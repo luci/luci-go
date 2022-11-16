@@ -16,7 +16,10 @@ package datastoreutil
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"go.chromium.org/luci/bisection/model"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -55,4 +58,34 @@ func CountLatestRevertsCommitted(c context.Context, hours int64) (int64, error) 
 	}
 
 	return count, nil
+}
+
+// GetAssociatedBuildID returns the build ID of the failure associated with the suspect
+func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, error) {
+	// Get parent analysis - either heuristic or nth section
+	if suspect.ParentAnalysis == nil {
+		return 0, fmt.Errorf("culprit with ID '%d' had no parent analysis",
+			suspect.Id)
+	}
+
+	// Get failure analysis that the heuristic/nth section analysis relates to
+	analysisKey := suspect.ParentAnalysis.Parent()
+	if analysisKey == nil {
+		return 0, fmt.Errorf("culprit with ID '%d' had no parent failure analysis",
+			suspect.Id)
+	}
+	analysisID := analysisKey.IntID()
+
+	compileFailure, err := GetCompileFailureForAnalysis(ctx, analysisID)
+	if err != nil {
+		return 0, fmt.Errorf("analysis with ID '%d' did not have a compile failure",
+			analysisID)
+	}
+
+	if compileFailure.Build == nil {
+		return 0, fmt.Errorf("compile failure with ID '%d' did not have a failed build",
+			compileFailure.Id)
+	}
+
+	return compileFailure.Build.IntID(), nil
 }

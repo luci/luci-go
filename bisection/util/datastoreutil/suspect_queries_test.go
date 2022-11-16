@@ -22,7 +22,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -198,5 +200,61 @@ func TestCountLatestRevertsCommitted(t *testing.T) {
 		count, err := CountLatestRevertsCommitted(c, 24)
 		So(err, ShouldBeNil)
 		So(count, ShouldEqual, 3)
+	})
+}
+
+func TestGetAssociatedBuildID(t *testing.T) {
+	ctx := memory.Use(context.Background())
+
+	Convey("Associated failed build ID for heuristic suspect", t, func() {
+		failedBuild := &model.LuciFailedBuild{
+			Id: 88128398584903,
+			LuciBuild: model.LuciBuild{
+				BuildId:     88128398584903,
+				Project:     "chromium",
+				Bucket:      "ci",
+				Builder:     "android",
+				BuildNumber: 123,
+			},
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		}
+		So(datastore.Put(ctx, failedBuild), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		compileFailure := &model.CompileFailure{
+			Build: datastore.KeyForObj(ctx, failedBuild),
+		}
+		So(datastore.Put(ctx, compileFailure), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		analysis := &model.CompileFailureAnalysis{
+			Id:             444,
+			CompileFailure: datastore.KeyForObj(ctx, compileFailure),
+		}
+		So(datastore.Put(ctx, analysis), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
+		}
+		So(datastore.Put(ctx, heuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		heuristicSuspect := &model.Suspect{
+			Id:             1,
+			Type:           model.SuspectType_Heuristic,
+			Score:          10,
+			ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "test.googlesource.com",
+				Project: "chromium/test",
+				Id:      "12ab34cd56ef",
+			},
+			ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+			VerificationStatus: model.SuspectVerificationStatus_UnderVerification,
+		}
+		So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		bbid, err := GetAssociatedBuildID(ctx, heuristicSuspect)
+		So(err, ShouldBeNil)
+		So(bbid, ShouldEqual, 88128398584903)
 	})
 }

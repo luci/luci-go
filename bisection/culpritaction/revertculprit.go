@@ -23,13 +23,12 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 // RevertHeuristicCulprit attempts to automatically revert a culprit
@@ -223,28 +222,6 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	return nil
 }
 
-func constructAnalysisURL(ctx context.Context, culpritModel *model.Suspect) (string, error) {
-	// Add link to LUCI Bisection failure analysis details
-	if culpritModel.ParentAnalysis != nil {
-		analysisKey := culpritModel.ParentAnalysis.Parent()
-		analysis := &model.CompileFailureAnalysis{
-			Id: analysisKey.IntID(),
-		}
-		err := datastore.Get(ctx, analysis)
-		if err != nil {
-			return "", errors.Annotate(err, "failed to get analysis with ID '%d'"+
-				" for culprit with ID '%d' when constructing analysis URL",
-				analysisKey.IntID(), culpritModel.Id).Err()
-		}
-
-		return fmt.Sprintf("https://%s.appspot.com/analysis/b/%d",
-			info.AppID(ctx), analysis.FirstFailedBuildId), nil
-	}
-
-	return "", fmt.Errorf("culprit with ID '%d' had no parent analysis",
-		culpritModel.Id)
-}
-
 func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Client,
 	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
 	// TODO: save the existing revert URL in datastore
@@ -273,17 +250,20 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 		return nil
 	}
 
-	// Revert is not owned by LUCI Bisection and has no supporting comment
-	url, err := constructAnalysisURL(ctx, culpritModel)
+	// If here, revert is not owned by LUCI Bisection and has no supporting comment
+
+	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
 	if err != nil {
 		return err
 	}
+	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
+	buildURL := util.ConstructBuildURL(ctx, bbid)
 
-	// TODO (aredulla): add link to build failure as well
 	_, err = gerritClient.AddComment(ctx, revert,
 		fmt.Sprintf("LUCI Bisection recommends submitting this revert because"+
 			" it has confirmed the target of this revert is the culprit of a"+
-			" build failure. See the analysis: %s.", url))
+			" build failure. See the analysis: %s\n\n"+
+			"Sample failed build: %s", analysisURL, buildURL))
 	return err
 }
 
@@ -304,14 +284,17 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 		return nil
 	}
 
-	url, err := constructAnalysisURL(ctx, culpritModel)
+	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
 	if err != nil {
 		return err
 	}
+	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
+	buildURL := util.ConstructBuildURL(ctx, bbid)
 
 	message := fmt.Sprintf("LUCI Bisection has identified this"+
-		" change as the culprit of a build failure. See the analysis: %s.\n\n"+
-		"A revert for this change was not created because %s.", url, reason)
+		" change as the culprit of a build failure. See the analysis: %s\n\n"+
+		"A revert for this change was not created because %s.\n\n"+
+		"Sample failed build: %s", analysisURL, reason, buildURL)
 
 	_, err = gerritClient.AddComment(ctx, culprit, message)
 	return err

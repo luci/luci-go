@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -128,15 +130,19 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 	paragraphs = append(paragraphs,
 		fmt.Sprintf("This reverts commit %s.", culpritModel.GitilesCommit.Id))
 
-	lbDescription := "LUCI Bisection identified this CL as the culprit of a build failure."
-
-	// Add link to LUCI Bisection failure analysis details
-	url, err := constructAnalysisURL(ctx, culpritModel)
+	// Add link to LUCI Bisection failure analysis details and failed build
+	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
 	if err != nil {
 		return "", err
 	}
-	lbDescription += fmt.Sprintf(" See the analysis: %s.", url)
-	paragraphs = append(paragraphs, lbDescription)
+	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
+	buildURL := util.ConstructBuildURL(ctx, bbid)
+
+	paragraphs = append(paragraphs, fmt.Sprintf("LUCI Bisection identified"+
+		" this CL as the culprit of a build failure. See the analysis: %s",
+		analysisURL))
+	paragraphs = append(paragraphs, fmt.Sprintf("Sample failed build: %s",
+		buildURL))
 
 	// TODO (aredulla): add link to file bug for LUCI Bisection if it's a
 	// false positive

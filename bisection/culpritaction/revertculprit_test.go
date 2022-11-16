@@ -27,7 +27,9 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	"go.chromium.org/luci/bisection/util"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -37,7 +39,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 func TestRevertHeuristicCulprit(t *testing.T) {
@@ -77,15 +78,27 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		ctx = clock.Set(ctx, cl)
 
 		// Setup datastore
+		failedBuild := &model.LuciFailedBuild{
+			Id: 88128398584903,
+			LuciBuild: model.LuciBuild{
+				BuildId:     88128398584903,
+				Project:     "chromium",
+				Bucket:      "ci",
+				Builder:     "android",
+				BuildNumber: 123,
+			},
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		}
+		So(datastore.Put(ctx, failedBuild), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
 		compileFailure := &model.CompileFailure{
-			Id: 111,
+			Build: datastore.KeyForObj(ctx, failedBuild),
 		}
 		So(datastore.Put(ctx, compileFailure), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		analysis := &model.CompileFailureAnalysis{
-			Id:                 444,
-			CompileFailure:     datastore.KeyForObj(ctx, compileFailure),
-			FirstFailedBuildId: 10003,
+			Id:             444,
+			CompileFailure: datastore.KeyForObj(ctx, compileFailure),
 		}
 		So(datastore.Put(ctx, analysis), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
@@ -95,8 +108,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		So(datastore.Put(ctx, heuristicAnalysis), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		analysisURL := fmt.Sprintf("https://%s.appspot.com/analysis/b/%d",
-			info.AppID(ctx), analysis.FirstFailedBuildId)
+		analysisURL := util.ConstructAnalysisURL(ctx, failedBuild.Id)
+		buildURL := util.ConstructBuildURL(ctx, failedBuild.Id)
 
 		// Set up mock Gerrit client
 		ctl := gomock.NewController(t)
@@ -260,8 +273,9 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					RevisionId: "current",
 					Message: fmt.Sprintf("LUCI Bisection recommends submitting this"+
 						" revert because it has confirmed the target of this revert is the"+
-						" culprit of a build failure. See the analysis: %s.",
-						analysisURL)},
+						" culprit of a build failure. See the analysis: %s\n\n"+
+						"Sample failed build: %s", analysisURL, buildURL),
+				},
 			)).Times(1)
 
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
@@ -347,9 +361,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					Number:     culpritRes.Changes[0].Number,
 					RevisionId: "current",
 					Message: fmt.Sprintf("LUCI Bisection has identified this"+
-						" change as the culprit of a build failure. See the analysis: %s.\n\n"+
+						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because there are merged"+
-						" changes depending on it.", analysisURL),
+						" changes depending on it.\n\nSample failed build: %s",
+						analysisURL, buildURL),
 				},
 			)).Times(1)
 
@@ -415,9 +430,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					Number:     culpritRes.Changes[0].Number,
 					RevisionId: "current",
 					Message: fmt.Sprintf("LUCI Bisection has identified this"+
-						" change as the culprit of a build failure. See the analysis: %s.\n\n"+
+						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because"+
-						" LUCI Bisection's revert creation has been disabled.", analysisURL),
+						" LUCI Bisection's revert creation has been disabled.\n\n"+
+						"Sample failed build: %s", analysisURL, buildURL),
 				},
 			)).Times(1)
 
