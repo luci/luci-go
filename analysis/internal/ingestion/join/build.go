@@ -189,7 +189,7 @@ func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64
 	}
 	ancestorInv, err := rc.GetInvocation(ctx, ancestorInvName)
 	code := status.Code(err)
-	if code == codes.NotFound {
+	if code == codes.NotFound || code == codes.PermissionDenied {
 		logging.Warningf(ctx, "Ancestor build ResultDB Invocation %s/%d for project %s not found (or LUCI Analysis does not have access to read it).",
 			rdbHost, ancestorBuildID, project)
 		// Invocation on the ancestor build not found or permission denied.
