@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
 // ipAllowlistNameRE is the regular expression for IP Allowlist Names.
@@ -119,6 +120,28 @@ func validateOAuth(ctx *validation.Context, configSet, path string, content []by
 			ctx.Error(err)
 		}
 	}
+
+	return nil
+}
+
+func validateSecurityCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	ctx.SetFile(path)
+	cfg := protocol.SecurityConfig{}
+
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
+		ctx.Error(err)
+		return nil
+	}
+
+	ctx.Enter("internal_service_regexp")
+	for i, re := range cfg.GetInternalServiceRegexp() {
+		ctx.Enter(fmt.Sprintf("# %d", i))
+		if _, err := regexp.Compile(fmt.Sprintf("^%s$", re)); err != nil {
+			ctx.Error(err)
+		}
+		ctx.Exit()
+	}
+	ctx.Exit()
 
 	return nil
 }

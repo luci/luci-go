@@ -287,3 +287,49 @@ func TestOAuthConfigValidation(t *testing.T) {
 		})
 	})
 }
+
+func TestSecurityConfigValidation(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	Convey("Validate security.cfg", t, func() {
+		vctx := &validation.Context{Context: ctx}
+		path := "security.cfg"
+		configSet := ""
+
+		Convey("Loading bad proto", func() {
+			content := []byte(` bad: "config" `)
+			So(validateSecurityCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+		})
+
+		const okCfg = `
+			# Realistic config.
+			# Services running on GAE.
+			internal_service_regexp: "(.*-dot-)?example-(dev|staging)\\.appspot\\.com"
+			# Services running elsewhere.
+			internal_service_regexp: "staging\\.example\\.api\\.dev"
+		`
+
+		Convey("OK", func() {
+			Convey("Fully loaded", func() {
+				So(validateSecurityCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("empty", func() {
+				So(validateSecurityCfg(vctx, configSet, path, []byte{}), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+		})
+
+		Convey("Bad regexp", func() {
+			content := []byte(` internal_service_regexp: "???" `)
+			So(validateSecurityCfg(vctx, configSet, path, content), ShouldBeNil)
+			// Syntax is Perl, in Perl it is not allowed to stack repetition operators.
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid nested repetition operator")
+		})
+
+	})
+}
