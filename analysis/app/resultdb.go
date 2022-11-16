@@ -19,15 +19,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"regexp"
-	"strconv"
 
-	"go.chromium.org/luci/analysis/internal/ingestion/control"
-	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/ingestion/join"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/router"
@@ -43,22 +39,34 @@ var (
 		field.String("project"),
 		// "success", "transient-failure", "permanent-failure" or "ignored".
 		field.String("status"))
-
-	// buildInvocationRE extracts the buildbucket build number from invocations
-	// named after a buildbucket build ID.
-	buildInvocationRE = regexp.MustCompile(`^build-([0-9]+)$`)
 )
 
-// InvocationFinalizedPubSubHandler accepts and processes ResultDB
+type handleInvocationMethod func(ctx context.Context, notification *rdbpb.InvocationFinalizedNotification) (processed bool, err error)
+
+// InvocationFinalizedHandler accepts and processes ResultDB
 // Invocation Finalized Pub/Sub messages.
-func InvocationFinalizedPubSubHandler(ctx *router.Context) {
+type InvocationFinalizedHandler struct {
+	// The method to use to handle the deserialized invocation finalized
+	// notification. Used to allow the handler to be replaced for testing.
+	handleInvocation handleInvocationMethod
+}
+
+// NewInvocationFinalizedHandler initialises a new InvocationFinalizedHandler.
+func NewInvocationFinalizedHandler() *InvocationFinalizedHandler {
+	return &InvocationFinalizedHandler{
+		handleInvocation: join.JoinInvocation,
+	}
+}
+
+// Handle processes a ResultDB Invocation Finalized Pub/Sub message.
+func (h *InvocationFinalizedHandler) Handle(ctx *router.Context) {
 	status := "unknown"
 	project := "unknown"
 	defer func() {
 		// Closure for late binding.
 		invocationsFinalizedCounter.Add(ctx.Context, 1, project, status)
 	}()
-	project, processed, err := invocationFinalizedPubSubHandlerImpl(ctx.Context, ctx.Request)
+	project, processed, err := h.handleImpl(ctx.Context, ctx.Request)
 
 	switch {
 	case err != nil:
@@ -78,21 +86,21 @@ func InvocationFinalizedPubSubHandler(ctx *router.Context) {
 	}
 }
 
-func invocationFinalizedPubSubHandlerImpl(ctx context.Context, request *http.Request) (project string, processed bool, err error) {
-	notification, err := extractInvocationFinalizedNotification(request)
+func (h *InvocationFinalizedHandler) handleImpl(ctx context.Context, request *http.Request) (project string, processed bool, err error) {
+	notification, err := extractNotification(request)
 	if err != nil {
 		return "unknown", false, errors.Annotate(err, "failed to extract invocation finalized notification").Err()
 	}
 
 	project, _ = realms.Split(notification.Realm)
-	processed, err = processInvocationFinalizedNotification(ctx, project, notification)
+	processed, err = h.handleInvocation(ctx, notification)
 	if err != nil {
 		return project, false, errors.Annotate(err, "processing notification").Err()
 	}
 	return project, processed, nil
 }
 
-func extractInvocationFinalizedNotification(r *http.Request) (*rdbpb.InvocationFinalizedNotification, error) {
+func extractNotification(r *http.Request) (*rdbpb.InvocationFinalizedNotification, error) {
 	var msg pubsubMessage
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		return nil, errors.Annotate(err, "decoding pubsub message").Err()
@@ -104,31 +112,4 @@ func extractInvocationFinalizedNotification(r *http.Request) (*rdbpb.InvocationF
 		return nil, errors.Annotate(err, "parsing pubsub message data").Err()
 	}
 	return &run, nil
-}
-
-func processInvocationFinalizedNotification(ctx context.Context, project string, notification *rdbpb.InvocationFinalizedNotification) (processed bool, err error) {
-	id, err := pbutil.ParseInvocationName(notification.Invocation)
-	if err != nil {
-		return false, errors.Annotate(err, "parse invocation name").Err()
-	}
-
-	match := buildInvocationRE.FindStringSubmatch(id)
-	if match == nil {
-		// Invocations that are not of the form build-<BUILD ID> are ignored.
-		return false, nil
-	}
-	bbBuildID, err := strconv.ParseInt(match[1], 10, 64)
-	if err != nil {
-		return false, errors.Annotate(err, "parse build ID").Err()
-	}
-
-	// This proto has no fields for now. If we need to pass anything about the invocation,
-	// we can add it in here in future.
-	result := &controlpb.InvocationResult{}
-
-	buildID := control.BuildID(bbHost, bbBuildID)
-	if err := JoinInvocationResult(ctx, buildID, project, result); err != nil {
-		return true, errors.Annotate(err, "joining invocation result").Err()
-	}
-	return true, nil
 }

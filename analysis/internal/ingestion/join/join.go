@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+// Package join contains methods for joining buildbucket build completions
+// with LUCI CV completions and ResultDB invocation finalizations.
+package join
 
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/common/errors"
@@ -30,6 +33,12 @@ import (
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+)
+
+var (
+	// buildInvocationRE extracts the buildbucket build number from invocations
+	// named after a buildbucket build ID.
+	buildInvocationRE = regexp.MustCompile(`^build-([0-9]+)$`)
 )
 
 var (
@@ -92,11 +101,12 @@ var (
 //
 // An ingestion task is created if all required data for the
 // ingestion is available.
-// - for builds part of a presubmit run, we will need to wait
-//   for the presubmit run.
-// - for builds with a ResultDB invocation (note this is not
-//   mutually exclusive to the above), we will need to wait
-//   for the ResultDB invocation.
+//   - for builds part of a presubmit run, we will need to wait
+//     for the presubmit run.
+//   - for builds with a ResultDB invocation (note this is not
+//     mutually exclusive to the above), we will need to wait
+//     for the ResultDB invocation.
+//
 // If none of the above applies, we will start an ingestion
 // straight away.
 //

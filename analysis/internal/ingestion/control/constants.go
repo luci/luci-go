@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package control
 
 import (
-	"testing"
+	"fmt"
 
-	"go.chromium.org/luci/analysis/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 )
 
-func TestMain(m *testing.M) {
-	testutil.SpannerTestMain(m)
+// BuildInvocationName returns the invocation name corresponding to a
+// buildbucket build.
+// The pattern is originally defined here:
+// https://source.chromium.org/chromium/infra/infra/+/main:appengine/cr-buildbucket/resultdb.py;l=75?q=build-%20resultdb&type=cs
+func BuildInvocationName(buildID int64) string {
+	return pbutil.InvocationName(fmt.Sprintf("build-%v", buildID))
 }

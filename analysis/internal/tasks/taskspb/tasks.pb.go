@@ -682,6 +682,73 @@ func (x *ReclusterChunkState) GetNextReportDue() *timestamppb.Timestamp {
 	return nil
 }
 
+// Payload of the JoinBuild task.
+type JoinBuild struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Buildbucket build ID, unique per Buildbucket instance.
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Buildbucket host, e.g. "cr-buildbucket.appspot.com".
+	Host string `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	// The LUCI Project to which the build belongs.
+	Project string `protobuf:"bytes,3,opt,name=project,proto3" json:"project,omitempty"`
+}
+
+func (x *JoinBuild) Reset() {
+	*x = JoinBuild{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *JoinBuild) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinBuild) ProtoMessage() {}
+
+func (x *JoinBuild) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinBuild.ProtoReflect.Descriptor instead.
+func (*JoinBuild) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *JoinBuild) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *JoinBuild) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *JoinBuild) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc = []byte{
@@ -821,11 +888,16 @@ var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDes
 	0x70, 0x6f, 0x72, 0x74, 0x5f, 0x64, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
 	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
 	0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0d, 0x6e, 0x65, 0x78, 0x74,
-	0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x44, 0x75, 0x65, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e,
-	0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63,
-	0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72,
-	0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x70,
-	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x65, 0x70, 0x6f, 0x72, 0x74, 0x44, 0x75, 0x65, 0x22, 0x49, 0x0a, 0x09, 0x4a, 0x6f, 0x69,
+	0x6e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72,
+	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f,
+	0x6a, 0x65, 0x63, 0x74, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
+	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61,
+	0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74,
+	0x61, 0x73, 0x6b, 0x73, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -840,7 +912,7 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDe
 	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_goTypes = []interface{}{
 	(*IngestTestResults)(nil),             // 0: luci.analysis.internal.tasks.IngestTestResults
 	(*ResultDB)(nil),                      // 1: luci.analysis.internal.tasks.ResultDB
@@ -850,28 +922,29 @@ var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_goType
 	(*ExportTestVariants)(nil),            // 5: luci.analysis.internal.tasks.ExportTestVariants
 	(*ReclusterChunks)(nil),               // 6: luci.analysis.internal.tasks.ReclusterChunks
 	(*ReclusterChunkState)(nil),           // 7: luci.analysis.internal.tasks.ReclusterChunkState
-	(*timestamppb.Timestamp)(nil),         // 8: google.protobuf.Timestamp
-	(*proto.BuildResult)(nil),             // 9: luci.analysis.internal.ingestion.control.BuildResult
-	(*proto.PresubmitResult)(nil),         // 10: luci.analysis.internal.ingestion.control.PresubmitResult
-	(*v1.Invocation)(nil),                 // 11: luci.resultdb.v1.Invocation
-	(*analyzedtestvariant.Predicate)(nil), // 12: luci.analysis.analyzedtestvariant.Predicate
-	(*v11.TimeRange)(nil),                 // 13: luci.analysis.v1.TimeRange
+	(*JoinBuild)(nil),                     // 8: luci.analysis.internal.tasks.JoinBuild
+	(*timestamppb.Timestamp)(nil),         // 9: google.protobuf.Timestamp
+	(*proto.BuildResult)(nil),             // 10: luci.analysis.internal.ingestion.control.BuildResult
+	(*proto.PresubmitResult)(nil),         // 11: luci.analysis.internal.ingestion.control.PresubmitResult
+	(*v1.Invocation)(nil),                 // 12: luci.resultdb.v1.Invocation
+	(*analyzedtestvariant.Predicate)(nil), // 13: luci.analysis.analyzedtestvariant.Predicate
+	(*v11.TimeRange)(nil),                 // 14: luci.analysis.v1.TimeRange
 }
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_depIdxs = []int32{
-	8,  // 0: luci.analysis.internal.tasks.IngestTestResults.partition_time:type_name -> google.protobuf.Timestamp
-	9,  // 1: luci.analysis.internal.tasks.IngestTestResults.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
-	10, // 2: luci.analysis.internal.tasks.IngestTestResults.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
-	11, // 3: luci.analysis.internal.tasks.ResultDB.invocation:type_name -> luci.resultdb.v1.Invocation
+	9,  // 0: luci.analysis.internal.tasks.IngestTestResults.partition_time:type_name -> google.protobuf.Timestamp
+	10, // 1: luci.analysis.internal.tasks.IngestTestResults.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
+	11, // 2: luci.analysis.internal.tasks.IngestTestResults.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
+	12, // 3: luci.analysis.internal.tasks.ResultDB.invocation:type_name -> luci.resultdb.v1.Invocation
 	1,  // 4: luci.analysis.internal.tasks.CollectTestResults.resultdb:type_name -> luci.analysis.internal.tasks.ResultDB
 	3,  // 5: luci.analysis.internal.tasks.UpdateTestVariant.test_variant_key:type_name -> luci.analysis.internal.tasks.TestVariantKey
-	8,  // 6: luci.analysis.internal.tasks.UpdateTestVariant.enqueue_time:type_name -> google.protobuf.Timestamp
-	12, // 7: luci.analysis.internal.tasks.ExportTestVariants.predicate:type_name -> luci.analysis.analyzedtestvariant.Predicate
-	13, // 8: luci.analysis.internal.tasks.ExportTestVariants.time_range:type_name -> luci.analysis.v1.TimeRange
-	8,  // 9: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
-	8,  // 10: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
-	8,  // 11: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
+	9,  // 6: luci.analysis.internal.tasks.UpdateTestVariant.enqueue_time:type_name -> google.protobuf.Timestamp
+	13, // 7: luci.analysis.internal.tasks.ExportTestVariants.predicate:type_name -> luci.analysis.analyzedtestvariant.Predicate
+	14, // 8: luci.analysis.internal.tasks.ExportTestVariants.time_range:type_name -> luci.analysis.v1.TimeRange
+	9,  // 9: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
+	9,  // 10: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
+	9,  // 11: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
 	7,  // 12: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
-	8,  // 13: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
+	9,  // 13: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
 	14, // [14:14] is the sub-list for method output_type
 	14, // [14:14] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
@@ -981,6 +1054,18 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init(
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*JoinBuild); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -988,7 +1073,7 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init(
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

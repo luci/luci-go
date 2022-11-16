@@ -261,7 +261,7 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 
 // JoinStatistics captures indicators of how well two join inputs
 // (e.g. buildbucket build completions and presubmit run completions,
-//  or buildbucket build completions and invocation finalizations)
+// or buildbucket build completions and invocation finalizations)
 // are being joined.
 type JoinStatistics struct {
 	// TotalByHour captures the number of builds in the ingestions

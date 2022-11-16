@@ -15,115 +15,77 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/tsmon"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/router"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
-	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-	"go.chromium.org/luci/analysis/internal/testutil"
-	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-func TestHandleInvocationFinalization(t *testing.T) {
-	Convey(`Test InvocationFinalizedPubSubHandler`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
-		ctx, skdr := tq.TestingContext(ctx, nil)
+func TestInvocationFinalizedHandler(t *testing.T) {
+	Convey(`Test InvocationFinalizedHandler`, t, func() {
+		ctx, _ := tsmon.WithDummyInMemory(context.Background())
 
-		// Buildbucket timestamps are only in microsecond precision.
-		t := time.Now().Truncate(time.Nanosecond * 1000)
-
-		build := newBuildBuilder(6363636363).
-			WithCreateTime(t).
-			WithInvocation()
-
-		expectedTask := &taskspb.IngestTestResults{
-			PartitionTime: timestamppb.New(t),
-			Build: &controlpb.BuildResult{
-				Host:         bbHost,
-				Id:           6363636363,
-				CreationTime: timestamppb.New(t),
-				Project:      "buildproject",
-			},
+		h := &InvocationFinalizedHandler{}
+		rsp := httptest.NewRecorder()
+		rctx := &router.Context{
+			Context: ctx,
+			Writer:  rsp,
 		}
 
-		assertTasksExpected := func() {
-			// Verify exactly one ingestion has been created.
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestResults)
-			So(resultsTask, ShouldResembleProto, expectedTask)
-		}
+		Convey(`Valid message`, func() {
+			called := false
+			var processed bool
+			h.handleInvocation = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
+				So(called, ShouldBeFalse)
+				So(notification, ShouldResembleProto, &resultpb.InvocationFinalizedNotification{
+					Invocation: "invocations/build-6363636363",
+					Realm:      "invproject:realm",
+				})
+				called = true
+				return processed, nil
+			}
 
-		Convey(`Without build ingested previously`, func() {
-			So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
+			// Process invocation finalization.
+			rctx.Request = &http.Request{Body: makeInvocationFinalizedReq(6363636363, "invproject:realm")}
 
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-		})
-		Convey(`With non-presubmit build ingested previously`, func() {
-			So(ingestBuild(ctx, build), ShouldBeNil)
+			Convey(`Processed`, func() {
+				processed = true
 
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-
-			So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
-
-			assertTasksExpected()
-
-			// Repeated messages should not trigger new ingestions.
-			So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
-
-			assertTasksExpected()
-		})
-		Convey(`With presubmit build ingested previously`, func() {
-			build = build.WithTags([]string{"user_agent:cq"})
-			So(ingestBuild(ctx, build), ShouldBeNil)
-
-			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-
-			Convey(`With LUCI CV run ingested previously`, func() {
-				So(ingestCVRun(ctx, []int64{build.buildID}), ShouldBeNil)
-
-				expectedTask.PartitionTime = timestamppb.New(cvCreateTime)
-				expectedTask.PresubmitRun = &controlpb.PresubmitResult{
-					PresubmitRunId: &pb.PresubmitRunId{
-						System: "luci-cv",
-						Id:     "cvproject/123e4567-e89b-12d3-a456-426614174000",
-					},
-					Status:       pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
-					Owner:        "automation",
-					Mode:         pb.PresubmitRunMode_FULL_RUN,
-					CreationTime: timestamppb.New(cvCreateTime),
-				}
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-
-				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
-
-				assertTasksExpected()
-
-				// Check metrics were reported correctly for this sequence.
-				isPresubmit := true
-				hasInvocation := true
-				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
-				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
-				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
-				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
+				h.Handle(rctx)
+				So(rsp.Code, ShouldEqual, http.StatusOK)
+				So(invocationsFinalizedCounter.Get(ctx, "invproject", "success"), ShouldEqual, 1)
+				So(called, ShouldBeTrue)
 			})
-			Convey(`Without LUCI CV run ingested previously`, func() {
-				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
+			Convey(`Not processed`, func() {
+				processed = false
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+				h.Handle(rctx)
+				So(rsp.Code, ShouldEqual, http.StatusNoContent)
+				So(invocationsFinalizedCounter.Get(ctx, "invproject", "ignored"), ShouldEqual, 1)
+				So(called, ShouldBeTrue)
 			})
+		})
+		Convey(`Invalid message`, func() {
+			h.handleInvocation = func(ctx context.Context, notification *resultpb.InvocationFinalizedNotification) (bool, error) {
+				panic("Should not be reached.")
+			}
+
+			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"))}
+
+			h.Handle(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusAccepted)
+			So(invocationsFinalizedCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 		})
 	})
 }

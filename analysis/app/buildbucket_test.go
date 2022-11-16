@@ -15,142 +15,81 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
-	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-	"go.chromium.org/luci/analysis/internal/testutil"
-	pb "go.chromium.org/luci/analysis/proto/v1"
+)
+
+const (
+	// Host name of buildbucket.
+	bbHost = "cr-buildbucket.appspot.com"
 )
 
 func TestHandleBuild(t *testing.T) {
+	buildjoiner.RegisterTaskClass()
+
 	Convey(`Test BuildbucketPubSubHandler`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
+		ctx, _ := tsmon.WithDummyInMemory(context.Background())
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
-		// Buildbucket timestamps are only in microsecond precision.
-		t := time.Now().Truncate(time.Nanosecond * 1000)
-
-		build := newBuildBuilder(14141414).
-			WithCreateTime(t)
-
-		expectedTask := &taskspb.IngestTestResults{
-			PartitionTime: timestamppb.New(t),
-			Build: &controlpb.BuildResult{
-				Host:         bbHost,
-				Id:           14141414,
-				CreationTime: timestamppb.New(t),
-				Project:      "buildproject",
-			},
+		pubSubMessage := bbv1.LegacyApiCommonBuildMessage{
+			Project: "buildproject",
+			Bucket:  "bucket",
+			Id:      14141414,
 		}
+		rsp := httptest.NewRecorder()
+		rctx := &router.Context{
+			Context: ctx,
+			Writer:  rsp,
+		}
+		Convey(`Completed build`, func() {
+			pubSubMessage.Status = bbv1.StatusCompleted
 
-		assertTasksExpected := func() {
+			rctx.Request = &http.Request{Body: makeBBReq(pubSubMessage, bbHost)}
+			BuildbucketPubSubHandler(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusOK)
+			So(buildCounter.Get(ctx, "buildproject", "success"), ShouldEqual, 1)
+
 			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.IngestTestResults)
+			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.JoinBuild)
+
+			expectedTask := &taskspb.JoinBuild{
+				Host:    bbHost,
+				Project: "buildproject",
+				Id:      14141414,
+			}
 			So(resultsTask, ShouldResembleProto, expectedTask)
-		}
-
-		Convey(`With vanilla build`, func() {
-			Convey(`Vanilla CI Build`, func() {
-				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-
-				assertTasksExpected()
-
-				// Test repeated processing does not lead to further
-				// ingestion tasks.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-
-				assertTasksExpected()
-			})
-			Convey(`Unusual CI Build`, func() {
-				// v8 project had some buildbucket-triggered builds
-				// with both the user_agent:cq and user_agent:recipe tags.
-				// These should be treated as CI builds.
-				build = build.WithTags([]string{"user_agent:cq", "user_agent:recipe"})
-
-				// Process build.
-				So(ingestBuild(ctx, build), ShouldBeNil)
-				assertTasksExpected()
-			})
 		})
-		Convey(`With build that is part of a LUCI CV run`, func() {
-			build := build.WithTags([]string{"user_agent:cq"})
+		Convey(`Uncompleted build`, func() {
+			pubSubMessage.Status = bbv1.StatusStarted
 
-			Convey(`Without LUCI CV run processed previously`, func() {
-				So(ingestBuild(ctx, build), ShouldBeNil)
+			rctx.Request = &http.Request{Body: makeBBReq(pubSubMessage, bbHost)}
+			BuildbucketPubSubHandler(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusNoContent)
+			So(buildCounter.Get(ctx, "buildproject", "ignored"), ShouldEqual, 1)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-			})
-			Convey(`With LUCI CV run processed previously`, func() {
-				So(ingestCVRun(ctx, []int64{11111171, build.buildID}), ShouldBeNil)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-
-				So(ingestBuild(ctx, build), ShouldBeNil)
-
-				expectedTask.PartitionTime = timestamppb.New(cvCreateTime)
-				expectedTask.PresubmitRun = &controlpb.PresubmitResult{
-					PresubmitRunId: &pb.PresubmitRunId{
-						System: "luci-cv",
-						Id:     "cvproject/123e4567-e89b-12d3-a456-426614174000",
-					},
-					Status:       pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
-					Owner:        "automation",
-					Mode:         pb.PresubmitRunMode_FULL_RUN,
-					CreationTime: timestamppb.New(cvCreateTime),
-					Critical:     true,
-				}
-				assertTasksExpected()
-
-				// Check metrics were reported correctly for this sequence.
-				isPresubmit := true
-				hasInvocation := false
-				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 2)
-				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 1)
-				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
-				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 0)
-			})
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 		})
-		Convey(`With build that has a ResultDB invocation`, func() {
-			build := build.WithInvocation()
+		Convey(`Invalid data`, func() {
+			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"))}
+			BuildbucketPubSubHandler(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusAccepted)
+			So(buildCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 
-			Convey(`Without invocation finalization acknowledged previously`, func() {
-				So(ingestBuild(ctx, build), ShouldBeNil)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-			})
-			Convey(`With invocation finalization acknowledged previously`, func() {
-				So(ingestFinalization(ctx, build.buildID), ShouldBeNil)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-
-				So(ingestBuild(ctx, build), ShouldBeNil)
-
-				assertTasksExpected()
-
-				// Check metrics were reported correctly for this sequence.
-				isPresubmit := false
-				hasInvocation := true
-				So(bbBuildInputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(bbBuildOutputCounter.Get(ctx, "buildproject", isPresubmit, hasInvocation), ShouldEqual, 1)
-				So(cvBuildInputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-				So(cvBuildOutputCounter.Get(ctx, "cvproject"), ShouldEqual, 0)
-				So(rdbBuildInputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
-				So(rdbBuildOutputCounter.Get(ctx, "invproject"), ShouldEqual, 1)
-			})
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 		})
 	})
 }

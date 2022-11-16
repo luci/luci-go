@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/legacydb"
 	"go.chromium.org/luci/analysis/internal/metrics"
+	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
 	"go.chromium.org/luci/analysis/internal/services/resultcollector"
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
@@ -128,8 +129,8 @@ func Main(init func(srv *luciserver.Server) error) {
 
 		// Pub/Sub subscription endpoints.
 		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)
-		srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.CVRunPubSubHandler)
-		srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.InvocationFinalizedPubSubHandler)
+		srv.Routes.POST("/_ah/push-handlers/cvrun", nil, app.NewCVRunHandler().Handle)
+		srv.Routes.POST("/_ah/push-handlers/invocation-finalized", nil, app.NewInvocationFinalizedHandler().Handle)
 
 		// Register task queue tasks.
 		if err := reclustering.RegisterTaskHandler(srv); err != nil {
@@ -138,6 +139,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		if err := resultingester.RegisterTaskHandler(srv); err != nil {
 			return errors.Annotate(err, "register result ingester").Err()
 		}
+		buildjoiner.RegisterTaskClass()
 		resultcollector.RegisterTaskClass()
 		testvariantbqexporter.RegisterTaskClass()
 		testvariantupdator.RegisterTaskClass()

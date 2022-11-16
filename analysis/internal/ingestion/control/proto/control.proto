@@ -18,10 +18,11 @@ package luci.analysis.internal.ingestion.control;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
 option go_package = "go.chromium.org/luci/analysis/internal/ingestion/control/proto;controlpb";
 
-// BuildResult represents the result from the buildbucket pub/sub
+// BuildResult represents the information about a buildbucket build
 // that should be passed to the result ingestion task.
 message BuildResult {
   // Buildbucket build ID, unique per Buildbucket instance.
@@ -35,6 +36,43 @@ message BuildResult {
 
   // The LUCI Project to which the build belongs.
   string project = 4;
+  
+  // The builder this build was a part of.
+  string builder = 5;
+
+  // The ending status of the build. E.g. Canceled, Success, Failure, Infra failure.
+  luci.analysis.v1.BuildStatus status = 6;
+
+  message Changelist {
+    // Host is the gerrit hostname, excluding "-review.googlesource.com".
+    string host = 1;
+    // The gerrit change number.
+    int64 change = 2;
+    // The gerrit patchset number.
+    int64 patchset = 3;
+  }
+
+  // The changelists that were tested by the build.
+  repeated Changelist changelists = 7;
+
+  // The version of code (excluding any unsubmitted changelists) that was
+  // tested by the build. This is the base commit ontop of which any
+  // changelists are applied.
+  buildbucket.v2.GitilesCommit commit = 8;
+
+  // Whether this buildbucket build has a ResultDB invocation. If true,
+  // the invocation is named "build-{id}".
+  bool has_invocation = 9;
+
+  // The ResultDB host which contains the ResultDB invocation of this
+  // build. Only populated if has_invocation is set.
+  string resultdb_host = 10;
+
+  // Whether the ResultDB invocation of this buildbucket build is included
+  // in the ResultDB invocation of the build ancestor (if any).
+  // Only populated if has_invocation is set. If the build has no ancestor,
+  // this is set to false.
+  bool is_included_by_ancestor = 11;
 }
 
 // PresubmitResult represents the result from the presubmit pub/sub

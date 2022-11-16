@@ -167,3 +167,15 @@ message ReclusterChunkState {
   // The next time a progress report should be made.
   google.protobuf.Timestamp next_report_due = 2;
 }
+
+// Payload of the JoinBuild task.
+message JoinBuild {
+  // Buildbucket build ID, unique per Buildbucket instance.
+  int64 id = 1;
+
+  // Buildbucket host, e.g. "cr-buildbucket.appspot.com".
+  string host = 2;
+
+  // The LUCI Project to which the build belongs.
+  string project = 3;
+}

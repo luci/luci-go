@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package join
 
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
+	cvv1 "go.chromium.org/luci/cv/api/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/cv"
+	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // cvCreateTime is the create time assigned to CV Runs, for testing.
@@ -41,32 +43,25 @@ func ingestBuild(ctx context.Context, build *buildBuilder) error {
 	}
 	ctx = buildbucket.UseFakeClient(ctx, builds)
 
-	r := &http.Request{Body: makeBBReq(build.BuildPubSubMessage(), bbHost)}
-	project, processed, err := bbPubSubHandlerImpl(ctx, r)
+	processed, err := JoinBuild(ctx, bbHost, "buildproject", build.buildID)
 	if err != nil {
 		return err
 	}
 	if !processed {
 		return errors.New("expected processed to be true")
-	}
-	if project != "buildproject" {
-		return fmt.Errorf("unexpected project (got %q, want %q)", project, "buildproject")
 	}
 	return nil
 }
 
 func ingestFinalization(ctx context.Context, buildID int64) error {
 	// Process invocation finalization.
-	r := &http.Request{Body: makeInvocationFinalizedReq(buildID, "invproject:realm")}
-	project, processed, err := invocationFinalizedPubSubHandlerImpl(ctx, r)
+	notification := makeInvocationFinalizedNotification(buildID, "invproject:realm")
+	processed, err := JoinInvocation(ctx, notification)
 	if err != nil {
 		return err
 	}
 	if !processed {
 		return errors.New("expected processed to be true")
-	}
-	if project != "invproject" {
-		return fmt.Errorf("unexpected project (got %q, want %q)", project, "invproject")
 	}
 	return nil
 }
@@ -97,8 +92,8 @@ func ingestCVRun(ctx context.Context, buildIDs []int64) error {
 	ctx = cv.UseFakeClient(ctx, runs)
 
 	// Process presubmit run.
-	r := &http.Request{Body: makeCVRunReq(run.Id)}
-	project, processed, err := cvPubSubHandlerImpl(ctx, r)
+	message := makeCVRunPubSub(run.Id)
+	project, processed, err := JoinCVRun(ctx, message)
 	if err != nil {
 		return err
 	}
@@ -112,10 +107,12 @@ func ingestCVRun(ctx context.Context, buildIDs []int64) error {
 }
 
 type buildBuilder struct {
-	buildID       int64
-	hasInvocation bool
-	tags          []string
-	createTime    time.Time
+	buildID             int64
+	hasInvocation       bool
+	tags                []string
+	createTime          time.Time
+	ancestorIDs         []int64
+	containedByAncestor bool
 }
 
 func newBuildBuilder(buildID int64) *buildBuilder {
@@ -140,6 +137,16 @@ func (b *buildBuilder) WithCreateTime(t time.Time) *buildBuilder {
 	return b
 }
 
+func (b *buildBuilder) WithAncestorIDs(ancestorIDs []int64) *buildBuilder {
+	b.ancestorIDs = ancestorIDs
+	return b
+}
+
+func (b *buildBuilder) WithContainedByAncestor(contained bool) *buildBuilder {
+	b.containedByAncestor = contained
+	return b
+}
+
 func (b *buildBuilder) BuildProto() *bbpb.Build {
 	rdb := &bbpb.BuildInfra_ResultDB{}
 	if b.hasInvocation {
@@ -160,22 +167,89 @@ func (b *buildBuilder) BuildProto() *bbpb.Build {
 			Bucket:  "bucket",
 			Builder: "builder",
 		},
-		Id:         b.buildID,
-		CreateTime: timestamppb.New(b.createTime),
-		Tags:       tags,
+		AncestorIds: b.ancestorIDs,
+		Id:          b.buildID,
+		CreateTime:  timestamppb.New(b.createTime),
+		Status:      bbpb.Status_SUCCESS,
+		Tags:        tags,
+		Input: &bbpb.Build_Input{
+			GerritChanges: []*bbpb.GerritChange{
+				{
+					Host:     "myproject-review.googlesource.com",
+					Change:   81818181,
+					Patchset: 9292,
+				},
+				{
+					Host:     "otherproject-review.googlesource.com",
+					Change:   71717171,
+					Patchset: 1212,
+				},
+			},
+		},
+		Output: &bbpb.Build_Output{
+			GitilesCommit: &bbpb.GitilesCommit{
+				Host:     "coolproject-review.googlesource.com",
+				Project:  "coolproject/src",
+				Id:       "00112233445566778899aabbccddeeff00112233",
+				Ref:      "refs/heads/branch",
+				Position: 555888,
+			},
+		},
 		Infra: &bbpb.BuildInfra{
 			Resultdb: rdb,
 		},
 	}
 }
 
-func (b *buildBuilder) BuildPubSubMessage() bbv1.LegacyApiCommonBuildMessage {
-	return bbv1.LegacyApiCommonBuildMessage{
-		Project:   "buildproject",
-		Bucket:    "bucket",
-		Id:        b.buildID,
-		Status:    bbv1.StatusCompleted,
-		CreatedTs: bbv1.FormatTimestamp(b.createTime),
-		Tags:      b.tags,
+func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
+	var rdbHost string
+	if b.hasInvocation {
+		rdbHost = "rdb.test.instance"
+	}
+
+	return &controlpb.BuildResult{
+		Host:         bbHost,
+		Id:           b.buildID,
+		CreationTime: timestamppb.New(b.createTime),
+		Project:      "buildproject",
+		Builder:      "builder",
+		Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
+		Changelists: []*controlpb.BuildResult_Changelist{
+			{
+				Host:     "myproject",
+				Change:   81818181,
+				Patchset: 9292,
+			},
+			{
+				Host:     "otherproject",
+				Change:   71717171,
+				Patchset: 1212,
+			},
+		},
+		Commit: &bbpb.GitilesCommit{
+			Host:     "coolproject-review.googlesource.com",
+			Project:  "coolproject/src",
+			Id:       "00112233445566778899aabbccddeeff00112233",
+			Ref:      "refs/heads/branch",
+			Position: 555888,
+		},
+		HasInvocation:        b.hasInvocation,
+		ResultdbHost:         rdbHost,
+		IsIncludedByAncestor: b.containedByAncestor,
+	}
+}
+
+func makeCVRunPubSub(runID string) *cvv1.PubSubRun {
+	return &cvv1.PubSubRun{
+		Id:       runID,
+		Status:   cvv1.Run_SUCCEEDED,
+		Hostname: "cvhost",
+	}
+}
+
+func makeInvocationFinalizedNotification(buildID int64, realm string) *rdbpb.InvocationFinalizedNotification {
+	return &rdbpb.InvocationFinalizedNotification{
+		Invocation: fmt.Sprintf("invocations/build-%v", buildID),
+		Realm:      realm,
 	}
 }
