@@ -30,11 +30,6 @@ cron:
   url: /internal/cron/update_project_config
   schedule: every 5 minutes
 
-- description: update buckets
-  target: backend
-  url: /internal/cron/buildbucket/update_buckets
-  schedule: every 24 hours
-
 - description: report builder metrics
   target: monitor
   url: /internal/cron/report_builder_metrics
