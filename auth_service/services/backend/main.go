@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
 )
 
 func main() {
@@ -66,7 +67,17 @@ func main() {
 			if err != nil {
 				return err
 			}
-			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, true); err != nil {
+
+			// security.cfg handling.
+			if err := securitycfg.Update(ctx); err != nil {
+				return err
+			}
+			securitycfg, err := securitycfg.Get(ctx)
+			if err != nil {
+				return err
+			}
+
+			if err := model.UpdateAuthGlobalConfig(ctx, oauthcfg, securitycfg, true); err != nil {
 				return err
 			}
 			return nil

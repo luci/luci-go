@@ -1302,7 +1302,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
 		ctx = info.SetImageVersion(ctx, "test-version")
 		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
-		cfgpb := &configspb.OAuthConfig{
+		oauthcfgpb := &configspb.OAuthConfig{
 			PrimaryClientId:     "new-test-client-id",
 			PrimaryClientSecret: "new-test-client-secret",
 			ClientIds: []string{
@@ -1311,9 +1311,10 @@ func TestAuthGlobalConfig(t *testing.T) {
 			},
 			TokenServerUrl: "https://new-token-server-url.example.com",
 		}
+		seccfgpb := testSecurityConfig()
 
 		Convey("Creating new AuthGlobalConfig", func() {
-			So(UpdateAuthGlobalConfig(ctx, cfgpb, false), ShouldBeNil)
+			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false), ShouldBeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			So(err, ShouldBeNil)
 			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{
@@ -1329,6 +1330,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 				OAuthAdditionalClientIDs: []string{"new-test-client-id-1", "new-test-client-id-2"},
 				OAuthClientSecret:        "new-test-client-secret",
 				TokenServerURL:           "https://new-token-server-url.example.com",
+				SecurityConfig:           testSecurityConfigBlob(),
 			})
 			state1, err := GetReplicationState(ctx)
 			So(err, ShouldBeNil)
@@ -1362,7 +1364,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 
 		Convey("Updating AuthGlobalConfig", func() {
 			So(datastore.Put(ctx, testAuthGlobalConfig(ctx)), ShouldBeNil)
-			So(UpdateAuthGlobalConfig(ctx, cfgpb, false), ShouldBeNil)
+			So(UpdateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false), ShouldBeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			So(err, ShouldBeNil)
 			So(updatedCfg, ShouldResemble, &AuthGlobalConfig{

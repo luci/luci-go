@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -38,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/service/protocol"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
@@ -1093,7 +1095,7 @@ func GetAuthGlobalConfig(ctx context.Context) (*AuthGlobalConfig, error) {
 // created.
 //
 // TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func UpdateAuthGlobalConfig(ctx context.Context, cfg *configspb.OAuthConfig, dryRun bool) error {
+func UpdateAuthGlobalConfig(ctx context.Context, oauthcfg *configspb.OAuthConfig, seccfg *protocol.SecurityConfig, dryRun bool) error {
 	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		rootAuthGlobalCfg, err := GetAuthGlobalConfig(ctx)
 		if err != nil && err != datastore.ErrNoSuchEntity {
@@ -1103,11 +1105,15 @@ func UpdateAuthGlobalConfig(ctx context.Context, cfg *configspb.OAuthConfig, dry
 		if rootAuthGlobalCfg == nil {
 			rootAuthGlobalCfg = makeAuthGlobalConfig(ctx)
 		}
-		rootAuthGlobalCfg.OAuthClientID = cfg.GetPrimaryClientId()
-		rootAuthGlobalCfg.OAuthAdditionalClientIDs = cfg.GetClientIds()
-		rootAuthGlobalCfg.OAuthClientSecret = cfg.GetPrimaryClientSecret()
-		rootAuthGlobalCfg.TokenServerURL = cfg.GetTokenServerUrl()
-		// TODO(crbug/1336135): add security config assignment once validation is ready.
+		rootAuthGlobalCfg.OAuthClientID = oauthcfg.GetPrimaryClientId()
+		rootAuthGlobalCfg.OAuthAdditionalClientIDs = oauthcfg.GetClientIds()
+		rootAuthGlobalCfg.OAuthClientSecret = oauthcfg.GetPrimaryClientSecret()
+		rootAuthGlobalCfg.TokenServerURL = oauthcfg.GetTokenServerUrl()
+		seccfgBlob, err := proto.Marshal(seccfg)
+		if err != nil {
+			return err
+		}
+		rootAuthGlobalCfg.SecurityConfig = seccfgBlob
 		if dryRun {
 			logging.Infof(ctx, "updating:\n%+v", rootAuthGlobalCfg)
 		} else {
