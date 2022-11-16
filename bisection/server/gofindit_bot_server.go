@@ -157,6 +157,10 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 		return errors.Annotate(err, "findNextNthSectionCommitToRun").Err()
 	}
 	if !shouldRun {
+		// We don't have more run to wait -> we've failed to find the suspect
+		if snapshot.NumInProgress == 0 {
+			return updateNthSectionModelNotFound(c, nsa)
+		}
 		return nil
 	}
 
@@ -173,6 +177,22 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	err = nthsection.RerunCommit(c, nsa, gitilesCommit, cfa.FirstFailedBuildId, dims)
 	if err != nil {
 		return errors.Annotate(err, "rerun commit for %s", commit).Err()
+	}
+	return nil
+}
+
+func updateNthSectionModelNotFound(c context.Context, nsa *model.CompileNthSectionAnalysis) error {
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, nsa)
+		if e != nil {
+			return e
+		}
+		nsa.EndTime = clock.Now(c)
+		nsa.Status = pb.AnalysisStatus_NOTFOUND
+		return datastore.Put(c, nsa)
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err, "failed updating nthsectionModel").Err()
 	}
 	return nil
 }

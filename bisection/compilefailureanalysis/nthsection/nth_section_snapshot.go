@@ -32,6 +32,13 @@ type NthSectionSnapshot struct {
 	BlameList *pb.BlameList
 	// Runs are sorted by index
 	Runs []*NthSectionSnapshotRun
+	// We want a way to detect infinite loop where there is some "consistent" infra failure
+	// for a builder, and nth section keep retrying for that builder, and
+	// draining the resources.
+	// In such cases, keep track of the number of infra failed rerun, and if
+	// there are too many, don't run any more
+	NumInfraFailed int
+	NumInProgress  int
 }
 
 type NthSectionSnapshotRun struct {
@@ -52,8 +59,9 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSecti
 	}
 
 	snapshot := &NthSectionSnapshot{
-		BlameList: nthSectionAnalysis.BlameList,
-		Runs:      []*NthSectionSnapshotRun{},
+		BlameList:      nthSectionAnalysis.BlameList,
+		Runs:           []*NthSectionSnapshotRun{},
+		NumInfraFailed: 0,
 	}
 
 	statusMap := map[string]pb.RerunStatus{}
@@ -61,6 +69,12 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSecti
 	for _, r := range reruns {
 		statusMap[r.GetId()] = r.Status
 		typeMap[r.GetId()] = r.Type
+		if r.Status == pb.RerunStatus_INFRA_FAILED {
+			snapshot.NumInfraFailed++
+		}
+		if r.Status == pb.RerunStatus_IN_PROGRESS {
+			snapshot.NumInProgress++
+		}
 	}
 
 	blamelist := nthSectionAnalysis.BlameList
@@ -75,6 +89,11 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSecti
 		}
 	}
 	return snapshot, nil
+}
+
+func (snapshot *NthSectionSnapshot) HasTooManyInfraFailure() bool {
+	// TODO (nqmtuan): Move the "2" into config.
+	return snapshot.NumInfraFailed > 2
 }
 
 // GetCurrentRegressionRange will return a pair of indices from the Snapshot
@@ -140,6 +159,11 @@ func (snapshot *NthSectionSnapshot) FindNextIndicesToRun(n int) ([]int, error) {
 	}
 	// There is a culprit, no need to run anymore
 	if hasCulprit {
+		return []int{}, nil
+	}
+
+	// Too many infra failure, we don't want to continue
+	if snapshot.HasTooManyInfraFailure() {
 		return []int{}, nil
 	}
 

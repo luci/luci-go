@@ -212,6 +212,29 @@ func TestCreateSnapshot(t *testing.T) {
 			Analysis: datastore.KeyForObj(c, analysis),
 		}
 		So(datastore.Put(c, rerun2), ShouldBeNil)
+
+		rerun3 := &model.SingleRerun{
+			Type:   model.RerunBuildType_NthSection,
+			Status: pb.RerunStatus_IN_PROGRESS,
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Id: "commit0",
+			},
+			Analysis: datastore.KeyForObj(c, analysis),
+		}
+
+		So(datastore.Put(c, rerun3), ShouldBeNil)
+
+		rerun4 := &model.SingleRerun{
+			Type:   model.RerunBuildType_NthSection,
+			Status: pb.RerunStatus_INFRA_FAILED,
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Id: "commit2",
+			},
+			Analysis: datastore.KeyForObj(c, analysis),
+		}
+
+		So(datastore.Put(c, rerun4), ShouldBeNil)
+
 		datastore.GetTestable(c).CatchupIndexes()
 
 		snapshot, err := CreateSnapshot(c, nthSectionAnalysis)
@@ -219,12 +242,26 @@ func TestCreateSnapshot(t *testing.T) {
 		diff := cmp.Diff(snapshot.BlameList, blamelist, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
+		So(snapshot.NumInProgress, ShouldEqual, 2)
+		So(snapshot.NumInfraFailed, ShouldEqual, 1)
 		So(snapshot.Runs, ShouldResemble, []*NthSectionSnapshotRun{
+			{
+				Index:  0,
+				Commit: "commit0",
+				Status: pb.RerunStatus_IN_PROGRESS,
+				Type:   model.RerunBuildType_NthSection,
+			},
 			{
 				Index:  1,
 				Commit: "commit1",
 				Status: pb.RerunStatus_IN_PROGRESS,
 				Type:   model.RerunBuildType_CulpritVerification,
+			},
+			{
+				Index:  2,
+				Commit: "commit2",
+				Status: pb.RerunStatus_INFRA_FAILED,
+				Type:   model.RerunBuildType_NthSection,
 			},
 			{
 				Index:  3,

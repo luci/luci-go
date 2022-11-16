@@ -394,6 +394,109 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			So(datastore.Get(c, nsaSuspect), ShouldBeNil)
 			So(nsaSuspect.GitilesCommit.Id, ShouldEqual, "commit5")
 		})
+
+		Convey("Nthsection couldn't find suspect", func() {
+			cf := &model.CompileFailure{}
+			So(datastore.Put(c, cf), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cfa := &model.CompileFailureAnalysis{
+				Id:             3457,
+				CompileFailure: datastore.KeyForObj(c, cf),
+			}
+			So(datastore.Put(c, cfa), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			nsa := &model.CompileNthSectionAnalysis{
+				ParentAnalysis: datastore.KeyForObj(c, cfa),
+				BlameList:      testutil.CreateBlamelist(10),
+			}
+			So(datastore.Put(c, nsa), ShouldBeNil)
+
+			// Set up reruns
+			rerunBuildModel := &model.CompileRerunBuild{
+				Id: 9768,
+			}
+			So(datastore.Put(c, rerunBuildModel), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Create 2 SingleRerun of 2 commits next to each other
+			singleRerun1 := &model.SingleRerun{
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit5",
+				},
+				Status:             pb.RerunStatus_INFRA_FAILED,
+				Type:               model.RerunBuildType_NthSection,
+				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
+				Analysis:           datastore.KeyForObj(c, cfa),
+				StartTime:          clock.Now(c).Add(time.Hour),
+			}
+			singleRerun2 := &model.SingleRerun{
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit6",
+				},
+				Status:             pb.RerunStatus_INFRA_FAILED,
+				Type:               model.RerunBuildType_NthSection,
+				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
+				Analysis:           datastore.KeyForObj(c, cfa),
+				StartTime:          clock.Now(c),
+			}
+			singleRerun3 := &model.SingleRerun{
+				RerunBuild: datastore.KeyForObj(c, rerunBuildModel),
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit8",
+				},
+				Status:             pb.RerunStatus_IN_PROGRESS,
+				Type:               model.RerunBuildType_NthSection,
+				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
+				Analysis:           datastore.KeyForObj(c, cfa),
+				StartTime:          clock.Now(c),
+			}
+
+			So(datastore.Put(c, singleRerun1), ShouldBeNil)
+			So(datastore.Put(c, singleRerun2), ShouldBeNil)
+			So(datastore.Put(c, singleRerun3), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Update analysis
+			req := &pb.UpdateAnalysisProgressRequest{
+				AnalysisId: 3457,
+				Bbid:       9768,
+				GitilesCommit: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit8",
+				},
+				RerunResult: &pb.RerunResult{
+					RerunStatus: pb.RerunStatus_INFRA_FAILED,
+				},
+				BotId: "abc",
+			}
+
+			// We do not expect any calls to ScheduleBuild
+			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
+			server := &GoFinditBotServer{}
+			res, err := server.UpdateAnalysisProgress(c, req)
+			So(err, ShouldBeNil)
+			So(datastore.Get(c, singleRerun3), ShouldBeNil)
+			So(singleRerun3.Status, ShouldEqual, pb.RerunStatus_INFRA_FAILED)
+			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
+
+			// Check that the nthsection analysis is updated with Suspect
+			datastore.GetTestable(c).CatchupIndexes()
+			So(datastore.Get(c, nsa), ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
+		})
 	})
 
 	Convey("verifyUpdateAnalysisProgressRequest", t, func() {
