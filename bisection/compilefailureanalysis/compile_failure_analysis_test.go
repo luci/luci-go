@@ -30,10 +30,12 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/logdog"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	configpb "go.chromium.org/luci/bisection/proto/config"
 )
 
 func TestAnalyzeFailure(t *testing.T) {
@@ -92,6 +94,14 @@ func TestAnalyzeFailure(t *testing.T) {
 	})
 
 	Convey("AnalyzeFailure analysis is created", t, func() {
+		// Set up the config
+		testCfg := &configpb.Config{
+			AnalysisConfig: &configpb.AnalysisConfig{
+				CulpritVerificationEnabled: false,
+			},
+		}
+		So(config.SetTestConfig(c, testCfg), ShouldBeNil)
+
 		failed_build := &model.LuciFailedBuild{
 			Id: 88128398584903,
 			LuciBuild: model.LuciBuild{

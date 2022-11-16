@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
@@ -179,4 +180,12 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 	}
 
 	return rerun.CapPriority(pri), nil
+}
+
+func ShouldRunCulpritVerification(c context.Context) (bool, error) {
+	cfg, err := config.Get(c)
+	if err != nil {
+		return false, err
+	}
+	return cfg.AnalysisConfig.CulpritVerificationEnabled, nil
 }

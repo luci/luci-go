@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/rerun"
@@ -171,4 +172,12 @@ func updateBlameList(c context.Context, nthSectionAnalysis *model.CompileNthSect
 		Commits: commits,
 	}
 	return datastore.Put(c, nthSectionAnalysis)
+}
+
+func ShouldRunNthSectionAnalysis(c context.Context) (bool, error) {
+	cfg, err := config.Get(c)
+	if err != nil {
+		return false, err
+	}
+	return cfg.AnalysisConfig.NthsectionEnabled, nil
 }

@@ -24,8 +24,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -196,6 +198,14 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		c = mc.Ctx
 
 		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).AnyTimes()
+
+		// Set up the config
+		testCfg := &configpb.Config{
+			AnalysisConfig: &configpb.AnalysisConfig{
+				NthsectionEnabled: true,
+			},
+		}
+		So(config.SetTestConfig(c, testCfg), ShouldBeNil)
 
 		Convey("Schedule run for next commit", func() {
 			bbres := &bbpb.Build{

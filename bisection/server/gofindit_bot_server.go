@@ -144,6 +144,14 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 		return nil
 	}
 
+	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c)
+	if err != nil {
+		return errors.Annotate(err, "couldn't fetch config for nthsection").Err()
+	}
+	if !shouldRunNthSection {
+		return nil
+	}
+
 	shouldRun, commit, err := findNextNthSectionCommitToRun(c, snapshot)
 	if err != nil {
 		return errors.Annotate(err, "findNextNthSectionCommitToRun").Err()

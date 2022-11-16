@@ -23,15 +23,16 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 )
 
 // AnalyzeFailure receives failure information and perform analysis.
@@ -78,16 +79,6 @@ func AnalyzeFailure(
 		return nil, e
 	}
 
-	// TODO (nqmtuan): run heuristic analysis and nth-section analysis in parallel
-	// TODO (nqmtuan): Enable n-th section analysis when it is ready
-	// Enabling it now will use up resources
-	// Nth-section analysis
-	// _, e = nthsection.Analyze(c, analysis)
-	// if e != nil {
-	// 	logging.Errorf(c, "Error during nthsection analysis: %v", e)
-	// 	errors.Log(c, e)
-	// }
-
 	// Heuristic analysis
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)
 	if e != nil {
@@ -111,10 +102,27 @@ func AnalyzeFailure(
 	}
 
 	// Verifies heuristic analysis result.
-	if shouldVerifyHeuristicResult(c) {
+	shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't fetch config for culprit verification. Build %d", firstFailedBuildID).Err()
+	}
+	if shouldRunCulpritVerification {
 		if err := verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id); err != nil {
 			// Do not return error here, just log
 			logging.Errorf(c, "Error verifying heuristic result for build %d: %s", firstFailedBuildID, err)
+		}
+	}
+
+	// Nth-section analysis
+	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't fetch config for nthsection. Build %d", firstFailedBuildID).Err()
+	}
+	if shouldRunNthSection {
+		_, e = nthsection.Analyze(c, analysis)
+		if e != nil {
+			e = errors.Annotate(e, "error during nthsection analysis for build %d", firstFailedBuildID).Err()
+			logging.Errorf(c, e.Error())
 		}
 	}
 
@@ -185,8 +193,4 @@ func findRegressionRange(
 		FirstFailed: firstFailedBuild.GetInput().GetGitilesCommit(),
 		LastPassed:  lastPassedBuild.GetInput().GetGitilesCommit(),
 	}, nil
-}
-
-func shouldVerifyHeuristicResult(c context.Context) bool {
-	return info.AppID(c) == "luci-bisection"
 }
