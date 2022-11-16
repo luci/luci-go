@@ -48,9 +48,17 @@ func commitRevert(ctx context.Context, gerritClient *gerrit.Client,
 	}
 
 	// Update revert details for commit action
-	culpritModel.IsRevertCommitted = true
-	culpritModel.RevertCommitTime = clock.Now(ctx)
-	err = datastore.Put(ctx, culpritModel)
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+
+		culpritModel.IsRevertCommitted = true
+		culpritModel.RevertCommitTime = clock.Now(ctx)
+
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
 	if err != nil {
 		return true, errors.Annotate(err,
 			"couldn't update suspect revert commit details").Err()

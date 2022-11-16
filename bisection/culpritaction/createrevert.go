@@ -92,11 +92,19 @@ func createRevert(ctx context.Context, gerritClient *gerrit.Client,
 	}
 
 	// Update revert details for creation
-	culpritModel.RevertURL = fmt.Sprintf("https://%s/c/%s/+/%d",
-		gerritClient.Host(ctx), revert.Project, revert.Number)
-	culpritModel.IsRevertCreated = true
-	culpritModel.RevertCreateTime = clock.Now(ctx)
-	err = datastore.Put(ctx, culpritModel)
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+
+		culpritModel.RevertURL = fmt.Sprintf("https://%s/c/%s/+/%d",
+			gerritClient.Host(ctx), revert.Project, revert.Number)
+		culpritModel.IsRevertCreated = true
+		culpritModel.RevertCreateTime = clock.Now(ctx)
+
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
 	if err != nil {
 		return revert, errors.Annotate(err,
 			"couldn't update suspect revert creation details").Err()
