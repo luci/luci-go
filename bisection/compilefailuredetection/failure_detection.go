@@ -55,11 +55,11 @@ func RegisterTaskClass() {
 			_, err := AnalyzeBuild(c, task.GetBbid())
 			if err != nil {
 				logging.Errorf(c, "Error processing failed build task with id = %d: %s", task.GetBbid(), err)
-				// If the error is not transient, there is no point retrying
+				// If the error is transient, return err to retry
 				if transient.Tag.In(err) {
-					return nil
+					return err
 				}
-				return err
+				return nil
 			}
 			return nil
 		},
