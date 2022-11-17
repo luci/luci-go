@@ -214,28 +214,6 @@ message ExecutionState {
       //  * the Tryjob was triggered by CV for a previous Run, or
       //  * the Tryjob was triggered by non-CV (e.g. `git cl try`).
       bool reused = 5;
-
-      // A Child represents a child Tryjob of this attempt.
-      //
-      // The Tryjob directly specified in the Attempt is the root or parent
-      // Tryjob; if that Tryjob triggers another Tryjob which should be watched
-      // (as specified in the project config), then the child shall be listed
-      // here.
-      message Child {
-        // TryjobId is the ID of the corresponding Tryjob entity.
-        int64 tryjob_id = 1;
-        // ExternalID is the external ID of the Tryjob, e.g. a BuildBucket ID.
-        string external_id = 2;
-        // Status is the status of the Tryjob.
-        cv.internal.tryjob.Status status = 3;
-        // Result is the Result of the Tryjob.
-        cv.internal.tryjob.Result result = 4;
-        // Triggered Tryjobs can recursively trigger child Tryjobs.
-        repeated Child children = 5;
-      }
-
-      // Children Tryjobs indirectly triggered by CV.
-      repeated Child children = 6;
     }
     // Attempts records all attempts (including retries) to verify the Run with
     // this Tryjob Execution.

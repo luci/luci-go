@@ -117,13 +117,6 @@ type Tryjob struct {
 
 	// UntriggeredReason is the reason why LUCI CV doesn't trigger the Tryjob.
 	UntriggeredReason string `gae:",noindex"`
-
-	// AncestorIDs are a list of IDs for ancestor Tryjobs where the first ID is
-	// the root Tryjob. Similar to ancestor_ids in BuildBucket Build proto.
-	AncestorIDs common.TryjobIDs `gae:",noindex"`
-
-	// ChildrenIDs are list of IDs for the direct children Tryjobs.
-	ChildrenIDs common.TryjobIDs `gae:",noindex"`
 }
 
 // tryjobMap is intended to quickly determine if a given ExternalID is
