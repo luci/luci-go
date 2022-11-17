@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import { Config } from 'karma';
-import { DefinePlugin, ProvidePlugin } from 'webpack';
-
 import puppeteer from 'puppeteer';
+import { DefinePlugin, ProvidePlugin } from 'webpack';
 
 import webpackConfig from './webpack.common';
 
