@@ -711,7 +711,6 @@ func TestIngestTestResults(t *testing.T) {
 						Host: "results.api.cr.dev",
 					},
 					Builder:                   "builder",
-					Project:                   "project",
 					IsPreSubmit:               true,
 					ContributedToClSubmission: true,
 				}

@@ -76,7 +76,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	buildReadMask := &field_mask.FieldMask{
 		Paths: []string{"ancestor_ids", "builder", "create_time", "infra.resultdb", "input", "output", "status", "tags"},
 	}
-	build, err := retrieveBuild(ctx, bbHost, project, buildID, buildReadMask)
+	build, err := retrieveBuild(ctx, bbHost, buildID, buildReadMask)
 	code := status.Code(err)
 	if code == codes.NotFound {
 		// Build not found, handle gracefully.
@@ -182,10 +182,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 func includedByAncestorBuild(ctx context.Context, buildID, ancestorBuildID int64, rdbHost string, project string) (bool, error) {
 	ancestorInvName := control.BuildInvocationName(ancestorBuildID)
 
-	// The ancestor build may not be in the same project as the build we are
-	// considering ingesting. We cannot use project-scoped credentials,
-	// and instead must use privileged access granted to us.
-	rc, err := resultdb.NewPrivilegedClient(ctx, rdbHost)
+	rc, err := resultdb.NewClient(ctx, rdbHost)
 	if err != nil {
 		return false, transient.Tag.Apply(err)
 	}
@@ -236,8 +233,8 @@ func extractTagValues(tags []*bbpb.StringPair, key string) []string {
 	return values
 }
 
-func retrieveBuild(ctx context.Context, bbHost, project string, id int64, readMask *field_mask.FieldMask) (*bbpb.Build, error) {
-	bc, err := buildbucket.NewClient(ctx, bbHost, project)
+func retrieveBuild(ctx context.Context, bbHost string, id int64, readMask *field_mask.FieldMask) (*bbpb.Build, error) {
+	bc, err := buildbucket.NewClient(ctx, bbHost)
 	if err != nil {
 		return nil, err
 	}

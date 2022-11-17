@@ -27,12 +27,12 @@ import (
 // mockResultDBClientKey is the context key indicates using mocked resultb client in tests.
 var mockResultDBClientKey = "used in tests only for setting the mock resultdb client"
 
-func newResultDBClient(ctx context.Context, host string, kind auth.RPCAuthorityKind, opts ...auth.RPCOption) (rdbpb.ResultDBClient, error) {
+func newResultDBClient(ctx context.Context, host string) (rdbpb.ResultDBClient, error) {
 	if mockClient, ok := ctx.Value(&mockResultDBClientKey).(*rdbpb.MockResultDBClient); ok {
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, kind, opts...)
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
@@ -51,28 +51,9 @@ type Client struct {
 	client rdbpb.ResultDBClient
 }
 
-// NewClient creates a client to communicate with ResultDB, acting as
-// the given project. Recommended way to construct a ResultDB client.
-func NewClient(ctx context.Context, host, project string) (*Client, error) {
-	client, err := newResultDBClient(ctx, host, auth.AsProject, auth.WithProject(project))
-	if err != nil {
-		return nil, err
-	}
-
-	return &Client{
-		client: client,
-	}, nil
-}
-
-// NewPrivilegedClient creates a client to communicate with ResultDB,
-// acting as LUCI Analysis to access data from any project.
-//
-// Caution: Callers must take special care to avoid "confused deputy"
-// issues when using this client, e.g. being tricked by one project
-// to access the resources of another. ResultDB will not check the
-// accessed resource is in the project that was intended.
-func NewPrivilegedClient(ctx context.Context, host string) (*Client, error) {
-	client, err := newResultDBClient(ctx, host, auth.AsSelf)
+// NewClient creates a client to communicate with ResultDB.
+func NewClient(ctx context.Context, host string) (*Client, error) {
+	client, err := newResultDBClient(ctx, host)
 	if err != nil {
 		return nil, err
 	}

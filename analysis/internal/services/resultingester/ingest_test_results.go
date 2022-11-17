@@ -191,7 +191,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 
 	rdbHost := payload.Build.ResultdbHost
 	invName := control.BuildInvocationName(payload.Build.Id)
-	rc, err := resultdb.NewClient(ctx, rdbHost, payload.Build.Project)
+	rc, err := resultdb.NewClient(ctx, rdbHost)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
@@ -294,18 +294,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 			contributedToCLSubmission := payload.PresubmitRun != nil &&
 				payload.PresubmitRun.Mode == pb.PresubmitRunMode_FULL_RUN &&
 				payload.PresubmitRun.Status == pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED
-
-			task := &taskspb.CollectTestResults{
-				Resultdb: &taskspb.ResultDB{
-					Invocation: inv,
-					Host:       rdbHost,
-				},
-				Builder:                   builder,
-				Project:                   payload.Build.Project,
-				IsPreSubmit:               isPreSubmit,
-				ContributedToClSubmission: contributedToCLSubmission,
-			}
-			if err = resultcollector.Schedule(ctx, task); err != nil {
+			if err = resultcollector.Schedule(ctx, inv, rdbHost, builder, isPreSubmit, contributedToCLSubmission); err != nil {
 				return transient.Tag.Apply(err)
 			}
 		}

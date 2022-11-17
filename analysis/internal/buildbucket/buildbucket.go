@@ -39,12 +39,12 @@ func useBuildsClientForTesting(ctx context.Context, client GetBuildsClient) cont
 	return context.WithValue(ctx, &testBBClientKey, client)
 }
 
-func newBuildsClient(ctx context.Context, host, project string) (GetBuildsClient, error) {
+func newBuildsClient(ctx context.Context, host string) (GetBuildsClient, error) {
 	if mockClient, ok := ctx.Value(&testBBClientKey).(GetBuildsClient); ok {
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +62,9 @@ type Client struct {
 	client GetBuildsClient
 }
 
-// NewClient creates a client to communicate with Buildbucket, acting as the given
-// LUCI project.
-func NewClient(ctx context.Context, host, project string) (*Client, error) {
-	client, err := newBuildsClient(ctx, host, project)
+// NewClient creates a client to communicate with Buildbucket.
+func NewClient(ctx context.Context, host string) (*Client, error) {
+	client, err := newBuildsClient(ctx, host)
 	if err != nil {
 		return nil, err
 	}

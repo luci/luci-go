@@ -67,7 +67,7 @@ func TestGetBuild(t *testing.T) {
 		reqCopy := proto.Clone(req).(*bbpb.GetBuildRequest)
 		mc.GetBuild(reqCopy, res)
 
-		bc, err := NewClient(mc.Ctx, "bbhost", "chromium")
+		bc, err := NewClient(mc.Ctx, "bbhost")
 		So(err, ShouldBeNil)
 		b, err := bc.GetBuild(mc.Ctx, req)
 		So(err, ShouldBeNil)

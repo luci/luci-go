@@ -30,7 +30,7 @@ func TestResultDB(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mc := NewMockedClient(context.Background(), ctl)
-		rc, err := NewClient(mc.Ctx, "rdbhost", "project")
+		rc, err := NewClient(mc.Ctx, "rdbhost")
 		So(err, ShouldBeNil)
 
 		inv := "invocations/build-87654321"
