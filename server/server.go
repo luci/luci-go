@@ -79,7 +79,7 @@
 //	  })
 //	}
 //
-// More examples can be found in the code search: https://source.chromium.org/search?q=%22server.Main(nil,%20modules,%22
+// More examples can be found in the code search: https://source.chromium.org/search?q=%22server.Main%28nil%2C%20modules%2C%22
 //
 // # Known modules
 //
