@@ -236,3 +236,9 @@ message RequestedDimension {
   // If set, ignore this dimension after this duration.
   google.protobuf.Duration expiration = 3;
 }
+
+// Compression method used in the corresponding data.
+enum Compression {
+  ZLIB = 0;
+  ZSTD = 1;
+}

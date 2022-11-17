@@ -147,7 +147,7 @@ type BackendSettings struct {
 
 	// Target backend. e.g. "swarming://chromium-swarm".
 	Target string `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
-	// hostname for the target backend. e.g. swarming://chromium-swarm.appspot.com
+	// hostname for the target backend. e.g. chromium-swarm.appspot.com
 	Hostname string `protobuf:"bytes,2,opt,name=hostname,proto3" json:"hostname,omitempty"`
 }
 

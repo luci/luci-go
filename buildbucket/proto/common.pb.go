@@ -170,6 +170,53 @@ func (Trinary) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_common_proto_rawDescGZIP(), []int{1}
 }
 
+// Compression method used in the corresponding data.
+type Compression int32
+
+const (
+	Compression_ZLIB Compression = 0
+	Compression_ZSTD Compression = 1
+)
+
+// Enum value maps for Compression.
+var (
+	Compression_name = map[int32]string{
+		0: "ZLIB",
+		1: "ZSTD",
+	}
+	Compression_value = map[string]int32{
+		"ZLIB": 0,
+		"ZSTD": 1,
+	}
+)
+
+func (x Compression) Enum() *Compression {
+	p := new(Compression)
+	*p = x
+	return p
+}
+
+func (x Compression) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Compression) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_buildbucket_proto_common_proto_enumTypes[2].Descriptor()
+}
+
+func (Compression) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_buildbucket_proto_common_proto_enumTypes[2]
+}
+
+func (x Compression) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Compression.Descriptor instead.
+func (Compression) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_common_proto_rawDescGZIP(), []int{2}
+}
+
 // An executable to run when the build is ready to start.
 //
 // Please refer to go.chromium.org/luci/luciexe for the protocol this executable
@@ -961,11 +1008,14 @@ var file_go_chromium_org_luci_buildbucket_proto_common_proto_rawDesc = []byte{
 	0x5f, 0x46, 0x41, 0x49, 0x4c, 0x55, 0x52, 0x45, 0x10, 0x24, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x41,
 	0x4e, 0x43, 0x45, 0x4c, 0x45, 0x44, 0x10, 0x44, 0x2a, 0x25, 0x0a, 0x07, 0x54, 0x72, 0x69, 0x6e,
 	0x61, 0x72, 0x79, 0x12, 0x09, 0x0a, 0x05, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x07,
-	0x0a, 0x03, 0x59, 0x45, 0x53, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x4e, 0x4f, 0x10, 0x02, 0x42,
-	0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
-	0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
-	0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x0a, 0x03, 0x59, 0x45, 0x53, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x4e, 0x4f, 0x10, 0x02, 0x2a,
+	0x21, 0x0a, 0x0b, 0x43, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x08,
+	0x0a, 0x04, 0x5a, 0x4c, 0x49, 0x42, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x5a, 0x53, 0x54, 0x44,
+	0x10, 0x01, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
+	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -980,30 +1030,31 @@ func file_go_chromium_org_luci_buildbucket_proto_common_proto_rawDescGZIP() []by
 	return file_go_chromium_org_luci_buildbucket_proto_common_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_proto_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_go_chromium_org_luci_buildbucket_proto_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_go_chromium_org_luci_buildbucket_proto_common_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_go_chromium_org_luci_buildbucket_proto_common_proto_goTypes = []interface{}{
 	(Status)(0),                              // 0: buildbucket.v2.Status
 	(Trinary)(0),                             // 1: buildbucket.v2.Trinary
-	(*Executable)(nil),                       // 2: buildbucket.v2.Executable
-	(*StatusDetails)(nil),                    // 3: buildbucket.v2.StatusDetails
-	(*Log)(nil),                              // 4: buildbucket.v2.Log
-	(*GerritChange)(nil),                     // 5: buildbucket.v2.GerritChange
-	(*GitilesCommit)(nil),                    // 6: buildbucket.v2.GitilesCommit
-	(*StringPair)(nil),                       // 7: buildbucket.v2.StringPair
-	(*TimeRange)(nil),                        // 8: buildbucket.v2.TimeRange
-	(*RequestedDimension)(nil),               // 9: buildbucket.v2.RequestedDimension
-	(*StatusDetails_ResourceExhaustion)(nil), // 10: buildbucket.v2.StatusDetails.ResourceExhaustion
-	(*StatusDetails_Timeout)(nil),            // 11: buildbucket.v2.StatusDetails.Timeout
-	(*timestamppb.Timestamp)(nil),            // 12: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),              // 13: google.protobuf.Duration
+	(Compression)(0),                         // 2: buildbucket.v2.Compression
+	(*Executable)(nil),                       // 3: buildbucket.v2.Executable
+	(*StatusDetails)(nil),                    // 4: buildbucket.v2.StatusDetails
+	(*Log)(nil),                              // 5: buildbucket.v2.Log
+	(*GerritChange)(nil),                     // 6: buildbucket.v2.GerritChange
+	(*GitilesCommit)(nil),                    // 7: buildbucket.v2.GitilesCommit
+	(*StringPair)(nil),                       // 8: buildbucket.v2.StringPair
+	(*TimeRange)(nil),                        // 9: buildbucket.v2.TimeRange
+	(*RequestedDimension)(nil),               // 10: buildbucket.v2.RequestedDimension
+	(*StatusDetails_ResourceExhaustion)(nil), // 11: buildbucket.v2.StatusDetails.ResourceExhaustion
+	(*StatusDetails_Timeout)(nil),            // 12: buildbucket.v2.StatusDetails.Timeout
+	(*timestamppb.Timestamp)(nil),            // 13: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),              // 14: google.protobuf.Duration
 }
 var file_go_chromium_org_luci_buildbucket_proto_common_proto_depIdxs = []int32{
-	10, // 0: buildbucket.v2.StatusDetails.resource_exhaustion:type_name -> buildbucket.v2.StatusDetails.ResourceExhaustion
-	11, // 1: buildbucket.v2.StatusDetails.timeout:type_name -> buildbucket.v2.StatusDetails.Timeout
-	12, // 2: buildbucket.v2.TimeRange.start_time:type_name -> google.protobuf.Timestamp
-	12, // 3: buildbucket.v2.TimeRange.end_time:type_name -> google.protobuf.Timestamp
-	13, // 4: buildbucket.v2.RequestedDimension.expiration:type_name -> google.protobuf.Duration
+	11, // 0: buildbucket.v2.StatusDetails.resource_exhaustion:type_name -> buildbucket.v2.StatusDetails.ResourceExhaustion
+	12, // 1: buildbucket.v2.StatusDetails.timeout:type_name -> buildbucket.v2.StatusDetails.Timeout
+	13, // 2: buildbucket.v2.TimeRange.start_time:type_name -> google.protobuf.Timestamp
+	13, // 3: buildbucket.v2.TimeRange.end_time:type_name -> google.protobuf.Timestamp
+	14, // 4: buildbucket.v2.RequestedDimension.expiration:type_name -> google.protobuf.Duration
 	5,  // [5:5] is the sub-list for method output_type
 	5,  // [5:5] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
@@ -1143,7 +1194,7 @@ func file_go_chromium_org_luci_buildbucket_proto_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_proto_common_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,

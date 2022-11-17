@@ -845,6 +845,20 @@ type BuildbucketCfg struct {
 
 	// All buckets defined for this project.
 	Buckets []*Bucket `protobuf:"bytes,1,rep,name=buckets,proto3" json:"buckets,omitempty"`
+	// A list of PubSub topics that Buildbucket will publish notifications for
+	// build status changes in this project.
+	// The message data schema can be found in message `BuildsV2PubSub` in
+	// https://chromium.googlesource.com/infra/luci/luci-go/+/main/buildbucket/appengine/tasks/defs/tasks.proto
+	// Attributes on the pubsub messages:
+	// - "project"
+	// - "bucket"
+	// - "builder"
+	// - "is_completed" (The value is either "true" or "false" in string.)
+	//
+	// Note: `pubsub.topics.publish` permission must be granted to the
+	// corresponding luci-project-scoped accounts in the cloud project(s) hosting
+	// the topics.
+	BuildsNotificationTopics []*BuildbucketCfgTopic `protobuf:"bytes,4,rep,name=builds_notification_topics,json=buildsNotificationTopics,proto3" json:"builds_notification_topics,omitempty"`
 }
 
 func (x *BuildbucketCfg) Reset() {
@@ -882,6 +896,13 @@ func (*BuildbucketCfg) Descriptor() ([]byte, []int) {
 func (x *BuildbucketCfg) GetBuckets() []*Bucket {
 	if x != nil {
 		return x.Buckets
+	}
+	return nil
+}
+
+func (x *BuildbucketCfg) GetBuildsNotificationTopics() []*BuildbucketCfgTopic {
+	if x != nil {
+		return x.BuildsNotificationTopics
 	}
 	return nil
 }
@@ -1340,6 +1361,67 @@ func (*Bucket_DynamicBuilderTemplate) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{3, 1}
 }
 
+type BuildbucketCfgTopic struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Topic name format should be like
+	// "projects/<projid>/topics/<topicid>" and conforms to the guideline:
+	// https://cloud.google.com/pubsub/docs/admin#resource_names.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The compression method that  `build_large_fields` uses in pubsub message
+	// data. By default, it's ZLIB as this is the most common one and is the
+	// built-in lib in many programming languages.
+	Compression Compression `protobuf:"varint,2,opt,name=compression,proto3,enum=buildbucket.v2.Compression" json:"compression,omitempty"`
+}
+
+func (x *BuildbucketCfgTopic) Reset() {
+	*x = BuildbucketCfgTopic{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuildbucketCfgTopic) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildbucketCfgTopic) ProtoMessage() {}
+
+func (x *BuildbucketCfgTopic) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildbucketCfgTopic.ProtoReflect.Descriptor instead.
+func (*BuildbucketCfgTopic) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *BuildbucketCfgTopic) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *BuildbucketCfgTopic) GetCompression() Compression {
+	if x != nil {
+		return x.Compression
+	}
+	return Compression_ZLIB
+}
+
 var File_go_chromium_org_luci_buildbucket_proto_project_config_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = []byte{
@@ -1538,23 +1620,35 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc = [
 	0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x65, 0x72,
 	0x76, 0x69, 0x63, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x1a, 0x18, 0x0a, 0x16,
 	0x44, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x54, 0x65,
-	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x4a, 0x04, 0x08, 0x04, 0x10, 0x05, 0x22, 0x4b, 0x0a, 0x0e,
-	0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x43, 0x66, 0x67, 0x12, 0x2d,
-	0x0a, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x13, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x42, 0x75,
-	0x63, 0x6b, 0x65, 0x74, 0x52, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x4a, 0x04, 0x08,
-	0x02, 0x10, 0x03, 0x4a, 0x04, 0x08, 0x03, 0x10, 0x04, 0x2a, 0x24, 0x0a, 0x06, 0x54, 0x6f, 0x67,
-	0x67, 0x6c, 0x65, 0x12, 0x09, 0x0a, 0x05, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x07,
-	0x0a, 0x03, 0x59, 0x45, 0x53, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x4e, 0x4f, 0x10, 0x02, 0x42,
-	0x7c, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
-	0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
-	0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0xa2, 0xfe, 0x23, 0x42, 0x0a, 0x40, 0x68, 0x74, 0x74,
-	0x70, 0x73, 0x3a, 0x2f, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x2e, 0x61, 0x70, 0x70, 0x73, 0x70, 0x6f, 0x74, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x63, 0x68,
-	0x65, 0x6d, 0x61, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x3a, 0x62, 0x75,
-	0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x63, 0x66, 0x67, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x4a, 0x04, 0x08, 0x04, 0x10, 0x05, 0x22, 0x88, 0x02, 0x0a,
+	0x0e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x43, 0x66, 0x67, 0x12,
+	0x2d, 0x0a, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x13, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x42,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x07, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x12, 0x5f,
+	0x0a, 0x1a, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x5f, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x73, 0x18, 0x04, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74,
+	0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x43, 0x66, 0x67, 0x2e,
+	0x74, 0x6f, 0x70, 0x69, 0x63, 0x52, 0x18, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x4e, 0x6f, 0x74,
+	0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x73, 0x1a,
+	0x5a, 0x0a, 0x05, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x3d, 0x0a, 0x0b,
+	0x63, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0e, 0x32, 0x1b, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e,
+	0x76, 0x32, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0b,
+	0x63, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x4a, 0x04, 0x08, 0x02, 0x10,
+	0x03, 0x4a, 0x04, 0x08, 0x03, 0x10, 0x04, 0x2a, 0x24, 0x0a, 0x06, 0x54, 0x6f, 0x67, 0x67, 0x6c,
+	0x65, 0x12, 0x09, 0x0a, 0x05, 0x55, 0x4e, 0x53, 0x45, 0x54, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03,
+	0x59, 0x45, 0x53, 0x10, 0x01, 0x12, 0x06, 0x0a, 0x02, 0x4e, 0x4f, 0x10, 0x02, 0x42, 0x7c, 0x5a,
+	0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
+	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x70, 0x62, 0xa2, 0xfe, 0x23, 0x42, 0x0a, 0x40, 0x68, 0x74, 0x74, 0x70, 0x73,
+	0x3a, 0x2f, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x61,
+	0x70, 0x70, 0x73, 0x70, 0x6f, 0x74, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x63, 0x68, 0x65, 0x6d,
+	0x61, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x3a, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x63, 0x66, 0x67, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1570,7 +1664,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDescGZI
 }
 
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_goTypes = []interface{}{
 	(Toggle)(0),                           // 0: buildbucket.Toggle
 	(Acl_Role)(0),                         // 1: buildbucket.Acl.Role
@@ -1586,43 +1680,47 @@ var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_goTypes = [
 	nil,                                   // 11: buildbucket.BuilderConfig.ExperimentsEntry
 	(*Bucket_Constraints)(nil),            // 12: buildbucket.Bucket.Constraints
 	(*Bucket_DynamicBuilderTemplate)(nil), // 13: buildbucket.Bucket.DynamicBuilderTemplate
-	(*Executable)(nil),                    // 14: buildbucket.v2.Executable
-	(*durationpb.Duration)(nil),           // 15: google.protobuf.Duration
-	(Trinary)(0),                          // 16: buildbucket.v2.Trinary
-	(*wrapperspb.UInt32Value)(nil),        // 17: google.protobuf.UInt32Value
-	(*v1.BigQueryExport)(nil),             // 18: luci.resultdb.v1.BigQueryExport
-	(*v1.HistoryOptions)(nil),             // 19: luci.resultdb.v1.HistoryOptions
+	(*BuildbucketCfgTopic)(nil),           // 14: buildbucket.BuildbucketCfg.topic
+	(*Executable)(nil),                    // 15: buildbucket.v2.Executable
+	(*durationpb.Duration)(nil),           // 16: google.protobuf.Duration
+	(Trinary)(0),                          // 17: buildbucket.v2.Trinary
+	(*wrapperspb.UInt32Value)(nil),        // 18: google.protobuf.UInt32Value
+	(*v1.BigQueryExport)(nil),             // 19: luci.resultdb.v1.BigQueryExport
+	(*v1.HistoryOptions)(nil),             // 20: luci.resultdb.v1.HistoryOptions
+	(Compression)(0),                      // 21: buildbucket.v2.Compression
 }
 var file_go_chromium_org_luci_buildbucket_proto_project_config_proto_depIdxs = []int32{
 	1,  // 0: buildbucket.Acl.role:type_name -> buildbucket.Acl.Role
 	10, // 1: buildbucket.BuilderConfig.backend:type_name -> buildbucket.BuilderConfig.Backend
 	10, // 2: buildbucket.BuilderConfig.backend_alt:type_name -> buildbucket.BuilderConfig.Backend
 	8,  // 3: buildbucket.BuilderConfig.recipe:type_name -> buildbucket.BuilderConfig.Recipe
-	14, // 4: buildbucket.BuilderConfig.exe:type_name -> buildbucket.v2.Executable
-	15, // 5: buildbucket.BuilderConfig.grace_period:type_name -> google.protobuf.Duration
-	16, // 6: buildbucket.BuilderConfig.wait_for_capacity:type_name -> buildbucket.v2.Trinary
+	15, // 4: buildbucket.BuilderConfig.exe:type_name -> buildbucket.v2.Executable
+	16, // 5: buildbucket.BuilderConfig.grace_period:type_name -> google.protobuf.Duration
+	17, // 6: buildbucket.BuilderConfig.wait_for_capacity:type_name -> buildbucket.v2.Trinary
 	7,  // 7: buildbucket.BuilderConfig.caches:type_name -> buildbucket.BuilderConfig.CacheEntry
 	0,  // 8: buildbucket.BuilderConfig.build_numbers:type_name -> buildbucket.Toggle
 	0,  // 9: buildbucket.BuilderConfig.auto_builder_dimension:type_name -> buildbucket.Toggle
 	0,  // 10: buildbucket.BuilderConfig.experimental:type_name -> buildbucket.Toggle
-	17, // 11: buildbucket.BuilderConfig.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
+	18, // 11: buildbucket.BuilderConfig.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
 	11, // 12: buildbucket.BuilderConfig.experiments:type_name -> buildbucket.BuilderConfig.ExperimentsEntry
-	16, // 13: buildbucket.BuilderConfig.critical:type_name -> buildbucket.v2.Trinary
+	17, // 13: buildbucket.BuilderConfig.critical:type_name -> buildbucket.v2.Trinary
 	9,  // 14: buildbucket.BuilderConfig.resultdb:type_name -> buildbucket.BuilderConfig.ResultDB
 	3,  // 15: buildbucket.Swarming.builders:type_name -> buildbucket.BuilderConfig
-	17, // 16: buildbucket.Swarming.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
+	18, // 16: buildbucket.Swarming.task_template_canary_percentage:type_name -> google.protobuf.UInt32Value
 	2,  // 17: buildbucket.Bucket.acls:type_name -> buildbucket.Acl
 	4,  // 18: buildbucket.Bucket.swarming:type_name -> buildbucket.Swarming
 	12, // 19: buildbucket.Bucket.constraints:type_name -> buildbucket.Bucket.Constraints
 	13, // 20: buildbucket.Bucket.dynamic_builder_template:type_name -> buildbucket.Bucket.DynamicBuilderTemplate
 	5,  // 21: buildbucket.BuildbucketCfg.buckets:type_name -> buildbucket.Bucket
-	18, // 22: buildbucket.BuilderConfig.ResultDB.bq_exports:type_name -> luci.resultdb.v1.BigQueryExport
-	19, // 23: buildbucket.BuilderConfig.ResultDB.history_options:type_name -> luci.resultdb.v1.HistoryOptions
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	14, // 22: buildbucket.BuildbucketCfg.builds_notification_topics:type_name -> buildbucket.BuildbucketCfg.topic
+	19, // 23: buildbucket.BuilderConfig.ResultDB.bq_exports:type_name -> luci.resultdb.v1.BigQueryExport
+	20, // 24: buildbucket.BuilderConfig.ResultDB.history_options:type_name -> luci.resultdb.v1.HistoryOptions
+	21, // 25: buildbucket.BuildbucketCfg.topic.compression:type_name -> buildbucket.v2.Compression
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() }
@@ -1764,6 +1862,18 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_proto_project_config_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BuildbucketCfgTopic); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1771,7 +1881,7 @@ func file_go_chromium_org_luci_buildbucket_proto_project_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_proto_project_config_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

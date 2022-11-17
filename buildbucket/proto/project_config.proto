@@ -514,6 +514,33 @@ message BuildbucketCfg {
 
   // All buckets defined for this project.
   repeated Bucket buckets = 1;
+
+  message topic {
+    // Topic name format should be like
+    // "projects/<projid>/topics/<topicid>" and conforms to the guideline:
+    // https://cloud.google.com/pubsub/docs/admin#resource_names.
+    string name = 1;
+
+    // The compression method that  `build_large_fields` uses in pubsub message
+    // data. By default, it's ZLIB as this is the most common one and is the
+    // built-in lib in many programming languages.
+    buildbucket.v2.Compression compression = 2;
+  }
+
+  // A list of PubSub topics that Buildbucket will publish notifications for
+  // build status changes in this project.
+  // The message data schema can be found in message `BuildsV2PubSub` in
+  // https://chromium.googlesource.com/infra/luci/luci-go/+/main/buildbucket/appengine/tasks/defs/tasks.proto
+  // Attributes on the pubsub messages:
+  // - "project"
+  // - "bucket"
+  // - "builder"
+  // - "is_completed" (The value is either "true" or "false" in string.)
+  //
+  // Note: `pubsub.topics.publish` permission must be granted to the
+  // corresponding luci-project-scoped accounts in the cloud project(s) hosting
+  // the topics.
+  repeated topic builds_notification_topics = 4;
 }
 
 // Toggle is a boolean with an extra state UNSET.
