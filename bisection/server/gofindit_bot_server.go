@@ -114,6 +114,12 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	if err != nil {
 		return err
 	}
+
+	// We should not schedule any more run for this analysis
+	if cfa.ShouldCancel {
+		return nil
+	}
+
 	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
 	if err != nil {
 		return err

@@ -442,3 +442,91 @@ func TestGetOtherSuspectsWithSameCL(t *testing.T) {
 		So(suspects[0].Id, ShouldEqual, 124)
 	})
 }
+
+func TestGetLatestBuildFailureAndAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+		Kind: "LuciFailedBuild",
+		SortBy: []datastore.IndexColumn{
+			{
+				Property: "project",
+			},
+			{
+				Property: "bucket",
+			},
+			{
+				Property: "builder",
+			},
+			{
+				Property:   "end_time",
+				Descending: true,
+			},
+		},
+	})
+	datastore.GetTestable(c).CatchupIndexes()
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	Convey("GetLatestBuildFailureAndAnalysis", t, func() {
+		build, err := GetLatestBuildFailureForBuilder(c, "project", "bucket", "builder")
+		So(err, ShouldBeNil)
+		So(build, ShouldBeNil)
+		analysis, err := GetLatestAnalysisForBuilder(c, "project", "bucket", "builder")
+		So(err, ShouldBeNil)
+		So(analysis, ShouldBeNil)
+
+		bf1 := &model.LuciFailedBuild{
+			Id: 123,
+			LuciBuild: model.LuciBuild{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+				EndTime: clock.Now(c),
+			},
+		}
+
+		bf2 := &model.LuciFailedBuild{
+			Id: 456,
+			LuciBuild: model.LuciBuild{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+				EndTime: clock.Now(c).Add(time.Hour),
+			},
+		}
+
+		So(datastore.Put(c, bf1), ShouldBeNil)
+		So(datastore.Put(c, bf2), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		build, err = GetLatestBuildFailureForBuilder(c, "project", "bucket", "builder")
+		So(err, ShouldBeNil)
+		So(build.Id, ShouldEqual, 456)
+
+		cf1 := &model.CompileFailure{
+			Id:    123,
+			Build: datastore.KeyForObj(c, bf1),
+		}
+		So(datastore.Put(c, cf1), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cf2 := &model.CompileFailure{
+			Id:               456,
+			Build:            datastore.KeyForObj(c, bf2),
+			MergedFailureKey: datastore.KeyForObj(c, cf1),
+		}
+		So(datastore.Put(c, cf2), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cfa := &model.CompileFailureAnalysis{
+			Id:             789,
+			CompileFailure: datastore.KeyForObj(c, cf1),
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		analysis, err = GetLatestAnalysisForBuilder(c, "project", "bucket", "builder")
+		So(err, ShouldBeNil)
+		So(analysis.Id, ShouldEqual, 789)
+	})
+}

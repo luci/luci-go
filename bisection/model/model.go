@@ -133,6 +133,9 @@ type CompileFailureAnalysis struct {
 	// Key to the heuristic suspects that was verified by Culprit verification
 	// In some rare cases, there are more than 1 culprit for the regression range.
 	VerifiedCulprits []*datastore.Key `gae:"verified_culprits"`
+	// Indicates whether the analysis should be cancelled or not,
+	// such as in the situation where the corresponding builder start passing again
+	ShouldCancel bool `gae:"should_cancel"`
 }
 
 // CompileFailureInRerunBuild is a compile failure in a rerun build.

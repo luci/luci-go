@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
@@ -417,5 +419,83 @@ func TestFailureDetection(t *testing.T) {
 				BuildFailureType: pb.BuildFailureType_COMPILE,
 			})
 		})
+	})
+}
+
+func TestUpdateSucceededBuild(t *testing.T) {
+	t.Parallel()
+
+	c := memory.Use(context.Background())
+	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+		Kind: "LuciFailedBuild",
+		SortBy: []datastore.IndexColumn{
+			{
+				Property: "project",
+			},
+			{
+				Property: "bucket",
+			},
+			{
+				Property: "builder",
+			},
+			{
+				Property:   "end_time",
+				Descending: true,
+			},
+		},
+	})
+	datastore.GetTestable(c).CatchupIndexes()
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mc := buildbucket.NewMockedClient(c, ctl)
+	c = mc.Ctx
+
+	res := &buildbucketpb.Build{
+		Id: 123,
+		Builder: &buildbucketpb.BuilderID{
+			Project: "project",
+			Bucket:  "bucket",
+			Builder: "builder",
+		},
+	}
+	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
+
+	Convey("UpdateSucceededBuild", t, func() {
+		bf := &model.LuciFailedBuild{
+			Id: 123,
+			LuciBuild: model.LuciBuild{
+				Project: "project",
+				Bucket:  "bucket",
+				Builder: "builder",
+				EndTime: clock.Now(c),
+			},
+		}
+
+		So(datastore.Put(c, bf), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cf := &model.CompileFailure{
+			Id:    123,
+			Build: datastore.KeyForObj(c, bf),
+		}
+		So(datastore.Put(c, cf), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cfa := &model.CompileFailureAnalysis{
+			Id:             789,
+			CompileFailure: datastore.KeyForObj(c, cf),
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		err := UpdateSucceededBuild(c, 123)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		So(err, ShouldBeNil)
+		So(datastore.Get(c, cfa), ShouldBeNil)
+		So(cfa.ShouldCancel, ShouldBeTrue)
 	})
 }

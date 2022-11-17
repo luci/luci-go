@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/rerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/common/errors"
@@ -94,7 +95,16 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		return nil
 	}
 
-	// We only care about failed builds
+	// If the build is succeeded -> some running analysis may not be necessary
+	if bbmsg.Build.Result == bbv1.ResultSuccess {
+		err := compilefailuredetection.UpdateSucceededBuild(c, bbmsg.Build.Id)
+		if err != nil {
+			return errors.Annotate(err, "UpdateSucceededBuild").Err()
+		}
+		return nil
+	}
+
+	// If the build is not succeed, and not failed either
 	if bbmsg.Build.Result != bbv1.ResultFailure {
 		logging.Debugf(c, "Result = %s. Exiting early...", bbmsg.Build.Result)
 		return nil

@@ -211,3 +211,32 @@ func GetOtherSuspectsWithSameCL(c context.Context, suspect *model.Suspect) ([]*m
 	}
 	return suspects, nil
 }
+
+// GetLatestBuildFailureForBuilder returns the latest LuciFailedBuild model for a builderID
+// If there is no build failure, return (nil, nil)
+func GetLatestBuildFailureForBuilder(c context.Context, project string, bucket string, builder string) (*model.LuciFailedBuild, error) {
+	builds := []*model.LuciFailedBuild{}
+	q := datastore.NewQuery("LuciFailedBuild").Eq("project", project).Eq("bucket", bucket).Eq("builder", builder).Order("-end_time").Limit(1)
+	err := datastore.GetAll(c, q, &builds)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed querying LuciFailedBuild").Err()
+	}
+
+	if len(builds) == 0 {
+		return nil, nil
+	}
+	return builds[0], nil
+}
+
+// GetLatestAnalysisForBuilder returns the latest CompileFailureAnalysis for a builderID
+// If there is no analysis, return (nil, nil)
+func GetLatestAnalysisForBuilder(c context.Context, project string, bucket string, builder string) (*model.CompileFailureAnalysis, error) {
+	build, err := GetLatestBuildFailureForBuilder(c, project, bucket, builder)
+	if err != nil {
+		return nil, errors.Annotate(err, "cannot GetLatestBuildFailureForBuilder").Err()
+	}
+	if build == nil {
+		return nil, nil
+	}
+	return GetAnalysisForBuild(c, build.Id)
+}

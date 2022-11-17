@@ -26,10 +26,12 @@ import (
 	pb "go.chromium.org/luci/bisection/proto"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
@@ -111,6 +113,44 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// UpdateSucceededBuild will be called when we got notification for a succeeded build
+// It will set the ShouldCancel flag of the analysis for the corresponding build.
+func UpdateSucceededBuild(c context.Context, bbid int64) error {
+	logging.Infof(c, "Received succeeded build %d", bbid)
+	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
+		Fields: &fieldmaskpb.FieldMask{
+			Paths: []string{"id", "builder"},
+		},
+	})
+
+	if err != nil {
+		return errors.Annotate(err, "couldn't get build %d", bbid).Err()
+	}
+
+	analysis, err := datastoreutil.GetLatestAnalysisForBuilder(c, build.Builder.Project, build.Builder.Bucket, build.Builder.Builder)
+	if err != nil {
+		return errors.Annotate(err, "couldn't GetLatestAnalysisForBuilder").Err()
+	}
+
+	// Update analysis ShouldCancelFlag
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, analysis)
+		if e != nil {
+			return e
+		}
+		analysis.ShouldCancel = true
+		return datastore.Put(c, analysis)
+	}, nil)
+
+	// TODO (nqmtuan): Also cancel all scheduled/running rerun build for the analysis
+
+	if err != nil {
+		return errors.Annotate(err, "couldn't set ShouldCancel flag").Err()
+	}
+
+	return nil
 }
 
 func shouldAnalyzeBuild(c context.Context, build *buildbucketpb.Build) bool {

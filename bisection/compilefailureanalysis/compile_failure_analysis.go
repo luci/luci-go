@@ -107,9 +107,11 @@ func AnalyzeFailure(
 		return nil, errors.Annotate(err, "couldn't fetch config for culprit verification. Build %d", firstFailedBuildID).Err()
 	}
 	if shouldRunCulpritVerification {
-		if err := verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id); err != nil {
-			// Do not return error here, just log
-			logging.Errorf(c, "Error verifying heuristic result for build %d: %s", firstFailedBuildID, err)
+		if !analysis.ShouldCancel {
+			if err := verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id); err != nil {
+				// Do not return error here, just log
+				logging.Errorf(c, "Error verifying heuristic result for build %d: %s", firstFailedBuildID, err)
+			}
 		}
 	}
 
