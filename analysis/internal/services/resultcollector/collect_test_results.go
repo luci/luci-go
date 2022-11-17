@@ -16,7 +16,6 @@ package resultcollector
 
 import (
 	"context"
-	"fmt"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -58,23 +57,15 @@ func RegisterTaskClass() {
 //
 // Interesting test variants are the analyzed test variants with any unexpected
 // results.
-func Schedule(ctx context.Context, inv *rdbpb.Invocation, rdbHost, builder string, isPreSubmit, contributedToCLSubmission bool) error {
+func Schedule(ctx context.Context, task *taskspb.CollectTestResults) error {
 	return tq.AddTask(ctx, &tq.Task{
-		Title: fmt.Sprintf("%s", inv.Name),
-		Payload: &taskspb.CollectTestResults{
-			Resultdb: &taskspb.ResultDB{
-				Invocation: inv,
-				Host:       rdbHost,
-			},
-			Builder:                   builder,
-			IsPreSubmit:               isPreSubmit,
-			ContributedToClSubmission: contributedToCLSubmission,
-		},
+		Title:   task.Resultdb.Invocation.Name,
+		Payload: task,
 	})
 }
 
 func collectTestResults(ctx context.Context, task *taskspb.CollectTestResults) error {
-	client, err := resultdb.NewClient(ctx, task.Resultdb.Host)
+	client, err := resultdb.NewClient(ctx, task.Resultdb.Host, task.Project)
 	if err != nil {
 		return err
 	}

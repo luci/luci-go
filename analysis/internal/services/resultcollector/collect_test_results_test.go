@@ -20,6 +20,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/proto"
 
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
@@ -64,12 +65,15 @@ func TestSchedule(t *testing.T) {
 				Invocation: inv,
 				Host:       "results.api.cr.dev",
 			},
+			Project:                   "Project",
 			Builder:                   "Linux Tests",
 			IsPreSubmit:               false,
 			ContributedToClSubmission: false,
 		}
-		So(Schedule(ctx, inv, task.Resultdb.Host, task.Builder, false, false), ShouldBeNil)
-		So(skdr.Tasks().Payloads()[0], ShouldResembleProto, task)
+
+		expectedTask := proto.Clone(task).(*taskspb.CollectTestResults)
+		So(Schedule(ctx, task), ShouldBeNil)
+		So(skdr.Tasks().Payloads()[0], ShouldResembleProto, expectedTask)
 	})
 }
 
