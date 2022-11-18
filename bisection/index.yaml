@@ -26,10 +26,10 @@ indexes:
   - name: analysis
   - name: start_time
 
- - kind: LuciFailedBuild
-    properties:
-    - name: project
-    - name: bucket
-    - name: builder
-    - name: end_time
-      direction: desc
+- kind: LuciFailedBuild
+  properties:
+  - name: project
+  - name: bucket
+  - name: builder
+  - name: end_time
+    direction: desc
