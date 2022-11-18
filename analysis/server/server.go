@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/legacydb"
 	"go.chromium.org/luci/analysis/internal/metrics"
+	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
 	"go.chromium.org/luci/analysis/internal/services/resultcollector"
@@ -75,6 +76,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
 		spanmodule.NewModuleFromFlags(),
 		legacydb.NewModuleFromFlags(),
+		scopedauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 	}
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
