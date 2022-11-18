@@ -300,8 +300,8 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 		base.Steps = make([]*bbpb.Step, 0, stepCount)
 	}
 
-	var insertSteps func(stepNS []string, streamURL string) *bbpb.Build
-	insertSteps = func(stepNS []string, streamURL string) *bbpb.Build {
+	var insertSteps func(stepNS []string, streamURL string, fromSubBuild bool) *bbpb.Build
+	insertSteps = func(stepNS []string, streamURL string, fromSubBuild bool) *bbpb.Build {
 		build, ok := builds[streamURL]
 		if !ok {
 			return nil
@@ -309,8 +309,8 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 		for _, step := range build.GetSteps() {
 			mb := step.GetMergeBuild()
 			mergeStream := mb.GetFromLogdogStream()
-			if mergeStream != "" || len(stepNS) > 0 {
-				step = reflectutil.ShallowCopy(step).(*bbpb.Step)
+			if mergeStream != "" || len(stepNS) > 0 || fromSubBuild {
+				step = proto.Clone(step).(*bbpb.Step)
 			}
 			baseName := step.Name
 			if len(stepNS) > 0 {
@@ -324,7 +324,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 				if !mb.LegacyGlobalNamespace {
 					subNamespace = append(stepNS, baseName)
 				}
-				subBuild := insertSteps(subNamespace, mergeStream)
+				subBuild := insertSteps(subNamespace, mergeStream, true)
 				if subBuild == nil {
 					var sb strings.Builder
 					if step.SummaryMarkdown != "" {
@@ -347,7 +347,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 		}
 		return build
 	}
-	updateBaseFromUserBuild(base, insertSteps(nil, a.userRootURL))
+	updateBaseFromUserBuild(base, insertSteps(nil, a.userRootURL, false))
 
 	select {
 	case a.mergedBuildC <- base:

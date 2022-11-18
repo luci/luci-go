@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-// buildState represets the current state of a single build.proto stream.
+// buildState represents the current state of a single build.proto stream.
 type buildState struct {
 	// build holds the most recently processed Build state. This message should be
 	// treated as immutable (i.e. proto.Clone before modifying it).
@@ -41,7 +41,7 @@ type buildState struct {
 	build *bbpb.Build
 
 	// buildReadOnly holds the most recently processed Build state to read.
-	// This message should be  treated as immutable (i.e. proto.Clone before modifying it).
+	// This message should be treated as immutable (i.e. proto.Clone before modifying it).
 	buildReadOnly *bbpb.Build
 
 	// closed is set to true when the build state is terminated and will receive
