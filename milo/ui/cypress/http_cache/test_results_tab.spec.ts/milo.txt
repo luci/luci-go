@@ -1,7 +1,7 @@
 [
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/GetProjectCfg",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/GetProjectCfg",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -13,7 +13,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/test-results",
+        "referer": "http://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/test-results",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },

@@ -66,7 +66,7 @@ export const ServicesStore = types
         if (!self.authState?.userIdentity) {
           return null;
         }
-        return new MiloInternal(makeClient({ host: '' }));
+        return new MiloInternal(makeClient({ host: '', insecure: location.protocol === 'http:' }));
       },
       get builds() {
         if (!self.authState?.userIdentity) {

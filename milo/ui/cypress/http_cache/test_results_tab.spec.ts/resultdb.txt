@@ -13,7 +13,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/service-worker.js",
+        "referer": "http://localhost:8080/ui/service-worker.js",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -57,7 +57,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/service-worker.js",
+        "referer": "http://localhost:8080/ui/service-worker.js",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -104,7 +104,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/service-worker.js",
+        "referer": "http://localhost:8080/ui/service-worker.js",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -148,7 +148,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/service-worker.js",
+        "referer": "http://localhost:8080/ui/service-worker.js",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },

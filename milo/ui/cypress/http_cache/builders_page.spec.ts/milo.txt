@@ -1,7 +1,7 @@
 [
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/ListBuilders",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/ListBuilders",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -13,7 +13,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/",
+        "referer": "http://localhost:8080/ui/p/chromium/builders/",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -50,7 +50,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -62,7 +62,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -103,7 +103,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -115,7 +115,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -156,7 +156,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -168,7 +168,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -209,7 +209,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -221,7 +221,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -262,7 +262,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -274,7 +274,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -315,7 +315,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -327,7 +327,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -368,7 +368,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -380,7 +380,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -421,7 +421,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -433,7 +433,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -474,7 +474,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -486,7 +486,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -527,7 +527,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -539,7 +539,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -579,7 +579,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -591,7 +591,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -631,7 +631,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -643,7 +643,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -683,7 +683,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -695,7 +695,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -735,7 +735,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -747,7 +747,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -787,7 +787,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -799,7 +799,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -839,7 +839,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -851,7 +851,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -891,7 +891,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -903,7 +903,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -943,7 +943,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryBuilderStats",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -955,7 +955,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -995,7 +995,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1007,7 +1007,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1048,7 +1048,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1060,7 +1060,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1101,7 +1101,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1113,7 +1113,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1154,7 +1154,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1166,7 +1166,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1207,7 +1207,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1219,7 +1219,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1260,7 +1260,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1272,7 +1272,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1313,7 +1313,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1325,7 +1325,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1366,7 +1366,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1378,7 +1378,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1419,7 +1419,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1431,7 +1431,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1472,7 +1472,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1484,7 +1484,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1525,7 +1525,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1537,7 +1537,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1578,7 +1578,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1590,7 +1590,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1631,7 +1631,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1643,7 +1643,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1684,7 +1684,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1696,7 +1696,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1737,7 +1737,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1749,7 +1749,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1790,7 +1790,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1802,7 +1802,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1843,7 +1843,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1855,7 +1855,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -1896,7 +1896,7 @@
   },
   {
     "req": {
-      "url": "https://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
+      "url": "http://localhost:8080/prpc/luci.milo.v1.MiloInternal/QueryRecentBuilds",
       "method": "POST",
       "headers": {
         "host": "localhost:8080",
@@ -1908,7 +1908,7 @@
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders",
+        "referer": "http://localhost:8080/ui/p/chromium/builders",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },

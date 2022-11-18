@@ -13,7 +13,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview",
+        "referer": "http://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -65,7 +65,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview",
+        "referer": "http://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -115,7 +115,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview",
+        "referer": "http://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/15252/overview",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -165,7 +165,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/not-bound-project/builders/not-bound-bucket/not-found-builder/12479/overview",
+        "referer": "http://localhost:8080/ui/p/not-bound-project/builders/not-bound-bucket/not-found-builder/12479/overview",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -217,7 +217,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/b8845866669318458401/overview",
+        "referer": "http://localhost:8080/ui/p/chromium/builders/ci/linux-rel-swarming/b8845866669318458401/overview",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -264,7 +264,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/service-worker.js",
+        "referer": "http://localhost:8080/ui/service-worker.js",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },

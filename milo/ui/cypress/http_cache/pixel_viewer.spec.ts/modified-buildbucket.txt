@@ -13,7 +13,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/p/chromium/builders/try/linux_layout_tests_composite_after_paint/51472/test-results?q=highlight-es",
+        "referer": "http://localhost:8080/ui/p/chromium/builders/try/linux_layout_tests_composite_after_paint/51472/test-results?q=highlight-es",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },

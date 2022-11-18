@@ -23,7 +23,7 @@ describe('Builders Page', () => {
   it('should get group ID from URL', () => {
     // We don't actually have a builders group in -dev.
     // Modify the RPC responses to not return 404.
-    cy.stubRequests({ url: 'https://localhost:8080/prpc/**', method: 'POST' }, 'modified-milo', STUB_REQUEST_OPTIONS);
+    cy.stubRequests({ url: 'http://localhost:8080/prpc/**', method: 'POST' }, 'modified-milo', STUB_REQUEST_OPTIONS);
 
     cy.visit('/ui/p/chromium/g/builders-group/builders');
     cy.get('milo-builders-page').shadow().get('#builders-group-id').contains('chromium');

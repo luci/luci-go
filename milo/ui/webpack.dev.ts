@@ -38,8 +38,10 @@ export default merge(common, {
     ...(DEBUG_SW
       ? [
           new Workbox.GenerateSW({
-            // Without this, new release will not take effect until users close
-            // all build page tabs.
+            // Without this, new release will not take effect until all milo
+            // pages are closed (refresh won't work).
+            // It might be appropriate to set this to false when debugging
+            // whether Workbox.messageSkipWaiting is called correctly.
             skipWaiting: true,
             navigateFallback: '/ui/index.html',
             sourcemap: true,
@@ -54,7 +56,7 @@ export default merge(common, {
 
   devServer: {
     hot: false,
-    https: true,
+    https: false,
     // Live reload causes the page to enter refresh loop when debugging SW.
     liveReload: !DEBUG_SW,
     client: {

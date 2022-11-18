@@ -13,7 +13,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/artifact/raw/invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet",
+        "referer": "http://localhost:8080/ui/artifact/raw/invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/ninja%3A%2F%2Fchrome%2Ftest%3Ainteractive_ui_tests%2FMediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },

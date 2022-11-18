@@ -13,7 +13,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/inv/build-8845866669318458401/test-results",
+        "referer": "http://localhost:8080/ui/inv/build-8845866669318458401/test-results",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -57,7 +57,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/inv/build-8845866669318458401/test-results",
+        "referer": "http://localhost:8080/ui/inv/build-8845866669318458401/test-results",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -105,7 +105,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/inv/not-found-8845866669318458401/test-results",
+        "referer": "http://localhost:8080/ui/inv/not-found-8845866669318458401/test-results",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },
@@ -153,7 +153,7 @@
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
-        "referer": "https://localhost:8080/ui/inv/not-found-8845866669318458401/test-results",
+        "referer": "http://localhost:8080/ui/inv/not-found-8845866669318458401/test-results",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-GB"
       },

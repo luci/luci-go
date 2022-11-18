@@ -27,7 +27,7 @@ describe('Pixel Viewer', () => {
       'modified-resultdb',
       STUB_REQUEST_OPTIONS
     );
-    cy.stubRequests({ url: 'https://localhost:8080/prpc/**', method: 'POST' }, 'modified-milo', STUB_REQUEST_OPTIONS);
+    cy.stubRequests({ url: 'http://localhost:8080/prpc/**', method: 'POST' }, 'modified-milo', STUB_REQUEST_OPTIONS);
     cy.stubRequests(
       { url: 'https://results.usercontent.cr.dev/**', method: 'GET' },
       'modified-artifacts',
