@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -85,6 +86,25 @@ type BuilderStat struct {
 	// LastScheduled is the last time we received a valid build scheduling request
 	// for this builder. Probabilistically update when scheduling a build.
 	LastScheduled time.Time `gae:"last_scheduled,noindex"`
+}
+
+// BuilderKey returns a datastore key for the Builder that a given BuilderStat
+// references.
+//
+// Panics if the ID of the BuilderStat is invalid.
+func (s *BuilderStat) BuilderKey(ctx context.Context) *datastore.Key {
+	parts := strings.Split(s.ID, ":")
+	if len(parts) != 3 {
+		panic(fmt.Errorf("invalid BuilderStatID: %s", s.ID))
+	}
+	return BuilderKey(ctx, parts[0], parts[1], parts[2])
+}
+
+// BuilderStatKey returns a datastore key for a given Builder.
+func BuilderStatKey(ctx context.Context, project, bucket, builder string) *datastore.Key {
+	return datastore.KeyForObj(ctx, &BuilderStat{
+		ID: fmt.Sprintf("%s:%s:%s", project, bucket, builder),
+	})
 }
 
 // UpdateBuilderStat updates or creates datastore BuilderStat entities.
