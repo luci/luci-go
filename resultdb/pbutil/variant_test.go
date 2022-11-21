@@ -19,6 +19,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestValidateVariant(t *testing.T) {
@@ -85,5 +86,42 @@ func TestVariantUtils(t *testing.T) {
 		}
 		vr := Variant(pairs...)
 		So(VariantToStringPairs(vr), ShouldResemble, StringPairs(pairs...))
+	})
+
+	Convey(`CombineVariant`, t, func() {
+		baseVariant := Variant(
+			"key/with/part/k3", "v3",
+		)
+		additionalVariant := Variant(
+			// Overwrite the value for the duplicate key.
+			"key/with/part/k3", "v4",
+			"k1", "v1",
+			"key/k2", "v2",
+		)
+		expectedVariant := Variant(
+			"key/with/part/k3", "v4",
+			"k1", "v1",
+			"key/k2", "v2",
+		)
+		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
+	})
+
+	Convey(`CombineVariant with nil variant`, t, func() {
+		var baseVariant *pb.Variant
+		var additionalVariant *pb.Variant
+		var expectedVariant *pb.Variant
+		v1, v2 := Variant("key/with/part/k3", "v3"), Variant("key/with/part/k4", "v4")
+
+		// (nil, nil)
+		baseVariant, additionalVariant, expectedVariant = nil, nil, nil
+		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
+
+		// (variant, nil)
+		baseVariant, additionalVariant, expectedVariant = v1, nil, v1
+		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
+
+		// (nil, variant)
+		baseVariant, additionalVariant, expectedVariant = nil, v2, v2
+		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
 	})
 }

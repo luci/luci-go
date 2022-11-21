@@ -107,6 +107,7 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 		StartTime:   st,
 		Duration:    durationpb.New(time.Minute),
 		Tags:        pbutil.StringPairs("k1", "v1"),
+		Variant:     pbutil.Variant(),
 		Artifacts: map[string]*sinkpb.Artifact{
 			"art1": artf,
 		},

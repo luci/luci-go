@@ -73,6 +73,7 @@ func TestReportTestResults(t *testing.T) {
 			StartTime:     tr.StartTime,
 			Duration:      tr.Duration,
 			Tags:          tr.Tags,
+			Variant:       tr.Variant,
 			TestMetadata:  tr.TestMetadata,
 			FailureReason: tr.FailureReason,
 		}
@@ -129,6 +130,25 @@ func TestReportTestResults(t *testing.T) {
 
 				// (tag1, tag2)
 				cfg.BaseTags, tr.Tags, expectedTR.Tags = t1, t2, append(t1, t2...)
+				checkResults()
+			})
+
+			Convey("with ServerConfig.BaseVariant and test result variant", func() {
+				v1, v2 := pbutil.Variant("bucket", "try"), pbutil.Variant("builder", "linux-rel")
+				// (nil, nil)
+				cfg.BaseVariant, tr.Variant, expectedTR.Variant = nil, nil, nil
+				checkResults()
+
+				// (variant, nil)
+				cfg.BaseVariant, tr.Variant, expectedTR.Variant = v1, nil, v1
+				checkResults()
+
+				// (nil, variant)
+				cfg.BaseVariant, tr.Variant, expectedTR.Variant = nil, v1, v1
+				checkResults()
+
+				// (variant1, variant2)
+				cfg.BaseVariant, tr.Variant, expectedTR.Variant = v1, v2, pbutil.CombineVariant(v1, v2)
 				checkResults()
 			})
 		})

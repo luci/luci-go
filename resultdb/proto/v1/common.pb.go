@@ -43,24 +43,25 @@ const (
 // A test case with a specific variant definition is called test variant.
 //
 // Guidelines for variant definition design:
-// - This rule guides what keys MUST be present in the definition.
-//   A single expected result of a given test variant is enough to consider it
-//   passing (potentially flakily). If it is important to differentiate across
-//   a certain dimension (e.g. whether web tests are executed with or without
-//   site per process isolation), then there MUST be a key that captures the
-//   dimension (e.g. a name from test_suites.pyl).
-//   Otherwise, a pass in one variant will hide a failure of another one.
 //
-// - This rule guides what keys MUST NOT be present in the definition.
-//   A change in the key-value set essentially resets the test result history.
-//   For example, if GN args are among variant key-value pairs, then adding a
-//   new GN arg changes the identity of the test variant and resets its history.
+//   - This rule guides what keys MUST be present in the definition.
+//     A single expected result of a given test variant is enough to consider it
+//     passing (potentially flakily). If it is important to differentiate across
+//     a certain dimension (e.g. whether web tests are executed with or without
+//     site per process isolation), then there MUST be a key that captures the
+//     dimension (e.g. a name from test_suites.pyl).
+//     Otherwise, a pass in one variant will hide a failure of another one.
+//
+//   - This rule guides what keys MUST NOT be present in the definition.
+//     A change in the key-value set essentially resets the test result history.
+//     For example, if GN args are among variant key-value pairs, then adding a
+//     new GN arg changes the identity of the test variant and resets its history.
 //
 // In Chromium, variant keys are:
-// - bucket: the LUCI bucket, e.g. "ci"
-// - builder: the LUCI builder, e.g. "linux-rel"
-// - test_suite: a name from
-//   https://cs.chromium.org/chromium/src/testing/buildbot/test_suites.pyl
+//   - bucket: the LUCI bucket, e.g. "ci"
+//   - builder: the LUCI builder, e.g. "linux-rel"
+//   - test_suite: a name from
+//     https://cs.chromium.org/chromium/src/testing/buildbot/test_suites.pyl
 type Variant struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

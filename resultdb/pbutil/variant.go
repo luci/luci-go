@@ -127,3 +127,22 @@ func VariantToStringPairs(vr *pb.Variant) []*pb.StringPair {
 	}
 	return sp
 }
+
+// CombineVariant combines base variant and additional variant. The additional
+// variant will overwrite the base variant if there is a duplicate key.
+func CombineVariant(baseVariant *pb.Variant, additionalVariant *pb.Variant) *pb.Variant {
+	if baseVariant == nil && additionalVariant == nil {
+		return nil
+	}
+
+	variant := &pb.Variant{
+		Def: make(map[string]string, len(baseVariant.GetDef())+len(additionalVariant.GetDef())),
+	}
+	for key, value := range baseVariant.GetDef() {
+		variant.Def[key] = value
+	}
+	for key, value := range additionalVariant.GetDef() {
+		variant.Def[key] = value
+	}
+	return variant
+}

@@ -141,12 +141,16 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 			c.setTestTags(tr)
 			tags := append(tr.GetTags(), c.cfg.BaseTags...)
 
+			// The test result variant will overwrite the value for the
+			// duplicate key in the base variant.
+			variant := pbutil.CombineVariant(c.cfg.BaseVariant, tr.GetVariant())
+
 			pbutil.SortStringPairs(tags)
 			reqs[i] = &pb.CreateTestResultRequest{
 				TestResult: &pb.TestResult{
 					TestId:        tr.GetTestId(),
 					ResultId:      tr.GetResultId(),
-					Variant:       c.cfg.BaseVariant,
+					Variant:       variant,
 					Expected:      tr.GetExpected(),
 					Status:        tr.GetStatus(),
 					SummaryHtml:   tr.GetSummaryHtml(),

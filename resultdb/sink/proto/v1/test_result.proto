@@ -67,6 +67,12 @@ message TestResult {
 
   // Equivalent of luci.resultdb.v1.TestResult.failure_reason.
   luci.resultdb.v1.FailureReason failure_reason = 12;
+
+  // Equivalent of luci.resultdb.v1.TestResult.variant.
+  // The variant for all test cases should be passed by command line args to rdb
+  // stream, however you can override or add to the variant on a per test case
+  // basis using this field.
+  luci.resultdb.v1.Variant variant = 13;
 }
 
 // A local equivalent of luci.resultdb.Artifact message
