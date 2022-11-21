@@ -1,0 +1,80 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package spike.ids;
+
+option go_package = "go.chromium.org/luci/provenance/api/spikepb/ids;idspb";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// Inspect supports exporting identified "interesting" events happening on a
+// machine as captured by a policy. A policy's design will define what is an
+// interesting event, e.g. it can be a network call.
+service Inspect {
+  // InspectionReport is the endpoint used by policies to report events to
+  // Spike, which is used in Spike as IDS indicators.
+  rpc InspectionReport(InspectionReportRequest) returns (google.protobuf.Empty);
+}
+
+// InspectionReportRequest encapsulates a policies inspect report to Spike.
+message InspectionReportRequest {
+  // An identifier for Spike to use to associate a report to a policy.
+  // Since there might be multiple policies running at the same time,
+  // Spike needs to know which policy is reporting what.
+  string policy_signature = 1;
+  // Details will have the information policy wants to export. It will
+  // have unique information depending upon the policy.
+  //
+  // For example, network proxy will have `NetworkActivityLog `information
+  // from google3/security/bcid/proto/software/network_proxy.proto.
+  // Processing of this information will be at Spike, i.e. Spike will
+  // learn how to interpret a particular type of report.
+  Details details = 2;
+  // Identifier of a build.
+  string build_id = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  // Provenance critical dictates whether this inspection report needs is
+  // needed for generating provenance.
+  bool provenance_critical = 5;
+}
+
+// Details will have the information policy wants to export. It will have unique
+// information depending upon the policy.
+message Details {
+  oneof material {
+    // Sample is an example policy for SPEE demonstration.
+    Sample sample = 1;
+    // NetworkProxy is BCID owned network proxy tool capable of enforcing
+    // network isolation policies.
+    NetworkProxy network_proxy = 2;
+  }
+}
+
+// NetworkProxy provides a transparent proxy between build process and the
+// internet. Read more at: go/luci-network-proxy (Google-internal).
+//
+// Information received from this policy will be included in SLSA provenance.
+message NetworkProxy {
+  // URI of the request observed at the proxy.
+  string uri = 1;
+  // Optional digest of a material downloaded with the network request.
+  string digest = 2;
+}
+
+message Sample {
+  bool ping = 1;
+}
