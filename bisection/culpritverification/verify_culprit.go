@@ -93,10 +93,17 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return err
 	}
 
-	suspect.VerificationStatus = model.SuspectVerificationStatus_UnderVerification
-	suspect.SuspectRerunBuild = datastore.KeyForObj(c, suspectRerunBuildModel)
-	suspect.ParentRerunBuild = datastore.KeyForObj(c, parentRerunBuildModel)
-	err = datastore.Put(c, suspect)
+	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, suspect)
+		if e != nil {
+			return e
+		}
+		suspect.VerificationStatus = model.SuspectVerificationStatus_UnderVerification
+		suspect.SuspectRerunBuild = datastore.KeyForObj(c, suspectRerunBuildModel)
+		suspect.ParentRerunBuild = datastore.KeyForObj(c, parentRerunBuildModel)
+		return datastore.Put(c, suspect)
+	}, nil)
+
 	if err != nil {
 		return err
 	}

@@ -222,10 +222,17 @@ func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSe
 		return errors.Annotate(err, "couldn't save suspect").Err()
 	}
 
-	nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
-	nsa.Suspect = datastore.KeyForObj(c, suspect)
-	nsa.EndTime = clock.Now(c)
-	err = datastore.Put(c, nsa)
+	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, nsa)
+		if e != nil {
+			return e
+		}
+		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
+		nsa.Suspect = datastore.KeyForObj(c, suspect)
+		nsa.EndTime = clock.Now(c)
+		return datastore.Put(c, nsa)
+	}, nil)
+
 	if err != nil {
 		return errors.Annotate(err, "couldn't save nthsection analysis").Err()
 	}
@@ -311,8 +318,15 @@ func updateSuspect(c context.Context, suspect *model.Suspect) error {
 
 	// Update suspect based on rerunStatus and parentRerunStatus
 	suspectStatus := getSuspectStatus(c, rerunStatus, parentRerunStatus)
-	suspect.VerificationStatus = suspectStatus
-	return datastore.Put(c, suspect)
+
+	return datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, suspect)
+		if e != nil {
+			return e
+		}
+		suspect.VerificationStatus = suspectStatus
+		return datastore.Put(c, suspect)
+	}, nil)
 }
 
 // updateSuspectAsConfirmedCulprit update the suspect as the confirmed culprit of analysis
@@ -331,10 +345,17 @@ func updateSuspectAsConfirmedCulprit(c context.Context, suspect *model.Suspect) 
 		// Just log the warning here, as it is a rare case
 		logging.Warningf(c, "found more than 2 suspects for analysis %d", analysis.Id)
 	}
-	analysis.VerifiedCulprits = verifiedCulprits
-	analysis.Status = pb.AnalysisStatus_FOUND
-	analysis.EndTime = clock.Now(c)
-	return datastore.Put(c, analysis)
+
+	return datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, analysis)
+		if e != nil {
+			return e
+		}
+		analysis.VerifiedCulprits = verifiedCulprits
+		analysis.Status = pb.AnalysisStatus_FOUND
+		analysis.EndTime = clock.Now(c)
+		return datastore.Put(c, analysis)
+	}, nil)
 }
 
 func getSuspectStatus(c context.Context, rerunStatus pb.RerunStatus, parentRerunStatus pb.RerunStatus) model.SuspectVerificationStatus {
@@ -362,10 +383,16 @@ func updateRerun(c context.Context, req *pb.UpdateAnalysisProgressRequest, rerun
 		return fmt.Errorf("different gitiles commit for rerun")
 	}
 
-	rerun.EndTime = clock.Now(c)
-	rerun.Status = req.RerunResult.RerunStatus
+	err := datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, rerun)
+		if e != nil {
+			return e
+		}
+		rerun.EndTime = clock.Now(c)
+		rerun.Status = req.RerunResult.RerunStatus
+		return datastore.Put(c, rerun)
+	}, nil)
 
-	err := datastore.Put(c, rerun)
 	if err != nil {
 		logging.Errorf(c, "Error updating SingleRerun for build %d: %s", req.Bbid, rerun)
 		return errors.Annotate(err, "saving SingleRerun").Err()

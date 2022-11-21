@@ -112,8 +112,14 @@ func updateFailedFiles(c context.Context, heuristicAnalysis *model.CompileHeuris
 	for k := range signal.Files {
 		keys = append(keys, k)
 	}
-	cfModel.FailedFiles = keys
-	return datastore.Put(c, cfModel)
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, cfModel)
+		if e != nil {
+			return e
+		}
+		cfModel.FailedFiles = keys
+		return datastore.Put(c, cfModel)
+	}, nil)
 }
 
 func saveResultsToDatastore(c context.Context, analysis *model.CompileHeuristicAnalysis, result *model.HeuristicAnalysisResult, gitilesHost string, gitilesProject string, gitilesRef string) error {

@@ -255,16 +255,30 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 	}
 
 	startTime := build.StartTime.AsTime()
-	rerunModel.StartTime = startTime
-	rerunModel.Status = build.Status
 
-	err = datastore.Put(c, rerunModel)
+	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, rerunModel)
+		if e != nil {
+			return e
+		}
+		rerunModel.StartTime = startTime
+		rerunModel.Status = build.Status
+		return datastore.Put(c, rerunModel)
+	}, nil)
+
 	if err != nil {
 		return errors.Annotate(err, "couldn't save rerun model %d", bbid).Err()
 	}
 
-	lastRerun.StartTime = startTime
-	err = datastore.Put(c, lastRerun)
+	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
+		e := datastore.Get(c, lastRerun)
+		if e != nil {
+			return e
+		}
+		lastRerun.StartTime = startTime
+		return datastore.Put(c, lastRerun)
+	}, nil)
+
 	if err != nil {
 		return errors.Annotate(err, "failed saving last rerun for build %d", rerunModel.Id).Err()
 	}

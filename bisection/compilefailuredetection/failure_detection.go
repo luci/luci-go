@@ -270,8 +270,12 @@ func analysisExists(c context.Context, refFailedBuild *buildbucketpb.Build, firs
 		}
 
 		// "Merge" the compile failures, so they use the same analysis
-		compileFailure.MergedFailureKey = analysis.CompileFailure
 		err = datastore.RunInTransaction(c, func(c context.Context) error {
+			e := datastore.Get(c, compileFailure)
+			if e != nil {
+				return e
+			}
+			compileFailure.MergedFailureKey = analysis.CompileFailure
 			return datastore.Put(c, compileFailure)
 		}, nil)
 

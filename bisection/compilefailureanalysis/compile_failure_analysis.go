@@ -58,8 +58,16 @@ func AnalyzeFailure(
 		return nil, e
 	}
 	failedTargets := compilelog.GetFailedTargets(compileLogs)
-	cf.OutputTargets = failedTargets
-	e = datastore.Put(c, cf)
+
+	e = datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, cf)
+		if e != nil {
+			return e
+		}
+		cf.OutputTargets = failedTargets
+		return datastore.Put(c, cf)
+	}, nil)
+
 	if e != nil {
 		return nil, e
 	}
@@ -83,9 +91,22 @@ func AnalyzeFailure(
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)
 	if e != nil {
 		logging.Errorf(c, "Error during heuristic analysis for build %d: %v", e)
-		analysis.Status = pb.AnalysisStatus_ERROR
-		analysis.EndTime = clock.Now(c)
-		datastore.Put(c, analysis)
+
+		err := datastore.RunInTransaction(c, func(c context.Context) error {
+			e := datastore.Get(c, analysis)
+			if e != nil {
+				return e
+			}
+			analysis.Status = pb.AnalysisStatus_ERROR
+			analysis.EndTime = clock.Now(c)
+			return datastore.Put(c, analysis)
+		}, nil)
+
+		if err != nil {
+			err = errors.Annotate(err, "failed storing analysis %d", analysis.Id).Err()
+			logging.Errorf(c, err.Error())
+		}
+
 		// As we only run heuristic analysis now, returns the error if heuristic
 		// analysis failed.
 		return nil, e
@@ -93,10 +114,16 @@ func AnalyzeFailure(
 
 	// TODO: For now, just check heuristic analysis status
 	// We need to implement nth-section analysis as well
-	analysis.Status = heuristicResult.Status
-	analysis.EndTime = heuristicResult.EndTime
+	e = datastore.RunInTransaction(c, func(c context.Context) error {
+		e = datastore.Get(c, analysis)
+		if e != nil {
+			return e
+		}
+		analysis.Status = heuristicResult.Status
+		analysis.EndTime = heuristicResult.EndTime
+		return datastore.Put(c, analysis)
+	}, nil)
 
-	e = datastore.Put(c, analysis)
 	if e != nil {
 		return nil, fmt.Errorf("Failed saving analysis: %w", e)
 	}
