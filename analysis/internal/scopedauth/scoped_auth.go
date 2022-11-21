@@ -21,8 +21,11 @@ package scopedauth
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"net/http"
 
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
 
@@ -97,16 +100,27 @@ func UseProjectScopedAuthSetting(ctx context.Context, useProjectScopedAuth bool)
 	return context.WithValue(ctx, &clientContextKey, useProjectScopedAuth)
 }
 
-// IsProjectScopedAuthEnabled returns whether project-scoped auth should be
-// used for accessing buildbucket, ResultDB and gerrit. This is generally
-// true in production environments and false in development environments,
-// where dev needs to access data in prod.
-func IsProjectScopedAuthEnabled(ctx context.Context) bool {
+// GetRPCTransport returns returns http.RoundTripper to use
+// for outbound HTTP RPC requests to buildbucket, resultdb and
+// gerrit. Project is name of the LUCI Project which the request
+// should be performed as (if project-scoped authentication is
+// enabled).
+func GetRPCTransport(ctx context.Context, project string) (http.RoundTripper, error) {
 	enabled, ok := ctx.Value(&clientContextKey).(bool)
 	if !ok {
-		// Only occurs if this module has not been loaded or another
-		// context has been used.
-		panic("project-scoped authentication setting not configured in context")
+		return nil, errors.New("project-scoped authentication setting not configured in context")
 	}
-	return enabled
+
+	var t http.RoundTripper
+	var err error
+	if enabled {
+		t, err = auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
+	} else {
+		t, err = auth.GetRPCTransport(ctx, auth.AsSelf)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
 }

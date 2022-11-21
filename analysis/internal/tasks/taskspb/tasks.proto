@@ -70,6 +70,8 @@ message CollectTestResults {
   bool is_pre_submit = 3;
   // If the try build contributes to a CL's submission.
   bool contributed_to_cl_submission = 4;
+  // The LUCI Project of the build.
+  string project = 5;
 }
 
 // Information that can form a key to an AnalyzedTestVariant row.

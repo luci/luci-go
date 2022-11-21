@@ -19,6 +19,7 @@ import (
 	"context"
 	"net/http"
 
+	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/grpc/prpc"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -27,15 +28,16 @@ import (
 // mockResultDBClientKey is the context key indicates using mocked resultb client in tests.
 var mockResultDBClientKey = "used in tests only for setting the mock resultdb client"
 
-func newResultDBClient(ctx context.Context, host string) (rdbpb.ResultDBClient, error) {
+func newResultDBClient(ctx context.Context, host string, createTransport func() (http.RoundTripper, error)) (rdbpb.ResultDBClient, error) {
 	if mockClient, ok := ctx.Value(&mockResultDBClientKey).(*rdbpb.MockResultDBClient); ok {
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	t, err := createTransport()
 	if err != nil {
 		return nil, err
 	}
+
 	return rdbpb.NewResultDBPRPCClient(
 		&prpc.Client{
 			C:                &http.Client{Transport: t},
@@ -51,9 +53,36 @@ type Client struct {
 	client rdbpb.ResultDBClient
 }
 
-// NewClient creates a client to communicate with ResultDB.
-func NewClient(ctx context.Context, host string) (*Client, error) {
-	client, err := newResultDBClient(ctx, host)
+// NewClient creates a client to communicate with ResultDB, acting as
+// the given project. Recommended way to construct a ResultDB client.
+func NewClient(ctx context.Context, host, project string) (*Client, error) {
+	createTransport := func() (http.RoundTripper, error) {
+		return scopedauth.GetRPCTransport(ctx, project)
+	}
+
+	client, err := newResultDBClient(ctx, host, createTransport)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		client: client,
+	}, nil
+}
+
+// NewPrivilegedClient creates a client to communicate with ResultDB,
+// acting as LUCI Analysis to access data from any project.
+//
+// Caution: Callers must take special care to avoid "confused deputy"
+// issues when using this client, e.g. being tricked by one project
+// to access the resources of another. ResultDB will not check the
+// accessed resource is in the project that was intended.
+func NewPrivilegedClient(ctx context.Context, host string) (*Client, error) {
+	createTransport := func() (http.RoundTripper, error) {
+		return auth.GetRPCTransport(ctx, auth.AsSelf)
+	}
+
+	client, err := newResultDBClient(ctx, host, createTransport)
 	if err != nil {
 		return nil, err
 	}

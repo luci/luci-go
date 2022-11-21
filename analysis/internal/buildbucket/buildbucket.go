@@ -21,9 +21,9 @@ import (
 
 	"google.golang.org/grpc"
 
+	"go.chromium.org/luci/analysis/internal/scopedauth"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 )
 
 // testBBClientKey is the context key controls the use of buildbucket client test doubles in tests.
@@ -39,12 +39,12 @@ func useBuildsClientForTesting(ctx context.Context, client GetBuildsClient) cont
 	return context.WithValue(ctx, &testBBClientKey, client)
 }
 
-func newBuildsClient(ctx context.Context, host string) (GetBuildsClient, error) {
+func newBuildsClient(ctx context.Context, host, project string) (GetBuildsClient, error) {
 	if mockClient, ok := ctx.Value(&testBBClientKey).(GetBuildsClient); ok {
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	t, err := scopedauth.GetRPCTransport(ctx, project)
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +62,10 @@ type Client struct {
 	client GetBuildsClient
 }
 
-// NewClient creates a client to communicate with Buildbucket.
-func NewClient(ctx context.Context, host string) (*Client, error) {
-	client, err := newBuildsClient(ctx, host)
+// NewClient creates a client to communicate with Buildbucket, acting as the given
+// LUCI project.
+func NewClient(ctx context.Context, host, project string) (*Client, error) {
+	client, err := newBuildsClient(ctx, host, project)
 	if err != nil {
 		return nil, err
 	}
