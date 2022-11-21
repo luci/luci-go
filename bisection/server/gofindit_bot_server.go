@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -29,6 +30,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -281,6 +284,23 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 		err = updateSuspectAsConfirmedCulprit(c, suspect)
 		if err != nil {
 			return errors.Annotate(err, "error updateSuspectAsConfirmedCulprit for rerun %d", rerun.Id).Err()
+		}
+
+		if suspect.Type == model.SuspectType_Heuristic {
+			// Add task to revert the heuristic confirmed culprit
+			analysisID := suspect.ParentAnalysis.Parent().IntID()
+			err = tq.AddTask(c, &tq.Task{
+				Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
+				Payload: &taskpb.RevertCulpritTask{
+					AnalysisId: analysisID,
+					CulpritId:  suspect.Id,
+				},
+			})
+			if err != nil {
+				return errors.Annotate(err,
+					"error creating task in task queue to revert heuristic culprit (analysis ID=%d, suspect ID=%d)",
+					analysisID, suspect.Id).Err()
+			}
 		}
 	}
 	return nil

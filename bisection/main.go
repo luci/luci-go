@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
+	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/frontend/handlers"
 	"go.chromium.org/luci/bisection/internal/config"
 	pb "go.chromium.org/luci/bisection/proto"
@@ -188,6 +189,7 @@ func main() {
 		cron.RegisterHandler("update-config", config.Update)
 
 		compilefailuredetection.RegisterTaskClass()
+		revertculprit.RegisterTaskClass()
 
 		return nil
 	})

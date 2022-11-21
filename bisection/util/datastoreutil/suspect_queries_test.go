@@ -258,3 +258,45 @@ func TestGetAssociatedBuildID(t *testing.T) {
 		So(bbid, ShouldEqual, 88128398584903)
 	})
 }
+
+func TestGetSuspect(t *testing.T) {
+	ctx := memory.Use(context.Background())
+
+	Convey("GetSuspect", t, func() {
+		// Setup datastore
+		compileFailureAnalysis := &model.CompileFailureAnalysis{
+			Id: 123,
+		}
+		So(datastore.Put(ctx, compileFailureAnalysis), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		parentAnalysis := datastore.KeyForObj(ctx, compileFailureAnalysis)
+
+		compileHeuristicAnalysis := &model.CompileHeuristicAnalysis{
+			Id:             45600001,
+			ParentAnalysis: parentAnalysis,
+		}
+		So(datastore.Put(ctx, compileHeuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		Convey("no suspect exists", func() {
+			suspect, err := GetSuspect(ctx, 789, parentAnalysis)
+			So(err, ShouldNotBeNil)
+			So(suspect, ShouldBeNil)
+		})
+
+		Convey("suspect exists", func() {
+			// Setup suspect in datastore
+			s := &model.Suspect{
+				Id:             789,
+				ParentAnalysis: parentAnalysis,
+			}
+			So(datastore.Put(ctx, s), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			suspect, err := GetSuspect(ctx, 789, parentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldResemble, s)
+		})
+	})
+}

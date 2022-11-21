@@ -25,3 +25,11 @@ message FailedBuildIngestionTask {
   int64 bbid = 1;
 }
 
+// Payload of the RevertCulpritTask
+message RevertCulpritTask {
+  // The ID of the CompileFailureAnalysis associated with the culprit
+  int64 analysis_id = 1;
+
+  // The ID of the Suspect which is the culprit
+  int64 culprit_id = 2;
+}

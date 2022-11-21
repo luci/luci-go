@@ -12,24 +12,107 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package culpritaction contains the logic to deal with culprits
-package culpritaction
+// Package revertculprit contains the logic to revert culprits
+package revertculprit
 
 import (
 	"context"
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
+	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server/tq"
 )
+
+const (
+	taskClass = "revert-culprit-action"
+	queue     = "revert-culprit-action"
+)
+
+// RegisterTaskClass registers the task class for tq dispatcher
+func RegisterTaskClass() {
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        taskClass,
+		Prototype: (*taskpb.RevertCulpritTask)(nil),
+		Queue:     queue,
+		Kind:      tq.NonTransactional,
+		Handler:   processRevertCulpritTask,
+	})
+}
+
+func processRevertCulpritTask(ctx context.Context, payload proto.Message) error {
+	task := payload.(*taskpb.RevertCulpritTask)
+
+	analysisID := task.GetAnalysisId()
+	culpritID := task.GetCulpritId()
+
+	logging.Infof(ctx,
+		"Processing revert culprit task for analysis ID=%d, culprit ID=%d",
+		analysisID, culpritID)
+
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(ctx, analysisID)
+	if err != nil {
+		// failed getting the CompileFailureAnalysis, so no point retrying
+		err = errors.Annotate(err,
+			"failed getting CompileFailureAnalysis when processing culprit revert task").Err()
+		logging.Errorf(ctx, err.Error())
+		return nil
+	}
+
+	var culprit *model.Suspect
+	for _, verifiedCulprit := range cfa.VerifiedCulprits {
+		if verifiedCulprit.IntID() == culpritID {
+			culprit, err = datastoreutil.GetSuspect(ctx, culpritID, verifiedCulprit.Parent())
+			if err != nil {
+				// failed getting the Suspect, so no point retrying
+				err = errors.Annotate(err,
+					"failed getting Suspect when processing culprit revert task").Err()
+				logging.Errorf(ctx, err.Error())
+				return nil
+			}
+			break
+		}
+	}
+
+	if culprit == nil {
+		// culprit is not within the analysis' verified culprits, so no point retrying
+		logging.Errorf(ctx, "failed to find the culprit within the analysis' verified culprits")
+		return nil
+	}
+
+	// Revert heuristic culprit
+	if culprit.Type == model.SuspectType_Heuristic {
+		err = RevertHeuristicCulprit(ctx, culprit)
+		if err != nil {
+			// If the error is transient, return err to retry
+			if transient.Tag.In(err) {
+				return err
+			}
+
+			// non-transient error, so do not retry
+			logging.Errorf(ctx, err.Error())
+			return nil
+		}
+		return nil
+	}
+
+	// TODO (aredulla): add functionality to revert nth section culprit
+
+	logging.Infof(ctx, "Culprit type '%s' not supported for revert", culprit.Type)
+	return nil
+}
 
 // RevertHeuristicCulprit attempts to automatically revert a culprit
 // identified as a result of a heuristic analysis.

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package culpritaction
+package revertculprit
 
 import (
 	"context"
@@ -30,6 +30,7 @@ import (
 	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -159,7 +160,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				model.SuspectVerificationStatus_ConfirmedCulprit)
 			So(err, ShouldErrLike, expectedErr)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
@@ -204,7 +206,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
@@ -281,7 +284,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
@@ -371,7 +375,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
@@ -440,7 +445,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
@@ -517,7 +523,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, true)
@@ -594,7 +601,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, true)
@@ -680,21 +688,12 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
-			suspect, err := getSuspectFromDatastore(ctx, heuristicSuspect)
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, true)
 			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, true)
 		})
 	})
-}
-
-func getSuspectFromDatastore(ctx context.Context, suspect *model.Suspect) (*model.Suspect, error) {
-	updatedSuspect := &model.Suspect{
-		Id:             suspect.Id,
-		ParentAnalysis: suspect.ParentAnalysis,
-	}
-
-	err := datastore.Get(ctx, updatedSuspect)
-	return updatedSuspect, err
 }

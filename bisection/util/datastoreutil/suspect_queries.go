@@ -60,18 +60,34 @@ func CountLatestRevertsCommitted(c context.Context, hours int64) (int64, error) 
 	return count, nil
 }
 
+// GetSuspect returns the Suspect given its ID and key to parent analysis
+func GetSuspect(ctx context.Context, suspectID int64,
+	parentAnalysis *datastore.Key) (*model.Suspect, error) {
+	suspect := &model.Suspect{
+		Id:             suspectID,
+		ParentAnalysis: parentAnalysis,
+	}
+
+	err := datastore.Get(ctx, suspect)
+	if err != nil {
+		return nil, err
+	}
+
+	return suspect, nil
+}
+
 // GetAssociatedBuildID returns the build ID of the failure associated with the suspect
 func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, error) {
 	// Get parent analysis - either heuristic or nth section
 	if suspect.ParentAnalysis == nil {
-		return 0, fmt.Errorf("culprit with ID '%d' had no parent analysis",
+		return 0, fmt.Errorf("suspect with ID '%d' had no parent analysis",
 			suspect.Id)
 	}
 
 	// Get failure analysis that the heuristic/nth section analysis relates to
 	analysisKey := suspect.ParentAnalysis.Parent()
 	if analysisKey == nil {
-		return 0, fmt.Errorf("culprit with ID '%d' had no parent failure analysis",
+		return 0, fmt.Errorf("suspect with ID '%d' had no parent failure analysis",
 			suspect.Id)
 	}
 	analysisID := analysisKey.IntID()
