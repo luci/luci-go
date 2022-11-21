@@ -45,6 +45,7 @@ luci_gae_vars:
     TINK_AEAD_KEY: sm://tink-aead-primary
     SPANNER_DB: projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev
     LEGACY_SPANNER_DB: projects/chops-weetbix-dev/instances/dev/databases/chops-weetbix-dev
+    DISABLE_PROJECT_SCOPED_AUTH: TRUE
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml and service-result-ingestion.yaml.
 handlers:
@@ -75,3 +76,4 @@ entrypoint: >
   -root-secret ${ROOT_SECRET}
   -spanner-database ${SPANNER_DB}
   -legacy-spanner-database ${LEGACY_SPANNER_DB}
+  -disable-project-scoped-auth=${DISABLE_PROJECT_SCOPED_AUTH}
