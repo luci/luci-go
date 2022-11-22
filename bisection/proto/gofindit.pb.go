@@ -43,11 +43,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// AnalysisStatus represents the result status of an analysis
 type AnalysisStatus int32
 
 const (
 	AnalysisStatus_ANALYSIS_STATUS_UNSPECIFIED AnalysisStatus = 0
 	// The analysis has been created, but not yet started.
+	// We don't have this status in code. It's here for backward-compatability
 	AnalysisStatus_CREATED AnalysisStatus = 1
 	// The analysis is running, but results have not been finalised.
 	AnalysisStatus_RUNNING AnalysisStatus = 2
@@ -57,7 +59,7 @@ const (
 	AnalysisStatus_NOTFOUND AnalysisStatus = 4
 	// The analysis results in an error
 	AnalysisStatus_ERROR AnalysisStatus = 5
-	// The analysis found some suspects
+	// The analysis found some suspects, either from heuristic or nthsection
 	AnalysisStatus_SUSPECTFOUND AnalysisStatus = 6
 )
 
@@ -110,6 +112,64 @@ func (AnalysisStatus) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{0}
 }
 
+// AnalysisRunStatus is different from AnalysisStatus in the sense
+// that it focused on whether the analysis is current running or not,
+// rather than focus on the result.
+type AnalysisRunStatus int32
+
+const (
+	AnalysisRunStatus_ANALYSIS_RUN_STATUS_UNSPECIFIED AnalysisRunStatus = 0
+	// The analysis started and is still running.
+	AnalysisRunStatus_STARTED AnalysisRunStatus = 2
+	// The analysis has ended (either it stopped naturally or ran into an error).
+	AnalysisRunStatus_ENDED AnalysisRunStatus = 3
+	// The analysis has been canceled.
+	AnalysisRunStatus_CANCELED AnalysisRunStatus = 4
+)
+
+// Enum value maps for AnalysisRunStatus.
+var (
+	AnalysisRunStatus_name = map[int32]string{
+		0: "ANALYSIS_RUN_STATUS_UNSPECIFIED",
+		2: "STARTED",
+		3: "ENDED",
+		4: "CANCELED",
+	}
+	AnalysisRunStatus_value = map[string]int32{
+		"ANALYSIS_RUN_STATUS_UNSPECIFIED": 0,
+		"STARTED":                         2,
+		"ENDED":                           3,
+		"CANCELED":                        4,
+	}
+)
+
+func (x AnalysisRunStatus) Enum() *AnalysisRunStatus {
+	p := new(AnalysisRunStatus)
+	*p = x
+	return p
+}
+
+func (x AnalysisRunStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AnalysisRunStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[1].Descriptor()
+}
+
+func (AnalysisRunStatus) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[1]
+}
+
+func (x AnalysisRunStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AnalysisRunStatus.Descriptor instead.
+func (AnalysisRunStatus) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{1}
+}
+
 type CulpritActionType int32
 
 const (
@@ -159,11 +219,11 @@ func (x CulpritActionType) String() string {
 }
 
 func (CulpritActionType) Descriptor() protoreflect.EnumDescriptor {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[1].Descriptor()
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[2].Descriptor()
 }
 
 func (CulpritActionType) Type() protoreflect.EnumType {
-	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[1]
+	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[2]
 }
 
 func (x CulpritActionType) Number() protoreflect.EnumNumber {
@@ -172,7 +232,7 @@ func (x CulpritActionType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CulpritActionType.Descriptor instead.
 func (CulpritActionType) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{1}
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{2}
 }
 
 type RerunStatus int32
@@ -214,11 +274,11 @@ func (x RerunStatus) String() string {
 }
 
 func (RerunStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[2].Descriptor()
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[3].Descriptor()
 }
 
 func (RerunStatus) Type() protoreflect.EnumType {
-	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[2]
+	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[3]
 }
 
 func (x RerunStatus) Number() protoreflect.EnumNumber {
@@ -227,7 +287,7 @@ func (x RerunStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RerunStatus.Descriptor instead.
 func (RerunStatus) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{2}
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{3}
 }
 
 type SuspectConfidenceLevel int32
@@ -266,11 +326,11 @@ func (x SuspectConfidenceLevel) String() string {
 }
 
 func (SuspectConfidenceLevel) Descriptor() protoreflect.EnumDescriptor {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[3].Descriptor()
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[4].Descriptor()
 }
 
 func (SuspectConfidenceLevel) Type() protoreflect.EnumType {
-	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[3]
+	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[4]
 }
 
 func (x SuspectConfidenceLevel) Number() protoreflect.EnumNumber {
@@ -279,7 +339,7 @@ func (x SuspectConfidenceLevel) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SuspectConfidenceLevel.Descriptor instead.
 func (SuspectConfidenceLevel) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{4}
 }
 
 type BuildFailureType int32
@@ -321,11 +381,11 @@ func (x BuildFailureType) String() string {
 }
 
 func (BuildFailureType) Descriptor() protoreflect.EnumDescriptor {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[4].Descriptor()
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[5].Descriptor()
 }
 
 func (BuildFailureType) Type() protoreflect.EnumType {
-	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[4]
+	return &file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes[5]
 }
 
 func (x BuildFailureType) Number() protoreflect.EnumNumber {
@@ -334,7 +394,7 @@ func (x BuildFailureType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BuildFailureType.Descriptor instead.
 func (BuildFailureType) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP(), []int{5}
 }
 
 type GetAnalysisRequest struct {
@@ -2446,7 +2506,13 @@ var file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDesc = []byte{
 	0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x46, 0x4f, 0x55, 0x4e,
 	0x44, 0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08, 0x4e, 0x4f, 0x54, 0x46, 0x4f, 0x55, 0x4e, 0x44, 0x10,
 	0x04, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x05, 0x12, 0x10, 0x0a, 0x0c,
-	0x53, 0x55, 0x53, 0x50, 0x45, 0x43, 0x54, 0x46, 0x4f, 0x55, 0x4e, 0x44, 0x10, 0x06, 0x2a, 0xa6,
+	0x53, 0x55, 0x53, 0x50, 0x45, 0x43, 0x54, 0x46, 0x4f, 0x55, 0x4e, 0x44, 0x10, 0x06, 0x2a, 0x5e,
+	0x0a, 0x11, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x52, 0x75, 0x6e, 0x53, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x12, 0x23, 0x0a, 0x1f, 0x41, 0x4e, 0x41, 0x4c, 0x59, 0x53, 0x49, 0x53, 0x5f,
+	0x52, 0x55, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
+	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x54, 0x41, 0x52,
+	0x54, 0x45, 0x44, 0x10, 0x02, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x4e, 0x44, 0x45, 0x44, 0x10, 0x03,
+	0x12, 0x0c, 0x0a, 0x08, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x45, 0x44, 0x10, 0x04, 0x2a, 0xa6,
 	0x01, 0x0a, 0x11, 0x43, 0x75, 0x6c, 0x70, 0x72, 0x69, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e,
 	0x54, 0x79, 0x70, 0x65, 0x12, 0x23, 0x0a, 0x1f, 0x43, 0x55, 0x4c, 0x50, 0x52, 0x49, 0x54, 0x5f,
 	0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50,
@@ -2528,104 +2594,105 @@ func file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescGZIP() []by
 	return file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_go_chromium_org_luci_bisection_proto_gofindit_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
 var file_go_chromium_org_luci_bisection_proto_gofindit_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_go_chromium_org_luci_bisection_proto_gofindit_proto_goTypes = []interface{}{
 	(AnalysisStatus)(0),                    // 0: gofindit.AnalysisStatus
-	(CulpritActionType)(0),                 // 1: gofindit.CulpritActionType
-	(RerunStatus)(0),                       // 2: gofindit.RerunStatus
-	(SuspectConfidenceLevel)(0),            // 3: gofindit.SuspectConfidenceLevel
-	(BuildFailureType)(0),                  // 4: gofindit.BuildFailureType
-	(*GetAnalysisRequest)(nil),             // 5: gofindit.GetAnalysisRequest
-	(*QueryAnalysisRequest)(nil),           // 6: gofindit.QueryAnalysisRequest
-	(*QueryAnalysisResponse)(nil),          // 7: gofindit.QueryAnalysisResponse
-	(*ListAnalysesRequest)(nil),            // 8: gofindit.ListAnalysesRequest
-	(*ListAnalysesResponse)(nil),           // 9: gofindit.ListAnalysesResponse
-	(*TriggerAnalysisRequest)(nil),         // 10: gofindit.TriggerAnalysisRequest
-	(*TriggerAnalysisResponse)(nil),        // 11: gofindit.TriggerAnalysisResponse
-	(*UpdateAnalysisRequest)(nil),          // 12: gofindit.UpdateAnalysisRequest
-	(*UpdateAnalysisProgressRequest)(nil),  // 13: gofindit.UpdateAnalysisProgressRequest
-	(*UpdateAnalysisProgressResponse)(nil), // 14: gofindit.UpdateAnalysisProgressResponse
-	(*Analysis)(nil),                       // 15: gofindit.Analysis
-	(*Culprit)(nil),                        // 16: gofindit.Culprit
-	(*HeuristicAnalysisResult)(nil),        // 17: gofindit.HeuristicAnalysisResult
-	(*HeuristicSuspect)(nil),               // 18: gofindit.HeuristicSuspect
-	(*NthSectionAnalysisResult)(nil),       // 19: gofindit.NthSectionAnalysisResult
-	(*BlameList)(nil),                      // 20: gofindit.BlameList
-	(*BlameListSingleCommit)(nil),          // 21: gofindit.BlameListSingleCommit
-	(*CulpritAction)(nil),                  // 22: gofindit.CulpritAction
-	(*RegressionRange)(nil),                // 23: gofindit.RegressionRange
-	(*SingleRerun)(nil),                    // 24: gofindit.SingleRerun
-	(*RerunResult)(nil),                    // 25: gofindit.RerunResult
-	(*BuildFailure)(nil),                   // 26: gofindit.BuildFailure
-	(*BugInfo)(nil),                        // 27: gofindit.BugInfo
-	(*MonorailBugInfo)(nil),                // 28: gofindit.MonorailBugInfo
-	(*BuganizerBugInfo)(nil),               // 29: gofindit.BuganizerBugInfo
-	(*proto.GitilesCommit)(nil),            // 30: buildbucket.v2.GitilesCommit
-	(*timestamppb.Timestamp)(nil),          // 31: google.protobuf.Timestamp
-	(*proto.BuilderID)(nil),                // 32: buildbucket.v2.BuilderID
+	(AnalysisRunStatus)(0),                 // 1: gofindit.AnalysisRunStatus
+	(CulpritActionType)(0),                 // 2: gofindit.CulpritActionType
+	(RerunStatus)(0),                       // 3: gofindit.RerunStatus
+	(SuspectConfidenceLevel)(0),            // 4: gofindit.SuspectConfidenceLevel
+	(BuildFailureType)(0),                  // 5: gofindit.BuildFailureType
+	(*GetAnalysisRequest)(nil),             // 6: gofindit.GetAnalysisRequest
+	(*QueryAnalysisRequest)(nil),           // 7: gofindit.QueryAnalysisRequest
+	(*QueryAnalysisResponse)(nil),          // 8: gofindit.QueryAnalysisResponse
+	(*ListAnalysesRequest)(nil),            // 9: gofindit.ListAnalysesRequest
+	(*ListAnalysesResponse)(nil),           // 10: gofindit.ListAnalysesResponse
+	(*TriggerAnalysisRequest)(nil),         // 11: gofindit.TriggerAnalysisRequest
+	(*TriggerAnalysisResponse)(nil),        // 12: gofindit.TriggerAnalysisResponse
+	(*UpdateAnalysisRequest)(nil),          // 13: gofindit.UpdateAnalysisRequest
+	(*UpdateAnalysisProgressRequest)(nil),  // 14: gofindit.UpdateAnalysisProgressRequest
+	(*UpdateAnalysisProgressResponse)(nil), // 15: gofindit.UpdateAnalysisProgressResponse
+	(*Analysis)(nil),                       // 16: gofindit.Analysis
+	(*Culprit)(nil),                        // 17: gofindit.Culprit
+	(*HeuristicAnalysisResult)(nil),        // 18: gofindit.HeuristicAnalysisResult
+	(*HeuristicSuspect)(nil),               // 19: gofindit.HeuristicSuspect
+	(*NthSectionAnalysisResult)(nil),       // 20: gofindit.NthSectionAnalysisResult
+	(*BlameList)(nil),                      // 21: gofindit.BlameList
+	(*BlameListSingleCommit)(nil),          // 22: gofindit.BlameListSingleCommit
+	(*CulpritAction)(nil),                  // 23: gofindit.CulpritAction
+	(*RegressionRange)(nil),                // 24: gofindit.RegressionRange
+	(*SingleRerun)(nil),                    // 25: gofindit.SingleRerun
+	(*RerunResult)(nil),                    // 26: gofindit.RerunResult
+	(*BuildFailure)(nil),                   // 27: gofindit.BuildFailure
+	(*BugInfo)(nil),                        // 28: gofindit.BugInfo
+	(*MonorailBugInfo)(nil),                // 29: gofindit.MonorailBugInfo
+	(*BuganizerBugInfo)(nil),               // 30: gofindit.BuganizerBugInfo
+	(*proto.GitilesCommit)(nil),            // 31: buildbucket.v2.GitilesCommit
+	(*timestamppb.Timestamp)(nil),          // 32: google.protobuf.Timestamp
+	(*proto.BuilderID)(nil),                // 33: buildbucket.v2.BuilderID
 }
 var file_go_chromium_org_luci_bisection_proto_gofindit_proto_depIdxs = []int32{
-	26, // 0: gofindit.QueryAnalysisRequest.build_failure:type_name -> gofindit.BuildFailure
-	15, // 1: gofindit.QueryAnalysisResponse.analyses:type_name -> gofindit.Analysis
-	15, // 2: gofindit.ListAnalysesResponse.analyses:type_name -> gofindit.Analysis
-	26, // 3: gofindit.TriggerAnalysisRequest.build_failure:type_name -> gofindit.BuildFailure
-	27, // 4: gofindit.TriggerAnalysisRequest.bug_info:type_name -> gofindit.BugInfo
-	15, // 5: gofindit.TriggerAnalysisResponse.result:type_name -> gofindit.Analysis
-	27, // 6: gofindit.UpdateAnalysisRequest.bug_info:type_name -> gofindit.BugInfo
-	30, // 7: gofindit.UpdateAnalysisProgressRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	25, // 8: gofindit.UpdateAnalysisProgressRequest.rerun_result:type_name -> gofindit.RerunResult
-	30, // 9: gofindit.UpdateAnalysisProgressResponse.next_revision_to_run:type_name -> buildbucket.v2.GitilesCommit
-	26, // 10: gofindit.Analysis.build_failure:type_name -> gofindit.BuildFailure
+	27, // 0: gofindit.QueryAnalysisRequest.build_failure:type_name -> gofindit.BuildFailure
+	16, // 1: gofindit.QueryAnalysisResponse.analyses:type_name -> gofindit.Analysis
+	16, // 2: gofindit.ListAnalysesResponse.analyses:type_name -> gofindit.Analysis
+	27, // 3: gofindit.TriggerAnalysisRequest.build_failure:type_name -> gofindit.BuildFailure
+	28, // 4: gofindit.TriggerAnalysisRequest.bug_info:type_name -> gofindit.BugInfo
+	16, // 5: gofindit.TriggerAnalysisResponse.result:type_name -> gofindit.Analysis
+	28, // 6: gofindit.UpdateAnalysisRequest.bug_info:type_name -> gofindit.BugInfo
+	31, // 7: gofindit.UpdateAnalysisProgressRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	26, // 8: gofindit.UpdateAnalysisProgressRequest.rerun_result:type_name -> gofindit.RerunResult
+	31, // 9: gofindit.UpdateAnalysisProgressResponse.next_revision_to_run:type_name -> buildbucket.v2.GitilesCommit
+	27, // 10: gofindit.Analysis.build_failure:type_name -> gofindit.BuildFailure
 	0,  // 11: gofindit.Analysis.status:type_name -> gofindit.AnalysisStatus
-	31, // 12: gofindit.Analysis.created_time:type_name -> google.protobuf.Timestamp
-	31, // 13: gofindit.Analysis.last_updated_time:type_name -> google.protobuf.Timestamp
-	31, // 14: gofindit.Analysis.end_time:type_name -> google.protobuf.Timestamp
-	17, // 15: gofindit.Analysis.heuristic_result:type_name -> gofindit.HeuristicAnalysisResult
-	19, // 16: gofindit.Analysis.nth_section_result:type_name -> gofindit.NthSectionAnalysisResult
-	32, // 17: gofindit.Analysis.builder:type_name -> buildbucket.v2.BuilderID
-	4,  // 18: gofindit.Analysis.build_failure_type:type_name -> gofindit.BuildFailureType
-	16, // 19: gofindit.Analysis.culprits:type_name -> gofindit.Culprit
-	30, // 20: gofindit.Culprit.commit:type_name -> buildbucket.v2.GitilesCommit
-	22, // 21: gofindit.Culprit.culprit_action:type_name -> gofindit.CulpritAction
+	32, // 12: gofindit.Analysis.created_time:type_name -> google.protobuf.Timestamp
+	32, // 13: gofindit.Analysis.last_updated_time:type_name -> google.protobuf.Timestamp
+	32, // 14: gofindit.Analysis.end_time:type_name -> google.protobuf.Timestamp
+	18, // 15: gofindit.Analysis.heuristic_result:type_name -> gofindit.HeuristicAnalysisResult
+	20, // 16: gofindit.Analysis.nth_section_result:type_name -> gofindit.NthSectionAnalysisResult
+	33, // 17: gofindit.Analysis.builder:type_name -> buildbucket.v2.BuilderID
+	5,  // 18: gofindit.Analysis.build_failure_type:type_name -> gofindit.BuildFailureType
+	17, // 19: gofindit.Analysis.culprits:type_name -> gofindit.Culprit
+	31, // 20: gofindit.Culprit.commit:type_name -> buildbucket.v2.GitilesCommit
+	23, // 21: gofindit.Culprit.culprit_action:type_name -> gofindit.CulpritAction
 	0,  // 22: gofindit.HeuristicAnalysisResult.status:type_name -> gofindit.AnalysisStatus
-	18, // 23: gofindit.HeuristicAnalysisResult.suspects:type_name -> gofindit.HeuristicSuspect
-	31, // 24: gofindit.HeuristicAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
-	31, // 25: gofindit.HeuristicAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
-	30, // 26: gofindit.HeuristicSuspect.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	3,  // 27: gofindit.HeuristicSuspect.confidence_level:type_name -> gofindit.SuspectConfidenceLevel
+	19, // 23: gofindit.HeuristicAnalysisResult.suspects:type_name -> gofindit.HeuristicSuspect
+	32, // 24: gofindit.HeuristicAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
+	32, // 25: gofindit.HeuristicAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
+	31, // 26: gofindit.HeuristicSuspect.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	4,  // 27: gofindit.HeuristicSuspect.confidence_level:type_name -> gofindit.SuspectConfidenceLevel
 	0,  // 28: gofindit.NthSectionAnalysisResult.status:type_name -> gofindit.AnalysisStatus
-	31, // 29: gofindit.NthSectionAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
-	31, // 30: gofindit.NthSectionAnalysisResult.last_updated_time:type_name -> google.protobuf.Timestamp
-	31, // 31: gofindit.NthSectionAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
-	30, // 32: gofindit.NthSectionAnalysisResult.culprit:type_name -> buildbucket.v2.GitilesCommit
-	23, // 33: gofindit.NthSectionAnalysisResult.remainingNthSectionRange:type_name -> gofindit.RegressionRange
-	24, // 34: gofindit.NthSectionAnalysisResult.reruns:type_name -> gofindit.SingleRerun
-	20, // 35: gofindit.NthSectionAnalysisResult.blameList:type_name -> gofindit.BlameList
-	21, // 36: gofindit.BlameList.commits:type_name -> gofindit.BlameListSingleCommit
-	1,  // 37: gofindit.CulpritAction.action_type:type_name -> gofindit.CulpritActionType
-	31, // 38: gofindit.CulpritAction.action_time:type_name -> google.protobuf.Timestamp
-	30, // 39: gofindit.RegressionRange.last_passed:type_name -> buildbucket.v2.GitilesCommit
-	30, // 40: gofindit.RegressionRange.first_failed:type_name -> buildbucket.v2.GitilesCommit
-	31, // 41: gofindit.SingleRerun.start_time:type_name -> google.protobuf.Timestamp
-	31, // 42: gofindit.SingleRerun.last_updated_time:type_name -> google.protobuf.Timestamp
-	31, // 43: gofindit.SingleRerun.end_time:type_name -> google.protobuf.Timestamp
-	25, // 44: gofindit.SingleRerun.rerun_result:type_name -> gofindit.RerunResult
-	2,  // 45: gofindit.RerunResult.rerun_status:type_name -> gofindit.RerunStatus
-	28, // 46: gofindit.BugInfo.monorail_bug_info:type_name -> gofindit.MonorailBugInfo
-	29, // 47: gofindit.BugInfo.buganizer_bug_info:type_name -> gofindit.BuganizerBugInfo
-	5,  // 48: gofindit.GoFinditService.GetAnalysis:input_type -> gofindit.GetAnalysisRequest
-	6,  // 49: gofindit.GoFinditService.QueryAnalysis:input_type -> gofindit.QueryAnalysisRequest
-	8,  // 50: gofindit.GoFinditService.ListAnalyses:input_type -> gofindit.ListAnalysesRequest
-	10, // 51: gofindit.GoFinditService.TriggerAnalysis:input_type -> gofindit.TriggerAnalysisRequest
-	12, // 52: gofindit.GoFinditService.UpdateAnalysis:input_type -> gofindit.UpdateAnalysisRequest
-	13, // 53: gofindit.GoFinditBotService.UpdateAnalysisProgress:input_type -> gofindit.UpdateAnalysisProgressRequest
-	15, // 54: gofindit.GoFinditService.GetAnalysis:output_type -> gofindit.Analysis
-	7,  // 55: gofindit.GoFinditService.QueryAnalysis:output_type -> gofindit.QueryAnalysisResponse
-	9,  // 56: gofindit.GoFinditService.ListAnalyses:output_type -> gofindit.ListAnalysesResponse
-	11, // 57: gofindit.GoFinditService.TriggerAnalysis:output_type -> gofindit.TriggerAnalysisResponse
-	15, // 58: gofindit.GoFinditService.UpdateAnalysis:output_type -> gofindit.Analysis
-	14, // 59: gofindit.GoFinditBotService.UpdateAnalysisProgress:output_type -> gofindit.UpdateAnalysisProgressResponse
+	32, // 29: gofindit.NthSectionAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
+	32, // 30: gofindit.NthSectionAnalysisResult.last_updated_time:type_name -> google.protobuf.Timestamp
+	32, // 31: gofindit.NthSectionAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
+	31, // 32: gofindit.NthSectionAnalysisResult.culprit:type_name -> buildbucket.v2.GitilesCommit
+	24, // 33: gofindit.NthSectionAnalysisResult.remainingNthSectionRange:type_name -> gofindit.RegressionRange
+	25, // 34: gofindit.NthSectionAnalysisResult.reruns:type_name -> gofindit.SingleRerun
+	21, // 35: gofindit.NthSectionAnalysisResult.blameList:type_name -> gofindit.BlameList
+	22, // 36: gofindit.BlameList.commits:type_name -> gofindit.BlameListSingleCommit
+	2,  // 37: gofindit.CulpritAction.action_type:type_name -> gofindit.CulpritActionType
+	32, // 38: gofindit.CulpritAction.action_time:type_name -> google.protobuf.Timestamp
+	31, // 39: gofindit.RegressionRange.last_passed:type_name -> buildbucket.v2.GitilesCommit
+	31, // 40: gofindit.RegressionRange.first_failed:type_name -> buildbucket.v2.GitilesCommit
+	32, // 41: gofindit.SingleRerun.start_time:type_name -> google.protobuf.Timestamp
+	32, // 42: gofindit.SingleRerun.last_updated_time:type_name -> google.protobuf.Timestamp
+	32, // 43: gofindit.SingleRerun.end_time:type_name -> google.protobuf.Timestamp
+	26, // 44: gofindit.SingleRerun.rerun_result:type_name -> gofindit.RerunResult
+	3,  // 45: gofindit.RerunResult.rerun_status:type_name -> gofindit.RerunStatus
+	29, // 46: gofindit.BugInfo.monorail_bug_info:type_name -> gofindit.MonorailBugInfo
+	30, // 47: gofindit.BugInfo.buganizer_bug_info:type_name -> gofindit.BuganizerBugInfo
+	6,  // 48: gofindit.GoFinditService.GetAnalysis:input_type -> gofindit.GetAnalysisRequest
+	7,  // 49: gofindit.GoFinditService.QueryAnalysis:input_type -> gofindit.QueryAnalysisRequest
+	9,  // 50: gofindit.GoFinditService.ListAnalyses:input_type -> gofindit.ListAnalysesRequest
+	11, // 51: gofindit.GoFinditService.TriggerAnalysis:input_type -> gofindit.TriggerAnalysisRequest
+	13, // 52: gofindit.GoFinditService.UpdateAnalysis:input_type -> gofindit.UpdateAnalysisRequest
+	14, // 53: gofindit.GoFinditBotService.UpdateAnalysisProgress:input_type -> gofindit.UpdateAnalysisProgressRequest
+	16, // 54: gofindit.GoFinditService.GetAnalysis:output_type -> gofindit.Analysis
+	8,  // 55: gofindit.GoFinditService.QueryAnalysis:output_type -> gofindit.QueryAnalysisResponse
+	10, // 56: gofindit.GoFinditService.ListAnalyses:output_type -> gofindit.ListAnalysesResponse
+	12, // 57: gofindit.GoFinditService.TriggerAnalysis:output_type -> gofindit.TriggerAnalysisResponse
+	16, // 58: gofindit.GoFinditService.UpdateAnalysis:output_type -> gofindit.Analysis
+	15, // 59: gofindit.GoFinditBotService.UpdateAnalysisProgress:output_type -> gofindit.UpdateAnalysisProgressResponse
 	54, // [54:60] is the sub-list for method output_type
 	48, // [48:54] is the sub-list for method input_type
 	48, // [48:48] is the sub-list for extension type_name
@@ -2949,7 +3016,7 @@ func file_go_chromium_org_luci_bisection_proto_gofindit_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_bisection_proto_gofindit_proto_rawDesc,
-			NumEnums:      5,
+			NumEnums:      6,
 			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   2,

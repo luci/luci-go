@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
@@ -76,7 +77,8 @@ func AnalyzeFailure(
 	analysis := &model.CompileFailureAnalysis{
 		CompileFailure:         datastore.KeyForObj(c, cf),
 		CreateTime:             clock.Now(c),
-		Status:                 pb.AnalysisStatus_CREATED,
+		Status:                 pb.AnalysisStatus_RUNNING,
+		RunStatus:              pb.AnalysisRunStatus_STARTED,
 		FirstFailedBuildId:     firstFailedBuildID,
 		LastPassedBuildId:      lastPassedBuildID,
 		InitialRegressionRange: regression_range,
@@ -90,54 +92,22 @@ func AnalyzeFailure(
 	// Heuristic analysis
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)
 	if e != nil {
+		// As this is only heuristic analysis, we log the error and continue with nthsection analysis
 		logging.Errorf(c, "Error during heuristic analysis for build %d: %v", e)
+	}
 
-		err := datastore.RunInTransaction(c, func(c context.Context) error {
-			e := datastore.Get(c, analysis)
-			if e != nil {
-				return e
-			}
-			analysis.Status = pb.AnalysisStatus_ERROR
-			analysis.EndTime = clock.Now(c)
-			return datastore.Put(c, analysis)
-		}, nil)
-
+	// If heuristic analysis does not return error, we proceed to verify its results (if any)
+	if e == nil {
+		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
 		if err != nil {
-			err = errors.Annotate(err, "failed storing analysis %d", analysis.Id).Err()
-			logging.Errorf(c, err.Error())
+			return nil, errors.Annotate(err, "couldn't fetch config for culprit verification. Build %d", firstFailedBuildID).Err()
 		}
-
-		// As we only run heuristic analysis now, returns the error if heuristic
-		// analysis failed.
-		return nil, e
-	}
-
-	// TODO: For now, just check heuristic analysis status
-	// We need to implement nth-section analysis as well
-	e = datastore.RunInTransaction(c, func(c context.Context) error {
-		e = datastore.Get(c, analysis)
-		if e != nil {
-			return e
-		}
-		analysis.Status = heuristicResult.Status
-		analysis.EndTime = heuristicResult.EndTime
-		return datastore.Put(c, analysis)
-	}, nil)
-
-	if e != nil {
-		return nil, fmt.Errorf("Failed saving analysis: %w", e)
-	}
-
-	// Verifies heuristic analysis result.
-	shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
-	if err != nil {
-		return nil, errors.Annotate(err, "couldn't fetch config for culprit verification. Build %d", firstFailedBuildID).Err()
-	}
-	if shouldRunCulpritVerification {
-		if !analysis.ShouldCancel {
-			if err := verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id); err != nil {
-				// Do not return error here, just log
-				logging.Errorf(c, "Error verifying heuristic result for build %d: %s", firstFailedBuildID, err)
+		if shouldRunCulpritVerification {
+			if !analysis.ShouldCancel {
+				if err := verifyHeuristicResults(c, heuristicResult, firstFailedBuildID, analysis.Id); err != nil {
+					// Do not return error here, just log
+					logging.Errorf(c, "Error verifying heuristic result for build %d: %s", firstFailedBuildID, err)
+				}
 			}
 		}
 	}
@@ -153,6 +123,12 @@ func AnalyzeFailure(
 			e = errors.Annotate(e, "error during nthsection analysis for build %d", firstFailedBuildID).Err()
 			logging.Errorf(c, e.Error())
 		}
+	}
+
+	// Update status of analysis
+	err = statusupdater.UpdateAnalysisStatus(c, analysis)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't update analysis status. Build %d", firstFailedBuildID).Err()
 	}
 
 	return analysis, nil

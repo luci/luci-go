@@ -119,10 +119,12 @@ type CompileFailureAnalysis struct {
 	CreateTime time.Time `gae:"create_time"`
 	// Time when the analysis starts to run.
 	StartTime time.Time `gae:"start_time"`
-	// Time when the analysis runs to the end.
+	// Time when the analysis ends, or canceled.
 	EndTime time.Time `gae:"end_time"`
 	// Status of the analysis
 	Status gofinditpb.AnalysisStatus `gae:"status"`
+	// Run status of the analysis
+	RunStatus gofinditpb.AnalysisRunStatus `gae:"run_status"`
 	// Id of the build in which the compile failures occurred the first time in
 	// a sequence of consecutive failed builds.
 	FirstFailedBuildId int64 `gae:"first_failed_build_id"`
@@ -266,10 +268,12 @@ type CompileHeuristicAnalysis struct {
 	ParentAnalysis *datastore.Key `gae:"$parent"`
 	// Time when the analysis starts to run.
 	StartTime time.Time `gae:"start_time"`
-	// Time when the analysis ends.
+	// Time when the analysis ends, or canceled
 	EndTime time.Time `gae:"end_time"`
 	// Status of the analysis
 	Status gofinditpb.AnalysisStatus `gae:"status"`
+	// Run status of the analysis
+	RunStatus gofinditpb.AnalysisRunStatus `gae:"run_status"`
 }
 
 // CompileNthSectionAnalysis is nth-section analysis for compile failures.
@@ -279,10 +283,12 @@ type CompileNthSectionAnalysis struct {
 	ParentAnalysis *datastore.Key `gae:"$parent"`
 	// Time when the analysis starts to run.
 	StartTime time.Time `gae:"start_time"`
-	// Time when the analysis ends.
+	// Time when the analysis ends, or canceled
 	EndTime time.Time `gae:"end_time"`
 	// Status of the analysis
 	Status gofinditpb.AnalysisStatus `gae:"status"`
+	// Run status of the analysis
+	RunStatus gofinditpb.AnalysisRunStatus `gae:"run_status"`
 
 	// When storing protobuf message, datastore will compress the data if it is big
 	// https://source.corp.google.com/chops_infra_internal/infra/go/src/go.chromium.org/luci/gae/service/datastore/protos.go;l=88

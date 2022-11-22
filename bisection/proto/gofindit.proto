@@ -268,9 +268,11 @@ message BlameListSingleCommit {
   string reviewTitle = 3;
 }
 
+// AnalysisStatus represents the result status of an analysis
 enum AnalysisStatus {
   ANALYSIS_STATUS_UNSPECIFIED = 0;
   // The analysis has been created, but not yet started.
+  // We don't have this status in code. It's here for backward-compatability
   CREATED = 1;
   // The analysis is running, but results have not been finalised.
   RUNNING = 2;
@@ -280,8 +282,21 @@ enum AnalysisStatus {
   NOTFOUND = 4;
   // The analysis results in an error
   ERROR = 5;
-  // The analysis found some suspects
+  // The analysis found some suspects, either from heuristic or nthsection
   SUSPECTFOUND = 6;
+}
+
+// AnalysisRunStatus is different from AnalysisStatus in the sense
+// that it focused on whether the analysis is current running or not,
+// rather than focus on the result.
+enum AnalysisRunStatus {
+  ANALYSIS_RUN_STATUS_UNSPECIFIED = 0;
+  // The analysis started and is still running.
+  STARTED = 2;
+  // The analysis has ended (either it stopped naturally or ran into an error).
+  ENDED = 3;
+  // The analysis has been canceled.
+  CANCELED = 4;
 }
 
 // An action that LUCI Bisection has taken with the culprit

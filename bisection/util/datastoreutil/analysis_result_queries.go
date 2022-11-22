@@ -240,3 +240,23 @@ func GetLatestAnalysisForBuilder(c context.Context, project string, bucket strin
 	}
 	return GetAnalysisForBuild(c, build.Id)
 }
+
+func GetRerunsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.SingleRerun, error) {
+	q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
+	reruns := []*model.SingleRerun{}
+	err := datastore.GetAll(c, q, &reruns)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting reruns for analysis %d", cfa.Id).Err()
+	}
+	return reruns, nil
+}
+
+func GetRerunsForNthSectionAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis) ([]*model.SingleRerun, error) {
+	q := datastore.NewQuery("SingleRerun").Eq("analysis", nsa.ParentAnalysis).Eq("rerun_type", model.RerunBuildType_NthSection)
+	reruns := []*model.SingleRerun{}
+	err := datastore.GetAll(c, q, &reruns)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting reruns for analysis %d", nsa.ParentAnalysis.IntID()).Err()
+	}
+	return reruns, nil
+}

@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
@@ -82,6 +83,13 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 		return nil, status.Errorf(codes.Internal, "Invalid type %v", lastRerun.Type)
 	}
 
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, req.AnalysisId)
+	if err != nil {
+		err = errors.Annotate(err, "failed GetCompileFailureAnalysis ID: %d", req.AnalysisId).Err()
+		errors.Log(c, err)
+		return nil, status.Errorf(codes.Internal, "error GetCompileFailureAnalysis")
+	}
+
 	// Culprit verification
 	if lastRerun.Type == model.RerunBuildType_CulpritVerification {
 		err := updateSuspectWithRerunData(c, lastRerun)
@@ -90,6 +98,15 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 			errors.Log(c, err)
 			return nil, status.Errorf(codes.Internal, "error updating suspect")
 		}
+
+		// Update analysis status
+		err = statusupdater.UpdateAnalysisStatus(c, cfa)
+		if err != nil {
+			err = errors.Annotate(err, "statusupdater.UpdateAnalysisStatus. Analysis ID: %d", req.AnalysisId).Err()
+			errors.Log(c, err)
+			return nil, status.Errorf(codes.Internal, "error UpdateAnalysisStatus")
+		}
+
 		// TODO (nqmtuan): It is possible that we schedule an nth-section run right after
 		// a culprit verification run within the same build. We will do this later, for
 		// safety, after we verify nth-section analysis is running fine.
@@ -98,79 +115,132 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 
 	// Nth section
 	if lastRerun.Type == model.RerunBuildType_NthSection {
-		err := processNthSectionUpdate(c, req)
+		nsa, err := processNthSectionUpdate(c, req)
 		if err != nil {
 			err = errors.Annotate(err, "processNthSectionUpdate. Analysis ID: %d", req.AnalysisId).Err()
 			logging.Errorf(c, err.Error())
+
+			// If there is an error, then nthsection analysis may ended
+			// if there is no unfinised nthsection runs
+			e := setNthSectionError(c, nsa)
+			if e != nil {
+				e = errors.Annotate(e, "setNthSectionError. Analysis ID: %d", req.AnalysisId).Err()
+				logging.Errorf(c, e.Error())
+			}
+
+			// Also the main analysis status may need to change as well
+			e = statusupdater.UpdateAnalysisStatus(c, cfa)
+			if e != nil {
+				e = errors.Annotate(e, "UpdateAnalysisStatus. Analysis ID: %d", req.AnalysisId).Err()
+				logging.Errorf(c, e.Error())
+			}
 			return nil, status.Errorf(codes.Internal, err.Error())
 		}
+
+		// Update analysis status
+		err = statusupdater.UpdateAnalysisStatus(c, cfa)
+		if err != nil {
+			err = errors.Annotate(err, "statusupdater.UpdateAnalysisStatus. Analysis ID: %d", req.AnalysisId).Err()
+			errors.Log(c, err)
+			return nil, status.Errorf(codes.Internal, "error UpdateAnalysisStatus")
+		}
+
 		return &pb.UpdateAnalysisProgressResponse{}, nil
 	}
 
 	return nil, status.Errorf(codes.Internal, "unknown error")
 }
 
+func setNthSectionError(c context.Context, nsa *model.CompileNthSectionAnalysis) error {
+	if nsa == nil {
+		return nil
+	}
+	reruns, err := datastoreutil.GetRerunsForNthSectionAnalysis(c, nsa)
+	if err != nil {
+		return errors.Annotate(err, "GetRerunsForNthSectionAnalysis").Err()
+	}
+
+	for _, rerun := range reruns {
+		// There are some rerun running, so do not mark this as error yet
+		if rerun.Status == pb.RerunStatus_IN_PROGRESS {
+			return nil
+		}
+	}
+
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, nsa)
+		if e != nil {
+			return e
+		}
+		nsa.Status = pb.AnalysisStatus_ERROR
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
+		nsa.EndTime = clock.Now(c)
+		return datastore.Put(c, nsa)
+	}, nil)
+}
+
 // processNthSectionUpdate processes the bot update for nthsection analysis run
 // It will schedule the next run for nthsection analysis targeting the same bot
-func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRequest) error {
+func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRequest) (*model.CompileNthSectionAnalysis, error) {
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, req.AnalysisId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// We should not schedule any more run for this analysis
 	if cfa.ShouldCancel {
-		return nil
+		return nil, nil
 	}
 
 	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// There is no nthsection analysis for this analysis
 	if nsa == nil {
-		return nil
+		return nil, nil
 	}
 
 	snapshot, err := nthsection.CreateSnapshot(c, nsa)
 	if err != nil {
-		return errors.Annotate(err, "couldn't create snapshot").Err()
+		return nsa, errors.Annotate(err, "couldn't create snapshot").Err()
 	}
 
 	// Check if we already found the culprit or not
 	ok, cul, err := snapshot.GetCulprit()
 	if err != nil {
-		return errors.Annotate(err, "couldn't get culprit").Err()
+		return nsa, errors.Annotate(err, "couldn't get culprit").Err()
 	}
 
 	// Found culprit -> Update the nthsection analysis
 	if ok {
 		err := storeNthSectionResultToDatastore(c, nsa, snapshot.BlameList.Commits[cul], req)
 		if err != nil {
-			return errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
+			return nsa, errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
 		}
-		return nil
+		return nsa, nil
 	}
 
 	shouldRunNthSection, err := nthsection.ShouldRunNthSectionAnalysis(c)
 	if err != nil {
-		return errors.Annotate(err, "couldn't fetch config for nthsection").Err()
+		return nsa, errors.Annotate(err, "couldn't fetch config for nthsection").Err()
 	}
 	if !shouldRunNthSection {
-		return nil
+		return nsa, nil
 	}
 
 	shouldRun, commit, err := findNextNthSectionCommitToRun(c, snapshot)
 	if err != nil {
-		return errors.Annotate(err, "findNextNthSectionCommitToRun").Err()
+		// Perhaps not found here?
+		return nsa, errors.Annotate(err, "findNextNthSectionCommitToRun").Err()
 	}
 	if !shouldRun {
 		// We don't have more run to wait -> we've failed to find the suspect
 		if snapshot.NumInProgress == 0 {
-			return updateNthSectionModelNotFound(c, nsa)
+			return nsa, updateNthSectionModelNotFound(c, nsa)
 		}
-		return nil
+		return nsa, nil
 	}
 
 	// We got the next commit to run. We will schedule a rerun targetting the same bot
@@ -185,9 +255,9 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	}
 	err = nthsection.RerunCommit(c, nsa, gitilesCommit, cfa.FirstFailedBuildId, dims)
 	if err != nil {
-		return errors.Annotate(err, "rerun commit for %s", commit).Err()
+		return nsa, errors.Annotate(err, "rerun commit for %s", commit).Err()
 	}
-	return nil
+	return nsa, nil
 }
 
 func updateNthSectionModelNotFound(c context.Context, nsa *model.CompileNthSectionAnalysis) error {
@@ -198,6 +268,7 @@ func updateNthSectionModelNotFound(c context.Context, nsa *model.CompileNthSecti
 		}
 		nsa.EndTime = clock.Now(c)
 		nsa.Status = pb.AnalysisStatus_NOTFOUND
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
 		return datastore.Put(c, nsa)
 	}, nil)
 	if err != nil {
@@ -232,6 +303,7 @@ func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSe
 		}
 		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
 		nsa.Suspect = datastore.KeyForObj(c, suspect)
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
 		nsa.EndTime = clock.Now(c)
 		return datastore.Put(c, nsa)
 	}, nil)
@@ -373,6 +445,7 @@ func updateSuspectAsConfirmedCulprit(c context.Context, suspect *model.Suspect) 
 		}
 		analysis.VerifiedCulprits = verifiedCulprits
 		analysis.Status = pb.AnalysisStatus_FOUND
+		analysis.RunStatus = pb.AnalysisRunStatus_ENDED
 		analysis.EndTime = clock.Now(c)
 		return datastore.Put(c, analysis)
 	}, nil)

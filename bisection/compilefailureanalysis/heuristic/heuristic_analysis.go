@@ -26,6 +26,7 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -39,7 +40,8 @@ func Analyze(
 	heuristicAnalysis := &model.CompileHeuristicAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 		StartTime:      clock.Now(c),
-		Status:         pb.AnalysisStatus_CREATED,
+		Status:         pb.AnalysisStatus_RUNNING,
+		RunStatus:      pb.AnalysisRunStatus_STARTED,
 	}
 
 	if err := datastore.Put(c, heuristicAnalysis); err != nil {
@@ -49,7 +51,8 @@ func Analyze(
 	// Get changelogs for heuristic analysis
 	changelogs, err := changelogutil.GetChangeLogs(c, rr)
 	if err != nil {
-		return nil, fmt.Errorf("Failed getting changelogs %w", err)
+		setStatusError(c, heuristicAnalysis)
+		return nil, fmt.Errorf("failed getting changelogs %w", err)
 	}
 	logging.Infof(c, "Changelogs has %d logs", len(changelogs))
 
@@ -58,26 +61,30 @@ func Analyze(
 	if compileLogs == nil {
 		compileLogs, err = compilelog.GetCompileLogs(c, cfa.FirstFailedBuildId)
 		if err != nil {
-			return nil, fmt.Errorf("Failed getting compile log: %w", err)
+			setStatusError(c, heuristicAnalysis)
+			return nil, fmt.Errorf("failed getting compile log: %w", err)
 		}
 	}
 	logging.Infof(c, "Compile log: %v", compileLogs)
 	signal, err := ExtractSignals(c, compileLogs)
 	if err != nil {
-		return nil, fmt.Errorf("Error extracting signals %w", err)
+		setStatusError(c, heuristicAnalysis)
+		return nil, fmt.Errorf("error extracting signals %w", err)
 	}
 	signal.CalculateDependencyMap(c)
 
 	// Update CompileFailure with failed files from signal
 	err = updateFailedFiles(c, heuristicAnalysis, signal)
 	if err != nil {
+		setStatusError(c, heuristicAnalysis)
 		logging.Errorf(c, "error in updateFailedFiles: %s", err)
 		return nil, err
 	}
 
 	analysisResult, err := AnalyzeChangeLogs(c, signal, changelogs)
 	if err != nil {
-		return nil, fmt.Errorf("Error in justifying changelogs %w", err)
+		setStatusError(c, heuristicAnalysis)
+		return nil, fmt.Errorf("error in justifying changelogs %w", err)
 	}
 
 	for _, item := range analysisResult.Items {
@@ -95,6 +102,7 @@ func Analyze(
 		heuristicAnalysis.Status = pb.AnalysisStatus_NOTFOUND
 	}
 
+	heuristicAnalysis.RunStatus = pb.AnalysisRunStatus_ENDED
 	heuristicAnalysis.EndTime = clock.Now(c)
 	if err := datastore.Put(c, heuristicAnalysis); err != nil {
 		return nil, fmt.Errorf("Failed to update heuristic analysis: %w", err)
@@ -156,5 +164,20 @@ func GetConfidenceLevel(score int) pb.SuspectConfidenceLevel {
 		return pb.SuspectConfidenceLevel_MEDIUM
 	default:
 		return pb.SuspectConfidenceLevel_LOW
+	}
+}
+
+func setStatusError(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) {
+	// if cannot set status error, just log the error here, because the calls
+	// are made from an error block
+	// We don't need a transaction here because heuristic analysis is run in a single thread
+	// and there will not be a race condition
+	heuristicAnalysis.Status = pb.AnalysisStatus_ERROR
+	heuristicAnalysis.EndTime = clock.Now(c)
+	heuristicAnalysis.RunStatus = pb.AnalysisRunStatus_ENDED
+	err := datastore.Put(c, heuristicAnalysis)
+	if err != nil {
+		err = errors.Annotate(err, "couldn't setStatusError for heuristic analysis %d", heuristicAnalysis.ParentAnalysis.IntID()).Err()
+		logging.Errorf(c, err.Error())
 	}
 }

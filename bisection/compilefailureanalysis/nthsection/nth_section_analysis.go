@@ -38,27 +38,37 @@ func Analyze(
 	c context.Context,
 	cfa *model.CompileFailureAnalysis) (*model.CompileNthSectionAnalysis, error) {
 	// Create a new CompileNthSectionAnalysis Entity
-	nthSectionAnalysis := &model.CompileNthSectionAnalysis{
+	nsa := &model.CompileNthSectionAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
 		StartTime:      clock.Now(c),
-		Status:         pb.AnalysisStatus_CREATED,
+		Status:         pb.AnalysisStatus_RUNNING,
+		RunStatus:      pb.AnalysisRunStatus_STARTED,
+	}
+
+	// We save the nthSectionAnalysis in updateBlameList below
+	// but we save it here because we need the object in datastore for setStatusError
+	err := datastore.Put(c, nsa)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't save nthsection model").Err()
 	}
 
 	changeLogs, err := changelogutil.GetChangeLogs(c, cfa.InitialRegressionRange)
 	if err != nil {
+		setStatusError(c, nsa)
 		logging.Infof(c, "Cannot fetch changelog for analysis %d", cfa.Id)
 	}
 
-	err = updateBlameList(c, nthSectionAnalysis, changeLogs)
+	err = updateBlameList(c, nsa, changeLogs)
 	if err != nil {
 		return nil, err
 	}
 
-	err = startAnalysis(c, nthSectionAnalysis, cfa)
+	err = startAnalysis(c, nsa, cfa)
 	if err != nil {
+		setStatusError(c, nsa)
 		return nil, errors.Annotate(err, "couldn't start analysis %d", cfa.Id).Err()
 	}
-	return nthSectionAnalysis, nil
+	return nsa, nil
 }
 
 // startAnalysis will based on find next commit(s) for rerun and schedule them
@@ -180,4 +190,24 @@ func ShouldRunNthSectionAnalysis(c context.Context) (bool, error) {
 		return false, err
 	}
 	return cfg.AnalysisConfig.NthsectionEnabled, nil
+}
+
+func setStatusError(c context.Context, nsa *model.CompileNthSectionAnalysis) {
+	// if cannot set status error, just log the error here, because the calls
+	// are made from an error block
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, nsa)
+		if e != nil {
+			return e
+		}
+		nsa.Status = pb.AnalysisStatus_ERROR
+		nsa.EndTime = clock.Now(c)
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
+		return datastore.Put(c, nsa)
+	}, nil)
+
+	if err != nil {
+		err = errors.Annotate(err, "couldn't setStatusError for nthsection analysis %d", nsa.ParentAnalysis.IntID()).Err()
+		logging.Errorf(c, err.Error())
+	}
 }

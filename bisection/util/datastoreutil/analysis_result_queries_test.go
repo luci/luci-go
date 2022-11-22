@@ -530,3 +530,48 @@ func TestGetLatestBuildFailureAndAnalysis(t *testing.T) {
 		So(analysis.Id, ShouldEqual, 789)
 	})
 }
+
+func TestGetRerunsForAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	Convey("GetRerunsForAnalysis", t, func() {
+		cfa := &model.CompileFailureAnalysis{
+			Id: 123,
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		nsa := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+		}
+		So(datastore.Put(c, nsa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		rr1 := &model.SingleRerun{
+			Type:     model.RerunBuildType_CulpritVerification,
+			Analysis: datastore.KeyForObj(c, cfa),
+		}
+
+		rr2 := &model.SingleRerun{
+			Id:       333,
+			Type:     model.RerunBuildType_NthSection,
+			Analysis: datastore.KeyForObj(c, cfa),
+		}
+
+		So(datastore.Put(c, rr1), ShouldBeNil)
+		So(datastore.Put(c, rr2), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		reruns, err := GetRerunsForAnalysis(c, cfa)
+		So(err, ShouldBeNil)
+		So(len(reruns), ShouldEqual, 2)
+
+		nsectionReruns, err := GetRerunsForNthSectionAnalysis(c, nsa)
+		So(err, ShouldBeNil)
+		So(len(nsectionReruns), ShouldEqual, 1)
+		So(nsectionReruns[0].Id, ShouldEqual, 333)
+	})
+}
