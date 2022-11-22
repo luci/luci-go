@@ -48,8 +48,8 @@ export function changeUserState(signIn: boolean) {
 
 const Container = styled(Box)<BoxProps>(() => ({
   display: 'inline-block',
-  height: '32px',
-  lineHeight: '32px',
+  height: '40px',
+  lineHeight: '40px',
 }));
 
 const ActionLink = styled(Link)<LinkProps>(() => ({
@@ -78,13 +78,13 @@ export function SignIn({ identity, email, picture }: SignInProps) {
       {picture && (
         <img
           src={picture}
-          css={{ margin: '2px 3px', height: '28px', width: '28px', borderRadius: '6px', overflow: 'hidden' }}
+          css={{ margin: '2px 3px', height: '36px', width: '36px', borderRadius: '6px', overflow: 'hidden' }}
         />
       )}
       <Box
         sx={{
           display: 'inline-block',
-          height: '32px',
+          height: '40px',
           verticalAlign: 'top',
         }}
       >

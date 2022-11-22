@@ -15,8 +15,8 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
-import { Feedback, Settings } from '@mui/icons-material';
-import { Box, Link, LinkProps, styled } from '@mui/material';
+import { Feedback, MoreVert } from '@mui/icons-material';
+import { Box, IconButton, Link, LinkProps, styled } from '@mui/material';
 import { customElement } from 'lit-element';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
@@ -26,22 +26,8 @@ import { consumer } from '../libs/context';
 import { genFeedbackUrl } from '../libs/utils';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../store';
 import commonStyle from '../styles/common_style.css';
+import { AppMenu } from './app_menu';
 import { SignIn } from './signin';
-
-const INTERACTIVE_ICON_STYLE = {
-  cursor: 'pointer',
-  height: '32px',
-  width: '32px',
-  '--mdc-icon-size': '28px',
-  marginTop: '2px',
-  marginRight: '14px',
-  position: 'relative',
-  color: 'black',
-  opacity: '0.6',
-  '&:hover': {
-    opacity: 0.8,
-  },
-};
 
 const NavLink = styled(Link)<LinkProps>(() => ({
   color: 'var(--default-text-color)',
@@ -49,7 +35,11 @@ const NavLink = styled(Link)<LinkProps>(() => ({
   cursor: 'pointer',
 }));
 
-export const TopBar = observer(() => {
+export interface TopBarProps {
+  readonly container?: HTMLElement;
+}
+
+export const TopBar = observer(({ container }: TopBarProps) => {
   const store = useStore();
 
   return (
@@ -57,7 +47,7 @@ export const TopBar = observer(() => {
       sx={{
         boxSizing: 'border-box',
         height: '52px',
-        padding: '10px 0',
+        padding: '6px 0',
         display: 'flex',
       }}
     >
@@ -67,17 +57,17 @@ export const TopBar = observer(() => {
           alignItems: 'center',
           verticalAlign: 'center',
           marginLeft: '14px',
-          lineHeight: '32px',
+          lineHeight: '40px',
         }}
       >
         <NavLink href="/">Home</NavLink> | <NavLink href="/search">Search</NavLink>
       </Box>
-      <Feedback onClick={() => window.open(genFeedbackUrl())} sx={INTERACTIVE_ICON_STYLE} />
-      {store.hasSettingsDialog > 0 ? (
-        <Settings onClick={() => store.setShowSettingsDialog(true)} sx={INTERACTIVE_ICON_STYLE} />
-      ) : (
-        <></>
-      )}
+      <IconButton onClick={() => window.open(genFeedbackUrl())} size="medium">
+        <Feedback />
+      </IconButton>
+      <AppMenu container={container}>
+        <MoreVert />
+      </AppMenu>
       <Box
         sx={{
           marginRight: '14px',
@@ -124,7 +114,7 @@ export class TopBarElement extends MobxLitElement {
     this.root.render(
       <CacheProvider value={this.cache}>
         <StoreProvider value={this.store}>
-          <TopBar />
+          <TopBar container={this.parent} />
         </StoreProvider>
       </CacheProvider>
     );
