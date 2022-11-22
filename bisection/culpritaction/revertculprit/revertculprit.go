@@ -71,6 +71,12 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 		return nil
 	}
 
+	// The analysis should be canceled. We should not do any gerrit actions.
+	if cfa.ShouldCancel {
+		logging.Errorf(ctx, "Analysis %d was canceled. No gerrit action required.")
+		return nil
+	}
+
 	var culprit *model.Suspect
 	for _, verifiedCulprit := range cfa.VerifiedCulprits {
 		if verifiedCulprit.IntID() == culpritID {
@@ -117,7 +123,6 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 // RevertHeuristicCulprit attempts to automatically revert a culprit
 // identified as a result of a heuristic analysis.
 // If an unexpected error occurs, it is logged and returned.
-// TODO (aredulla): call this when processing revert tasks in the task queue.
 func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) error {
 	// Check the culprit verification status
 	if culpritModel.VerificationStatus != model.SuspectVerificationStatus_ConfirmedCulprit {
