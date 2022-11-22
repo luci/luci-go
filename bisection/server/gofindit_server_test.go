@@ -38,6 +38,17 @@ func TestQueryAnalysis(t *testing.T) {
 	t.Parallel()
 	server := &GoFinditServer{}
 	c := memory.Use(context.Background())
+	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
+		Kind: "SingleRerun",
+		SortBy: []datastore.IndexColumn{
+			{
+				Property: "rerun_build",
+			},
+			{
+				Property: "start_time",
+			},
+		},
+	})
 	datastore.GetTestable(c).AutoIndex(true)
 
 	Convey("No BuildFailure Info", t, func() {
@@ -121,7 +132,6 @@ func TestQueryAnalysis(t *testing.T) {
 		compileFailureAnalysis := &model.CompileFailureAnalysis{
 			CompileFailure:     datastore.KeyForObj(c, compileFailure),
 			FirstFailedBuildId: 119,
-			VerifiedCulprits:   []*datastore.Key{datastore.KeyForObj(c, suspect)},
 		}
 		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -130,6 +140,107 @@ func TestQueryAnalysis(t *testing.T) {
 			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
 		}
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Add culprit verification rerun build for suspect
+		suspectRerunBuild := &model.CompileRerunBuild{
+			Id: 8877665544332211,
+			LuciBuild: model.LuciBuild{
+				BuildId:    8877665544332211,
+				Project:    "chromium",
+				Bucket:     "findit",
+				Builder:    "gofindit-single-revision",
+				CreateTime: (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
+				StartTime:  (&timestamppb.Timestamp{Seconds: 101}).AsTime(),
+				EndTime:    (&timestamppb.Timestamp{Seconds: 102}).AsTime(),
+				Status:     buildbucketpb.Status_FAILURE,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "ref",
+					Id:      "123xyz",
+				},
+			},
+		}
+		So(datastore.Put(c, suspectRerunBuild), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Add culprit verification single rerun for suspect
+		suspectSingleRerun := &model.SingleRerun{
+			Analysis:   datastore.KeyForObj(c, compileFailureAnalysis),
+			Suspect:    datastore.KeyForObj(c, suspect),
+			RerunBuild: datastore.KeyForObj(c, suspectRerunBuild),
+			Status:     pb.RerunStatus_FAILED,
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "123xyz",
+			},
+			CreateTime: (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
+			StartTime:  (&timestamppb.Timestamp{Seconds: 101}).AsTime(),
+			EndTime:    (&timestamppb.Timestamp{Seconds: 102}).AsTime(),
+			Type:       model.RerunBuildType_CulpritVerification,
+			Priority:   100,
+		}
+		So(datastore.Put(c, suspectSingleRerun), ShouldBeNil)
+
+		// Add culprit verification rerun build for parent of suspect
+		parentRerunBuild := &model.CompileRerunBuild{
+			Id: 7766554433221100,
+			LuciBuild: model.LuciBuild{
+				BuildId:    7766554433221100,
+				Project:    "chromium",
+				Bucket:     "findit",
+				Builder:    "gofindit-single-revision",
+				CreateTime: (&timestamppb.Timestamp{Seconds: 200}).AsTime(),
+				StartTime:  (&timestamppb.Timestamp{Seconds: 201}).AsTime(),
+				EndTime:    (&timestamppb.Timestamp{Seconds: 202}).AsTime(),
+				Status:     buildbucketpb.Status_SUCCESS,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "ref",
+					Id:      "122abc",
+				},
+			},
+		}
+		So(datastore.Put(c, parentRerunBuild), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Add culprit verification single rerun for parent of suspect
+		parentSingleRerun := &model.SingleRerun{
+			Analysis:   datastore.KeyForObj(c, compileFailureAnalysis),
+			Suspect:    datastore.KeyForObj(c, suspect),
+			RerunBuild: datastore.KeyForObj(c, parentRerunBuild),
+			Status:     pb.RerunStatus_PASSED,
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "122abc",
+			},
+			CreateTime: (&timestamppb.Timestamp{Seconds: 200}).AsTime(),
+			StartTime:  (&timestamppb.Timestamp{Seconds: 201}).AsTime(),
+			EndTime:    (&timestamppb.Timestamp{Seconds: 202}).AsTime(),
+			Type:       model.RerunBuildType_CulpritVerification,
+			Priority:   100,
+		}
+		So(datastore.Put(c, parentSingleRerun), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Update suspect's culprit verification results
+		suspect.ParentAnalysis = datastore.KeyForObj(c, heuristicAnalysis)
+		suspect.VerificationStatus = model.SuspectVerificationStatus_ConfirmedCulprit
+		suspect.SuspectRerunBuild = datastore.KeyForObj(c, suspectRerunBuild)
+		suspect.ParentRerunBuild = datastore.KeyForObj(c, parentRerunBuild)
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		compileFailureAnalysis.VerifiedCulprits = []*datastore.Key{
+			datastore.KeyForObj(c, suspect),
+		}
+		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		req := &pb.QueryAnalysisRequest{
@@ -164,6 +275,25 @@ func TestQueryAnalysis(t *testing.T) {
 					ActionType:  pb.CulpritActionType_CULPRIT_AUTO_REVERTED,
 					RevertClUrl: "https://this/is/revert/review/url",
 					ActionTime:  &timestamppb.Timestamp{Seconds: 200},
+				},
+			},
+			VerificationDetails: &pb.SuspectVerificationDetails{
+				Status: string(model.SuspectVerificationStatus_ConfirmedCulprit),
+				SuspectRerun: &pb.SingleRerun{
+					Bbid:      8877665544332211,
+					StartTime: &timestamppb.Timestamp{Seconds: 101},
+					EndTime:   &timestamppb.Timestamp{Seconds: 102},
+					RerunResult: &pb.RerunResult{
+						RerunStatus: pb.RerunStatus_FAILED,
+					},
+				},
+				ParentRerun: &pb.SingleRerun{
+					Bbid:      7766554433221100,
+					StartTime: &timestamppb.Timestamp{Seconds: 201},
+					EndTime:   &timestamppb.Timestamp{Seconds: 202},
+					RerunResult: &pb.RerunResult{
+						RerunStatus: pb.RerunStatus_PASSED,
+					},
 				},
 			},
 		}), ShouldBeTrue)

@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/pagination"
 	"go.chromium.org/luci/common/pagination/dscursor"
@@ -196,6 +197,13 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 			ReviewTitle: suspect.ReviewTitle,
 		}
 
+		// Add suspect verification details for the culprit
+		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+		if err != nil {
+			return nil, err
+		}
+		pbCulprit.VerificationDetails = verificationDetails
+
 		// Add culprit action for creating/auto-committing a revert
 		if suspect.IsRevertCreated {
 			culpritAction := &pb.CulpritAction{
@@ -223,6 +231,60 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	//     * commenting on related bugs
 
 	return result, nil
+}
+
+// constructSingleRerun constructs a pb.SingleRerun using the details from the
+// rerun build and latest single rerun
+func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, error) {
+	rerunBuild := &model.CompileRerunBuild{
+		Id: rerunBBID,
+	}
+	err := datastore.Get(c, rerunBuild)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed getting rerun build").Err()
+	}
+
+	singleRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunBuild)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed getting single rerun").Err()
+	}
+
+	return &pb.SingleRerun{
+		StartTime: timestamppb.New(singleRerun.StartTime),
+		EndTime:   timestamppb.New(singleRerun.EndTime),
+		Bbid:      rerunBBID,
+		RerunResult: &pb.RerunResult{
+			RerunStatus: singleRerun.Status,
+		},
+	}, nil
+}
+
+// constructSuspectVerificationDetails constructs a pb.SuspectVerificationDetails for the given suspect
+func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspect) (*pb.SuspectVerificationDetails, error) {
+	// Add the current verification status
+	verificationDetails := &pb.SuspectVerificationDetails{
+		Status: string(suspect.VerificationStatus),
+	}
+
+	// Add rerun details for the suspect commit
+	if suspect.SuspectRerunBuild != nil {
+		singleRerun, err := constructSingleRerun(c, suspect.SuspectRerunBuild.IntID())
+		if err != nil {
+			return nil, errors.Annotate(err, "failed getting verification rerun for suspect commit").Err()
+		}
+		verificationDetails.SuspectRerun = singleRerun
+	}
+
+	// Add rerun details for the parent commit of suspect
+	if suspect.ParentRerunBuild != nil {
+		singleRerun, err := constructSingleRerun(c, suspect.ParentRerunBuild.IntID())
+		if err != nil {
+			return nil, errors.Annotate(err, "failed getting verification rerun for parent commit of suspect").Err()
+		}
+		verificationDetails.ParentRerun = singleRerun
+	}
+
+	return verificationDetails, nil
 }
 
 // validateQueryAnalysisRequest checks if the request is valid.
@@ -314,6 +376,7 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	}, nil
 }
 
+// validateListAnalysesRequest checks if the request is valid.
 func validateListAnalysesRequest(req *pb.ListAnalysesRequest) error {
 	if req.PageSize < 0 {
 		return status.Errorf(codes.InvalidArgument, "Page size can't be negative")
