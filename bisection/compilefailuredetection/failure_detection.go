@@ -134,6 +134,10 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 		return errors.Annotate(err, "couldn't GetLatestAnalysisForBuilder").Err()
 	}
 
+	if analysis == nil {
+		return nil
+	}
+
 	// Update analysis ShouldCancelFlag
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		e := datastore.Get(c, analysis)

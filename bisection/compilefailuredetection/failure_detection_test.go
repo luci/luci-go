@@ -463,6 +463,11 @@ func TestUpdateSucceededBuild(t *testing.T) {
 	}
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
+	Convey("UpdateSucceededBuild no build", t, func() {
+		err := UpdateSucceededBuild(c, 123)
+		So(err, ShouldBeNil)
+	})
+
 	Convey("UpdateSucceededBuild", t, func() {
 		bf := &model.LuciFailedBuild{
 			Id: 123,
