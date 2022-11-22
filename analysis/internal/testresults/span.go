@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package testresults contains methods for accessing test results in Spanner.
 package testresults
 
 import (
@@ -47,7 +48,7 @@ var (
 
 // Changelist represents a gerrit changelist.
 type Changelist struct {
-	// Host is the gerrit hostname, excluding "-review.googlesource.com".
+	// Host is the gerrit hostname. E.g. chromium-review.googlesource.com.
 	Host     string
 	Change   int64
 	Patchset int64
@@ -165,7 +166,7 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 			changelists := make([]Changelist, 0, len(changelistHosts))
 			for i := range changelistHosts {
 				changelists = append(changelists, Changelist{
-					Host:     changelistHosts[i],
+					Host:     decompressHost(changelistHosts[i]),
 					Change:   changelistChanges[i],
 					Patchset: changelistPatchsets[i],
 				})
@@ -198,7 +199,7 @@ func (inv *IngestedInvocation) SaveUnverified() *spanner.Mutation {
 	changelistChanges := make([]int64, 0, len(inv.Changelists))
 	changelistPatchsets := make([]int64, 0, len(inv.Changelists))
 	for _, cl := range inv.Changelists {
-		changelistHosts = append(changelistHosts, cl.Host)
+		changelistHosts = append(changelistHosts, compressHost(cl.Host))
 		changelistChanges = append(changelistChanges, cl.Change)
 		changelistPatchsets = append(changelistPatchsets, cl.Patchset)
 	}
@@ -316,7 +317,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			changelists := make([]Changelist, 0, len(changelistHosts))
 			for i := range changelistHosts {
 				changelists = append(changelists, Changelist{
-					Host:     changelistHosts[i],
+					Host:     decompressHost(changelistHosts[i]),
 					Change:   changelistChanges[i],
 					Patchset: changelistPatchsets[i],
 				})
@@ -365,7 +366,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	changelistChanges := make([]int64, 0, len(tr.Changelists))
 	changelistPatchsets := make([]int64, 0, len(tr.Changelists))
 	for _, cl := range tr.Changelists {
-		changelistHosts = append(changelistHosts, cl.Host)
+		changelistHosts = append(changelistHosts, compressHost(cl.Host))
 		changelistChanges = append(changelistChanges, cl.Change)
 		changelistPatchsets = append(changelistPatchsets, cl.Patchset)
 	}

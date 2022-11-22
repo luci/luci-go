@@ -17,7 +17,6 @@ package join
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -141,16 +140,16 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	}
 
 	gerritChanges := build.GetInput().GetGerritChanges()
-	changelists := make([]*ctlpb.BuildResult_Changelist, 0, len(gerritChanges))
+	changelists := make([]*pb.Changelist, 0, len(gerritChanges))
 	for _, change := range gerritChanges {
-		if !strings.HasSuffix(change.Host, testresults.GerritHostnameSuffix) {
-			return false, fmt.Errorf(`gerrit host %q does not end in expected suffix %q`, change.Host, testresults.GerritHostnameSuffix)
+		if err := testresults.ValidateGerritHostname(change.Host); err != nil {
+			return false, err
 		}
-		host := strings.TrimSuffix(change.Host, testresults.GerritHostnameSuffix)
-		changelists = append(changelists, &ctlpb.BuildResult_Changelist{
-			Host:     host,
+
+		changelists = append(changelists, &pb.Changelist{
+			Host:     change.Host,
 			Change:   change.Change,
-			Patchset: change.Patchset,
+			Patchset: int32(change.Patchset),
 		})
 	}
 

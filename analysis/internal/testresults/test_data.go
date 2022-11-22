@@ -27,7 +27,9 @@ import (
 
 // June 17th, 2022 is a Friday. The preceding 5 * 24 weekday hour
 // are as follows:
-//             Inclusive              - Exclusive
+//
+//	Inclusive              - Exclusive
+//
 // Interval 0: (-1 day) Thursday 8am  - (now)    Friday 8am
 // Interval 1: (-2 day) Wednesday 8am - (-1 day) Thursday 8am
 // Interval 2: (-3 day) Tuesday 8am   - (-2 day) Wednesday 8am
@@ -57,7 +59,7 @@ func CreateQueryFailureRateTestData(ctx context.Context) error {
 			var changelists []Changelist
 			for _, clNum := range changeListNumber {
 				changelists = append(changelists, Changelist{
-					Host:     "mygerrit",
+					Host:     "mygerrit-review.googlesource.com",
 					Change:   clNum,
 					Patchset: 5,
 				})

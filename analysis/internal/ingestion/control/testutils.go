@@ -49,9 +49,9 @@ func NewEntry(uniqifier int) *EntryBuilder {
 				Project:      "myproject",
 				Builder:      "builder",
 				Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
-				Changelists: []*controlpb.BuildResult_Changelist{
+				Changelists: []*pb.Changelist{
 					{
-						Host:     "myhost",
+						Host:     "myhost-review.googlesource.com",
 						Change:   123456,
 						Patchset: 123,
 					},

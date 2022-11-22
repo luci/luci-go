@@ -408,7 +408,7 @@ func toPBVerdictExamples(ves []*verdictExample) []*pb.TestVariantFailureRateAnal
 		}
 		for i := range ve.ChangelistHosts {
 			cls = append(cls, &pb.Changelist{
-				Host:     ve.ChangelistHosts[i] + GerritHostnameSuffix,
+				Host:     decompressHost(ve.ChangelistHosts[i]),
 				Change:   ve.ChangelistChanges[i],
 				Patchset: int32(ve.ChangelistPatchsets[i]),
 			})
@@ -438,7 +438,7 @@ func toPBRecentVerdicts(verdicts []*recentVerdict) []*pb.TestVariantFailureRateA
 		}
 		for i := range v.ChangelistHosts {
 			cls = append(cls, &pb.Changelist{
-				Host:     v.ChangelistHosts[i] + GerritHostnameSuffix,
+				Host:     decompressHost(v.ChangelistHosts[i]),
 				Change:   v.ChangelistChanges[i],
 				Patchset: int32(v.ChangelistPatchsets[i]),
 			})

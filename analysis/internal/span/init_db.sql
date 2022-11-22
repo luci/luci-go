@@ -523,10 +523,10 @@ CREATE TABLE TestResults (
 
   -- Hostname(s) of the gerrit instance of the changelist that was tested
   -- (if any). For storage efficiency, the suffix "-review.googlesource.com"
-  -- is not stored. Only gerrit hosts are supported.
-  -- 56 chars because maximum length of a domain name label is 63 chars,
-  -- and we subtract 7 chars for "-review".
-  ChangelistHosts ARRAY<STRING(56)> NOT NULL,
+  -- is not stored if it is present. When reading, if the value read
+  -- does not contain dots ('.'), the suffix should be added back.
+  -- Otherwise, the value can be assumed to be complete.
+  ChangelistHosts ARRAY<STRING(255)> NOT NULL,
 
   -- The changelist number(s), e.g. 12345.
   ChangelistChanges ARRAY<INT64> NOT NULL,
@@ -662,10 +662,10 @@ CREATE TABLE IngestedInvocations (
 
   -- Hostname(s) of the gerrit instance of the changelist that was tested
   -- (if any). For storage efficiency, the suffix "-review.googlesource.com"
-  -- is not stored. Only gerrit hosts are supported.
-  -- 56 chars because maximum length of a domain name label is 63 chars,
-  -- and we subtract 7 chars for "-review".
-  ChangelistHosts ARRAY<STRING(56)> NOT NULL,
+  -- is not stored if it is present. When reading, if the value read
+  -- does not contain dots ('.'), the suffix should be added back.
+  -- Otherwise, the value can be assumed to be complete.
+  ChangelistHosts ARRAY<STRING(255)> NOT NULL,
 
   -- The changelist number(s), e.g. 12345.
   ChangelistChanges ARRAY<INT64> NOT NULL,

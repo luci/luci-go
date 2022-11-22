@@ -180,7 +180,7 @@ func (b *buildBuilder) BuildProto() *bbpb.Build {
 					Patchset: 9292,
 				},
 				{
-					Host:     "otherproject-review.googlesource.com",
+					Host:     "otherproject.gerrit.instance",
 					Change:   71717171,
 					Patchset: 1212,
 				},
@@ -214,14 +214,14 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 		Project:      "buildproject",
 		Builder:      "builder",
 		Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
-		Changelists: []*controlpb.BuildResult_Changelist{
+		Changelists: []*pb.Changelist{
 			{
-				Host:     "myproject",
+				Host:     "myproject-review.googlesource.com",
 				Change:   81818181,
 				Patchset: 9292,
 			},
 			{
-				Host:     "otherproject",
+				Host:     "otherproject.gerrit.instance",
 				Change:   71717171,
 				Patchset: 1212,
 			},

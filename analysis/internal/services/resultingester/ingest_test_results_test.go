@@ -234,12 +234,12 @@ func TestIngestTestResults(t *testing.T) {
 				CommitHash:       strings.Repeat("0a", 20),
 				Changelists: []testresults.Changelist{
 					{
-						Host:     "anothergerrit",
+						Host:     "anothergerrit.gerrit.instance",
 						Change:   77788,
 						Patchset: 19,
 					},
 					{
-						Host:     "mygerrit",
+						Host:     "mygerrit-review.googlesource.com",
 						Change:   12345,
 						Patchset: 5,
 					},
@@ -289,12 +289,12 @@ func TestIngestTestResults(t *testing.T) {
 					WithBuildStatus(pb.BuildStatus_BUILD_STATUS_FAILURE).
 					WithChangelists([]testresults.Changelist{
 						{
-							Host:     "anothergerrit",
+							Host:     "anothergerrit.gerrit.instance",
 							Change:   77788,
 							Patchset: 19,
 						},
 						{
-							Host:     "mygerrit",
+							Host:     "mygerrit-review.googlesource.com",
 							Change:   12345,
 							Patchset: 5,
 						},
@@ -831,14 +831,14 @@ func TestIngestTestResults(t *testing.T) {
 					Project:      "project",
 					Builder:      "builder",
 					Status:       pb.BuildStatus_BUILD_STATUS_FAILURE,
-					Changelists: []*ctrlpb.BuildResult_Changelist{
+					Changelists: []*pb.Changelist{
 						{
-							Host:     "mygerrit",
+							Host:     "mygerrit-review.googlesource.com",
 							Change:   12345,
 							Patchset: 5,
 						},
 						{
-							Host:     "anothergerrit",
+							Host:     "anothergerrit.gerrit.instance",
 							Change:   77788,
 							Patchset: 19,
 						},

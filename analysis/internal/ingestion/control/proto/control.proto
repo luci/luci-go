@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.analysis.internal.ingestion.control;
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/changelist.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
@@ -52,8 +53,11 @@ message BuildResult {
     int64 patchset = 3;
   }
 
+  // The changelists that were tested by the build. (Deprecated, use changelists instead.)
+  repeated Changelist changelists_old = 7;
+
   // The changelists that were tested by the build.
-  repeated Changelist changelists = 7;
+  repeated luci.analysis.v1.Changelist changelists = 12;
 
   // The version of code (excluding any unsubmitted changelists) that was
   // tested by the build. This is the base commit ontop of which any

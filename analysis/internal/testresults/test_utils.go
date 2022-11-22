@@ -46,12 +46,12 @@ func NewTestResult() *TestResultBuilder {
 		CommitPosition:       1893189,
 		Changelists: []Changelist{
 			{
-				Host:     "mygerrit",
+				Host:     "mygerrit-review.googlesource.com",
 				Change:   12345678,
 				Patchset: 9,
 			},
 			{
-				Host:     "anothergerrit",
+				Host:     "anothergerrit.gerrit.instance",
 				Change:   234568790,
 				Patchset: 1,
 			},

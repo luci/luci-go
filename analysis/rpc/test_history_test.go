@@ -112,12 +112,12 @@ func TestTestHistoryServer(t *testing.T) {
 				if hasUnsubmittedChanges {
 					baseTestResult = baseTestResult.WithChangelists([]testresults.Changelist{
 						{
-							Host:     "mygerrit",
+							Host:     "mygerrit-review.googlesource.com",
 							Change:   4321,
 							Patchset: 5,
 						},
 						{
-							Host:     "anothergerrit",
+							Host:     "anothergerrit.gerrit.instance",
 							Change:   5471,
 							Patchset: 6,
 						},
