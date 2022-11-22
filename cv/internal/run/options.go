@@ -78,6 +78,7 @@ func ExtractOptions(snapshot *changelist.Snapshot) *Options {
 		o.SkipPresubmit = true
 	}
 	o.IncludedTryjobs = append(o.IncludedTryjobs, valuesOf("Cq-Include-Trybots", "CQ_INCLUDE_TRYBOTS")...)
+	o.OverriddenTryjobs = append(o.OverriddenTryjobs, valuesOf("Override-Tryjobs-For-Automation", "")...)
 	o.CustomTryjobTags = append(o.CustomTryjobTags, valuesOf("Cq-Cl-Tag", "")...)
 	return o
 }
@@ -99,6 +100,7 @@ func MergeOptions(a, b *Options) *Options {
 		SkipEquivalentBuilders: a.SkipEquivalentBuilders || b.SkipEquivalentBuilders,
 		SkipTreeChecks:         a.SkipTreeChecks || b.SkipTreeChecks,
 		IncludedTryjobs:        append(a.IncludedTryjobs, b.IncludedTryjobs...),
+		OverriddenTryjobs:      append(a.OverriddenTryjobs, b.OverriddenTryjobs...),
 		CustomTryjobTags:       append(a.CustomTryjobTags, b.CustomTryjobTags...),
 	}
 }

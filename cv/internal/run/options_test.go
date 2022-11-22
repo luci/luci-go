@@ -127,6 +127,21 @@ func TestExtractOptions(t *testing.T) {
 				})
 		})
 
+		Convey("Override-Tryjobs-For-Automation", func() {
+			So(extract(`
+				CL title.
+
+				Override-Tryjobs-For-Automation: project/bucket:builder1,builder2;project2/bucket:builder3
+				Override-Tryjobs-For-Automation: project/bucket:builder4
+			`), ShouldResembleProto,
+				&Options{
+					OverriddenTryjobs: []string{
+						"project/bucket:builder4",
+						"project/bucket:builder1,builder2;project2/bucket:builder3",
+					},
+				})
+		})
+
 		Convey("Cq-Cl-Tag", func() {
 			// legacy format (i.e. CQ_CL_TAG=XXX) is not supported.
 			So(extract(`
