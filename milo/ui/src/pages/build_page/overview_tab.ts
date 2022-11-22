@@ -36,6 +36,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_util
 import {
   getBotLink,
   getBuildbucketLink,
+  getInvocationLink,
   getURLForGerritChange,
   getURLForGitilesCommit,
   getURLForSwarmingTask,
@@ -60,7 +61,6 @@ const enum Dialog {
   CancelBuild,
   RetryBuild,
 }
-
 @customElement('milo-overview-tab')
 @errorHandler(forwardWithoutMsg)
 @consumer
@@ -257,6 +257,7 @@ export class OverviewTabElement extends MobxLitElement {
   private renderInfra() {
     const build = this.store.buildPage.build!.data;
     const botLink = build.infra?.swarming ? getBotLink(build.infra.swarming) : null;
+    const invocationLink = build.infra?.resultdb?.invocation ? getInvocationLink(build.infra.resultdb.invocation) : null;
     return html`
       <h3>Infra</h3>
       <table>
@@ -301,6 +302,10 @@ export class OverviewTabElement extends MobxLitElement {
         <tr>
           <td>Recipe:</td>
           <td><milo-link .link=${this.build!.recipeLink} target="_blank"></milo-link></td>
+        </tr>
+        <tr>
+          <td>ResultDB Invocation:</td>
+          <td>${invocationLink ? html`<milo-link .link=${invocationLink} target="_blank"></milo-link>` : 'None'}</td>
         </tr>
       </table>
     `;

@@ -72,6 +72,16 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
   return null;
 }
 
+// getBotLink generates a link to a swarming bot.
+export function getInvocationLink(invocationName: string): Link | null {
+  const stripped = invocationName.slice('invocations/'.length);
+  return {
+    label: invocationName,
+    url: router.urlForName('invocation-details', { invocation_id: stripped }),
+    ariaLabel: `result db invocation ${invocationName}`,
+  };
+}
+
 // getBuildbucketLink generates a link to a buildbucket RPC explorer page for
 // the given build.
 export function getBuildbucketLink(buildbucketHost: string, buildId: string): Link {
