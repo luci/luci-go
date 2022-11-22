@@ -13,17 +13,22 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, makeObservable, observable } from 'mobx';
+import { autorun, computed, makeObservable, observable } from 'mobx';
 
 import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumer } from '../../libs/context';
-import { router } from '../../routes';
 import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
+import { Invocation } from '../../services/resultdb';
+import { MiloBaseElement } from '../../components/milo_base';
+import { TimelineBlock } from '../../components/timeline';
+import { DateTime } from 'luxon';
+
+const MARGIN = 20;
+const MIN_GRAPH_WIDTH = 900;
 
 function stripInvocationPrefix(invocationName: string): string {
   return invocationName.slice('invocations/'.length);
@@ -31,7 +36,7 @@ function stripInvocationPrefix(invocationName: string): string {
 
 @customElement('milo-invocation-details-tab')
 @consumer
-export class InvocationDetailsTabElement extends MobxLitElement {
+export class InvocationDetailsTabElement extends MiloBaseElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
@@ -41,22 +46,57 @@ export class InvocationDetailsTabElement extends MobxLitElement {
   invocationState!: InvocationState;
 
   @computed
-  private get hasIncludedInvocations() {
-    return (this.invocationState.invocation!.includedInvocations || []).length > 0;
-  }
-  @computed
   private get hasTags() {
     return (this.invocationState.invocation!.tags || []).length > 0;
   }
 
+  @observable
+  private graphWidth = MIN_GRAPH_WIDTH;
+
+  @observable
+  private numRequestsCompleted = 0;
+
+  private includedInvocations: { [name: string]: Invocation } = {};
+
   constructor() {
     super();
     makeObservable(this);
+    this.addDisposer(
+      autorun(() => {
+        try {
+          if (!this.invocationState || !this.invocationState.invocation || !this.invocationState.invocation.includedInvocations) {
+            return;
+          }
+          for (const invocationName of this.invocationState.invocation!.includedInvocations || []) {
+            this.store.services.resultDb?.getInvocation({ name: invocationName }).then(invocation => {
+              this.includedInvocations[invocationName] = invocation;
+              this.numRequestsCompleted += 1;
+            }).catch((e) => {
+              // TODO(mwarton): display the error to the user.
+              console.error(e);
+            })
+          }
+        } catch (e) {
+          // TODO(mwarton): display the error to the user.
+          console.error(e);
+        }
+      })
+    );
   }
+
+  private now = DateTime.now();
 
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('invocation-details');
+    this.now = DateTime.now();
+
+    const syncWidth = () => {
+      this.graphWidth = Math.max(window.innerWidth - 2 * MARGIN, MIN_GRAPH_WIDTH);
+    };
+    window.addEventListener('resize', syncWidth);
+    this.addDisposer(() => window.removeEventListener('resize', syncWidth));
+    syncWidth();
   }
 
   protected render() {
@@ -64,48 +104,52 @@ export class InvocationDetailsTabElement extends MobxLitElement {
     if (invocation === null) {
       return html``;
     }
+
+    const blocks: TimelineBlock[] = Object.values(this.includedInvocations).map(i => ({
+      text: stripInvocationPrefix(i.name),
+      href: `/ui/inv/${stripInvocationPrefix(i.name)}/invocation-details`,
+      start: DateTime.fromISO(i.createTime),
+      end: i.finalizeTime ? DateTime.fromISO(i.finalizeTime) : undefined,
+    }));
+    blocks.sort((a, b) => {
+      if (a.end && (!b.end || a.end < b.end)) {
+        return -1;
+      } else if (b.end && (!a.end || a.end > b.end)) {
+        return 1;
+      } else {
+        // Invocations always have a create time, no need for undefined checks here.
+        return a.start!.toMillis() - b.start!.toMillis();
+      }
+    });
     return html`
       <div>Create Time: ${new Date(invocation.createTime).toLocaleString()}</div>
       <div>Finalize Time: ${new Date(invocation.finalizeTime).toLocaleDateString()}</div>
       <div>Deadline: ${new Date(invocation.deadline).toLocaleDateString()}</div>
-      <div id="included-invocations" style=${styleMap({ display: this.hasIncludedInvocations ? '' : 'none' })}>
-        Included Invocations:
-        <ul>
-          ${invocation.includedInvocations
-            ?.map((invName) => stripInvocationPrefix(invName))
-            .map(
-              (invId) => html`
-                <li>
-                  <a href=${router.urlForName('invocation', { invocation_id: invId })} target="_blank">${invId}</a>
-                  ${this.renderBuildLink(invId)}
-                </li>
-              `
-            )}
-        </ul>
-      </div>
       <div style=${styleMap({ display: this.hasTags ? '' : 'none' })}>
         Tags:
         <table id="tag-table" border="0">
           ${invocation.tags?.map(
-            (tag) => html`
+          (tag) => html`
               <tr>
                 <td>${tag.key}:</td>
                 <td>${tag.value}</td>
               </tr>
             `
-          )}
+        )}
         </table>
       </div>
+      <div id="included-invocations">
+        ${invocation.includedInvocations?.length ?
+          html`Included Invocations: (loaded ${this.numRequestsCompleted} of ${invocation.includedInvocations?.length})
+                <milo-timeline
+                  .width=${this.graphWidth}
+                  .startTime=${DateTime.fromISO(invocation.createTime)}
+                  .endTime=${invocation.finalizeTime ? DateTime.fromISO(invocation.finalizeTime) : this.now}
+                  .blocks=${blocks}>
+                </milo-timeline>` :
+          'Included Invocations: None'}
+      </div>
     `;
-  }
-
-  private renderBuildLink(invId: string) {
-    const match = invId.match(/^build-(?<id>\d+)/);
-    if (!match) {
-      return '';
-    }
-    const buildPageUrl = router.urlForName('build-short-link', { build_id: match.groups!['id'] });
-    return html`(<a href=${buildPageUrl} target="_blank">build page</a>)`;
   }
 
   static styles = [

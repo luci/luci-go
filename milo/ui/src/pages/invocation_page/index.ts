@@ -19,6 +19,7 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
+import '../../components/timeline';
 import '../test_results_tab/count_indicator';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
@@ -130,6 +131,8 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
         <div id="test-invocation-id">
           <span id="test-invocation-id-label">Invocation ID </span>
           <span>${this.invocationState.invocationId}</span>
+          ${this.renderBuildLink(this.invocationState.invocationId)}
+          ${this.renderTaskLink(this.invocationState.invocationId)}
         </div>
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
@@ -143,6 +146,42 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       <slot></slot>
     `;
   });
+
+  private renderBuildLink(invId: string | null) {
+    if (!invId) {
+      return '';
+    }
+    const match = invId.match(/^build-(?<id>\d+)/);
+    if (!match) {
+      return '';
+    }
+
+    const buildPageUrl = router.urlForName('build-short-link', { build_id: match.groups!['id'] });
+    return html`(<a href=${buildPageUrl} target="_blank">build page</a>)`;
+  }
+
+  // Should be checked upstream, but allowlist URLs here just to be safe.
+  private static allowedSwarmingUrls= [
+    'chromium-swarm-dev.appspot.com',
+    'chromium-swarm.appspot.com',
+    'chrome-swarming.appspot.com',
+  ];
+
+  private renderTaskLink(invId: string | null) {
+    if (!invId) {
+      return '';
+    }
+    const match = invId.match(/^task-(?<url>.*)-(?<id>[0-9a-fA-F]+)$/);
+    if (!match) {
+      return '';
+    }
+    const url = match.groups!['url'];
+    if(InvocationPageElement.allowedSwarmingUrls.indexOf(url) == -1) {
+      return `(unknown swarming url)`;
+    }
+    const taskPageUrl = `https://${url}/task?id=${match.groups!['id']}`;
+    return html`(<a href=${taskPageUrl} target="_blank">task page</a>)`;
+  }
 
   static styles = [
     commonStyle,
