@@ -49,9 +49,10 @@ var (
 // Changelist represents a gerrit changelist.
 type Changelist struct {
 	// Host is the gerrit hostname. E.g. chromium-review.googlesource.com.
-	Host     string
-	Change   int64
-	Patchset int64
+	Host      string
+	Change    int64
+	Patchset  int32
+	OwnerKind pb.ChangelistOwnerKind
 }
 
 // PresubmitRun represents information about the presubmit run a test result
@@ -114,6 +115,7 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 		"PresubmitRunMode", "PresubmitRunOwner",
 		"GitReferenceHash", "CommitPosition", "CommitHash",
 		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
+		"ChangelistOwnerKinds",
 	}
 	return span.Read(ctx, "IngestedInvocations", keys, fields).Do(
 		func(row *spanner.Row) error {
@@ -126,6 +128,7 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 			var changelistHosts []string
 			var changelistChanges []int64
 			var changelistPatchsets []int64
+			var changelistOwnerKinds []string
 
 			err := b.FromSpanner(
 				row,
@@ -133,7 +136,7 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 				&inv.BuildStatus,
 				&presubmitRunMode, &presubmitRunOwner,
 				&gitReferenceHash, &commitPosition, &commitHash,
-				&changelistHosts, &changelistChanges, &changelistPatchsets,
+				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
 			)
 			if err != nil {
 				return err
@@ -159,16 +162,27 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 			// Data in Spanner should be consistent, so
 			// len(changelistHosts) == len(changelistChanges)
 			//    == len(changelistPatchsets).
+			//
+			// ChangeListOwnerKinds was retrofitted after the table
+			// was first created, so it should be of equal length
+			// only if present. It was introduced in November 2022,
+			// so this special-case can be deleted in March 2023+.
 			if len(changelistHosts) != len(changelistChanges) ||
-				len(changelistChanges) != len(changelistPatchsets) {
+				len(changelistChanges) != len(changelistPatchsets) ||
+				(changelistOwnerKinds != nil && len(changelistOwnerKinds) != len(changelistPatchsets)) {
 				panic("Changelist arrays have mismatched length in Spanner")
 			}
 			changelists := make([]Changelist, 0, len(changelistHosts))
 			for i := range changelistHosts {
+				var ownerKind pb.ChangelistOwnerKind
+				if changelistOwnerKinds != nil {
+					ownerKind = ownerKindFromDB(changelistOwnerKinds[i])
+				}
 				changelists = append(changelists, Changelist{
-					Host:     decompressHost(changelistHosts[i]),
-					Change:   changelistChanges[i],
-					Patchset: changelistPatchsets[i],
+					Host:      decompressHost(changelistHosts[i]),
+					Change:    changelistChanges[i],
+					Patchset:  int32(changelistPatchsets[i]),
+					OwnerKind: ownerKind,
 				})
 			}
 			inv.Changelists = changelists
@@ -198,10 +212,12 @@ func (inv *IngestedInvocation) SaveUnverified() *spanner.Mutation {
 	changelistHosts := make([]string, 0, len(inv.Changelists))
 	changelistChanges := make([]int64, 0, len(inv.Changelists))
 	changelistPatchsets := make([]int64, 0, len(inv.Changelists))
+	changelistOwnerKinds := make([]string, 0, len(inv.Changelists))
 	for _, cl := range inv.Changelists {
 		changelistHosts = append(changelistHosts, compressHost(cl.Host))
 		changelistChanges = append(changelistChanges, cl.Change)
-		changelistPatchsets = append(changelistPatchsets, cl.Patchset)
+		changelistPatchsets = append(changelistPatchsets, int64(cl.Patchset))
+		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))
 	}
 
 	row := map[string]interface{}{
@@ -218,6 +234,7 @@ func (inv *IngestedInvocation) SaveUnverified() *spanner.Mutation {
 		"ChangelistHosts":      changelistHosts,
 		"ChangelistChanges":    changelistChanges,
 		"ChangelistPatchsets":  changelistPatchsets,
+		"ChangelistOwnerKinds": changelistOwnerKinds,
 	}
 	return spanner.InsertOrUpdateMap("IngestedInvocations", spanutil.ToSpannerMap(row))
 }
@@ -257,7 +274,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 		"SubRealm", "BuildStatus",
 		"PresubmitRunMode", "PresubmitRunOwner",
 		"GitReferenceHash", "CommitPosition",
-		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
+		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds",
 	}
 	return span.Read(ctx, "TestResults", keys, fields).Do(
 		func(row *spanner.Row) error {
@@ -271,6 +288,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			var changelistHosts []string
 			var changelistChanges []int64
 			var changelistPatchsets []int64
+			var changelistOwnerKinds []string
 			err := b.FromSpanner(
 				row,
 				&tr.Project, &tr.TestID, &tr.PartitionTime, &tr.VariantHash, &tr.IngestedInvocationID,
@@ -280,7 +298,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				&tr.SubRealm, &tr.BuildStatus,
 				&presubmitRunMode, &presubmitRunOwner,
 				&gitReferenceHash, &commitPosition,
-				&changelistHosts, &changelistChanges, &changelistPatchsets,
+				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
 			)
 			if err != nil {
 				return err
@@ -310,16 +328,27 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			// Data in spanner should be consistent, so
 			// len(changelistHosts) == len(changelistChanges)
 			//    == len(changelistPatchsets).
+			//
+			// ChangeListOwnerKinds was retrofitted after the table
+			// was first created, so it should be of equal length
+			// only if present. It was introduced in November 2022,
+			// so this special-case can be deleted in March 2023+.
 			if len(changelistHosts) != len(changelistChanges) ||
-				len(changelistChanges) != len(changelistPatchsets) {
+				len(changelistChanges) != len(changelistPatchsets) ||
+				(changelistOwnerKinds != nil && len(changelistOwnerKinds) != len(changelistPatchsets)) {
 				panic("Changelist arrays have mismatched length in Spanner")
 			}
 			changelists := make([]Changelist, 0, len(changelistHosts))
 			for i := range changelistHosts {
+				var ownerKind pb.ChangelistOwnerKind
+				if changelistOwnerKinds != nil {
+					ownerKind = ownerKindFromDB(changelistOwnerKinds[i])
+				}
 				changelists = append(changelists, Changelist{
-					Host:     decompressHost(changelistHosts[i]),
-					Change:   changelistChanges[i],
-					Patchset: changelistPatchsets[i],
+					Host:      decompressHost(changelistHosts[i]),
+					Change:    changelistChanges[i],
+					Patchset:  int32(changelistPatchsets[i]),
+					OwnerKind: ownerKind,
 				})
 			}
 			tr.Changelists = changelists
@@ -337,6 +366,7 @@ var TestResultSaveCols = []string{
 	"PresubmitRunMode", "PresubmitRunOwner",
 	"GitReferenceHash", "CommitPosition",
 	"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
+	"ChangelistOwnerKinds",
 }
 
 // SaveUnverified prepare a mutation to insert the test result into the
@@ -365,10 +395,12 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	changelistHosts := make([]string, 0, len(tr.Changelists))
 	changelistChanges := make([]int64, 0, len(tr.Changelists))
 	changelistPatchsets := make([]int64, 0, len(tr.Changelists))
+	changelistOwnerKinds := make([]string, 0, len(tr.Changelists))
 	for _, cl := range tr.Changelists {
 		changelistHosts = append(changelistHosts, compressHost(cl.Host))
 		changelistChanges = append(changelistChanges, cl.Change)
-		changelistPatchsets = append(changelistPatchsets, cl.Patchset)
+		changelistPatchsets = append(changelistPatchsets, int64(cl.Patchset))
+		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))
 	}
 
 	isUnexpected := spanner.NullBool{Bool: tr.IsUnexpected, Valid: tr.IsUnexpected}
@@ -395,7 +427,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 		spanutil.ToSpanner(exonerationReasons), tr.SubRealm, int64(tr.BuildStatus),
 		presubmitRunMode, presubmitRunOwner,
 		gitReferenceHash, commitPosition,
-		changelistHosts, changelistChanges, changelistPatchsets,
+		changelistHosts, changelistChanges, changelistPatchsets, changelistOwnerKinds,
 	}
 	return spanner.InsertOrUpdate("TestResults", TestResultSaveCols, vals)
 }

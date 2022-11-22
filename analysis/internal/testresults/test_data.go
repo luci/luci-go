@@ -59,9 +59,10 @@ func CreateQueryFailureRateTestData(ctx context.Context) error {
 			var changelists []Changelist
 			for _, clNum := range changeListNumber {
 				changelists = append(changelists, Changelist{
-					Host:     "mygerrit-review.googlesource.com",
-					Change:   clNum,
-					Patchset: 5,
+					Host:      "mygerrit-review.googlesource.com",
+					Change:    clNum,
+					Patchset:  5,
+					OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 				})
 			}
 			baseTestResult = baseTestResult.WithChangelists(changelists)
@@ -316,9 +317,10 @@ func QueryFailureRateSampleResponse() *pb.QueryTestVariantFailureRateResponse {
 func expectedPBChangelist(change int64) []*pb.Changelist {
 	return []*pb.Changelist{
 		{
-			Host:     "mygerrit-review.googlesource.com",
-			Change:   change,
-			Patchset: 5,
+			Host:      "mygerrit-review.googlesource.com",
+			Change:    change,
+			Patchset:  5,
+			OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 		},
 	}
 }

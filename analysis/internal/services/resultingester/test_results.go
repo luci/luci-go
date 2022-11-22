@@ -73,35 +73,27 @@ func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocat
 			proj, task.Build.Project, task.Build.Host, task.Build.Id).Err()
 	}
 
-	changelists := make([]testresults.Changelist, 0, len(task.Build.Changelists)+len(task.Build.ChangelistsOld))
-	for _, change := range task.Build.Changelists {
+	gerritChanges := task.Build.Changelists
+	changelists := make([]testresults.Changelist, 0, len(gerritChanges))
+	for _, change := range gerritChanges {
 		if err := testresults.ValidateGerritHostname(change.Host); err != nil {
 			return nil, nil, err
 		}
 		changelists = append(changelists, testresults.Changelist{
-			Host:     change.Host,
-			Change:   change.Change,
-			Patchset: int64(change.Patchset),
+			Host:      change.Host,
+			Change:    change.Change,
+			Patchset:  change.Patchset,
+			OwnerKind: change.OwnerKind,
 		})
 	}
-	for _, change := range task.Build.ChangelistsOld {
-		// Old changelists had the host specified exclusive of the
-		// gerrit hostname suffix.
-		host := change.Host + testresults.GerritHostnameSuffix
-		if err := testresults.ValidateGerritHostname(host); err != nil {
-			return nil, nil, err
-		}
-		changelists = append(changelists, testresults.Changelist{
-			Host:     host,
-			Change:   change.Change,
-			Patchset: int64(change.Patchset),
-		})
-	}
-
+	// TODO (b/258734241): This has been migrated to join-build task queue.
+	// Remove when old build completions flushed out.
 	// Store the tested changelists in sorted order. This ensures that for
 	// the same combination of CLs tested, the arrays are identical.
 	testresults.SortChangelists(changelists)
 
+	// TODO (b/258734241): This has been migrated to join-build task queue.
+	// Remove when old build completions flushed out.
 	// Truncate the list of changelists to avoid storing an excessive number.
 	// Apply truncation after sorting to ensure a stable set of changelists.
 	if len(changelists) > maximumCLs {

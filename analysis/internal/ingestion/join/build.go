@@ -17,9 +17,12 @@ package join
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -29,6 +32,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
+	"go.chromium.org/luci/analysis/internal/gerrit"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	ctlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/resultdb"
@@ -43,6 +47,9 @@ const (
 	// userAgentCQ is the value of the user agent tag, for builds started
 	// by LUCI CV.
 	userAgentCQ = "cq"
+	// The maximum number of CLs to keep for each ingested build.
+	// Avoids excessive storage consumption and calls to gerrit.
+	maximumCLs = 10
 )
 
 var (
@@ -140,16 +147,31 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 	}
 
 	gerritChanges := build.GetInput().GetGerritChanges()
+
+	// Capture the tested changelists in sorted order. This ensures that for
+	// the same combination of CLs tested, the arrays are identical.
+	sortChangelists(gerritChanges)
+
+	// Truncate the list of changelists to avoid storing an excessive number.
+	// Apply truncation after sorting to ensure a stable set of changelists.
+	if len(gerritChanges) > maximumCLs {
+		gerritChanges = gerritChanges[:maximumCLs]
+	}
+
 	changelists := make([]*pb.Changelist, 0, len(gerritChanges))
 	for _, change := range gerritChanges {
 		if err := testresults.ValidateGerritHostname(change.Host); err != nil {
 			return false, err
 		}
-
+		ownerKind, err := retrieveChangelistOwnerKind(ctx, project, change)
+		if err != nil {
+			return false, errors.Annotate(err, "retrieving gerrit change %s/%v", change.Host, change.Change).Err()
+		}
 		changelists = append(changelists, &pb.Changelist{
-			Host:     change.Host,
-			Change:   change.Change,
-			Patchset: int32(change.Patchset),
+			Host:      change.Host,
+			Change:    change.Change,
+			Patchset:  int32(change.Patchset),
+			OwnerKind: ownerKind,
 		})
 	}
 
@@ -256,4 +278,66 @@ func retrieveBuild(ctx context.Context, bbHost, project string, id int64, readMa
 		return nil, err
 	}
 	return b, nil
+}
+
+func retrieveChangelistOwnerKind(ctx context.Context, luciProject string, change *bbpb.GerritChange) (pb.ChangelistOwnerKind, error) {
+	if !strings.HasSuffix(change.Host, "-review.googlesource.com") {
+		// Do not try and retrieve CL information from a gerrit host other
+		// than those hosted on .googlesource.com. The CL hostname
+		// could come from an untrusted source, and we don't want to leak
+		// our authentication tokens to arbitrary hosts on the internet.
+		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, nil
+	}
+
+	client, err := gerrit.NewClient(ctx, change.Host, luciProject)
+	if err != nil {
+		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, err
+	}
+	req := &gerritpb.GetChangeRequest{
+		Number: change.Change,
+		Options: []gerritpb.QueryOption{
+			gerritpb.QueryOption_DETAILED_ACCOUNTS,
+		},
+		Project: change.Project,
+	}
+	fullChange, err := client.GetChange(ctx, req)
+	code := status.Code(err)
+	if code == codes.NotFound {
+		logging.Warningf(ctx, "Patchset %s/%v for project %s not found.",
+			change.Host, change.Change, luciProject)
+		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, nil
+	}
+	if code == codes.PermissionDenied {
+		logging.Warningf(ctx, "LUCI Analysis does not have permission to read patchset %s/%v for project %s.",
+			change.Host, change.Change, luciProject)
+		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, nil
+	}
+	if err != nil {
+		return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, transient.Tag.Apply(err)
+	}
+	ownerEmail := fullChange.Owner.GetEmail()
+	if automationAccountRE.MatchString(ownerEmail) {
+		return pb.ChangelistOwnerKind_AUTOMATION, nil
+	} else if ownerEmail != "" {
+		return pb.ChangelistOwnerKind_HUMAN, nil
+	}
+	return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, nil
+}
+
+// sortChangelists sorts a slice of changelists to be in ascending
+// lexicographical order by (host, change, patchset).
+func sortChangelists(cls []*bbpb.GerritChange) {
+	sort.Slice(cls, func(i, j int) bool {
+		// Returns true iff cls[i] is less than cls[j].
+		if cls[i].Host < cls[j].Host {
+			return true
+		}
+		if cls[i].Host == cls[j].Host && cls[i].Change < cls[j].Change {
+			return true
+		}
+		if cls[i].Host == cls[j].Host && cls[i].Change == cls[j].Change && cls[i].Patchset < cls[j].Patchset {
+			return true
+		}
+		return false
+	})
 }

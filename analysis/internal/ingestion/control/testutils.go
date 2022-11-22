@@ -51,9 +51,10 @@ func NewEntry(uniqifier int) *EntryBuilder {
 				Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
 				Changelists: []*pb.Changelist{
 					{
-						Host:     "myhost-review.googlesource.com",
-						Change:   123456,
-						Patchset: 123,
+						Host:      "myhost-review.googlesource.com",
+						Change:    123456,
+						Patchset:  123,
+						OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 					},
 				},
 				Commit: &buildbucketpb.GitilesCommit{

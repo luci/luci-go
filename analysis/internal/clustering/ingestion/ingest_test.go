@@ -74,14 +74,16 @@ func TestIngest(t *testing.T) {
 			BuildCritical: true,
 			Changelists: []*pb.Changelist{
 				{
-					Host:     "chromium-review.googlesource.com",
-					Change:   12345,
-					Patchset: 1,
+					Host:      "chromium-review.googlesource.com",
+					Change:    12345,
+					Patchset:  1,
+					OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 				},
 				{
-					Host:     "chromium-review.googlesource.com",
-					Change:   67890,
-					Patchset: 2,
+					Host:      "chromium-review.googlesource.com",
+					Change:    67890,
+					Patchset:  2,
+					OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 				},
 			},
 		}
@@ -513,14 +515,16 @@ func expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTes
 		BuildCritical:      true,
 		Changelists: []*pb.Changelist{
 			{
-				Host:     "chromium-review.googlesource.com",
-				Change:   12345,
-				Patchset: 1,
+				Host:      "chromium-review.googlesource.com",
+				Change:    12345,
+				Patchset:  1,
+				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 			},
 			{
-				Host:     "chromium-review.googlesource.com",
-				Change:   67890,
-				Patchset: 2,
+				Host:      "chromium-review.googlesource.com",
+				Change:    67890,
+				Patchset:  2,
+				OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 			},
 		},
 		IngestedInvocationId:          "build-123456790123456",

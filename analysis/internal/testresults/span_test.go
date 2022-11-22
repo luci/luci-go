@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/server/span"
@@ -69,14 +70,16 @@ func TestReadTestHistory(t *testing.T) {
 				if hasUnsubmittedChanges {
 					baseTestResult = baseTestResult.WithChangelists([]Changelist{
 						{
-							Host:     "mygerrit-review.googlesource.com",
-							Change:   4321,
-							Patchset: 5,
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    4321,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 						},
 						{
-							Host:     "anothergerrit.gerrit.instance",
-							Change:   5471,
-							Patchset: 6,
+							Host:      "anothergerrit.gerrit.instance",
+							Change:    5471,
+							Patchset:  6,
+							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 						},
 					})
 				} else {
@@ -462,9 +465,10 @@ func TestReadTestHistoryStats(t *testing.T) {
 				if hasUnsubmittedChanges {
 					baseTestResult = baseTestResult.WithChangelists([]Changelist{
 						{
-							Host:     "mygerrit-review.googlesource.com",
-							Change:   4321,
-							Patchset: 5,
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    4321,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 						},
 					})
 				} else {
@@ -544,6 +548,43 @@ func TestReadTestHistoryStats(t *testing.T) {
 					VariantHash:       pbutil.VariantHash(var3),
 					ExoneratedCount:   1,
 					PassedAvgDuration: durationpb.New(88888 * time.Microsecond),
+				},
+			})
+		})
+		Convey("with legacy test results data", func() {
+			// This test case can be deleted from March 2023. This should be
+			// combined with an update to make ChangelistOwnerKinds NOT NULL.
+			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+				stmt := spanner.NewStatement("UPDATE TestResults SET ChangelistOwnerKinds = NULL WHERE TRUE")
+				_, err := span.Update(ctx, stmt)
+				return err
+			})
+			So(err, ShouldBeNil)
+
+			opts.PageSize = 3
+			verdicts, nextPageToken, err := ReadTestHistoryStats(span.Single(ctx), opts)
+			So(err, ShouldBeNil)
+			So(nextPageToken, ShouldNotBeEmpty)
+			So(verdicts, ShouldResembleProto, []*pb.QueryTestHistoryStatsResponse_Group{
+				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
+					VariantHash:       pbutil.VariantHash(var1),
+					ExpectedCount:     1,
+					ExoneratedCount:   1,
+					PassedAvgDuration: durationpb.New(((22222 + 1234567890123456) / 2) * time.Microsecond),
+				},
+				{
+					PartitionTime:     timestamppb.New(referenceTime.Add(-1 * day)),
+					VariantHash:       pbutil.VariantHash(var2),
+					FlakyCount:        1,
+					PassedAvgDuration: nil,
+				},
+				{
+					PartitionTime:            timestamppb.New(referenceTime.Add(-2 * day)),
+					VariantHash:              pbutil.VariantHash(var1),
+					UnexpectedCount:          1,
+					UnexpectedlySkippedCount: 1,
+					PassedAvgDuration:        durationpb.New(33333 * time.Microsecond),
 				},
 			})
 		})

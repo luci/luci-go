@@ -501,9 +501,10 @@ func (b *testResultBuilder) buildFailure() *cpb.Failure {
 		BuildCritical: &buildCritical,
 		Changelists: []*pb.Changelist{
 			{
-				Host:     "chromium",
-				Change:   12345,
-				Patchset: int32(b.uniqifier),
+				Host:      "chromium",
+				Change:    12345,
+				Patchset:  int32(b.uniqifier),
+				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 			},
 		},
 
@@ -583,9 +584,10 @@ func (b *testResultBuilder) buildBQExport(clusterIDs []clustering.ClusterID) []*
 			BuildCritical:      b.uniqifier%2 == 0,
 			Changelists: []*pb.Changelist{
 				{
-					Host:     "chromium",
-					Change:   12345,
-					Patchset: int32(b.uniqifier),
+					Host:      "chromium",
+					Change:    12345,
+					Patchset:  int32(b.uniqifier),
+					OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 				},
 			},
 

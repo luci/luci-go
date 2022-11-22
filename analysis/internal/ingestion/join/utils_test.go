@@ -22,6 +22,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -29,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
 	"go.chromium.org/luci/analysis/internal/cv"
+	"go.chromium.org/luci/analysis/internal/gerrit"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	_ "go.chromium.org/luci/analysis/internal/services/resultingester" // Needed to ensure task class is registered.
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -42,6 +44,8 @@ func ingestBuild(ctx context.Context, build *buildBuilder) error {
 		build.buildID: build.BuildProto(),
 	}
 	ctx = buildbucket.UseFakeClient(ctx, builds)
+
+	ctx = gerrit.UseFakeClient(ctx, build.GerritProtosByHost())
 
 	processed, err := JoinBuild(ctx, bbHost, "buildproject", build.buildID)
 	if err != nil {
@@ -176,13 +180,21 @@ func (b *buildBuilder) BuildProto() *bbpb.Build {
 			GerritChanges: []*bbpb.GerritChange{
 				{
 					Host:     "myproject-review.googlesource.com",
+					Project:  "my/src",
 					Change:   81818181,
 					Patchset: 9292,
 				},
 				{
-					Host:     "otherproject.gerrit.instance",
+					Host:     "otherproject-review.googlesource.com",
+					Project:  "other/src",
 					Change:   71717171,
 					Patchset: 1212,
+				},
+				{
+					Host:     "do.not.query.untrusted.gerrit.instance",
+					Project:  "other/src",
+					Change:   92929292,
+					Patchset: 5656,
 				},
 			},
 		},
@@ -197,6 +209,29 @@ func (b *buildBuilder) BuildProto() *bbpb.Build {
 		},
 		Infra: &bbpb.BuildInfra{
 			Resultdb: rdb,
+		},
+	}
+}
+
+func (b *buildBuilder) GerritProtosByHost() map[string][]*gerritpb.ChangeInfo {
+	return map[string][]*gerritpb.ChangeInfo{
+		"myproject-review.googlesource.com": {
+			{
+				Number:  81818181,
+				Project: "my/src",
+				Owner: &gerritpb.AccountInfo{
+					Email: "some-account@my-bot.iam.gserviceaccount.com",
+				},
+			},
+		},
+		"otherproject-review.googlesource.com": {
+			{
+				Number:  71717171,
+				Project: "other/src",
+				Owner: &gerritpb.AccountInfo{
+					Email: "user@chromium.org",
+				},
+			},
 		},
 	}
 }
@@ -216,14 +251,22 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 		Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
 		Changelists: []*pb.Changelist{
 			{
-				Host:     "myproject-review.googlesource.com",
-				Change:   81818181,
-				Patchset: 9292,
+				Host:      "do.not.query.untrusted.gerrit.instance",
+				Change:    92929292,
+				Patchset:  5656,
+				OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
 			},
 			{
-				Host:     "otherproject.gerrit.instance",
-				Change:   71717171,
-				Patchset: 1212,
+				Host:      "myproject-review.googlesource.com",
+				Change:    81818181,
+				Patchset:  9292,
+				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+			},
+			{
+				Host:      "otherproject-review.googlesource.com",
+				Change:    71717171,
+				Patchset:  1212,
+				OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 			},
 		},
 		Commit: &bbpb.GitilesCommit{

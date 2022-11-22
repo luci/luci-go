@@ -15,10 +15,12 @@
 package testresults
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/server/span"
@@ -63,6 +65,32 @@ func TestQueryFailureRate(t *testing.T) {
 
 			result, err := QueryFailureRate(txn, opts)
 			So(err, ShouldBeNil)
+			So(result, ShouldResembleProto, expectedResult)
+		})
+		Convey("With legacy test results data", func() {
+			// This test case can be deleted from March 2023. This should be
+			// combined with an update to make ChangelistOwnerKinds NOT NULL.
+			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+				stmt := spanner.NewStatement("UPDATE TestResults SET ChangelistOwnerKinds = NULL WHERE TRUE")
+				_, err := span.Update(ctx, stmt)
+				return err
+			})
+			So(err, ShouldBeNil)
+
+			result, err := QueryFailureRate(txn, opts)
+			So(err, ShouldBeNil)
+			for _, tvs := range expectedResult.TestVariants {
+				for _, v := range tvs.RecentVerdicts {
+					for _, cl := range v.Changelists {
+						cl.OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
+					}
+				}
+				for _, v := range tvs.RunFlakyVerdictExamples {
+					for _, cl := range v.Changelists {
+						cl.OwnerKind = pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED
+					}
+				}
+			}
 			So(result, ShouldResembleProto, expectedResult)
 		})
 		Convey("Realm filter works correctly", func() {

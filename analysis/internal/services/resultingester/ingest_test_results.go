@@ -403,9 +403,10 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	changelists := make([]*pb.Changelist, 0, len(inv.Changelists))
 	for _, cl := range inv.Changelists {
 		changelists = append(changelists, &pb.Changelist{
-			Host:     cl.Host,
-			Change:   cl.Change,
-			Patchset: int32(cl.Patchset),
+			Host:      cl.Host,
+			Change:    cl.Change,
+			Patchset:  int32(cl.Patchset),
+			OwnerKind: cl.OwnerKind,
 		})
 	}
 

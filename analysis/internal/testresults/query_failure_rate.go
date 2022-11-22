@@ -396,21 +396,30 @@ type verdictExample struct {
 	ChangelistHosts      []string
 	ChangelistChanges    []int64
 	ChangelistPatchsets  []int64
+	ChangelistOwnerKinds []string
 }
 
 func toPBVerdictExamples(ves []*verdictExample) []*pb.TestVariantFailureRateAnalysis_VerdictExample {
 	results := make([]*pb.TestVariantFailureRateAnalysis_VerdictExample, 0, len(ves))
 	for _, ve := range ves {
 		cls := make([]*pb.Changelist, 0, len(ve.ChangelistHosts))
+		// TODO(b/258734241): Expect ChangelistOwnerKinds will
+		// have matching length in all cases from March 2023.
 		if len(ve.ChangelistHosts) != len(ve.ChangelistChanges) ||
-			len(ve.ChangelistChanges) != len(ve.ChangelistPatchsets) {
+			len(ve.ChangelistChanges) != len(ve.ChangelistPatchsets) ||
+			(ve.ChangelistOwnerKinds != nil && len(ve.ChangelistOwnerKinds) != len(ve.ChangelistHosts)) {
 			panic("data consistency issue: length of changelist arrays do not match")
 		}
 		for i := range ve.ChangelistHosts {
+			var ownerKind pb.ChangelistOwnerKind
+			if ve.ChangelistOwnerKinds != nil {
+				ownerKind = ownerKindFromDB(ve.ChangelistOwnerKinds[i])
+			}
 			cls = append(cls, &pb.Changelist{
-				Host:     decompressHost(ve.ChangelistHosts[i]),
-				Change:   ve.ChangelistChanges[i],
-				Patchset: int32(ve.ChangelistPatchsets[i]),
+				Host:      decompressHost(ve.ChangelistHosts[i]),
+				Change:    ve.ChangelistChanges[i],
+				Patchset:  int32(ve.ChangelistPatchsets[i]),
+				OwnerKind: ownerKind,
 			})
 		}
 		results = append(results, &pb.TestVariantFailureRateAnalysis_VerdictExample{
@@ -432,15 +441,23 @@ func toPBRecentVerdicts(verdicts []*recentVerdict) []*pb.TestVariantFailureRateA
 	results := make([]*pb.TestVariantFailureRateAnalysis_RecentVerdict, 0, len(verdicts))
 	for _, v := range verdicts {
 		cls := make([]*pb.Changelist, 0, len(v.ChangelistHosts))
+		// TODO(b/258734241): Expect ChangelistOwnerKinds will
+		// have matching length in all cases from March 2023.
 		if len(v.ChangelistHosts) != len(v.ChangelistChanges) ||
-			len(v.ChangelistChanges) != len(v.ChangelistPatchsets) {
+			len(v.ChangelistChanges) != len(v.ChangelistPatchsets) ||
+			(v.ChangelistOwnerKinds != nil && len(v.ChangelistOwnerKinds) != len(v.ChangelistHosts)) {
 			panic("data consistency issue: length of changelist arrays do not match")
 		}
 		for i := range v.ChangelistHosts {
+			var ownerKind pb.ChangelistOwnerKind
+			if v.ChangelistOwnerKinds != nil {
+				ownerKind = ownerKindFromDB(v.ChangelistOwnerKinds[i])
+			}
 			cls = append(cls, &pb.Changelist{
-				Host:     decompressHost(v.ChangelistHosts[i]),
-				Change:   v.ChangelistChanges[i],
-				Patchset: int32(v.ChangelistPatchsets[i]),
+				Host:      decompressHost(v.ChangelistHosts[i]),
+				Change:    v.ChangelistChanges[i],
+				Patchset:  int32(v.ChangelistPatchsets[i]),
+				OwnerKind: ownerKind,
 			})
 		}
 		results = append(results, &pb.TestVariantFailureRateAnalysis_RecentVerdict{
@@ -472,6 +489,7 @@ WITH test_variant_verdicts AS (
 				ChangelistHosts,
 				ChangelistChanges,
 				ChangelistPatchsets,
+				ChangelistOwnerKinds,
 				PresubmitRunByAutomation)
 				-- Prefer the verdict that is flaky. If both (or neither) are flaky,
 				-- pick the verdict with the highest partition time. If partition
@@ -487,6 +505,7 @@ WITH test_variant_verdicts AS (
 					ANY_VALUE(ChangelistHosts) AS ChangelistHosts,
 					ANY_VALUE(ChangelistChanges) AS ChangelistChanges,
 					ANY_VALUE(ChangelistPatchsets) AS ChangelistPatchsets,
+					ANY_VALUE(ChangelistOwnerKinds) AS ChangelistOwnerKinds,
 					ANY_VALUE(PresubmitRunByAutomation) As PresubmitRunByAutomation
 				FROM (
 					-- Flatten test results to test runs.
@@ -498,6 +517,7 @@ WITH test_variant_verdicts AS (
 						ANY_VALUE(ChangelistHosts) AS ChangelistHosts,
 						ANY_VALUE(ChangelistChanges) AS ChangelistChanges,
 						ANY_VALUE(ChangelistPatchsets) AS ChangelistPatchsets,
+						ANY_VALUE(ChangelistOwnerKinds) AS ChangelistOwnerKinds,
 						ANY_VALUE(PresubmitRunOwner IS NOT NULL AND PresubmitRunOwner = "automation") AS PresubmitRunByAutomation
 					FROM TestResults
 					WHERE Project = @project
@@ -544,7 +564,8 @@ SELECT
 			v.IngestedInvocationId,
 			v.ChangelistHosts,
 			v.ChangelistChanges,
-			v.ChangelistPatchsets
+			v.ChangelistPatchsets,
+			v.ChangelistOwnerKinds,
 		FROM UNNEST(Verdicts) v WITH OFFSET o
 		WHERE v.HasUnexpectedRun AND v.HasExpectedRun
 		ORDER BY o -- Order by descending partition time.
@@ -557,6 +578,7 @@ SELECT
 			v.ChangelistHosts,
 			v.ChangelistChanges,
 			v.ChangelistPatchsets,
+			v.ChangelistOwnerKinds,
 			v.HasUnexpectedRun
 		FROM UNNEST(Verdicts) v WITH OFFSET o
 		WHERE

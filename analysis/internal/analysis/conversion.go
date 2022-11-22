@@ -63,3 +63,9 @@ func FromBQPresubmitRunMode(value string) pb.PresubmitRunMode {
 func FromBQExonerationReason(value string) pb.ExonerationReason {
 	return pb.ExonerationReason(pb.ExonerationReason_value[value])
 }
+
+// FromBQChangelistOwnershipKind extracts luci.analysis.v1.ChangelistOwnerKind
+// from its BigQuery column representation.
+func FromBQChangelistOwnershipKind(value string) pb.ChangelistOwnerKind {
+	return pb.ChangelistOwnerKind(pb.ChangelistOwnerKind_value[value])
+}

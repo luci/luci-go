@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -45,7 +46,7 @@ func RegisterTaskClass() {
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			task := payload.(*taskspb.JoinBuild)
 			_, err := join.JoinBuild(ctx, task.Host, task.Project, task.Id)
-			return err
+			return errors.Annotate(err, "join build %s/%v", task.Host, task.Id).Err()
 		},
 	})
 }

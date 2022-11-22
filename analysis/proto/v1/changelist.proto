@@ -28,4 +28,20 @@ message Changelist {
 
   // Patch set number, e.g. 1.
   int32 patchset = 3;
+
+  // The kind of owner of the changelist.
+  ChangelistOwnerKind owner_kind = 4;
+}
+
+// ChangelistOwner describes the owner of a gerrit changelist.
+enum ChangelistOwnerKind {
+  // The changelist owner is not known.
+  CHANGELIST_OWNER_UNSPECIFIED = 0;
+
+  // The changelist is owned by a human.
+  HUMAN = 1;
+
+  // The changelist is owned by automation. (E.g. autoroller or
+  // automatic uprev process.)
+  AUTOMATION = 2;
 }

@@ -616,9 +616,10 @@ func createDistinctClusterFailurePB(f *analysis.ClusterFailure) *pb.DistinctClus
 	var changelists []*pb.Changelist
 	for _, cl := range f.Changelists {
 		changelists = append(changelists, &pb.Changelist{
-			Host:     cl.Host.StringVal,
-			Change:   cl.Change.Int64,
-			Patchset: int32(cl.Patchset.Int64),
+			Host:      cl.Host.StringVal,
+			Change:    cl.Change.Int64,
+			Patchset:  int32(cl.Patchset.Int64),
+			OwnerKind: analysis.FromBQChangelistOwnershipKind(cl.OwnerKind.StringVal),
 		})
 	}
 

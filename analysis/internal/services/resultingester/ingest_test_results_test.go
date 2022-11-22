@@ -234,14 +234,16 @@ func TestIngestTestResults(t *testing.T) {
 				CommitHash:       strings.Repeat("0a", 20),
 				Changelists: []testresults.Changelist{
 					{
-						Host:     "anothergerrit.gerrit.instance",
-						Change:   77788,
-						Patchset: 19,
+						Host:      "anothergerrit.gerrit.instance",
+						Change:    77788,
+						Patchset:  19,
+						OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 					},
 					{
-						Host:     "mygerrit-review.googlesource.com",
-						Change:   12345,
-						Patchset: 5,
+						Host:      "mygerrit-review.googlesource.com",
+						Change:    12345,
+						Patchset:  5,
+						OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 					},
 				},
 			}
@@ -289,14 +291,16 @@ func TestIngestTestResults(t *testing.T) {
 					WithBuildStatus(pb.BuildStatus_BUILD_STATUS_FAILURE).
 					WithChangelists([]testresults.Changelist{
 						{
-							Host:     "anothergerrit.gerrit.instance",
-							Change:   77788,
-							Patchset: 19,
+							Host:      "anothergerrit.gerrit.instance",
+							Change:    77788,
+							Patchset:  19,
+							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 						},
 						{
-							Host:     "mygerrit-review.googlesource.com",
-							Change:   12345,
-							Patchset: 5,
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    12345,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 						},
 					}).
 					WithPresubmitRun(&testresults.PresubmitRun{
@@ -833,14 +837,16 @@ func TestIngestTestResults(t *testing.T) {
 					Status:       pb.BuildStatus_BUILD_STATUS_FAILURE,
 					Changelists: []*pb.Changelist{
 						{
-							Host:     "mygerrit-review.googlesource.com",
-							Change:   12345,
-							Patchset: 5,
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    12345,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 						},
 						{
-							Host:     "anothergerrit.gerrit.instance",
-							Change:   77788,
-							Patchset: 19,
+							Host:      "anothergerrit.gerrit.instance",
+							Change:    77788,
+							Patchset:  19,
+							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 						},
 					},
 					Commit: &bbpb.GitilesCommit{

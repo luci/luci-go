@@ -514,7 +514,10 @@ CREATE TABLE TestResults (
   -- changelists that were tested by the test execution. The arrays
   -- are matched in length and correspond in index, i.e.
   -- ChangelistHosts[OFFSET(0)] corresponds with ChangelistChanges[OFFSET(0)]
-  -- and ChangelistPatchsets[OFFSET(0)].
+  -- and ChangelistPatchsets[OFFSET(0)],
+  -- with the exception of ChangelistOwnerKinds, for which correspondance
+  -- is not guaranteed until March 2023 (as the column was retrofitted later).
+  --
   -- Changelists are stored in ascending lexicographical order (over
   -- (hostname, change, patchset)).
   -- They will be set for all presubmit runs, and may be set for other
@@ -533,6 +536,12 @@ CREATE TABLE TestResults (
 
   -- The patchset number(s) of the changelist, e.g. 1.
   ChangelistPatchsets ARRAY<INT64> NOT NULL,
+
+  -- The changelist owner kind(s). Elements in this array correspond to
+  -- one of the luci.analysis.v1.ChangelistOwnerKinds values.
+  -- 'U' corresponds to a User changelist, 'A' corresponds to an Automation
+  -- changelist, and '' corresponds to a changelist of unspecified origin.
+  ChangelistOwnerKinds ARRAY<STRING(1)>,
 ) PRIMARY KEY(Project, TestId, PartitionTime DESC, VariantHash, IngestedInvocationId, RunIndex, ResultIndex)
 , ROW DELETION POLICY (OLDER_THAN(PartitionTime, INTERVAL 90 DAY));
 
@@ -653,7 +662,10 @@ CREATE TABLE IngestedInvocations (
   -- changelists that were tested by the test execution. The arrays
   -- are matched in length and correspond in index, i.e.
   -- ChangelistHosts[OFFSET(0)] corresponds with ChangelistChanges[OFFSET(0)]
-  -- and ChangelistPatchsets[OFFSET(0)].
+  -- and ChangelistPatchsets[OFFSET(0)],
+  -- with the exception of ChangelistOwnerKinds, for which correspondance
+  -- is not guaranteed until March 2023 (as the column was retrofitted later).
+  --
   -- Changelists are stored in ascending lexicographical order (over
   -- (hostname, change, patchset)).
   -- They will be set for all presubmit runs, and may be set for other
@@ -672,6 +684,12 @@ CREATE TABLE IngestedInvocations (
 
   -- The patchset number(s) of the changelist, e.g. 1.
   ChangelistPatchsets ARRAY<INT64> NOT NULL,
+
+  -- The changelist owner kind(s). Elements in this array correspond to
+  -- one of the luci.analysis.v1.ChangelistOwnerKinds values.
+  -- 'U' corresponds to a User changelist, 'A' corresponds to an Automation
+  -- changelist, and '' corresponds to a changelist of unspecified origin.
+  ChangelistOwnerKinds ARRAY<STRING(1)>,
 ) PRIMARY KEY(Project, IngestedInvocationId)
 -- Use a slightly longer retention period to prevent the invocation being
 -- dropped before the associated TestResults.

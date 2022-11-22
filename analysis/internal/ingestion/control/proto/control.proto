@@ -44,18 +44,6 @@ message BuildResult {
   // The ending status of the build. E.g. Canceled, Success, Failure, Infra failure.
   luci.analysis.v1.BuildStatus status = 6;
 
-  message Changelist {
-    // Host is the gerrit hostname, excluding "-review.googlesource.com".
-    string host = 1;
-    // The gerrit change number.
-    int64 change = 2;
-    // The gerrit patchset number.
-    int64 patchset = 3;
-  }
-
-  // The changelists that were tested by the build. (Deprecated, use changelists instead.)
-  repeated Changelist changelists_old = 7;
-
   // The changelists that were tested by the build.
   repeated luci.analysis.v1.Changelist changelists = 12;
 

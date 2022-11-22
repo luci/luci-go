@@ -105,7 +105,7 @@ func UseProjectScopedAuthSetting(ctx context.Context, useProjectScopedAuth bool)
 // gerrit. Project is name of the LUCI Project which the request
 // should be performed as (if project-scoped authentication is
 // enabled).
-func GetRPCTransport(ctx context.Context, project string) (http.RoundTripper, error) {
+func GetRPCTransport(ctx context.Context, project string, opts ...auth.RPCOption) (http.RoundTripper, error) {
 	enabled, ok := ctx.Value(&clientContextKey).(bool)
 	if !ok {
 		return nil, errors.New("project-scoped authentication setting not configured in context")
@@ -114,9 +114,10 @@ func GetRPCTransport(ctx context.Context, project string) (http.RoundTripper, er
 	var t http.RoundTripper
 	var err error
 	if enabled {
-		t, err = auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
+		options := append([]auth.RPCOption{auth.WithProject(project)}, opts...)
+		t, err = auth.GetRPCTransport(ctx, auth.AsProject, options...)
 	} else {
-		t, err = auth.GetRPCTransport(ctx, auth.AsSelf)
+		t, err = auth.GetRPCTransport(ctx, auth.AsSelf, opts...)
 	}
 
 	if err != nil {

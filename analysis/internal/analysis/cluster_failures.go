@@ -47,23 +47,24 @@ type ClusterFailure struct {
 
 type Exoneration struct {
 	// luci.analysis.v1.ExonerationReason value. E.g. "OCCURS_ON_OTHER_CLS".
-	Reason bigquery.NullString `json:"reason"`
+	Reason bigquery.NullString
 }
 
 type Variant struct {
-	Key   bigquery.NullString `json:"key"`
-	Value bigquery.NullString `json:"value"`
+	Key   bigquery.NullString
+	Value bigquery.NullString
 }
 
 type PresubmitRunID struct {
-	System bigquery.NullString `json:"system"`
-	ID     bigquery.NullString `json:"id"`
+	System bigquery.NullString
+	ID     bigquery.NullString
 }
 
 type Changelist struct {
-	Host     bigquery.NullString `json:"host"`
-	Change   bigquery.NullInt64  `json:"change"`
-	Patchset bigquery.NullInt64  `json:"patchset"`
+	Host      bigquery.NullString
+	Change    bigquery.NullInt64
+	Patchset  bigquery.NullInt64
+	OwnerKind bigquery.NullString
 }
 
 type ReadClusterFailuresOptions struct {
