@@ -15,8 +15,7 @@
 import { Router } from '@vaadin/router';
 import { BroadcastChannel } from 'broadcast-channel';
 
-import './components/page_layout';
-import { refreshAuthChannel } from './components/page_layout';
+import { REFRESH_AUTH_CHANNEL } from './libs/constants';
 
 export const NOT_FOUND_URL = '/not-found';
 
@@ -24,7 +23,13 @@ const appRoot = document.getElementById('app-root');
 export const router = new Router(appRoot, { baseUrl: '/ui/' });
 router.setRoutes({
   path: '/',
-  component: 'milo-page-layout',
+  action: async (_ctx, cmd) => {
+    await import(
+      /* webpackChunkName: "page_layout" */
+      './components/page_layout'
+    );
+    return cmd.component('milo-page-layout');
+  },
   children: [
     {
       path: '/login',
@@ -279,7 +284,7 @@ router.setRoutes({
       path: '/auth-callback/:channel_id',
       action: async (ctx, cmd) => {
         new BroadcastChannel(ctx.params['channel_id'] as string).postMessage('close');
-        refreshAuthChannel.postMessage('refresh');
+        REFRESH_AUTH_CHANNEL.postMessage('refresh');
         await import(
           /* webpackChunkName: "close_page" */
           './pages/close_page'

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { BroadcastChannel } from 'broadcast-channel';
 import { fromPromise } from 'mobx-utils';
 
 import { BuildStatus } from '../services/buildbucket';
@@ -193,3 +194,5 @@ export const PREDEFINED_TIME_INTERVALS = Object.freeze([
 
 export const NEVER_PROMISE = new Promise<never>(() => {});
 export const NEVER_OBSERVABLE = fromPromise(NEVER_PROMISE);
+
+export const REFRESH_AUTH_CHANNEL = new BroadcastChannel('refresh-auth-channel');

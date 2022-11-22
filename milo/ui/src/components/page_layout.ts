@@ -13,13 +13,13 @@
 // limitations under the License.
 
 import { Router } from '@vaadin/router';
-import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
 import { destroy } from 'mobx-state-tree';
 
 import './tooltip';
 import './top_bar';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
+import { REFRESH_AUTH_CHANNEL } from '../libs/constants';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
@@ -30,8 +30,6 @@ import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { provideStore, Store } from '../store';
 import commonStyle from '../styles/common_style.css';
 import { MiloBaseElement } from './milo_base';
-
-export const refreshAuthChannel = new BroadcastChannel('refresh-auth-channel');
 
 function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
   if (
@@ -84,8 +82,8 @@ export class PageLayoutElement extends MiloBaseElement {
     }
 
     const onRefreshAuth = () => this.store.authState.scheduleUpdate(true);
-    refreshAuthChannel.addEventListener('message', onRefreshAuth);
-    this.addDisposer(() => refreshAuthChannel.removeEventListener('message', onRefreshAuth));
+    REFRESH_AUTH_CHANNEL.addEventListener('message', onRefreshAuth);
+    this.addDisposer(() => REFRESH_AUTH_CHANNEL.removeEventListener('message', onRefreshAuth));
 
     this.addDisposer(() => {
       destroy(this.store);
