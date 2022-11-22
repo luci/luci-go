@@ -273,9 +273,15 @@ export const BuildPage = types
       get builder() {
         return unwrapObservable(builder.get() || NEVER_OBSERVABLE, null);
       },
-      get permittedActions(): { readonly [key: string]: boolean } {
+      get _permittedActions(): { readonly [key: string]: boolean | undefined } {
         const permittedActionRes = unwrapObservable(permittedActions.get() || NEVER_OBSERVABLE, null);
         return permittedActionRes?.results || {};
+      },
+      get canRetry() {
+        return this._permittedActions[ADD_BUILD_PERM] || false;
+      },
+      get canCancel() {
+        return this._permittedActions[CANCEL_BUILD_PERM] || false;
       },
       get projectCfg() {
         return unwrapObservable(projectCfg.get() || NEVER_OBSERVABLE, null);

@@ -108,8 +108,8 @@ export interface Build {
   readonly output?: BuildOutput;
   readonly steps?: readonly Step[];
   readonly infra?: BuildInfra;
-  readonly tags: readonly StringPair[];
-  readonly exe: Executable;
+  readonly tags?: readonly StringPair[];
+  readonly exe?: Executable;
   readonly schedulingTimeout?: string;
   readonly executionTimeout?: string;
   readonly gracePeriod?: string;

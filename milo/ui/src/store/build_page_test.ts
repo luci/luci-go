@@ -103,7 +103,7 @@ describe('BuildPageStore', () => {
           store.buildPage.build;
           store.buildPage.builder;
           store.buildPage.customBugLink;
-          store.buildPage.permittedActions;
+          store.buildPage.canRetry;
         })
       );
       await timer.runAllAsync();

@@ -48,7 +48,7 @@ import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration } from '../../libs/time_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { router } from '../../routes';
-import { ADD_BUILD_PERM, BuildStatus, CANCEL_BUILD_PERM, GitilesCommit } from '../../services/buildbucket';
+import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
 import { createTVPropGetter, getPropKeyLabel } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import colorClasses from '../../styles/color_classes.css';
@@ -100,7 +100,7 @@ export class OverviewTabElement extends MobxLitElement {
   private renderActionButtons() {
     const build = this.store.buildPage.build!;
 
-    const canRetry = this.store.buildPage.permittedActions[ADD_BUILD_PERM] ?? false;
+    const canRetry = this.store.buildPage.canRetry;
 
     if (build.endTime) {
       return html`
@@ -113,7 +113,7 @@ export class OverviewTabElement extends MobxLitElement {
       `;
     }
 
-    const canCancel = build.cancelTime === null && this.store.buildPage.permittedActions[CANCEL_BUILD_PERM];
+    const canCancel = build.cancelTime === null && this.store.buildPage.canCancel;
     let tooltip = '';
     if (!canCancel) {
       tooltip =
@@ -257,7 +257,9 @@ export class OverviewTabElement extends MobxLitElement {
   private renderInfra() {
     const build = this.store.buildPage.build!.data;
     const botLink = build.infra?.swarming ? getBotLink(build.infra.swarming) : null;
-    const invocationLink = build.infra?.resultdb?.invocation ? getInvocationLink(build.infra.resultdb.invocation) : null;
+    const invocationLink = build.infra?.resultdb?.invocation
+      ? getInvocationLink(build.infra.resultdb.invocation)
+      : null;
     return html`
       <h3>Infra</h3>
       <table>
@@ -299,10 +301,16 @@ export class OverviewTabElement extends MobxLitElement {
               `
             : ''
         }
-        <tr>
-          <td>Recipe:</td>
-          <td><milo-link .link=${this.build!.recipeLink} target="_blank"></milo-link></td>
-        </tr>
+        ${
+          this.build?.recipeLink
+            ? html`
+                <tr>
+                  <td>Recipe:</td>
+                  <td><milo-link .link=${this.build.recipeLink} target="_blank"></milo-link></td>
+                </tr>
+              `
+            : ''
+        }
         <tr>
           <td>ResultDB Invocation:</td>
           <td>${invocationLink ? html`<milo-link .link=${invocationLink} target="_blank"></milo-link>` : 'None'}</td>

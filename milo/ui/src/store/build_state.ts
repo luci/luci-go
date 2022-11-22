@@ -295,7 +295,7 @@ export const BuildState = types
       return Boolean(self.data.input?.experiments?.includes('luci.buildbucket.canary_software'));
     },
     get buildSets(): readonly string[] {
-      return self.data.tags.filter((tag) => tag.key === 'buildset').map((tag) => tag.value || '');
+      return self.data.tags?.filter((tag) => tag.key === 'buildset').map((tag) => tag.value || '') || [];
     },
     get associatedGitilesCommit() {
       return self.data.output?.gitilesCommit || self.data.input?.gitilesCommit;
@@ -309,7 +309,7 @@ export const BuildState = types
     },
     get recipeLink() {
       let csHost = 'source.chromium.org';
-      if (self.data.exe.cipdPackage?.includes('internal')) {
+      if (self.data.exe?.cipdPackage?.includes('internal')) {
         csHost = 'source.corp.google.com';
       }
       // TODO(crbug.com/1149540): remove this conditional once the long-term
@@ -317,7 +317,11 @@ export const BuildState = types
       if (self.data.builder.project === 'flutter') {
         csHost = 'cs.opensource.google';
       }
-      const recipeName = self.data.input?.properties?.['recipe'] as string;
+      const recipeName = self.data.input?.properties?.['recipe'];
+      if (!recipeName) {
+        return null;
+      }
+
       return {
         label: recipeName,
         url: `https://${csHost}/search/?${new URLSearchParams([['q', `file:recipes/${recipeName}.py`]]).toString()}`,
