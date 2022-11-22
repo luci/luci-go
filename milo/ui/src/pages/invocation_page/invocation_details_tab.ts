@@ -123,7 +123,7 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
     });
     return html`
       <div>Create Time: ${new Date(invocation.createTime).toLocaleString()}</div>
-      <div>Finalize Time: ${new Date(invocation.finalizeTime).toLocaleDateString()}</div>
+      <div>Finalize Time: ${new Date(invocation.finalizeTime).toLocaleString()}</div>
       <div>Deadline: ${new Date(invocation.deadline).toLocaleDateString()}</div>
       <div style=${styleMap({ display: this.hasTags ? '' : 'none' })}>
         Tags:
