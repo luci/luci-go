@@ -35,7 +35,7 @@ const _self = self as unknown as ServiceWorkerGlobalScope;
 const FORCE_UPDATE_TOKEN_KEY = 'force-update-token-' + _self.registration.scope;
 
 // Update this value to ensure older versions are removed from the cache.
-const FORCE_UPDATE_TOKEN_VALUE = 'v8';
+const FORCE_UPDATE_TOKEN_VALUE = 'v9';
 
 _self.addEventListener('install', (e) => {
   e.waitUntil(
