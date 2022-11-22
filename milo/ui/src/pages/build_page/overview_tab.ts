@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@material/mwc-button';
-import '@material/mwc-textarea';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html, TemplateResult } from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html';

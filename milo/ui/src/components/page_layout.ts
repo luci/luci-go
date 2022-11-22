@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@material/mwc-icon';
-import '@material/mwc-icon-button';
-import '@material/mwc-snackbar';
-import { BeforeEnterObserver, Router } from '@vaadin/router';
+import { Router } from '@vaadin/router';
 import { BroadcastChannel } from 'broadcast-channel';
 import { css, customElement, html } from 'lit-element';
-import { makeObservable, observable } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 
 import './tooltip';
 import './top_bar';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
-import { NEW_MILO_VERSION_EVENT_TYPE } from '../libs/constants';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
 import { hasTags } from '../libs/tag';
+import { createStaticTrustedURL } from '../libs/utils';
 import { router } from '../routes';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { provideStore, Store } from '../store';
@@ -57,7 +53,7 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
 @customElement('milo-page-layout')
 @errorHandler(redirectToLogin)
 @provider
-export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObserver {
+export class PageLayoutElement extends MiloBaseElement {
   @provideStore({ global: true }) readonly store = Store.create();
   @provideNotifier({ global: true }) readonly notifier = new ProgressiveNotifier({
     // Ensures that everything above the current scroll view is rendered.
@@ -65,32 +61,27 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
     rootMargin: '1000000px 0px 0px 0px',
   });
 
-  @observable.ref showUpdateBanner = false;
-
-  constructor() {
-    super();
-    makeObservable(this);
-  }
-
-  onBeforeEnter() {
-    if ('serviceWorker' in navigator) {
-      // onBeforeEnter can be async.
-      // But we don't want to block the rest of the page from rendering.
-      navigator.serviceWorker.getRegistration('/').then((redirectSw) => {
-        this.store.setRedirectSw(redirectSw || null);
-      });
-    } else {
-      this.store.setRedirectSw(null);
-    }
-  }
-
   connectedCallback() {
     super.connectedCallback();
 
     this.store.authState.init();
-    const onNewMiloVersion = () => (this.showUpdateBanner = true);
-    window.addEventListener(NEW_MILO_VERSION_EVENT_TYPE, onNewMiloVersion);
-    this.addDisposer(() => window.removeEventListener(NEW_MILO_VERSION_EVENT_TYPE, onNewMiloVersion));
+    if (navigator.serviceWorker && ENABLE_UI_SW) {
+      this.store.workbox.init(createStaticTrustedURL('sw-js-static', '/ui/service-worker.js'));
+    }
+
+    if (navigator.serviceWorker && !document.cookie.includes('showNewBuildPage=false')) {
+      navigator.serviceWorker
+        .register(
+          // cast to string because TypeScript doesn't allow us to use
+          // TrustedScriptURL here
+          createStaticTrustedURL('root-sw-js-static', '/root-sw.js') as string
+        )
+        .then((registration) => {
+          this.store.setRedirectSw(registration);
+        });
+    } else {
+      this.store.setRedirectSw(null);
+    }
 
     const onRefreshAuth = () => this.store.authState.scheduleUpdate(true);
     refreshAuthChannel.addEventListener('message', onRefreshAuth);
@@ -103,18 +94,6 @@ export class PageLayoutElement extends MiloBaseElement implements BeforeEnterObs
 
   protected render() {
     return html`
-      <mwc-snackbar labelText="A New Version of Milo is Available" timeoutMs=${-1} ?open=${this.showUpdateBanner}>
-        <mwc-button
-          slot="action"
-          @click=${async () => {
-            this.showUpdateBanner = false;
-            (await window.SW_PROMISE).messageSkipWaiting();
-          }}
-        >
-          Update
-        </mwc-button>
-        <mwc-icon-button icon="close" slot="dismiss" @click=${() => (this.showUpdateBanner = false)}></mwc-icon-button>
-      </mwc-snackbar>
       <milo-tooltip></milo-tooltip>
       ${this.store.banners.map((banner) => html`<div class="banner-container">${banner}</div>`)}
       <milo-top-bar></milo-top-bar>

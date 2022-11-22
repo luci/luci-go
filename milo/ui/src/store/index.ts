@@ -19,6 +19,7 @@ import { createContextLink } from '../libs/context';
 import { AuthStateStore } from './auth_state';
 import { BuildPage } from './build_page';
 import { SearchPage } from './search_page';
+import { WorkboxState } from './service_worker/workbox_state';
 import { ServicesStore } from './services';
 import { TestHistoryPage } from './test_history_page';
 import { Timestamp } from './timestamp';
@@ -43,6 +44,7 @@ export const Store = types
     hasSettingsDialog: 0,
     showSettingsDialog: false,
     banners: types.array(types.frozen<unknown>()),
+    workbox: types.optional(WorkboxState, {}),
 
     authState: types.optional(AuthStateStore, {}),
     userConfig: types.optional(UserConfig, {}),
@@ -54,6 +56,8 @@ export const Store = types
   })
   .volatile(() => ({
     /**
+     * The service worker that performs redirection.
+     *
      * undefined means it's not initialized yet.
      * null means there's no such service worker.
      */
