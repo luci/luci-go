@@ -24,9 +24,12 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 )
 
-// RemoveInactiveBuilderStats removes the BuilderStats of builders of which
-// config no longer exists or haven't successfully scheduled for
-// model.BuilderExpirationDuration.
+// RemoveInactiveBuilderStats removes inactive BuilderStats.
+//
+// BuilderStat is inactive, if either or both of the following conditions are
+// true.
+// - the Builder hasn't scheduled a build for model.BuilderExpirationDuration
+// - the Builder config no longer exists.
 func RemoveInactiveBuilderStats(ctx context.Context) error {
 	var toDelete []*datastore.Key
 	q := datastore.NewQuery(model.BuilderStatKind)
