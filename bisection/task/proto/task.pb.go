@@ -141,6 +141,55 @@ func (x *RevertCulpritTask) GetCulpritId() int64 {
 	return 0
 }
 
+// Payload of the CancelAnalysis
+type CancelAnalysisTask struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The analysis ID that we need to cancel.
+	AnalysisId int64 `protobuf:"varint,1,opt,name=analysis_id,json=analysisId,proto3" json:"analysis_id,omitempty"`
+}
+
+func (x *CancelAnalysisTask) Reset() {
+	*x = CancelAnalysisTask{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CancelAnalysisTask) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelAnalysisTask) ProtoMessage() {}
+
+func (x *CancelAnalysisTask) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelAnalysisTask.ProtoReflect.Descriptor instead.
+func (*CancelAnalysisTask) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CancelAnalysisTask) GetAnalysisId() int64 {
+	if x != nil {
+		return x.AnalysisId
+	}
+	return 0
+}
+
 var File_go_chromium_org_luci_bisection_task_proto_task_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc = []byte{
@@ -156,10 +205,13 @@ var file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc = []byte{
 	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
 	0x73, 0x49, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x63, 0x75, 0x6c, 0x70, 0x72, 0x69, 0x74, 0x5f, 0x69,
 	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x63, 0x75, 0x6c, 0x70, 0x72, 0x69, 0x74,
-	0x49, 0x64, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
-	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x49, 0x64, 0x22, 0x35, 0x0a, 0x12, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x41, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x1f, 0x0a, 0x0b, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x61,
+	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x49, 0x64, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x6f, 0x2e,
+	0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63,
+	0x69, 0x2f, 0x62, 0x69, 0x73, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x74, 0x61, 0x73, 0x6b,
+	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -174,10 +226,11 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP() []b
 	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_goTypes = []interface{}{
 	(*FailedBuildIngestionTask)(nil), // 0: proto.FailedBuildIngestionTask
 	(*RevertCulpritTask)(nil),        // 1: proto.RevertCulpritTask
+	(*CancelAnalysisTask)(nil),       // 2: proto.CancelAnalysisTask
 }
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -217,6 +270,18 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CancelAnalysisTask); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -224,7 +289,7 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

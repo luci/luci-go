@@ -148,7 +148,13 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 		return datastore.Put(c, analysis)
 	}, nil)
 
-	// TODO (nqmtuan): Also cancel all scheduled/running rerun build for the analysis
+	// Create a task to cancel all remaining runs
+	err = tq.AddTask(c, &tq.Task{
+		Title: fmt.Sprintf("cancel_analysis_%d", analysis.Id),
+		Payload: &tpb.CancelAnalysisTask{
+			AnalysisId: analysis.Id,
+		},
+	})
 
 	if err != nil {
 		return errors.Annotate(err, "couldn't set ShouldCancel flag").Err()

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/frontend/handlers"
@@ -188,8 +189,10 @@ func main() {
 		// GAE crons
 		cron.RegisterHandler("update-config", config.Update)
 
+		// Task queues
 		compilefailuredetection.RegisterTaskClass()
 		revertculprit.RegisterTaskClass()
+		cancelanalysis.RegisterTaskClass()
 
 		return nil
 	})

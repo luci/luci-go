@@ -18,14 +18,19 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/tq"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -469,6 +474,9 @@ func TestUpdateSucceededBuild(t *testing.T) {
 	})
 
 	Convey("UpdateSucceededBuild", t, func() {
+		c, scheduler := tq.TestingContext(c, nil)
+		cancelanalysis.RegisterTaskClass()
+
 		bf := &model.LuciFailedBuild{
 			Id: 123,
 			LuciBuild: model.LuciBuild{
@@ -502,5 +510,12 @@ func TestUpdateSucceededBuild(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(datastore.Get(c, cfa), ShouldBeNil)
 		So(cfa.ShouldCancel, ShouldBeTrue)
+
+		// Assert task
+		task := &tpb.CancelAnalysisTask{
+			AnalysisId: cfa.Id,
+		}
+		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
+		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
 	})
 }

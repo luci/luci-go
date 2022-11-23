@@ -33,3 +33,9 @@ message RevertCulpritTask {
   // The ID of the Suspect which is the culprit
   int64 culprit_id = 2;
 }
+
+// Payload of the CancelAnalysis
+message CancelAnalysisTask {
+  // The analysis ID that we need to cancel.
+  int64 analysis_id = 1;
+}
