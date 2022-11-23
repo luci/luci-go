@@ -104,7 +104,6 @@ func main() {
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		cron.RegisterHandler("update_project_config", config.UpdateProjectCfg)
 		cron.RegisterHandler("reset_expired_leases", buildcron.ResetExpiredLeases)
-		// TODO(crbug/1392469) - remove py handler
 		cron.RegisterHandler("remove_inactive_builder_stats", buildercron.RemoveInactiveBuilderStats)
 
 		// PubSub push handler processing messages
