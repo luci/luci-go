@@ -25,6 +25,88 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
+var testVariant1 = pbutil.Variant("key1", "val1", "key2", "val1")
+var testVariant2 = pbutil.Variant("key1", "val2", "key2", "val1")
+var testVariant3 = pbutil.Variant("key1", "val2", "key2", "val2")
+var testVariant4 = pbutil.Variant("key1", "val1", "key2", "val2")
+
+func createTestHistoryTestData(ctx context.Context, referenceTime time.Time) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		insertTVR := func(subRealm string, variant *pb.Variant) {
+			span.BufferWrite(ctx, (&TestVariantRealm{
+				Project:     "project",
+				TestID:      "test_id",
+				SubRealm:    subRealm,
+				Variant:     variant,
+				VariantHash: pbutil.VariantHash(variant),
+			}).SaveUnverified())
+		}
+
+		insertTVR("realm", testVariant1)
+		insertTVR("realm", testVariant2)
+		insertTVR("realm", testVariant3)
+		insertTVR("realm2", testVariant4)
+
+		insertTV := func(partitionTime time.Time, variant *pb.Variant, invId string, status pb.TestVerdictStatus, hasUnsubmittedChanges bool, avgDuration *time.Duration) {
+			baseTestResult := NewTestResult().
+				WithProject("project").
+				WithTestID("test_id").
+				WithVariantHash(pbutil.VariantHash(variant)).
+				WithPartitionTime(partitionTime).
+				WithIngestedInvocationID(invId).
+				WithSubRealm("realm").
+				WithStatus(pb.TestResultStatus_PASS)
+			if hasUnsubmittedChanges {
+				baseTestResult = baseTestResult.WithChangelists([]Changelist{
+					{
+						Host:      "anothergerrit.gerrit.instance",
+						Change:    5471,
+						Patchset:  6,
+						OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+					},
+					{
+						Host:      "mygerrit-review.googlesource.com",
+						Change:    4321,
+						Patchset:  5,
+						OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+					},
+				})
+			} else {
+				baseTestResult = baseTestResult.WithChangelists(nil)
+			}
+
+			trs := NewTestVerdict().
+				WithBaseTestResult(baseTestResult.Build()).
+				WithStatus(status).
+				WithPassedAvgDuration(avgDuration).
+				Build()
+			for _, tr := range trs {
+				span.BufferWrite(ctx, tr.SaveUnverified())
+			}
+		}
+
+		day := 24 * time.Hour
+		insertTV(referenceTime.Add(-1*time.Hour), testVariant1, "inv1", pb.TestVerdictStatus_EXPECTED, false, newDuration(22222*time.Microsecond))
+		insertTV(referenceTime.Add(-12*time.Hour), testVariant1, "inv2", pb.TestVerdictStatus_EXONERATED, false, newDuration(1234567890123456*time.Microsecond))
+		insertTV(referenceTime.Add(-24*time.Hour), testVariant2, "inv1", pb.TestVerdictStatus_FLAKY, false, nil)
+
+		insertTV(referenceTime.Add(-day-1*time.Hour), testVariant1, "inv1", pb.TestVerdictStatus_UNEXPECTED, false, newDuration(33333*time.Microsecond))
+		insertTV(referenceTime.Add(-day-12*time.Hour), testVariant1, "inv2", pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED, true, nil)
+		insertTV(referenceTime.Add(-day-24*time.Hour), testVariant2, "inv1", pb.TestVerdictStatus_EXPECTED, true, nil)
+
+		insertTV(referenceTime.Add(-2*day-3*time.Hour), testVariant3, "inv1", pb.TestVerdictStatus_EXONERATED, true, newDuration(88888*time.Microsecond))
+
+		return nil
+	})
+	return err
+}
+
+func newDuration(value time.Duration) *time.Duration {
+	d := new(time.Duration)
+	*d = value
+	return d
+}
+
 // June 17th, 2022 is a Friday. The preceding 5 * 24 weekday hour
 // are as follows:
 //

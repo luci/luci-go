@@ -112,14 +112,16 @@ func TestTestHistoryServer(t *testing.T) {
 				if hasUnsubmittedChanges {
 					baseTestResult = baseTestResult.WithChangelists([]testresults.Changelist{
 						{
-							Host:     "mygerrit-review.googlesource.com",
-							Change:   4321,
-							Patchset: 5,
+							Host:      "anothergerrit.gerrit.instance",
+							Change:    5471,
+							Patchset:  6,
+							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 						},
 						{
-							Host:     "anothergerrit.gerrit.instance",
-							Change:   5471,
-							Patchset: 6,
+							Host:      "mygerrit-review.googlesource.com",
+							Change:    4321,
+							Patchset:  5,
+							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
 						},
 					})
 				} else {
@@ -166,6 +168,21 @@ func TestTestHistoryServer(t *testing.T) {
 					SubRealm: "realm",
 				},
 				PageSize: 5,
+			}
+
+			expectedChangelists := []*pb.Changelist{
+				{
+					Host:      "anothergerrit.gerrit.instance",
+					Change:    5471,
+					Patchset:  6,
+					OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+				},
+				{
+					Host:      "mygerrit-review.googlesource.com",
+					Change:    4321,
+					Patchset:  5,
+					OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+				},
 			}
 
 			Convey("unauthorised requests are rejected", func() {
@@ -240,6 +257,7 @@ func TestTestHistoryServer(t *testing.T) {
 							InvocationId:  "inv1",
 							Status:        pb.TestVerdictStatus_EXPECTED,
 							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
+							Changelists:   expectedChangelists,
 						},
 						{
 							TestId:        "test_id",
@@ -291,6 +309,7 @@ func TestTestHistoryServer(t *testing.T) {
 							InvocationId:  "inv2",
 							Status:        pb.TestVerdictStatus_EXPECTED,
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
+							Changelists:   expectedChangelists,
 						},
 					},
 					NextPageToken: res.NextPageToken,
@@ -308,6 +327,7 @@ func TestTestHistoryServer(t *testing.T) {
 							InvocationId:  "inv1",
 							Status:        pb.TestVerdictStatus_EXPECTED,
 							PartitionTime: timestamppb.New(referenceTime.Add(-2 * day)),
+							Changelists:   expectedChangelists,
 						},
 						{
 							TestId:        "test_id",
@@ -315,6 +335,7 @@ func TestTestHistoryServer(t *testing.T) {
 							InvocationId:  "inv1",
 							Status:        pb.TestVerdictStatus_EXPECTED,
 							PartitionTime: timestamppb.New(referenceTime.Add(-3 * day)),
+							Changelists:   expectedChangelists,
 						},
 					},
 				})

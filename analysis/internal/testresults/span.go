@@ -546,6 +546,10 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 		}
 		var status int64
 		var passedAvgDurationUsec spanner.NullInt64
+		var changelistHosts []string
+		var changelistChanges []int64
+		var changelistPatchsets []int64
+		var changelistOwnerKinds []string
 		err := b.FromSpanner(
 			row,
 			&tv.PartitionTime,
@@ -553,6 +557,10 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 			&tv.InvocationId,
 			&status,
 			&passedAvgDurationUsec,
+			&changelistHosts,
+			&changelistChanges,
+			&changelistPatchsets,
+			&changelistOwnerKinds,
 		)
 		if err != nil {
 			return err
@@ -561,6 +569,35 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions) (verdicts
 		if passedAvgDurationUsec.Valid {
 			tv.PassedAvgDuration = durationpb.New(time.Microsecond * time.Duration(passedAvgDurationUsec.Int64))
 		}
+
+		// Data in spanner should be consistent, so
+		// len(changelistHosts) == len(changelistChanges)
+		//    == len(changelistPatchsets).
+		//
+		// ChangeListOwnerKinds was retrofitted after the table
+		// was first created, so it should be of equal length
+		// only if present. It was introduced in November 2022,
+		// so this special-case can be deleted in March 2023+.
+		if len(changelistHosts) != len(changelistChanges) ||
+			len(changelistChanges) != len(changelistPatchsets) ||
+			(changelistOwnerKinds != nil && len(changelistOwnerKinds) != len(changelistPatchsets)) {
+			panic("Changelist arrays have mismatched length in Spanner")
+		}
+		changelists := make([]*pb.Changelist, 0, len(changelistHosts))
+		for i := range changelistHosts {
+			var ownerKind pb.ChangelistOwnerKind
+			if changelistOwnerKinds != nil {
+				ownerKind = ownerKindFromDB(changelistOwnerKinds[i])
+			}
+			changelists = append(changelists, &pb.Changelist{
+				Host:      decompressHost(changelistHosts[i]),
+				Change:    changelistChanges[i],
+				Patchset:  int32(changelistPatchsets[i]),
+				OwnerKind: ownerKind,
+			})
+		}
+		tv.Changelists = changelists
+
 		verdicts = append(verdicts, tv)
 		return nil
 	})
@@ -940,6 +977,10 @@ var testHistoryQueryTmpl = template.Must(template.New("").Parse(`
 			IngestedInvocationId,
 			{{template "tvStatus" .}},
 			CAST(AVG(IF(Status = @pass, RunDurationUsec, NULL)) AS INT64) AS PassedAvgDurationUsec,
+			ANY_VALUE(ChangelistHosts) AS ChangelistHosts,
+			ANY_VALUE(ChangelistChanges) AS ChangelistChanges,
+			ANY_VALUE(ChangelistPatchsets) AS ChangelistPatchsets,
+			ANY_VALUE(ChangelistOwnerKinds) AS ChangelistOwnerKinds,
 		FROM TestResults
 		WHERE
 			{{template "testResultFilter" .}}
