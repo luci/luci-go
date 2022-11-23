@@ -65,8 +65,7 @@ cron:
 
 ## cleanup builders
 
-- description: removes the BuilderStat of builders, if there was no builds
-  scheduled for a long time or the builder config no longer exists.
+- description: removes inactive BuilderStats
   target: default-go
   url: /internal/cron/buildbucket/remove_inactive_builder_stats
   schedule: every 1 hours
