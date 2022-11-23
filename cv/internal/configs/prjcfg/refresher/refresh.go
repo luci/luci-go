@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prjcfg
+package refresher
 
 import (
 	"context"
@@ -26,13 +26,15 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 )
 
+// ConfigFileName is the filename of CV project configs.
 const ConfigFileName = "commit-queue.cfg"
 
-// ProjectsWithConfig returns all LUCI projects which have CV config.
-func ProjectsWithConfig(ctx context.Context) ([]string, error) {
+// projectsWithConfig returns all LUCI projects which have CV config.
+func projectsWithConfig(ctx context.Context) ([]string, error) {
 	projects, err := cfgclient.ProjectsWithConfig(ctx, ConfigFileName)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get projects with %q from LUCI Config",
@@ -67,7 +69,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	}
 
 	// Write out ConfigHashInfo if missing and all ConfigGroups.
-	localHash := ComputeHash(cfg)
+	localHash := prjcfg.ComputeHash(cfg)
 	cgNames := make([]string, len(cfg.GetConfigGroups()))
 	for i, cg := range cfg.GetConfigGroups() {
 		cgNames[i] = cg.GetName()
@@ -75,9 +77,9 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	targetEVersion := existingPC.EVersion + 1
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		hashInfo := ConfigHashInfo{
+		hashInfo := prjcfg.ConfigHashInfo{
 			Hash:    localHash,
-			Project: ProjectConfigKey(ctx, project),
+			Project: prjcfg.ProjectConfigKey(ctx, project),
 		}
 		switch err := datastore.Get(ctx, &hashInfo); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
@@ -89,7 +91,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 			hashInfo.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
 			hashInfo.ConfigGroupNames = cgNames
 			hashInfo.GitRevision = meta.Revision
-			hashInfo.SchemaVersion = SchemaVersion
+			hashInfo.SchemaVersion = prjcfg.SchemaVersion
 			return errors.Annotate(datastore.Put(ctx, &hashInfo), "failed to put ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
 		}
 	}, nil)
@@ -104,14 +106,14 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	updated := false
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		updated = false
-		pc := ProjectConfig{Project: project}
+		pc := prjcfg.ProjectConfig{Project: project}
 		switch err := datastore.Get(ctx, &pc); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
 			return errors.Annotate(err, "failed to get ProjectConfig(project=%q)", project).Tag(transient.Tag).Err()
 		case pc.EVersion != existingPC.EVersion:
 			return nil // Already updated by concurrent updateProject.
 		default:
-			pc = ProjectConfig{
+			pc = prjcfg.ProjectConfig{
 				Project:          project,
 				Enabled:          true,
 				UpdateTime:       datastore.RoundTime(clock.Now(ctx)).UTC(),
@@ -119,7 +121,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 				Hash:             localHash,
 				ExternalHash:     meta.ContentHash,
 				ConfigGroupNames: cgNames,
-				SchemaVersion:    SchemaVersion,
+				SchemaVersion:    prjcfg.SchemaVersion,
 			}
 			updated = true
 			if err := datastore.Put(ctx, &pc); err != nil {
@@ -141,8 +143,8 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 // needsUpdate checks if there is a new config version.
 //
 // Loads and returns the ProjectConfig stored in Datastore.
-func needsUpdate(ctx context.Context, project string) (bool, ProjectConfig, error) {
-	pc := ProjectConfig{Project: project}
+func needsUpdate(ctx context.Context, project string) (bool, prjcfg.ProjectConfig, error) {
+	pc := prjcfg.ProjectConfig{Project: project}
 	var meta config.Meta
 	// NOTE: config metadata fetched here can't be used later to fetch actual
 	// contents (see https://crrev.com/c/3050832), so it is only used
@@ -165,7 +167,7 @@ func needsUpdate(ctx context.Context, project string) (bool, ProjectConfig, erro
 		return true, pc, nil
 	case pc.ExternalHash != meta.ContentHash:
 		return true, pc, nil
-	case pc.SchemaVersion != SchemaVersion:
+	case pc.SchemaVersion != prjcfg.SchemaVersion:
 		// Intentionally using != here s.t. rollbacks result in downgrading of the
 		// schema. Given that project configs are checked and potentially updated
 		// every ~1 minute, this if OK.
@@ -202,7 +204,7 @@ func DisableProject(ctx context.Context, project string, notify NotifyCallback) 
 
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		disabled = false
-		pc := ProjectConfig{Project: project}
+		pc := prjcfg.ProjectConfig{Project: project}
 		switch err := datastore.Get(ctx, &pc); {
 		case datastore.IsErrNoSuchEntity(err):
 			return nil // No-op when disabling non-existent Project
@@ -243,11 +245,11 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 
 	// Check if there are any existing entities with the current schema version
 	// such that we can skip updating them.
-	projKey := ProjectConfigKey(ctx, project)
-	entities := make([]*ConfigGroup, cgLen)
+	projKey := prjcfg.ProjectConfigKey(ctx, project)
+	entities := make([]*prjcfg.ConfigGroup, cgLen)
 	for i, cg := range cfg.GetConfigGroups() {
-		entities[i] = &ConfigGroup{
-			ID:      MakeConfigGroupID(hash, cg.GetName()),
+		entities[i] = &prjcfg.ConfigGroup{
+			ID:      prjcfg.MakeConfigGroupID(hash, cg.GetName()),
 			Project: projKey,
 		}
 	}
@@ -267,14 +269,14 @@ func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash strin
 			// proceed to put below.
 		case err != nil:
 			return errors.Annotate(err, "failed to check the existence of one of ConfigGroups").Tag(transient.Tag).Err()
-		case ent.SchemaVersion != SchemaVersion:
+		case ent.SchemaVersion != prjcfg.SchemaVersion:
 			// Intentionally using != here s.t. rollbacks result in downgrading
 			// of the schema. Given that project configs are checked and
 			// potentially updated every ~1 minute, this if OK.
 		default:
 			continue // up to date
 		}
-		ent.SchemaVersion = SchemaVersion
+		ent.SchemaVersion = prjcfg.SchemaVersion
 		ent.DrainingStartTime = cfg.GetDrainingStartTime()
 		ent.SubmitOptions = cfg.GetSubmitOptions()
 		ent.Content = cfg.GetConfigGroups()[i]

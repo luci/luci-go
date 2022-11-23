@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prjcfg
+package refresher
 
 import (
 	"context"
@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -67,7 +68,7 @@ var testCfg = &cfgpb.Config{
 	},
 }
 
-func TestUpdateProject(t *testing.T) {
+func TestupdateProject(t *testing.T) {
 	Convey("Update Project", t, func() {
 		ctx, testClock, _ := mkTestingCtx()
 		chromiumConfig := &cfgpb.Config{
@@ -112,14 +113,14 @@ func TestUpdateProject(t *testing.T) {
 			cfg, meta := &cfgpb.Config{}, &config.Meta{}
 			err := cfgclient.Get(ctx, config.ProjectSet("chromium"), ConfigFileName, cfgclient.ProtoText(cfg), meta)
 			So(err, ShouldBeNil)
-			localHash := ComputeHash(cfg)
-			projKey := ProjectConfigKey(ctx, "chromium")
+			localHash := prjcfg.ComputeHash(cfg)
+			projKey := prjcfg.ProjectConfigKey(ctx, "chromium")
 			cgNames := make([]string, len(cfg.GetConfigGroups()))
 			// Verify ConfigGroups.
 			for i, cgpb := range cfg.GetConfigGroups() {
 				cgNames[i] = cgpb.GetName()
-				cg := ConfigGroup{
-					ID:      MakeConfigGroupID(localHash, cgNames[i]),
+				cg := prjcfg.ConfigGroup{
+					ID:      prjcfg.MakeConfigGroupID(localHash, cgNames[i]),
 					Project: projKey,
 				}
 				err := datastore.Get(ctx, &cg)
@@ -130,12 +131,12 @@ func TestUpdateProject(t *testing.T) {
 				So(cg.CQStatusHost, ShouldResemble, cfg.GetCqStatusHost())
 			}
 			// Verify ProjectConfig.
-			pc := ProjectConfig{Project: "chromium"}
+			pc := prjcfg.ProjectConfig{Project: "chromium"}
 			err = datastore.Get(ctx, &pc)
 			So(err, ShouldBeNil)
-			So(pc, ShouldResemble, ProjectConfig{
+			So(pc, ShouldResemble, prjcfg.ProjectConfig{
 				Project:          "chromium",
-				SchemaVersion:    SchemaVersion,
+				SchemaVersion:    prjcfg.SchemaVersion,
 				Enabled:          true,
 				EVersion:         expectedEVersion,
 				Hash:             localHash,
@@ -148,16 +149,16 @@ func TestUpdateProject(t *testing.T) {
 			// internally determined by the memory-based implementation
 			// and isn't important here, so just assert that something
 			// that looks like a hash digest is filled in.
-			hashInfo := ConfigHashInfo{Hash: localHash, Project: projKey}
+			hashInfo := prjcfg.ConfigHashInfo{Hash: localHash, Project: projKey}
 			err = datastore.Get(ctx, &hashInfo)
 			So(err, ShouldBeNil)
 			So(len(hashInfo.GitRevision), ShouldEqual, 40)
 			hashInfo.GitRevision = ""
 			// Verify the rest of ConfigHashInfo.
-			So(hashInfo, ShouldResemble, ConfigHashInfo{
+			So(hashInfo, ShouldResemble, prjcfg.ConfigHashInfo{
 				Hash:             localHash,
 				Project:          projKey,
-				SchemaVersion:    SchemaVersion,
+				SchemaVersion:    prjcfg.SchemaVersion,
 				ProjectEVersion:  expectedEVersion,
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
@@ -187,7 +188,7 @@ func TestUpdateProject(t *testing.T) {
 			Convey("Noop if config is up-to-date", func() {
 				err := UpdateProject(ctx, "chromium", notify)
 				So(err, ShouldBeNil)
-				pc := ProjectConfig{Project: "chromium"}
+				pc := prjcfg.ProjectConfig{Project: "chromium"}
 				So(datastore.Get(ctx, &pc), ShouldBeNil)
 				So(pc.EVersion, ShouldEqual, 1)
 				prevUpdatedTime := testClock.Now().Add(-10 * time.Minute)
@@ -204,7 +205,7 @@ func TestUpdateProject(t *testing.T) {
 					So(notifyCalled, ShouldBeTrue)
 					So(datastore.Get(ctx, &pc), ShouldBeNil)
 					So(pc.EVersion, ShouldEqual, 2)
-					So(pc.SchemaVersion, ShouldEqual, SchemaVersion)
+					So(pc.SchemaVersion, ShouldEqual, prjcfg.SchemaVersion)
 				})
 			})
 
@@ -253,14 +254,14 @@ func TestUpdateProject(t *testing.T) {
 				Convey("Re-enables project even if config hash is the same", func() {
 					testClock.Add(10 * time.Minute)
 					So(DisableProject(ctx, "chromium", notify), ShouldBeNil)
-					before := ProjectConfig{Project: "chromium"}
+					before := prjcfg.ProjectConfig{Project: "chromium"}
 					So(datastore.Get(ctx, &before), ShouldBeNil)
 					// Delete config entities.
-					projKey := ProjectConfigKey(ctx, "chromium")
+					projKey := prjcfg.ProjectConfigKey(ctx, "chromium")
 					err := datastore.Delete(ctx,
-						&ConfigHashInfo{Hash: before.Hash, Project: projKey},
-						&ConfigGroup{
-							ID:      MakeConfigGroupID(before.Hash, before.ConfigGroupNames[0]),
+						&prjcfg.ConfigHashInfo{Hash: before.Hash, Project: projKey},
+						&prjcfg.ConfigGroup{
+							ID:      prjcfg.MakeConfigGroupID(before.Hash, before.ConfigGroupNames[0]),
 							Project: projKey,
 						},
 					)
@@ -268,7 +269,7 @@ func TestUpdateProject(t *testing.T) {
 
 					testClock.Add(10 * time.Minute)
 					So(UpdateProject(ctx, "chromium", notify), ShouldBeNil)
-					after := ProjectConfig{Project: "chromium"}
+					after := prjcfg.ProjectConfig{Project: "chromium"}
 					So(datastore.Get(ctx, &after), ShouldBeNil)
 
 					So(after.Enabled, ShouldBeTrue)
@@ -283,11 +284,11 @@ func TestUpdateProject(t *testing.T) {
 	})
 }
 
-func TestDisableProject(t *testing.T) {
+func TestdisableProject(t *testing.T) {
 	Convey("Disable", t, func() {
 		ctx, testClock, _ := mkTestingCtx()
 		writeProjectConfig := func(enabled bool) {
-			pc := ProjectConfig{
+			pc := prjcfg.ProjectConfig{
 				Project:          "chromium",
 				Enabled:          enabled,
 				EVersion:         100,
@@ -310,7 +311,7 @@ func TestDisableProject(t *testing.T) {
 			writeProjectConfig(true)
 			err := DisableProject(ctx, "chromium", notify)
 			So(err, ShouldBeNil)
-			actual := ProjectConfig{Project: "chromium"}
+			actual := prjcfg.ProjectConfig{Project: "chromium"}
 			So(datastore.Get(ctx, &actual), ShouldBeNil)
 			So(actual.Enabled, ShouldBeFalse)
 			So(actual.EVersion, ShouldEqual, 101)
@@ -322,7 +323,7 @@ func TestDisableProject(t *testing.T) {
 			writeProjectConfig(false)
 			err := DisableProject(ctx, "chromium", notify)
 			So(err, ShouldBeNil)
-			actual := ProjectConfig{Project: "chromium"}
+			actual := prjcfg.ProjectConfig{Project: "chromium"}
 			So(datastore.Get(ctx, &actual), ShouldBeNil)
 			So(actual.Enabled, ShouldBeFalse)
 			So(actual.EVersion, ShouldEqual, 100)
@@ -332,7 +333,7 @@ func TestDisableProject(t *testing.T) {
 		Convey("non-existing Project", func() {
 			err := DisableProject(ctx, "non-existing", notify)
 			So(err, ShouldBeNil)
-			So(datastore.Get(ctx, &ProjectConfig{Project: "non-existing"}), ShouldErrLike, datastore.ErrNoSuchEntity)
+			So(datastore.Get(ctx, &prjcfg.ProjectConfig{Project: "non-existing"}), ShouldErrLike, datastore.ErrNoSuchEntity)
 			So(notifyCalled, ShouldBeFalse)
 		})
 	})
@@ -364,37 +365,37 @@ func TestPutConfigGroups(t *testing.T) {
 		}
 
 		Convey("New Configs", func() {
-			hash := ComputeHash(testCfg)
+			hash := prjcfg.ComputeHash(testCfg)
 			err := putConfigGroups(ctx, testCfg, "chromium", hash)
 			So(err, ShouldBeNil)
-			stored := ConfigGroup{
-				ID:      MakeConfigGroupID(hash, "group_foo"),
-				Project: ProjectConfigKey(ctx, "chromium"),
+			stored := prjcfg.ConfigGroup{
+				ID:      prjcfg.MakeConfigGroupID(hash, "group_foo"),
+				Project: prjcfg.ProjectConfigKey(ctx, "chromium"),
 			}
 			So(datastore.Get(ctx, &stored), ShouldBeNil)
 			So(stored.DrainingStartTime, ShouldEqual, testCfg.GetDrainingStartTime())
 			So(stored.SubmitOptions, ShouldResembleProto, testCfg.GetSubmitOptions())
 			So(stored.Content, ShouldResembleProto, testCfg.GetConfigGroups()[0])
-			So(stored.SchemaVersion, ShouldEqual, SchemaVersion)
+			So(stored.SchemaVersion, ShouldEqual, prjcfg.SchemaVersion)
 
 			Convey("Skip if already exists", func() {
 				ctx := datastore.AddRawFilters(ctx, func(_ context.Context, rds datastore.RawInterface) datastore.RawInterface {
 					return readOnlyFilter{rds}
 				})
-				err := putConfigGroups(ctx, testCfg, "chromium", ComputeHash(testCfg))
+				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.ComputeHash(testCfg))
 				So(err, ShouldBeNil)
 			})
 
 			Convey("Update existing due to SchemaVersion", func() {
 				old := stored // copy
-				old.SchemaVersion = SchemaVersion - 1
+				old.SchemaVersion = prjcfg.SchemaVersion - 1
 				So(datastore.Put(ctx, &old), ShouldBeNil)
 
-				err := putConfigGroups(ctx, testCfg, "chromium", ComputeHash(testCfg))
+				err := putConfigGroups(ctx, testCfg, "chromium", prjcfg.ComputeHash(testCfg))
 				So(err, ShouldBeNil)
 
 				So(datastore.Get(ctx, &stored), ShouldBeNil)
-				So(stored.SchemaVersion, ShouldEqual, SchemaVersion)
+				So(stored.SchemaVersion, ShouldEqual, prjcfg.SchemaVersion)
 			})
 		})
 	})

@@ -74,7 +74,7 @@ func NewRefresher(tqd *tq.Dispatcher, pm PM, env *common.Env) *Refresher {
 //
 // It's expected to be called by a cron.
 func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
-	projects, err := prjcfg.ProjectsWithConfig(ctx)
+	projects, err := projectsWithConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -138,9 +138,9 @@ func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
 }
 
 func (r *Refresher) refreshProject(ctx context.Context, project string, disable bool) error {
-	action, actionFn := "update", prjcfg.UpdateProject
+	action, actionFn := "update", UpdateProject
 	if disable {
-		action, actionFn = "disable", prjcfg.DisableProject
+		action, actionFn = "disable", DisableProject
 	}
 	err := actionFn(ctx, project, func(ctx context.Context) error {
 		return r.pm.UpdateConfig(ctx, project)

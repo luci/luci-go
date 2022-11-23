@@ -47,7 +47,7 @@ func TestConfigRefreshCron(t *testing.T) {
 
 		Convey("for a new project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.ProjectSet("chromium"): {prjcfg.ConfigFileName: ""},
+				config.ProjectSet("chromium"): {ConfigFileName: ""},
 			}))
 			// Project chromium doesn't exist in datastore.
 			err := pcr.SubmitRefreshTasks(ctx)
@@ -61,7 +61,7 @@ func TestConfigRefreshCron(t *testing.T) {
 
 		Convey("for an existing project", func() {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.ProjectSet("chromium"): {prjcfg.ConfigFileName: ""},
+				config.ProjectSet("chromium"): {ConfigFileName: ""},
 			}))
 			So(datastore.Put(ctx, &prjcfg.ProjectConfig{
 				Project: "chromium",

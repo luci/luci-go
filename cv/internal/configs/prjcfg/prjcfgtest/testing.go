@@ -31,6 +31,7 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/refresher"
 )
 
 // Create creates project config for the first time.
@@ -39,9 +40,9 @@ import (
 func Create(ctx context.Context, project string, cfg *cfgpb.Config) {
 	MustNotExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.ProjectSet(project): {prjcfg.ConfigFileName: prototext.Format(cfg)},
+		config.ProjectSet(project): {refresher.ConfigFileName: prototext.Format(cfg)},
 	}))
-	err := prjcfg.UpdateProject(ctx, project, func(context.Context) error { return nil })
+	err := refresher.UpdateProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
 		panic(err)
 	}
@@ -53,9 +54,9 @@ func Create(ctx context.Context, project string, cfg *cfgpb.Config) {
 func Update(ctx context.Context, project string, cfg *cfgpb.Config) {
 	MustExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.ProjectSet(project): {prjcfg.ConfigFileName: prototext.Format(cfg)},
+		config.ProjectSet(project): {refresher.ConfigFileName: prototext.Format(cfg)},
 	}))
-	err := prjcfg.UpdateProject(ctx, project, func(context.Context) error { return nil })
+	err := refresher.UpdateProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +67,7 @@ func Update(ctx context.Context, project string, cfg *cfgpb.Config) {
 // Panics if project config doesn't exist.
 func Disable(ctx context.Context, project string) {
 	MustExist(ctx, project)
-	err := prjcfg.DisableProject(ctx, project, func(context.Context) error { return nil })
+	err := refresher.DisableProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
 		panic(err)
 	}
@@ -105,6 +106,7 @@ func Delete(ctx context.Context, project string) {
 	}
 }
 
+// MustExist ensures that The Meta of a given project exists. Panics, otherwise.
 func MustExist(ctx context.Context, project string) prjcfg.Meta {
 	switch m, err := prjcfg.GetLatestMeta(ctx, project); {
 	case err != nil:
@@ -116,6 +118,8 @@ func MustExist(ctx context.Context, project string) prjcfg.Meta {
 	}
 }
 
+// MustNotExist ensures that The Meta of a given project does not exists.
+// Panics, otherwise.
 func MustNotExist(ctx context.Context, project string) {
 	switch m, err := prjcfg.GetLatestMeta(ctx, project); {
 	case err != nil:
