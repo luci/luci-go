@@ -26,12 +26,15 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
 import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
+import { PlainTable } from '../plain_table/plain_table';
 import {
   Culprit,
   CulpritAction,
   CulpritActionType,
+  SuspectVerificationDetails,
 } from '../../services/luci_bisection';
 import { getCommitShortHash } from '../../tools/commit_formatters';
+import { EMPTY_LINK, linkToBuild } from '../../tools/link_constructors';
 
 interface CulpritsTableProps {
   culprits: Culprit[];
@@ -43,6 +46,10 @@ interface CulpritTableRowProps {
 
 interface CulpritActionTableCellProps {
   action: CulpritAction | null | undefined;
+}
+
+interface VerificationDetailsTableProps {
+  details: SuspectVerificationDetails;
 }
 
 const CULPRIT_ACTION_DESCRIPTIONS: Record<CulpritActionType, string> = {
@@ -89,6 +96,57 @@ const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
   );
 };
 
+const VerificationDetailsTable = ({
+  details,
+}: VerificationDetailsTableProps) => {
+  let culpritRerunBuildLink = EMPTY_LINK;
+  if (details.suspectRerun) {
+    culpritRerunBuildLink = linkToBuild(details.suspectRerun.bbid);
+  }
+
+  let parentRerunBuildLink = EMPTY_LINK;
+  if (details.parentRerun) {
+    parentRerunBuildLink = linkToBuild(details.parentRerun.bbid);
+  }
+
+  return (
+    <PlainTable>
+      <TableBody>
+        <TableRow>
+          <TableCell>
+            Culprit commit:{' '}
+            {details.suspectRerun && (
+              <Link
+                href={culpritRerunBuildLink.url}
+                target='_blank'
+                rel='noreferrer'
+                underline='always'
+              >
+                {details.suspectRerun.rerunResult.rerunStatus}
+              </Link>
+            )}
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell>
+            Parent commit:{' '}
+            {details.parentRerun && (
+              <Link
+                href={parentRerunBuildLink.url}
+                target='_blank'
+                rel='noreferrer'
+                underline='always'
+              >
+                {details.parentRerun.rerunResult.rerunStatus}
+              </Link>
+            )}
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </PlainTable>
+  );
+};
+
 const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
   const { commit, reviewUrl, reviewTitle } = culprit;
   let culpritDescription = getCommitShortHash(commit.id);
@@ -115,6 +173,9 @@ const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
             {culpritDescription}
           </Link>
         </TableCell>
+        <TableCell>
+          <VerificationDetailsTable details={culprit.verificationDetails} />
+        </TableCell>
         {culpritAction.length > 0 ? (
           <CulpritActionTableCell action={culpritAction[0]} />
         ) : (
@@ -136,9 +197,15 @@ export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
   return (
     <TableContainer className='culprits-table' component={Paper}>
       <Table size='small'>
+        <colgroup>
+          <col style={{ width: '35%' }} />
+          <col style={{ width: '20%' }} />
+          <col style={{ width: '45%' }} />
+        </colgroup>
         <TableHead>
           <TableRow>
             <TableCell>Culprit CL</TableCell>
+            <TableCell>Verification Details</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>

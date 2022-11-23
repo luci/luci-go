@@ -112,6 +112,9 @@ describe('Test AnalysisTableRow component', () => {
         reviewTitle: 'Added new feature to improve testing',
         reviewUrl:
           'https://chromium-review.googlesource.com/placeholder/+/123456',
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+        },
       },
       {
         commit: {
@@ -124,6 +127,9 @@ describe('Test AnalysisTableRow component', () => {
         reviewTitle: 'Added new feature to improve testing again',
         reviewUrl:
           'https://chromium-review.googlesource.com/placeholder/+/234567',
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+        },
       },
     ];
 

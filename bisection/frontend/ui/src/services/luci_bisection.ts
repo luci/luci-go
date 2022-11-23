@@ -83,6 +83,13 @@ export type BuildFailureType =
   | 'INFRA'
   | 'OTHER';
 
+export type RerunStatus =
+  | 'RERUN_STATUS_UNSPECIFIED'
+  | 'IN_PROGRESS'
+  | 'PASSED'
+  | 'FAILED'
+  | 'INFRA_FAILED';
+
 export function isAnalysisComplete(status: AnalysisStatus) {
   const completeStatuses: Array<AnalysisStatus> = [
     'FOUND',
@@ -175,12 +182,30 @@ export interface Culprit {
   reviewUrl: string;
   reviewTitle?: string;
   culpritAction?: CulpritAction[];
+  verificationDetails: SuspectVerificationDetails;
 }
 
 export interface CulpritAction {
   actionType: CulpritActionType;
   revertClUrl?: string;
   bugUrl?: string;
+}
+
+export interface SuspectVerificationDetails {
+  status: string;
+  suspectRerun?: SingleRerun;
+  parentRerun?: SingleRerun;
+}
+
+export interface SingleRerun {
+  startTime: string;
+  endTime: string;
+  bbid: string;
+  rerunResult: RerunResult;
+}
+
+export interface RerunResult {
+  rerunStatus: RerunStatus;
 }
 
 export interface CL {

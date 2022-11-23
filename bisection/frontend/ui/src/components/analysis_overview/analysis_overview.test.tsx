@@ -98,6 +98,9 @@ describe('Test AnalysisOverview component', () => {
             bugUrl: 'https://buganizer.corp.google.com/99887766',
           },
         ],
+        verificationDetails: {
+          status: 'Confirmed Culprit',
+        },
       },
     ];
 

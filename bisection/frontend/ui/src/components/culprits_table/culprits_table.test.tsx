@@ -32,6 +32,9 @@ describe('Test CulpritsTable component', () => {
       reviewTitle: 'Added new feature to improve testing again',
       reviewUrl:
         'https://chromium-review.googlesource.com/placeholder/+/234567',
+      verificationDetails: {
+        status: 'Confirmed Culprit',
+      },
     };
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
@@ -74,6 +77,9 @@ describe('Test CulpritsTable component', () => {
       reviewUrl:
         'https://chromium-review.googlesource.com/placeholder/+/123456',
       culpritAction: [bugAction, autoRevertAction],
+      verificationDetails: {
+        status: 'Confirmed Culprit',
+      },
     };
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
@@ -108,6 +114,55 @@ describe('Test CulpritsTable component', () => {
     expect(revertActionLink?.getAttribute('href')).toBe(
       autoRevertAction.revertClUrl
     );
+  });
+
+  test('if culprit verification details are displayed', async () => {
+    const mockCulprit: Culprit = {
+      commit: {
+        host: 'testHost',
+        project: 'testProject',
+        ref: 'test/ref/dev',
+        id: 'def456def456',
+        position: '298',
+      },
+      reviewTitle: 'Added new feature as requested',
+      reviewUrl: 'https://chromium-review.googlesource.com/placeholder/+/92345',
+      verificationDetails: {
+        status: 'Confirmed Culprit',
+        suspectRerun: {
+          startTime: '2022-09-06T07:13:16.398865Z',
+          endTime: '2022-09-06T07:13:18.398865Z',
+          bbid: '8877665544332211',
+          rerunResult: {
+            rerunStatus: 'FAILED',
+          },
+        },
+        parentRerun: {
+          startTime: '2022-09-06T07:16:16.398865Z',
+          endTime: '2022-09-06T07:16:31.398865Z',
+          bbid: '8765432187654321',
+          rerunResult: {
+            rerunStatus: 'PASSED',
+          },
+        },
+      },
+    };
+
+    render(<CulpritsTable culprits={[mockCulprit]} />);
+
+    await screen.findByText('Culprit CL');
+
+    // Check the culprit's verification build numbers are displayed
+    expect(
+      screen.getByText(
+        mockCulprit.verificationDetails.suspectRerun!.rerunResult.rerunStatus
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        mockCulprit.verificationDetails.parentRerun!.rerunResult.rerunStatus
+      )
+    ).toBeInTheDocument();
   });
 
   test('if an appropriate message is displayed for no culprits', async () => {
