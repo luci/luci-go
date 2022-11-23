@@ -265,6 +265,22 @@ func TestCompute(t *testing.T) {
 		defer cancel()
 		ctx = makeFakeAuthState(ctx)
 
+		Convey("fail if IncludedTryjobs and OverriddenTryjobs are both provided", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
+
+			res, err := Compute(ctx, *in)
+			So(err, ShouldBeNil)
+			So(res.OK(), ShouldBeFalse)
+			So(res, ShouldResemble, &ComputationResult{
+				ComputationFailure: &incompatibleTryjobOptions{
+					hasIncludedTryjobs:   true,
+					hasOverriddenTryjobs: true,
+				},
+			})
+		})
+
 		Convey("with a minimal test case", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			Convey("with a single CL", func() {})

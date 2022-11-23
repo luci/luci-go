@@ -497,8 +497,6 @@ type Options struct {
 	// TODO(https://crbug.com/950074): ignore.
 	//
 	// If false (default), respects project configuration.
-	//
-	// Mutually exclusive with `included_tryjobs` and `overridden_tryjobs` option.
 	SkipTryjobs bool `protobuf:"varint,4,opt,name=skip_tryjobs,json=skipTryjobs,proto3" json:"skip_tryjobs,omitempty"`
 	// Deprecated per https://crbug.com/950074.
 	// See skip_tryjobs doc.
@@ -511,7 +509,7 @@ type Options struct {
 	// Note that there may be duplication in the directives, it's up to the
 	// consumer of this information to handle it.
 	//
-	// Mutually exclusive with `overridden_tryjobs` and `skip_tryjobs` option.
+	// Mutually exclusive with `overridden_tryjobs` option.
 	IncludedTryjobs []string `protobuf:"bytes,6,rep,name=included_tryjobs,json=includedTryjobs,proto3" json:"included_tryjobs,omitempty"`
 	// Overrides all the Tryjobs triggered for this Run regardless of Project
 	// configuration.
@@ -522,7 +520,7 @@ type Options struct {
 	// Note that there may be duplication in the directives, it's up to the
 	// consumer of this information to handle it.
 	//
-	// Mutually exclusive with `included_tryjobs` and `skip_tryjobs` option.
+	// Mutually exclusive with `included_tryjobs` option.
 	OverriddenTryjobs []string `protobuf:"bytes,8,rep,name=overridden_tryjobs,json=overriddenTryjobs,proto3" json:"overridden_tryjobs,omitempty"`
 	// Contains the custom Tryjob tags that should be added when launching
 	// Tryjobs for this Run.

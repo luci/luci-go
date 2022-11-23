@@ -546,15 +546,25 @@ func getIncludablesAndTriggeredBy(builders []*cfgpb.Verifiers_Tryjob_Builder) (i
 
 // Compute computes the Tryjob Requirement to verify the run.
 func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
+	hasIncluded := len(in.RunOptions.GetIncludedTryjobs()) > 0
+	hasOverridden := len(in.RunOptions.GetOverriddenTryjobs()) > 0
+	if hasIncluded && hasOverridden {
+		// Only one of the three Tryjob related option can be specified.
+		return &ComputationResult{
+			ComputationFailure: &incompatibleTryjobOptions{
+				hasIncludedTryjobs:   hasIncluded,
+				hasOverriddenTryjobs: hasOverridden,
+			},
+		}, nil
+	}
+
 	ret := &ComputationResult{Requirement: &tryjob.Requirement{
 		RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
 	}}
 	explicitlyIncluded := stringset.New(0)
-	switch in.RunMode {
-	case run.NewPatchsetRun:
+	if in.RunMode != run.NewPatchsetRun {
 		// Ignore tryjobs included by the cq-include-trybots: footer , these are
 		// intended for CQ-vote runs.
-	default:
 		var compFail ComputationFailure
 		explicitlyIncluded, compFail = getIncludedTryjobs(in.RunOptions.GetIncludedTryjobs())
 		if compFail != nil {

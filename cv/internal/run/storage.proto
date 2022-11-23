@@ -166,8 +166,6 @@ message Options {
   // TODO(https://crbug.com/950074): ignore.
   //
   // If false (default), respects project configuration.
-  //
-  // Mutually exclusive with `included_tryjobs` and `overridden_tryjobs` option.
   bool skip_tryjobs = 4;
   // Deprecated per https://crbug.com/950074.
   // See skip_tryjobs doc.
@@ -181,7 +179,8 @@ message Options {
   // Note that there may be duplication in the directives, it's up to the
   // consumer of this information to handle it.
   //
-  // Mutually exclusive with `overridden_tryjobs` and `skip_tryjobs` option.
+  // Mutually exclusive with `overridden_tryjobs` option.
+  // This option is ignored if `skip_tryjobs` is true.
   repeated string included_tryjobs = 6;
 
   // Overrides all the Tryjobs triggered for this Run regardless of Project
@@ -193,7 +192,8 @@ message Options {
   // Note that there may be duplication in the directives, it's up to the
   // consumer of this information to handle it.
   //
-  // Mutually exclusive with `included_tryjobs` and `skip_tryjobs` option.
+  // Mutually exclusive with `included_tryjobs` option.
+  // This option is ignored if `skip_tryjobs` is true.
   repeated string overridden_tryjobs = 8;
 
   // Contains the custom Tryjob tags that should be added when launching

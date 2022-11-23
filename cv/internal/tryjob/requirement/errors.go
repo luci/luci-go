@@ -83,3 +83,19 @@ func (bni *buildersNotDirectlyIncludable) Reason() string {
 		return fmt.Sprintf("the following builders are included but cannot be triggered directly by CV:\n - %s", strings.Join(bni.Builders, "\n - "))
 	}
 }
+
+// incompatibleTryjobOptions is a computation failure where multiple Tryjob
+// options have been provided but they are not compatible with each other.
+type incompatibleTryjobOptions struct {
+	hasIncludedTryjobs   bool
+	hasOverriddenTryjobs bool
+}
+
+func (ito *incompatibleTryjobOptions) Reason() string {
+	switch {
+	case ito.hasIncludedTryjobs && ito.hasOverriddenTryjobs:
+		return "Both `Cq-Include-Trybots` and `Override-Tryjobs-For-Automation` are specified. Only one is allowed."
+	default:
+		panic(fmt.Errorf("impossible"))
+	}
+}
