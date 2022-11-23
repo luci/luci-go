@@ -163,6 +163,24 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 		return err
 	}
 
+	hasFlag, err := gerrit.HasAutoRevertOffFlagSet(ctx, culprit)
+	if err != nil {
+		err = errors.Annotate(err, "issue checking for auto-revert flag").Err()
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	if hasFlag {
+		// comment that auto-revert has been disabled for this change
+		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
+			"auto-revert has been disabled for this CL by its description")
+		if err != nil {
+			logging.Errorf(ctx, err.Error())
+			return err
+		}
+
+		return nil
+	}
+
 	// Check if revert creation is disabled
 	if !cfg.GerritConfig.CreateRevertSettings.Enabled {
 		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,

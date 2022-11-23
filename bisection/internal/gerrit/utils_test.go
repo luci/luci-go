@@ -206,3 +206,185 @@ func TestIsRecentSubmit(t *testing.T) {
 		})
 	})
 }
+
+func TestHasAutoRevertOffFlagSet(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("change does not have enough information", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project: "chromium/test/src",
+			Number:  234567,
+		}
+		_, err := HasAutoRevertOffFlagSet(ctx, change)
+		So(err, ShouldErrLike, "could not get", "info")
+	})
+
+	Convey("change does not mention flag", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project:         "chromium/test/src",
+			Number:          234567,
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Number: 1,
+					Kind:   gerritpb.RevisionInfo_REWORK,
+					Uploader: &gerritpb.AccountInfo{
+						AccountId:       1000096,
+						Name:            "John Doe",
+						Email:           "jdoe@example.com",
+						SecondaryEmails: []string{"johndoe@chromium.org"},
+						Username:        "jdoe",
+					},
+					Ref:         "refs/changes/123",
+					Description: "first upload",
+					Files: map[string]*gerritpb.FileInfo{
+						"go/to/file.go": {
+							LinesInserted: 32,
+							LinesDeleted:  44,
+							SizeDelta:     -567,
+							Size:          11984,
+						},
+					},
+					Commit: &gerritpb.CommitInfo{
+						Id:      "",
+						Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+						Parents: []*gerritpb.CommitInfo_Parent{
+							{Id: "deadbeef00"},
+						},
+					},
+				},
+			},
+		}
+
+		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
+		So(err, ShouldBeNil)
+		So(hasFlag, ShouldEqual, false)
+	})
+
+	Convey("change has flag set", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project:         "chromium/test/src",
+			Number:          234567,
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Number: 1,
+					Kind:   gerritpb.RevisionInfo_REWORK,
+					Uploader: &gerritpb.AccountInfo{
+						AccountId:       1000096,
+						Name:            "John Doe",
+						Email:           "jdoe@example.com",
+						SecondaryEmails: []string{"johndoe@chromium.org"},
+						Username:        "jdoe",
+					},
+					Ref:         "refs/changes/123",
+					Description: "first upload",
+					Files: map[string]*gerritpb.FileInfo{
+						"go/to/file.go": {
+							LinesInserted: 32,
+							LinesDeleted:  44,
+							SizeDelta:     -567,
+							Size:          11984,
+						},
+					},
+					Commit: &gerritpb.CommitInfo{
+						Id:      "",
+						Message: "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef",
+						Parents: []*gerritpb.CommitInfo_Parent{
+							{Id: "deadbeef00"},
+						},
+					},
+				},
+			},
+		}
+
+		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
+		So(err, ShouldBeNil)
+		So(hasFlag, ShouldEqual, true)
+	})
+
+	Convey("change has flag set with extra whitespace", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project:         "chromium/test/src",
+			Number:          234567,
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Number: 1,
+					Kind:   gerritpb.RevisionInfo_REWORK,
+					Uploader: &gerritpb.AccountInfo{
+						AccountId:       1000096,
+						Name:            "John Doe",
+						Email:           "jdoe@example.com",
+						SecondaryEmails: []string{"johndoe@chromium.org"},
+						Username:        "jdoe",
+					},
+					Ref:         "refs/changes/123",
+					Description: "first upload",
+					Files: map[string]*gerritpb.FileInfo{
+						"go/to/file.go": {
+							LinesInserted: 32,
+							LinesDeleted:  44,
+							SizeDelta:     -567,
+							Size:          11984,
+						},
+					},
+					Commit: &gerritpb.CommitInfo{
+						Id:      "",
+						Message: "Title.\n\nBody is here.\n\nNOAUTOREVERT\t=   true\n\nChange-Id: I100deadbeef",
+						Parents: []*gerritpb.CommitInfo_Parent{
+							{Id: "deadbeef00"},
+						},
+					},
+				},
+			},
+		}
+
+		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
+		So(err, ShouldBeNil)
+		So(hasFlag, ShouldEqual, true)
+	})
+
+	Convey("change has flag set to false", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project:         "chromium/test/src",
+			Number:          234567,
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Number: 1,
+					Kind:   gerritpb.RevisionInfo_REWORK,
+					Uploader: &gerritpb.AccountInfo{
+						AccountId:       1000096,
+						Name:            "John Doe",
+						Email:           "jdoe@example.com",
+						SecondaryEmails: []string{"johndoe@chromium.org"},
+						Username:        "jdoe",
+					},
+					Ref:         "refs/changes/123",
+					Description: "first upload",
+					Files: map[string]*gerritpb.FileInfo{
+						"go/to/file.go": {
+							LinesInserted: 32,
+							LinesDeleted:  44,
+							SizeDelta:     -567,
+							Size:          11984,
+						},
+					},
+					Commit: &gerritpb.CommitInfo{
+						Id:      "",
+						Message: "Title.\n\nBody is here.\n\nNOAUTOREVERT=false SOMEOTHERFLAG=true\n\nChange-Id: I100deadbeef",
+						Parents: []*gerritpb.CommitInfo_Parent{
+							{Id: "deadbeef00"},
+						},
+					},
+				},
+			},
+		}
+
+		hasFlag, err := HasAutoRevertOffFlagSet(ctx, change)
+		So(err, ShouldBeNil)
+		So(hasFlag, ShouldEqual, false)
+	})
+}

@@ -76,6 +76,8 @@ func (c *Client) queryChanges(ctx context.Context, query string) ([]*gerritpb.Ch
 		Query: query,
 		Options: []gerritpb.QueryOption{
 			gerritpb.QueryOption_LABELS,
+			gerritpb.QueryOption_CURRENT_REVISION,
+			gerritpb.QueryOption_CURRENT_COMMIT,
 			gerritpb.QueryOption_DETAILED_ACCOUNTS,
 			gerritpb.QueryOption_MESSAGES,
 			gerritpb.QueryOption_CHANGE_ACTIONS,

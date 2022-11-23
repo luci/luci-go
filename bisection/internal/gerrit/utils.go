@@ -90,3 +90,20 @@ func IsRecentSubmit(ctx context.Context, change *gerritpb.ChangeInfo, maxAge tim
 	submitted := change.Submitted.AsTime()
 	return submitted.Equal(earliest) || submitted.After(earliest)
 }
+
+// HasAutoRevertOffFlagSet returns whether the change has the flag set to true
+// to prevent auto-revert.
+func HasAutoRevertOffFlagSet(ctx context.Context, change *gerritpb.ChangeInfo) (bool, error) {
+	revisionInfo, ok := change.Revisions[change.CurrentRevision]
+	if !ok {
+		return false, fmt.Errorf("could not get revision info")
+	}
+
+	commitInfo := revisionInfo.Commit
+	if commitInfo == nil {
+		return false, fmt.Errorf("could not get commit info")
+	}
+
+	pattern := regexp.MustCompile(`(NOAUTOREVERT)(\s)*=(\s)*true`)
+	return pattern.MatchString(commitInfo.Message), nil
+}
