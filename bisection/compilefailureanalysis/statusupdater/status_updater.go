@@ -30,7 +30,7 @@ import (
 func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) error {
 	// If there are confirmed culprit
 	if len(cfa.VerifiedCulprits) > 0 {
-		return updateStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+		return UpdateStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 	}
 
 	// Fetch heuristic and nthsection analysis
@@ -52,35 +52,35 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 	// No nth-section run. Just consider the heuristic analysis.
 	if nsa == nil || nsa.Status == pb.AnalysisStatus_ERROR {
 		if ha == nil || ha.Status == pb.AnalysisStatus_ERROR {
-			return updateStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 		}
 		if ha.Status != pb.AnalysisStatus_SUSPECTFOUND {
-			return updateStatus(c, cfa, ha.Status, ha.RunStatus)
+			return UpdateStatus(c, cfa, ha.Status, ha.RunStatus)
 		}
 		// Heuristic found suspect. So analysis could be in progress or ended
 		// depend on if there is any rerun in progress
 		if haveUnfinishedReruns {
-			return updateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		} else {
-			return updateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		}
 	}
 
 	// No heuristic analysis (for some reasons). Just consider nth section
 	if ha == nil || ha.Status == pb.AnalysisStatus_ERROR {
 		if nsa == nil || nsa.Status == pb.AnalysisStatus_ERROR {
-			return updateStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
 		}
 
 		if nsa.Status != pb.AnalysisStatus_SUSPECTFOUND {
-			return updateStatus(c, cfa, nsa.Status, nsa.RunStatus)
+			return UpdateStatus(c, cfa, nsa.Status, nsa.RunStatus)
 		}
 		// nsa found suspect. So analysis could be in progress or ended
 		// depend on if there is any rerun in progress
 		if haveUnfinishedReruns {
-			return updateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		} else {
-			return updateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		}
 	}
 
@@ -89,20 +89,20 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 	if gotSuspect {
 		inProgress := (ha.Status == pb.AnalysisStatus_RUNNING || nsa.Status == pb.AnalysisStatus_RUNNING)
 		if haveUnfinishedReruns || inProgress {
-			return updateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		} else {
-			return updateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
 		}
 	}
 
 	// No suspect -> either in progress or notfound
 	if ha.Status == pb.AnalysisStatus_NOTFOUND && nsa.Status == pb.AnalysisStatus_NOTFOUND {
-		return updateStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+		return UpdateStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 	}
-	return updateStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+	return UpdateStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 }
 
-func updateStatus(c context.Context, cfa *model.CompileFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
+func UpdateStatus(c context.Context, cfa *model.CompileFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		e := datastore.Get(c, cfa)
 		if e != nil {
@@ -125,6 +125,32 @@ func updateStatus(c context.Context, cfa *model.CompileFailureAnalysis, status p
 			cfa.EndTime = clock.Now(c)
 		}
 		return datastore.Put(c, cfa)
+	}, nil)
+}
+
+func UpdateNthSectionStatus(c context.Context, nsa *model.CompileNthSectionAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, nsa)
+		if e != nil {
+			return e
+		}
+
+		// If the run has ended or canceled, we don't want to do anything
+		if nsa.RunStatus == pb.AnalysisRunStatus_ENDED || nsa.RunStatus == pb.AnalysisRunStatus_CANCELED {
+			return nil
+		}
+
+		// All the same, no need to update
+		if nsa.RunStatus == runStatus && nsa.Status == status {
+			return nil
+		}
+
+		nsa.Status = status
+		nsa.RunStatus = runStatus
+		if runStatus == pb.AnalysisRunStatus_ENDED || runStatus == pb.AnalysisRunStatus_CANCELED {
+			nsa.EndTime = clock.Now(c)
+		}
+		return datastore.Put(c, nsa)
 	}, nil)
 }
 

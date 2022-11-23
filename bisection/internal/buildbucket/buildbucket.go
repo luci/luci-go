@@ -80,6 +80,10 @@ func (c *Client) ScheduleBuild(ctx context.Context, req *bbpb.ScheduleBuildReque
 	return c.Client.ScheduleBuild(ctx, req)
 }
 
+func (c *Client) CancelBuild(ctx context.Context, req *bbpb.CancelBuildRequest) (*bbpb.Build, error) {
+	return c.Client.CancelBuild(ctx, req)
+}
+
 func GetBuild(c context.Context, bbid int64, mask *bbpb.BuildMask) (*bbpb.Build, error) {
 	q := &bbpb.GetBuildRequest{
 		Id:   bbid,
@@ -133,4 +137,18 @@ func ScheduleBuild(c context.Context, req *bbpb.ScheduleBuildRequest) (*bbpb.Bui
 		return nil, err
 	}
 	return cl.ScheduleBuild(c, req)
+}
+
+func CancelBuild(c context.Context, bbid int64, reason string) (*bbpb.Build, error) {
+	// Create a new buildbucket client
+	cl, err := NewClient(c, bbHost)
+	if err != nil {
+		logging.Errorf(c, "Cannot create Buildbucket client")
+		return nil, err
+	}
+	req := &bbpb.CancelBuildRequest{
+		Id:              bbid,
+		SummaryMarkdown: reason,
+	}
+	return cl.Client.CancelBuild(c, req)
 }

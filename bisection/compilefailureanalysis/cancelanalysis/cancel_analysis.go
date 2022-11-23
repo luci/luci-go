@@ -25,7 +25,11 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
+	"go.chromium.org/luci/bisection/internal/buildbucket"
+	pb "go.chromium.org/luci/bisection/proto"
 	tpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
 const (
@@ -60,6 +64,62 @@ func RegisterTaskClass() {
 
 // CancelAnalysis cancels all pending and running reruns for an analysis.
 func CancelAnalysis(c context.Context, analysisID int64) error {
-	// TODO (nqmtuan): Implement this
+	logging.Infof(c, "Cancel analysis %d", analysisID)
+
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
+	if err != nil {
+		return errors.Annotate(err, "couldn't get analysis %d", analysisID).Err()
+	}
+	reruns, err := datastoreutil.GetRerunsForAnalysis(c, cfa)
+	if err != nil {
+		return errors.Annotate(err, "couldn't get reruns for analysis %d", analysisID).Err()
+	}
+
+	var errs []error
+	for _, rerun := range reruns {
+		if rerun.Status == pb.RerunStatus_IN_PROGRESS {
+			bbid := rerun.RerunBuild.IntID()
+			_, err := buildbucket.CancelBuild(c, bbid, "analysis was canceled")
+			if err != nil {
+				errs = append(errs, errors.Annotate(err, "couldn't cancel build %d", bbid).Err())
+			}
+			// TODO (nqmtuan): Also update rerun status
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.NewMultiError(errs...)
+	}
+
+	// Update status of analysis and nthsection analysis
+	newStatus := cfa.Status
+	// Only updates status if is was running
+	if cfa.Status == pb.AnalysisStatus_RUNNING {
+		newStatus = pb.AnalysisStatus_NOTFOUND
+	}
+	err = statusupdater.UpdateStatus(c, cfa, newStatus, pb.AnalysisRunStatus_CANCELED)
+
+	if err != nil {
+		return errors.Annotate(err, "couldn't update status for analysis %d", cfa.Id).Err()
+	}
+
+	// Update status of nthsection analysis
+	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
+	if err != nil {
+		return err
+	}
+	if nsa == nil {
+		return nil
+	}
+	newStatus = nsa.Status
+	if nsa.Status == pb.AnalysisStatus_RUNNING {
+		newStatus = pb.AnalysisStatus_NOTFOUND
+	}
+
+	err = statusupdater.UpdateNthSectionStatus(c, nsa, newStatus, pb.AnalysisRunStatus_CANCELED)
+	if err != nil {
+		return errors.Annotate(err, "couldn't update status for nthsection for analysis %d", cfa.Id).Err()
+	}
+
 	return nil
 }

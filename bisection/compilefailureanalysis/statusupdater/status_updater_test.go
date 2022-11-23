@@ -179,7 +179,7 @@ func TestUpdateStatus(t *testing.T) {
 	Convey("UpdateStatus", t, func() {
 		Convey("Ended analysis will not update", func() {
 			cfa := createCompileFailureAnalysisModelWithStatus(c, 1000, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
-			err := updateStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			err := UpdateStatus(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
 			So(err, ShouldBeNil)
 			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
 			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
@@ -187,7 +187,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		Convey("Canceled analysis will not update", func() {
 			cfa := createCompileFailureAnalysisModelWithStatus(c, 1001, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
-			err := updateStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			err := UpdateStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 			So(err, ShouldBeNil)
 			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
@@ -195,10 +195,46 @@ func TestUpdateStatus(t *testing.T) {
 
 		Convey("Update status", func() {
 			cfa := createCompileFailureAnalysisModelWithStatus(c, 1001, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
-			err := updateStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			err := UpdateStatus(c, cfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 			So(err, ShouldBeNil)
 			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
 			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		})
+	})
+}
+
+func TestUpdateNthSectionStatus(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	Convey("UpdateNthSectionStatus", t, func() {
+		Convey("Ended analysis will not update", func() {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, 1000, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			err := UpdateNthSectionStatus(c, nsa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			So(err, ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+		})
+
+		Convey("Canceled analysis will not update", func() {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, 1001, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_CANCELED)
+			err := UpdateNthSectionStatus(c, nsa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			So(err, ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
+		})
+
+		Convey("Update status", func() {
+			cfa := createCompileFailureAnalysisModelWithStatus(c, 1002, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			err := UpdateNthSectionStatus(c, nsa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			So(err, ShouldBeNil)
+			So(nsa.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
+			So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 		})
 	})
 }
