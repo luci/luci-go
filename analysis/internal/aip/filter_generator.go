@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/common/errors"
 )
 
 // whereClause constructs Standard SQL WHERE clause parts from
@@ -156,15 +157,15 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		}
 		key := w.bind(restriction.Comparable.Member.Fields[0])
 		if restriction.Comparator == ":" {
-			value, err := w.likeArgValue(restriction.Arg)
+			value, err := w.likeArgValue(restriction.Arg, column.columnType)
 			if err != nil {
-				return "", err
+				return "", errors.Annotate(err, "argument for field %s", column.name).Err()
 			}
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", column.databaseName, key, value), nil
 		}
-		value, err := w.argValue(restriction.Arg)
+		value, err := w.argValue(restriction.Arg, column.columnType)
 		if err != nil {
-			return "", err
+			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
 		}
 		if restriction.Comparator == "=" {
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value = %s))", column.databaseName, key, value), nil
@@ -188,33 +189,33 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
 	} else if restriction.Comparator == "=" {
-		arg, err := w.argValue(restriction.Arg)
-		if err != nil {
-			return "", err
-		}
 		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("(%s = %s)", column.databaseName, arg), nil
+		arg, err := w.argValue(restriction.Arg, column.columnType)
+		if err != nil {
+			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
+		}
+		return fmt.Sprintf("(COALESCE(%s, %s) = %s)", column.databaseName, columnDefaultValue(column.columnType), arg), nil
 	} else if restriction.Comparator == "!=" {
-		arg, err := w.argValue(restriction.Arg)
-		if err != nil {
-			return "", err
-		}
 		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("(%s <> %s)", column.databaseName, arg), nil
+		arg, err := w.argValue(restriction.Arg, column.columnType)
+		if err != nil {
+			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
+		}
+		return fmt.Sprintf("(COALESCE(%s, %s) <> %s)", column.databaseName, columnDefaultValue(column.columnType), arg), nil
 	} else if restriction.Comparator == ":" {
-		arg, err := w.likeArgValue(restriction.Arg)
-		if err != nil {
-			return "", err
-		}
 		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
 		if err != nil {
 			return "", err
+		}
+		arg, err := w.likeArgValue(restriction.Arg, column.columnType)
+		if err != nil {
+			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
 		}
 		return fmt.Sprintf("(%s LIKE %s)", column.databaseName, arg), nil
 	} else {
@@ -225,41 +226,54 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 // argValue returns a SQL expression representing the value of the specified
 // arg.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) argValue(arg *Arg) (string, error) {
+func (w *whereClause) argValue(arg *Arg, columnType ColumnType) (string, error) {
 	if arg.Composite != nil {
 		return "", fmt.Errorf("composite expressions in arguments not implemented yet")
 	}
 	if arg.Comparable == nil {
 		return "", fmt.Errorf("missing comparable in argument")
 	}
-	return w.comparableValue(arg.Comparable)
+	return w.comparableValue(arg.Comparable, columnType)
 }
 
 // argValue returns a SQL expression representing the value of the specified
 // comparable.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) comparableValue(comparable *Comparable) (string, error) {
+func (w *whereClause) comparableValue(comparable *Comparable, columnType ColumnType) (string, error) {
 	if comparable.Member == nil {
 		return "", fmt.Errorf("invalid comparable")
 	}
 	if len(comparable.Member.Fields) > 0 {
 		return "", fmt.Errorf("fields not implemented yet")
 	}
-	// Bind unsanitised user input to a parameter to protect against SQL injection.
-	return w.bind(comparable.Member.Value), nil
-
+	switch columnType {
+	case ColumnTypeString:
+		// Bind unsanitised user input to a parameter to protect against SQL injection.
+		return w.bind(comparable.Member.Value), nil
+	case ColumnTypeBool:
+		if strings.EqualFold(comparable.Member.Value, "true") {
+			return "TRUE", nil
+		} else if strings.EqualFold(comparable.Member.Value, "false") {
+			return "FALSE", nil
+		}
+		return "", fmt.Errorf("only TRUE or FALSE can be specified as the value for a boolean field")
+	}
+	return "", fmt.Errorf("unable to generate SQL value for unknown field type: %s", columnType.String())
 }
 
 // likeArgValue returns a SQL expression that, when passed to the
 // right hand side of a LIKE operator, performs substring matching against
 // the value of the argument.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) likeArgValue(arg *Arg) (string, error) {
+func (w *whereClause) likeArgValue(arg *Arg, columnType ColumnType) (string, error) {
 	if arg.Composite != nil {
 		return "", fmt.Errorf("composite expressions are not allowed as RHS to has (:) operator")
 	}
 	if arg.Comparable == nil {
 		return "", fmt.Errorf("missing comparable in argument")
+	}
+	if columnType != ColumnTypeString {
+		return "", fmt.Errorf("cannot use has (:) operator on a non-string field %q", columnType.String())
 	}
 	return w.likeComparableValue(arg.Comparable)
 }
@@ -282,9 +296,9 @@ func (w *whereClause) likeComparableValue(comparable *Comparable) (string, error
 // bind binds a new query parameter with the given value, and returns
 // the name of the parameter (including '@').
 // The returned string is an injection-safe SQL expression.
-func (q *whereClause) bind(value string) string {
-	name := q.namePrefix + strconv.Itoa(q.nextValueName)
-	q.nextValueName += 1
-	q.parameters = append(q.parameters, QueryParameter{Name: name, Value: value})
+func (w *whereClause) bind(value string) string {
+	name := w.namePrefix + strconv.Itoa(w.nextValueName)
+	w.nextValueName += 1
+	w.parameters = append(w.parameters, QueryParameter{Name: name, Value: value})
 	return "@" + name
 }

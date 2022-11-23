@@ -38,6 +38,8 @@ var ClusteredFailuresTable = aip.NewTable().WithColumns(
 	aip.NewColumn().WithName("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
 	aip.NewColumn().WithName("variant").WithDatabaseName("variant").KeyValue().Filterable().Build(),
 	aip.NewColumn().WithName("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
+	aip.NewColumn().WithName("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
+	aip.NewColumn().WithName("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
 ).Build()
 
 var ClusterSummariesTable = aip.NewTable().WithColumns(

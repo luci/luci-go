@@ -22,7 +22,7 @@ type ColumnBuilder struct {
 
 // NewColumn starts building a new column.
 func NewColumn() *ColumnBuilder {
-	return &ColumnBuilder{}
+	return &ColumnBuilder{Column{columnType: ColumnTypeString}}
 }
 
 // WithName specifies the user-visible name of the column.
@@ -47,6 +47,13 @@ func (c *ColumnBuilder) WithDatabaseName(name string) *ColumnBuilder {
 // Example query: tag.key=value
 func (c *ColumnBuilder) KeyValue() *ColumnBuilder {
 	c.column.keyValue = true
+	return c
+}
+
+// Bool specifies this column has bool type in the database.
+// NULL values are coalesced to FALSE.
+func (c *ColumnBuilder) Bool() *ColumnBuilder {
+	c.column.columnType = ColumnTypeBool
 	return c
 }
 

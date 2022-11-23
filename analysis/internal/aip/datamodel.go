@@ -23,6 +23,27 @@ import (
 	"strings"
 )
 
+const (
+	// ColumnTypeString is a column of type string.
+	ColumnTypeString ColumnType = iota
+	// ColumnTypeBool is a column of type boolean.  NULL values are mapped to FALSE.
+	ColumnTypeBool = iota
+)
+
+// ColumnType is an enum for the type of a column.  Valid values are in the const block above.
+type ColumnType int32
+
+func (t ColumnType) String() string {
+	switch t {
+	case ColumnTypeString:
+		return "STRING"
+	case ColumnTypeBool:
+		return "BOOL"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 // Column represents the schema of a Database column.
 type Column struct {
 	// The externally-visible name of the column. This may be used in AIP-160
@@ -48,6 +69,9 @@ type Column struct {
 
 	// Whether this column is an array of structs with two string members: key and value.
 	keyValue bool
+
+	// The type of the column, defaults to ColumnType_STRING.
+	columnType ColumnType
 }
 
 // Table represents the schema of a Database table, view or query.
@@ -92,4 +116,17 @@ func (t *Table) SortableColumnByName(name string) (*Column, error) {
 		}
 	}
 	return nil, fmt.Errorf("no sortable field named %q, valid fields are %s", name, strings.Join(columnNames, ", "))
+}
+
+func columnDefaultValue(columnType ColumnType) string {
+	switch columnType {
+	case ColumnTypeString:
+		return "''"
+	case ColumnTypeBool:
+		return "FALSE"
+	default:
+		// This case should not be possible unless there is an implementation error becuase columns are
+		// created through the builder, so panic is acceptable.
+		panic(fmt.Sprintf("cannot get default value of column type %s", columnType.String()))
+	}
 }

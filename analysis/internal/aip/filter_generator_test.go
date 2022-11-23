@@ -29,6 +29,7 @@ func TestWhereClause(t *testing.T) {
 			NewColumn().WithName("bar").WithDatabaseName("db_bar").FilterableImplicitly().Build(),
 			NewColumn().WithName("baz").WithDatabaseName("db_baz").Filterable().Build(),
 			NewColumn().WithName("kv").WithDatabaseName("db_kv").KeyValue().Filterable().Build(),
+			NewColumn().WithName("bool").WithDatabaseName("db_bool").Bool().Filterable().Build(),
 			NewColumn().WithName("unfilterable").WithDatabaseName("unfilterable").Build(),
 		).Build()
 
@@ -65,7 +66,16 @@ func TestWhereClause(t *testing.T) {
 						Value: "somevalue",
 					},
 				})
-				So(result, ShouldEqual, "(db_foo = @p_0)")
+				So(result, ShouldEqual, "(COALESCE(db_foo, '') = @p_0)")
+			})
+			Convey("equals operator on bool column", func() {
+				filter, err := ParseFilter("bool = true AND bool = false")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldBeNil)
+				So(result, ShouldEqual, "((COALESCE(db_bool, FALSE) = TRUE) AND (COALESCE(db_bool, FALSE) = FALSE))")
 			})
 			Convey("not equals operator", func() {
 				filter, err := ParseFilter("foo != somevalue")
@@ -79,7 +89,16 @@ func TestWhereClause(t *testing.T) {
 						Value: "somevalue",
 					},
 				})
-				So(result, ShouldEqual, "(db_foo <> @p_0)")
+				So(result, ShouldEqual, "(COALESCE(db_foo, '') <> @p_0)")
+			})
+			Convey("not equals operator on bool column", func() {
+				filter, err := ParseFilter("bool != true AND bool != false")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldBeNil)
+				So(result, ShouldEqual, "((COALESCE(db_bool, FALSE) <> TRUE) AND (COALESCE(db_bool, FALSE) <> FALSE))")
 			})
 			Convey("implicit match operator", func() {
 				filter, err := ParseFilter("somevalue")
@@ -213,7 +232,7 @@ func TestWhereClause(t *testing.T) {
 					Value: "%explicitfour%",
 				},
 			})
-			So(result, ShouldEqual, "((db_foo LIKE @p_0 OR db_bar LIKE @p_0) AND ((db_foo = @p_1) OR (NOT (db_bar = @p_2))) AND ((db_foo <> @p_3) OR (db_baz LIKE @p_4)))")
+			So(result, ShouldEqual, "((db_foo LIKE @p_0 OR db_bar LIKE @p_0) AND ((COALESCE(db_foo, '') = @p_1) OR (NOT (COALESCE(db_bar, '') = @p_2))) AND ((COALESCE(db_foo, '') <> @p_3) OR (db_baz LIKE @p_4)))")
 		})
 	})
 }
