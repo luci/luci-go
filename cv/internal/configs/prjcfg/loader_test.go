@@ -45,7 +45,7 @@ func mockUpdateProjectConfig(ctx context.Context, project string, cgs []*cfgpb.C
 		Hash:             cfgHash,
 		ExternalHash:     cfgHash + "external",
 		ConfigGroupNames: cgNames,
-		SchemaVersion:    schemaVersion,
+		SchemaVersion:    SchemaVersion,
 	}
 	cfgHashInfo := &ConfigHashInfo{
 		Hash:             cfgHash,
@@ -68,7 +68,7 @@ func mockDisableProjectConfig(ctx context.Context, project string, cgs []*cfgpb.
 		Hash:             cfgHash,
 		ExternalHash:     cfgHash + "external",
 		ConfigGroupNames: cgNames,
-		SchemaVersion:    schemaVersion,
+		SchemaVersion:    SchemaVersion,
 	}
 	return datastore.Put(ctx, pc)
 }

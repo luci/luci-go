@@ -34,11 +34,11 @@ import (
 
 const projectConfigKind string = "ProjectConfig"
 
-// schemaVersion is the current DS schema version.
+// SchemaVersion is the current DS schema version.
 //
 // Bump it to force-update Project configs and their Config Groups after the
 // next deployment.
-const schemaVersion = 1
+const SchemaVersion = 1
 
 // ProjectConfig is the root entity that keeps track of the latest version
 // info of the CV config for a LUCI Project. It only contains high-level
@@ -52,7 +52,7 @@ type ProjectConfig struct {
 	// SchemaVersion is the version of the schema.
 	//
 	// It is used to force-update old entities to newest format.
-	// See schemaVersion const.
+	// See SchemaVersion const.
 	SchemaVersion int `gae:",noindex"`
 	// Enabled indicates whether CV is enabled for this LUCI Project.
 	//
@@ -67,7 +67,7 @@ type ProjectConfig struct {
 	// this LUCI Project.
 	EVersion int64 `gae:",noindex"`
 	// Hash is a string computed from the content of latest imported CV Config
-	// using `computeHash()`.
+	// using `ComputeHash()`.
 	Hash string `gae:",noindex"`
 	// ExternalHash is the hash string of this CV config in the external source
 	// of truth (currently, LUCI Config). Used to quickly decided whether the
@@ -78,7 +78,7 @@ type ProjectConfig struct {
 	ConfigGroupNames []string `gae:",noindex"`
 }
 
-// computeHash computes the hash string of given CV Config and prefixed with
+// ComputeHash computes the hash string of given CV Config and prefixed with
 // hash algorithm string. (e.g. sha256:deadbeefdeadbeef)
 //
 // The hash string is an hex-encoded string of the first 8 bytes (i.e. 16
@@ -88,7 +88,7 @@ type ProjectConfig struct {
 // Therefore, in worst case scenario, when a newer version of proto lib is
 // deployed, CV may re-ingest functionally equivalent config.
 // See: https://godoc.org/google.golang.org/protobuf/proto#MarshalOptions
-func computeHash(cfg *cfgpb.Config) string {
+func ComputeHash(cfg *cfgpb.Config) string {
 	b, err := proto.MarshalOptions{Deterministic: true}.Marshal(cfg)
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal config: %s", err))
@@ -96,6 +96,11 @@ func computeHash(cfg *cfgpb.Config) string {
 	sha := sha256.New()
 	sha.Write(b)
 	return fmt.Sprintf("sha256:%s", hex.EncodeToString(sha.Sum(nil)[:8]))
+}
+
+// ProjectConfigKey returns the ProjectConfig key for a given project.
+func ProjectConfigKey(ctx context.Context, project string) *datastore.Key {
+	return datastore.MakeKey(ctx, projectConfigKind, project)
 }
 
 // GetAllProjectIDs returns the names of all projects available in datastore.
@@ -128,7 +133,7 @@ type ConfigHashInfo struct {
 	// SchemaVersion is the version of the schema.
 	//
 	// It is used to force-update old entities to newest format.
-	// See schemaVersion const.
+	// See SchemaVersion const.
 	SchemaVersion int `gae:",noindex"`
 	// GitRevision is the git revision (commit hash) of the imported config.
 	GitRevision string `gae:",noindex"`
@@ -187,7 +192,7 @@ type ConfigGroup struct {
 	// SchemaVersion is the version of the schema.
 	//
 	// It is used to force-update old entities to newest format.
-	// See schemaVersion const.
+	// See SchemaVersion const.
 	SchemaVersion int `gae:",noindex"`
 	// DrainingStartTime represents `draining_start_time` in the CV config.
 	//
@@ -212,62 +217,4 @@ type ConfigGroup struct {
 // ProjectString returns LUCI Project as a string.
 func (c *ConfigGroup) ProjectString() string {
 	return c.Project.StringID()
-}
-
-// putConfigGroups puts the ConfigGroups in the given CV config to datastore.
-//
-// It checks for existence of each ConfigGroup first to avoid unnecessary puts.
-// It is also idempotent so it is safe to retry and can be called out of a
-// transactional context.
-func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash string) error {
-	cgLen := len(cfg.GetConfigGroups())
-	if cgLen == 0 {
-		return nil
-	}
-
-	// Check if there are any existing entities with the current schema version
-	// such that we can skip updating them.
-	projKey := datastore.MakeKey(ctx, projectConfigKind, project)
-	entities := make([]*ConfigGroup, cgLen)
-	for i, cg := range cfg.GetConfigGroups() {
-		entities[i] = &ConfigGroup{
-			ID:      MakeConfigGroupID(hash, cg.GetName()),
-			Project: projKey,
-		}
-	}
-	err := datastore.Get(ctx, entities)
-	errs, ok := err.(errors.MultiError)
-	switch {
-	case err != nil && !ok:
-		return errors.Annotate(err, "failed to check the existence of ConfigGroups").Tag(transient.Tag).Err()
-	case err == nil:
-		errs = make(errors.MultiError, cgLen)
-	}
-	toPut := entities[:0] // re-use the slice
-	for i, err := range errs {
-		ent := entities[i]
-		switch {
-		case err == datastore.ErrNoSuchEntity:
-			// proceed to put below.
-		case err != nil:
-			return errors.Annotate(err, "failed to check the existence of one of ConfigGroups").Tag(transient.Tag).Err()
-		case ent.SchemaVersion != schemaVersion:
-			// Intentionally using != here s.t. rollbacks result in downgrading
-			// of the schema. Given that project configs are checked and
-			// potentially updated every ~1 minute, this if OK.
-		default:
-			continue // up to date
-		}
-		ent.SchemaVersion = schemaVersion
-		ent.DrainingStartTime = cfg.GetDrainingStartTime()
-		ent.SubmitOptions = cfg.GetSubmitOptions()
-		ent.Content = cfg.GetConfigGroups()[i]
-		ent.CQStatusHost = cfg.GetCqStatusHost()
-		toPut = append(toPut, ent)
-	}
-
-	if err := datastore.Put(ctx, toPut); err != nil {
-		return errors.Annotate(err, "failed to put ConfigGroups").Tag(transient.Tag).Err()
-	}
-	return nil
 }

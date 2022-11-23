@@ -67,7 +67,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	}
 
 	// Write out ConfigHashInfo if missing and all ConfigGroups.
-	localHash := computeHash(cfg)
+	localHash := ComputeHash(cfg)
 	cgNames := make([]string, len(cfg.GetConfigGroups()))
 	for i, cg := range cfg.GetConfigGroups() {
 		cgNames[i] = cg.GetName()
@@ -77,7 +77,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		hashInfo := ConfigHashInfo{
 			Hash:    localHash,
-			Project: datastore.MakeKey(ctx, projectConfigKind, project),
+			Project: ProjectConfigKey(ctx, project),
 		}
 		switch err := datastore.Get(ctx, &hashInfo); {
 		case err != nil && err != datastore.ErrNoSuchEntity:
@@ -89,7 +89,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 			hashInfo.UpdateTime = datastore.RoundTime(clock.Now(ctx)).UTC()
 			hashInfo.ConfigGroupNames = cgNames
 			hashInfo.GitRevision = meta.Revision
-			hashInfo.SchemaVersion = schemaVersion
+			hashInfo.SchemaVersion = SchemaVersion
 			return errors.Annotate(datastore.Put(ctx, &hashInfo), "failed to put ConfigHashInfo(Hash=%q)", localHash).Tag(transient.Tag).Err()
 		}
 	}, nil)
@@ -119,7 +119,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 				Hash:             localHash,
 				ExternalHash:     meta.ContentHash,
 				ConfigGroupNames: cgNames,
-				SchemaVersion:    schemaVersion,
+				SchemaVersion:    SchemaVersion,
 			}
 			updated = true
 			if err := datastore.Put(ctx, &pc); err != nil {
@@ -165,7 +165,7 @@ func needsUpdate(ctx context.Context, project string) (bool, ProjectConfig, erro
 		return true, pc, nil
 	case pc.ExternalHash != meta.ContentHash:
 		return true, pc, nil
-	case pc.SchemaVersion != schemaVersion:
+	case pc.SchemaVersion != SchemaVersion:
 		// Intentionally using != here s.t. rollbacks result in downgrading of the
 		// schema. Given that project configs are checked and potentially updated
 		// every ~1 minute, this if OK.
@@ -226,6 +226,64 @@ func DisableProject(ctx context.Context, project string, notify NotifyCallback) 
 		return errors.Annotate(err, "failed to run transaction to disable project %q", project).Tag(transient.Tag).Err()
 	case disabled:
 		logging.Infof(ctx, "disabled project %q", project)
+	}
+	return nil
+}
+
+// putConfigGroups puts the ConfigGroups in the given CV config to datastore.
+//
+// It checks for existence of each ConfigGroup first to avoid unnecessary puts.
+// It is also idempotent so it is safe to retry and can be called out of a
+// transactional context.
+func putConfigGroups(ctx context.Context, cfg *cfgpb.Config, project, hash string) error {
+	cgLen := len(cfg.GetConfigGroups())
+	if cgLen == 0 {
+		return nil
+	}
+
+	// Check if there are any existing entities with the current schema version
+	// such that we can skip updating them.
+	projKey := ProjectConfigKey(ctx, project)
+	entities := make([]*ConfigGroup, cgLen)
+	for i, cg := range cfg.GetConfigGroups() {
+		entities[i] = &ConfigGroup{
+			ID:      MakeConfigGroupID(hash, cg.GetName()),
+			Project: projKey,
+		}
+	}
+	err := datastore.Get(ctx, entities)
+	errs, ok := err.(errors.MultiError)
+	switch {
+	case err != nil && !ok:
+		return errors.Annotate(err, "failed to check the existence of ConfigGroups").Tag(transient.Tag).Err()
+	case err == nil:
+		errs = make(errors.MultiError, cgLen)
+	}
+	toPut := entities[:0] // re-use the slice
+	for i, err := range errs {
+		ent := entities[i]
+		switch {
+		case err == datastore.ErrNoSuchEntity:
+			// proceed to put below.
+		case err != nil:
+			return errors.Annotate(err, "failed to check the existence of one of ConfigGroups").Tag(transient.Tag).Err()
+		case ent.SchemaVersion != SchemaVersion:
+			// Intentionally using != here s.t. rollbacks result in downgrading
+			// of the schema. Given that project configs are checked and
+			// potentially updated every ~1 minute, this if OK.
+		default:
+			continue // up to date
+		}
+		ent.SchemaVersion = SchemaVersion
+		ent.DrainingStartTime = cfg.GetDrainingStartTime()
+		ent.SubmitOptions = cfg.GetSubmitOptions()
+		ent.Content = cfg.GetConfigGroups()[i]
+		ent.CQStatusHost = cfg.GetCqStatusHost()
+		toPut = append(toPut, ent)
+	}
+
+	if err := datastore.Put(ctx, toPut); err != nil {
+		return errors.Annotate(err, "failed to put ConfigGroups").Tag(transient.Tag).Err()
 	}
 	return nil
 }

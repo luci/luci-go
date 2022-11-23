@@ -24,6 +24,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmemory "go.chromium.org/luci/config/impl/memory"
@@ -40,6 +42,30 @@ import (
 )
 
 var testNow = testclock.TestTimeLocal.Round(1 * time.Millisecond)
+var testCfg = &cfgpb.Config{
+	DrainingStartTime: "2014-05-11T14:37:57Z",
+	SubmitOptions: &cfgpb.SubmitOptions{
+		MaxBurst:   50,
+		BurstDelay: durationpb.New(2 * time.Second),
+	},
+	CqStatusHost: "chromium-cq-status.appspot.com",
+	ConfigGroups: []*cfgpb.ConfigGroup{
+		{
+			Name: "group_foo",
+			Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+				{
+					Url: "https://chromium-review.googlesource.com/",
+					Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+						{
+							Name:      "chromium/src",
+							RefRegexp: []string{"refs/heads/main"},
+						},
+					},
+				},
+			},
+		},
+	},
+}
 
 func TestUpdateProject(t *testing.T) {
 	Convey("Update Project", t, func() {
@@ -86,8 +112,8 @@ func TestUpdateProject(t *testing.T) {
 			cfg, meta := &cfgpb.Config{}, &config.Meta{}
 			err := cfgclient.Get(ctx, config.ProjectSet("chromium"), ConfigFileName, cfgclient.ProtoText(cfg), meta)
 			So(err, ShouldBeNil)
-			localHash := computeHash(cfg)
-			projKey := datastore.MakeKey(ctx, projectConfigKind, "chromium")
+			localHash := ComputeHash(cfg)
+			projKey := ProjectConfigKey(ctx, "chromium")
 			cgNames := make([]string, len(cfg.GetConfigGroups()))
 			// Verify ConfigGroups.
 			for i, cgpb := range cfg.GetConfigGroups() {
@@ -109,7 +135,7 @@ func TestUpdateProject(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pc, ShouldResemble, ProjectConfig{
 				Project:          "chromium",
-				SchemaVersion:    schemaVersion,
+				SchemaVersion:    SchemaVersion,
 				Enabled:          true,
 				EVersion:         expectedEVersion,
 				Hash:             localHash,
@@ -131,7 +157,7 @@ func TestUpdateProject(t *testing.T) {
 			So(hashInfo, ShouldResemble, ConfigHashInfo{
 				Hash:             localHash,
 				Project:          projKey,
-				SchemaVersion:    schemaVersion,
+				SchemaVersion:    SchemaVersion,
 				ProjectEVersion:  expectedEVersion,
 				UpdateTime:       datastore.RoundTime(testClock.Now()).UTC(),
 				ConfigGroupNames: cgNames,
@@ -168,7 +194,7 @@ func TestUpdateProject(t *testing.T) {
 				So(pc.UpdateTime, ShouldResemble, prevUpdatedTime.UTC())
 				So(notifyCalled, ShouldBeFalse)
 
-				Convey("But not noop if schemaVersion changed", func() {
+				Convey("But not noop if SchemaVersion changed", func() {
 					old := pc // copy
 					old.SchemaVersion--
 					So(datastore.Put(ctx, &old), ShouldBeNil)
@@ -178,7 +204,7 @@ func TestUpdateProject(t *testing.T) {
 					So(notifyCalled, ShouldBeTrue)
 					So(datastore.Get(ctx, &pc), ShouldBeNil)
 					So(pc.EVersion, ShouldEqual, 2)
-					So(pc.SchemaVersion, ShouldEqual, schemaVersion)
+					So(pc.SchemaVersion, ShouldEqual, SchemaVersion)
 				})
 			})
 
@@ -230,7 +256,7 @@ func TestUpdateProject(t *testing.T) {
 					before := ProjectConfig{Project: "chromium"}
 					So(datastore.Get(ctx, &before), ShouldBeNil)
 					// Delete config entities.
-					projKey := datastore.MakeKey(ctx, projectConfigKind, "chromium")
+					projKey := ProjectConfigKey(ctx, "chromium")
 					err := datastore.Delete(ctx,
 						&ConfigHashInfo{Hash: before.Hash, Project: projKey},
 						&ConfigGroup{
@@ -326,4 +352,56 @@ func toProtoText(msg proto.Message) string {
 	bs, err := prototext.Marshal(msg)
 	So(err, ShouldBeNil)
 	return string(bs)
+}
+
+func TestPutConfigGroups(t *testing.T) {
+	t.Parallel()
+
+	Convey("PutConfigGroups", t, func() {
+		ctx := gaememory.Use(context.Background())
+		if testing.Verbose() {
+			ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+		}
+
+		Convey("New Configs", func() {
+			hash := ComputeHash(testCfg)
+			err := putConfigGroups(ctx, testCfg, "chromium", hash)
+			So(err, ShouldBeNil)
+			stored := ConfigGroup{
+				ID:      MakeConfigGroupID(hash, "group_foo"),
+				Project: ProjectConfigKey(ctx, "chromium"),
+			}
+			So(datastore.Get(ctx, &stored), ShouldBeNil)
+			So(stored.DrainingStartTime, ShouldEqual, testCfg.GetDrainingStartTime())
+			So(stored.SubmitOptions, ShouldResembleProto, testCfg.GetSubmitOptions())
+			So(stored.Content, ShouldResembleProto, testCfg.GetConfigGroups()[0])
+			So(stored.SchemaVersion, ShouldEqual, SchemaVersion)
+
+			Convey("Skip if already exists", func() {
+				ctx := datastore.AddRawFilters(ctx, func(_ context.Context, rds datastore.RawInterface) datastore.RawInterface {
+					return readOnlyFilter{rds}
+				})
+				err := putConfigGroups(ctx, testCfg, "chromium", ComputeHash(testCfg))
+				So(err, ShouldBeNil)
+			})
+
+			Convey("Update existing due to SchemaVersion", func() {
+				old := stored // copy
+				old.SchemaVersion = SchemaVersion - 1
+				So(datastore.Put(ctx, &old), ShouldBeNil)
+
+				err := putConfigGroups(ctx, testCfg, "chromium", ComputeHash(testCfg))
+				So(err, ShouldBeNil)
+
+				So(datastore.Get(ctx, &stored), ShouldBeNil)
+				So(stored.SchemaVersion, ShouldEqual, SchemaVersion)
+			})
+		})
+	})
+}
+
+type readOnlyFilter struct{ datastore.RawInterface }
+
+func (f readOnlyFilter) PutMulti(keys []*datastore.Key, vals []datastore.PropertyMap, cb datastore.NewKeyCB) error {
+	panic("write is not supported")
 }
