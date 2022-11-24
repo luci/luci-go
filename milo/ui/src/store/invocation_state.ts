@@ -203,11 +203,8 @@ export const InvocationState = types
         const searchParam = new URLSearchParams({
           q: 'VHASH:' + variantHash,
         });
-        return (
-          router.urlForName('test-history', { realm: this.invocation.realm, test_id: testId }) +
-          '?' +
-          searchParam.toString()
-        );
+        const project = this.invocation.realm.split(':', 2)[0];
+        return router.urlForName('test-history', { realm: project, test_id: testId }) + '?' + searchParam.toString();
       },
     };
   })
