@@ -145,8 +145,9 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 	paragraphs = append(paragraphs, fmt.Sprintf("Sample failed build: %s",
 		buildURL))
 
-	// TODO (aredulla): add link to file bug for LUCI Bisection if it's a
-	// false positive
+	paragraphs = append(paragraphs,
+		fmt.Sprintf("If this is a false positive, please report it at %s",
+			util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)))
 
 	// Set CQ flags in the last paragraph, i.e. footer of the CL description
 	//

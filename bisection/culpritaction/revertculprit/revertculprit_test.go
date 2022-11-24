@@ -111,6 +111,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 
 		analysisURL := util.ConstructAnalysisURL(ctx, failedBuild.Id)
 		buildURL := util.ConstructBuildURL(ctx, failedBuild.Id)
+		bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL,
+			"https://test-review.googlesource.com/c/chromium/test/+/876543")
 
 		// Set up mock Gerrit client
 		ctl := gomock.NewController(t)
@@ -291,7 +293,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					Message: fmt.Sprintf("LUCI Bisection recommends submitting this"+
 						" revert because it has confirmed the target of this revert is the"+
 						" culprit of a build failure. See the analysis: %s\n\n"+
-						"Sample failed build: %s", analysisURL, buildURL),
+						"Sample failed build: %s\n\nIf this is a false positive, please"+
+						" report it at %s", analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
@@ -394,8 +397,9 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					Message: fmt.Sprintf("LUCI Bisection has identified this"+
 						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because there are merged"+
-						" changes depending on it.\n\nSample failed build: %s",
-						analysisURL, buildURL),
+						" changes depending on it.\n\nSample failed build: %s\n\nIf this is"+
+						" a false positive, please report it at %s",
+						analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
@@ -478,7 +482,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because"+
 						" LUCI Bisection's revert creation has been disabled.\n\n"+
-						"Sample failed build: %s", analysisURL, buildURL),
+						"Sample failed build: %s\n\nIf this is a false positive, please"+
+						" report it at %s", analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
@@ -843,7 +848,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because"+
 						" auto-revert has been disabled for this CL by its description.\n\n"+
-						"Sample failed build: %s", analysisURL, buildURL),
+						"Sample failed build: %s\n\nIf this is a false positive, please report"+
+						" it at %s", analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
@@ -926,7 +932,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because"+
 						" LUCI Bisection cannot revert changes from this CL's author.\n\n"+
-						"Sample failed build: %s", analysisURL, buildURL),
+						"Sample failed build: %s\n\nIf this is a false positive, please report"+
+						" it at %s", analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 

@@ -382,12 +382,15 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	}
 	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
 	buildURL := util.ConstructBuildURL(ctx, bbid)
+	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)
 
 	_, err = gerritClient.AddComment(ctx, revert,
 		fmt.Sprintf("LUCI Bisection recommends submitting this revert because"+
 			" it has confirmed the target of this revert is the culprit of a"+
 			" build failure. See the analysis: %s\n\n"+
-			"Sample failed build: %s", analysisURL, buildURL))
+			"Sample failed build: %s\n\n"+
+			"If this is a false positive, please report it at %s",
+			analysisURL, buildURL, bugURL))
 	return err
 }
 
@@ -414,11 +417,14 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 	}
 	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
 	buildURL := util.ConstructBuildURL(ctx, bbid)
+	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)
 
 	message := fmt.Sprintf("LUCI Bisection has identified this"+
 		" change as the culprit of a build failure. See the analysis: %s\n\n"+
 		"A revert for this change was not created because %s.\n\n"+
-		"Sample failed build: %s", analysisURL, reason, buildURL)
+		"Sample failed build: %s\n\n"+
+		"If this is a false positive, please report it at %s",
+		analysisURL, reason, buildURL, bugURL)
 
 	_, err = gerritClient.AddComment(ctx, culprit, message)
 	return err
