@@ -56,7 +56,7 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
   @observable
   private numRequestsCompleted = 0;
 
-  private includedInvocations: { [name: string]: Invocation } = {};
+  private includedInvocations: Invocation[] = [];
 
   constructor() {
     super();
@@ -67,17 +67,27 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
           if (!this.invState || !this.invState.invocation || !this.invState.invocation.includedInvocations) {
             return;
           }
-          for (const invocationName of this.invState.invocation!.includedInvocations || []) {
-            this.store.services.resultDb
-              ?.getInvocation({ name: invocationName })
-              .then((invocation) => {
-                this.includedInvocations[invocationName] = invocation;
-                this.numRequestsCompleted += 1;
-              })
-              .catch((e) => {
+          let invs = this.invState.invocation.includedInvocations || [];
+          // No more than 512 requests in flight at a time to prevent browsers cancelling them
+          // TODO: implement a BatchGetInvocation call in ResultDB and remove this compensation.
+          const delayedInvs = invs.slice(512);
+          invs = invs.slice(0, 512);
+          const invocationReceivedCallback = (invocation: Invocation) => {
+            this.includedInvocations.push(invocation);
+            // this.numRequestsCompleted += 1;
+            this.batchRequestComplete();
+            if (delayedInvs.length) {
+              this.store.services.resultDb?.getInvocation({ name: delayedInvs.pop()! }, {skipUpdate: true}).then(invocationReceivedCallback).catch((e) => {
                 // TODO(mwarton): display the error to the user.
                 console.error(e);
-              });
+              })
+            }
+          }
+          for (const invocationName of invs) {
+            this.store.services.resultDb?.getInvocation({ name: invocationName }, {skipUpdate: true}).then(invocationReceivedCallback).catch((e) => {
+              // TODO(mwarton): display the error to the user.
+              console.error(e);
+            })
           }
         } catch (e) {
           // TODO(mwarton): display the error to the user.
@@ -85,6 +95,20 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
         }
       })
     );
+  }
+
+  // requestsInBatch is NOT observable so we can batch updates to the observable numRequestsCompleted.
+  private requestsInBatch = 0;
+  // equivalent to this.numRequestsCompleted += 1, but batches all of the updates until the next idle period.
+  // This ensures a render is only kicked off once the last one is finished, giving the minimum number of re-renders.
+  batchRequestComplete() {
+    if (this.requestsInBatch === 0) {
+      window.requestIdleCallback(() => {
+        this.numRequestsCompleted += this.requestsInBatch;
+        this.requestsInBatch = 0;
+      });
+    }
+    this.requestsInBatch += 1;
   }
 
   private now = DateTime.now();
@@ -108,7 +132,8 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
       return html``;
     }
 
-    const blocks: TimelineBlock[] = Object.values(this.includedInvocations).map((i) => ({
+
+    const blocks: TimelineBlock[] = this.includedInvocations.map(i => ({
       text: stripInvocationPrefix(i.name),
       href: `/ui/inv/${stripInvocationPrefix(i.name)}/invocation-details`,
       start: DateTime.fromISO(i.createTime),

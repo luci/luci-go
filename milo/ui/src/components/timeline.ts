@@ -99,6 +99,8 @@ export class Timeline extends LitElement {
   private scaleTime!: d3.ScaleTime<number, number, never>;
   private scaleStep!: d3.ScaleLinear<number, number, never>;
   private timeInterval!: d3.TimeInterval;
+  // prevTimeout is the id of the timeout set in the previous render call.  If it is null there is no pending timeout.
+  private prevTimeout: number | null = null;
 
 
   constructor() {
@@ -310,7 +312,13 @@ export class Timeline extends LitElement {
 
       // Wail until the next event cycle so blockText is rendered when we call
       // this.getBBox();
-      window.setTimeout(() => {
+
+      // Cancel timeouts for previous renders so we don't do useless page layouts.
+      if (this.prevTimeout) {
+        clearTimeout(this.prevTimeout);
+      }
+      this.prevTimeout = window.setTimeout(() => {
+        this.prevTimeout = null;
         const self = this;
         blockText.each(function () {
           const textBBox = this.getBBox();
