@@ -13,17 +13,12 @@
 // limitations under the License.
 
 import { assert } from 'chai';
+import { destroy, protect, unprotect } from 'mobx-state-tree';
 import sinon from 'sinon';
 
-import {
-  QueryTestVariantsRequest,
-  QueryTestVariantsResponse,
-  ResultDb,
-  TestVariant,
-  TestVariantStatus,
-} from '../services/resultdb';
-import { StoreInstance } from '../store';
-import { InvocationState } from './invocation_state';
+import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
+import { TestVariant, TestVariantStatus } from '../services/resultdb';
+import { Store } from '.';
 
 const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',
@@ -62,48 +57,44 @@ const variant5: TestVariant = {
 
 describe('InvocationState', () => {
   describe('filterVariant', () => {
-    const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
+    const store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+      invocationPage: { invocationId: 'invocation-id' },
+    });
+    after(() => destroy(store));
+    unprotect(store);
+    const queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
+    protect(store);
+
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3, variant4, variant5] });
 
-    const store = {
-      selectedTabId: '',
-      services: {
-        resultDb: {
-          queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
-        },
-      },
-    } as StoreInstance;
-
-    const invocationState = new InvocationState(store);
-    invocationState.invocationId = 'invocation-id';
-    before(async () => await invocationState.testLoader!.loadNextTestVariants());
-    after(() => invocationState.dispose());
+    before(async () => await store.invocationPage.invocation.testLoader!.loadNextTestVariants());
 
     it('should not filter out anything when search text is empty', () => {
-      invocationState.searchText = '';
-      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, [variant1, variant2]);
-      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
+      store.invocationPage.invocation.setSearchText('');
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, [variant1, variant2]);
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
     });
 
     it("should filter out variants whose test ID doesn't match the search text", () => {
-      invocationState.searchText = 'test-suite-a';
-      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, [variant1, variant2]);
-      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, []);
+      store.invocationPage.invocation.setSearchText('test-suite-a');
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, [variant1, variant2]);
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, []);
     });
 
     it('search text should be case insensitive', () => {
-      invocationState.searchText = 'test-suite-b';
-      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
+      store.invocationPage.invocation.setSearchText('test-suite-b');
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, []);
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
     });
 
     it('should preserve the last known valid filter', () => {
-      invocationState.searchText = 'test-suite-b';
-      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
-      invocationState.searchText = 'invalid:filter';
-      assert.deepEqual(invocationState.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(invocationState.testLoader!.expectedTestVariants, [variant5]);
+      store.invocationPage.invocation.setSearchText('test-suite-b');
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, []);
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
+      store.invocationPage.invocation.setSearchText('invalid:filter');
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, []);
+      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
     });
   });
 });

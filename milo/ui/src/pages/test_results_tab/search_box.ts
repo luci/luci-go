@@ -21,9 +21,9 @@ import { computed, makeObservable, observable } from 'mobx';
 import '../../components/auto_complete';
 import '../../components/hotkey';
 import { SuggestionEntry } from '../../components/auto_complete';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumer } from '../../libs/context';
 import { suggestTestResultSearchQuery } from '../../libs/queries/tr_search_query';
+import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
 
 /**
  * An element that let the user search tests in the test results tab with DSL.
@@ -33,17 +33,17 @@ import { suggestTestResultSearchQuery } from '../../libs/queries/tr_search_query
 export class TestResultTabSearchBoxElement extends MobxLitElement {
   @observable.ref
   @consumeInvocationState()
-  invocationState!: InvocationState;
+  invState!: InvocationStateInstance;
 
   @computed private get lastSubQuery() {
-    return this.invocationState.searchText.split(' ').pop() || '';
+    return this.invState.searchText.split(' ').pop() || '';
   }
   @computed private get queryPrefix() {
-    const searchTextPrefixLen = this.invocationState.searchText.length - this.lastSubQuery.length;
-    return this.invocationState.searchText.slice(0, searchTextPrefixLen);
+    const searchTextPrefixLen = this.invState.searchText.length - this.lastSubQuery.length;
+    return this.invState.searchText.slice(0, searchTextPrefixLen);
   }
   @computed private get suggestions() {
-    return suggestTestResultSearchQuery(this.invocationState.searchText);
+    return suggestTestResultSearchQuery(this.invState.searchText);
   }
 
   constructor() {
@@ -63,16 +63,16 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
         <milo-auto-complete
           id="search-box"
           .highlight=${true}
-          .value=${this.invocationState.searchText}
+          .value=${this.invState.searchText}
           .placeHolder=${'Press / to search test results...'}
           .suggestions=${this.suggestions}
-          .onValueUpdate=${(newVal: string) => (this.invocationState.searchText = newVal)}
+          .onValueUpdate=${(newVal: string) => this.invState.setSearchText(newVal)}
           .onSuggestionSelected=${(suggestion: SuggestionEntry) => {
-            this.invocationState.searchText = this.queryPrefix + suggestion.value! + ' ';
+            this.invState.setSearchText(this.queryPrefix + suggestion.value! + ' ');
           }}
         >
           <mwc-icon
-            style=${styleMap({ color: this.invocationState.searchText === '' ? '' : 'var(--active-color)' })}
+            style=${styleMap({ color: this.invState.searchText === '' ? '' : 'var(--active-color)' })}
             slot="pre-icon"
           >
             search
@@ -81,8 +81,8 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
             id="clear-search"
             slot="post-icon"
             title="Clear"
-            style=${styleMap({ display: this.invocationState.searchText === '' ? 'none' : '' })}
-            @click=${() => (this.invocationState.searchText = '')}
+            style=${styleMap({ display: this.invState.searchText === '' ? 'none' : '' })}
+            @click=${() => this.invState.setSearchText('')}
           >
             close
           </mwc-icon>

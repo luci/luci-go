@@ -18,6 +18,7 @@ import { createContext, useContext } from 'react';
 import { createContextLink } from '../libs/context';
 import { AuthStateStore } from './auth_state';
 import { BuildPage } from './build_page';
+import { InvocationPage } from './invocation_page';
 import { SearchPage } from './search_page';
 import { WorkboxState } from './service_worker/workbox_state';
 import { ServicesStore } from './services';
@@ -53,6 +54,7 @@ export const Store = types
     searchPage: types.optional(SearchPage, {}),
     buildPage: types.optional(BuildPage, {}),
     testHistoryPage: types.optional(TestHistoryPage, {}),
+    invocationPage: types.optional(InvocationPage, {}),
   })
   .volatile(() => ({
     /**
@@ -97,6 +99,9 @@ export const Store = types
       });
       self.testHistoryPage.setDependencies({
         refreshTime: self.refreshTime,
+        services: self.services,
+      });
+      self.invocationPage.setDependencies({
         services: self.services,
       });
     },

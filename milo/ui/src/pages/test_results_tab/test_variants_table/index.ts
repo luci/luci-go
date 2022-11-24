@@ -18,18 +18,18 @@ import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
 import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
-import { computed, makeObservable, observable, reaction } from 'mobx';
+import { makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/dot_spinner';
 import '../../../components/column_header';
 import './test_variant_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { VARIANT_STATUS_CLASS_MAP } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
-import { createTVPropGetter, getPropKeyLabel, TestVariant, TestVariantStatus } from '../../../services/resultdb';
+import { getPropKeyLabel, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
+import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 import { TestVariantEntryElement } from './test_variant_entry';
@@ -47,15 +47,7 @@ export interface VariantGroup {
 @consumer
 export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeStore() store!: StoreInstance;
-  @observable.ref @consumeInvocationState() invState!: InvocationState;
-
-  @computed private get columnGetters() {
-    return this.invState.columnKeys.map((col) => createTVPropGetter(col));
-  }
-
-  @computed private get columnWidths() {
-    return this.invState.columnWidths;
-  }
+  @observable.ref @consumeInvocationState() invState!: InvocationStateInstance;
 
   constructor() {
     super();
@@ -167,7 +159,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
         (v) => html`
           <milo-test-variant-entry
             .variant=${v}
-            .columnGetters=${this.columnGetters}
+            .columnGetters=${this.invState.columnGetters}
             .expanded=${this.invState.testVariantCount === 1}
             .historyUrl=${this.invState.getHistoryUrl(v.testId, v.variantHash)}
           ></milo-test-variant-entry>
@@ -224,7 +216,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <div style="--tvt-columns: ${this.getTvtColumns(this.columnWidths)}">
+      <div style="--tvt-columns: ${this.getTvtColumns(this.invState.columnWidths)}">
         <div id="table-header">
           <div><!-- Expand toggle --></div>
           <milo-column-header
@@ -239,7 +231,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
               .tooltip=${col}
               .resizeColumn=${(delta: number, finalized: boolean) => {
                 if (!finalized) {
-                  const newColWidths = this.columnWidths.slice();
+                  const newColWidths = this.invState.columnWidths.slice();
                   newColWidths[i] += delta;
                   // Update the style directly so lit-element doesn't need to
                   // re-render the component frequently.
@@ -251,7 +243,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
                 }
 
                 this.tableHeaderEle?.style.removeProperty('--tvt-columns');
-                this.store.userConfig.tests.setColumWidth(col, this.columnWidths[i] + delta);
+                this.store.userConfig.tests.setColumWidth(col, this.invState.columnWidths[i] + delta);
               }}
               .sortByColumn=${this.sortByColumnFn(col)}
               .groupByColumn=${this.groupByColumnFn(col)}

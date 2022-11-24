@@ -26,7 +26,6 @@ import '../../../components/pin_toggle';
 import './step_cluster';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
-import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../../libs/constants';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
@@ -47,10 +46,6 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
-
-  @observable.ref
-  @consumeInvocationState()
-  invState!: InvocationState;
 
   @observable.ref step!: StepExt;
 

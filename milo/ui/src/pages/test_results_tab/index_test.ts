@@ -15,15 +15,16 @@
 import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { customElement, html, LitElement } from 'lit-element';
+import { computed } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 import sinon, { SinonStub } from 'sinon';
 
 import '.';
-import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { provider } from '../../libs/context';
 import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
 import { ResultDb, TestVariantStatus } from '../../services/resultdb';
 import { provideStore, Store, StoreInstance } from '../../store';
+import { provideInvocationState } from '../../store/invocation_state';
 import { TestResultsTabElement } from '.';
 
 const variant1 = {
@@ -68,28 +69,30 @@ class ContextProvider extends LitElement {
   store!: StoreInstance;
 
   @provideInvocationState()
-  invocationState!: InvocationState;
+  @computed
+  get invocationState() {
+    return this.store.invocationPage.invocation;
+  }
 }
 
 describe('Test Results Tab', () => {
   it('should load the first page of test variants when connected', async () => {
-    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+    const store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+      invocationPage: { invocationId: 'invocation-id' },
+    });
     const queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
     queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
     const getInvocationStub = sinon.stub(store.services.resultDb!, 'getInvocation');
     getInvocationStub.returns(Promise.race([]));
 
-    const invocationState = new InvocationState(store);
-    invocationState.invocationId = 'invocation-id';
-
     after(() => {
       fixtureCleanup();
-      invocationState.dispose();
       destroy(store);
     });
     const provider = await fixture<ContextProvider>(html`
-      <milo-test-context-provider .store=${store} .invocationState=${invocationState}>
+      <milo-test-context-provider .store=${store}>
         <milo-test-results-tab></milo-test-results-tab>
       </milo-test-context-provider>
     `);
@@ -101,7 +104,7 @@ describe('Test Results Tab', () => {
     tab.connectedCallback();
 
     await aTimeout(0);
-    assert.isFalse(invocationState.testLoader?.isLoading);
+    assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
     assert.strictEqual(queryTestVariantsStub.callCount, 1);
   });
 
@@ -111,11 +114,13 @@ describe('Test Results Tab', () => {
       ReturnType<ResultDb['queryTestVariants']>
     >;
     let store: StoreInstance;
-    let invocationState: InvocationState;
     let tab: TestResultsTabElement;
 
     beforeEach(async () => {
-      store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+      store = Store.create({
+        authState: { value: { identity: ANONYMOUS_IDENTITY } },
+        invocationPage: { invocationId: 'invocation-id' },
+      });
 
       queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
       queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1], nextPageToken: 'next0' });
@@ -127,11 +132,8 @@ describe('Test Results Tab', () => {
       const getInvocationStub = sinon.stub(store.services.resultDb!, 'getInvocation');
       getInvocationStub.returns(Promise.race([]));
 
-      invocationState = new InvocationState(store);
-      invocationState.invocationId = 'invocation-id';
-
       const provider = await fixture<ContextProvider>(html`
-        <milo-test-context-provider .store=${store} .invocationState=${invocationState}>
+        <milo-test-context-provider .store=${store}>
           <milo-test-results-tab></milo-test-results-tab>
         </milo-test-context-provider>
       `);
@@ -140,30 +142,29 @@ describe('Test Results Tab', () => {
 
     afterEach(() => {
       fixtureCleanup();
-      invocationState.dispose();
       destroy(store);
       const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
       window.history.replaceState(null, '', url);
     });
 
     it('should trigger automatic loading when visiting the tab for the first time', async () => {
-      assert.isTrue(invocationState.testLoader?.isLoading);
+      assert.isTrue(store.invocationPage.invocation.testLoader?.isLoading);
       assert.strictEqual(queryTestVariantsStub.callCount, 1);
 
       await aTimeout(0);
-      assert.isFalse(invocationState.testLoader?.isLoading);
+      assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
       assert.strictEqual(queryTestVariantsStub.callCount, 1);
 
       // Disconnect, then reload the tab.
       tab.disconnectedCallback();
       await fixture<ContextProvider>(html`
-        <milo-test-context-provider .store=${store} .invocationState=${invocationState}>
+        <milo-test-context-provider .store=${store}>
           <milo-test-results-tab></milo-test-results-tab>
         </milo-test-context-provider>
       `);
 
       // Should not trigger loading agin.
-      assert.isFalse(invocationState.testLoader?.isLoading);
+      assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
       assert.strictEqual(queryTestVariantsStub.callCount, 1);
     });
   });

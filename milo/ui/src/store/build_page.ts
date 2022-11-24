@@ -14,7 +14,8 @@
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
-import { cast, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import { reaction } from 'mobx';
+import { addDisposer, cast, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
 
 import { getGitilesRepoURL, renderBugUrlTemplate } from '../libs/build_utils';
@@ -31,10 +32,12 @@ import {
   GetBuildRequest,
   GitilesCommit,
   SEARCH_BUILD_FIELD_MASK,
+  TEST_PRESENTATION_KEY,
 } from '../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
 import { BuildState, BuildStateInstance } from './build_state';
+import { InvocationState } from './invocation_state';
 import { ServicesStore } from './services';
 import { Timestamp } from './timestamp';
 import { UserConfig } from './user_config';
@@ -73,6 +76,7 @@ export const BuildPage = types
      * Computed invocation ID may not work on older builds.
      */
     useComputedInvId: true,
+    invocation: types.optional(InvocationState, {}),
 
     selectedBlamelistPinIndex: 0,
 
@@ -108,6 +112,14 @@ export const BuildPage = types
       const cached =
         self.builderIdParam && this.buildNum !== null ? self.getBuildId(self.builderIdParam, this.buildNum) : null;
       return cached || (self.buildNumOrIdParam?.startsWith('b') ? self.buildNumOrIdParam.slice(1) : null);
+    },
+    get hasInvocation() {
+      if (self.useComputedInvId) {
+        // The invocation may not exist. Wait for the invocation query to confirm
+        // its existence.
+        return Boolean(self.invocation?.invocation);
+      }
+      return Boolean(self._build?.data.infra?.resultdb?.invocation);
     },
   }))
   .actions((self) => ({
@@ -173,7 +185,7 @@ export const BuildPage = types
         if (self.build === null) {
           return null;
         }
-        const invIdFromBuild = self.build?.data.infra?.resultdb?.invocation?.slice('invocations/'.length) || '';
+        const invIdFromBuild = self.build?.data.infra?.resultdb?.invocation?.slice('invocations/'.length) ?? null;
         return fromPromise(Promise.resolve(invIdFromBuild));
       } else if (self.buildId) {
         // Favor ID over builder + number to ensure cache hit when the build
@@ -344,7 +356,7 @@ export const BuildPage = types
     };
   })
   .actions((self) => ({
-    setDependencies(deps: Pick<typeof self, 'currentTime' | 'refreshTime' | 'services' | 'userConfig'>) {
+    setDependencies(deps: Partial<Pick<typeof self, 'currentTime' | 'refreshTime' | 'services' | 'userConfig'>>) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
     setUseComputedInvId(useComputed: boolean) {
@@ -379,6 +391,32 @@ export const BuildPage = types
       });
       self.refreshTime?.refresh();
     }),
+    afterCreate() {
+      addDisposer(
+        self,
+        reaction(
+          () => self.services,
+          (services) => {
+            self.invocation.setDependencies({
+              services,
+            });
+          },
+          { fireImmediately: true }
+        )
+      );
+
+      self.invocation.setDependencies({
+        invocationIdGetter: () => self.invocationId,
+        presentationConfigGetter: () =>
+          self.build?.data.output?.properties?.[TEST_PRESENTATION_KEY] ||
+          self.build?.data.input?.properties?.[TEST_PRESENTATION_KEY] ||
+          {},
+        warningGetter: () =>
+          self.build?.buildOrStepInfraFailed
+            ? 'Test results displayed here are likely incomplete because some steps have infra failed.'
+            : '',
+      });
+    },
   }));
 
 export type BuildPageInstance = Instance<typeof BuildPage>;

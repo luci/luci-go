@@ -19,8 +19,8 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, customElement, html } from 'lit-element';
 import { makeObservable, observable } from 'mobx';
 
-import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { consumer } from '../../../libs/context';
+import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
 import commonStyle from '../../../styles/common_style.css';
 
 @customElement('milo-tvt-config-widget')
@@ -28,7 +28,7 @@ import commonStyle from '../../../styles/common_style.css';
 export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
   @observable.ref
   @consumeInvocationState()
-  invState!: InvocationState;
+  invState!: InvocationStateInstance;
 
   // These properties are frequently updated.
   // Don't set them as observables so updating them won't have big performance

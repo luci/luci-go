@@ -15,18 +15,15 @@
 import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
 import { assert } from 'chai';
 import { customElement, html, LitElement } from 'lit-element';
+import { destroy, protect, unprotect } from 'mobx-state-tree';
 import sinon from 'sinon';
 
 import './count_indicator';
-import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { provider } from '../../libs/context';
-import {
-  QueryTestVariantsRequest,
-  QueryTestVariantsResponse,
-  ResultDb,
-  TestVariantStatus,
-} from '../../services/resultdb';
-import { StoreInstance } from '../../store';
+import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
+import { TestVariantStatus } from '../../services/resultdb';
+import { Store } from '../../store';
+import { InvocationStateInstance, provideInvocationState } from '../../store/invocation_state';
 import { TestResultsTabCountIndicatorElement } from './count_indicator';
 
 const variant1 = {
@@ -68,31 +65,26 @@ const variant5 = {
 @provider
 class ContextProvider extends LitElement {
   @provideInvocationState()
-  invocationState!: InvocationState;
+  invocationState!: InvocationStateInstance;
 }
 
 describe('Test Count Indicator', () => {
   it('should load the first page of test variants when connected', async () => {
-    const queryTestVariantsStub = sinon.stub<[QueryTestVariantsRequest], Promise<QueryTestVariantsResponse>>();
+    const store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+      invocationPage: { invocationId: 'invocation-id' },
+    });
+    after(() => destroy(store));
+    unprotect(store);
+    const queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
+    protect(store);
+
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
     queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
 
-    const store = {
-      selectedTabId: '',
-      services: {
-        resultDb: {
-          queryTestVariants: queryTestVariantsStub as typeof ResultDb.prototype.queryTestVariants,
-        },
-      },
-    } as StoreInstance;
-
-    const invocationState = new InvocationState(store);
-    invocationState.invocationId = 'invocation-id';
-    after(() => invocationState.dispose());
-
     after(fixtureCleanup);
     const provider = await fixture<ContextProvider>(html`
-      <milo-trt-count-indicator-context-provider .invocationState=${invocationState}>
+      <milo-trt-count-indicator-context-provider .invocationState=${store.invocationPage.invocation}>
         <milo-trt-count-indicator></milo-trt-count-indicator>
       </milo-trt-count-indicator-context-provider>
     `);
@@ -104,7 +96,7 @@ describe('Test Count Indicator', () => {
     indicator.connectedCallback();
 
     await aTimeout(0);
-    assert.isFalse(invocationState.testLoader?.isLoading);
+    assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
     assert.strictEqual(queryTestVariantsStub.callCount, 1);
   });
 });

@@ -25,7 +25,6 @@ import '../../../components/expandable_entry';
 import '../../../components/copy_to_clipboard';
 import '../../../components/result_entry';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../../../common_tags';
-import { consumeInvocationState, InvocationState } from '../../../context/invocation_state';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
@@ -33,6 +32,7 @@ import { attachTags, hasTags } from '../../../libs/tag';
 import { Cluster } from '../../../services/luci_analysis';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
+import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
 
@@ -47,7 +47,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @lazyRendering
 export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref @consumeStore() store!: StoreInstance;
-  @observable.ref @consumeInvocationState() invState!: InvocationState;
+  @observable.ref @consumeInvocationState() invState!: InvocationStateInstance;
 
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];

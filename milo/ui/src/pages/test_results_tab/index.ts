@@ -22,12 +22,12 @@ import './test_variants_table';
 import './test_variants_table/config_widget';
 import './search_box';
 import { MiloBaseElement } from '../../components/milo_base';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { URLExt } from '../../libs/utils';
 import { consumeStore, StoreInstance } from '../../store';
+import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
 import commonStyle from '../../styles/common_style.css';
 import { TestVariantsTableElement } from './test_variants_table';
 
@@ -44,7 +44,7 @@ export class TestResultsTabElement extends MiloBaseElement {
 
   @observable.ref
   @consumeInvocationState()
-  invocationState!: InvocationState;
+  invState!: InvocationStateInstance;
 
   private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
@@ -66,19 +66,19 @@ export class TestResultsTabElement extends MiloBaseElement {
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has('q')) {
-      this.invocationState.searchText = searchParams.get('q')!;
+      this.invState.searchText = searchParams.get('q')!;
     }
     if (searchParams.has('cols')) {
       const cols = searchParams.get('cols')!;
-      this.invocationState.setColumnKeys(cols.split(',').filter((col) => col !== ''));
+      this.invState.setColumnKeys(cols.split(',').filter((col) => col !== ''));
     }
     if (searchParams.has('sortby')) {
       const sortingKeys = searchParams.get('sortby')!;
-      this.invocationState.setSortingKeys(sortingKeys.split(',').filter((col) => col !== ''));
+      this.invState.setSortingKeys(sortingKeys.split(',').filter((col) => col !== ''));
     }
     if (searchParams.has('groupby')) {
       const groupingKeys = searchParams.get('groupby')!;
-      this.invocationState.setGroupingKeys(groupingKeys.split(',').filter((key) => key !== ''));
+      this.invState.setGroupingKeys(groupingKeys.split(',').filter((key) => key !== ''));
     }
 
     // Update the querystring when filters are updated.
@@ -86,16 +86,16 @@ export class TestResultsTabElement extends MiloBaseElement {
       reaction(
         () => {
           const newUrl = new URLExt(window.location.href)
-            .setSearchParam('q', this.invocationState.searchText)
-            .setSearchParam('cols', this.invocationState.columnKeys.join(','))
-            .setSearchParam('sortby', this.invocationState.sortingKeys.join(','))
-            .setSearchParam('groupby', this.invocationState.groupingKeys.join(','))
+            .setSearchParam('q', this.invState.searchText)
+            .setSearchParam('cols', this.invState.columnKeys.join(','))
+            .setSearchParam('sortby', this.invState.sortingKeys.join(','))
+            .setSearchParam('groupby', this.invState.groupingKeys.join(','))
             // Make the URL shorter.
             .removeMatchedParams({
               q: '',
-              cols: this.invocationState.defaultColumnKeys.join(','),
-              sortby: this.invocationState.defaultSortingKeys.join(','),
-              groupby: this.invocationState.defaultGroupingKeys.join(','),
+              cols: this.invState.defaultColumnKeys.join(','),
+              sortby: this.invState.defaultSortingKeys.join(','),
+              groupby: this.invState.defaultGroupingKeys.join(','),
             });
           return newUrl.toString();
         },
@@ -108,7 +108,7 @@ export class TestResultsTabElement extends MiloBaseElement {
   }
 
   private renderBody() {
-    const state = this.invocationState;
+    const state = this.invState;
 
     if (state.invocationId === '') {
       return html`
@@ -122,9 +122,7 @@ export class TestResultsTabElement extends MiloBaseElement {
     }
 
     return html`
-      ${this.invocationState.warning
-        ? html`<div id="test-results-tab-warning">${this.invocationState.warning}</div>`
-        : ''}
+      ${this.invState.warning ? html`<div id="test-results-tab-warning">${this.invState.warning}</div>` : ''}
       <milo-test-variants-table></milo-test-variants-table>
     `;
   }

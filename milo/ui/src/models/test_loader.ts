@@ -60,7 +60,7 @@ export class LoadTestVariantsError extends Error implements InnerTag {
  */
 export class TestLoader {
   @observable.ref filter = (_v: TestVariant) => true;
-  @observable.ref groupers: Array<[string, (v: TestVariant) => unknown]> = [];
+  @observable.ref groupers: ReadonlyArray<readonly [string, (v: TestVariant) => unknown]> = [];
   @observable.ref cmpFn = (_v1: TestVariant, _v2: TestVariant) => 0;
 
   @computed get isLoading() {

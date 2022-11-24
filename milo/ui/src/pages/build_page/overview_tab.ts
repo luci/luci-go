@@ -31,7 +31,6 @@ import './cancel_build_dialog';
 import './retry_build_dialog';
 import './steps_tab/step_display_config';
 import './steps_tab/step_list';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import {
   getBotLink,
@@ -49,7 +48,7 @@ import { displayDuration } from '../../libs/time_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
-import { createTVPropGetter, getPropKeyLabel } from '../../services/resultdb';
+import { getPropKeyLabel } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
@@ -69,9 +68,9 @@ export class OverviewTabElement extends MobxLitElement {
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @consumeInvocationState()
-  invocationState!: InvocationState;
+  @computed private get invState() {
+    return this.store.buildPage.invocation;
+  }
 
   @computed private get build() {
     return this.store.buildPage.build;
@@ -80,10 +79,6 @@ export class OverviewTabElement extends MobxLitElement {
   @observable.ref private activeDialog = Dialog.None;
   @action private setActiveDialog(dialog: Dialog) {
     this.activeDialog = dialog;
-  }
-
-  @computed private get columnGetters() {
-    return this.invocationState.columnKeys.map((col) => createTVPropGetter(col));
   }
 
   constructor() {
@@ -320,11 +315,11 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderFailedTests() {
-    if (!this.invocationState.hasInvocation) {
+    if (!this.store.buildPage.hasInvocation) {
       return;
     }
 
-    const testLoader = this.invocationState.testLoader;
+    const testLoader = this.invState.testLoader;
     const testsTabUrl = router.urlForName('build-test-results', {
       ...this.store.buildPage.builderIdParam!,
       build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
@@ -332,7 +327,7 @@ export class OverviewTabElement extends MobxLitElement {
 
     // Overview tab is more crowded than the test results tab.
     // Hide all additional columns.
-    const columnWidths = '24px ' + this.invocationState.columnWidths.map(() => '0').join(' ') + ' 1fr';
+    const columnWidths = '24px ' + this.invState.columnWidths.map(() => '0').join(' ') + ' 1fr';
 
     return html`
       <h3>Failed Tests (<a href=${testsTabUrl}>View All Tests</a>)</h3>
@@ -355,8 +350,8 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderFailedTestList() {
-    const testLoader = this.invocationState.testLoader!;
-    const groupDefs = this.invocationState.groupers
+    const testLoader = this.invState.testLoader!;
+    const groupDefs = this.invState.groupers
       .filter(([key]) => key !== 'status')
       .map(([key, getter]) => [getPropKeyLabel(key), getter] as [string, typeof getter]);
 
@@ -377,8 +372,8 @@ export class OverviewTabElement extends MobxLitElement {
         htmlTemplates.push(html`
           <milo-test-variant-entry
             .variant=${testVariant}
-            .columnGetters=${this.columnGetters}
-            .historyUrl=${this.invocationState.getHistoryUrl(testVariant.testId, testVariant.variantHash)}
+            .columnGetters=${this.invState.columnGetters}
+            .historyUrl=${this.invState.getHistoryUrl(testVariant.testId, testVariant.variantHash)}
           ></milo-test-variant-entry>
         `);
       }

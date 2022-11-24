@@ -23,12 +23,12 @@ import '../../components/timeline';
 import '../test_results_tab/count_indicator';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
-import { InvocationState, provideInvocationState } from '../../context/invocation_state';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { NOT_FOUND_URL, router } from '../../routes';
 import { consumeStore, StoreInstance } from '../../store';
+import { provideInvocationState } from '../../store/invocation_state';
 import commonStyle from '../../styles/common_style.css';
 
 /**
@@ -46,9 +46,11 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @provideInvocationState({ global: true })
-  invocationState!: InvocationState;
+  @provideInvocationState()
+  @computed
+  get invState() {
+    return this.store.invocationPage.invocation;
+  }
 
   constructor() {
     super();
@@ -70,25 +72,30 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
 
     this.addDisposer(
       reaction(
-        () => [this.store],
-        ([store]) => {
-          this.invocationState?.dispose();
-          this.invocationState = new InvocationState(store);
-          this.invocationState.invocationId = this.invocationId;
-
-          // Emulate @property() update.
-          this.updated(new Map([['invocationState', this.invocationState]]));
+        () => [this.store.invocationPage],
+        ([pageState]) => {
+          pageState.setInvocationId(this.invocationId);
         },
         { fireImmediately: true }
       )
     );
-    this.addDisposer(() => this.invocationState.dispose());
+
+    this.addDisposer(
+      reaction(
+        () => [this.invState],
+        ([invState]) => {
+          // Emulate @property() update.
+          this.updated(new Map([['invState', invState]]));
+        },
+        { fireImmediately: true }
+      )
+    );
 
     document.title = `inv: ${this.invocationId}`;
   }
 
   private renderInvocationState() {
-    const invocation = this.invocationState.invocation;
+    const invocation = this.invState.invocation;
     if (!invocation) {
       return null;
     }
@@ -110,19 +117,19 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       {
         id: 'test-results',
         label: 'Test Results',
-        href: router.urlForName('invocation-test-results', { invocation_id: this.invocationState.invocationId! }),
+        href: router.urlForName('invocation-test-results', { invocation_id: this.invState.invocationId! }),
         slotName: 'test-count-indicator',
       },
       {
         id: 'invocation-details',
         label: 'Invocation Details',
-        href: router.urlForName('invocation-details', { invocation_id: this.invocationState.invocationId! }),
+        href: router.urlForName('invocation-details', { invocation_id: this.invState.invocationId! }),
       },
     ];
   }
 
   protected render = reportRenderError(this, () => {
-    if (this.invocationState.invocationId === '') {
+    if (this.invState.invocationId === '') {
       return html``;
     }
 
@@ -130,15 +137,14 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       <div id="test-invocation-summary">
         <div id="test-invocation-id">
           <span id="test-invocation-id-label">Invocation ID </span>
-          <span>${this.invocationState.invocationId}</span>
-          ${this.renderBuildLink(this.invocationState.invocationId)}
-          ${this.renderTaskLink(this.invocationState.invocationId)}
+          <span>${this.invState.invocationId}</span>
+          ${this.renderBuildLink(this.invState.invocationId)} ${this.renderTaskLink(this.invState.invocationId)}
         </div>
         <div id="test-invocation-state">${this.renderInvocationState()}</div>
       </div>
       <milo-status-bar
         .components=${[{ color: 'var(--active-color)', weight: 1 }]}
-        .loading=${this.invocationState.invocation === null}
+        .loading=${this.invState.invocation === null}
       ></milo-status-bar>
       <milo-tab-bar .tabs=${this.tabDefs} .selectedTabId=${this.store.selectedTabId}>
         <milo-trt-count-indicator slot="test-count-indicator"></milo-trt-count-indicator>
@@ -161,7 +167,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   }
 
   // Should be checked upstream, but allowlist URLs here just to be safe.
-  private static allowedSwarmingUrls= [
+  private static allowedSwarmingUrls = [
     'chromium-swarm-dev.appspot.com',
     'chromium-swarm.appspot.com',
     'chrome-swarming.appspot.com',
@@ -176,8 +182,8 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       return '';
     }
     const url = match.groups!['url'];
-    if(InvocationPageElement.allowedSwarmingUrls.indexOf(url) == -1) {
-      return `(unknown swarming url)`;
+    if (InvocationPageElement.allowedSwarmingUrls.indexOf(url) === -1) {
+      return '(unknown swarming url)';
     }
     const taskPageUrl = `https://${url}/task?id=${match.groups!['id']}`;
     return html`(<a href=${taskPageUrl} target="_blank">task page</a>)`;

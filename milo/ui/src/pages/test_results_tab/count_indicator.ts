@@ -17,10 +17,10 @@ import { reaction } from 'mobx';
 
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportErrorAsync } from '../../libs/error_handler';
 import { LoadingStage } from '../../models/test_loader';
+import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
 
 /**
  * Format number with a cap.
@@ -41,7 +41,7 @@ function formatNum(num: number, hasMore: boolean, cap?: number) {
 @errorHandler(forwardWithoutMsg, () => html``)
 @consumer
 export class TestResultsTabCountIndicatorElement extends MiloBaseElement {
-  @consumeInvocationState() invState!: InvocationState;
+  @consumeInvocationState() invState!: InvocationStateInstance;
 
   connectedCallback() {
     super.connectedCallback();

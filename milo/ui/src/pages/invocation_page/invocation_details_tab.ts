@@ -16,16 +16,16 @@ import '@material/mwc-icon';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
+import { DateTime } from 'luxon';
 import { autorun, computed, makeObservable, observable } from 'mobx';
 
-import { consumeInvocationState, InvocationState } from '../../context/invocation_state';
-import { consumer } from '../../libs/context';
-import { consumeStore, StoreInstance } from '../../store';
-import commonStyle from '../../styles/common_style.css';
-import { Invocation } from '../../services/resultdb';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TimelineBlock } from '../../components/timeline';
-import { DateTime } from 'luxon';
+import { consumer } from '../../libs/context';
+import { Invocation } from '../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../store';
+import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
+import commonStyle from '../../styles/common_style.css';
 
 const MARGIN = 20;
 const MIN_GRAPH_WIDTH = 900;
@@ -43,11 +43,11 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
 
   @observable.ref
   @consumeInvocationState()
-  invocationState!: InvocationState;
+  invState!: InvocationStateInstance;
 
   @computed
   private get hasTags() {
-    return (this.invocationState.invocation!.tags || []).length > 0;
+    return (this.invState.invocation!.tags || []).length > 0;
   }
 
   @observable
@@ -64,17 +64,20 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
     this.addDisposer(
       autorun(() => {
         try {
-          if (!this.invocationState || !this.invocationState.invocation || !this.invocationState.invocation.includedInvocations) {
+          if (!this.invState || !this.invState.invocation || !this.invState.invocation.includedInvocations) {
             return;
           }
-          for (const invocationName of this.invocationState.invocation!.includedInvocations || []) {
-            this.store.services.resultDb?.getInvocation({ name: invocationName }).then(invocation => {
-              this.includedInvocations[invocationName] = invocation;
-              this.numRequestsCompleted += 1;
-            }).catch((e) => {
-              // TODO(mwarton): display the error to the user.
-              console.error(e);
-            })
+          for (const invocationName of this.invState.invocation!.includedInvocations || []) {
+            this.store.services.resultDb
+              ?.getInvocation({ name: invocationName })
+              .then((invocation) => {
+                this.includedInvocations[invocationName] = invocation;
+                this.numRequestsCompleted += 1;
+              })
+              .catch((e) => {
+                // TODO(mwarton): display the error to the user.
+                console.error(e);
+              });
           }
         } catch (e) {
           // TODO(mwarton): display the error to the user.
@@ -100,12 +103,12 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
   }
 
   protected render() {
-    const invocation = this.invocationState.invocation;
+    const invocation = this.invState.invocation;
     if (invocation === null) {
       return html``;
     }
 
-    const blocks: TimelineBlock[] = Object.values(this.includedInvocations).map(i => ({
+    const blocks: TimelineBlock[] = Object.values(this.includedInvocations).map((i) => ({
       text: stripInvocationPrefix(i.name),
       href: `/ui/inv/${stripInvocationPrefix(i.name)}/invocation-details`,
       start: DateTime.fromISO(i.createTime),
@@ -129,25 +132,27 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
         Tags:
         <table id="tag-table" border="0">
           ${invocation.tags?.map(
-          (tag) => html`
+            (tag) => html`
               <tr>
                 <td>${tag.key}:</td>
                 <td>${tag.value}</td>
               </tr>
             `
-        )}
+          )}
         </table>
       </div>
       <div id="included-invocations">
-        ${invocation.includedInvocations?.length ?
-          html`Included Invocations: (loaded ${this.numRequestsCompleted} of ${invocation.includedInvocations?.length})
-                <milo-timeline
-                  .width=${this.graphWidth}
-                  .startTime=${DateTime.fromISO(invocation.createTime)}
-                  .endTime=${invocation.finalizeTime ? DateTime.fromISO(invocation.finalizeTime) : this.now}
-                  .blocks=${blocks}>
-                </milo-timeline>` :
-          'Included Invocations: None'}
+        ${invocation.includedInvocations?.length
+          ? html`Included Invocations: (loaded ${this.numRequestsCompleted} of
+              ${invocation.includedInvocations?.length})
+              <milo-timeline
+                .width=${this.graphWidth}
+                .startTime=${DateTime.fromISO(invocation.createTime)}
+                .endTime=${invocation.finalizeTime ? DateTime.fromISO(invocation.finalizeTime) : this.now}
+                .blocks=${blocks}
+              >
+              </milo-timeline>`
+          : 'Included Invocations: None'}
       </div>
     `;
   }

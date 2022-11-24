@@ -14,7 +14,7 @@
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { autorun, computed, makeObservable, observable, reaction, when } from 'mobx';
+import { computed, makeObservable, observable, reaction, when } from 'mobx';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -23,7 +23,6 @@ import './change_config_dialog';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
-import { InvocationState, provideInvocationState, QueryInvocationError } from '../../context/invocation_state';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
 import {
@@ -45,9 +44,10 @@ import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { NOT_FOUND_URL, router } from '../../routes';
-import { BuilderID, BuildStatus, TEST_PRESENTATION_KEY } from '../../services/buildbucket';
+import { BuilderID, BuildStatus } from '../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../store';
 import { GetBuildError } from '../../store/build_page';
+import { provideInvocationState, QueryInvocationError } from '../../store/invocation_state';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
 
@@ -129,12 +129,14 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @consumeStore()
   store!: StoreInstance;
 
-  @observable.ref
-  @provideInvocationState({ global: true })
-  invocationState!: InvocationState;
-
   @computed private get build() {
     return this.store.buildPage.build;
+  }
+
+  @provideInvocationState({ global: true })
+  @computed
+  get invState() {
+    return this.store.buildPage.invocation;
   }
 
   // The page is visited via a short link.
@@ -234,31 +236,13 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
     this.addDisposer(
       reaction(
-        () => this.store,
-        (store) => {
-          this.invocationState?.dispose();
-          this.invocationState = new InvocationState(store);
-
+        () => this.invState,
+        (invState) => {
           // Emulate @property() update.
-          this.updated(new Map([['invocationState', this.invocationState]]));
+          this.updated(new Map([['invState', invState]]));
         },
         { fireImmediately: true }
       )
-    );
-    this.addDisposer(() => this.invocationState.dispose());
-
-    this.addDisposer(
-      autorun(() => {
-        this.invocationState.invocationId = this.store.buildPage.invocationId;
-        this.invocationState.isComputedInvId = this.store.buildPage.useComputedInvId;
-        this.invocationState.presentationConfig =
-          this.build?.data.output?.properties?.[TEST_PRESENTATION_KEY] ||
-          this.build?.data.input?.properties?.[TEST_PRESENTATION_KEY] ||
-          {};
-        this.invocationState.warning = this.build?.buildOrStepInfraFailed
-          ? 'Test results displayed here are likely incomplete because some steps have infra failed.'
-          : '';
-      })
     );
 
     if (this.isShortLink) {
@@ -328,7 +312,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // TODO(crbug/1128097): display test-results tab unconditionally once
       // Foundation team is ready for ResultDB integration with other LUCI
       // projects.
-      ...(!this.invocationState.hasInvocation
+      ...(!this.store.buildPage.hasInvocation
         ? []
         : [
             {
