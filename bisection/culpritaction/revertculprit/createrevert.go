@@ -34,7 +34,7 @@ var (
 	// errHasDependency is returned when attempting to create a revert for
 	// a culprit but that culprit has a merged dependency
 	errHasDependency = errors.New("createRevert: culprit has a merged dependency")
-	// errHasMHasDependency is returned when attempting to create a revert for
+	// errAlreadyReverted is returned when attempting to create a revert for
 	// a culprit but that culprit has already been reverted
 	errAlreadyReverted = errors.New("createRevert: culprit has already been reverted")
 	// errHasRevert is returned when attempting to create a revert for
@@ -138,14 +138,22 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
 	buildURL := util.ConstructBuildURL(ctx, bbid)
 
-	paragraphs = append(paragraphs, fmt.Sprintf("LUCI Bisection identified"+
-		" this CL as the culprit of a build failure. See the analysis: %s",
-		analysisURL))
+	paragraphs = append(paragraphs, fmt.Sprintf("Reason for revert:\n"+
+		"LUCI Bisection identified this CL as the culprit of a build failure."+
+		" See the analysis: %s", analysisURL))
+
 	paragraphs = append(paragraphs, fmt.Sprintf("Sample failed build: %s",
 		buildURL))
 
 	// TODO (aredulla): add link to file bug for LUCI Bisection if it's a
 	// false positive
+
+	// Set CQ flags in the last paragraph, i.e. footer of the CL description
+	//
+	// TODO (aredulla): also specify the revert's bug in this footer to be the
+	// same as the culprit's bug
+	paragraphs = append(paragraphs,
+		"No-Presubmit: true\nNo-Tree-Checks: true\nNo-Try: true")
 
 	return strings.Join(paragraphs, "\n\n"), nil
 }
