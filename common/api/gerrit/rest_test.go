@@ -219,6 +219,10 @@ func TestGetChange(t *testing.T) {
 							Parents: []*gerritpb.CommitInfo_Parent{
 								{Id: "deadbeef00"},
 							},
+							Author: &gerritpb.GitPersonInfo{
+								Name:  "John Doe",
+								Email: "jdoe@example.com",
+							},
 						},
 					},
 				},
@@ -1379,6 +1383,10 @@ func TestGetRelatedChanges(t *testing.T) {
 					Commit: &gerritpb.CommitInfo{
 						Id:      "4d048b016cb4df4d5d2805f0d3d1042cb1d80671",
 						Parents: []*gerritpb.CommitInfo_Parent{{Id: "cd7db096c014399c369ddddd319708c3f46752f5"}},
+						Author: &gerritpb.GitPersonInfo{
+							Name:  "Andrii Shyshkalov",
+							Email: "tandrii@chromium.org",
+						},
 					},
 					Number:          1563639,
 					Patchset:        1,
@@ -1390,6 +1398,10 @@ func TestGetRelatedChanges(t *testing.T) {
 					Commit: &gerritpb.CommitInfo{
 						Id:      "bce1f3beea01b8b282001b01bd9ea442730d578e",
 						Parents: []*gerritpb.CommitInfo_Parent{{Id: "fdd1f6d3875e68c99303ebfb25dd5d097e91c83f"}},
+						Author: &gerritpb.GitPersonInfo{
+							Name:  "Andrii Shyshkalov",
+							Email: "tandrii@chromium.org",
+						},
 					},
 					Number:          1563638,
 					Patchset:        2,
@@ -1401,6 +1413,10 @@ func TestGetRelatedChanges(t *testing.T) {
 					Commit: &gerritpb.CommitInfo{
 						Id:      "fdd1f6d3875e68c99303ebfb25dd5d097e91c83f",
 						Parents: []*gerritpb.CommitInfo_Parent{{Id: "f8e5384ee591cd5105113098d24c60e750b6c4f6"}},
+						Author: &gerritpb.GitPersonInfo{
+							Name:  "Andrii Shyshkalov",
+							Email: "tandrii@chromium.org",
+						},
 					},
 					Number:          1563637,
 					Patchset:        1,

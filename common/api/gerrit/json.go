@@ -338,14 +338,27 @@ func (ri *revisionInfo) ToProto() *gerritpb.RevisionInfo {
 	return ret
 }
 
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#git-person-info
+type gitPersonInfo struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func (g *gitPersonInfo) ToProto() *gerritpb.GitPersonInfo {
+	return &gerritpb.GitPersonInfo{
+		Name:  g.Name,
+		Email: g.Email,
+	}
+}
+
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#commit-info
 type commitInfo struct {
-	Commit    string        `json:"commit"`
-	Parents   []*commitInfo `json:"parents"`
-	Author    *accountInfo  `json:"author"`
-	Committer *accountInfo  `json:"committer"`
-	Subject   string        `json:"subject"`
-	Message   string        `json:"message"`
+	Commit    string         `json:"commit"`
+	Parents   []*commitInfo  `json:"parents"`
+	Author    *gitPersonInfo `json:"author"`
+	Committer *gitPersonInfo `json:"committer"`
+	Subject   string         `json:"subject"`
+	Message   string         `json:"message"`
 }
 
 func (c *commitInfo) ToProto() *gerritpb.CommitInfo {
@@ -357,6 +370,7 @@ func (c *commitInfo) ToProto() *gerritpb.CommitInfo {
 		Id:      c.Commit,
 		Parents: parents,
 		Message: c.Message,
+		Author:  c.Author.ToProto(),
 		// TODO(tandrii): support other fields once added.
 	}
 }

@@ -416,6 +416,18 @@ message AccountInfo {
   int64 account_id = 5;
 }
 
+// The GitPersonInfo entity contains information about the author/committer of a commit.
+//
+// Fields are a subset of:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#git-person-info
+message GitPersonInfo {
+  // The name of the author/committer.
+  string name = 1;
+
+  // The email address of the author/committer.
+  string email = 2;
+}
+
 // Information about a change.
 //
 // Source of truth:
@@ -599,6 +611,10 @@ message CommitInfo {
   // The commit message.
   // It is not set when CommitInfo is part of the GetRelatedChangesResponse.
   string message = 3;
+
+  // The author of the commit as a GitPersonInfo entity.
+  GitPersonInfo author = 4;
+
   // TODO(tandrii): add other fields when necessary.
 }
 
