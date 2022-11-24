@@ -69,10 +69,10 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSecti
 	for _, r := range reruns {
 		statusMap[r.GetId()] = r.Status
 		typeMap[r.GetId()] = r.Type
-		if r.Status == pb.RerunStatus_INFRA_FAILED {
+		if r.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED {
 			snapshot.NumInfraFailed++
 		}
-		if r.Status == pb.RerunStatus_IN_PROGRESS {
+		if r.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
 			snapshot.NumInProgress++
 		}
 	}
@@ -105,10 +105,10 @@ func (snapshot *NthSectionSnapshot) GetCurrentRegressionRange() (int, int, error
 	lastPassedIdx := len(snapshot.BlameList.Commits)
 	for _, run := range snapshot.Runs {
 		// The snapshot runs are sorted by index, so we don't need the (firstFailedIdx < run.Index) check here
-		if run.Status == pb.RerunStatus_FAILED {
+		if run.Status == pb.RerunStatus_RERUN_STATUS_FAILED {
 			firstFailedIdx = run.Index
 		}
-		if run.Status == pb.RerunStatus_PASSED {
+		if run.Status == pb.RerunStatus_RERUN_STATUS_PASSED {
 			if run.Index < lastPassedIdx {
 				lastPassedIdx = run.Index
 			}
@@ -214,11 +214,11 @@ func (snapshot *NthSectionSnapshot) findRegressionChunks() ([]*NthSectionSnapsho
 	for _, run := range snapshot.Runs {
 		// There is a special case where there is a failed run at the start
 		// In such case we don't want to include the failed run in any chunks
-		if run.Index == start && run.Status == pb.RerunStatus_FAILED {
+		if run.Index == start && run.Status == pb.RerunStatus_RERUN_STATUS_FAILED {
 			start = run.Index + 1
 			continue
 		}
-		if run.Index >= start && run.Index <= end && run.Status == pb.RerunStatus_IN_PROGRESS {
+		if run.Index >= start && run.Index <= end && run.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
 			if start <= run.Index-1 {
 				chunks = append(chunks, &NthSectionSnapshotChunk{Begin: start, End: run.Index - 1})
 			}

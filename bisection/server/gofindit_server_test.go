@@ -170,7 +170,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Analysis:   datastore.KeyForObj(c, compileFailureAnalysis),
 			Suspect:    datastore.KeyForObj(c, suspect),
 			RerunBuild: datastore.KeyForObj(c, suspectRerunBuild),
-			Status:     pb.RerunStatus_FAILED,
+			Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -213,7 +213,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Analysis:   datastore.KeyForObj(c, compileFailureAnalysis),
 			Suspect:    datastore.KeyForObj(c, suspect),
 			RerunBuild: datastore.KeyForObj(c, parentRerunBuild),
-			Status:     pb.RerunStatus_PASSED,
+			Status:     pb.RerunStatus_RERUN_STATUS_PASSED,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
@@ -284,7 +284,7 @@ func TestQueryAnalysis(t *testing.T) {
 					StartTime: &timestamppb.Timestamp{Seconds: 101},
 					EndTime:   &timestamppb.Timestamp{Seconds: 102},
 					RerunResult: &pb.RerunResult{
-						RerunStatus: pb.RerunStatus_FAILED,
+						RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 					},
 				},
 				ParentRerun: &pb.SingleRerun{
@@ -292,7 +292,7 @@ func TestQueryAnalysis(t *testing.T) {
 					StartTime: &timestamppb.Timestamp{Seconds: 201},
 					EndTime:   &timestamppb.Timestamp{Seconds: 202},
 					RerunResult: &pb.RerunResult{
-						RerunStatus: pb.RerunStatus_PASSED,
+						RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
 					},
 				},
 			},

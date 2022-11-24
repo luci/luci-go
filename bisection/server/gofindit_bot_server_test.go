@@ -122,7 +122,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Project: "chromium/src",
 				Id:      "3425",
 			},
-			Status:  pb.RerunStatus_IN_PROGRESS,
+			Status:  pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			Type:    model.RerunBuildType_CulpritVerification,
 			Suspect: datastore.KeyForObj(c, suspect),
 		}
@@ -134,7 +134,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Project: "chromium/src",
 				Id:      "3426",
 			},
-			Status:  pb.RerunStatus_IN_PROGRESS,
+			Status:  pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			Type:    model.RerunBuildType_CulpritVerification,
 			Suspect: datastore.KeyForObj(c, suspect),
 		}
@@ -152,7 +152,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Id:      "3425",
 			},
 			RerunResult: &pb.RerunResult{
-				RerunStatus: pb.RerunStatus_FAILED,
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 			},
 			BotId: "abc",
 		}
@@ -166,7 +166,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Id:      "3426",
 			},
 			RerunResult: &pb.RerunResult{
-				RerunStatus: pb.RerunStatus_PASSED,
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
 			},
 			BotId: "abc",
 		}
@@ -175,14 +175,14 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		_, err := server.UpdateAnalysisProgress(c, req1)
 		So(err, ShouldBeNil)
 		datastore.Get(c, singleRerun1)
-		So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_FAILED)
+		So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
 		datastore.Get(c, suspect)
 		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
 
 		_, err = server.UpdateAnalysisProgress(c, req2)
 		So(err, ShouldBeNil)
 		datastore.Get(c, singleRerun2)
-		So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_PASSED)
+		So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
 		datastore.Get(c, suspect)
 		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_ConfirmedCulprit)
 
@@ -263,7 +263,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit5",
 				},
-				Status:             pb.RerunStatus_IN_PROGRESS,
+				Status:             pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -282,7 +282,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Id:      "commit5",
 				},
 				RerunResult: &pb.RerunResult{
-					RerunStatus: pb.RerunStatus_FAILED,
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				BotId: "abc",
 			}
@@ -292,7 +292,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
 			So(datastore.Get(c, singleRerun), ShouldBeNil)
-			So(singleRerun.Status, ShouldEqual, pb.RerunStatus_FAILED)
+			So(singleRerun.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
 			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
 			// Check that another rerun is scheduled
 			rr := &model.CompileRerunBuild{
@@ -338,7 +338,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit5",
 				},
-				Status:             pb.RerunStatus_IN_PROGRESS,
+				Status:             pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -352,7 +352,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit6",
 				},
-				Status:             pb.RerunStatus_PASSED,
+				Status:             pb.RerunStatus_RERUN_STATUS_PASSED,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -374,7 +374,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Id:      "commit5",
 				},
 				RerunResult: &pb.RerunResult{
-					RerunStatus: pb.RerunStatus_FAILED,
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				BotId: "abc",
 			}
@@ -385,7 +385,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			res, err := server.UpdateAnalysisProgress(c, req)
 			So(err, ShouldBeNil)
 			So(datastore.Get(c, singleRerun1), ShouldBeNil)
-			So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_FAILED)
+			So(singleRerun1.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_FAILED)
 			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
 
 			// Check that the nthsection analysis is updated with Suspect
@@ -438,7 +438,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit5",
 				},
-				Status:             pb.RerunStatus_INFRA_FAILED,
+				Status:             pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -451,7 +451,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit6",
 				},
-				Status:             pb.RerunStatus_INFRA_FAILED,
+				Status:             pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -465,7 +465,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit8",
 				},
-				Status:             pb.RerunStatus_IN_PROGRESS,
+				Status:             pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -488,7 +488,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Id:      "commit8",
 				},
 				RerunResult: &pb.RerunResult{
-					RerunStatus: pb.RerunStatus_INFRA_FAILED,
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
 				},
 				BotId: "abc",
 			}
@@ -499,7 +499,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			res, err := server.UpdateAnalysisProgress(c, req)
 			So(err, ShouldBeNil)
 			So(datastore.Get(c, singleRerun3), ShouldBeNil)
-			So(singleRerun3.Status, ShouldEqual, pb.RerunStatus_INFRA_FAILED)
+			So(singleRerun3.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_INFRA_FAILED)
 			So(res, ShouldResemble, &pb.UpdateAnalysisProgressResponse{})
 
 			// Check that the nthsection analysis is updated with Suspect
@@ -544,7 +544,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit9",
 				},
-				Status:             pb.RerunStatus_FAILED,
+				Status:             pb.RerunStatus_RERUN_STATUS_FAILED,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -557,7 +557,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Ref:     "ref",
 					Id:      "commit1",
 				},
-				Status:             pb.RerunStatus_IN_PROGRESS,
+				Status:             pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				Type:               model.RerunBuildType_NthSection,
 				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
 				Analysis:           datastore.KeyForObj(c, cfa),
@@ -580,7 +580,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 					Id:      "commit1",
 				},
 				RerunResult: &pb.RerunResult{
-					RerunStatus: pb.RerunStatus_PASSED, // This would result in a conflict, since commit 9 failed
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED, // This would result in a conflict, since commit 9 failed
 				},
 				BotId: "abc",
 			}
@@ -591,7 +591,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			_, err := server.UpdateAnalysisProgress(c, req)
 			So(err, ShouldNotBeNil)
 			So(datastore.Get(c, singleRerun2), ShouldBeNil)
-			So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_PASSED)
+			So(singleRerun2.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_PASSED)
 
 			// Check analysis status
 			datastore.GetTestable(c).CatchupIndexes()
@@ -614,7 +614,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		req.GitilesCommit = &bbpb.GitilesCommit{}
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
 		req.RerunResult = &pb.RerunResult{
-			RerunStatus: pb.RerunStatus_FAILED,
+			RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 		}
 		So(verifyUpdateAnalysisProgressRequest(c, req), ShouldNotBeNil)
 		req.BotId = "botid"

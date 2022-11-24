@@ -194,7 +194,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun1 := &model.SingleRerun{
 			Type:   model.RerunBuildType_CulpritVerification,
-			Status: pb.RerunStatus_IN_PROGRESS,
+			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Id: "commit1",
 			},
@@ -205,7 +205,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun2 := &model.SingleRerun{
 			Type:   model.RerunBuildType_NthSection,
-			Status: pb.RerunStatus_FAILED,
+			Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Id: "commit3",
 			},
@@ -215,7 +215,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun3 := &model.SingleRerun{
 			Type:   model.RerunBuildType_NthSection,
-			Status: pb.RerunStatus_IN_PROGRESS,
+			Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Id: "commit0",
 			},
@@ -226,7 +226,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		rerun4 := &model.SingleRerun{
 			Type:   model.RerunBuildType_NthSection,
-			Status: pb.RerunStatus_INFRA_FAILED,
+			Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Id: "commit2",
 			},
@@ -248,25 +248,25 @@ func TestCreateSnapshot(t *testing.T) {
 			{
 				Index:  0,
 				Commit: "commit0",
-				Status: pb.RerunStatus_IN_PROGRESS,
+				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				Type:   model.RerunBuildType_NthSection,
 			},
 			{
 				Index:  1,
 				Commit: "commit1",
-				Status: pb.RerunStatus_IN_PROGRESS,
+				Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				Type:   model.RerunBuildType_CulpritVerification,
 			},
 			{
 				Index:  2,
 				Commit: "commit2",
-				Status: pb.RerunStatus_INFRA_FAILED,
+				Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
 				Type:   model.RerunBuildType_NthSection,
 			},
 			{
 				Index:  3,
 				Commit: "commit3",
-				Status: pb.RerunStatus_FAILED,
+				Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				Type:   model.RerunBuildType_NthSection,
 			},
 		})
@@ -297,19 +297,19 @@ func TestGetRegressionRange(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  10,
-					Status: pb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				{
 					Index:  15,
-					Status: pb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				{
 					Index:  40,
-					Status: pb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				},
 				{
 					Index:  50,
-					Status: pb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				},
 			},
 		}
@@ -327,11 +327,11 @@ func TestGetRegressionRange(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  17,
-					Status: pb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				{
 					Index:  10,
-					Status: pb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				},
 			},
 		}
@@ -351,11 +351,11 @@ func TestGetCulprit(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  15,
-					Status: pb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				{
 					Index:  16,
-					Status: pb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				},
 			},
 		}
@@ -385,11 +385,11 @@ func TestGetCulprit(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  10,
-					Status: pb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				{
 					Index:  2,
-					Status: pb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				},
 			},
 		}
@@ -409,27 +409,27 @@ func TestFindRegressionChunks(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  15,
-					Status: pb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 				{
 					Index:  19,
-					Status: pb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				},
 				{
 					Index:  26,
-					Status: pb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				},
 				{
 					Index:  35,
-					Status: pb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				},
 				{
 					Index:  39,
-					Status: pb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				},
 				{
 					Index:  40,
-					Status: pb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				},
 			},
 		}
@@ -486,7 +486,7 @@ func TestFindNextIndicesToRun(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  5,
-					Status: pb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				},
 			},
 		}
@@ -502,11 +502,11 @@ func TestFindNextIndicesToRun(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  5,
-					Status: pb.RerunStatus_PASSED,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
 				},
 				{
 					Index:  4,
-					Status: pb.RerunStatus_FAILED,
+					Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 				},
 			},
 		}
@@ -527,7 +527,7 @@ func TestFindNextCommitsToRun(t *testing.T) {
 			Runs: []*NthSectionSnapshotRun{
 				{
 					Index:  5,
-					Status: pb.RerunStatus_IN_PROGRESS,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 				},
 			},
 		}

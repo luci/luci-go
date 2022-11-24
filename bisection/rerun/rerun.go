@@ -190,7 +190,7 @@ func CreateRerunBuildModel(c context.Context, build *buildbucketpb.Build, rerunT
 	// It will be updated when we receive updates from recipe
 	singleRerun := &model.SingleRerun{
 		RerunBuild: datastore.KeyForObj(c, rerunBuild),
-		Status:     pb.RerunStatus_IN_PROGRESS,
+		Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		GitilesCommit: buildbucketpb.GitilesCommit{
 			Host:    gitilesCommit.Host,
 			Project: gitilesCommit.Project,

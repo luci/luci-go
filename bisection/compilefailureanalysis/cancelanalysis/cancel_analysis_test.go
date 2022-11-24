@@ -78,17 +78,17 @@ func TestCancelAnalysis(t *testing.T) {
 		rr1 := &model.SingleRerun{
 			RerunBuild: datastore.KeyForObj(c, rb1),
 			Analysis:   datastore.KeyForObj(c, cfa),
-			Status:     pb.RerunStatus_IN_PROGRESS,
+			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
 		rr2 := &model.SingleRerun{
 			RerunBuild: datastore.KeyForObj(c, rb2),
 			Analysis:   datastore.KeyForObj(c, cfa),
-			Status:     pb.RerunStatus_FAILED,
+			Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
 		}
 		rr3 := &model.SingleRerun{
 			RerunBuild: datastore.KeyForObj(c, rb3),
 			Analysis:   datastore.KeyForObj(c, cfa),
-			Status:     pb.RerunStatus_IN_PROGRESS,
+			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
 		So(datastore.Put(c, rr1), ShouldBeNil)
 		So(datastore.Put(c, rr2), ShouldBeNil)
@@ -102,9 +102,18 @@ func TestCancelAnalysis(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 		So(datastore.Get(c, cfa), ShouldBeNil)
 		So(datastore.Get(c, nsa), ShouldBeNil)
+		So(datastore.Get(c, rr1), ShouldBeNil)
+		So(datastore.Get(c, rr3), ShouldBeNil)
+		So(datastore.Get(c, rb1), ShouldBeNil)
+		So(datastore.Get(c, rb3), ShouldBeNil)
+
 		So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 		So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
 		So(nsa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 		So(nsa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
+		So(rr1.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_CANCELED)
+		So(rr3.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_CANCELED)
+		So(rb1.Status, ShouldEqual, bbpb.Status_CANCELED)
+		So(rb3.Status, ShouldEqual, bbpb.Status_CANCELED)
 	})
 }

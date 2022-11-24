@@ -162,7 +162,7 @@ func setNthSectionError(c context.Context, nsa *model.CompileNthSectionAnalysis)
 
 	for _, rerun := range reruns {
 		// There are some rerun running, so do not mark this as error yet
-		if rerun.Status == pb.RerunStatus_IN_PROGRESS {
+		if rerun.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
 			return nil
 		}
 	}
@@ -452,13 +452,13 @@ func updateSuspectAsConfirmedCulprit(c context.Context, suspect *model.Suspect) 
 }
 
 func getSuspectStatus(c context.Context, rerunStatus pb.RerunStatus, parentRerunStatus pb.RerunStatus) model.SuspectVerificationStatus {
-	if rerunStatus == pb.RerunStatus_FAILED && parentRerunStatus == pb.RerunStatus_PASSED {
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_FAILED && parentRerunStatus == pb.RerunStatus_RERUN_STATUS_PASSED {
 		return model.SuspectVerificationStatus_ConfirmedCulprit
 	}
-	if rerunStatus == pb.RerunStatus_PASSED || parentRerunStatus == pb.RerunStatus_FAILED {
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_PASSED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_FAILED {
 		return model.SuspectVerificationStatus_Vindicated
 	}
-	if rerunStatus == pb.RerunStatus_INFRA_FAILED || parentRerunStatus == pb.RerunStatus_INFRA_FAILED {
+	if rerunStatus == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED {
 		return model.SuspectVerificationStatus_VerificationError
 	}
 	if rerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED || parentRerunStatus == pb.RerunStatus_RERUN_STATUS_UNSPECIFIED {

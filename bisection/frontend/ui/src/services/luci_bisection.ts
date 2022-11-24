@@ -85,10 +85,11 @@ export type BuildFailureType =
 
 export type RerunStatus =
   | 'RERUN_STATUS_UNSPECIFIED'
-  | 'IN_PROGRESS'
-  | 'PASSED'
-  | 'FAILED'
-  | 'INFRA_FAILED';
+  | 'RERUN_STATUS_IN_PROGRESS'
+  | 'RERUN_STATUS_PASSED'
+  | 'RERUN_STATUS_FAILED'
+  | 'RERUN_STATUS_INFRA_FAILED'
+  | 'RERUN_STATUS_CANCELED';
 
 export function isAnalysisComplete(status: AnalysisStatus) {
   const completeStatuses: Array<AnalysisStatus> = [

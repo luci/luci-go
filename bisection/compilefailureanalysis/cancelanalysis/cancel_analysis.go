@@ -20,13 +20,17 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -77,13 +81,17 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 
 	var errs []error
 	for _, rerun := range reruns {
-		if rerun.Status == pb.RerunStatus_IN_PROGRESS {
+		if rerun.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
 			bbid := rerun.RerunBuild.IntID()
 			_, err := buildbucket.CancelBuild(c, bbid, "analysis was canceled")
 			if err != nil {
 				errs = append(errs, errors.Annotate(err, "couldn't cancel build %d", bbid).Err())
+			} else {
+				err = updateCancelStatusForRerun(c, rerun)
+				if err != nil {
+					errs = append(errs, errors.Annotate(err, "couldn't update rerun status %d", rerun.RerunBuild.IntID()).Err())
+				}
 			}
-			// TODO (nqmtuan): Also update rerun status
 		}
 	}
 
@@ -122,4 +130,33 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 	}
 
 	return nil
+}
+
+func updateCancelStatusForRerun(c context.Context, rerun *model.SingleRerun) error {
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		// Update rerun
+		e := datastore.Get(c, rerun)
+		if e != nil {
+			return e
+		}
+		rerun.EndTime = clock.Now(c)
+		rerun.Status = pb.RerunStatus_RERUN_STATUS_CANCELED
+
+		e = datastore.Put(c, rerun)
+		if e != nil {
+			return e
+		}
+
+		// Update rerun build model
+		rerunBuild := &model.CompileRerunBuild{
+			Id: rerun.RerunBuild.IntID(),
+		}
+		e = datastore.Get(c, rerunBuild)
+		if e != nil {
+			return e
+		}
+		rerunBuild.EndTime = clock.Now(c)
+		rerunBuild.Status = bbpb.Status_CANCELED
+		return datastore.Put(c, rerunBuild)
+	}, nil)
 }

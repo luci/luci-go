@@ -284,7 +284,7 @@ func createNthSectionAnalysis(c context.Context, cfa *model.CompileFailureAnalys
 func createUnfinishedRerun(c context.Context, cfa *model.CompileFailureAnalysis) {
 	rerun := &model.SingleRerun{
 		Analysis: datastore.KeyForObj(c, cfa),
-		Status:   pb.RerunStatus_IN_PROGRESS,
+		Status:   pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 	}
 	So(datastore.Put(c, rerun), ShouldBeNil)
 	datastore.GetTestable(c).CatchupIndexes()

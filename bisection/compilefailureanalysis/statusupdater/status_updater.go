@@ -160,7 +160,7 @@ func analysisStillHaveUnfinishedReruns(c context.Context, cfa *model.CompileFail
 		return false, err
 	}
 	for _, rerun := range reruns {
-		if rerun.Status == pb.RerunStatus_IN_PROGRESS {
+		if rerun.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
 			return true, nil
 		}
 	}
