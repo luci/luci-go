@@ -181,6 +181,24 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 		return nil
 	}
 
+	cannotRevert, err := HasIrrevertibleAuthor(ctx, culprit)
+	if err != nil {
+		err = errors.Annotate(err, "issue getting culprit's commit author").Err()
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	if cannotRevert {
+		// comment that the author of the culprit is irrevertible
+		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
+			"LUCI Bisection cannot revert changes from this CL's author")
+		if err != nil {
+			logging.Errorf(ctx, err.Error())
+			return err
+		}
+
+		return nil
+	}
+
 	// Check if revert creation is disabled
 	if !cfg.GerritConfig.CreateRevertSettings.Enabled {
 		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,

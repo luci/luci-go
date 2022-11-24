@@ -107,3 +107,22 @@ func HasAutoRevertOffFlagSet(ctx context.Context, change *gerritpb.ChangeInfo) (
 	pattern := regexp.MustCompile(`(NOAUTOREVERT)(\s)*=(\s)*true`)
 	return pattern.MatchString(commitInfo.Message), nil
 }
+
+// AuthorEmail returns the email of the author of the change's current commit.
+func AuthorEmail(ctx context.Context, change *gerritpb.ChangeInfo) (string, error) {
+	revisionInfo, ok := change.Revisions[change.CurrentRevision]
+	if !ok {
+		return "", fmt.Errorf("could not get revision info")
+	}
+
+	commitInfo := revisionInfo.Commit
+	if commitInfo == nil {
+		return "", fmt.Errorf("could not get commit info")
+	}
+
+	if commitInfo.Author == nil {
+		return "", fmt.Errorf("no author in commit info")
+	}
+
+	return commitInfo.Author.Email, nil
+}

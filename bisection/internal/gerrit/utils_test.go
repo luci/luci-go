@@ -388,3 +388,104 @@ func TestHasAutoRevertOffFlagSet(t *testing.T) {
 		So(hasFlag, ShouldEqual, false)
 	})
 }
+
+func TestAuthorEmail(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("change does not have enough information", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project: "chromium/test/src",
+			Number:  234567,
+		}
+		_, err := AuthorEmail(ctx, change)
+		So(err, ShouldErrLike, "could not get", "info")
+	})
+
+	Convey("change does not have an author", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project:         "chromium/test/src",
+			Number:          234567,
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Number: 1,
+					Kind:   gerritpb.RevisionInfo_REWORK,
+					Uploader: &gerritpb.AccountInfo{
+						AccountId:       1000096,
+						Name:            "John Doe",
+						Email:           "jdoe@example.com",
+						SecondaryEmails: []string{"johndoe@chromium.org"},
+						Username:        "jdoe",
+					},
+					Ref:         "refs/changes/123",
+					Description: "first upload",
+					Files: map[string]*gerritpb.FileInfo{
+						"go/to/file.go": {
+							LinesInserted: 32,
+							LinesDeleted:  44,
+							SizeDelta:     -567,
+							Size:          11984,
+						},
+					},
+					Commit: &gerritpb.CommitInfo{
+						Id:      "",
+						Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+						Parents: []*gerritpb.CommitInfo_Parent{
+							{Id: "deadbeef00"},
+						},
+					},
+				},
+			},
+		}
+
+		_, err := AuthorEmail(ctx, change)
+		So(err, ShouldErrLike, "no author in commit info")
+	})
+
+	Convey("author email is returned", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project:         "chromium/test/src",
+			Number:          234567,
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Number: 1,
+					Kind:   gerritpb.RevisionInfo_REWORK,
+					Uploader: &gerritpb.AccountInfo{
+						AccountId:       1000096,
+						Name:            "John Doe",
+						Email:           "jdoe@example.com",
+						SecondaryEmails: []string{"johndoe@chromium.org"},
+						Username:        "jdoe",
+					},
+					Ref:         "refs/changes/123",
+					Description: "first upload",
+					Files: map[string]*gerritpb.FileInfo{
+						"go/to/file.go": {
+							LinesInserted: 32,
+							LinesDeleted:  44,
+							SizeDelta:     -567,
+							Size:          11984,
+						},
+					},
+					Commit: &gerritpb.CommitInfo{
+						Id:      "",
+						Message: "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef",
+						Parents: []*gerritpb.CommitInfo_Parent{
+							{Id: "deadbeef00"},
+						},
+						Author: &gerritpb.GitPersonInfo{
+							Name:  "John Doe",
+							Email: "jdoe@example.com",
+						},
+					},
+				},
+			},
+		}
+
+		author, err := AuthorEmail(ctx, change)
+		So(err, ShouldBeNil)
+		So(author, ShouldEqual, "jdoe@example.com")
+	})
+}

@@ -263,6 +263,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
 								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
 							},
 						},
 					},
@@ -350,6 +354,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
 								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
 							},
 						},
 					},
@@ -450,6 +458,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
 								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
 							},
 						},
 					},
@@ -529,6 +541,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
 								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
 							},
 						},
 					},
@@ -616,6 +632,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
 								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
 							},
 						},
 					},
@@ -703,6 +723,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
 								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
 							},
 						},
 					},
@@ -799,6 +823,10 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
 								Message: "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
 							},
 						},
 					},
@@ -815,6 +843,89 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because"+
 						" auto-revert has been disabled for this CL by its description.\n\n"+
+						"Sample failed build: %s", analysisURL, buildURL),
+				},
+			)).Times(1)
+
+			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
+			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+		})
+
+		Convey("revert was from an irrevertible author", func() {
+			// Setup suspect in datastore
+			heuristicSuspect := &model.Suspect{
+				Id:             10,
+				Type:           model.SuspectType_Heuristic,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/test",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			}
+			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			// Set up mock responses
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          876543,
+					Project:         "chromium/test",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "deadbeef",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"deadbeef": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "ChromeOS Commit Bot",
+									Email: "chromeos-commit-bot@chromium.org",
+								},
+							},
+						},
+					},
+				}},
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(culpritRes, nil).Times(1)
+			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.SetReviewRequest{
+					Project:    culpritRes.Changes[0].Project,
+					Number:     culpritRes.Changes[0].Number,
+					RevisionId: "current",
+					Message: fmt.Sprintf("LUCI Bisection has identified this"+
+						" change as the culprit of a build failure. See the analysis: %s\n\n"+
+						"A revert for this change was not created because"+
+						" LUCI Bisection cannot revert changes from this CL's author.\n\n"+
 						"Sample failed build: %s", analysisURL, buildURL),
 				},
 			)).Times(1)
