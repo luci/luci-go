@@ -134,7 +134,7 @@ describe('Test CulpritsTable component', () => {
           endTime: '2022-09-06T07:13:18.398865Z',
           bbid: '8877665544332211',
           rerunResult: {
-            rerunStatus: 'FAILED',
+            rerunStatus: 'RERUN_STATUS_FAILED',
           },
         },
         parentRerun: {
@@ -142,7 +142,7 @@ describe('Test CulpritsTable component', () => {
           endTime: '2022-09-06T07:16:31.398865Z',
           bbid: '8765432187654321',
           rerunResult: {
-            rerunStatus: 'PASSED',
+            rerunStatus: 'RERUN_STATUS_PASSED',
           },
         },
       },
