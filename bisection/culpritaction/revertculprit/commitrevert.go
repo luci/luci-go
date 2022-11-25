@@ -18,10 +18,12 @@ import (
 	"context"
 
 	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -36,13 +38,17 @@ import (
 //   - the culprit is not yet older than the maximum revertible culprit age
 func commitRevert(ctx context.Context, gerritClient *gerrit.Client,
 	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) (bool, error) {
-	// TODO (aredulla): CC sheriffs on rotation
-	_, err := gerritClient.CommitRevert(
-		ctx,
-		revert,
-		"LUCI Bisection is automatically submitting this revert.",
-		[]*gerritpb.AccountInfo{},
-	)
+	// CC on-call arborists
+	ccEmails, err := rotationproxy.GetOnCallEmails(ctx,
+		culpritModel.GitilesCommit.Project)
+	if err != nil {
+		// non-critical, just log the error
+		err = errors.Annotate(err, "failed getting accounts to CC on bot-commit").Err()
+		logging.Errorf(ctx, err.Error())
+	}
+
+	_, err = gerritClient.CommitRevert(ctx, revert,
+		"LUCI Bisection is automatically submitting this revert.", ccEmails)
 	if err != nil {
 		return false, err
 	}

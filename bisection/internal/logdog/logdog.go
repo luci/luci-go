@@ -46,7 +46,7 @@ func (cl *LogdogClient) GetLog(c context.Context, viewUrl string) (string, error
 	req.URL.RawQuery = q.Encode()
 
 	logging.Infof(c, "Sending request to logdog %s", req.URL.String())
-	return util.SendHttpRequest(c, req, 30*time.Second)
+	return util.SendHTTPRequest(c, req, 30*time.Second)
 }
 
 // We need the interface for testing purpose

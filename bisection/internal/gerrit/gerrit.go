@@ -185,24 +185,24 @@ func (c *Client) AddComment(ctx context.Context, change *gerritpb.ChangeInfo, me
 	return res, nil
 }
 
-// SendForReview adds the accounts as reviewers for the
+// SendForReview adds the emails as reviewers for the
 // change, and sets the change to be ready for review
 func (c *Client) SendForReview(ctx context.Context, change *gerritpb.ChangeInfo, message string,
-	reviewerAccounts []*gerritpb.AccountInfo, ccAccounts []*gerritpb.AccountInfo) (*gerritpb.ReviewResult, error) {
+	reviewerEmails []string, ccEmails []string) (*gerritpb.ReviewResult, error) {
 	req := c.createSetReviewRequest(ctx, change, message)
 
-	// Add reviewer and CC accounts to the change
-	reviewerCount := len(reviewerAccounts)
-	reviewerInputs := make([]*gerritpb.ReviewerInput, reviewerCount+len(ccAccounts))
-	for i, account := range reviewerAccounts {
+	// Add reviewer and CC emails to the change
+	reviewerCount := len(reviewerEmails)
+	reviewerInputs := make([]*gerritpb.ReviewerInput, reviewerCount+len(ccEmails))
+	for i, email := range reviewerEmails {
 		reviewerInputs[i] = &gerritpb.ReviewerInput{
-			Reviewer: account.Email,
+			Reviewer: email,
 			State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
 		}
 	}
-	for i, account := range ccAccounts {
+	for i, email := range ccEmails {
 		reviewerInputs[reviewerCount+i] = &gerritpb.ReviewerInput{
-			Reviewer: account.Email,
+			Reviewer: email,
 			State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_CC,
 		}
 	}
@@ -218,7 +218,7 @@ func (c *Client) SendForReview(ctx context.Context, change *gerritpb.ChangeInfo,
 // CommitRevert bot-commits the revert change. The change must be a pure revert;
 // if not, this function does not attempt to commit the change and returns an error.
 func (c *Client) CommitRevert(ctx context.Context, change *gerritpb.ChangeInfo,
-	message string, ccAccounts []*gerritpb.AccountInfo) (*gerritpb.ReviewResult, error) {
+	message string, ccEmails []string) (*gerritpb.ReviewResult, error) {
 	// Check the change is a pure revert
 	isRevert, err := c.isPureRevert(ctx, change)
 	if err != nil {
@@ -233,11 +233,11 @@ func (c *Client) CommitRevert(ctx context.Context, change *gerritpb.ChangeInfo,
 
 	req := c.createSetReviewRequest(ctx, change, message)
 
-	// Add CC accounts to the change
-	reviewerInputs := make([]*gerritpb.ReviewerInput, len(ccAccounts))
-	for i, account := range ccAccounts {
+	// Add CC emails to the change
+	reviewerInputs := make([]*gerritpb.ReviewerInput, len(ccEmails))
+	for i, email := range ccEmails {
 		reviewerInputs[i] = &gerritpb.ReviewerInput{
-			Reviewer: account.Email,
+			Reviewer: email,
 			State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_CC,
 		}
 	}

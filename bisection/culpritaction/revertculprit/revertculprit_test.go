@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
@@ -118,7 +119,9 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockClient := gerrit.NewMockedClient(ctx, ctl)
-		ctx = mockClient.Ctx
+		ctx = rotationproxy.MockedRotationProxyClientContext(mockClient.Ctx, map[string]string{
+			"oncallator:chrome-build-sheriff": `{"emails":["jdoe@example.com", "esmith@example.com"],"updated_unix_timestamp":1669331526}`,
+		})
 
 		Convey("must be confirmed culprit", func() {
 			// Setup suspect in datastore
@@ -129,7 +132,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -180,7 +183,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -227,7 +230,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -257,7 +260,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
 					CurrentRevision: "deadbeef",
@@ -277,7 +280,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			revertRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:  876549,
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Status:  gerritpb.ChangeStatus_NEW,
 				}},
 			}
@@ -319,7 +322,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -349,7 +352,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
 					CurrentRevision: "deadbeef",
@@ -372,12 +375,12 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			relatedChanges := &gerritpb.GetRelatedChangesResponse{
 				Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 					{
-						Project: "chromium/test",
+						Project: "chromium/src",
 						Number:  876544,
 						Status:  gerritpb.ChangeStatus_MERGED,
 					},
 					{
-						Project: "chromium/test",
+						Project: "chromium/src",
 						Number:  876543,
 						Status:  gerritpb.ChangeStatus_MERGED,
 					},
@@ -424,7 +427,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -454,7 +457,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
 					CurrentRevision: "deadbeef",
@@ -508,7 +511,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -538,7 +541,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 30)),
 					CurrentRevision: "deadbeef",
@@ -557,7 +560,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			}
 			revertRes := &gerritpb.ChangeInfo{
 				Number:  876549,
-				Project: "chromium/test",
+				Project: "chromium/src",
 				Status:  gerritpb.ChangeStatus_NEW,
 			}
 			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
@@ -575,6 +578,16 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					RevisionId: "current",
 					Message: "LUCI Bisection could not automatically submit this revert" +
 						" because the target of this revert was not committed recently.",
+					Reviewers: []*gerritpb.ReviewerInput{
+						{
+							Reviewer: "jdoe@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
+						},
+						{
+							Reviewer: "esmith@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
+						},
+					},
 				},
 			)).Times(1)
 
@@ -599,7 +612,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -629,7 +642,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
 					CurrentRevision: "deadbeef",
@@ -648,7 +661,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			}
 			revertRes := &gerritpb.ChangeInfo{
 				Number:  876549,
-				Project: "chromium/test",
+				Project: "chromium/src",
 				Status:  gerritpb.ChangeStatus_NEW,
 			}
 			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
@@ -666,6 +679,16 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					RevisionId: "current",
 					Message: "LUCI Bisection could not automatically submit this revert" +
 						" because LUCI Bisection's revert submission has been disabled.",
+					Reviewers: []*gerritpb.ReviewerInput{
+						{
+							Reviewer: "jdoe@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
+						},
+						{
+							Reviewer: "esmith@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_REVIEWER,
+						},
+					},
 				},
 			)).Times(1)
 
@@ -690,7 +713,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -720,7 +743,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
 					CurrentRevision: "deadbeef",
@@ -739,7 +762,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			}
 			revertRes := &gerritpb.ChangeInfo{
 				Number:  876549,
-				Project: "chromium/test",
+				Project: "chromium/src",
 				Status:  gerritpb.ChangeStatus_NEW,
 			}
 			pureRevertRes := &gerritpb.PureRevertInfo{
@@ -766,6 +789,16 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 						"Bot-Commit":      1,
 						"CQ":              2,
 					},
+					Reviewers: []*gerritpb.ReviewerInput{
+						{
+							Reviewer: "jdoe@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_CC,
+						},
+						{
+							Reviewer: "esmith@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_CC,
+						},
+					},
 				},
 			)).Times(1)
 
@@ -790,7 +823,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -820,7 +853,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
 					CurrentRevision: "deadbeef",
@@ -874,7 +907,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
 				GitilesCommit: buildbucketpb.GitilesCommit{
 					Host:    "test.googlesource.com",
-					Project: "chromium/test",
+					Project: "chromium/src",
 					Id:      "12ab34cd56ef",
 				},
 				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
@@ -904,7 +937,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			culpritRes := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:          876543,
-					Project:         "chromium/test",
+					Project:         "chromium/src",
 					Status:          gerritpb.ChangeStatus_MERGED,
 					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
 					CurrentRevision: "deadbeef",

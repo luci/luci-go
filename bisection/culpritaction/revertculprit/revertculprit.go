@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
@@ -252,7 +253,7 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 			// unexpected error from creating the revert
 			if revert != nil {
 				// a revert was created by LUCI Bisection - add reviewers to it
-				reviewErr := sendRevertForReview(ctx, gerritClient, revert,
+				reviewErr := sendRevertForReview(ctx, gerritClient, culpritModel, revert,
 					"an unexpected error occurred when LUCI Bisection created this revert")
 				if reviewErr != nil {
 					logging.Errorf(ctx, reviewErr.Error())
@@ -277,7 +278,7 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	// Check if revert submission is disabled
 	if !cfg.GerritConfig.SubmitRevertSettings.Enabled {
 		// Send the revert to be manually reviewed as auto-committing is disabled
-		err = sendRevertForReview(ctx, gerritClient, revert,
+		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
 			"LUCI Bisection's revert submission has been disabled")
 		if err != nil {
 			logging.Errorf(ctx, err.Error())
@@ -296,7 +297,7 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	}
 	// Check the daily limit for revert submissions has not been reached
 	if committedCount >= int64(cfg.GerritConfig.SubmitRevertSettings.DailyLimit) {
-		err = sendRevertForReview(ctx, gerritClient, revert,
+		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
 			fmt.Sprintf("LUCI Bisection's daily limit for revert submission (%d)"+
 				" has been reached; %d reverts have already been submitted.",
 				cfg.GerritConfig.SubmitRevertSettings.DailyLimit, committedCount))
@@ -314,7 +315,7 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	if !gerrit.IsRecentSubmit(ctx, culprit, maxAge) {
 		// culprit was not submitted recently, so the revert should not be
 		// automatically submitted
-		err = sendRevertForReview(ctx, gerritClient, revert,
+		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
 			"the target of this revert was not committed recently")
 		if err != nil {
 			logging.Errorf(ctx, err.Error())
@@ -330,7 +331,7 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	if err != nil {
 		// Send the revert to be manually reviewed if it was not committed
 		if !committed {
-			reviewErr := sendRevertForReview(ctx, gerritClient, revert,
+			reviewErr := sendRevertForReview(ctx, gerritClient, culpritModel, revert,
 				"an error occurred when attempting to submit it")
 			if reviewErr != nil {
 				logging.Errorf(ctx, reviewErr.Error())
@@ -432,16 +433,25 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 
 // sendRevertForReview adds a comment from LUCI Bisection on a revert CL
 // explaining why a revert was not automatically submitted.
-// TODO: this function will also add sheriffs on rotation as reviewers to the
+// TODO: this function will also add arborists on rotation as reviewers to the
 // revert CL
 func sendRevertForReview(ctx context.Context, gerritClient *gerrit.Client,
-	revert *gerritpb.ChangeInfo, reason string) error {
+	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo, reason string) error {
 	// TODO (aredulla): store reason in datastore to allow investigation
 
-	// TODO (aredulla): add sheriffs on rotation as reviewers
+	// Get on-call arborists
+	reviewerEmails, err := rotationproxy.GetOnCallEmails(ctx,
+		culpritModel.GitilesCommit.Project)
+	if err != nil {
+		return errors.Annotate(err, "failed getting reviewers for manual review").Err()
+	}
+
+	// For now, no accounts are additionally CC'd
+	ccEmails := []string{}
+
 	message := fmt.Sprintf("LUCI Bisection could not automatically"+
 		" submit this revert because %s.", reason)
-	_, err := gerritClient.SendForReview(ctx, revert, message,
-		[]*gerritpb.AccountInfo{}, []*gerritpb.AccountInfo{})
+	_, err = gerritClient.SendForReview(ctx, revert, message,
+		reviewerEmails, ccEmails)
 	return err
 }

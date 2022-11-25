@@ -134,5 +134,5 @@ func (cl *GitilesClient) sendRequest(c context.Context, url string, params map[s
 	req.URL.RawQuery = q.Encode()
 
 	logging.Infof(c, "Sending request to gitiles %s", req.URL.String())
-	return util.SendHttpRequest(c, req, 30*time.Second)
+	return util.SendHTTPRequest(c, req, 30*time.Second)
 }

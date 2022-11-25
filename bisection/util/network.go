@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-func SendHttpRequest(c context.Context, req *http.Request, timeout time.Duration) (string, error) {
-	c, cancel := context.WithTimeout(c, 30*time.Second)
+func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration) (string, error) {
+	c, cancel := context.WithTimeout(c, timeout)
 	defer cancel()
 
 	transport, err := auth.GetRPCTransport(c, auth.AsProject)

@@ -433,10 +433,10 @@ func TestSendForReview(t *testing.T) {
 			Number:  123456,
 			Project: testGerritProject,
 		}
-		reviewerAccounts := []*gerritpb.AccountInfo{{AccountId: 10001}}
-		ccAccounts := []*gerritpb.AccountInfo{{AccountId: 10003}}
+		reviewerEmails := []string{"jdoe@example.com"}
+		ccEmails := []string{"esmith@example.com"}
 		reviewResult, err := client.SendForReview(ctx, changeInfo,
-			"This change has been identified as a possible culprit.", reviewerAccounts, ccAccounts)
+			"This change has been identified as a possible culprit.", reviewerEmails, ccEmails)
 		So(err, ShouldBeNil)
 		So(reviewResult, ShouldResemble, expectedResult)
 	})
@@ -470,9 +470,9 @@ func TestCommitRevert(t *testing.T) {
 				Number:  234567,
 				Project: testGerritProject,
 			}
-			ccAccounts := []*gerritpb.AccountInfo{{AccountId: 10001}, {AccountId: 10003}}
+			ccEmails := []string{"jdoe@example.com", "esmith@example.com"}
 			reviewResult, err := client.CommitRevert(ctx, revertInfo,
-				"This revert has been submitted automatically.", ccAccounts)
+				"This revert has been submitted automatically.", ccEmails)
 			So(err, ShouldErrLike, "not a pure revert")
 			So(reviewResult, ShouldBeNil)
 		})
@@ -522,8 +522,8 @@ func TestCommitRevert(t *testing.T) {
 							},
 						},
 					},
-					"10003": {
-						Input: "10003",
+					"esmith@example.com": {
+						Input: "esmith@example.com",
 						Ccs: []*gerritpb.ReviewerInfo{
 							{
 								Account: &gerritpb.AccountInfo{
@@ -547,9 +547,10 @@ func TestCommitRevert(t *testing.T) {
 				Number:  234567,
 				Project: testGerritProject,
 			}
-			ccAccounts := []*gerritpb.AccountInfo{{AccountId: 10001}, {AccountId: 10003}}
+			ccEmails := []string{"jdoe@example.com", "esmith@example.com"}
 			reviewResult, err := client.CommitRevert(ctx, revertInfo,
-				"This change has been confirmed as the culprit and has been auto-reverted.", ccAccounts)
+				"This change has been confirmed as the culprit and has been auto-reverted.",
+				ccEmails)
 			So(err, ShouldBeNil)
 			So(reviewResult, ShouldResemble, expectedResult)
 		})
