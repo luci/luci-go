@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
+	// "go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/info"
 )
@@ -30,11 +30,16 @@ import (
 // getGerritEmailAddress is a helper function to get the email address
 // that LUCI Bisection uses to perform Gerrit actions
 func getGerritEmailAddress(ctx context.Context) (string, error) {
-	emailAddress, err := info.ServiceAccount(ctx)
-	if err != nil {
-		return "", errors.Annotate(err,
-			"failed to get LUCI Bisection email address used for Gerrit").Err()
-	}
+	// TODO (aredulla): use ServiceAccount function once it is available
+	// emailAddress, err := info.ServiceAccount(ctx)
+	// if err != nil {
+	// 	return "", errors.Annotate(err,
+	// 		"failed to get LUCI Bisection email address used for Gerrit").Err()
+	// }
+
+	// For now, construct the service account email from the App ID
+	emailAddress := fmt.Sprintf("%s@appspot.gserviceaccount.com", info.AppID(ctx))
+
 	return emailAddress, nil
 }
 
