@@ -97,11 +97,11 @@ var _ Loggable = (*State)(nil)
 //
 // End must be invoked like:
 //
-//    var err error
-//    state, ctx := build.Start(ctx, initialBuild, ...)
-//    defer func() { state.End(err) }()
+//	var err error
+//	state, ctx := build.Start(ctx, initialBuild, ...)
+//	defer func() { state.End(err) }()
 //
-//    err = opThatErrsOrPanics(ctx)
+//	err = opThatErrsOrPanics(ctx)
 //
 // NOTE: A panic will still crash the program as usual. This does NOT
 // `recover()` the panic. Please use conventional Go error handling and control
@@ -138,8 +138,8 @@ func (s *State) End(err error) {
 // `name` is the user-provided name for the log.
 //
 // `openStream` is a callback which takes
-//   * `dedupedName` - the deduplicated version of `name`
-//   * `relLdName` - The logdog stream name, relative to this process'
+//   - `dedupedName` - the deduplicated version of `name`
+//   - `relLdName` - The logdog stream name, relative to this process'
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
 func (s *State) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
 	relLdName := ""
@@ -207,6 +207,50 @@ func (s *State) Infra() *bbpb.BuildInfra {
 		return nil
 	}
 	return proto.Clone(s.buildPb.Infra).(*bbpb.BuildInfra)
+}
+
+// BuildID returns Build.Id.
+func (s *State) BuildID() int64 {
+	s.buildPbMu.RLock()
+	defer s.buildPbMu.RUnlock()
+	return s.buildPb.Id
+}
+
+// Builder returns a clone of the Build.Builder submessage.
+func (s *State) Builder() *bbpb.BuilderID {
+	s.buildPbMu.RLock()
+	defer s.buildPbMu.RUnlock()
+	if s.buildPb.Builder == nil {
+		return nil
+	}
+	return proto.Clone(s.buildPb.Builder).(*bbpb.BuilderID)
+}
+
+// GitilesCommit returns a clone of the Build.Input.GitilesCommit message.
+//
+// Note: The result of SetGitilesCommit will not appear here. This is the input GitilesCommit only.
+func (s *State) GitilesCommit() *bbpb.GitilesCommit {
+	s.buildPbMu.RLock()
+	defer s.buildPbMu.RUnlock()
+	if s.buildPb.Input.GitilesCommit == nil {
+		return nil
+	}
+	return proto.Clone(s.buildPb.Input.GitilesCommit).(*bbpb.GitilesCommit)
+}
+
+// GerritChanges returns a clone of Build.Input.GerritChanges.
+func (s *State) GerritChanges() []*bbpb.GerritChange {
+	s.buildPbMu.RLock()
+	defer s.buildPbMu.RUnlock()
+	n := len(s.buildPb.Input.GerritChanges)
+	if n == 0 {
+		return nil
+	}
+	chgs := make([]*bbpb.GerritChange, 0, n)
+	for _, chg := range s.buildPb.Input.GerritChanges {
+		chgs = append(chgs, proto.Clone(chg).(*bbpb.GerritChange))
+	}
+	return chgs
 }
 
 // SynthesizeIOProto synthesizes a `.proto` file from the input and ouptut
