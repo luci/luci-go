@@ -107,3 +107,65 @@ func TestConfigGroupProjectString(t *testing.T) {
 		So(c.ProjectString(), ShouldEqual, "chromium")
 	})
 }
+
+func TestGetAllGerritHosts(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetAllGerritHosts", t, func() {
+		ctx := gaememory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		pc1 := &ProjectConfig{
+			Project: "enabledProject",
+			Hash:    "sha256:deadbeef",
+			Enabled: true,
+		}
+		pc2 := &ProjectConfig{
+			Project: "disabledProject",
+			Hash:    "sha256:dddeadbbbbef",
+			Enabled: true,
+		}
+		So(datastore.Put(ctx, pc1, pc2), ShouldBeNil)
+
+		addCG := func(pc *ProjectConfig, cgName string, hosts ...string) error {
+			cpb := &cfgpb.ConfigGroup{Name: cgName}
+			for _, host := range hosts {
+				cpb.Gerrit = append(cpb.Gerrit, &cfgpb.ConfigGroup_Gerrit{
+					Url: "https://" + host,
+					Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+						{Name: "cr/src1"},
+						{Name: "cr/src2"},
+					},
+				})
+			}
+			cg := &ConfigGroup{
+				Project: ProjectConfigKey(ctx, pc.Project),
+				ID:      MakeConfigGroupID(pc.Hash, cgName),
+				Content: cpb,
+			}
+			pc.ConfigGroupNames = append(pc.ConfigGroupNames, cgName)
+			return datastore.Put(ctx, pc, cg)
+		}
+
+		Convey("works", func() {
+			So(addCG(pc1, "main", "example.com", "example.org"), ShouldBeNil)
+			So(addCG(pc2, "main", "example.edu", "example.net"), ShouldBeNil)
+
+			hosts, err := GetAllGerritHosts(ctx)
+			So(err, ShouldBeNil)
+			So(hosts[pc1.Project].ToSortedSlice(), ShouldResemble,
+				[]string{"example.com", "example.org"})
+			So(hosts[pc2.Project].ToSortedSlice(), ShouldResemble,
+				[]string{"example.edu", "example.net"})
+		})
+
+		Convey("doesn't include disabled projects", func() {
+			pc2.Enabled = false
+			So(datastore.Put(ctx, pc2), ShouldBeNil)
+			hosts, err := GetAllGerritHosts(ctx)
+			So(err, ShouldBeNil)
+			So(hosts, ShouldNotContainKey, pc2.Project)
+		})
+	})
+}

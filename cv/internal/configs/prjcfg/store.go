@@ -19,14 +19,17 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -217,4 +220,73 @@ type ConfigGroup struct {
 // ProjectString returns LUCI Project as a string.
 func (c *ConfigGroup) ProjectString() string {
 	return c.Project.StringID()
+}
+
+// GetAllGerritHosts returns a map of the Gerrit hosts watched by enabled LUCI
+// projects.
+func GetAllGerritHosts(ctx context.Context) (map[string]stringset.Set, error) {
+	var prjs []*ProjectConfig
+	q := datastore.NewQuery(projectConfigKind).Eq("Enabled", true)
+	if err := datastore.GetAll(ctx, q, &prjs); err != nil {
+		return nil, transient.Tag.Apply(err)
+	}
+
+	ret := make(map[string]stringset.Set)
+	err := parallel.WorkPool(32, func(work chan<- func() error) {
+		for _, p := range prjs {
+			hosts := stringset.New(4)
+			ret[p.Project] = hosts
+			p := p
+			work <- func() error {
+				err := addGerritHosts(ctx, p, hosts)
+				return errors.Annotate(err, "%s: addGerritHosts", p.Project).Err()
+			}
+		}
+	})
+	return ret, err
+}
+
+func addGerritHosts(ctx context.Context, prj *ProjectConfig, hosts stringset.Set) error {
+	const chunkSize = 16
+	cgs := make([]*ConfigGroup, 0, chunkSize)
+	pck := ProjectConfigKey(ctx, prj.Project)
+
+	for offset := 0; offset < len(prj.ConfigGroupNames); offset += chunkSize {
+		// prepare ConfigGroup(s) upto chunkSize.
+		end := offset + chunkSize
+		if end > len(prj.ConfigGroupNames) {
+			end = len(prj.ConfigGroupNames)
+		}
+		cgs = cgs[:0]
+		for pos := offset; pos < end; pos++ {
+			cgs = append(cgs, &ConfigGroup{
+				ID:      MakeConfigGroupID(prj.Hash, prj.ConfigGroupNames[pos]),
+				Project: pck,
+			})
+		}
+		if err := datastore.Get(ctx, cgs); err != nil {
+			return errors.Annotate(err, "fetching ConfigGroups for %s",
+				strings.Join(prj.ConfigGroupNames[offset:end], ",")).Tag(transient.Tag).Err()
+		}
+
+		// parse and add all the hosts.
+		for _, cg := range cgs {
+			for _, repo := range cg.Content.GetGerrit() {
+				rawURL := repo.GetUrl()
+				u, err := url.Parse(rawURL)
+				if err != nil {
+					// must be a bug in the project config validator.
+					return errors.Annotate(err, "%s: invalid GerritURL %q",
+						cg.ID.Name(), rawURL).Err()
+				}
+				if u.Host == "" {
+					// same; must be a bug.
+					return errors.Reason("%s: empty GerritHost %q",
+						cg.ID.Name(), rawURL).Err()
+				}
+				hosts.Add(u.Host)
+			}
+		}
+	}
+	return nil
 }
