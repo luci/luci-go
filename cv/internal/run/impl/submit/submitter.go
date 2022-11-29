@@ -17,6 +17,7 @@ package submit
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -226,11 +227,29 @@ func (s RunCLsSubmitter) submitCL(ctx context.Context, cl *run.RunCL) error {
 		return err
 	}
 	ci := cl.Detail.GetGerrit().GetInfo()
-	_, submitErr := gc.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
-		Number:     ci.GetNumber(),
-		RevisionId: ci.GetCurrentRevision(),
-		Project:    ci.GetProject(),
+	submitErr := s.gFactory.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
+		_, err := gc.SubmitRevision(ctx, &gerritpb.SubmitRevisionRequest{
+			Number:     ci.GetNumber(),
+			RevisionId: ci.GetCurrentRevision(),
+			Project:    ci.GetProject(),
+		})
+		grpcStatus, ok := status.FromError(errors.Unwrap(err))
+		if !ok {
+			return err
+		}
+		switch code, msg := grpcStatus.Code(), grpcStatus.Message(); {
+		case code == codes.OK:
+			return nil
+		case code == codes.Internal && strings.Contains(msg, "LOCK_FAILURE"):
+			// 503 Lock Failure is normally caused by stale replica serving the
+			// request.
+			// Reference: go/gob/users/user-faq#an-update-of-the-change-is-failing-with-the-503-lock-failure
+			return gerrit.ErrStaleData
+		default:
+			return err
+		}
 	})
+
 	if submitErr == nil {
 		return nil
 	}
