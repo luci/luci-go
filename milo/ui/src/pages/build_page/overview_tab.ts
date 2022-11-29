@@ -183,6 +183,10 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderBuilderDescription() {
+    if (!this.store.buildPage.canReadFullBuild) {
+      return;
+    }
+
     const descriptionHtml = unwrapOrElse(
       () => this.store.buildPage.builder?.config.descriptionHtml,
       (err) => {
@@ -315,7 +319,7 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderFailedTests() {
-    if (!this.store.buildPage.hasInvocation) {
+    if (!this.store.buildPage.hasInvocation || !this.store.buildPage.canReadTestVerdicts) {
       return;
     }
 
@@ -383,6 +387,10 @@ export class OverviewTabElement extends MobxLitElement {
   }
 
   private renderSteps() {
+    if (!this.store.buildPage.canReadFullBuild) {
+      return;
+    }
+
     const stepsUrl = router.urlForName('build-steps', {
       ...this.store.buildPage.builderIdParam,
       build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
@@ -488,6 +496,26 @@ export class OverviewTabElement extends MobxLitElement {
     `;
   }
 
+  private renderProperties() {
+    const build = this.store.buildPage.build?.data;
+    if (!build || !this.store.buildPage.canReadFullBuild) {
+      return html``;
+    }
+
+    return html`
+      <h3>Input Properties</h3>
+      <milo-property-viewer
+        .properties=${build.input?.properties || {}}
+        .config=${this.store.userConfig.build.inputProperties}
+      ></milo-property-viewer>
+      <h3>Output Properties</h3>
+      <milo-property-viewer
+        .properties=${build.output?.properties || {}}
+        .config=${this.store.userConfig.build.outputProperties}
+      ></milo-property-viewer>
+    `;
+  }
+
   protected render = reportRenderError(this, () => {
     const build = this.store.buildPage.build?.data;
     if (!build) {
@@ -511,17 +539,7 @@ export class OverviewTabElement extends MobxLitElement {
         <div class="second-column">
           ${this.renderBuilderDescription()} ${this.renderInput()} ${this.renderOutput()} ${this.renderInfra()}
           ${this.renderTiming()} ${this.renderBuildLogs()} ${this.renderActionButtons()} ${this.renderTags()}
-          ${this.renderExperiments()}
-          <h3>Input Properties</h3>
-          <milo-property-viewer
-            .properties=${build.input?.properties || {}}
-            .config=${this.store.userConfig.build.inputProperties}
-          ></milo-property-viewer>
-          <h3>Output Properties</h3>
-          <milo-property-viewer
-            .properties=${build.output?.properties || {}}
-            .config=${this.store.userConfig.build.outputProperties}
-          ></milo-property-viewer>
+          ${this.renderExperiments()} ${this.renderProperties()}
           <milo-bp-build-packages-info .build=${build}></milo-bp-build-packages-info>
         </div>
       </div>

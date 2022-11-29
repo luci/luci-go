@@ -24,18 +24,26 @@ import * as iter from '../libs/iter_utils';
 import { aliveFlow, keepAliveComputed, unwrapObservable } from '../libs/milo_mobx_utils';
 import { attachTags, InnerTag, TAG_SOURCE } from '../libs/tag';
 import {
-  ADD_BUILD_PERM,
   Build,
   BUILD_FIELD_MASK,
   BuilderID,
-  CANCEL_BUILD_PERM,
   GetBuildRequest,
   GitilesCommit,
+  PERM_BUILDS_ADD,
+  PERM_BUILDS_CANCEL,
+  PERM_BUILDS_GET,
+  PERM_BUILDS_GET_LIMITED,
   SEARCH_BUILD_FIELD_MASK,
   TEST_PRESENTATION_KEY,
 } from '../services/buildbucket';
 import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
-import { getInvIdFromBuildId, getInvIdFromBuildNum } from '../services/resultdb';
+import {
+  getInvIdFromBuildId,
+  getInvIdFromBuildNum,
+  PERM_INVOCATIONS_GET,
+  PERM_TEST_EXONERATIONS_LIST,
+  PERM_TEST_RESULTS_LIST,
+} from '../services/resultdb';
 import { BuildState, BuildStateInstance } from './build_state';
 import { InvocationState } from './invocation_state';
 import { ServicesStore } from './services';
@@ -255,7 +263,15 @@ export const BuildPage = types
       return fromPromise(
         self.services.milo.batchCheckPermissions({
           realm: `${self.build.data.builder.project}:${self.build.data.builder.bucket}`,
-          permissions: [CANCEL_BUILD_PERM, ADD_BUILD_PERM],
+          permissions: [
+            PERM_BUILDS_CANCEL,
+            PERM_BUILDS_ADD,
+            PERM_BUILDS_GET,
+            PERM_BUILDS_GET_LIMITED,
+            PERM_INVOCATIONS_GET,
+            PERM_TEST_EXONERATIONS_LIST,
+            PERM_TEST_RESULTS_LIST,
+          ],
         })
       );
     });
@@ -290,10 +306,20 @@ export const BuildPage = types
         return permittedActionRes?.results || {};
       },
       get canRetry() {
-        return this._permittedActions[ADD_BUILD_PERM] || false;
+        return this._permittedActions[PERM_BUILDS_ADD] || false;
       },
       get canCancel() {
-        return this._permittedActions[CANCEL_BUILD_PERM] || false;
+        return this._permittedActions[PERM_BUILDS_CANCEL] || false;
+      },
+      get canReadFullBuild() {
+        return this._permittedActions[PERM_BUILDS_GET] || false;
+      },
+      get canReadTestVerdicts() {
+        return (
+          this._permittedActions[PERM_INVOCATIONS_GET] &&
+          this._permittedActions[PERM_TEST_EXONERATIONS_LIST] &&
+          this._permittedActions[PERM_TEST_RESULTS_LIST]
+        );
       },
       get projectCfg() {
         return unwrapObservable(projectCfg.get() || NEVER_OBSERVABLE, null);

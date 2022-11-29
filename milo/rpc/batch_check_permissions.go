@@ -22,6 +22,10 @@ import (
 	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+
+	// Ensure those permissions are registered in memory.
+	_ "go.chromium.org/luci/buildbucket/bbperms"
+	_ "go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // The maximum number of permissions allowed in the BatchCheckPermissions RPC.

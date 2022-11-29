@@ -312,7 +312,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       // TODO(crbug/1128097): display test-results tab unconditionally once
       // Foundation team is ready for ResultDB integration with other LUCI
       // projects.
-      ...(!this.store.buildPage.hasInvocation
+      ...(!this.store.buildPage.hasInvocation || !this.store.buildPage.canReadTestVerdicts
         ? []
         : [
             {
@@ -322,26 +322,30 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
               slotName: 'test-count-indicator',
             },
           ]),
-      {
-        id: 'steps',
-        label: 'Steps & Logs',
-        href: router.urlForName('build-steps', params),
-      },
-      {
-        id: 'related-builds',
-        label: 'Related Builds',
-        href: router.urlForName('build-related-builds', params),
-      },
-      {
-        id: 'timeline',
-        label: 'Timeline',
-        href: router.urlForName('build-timeline', params),
-      },
-      {
-        id: 'blamelist',
-        label: 'Blamelist',
-        href: router.urlForName('build-blamelist', params),
-      },
+      ...(!this.store.buildPage.canReadFullBuild
+        ? []
+        : [
+            {
+              id: 'steps',
+              label: 'Steps & Logs',
+              href: router.urlForName('build-steps', params),
+            },
+            {
+              id: 'related-builds',
+              label: 'Related Builds',
+              href: router.urlForName('build-related-builds', params),
+            },
+            {
+              id: 'timeline',
+              label: 'Timeline',
+              href: router.urlForName('build-timeline', params),
+            },
+            {
+              id: 'blamelist',
+              label: 'Blamelist',
+              href: router.urlForName('build-blamelist', params),
+            },
+          ]),
     ];
   }
 

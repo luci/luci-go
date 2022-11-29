@@ -29,6 +29,10 @@ import { StringPair } from './common';
  */
 /* eslint-enable max-len */
 
+export const PERM_INVOCATIONS_GET = 'resultdb.invocations.get';
+export const PERM_TEST_EXONERATIONS_LIST = 'resultdb.testExonerations.list';
+export const PERM_TEST_RESULTS_LIST = 'resultdb.testResults.list';
+
 export enum TestStatus {
   Unspecified = 'STATUS_UNSPECIFIED',
   Pass = 'PASS',
