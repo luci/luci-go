@@ -159,7 +159,7 @@ func (s *State) addLog(name string, openStream func(dedupedName string, relLdNam
 
 // Log creates a new build-level line-oriented text log stream with the given name.
 //
-// You must close the stream when you're done with it.
+// The stream will close when the state is End'd.
 func (s *State) Log(name string, opts ...streamclient.Option) io.Writer {
 	var ret io.WriteCloser
 
