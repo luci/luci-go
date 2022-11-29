@@ -27,14 +27,23 @@ import (
 )
 
 // PutBuilder saves a *model.Builder to datastore for test usage.
-func PutBuilder(ctx context.Context, project, bucket, builder string) {
-	convey.So(datastore.Put(ctx, &model.Builder{
+func PutBuilder(ctx context.Context, project, bucket, builder string, backend string) {
+
+	bldr := &model.Builder{
 		Parent: model.BucketKey(ctx, project, bucket),
 		ID:     builder,
 		Config: &pb.BuilderConfig{
 			Name: builder,
 		},
-	}), convey.ShouldBeNil)
+	}
+
+	if backend != "" {
+		bldr.Config.Backend = &pb.BuilderConfig_Backend{
+			Target: backend,
+		}
+	}
+
+	convey.So(datastore.Put(ctx, bldr), convey.ShouldBeNil)
 }
 
 // PutBucket saves a *model.Bucket to datastore for test usage.

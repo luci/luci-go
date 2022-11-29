@@ -192,6 +192,54 @@ func (x *CreateSwarmingBuildTask) GetBuildId() int64 {
 	return 0
 }
 
+// A task to create a backend task
+type CreateBackendBuildTask struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BuildId int64 `protobuf:"varint,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+}
+
+func (x *CreateBackendBuildTask) Reset() {
+	*x = CreateBackendBuildTask{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateBackendBuildTask) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBackendBuildTask) ProtoMessage() {}
+
+func (x *CreateBackendBuildTask) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBackendBuildTask.ProtoReflect.Descriptor instead.
+func (*CreateBackendBuildTask) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CreateBackendBuildTask) GetBuildId() int64 {
+	if x != nil {
+		return x.BuildId
+	}
+	return 0
+}
+
 // A task to create a Swarming task.
 type SyncSwarmingBuildTask struct {
 	state         protoimpl.MessageState
@@ -208,7 +256,7 @@ type SyncSwarmingBuildTask struct {
 func (x *SyncSwarmingBuildTask) Reset() {
 	*x = SyncSwarmingBuildTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -221,7 +269,7 @@ func (x *SyncSwarmingBuildTask) String() string {
 func (*SyncSwarmingBuildTask) ProtoMessage() {}
 
 func (x *SyncSwarmingBuildTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -234,7 +282,7 @@ func (x *SyncSwarmingBuildTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncSwarmingBuildTask.ProtoReflect.Descriptor instead.
 func (*SyncSwarmingBuildTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SyncSwarmingBuildTask) GetBuildId() int64 {
@@ -265,7 +313,7 @@ type ExportBigQuery struct {
 func (x *ExportBigQuery) Reset() {
 	*x = ExportBigQuery{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -278,7 +326,7 @@ func (x *ExportBigQuery) String() string {
 func (*ExportBigQuery) ProtoMessage() {}
 
 func (x *ExportBigQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -291,7 +339,7 @@ func (x *ExportBigQuery) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportBigQuery.ProtoReflect.Descriptor instead.
 func (*ExportBigQuery) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ExportBigQuery) GetBuildId() int64 {
@@ -314,7 +362,7 @@ type ExportBigQueryGo struct {
 func (x *ExportBigQueryGo) Reset() {
 	*x = ExportBigQueryGo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -327,7 +375,7 @@ func (x *ExportBigQueryGo) String() string {
 func (*ExportBigQueryGo) ProtoMessage() {}
 
 func (x *ExportBigQueryGo) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +388,7 @@ func (x *ExportBigQueryGo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportBigQueryGo.ProtoReflect.Descriptor instead.
 func (*ExportBigQueryGo) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ExportBigQueryGo) GetBuildId() int64 {
@@ -363,7 +411,7 @@ type FinalizeResultDB struct {
 func (x *FinalizeResultDB) Reset() {
 	*x = FinalizeResultDB{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -376,7 +424,7 @@ func (x *FinalizeResultDB) String() string {
 func (*FinalizeResultDB) ProtoMessage() {}
 
 func (x *FinalizeResultDB) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -389,7 +437,7 @@ func (x *FinalizeResultDB) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinalizeResultDB.ProtoReflect.Descriptor instead.
 func (*FinalizeResultDB) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *FinalizeResultDB) GetBuildId() int64 {
@@ -414,7 +462,7 @@ type NotifyPubSub struct {
 func (x *NotifyPubSub) Reset() {
 	*x = NotifyPubSub{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -427,7 +475,7 @@ func (x *NotifyPubSub) String() string {
 func (*NotifyPubSub) ProtoMessage() {}
 
 func (x *NotifyPubSub) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -440,7 +488,7 @@ func (x *NotifyPubSub) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyPubSub.ProtoReflect.Descriptor instead.
 func (*NotifyPubSub) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *NotifyPubSub) GetBuildId() int64 {
@@ -470,7 +518,7 @@ type NotifyPubSubGo struct {
 func (x *NotifyPubSubGo) Reset() {
 	*x = NotifyPubSubGo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[8]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -483,7 +531,7 @@ func (x *NotifyPubSubGo) String() string {
 func (*NotifyPubSubGo) ProtoMessage() {}
 
 func (x *NotifyPubSubGo) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -496,7 +544,7 @@ func (x *NotifyPubSubGo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyPubSubGo.ProtoReflect.Descriptor instead.
 func (*NotifyPubSubGo) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{8}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *NotifyPubSubGo) GetBuildId() int64 {
@@ -522,7 +570,7 @@ type CancelBuildTask struct {
 func (x *CancelBuildTask) Reset() {
 	*x = CancelBuildTask{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[9]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -535,7 +583,7 @@ func (x *CancelBuildTask) String() string {
 func (*CancelBuildTask) ProtoMessage() {}
 
 func (x *CancelBuildTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -548,7 +596,7 @@ func (x *CancelBuildTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelBuildTask.ProtoReflect.Descriptor instead.
 func (*CancelBuildTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{9}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CancelBuildTask) GetBuildId() int64 {
@@ -584,7 +632,7 @@ type BuildsV2PubSub struct {
 func (x *BuildsV2PubSub) Reset() {
 	*x = BuildsV2PubSub{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[10]
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -597,7 +645,7 @@ func (x *BuildsV2PubSub) String() string {
 func (*BuildsV2PubSub) ProtoMessage() {}
 
 func (x *BuildsV2PubSub) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -610,7 +658,7 @@ func (x *BuildsV2PubSub) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildsV2PubSub.ProtoReflect.Descriptor instead.
 func (*BuildsV2PubSub) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{10}
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *BuildsV2PubSub) GetBuild() *proto.Build {
@@ -660,47 +708,50 @@ var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDe
 	0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x34, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61,
 	0x74, 0x65, 0x53, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54,
 	0x61, 0x73, 0x6b, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x52,
-	0x0a, 0x15, 0x53, 0x79, 0x6e, 0x63, 0x53, 0x77, 0x61, 0x72, 0x6d, 0x69, 0x6e, 0x67, 0x42, 0x75,
-	0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x33,
+	0x0a, 0x16, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x61, 0x63, 0x6b, 0x65, 0x6e, 0x64, 0x42,
+	0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x49, 0x64, 0x22, 0x52, 0x0a, 0x15, 0x53, 0x79, 0x6e, 0x63, 0x53, 0x77, 0x61, 0x72, 0x6d,
+	0x69, 0x6e, 0x67, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x19, 0x0a, 0x08,
+	0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07,
+	0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x1e, 0x0a, 0x0a, 0x67, 0x65, 0x6e, 0x65, 0x72,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x67, 0x65, 0x6e,
+	0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x2b, 0x0a, 0x0e, 0x45, 0x78, 0x70, 0x6f, 0x72,
+	0x74, 0x42, 0x69, 0x67, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x49, 0x64, 0x22, 0x2d, 0x0a, 0x10, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x42, 0x69,
+	0x67, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x49, 0x64, 0x22, 0x2d, 0x0a, 0x10, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x44, 0x42, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64,
 	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64,
-	0x49, 0x64, 0x12, 0x1e, 0x0a, 0x0a, 0x67, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x67, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x22, 0x2b, 0x0a, 0x0e, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x42, 0x69, 0x67, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22,
-	0x2d, 0x0a, 0x10, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x42, 0x69, 0x67, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x47, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x2d,
-	0x0a, 0x10, 0x46, 0x69, 0x6e, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74,
-	0x44, 0x42, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x45, 0x0a,
-	0x0c, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x50, 0x75, 0x62, 0x53, 0x75, 0x62, 0x12, 0x19, 0x0a,
-	0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52,
-	0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x63, 0x61, 0x6c, 0x6c,
-	0x62, 0x61, 0x63, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x08, 0x63, 0x61, 0x6c, 0x6c,
-	0x62, 0x61, 0x63, 0x6b, 0x22, 0x2b, 0x0a, 0x0e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x50, 0x75,
-	0x62, 0x53, 0x75, 0x62, 0x47, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f,
-	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49,
-	0x64, 0x22, 0x2c, 0x0a, 0x0f, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x42, 0x75, 0x69, 0x6c, 0x64,
-	0x54, 0x61, 0x73, 0x6b, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22,
-	0xaa, 0x01, 0x0a, 0x0e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x56, 0x32, 0x50, 0x75, 0x62, 0x53,
-	0x75, 0x62, 0x12, 0x2b, 0x0a, 0x05, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e,
-	0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x05, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x12,
-	0x2c, 0x0a, 0x12, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x6c, 0x61, 0x72, 0x67, 0x65, 0x5f, 0x66,
-	0x69, 0x65, 0x6c, 0x64, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x10, 0x62, 0x75, 0x69,
-	0x6c, 0x64, 0x4c, 0x61, 0x72, 0x67, 0x65, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x12, 0x3d, 0x0a,
-	0x0b, 0x63, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x0e, 0x32, 0x1b, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74,
-	0x2e, 0x76, 0x32, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52,
-	0x0b, 0x63, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0x40, 0x5a, 0x3e,
-	0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f,
-	0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74,
-	0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73,
-	0x2f, 0x64, 0x65, 0x66, 0x73, 0x3b, 0x74, 0x61, 0x73, 0x6b, 0x64, 0x65, 0x66, 0x73, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x49, 0x64, 0x22, 0x45, 0x0a, 0x0c, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x50, 0x75, 0x62, 0x53,
+	0x75, 0x62, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x1a, 0x0a,
+	0x08, 0x63, 0x61, 0x6c, 0x6c, 0x62, 0x61, 0x63, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52,
+	0x08, 0x63, 0x61, 0x6c, 0x6c, 0x62, 0x61, 0x63, 0x6b, 0x22, 0x2b, 0x0a, 0x0e, 0x4e, 0x6f, 0x74,
+	0x69, 0x66, 0x79, 0x50, 0x75, 0x62, 0x53, 0x75, 0x62, 0x47, 0x6f, 0x12, 0x19, 0x0a, 0x08, 0x62,
+	0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62,
+	0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x2c, 0x0a, 0x0f, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c,
+	0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x62, 0x75, 0x69,
+	0x6c, 0x64, 0x49, 0x64, 0x22, 0xaa, 0x01, 0x0a, 0x0e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x56,
+	0x32, 0x50, 0x75, 0x62, 0x53, 0x75, 0x62, 0x12, 0x2b, 0x0a, 0x05, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75,
+	0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x05, 0x62,
+	0x75, 0x69, 0x6c, 0x64, 0x12, 0x2c, 0x0a, 0x12, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x6c, 0x61,
+	0x72, 0x67, 0x65, 0x5f, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x10, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x4c, 0x61, 0x72, 0x67, 0x65, 0x46, 0x69, 0x65, 0x6c,
+	0x64, 0x73, 0x12, 0x3d, 0x0a, 0x0b, 0x63, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x43, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x63, 0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d,
+	0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e, 0x65, 0x2f,
+	0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x64, 0x65, 0x66, 0x73, 0x3b, 0x74, 0x61, 0x73, 0x6b, 0x64,
+	0x65, 0x66, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -715,25 +766,26 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawD
 	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_goTypes = []interface{}{
 	(*CancelSwarmingTask)(nil),      // 0: taskdefs.CancelSwarmingTask
 	(*CreateSwarmingTask)(nil),      // 1: taskdefs.CreateSwarmingTask
 	(*CreateSwarmingBuildTask)(nil), // 2: taskdefs.CreateSwarmingBuildTask
-	(*SyncSwarmingBuildTask)(nil),   // 3: taskdefs.SyncSwarmingBuildTask
-	(*ExportBigQuery)(nil),          // 4: taskdefs.ExportBigQuery
-	(*ExportBigQueryGo)(nil),        // 5: taskdefs.ExportBigQueryGo
-	(*FinalizeResultDB)(nil),        // 6: taskdefs.FinalizeResultDB
-	(*NotifyPubSub)(nil),            // 7: taskdefs.NotifyPubSub
-	(*NotifyPubSubGo)(nil),          // 8: taskdefs.NotifyPubSubGo
-	(*CancelBuildTask)(nil),         // 9: taskdefs.CancelBuildTask
-	(*BuildsV2PubSub)(nil),          // 10: taskdefs.BuildsV2PubSub
-	(*proto.Build)(nil),             // 11: buildbucket.v2.Build
-	(proto.Compression)(0),          // 12: buildbucket.v2.Compression
+	(*CreateBackendBuildTask)(nil),  // 3: taskdefs.CreateBackendBuildTask
+	(*SyncSwarmingBuildTask)(nil),   // 4: taskdefs.SyncSwarmingBuildTask
+	(*ExportBigQuery)(nil),          // 5: taskdefs.ExportBigQuery
+	(*ExportBigQueryGo)(nil),        // 6: taskdefs.ExportBigQueryGo
+	(*FinalizeResultDB)(nil),        // 7: taskdefs.FinalizeResultDB
+	(*NotifyPubSub)(nil),            // 8: taskdefs.NotifyPubSub
+	(*NotifyPubSubGo)(nil),          // 9: taskdefs.NotifyPubSubGo
+	(*CancelBuildTask)(nil),         // 10: taskdefs.CancelBuildTask
+	(*BuildsV2PubSub)(nil),          // 11: taskdefs.BuildsV2PubSub
+	(*proto.Build)(nil),             // 12: buildbucket.v2.Build
+	(proto.Compression)(0),          // 13: buildbucket.v2.Compression
 }
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_depIdxs = []int32{
-	11, // 0: taskdefs.BuildsV2PubSub.build:type_name -> buildbucket.v2.Build
-	12, // 1: taskdefs.BuildsV2PubSub.compression:type_name -> buildbucket.v2.Compression
+	12, // 0: taskdefs.BuildsV2PubSub.build:type_name -> buildbucket.v2.Build
+	13, // 1: taskdefs.BuildsV2PubSub.compression:type_name -> buildbucket.v2.Compression
 	2,  // [2:2] is the sub-list for method output_type
 	2,  // [2:2] is the sub-list for method input_type
 	2,  // [2:2] is the sub-list for extension type_name
@@ -784,7 +836,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SyncSwarmingBuildTask); i {
+			switch v := v.(*CreateBackendBuildTask); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -796,7 +848,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportBigQuery); i {
+			switch v := v.(*SyncSwarmingBuildTask); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -808,7 +860,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportBigQueryGo); i {
+			switch v := v.(*ExportBigQuery); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -820,7 +872,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FinalizeResultDB); i {
+			switch v := v.(*ExportBigQueryGo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -832,7 +884,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NotifyPubSub); i {
+			switch v := v.(*FinalizeResultDB); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -844,7 +896,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NotifyPubSubGo); i {
+			switch v := v.(*NotifyPubSub); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -856,7 +908,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CancelBuildTask); i {
+			switch v := v.(*NotifyPubSubGo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -868,6 +920,18 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CancelBuildTask); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BuildsV2PubSub); i {
 			case 0:
 				return &v.state
@@ -886,7 +950,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

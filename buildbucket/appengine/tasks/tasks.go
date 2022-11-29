@@ -224,6 +224,17 @@ func init() {
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "create-backend-task-go",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.CreateBackendBuildTask)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.CreateBackendBuildTask)
+			return SyncBuild(ctx, t.GetBuildId(), 0)
+		},
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "sync-swarming-task-go",
 		Kind:      tq.NonTransactional,
 		Prototype: (*taskdefs.SyncSwarmingBuildTask)(nil),
@@ -279,6 +290,18 @@ func CreateSwarmingBuildTask(ctx context.Context, task *taskdefs.CreateSwarmingB
 	}
 	return tq.AddTask(ctx, &tq.Task{
 		Title:   fmt.Sprintf("create-swarming-task-%d", task.BuildId),
+		Payload: task,
+	})
+}
+
+// CreateBackendBuildTask enqueues a Cloud Tasks task to create a backend task
+// from the given build.
+func CreateBackendBuildTask(ctx context.Context, task *taskdefs.CreateBackendBuildTask) error {
+	if task.GetBuildId() == 0 {
+		return errors.Reason("build_id is required").Err()
+	}
+	return tq.AddTask(ctx, &tq.Task{
+		Title:   fmt.Sprintf("create-backend-task-%d", task.BuildId),
 		Payload: task,
 	})
 }

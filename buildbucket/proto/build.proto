@@ -810,7 +810,7 @@ message BuildInfra {
   }
 
   Buildbucket buildbucket = 1 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
-  Swarming swarming = 2 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
+  Swarming swarming = 2;
   LogDog logdog = 3 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
   Recipe recipe = 4;
   ResultDB resultdb = 5 [ (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];

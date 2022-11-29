@@ -127,8 +127,8 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 1")
-		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 2")
+		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 1", "")
+		testutil.PutBuilder(ctx, "project", "bucket 1", "builder 2", "")
 		testutil.PutBucket(ctx, "project", "bucket 1", &pb.Bucket{
 			Swarming: &pb.Swarming{},
 		})
@@ -498,7 +498,7 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("dry run", func() {
-			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			Convey("mixed", func() {
@@ -647,7 +647,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				},
 			}
-			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			blds, err := scheduleBuilds(ctx, globalCfg, req)
@@ -798,7 +798,7 @@ func TestScheduleBuild(t *testing.T) {
 					Critical: pb.Trinary_NO,
 				},
 			}
-			testutil.PutBuilder(ctx, "project", "static bucket", "static builder")
+			testutil.PutBuilder(ctx, "project", "static bucket", "static builder", "")
 			testutil.PutBucket(ctx, "project", "static bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
 			testutil.PutBucket(ctx, "project", "dynamic bucket", &pb.Bucket{DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{}})
 
@@ -1282,8 +1282,8 @@ func TestScheduleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			tk := base64.RawURLEncoding.EncodeToString(tkeBytes)
 
-			testutil.PutBuilder(ctx, "project", "bucket", "builder")
-			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBucket(ctx, "project", "bucket", nil)
 
 			So(datastore.Put(ctx, &model.Build{
@@ -3425,6 +3425,52 @@ func TestScheduleBuild(t *testing.T) {
 			})
 		})
 
+		Convey("backend", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+			}
+			s := &pb.SettingsCfg{
+				Backend: []*pb.BackendSettings{
+					{
+						Target:   "swarming://chromium-swarm",
+						Hostname: "chromium-swarm.appspot.com",
+					},
+				},
+			}
+
+			bldrCfg := &pb.BuilderConfig{
+				Backend: &pb.BuilderConfig_Backend{
+					Target: "swarming://chromium-swarm",
+				},
+			}
+
+			setInfra(ctx, nil, bldrCfg, b, s)
+			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+				},
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir:    "cache",
+					PayloadPath: "kitchen-checkout",
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "app.appspot.com",
+				},
+				Logdog: &pb.BuildInfra_LogDog{
+					Project: "project",
+				},
+				Resultdb: &pb.BuildInfra_ResultDB{},
+			})
+		})
+
 		Convey("logdog", func() {
 			b := &pb.Build{
 				Builder: &pb.BuilderID{
@@ -4908,7 +4954,7 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				Convey("exists", func() {
-					testutil.PutBuilder(ctx, "project", "bucket", "builder")
+					testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 					So(datastore.Put(ctx, &model.Build{
 						ID: 9021868963221667745,
 						Proto: &pb.Build{
@@ -5070,7 +5116,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						RequestId: "id",
 					}
-					testutil.PutBuilder(ctx, "project", "bucket", "builder")
+					testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 
 					Convey("deduplication", func() {
 						So(datastore.Put(ctx, &model.RequestID{

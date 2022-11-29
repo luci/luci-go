@@ -35,6 +35,11 @@ message CreateSwarmingBuildTask {
   int64 build_id = 1;
 }
 
+// A task to create a backend task
+message CreateBackendBuildTask {
+  int64 build_id = 1;
+}
+
 // A task to create a Swarming task.
 message SyncSwarmingBuildTask {
   // ID of a build in the datastore. See model.Build.

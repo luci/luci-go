@@ -108,6 +108,10 @@ func validateBucketConstraints(ctx context.Context, b *pb.Build) error {
 		return errors.Reason("constraints for %s not found", bckStr).Err()
 	}
 
+	// want to return early if swarming is not set and backend is set.
+	if b.GetInfra().GetSwarming() == nil {
+		return nil
+	}
 	allowedPools := stringset.NewFromSlice(constraints.GetPools()...)
 	allowedSAs := stringset.NewFromSlice(constraints.GetServiceAccounts()...)
 	poolAllowed := false
@@ -284,8 +288,32 @@ func validateDimensions(dims []*pb.RequestedDimension) error {
 	return nil
 }
 
+func validateInfraBackendTaskTarget(target string) error {
+	invalidKeywordsForTaskBackendTarget := []string{"http", "rpc"}
+	for _, word := range invalidKeywordsForTaskBackendTarget {
+		if strings.Contains(target, word) {
+			return errors.Reason("backend task target contains invalid keyword: %s.", word).Err()
+		}
+	}
+	split := strings.Split(target, "://")
+	if len(split) != 2 {
+		return errors.Reason("backend task target was not properly formatted.").Err()
+	}
+	return nil
+}
+
+func validateInfraBackend(ctx context.Context, ib *pb.BuildInfra_Backend) error {
+	if ib == nil {
+		return nil
+	}
+	return validateInfraBackendTaskTarget(ib.GetTask().GetId().GetTarget())
+}
+
 func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {
 	var err error
+	if is == nil {
+		return nil
+	}
 	switch {
 	case teeErr(validateHostName(is.GetHostname()), &err) != nil:
 		return errors.Annotate(err, "hostname").Err()
@@ -325,16 +353,20 @@ func validateInfraResultDB(irdb *pb.BuildInfra_ResultDB) error {
 func validateInfra(ctx context.Context, infra *pb.BuildInfra) error {
 	var err error
 	switch {
-	case teeErr(validateInfraBuildbucket(ctx, infra.GetBuildbucket()), &err) != nil:
-		return errors.Annotate(err, "buildbucket").Err()
+	case infra.GetBackend() == nil && infra.GetSwarming() == nil:
+		return errors.Reason("backend or swarming is needed in build infra").Err()
+	case infra.GetBackend() != nil && infra.GetSwarming() != nil:
+		return errors.Reason("can only have one of backend or swarming in build infra. both were provided").Err()
+	case teeErr(validateInfraBackend(ctx, infra.GetBackend()), &err) != nil:
+		return errors.Annotate(err, "backend").Err()
 	case teeErr(validateInfraSwarming(infra.GetSwarming()), &err) != nil:
 		return errors.Annotate(err, "swarming").Err()
+	case teeErr(validateInfraBuildbucket(ctx, infra.GetBuildbucket()), &err) != nil:
+		return errors.Annotate(err, "buildbucket").Err()
 	case teeErr(validateInfraLogDog(infra.GetLogdog()), &err) != nil:
 		return errors.Annotate(err, "logdog").Err()
 	case teeErr(validateInfraResultDB(infra.GetResultdb()), &err) != nil:
 		return errors.Annotate(err, "resultdb").Err()
-	case infra.GetBackend() != nil:
-		return errors.Reason("backend: should not be specified").Err()
 	default:
 		return nil
 	}
@@ -528,7 +560,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 		}
 	}
 
-	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming
+	// This parallel work isn't combined with the above parallel work to ensure build entities and Swarming (or Backend)
 	// task creation tasks are only created if everything else has succeeded (since everything can't be done
 	// in one transaction).
 	_ = parallel.WorkPool(min(64, len(validBlds)), func(work chan<- func() error) {
@@ -584,12 +616,19 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					case err != datastore.ErrNoSuchEntity:
 						return errors.Annotate(err, "failed to fetch build: %d", b.ID).Err()
 					}
-
 					if err := datastore.Put(ctx, toPut...); err != nil {
 						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
 					}
-
 					if !bc.dynamicBuckets.Has(bucket) && cfg == nil {
+						return nil
+					}
+					// If there is a backend set, lets use it and return to not use swarming.
+					if b.Proto.Infra.GetBackend() != nil {
+						if err := tasks.CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
+							BuildId: b.ID,
+						}); err != nil {
+							return errors.Annotate(err, "failed to enqueue CreateBackendTask").Err()
+						}
 						return nil
 					}
 

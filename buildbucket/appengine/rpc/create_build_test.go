@@ -525,12 +525,53 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						So(err, ShouldErrLike, `build: infra: resultdb: hostname: must not contain "://"`)
 					})
 				})
-
 				Convey("backend", func() {
-					Convey("should not specified", func() {
-						req.Build.Infra.Backend = &pb.BuildInfra_Backend{}
+					Convey("swarmingAndBackendBothSet", func() {
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarming.appspot.com",
+								},
+							},
+						}
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						So(err, ShouldErrLike, `build: infra: backend: should not be specified`)
+						So(err, ShouldErrLike, `build: infra: can only have one of backend or swarming in build infra. both were provided`)
+					})
+					Convey("targetIsValid", func() {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarming.appspot.com",
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldBeNil)
+					})
+					Convey("targetIsNotValid", func() {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarmingchromium-swarming.appspot.com",
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: infra: backend: backend task target was not properly formatted.`)
+					})
+					Convey("targetIsNotValidHttp", func() {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "https://swarmingchromium-swarming.appspot.com",
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: infra: backend: backend task target contains invalid keyword: http.`)
 					})
 				})
 			})
@@ -637,8 +678,8 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 	})
 }
 
-func TestCreatBuild(t *testing.T) {
-	Convey("CreatBuild", t, func() {
+func TestCreateBuild(t *testing.T) {
+	Convey("CreateBuild", t, func() {
 		srv := &Builds{}
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
@@ -651,6 +692,12 @@ func TestCreatBuild(t *testing.T) {
 			Identity: "user:caller@example.com",
 		})
 		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Backend: []*pb.BackendSettings{
+				{
+					Target:   "swarming://chromium-swarm",
+					Hostname: "chromium-swarm.appspot.com",
+				},
+			},
 			Experiment: &pb.ExperimentSettings{
 				Experiments: []*pb.ExperimentSettings_Experiment{
 					{
@@ -674,11 +721,44 @@ func TestCreatBuild(t *testing.T) {
 					Pools:           []string{"example.pool"},
 					ServiceAccounts: []string{"example@account.com"},
 				}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 
 			b, err := srv.CreateBuild(ctx, req)
 			So(b, ShouldNotBeNil)
 			So(err, ShouldBeNil)
+			So(sch.Tasks(), ShouldHaveLength, 1)
+
+			// Check datastore.
+			bld := &model.Build{ID: b.Id}
+			So(datastore.Get(ctx, bld), ShouldBeNil)
+		})
+
+		Convey("passes with backend", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+				},
+			})
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+				Constraints: &pb.Bucket_Constraints{
+					Pools:           []string{"example.pool"},
+					ServiceAccounts: []string{"example@account.com"},
+				}})
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "swarming://chromium-swarm")
+			req.Build.Infra.Swarming = nil
+			req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Target: "swarming://chromium-swarm",
+						Id:     "1",
+					},
+				},
+			}
+
+			b, err := srv.CreateBuild(ctx, req)
+			So(err, ShouldBeNil)
+			So(b, ShouldNotBeNil)
 			So(sch.Tasks(), ShouldHaveLength, 1)
 
 			// Check datastore.
@@ -699,7 +779,7 @@ func TestCreatBuild(t *testing.T) {
 						Pools:           []string{"example.pool"},
 						ServiceAccounts: []string{"example@account.com"},
 					}})
-				testutil.PutBuilder(ctx, "project", "bucket", "builder")
+				testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 				bld, err := srv.CreateBuild(ctx, req)
 				So(bld, ShouldBeNil)
 				So(err, ShouldErrLike, `does not have permission "buildbucket.builds.create" in bucket "project/bucket"`)

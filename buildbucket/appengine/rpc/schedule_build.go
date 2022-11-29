@@ -775,17 +775,7 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 		Resultdb: &pb.BuildInfra_ResultDB{
 			Hostname: globalCfg.GetResultdb().GetHostname(),
 		},
-		Swarming: &pb.BuildInfra_Swarming{
-			Hostname:           cfg.GetSwarmingHost(),
-			ParentRunId:        req.GetSwarming().GetParentRunId(),
-			Priority:           int32(cfg.GetPriority()),
-			TaskServiceAccount: cfg.GetServiceAccount(),
-		},
 	}
-	if build.Infra.Swarming.Priority == 0 {
-		build.Infra.Swarming.Priority = 30
-	}
-
 	if cfg.GetRecipe() != nil {
 		build.Infra.Recipe = &pb.BuildInfra_Recipe{
 			CipdPackage: cfg.Recipe.CipdPackage,
@@ -793,41 +783,61 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 		}
 	}
 
-	globalCaches := globalCfg.GetSwarming().GetGlobalCaches()
-	taskCaches := make([]*pb.BuildInfra_Swarming_CacheEntry, len(cfg.GetCaches()), len(cfg.GetCaches())+len(globalCaches))
-	names := stringset.New(len(cfg.GetCaches()))
-	paths := stringset.New(len(cfg.GetCaches()))
-	for i, c := range cfg.GetCaches() {
-		taskCaches[i] = configuredCacheToTaskCache(c)
-		names.Add(taskCaches[i].Name)
-		paths.Add(taskCaches[i].Path)
-	}
-
-	// Requested caches have precedence over global caches.
-	// Apply global caches whose names and paths weren't overridden.
-	for _, c := range globalCaches {
-		if !names.Has(c.Name) && !paths.Has(c.Path) {
-			taskCaches = append(taskCaches, configuredCacheToTaskCache(c))
+	// Need to configure build.Infra for a backend or swarming.
+	if cfg.GetBackend() != nil {
+		build.Infra.Backend = &pb.BuildInfra_Backend{
+			Task: &pb.Task{
+				Id: &pb.TaskID{
+					Target: cfg.GetBackend().GetTarget(),
+				},
+			},
 		}
-	}
+	} else {
+		build.Infra.Swarming = &pb.BuildInfra_Swarming{
+			Hostname:           cfg.GetSwarmingHost(),
+			ParentRunId:        req.GetSwarming().GetParentRunId(),
+			Priority:           int32(cfg.GetPriority()),
+			TaskServiceAccount: cfg.GetServiceAccount(),
+		}
+		if build.Infra.Swarming.Priority == 0 {
+			build.Infra.Swarming.Priority = 30
+		}
+		globalCaches := globalCfg.GetSwarming().GetGlobalCaches()
+		taskCaches := make([]*pb.BuildInfra_Swarming_CacheEntry, len(cfg.GetCaches()), len(cfg.GetCaches())+len(globalCaches))
+		names := stringset.New(len(cfg.GetCaches()))
+		paths := stringset.New(len(cfg.GetCaches()))
+		for i, c := range cfg.GetCaches() {
+			taskCaches[i] = configuredCacheToTaskCache(c)
+			names.Add(taskCaches[i].Name)
+			paths.Add(taskCaches[i].Path)
+		}
 
-	if !paths.Has("builder") {
-		taskCaches = append(taskCaches, &pb.BuildInfra_Swarming_CacheEntry{
-			Name:             fmt.Sprintf("builder_%x_v2", sha256.Sum256([]byte(protoutil.FormatBuilderID(build.Builder)))),
-			Path:             "builder",
-			WaitForWarmCache: defBuilderCacheTimeout,
+		// Requested caches have precedence over global caches.
+		// Apply global caches whose names and paths weren't overridden.
+		for _, c := range globalCaches {
+			if !names.Has(c.Name) && !paths.Has(c.Path) {
+				taskCaches = append(taskCaches, configuredCacheToTaskCache(c))
+			}
+		}
+
+		if !paths.Has("builder") {
+			taskCaches = append(taskCaches, &pb.BuildInfra_Swarming_CacheEntry{
+				Name:             fmt.Sprintf("builder_%x_v2", sha256.Sum256([]byte(protoutil.FormatBuilderID(build.Builder)))),
+				Path:             "builder",
+				WaitForWarmCache: defBuilderCacheTimeout,
+			})
+		}
+
+		sort.Slice(taskCaches, func(i, j int) bool {
+			return taskCaches[i].Path < taskCaches[j].Path
 		})
-	}
+		build.Infra.Swarming.Caches = taskCaches
 
-	sort.Slice(taskCaches, func(i, j int) bool {
-		return taskCaches[i].Path < taskCaches[j].Path
-	})
-	build.Infra.Swarming.Caches = taskCaches
-
-	if req.GetPriority() > 0 {
-		build.Infra.Swarming.Priority = req.Priority
+		if req.GetPriority() > 0 {
+			build.Infra.Swarming.Priority = req.Priority
+		}
+		setDimensions(req, cfg, build)
 	}
-	setDimensions(req, cfg, build)
 }
 
 // setInput computes the input values from the given request and builder config,
