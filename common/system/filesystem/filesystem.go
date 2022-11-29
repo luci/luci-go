@@ -502,7 +502,13 @@ func findPathSeparators(path string) []int {
 //
 // Returns an error if any of the provided paths does not exist.
 // If successful, will return a path ending with PathSeparator.
+//
+// If no paths are prodvided, returns ("", nil)
 func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
+	if len(paths) == 0 {
+		return "", nil
+	}
+
 	const sep = string(os.PathSeparator)
 
 	type cleanPath struct {
@@ -515,6 +521,8 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 	}
 	cleanPaths := make([]cleanPath, len(paths))
 
+	var commonVolume *string
+
 	// Clean all the paths, make them absolute.
 	// Find all the slashes in the paths.
 	//
@@ -526,18 +534,32 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 		if err := AbsPath(&path); err != nil {
 			return "", err
 		}
+		vol := filepath.VolumeName(path)
+
+		if commonVolume != nil {
+			// note: we check this first to allow testing; otherwise we would need to
+			// run tests on a machine with multiple volumes.
+			if vol != *commonVolume {
+				return "", errors.Reason("provided paths originate on different volumes: path[0]:%q, path[%d]:%q", *commonVolume, i, vol).Err()
+			}
+		} else {
+			commonVolume = &vol
+		}
+
 		fi, err := os.Lstat(path)
 		if err != nil {
-			return "", err
+			return "", errors.Annotate(err, "reading path[%d]: %q", i, path).Err()
 		}
 		if !fi.IsDir() {
 			path = filepath.Dir(path)
 			fi, err := os.Lstat(path)
 			if err != nil {
-				return "", err
+				// given that we know that the original `path` exists, this SHOULD be
+				// impossible, but FUSE exists so... idk.
+				return "", errors.Annotate(err, "reading Dir(path[%d]): %q", i, path).Err()
 			}
 			if !fi.IsDir() {
-				// this SHOULD be impossible, but FUSE exists so... idk.
+				// this SHOULD ALSO be impossible...
 				return "", errors.Annotate(err, "path %q could not be resolved to parent dir", path).Err()
 			}
 		}
@@ -570,7 +592,9 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 	// However, ain't nobody got time for that.
 	slashesMatch := func(whichSlash int) bool {
 		for _, other := range cleanPaths[1:] {
-			for i, slashIdx := range candidate.slashes[:whichSlash] {
+			// whichSlash+1 because we want to include everything up to, and
+			// including, whichSlash.
+			for i, slashIdx := range candidate.slashes[:whichSlash+1] {
 				if other.slashes[i] != slashIdx {
 					return false
 				}
@@ -646,5 +670,13 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 			return curPath, nil
 		}
 	}
-	return "", errors.Reason("hit filesystem root").Err()
+
+	// Should never get here:
+	//   * We are on unix and so whichSlash==0 is always the path "/". Either we
+	//     found the root sentinel above, or returned "/" successfully.
+	//   * We are on !unix and so whichSlash==0 is always a Volume (e.g. "C:\\").
+	//     However we already checked when resolving `paths` at the top that all
+	//     the cleanPaths share the SAME volume. Thus we should have either found
+	//     the root sentinel or returned this same volume (i.e. `commonVolume`).
+	panic("impossible")
 }

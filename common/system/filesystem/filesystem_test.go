@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestIsNotExist(t *testing.T) {
@@ -516,62 +517,113 @@ func TestGetCommonAncestor(t *testing.T) {
 	const sep = string(filepath.Separator)
 
 	Convey(`GetCommonAncestor`, t, func() {
-		tdir := t.TempDir()
-		So(os.MkdirAll(filepath.Join(tdir, "a", "b", "c", "d"), 0o777), ShouldBeNil)
-		if fsCaseSensitive {
-			So(os.MkdirAll(filepath.Join(tdir, "a", "B", "c"), 0o777), ShouldBeNil)
-			So(os.MkdirAll(filepath.Join(tdir, "A", "b", "c", "d"), 0o777), ShouldBeNil)
-		}
-		So(os.MkdirAll(filepath.Join(tdir, "a", "1", "2", "3"), 0o777), ShouldBeNil)
-		So(os.MkdirAll(filepath.Join(tdir, "r", "o", "o", "t"), 0o777), ShouldBeNil)
+		Convey(`common ancestor logic`, func() {
+			Convey(`common`, func() {
+				tdir := t.TempDir()
+				So(os.MkdirAll(filepath.Join(tdir, "a", "b", "c", "d"), 0o777), ShouldBeNil)
+				if fsCaseSensitive {
+					So(os.MkdirAll(filepath.Join(tdir, "a", "B", "c"), 0o777), ShouldBeNil)
+					So(os.MkdirAll(filepath.Join(tdir, "A", "b", "c", "d"), 0o777), ShouldBeNil)
+				}
+				So(os.MkdirAll(filepath.Join(tdir, "a", "1", "2", "3"), 0o777), ShouldBeNil)
+				So(os.MkdirAll(filepath.Join(tdir, "r", "o", "o", "t"), 0o777), ShouldBeNil)
 
-		So(Touch(filepath.Join(tdir, "a", "B", "c", "something"), time.Now(), 0o666), ShouldBeNil)
-		So(Touch(filepath.Join(tdir, "a", "b", "else"), time.Now(), 0o666), ShouldBeNil)
+				So(Touch(filepath.Join(tdir, "a", "B", "c", "something"), time.Now(), 0o666), ShouldBeNil)
+				So(Touch(filepath.Join(tdir, "a", "b", "else"), time.Now(), 0o666), ShouldBeNil)
 
-		Convey(`regular`, func() {
-			common, err := GetCommonAncestor([]string{
-				filepath.Join(tdir, "a", "b", "c", "d"),
-				filepath.Join(tdir, "a", "B", "c", "something"),
-				filepath.Join(tdir, "A", "b", "c", "d"),
-				filepath.Join(tdir, "a", "b", "else"),
-			}, []string{".git"})
-			So(err, ShouldBeNil)
-			if fsCaseSensitive {
+				Convey(`stops at 'local' common ancestor`, func() {
+					common, err := GetCommonAncestor([]string{
+						filepath.Join(tdir, "a", "b", "c", "d"),
+						filepath.Join(tdir, "a", "B", "c", "something"),
+						filepath.Join(tdir, "A", "b", "c", "d"),
+						filepath.Join(tdir, "a", "b", "else"),
+					}, []string{".git"})
+					So(err, ShouldBeNil)
+					if fsCaseSensitive {
+						So(common, ShouldResemble, tdir+sep)
+					} else {
+						So(common, ShouldResemble, filepath.Join(tdir, "a", "b")+sep)
+					}
+				})
+
+				Convey(`walks up to fs root`, func() {
+					common, err := GetCommonAncestor([]string{
+						filepath.VolumeName(tdir) + sep,
+						filepath.Join(tdir, "a", "B", "c", "something"),
+						filepath.Join(tdir, "A", "b", "c", "d"),
+						filepath.Join(tdir, "a", "b", "else"),
+					}, []string{".git"})
+					So(err, ShouldBeNil)
+					So(common, ShouldResemble, filepath.VolumeName(tdir)+sep)
+				})
+			})
+
+			Convey(`slash comparison`, func() {
+				tdir := t.TempDir()
+				So(os.MkdirAll(filepath.Join(tdir, "longpath", "a", "c", "d"), 0o777), ShouldBeNil)
+				So(os.MkdirAll(filepath.Join(tdir, "a", "longpath", "c", "d"), 0o777), ShouldBeNil)
+
+				common, err := GetCommonAncestor([]string{
+					filepath.Join(tdir, "longpath", "a", "c", "d"),
+					filepath.Join(tdir, "a", "longpath", "c", "d"),
+				}, []string{".git"})
+				So(err, ShouldBeNil)
 				So(common, ShouldResemble, tdir+sep)
-			} else {
-				So(common, ShouldResemble, filepath.Join(tdir, "a", "b")+sep)
+			})
+
+			Convey(`non exist`, func() {
+				_, err := GetCommonAncestor([]string{
+					filepath.Join("i", "dont", "exist"),
+				}, []string{".git"})
+				So(err, ShouldErrLike, "reading path[0]")
+			})
+
+			Convey(`sentinel`, func() {
+				tdir := t.TempDir()
+				So(os.MkdirAll(filepath.Join(tdir, "repoA", ".git"), 0o777), ShouldBeNil)
+				So(os.MkdirAll(filepath.Join(tdir, "repoA", "something"), 0o777), ShouldBeNil)
+				So(os.MkdirAll(filepath.Join(tdir, "repoB", ".git"), 0o777), ShouldBeNil)
+				So(os.MkdirAll(filepath.Join(tdir, "repoB", "else"), 0o777), ShouldBeNil)
+
+				_, err := GetCommonAncestor([]string{
+					filepath.Join(tdir, "repoA", "something"),
+					filepath.Join(tdir, "repoB", "else"),
+				}, []string{".git"})
+				So(err, ShouldErrLike, "hit root sentinel")
+			})
+
+			if runtime.GOOS == "windows" {
+				Convey(`different volumes`, func() {
+					tdir := t.TempDir()
+					_, err := GetCommonAncestor([]string{
+						tdir,
+						`\\fake\network\share`,
+					}, nil)
+					So(err, ShouldErrLike, "originate on different volumes")
+				})
 			}
 		})
 
-		Convey(`root`, func() {
-			common, err := GetCommonAncestor([]string{
-				filepath.VolumeName(tdir) + sep,
-				filepath.Join(tdir, "a", "B", "c", "something"),
-				filepath.Join(tdir, "A", "b", "c", "d"),
-				filepath.Join(tdir, "a", "b", "else"),
-			}, []string{".git"})
-			So(err, ShouldBeNil)
-			So(common, ShouldResemble, filepath.VolumeName(tdir)+sep)
+		Convey(`helpers`, func() {
+			if runtime.GOOS == "windows" {
+				Convey(`windows paths`, func() {
+					So(findPathSeparators(`D:\something\`), ShouldResemble, []int{2, 12})
+					So(findPathSeparators(`D:\`), ShouldResemble, []int{2})
+					So(findPathSeparators(`\\some\host\something\`),
+						ShouldResemble, []int{11, 21})
+					So(findPathSeparators(`\\some\host\`),
+						ShouldResemble, []int{11})
+					So(findPathSeparators(`\\?\C:\Test\`),
+						ShouldResemble, []int{6, 11})
+				})
+			} else {
+				Convey(`*nix paths`, func() {
+					So(findPathSeparators(`/something/`),
+						ShouldResemble, []int{0, 10})
+					So(findPathSeparators(`/`),
+						ShouldResemble, []int{0})
+				})
+			}
 		})
-
-		if runtime.GOOS == "windows" {
-			Convey(`windows paths`, func() {
-				So(findPathSeparators(`D:\something\`), ShouldResemble, []int{2, 12})
-				So(findPathSeparators(`D:\`), ShouldResemble, []int{2})
-				So(findPathSeparators(`\\some\host\something\`),
-					ShouldResemble, []int{11, 21})
-				So(findPathSeparators(`\\some\host\`),
-					ShouldResemble, []int{11})
-				So(findPathSeparators(`\\?\C:\Test\`),
-					ShouldResemble, []int{6, 11})
-			})
-		} else {
-			Convey(`*nix paths`, func() {
-				So(findPathSeparators(`/something/`),
-					ShouldResemble, []int{0, 10})
-				So(findPathSeparators(`/`),
-					ShouldResemble, []int{0})
-			})
-		}
 	})
 }
