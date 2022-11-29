@@ -20,6 +20,10 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/config/validation"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/cvtesting"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -83,9 +87,11 @@ func TestMigrationConfigValidation(t *testing.T) {
 func TestListenerConfigValidation(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	Convey("Validate Config", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
 		vctx := &validation.Context{Context: ctx}
 		configSet := "services/luci-change-verifier"
 		path := "listener-settings.cfg"
@@ -117,7 +123,7 @@ func TestListenerConfigValidation(t *testing.T) {
 				}
 			`)
 			Convey("fully loaded", func() {
-				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
+				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 			Convey("empty", func() {
@@ -127,7 +133,7 @@ func TestListenerConfigValidation(t *testing.T) {
 		})
 
 		Convey("Fail", func() {
-			Convey("Duplicate subscription ID", func() {
+			Convey("duplicate subscription ID", func() {
 				cfg := []byte(`
 					gerrit_subscriptions {
 						host: "example.org"
@@ -139,7 +145,7 @@ func TestListenerConfigValidation(t *testing.T) {
 						message_format: JSON
 					}
 				`)
-				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
+				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, "duplicate subscription ID")
 			})
 
@@ -147,7 +153,7 @@ func TestListenerConfigValidation(t *testing.T) {
 				cfg := []byte(`
 					enabled_project_regexps: "(123"
 				`)
-				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
+				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, "missing closing")
 			})
 
@@ -155,7 +161,7 @@ func TestListenerConfigValidation(t *testing.T) {
 				cfg := []byte(`
 					disabled_project_regexps: "(123"
 				`)
-				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
+				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, "missing closing")
 			})
 
@@ -165,9 +171,63 @@ func TestListenerConfigValidation(t *testing.T) {
 						host: "example.org"
 					}
 				`)
-				So(validateListenerSettings(vctx, configSet, path, []byte(cfg)), ShouldBeNil)
+				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring,
 					"message_format): must be specified")
+			})
+		})
+
+		Convey("watched repo", func() {
+			pc := &prjcfg.ProjectConfig{
+				Project:          "chromium",
+				ConfigGroupNames: []string{"main"},
+				Hash:             "sha256:deadbeef",
+				Enabled:          true,
+			}
+			cpb := &cfgpb.ConfigGroup{
+				Name: "main",
+				Gerrit: []*cfgpb.ConfigGroup_Gerrit{
+					{
+						Url: "https://chromium-review.googlesoure.com/foo",
+						Projects: []*cfgpb.ConfigGroup_Gerrit_Project{
+							{Name: "cr/src1"},
+							{Name: "cr/src2"},
+						},
+					},
+				},
+			}
+			cg := &prjcfg.ConfigGroup{
+				Project: prjcfg.ProjectConfigKey(ctx, pc.Project),
+				ID:      prjcfg.MakeConfigGroupID(pc.Hash, "main"),
+				Content: cpb,
+			}
+			So(datastore.Put(ctx, pc, cg), ShouldBeNil)
+
+			Convey("missing gerrit_subscriptions", func() {
+				cfg := []byte(`
+					gerrit_subscriptions {
+						host: "pigweed-review.googlesource.com"
+						subscription_id: "pigweed_gerrit"
+						receive_settings: {
+							num_goroutines: 100
+							max_outstanding_messages: 5000
+						}
+						message_format: PROTO_BINARY
+					}
+				`)
+
+				Convey("fails", func() {
+					So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
+					So(vctx.Finalize(), ShouldErrLike, "there is no gerrit_subscriptions")
+				})
+
+				Convey("succeeeds if disabled in listener settings", func() {
+					cfg := append(cfg, []byte(`
+						disabled_project_regexps: "chromium"
+					`)...)
+					So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
+					So(vctx.Finalize(), ShouldBeNil)
+				})
 			})
 		})
 	})

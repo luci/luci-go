@@ -18,9 +18,13 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
@@ -69,14 +73,14 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 		ctx.Error(err)
 		return nil
 	}
-	hosts := stringset.New(0)
+	subscribedHosts := stringset.New(0)
 	for i, sub := range cfg.GetGerritSubscriptions() {
 		ctx.Enter("gerrit_subscriptions #%d", i+1)
 		id := sub.GetSubscriptionId()
 		if id == "" {
 			id = sub.GetHost()
 		}
-		if !hosts.Add(id) {
+		if !subscribedHosts.Add(id) {
 			ctx.Errorf("duplicate subscription ID %q", id)
 		}
 		if sub.GetMessageFormat() == listenerpb.Settings_GerritSubscription_MESSAGE_FORMAT_UNSPECIFIED {
@@ -88,8 +92,29 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 	}
 	validateRegexp(ctx, "enabled_project_regexps", cfg.GetEnabledProjectRegexps())
 	validateRegexp(ctx, "disabled_project_regexps", cfg.GetDisabledProjectRegexps())
-	// TODO(crbug.com/1358208): check if listener-settings.cfg has
-	// a subscription for all the Gerrit hosts, if the LUCI project is
-	// enabled in the pubsub listener.
+
+	// Skip checking subscription configs on error.
+	// The error must be due to an invalid regex in `disabled_project_regexps`.
+	if isListenerEnabled, err := srvcfg.MakeListenerProjectChecker(&cfg); err == nil {
+		watchedHostsByPrj, err := prjcfg.GetAllGerritHosts(ctx.Context)
+		if err != nil {
+			return errors.Annotate(err, "GetAllGerritHosts").Tag(transient.Tag).Err()
+		}
+		for prj, hosts := range watchedHostsByPrj {
+			// Unless it's matched with one of disabled_project_regexps,
+			// all the Gerrit hosts must have a subscription config.
+			if !isListenerEnabled(prj) {
+				continue
+			}
+
+			ctx.Enter("project config %q", prj)
+			for h := range hosts {
+				if !subscribedHosts.Has(h) {
+					ctx.Errorf("watches %q, but there is no gerrit_subscriptions for it", h)
+				}
+			}
+			ctx.Exit()
+		}
+	}
 	return nil
 }

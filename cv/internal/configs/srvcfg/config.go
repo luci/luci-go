@@ -17,7 +17,9 @@ package srvcfg
 
 import (
 	"context"
+	"regexp"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
@@ -78,6 +80,41 @@ func GetListenerConfig(ctx context.Context) (*listenerpb.Settings, error) {
 }
 
 // SetTestListenerConfig is used in tests only.
-func SetTestListenerConfig(ctx context.Context, m *listenerpb.Settings) error {
-	return cachedListenerCfg.Set(ctx, m, &config.Meta{})
+func SetTestListenerConfig(ctx context.Context, ls *listenerpb.Settings) error {
+	return cachedListenerCfg.Set(ctx, ls, &config.Meta{})
+}
+
+// MakeListenerProjectChecker returns a function that checks if a given project is
+// enabled in the listener settings.
+func MakeListenerProjectChecker(ls *listenerpb.Settings) (isEnabled func(string) bool, err error) {
+	res, err := anchorRegexps(ls.GetDisabledProjectRegexps())
+	if err != nil {
+		// Must be a bug in the validator.
+		return nil, errors.Annotate(err, "invalid disabled_project_regexps").Err()
+	}
+	return func(prj string) bool {
+		for _, re := range res {
+			if re.Match([]byte(prj)) {
+				return false
+			}
+		}
+		return true
+	}, nil
+}
+
+// anchorRegexps converts partial match regexs to full matches.
+//
+// Returns compiled regexps of them.
+func anchorRegexps(partials []string) ([]*regexp.Regexp, error) {
+	var me errors.MultiError
+	var res []*regexp.Regexp
+	for _, p := range partials {
+		re, err := regexp.Compile("^" + p + "$")
+		me.MaybeAdd(err)
+		res = append(res, re)
+	}
+	if me.AsError() == nil {
+		return res, nil
+	}
+	return nil, me
 }
