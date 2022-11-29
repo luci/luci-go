@@ -21,9 +21,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"syscall"
 	"time"
 
+	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -446,4 +448,203 @@ func IsDir(path string) (bool, error) {
 // reserved to the root user.
 func GetFreeSpace(path string) (uint64, error) {
 	return getFreeSpace(path)
+}
+
+// findPathSeparators finds the index of all PathSeparators in `path` which
+// don't split the Volume.
+//
+// This function is only defined for clean, absolute, paths which end with
+// a path separator.
+//
+// For unix paths, the first returned index will always be 0.
+func findPathSeparators(path string) []int {
+	offset := len(filepath.VolumeName(path))
+	path = path[offset:]
+
+	ret := make([]int, 0, 10) // 10 is a guess, could be more or less.
+	for {
+		idx := strings.IndexByte(path, os.PathSeparator)
+		if idx == -1 {
+			break
+		}
+		ret = append(ret, offset+idx)
+		offset += idx + 1
+		path = path[idx+1:]
+	}
+
+	return ret
+}
+
+// GetCommonAncestor returns the smallest path which is the ancestor of all
+// provided paths (which must actually exist on the filesystem).
+//
+// All paths here are converted to absolute paths before calculating the
+// ancestor, and the returned path will also be an absolute path. Note that this
+// doesn't do anything special with symlinks; the caller can resolve them if
+// necessary.
+//
+// This function works correctly on case-insensitive filesystems, or on
+// filesystems with a mix of case-sensitive and case-insensitive paths, but you
+// can get some wild filesystems out there, so this will probably break on
+// exotic setups. Note that the case of the path you get back will be derived
+// from the shortest input path (after making them absolute); this function
+// makes no attempt to "canonicalize" the case of any paths (but may do so
+// accidentally, depending on the operating system). This function does not
+// attempt to resolve symlinks.
+//
+// If a given path points to a file, the file's containing directory will be
+// considered instead (i.e. GetCommonAncestor("a/b.ext") will return the
+// absolute path of "a").
+//
+// `rootSentinels` is a list of sub paths to look for to stop walking up the
+// directory hierarchy. A typical value would be something like
+// []string{".git"}.
+//
+// Returns an error if any of the provided paths does not exist.
+// If successful, will return a path ending with PathSeparator.
+func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
+	const sep = string(os.PathSeparator)
+
+	type cleanPath struct {
+		// The cleaned, absolute path to a directory which exists.
+		path string
+		// Indexes in `path` for each os.PathSeparator which is a valid split point.
+		// Note that UNC roots on windows may 'skip' PathSeparators (i.e. slashes[0]
+		// may contain multiple PathSeparators).
+		slashes []int
+	}
+	cleanPaths := make([]cleanPath, len(paths))
+
+	// Clean all the paths, make them absolute.
+	// Find all the slashes in the paths.
+	//
+	// Note that a UNC path like '\\host\share\something' would have its first
+	// slash at index 12.
+	// A Unix path like '/host/share/something' would have its first
+	// slash at index 0.
+	for i, path := range paths {
+		if err := AbsPath(&path); err != nil {
+			return "", err
+		}
+		fi, err := os.Lstat(path)
+		if err != nil {
+			return "", err
+		}
+		if !fi.IsDir() {
+			path = filepath.Dir(path)
+			fi, err := os.Lstat(path)
+			if err != nil {
+				return "", err
+			}
+			if !fi.IsDir() {
+				// this SHOULD be impossible, but FUSE exists so... idk.
+				return "", errors.Annotate(err, "path %q could not be resolved to parent dir", path).Err()
+			}
+		}
+
+		if !strings.HasSuffix(path, sep) {
+			path = path + sep
+		}
+		cleanPaths[i] = cleanPath{
+			path:    path,
+			slashes: findPathSeparators(path),
+		}
+	}
+
+	// sort by length and then alphabetically
+	sort.Slice(cleanPaths, sortby.Chain{
+		func(i, j int) bool { return len(cleanPaths[i].path) < len(cleanPaths[j].path) },
+		func(i, j int) bool { return cleanPaths[i].path < cleanPaths[j].path },
+	}.Use)
+
+	candidate := cleanPaths[0]
+
+	// We want to see if all the slashes in all other candidates line up with the
+	// slashes in `candidate`.
+	//
+	// We are already making some lexical assumptions about the paths here; If we
+	// wanted to discard lexical assumptions we would need to do all permutations
+	// of SameFile checks for every directory combination in all paths, and pick
+	// the lowest one which matched (due to the possibility of e.g. bind mounts).
+	//
+	// However, ain't nobody got time for that.
+	slashesMatch := func(whichSlash int) bool {
+		for _, other := range cleanPaths[1:] {
+			for i, slashIdx := range candidate.slashes[:whichSlash] {
+				if other.slashes[i] != slashIdx {
+					return false
+				}
+			}
+		}
+		return true
+	}
+
+	// for each slash in the candidate, see if all cleanPaths at this slash return
+	// true from os.SameFile vs candidate.
+	//
+	// Calling this function implies that all other paths have already been
+	// verified with slashesMatch.
+	//
+	// The first check would avoid comparing "/long/f" vs "/s/long"; Although they
+	// both have a slash at 7, the prefix leading to that doesn't match. See
+	// comment on slashesMatch.
+	trySlash := func(curPath string) (bool, error) {
+		var curFi os.FileInfo
+		for _, other := range cleanPaths[1:] {
+			otherPath := other.path[:len(curPath)]
+			if otherPath == curPath {
+				// exact match, try the next one
+				continue
+			}
+
+			// ok, try SameFile
+			if curFi == nil {
+				var err error
+				if curFi, err = os.Lstat(curPath); err != nil {
+					return false, err
+				}
+			}
+			otherFi, err := os.Lstat(otherPath)
+			if err != nil {
+				return false, err
+			}
+			if !os.SameFile(curFi, otherFi) {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
+
+	for whichSlash := len(candidate.slashes) - 1; whichSlash >= 0; whichSlash-- {
+		// curPath includes trailing slash
+		curPath := candidate.path[:candidate.slashes[whichSlash]+1]
+
+		// check if it's out of bounds
+		for _, sentinel := range rootSentinels {
+			sentinelPath := filepath.Join(curPath, sentinel)
+			if _, err := os.Lstat(sentinelPath); err == nil {
+				return "", errors.Reason("hit root sentinel %q", sentinelPath).Err()
+			} else if !os.IsNotExist(err) {
+				return "", errors.Annotate(err, "root sentinel %q", sentinelPath).Err()
+			}
+		}
+
+		// Check to see if all other candidates have the same slash structure; i.e.
+		// the first `whichSlash` number of slashes line up across all paths. This
+		// avoids doing stats to see if "/a/path/" and "/path/a/" are the same file.
+		if !slashesMatch(whichSlash) {
+			continue
+		}
+
+		// all slashes match, let's see if the targeted files are the same (either
+		// lexically equivalent or are os.SameFile)
+		ok, err := trySlash(curPath)
+		if err != nil {
+			return "", err
+		}
+		if ok {
+			return curPath, nil
+		}
+	}
+	return "", errors.Reason("hit filesystem root").Err()
 }

@@ -492,3 +492,86 @@ func isGone(path string) bool {
 	}
 	return false
 }
+
+func TestGetCommonAncestor(t *testing.T) {
+	t.Parallel()
+
+	tdir := t.TempDir()
+	if err := Touch(filepath.Join(tdir, "A"), time.Now(), 0o666); err != nil {
+		t.Error(err)
+	}
+	if err := Touch(filepath.Join(tdir, "a"), time.Now(), 0o666); err != nil {
+		t.Error(err)
+	}
+	big, err := os.Stat(filepath.Join(tdir, "A"))
+	if err != nil {
+		t.Error(err)
+	}
+	small, err := os.Stat(filepath.Join(tdir, "a"))
+	if err != nil {
+		t.Error(err)
+	}
+	fsCaseSensitive := !os.SameFile(big, small)
+
+	const sep = string(filepath.Separator)
+
+	Convey(`GetCommonAncestor`, t, func() {
+		tdir := t.TempDir()
+		So(os.MkdirAll(filepath.Join(tdir, "a", "b", "c", "d"), 0o777), ShouldBeNil)
+		if fsCaseSensitive {
+			So(os.MkdirAll(filepath.Join(tdir, "a", "B", "c"), 0o777), ShouldBeNil)
+			So(os.MkdirAll(filepath.Join(tdir, "A", "b", "c", "d"), 0o777), ShouldBeNil)
+		}
+		So(os.MkdirAll(filepath.Join(tdir, "a", "1", "2", "3"), 0o777), ShouldBeNil)
+		So(os.MkdirAll(filepath.Join(tdir, "r", "o", "o", "t"), 0o777), ShouldBeNil)
+
+		So(Touch(filepath.Join(tdir, "a", "B", "c", "something"), time.Now(), 0o666), ShouldBeNil)
+		So(Touch(filepath.Join(tdir, "a", "b", "else"), time.Now(), 0o666), ShouldBeNil)
+
+		Convey(`regular`, func() {
+			common, err := GetCommonAncestor([]string{
+				filepath.Join(tdir, "a", "b", "c", "d"),
+				filepath.Join(tdir, "a", "B", "c", "something"),
+				filepath.Join(tdir, "A", "b", "c", "d"),
+				filepath.Join(tdir, "a", "b", "else"),
+			}, []string{".git"})
+			So(err, ShouldBeNil)
+			if fsCaseSensitive {
+				So(common, ShouldResemble, tdir+sep)
+			} else {
+				So(common, ShouldResemble, filepath.Join(tdir, "a", "b")+sep)
+			}
+		})
+
+		Convey(`root`, func() {
+			common, err := GetCommonAncestor([]string{
+				filepath.VolumeName(tdir) + sep,
+				filepath.Join(tdir, "a", "B", "c", "something"),
+				filepath.Join(tdir, "A", "b", "c", "d"),
+				filepath.Join(tdir, "a", "b", "else"),
+			}, []string{".git"})
+			So(err, ShouldBeNil)
+			So(common, ShouldResemble, filepath.VolumeName(tdir)+sep)
+		})
+
+		if runtime.GOOS == "windows" {
+			Convey(`windows paths`, func() {
+				So(findPathSeparators(`D:\something\`), ShouldResemble, []int{2, 12})
+				So(findPathSeparators(`D:\`), ShouldResemble, []int{2})
+				So(findPathSeparators(`\\some\host\something\`),
+					ShouldResemble, []int{11, 21})
+				So(findPathSeparators(`\\some\host\`),
+					ShouldResemble, []int{11})
+				So(findPathSeparators(`\\?\C:\Test\`),
+					ShouldResemble, []int{6, 11})
+			})
+		} else {
+			Convey(`*nix paths`, func() {
+				So(findPathSeparators(`/something/`),
+					ShouldResemble, []int{0, 10})
+				So(findPathSeparators(`/`),
+					ShouldResemble, []int{0})
+			})
+		}
+	})
+}
