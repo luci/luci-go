@@ -36,11 +36,12 @@ func _() {
 	_ = x[Idle-0]
 	_ = x[Busy-1]
 	_ = x[Offline-2]
+	_ = x[Quarantined-3]
 }
 
-const _BotStatus_name = "IdleBusyOffline"
+const _BotStatus_name = "IdleBusyOfflineQuarantined"
 
-var _BotStatus_index = [...]uint8{0, 4, 8, 15}
+var _BotStatus_index = [...]uint8{0, 4, 8, 15, 26}
 
 func (i BotStatus) String() string {
 	if i < 0 || i >= BotStatus(len(_BotStatus_index)-1) {

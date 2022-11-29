@@ -45,6 +45,15 @@
           </td>
         </tr>
         <tr>
+          <td>Quarantined</td><td>{{ .Quarantined }}</td>
+          <td class="graph">
+            {{ if gt .Quarantined 0 }}
+              <div class="bar quarantined"
+                   style="width: {{ percent .Quarantined .Total }}%"></div>
+            {{ end }}
+          </td>
+        </tr>
+        <tr>
           <td>Offline</td><td>{{ .Offline }}</td>
           <td class="graph">
             {{ if gt .Offline 0 }}

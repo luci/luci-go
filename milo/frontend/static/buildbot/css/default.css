@@ -312,6 +312,10 @@ li.sublink:nth-child(odd) {
   background-color: #fd3;
 }
 
+.quarantined {
+  background-color: #66c;
+}
+
 .offline {
   background-color: #c6c;
 }
@@ -490,6 +494,12 @@ div.BuildWaterfall {
   color: #FFFFFF;
   background-color: #c6c;
   border-color: #ACA0B3;
+}
+
+.status-Quarantined {
+  color: #FFFFFF;
+  background-color: #66c;
+  border-color: #66A0B3;
 }
 
 .start, .status-NotRun, .status.SCHEDULED {

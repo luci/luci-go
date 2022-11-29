@@ -130,11 +130,11 @@ func TestPools(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(s.Status, ShouldEqual, milostatus.Offline)
 				})
-				Convey(`Quarantined is Offline`, func() {
+				Convey(`Quarantined is Quarantined`, func() {
 					bot.Quarantined = true
 					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
-					So(s.Status, ShouldEqual, milostatus.Offline)
+					So(s.Status, ShouldEqual, milostatus.Quarantined)
 				})
 			})
 		})

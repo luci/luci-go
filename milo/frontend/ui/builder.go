@@ -72,6 +72,7 @@ func (b *Bot) Label() *Link {
 type MachinePool struct {
 	Total        int
 	Offline      int
+	Quarantined  int
 	Idle         int
 	Busy         int
 	Bots         []Bot
@@ -116,6 +117,8 @@ func NewMachinePool(c context.Context, botPool *model.BotPool) *MachinePool {
 			result.Idle++
 		case milostatus.Busy:
 			result.Busy++
+		case milostatus.Quarantined:
+			result.Quarantined++
 		case milostatus.Offline:
 			result.Offline++
 		}

@@ -127,8 +127,10 @@ func parseBot(c context.Context, swarmingHost string, botInfo *swarmingAPI.Swarm
 	switch {
 	case botInfo.TaskId != "" || botInfo.MaintenanceMsg != "":
 		result.Status = milostatus.Busy
-	case botInfo.IsDead || botInfo.Quarantined:
+	case botInfo.IsDead:
 		result.Status = milostatus.Offline
+	case botInfo.Quarantined:
+		result.Status = milostatus.Quarantined
 	default:
 		// Defaults to idle.
 	}

@@ -142,7 +142,8 @@ const (
 	// Busy means the bot is currently running a job, or recently finished
 	// a job and may not be ready to accept a new job yet.
 	Busy
-	// Offline means the bot is neither ready to accept a job nor
-	// currently running a job.  The bot could be dead or quarantined.
+	// Offline means the bot is dead.
 	Offline
+	// Quarantined means the bot is quarantined.
+	Quarantined
 )
