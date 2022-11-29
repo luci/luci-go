@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -39,9 +40,9 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const CurrentBucketSchemaVersion = 13
@@ -77,6 +78,14 @@ var (
 	cacheNameMaxLength = 4096
 
 	experimentNameRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
+
+	// cloudProjectIDRE is the cloud project identifier regex derived from
+	// https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin
+	cloudProjectIDRE = regexp.MustCompile(`^[a-z]([a-z0-9-]){4,28}[a-z0-9]$`)
+	// topicNameRE is the full topic name regex derived from https://cloud.google.com/pubsub/docs/admin#resource_names
+	topicNameRE = regexp.MustCompile(`^projects/(.*)/topics/(.*)$`)
+	// topicIDRE is the topic id regex derived from https://cloud.google.com/pubsub/docs/admin#resource_names
+	topicIDRE = regexp.MustCompile(`^[A-Za-z]([0-9A-Za-z\._\-~+%]){3,255}$`)
 )
 
 // changeLog is a temporary struct to track all changes in UpdateProjectCfg.
@@ -413,7 +422,75 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		}
 		ctx.Exit()
 	}
+	validateBuildNotifyTopics(ctx, cfg.BuildsNotificationTopics, project)
 	return nil
+}
+
+// validateBuildNotifyTopics validate `builds_notification_topics` field.
+func validateBuildNotifyTopics(ctx *validation.Context, topics []*pb.BuildbucketCfgTopic, project string) {
+	if len(topics) == 0 {
+		return
+	}
+
+	ctx.Enter("builds_notification_topics")
+	defer ctx.Exit()
+
+	errs := make(errors.MultiError, len(topics))
+	_ = parallel.WorkPool(min(6, len(topics)), func(work chan<- func() error) {
+		for i, topic := range topics {
+			i := i
+			topic := topic
+			cloudProj, topicID, err := validateTopicName(topic.Name)
+			if err != nil {
+				errs[i] = err
+				continue
+			}
+			work <- func() error {
+				client, err := clients.NewPubsubClient(ctx.Context, cloudProj, project)
+				if err != nil {
+					errs[i] = errors.Annotate(err, "failed to create a pubsub client for %q", cloudProj).Err()
+					return nil
+				}
+				cTopic := client.Topic(topicID)
+				switch perms, err := cTopic.IAM().TestPermissions(ctx.Context, []string{"pubsub.topics.publish"}); {
+				case err != nil:
+					errs[i] = errors.Annotate(err, "failed to check luci project account's permission for %s", topic.Name).Err()
+				case len(perms) < 1:
+					errs[i] = errors.Reason("luci project account (%s-scoped@luci-project-accounts.iam.gserviceaccount.com) doesn't have the publish permission for %s", project, topic.Name).Err()
+				}
+				return nil
+			}
+		}
+	})
+
+	for _, err := range errs {
+		if err != nil {
+			ctx.Errorf("builds_notification_topics: %s", err)
+		}
+	}
+}
+
+// validateTopicName validates the format of topic, extract the cloud project and topic id, and return them.
+func validateTopicName(topic string) (string, string, error) {
+	matches := topicNameRE.FindAllStringSubmatch(topic, -1)
+	if matches == nil || len(matches[0]) != 3 {
+		return "", "", errors.Reason("topic %q does not match %q", topic, topicNameRE).Err()
+	}
+
+	cloudProj := matches[0][1]
+	topicID := matches[0][2]
+	// Only internal App Engine projects start "google.com:" with go/gae4g-setup#choosing-the-right-app-engine-version,
+	// all other project ids conform to cloudProjectIDRE.
+	if !strings.HasPrefix(cloudProj, "google.com:") && !cloudProjectIDRE.MatchString(cloudProj) {
+		return "", "", errors.Reason("cloud project id %q does not match %q", cloudProj, cloudProjectIDRE).Err()
+	}
+	if strings.HasPrefix(topicID, "goog") {
+		return "", "", errors.Reason("topic id %q shouldn't begin with the string goog", topicID).Err()
+	}
+	if !topicIDRE.MatchString(topicID) {
+		return "", "", errors.Reason("topic id %q does not match %q", topicID, topicIDRE).Err()
+	}
+	return cloudProj, topicID, nil
 }
 
 // validateProjectSwarming validates project_config.Swarming.
