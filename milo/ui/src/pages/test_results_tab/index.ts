@@ -66,7 +66,7 @@ export class TestResultsTabElement extends MiloBaseElement {
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has('q')) {
-      this.invState.searchText = searchParams.get('q')!;
+      this.invState.setSearchText(searchParams.get('q')!);
     }
     if (searchParams.has('cols')) {
       const cols = searchParams.get('cols')!;
