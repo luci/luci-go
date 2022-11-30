@@ -28,6 +28,7 @@ import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/field_option.proto";
 import "go.chromium.org/luci/buildbucket/proto/step.proto";
 import "go.chromium.org/luci/buildbucket/proto/task.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 
 // A single build, identified by an int64 ID.
 // Belongs to a builder.
@@ -607,6 +608,9 @@ message BuildInfra {
     Agent agent = 10 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
 
     repeated string known_public_gerrit_hosts = 11;
+
+    // Flag for if the build should have a build number.
+    bool build_number = 12;
   }
 
   // Swarming-specific information.
@@ -743,6 +747,18 @@ message BuildInfra {
     // Name of the invocation for results of this build.
     // Typically "invocations/build:<build_id>".
     string invocation = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+    // Whether to enable ResultDB:Buildbucket integration.
+    bool enable = 3;
+
+    // Configuration for exporting test results to BigQuery.
+    // This can have multiple values to export results to multiple BigQuery
+    // tables, or to support multiple test result predicates.
+    repeated luci.resultdb.v1.BigQueryExport bq_exports = 4;
+
+    // Specifies if and how to index this build's test results for historical
+    // queries.
+    luci.resultdb.v1.HistoryOptions history_options = 5;
   }
 
   // BBAgent-specific information.

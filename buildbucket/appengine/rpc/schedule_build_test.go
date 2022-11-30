@@ -3529,7 +3529,17 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setInfra(ctx, nil, nil, b, s)
+			bqExports := []*rdbPb.BigQueryExport{}
+			historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
+			cfg := &pb.BuilderConfig{
+				Resultdb: &pb.BuilderConfig_ResultDB{
+					Enable:         true,
+					HistoryOptions: historyOptions,
+					BqExports:      bqExports,
+				},
+			}
+
+			setInfra(ctx, nil, cfg, b, s)
 			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 				Bbagent: &pb.BuildInfra_BBAgent{
 					PayloadPath: "kitchen-checkout",
@@ -3543,7 +3553,10 @@ func TestScheduleBuild(t *testing.T) {
 					Project:  "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{
-					Hostname: "host",
+					Hostname:       "host",
+					Enable:         true,
+					HistoryOptions: historyOptions,
+					BqExports:      bqExports,
 				},
 				Swarming: &pb.BuildInfra_Swarming{
 					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
@@ -5079,6 +5092,7 @@ func TestScheduleBuild(t *testing.T) {
 										"kitchen-checkout": pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 									},
 								},
+								BuildNumber: true,
 							},
 							Logdog: &pb.BuildInfra_LogDog{
 								Project: "project",

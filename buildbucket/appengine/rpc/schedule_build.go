@@ -767,13 +767,17 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 			RequestedDimensions:    req.GetDimensions(),
 			RequestedProperties:    req.GetProperties(),
 			KnownPublicGerritHosts: globalCfg.GetKnownPublicGerritHosts(),
+			BuildNumber:            cfg.GetBuildNumbers() == pb.Toggle_YES,
 		},
 		Logdog: &pb.BuildInfra_LogDog{
 			Hostname: globalCfg.GetLogdog().GetHostname(),
 			Project:  build.Builder.GetProject(),
 		},
 		Resultdb: &pb.BuildInfra_ResultDB{
-			Hostname: globalCfg.GetResultdb().GetHostname(),
+			Hostname:       globalCfg.GetResultdb().GetHostname(),
+			Enable:         cfg.GetResultdb().GetEnable(),
+			BqExports:      cfg.GetResultdb().GetBqExports(),
+			HistoryOptions: cfg.GetResultdb().GetHistoryOptions(),
 		},
 	}
 	if cfg.GetRecipe() != nil {
@@ -1283,10 +1287,7 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		reqIDs = append(reqIDs, req.RequestId)
 	}
 	bc := &buildCreator{
-		globalCfg:      globalCfg,
 		blds:           blds,
-		cfgs:           cfgs,
-		dynamicBuckets: dynamicBuckets,
 		idxMapBldToReq: idxMapBlds,
 		reqIDs:         reqIDs,
 		merr:           merr,

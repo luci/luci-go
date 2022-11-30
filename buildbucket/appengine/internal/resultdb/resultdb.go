@@ -32,7 +32,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
-	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
@@ -46,20 +45,24 @@ func SetMockRecorder(ctx context.Context, mock rdbPb.RecorderClient) context.Con
 // CreateInvocations creates resultdb invocations for each build.
 // build.Proto.Infra.Resultdb must not be nil.
 //
-// cfgs is the builder config map with the struct of Bucket ID -> Builder name -> *pb.BuilderConfig.
-//
 // Note: it will mutate the value of build.Proto.Infra.Resultdb.Invocation and build.ResultDBUpdateToken.
-func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[string]map[string]*pb.BuilderConfig, host string) errors.MultiError {
+func CreateInvocations(ctx context.Context, builds []*model.Build) errors.MultiError {
 	bbHost := info.AppID(ctx) + ".appspot.com"
 	merr := make(errors.MultiError, len(builds))
+	if len(builds) == 0 {
+		return nil
+	}
+	host := builds[0].Proto.GetInfra().GetResultdb().GetHostname()
+	if host == "" {
+		return nil
+	}
 
 	_ = parallel.WorkPool(64, func(ch chan<- func() error) {
 		for i, b := range builds {
 			i := i
 			b := b
 			proj := b.Proto.Builder.Project
-			cfg := cfgs[protoutil.FormatBucketID(proj, b.Proto.Builder.Bucket)][b.Proto.Builder.Builder]
-			if !cfg.GetResultdb().GetEnable() {
+			if !b.Proto.GetInfra().GetResultdb().GetEnable() {
 				continue
 			}
 			realm := b.Realm()
@@ -83,11 +86,11 @@ func CreateInvocations(ctx context.Context, builds []*model.Build, cfgs map[stri
 				reqForBldID := &rdbPb.CreateInvocationRequest{
 					InvocationId: invID,
 					Invocation: &rdbPb.Invocation{
-						BigqueryExports:  cfg.Resultdb.BqExports,
+						BigqueryExports:  b.Proto.GetInfra().GetResultdb().GetBqExports(),
 						ProducerResource: fmt.Sprintf("//%s/builds/%d", bbHost, b.Proto.Id),
 						Realm:            realm,
 						HistoryOptions: &rdbPb.HistoryOptions{
-							UseInvocationTimestamp: cfg.Resultdb.HistoryOptions.GetUseInvocationTimestamp(),
+							UseInvocationTimestamp: b.Proto.GetInfra().GetResultdb().GetHistoryOptions().GetUseInvocationTimestamp(),
 						},
 					},
 					RequestId: invID,

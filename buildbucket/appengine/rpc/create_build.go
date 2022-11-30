@@ -484,14 +484,8 @@ func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments string
 }
 
 type buildCreator struct {
-	globalCfg *pb.SettingsCfg
 	// Valid builds to be saved in datastore. The len(blds) <= len(reqIDs)
 	blds []*model.Build
-	// Builder configs referenced by the given requests in a map of
-	// Bucket ID -> Builder name -> *pb.BuilderConfig.
-	cfgs map[string]map[string]*pb.BuilderConfig
-	// dynamicBuckets contains dynamic buckets.
-	dynamicBuckets stringset.Set
 	// idxMapBldToReq is an index map of index of blds -> index of reqIDs.
 	idxMapBldToReq []int
 	// RequestIDs of each request.
@@ -527,10 +521,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 		bc.blds[i].Proto.Infra.Logdog.Prefix = fmt.Sprintf("buildbucket/%s/%d", appID, bc.blds[i].Proto.Id)
 		protoutil.SetStatus(now, bc.blds[i].Proto, pb.Status_SCHEDULED)
 
-		bldr := bc.blds[i].Proto.Builder
-		bucket := protoutil.FormatBucketID(bldr.Project, bldr.Bucket)
-		cfg := bc.cfgs[bucket][bldr.Builder]
-		if cfg.GetBuildNumbers() == pb.Toggle_YES {
+		if bc.blds[i].Proto.GetInfra().GetBuildbucket().GetBuildNumber() {
 			idxMapNums = append(idxMapNums, bc.idxMapBldToReq[i])
 			nums = append(nums, bc.blds[i])
 		}
@@ -544,9 +535,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 	validBlds, idxMapValidBlds := getValidBlds(bc.blds, bc.merr, bc.idxMapBldToReq)
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error { return model.UpdateBuilderStat(ctx, validBlds, now) }
-		if rdbHost := bc.globalCfg.GetResultdb().GetHostname(); rdbHost != "" {
-			work <- func() error { return resultdb.CreateInvocations(ctx, validBlds, bc.cfgs, rdbHost) }
-		}
+		work <- func() error { return resultdb.CreateInvocations(ctx, validBlds) }
 		work <- func() error { return search.UpdateTagIndex(ctx, validBlds) }
 	})
 	if err != nil {
@@ -574,9 +563,6 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 			}
 
 			reqID := bc.reqIDs[origI]
-			bldr := b.Proto.Builder
-			bucket := fmt.Sprintf("%s/%s", bldr.Project, bldr.Bucket)
-			cfg := bc.cfgs[bucket][bldr.Builder]
 			work <- func() error {
 				toPut := []interface{}{
 					b,
@@ -619,9 +605,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					if err := datastore.Put(ctx, toPut...); err != nil {
 						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
 					}
-					if !bc.dynamicBuckets.Has(bucket) && cfg == nil {
-						return nil
-					}
+
 					// If there is a backend set, lets use it and return to not use swarming.
 					if b.Proto.Infra.GetBackend() != nil {
 						if err := tasks.CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
@@ -751,20 +735,11 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 		return nil, appstatus.BadRequest(err)
 	}
 
-	// Bucket -> Builder -> *pb.BuilderConfig.
-	cfgs, dynamicBuckets, err := fetchBuilderConfigs(ctx, []*pb.BuilderID{req.Build.Builder})
-	if err != nil {
-		return nil, errors.Annotate(err, "error fetching builder config").Err()
-	}
-
 	bld := &model.Build{
 		Proto: req.Build,
 	}
 	bc := &buildCreator{
-		globalCfg:      globalCfg,
 		blds:           []*model.Build{bld},
-		cfgs:           cfgs,
-		dynamicBuckets: dynamicBuckets,
 		idxMapBldToReq: []int{0},
 		reqIDs:         []string{req.RequestId},
 		merr:           make(errors.MultiError, 1),

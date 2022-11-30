@@ -28,8 +28,6 @@ import (
 	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/proto"
-	luciconfig "go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/cfgclient"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -39,14 +37,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-type fakeCfgClient struct {
-	luciconfig.Interface
-}
-
-func (*fakeCfgClient) GetConfig(ctx context.Context, configSet luciconfig.Set, path string, metaOnly bool) (*luciconfig.Config, error) {
-	return &luciconfig.Config{Content: `resultdb {hostname: "rdbHost"}`}, nil
-}
-
 func TestCreateInvocations(t *testing.T) {
 	t.Parallel()
 
@@ -55,27 +45,10 @@ func TestCreateInvocations(t *testing.T) {
 		defer ctl.Finish()
 		mockClient := rdbPb.NewMockRecorderClient(ctl)
 		ctx := SetMockRecorder(context.Background(), mockClient)
-		ctx = cfgclient.Use(ctx, &fakeCfgClient{})
 		ctx = memory.UseInfo(ctx, "cr-buildbucket-dev")
 
 		bqExports := []*rdbPb.BigQueryExport{}
 		historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
-		cfgs := map[string]map[string]*pb.BuilderConfig{
-			"proj1/bucket": {"builder": &pb.BuilderConfig{
-				Resultdb: &pb.BuilderConfig_ResultDB{
-					Enable:         true,
-					HistoryOptions: historyOptions,
-					BqExports:      bqExports,
-				},
-			}},
-			"proj2/bucket": {"builder": &pb.BuilderConfig{
-				Resultdb: &pb.BuilderConfig_ResultDB{
-					Enable:         true,
-					HistoryOptions: historyOptions,
-					BqExports:      bqExports,
-				},
-			}},
-		}
 
 		Convey("builds without number", func() {
 			builds := []*model.Build{
@@ -88,7 +61,14 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:       "host",
+								Enable:         true,
+								HistoryOptions: historyOptions,
+								BqExports:      bqExports,
+							},
+						},
 					},
 				},
 				{
@@ -100,7 +80,13 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Enable:         true,
+								HistoryOptions: historyOptions,
+								BqExports:      bqExports,
+							},
+						},
 					},
 				},
 			}
@@ -136,7 +122,7 @@ func TestCreateInvocations(t *testing.T) {
 				return &rdbPb.Invocation{}, nil
 			})
 
-			err := CreateInvocations(ctx, builds, cfgs, "host")
+			err := CreateInvocations(ctx, builds)
 			So(err, ShouldBeNil)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build-1")
 			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-1")
@@ -156,12 +142,17 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:       "host",
+								Enable:         true,
+								HistoryOptions: historyOptions,
+								BqExports:      bqExports,
+							},
+						},
 					},
 				},
 			}
-			bqExports := []*rdbPb.BigQueryExport{}
-			historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
 
 			sha256Bldr := sha256.Sum256([]byte("proj1/bucket/builder"))
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
@@ -191,7 +182,7 @@ func TestCreateInvocations(t *testing.T) {
 					RequestId: "build-1-123",
 				})).Return(&rdbPb.Invocation{}, nil)
 
-			err := CreateInvocations(ctx, builds, cfgs, "host")
+			err := CreateInvocations(ctx, builds)
 			So(err, ShouldBeNil)
 			So(len(builds), ShouldEqual, 1)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "token for build id 1")
@@ -210,12 +201,17 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:       "host",
+								Enable:         true,
+								HistoryOptions: historyOptions,
+								BqExports:      bqExports,
+							},
+						},
 					},
 				},
 			}
-			bqExports := []*rdbPb.BigQueryExport{}
-			historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
 
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
 				&rdbPb.CreateInvocationRequest{
@@ -229,7 +225,7 @@ func TestCreateInvocations(t *testing.T) {
 					RequestId: "build-1",
 				}), gomock.Any()).Return(nil, grpcStatus.Error(codes.AlreadyExists, "already exists"))
 
-			err := CreateInvocations(ctx, builds, cfgs, "host")
+			err := CreateInvocations(ctx, builds)
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = AlreadyExists desc = already exists")
 		})
 
@@ -244,14 +240,21 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:       "host",
+								Enable:         true,
+								HistoryOptions: historyOptions,
+								BqExports:      bqExports,
+							},
+						},
 					},
 				},
 			}
 
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, grpcStatus.Error(codes.DeadlineExceeded, "timeout"))
 
-			err := CreateInvocations(ctx, builds, cfgs, "host")
+			err := CreateInvocations(ctx, builds)
 			So(err, ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = DeadlineExceeded desc = timeout")
 		})
 
@@ -266,7 +269,14 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:       "host",
+								Enable:         true,
+								HistoryOptions: historyOptions,
+								BqExports:      bqExports,
+							},
+						},
 					},
 				},
 				{
@@ -278,7 +288,14 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{
+							Resultdb: &pb.BuildInfra_ResultDB{
+								Hostname:       "host",
+								Enable:         true,
+								HistoryOptions: historyOptions,
+								BqExports:      bqExports,
+							},
+						},
 					},
 				},
 			}
@@ -310,7 +327,7 @@ func TestCreateInvocations(t *testing.T) {
 				return &rdbPb.Invocation{}, nil
 			})
 
-			err := CreateInvocations(ctx, builds, cfgs, "host")
+			err := CreateInvocations(ctx, builds)
 			So(err[0], ShouldErrLike, "failed to create the invocation for build id: 1: rpc error: code = Internal desc = error")
 			So(err[1], ShouldBeNil)
 			So(builds[0].ResultDBUpdateToken, ShouldEqual, "")
@@ -330,19 +347,15 @@ func TestCreateInvocations(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{}},
+						Infra: &pb.BuildInfra{Resultdb: &pb.BuildInfra_ResultDB{
+							Hostname: "host",
+							Enable:   false,
+						}},
 					},
 				},
 			}
-			cfgs = map[string]map[string]*pb.BuilderConfig{
-				"proj1/bucket": {"builder": &pb.BuilderConfig{
-					Resultdb: &pb.BuilderConfig_ResultDB{
-						Enable: false,
-					},
-				}},
-			}
 
-			err := CreateInvocations(ctx, builds, cfgs, "host")
+			err := CreateInvocations(ctx, builds)
 			So(err, ShouldBeNil)
 			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "")
 		})
