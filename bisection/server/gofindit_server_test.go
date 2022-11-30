@@ -125,6 +125,9 @@ func TestQueryAnalysis(t *testing.T) {
 				IsRevertCommitted: true,
 				RevertCommitTime:  (&timestamppb.Timestamp{Seconds: 200}).AsTime(),
 			},
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			Score:              100,
+			Justification:      "Justification",
 		}
 		So(datastore.Put(c, suspect), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -277,6 +280,39 @@ func TestQueryAnalysis(t *testing.T) {
 					ActionTime:  &timestamppb.Timestamp{Seconds: 200},
 				},
 			},
+			VerificationDetails: &pb.SuspectVerificationDetails{
+				Status: string(model.SuspectVerificationStatus_ConfirmedCulprit),
+				SuspectRerun: &pb.SingleRerun{
+					Bbid:      8877665544332211,
+					StartTime: &timestamppb.Timestamp{Seconds: 101},
+					EndTime:   &timestamppb.Timestamp{Seconds: 102},
+					RerunResult: &pb.RerunResult{
+						RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
+					},
+				},
+				ParentRerun: &pb.SingleRerun{
+					Bbid:      7766554433221100,
+					StartTime: &timestamppb.Timestamp{Seconds: 201},
+					EndTime:   &timestamppb.Timestamp{Seconds: 202},
+					RerunResult: &pb.RerunResult{
+						RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+					},
+				},
+			},
+		}), ShouldBeTrue)
+
+		So(len(analysis.HeuristicResult.Suspects), ShouldEqual, 1)
+		So(proto.Equal(analysis.HeuristicResult.Suspects[0], &pb.HeuristicSuspect{
+			GitilesCommit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "123xyz",
+			},
+			ReviewUrl:       "http://this/is/review/url",
+			ReviewTitle:     "This is review title",
+			Score:           100,
+			Justification:   "Justification",
+			ConfidenceLevel: pb.SuspectConfidenceLevel_HIGH,
 			VerificationDetails: &pb.SuspectVerificationDetails{
 				Status: string(model.SuspectVerificationStatus_ConfirmedCulprit),
 				SuspectRerun: &pb.SingleRerun{

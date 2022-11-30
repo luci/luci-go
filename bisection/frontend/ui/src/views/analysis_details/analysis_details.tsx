@@ -29,6 +29,8 @@ import Typography from '@mui/material/Typography';
 import { AnalysisOverview } from '../../components/analysis_overview/analysis_overview';
 import { CulpritsTable } from '../../components/culprits_table/culprits_table';
 import { HeuristicAnalysisTable } from '../../components/heuristic_analysis_table/heuristic_analysis_table';
+import { CulpritVerificationTable } from '../../components/culprit_verification_table/culprit_verification_table';
+
 // TODO: uncomment below once revert CL and prime suspect information is added to the analysis response
 // import { RevertCLOverview } from '../../components/revert_cl_overview/revert_cl_overview';
 // import { SuspectsOverview } from '../../components/suspects_overview/suspects_overview';
@@ -186,7 +188,6 @@ export const AnalysisDetailsPage = () => {
               />
               <Tab
                 className='rounded-tab'
-                disabled
                 value={AnalysisComponentTabs.CULPRIT_VERIFICATION}
                 label={AnalysisComponentTabs.CULPRIT_VERIFICATION}
               />
@@ -206,8 +207,7 @@ export const AnalysisDetailsPage = () => {
               value={currentTab}
               name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
             >
-              {/* TODO: Replace with culprit verification results */}
-              Placeholder for culprit verification details
+              <CulpritVerificationTable result={analysis!} />
             </TabPanel>
           </div>
         </>

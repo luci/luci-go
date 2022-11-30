@@ -238,6 +238,8 @@ message HeuristicSuspect {
   SuspectConfidenceLevel confidence_level = 6;
   // Title of the review for the commit
   string reviewTitle = 7;
+  // The details of suspect verification for the suspect
+  SuspectVerificationDetails verification_details = 8;
 }
 
 message NthSectionAnalysisResult {

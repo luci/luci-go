@@ -157,6 +157,7 @@ export interface HeuristicSuspect {
   score: string;
   justification: string;
   confidenceLevel: SuspectConfidenceLevel;
+  verificationDetails: SuspectVerificationDetails
 }
 
 export interface NthSectionAnalysisResult {

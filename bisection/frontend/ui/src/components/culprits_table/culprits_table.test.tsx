@@ -155,12 +155,12 @@ describe('Test CulpritsTable component', () => {
     // Check the culprit's verification build numbers are displayed
     expect(
       screen.getByText(
-        mockCulprit.verificationDetails.suspectRerun!.rerunResult.rerunStatus
+        'Failed'
       )
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        mockCulprit.verificationDetails.parentRerun!.rerunResult.rerunStatus
+        'Passed'
       )
     ).toBeInTheDocument();
   });

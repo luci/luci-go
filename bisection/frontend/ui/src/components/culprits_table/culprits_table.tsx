@@ -31,6 +31,7 @@ import {
   Culprit,
   CulpritAction,
   CulpritActionType,
+  RerunStatus,
   SuspectVerificationDetails,
 } from '../../services/luci_bisection';
 import { getCommitShortHash } from '../../tools/commit_formatters';
@@ -96,9 +97,12 @@ const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
   );
 };
 
-const VerificationDetailsTable = ({
+export const VerificationDetailsTable = ({
   details,
 }: VerificationDetailsTableProps) => {
+  if (!details.suspectRerun && !details.parentRerun) {
+    return <>No rerun found</>
+  }
   let culpritRerunBuildLink = EMPTY_LINK;
   if (details.suspectRerun) {
     culpritRerunBuildLink = linkToBuild(details.suspectRerun.bbid);
@@ -122,7 +126,7 @@ const VerificationDetailsTable = ({
                 rel='noreferrer'
                 underline='always'
               >
-                {details.suspectRerun.rerunResult.rerunStatus}
+                {displayRerunStatus(details.suspectRerun.rerunResult.rerunStatus)}
               </Link>
             )}
           </TableCell>
@@ -137,7 +141,7 @@ const VerificationDetailsTable = ({
                 rel='noreferrer'
                 underline='always'
               >
-                {details.parentRerun.rerunResult.rerunStatus}
+                {displayRerunStatus(details.parentRerun.rerunResult.rerunStatus)}
               </Link>
             )}
           </TableCell>
@@ -222,3 +226,19 @@ export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
     </TableContainer>
   );
 };
+
+function displayRerunStatus(rerunStatus: RerunStatus): string {
+  switch(rerunStatus) {
+    case 'RERUN_STATUS_PASSED':
+      return 'Passed'
+    case 'RERUN_STATUS_FAILED':
+      return 'Failed'
+    case 'RERUN_STATUS_IN_PROGRESS':
+      return 'In Progress'
+    case 'RERUN_STATUS_INFRA_FAILED':
+      return 'Infra failed'
+    case 'RERUN_STATUS_CANCELED':
+      return 'Canceled'
+  }
+  return 'Unknown'
+}

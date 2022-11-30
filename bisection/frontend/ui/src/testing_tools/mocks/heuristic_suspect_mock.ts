@@ -33,5 +33,8 @@ export const createMockHeuristicSuspect = (
       'The file "dir/a/b/x.cc" was added and it was in the failure log.\n' +
       'The file "content/util.c" was modified. It was related to the file obj/content/util.o which was in the failure log.',
     confidenceLevel: 'HIGH',
+    verificationDetails: {
+      status: "Vindicated",
+    }
   };
 };

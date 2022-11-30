@@ -165,6 +165,12 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 			ConfidenceLevel: heuristic.GetConfidenceLevel(suspect.Score),
 		}
 
+		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+		if err != nil {
+			return nil, errors.Annotate(err, "couldn't constructSuspectVerificationDetails").Err()
+		}
+		pbSuspects[i].VerificationDetails = verificationDetails
+
 		// TODO: check access permissions before including the review title.
 		//       For now, we will include it by default as LUCI Bisection access
 		//       should already be restricted to internal users only.
