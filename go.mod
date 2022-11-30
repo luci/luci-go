@@ -21,7 +21,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.0
 	github.com/alecthomas/participle/v2 v2.0.0-alpha7
 	github.com/alicebob/miniredis/v2 v2.23.0
-	github.com/bazelbuild/buildtools v0.0.0-20220510163207-df8cabe96863
+	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20220510175640-3b4b64021035
 	github.com/bazelbuild/remote-apis-sdks v0.0.0-20220518145948-4b34b65cbf91
 	github.com/danjacques/gofslock v0.0.0-20220131014315-6e321f4509c8

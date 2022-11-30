@@ -111,8 +111,15 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		l.Unlock()
 	}
 
+	rewriter, err := base.GuessRewriterConfig(files)
+	if err != nil {
+		return nil, err
+	}
+
+	// The visit method will track down all the wanted files within the directory
 	errs := buildifier.Visit(base.PathLoader, files, func(path string, body []byte, f *build.File) errors.MultiError {
-		formatted := build.Format(f)
+		formatted := build.FormatWithRewriter(rewriter, f)
+
 		if bytes.Equal(body, formatted) {
 			outcome(path, outcomeGood, nil)
 			return nil

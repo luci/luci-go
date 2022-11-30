@@ -1,0 +1,38 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+package lucicfgfmtconfig;
+
+option go_package = "go.chromium.org/luci/lucicfg/buildifier";
+
+message LucicfgFmtConfig {
+  // Argument names in the order they should appear in calls.
+  //
+  // The ordering of an argument can be specific to a function by
+  // specifying the argument name as <function-name>.<arg-name>, where
+  // <function-name> is the name used at the callsite. The name the
+  // function is defined with is not considered. This means that loading a
+  // function with an alias will change which entries apply to calls to the
+  // function. When the ordering for an argument is determined, if
+  // <function-name>.<arg-name> is present, it will use the relative
+  // ordering of that entry to determine the order of the argument in the
+  // call. If <function-name>.<arg-name> is not present and <arg-name> is
+  // present, it will use the relative ordering of that entry to determine
+  // the order of the argument in the call. If neither
+  // <function-name>.<arg-name> nor <arg-name> are present, then the
+  // argument will appear in lexicographic order after any arguments that
+  // are specified in the list.
+  repeated string argument_name_ordering = 1;
+}

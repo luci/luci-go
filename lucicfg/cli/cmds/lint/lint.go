@@ -68,7 +68,13 @@ func (lr *lintRun) run(ctx context.Context, inputs []string) (*lintResult, error
 	if err != nil {
 		return nil, err
 	}
-	findings, err := buildifier.Lint(base.PathLoader, files, lr.checks)
+
+	rewriter, err := base.GuessRewriterConfig(files)
+	if err != nil {
+		return nil, err
+	}
+
+	findings, err := buildifier.Lint(base.PathLoader, files, lr.checks, rewriter)
 	for _, f := range findings {
 		if text := f.Format(); text != "" {
 			fmt.Fprintf(os.Stderr, "%s", text)

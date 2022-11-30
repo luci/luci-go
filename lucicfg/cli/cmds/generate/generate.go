@@ -160,7 +160,7 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 			Output:        output,
 			Meta:          meta,
 			ConfigService: gr.ConfigService,
-		})
+		}, nil)
 	}
 	return result, nil
 }

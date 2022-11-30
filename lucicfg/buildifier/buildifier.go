@@ -27,7 +27,6 @@ import (
 	"sync"
 
 	"github.com/bazelbuild/buildtools/build"
-	"github.com/bazelbuild/buildtools/tables"
 	"github.com/bazelbuild/buildtools/warn"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -92,7 +91,7 @@ func (f *Finding) Format() string {
 //
 // Returns all findings and a non-nil error (usually a MultiError) if some
 // findings are blocking.
-func Lint(loader interpreter.Loader, paths []string, lintChecks []string) (findings []*Finding, err error) {
+func Lint(loader interpreter.Loader, paths []string, lintChecks []string, rewriter *build.Rewriter) (findings []*Finding, err error) {
 	checks, err := normalizeLintChecks(lintChecks)
 	if err != nil {
 		return nil, err
@@ -142,7 +141,7 @@ func Lint(loader interpreter.Loader, paths []string, lintChecks []string) (findi
 				})
 			}
 		}
-		if checkFmt && !bytes.Equal(build.Format(f), body) {
+		if checkFmt && !bytes.Equal(build.FormatWithRewriter(rewriter, f), body) {
 			merr = append(merr, &Finding{
 				Path:       path,
 				Category:   formattingCategory,
@@ -189,7 +188,6 @@ type Visitor func(path string, body []byte, f *build.File) errors.MultiError
 //
 // Collects all errors from all callbacks in a single joint multi-error.
 func Visit(loader interpreter.Loader, paths []string, v Visitor) errors.MultiError {
-	initTables()
 
 	m := sync.Mutex{}
 	perPath := make(map[string]errors.MultiError, len(paths))
@@ -219,15 +217,6 @@ func Visit(loader interpreter.Loader, paths []string, v Visitor) errors.MultiErr
 		errs = append(errs, perPath[path]...)
 	}
 	return errs
-}
-
-var tablesOnce sync.Once
-
-// initTables tweaks Buildifier to forget as much as possible about Bazel rules.
-func initTables() {
-	tablesOnce.Do(func() {
-		tables.OverrideTables(nil, nil, nil, nil, nil, nil, nil, false, false)
-	})
 }
 
 // parseFile parses a Starlark module using the buildifier parser.

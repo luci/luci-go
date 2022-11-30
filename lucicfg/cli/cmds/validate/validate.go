@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -148,7 +149,7 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 		Output:        configSet.AsOutput("."),
 		Meta:          vr.Meta,
 		ConfigService: vr.ConfigService,
-	})
+	}, nil)
 	return &validateResult{Validation: res}, err
 }
 
@@ -213,6 +214,18 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		}
 	}
 
+	var entryPath = filepath.Dir(path)
+
+	if err := base.CheckForBogusConfig(entryPath); err != nil {
+		return nil, err
+	}
+
+	// Initialize and return
+	rewriter, err := base.LoadRewriterFromConfig(filepath.Join(entryPath, base.ConfigName))
+	if err != nil {
+		return nil, err
+	}
+
 	// Apply local linters and validate outputs via LUCI Config RPC. This silently
 	// skips configs not belonging to any config sets.
 	result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
@@ -221,6 +234,6 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		Output:        output,
 		Meta:          meta,
 		ConfigService: vr.ConfigService,
-	})
+	}, rewriter)
 	return result, err
 }

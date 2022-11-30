@@ -20,6 +20,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/bazelbuild/buildtools/build"
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -60,18 +61,19 @@ type ConfigServiceFactory func(ctx context.Context, host string) (*config.Servic
 //
 // Dumps all validation errors to the stderr. In addition to detailed validation
 // results, also returns a multi-error with all blocking errors.
-func Validate(ctx context.Context, params ValidateParams) ([]*buildifier.Finding, []*lucicfg.ValidationResult, error) {
+func Validate(ctx context.Context, params ValidateParams, rewriter *build.Rewriter) ([]*buildifier.Finding, []*lucicfg.ValidationResult, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-
 	var localRes []*buildifier.Finding
 	var localErr error
+
 	go func() {
 		defer wg.Done()
 		localRes, localErr = buildifier.Lint(
 			params.Loader,
 			params.Source,
 			params.Meta.LintChecks,
+			rewriter,
 		)
 	}()
 
