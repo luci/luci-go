@@ -24,7 +24,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
 import { CulpritVerificationTableRow } from './culprit_verification_table_row/culprit_verification_table_row';
-import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 
 import {
   Analysis,
