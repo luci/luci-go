@@ -80,7 +80,7 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) f
 				}
 			}()
 			l := &listener{
-				pubsubClient: client,
+				subscription: client.Subscription(SubscriptionID),
 				tjNotifier:   tjNotifier,
 			}
 			defer l.reportStats(ctx)
@@ -115,8 +115,25 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) f
 	}
 }
 
+// StartListenerForTest starts a buildbucket listener for testing purpose.
+//
+// Returns a callback function to stop the listener.
+func StartListenerForTest(ctx context.Context, sub *pubsub.Subscription, tjNotifier tryjobNotifier) func() {
+	cctx, cancel := context.WithCancel(ctx)
+	go func() {
+		l := &listener{
+			subscription: sub,
+			tjNotifier:   tjNotifier,
+		}
+		if err := l.start(cctx); err != nil {
+			logging.Errorf(ctx, "encounter error in buildbucket listener: %s", err)
+		}
+	}()
+	return cancel
+}
+
 type listener struct {
-	pubsubClient *pubsub.Client
+	subscription *pubsub.Subscription
 	tjNotifier   tryjobNotifier
 
 	stats       listenerStats
@@ -128,8 +145,7 @@ type listenerStats struct {
 }
 
 func (l *listener) start(ctx context.Context) error {
-	subscription := l.pubsubClient.Subscription(SubscriptionID)
-	return subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+	return l.subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		switch err := l.processMsg(ctx, msg); {
 		case err == nil:
 			msg.Ack()

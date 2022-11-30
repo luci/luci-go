@@ -85,14 +85,14 @@ func TestListener(t *testing.T) {
 		defer client.Close()
 		topic, err := client.CreateTopic(ctx, "build-update")
 		So(err, ShouldBeNil)
-		_, err = client.CreateSubscription(ctx, SubscriptionID, pubsub.SubscriptionConfig{
+		sub, err := client.CreateSubscription(ctx, SubscriptionID, pubsub.SubscriptionConfig{
 			Topic: topic,
 		})
 		So(err, ShouldBeNil)
 
 		tjNotifier := &testTryjobNotifier{}
 		l := &listener{
-			pubsubClient: client,
+			subscription: sub,
 			tjNotifier:   tjNotifier,
 			processedCh:  make(chan string, 10),
 		}

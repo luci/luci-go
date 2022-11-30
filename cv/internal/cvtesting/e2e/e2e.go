@@ -25,6 +25,11 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/pstest"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -37,6 +42,7 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/dsmapper"
@@ -45,6 +51,8 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	migrationpb "go.chromium.org/luci/cv/api/migration"
+	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
+	bblistener "go.chromium.org/luci/cv/internal/buildbucket/listener"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
@@ -61,9 +69,10 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
 	runimpl "go.chromium.org/luci/cv/internal/run/impl"
-	"go.chromium.org/luci/cv/internal/run/pubsub"
+	cvpubsub "go.chromium.org/luci/cv/internal/run/pubsub"
 	"go.chromium.org/luci/cv/internal/tryjob"
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
+	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
 )
 
 const (
@@ -71,9 +80,11 @@ const (
 	tqConcurrentFlagName = "cv.tqparallel"
 	extraVerboseFlagName = "cv.verbose"
 	fastClockFlagName    = "cv.fastclock"
-	committers           = "committer-group"
-	dryRunners           = "dry-runner-group"
-	newPatchsetRunners   = "new-patchset-runner-group"
+	// TODO(crbug/1344711): Change to a dev host or an example host.
+	buildbucketHost    = chromeinfra.BuildbucketHost
+	committers         = "committer-group"
+	dryRunners         = "dry-runner-group"
+	newPatchsetRunners = "new-patchset-runner-group"
 )
 
 var (
@@ -98,11 +109,12 @@ func init() {
 // components.
 //
 // Typical use:
-//   ct := Test{CVDev: true}
-//   ctx, cancel := ct.SetUp()
-//   defer cancel()
-//   ...
-//   ct.RunUntil(ctx, func() bool { return len(ct.LoadRunsOf("project")) > 0 })
+//
+//	ct := Test{CVDev: true}
+//	ctx, cancel := ct.SetUp()
+//	defer cancel()
+//	...
+//	ct.RunUntil(ctx, func() bool { return len(ct.LoadRunsOf("project")) > 0 })
 type Test struct {
 	*cvtesting.Test // auto-initialized if nil
 
@@ -113,9 +125,9 @@ type Test struct {
 	MigrationServer migrationpb.MigrationServer
 
 	// dsFlakiness enables ds flakiness for "RunUntil".
-	dsFlakiness    float64
-	dsFlakinesRand rand.Source
-	tqSweepChannel dispatcher.Channel
+	dsFlakiness     float64
+	dsFlakinessRand rand.Source
+	tqSweepChannel  dispatcher.Channel
 
 	cqdsMu sync.Mutex
 	// cqds are fake CQDaemons indexed by LUCI project name.
@@ -125,7 +137,7 @@ type Test struct {
 // SetUp sets up the end to end test.
 //
 // Must be called exactly once.
-func (t *Test) SetUp() (ctx context.Context, deferme func()) {
+func (t *Test) SetUp() (context.Context, func()) {
 	if t.Test == nil {
 		t.Test = &cvtesting.Test{}
 	}
@@ -143,7 +155,7 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 
 	// Delegate most setup to cvtesting.Test.
 	ctx, ctxCancel := t.Test.SetUp()
-	deferme = ctxCancel
+	cleanupFns := []func(){ctxCancel}
 
 	if (*dsFlakinessFlag) != 0 {
 		t.dsFlakiness = *dsFlakinessFlag
@@ -151,12 +163,8 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 			panic(fmt.Errorf("invalid %s %f: must be between 0.0 and 1.0", dsFlakinessFlagName, t.dsFlakiness))
 		}
 		logging.Warningf(ctx, "Using %.4f flaky Datastore", t.dsFlakiness)
-		t.dsFlakinesRand = rand.NewSource(0)
-		stopSweeping := t.startTQSweeping(ctx)
-		deferme = func() {
-			stopSweeping()
-			ctxCancel()
-		}
+		t.dsFlakinessRand = rand.NewSource(0)
+		cleanupFns = append(cleanupFns, t.startTQSweeping(ctx))
 	}
 
 	gFactory := t.GFactory()
@@ -166,16 +174,31 @@ func (t *Test) SetUp() (ctx context.Context, deferme func()) {
 	clMutator := changelist.NewMutator(t.TQDispatcher, t.PMNotifier, t.RunNotifier, tjNotifier)
 	clUpdater := changelist.NewUpdater(t.TQDispatcher, clMutator)
 	bbFactory := t.BuildbucketFake.NewClientFactory()
+	topic, sub, cleanupFn := t.makeBuildbucketPubsub(ctx)
+	cleanupFns = append(cleanupFns, cleanupFn)
+	t.BuildbucketFake.RegisterPubsubTopic(buildbucketHost, topic)
+	cleanupFn = bblistener.StartListenerForTest(ctx, sub, tjNotifier)
+	cleanupFns = append(cleanupFns, cleanupFn)
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
 	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, t.Env)
-	_ = tjcancel.NewCancellator(tjNotifier)
+	bbFacade := &bbfacade.Facade{
+		ClientFactory: bbFactory,
+	}
+	tryjobUpdater := tjupdate.NewUpdater(t.Env, tjNotifier, t.RunNotifier)
+	tryjobUpdater.RegisterBackend(bbFacade)
+	tryjobCancellator := tjcancel.NewCancellator(tjNotifier)
+	tryjobCancellator.RegisterBackend(bbFacade)
 	t.MigrationServer = &migration.MigrationServer{
 		RunNotifier: t.RunNotifier,
 		GFactory:    gFactory,
 	}
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
-	return ctx, deferme
+	return ctx, func() {
+		for i := len(cleanupFns) - 1; i >= 0; i-- {
+			cleanupFns[i]()
+		}
+	}
 }
 
 // RunUntil runs TQ tasks, while stopIf returns false.
@@ -540,7 +563,7 @@ func (t *Test) flakifyDS(ctx context.Context) context.Context {
 	ctx, fb := featureBreaker.FilterRDS(ctx, nil)
 	fb.BreakFeaturesWithCallback(
 		flaky.Errors(flaky.Params{
-			Rand:                t.dsFlakinesRand,
+			Rand:                t.dsFlakinessRand,
 			DeadlineProbability: t.dsFlakiness,
 		}),
 		"DecodeCursor",
@@ -568,7 +591,7 @@ func (t *Test) flakifyDS(ctx context.Context) context.Context {
 	// than a non-transactional Get.
 	fb.BreakFeaturesWithCallback(
 		flaky.Errors(flaky.Params{
-			Rand:                             t.dsFlakinesRand,
+			Rand:                             t.dsFlakinessRand,
 			DeadlineProbability:              math.Min(t.dsFlakiness*5, 1.0),
 			ConcurrentTransactionProbability: 0,
 		}),
@@ -624,7 +647,31 @@ func (t *Test) enqueueTQSweep(ctx context.Context) {
 // events.
 func (t *Test) RunEndedPubSubTasks() tqtesting.TaskList {
 	return t.SucceededTQTasks.Filter(func(t *tqtesting.Task) bool {
-		_, ok := t.Payload.(*pubsub.PublishRunEndedTask)
+		_, ok := t.Payload.(*cvpubsub.PublishRunEndedTask)
 		return ok
 	})
+}
+
+func (t *Test) makeBuildbucketPubsub(ctx context.Context) (*pubsub.Topic, *pubsub.Subscription, func()) {
+	srv := pstest.NewServer()
+	client, err := pubsub.NewClient(ctx, t.Env.GAEInfo.CloudProject,
+		option.WithEndpoint(srv.Addr),
+		option.WithoutAuthentication(),
+		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+	)
+	if err != nil {
+		panic(err)
+	}
+	topic, err := client.CreateTopic(ctx, "bb-build")
+	if err != nil {
+		panic(err)
+	}
+	sub, err := client.CreateSubscription(ctx, bblistener.SubscriptionID, pubsub.SubscriptionConfig{Topic: topic})
+	if err != nil {
+		panic(err)
+	}
+	return topic, sub, func() {
+		_ = client.Close()
+		_ = srv.Close()
+	}
 }
