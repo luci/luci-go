@@ -19,16 +19,16 @@ import (
 	"strings"
 )
 
-const canonicalIncludeDirectiveFormat = "project/bucket:builder1,builder2;project2/bucket:builder3"
+const canonicalDirectiveFormat = "project/bucket:builder1,builder2;project2/bucket:builder3"
 
-// invalidCQIncludedTryjobs is a computation failure where the value of the
-// Cq-Include-Trybots footer is malformed.
-type invalidCQIncludedTryjobs struct {
+// invalidTryjobDirectives is a computation failure where the value of the
+// Tryjob directives provided in the footer is malformed.
+type invalidTryjobDirectives struct {
 	value string
 }
 
-func (icqit *invalidCQIncludedTryjobs) Reason() string {
-	return fmt.Sprintf("The included tryjob spec %q is invalid. Canonical format is %s", icqit.value, canonicalIncludeDirectiveFormat)
+func (itd *invalidTryjobDirectives) Reason() string {
+	return fmt.Sprintf("The tryjob directive %q is invalid. Canonical format is %s", itd.value, canonicalDirectiveFormat)
 }
 
 // unauthorizedIncludedTryjob is a computation failure where a user is not allowed to

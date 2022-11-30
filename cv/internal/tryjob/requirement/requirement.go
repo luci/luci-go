@@ -156,19 +156,20 @@ var (
 	// Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#482
 	bucketRE = `[a-z0-9\-_.]+`
 	// Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#220
-	builderRE          = `[a-zA-Z0-9\-_.\(\) ]+`
-	modernProjBucketRe = fmt.Sprintf(`%s/%s`, projectRE, bucketRE)
-	legacyProjBucketRe = fmt.Sprintf(`luci\.%s\.%s`, projectRE, bucketRE)
-	buildersRE         = fmt.Sprintf(`((%s)|(%s))\s*:\s*%s(\s*,\s*%s)*`, modernProjBucketRe, legacyProjBucketRe, builderRE, builderRE)
-	includeLineRegexp  = regexp.MustCompile(fmt.Sprintf(`^\s*%s(\s*;\s*%s)*\s*$`, buildersRE, buildersRE))
+	builderRE                 = `[a-zA-Z0-9\-_.\(\) ]+`
+	modernProjBucketRe        = fmt.Sprintf(`%s/%s`, projectRE, bucketRE)
+	legacyProjBucketRe        = fmt.Sprintf(`luci\.%s\.%s`, projectRE, bucketRE)
+	buildersRE                = fmt.Sprintf(`((%s)|(%s))\s*:\s*%s(\s*,\s*%s)*`, modernProjBucketRe, legacyProjBucketRe, builderRE, builderRE)
+	tryjobDirectiveLineRegexp = regexp.MustCompile(fmt.Sprintf(`^\s*%s(\s*;\s*%s)*\s*$`, buildersRE, buildersRE))
 )
 
-// TODO(robertocn): Consider moving the parsing of the Cq-Include-Trybots
-// directives to the place where the footer values are extracted, and refactor
-// RunOptions.IncludeTrybots accordingly (e.g. to be a list of builder ids).
+// TODO(robertocn): Consider moving the parsing of the Tryjob directives
+// like `Cq-Include-Trybots` to the place where the footer values are
+// extracted, and refactor the corresponding field in RunOptions accordingly
+// (e.g. to be a list of builder ids).
 func parseBuilderStrings(line string) ([]string, ComputationFailure) {
-	if !includeLineRegexp.MatchString(line) {
-		return nil, &invalidCQIncludedTryjobs{line}
+	if !tryjobDirectiveLineRegexp.MatchString(line) {
+		return nil, &invalidTryjobDirectives{line}
 	}
 	var ret []string
 	for _, bucketSegment := range strings.Split(strings.TrimSpace(line), ";") {
@@ -194,9 +195,12 @@ func parseBuilderStrings(line string) ([]string, ComputationFailure) {
 	return ret, nil
 }
 
-// getIncludedTryjobs checks the given CLs for footers and tags that request
-// specific builders to be included in the tryjobs to require.
-func getIncludedTryjobs(directives []string) (stringset.Set, ComputationFailure) {
+// parseTryjobDirectives parses a list of builders from the Tryjob directives
+// lines provided via git footers like `Cq-Include-Trybots` and
+// `Override-Tryjobs-For-Automation`.
+//
+// Return a list of builders.
+func parseTryjobDirectives(directives []string) (stringset.Set, ComputationFailure) {
 	ret := make(stringset.Set)
 	for _, d := range directives {
 		builderStrings, compFail := parseBuilderStrings(d)
@@ -566,7 +570,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 		// Ignore tryjobs included by the cq-include-trybots: footer , these are
 		// intended for CQ-vote runs.
 		var compFail ComputationFailure
-		explicitlyIncluded, compFail = getIncludedTryjobs(in.RunOptions.GetIncludedTryjobs())
+		explicitlyIncluded, compFail = parseTryjobDirectives(in.RunOptions.GetIncludedTryjobs())
 		if compFail != nil {
 			return &ComputationResult{ComputationFailure: compFail}, nil
 		}
