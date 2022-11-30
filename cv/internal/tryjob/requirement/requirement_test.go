@@ -969,6 +969,99 @@ func TestCompute(t *testing.T) {
 				}},
 			})
 		})
+
+		Convey("override has undefined builder", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:unlisted")
+
+			res, err := Compute(ctx, *in)
+			So(err, ShouldBeNil)
+			So(res.OK(), ShouldBeFalse)
+			So(res, ShouldResemble, &ComputationResult{
+				ComputationFailure: &buildersNotDefined{
+					Builders: []string{"test-proj/test/unlisted"},
+				},
+			})
+		})
+
+		Convey("override honors SkipTryjobs option", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
+			in.RunOptions.SkipTryjobs = true
+
+			res, err := Compute(ctx, *in)
+			So(err, ShouldBeNil)
+			So(res.OK(), ShouldBeTrue)
+			So(res.Requirement.GetDefinitions(), ShouldBeEmpty)
+		})
+
+		Convey("override has unauthorized Tryjob", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
+				Name:      "test-proj/test/builder1",
+				Allowlist: "secret-group",
+			}.generate()})
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
+
+			res, err := Compute(ctx, *in)
+			So(err, ShouldBeNil)
+			So(res.OK(), ShouldBeFalse)
+			So(res, ShouldResemble, &ComputationResult{
+				ComputationFailure: &unauthorizedIncludedTryjob{
+					Users:   []string{userA.Email()},
+					Builder: "test-proj/test/builder1",
+				},
+			})
+		})
+
+		Convey("override works", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name: "test-proj/test/builder1",
+				}.generate(),
+				builderConfigGenerator{
+					Name: "test-proj/test/builder2",
+				}.generate(),
+			})
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
+
+			res, err := Compute(ctx, *in)
+			So(err, ShouldBeNil)
+			So(res.OK(), ShouldBeTrue)
+			So(res.Requirement.Definitions, ShouldResembleProto, []*tryjob.Definition{
+				{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder1",
+							},
+						},
+					},
+					Critical: true,
+				},
+			})
+		})
+
+		Convey("override works for equivalent builder", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
+				builderConfigGenerator{
+					Name:     "test-proj/test/builder1",
+					EquiName: "test-proj/test/builder2",
+				}.generate(),
+				builderConfigGenerator{
+					Name: "test-proj/test/builder3",
+				}.generate(),
+			})
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder2")
+
+			res, err := Compute(ctx, *in)
+			So(err, ShouldBeNil)
+			So(res.OK(), ShouldBeTrue)
+			So(res.Requirement.Definitions, ShouldHaveLength, 1)
+			So(res.Requirement.Definitions[0].GetBuildbucket().GetBuilder().GetBuilder(), ShouldEqual, "builder2")
+		})
 	})
 }
 

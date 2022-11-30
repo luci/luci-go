@@ -41,6 +41,17 @@ type Input struct {
 	RunMode     run.Mode
 }
 
+func (i Input) allCLOwnersSorted() []string {
+	ownersSet := stringset.New(len(i.CLs))
+	for _, cl := range i.CLs {
+		curr := cl.Detail.GetGerrit().GetInfo().GetOwner().GetEmail()
+		if curr != "" {
+			ownersSet.Add(curr)
+		}
+	}
+	return ownersSet.ToSortedSlice()
+}
+
 // ComputationFailure is what fails the Tryjob Requirement computation.
 type ComputationFailure interface {
 	// Reason returns a human-readable string that explains what fails the
@@ -92,53 +103,37 @@ func (r ComputationResult) OK() bool {
 func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	hasIncluded := len(in.RunOptions.GetIncludedTryjobs()) > 0
 	hasOverridden := len(in.RunOptions.GetOverriddenTryjobs()) > 0
-	if hasIncluded && hasOverridden {
-		// Only one of the three Tryjob related option can be specified.
+	var explicitlyIncluded stringset.Set
+	switch {
+	case hasIncluded && hasOverridden:
+		// Only one of the two Tryjob related options can be specified.
 		return &ComputationResult{
 			ComputationFailure: &incompatibleTryjobOptions{
 				hasIncludedTryjobs:   hasIncluded,
 				hasOverriddenTryjobs: hasOverridden,
 			},
 		}, nil
-	}
-
-	ret := &ComputationResult{Requirement: &tryjob.Requirement{
-		RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
-	}}
-	explicitlyIncluded := stringset.New(0)
-	if in.RunMode != run.NewPatchsetRun {
-		// Ignore tryjobs included by the cq-include-trybots: footer , these are
-		// intended for CQ-vote runs.
+	case hasOverridden:
+		return handleOverriddenTryjobs(ctx, in)
+	case hasIncluded && in.RunMode != run.NewPatchsetRun:
+		// Ignore tryjobs included by the cq-include-trybots: footer for new
+		// patchset run, these are intended for CQ-vote runs.
 		var compFail ComputationFailure
-		explicitlyIncluded, compFail = parseTryjobDirectives(in.RunOptions.GetIncludedTryjobs())
+		explicitlyIncluded, compFail = calculateExplicitlyIncluded(in)
 		if compFail != nil {
-			return &ComputationResult{ComputationFailure: compFail}, nil
-		}
-		includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
-		unincludable := explicitlyIncluded.Difference(includableBuilders)
-		undefined := unincludable.Difference(triggeredByBuilders)
-		switch {
-		case len(undefined) != 0:
-			return &ComputationResult{ComputationFailure: &buildersNotDefined{Builders: undefined.ToSlice()}}, nil
-		case len(unincludable) != 0:
-			return &ComputationResult{ComputationFailure: &buildersNotDirectlyIncludable{Builders: unincludable.ToSlice()}}, nil
+			return &ComputationResult{
+				ComputationFailure: compFail,
+			}, nil
 		}
 	}
 
-	ownersSet := stringset.New(len(in.CLs))
-	for _, cl := range in.CLs {
-		curr := cl.Detail.GetGerrit().GetInfo().GetOwner().GetEmail()
-		if curr != "" {
-			ownersSet.Add(curr)
-		}
-	}
-	allOwnerEmails := ownersSet.ToSortedSlice()
 	// Make 2 independent generators so that e.g. the addition of experimental
 	// tryjobs during a Run's lifetime does not cause it to change its use of
 	// equivalent builders upon recomputation.
 	rands := makeRands(in, 2)
 	experimentRand, equivalentBuilderRand := rands[0], rands[1]
 	builders := in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders()
+	allOwners := in.allCLOwnersSorted()
 	definitions := make([]*tryjob.Definition, len(builders))
 	var computationFailureHolder atomic.Value
 	// Utilize multiple cores.
@@ -163,7 +158,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 				} else {
 					dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
 				}
-				switch r, compFail, err := shouldInclude(ctx, in, dm, experimentSelected, useEquivalent, builder, explicitlyIncluded, allOwnerEmails); {
+				switch r, compFail, err := shouldInclude(ctx, in, dm, experimentSelected, useEquivalent, builder, explicitlyIncluded, allOwners); {
 				case err != nil:
 					return err
 				case compFail != nil:
@@ -184,10 +179,78 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 			ComputationFailure: failure.(ComputationFailure),
 		}, nil
 	default:
+		ret := &ComputationResult{Requirement: &tryjob.Requirement{
+			RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
+		}}
 		for _, def := range definitions {
 			if def != nil {
 				ret.Requirement.Definitions = append(ret.Requirement.Definitions, def)
 			}
+		}
+		return ret, nil
+	}
+}
+
+func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult, error) {
+	override, compFail := parseTryjobDirectives(in.RunOptions.GetOverriddenTryjobs())
+	if compFail != nil {
+		return &ComputationResult{ComputationFailure: compFail}, nil
+	}
+	allBuilders := getAllBuilders(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
+	if notDefined := override.Difference(allBuilders); len(notDefined) > 0 {
+		return &ComputationResult{
+			ComputationFailure: &buildersNotDefined{Builders: notDefined.ToSlice()},
+		}, nil
+	}
+
+	allOwners := in.allCLOwnersSorted()
+	ret := &ComputationResult{
+		Requirement: &tryjob.Requirement{
+			RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
+		},
+	}
+	for _, b := range in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders() {
+		switch ps := isPresubmit(b); {
+		case !override.Has(b.GetName()) && !override.Has(b.GetEquivalentTo().GetName()):
+			continue
+		case in.RunOptions.GetSkipTryjobs() && !ps:
+			continue
+		// TODO(crbug.com/950074): Remove this clause.
+		case in.RunOptions.GetSkipPresubmit() && ps:
+			continue
+		}
+
+		builderName := b.Name
+		equivalence := mainOnly
+		allowlist := b.GetOwnerWhitelistGroup()
+		if equi := b.GetEquivalentTo(); override.Has(equi.GetName()) {
+			builderName = equi.GetName()
+			equivalence = equivalentOnly
+			if equi.GetOwnerWhitelistGroup() != "" {
+				allowlist = []string{equi.GetOwnerWhitelistGroup()}
+			}
+		}
+		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, allowlist...); {
+		case err != nil:
+			return nil, err
+		case len(disallowedOwners) != 0:
+			return &ComputationResult{
+				ComputationFailure: &unauthorizedIncludedTryjob{
+					Users:   disallowedOwners,
+					Builder: builderName,
+				},
+			}, nil
+		default:
+			dm := &definitionMaker{
+				builder:        b,
+				criticality:    true,
+				equivalence:    equivalence,
+				skipStaleCheck: b.GetCancelStale() == cfgpb.Toggle_NO,
+			}
+			if in.RunOptions.GetAvoidCancellingTryjobs() {
+				dm.skipStaleCheck = true
+			}
+			ret.Requirement.Definitions = append(ret.Requirement.Definitions, dm.make())
 		}
 	}
 	return ret, nil
@@ -318,6 +381,23 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 	default:
 		return skipBuilder, nil, nil
 	}
+}
+
+func calculateExplicitlyIncluded(in Input) (stringset.Set, ComputationFailure) {
+	explicitlyIncluded, compFail := parseTryjobDirectives(in.RunOptions.GetIncludedTryjobs())
+	if compFail != nil {
+		return nil, compFail
+	}
+	includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
+	unincludable := explicitlyIncluded.Difference(includableBuilders)
+	undefined := unincludable.Difference(triggeredByBuilders)
+	switch {
+	case len(undefined) != 0:
+		return nil, &buildersNotDefined{Builders: undefined.ToSlice()}
+	case len(unincludable) != 0:
+		return nil, &buildersNotDirectlyIncludable{Builders: unincludable.ToSlice()}
+	}
+	return explicitlyIncluded, nil
 }
 
 // getDisallowedOwners checks which of the owner emails given belong
@@ -459,6 +539,17 @@ func isPresubmit(builder *cfgpb.Verifiers_Tryjob_Builder) bool {
 	// TODO(crbug.com/1292195): Implement a different way of deciding that a
 	// builder is presubmit.
 	return builder.DisableReuse
+}
+
+func getAllBuilders(builders []*cfgpb.Verifiers_Tryjob_Builder) stringset.Set {
+	ret := stringset.New(len(builders))
+	for _, b := range builders {
+		ret.Add(b.Name)
+		if b.EquivalentTo != nil {
+			ret.Add(b.EquivalentTo.Name)
+		}
+	}
+	return ret
 }
 
 // getIncludablesAndTriggeredBy computes the set of builders that it is valid to
