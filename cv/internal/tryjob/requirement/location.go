@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -164,4 +165,65 @@ func isMergeCommit(ctx context.Context, g *changelist.Gerrit) bool {
 		return false
 	}
 	return len(rev.GetCommit().GetParents()) > 1 && len(g.GetFiles()) == 0
+}
+
+// locationMatch returns true if the builder should be included given the
+// location regexp fields and CLs.
+//
+// The builder is included if at least one file from at least one CL matches
+// a locationRegexp pattern and does not match any locationRegexpExclude
+// patterns.
+//
+// Note that an empty locationRegexp is treated equivalently to a `.*` value.
+//
+// Panics if any regex is invalid.
+func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []string, cls []*run.RunCL) (bool, error) {
+	if len(locationRegexp) == 0 {
+		locationRegexp = append(locationRegexp, ".*")
+	}
+	changedLocations := make(stringset.Set)
+	for _, cl := range cls {
+		if isMergeCommit(ctx, cl.Detail.GetGerrit()) {
+			// Merge commits have zero changed files. We don't want to land such
+			// changes without triggering any builders, so we ignore location filters
+			// if there are any CLs that are merge commits. See crbug/1006534.
+			return true, nil
+		}
+		host, project := cl.Detail.GetGerrit().GetHost(), cl.Detail.GetGerrit().GetInfo().GetProject()
+		for _, f := range cl.Detail.GetGerrit().GetFiles() {
+			changedLocations.Add(fmt.Sprintf("https://%s/%s/+/%s", host, project, f))
+		}
+	}
+	// First remove from the list the files that match locationRegexpExclude, and
+	for _, lre := range locationRegexpExclude {
+		re := regexp.MustCompile(fmt.Sprintf("^%s$", lre))
+		changedLocations.Iter(func(loc string) bool {
+			if re.MatchString(loc) {
+				changedLocations.Del(loc)
+			}
+			return true
+		})
+	}
+	if changedLocations.Len() == 0 {
+		// Any locations touched by the change have been excluded by the
+		// builder's config.
+		return false, nil
+	}
+	// Matching the remainder against locationRegexp, returning true if there's
+	// a match.
+	for _, lri := range locationRegexp {
+		re := regexp.MustCompile(fmt.Sprintf("^%s$", lri))
+		found := false
+		changedLocations.Iter(func(loc string) bool {
+			if re.MatchString(loc) {
+				found = true
+				return false
+			}
+			return true
+		})
+		if found {
+			return true, nil
+		}
+	}
+	return false, nil
 }

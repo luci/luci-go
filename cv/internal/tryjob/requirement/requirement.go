@@ -16,14 +16,8 @@ package requirement
 
 import (
 	"context"
-	"crypto"
-	"encoding/binary"
 	"fmt"
-	"math/rand"
-	"regexp"
 	"runtime"
-	"sort"
-	"strings"
 	"sync/atomic"
 
 	"go.chromium.org/luci/auth/identity"
@@ -94,310 +88,109 @@ func (r ComputationResult) OK() bool {
 	}
 }
 
-// getDisallowedOwners checks which of the owner emails given belong
-// to none of the given allowLists.
-//
-// NOTE: If no allowLists are given, the return value defaults to nil. This may
-// be unexpected, and has security implications. This behavior is valid in
-// regards to checking whether the owners are allowed to use a certain builder,
-// if no allowList groups are defined, then the expectation is that the action
-// is allowed by default.
-func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowLists ...string) ([]string, error) {
-	switch {
-	case len(allOwnerEmails) == 0:
-		panic(fmt.Errorf("cannot check membership of nil user"))
-	case len(allowLists) == 0:
-		return nil, nil
-	}
-	var disallowed []string
-	for _, userEmail := range allOwnerEmails {
-		id, err := identity.MakeIdentity(fmt.Sprintf("user:%s", userEmail))
-		if err != nil {
-			return nil, err
-		}
-		switch allowed, err := auth.GetState(ctx).DB().IsMember(ctx, id, allowLists); {
-		case err != nil:
-			return nil, err
-		case !allowed:
-			disallowed = append(disallowed, userEmail)
-		}
-	}
-	return disallowed, nil
-}
-
-func isBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_Builder) (bool, error) {
-	if len(b.GetOwnerWhitelistGroup()) > 0 {
-		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()...); {
-		case err != nil:
-			return false, err
-		case len(disallowedOwners) > 0:
-			return false, nil
-		}
-	}
-	return true, nil
-
-}
-
-func isEquiBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_EquivalentBuilder) (bool, error) {
-	if b.GetOwnerWhitelistGroup() != "" {
-		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()); {
-		case err != nil:
-			return false, err
-		case len(disallowedOwners) > 0:
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-var (
-	// Reference: https://chromium.googlesource.com/infra/luci/luci-py/+/a6655aa3/appengine/components/components/config/proto/service_config.proto#87
-	projectRE = `[a-z0-9\-]+`
-	// Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#482
-	bucketRE = `[a-z0-9\-_.]+`
-	// Reference: https://chromium.googlesource.com/infra/luci/luci-go/+/6b8fdd66/buildbucket/proto/project_config.proto#220
-	builderRE                 = `[a-zA-Z0-9\-_.\(\) ]+`
-	modernProjBucketRe        = fmt.Sprintf(`%s/%s`, projectRE, bucketRE)
-	legacyProjBucketRe        = fmt.Sprintf(`luci\.%s\.%s`, projectRE, bucketRE)
-	buildersRE                = fmt.Sprintf(`((%s)|(%s))\s*:\s*%s(\s*,\s*%s)*`, modernProjBucketRe, legacyProjBucketRe, builderRE, builderRE)
-	tryjobDirectiveLineRegexp = regexp.MustCompile(fmt.Sprintf(`^\s*%s(\s*;\s*%s)*\s*$`, buildersRE, buildersRE))
-)
-
-// TODO(robertocn): Consider moving the parsing of the Tryjob directives
-// like `Cq-Include-Trybots` to the place where the footer values are
-// extracted, and refactor the corresponding field in RunOptions accordingly
-// (e.g. to be a list of builder ids).
-func parseBuilderStrings(line string) ([]string, ComputationFailure) {
-	if !tryjobDirectiveLineRegexp.MatchString(line) {
-		return nil, &invalidTryjobDirectives{line}
-	}
-	var ret []string
-	for _, bucketSegment := range strings.Split(strings.TrimSpace(line), ";") {
-		parts := strings.Split(strings.TrimSpace(bucketSegment), ":")
-		if len(parts) != 2 {
-			panic(fmt.Errorf("impossible; expected %q separated by exactly one \":\", got %d", bucketSegment, len(parts)-1))
-		}
-		projectBucket, builders := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
-		var project, bucket string
-		if strings.HasPrefix(projectBucket, "luci.") {
-			// Legacy style. Example: luci.chromium.try: builder_a
-			parts := strings.SplitN(projectBucket, ".", 3)
-			project, bucket = parts[1], parts[2]
-		} else {
-			// Modern style. Example: chromium/try: builder_a
-			parts := strings.SplitN(projectBucket, "/", 2)
-			project, bucket = parts[0], parts[1]
-		}
-		for _, builderName := range strings.Split(builders, ",") {
-			ret = append(ret, fmt.Sprintf("%s/%s/%s", strings.TrimSpace(project), strings.TrimSpace(bucket), strings.TrimSpace(builderName)))
-		}
-	}
-	return ret, nil
-}
-
-// parseTryjobDirectives parses a list of builders from the Tryjob directives
-// lines provided via git footers like `Cq-Include-Trybots` and
-// `Override-Tryjobs-For-Automation`.
-//
-// Return a list of builders.
-func parseTryjobDirectives(directives []string) (stringset.Set, ComputationFailure) {
-	ret := make(stringset.Set)
-	for _, d := range directives {
-		builderStrings, compFail := parseBuilderStrings(d)
-		if compFail != nil {
-			return nil, compFail
-		}
-		for _, builderString := range builderStrings {
-			ret.Add(builderString)
-		}
-	}
-	return ret, nil
-}
-
-// locationMatch returns true if the builder should be included given the
-// location regexp fields and CLs.
-//
-// The builder is included if at least one file from at least one CL matches
-// a locationRegexp pattern and does not match any locationRegexpExclude
-// patterns.
-//
-// Note that an empty locationRegexp is treated equivalently to a `.*` value.
-//
-// Panics if any regex is invalid.
-func locationMatch(ctx context.Context, locationRegexp, locationRegexpExclude []string, cls []*run.RunCL) (bool, error) {
-	if len(locationRegexp) == 0 {
-		locationRegexp = append(locationRegexp, ".*")
-	}
-	changedLocations := make(stringset.Set)
-	for _, cl := range cls {
-		if isMergeCommit(ctx, cl.Detail.GetGerrit()) {
-			// Merge commits have zero changed files. We don't want to land such
-			// changes without triggering any builders, so we ignore location filters
-			// if there are any CLs that are merge commits. See crbug/1006534.
-			return true, nil
-		}
-		host, project := cl.Detail.GetGerrit().GetHost(), cl.Detail.GetGerrit().GetInfo().GetProject()
-		for _, f := range cl.Detail.GetGerrit().GetFiles() {
-			changedLocations.Add(fmt.Sprintf("https://%s/%s/+/%s", host, project, f))
-		}
-	}
-	// First remove from the list the files that match locationRegexpExclude, and
-	for _, lre := range locationRegexpExclude {
-		re := regexp.MustCompile(fmt.Sprintf("^%s$", lre))
-		changedLocations.Iter(func(loc string) bool {
-			if re.MatchString(loc) {
-				changedLocations.Del(loc)
-			}
-			return true
-		})
-	}
-	if changedLocations.Len() == 0 {
-		// Any locations touched by the change have been excluded by the
-		// builder's config.
-		return false, nil
-	}
-	// Matching the remainder against locationRegexp, returning true if there's
-	// a match.
-	for _, lri := range locationRegexp {
-		re := regexp.MustCompile(fmt.Sprintf("^%s$", lri))
-		found := false
-		changedLocations.Iter(func(loc string) bool {
-			if re.MatchString(loc) {
-				found = true
-				return false
-			}
-			return true
-		})
-		if found {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// makeBuildbucketDefinition converts a builder name to a minimal Definition.
-func makeBuildbucketDefinition(builderName string) *tryjob.Definition {
-	if builderName == "" {
-		panic(fmt.Errorf("builderName unexpectedly empty"))
-	}
-	builderID, err := buildbucket.ParseBuilderID(builderName)
-	if err != nil {
-		panic(err)
-	}
-
-	return &tryjob.Definition{
-		Backend: &tryjob.Definition_Buildbucket_{
-			Buildbucket: &tryjob.Definition_Buildbucket{
-				Host:    chromeinfra.BuildbucketHost,
-				Builder: builderID,
+// Compute computes the Tryjob Requirement to verify the run.
+func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
+	hasIncluded := len(in.RunOptions.GetIncludedTryjobs()) > 0
+	hasOverridden := len(in.RunOptions.GetOverriddenTryjobs()) > 0
+	if hasIncluded && hasOverridden {
+		// Only one of the three Tryjob related option can be specified.
+		return &ComputationResult{
+			ComputationFailure: &incompatibleTryjobOptions{
+				hasIncludedTryjobs:   hasIncluded,
+				hasOverriddenTryjobs: hasOverridden,
 			},
-		},
+		}, nil
 	}
-}
 
-type criticality bool
+	ret := &ComputationResult{Requirement: &tryjob.Requirement{
+		RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
+	}}
+	explicitlyIncluded := stringset.New(0)
+	if in.RunMode != run.NewPatchsetRun {
+		// Ignore tryjobs included by the cq-include-trybots: footer , these are
+		// intended for CQ-vote runs.
+		var compFail ComputationFailure
+		explicitlyIncluded, compFail = parseTryjobDirectives(in.RunOptions.GetIncludedTryjobs())
+		if compFail != nil {
+			return &ComputationResult{ComputationFailure: compFail}, nil
+		}
+		includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
+		unincludable := explicitlyIncluded.Difference(includableBuilders)
+		undefined := unincludable.Difference(triggeredByBuilders)
+		switch {
+		case len(undefined) != 0:
+			return &ComputationResult{ComputationFailure: &buildersNotDefined{Builders: undefined.ToSlice()}}, nil
+		case len(unincludable) != 0:
+			return &ComputationResult{ComputationFailure: &buildersNotDirectlyIncludable{Builders: unincludable.ToSlice()}}, nil
+		}
+	}
 
-const (
-	critical    criticality = true
-	nonCritical criticality = false
-)
+	ownersSet := stringset.New(len(in.CLs))
+	for _, cl := range in.CLs {
+		curr := cl.Detail.GetGerrit().GetInfo().GetOwner().GetEmail()
+		if curr != "" {
+			ownersSet.Add(curr)
+		}
+	}
+	allOwnerEmails := ownersSet.ToSortedSlice()
+	// Make 2 independent generators so that e.g. the addition of experimental
+	// tryjobs during a Run's lifetime does not cause it to change its use of
+	// equivalent builders upon recomputation.
+	rands := makeRands(in, 2)
+	experimentRand, equivalentBuilderRand := rands[0], rands[1]
+	builders := in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders()
+	definitions := make([]*tryjob.Definition, len(builders))
+	var computationFailureHolder atomic.Value
+	// Utilize multiple cores.
+	err := parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
+		for i, builder := range builders {
+			i, builder := i, builder
+			var experimentSelected bool
+			var useEquivalent bool
+			if expPercentage := builder.GetExperimentPercentage(); expPercentage != 0 {
+				experimentSelected = experimentRand.Float32()*100 <= expPercentage
+			}
+			if equiPercentage := builder.GetEquivalentTo().GetPercentage(); equiPercentage != 0 {
+				useEquivalent = equivalentBuilderRand.Float32()*100 <= equiPercentage
+			}
+			work <- func() error {
+				dm := &definitionMaker{
+					builder:     builder,
+					criticality: builder.ExperimentPercentage == 0,
+				}
+				if in.RunOptions.GetAvoidCancellingTryjobs() {
+					dm.skipStaleCheck = true
+				} else {
+					dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
+				}
+				switch r, compFail, err := shouldInclude(ctx, in, dm, experimentSelected, useEquivalent, builder, explicitlyIncluded, allOwnerEmails); {
+				case err != nil:
+					return err
+				case compFail != nil:
+					computationFailureHolder.Store(compFail)
+				case r != skipBuilder:
+					definitions[i] = dm.make()
+				}
+				return nil
+			}
+		}
+	})
 
-type equivalentUsage int8
-
-const (
-	mainOnly equivalentUsage = iota + 1
-	equivalentOnly
-	bothMainAndEquivalent
-	flipMainAndEquivalent
-)
-
-type definitionMaker struct {
-	builder        *cfgpb.Verifiers_Tryjob_Builder
-	equivalence    equivalentUsage
-	criticality    criticality
-	skipStaleCheck bool
-}
-
-func (dm *definitionMaker) make() *tryjob.Definition {
-	var definition *tryjob.Definition
-	switch dm.equivalence {
-	case mainOnly:
-		definition = makeBuildbucketDefinition(dm.builder.GetName())
-	case equivalentOnly:
-		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
-	case bothMainAndEquivalent:
-		definition = makeBuildbucketDefinition(dm.builder.GetName())
-		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
-	case flipMainAndEquivalent:
-		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
-		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetName())
+	switch failure := computationFailureHolder.Load(); {
+	case err != nil:
+		return nil, err
+	case failure != nil:
+		return &ComputationResult{
+			ComputationFailure: failure.(ComputationFailure),
+		}, nil
 	default:
-		panic(fmt.Errorf("unknown equivalentUsage(%d)", dm.equivalence))
-	}
-	definition.DisableReuse = dm.builder.GetDisableReuse()
-	definition.Critical = bool(dm.criticality)
-	definition.Experimental = dm.builder.GetExperimentPercentage() > 0
-	definition.ResultVisibility = dm.builder.GetResultVisibility()
-	definition.SkipStaleCheck = dm.skipStaleCheck
-	return definition
-}
-
-func isModeAllowed(mode run.Mode, allowedModes []string) bool {
-	if len(allowedModes) == 0 {
-		allowedModes = run.DefaultAllowedModes()
-	}
-	for _, allowed := range allowedModes {
-		if string(mode) == allowed {
-			return true
+		for _, def := range definitions {
+			if def != nil {
+				ret.Requirement.Definitions = append(ret.Requirement.Definitions, def)
+			}
 		}
 	}
-	return false
-}
-
-// makeRands makes `n` new pseudo-random generators to be used for the Tryjob
-// Requirement computation's random selections (experiment, equivalentBuilder)
-//
-// The generators are seeded deterministically based on the set of CLs (their
-// IDs, specifically) and their trigger times.
-//
-// We do it this way so that recomputing the Requirement for the same Run yields
-// the same result, but triggering the same set of CLs subsequent times has a
-// chance of generating a different set of random selections.
-func makeRands(in Input, n int) []*rand.Rand {
-	// Though MD5 is cryptographically broken, it's not being used here for
-	// security purposes, and it's faster than SHA.
-	h := crypto.MD5.New()
-	buf := make([]byte, 8)
-	cls := make([]*run.RunCL, len(in.CLs))
-	copy(cls, in.CLs)
-	sort.Slice(cls, func(i, j int) bool { return cls[i].ID < cls[j].ID })
-	var err error
-	for _, cl := range cls {
-		binary.LittleEndian.PutUint64(buf, uint64(cl.ID))
-		_, err = h.Write(buf)
-		if err == nil && cl.Trigger != nil {
-			binary.LittleEndian.PutUint64(buf, uint64(cl.Trigger.Time.AsTime().UTC().Unix()))
-			_, err = h.Write(buf)
-		}
-		if err != nil {
-			panic(err)
-		}
-	}
-	digest := h.Sum(nil)
-	// Use the first eight bytes of the digest to seed a new rand, and use such
-	// rand's generated values to seed the requested number of generators.
-	baseRand := rand.New(rand.NewSource(int64(binary.LittleEndian.Uint64(digest[:8]))))
-	ret := make([]*rand.Rand, n)
-	for i := range ret {
-		ret[i] = rand.New(rand.NewSource(baseRand.Int63()))
-	}
-	return ret
-}
-
-func isPresubmit(builder *cfgpb.Verifiers_Tryjob_Builder) bool {
-	// TODO(crbug.com/1292195): Implement a different way of deciding that a
-	// builder is presubmit.
-	return builder.DisableReuse
+	return ret, nil
 }
 
 type inclusionResult bool
@@ -527,6 +320,147 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 	}
 }
 
+// getDisallowedOwners checks which of the owner emails given belong
+// to none of the given allowLists.
+//
+// NOTE: If no allowLists are given, the return value defaults to nil. This may
+// be unexpected, and has security implications. This behavior is valid in
+// regards to checking whether the owners are allowed to use a certain builder,
+// if no allowList groups are defined, then the expectation is that the action
+// is allowed by default.
+func getDisallowedOwners(ctx context.Context, allOwnerEmails []string, allowLists ...string) ([]string, error) {
+	switch {
+	case len(allOwnerEmails) == 0:
+		panic(fmt.Errorf("cannot check membership of nil user"))
+	case len(allowLists) == 0:
+		return nil, nil
+	}
+	var disallowed []string
+	for _, userEmail := range allOwnerEmails {
+		id, err := identity.MakeIdentity(fmt.Sprintf("user:%s", userEmail))
+		if err != nil {
+			return nil, err
+		}
+		switch allowed, err := auth.GetState(ctx).DB().IsMember(ctx, id, allowLists); {
+		case err != nil:
+			return nil, err
+		case !allowed:
+			disallowed = append(disallowed, userEmail)
+		}
+	}
+	return disallowed, nil
+}
+
+func isBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_Builder) (bool, error) {
+	if len(b.GetOwnerWhitelistGroup()) > 0 {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()...); {
+		case err != nil:
+			return false, err
+		case len(disallowedOwners) > 0:
+			return false, nil
+		}
+	}
+	return true, nil
+
+}
+
+func isEquiBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Verifiers_Tryjob_EquivalentBuilder) (bool, error) {
+	if b.GetOwnerWhitelistGroup() != "" {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, b.GetOwnerWhitelistGroup()); {
+		case err != nil:
+			return false, err
+		case len(disallowedOwners) > 0:
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+// makeBuildbucketDefinition converts a builder name to a minimal Definition.
+func makeBuildbucketDefinition(builderName string) *tryjob.Definition {
+	if builderName == "" {
+		panic(fmt.Errorf("builderName unexpectedly empty"))
+	}
+	builderID, err := buildbucket.ParseBuilderID(builderName)
+	if err != nil {
+		panic(err)
+	}
+
+	return &tryjob.Definition{
+		Backend: &tryjob.Definition_Buildbucket_{
+			Buildbucket: &tryjob.Definition_Buildbucket{
+				Host:    chromeinfra.BuildbucketHost,
+				Builder: builderID,
+			},
+		},
+	}
+}
+
+type criticality bool
+
+const (
+	critical    criticality = true
+	nonCritical criticality = false
+)
+
+type equivalentUsage int8
+
+const (
+	mainOnly equivalentUsage = iota + 1
+	equivalentOnly
+	bothMainAndEquivalent
+	flipMainAndEquivalent
+)
+
+type definitionMaker struct {
+	builder        *cfgpb.Verifiers_Tryjob_Builder
+	equivalence    equivalentUsage
+	criticality    criticality
+	skipStaleCheck bool
+}
+
+func (dm *definitionMaker) make() *tryjob.Definition {
+	var definition *tryjob.Definition
+	switch dm.equivalence {
+	case mainOnly:
+		definition = makeBuildbucketDefinition(dm.builder.GetName())
+	case equivalentOnly:
+		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
+	case bothMainAndEquivalent:
+		definition = makeBuildbucketDefinition(dm.builder.GetName())
+		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
+	case flipMainAndEquivalent:
+		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
+		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetName())
+	default:
+		panic(fmt.Errorf("unknown equivalentUsage(%d)", dm.equivalence))
+	}
+	definition.DisableReuse = dm.builder.GetDisableReuse()
+	definition.Critical = bool(dm.criticality)
+	definition.Experimental = dm.builder.GetExperimentPercentage() > 0
+	definition.ResultVisibility = dm.builder.GetResultVisibility()
+	definition.SkipStaleCheck = dm.skipStaleCheck
+	return definition
+}
+
+func isModeAllowed(mode run.Mode, allowedModes []string) bool {
+	if len(allowedModes) == 0 {
+		allowedModes = run.DefaultAllowedModes()
+	}
+	for _, allowed := range allowedModes {
+		if string(mode) == allowed {
+			return true
+		}
+	}
+	return false
+}
+
+func isPresubmit(builder *cfgpb.Verifiers_Tryjob_Builder) bool {
+	// TODO(crbug.com/1292195): Implement a different way of deciding that a
+	// builder is presubmit.
+	return builder.DisableReuse
+}
+
 // getIncludablesAndTriggeredBy computes the set of builders that it is valid to
 // include as trybots in a CL, and those that cannot be included due to their
 // being triggered by another builder.
@@ -543,119 +477,6 @@ func getIncludablesAndTriggeredBy(builders []*cfgpb.Verifiers_Tryjob_Builder) (i
 		default:
 			includable.Add(b.Name)
 		}
-
 	}
 	return includable, triggeredByOther
-}
-
-// Compute computes the Tryjob Requirement to verify the run.
-func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
-	hasIncluded := len(in.RunOptions.GetIncludedTryjobs()) > 0
-	hasOverridden := len(in.RunOptions.GetOverriddenTryjobs()) > 0
-	if hasIncluded && hasOverridden {
-		// Only one of the three Tryjob related option can be specified.
-		return &ComputationResult{
-			ComputationFailure: &incompatibleTryjobOptions{
-				hasIncludedTryjobs:   hasIncluded,
-				hasOverriddenTryjobs: hasOverridden,
-			},
-		}, nil
-	}
-
-	ret := &ComputationResult{Requirement: &tryjob.Requirement{
-		RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
-	}}
-	explicitlyIncluded := stringset.New(0)
-	if in.RunMode != run.NewPatchsetRun {
-		// Ignore tryjobs included by the cq-include-trybots: footer , these are
-		// intended for CQ-vote runs.
-		var compFail ComputationFailure
-		explicitlyIncluded, compFail = parseTryjobDirectives(in.RunOptions.GetIncludedTryjobs())
-		if compFail != nil {
-			return &ComputationResult{ComputationFailure: compFail}, nil
-		}
-		includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
-		unincludable := explicitlyIncluded.Difference(includableBuilders)
-		undefined := unincludable.Difference(triggeredByBuilders)
-		switch {
-		case len(undefined) != 0:
-			return &ComputationResult{ComputationFailure: &buildersNotDefined{Builders: undefined.ToSlice()}}, nil
-		case len(unincludable) != 0:
-			return &ComputationResult{ComputationFailure: &buildersNotDirectlyIncludable{Builders: unincludable.ToSlice()}}, nil
-		}
-	}
-
-	ownersSet := stringset.New(len(in.CLs))
-	for _, cl := range in.CLs {
-		curr := cl.Detail.GetGerrit().GetInfo().GetOwner().GetEmail()
-		if curr != "" {
-			ownersSet.Add(curr)
-		}
-	}
-	allOwnerEmails := ownersSet.ToSortedSlice()
-	// Make 2 independent generators so that e.g. the addition of experimental
-	// tryjobs during a Run's lifetime does not cause it to change its use of
-	// equivalent builders upon recomputation.
-	rands := makeRands(in, 2)
-	experimentRand, equivalentBuilderRand := rands[0], rands[1]
-	builders := in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders()
-	definitions := make([]*tryjob.Definition, len(builders))
-	var computationFailureHolder atomic.Value
-	// Utilize multiple cores.
-	err := parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
-		for i, builder := range builders {
-			i, builder := i, builder
-			var experimentSelected bool
-			var useEquivalent bool
-			if expPercentage := builder.GetExperimentPercentage(); expPercentage != 0 {
-				experimentSelected = experimentRand.Float32()*100 <= expPercentage
-			}
-			if equiPercentage := builder.GetEquivalentTo().GetPercentage(); equiPercentage != 0 {
-				useEquivalent = equivalentBuilderRand.Float32()*100 <= equiPercentage
-			}
-			work <- func() error {
-				dm := &definitionMaker{
-					builder:     builder,
-					criticality: builder.ExperimentPercentage == 0,
-				}
-				if in.RunOptions.GetAvoidCancellingTryjobs() {
-					dm.skipStaleCheck = true
-				} else {
-					dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
-				}
-				switch r, compFail, err := shouldInclude(ctx, in, dm, experimentSelected, useEquivalent, builder, explicitlyIncluded, allOwnerEmails); {
-				case err != nil:
-					return err
-				case compFail != nil:
-					computationFailureHolder.Store(compFail)
-				case r != skipBuilder:
-					definitions[i] = dm.make()
-				}
-				return nil
-			}
-		}
-	})
-
-	switch failure := computationFailureHolder.Load(); {
-	case err != nil:
-		return nil, err
-	case failure != nil:
-		return &ComputationResult{
-			ComputationFailure: failure.(ComputationFailure),
-		}, nil
-	default:
-		for _, def := range definitions {
-			if def != nil {
-				ret.Requirement.Definitions = append(ret.Requirement.Definitions, def)
-			}
-		}
-	}
-	return ret, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
