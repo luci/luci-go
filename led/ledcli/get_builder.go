@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -90,22 +91,46 @@ type builder struct {
 	builder  string
 }
 
-// parseBuilder parses the builder string in the format of "luci.project.bucket:builder".
+// parseV1Builder parses the builder string in the format of "bucket:builder".
+// Where the bucket can have two formats:
+// * luci.project.bucket
+// * project/bucket
 func parseV1Builder(builderStr string) *builder {
-	v1BuilderRe := regexp.MustCompile(`^(luci\.(\w*)\.(\w*)):(.*)$`)
-	match := v1BuilderRe.FindStringSubmatch(builderStr)
-	if len(match) != 5 {
+	toks := strings.SplitN(builderStr, ":", 2)
+	if len(toks) != 2 {
 		return nil
 	}
-	return &builder{
-		project:  match[2],
-		v1Bucket: match[1],
-		v2Bucket: match[3],
-		builder:  match[4],
+
+	bucket, bldr := toks[0], toks[1]
+	if bucket == "" || bldr == "" {
+		return nil
 	}
+
+	parsed := &builder{
+		v1Bucket: bucket,
+		builder:  bldr,
+	}
+
+	// luci.project.bucket:builder
+	v1BucketRe := regexp.MustCompile(`^luci\.(\w*)\.(\w*)$`)
+	match := v1BucketRe.FindStringSubmatch(bucket)
+	if len(match) == 3 {
+		parsed.project = match[1]
+		parsed.v2Bucket = match[2]
+		return parsed
+	}
+
+	// project/bucket:builder
+	subs := strings.Split(bucket, "/")
+	if len(subs) != 2 {
+		return nil
+	}
+	parsed.project = subs[0]
+	parsed.v2Bucket = subs[1]
+	return parsed
 }
 
-// parseBuilder parses the builder string in the format of "project/bucket/builder".
+// parseV2Builder parses the builder string in the format of "project/bucket/builder".
 func parseV2Builder(builderStr string) *builder {
 	builderID, err := protoutil.ParseBuilderID(builderStr)
 	if err != nil {
