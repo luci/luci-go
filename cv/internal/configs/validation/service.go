@@ -76,12 +76,9 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 	subscribedHosts := stringset.New(0)
 	for i, sub := range cfg.GetGerritSubscriptions() {
 		ctx.Enter("gerrit_subscriptions #%d", i+1)
-		id := sub.GetSubscriptionId()
-		if id == "" {
-			id = sub.GetHost()
-		}
-		if !subscribedHosts.Add(id) {
-			ctx.Errorf("duplicate subscription ID %q", id)
+		host := sub.GetHost()
+		if !subscribedHosts.Add(host) {
+			ctx.Errorf("subscription already exists for host %q", host)
 		}
 		if sub.GetMessageFormat() == listenerpb.Settings_GerritSubscription_MESSAGE_FORMAT_UNSPECIFIED {
 			ctx.Enter("message_format")

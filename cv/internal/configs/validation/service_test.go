@@ -133,20 +133,21 @@ func TestListenerConfigValidation(t *testing.T) {
 		})
 
 		Convey("Fail", func() {
-			Convey("duplicate subscription ID", func() {
+			Convey("multiple subscriptions for the same host", func() {
 				cfg := []byte(`
 					gerrit_subscriptions {
 						host: "example.org"
+						subscription_id: "sub"
 						message_format: JSON
 					}
 					gerrit_subscriptions {
-						host: "example2.org"
-						subscription_id: "example.org"
+						host: "example.org"
+						subscription_id: "sub2"
 						message_format: JSON
 					}
 				`)
 				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
-				So(vctx.Finalize(), ShouldErrLike, "duplicate subscription ID")
+				So(vctx.Finalize(), ShouldErrLike, `already exists for host "example.org"`)
 			})
 
 			Convey("invalid enabled_project_regexps", func() {
