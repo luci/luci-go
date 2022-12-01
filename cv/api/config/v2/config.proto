@@ -382,7 +382,8 @@ message Verifiers {
 
   // Tryjob configures builders which CQ may trigger and/or use to verify CL(s).
   message Tryjob {
-    // Next field number: 15
+    // Next field number: 4
+
 
     // Builders on which tryjobs should be triggered.
     //
@@ -398,7 +399,12 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {
-      // Next field number: 16
+      // Next field number: 17
+
+      // The buildbucket host name.
+      //
+      // Optional. If empty, default to "cr-buildbucket.appspot.com".
+      string host = 16;
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
