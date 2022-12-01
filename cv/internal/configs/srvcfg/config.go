@@ -70,8 +70,10 @@ func SetTestMigrationConfig(ctx context.Context, m *migrationpb.Settings) error 
 }
 
 // GetListenerConfig loads cached Listener config.
-func GetListenerConfig(ctx context.Context) (*listenerpb.Settings, error) {
-	switch v, err := cachedListenerCfg.Get(ctx, &config.Meta{}); {
+//
+// If meta is not nil, it will be updated with the meta of the loaded config.
+func GetListenerConfig(ctx context.Context, meta *config.Meta) (*listenerpb.Settings, error) {
+	switch v, err := cachedListenerCfg.Get(ctx, meta); {
 	case err != nil:
 		return nil, err
 	default:
@@ -80,12 +82,12 @@ func GetListenerConfig(ctx context.Context) (*listenerpb.Settings, error) {
 }
 
 // SetTestListenerConfig is used in tests only.
-func SetTestListenerConfig(ctx context.Context, ls *listenerpb.Settings) error {
-	return cachedListenerCfg.Set(ctx, ls, &config.Meta{})
+func SetTestListenerConfig(ctx context.Context, ls *listenerpb.Settings, m *config.Meta) error {
+	return cachedListenerCfg.Set(ctx, ls, m)
 }
 
-// MakeListenerProjectChecker returns a function that checks if a given project is
-// enabled in the listener settings.
+// MakeListenerProjectChecker returns a function that checks if a given project
+// is enabled in the Listener config.
 func MakeListenerProjectChecker(ls *listenerpb.Settings) (isEnabled func(string) bool, err error) {
 	res, err := anchorRegexps(ls.GetDisabledProjectRegexps())
 	if err != nil {

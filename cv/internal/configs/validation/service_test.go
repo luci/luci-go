@@ -146,15 +146,15 @@ func TestListenerConfigValidation(t *testing.T) {
 					}
 				`)
 				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "duplicate subscription ID")
+				So(vctx.Finalize(), ShouldErrLike, "duplicate subscription ID")
 			})
 
 			Convey("invalid enabled_project_regexps", func() {
 				cfg := []byte(`
-					enabled_project_regexps: "(123"
+				enabled_project_regexps: "(123"
 				`)
 				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "missing closing")
+				So(vctx.Finalize(), ShouldErrLike, "missing closing")
 			})
 
 			Convey("invalid disabled_project_regexps", func() {
@@ -162,7 +162,7 @@ func TestListenerConfigValidation(t *testing.T) {
 					disabled_project_regexps: "(123"
 				`)
 				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
-				So(vctx.Finalize().Error(), ShouldContainSubstring, "missing closing")
+				So(vctx.Finalize(), ShouldErrLike, "missing closing")
 			})
 
 			Convey("invalid message_format", func() {

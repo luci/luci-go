@@ -34,7 +34,7 @@ func TestIsPubsubEnabled(t *testing.T) {
 		settings := &listenerpb.Settings{
 			EnabledProjectRegexps: []string{"fo?", "bar.*", "deed"},
 		}
-		So(srvcfg.SetTestListenerConfig(ctx, settings), ShouldBeNil)
+		So(srvcfg.SetTestListenerConfig(ctx, settings, nil), ShouldBeNil)
 		check := func(prj string) bool {
 			yes, err := IsPubsubEnabled(ctx, prj)
 			So(err, ShouldBeNil)

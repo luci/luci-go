@@ -344,7 +344,7 @@ func TestDiscoversCLs(t *testing.T) {
 
 			Convey("Unless the pubsub is enabled", func() {
 				settings := &listenerpb.Settings{EnabledProjectRegexps: []string{lProject}}
-				So(srvcfg.SetTestListenerConfig(ctx, settings), ShouldBeNil)
+				So(srvcfg.SetTestListenerConfig(ctx, settings, nil), ShouldBeNil)
 
 				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
 				So(clUpdater.peekScheduledChanges(), ShouldBeEmpty)

@@ -32,7 +32,7 @@ import (
 // - is still processing pubsub messages even if this function returns false
 // - stopped processing pubsub messages even if this function returns true
 func IsPubsubEnabled(ctx context.Context, prj string) (bool, error) {
-	cfg, err := srvcfg.GetListenerConfig(ctx)
+	cfg, err := srvcfg.GetListenerConfig(ctx, nil)
 	if err != nil {
 		return false, transient.Tag.Apply(err)
 	}

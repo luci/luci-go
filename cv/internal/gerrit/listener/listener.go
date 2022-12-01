@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
@@ -66,15 +67,20 @@ func NewListener(psClient *pubsub.Client, sch scheduler) *Listener {
 // Run continuously evaluates the listener settings and manages workers
 // for each of the subscriptions configured.
 func (l *Listener) Run(ctx context.Context) {
+	var prevHash string
+
 	for {
-		gcfg, err := srvcfg.GetListenerConfig(ctx)
-		if err != nil {
-			// log the error and retry it after the interval.
+		meta := &config.Meta{}
+		lcfg, err := srvcfg.GetListenerConfig(ctx, meta)
+		switch {
+		case err != nil:
 			logging.Errorf(ctx, "GetListenerConfig: %s", err)
-		} else if err := l.prjFinder.reload(gcfg.GetEnabledProjectRegexps()); err != nil {
-			logging.Errorf(ctx, "Listener: projectFinder.reload: %s", err)
-		} else if err := l.reload(ctx, gcfg.GetGerritSubscriptions()); err != nil {
-			logging.Errorf(ctx, "Listener.reload: %s", err.Error())
+		case meta.ContentHash != prevHash:
+			// new config?
+			logging.Infof(ctx, "Listener.Run: new settings.cfg found: %s", meta.ContentHash)
+			if err := l.reload(ctx, lcfg); err != nil {
+				logging.Errorf(ctx, "Listener.reload: %s", err.Error())
+			}
 		}
 
 		select {
@@ -86,13 +92,23 @@ func (l *Listener) Run(ctx context.Context) {
 	}
 }
 
-// reload reloads the subscribers as configured in the settings.
+func (l *Listener) reload(ctx context.Context, s *listenerpb.Settings) error {
+	if err := l.prjFinder.reload(s.GetEnabledProjectRegexps()); err != nil {
+		return errors.Annotate(err, "projectFinder.reload").Err()
+	}
+	if err := l.reloadSubscribers(ctx, s.GetGerritSubscriptions()); err != nil {
+		return errors.Annotate(err, "reloadSubscribers").Err()
+	}
+	return nil
+}
+
+// reloadSubscribers reloads the subscribers as configured in the settings.
 //
 // It will
 // - start a subscriber for new subscription settings.
 // - stop the subscriber for removed subscription settings.
 // - restart the subscriber if it is found dead.
-func (l *Listener) reload(ctx context.Context, settings []*listenerpb.Settings_GerritSubscription) error {
+func (l *Listener) reloadSubscribers(ctx context.Context, settings []*listenerpb.Settings_GerritSubscription) error {
 	var wg sync.WaitGroup
 	activeHosts := stringset.New(len(settings))
 	startErrs := errors.NewLazyMultiError(len(settings))

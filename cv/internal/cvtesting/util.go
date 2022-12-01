@@ -233,7 +233,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 	if err := srvcfg.SetTestMigrationConfig(ctx, proto.Clone(t.InitialMigrationSettings).(*migrationpb.Settings)); err != nil {
 		panic(err)
 	}
-	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}); err != nil {
+	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
 		panic(err)
 	}
 

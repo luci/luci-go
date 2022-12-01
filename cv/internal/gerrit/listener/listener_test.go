@@ -16,10 +16,15 @@ package listener
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
@@ -41,15 +46,26 @@ func TestListener(t *testing.T) {
 		sch := &testScheduler{}
 		l := NewListener(client, sch)
 
+		updateCfg := func(s *listenerpb.Settings) error {
+			b, err := proto.MarshalOptions{Deterministic: true}.Marshal(s)
+			if err != nil {
+				panic(err)
+			}
+			sha := sha256.New()
+			sha.Write(b)
+			m := &config.Meta{ContentHash: fmt.Sprintf("%x", sha.Sum(nil))}
+			return srvcfg.SetTestListenerConfig(ctx, s, m)
+		}
+
 		Convey("Run stops if context cancelled", func() {
 			ctx, cancel = context.WithCancel(ctx)
 			defer cancel()
-			settings := &listenerpb.Settings{
+			lCfg := &listenerpb.Settings{
 				GerritSubscriptions: []*listenerpb.Settings_GerritSubscription{
 					{Host: "a.example.org"},
 				},
 			}
-			So(srvcfg.SetTestListenerConfig(ctx, settings), ShouldBeNil)
+			So(updateCfg(lCfg), ShouldBeNil)
 
 			// launch and wait until the subscriber is up.
 			endC := make(chan struct{})
@@ -79,12 +95,12 @@ func TestListener(t *testing.T) {
 		})
 
 		Convey("reload", func() {
-			gSettings := []*listenerpb.Settings_GerritSubscription{
+			subCfgs := []*listenerpb.Settings_GerritSubscription{
 				{Host: "a.example.org"},
 				{Host: "b.example.org"},
 			}
 			So(l.sbers, ShouldHaveLength, 0)
-			So(l.reload(ctx, gSettings), ShouldBeNil)
+			So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
 			aSub, bSub := l.getSubscriber("a.example.org"), l.getSubscriber("b.example.org")
 			So(aSub, ShouldNotBeNil)
 			So(aSub.sub.ID(), ShouldEqual, "a.example.org")
@@ -93,27 +109,27 @@ func TestListener(t *testing.T) {
 
 			Convey("adds subscribers for new subscriptions", func() {
 				mockTopicSub(ctx, client, "c.example.org", "c.example.org")
-				gSettings = append(gSettings, &listenerpb.Settings_GerritSubscription{
+				subCfgs = append(subCfgs, &listenerpb.Settings_GerritSubscription{
 					Host: "c.example.org",
 				})
-				So(l.reload(ctx, gSettings), ShouldBeNil)
+				So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
 				So(l.sbers, ShouldHaveLength, 3)
 				So(l.getSubscriber("c.example.org").sub.ID(), ShouldEqual, "c.example.org")
 			})
 
 			Convey("removes subscribers for removed subscriptions", func() {
-				gSettings = gSettings[0 : len(gSettings)-1]
-				So(l.reload(ctx, gSettings), ShouldBeNil)
+				subCfgs = subCfgs[0 : len(subCfgs)-1]
+				So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
 				So(l.sbers, ShouldHaveLength, 1)
 				So(l.getSubscriber("b.example.org"), ShouldBeNil)
 			})
 
 			Convey("reload subscribers with new settings", func() {
 				want := defaultNumGoroutines + 1
-				gSettings[1].ReceiveSettings = &listenerpb.Settings_ReceiveSettings{
+				subCfgs[1].ReceiveSettings = &listenerpb.Settings_ReceiveSettings{
 					NumGoroutines: uint64(want),
 				}
-				So(l.reload(ctx, gSettings), ShouldBeNil)
+				So(l.reload(ctx, &listenerpb.Settings{GerritSubscriptions: subCfgs}), ShouldBeNil)
 				bSub := l.getSubscriber("b.example.org")
 				So(bSub, ShouldNotBeNil)
 				So(bSub.sub.ReceiveSettings.NumGoroutines, ShouldEqual, want)
