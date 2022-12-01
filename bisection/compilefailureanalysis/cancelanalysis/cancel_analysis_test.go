@@ -54,6 +54,18 @@ func TestCancelAnalysis(t *testing.T) {
 		So(datastore.Put(c, cfa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
+		ha := &model.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+		}
+		So(datastore.Put(c, ha), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect := &model.Suspect{
+			ParentAnalysis: datastore.KeyForObj(c, ha),
+		}
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		nsa := &model.CompileNthSectionAnalysis{
 			Status:         pb.AnalysisStatus_RUNNING,
 			RunStatus:      pb.AnalysisRunStatus_STARTED,
@@ -78,6 +90,7 @@ func TestCancelAnalysis(t *testing.T) {
 		rr1 := &model.SingleRerun{
 			RerunBuild: datastore.KeyForObj(c, rb1),
 			Analysis:   datastore.KeyForObj(c, cfa),
+			Suspect:    datastore.KeyForObj(c, suspect),
 			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
 		rr2 := &model.SingleRerun{
@@ -106,6 +119,7 @@ func TestCancelAnalysis(t *testing.T) {
 		So(datastore.Get(c, rr3), ShouldBeNil)
 		So(datastore.Get(c, rb1), ShouldBeNil)
 		So(datastore.Get(c, rb3), ShouldBeNil)
+		So(datastore.Get(c, suspect), ShouldBeNil)
 
 		So(cfa.Status, ShouldEqual, pb.AnalysisStatus_NOTFOUND)
 		So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_CANCELED)
@@ -115,5 +129,6 @@ func TestCancelAnalysis(t *testing.T) {
 		So(rr3.Status, ShouldEqual, pb.RerunStatus_RERUN_STATUS_CANCELED)
 		So(rb1.Status, ShouldEqual, bbpb.Status_CANCELED)
 		So(rb3.Status, ShouldEqual, bbpb.Status_CANCELED)
+		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Canceled)
 	})
 }

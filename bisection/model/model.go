@@ -44,6 +44,8 @@ const (
 	SuspectVerificationStatus_Vindicated = "Vindicated"
 	// Some error happened during verification
 	SuspectVerificationStatus_VerificationError = "Verification Error"
+	// The verification is canceled
+	SuspectVerificationStatus_Canceled = "Canceled"
 )
 
 type SuspectType string

@@ -135,28 +135,51 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 func updateCancelStatusForRerun(c context.Context, rerun *model.SingleRerun) error {
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		// Update rerun
-		e := datastore.Get(c, rerun)
-		if e != nil {
-			return e
+		err := datastore.Get(c, rerun)
+		if err != nil {
+			return err
 		}
 		rerun.EndTime = clock.Now(c)
 		rerun.Status = pb.RerunStatus_RERUN_STATUS_CANCELED
 
-		e = datastore.Put(c, rerun)
-		if e != nil {
-			return e
+		err = datastore.Put(c, rerun)
+		if err != nil {
+			return err
 		}
 
 		// Update rerun build model
 		rerunBuild := &model.CompileRerunBuild{
 			Id: rerun.RerunBuild.IntID(),
 		}
-		e = datastore.Get(c, rerunBuild)
-		if e != nil {
-			return e
+		err = datastore.Get(c, rerunBuild)
+		if err != nil {
+			return err
 		}
 		rerunBuild.EndTime = clock.Now(c)
 		rerunBuild.Status = bbpb.Status_CANCELED
-		return datastore.Put(c, rerunBuild)
+		err = datastore.Put(c, rerunBuild)
+		if err != nil {
+			return err
+		}
+
+		// Also if the rerun is for culprit verification, set the status of the suspect
+		if rerun.Suspect != nil {
+			suspect := &model.Suspect{
+				Id:             rerun.Suspect.IntID(),
+				ParentAnalysis: rerun.Suspect.Parent(),
+			}
+			err = datastore.Get(c, suspect)
+			if err != nil {
+				return errors.Annotate(err, "couldn't get suspect for rerun").Err()
+			}
+
+			suspect.VerificationStatus = model.SuspectVerificationStatus_Canceled
+			err = datastore.Put(c, suspect)
+
+			if err != nil {
+				return errors.Annotate(err, "couldn't update suspect status").Err()
+			}
+		}
+		return nil
 	}, nil)
 }
