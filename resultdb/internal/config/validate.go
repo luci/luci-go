@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 
+	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth/realms"
 
@@ -75,6 +76,18 @@ func validateRealmGCSAllowlist(ctx *validation.Context, name string, allowList *
 			validateGCSBucketPrefix(ctx, fmt.Sprintf("allowed_prefixes[%d]", i), prefix)
 		}
 	}
+}
+
+// validateProjectConfigRaw deserializes the project-level config message
+// and passes it through the validator.
+func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb.ProjectConfig {
+	msg := &configpb.ProjectConfig{}
+	if err := luciproto.UnmarshalTextML(content, msg); err != nil {
+		ctx.Errorf("failed to unmarshal as text proto: %s", err)
+		return nil
+	}
+	validateProjectConfig(ctx, msg)
+	return msg
 }
 
 func validateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
