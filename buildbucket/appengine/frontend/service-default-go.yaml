@@ -8,10 +8,12 @@ luci_gae_vars:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     REDIS_ADDR: 10.90.74.59:6379
     VPC_CONNECTOR: projects/cr-buildbucket-dev/locations/us-central1/connectors/connector
+    DS_CACHE: redis
   cr-buildbucket:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
     REDIS_ADDR: 10.52.56.84:6379
     VPC_CONNECTOR: projects/cr-buildbucket/locations/us-central1/connectors/connector
+    DS_CACHE: disable
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}
@@ -39,6 +41,7 @@ entrypoint: >
   -primary-tink-aead-key sm://tink-aead-primary
   -ds-connection-pool-size 8
   -redis-addr ${REDIS_ADDR}
+  -ds-cache ${DS_CACHE}
 
 handlers:
 - url: /.*
