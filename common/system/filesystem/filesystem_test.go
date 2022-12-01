@@ -590,6 +590,7 @@ func TestGetCommonAncestor(t *testing.T) {
 					filepath.Join(tdir, "repoB", "else"),
 				}, []string{".git"})
 				So(err, ShouldErrLike, "hit root sentinel")
+				So(errors.Is(err, ErrRootSentinel), ShouldBeTrue)
 			})
 
 			if runtime.GOOS == "windows" {

@@ -475,6 +475,10 @@ func findPathSeparators(path string) []int {
 	return ret
 }
 
+// ErrRootSentinel is wrapped and then returned from GetCommonAncestor when it
+// encounters one of the provided rootSentinels.
+var ErrRootSentinel = errors.New("hit root sentinel")
+
 // GetCommonAncestor returns the smallest path which is the ancestor of all
 // provided paths (which must actually exist on the filesystem).
 //
@@ -498,7 +502,8 @@ func findPathSeparators(path string) []int {
 //
 // `rootSentinels` is a list of sub paths to look for to stop walking up the
 // directory hierarchy. A typical value would be something like
-// []string{".git"}.
+// []string{".git"}. If one of these is found, this function returns "" with
+// a wrapped ErrRootSentinel. Use errors.Is to identify this.
 //
 // Returns an error if any of the provided paths does not exist.
 // If successful, will return a path ending with PathSeparator.
@@ -647,9 +652,9 @@ func GetCommonAncestor(paths []string, rootSentinels []string) (string, error) {
 		for _, sentinel := range rootSentinels {
 			sentinelPath := filepath.Join(curPath, sentinel)
 			if _, err := os.Lstat(sentinelPath); err == nil {
-				return "", errors.Reason("hit root sentinel %q", sentinelPath).Err()
+				return "", errors.Annotate(ErrRootSentinel, "%q", sentinelPath).Err()
 			} else if !os.IsNotExist(err) {
-				return "", errors.Annotate(err, "root sentinel %q", sentinelPath).Err()
+				return "", errors.Annotate(err, "failed to read root sentinel %q", sentinelPath).Err()
 			}
 		}
 

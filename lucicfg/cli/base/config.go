@@ -40,7 +40,12 @@ const ConfigName = ".lucicfgfmtrc"
 func GuessRewriterConfig(paths []string) (*build.Rewriter, error) {
 	// Find the common ancestor
 	commonAncestorPath, err := filesystem.GetCommonAncestor(paths, []string{".git"})
+	if errors.Is(err, filesystem.ErrRootSentinel) {
+		// we hit the repo root, just return the default rewriter
+		return LoadRewriterFromConfig("")
+	}
 	if err != nil {
+		// other errors are fatal
 		return nil, err
 	}
 
@@ -48,15 +53,16 @@ func GuessRewriterConfig(paths []string) (*build.Rewriter, error) {
 		return nil, err
 	}
 
-	if path, err := findConfigPathUpwards(commonAncestorPath); err != nil {
+	path, err := findConfigPathUpwards(commonAncestorPath)
+	if err != nil {
 		return nil, err
-	} else {
-		// Notify users that a config file was found
-		if path != "" {
-			fmt.Printf("\nConfig file found at %s\n", path)
-		}
-		return LoadRewriterFromConfig(path)
 	}
+
+	// Notify users that a config file was found
+	if path != "" {
+		fmt.Printf("\nConfig file found at %s\n", path)
+	}
+	return LoadRewriterFromConfig(path)
 }
 
 // CheckForBogusConfig will look for any config files contained in a subdirectory of entryPath
