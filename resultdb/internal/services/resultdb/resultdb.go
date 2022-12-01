@@ -27,10 +27,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gerritauth"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rpcutil"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -76,6 +78,9 @@ func InitServer(srv *server.Server, opts Options) error {
 	for _, host := range hosts.ToSortedSlice() {
 		contentServer.InstallHandlers(srv.VirtualHost(host))
 	}
+
+	// Serve cron jobs endpoints.
+	cron.RegisterHandler("read-config", config.UpdateProjects)
 
 	rdbSvr := &resultDBServer{
 		generateArtifactURL: contentServer.GenerateSignedURL,

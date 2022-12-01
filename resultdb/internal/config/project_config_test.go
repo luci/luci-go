@@ -73,7 +73,7 @@ func TestProjectConfig(t *testing.T) {
 
 		Convey("Update works", func() {
 			// Initial update.
-			err := updateProjects(ctx)
+			err := UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -85,7 +85,7 @@ func TestProjectConfig(t *testing.T) {
 			So(projects["b"], ShouldResembleProto, projectB)
 
 			// Noop update.
-			err = updateProjects(ctx)
+			err = UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -99,7 +99,7 @@ func TestProjectConfig(t *testing.T) {
 			configs["projects/c"] = cfgmem.Files{
 				"${appid}.cfg": textPBMultiline.Format(projectC),
 			}
-			err = updateProjects(ctx)
+			err = UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -140,7 +140,7 @@ func TestProjectConfig(t *testing.T) {
 
 		Convey("Validation works", func() {
 			configs["projects/b"]["${appid}.cfg"] = `bad data`
-			err := updateProjects(ctx)
+			err := UpdateProjects(ctx)
 			datastore.GetTestable(ctx).CatchupIndexes()
 			So(err, ShouldErrLike, "validation errors")
 
@@ -155,7 +155,7 @@ func TestProjectConfig(t *testing.T) {
 
 		Convey("Update retains existing config if new config is invalid", func() {
 			// Initial update.
-			err := updateProjects(ctx)
+			err := UpdateProjects(ctx)
 			So(err, ShouldBeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -175,7 +175,7 @@ func TestProjectConfig(t *testing.T) {
 			newProjectB.RealmGcsAllowlist[0].Realm = ""
 			configs["projects/a"]["${appid}.cfg"] = textPBMultiline.Format(newProjectA)
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
-			err = updateProjects(ctx)
+			err = UpdateProjects(ctx)
 			So(err, ShouldErrLike, "validation errors")
 			datastore.GetTestable(ctx).CatchupIndexes()
 

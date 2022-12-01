@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
 	quota "go.chromium.org/luci/server/quotabeta"
 
@@ -51,6 +52,7 @@ func main() {
 	artifactcontent.RegisterRBEInstanceFlag(flag.CommandLine, &opts.ArtifactRBEInstance)
 
 	modules := []module.Module{
+		cron.NewModuleFromFlags(),
 		// rpcquota and cfgmodule must be installed before quota, so
 		// they need to be passed here rather than declared as
 		// Dependencies of quota.
