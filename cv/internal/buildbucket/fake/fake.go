@@ -29,8 +29,10 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/buildbucket"
 )
 
@@ -128,6 +130,25 @@ func (f *Fake) AddBuilder(host string, builder *bbpb.BuilderID, properties inter
 	}
 	bucket.GetSwarming().Builders = append(bucket.GetSwarming().GetBuilders(), builderCfg)
 	return f
+}
+
+// EnsureBuilders ensures all builders defined in the Project config are added
+// to the Buildbucket fake.
+func (f *Fake) EnsureBuilders(cfg *cfgpb.Config) {
+	added := stringset.New(1)
+	for _, cg := range cfg.GetConfigGroups() {
+		for _, b := range cg.GetVerifiers().GetTryjob().GetBuilders() {
+			if added.Has(fmt.Sprintf("%s/%s", b.GetHost(), b.GetName())) {
+				continue
+			}
+			builder, err := bbutil.ParseBuilderID(b.GetName())
+			if err != nil {
+				panic(err)
+			}
+			f.AddBuilder(b.GetHost(), builder, nil)
+			added.Add(fmt.Sprintf("%s/%s", b.GetHost(), b.GetName()))
+		}
+	}
 }
 
 // MutateBuild mutates the provided build.
