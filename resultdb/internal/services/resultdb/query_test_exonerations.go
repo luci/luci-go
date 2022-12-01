@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -54,7 +55,7 @@ func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.Query
 	defer cancel()
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.Query
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: invs,
+		InvocationIDs: invs.WithExonerationsIDSet(),
 	}
 	tes, token, err := q.Fetch(ctx)
 	if err != nil {

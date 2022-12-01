@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
@@ -49,20 +50,20 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	defer cancel()
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the reach").Err()
 	}
 
 	// Query test variants.
 	q := testvariants.Query{
-		InvocationIDs:      invs,
-		Predicate:          in.Predicate,
-		ResultLimit:        testvariants.AdjustResultLimit(in.ResultLimit),
-		PageSize:           pagination.AdjustPageSize(in.PageSize),
-		ResponseLimitBytes: testvariants.DefaultResponseLimitBytes,
-		PageToken:          in.PageToken,
-		Mask:               readMask,
+		ReachableInvocations: invs,
+		Predicate:            in.Predicate,
+		ResultLimit:          testvariants.AdjustResultLimit(in.ResultLimit),
+		PageSize:             pagination.AdjustPageSize(in.PageSize),
+		ResponseLimitBytes:   testvariants.DefaultResponseLimitBytes,
+		PageToken:            in.PageToken,
+		Mask:                 readMask,
 	}
 
 	var tvs []*pb.TestVariant

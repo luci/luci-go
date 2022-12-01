@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -122,13 +123,13 @@ type testVariantKey struct {
 }
 
 // queryExoneratedTestVariants reads exonerated test variants matching the predicate.
-func queryExoneratedTestVariants(ctx context.Context, invIDs invocations.IDSet) (map[testVariantKey]struct{}, error) {
+func queryExoneratedTestVariants(ctx context.Context, invs invocations.IDSet) (map[testVariantKey]struct{}, error) {
 	st := spanner.NewStatement(`
 		SELECT DISTINCT TestId, VariantHash,
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@invIDs)
 	`)
-	st.Params["invIDs"] = invIDs
+	st.Params["invIDs"] = invs
 	tvs := map[testVariantKey]struct{}{}
 	var b spanutil.Buffer
 	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
@@ -211,8 +212,8 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	if err != nil {
 		return err
 	}
-	exportInvocationBatch := func(ctx context.Context, invIDs invocations.IDSet) error {
-		exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invIDs)
+	exportInvocationBatch := func(ctx context.Context, invs graph.ReachableInvocations) error {
+		exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invs.IDSet())
 		if err != nil {
 			return errors.Annotate(err, "query exoneration").Err()
 		}
@@ -238,7 +239,7 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 
 		q := testresults.Query{
 			Predicate:     bqExport.GetTestResults().GetPredicate(),
-			InvocationIDs: invIDs,
+			InvocationIDs: invs.IDSet(),
 			Mask:          testresults.AllFields,
 		}
 		eg.Go(func() error {

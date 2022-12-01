@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/resultcount"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -41,12 +42,12 @@ func (s *resultDBServer) QueryTestResultStatistics(ctx context.Context, in *pb.Q
 	defer cancel()
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}
 
-	totalNum, err := resultcount.ReadTestResultCount(ctx, invs)
+	totalNum, err := resultcount.ReadTestResultCount(ctx, invs.IDSet())
 	if err != nil {
 		return nil, err
 	}

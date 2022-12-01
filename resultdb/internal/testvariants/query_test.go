@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -44,11 +45,23 @@ func TestQueryTestVariants(t *testing.T) {
 	Convey(`QueryTestVariants`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
+		reachableInvs := make(graph.ReachableInvocations)
+		reachableInvs["inv0"] = graph.ReachableInvocation{
+			HasTestResults:      true,
+			HasTestExonerations: true,
+		}
+		reachableInvs["inv1"] = graph.ReachableInvocation{
+			HasTestResults: true,
+		}
+		reachableInvs["inv2"] = graph.ReachableInvocation{
+			HasTestExonerations: true,
+		}
+
 		q := &Query{
-			InvocationIDs:      invocations.NewIDSet("inv0", "inv1"),
-			PageSize:           100,
-			ResultLimit:        10,
-			ResponseLimitBytes: DefaultResponseLimitBytes,
+			ReachableInvocations: reachableInvs,
+			PageSize:             100,
+			ResultLimit:          10,
+			ResponseLimitBytes:   DefaultResponseLimitBytes,
 		}
 
 		fetch := func(q *Query) (tvs []*pb.TestVariant, token string, err error) {
@@ -89,6 +102,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 		testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 			insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
@@ -119,7 +133,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE),
-			insert.TestExonerations("inv0", "T2", nil, pb.ExonerationReason_UNEXPECTED_PASS, 1),
+			insert.TestExonerations("inv2", "T2", nil, pb.ExonerationReason_UNEXPECTED_PASS),
 		)...)
 
 		// Insert an additional TestResult for comparing TestVariant.Results.Result.
@@ -217,6 +231,7 @@ func TestQueryTestVariants(t *testing.T) {
 			sort.Slice(tvs[7].Exonerations, func(i, j int) bool {
 				return tvs[7].Exonerations[i].ExplanationHtml < tvs[7].Exonerations[j].ExplanationHtml
 			})
+			So(len(tvs[7].Exonerations), ShouldEqual, 3)
 			So(tvs[7].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
@@ -230,6 +245,7 @@ func TestQueryTestVariants(t *testing.T) {
 				ExplanationHtml: "explanation 2",
 				Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 			})
+			So(len(tvs[8].Exonerations), ShouldEqual, 1)
 			So(tvs[8].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
@@ -561,7 +577,9 @@ func TestQueryTestVariants(t *testing.T) {
 		})
 
 		Convey(`Empty Invocation works`, func() {
-			q.InvocationIDs = invocations.NewIDSet("invnotexists")
+			reachableInvs := make(graph.ReachableInvocations)
+			reachableInvs["invnotexists"] = graph.ReachableInvocation{}
+			q.ReachableInvocations = reachableInvs
 
 			var allTVs []*pb.TestVariant
 			fetchAll(q, func(tvs []*pb.TestVariant) {

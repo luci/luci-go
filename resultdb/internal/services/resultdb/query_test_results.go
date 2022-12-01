@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -92,7 +93,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	defer cancel()
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the reach").Err()
 	}
@@ -102,7 +103,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: invs,
+		InvocationIDs: invs.IDSet(),
 		Mask:          readMask,
 	}
 	trs, token, err := q.Fetch(ctx)

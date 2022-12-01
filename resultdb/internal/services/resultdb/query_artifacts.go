@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -53,14 +54,14 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	defer cancel()
 
 	// Get the transitive closure.
-	invs, err := invocations.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}
 
 	// Query artifacts.
 	q := artifacts.Query{
-		InvocationIDs:       invs,
+		InvocationIDs:       invs.IDSet(),
 		TestResultPredicate: in.GetPredicate().GetTestResultPredicate(),
 		PageSize:            pagination.AdjustPageSize(in.PageSize),
 		PageToken:           in.PageToken,

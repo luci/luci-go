@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -83,8 +84,8 @@ func ValidateResultLimit(resultLimit int32) error {
 
 // Query specifies test variants to fetch.
 type Query struct {
-	InvocationIDs invocations.IDSet
-	Predicate     *pb.TestVariantPredicate
+	ReachableInvocations graph.ReachableInvocations
+	Predicate            *pb.TestVariantPredicate
 	// ResultLimit is a limit on the number of test results returned
 	// per test variant. Must be postiive.
 	ResultLimit int
@@ -237,7 +238,7 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 
 func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*pb.TestVariant) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.run")
-	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
+	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations))
 	defer func() { ts.End(err) }()
 
 	if q.PageSize < 0 {
@@ -359,7 +360,7 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 // Within each test variant, unexpected results are returned first.
 func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
-	ts.Attribute("cr.dev/invocations", len(q.InvocationIDs))
+	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations))
 	defer func() { ts.End(err) }()
 	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]interface{}{
 		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
@@ -565,15 +566,16 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 	}
 
 	q.params = map[string]interface{}{
-		"invIDs":              q.InvocationIDs,
-		"testIDs":             q.TestIDs,
-		"skipStatus":          int(pb.TestStatus_SKIP),
-		"unexpected":          int(pb.TestVariantStatus_UNEXPECTED),
-		"unexpectedlySkipped": int(pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
-		"flaky":               int(pb.TestVariantStatus_FLAKY),
-		"exonerated":          int(pb.TestVariantStatus_EXONERATED),
-		"expected":            int(pb.TestVariantStatus_EXPECTED),
-		"status":              status,
+		"testResultInvIDs":      q.ReachableInvocations.WithTestResultsIDSet(),
+		"testExonerationInvIDs": q.ReachableInvocations.WithExonerationsIDSet(),
+		"testIDs":               q.TestIDs,
+		"skipStatus":            int(pb.TestStatus_SKIP),
+		"unexpected":            int(pb.TestVariantStatus_UNEXPECTED),
+		"unexpectedlySkipped":   int(pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED),
+		"flaky":                 int(pb.TestVariantStatus_FLAKY),
+		"exonerated":            int(pb.TestVariantStatus_EXONERATED),
+		"expected":              int(pb.TestVariantStatus_EXPECTED),
+		"status":                status,
 	}
 
 	var expected bool
@@ -614,7 +616,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 	WITH unexpectedTestVariants AS (
 		SELECT DISTINCT TestId, VariantHash
 		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
-		WHERE IsUnexpected AND InvocationId in UNNEST(@invIDs)
+		WHERE IsUnexpected AND InvocationId in UNNEST(@testResultInvIDs)
 	),
 
 	-- Get test variants and their results.
@@ -632,7 +634,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			ARRAY_AGG(STRUCT({{.ResultColumns}})) results,
 		FROM unexpectedTestVariants vur
 		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-		WHERE InvocationId in UNNEST(@invIDs)
+		WHERE InvocationId in UNNEST(@testResultInvIDs)
 		GROUP BY TestId, VariantHash
 	),
 
@@ -643,7 +645,7 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 			ARRAY_AGG(ExplanationHTML) ExonertionExplanationHTMLs,
 			ARRAY_AGG(Reason) ExonerationReasons
 		FROM TestExonerations
-		WHERE InvocationId IN UNNEST(@invIDs)
+		WHERE InvocationId IN UNNEST(@testExonerationInvIDs)
 		GROUP BY TestId, VariantHash
 	),
 
@@ -710,7 +712,7 @@ var allTestResultsSQLTmpl = template.Must(template.New("allTestResultsSQL").Pars
 		-- Wrap it in an array instead.
 		ARRAY(SELECT STRUCT({{.ResultColumns}})) AS results,
 	FROM TestResults
-	WHERE InvocationId in UNNEST(@invIDs)
+	WHERE InvocationId in UNNEST(@testResultInvIDs)
 	{{if .HasTestIds}}
 		AND TestId in UNNEST(@testIDs)
 	{{end}}

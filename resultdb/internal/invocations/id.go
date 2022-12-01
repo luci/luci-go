@@ -207,30 +207,6 @@ func (s IDSet) Names() []string {
 	return names
 }
 
-// Batches splits s into batches.
-// The batches are sorted by RowID(), such that interval (minRowID, maxRowID)
-// of each batch does not overlap with any other batch.
-//
-// The size of batch is hardcoded 50, because that's the maximum parallelism
-// we get from Cloud Spanner.
-func (s IDSet) Batches() []IDSet {
-	return s.batches(50)
-}
-
-func (s IDSet) batches(size int) []IDSet {
-	ids := s.SortByRowID()
-	batches := make([]IDSet, 0, 1+len(ids)/size)
-	for len(ids) > 0 {
-		batchSize := size
-		if batchSize > len(ids) {
-			batchSize = len(ids)
-		}
-		batches = append(batches, NewIDSet(ids[:batchSize]...))
-		ids = ids[batchSize:]
-	}
-	return batches
-}
-
 // SortByRowID returns IDs in the set sorted by row id.
 func (s IDSet) SortByRowID() []ID {
 	rowIDs := make([]string, 0, len(s))

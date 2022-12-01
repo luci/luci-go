@@ -1,4 +1,4 @@
-// Copyright 2020 The LUCI Authors.
+// Copyright 2022 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package invocations
+package graph
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"sync"
@@ -29,7 +28,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/invocations"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
 )
@@ -44,30 +44,33 @@ const MaxNodes = 20000
 // see volatile-lru policy: https://redis.io/topics/lru-cache
 const reachCacheExpiration = 30 * 24 * time.Hour // 30 days
 
-// InclusionKey returns a spanner key for an Inclusion row.
-func InclusionKey(including, included ID) spanner.Key {
-	return spanner.Key{including.RowID(), included.RowID()}
-}
-
-// ReadIncluded reads ids of included invocations.
-func ReadIncluded(ctx context.Context, id ID) (IDSet, error) {
-	var ret IDSet
-	var b spanutil.Buffer
-	err := span.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
-		var included ID
-		if err := b.FromSpanner(row, &included); err != nil {
-			return err
-		}
-		if ret == nil {
-			ret = make(IDSet)
-		}
-		ret.Add(included)
+// readReachableInvocation reads summary information about a reachable
+// invocation.
+func readReachableInvocation(ctx context.Context, id invocations.ID) (ReachableInvocation, error) {
+	// Both of these requests should be very cheap, as they check only for the existance of one matching row.
+	var hasTestResults bool
+	opts := &spanner.ReadOptions{Limit: 1}
+	err := span.ReadWithOptions(ctx, "TestResults", id.Key().AsPrefix(), []string{"InvocationId"}, opts).Do(func(r *spanner.Row) error {
+		hasTestResults = true
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return ReachableInvocation{}, err
 	}
-	return ret, nil
+
+	var hasTestExonerations bool
+	opts = &spanner.ReadOptions{Limit: 1}
+	err = span.ReadWithOptions(ctx, "TestExonerations", id.Key().AsPrefix(), []string{"InvocationId"}, opts).Do(func(r *spanner.Row) error {
+		hasTestExonerations = true
+		return nil
+	})
+	if err != nil {
+		return ReachableInvocation{}, err
+	}
+	return ReachableInvocation{
+		HasTestResults:      hasTestResults,
+		HasTestExonerations: hasTestExonerations,
+	}, nil
 }
 
 // TooManyTag set in an error indicates that too many invocations
@@ -79,10 +82,10 @@ var TooManyTag = errors.BoolTag{
 // Reachable returns all invocations reachable from roots along the inclusion
 // edges.  Will return an error if there are more than MaxNodes invocations.
 // May return an appstatus-annotated error.
-func Reachable(ctx context.Context, roots IDSet) (IDSet, error) {
-	allIDs := IDSet{}
-	processor := func(ctx context.Context, invIDs IDSet) error {
-		allIDs.Union(invIDs)
+func Reachable(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
+	allIDs := ReachableInvocations{}
+	processor := func(ctx context.Context, invs ReachableInvocations) error {
+		allIDs.Union(invs)
 		// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
 		// to run into problems if you try to process all of these in one go (e.g. in a
 		// Spanner query).  If you want more, use the batched call and handle a batch at a time.
@@ -100,12 +103,12 @@ func Reachable(ctx context.Context, roots IDSet) (IDSet, error) {
 // limitation.
 // If the processor returns an error, no more batches will be processed and the
 // error will be returned immediately.
-func BatchedReachable(ctx context.Context, roots IDSet, processor func(context.Context, IDSet) error) error {
-	invIDs, err := reachable(ctx, roots, true)
+func BatchedReachable(ctx context.Context, roots invocations.IDSet, processor func(context.Context, ReachableInvocations) error) error {
+	invs, err := reachable(ctx, roots, true)
 	if err != nil {
 		return err
 	}
-	for _, batch := range invIDs.Batches() {
+	for _, batch := range invs.Batches() {
 		if err := processor(ctx, batch); err != nil {
 			return err
 		}
@@ -118,38 +121,40 @@ func BatchedReachable(ctx context.Context, roots IDSet, processor func(context.C
 //
 // Useful to keep cache-hit stats high in cases where the roots are known not to
 // have cache.
-func ReachableSkipRootCache(ctx context.Context, roots IDSet, processor func(context.Context, IDSet) error) error {
-	invIDs, err := reachable(ctx, roots, false)
+func ReachableSkipRootCache(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
+	invs, err := reachable(ctx, roots, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return processor(ctx, invIDs)
+	return invs, nil
 }
 
-func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable IDSet, err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.readReachableInvocations")
+func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) (reachable ReachableInvocations, err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.graph.reachable")
 	defer func() { ts.End(err) }()
 
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
-	reachable = make(IDSet, len(roots))
+	visited := make(invocations.IDSet, len(roots))
+	reachable = make(ReachableInvocations, len(roots))
+	hasCacheMiss := false
 	var mu sync.Mutex
 
 	spanSem := semaphore.NewWeighted(64) // limits Spanner RPC concurrency.
 
-	var visit func(id ID, useCache bool) error
-	visit = func(id ID, useCache bool) error {
+	var visit func(id invocations.ID, useCache bool) error
+	visit = func(id invocations.ID, useCache bool) error {
 		mu.Lock()
 		defer mu.Unlock()
 
 		// Check if we already started/finished fetching this invocation.
-		if reachable.Has(id) {
+		if visited.Has(id) {
 			return nil
 		}
 
 		// Mark the invocation as being processed.
-		reachable.Add(id)
+		visited.Add(id)
 
 		// Concurrently fetch the inclusions without a lock.
 		eg.Go(func() error {
@@ -159,7 +164,7 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 
 			if useCache {
 				// First check the cache.
-				switch ids, err := ReachCache(id).Read(ctx); {
+				switch reachables, err := reachCache(id).Read(ctx); {
 				case err == redisconn.ErrNotConfigured || err == ErrUnknownReach:
 					// Ignore this error.
 				case err != nil:
@@ -169,19 +174,20 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 					// recursion.
 					mu.Lock()
 					defer mu.Unlock()
-					reachable.Union(ids)
+					reachable.Union(reachables)
 					return nil
 				}
 				// Cache miss. => Read from Spanner.
 			}
 
+			// Find and visit children.
 			if err := spanSem.Acquire(ctx, 1); err != nil {
 				return err
 			}
-			included, err := ReadIncluded(ctx, id)
+			included, err := invocations.ReadIncluded(ctx, id)
 			spanSem.Release(1)
 			if err != nil {
-				return errors.Annotate(err, "failed to read inclusions of %s", id.Name()).Err()
+				return errors.Annotate(err, "reading invocations included in %s", id.Name()).Err()
 			}
 
 			for id := range included {
@@ -190,6 +196,20 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 					return err
 				}
 			}
+
+			// Read summary information about the current invocation.
+			if err := spanSem.Acquire(ctx, 1); err != nil {
+				return err
+			}
+			inv, err := readReachableInvocation(ctx, id)
+			spanSem.Release(1)
+			if err != nil {
+				return errors.Annotate(err, "reading reachable invocation %s", id.Name()).Err()
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			reachable[id] = inv
+			hasCacheMiss = true
 			return nil
 		})
 		return nil
@@ -206,6 +226,23 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
+
+	// If we queried for one root and we had a cache miss, try to insert the
+	// reachable invocations, so that the cache will hopefully be populated
+	// next time.
+	if len(roots) == 1 && hasCacheMiss {
+		var root invocations.ID
+		for id := range roots {
+			root = id
+		}
+		state, err := invocations.ReadState(ctx, root)
+		if err == nil && state == resultpb.Invocation_FINALIZED {
+			// Only populate the cache if the invocation exists and is
+			// finalized.
+			reachCache(root).TryWrite(ctx, reachable)
+		}
+	}
+
 	logging.Debugf(ctx, "%d invocations are reachable from %s", len(reachable), roots.Names())
 	return reachable, nil
 }
@@ -219,19 +256,25 @@ func reachable(ctx context.Context, roots IDSet, useRootCache bool) (reachable I
 // and avoid a situation where we failed to update the currently stored set,
 // ignored the failure and then, after Redis came back online, read the
 // stale set.
-type ReachCache ID
+type reachCache invocations.ID
 
 // key returns the Redis key.
-func (c ReachCache) key() string {
-	return fmt.Sprintf("reach:%s", c)
+func (c reachCache) key() string {
+	return fmt.Sprintf("reach2:%s", c)
 }
 
 // Write writes the new value.
 // The value does not have to include c, this is implied.
-func (c ReachCache) Write(ctx context.Context, value IDSet) (err error) {
+func (c reachCache) Write(ctx context.Context, value ReachableInvocations) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.write")
 	ts.Attribute("id", string(c))
 	defer func() { ts.End(err) }()
+
+	// Expect the set of reachable invocations to include the invocation
+	// for which the cache entry is.
+	if _, ok := value[invocations.ID(c)]; !ok {
+		return errors.New("value is invalid, does not contain the root invocation itself")
+	}
 
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
@@ -241,26 +284,24 @@ func (c ReachCache) Write(ctx context.Context, value IDSet) (err error) {
 
 	key := c.key()
 
-	marshaled := &bytes.Buffer{}
-	for id := range value {
-		if id != ID(c) {
-			fmt.Fprintln(marshaled, id)
-		}
+	marshaled, err := value.marshal()
+	if err != nil {
+		return errors.Annotate(err, "marshal").Err()
 	}
-	if marshaled.Len() == 0 {
-		// Redis does not support empty values. Write just "\n".
-		fmt.Fprintln(marshaled)
-	}
-	ts.Attribute("size", marshaled.Len())
+	ts.Attribute("size", len(marshaled))
 
-	conn.Send("SET", key, marshaled.Bytes())
-	conn.Send("EXPIRE", key, int(reachCacheExpiration.Seconds()))
+	if err := conn.Send("SET", key, marshaled); err != nil {
+		return err
+	}
+	if err := conn.Send("EXPIRE", key, int(reachCacheExpiration.Seconds())); err != nil {
+		return err
+	}
 	_, err = conn.Do("")
 	return err
 }
 
 // TryWrite tries to write the new value. On failure, logs it.
-func (c ReachCache) TryWrite(ctx context.Context, value IDSet) {
+func (c reachCache) TryWrite(ctx context.Context, value ReachableInvocations) {
 	switch err := c.Write(ctx, value); {
 	case err == redisconn.ErrNotConfigured:
 
@@ -272,13 +313,11 @@ func (c ReachCache) TryWrite(ctx context.Context, value IDSet) {
 // ErrUnknownReach is returned by ReachCache.Read if the cached value is absent.
 var ErrUnknownReach = fmt.Errorf("the reachable set is unknown")
 
-var memberSep = []byte("\n")
-
 // Read reads the current value.
 // Returns ErrUnknownReach if the value is absent.
 //
 // If err is nil, ids includes c, even if it was not passed in Write().
-func (c ReachCache) Read(ctx context.Context) (ids IDSet, err error) {
+func (c reachCache) Read(ctx context.Context) (invs ReachableInvocations, err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.reachCache.read")
 	ts.Attribute("id", string(c))
 	defer func() { ts.End(err) }()
@@ -289,22 +328,14 @@ func (c ReachCache) Read(ctx context.Context) (ids IDSet, err error) {
 	}
 	defer conn.Close()
 
-	members, err := redis.Bytes(conn.Do("GET", c.key()))
+	b, err := redis.Bytes(conn.Do("GET", c.key()))
 	switch {
 	case err == redis.ErrNil:
 		return nil, ErrUnknownReach
 	case err != nil:
 		return nil, err
 	}
-	ts.Attribute("size", len(members))
+	ts.Attribute("size", len(b))
 
-	split := bytes.Split(members, memberSep)
-	ids = make(IDSet, len(split)+1)
-	ids.Add(ID(c))
-	for _, id := range split {
-		if len(id) > 0 {
-			ids.Add(ID(id))
-		}
-	}
-	return ids, nil
+	return unmarshalReachableInvocations(b)
 }

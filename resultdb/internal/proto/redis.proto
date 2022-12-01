@@ -1,0 +1,37 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.internal;
+
+option go_package = "go.chromium.org/luci/resultdb/internal/proto;internalpb";
+
+
+// ReachableInvocations captures the invocations reachable from a root
+// invocation (including the invocation itself). It is stored as a value
+// in redis for finalized invocations alongside the ID of that invocation.
+message ReachableInvocations {
+    message ReachableInvocation {
+        // The invocation ID.
+        string invocation_id = 1;
+        // Whether the invocation has any test results.
+        bool has_test_results = 2;
+        // Whether the invocation has any test exonerations.
+        bool has_test_exonerations = 3;
+    }
+    // The invocations reachable. This includes the root invocation
+    // (the invocation for which this cache entry is) itself.
+    repeated ReachableInvocation invocations = 1;
+}

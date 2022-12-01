@@ -223,3 +223,29 @@ func ReadRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error
 	}
 	return realms, nil
 }
+
+// InclusionKey returns a spanner key for an Inclusion row.
+func InclusionKey(including, included ID) spanner.Key {
+	return spanner.Key{including.RowID(), included.RowID()}
+}
+
+// ReadIncluded reads ids of (directly) included invocations.
+func ReadIncluded(ctx context.Context, id ID) (IDSet, error) {
+	var ret IDSet
+	var b spanutil.Buffer
+	err := span.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
+		var included ID
+		if err := b.FromSpanner(row, &included); err != nil {
+			return err
+		}
+		if ret == nil {
+			ret = make(IDSet)
+		}
+		ret.Add(included)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}

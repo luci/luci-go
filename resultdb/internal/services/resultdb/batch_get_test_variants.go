@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -76,7 +77,7 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	invs, err := invocations.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(in.Invocation)))
+	invs, err := graph.Reachable(ctx, invocations.NewIDSet(invocations.MustParseName(in.Invocation)))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch invocations").Err()
 	}
@@ -84,11 +85,11 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	// Query test variants with an empty predicate and a list of test IDs,
 	// which will match all variants with those IDs, regardless of status.
 	q := testvariants.Query{
-		InvocationIDs:      invs,
-		TestIDs:            testIDs,
-		Predicate:          &pb.TestVariantPredicate{},
-		ResultLimit:        testvariants.AdjustResultLimit(in.ResultLimit),
-		ResponseLimitBytes: testvariants.DefaultResponseLimitBytes,
+		ReachableInvocations: invs,
+		TestIDs:              testIDs,
+		Predicate:            &pb.TestVariantPredicate{},
+		ResultLimit:          testvariants.AdjustResultLimit(in.ResultLimit),
+		ResponseLimitBytes:   testvariants.DefaultResponseLimitBytes,
 		// Number chosen fairly arbitrarily.
 		PageSize:  1000,
 		PageToken: "",

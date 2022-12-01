@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -237,7 +238,6 @@ func ensureFinalizing(ctx context.Context, invID invocations.ID) error {
 // For each FINALIZING invocation that includes the given one, enqueues
 // a finalization task.
 func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
-	var reach = make(invocations.IDSet)
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check the state before proceeding, so that if the invocation already
 		// finalized, we return errAlreadyFinalized.
@@ -248,21 +248,14 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 		var reachVarUnion []string
 		err := parallel.FanOutIn(func(work chan<- func() error) {
 			// Read all reachable invocations to cache them after the transaction.
-			work <- func() (err error) {
-				processReachableInvocations := func(ctx context.Context, invIDs invocations.IDSet) error {
-					reach.Union(invIDs)
-					variants, err := variantUnion(ctx, reach)
-					if err != nil {
-						return err
-					}
-					reachVarUnion = append(reachVarUnion, variants...)
-					return nil
-				}
-				err = invocations.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID), processReachableInvocations)
+			work <- func() error {
+				var err error
+				reach, err := graph.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID))
 				if err != nil {
-					return
+					return err
 				}
-				return
+				reachVarUnion, err = variantUnion(ctx, reach.IDSet())
+				return err
 			}
 
 			work <- func() error {
@@ -320,8 +313,6 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 	case err != nil:
 		return err
 	default:
-		// Cache the reachable invocations.
-		invocations.ReachCache(invID).TryWrite(ctx, reach)
 		return nil
 	}
 }

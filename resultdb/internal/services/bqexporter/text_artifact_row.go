@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -177,13 +178,13 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 		return errors.Annotate(err, "error reading exported invocation").Err()
 	}
 
-	exportInvocationBatch := func(ctx context.Context, invIDs invocations.IDSet) error {
+	exportInvocationBatch := func(ctx context.Context, reachableInvs graph.ReachableInvocations) error {
 		contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
 		if contentTypeRegexp == "" {
 			contentTypeRegexp = "text/.*"
 		}
 		q := artifacts.Query{
-			InvocationIDs:       invIDs,
+			InvocationIDs:       reachableInvs.IDSet(),
 			TestResultPredicate: bqExport.GetTextArtifacts().GetPredicate().GetTestResultPredicate(),
 			ContentTypeRegexp:   contentTypeRegexp,
 			ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),
