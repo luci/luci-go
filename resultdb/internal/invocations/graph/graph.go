@@ -133,6 +133,7 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 	ctx, ts := trace.StartSpan(ctx, "resultdb.graph.reachable")
 	defer func() { ts.End(err) }()
 
+	originalCtx := ctx
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
 
@@ -227,6 +228,9 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 		return nil, err
 	}
 
+	// Restore the original context as the waitgroup context is cancelled.
+	ctx = originalCtx
+
 	// If we queried for one root and we had a cache miss, try to insert the
 	// reachable invocations, so that the cache will hopefully be populated
 	// next time.
@@ -236,7 +240,9 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 			root = id
 		}
 		state, err := invocations.ReadState(ctx, root)
-		if err == nil && state == resultpb.Invocation_FINALIZED {
+		if err != nil {
+			logging.Warningf(ctx, "reachable: failed to read root invocation %s: %s", root, err)
+		} else if state == resultpb.Invocation_FINALIZED {
 			// Only populate the cache if the invocation exists and is
 			// finalized.
 			reachCache(root).TryWrite(ctx, reachable)
