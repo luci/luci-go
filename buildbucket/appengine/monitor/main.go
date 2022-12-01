@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -70,6 +71,7 @@ func main() {
 		cron.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, mods, func(srv *server.Server) error {
