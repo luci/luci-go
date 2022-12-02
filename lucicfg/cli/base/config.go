@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/lucicfg/buildifier"
+	"go.chromium.org/luci/lucicfg/vars"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -133,15 +134,7 @@ func convertOrderingToTable(nameOrdering []string) map[string]int {
 }
 
 func rewriterFromConfig(nameOrdering map[string]int) *build.Rewriter {
-	var rewriter = &build.Rewriter{
-		RewriteSet: []string{
-			"listsort",
-			"loadsort",
-			"formatdocstrings",
-			"reorderarguments",
-			"editoctal",
-		},
-	}
+	var rewriter = vars.GetDefaultRewriter()
 	if nameOrdering != nil {
 		rewriter.NamePriority = nameOrdering
 		rewriter.RewriteSet = append(rewriter.RewriteSet, "callsort")

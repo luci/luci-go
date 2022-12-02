@@ -22,6 +22,7 @@ import (
 
 	"go.starlark.net/starlark"
 
+	"github.com/bazelbuild/buildtools/build"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
@@ -62,6 +63,19 @@ type Vars struct {
 type scope struct {
 	values map[ID]varValue  // var -> (value, trace)
 	thread *starlark.Thread // just for asserts
+}
+
+// GetDefaultRewriter will return the default rewriter with basic rewriter properties
+func GetDefaultRewriter() *build.Rewriter {
+	return &build.Rewriter{
+		RewriteSet: []string{
+			"listsort",
+			"loadsort",
+			"formatdocstrings",
+			"reorderarguments",
+			"editoctal",
+		},
+	}
 }
 
 // assign mutates 'values' map, auto-initializing it if necessary.

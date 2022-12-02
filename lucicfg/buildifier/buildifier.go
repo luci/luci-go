@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/lucicfg/vars"
 	"go.chromium.org/luci/starlark/interpreter"
 )
 
@@ -89,12 +90,17 @@ func (f *Finding) Format() string {
 
 // Lint appliers linting and formatting checks to the given files.
 //
+// If a nil Rewriter is accepted, we will use default rewriter in vars package
 // Returns all findings and a non-nil error (usually a MultiError) if some
 // findings are blocking.
 func Lint(loader interpreter.Loader, paths []string, lintChecks []string, rewriter *build.Rewriter) (findings []*Finding, err error) {
 	checks, err := normalizeLintChecks(lintChecks)
 	if err != nil {
 		return nil, err
+	}
+
+	if rewriter == nil {
+		rewriter = vars.GetDefaultRewriter()
 	}
 
 	// Transform unrecognized linter checks into warning-level findings.
