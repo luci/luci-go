@@ -66,24 +66,6 @@ func (bnd *buildersNotDefined) Reason() string {
 	}
 }
 
-// buildersNotDirectlyIncludable represents a computation failure where builders
-// explicitly included in the Run are to be triggered by some other builder and
-// not by CV directly.
-type buildersNotDirectlyIncludable struct {
-	Builders []string
-}
-
-func (bni *buildersNotDirectlyIncludable) Reason() string {
-	switch len(bni.Builders) {
-	case 0:
-		panic(fmt.Errorf("impossible: at least one unincludable builder is needed in this failure"))
-	case 1:
-		return fmt.Sprintf("builder %q is included but cannot be triggered directly by CV", bni.Builders[0])
-	default:
-		return fmt.Sprintf("the following builders are included but cannot be triggered directly by CV:\n - %s", strings.Join(bni.Builders, "\n - "))
-	}
-}
-
 // incompatibleTryjobOptions is a computation failure where multiple Tryjob
 // options have been provided but they are not compatible with each other.
 type incompatibleTryjobOptions struct {

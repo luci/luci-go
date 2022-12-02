@@ -322,22 +322,6 @@ func TestCompute(t *testing.T) {
 				},
 			})
 		})
-		Convey("includes triggeredBy builder", func() {
-			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{Name: "test-proj/test/builder1"}.generate(),
-				builderConfigGenerator{Name: "test-proj/test/indirect", TriggeredBy: "test-proj/test/builder1"}.generate(),
-			})
-			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:indirect")
-			res, err := Compute(ctx, *in)
-
-			So(err, ShouldBeNil)
-			So(res.OK(), ShouldBeFalse)
-			So(res, ShouldResemble, &ComputationResult{
-				ComputationFailure: &buildersNotDirectlyIncludable{
-					Builders: []string{"test-proj/test/indirect"},
-				},
-			})
-		})
 		Convey("includes unauthorized builder", func() {
 			Convey("with single unauthorized user", func() {
 				in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
@@ -1075,7 +1059,6 @@ type builderConfigGenerator struct {
 	LocationRegexp        []string
 	LocationRegexpExclude []string
 	LocationFilters       []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter
-	TriggeredBy           string
 	CancelStale           cfgpb.Toggle
 	Modes                 []string
 }
@@ -1087,7 +1070,6 @@ func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
 		LocationRegexp:        bcg.LocationRegexp,
 		LocationRegexpExclude: bcg.LocationRegexpExclude,
 		LocationFilters:       bcg.LocationFilters,
-		TriggeredBy:           bcg.TriggeredBy,
 		CancelStale:           bcg.CancelStale,
 	}
 	if len(bcg.Modes) != 0 {

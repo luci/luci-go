@@ -274,12 +274,6 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 		return skipBuilder, nil, nil
 	}
 
-	// If the builder is triggered by another builder, it does not need to be
-	// considered as a required Tryjob.
-	if b.TriggeredBy != "" {
-		return skipBuilder, nil, nil
-	}
-
 	if incl.Has(b.Name) {
 		switch disallowedOwners, err := getDisallowedOwners(ctx, owners, b.GetOwnerWhitelistGroup()...); {
 		case err != nil:
@@ -388,14 +382,9 @@ func calculateExplicitlyIncluded(in Input) (stringset.Set, ComputationFailure) {
 	if compFail != nil {
 		return nil, compFail
 	}
-	includableBuilders, triggeredByBuilders := getIncludablesAndTriggeredBy(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
-	unincludable := explicitlyIncluded.Difference(includableBuilders)
-	undefined := unincludable.Difference(triggeredByBuilders)
-	switch {
-	case len(undefined) != 0:
+	allBuilders := getAllBuilders(in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders())
+	if undefined := explicitlyIncluded.Difference(allBuilders); len(undefined) > 0 {
 		return nil, &buildersNotDefined{Builders: undefined.ToSlice()}
-	case len(unincludable) != 0:
-		return nil, &buildersNotDirectlyIncludable{Builders: unincludable.ToSlice()}
 	}
 	return explicitlyIncluded, nil
 }
@@ -550,24 +539,4 @@ func getAllBuilders(builders []*cfgpb.Verifiers_Tryjob_Builder) stringset.Set {
 		}
 	}
 	return ret
-}
-
-// getIncludablesAndTriggeredBy computes the set of builders that it is valid to
-// include as trybots in a CL, and those that cannot be included due to their
-// being triggered by another builder.
-func getIncludablesAndTriggeredBy(builders []*cfgpb.Verifiers_Tryjob_Builder) (includable, triggeredByOther stringset.Set) {
-	includable = stringset.New(len(builders))
-	triggeredByOther = stringset.New(len(builders))
-	for _, b := range builders {
-		switch {
-		case b.TriggeredBy != "":
-			triggeredByOther.Add(b.Name)
-		case b.EquivalentTo != nil:
-			includable.Add(b.EquivalentTo.Name)
-			fallthrough
-		default:
-			includable.Add(b.Name)
-		}
-	}
-	return includable, triggeredByOther
 }
