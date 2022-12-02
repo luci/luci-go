@@ -616,6 +616,11 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 						return nil
 					}
 
+					if b.Proto.Infra.GetSwarming().GetHostname() == "" {
+						logging.Debugf(ctx, "skipped creating swarming task for build %d", b.ID)
+						return nil
+					}
+
 					if stringset.NewFromSlice(b.Proto.Input.Experiments...).Has(bb.ExperimentBackendGo) {
 						if err := tasks.CreateSwarmingBuildTask(ctx, &taskdefs.CreateSwarmingBuildTask{
 							BuildId: b.ID,

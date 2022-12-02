@@ -179,7 +179,8 @@ func TestScheduleBuild(t *testing.T) {
 			So(err.(errors.MultiError)[1], ShouldErrLike, "builder not found")
 			So(bldrs["project/bucket 3"]["builder 1"], ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
-				Name: "builder 1",
+				Name:         "builder 1",
+				SwarmingHost: "host",
 			})
 		})
 
@@ -208,7 +209,8 @@ func TestScheduleBuild(t *testing.T) {
 			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
-				Name: "builder 1",
+				Name:         "builder 1",
+				SwarmingHost: "host",
 			})
 		})
 
@@ -233,10 +235,12 @@ func TestScheduleBuild(t *testing.T) {
 			bldrs, _, err := fetchBuilderConfigs(ctx, bldrIDs)
 			So(err, ShouldBeNil)
 			So(bldrs["project/bucket 1"]["builder 1"], ShouldResembleProto, &pb.BuilderConfig{
-				Name: "builder 1",
+				Name:         "builder 1",
+				SwarmingHost: "host",
 			})
 			So(bldrs["project/bucket 1"]["builder 2"], ShouldResembleProto, &pb.BuilderConfig{
-				Name: "builder 2",
+				Name:         "builder 2",
+				SwarmingHost: "host",
 			})
 			So(bldrs["project/bucket 2"]["builder 1"], ShouldBeNil)
 		})
@@ -588,6 +592,7 @@ func TestScheduleBuild(t *testing.T) {
 								Hostname: "rdbHost",
 							},
 							Swarming: &pb.BuildInfra_Swarming{
+								Hostname: "host",
 								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 									{
 										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -695,6 +700,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "host",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -852,6 +858,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "host",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_943d53aa636f1497a9367662af111471018b08dcd116ae5405ff9fab3b2d5682_v2",
@@ -920,6 +927,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "host",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_943d53aa636f1497a9367662af111471018b08dcd116ae5405ff9fab3b2d5682_v2",
@@ -1073,7 +1081,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			})
 
-			So(sch.Tasks(), ShouldHaveLength, 3)
+			So(sch.Tasks(), ShouldHaveLength, 2)
 			So(datastore.Get(ctx, blds), ShouldBeNil)
 		})
 
@@ -1130,7 +1138,8 @@ func TestScheduleBuild(t *testing.T) {
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder",
 					Config: &pb.BuilderConfig{
-						Name: "builder",
+						Name:         "builder",
+						SwarmingHost: "host",
 					},
 				}), ShouldBeNil)
 			testutil.PutBucket(ctx, "project", "bucket", nil)
@@ -1181,6 +1190,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "host",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -1385,6 +1395,7 @@ func TestScheduleBuild(t *testing.T) {
 							Hostname: "rdbHost",
 						},
 						Swarming: &pb.BuildInfra_Swarming{
+							Hostname: "host",
 							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 								{
 									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
@@ -4905,7 +4916,7 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
-			Convey("dynamic", func() {
+			Convey("directly from dynamic", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
@@ -4937,7 +4948,7 @@ func TestScheduleBuild(t *testing.T) {
 					Input:      &pb.Build_Input{},
 					Status:     pb.Status_SCHEDULED,
 				})
-				So(len(sch.Tasks()), ShouldEqual, 1)
+				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
 			Convey("static", func() {
@@ -4993,6 +5004,7 @@ func TestScheduleBuild(t *testing.T) {
 						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
+							SwarmingHost: "host",
 						},
 					}), ShouldBeNil)
 
@@ -5026,6 +5038,7 @@ func TestScheduleBuild(t *testing.T) {
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
 							Experiments:  map[string]int32{bb.ExperimentBackendGo: 100},
+							SwarmingHost: "host",
 						},
 					}), ShouldBeNil)
 
@@ -5280,6 +5293,7 @@ func TestScheduleBuild(t *testing.T) {
 						Config: &pb.BuilderConfig{
 							BuildNumbers: pb.Toggle_YES,
 							Name:         "builder",
+							SwarmingHost: "host",
 						},
 					}), ShouldBeNil)
 
@@ -5358,6 +5372,7 @@ func TestScheduleBuild(t *testing.T) {
 			Config: &pb.BuilderConfig{
 				BuildNumbers: pb.Toggle_YES,
 				Name:         "builder",
+				SwarmingHost: "host",
 			},
 		}), ShouldBeNil)
 
@@ -5556,6 +5571,7 @@ func TestScheduleBuild(t *testing.T) {
 					Config: &pb.BuilderConfig{
 						BuildNumbers: pb.Toggle_YES,
 						Name:         "builder_with_rdb",
+						SwarmingHost: "host",
 						Resultdb: &pb.BuilderConfig_ResultDB{
 							Enable:         true,
 							HistoryOptions: historyOptions,
