@@ -152,9 +152,9 @@ func (in *Input) panicIfInvalid() {
 //
 // Returns error tagged with `ErrPreconditionFailedTag` if one of the
 // following conditions is matched.
-//  * The patchset of the provided CL is not the latest in Gerrit.
-//  * The provided CL gets `changelist.AccessDenied` or
-//    `changelist.AccessDeniedProbably` from Gerrit.
+//   - The patchset of the provided CL is not the latest in Gerrit.
+//   - The provided CL gets `changelist.AccessDenied` or
+//     `changelist.AccessDeniedProbably` from Gerrit.
 //
 // Normally, the triggering vote(s) is removed last and all other votes
 // are removed in chronological order (latest to earliest).
@@ -163,9 +163,9 @@ func (in *Input) panicIfInvalid() {
 // Abnormally, e.g. lack of permission to remove votes, falls back to post a
 // special message which "deactivates" the triggering votes. This special
 // message is a combination of:
-//   * the original message in the input
-//   * reason for abnormality,
-//   * special `botdata.BotData` which ensures CV won't consider previously
+//   - the original message in the input
+//   - reason for abnormality,
+//   - special `botdata.BotData` which ensures CV won't consider previously
 //     triggering votes as triggering in the future.
 //
 // Alternatively, in the case of a new patchset run:
@@ -505,20 +505,24 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 	nd := makeGerritNotifyDetails(notify, ci)
 	reason = fmt.Sprintf("ps#%d: %s", ci.GetRevisions()[ci.GetCurrentRevision()].GetNumber(), reason)
 	attention := makeGerritAttentionSetInputs(addAttn, ci, reason)
+	msg = gerrit.TruncateMessage(msg)
+	// Post message with unique tag per Run so that Gerrit will always display
+	// these messages. The uniqueness is achieved by appending the Run triggering
+	// time. Otherwise, users may falsely believe LUCI CV is not doing anything
+	// to handle their CLs because Gerrit will hide old messages with the same
+	// tag (See: crbug.com/1359521). The message in trigger cancellation normally
+	// contains the result for the Run (e.g. passing or why the Run fails) so it
+	// is a good indication of LUCI CV is working fine without introducing too
+	// much noise.
+	tag := fmt.Sprintf("%s:%d", run.Mode(t.Mode).GerritMessageTag(), t.GetTime().AsTime().Unix())
 	var gerritErr error
 	outerErr := c.gf.MakeMirrorIterator(ctx).RetryIfStale(func(opt grpc.CallOption) error {
-		// Do not post message with tag so that Gerrit will always display these
-		// messages. Otherwise, users may falsely believe LUCI CV is not doing
-		// anything to handle their CLs because Gerrit will hide old messages with
-		// the same tag (See: crbug.com/1359521). The message in trigger
-		// cancellation normally contains the result for the Run (e.g. passing or
-		// why the Run fails) so it is a good indication of LUCI CV is working fine
-		// without introducing too much noise.
 		_, gerritErr = c.gc.SetReview(ctx, &gerritpb.SetReviewRequest{
 			Number:     c.Number,
 			Project:    c.Project,
 			RevisionId: ci.GetCurrentRevision(),
-			Message:    gerrit.TruncateMessage(msg),
+			Message:    msg,
+			Tag:        tag,
 			// Set `Notify` to NONE because LUCI CV has the knowledge on all the
 			// accounts to notify. All of them are included through `NotifyDetails`.
 			// Therefore, there is no point using the special enum provided via
