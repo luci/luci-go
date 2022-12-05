@@ -110,28 +110,11 @@ type FailureAssociationRule struct {
 	// This flag is effective only if the IsManagingBug is true.
 	// The default value will be false.
 	IsManagingBugPriority bool `json:"isManagingBugPriority"`
-	// Tracks the last time the field `IsManagingBugPriority` was updated.
-	// Defaults to nil which means the field was never updated.
-	IsManagingBugPriorityLastUpdated time.Time `json:"isManagingBugPriorityLastUpdated"`
 	// The suggested cluster this rule was created from (if any).
 	// Until re-clustering is complete and has reduced the residual impact
 	// of the source cluster, this cluster ID tells bug filing to ignore
 	// the source cluster when determining whether new bugs need to be filed.
 	SourceCluster clustering.ClusterID `json:"sourceCluster"`
-}
-
-// UpdateOptions are the options that are using during
-// the update of a rule.
-type UpdateOptions struct {
-	// PredicateUpdated should be set if IsActive and/or RuleDefinition
-	// have been updated.
-	// If set, these new values of these fields will be saved and
-	// PredicateLastUpdated will be updated."
-	PredicateUpdated bool
-	// IsManagingBugPriorityUpdated should be set if IsManagingBugPriority
-	// has been updated.
-	// If set, the IsManagingBugPriorityLastUpdated will be updated.
-	IsManagingBugPriorityUpdated bool
 }
 
 // Read reads the failure association rule with the given rule ID.
@@ -255,7 +238,7 @@ func readWhere(ctx context.Context, whereClause string, params map[string]interf
 		SELECT Project, RuleId, RuleDefinition, BugSystem, BugId,
 		  CreationTime, LastUpdated, PredicateLastUpdated,
 		  CreationUser, LastUpdatedUser,
-		  IsActive, IsManagingBug, IsManagingBugPriority, IsManagingBugPriorityLastUpdated,
+		  IsActive, IsManagingBug, IsManagingBugPriority,
 		  SourceClusterAlgorithm, SourceClusterId
 		FROM FailureAssociationRules
 		WHERE (` + whereClause + `)
@@ -272,13 +255,11 @@ func readWhere(ctx context.Context, whereClause string, params map[string]interf
 		var isActive, isManagingBug spanner.NullBool
 		var sourceClusterAlgorithm, sourceClusterID string
 		var isManagingBugPriority bool
-		var isManagingBugPriorityLastUpdated time.Time
 		err := r.Columns(
 			&project, &ruleID, &ruleDefinition, &bugSystem, &bugID,
 			&creationTime, &lastUpdated, &predicateLastUpdated,
 			&creationUser, &lastUpdatedUser,
 			&isActive, &isManagingBug, &isManagingBugPriority,
-			&isManagingBugPriorityLastUpdated,
 			&sourceClusterAlgorithm, &sourceClusterID,
 		)
 		if err != nil {
@@ -286,19 +267,18 @@ func readWhere(ctx context.Context, whereClause string, params map[string]interf
 		}
 
 		rule := &FailureAssociationRule{
-			Project:                          project,
-			RuleID:                           ruleID,
-			RuleDefinition:                   ruleDefinition,
-			CreationTime:                     creationTime,
-			CreationUser:                     creationUser,
-			LastUpdated:                      lastUpdated,
-			LastUpdatedUser:                  lastUpdatedUser,
-			PredicateLastUpdated:             predicateLastUpdated,
-			BugID:                            bugs.BugID{System: bugSystem, ID: bugID},
-			IsActive:                         isActive.Valid && isActive.Bool,
-			IsManagingBug:                    isManagingBug.Valid && isManagingBug.Bool,
-			IsManagingBugPriority:            isManagingBugPriority,
-			IsManagingBugPriorityLastUpdated: isManagingBugPriorityLastUpdated,
+			Project:               project,
+			RuleID:                ruleID,
+			RuleDefinition:        ruleDefinition,
+			CreationTime:          creationTime,
+			CreationUser:          creationUser,
+			LastUpdated:           lastUpdated,
+			LastUpdatedUser:       lastUpdatedUser,
+			PredicateLastUpdated:  predicateLastUpdated,
+			BugID:                 bugs.BugID{System: bugSystem, ID: bugID},
+			IsActive:              isActive.Valid && isActive.Bool,
+			IsManagingBug:         isManagingBug.Valid && isManagingBug.Bool,
+			IsManagingBugPriority: isManagingBugPriority,
 			SourceCluster: clustering.ClusterID{
 				Algorithm: sourceClusterAlgorithm,
 				ID:        sourceClusterID,
@@ -403,31 +383,30 @@ func ReadTotalActiveRules(ctx context.Context) (map[string]int64, error) {
 }
 
 // Create inserts a new failure association rule with the specified details.
-func Create(ctx context.Context, rule *FailureAssociationRule, user string) error {
-	if err := validateRule(rule); err != nil {
+func Create(ctx context.Context, r *FailureAssociationRule, user string) error {
+	if err := validateRule(r); err != nil {
 		return err
 	}
 	if err := validateUser(user); err != nil {
 		return err
 	}
 	ms := spanutil.InsertMap("FailureAssociationRules", map[string]interface{}{
-		"Project":              rule.Project,
-		"RuleId":               rule.RuleID,
-		"RuleDefinition":       rule.RuleDefinition,
+		"Project":              r.Project,
+		"RuleId":               r.RuleID,
+		"RuleDefinition":       r.RuleDefinition,
 		"PredicateLastUpdated": spanner.CommitTimestamp,
 		"CreationTime":         spanner.CommitTimestamp,
 		"CreationUser":         user,
 		"LastUpdated":          spanner.CommitTimestamp,
 		"LastUpdatedUser":      user,
-		"BugSystem":            rule.BugID.System,
-		"BugId":                rule.BugID.ID,
+		"BugSystem":            r.BugID.System,
+		"BugId":                r.BugID.ID,
 		// IsActive uses the value 'NULL' to indicate false, and true to indicate true.
-		"IsActive":                         spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive},
-		"IsManagingBug":                    rule.IsManagingBug,
-		"IsManagingBugPriority":            rule.IsManagingBugPriority,
-		"IsManagingBugPriorityLastUpdated": spanner.CommitTimestamp,
-		"SourceClusterAlgorithm":           rule.SourceCluster.Algorithm,
-		"SourceClusterId":                  rule.SourceCluster.ID,
+		"IsActive":               spanner.NullBool{Bool: r.IsActive, Valid: r.IsActive},
+		"IsManagingBug":          r.IsManagingBug,
+		"IsManagingBugPriority":  r.IsManagingBugPriority,
+		"SourceClusterAlgorithm": r.SourceCluster.Algorithm,
+		"SourceClusterId":        r.SourceCluster.ID,
 	})
 	span.BufferWrite(ctx, ms)
 	return nil
@@ -436,33 +415,30 @@ func Create(ctx context.Context, rule *FailureAssociationRule, user string) erro
 // Update updates an existing failure association rule to have the specified
 // details. Set updatePredicate to true if you changed RuleDefinition
 // or IsActive.
-func Update(ctx context.Context, rule *FailureAssociationRule, options UpdateOptions, user string) error {
-	if err := validateRule(rule); err != nil {
+func Update(ctx context.Context, r *FailureAssociationRule, updatePredicate bool, user string) error {
+	if err := validateRule(r); err != nil {
 		return err
 	}
 	if err := validateUser(user); err != nil {
 		return err
 	}
 	update := map[string]interface{}{
-		"Project":                rule.Project,
-		"RuleId":                 rule.RuleID,
+		"Project":                r.Project,
+		"RuleId":                 r.RuleID,
 		"LastUpdated":            spanner.CommitTimestamp,
 		"LastUpdatedUser":        user,
-		"BugSystem":              rule.BugID.System,
-		"BugId":                  rule.BugID.ID,
-		"SourceClusterAlgorithm": rule.SourceCluster.Algorithm,
-		"SourceClusterId":        rule.SourceCluster.ID,
-		"IsManagingBug":          rule.IsManagingBug,
-		"IsManagingBugPriority":  rule.IsManagingBugPriority,
+		"BugSystem":              r.BugID.System,
+		"BugId":                  r.BugID.ID,
+		"SourceClusterAlgorithm": r.SourceCluster.Algorithm,
+		"SourceClusterId":        r.SourceCluster.ID,
+		"IsManagingBug":          r.IsManagingBug,
+		"IsManagingBugPriority":  r.IsManagingBugPriority,
 	}
-	if options.PredicateUpdated {
-		update["RuleDefinition"] = rule.RuleDefinition
+	if updatePredicate {
+		update["RuleDefinition"] = r.RuleDefinition
 		// IsActive uses the value 'NULL' to indicate false, and true to indicate true.
-		update["IsActive"] = spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive}
+		update["IsActive"] = spanner.NullBool{Bool: r.IsActive, Valid: r.IsActive}
 		update["PredicateLastUpdated"] = spanner.CommitTimestamp
-	}
-	if options.IsManagingBugPriorityUpdated {
-		update["IsManagingBugPriorityLastUpdated"] = spanner.CommitTimestamp
 	}
 	ms := spanutil.UpdateMap("FailureAssociationRules", update)
 	span.BufferWrite(ctx, ms)

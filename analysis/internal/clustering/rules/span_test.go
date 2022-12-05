@@ -290,7 +290,6 @@ func TestSpan(t *testing.T) {
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
 					testExists(expectedRule)
 				})
@@ -305,7 +304,6 @@ func TestSpan(t *testing.T) {
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
 					testExists(expectedRule)
 				})
@@ -317,7 +315,6 @@ func TestSpan(t *testing.T) {
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
 					testExists(expectedRule)
 				})
@@ -329,7 +326,6 @@ func TestSpan(t *testing.T) {
 					expectedRule := *r
 					expectedRule.LastUpdated = commitTime
 					expectedRule.PredicateLastUpdated = commitTime
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.CreationTime = commitTime
 					testExists(expectedRule)
 				})
@@ -380,9 +376,9 @@ func TestSpan(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(rule, ShouldResemble, expectedRule)
 			}
-			testUpdate := func(bc *FailureAssociationRule, options UpdateOptions, user string) (time.Time, error) {
+			testUpdate := func(bc *FailureAssociationRule, predicateUpdated bool, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					return Update(ctx, bc, options, user)
+					return Update(ctx, bc, predicateUpdated, user)
 				})
 				return commitTime.In(time.UTC), err
 			}
@@ -396,9 +392,8 @@ func TestSpan(t *testing.T) {
 					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
 					r.IsActive = false
 					r.SourceCluster = clustering.ClusterID{Algorithm: "testname-v1", ID: "00112233445566778899aabbccddeeff"}
-					commitTime, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: true,
-					}, "testuser@google.com")
+					updatePredicate := true
+					commitTime, err := testUpdate(r, updatePredicate, "testuser@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
@@ -410,25 +405,11 @@ func TestSpan(t *testing.T) {
 				Convey(`Do not update predicate`, func() {
 					r.BugID = bugs.BugID{System: "monorail", ID: "chromium/651234"}
 					r.SourceCluster = clustering.ClusterID{Algorithm: "testname-v1", ID: "00112233445566778899aabbccddeeff"}
-					commitTime, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
-					}, "testuser@google.com")
+					updatePredicate := false
+					commitTime, err := testUpdate(r, updatePredicate, "testuser@google.com")
 					So(err, ShouldBeNil)
 
 					expectedRule := *r
-					expectedRule.LastUpdated = commitTime
-					expectedRule.LastUpdatedUser = "testuser@google.com"
-					testExists(&expectedRule)
-				})
-				Convey(`Update IsManagingBugPriority`, func() {
-					r.IsManagingBugPriority = false
-					commitTime, err := testUpdate(r, UpdateOptions{
-						IsManagingBugPriorityUpdated: true,
-					}, "testuser@google.com")
-					So(err, ShouldBeNil)
-
-					expectedRule := *r
-					expectedRule.IsManagingBugPriorityLastUpdated = commitTime
 					expectedRule.LastUpdated = commitTime
 					expectedRule.LastUpdatedUser = "testuser@google.com"
 					testExists(&expectedRule)
@@ -436,31 +417,27 @@ func TestSpan(t *testing.T) {
 			})
 			Convey(`Invalid`, func() {
 				Convey(`With invalid User`, func() {
-					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
-					}, "")
+					updatePredicate := false
+					_, err := testUpdate(r, updatePredicate, "")
 					So(err, ShouldErrLike, "user must be valid")
 				})
 				Convey(`With invalid Rule Definition`, func() {
 					r.RuleDefinition = "invalid"
-					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: true,
-					}, LUCIAnalysisSystem)
+					updatePredicate := true
+					_, err := testUpdate(r, updatePredicate, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "rule definition is not valid")
 				})
 				Convey(`With invalid Bug ID`, func() {
 					r.BugID.System = ""
-					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
-					}, LUCIAnalysisSystem)
+					updatePredicate := false
+					_, err := testUpdate(r, updatePredicate, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "bug ID is not valid")
 				})
 				Convey(`With invalid Source Cluster`, func() {
 					So(r.SourceCluster.ID, ShouldNotBeNil)
 					r.SourceCluster.Algorithm = ""
-					_, err := testUpdate(r, UpdateOptions{
-						PredicateUpdated: false,
-					}, LUCIAnalysisSystem)
+					updatePredicate := false
+					_, err := testUpdate(r, updatePredicate, LUCIAnalysisSystem)
 					So(err, ShouldErrLike, "source cluster ID is not valid")
 				})
 			})

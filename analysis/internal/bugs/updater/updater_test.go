@@ -233,8 +233,6 @@ func TestRun(t *testing.T) {
 				expectedRule.LastUpdated = rule.LastUpdated
 				So(rule.PredicateLastUpdated, ShouldNotBeZeroValue)
 				expectedRule.PredicateLastUpdated = rule.PredicateLastUpdated
-				So(rule.IsManagingBugPriorityLastUpdated, ShouldNotBeZeroValue)
-				expectedRule.IsManagingBugPriorityLastUpdated = rule.IsManagingBugPriorityLastUpdated
 				So(rule, ShouldResemble, expectedRule)
 
 				So(len(f.Issues), ShouldEqual, 1)
@@ -533,13 +531,11 @@ func TestRun(t *testing.T) {
 					So(r.CreationTime, ShouldNotBeZeroValue)
 					So(r.LastUpdated, ShouldNotBeZeroValue)
 					So(r.PredicateLastUpdated, ShouldNotBeZeroValue)
-					So(r.IsManagingBugPriorityLastUpdated, ShouldNotBeZeroValue)
 					// Accept whatever values the implementation has set.
 					r.RuleID = ""
 					r.CreationTime = time.Time{}
 					r.LastUpdated = time.Time{}
 					r.PredicateLastUpdated = time.Time{}
-					r.IsManagingBugPriorityLastUpdated = time.Time{}
 				}
 
 				sortedExpected := make([]*rules.FailureAssociationRule, len(expectedRules))
@@ -788,9 +784,8 @@ func TestRun(t *testing.T) {
 							}
 							issueOneRule[0].RuleDefinition = longRule
 
-							return rules.Update(ctx, issueOneRule[0], rules.UpdateOptions{
-								PredicateUpdated: true,
-							}, rules.LUCIAnalysisSystem)
+							const updatePredicate = true
+							return rules.Update(ctx, issueOneRule[0], updatePredicate, rules.LUCIAnalysisSystem)
 						})
 						So(err, ShouldBeNil)
 
