@@ -230,7 +230,15 @@ type updateOptions struct {
 
 // updateAnalysisAndBugsForProject updates BigQuery analysis, and
 // LUCI Analysis-managed bugs for a particular LUCI project.
-func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) error {
+func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (retErr error) {
+	defer func() {
+		// Catch panics, to avoid panics in one project from affecting
+		// analysis and bug-filing in another.
+		if err := recover(); err != nil {
+			retErr = errors.Reason("caught panic: %v", err).Err()
+		}
+	}()
+
 	// Capture the current state of re-clustering before running analysis.
 	// This will reflect how up-to-date our analysis is when it completes.
 	progress, err := runs.ReadReclusteringProgress(ctx, opts.project)

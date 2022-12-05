@@ -341,6 +341,11 @@ func (m *BugManager) fetchIssues(ctx context.Context, request []bugs.BugUpdateRe
 		if err != nil {
 			return nil, err
 		}
+		for i, issue := range issues {
+			if issue.Status == nil {
+				return nil, errors.Reason("issue %s did not have a status", names[i]).Err()
+			}
+		}
 		response = append(response, issues...)
 	}
 	return response, nil
