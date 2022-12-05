@@ -210,6 +210,9 @@ CREATE TABLE FailureAssociationRules (
   -- out here because spanner emulator doesn't support DEFAULT
   -- expressions, see https://github.com/GoogleCloudPlatform/cloud-spanner-emulator/issues/71.
   IsManagingBugPriority BOOL NOT NULL, -- DEFAULT TRUE,
+
+  -- Tracks when the field IsManagingBugPriority was last updated.
+  IsManagingBugPriorityLastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
   -- The suggested cluster this failure association rule was created from
   -- (if any) (part 1).
   -- This is the algorithm component of the suggested cluster this rule
