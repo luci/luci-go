@@ -76,7 +76,7 @@ var (
 		field.String("project"),
 		// "success", "failed_validation",
 		// "ignored_no_invocation", "ignored_has_ancestor",
-		// "ignored_no_resultdb_access".
+		// "ignored_invocation_not_found", "ignored_resultdb_permission_denied".
 		field.String("outcome"))
 
 	testVariantReadMask = &fieldmaskpb.FieldMask{
@@ -199,9 +199,16 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	code := status.Code(err)
 	if code == codes.NotFound {
 		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Invocation %s for project %s not found (or LUCI Analysis does not have access to read it).",
+		logging.Warningf(ctx, "Invocation %s for project %s not found.",
 			invName, payload.Build.Project)
-		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_no_resultdb_access")
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_invocation_not_found")
+		return nil
+	}
+	if code == codes.PermissionDenied {
+		// Invocation not found, end the task gracefully.
+		logging.Warningf(ctx, "Permission denied to read invocation %s for project %s.",
+			invName, payload.Build.Project)
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_resultdb_permission_denied")
 		return nil
 	}
 	if err != nil {
