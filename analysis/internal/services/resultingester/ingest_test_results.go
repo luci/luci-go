@@ -212,7 +212,8 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return nil
 	}
 	if err != nil {
-		return transient.Tag.Apply(err)
+		logging.Warningf(ctx, "GetInvocation has error code %s.", code)
+		return transient.Tag.Apply(errors.Annotate(err, "get invocation").Err())
 	}
 
 	ingestedInv, gitRef, err := extractIngestionContext(payload, inv)
