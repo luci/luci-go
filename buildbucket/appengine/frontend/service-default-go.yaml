@@ -6,11 +6,13 @@ runtime: go116
 luci_gae_vars:
   cr-buildbucket-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+    PROFILING_PROBABILITY: 1.0
     REDIS_ADDR: 10.90.74.59:6379
     VPC_CONNECTOR: projects/cr-buildbucket-dev/locations/us-central1/connectors/connector
     DS_CACHE: redis
   cr-buildbucket:
     AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+    PROFILING_PROBABILITY: 0.02
     REDIS_ADDR: 10.52.56.84:6379
     VPC_CONNECTOR: projects/cr-buildbucket/locations/us-central1/connectors/connector-e2-standard-4
     DS_CACHE: disable
@@ -33,6 +35,7 @@ entrypoint: >
   -bqlog-dataset sandbox
   -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
   -cloud-error-reporting
+  -profiling-probability ${PROFILING_PROBABILITY}
   -config-service-host luci-config.appspot.com
   -gerrit-auth-signer-account gerritcodereview@system.gserviceaccount.com
   -gerrit-auth-signer-account git-gerrit@system.gserviceaccount.com
