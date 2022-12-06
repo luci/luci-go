@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/caching"
 )
 
@@ -268,10 +267,9 @@ func fetchProjects(ctx context.Context) (map[string]*configpb.ProjectConfig, err
 	return result, nil
 }
 
-// cleanContext returns a context with datastore using the default namespace
-// and not using transactions.
+// cleanContext returns a context with datastore and not using transactions.
 func cleanContext(ctx context.Context) context.Context {
-	return datastore.WithoutTransaction(info.MustNamespace(ctx, ""))
+	return datastore.WithoutTransaction(ctx)
 }
 
 // SetTestProjectConfig sets test project configuration in datastore.
