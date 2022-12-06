@@ -142,25 +142,51 @@ func UpdateProjectCfg(ctx context.Context) error {
 		bucketsToDelete[project][bk.StringID()] = bk
 	}
 
+	var projKeys []*datastore.Key
+	if err := datastore.GetAll(ctx, datastore.NewQuery(model.ProjectKind), &projKeys); err != nil {
+		return errors.Annotate(err, "failed to fetch all project keys").Err()
+	}
+	projsToDelete := make(map[string]*datastore.Key) // project -> project keys
+	for _, projKey := range projKeys {
+		projsToDelete[projKey.StringID()] = projKey
+	}
+	var projsToPut []*model.Project
+
 	for i, meta := range cfgMetas {
 		project := meta.ConfigSet.Project()
 		if cfgs[i] == nil || cfgs[i].Content == "" {
 			delete(bucketsToDelete, project)
+			delete(projsToDelete, project)
 			continue
 		}
 		pCfg := &pb.BuildbucketCfg{}
 		if err := prototext.Unmarshal([]byte(cfgs[i].Content), pCfg); err != nil {
 			logging.Errorf(ctx, "config of project %s is broken: %s", project, err)
-			// If a project config is broken, we don't delete the already stored buckets.
+			// If a project config is broken, we don't delete the already stored
+			// buckets and projects.
 			delete(bucketsToDelete, project)
+			delete(projsToDelete, project)
 			continue
 		}
+		delete(projsToDelete, project)
 
 		revision := meta.Revision
 		// revision is empty in file-system mode. Use SHA1 of the config as revision.
 		if revision == "" {
 			cntHash := sha1.Sum([]byte(cfgs[i].Content))
 			revision = "sha1:" + hex.EncodeToString(cntHash[:])
+		}
+
+		// Check if the shared project-level config has changed.
+		prjChanged, err := isCommonConfigChanged(ctx, pCfg.CommonConfig, project)
+		if err != nil {
+			return err
+		}
+		if prjChanged {
+			projsToPut = append(projsToPut, &model.Project{
+				ID:           project,
+				CommonConfig: pCfg.CommonConfig,
+			})
 		}
 
 		for _, cfgBucket := range pCfg.Buckets {
@@ -286,11 +312,20 @@ func UpdateProjectCfg(ctx context.Context) error {
 			toDelete = append(toDelete, bktKey)
 		}
 	}
+	// Delete non-existent projects. Their associated buckets/builders has been
+	// put into toDelete in the above code.
+	for _, projKey := range projsToDelete {
+		toDelete = append(toDelete, projKey)
+	}
 
 	// TODO(crbug.com/1362157) Delete after the correctness is proved in Prod.
-	for _, bkt := range toDelete {
-		changes = append(changes, &changeLog{item: bkt.Parent().StringID() + "." + bkt.StringID(), action: "delete"})
+	for _, keys := range toDelete {
+		changes = append(changes, &changeLog{item: keys.StringID(), action: "delete"})
 	}
+	for _, prj := range projsToPut {
+		changes = append(changes, &changeLog{item: prj.ID, action: "put"})
+	}
+
 	if len(changes) == 0 {
 		logging.Debugf(ctx, "No changes this time.")
 	} else {
@@ -299,7 +334,40 @@ func UpdateProjectCfg(ctx context.Context) error {
 			logging.Debugf(ctx, "%s, Action:%s", change.item, change.action)
 		}
 	}
+	if err := datastore.Put(ctx, projsToPut); err != nil {
+		return err
+	}
 	return datastore.Delete(ctx, toDelete)
+}
+
+func isCommonConfigChanged(ctx context.Context, newCfg *pb.BuildbucketCfg_CommonConfig, project string) (bool, error) {
+	storedPrj := &model.Project{ID: project}
+	switch err := datastore.Get(ctx, storedPrj); {
+	case err == datastore.ErrNoSuchEntity:
+		if len(newCfg.GetBuildsNotificationTopics()) != 0 {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	case err != nil:
+		return false, errors.Annotate(err, "error fetching project entity - %s", project).Err()
+	}
+
+	storedTopics := storedPrj.CommonConfig.GetBuildsNotificationTopics()
+	if len(newCfg.GetBuildsNotificationTopics()) != len(storedTopics) {
+		return true, nil
+	}
+
+	storedTopicsSet := stringset.New(len(storedTopics))
+	for _, t := range storedTopics {
+		storedTopicsSet.Add(t.Name + "|" + t.Compression.String())
+	}
+	for _, t := range newCfg.GetBuildsNotificationTopics() {
+		if !storedTopicsSet.Has(t.Name + "|" + t.Compression.String()) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // transacUpdate updates the given bucket, its builders or delete its builders transactionally.
@@ -422,12 +490,15 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		}
 		ctx.Exit()
 	}
-	validateBuildNotifyTopics(ctx, cfg.BuildsNotificationTopics, project)
+
+	if cfg.CommonConfig != nil {
+		validateBuildNotifyTopics(ctx, cfg.CommonConfig.BuildsNotificationTopics, project)
+	}
 	return nil
 }
 
 // validateBuildNotifyTopics validate `builds_notification_topics` field.
-func validateBuildNotifyTopics(ctx *validation.Context, topics []*pb.BuildbucketCfgTopic, project string) {
+func validateBuildNotifyTopics(ctx *validation.Context, topics []*pb.BuildbucketCfg_Topic, project string) {
 	if len(topics) == 0 {
 		return
 	}

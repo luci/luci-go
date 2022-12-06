@@ -27,17 +27,6 @@ const (
 	BucketKind = "BucketV2"
 )
 
-// Project is the parent entity of buckets in the datastore.
-// Entities of this kind don't exist in the datastore.
-type Project struct {
-	ID string `gae:"$id"`
-}
-
-// ProjectKey returns a datastore key of a project.
-func ProjectKey(ctx context.Context, project string) *datastore.Key {
-	return datastore.KeyForObj(ctx, &Project{ID: project})
-}
-
 // Bucket is a representation of a bucket in the datastore.
 type Bucket struct {
 	_kind string `gae:"$kind,BucketV2"`

@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 
@@ -575,7 +576,7 @@ func TestValidateProject(t *testing.T) {
 		})
 		Convey("wrong project identifier", func() {
 			_, _, err := validateTopicName("projects/pro/topics/topic1")
-			So(err, ShouldErrLike,`cloud project id "pro" does not match "^[a-z]([a-z0-9-]){4,28}[a-z0-9]$"`)
+			So(err, ShouldErrLike, `cloud project id "pro" does not match "^[a-z]([a-z0-9-]){4,28}[a-z0-9]$"`)
 		})
 		Convey("wrong topic id prefix", func() {
 			_, _, err := validateTopicName("projects/cloud-project/topics/goog11")
@@ -583,11 +584,11 @@ func TestValidateProject(t *testing.T) {
 		})
 		Convey("wrong topic id format", func() {
 			_, _, err := validateTopicName("projects/cloud-project/topics/abc##")
-			So(err, ShouldErrLike,  `topic id "abc##" does not match "^[A-Za-z]([0-9A-Za-z\\._\\-~+%]){3,255}$"`)
+			So(err, ShouldErrLike, `topic id "abc##" does not match "^[A-Za-z]([0-9A-Za-z\\._\\-~+%]){3,255}$"`)
 		})
 		Convey("success", func() {
 			cloudProj, topic, err := validateTopicName("projects/cloud-project/topics/mytopic")
-			So(err,ShouldBeNil)
+			So(err, ShouldBeNil)
 			So(cloudProj, ShouldEqual, "cloud-project")
 			So(topic, ShouldEqual, "mytopic")
 		})
@@ -1174,6 +1175,97 @@ func TestUpdateProject(t *testing.T) {
 				var actualBuilders []*model.Builder
 				So(datastore.GetAll(ctx, datastore.NewQuery(model.BuilderKind).Ancestor(model.BucketKey(ctx, "dart", "try")).Order("__key__"), &actualBuilders), ShouldBeNil)
 				So(len(actualBuilders), ShouldEqual, 212)
+			})
+		})
+
+		Convey("builds_notification_topics", func() {
+			defer restoreCfgVars()
+			topicSort := func(topics []*pb.BuildbucketCfg_Topic) {
+				sort.Slice(topics, func(i, j int) bool {
+					if topics[i].Name == topics[j].Name {
+						return topics[i].Compression < topics[j].Compression
+					}
+					return topics[i].Name < topics[j].Name
+				})
+			}
+			dartBuildbucketCfg = origDartCfg + `
+	common_config {
+		builds_notification_topics {
+			name: "projects/dart/topics/my-dart-topic1"
+		}
+		builds_notification_topics {
+			name: "projects/dart/topics/my-dart-topic2"
+		}
+	}`
+			dartRevision = "dart_add_topics"
+
+			// before UpdateProjectCfg, no project entity.
+			So(datastore.Get(ctx, &model.Project{ID: "dart"}), ShouldEqual, datastore.ErrNoSuchEntity)
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			actualProj := &model.Project{ID: "dart"}
+			So(datastore.Get(ctx, actualProj), ShouldBeNil)
+			topicSort(actualProj.CommonConfig.BuildsNotificationTopics)
+			So(actualProj.CommonConfig.BuildsNotificationTopics, ShouldResembleProto, []*pb.BuildbucketCfg_Topic{
+				{
+					Name:        "projects/dart/topics/my-dart-topic1",
+					Compression: pb.Compression_ZLIB,
+				},
+				{
+					Name:        "projects/dart/topics/my-dart-topic2",
+					Compression: pb.Compression_ZLIB,
+				},
+			})
+
+			Convey("modify", func() {
+				dartBuildbucketCfg = origDartCfg + `
+	common_config {
+		builds_notification_topics {
+			name: "projects/dart/topics/my-dart-topic1"
+			compression: ZSTD
+		}
+		builds_notification_topics {
+			name: "projects/dart/topics/my-dart-topic2"
+		}
+	}`
+				dartRevision = "dart_modify_topics"
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				actualProj := &model.Project{ID: "dart"}
+				So(datastore.Get(ctx, actualProj), ShouldBeNil)
+				topicSort(actualProj.CommonConfig.BuildsNotificationTopics)
+				So(actualProj.CommonConfig.BuildsNotificationTopics, ShouldResembleProto, []*pb.BuildbucketCfg_Topic{
+					{
+						Name:        "projects/dart/topics/my-dart-topic1",
+						Compression: pb.Compression_ZSTD,
+					},
+					{
+						Name:        "projects/dart/topics/my-dart-topic2",
+						Compression: pb.Compression_ZLIB,
+					},
+				})
+
+			})
+
+			Convey("delete all topics", func() {
+				dartBuildbucketCfg = origDartCfg
+				dartRevision = "dart_empty_topics"
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				actualProj := &model.Project{ID: "dart"}
+				So(datastore.Get(ctx, actualProj), ShouldBeNil)
+				So(actualProj.CommonConfig, ShouldBeNil)
+			})
+
+			Convey("delete the project", func() {
+				dartBuildbucketCfg = ``
+				dartRevision = "dart_is_deleted"
+				So(UpdateProjectCfg(ctx), ShouldBeNil)
+				actualProj := &model.Project{ID: "dart"}
+				So(datastore.Get(ctx, actualProj), ShouldEqual, datastore.ErrNoSuchEntity)
+				dartBuckets := []*model.Bucket{}
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.ProjectKey(ctx, "dart")), &dartBuckets), ShouldBeNil)
+				So(dartBuckets, ShouldBeEmpty)
+				dartBuilders := []*model.Builder{}
+				So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind).Ancestor(model.BucketKey(ctx, "dart", "try")), &dartBuilders), ShouldBeNil)
+				So(dartBuilders, ShouldBeEmpty)
 			})
 		})
 	})
