@@ -164,6 +164,36 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 		return err
 	}
 
+	// Check for existing reverts
+	reverts, err := gerritClient.GetReverts(ctx, culprit)
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	activeReverts := []*gerritpb.ChangeInfo{}
+	for _, revert := range reverts {
+		if revert.Status == gerritpb.ChangeStatus_MERGED {
+			// there is a merged revert - no further action required
+			return nil
+		}
+
+		if revert.Status == gerritpb.ChangeStatus_NEW {
+			activeReverts = append(activeReverts, revert)
+		}
+	}
+
+	if len(activeReverts) > 0 {
+		// there is an existing revert yet to be merged;
+		// add a supporting comment to the first revert
+		err = commentSupportOnExistingRevert(ctx, gerritClient, culpritModel, activeReverts[0])
+		if err != nil {
+			logging.Errorf(ctx, err.Error())
+			return err
+		}
+
+		return nil
+	}
+
 	hasFlag, err := gerrit.HasAutoRevertOffFlagSet(ctx, culprit)
 	if err != nil {
 		err = errors.Annotate(err, "issue checking for auto-revert flag").Err()
@@ -200,113 +230,59 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 		return nil
 	}
 
-	// Check if revert creation is disabled
-	if !cfg.GerritConfig.CreateRevertSettings.Enabled {
-		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
-			"LUCI Bisection's revert creation has been disabled")
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		// revert creation is disabled - stop now
-		return nil
-	}
-
-	// Check the daily limit for revert creations has not been reached
-	createdCount, err := datastoreutil.CountLatestRevertsCreated(ctx, 24)
+	// Check if there are other merged changes depending on the culprit
+	// before trying to revert it
+	hasDep, err := gerritClient.HasDependency(ctx, culprit)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
-
-	if createdCount >= int64(cfg.GerritConfig.CreateRevertSettings.DailyLimit) {
+	if hasDep {
+		// revert should not be created as the culprit has merged dependencies
 		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
-			fmt.Sprintf("LUCI Bisection's daily limit for revert creation (%d)"+
-				" has been reached; %d reverts have already been created.",
-				cfg.GerritConfig.CreateRevertSettings.DailyLimit, createdCount))
+			"there are merged changes depending on it")
 		if err != nil {
 			logging.Errorf(ctx, err.Error())
 			return err
 		}
 
-		// revert creation daily limit has been reached - stop now
+		return nil
+	}
+
+	// Check if the Gerrit config allows revert creation
+	canCreate, reason, err := config.CanCreateRevert(ctx, cfg.GerritConfig)
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	if !canCreate {
+		// cannot create revert based on config
+		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
+			reason)
+		if err != nil {
+			logging.Errorf(ctx, err.Error())
+			return err
+		}
+
 		return nil
 	}
 
 	// Create revert
 	revert, err := createRevert(ctx, gerritClient, culpritModel, culprit)
 	if err != nil {
-		switch err {
-		case errAlreadyReverted:
-			// there is a merged revert - no further action required
-			err = nil
-		case errHasRevert:
-			// there is an existing revert
-			err = commentSupportOnExistingRevert(ctx, gerritClient, culpritModel,
-				revert)
-		case errHasDependency:
-			// revert should not be created as the culprit has merged dependencies
-			err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
-				"there are merged changes depending on it")
-		default:
-			// unexpected error from creating the revert
-			if revert != nil {
-				// a revert was created by LUCI Bisection - add reviewers to it
-				reviewErr := sendRevertForReview(ctx, gerritClient, culpritModel, revert,
-					"an unexpected error occurred when LUCI Bisection created this revert")
-				if reviewErr != nil {
-					logging.Errorf(ctx, reviewErr.Error())
-					return reviewErr
-				}
+		// unexpected error from creating the revert
+		logging.Errorf(ctx, err.Error())
+
+		if revert != nil {
+			// a revert was created by LUCI Bisection - add reviewers to it
+			err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
+				"an unexpected error occurred when LUCI Bisection created this revert")
+			if err != nil {
+				logging.Errorf(ctx, err.Error())
+				return err
 			}
 		}
 
-		if err != nil {
-			// log and return the unexpected error from:
-			//    * creating the revert; or
-			//    * commenting on an existing revert; or
-			//    * commenting on a culprit.
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		// no further action required for this culprit - stop now
-		return nil
-	}
-
-	// Check if revert submission is disabled
-	if !cfg.GerritConfig.SubmitRevertSettings.Enabled {
-		// Send the revert to be manually reviewed as auto-committing is disabled
-		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
-			"LUCI Bisection's revert submission has been disabled")
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		// revert submission is disabled - stop now
-		return nil
-	}
-
-	// Get the number of reverts committed in the past day
-	committedCount, err := datastoreutil.CountLatestRevertsCommitted(ctx, 24)
-	if err != nil {
-		logging.Errorf(ctx, err.Error())
-		return err
-	}
-	// Check the daily limit for revert submissions has not been reached
-	if committedCount >= int64(cfg.GerritConfig.SubmitRevertSettings.DailyLimit) {
-		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
-			fmt.Sprintf("LUCI Bisection's daily limit for revert submission (%d)"+
-				" has been reached; %d reverts have already been submitted.",
-				cfg.GerritConfig.SubmitRevertSettings.DailyLimit, committedCount))
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		// revert submission daily limit has been reached - stop now
 		return nil
 	}
 
@@ -323,6 +299,24 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 		}
 
 		// no longer submitting revert as it's too old - stop now
+		return nil
+	}
+
+	// Check if the Gerrit config allows revert submission
+	canSubmit, reason, err := config.CanSubmitRevert(ctx, cfg.GerritConfig)
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	if !canSubmit {
+		// cannot submit revert based on config - send the revert to be
+		// manually reviewed instead
+		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert, reason)
+		if err != nil {
+			logging.Errorf(ctx, err.Error())
+			return err
+		}
+
 		return nil
 	}
 

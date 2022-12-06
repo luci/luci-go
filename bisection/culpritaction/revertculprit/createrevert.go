@@ -30,58 +30,15 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-var (
-	// errHasDependency is returned when attempting to create a revert for
-	// a culprit but that culprit has a merged dependency
-	errHasDependency = errors.New("createRevert: culprit has a merged dependency")
-	// errAlreadyReverted is returned when attempting to create a revert for
-	// a culprit but that culprit has already been reverted
-	errAlreadyReverted = errors.New("createRevert: culprit has already been reverted")
-	// errHasRevert is returned when attempting to create a revert for
-	// a culprit but that culprit has an existing revert
-	errHasRevert = errors.New("createRevert: culprit has an existing revert")
-)
-
-// createRevert attempts to create a revert for the given culprit.
-// Returns a revert for the culprit (may or may not have been created by
-// LUCI Bisection).
+// createRevert creates a revert for the given culprit.
+// Returns a revert for the culprit, created by LUCI Bisection.
 // Note: this should only be called according to the service-wide configuration
 // data for LUCI Bisection, i.e.
 //   - Gerrit actions are enabled
-//   - Creating reverts is enabled
+//   - creating reverts is enabled
 //   - the daily limit of created reverts has not yet been reached
 func createRevert(ctx context.Context, gerritClient *gerrit.Client,
 	culpritModel *model.Suspect, culprit *gerritpb.ChangeInfo) (*gerritpb.ChangeInfo, error) {
-	// Check if there's an existing revert
-	reverts, err := gerritClient.GetReverts(ctx, culprit)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, revert := range reverts {
-		switch revert.Status {
-		case gerritpb.ChangeStatus_MERGED:
-			return revert, errAlreadyReverted
-		case gerritpb.ChangeStatus_NEW:
-			return revert, errHasRevert
-		default:
-			continue
-		}
-	}
-
-	// If here, then either there are no existing reverts for the culprit, or
-	// they are all abandoned reverts
-
-	// Check if there are other merged changes depending on the culprit
-	// before trying to revert it
-	hasDep, err := gerritClient.HasDependency(ctx, culprit)
-	if err != nil {
-		return nil, err
-	}
-	if hasDep {
-		return nil, errHasDependency
-	}
-
 	revertDescription, err := generateRevertDescription(ctx, culpritModel, culprit)
 	if err != nil {
 		return nil, err
