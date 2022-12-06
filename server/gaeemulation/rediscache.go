@@ -25,6 +25,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/filter/dscache"
 )
@@ -43,10 +44,11 @@ var dataPrefixBuf = []byte{dataPrefix}
 // The script does "compare prefix and swap".
 //
 // Arguments:
-//  KEYS[1]: the key to operate on.
-//  ARGV[1]: the old value to compare to (its first maxLockItemLen bytes).
-//  ARGV[2]: the new value to write.
-//  ARGV[3]: expiration time (in sec) of the new value.
+//
+//	KEYS[1]: the key to operate on.
+//	ARGV[1]: the old value to compare to (its first maxLockItemLen bytes).
+//	ARGV[2]: the new value to write.
+//	ARGV[3]: expiration time (in sec) of the new value.
 var casScript = strings.TrimSpace(fmt.Sprintf(`
 if redis.call("GETRANGE", KEYS[1], 0, %d) == ARGV[1] then
 	return redis.call("SET", KEYS[1], ARGV[2], "EX", ARGV[3])
@@ -156,29 +158,66 @@ func (c redisCache) CompareAndSwap(ctx context.Context, items []dscache.CacheIte
 	}
 
 	return c.do(ctx, "CompareAndSwap", func(conn redis.Conn) error {
-		// Preload the script to make sure Redis knows about it. Redis guarantees
-		// that scripts loaded in a connection survive at least until this
-		// connection is dropped (in practice they survive until the server is
-		// restarted or the script cache is manually flushed).
-		conn.Send("SCRIPT", "LOAD", casScript)
-
-		for _, item := range items {
+		toSwap := make([]*cacheItem, len(items))
+		for i, item := range items {
 			item := item.(*cacheItem)
 			if item.lock == nil {
 				panic("dscache violated Cache contract: can CAS only promoted items")
 			}
-			conn.Send("EVALSHA",
-				casScriptSHA1, // the script to execute
-				1,             // number of key-typed arguments (see casScript)
-				item.key,      // the key to operate one
-				item.lock,     // will be compared to what's in the cache right now
-				item.body,     // the new value if comparison succeeds
-				int(item.exp.Seconds()),
-			)
+			toSwap[i] = item
 		}
 
-		_, err := conn.Do("")
-		return err
+		for {
+			// Pipeline all CAS operations at once.
+			for _, item := range toSwap {
+				_ = conn.Send("EVALSHA",
+					casScriptSHA1, // the script to execute
+					1,             // number of key-typed arguments (see casScript)
+					item.key,      // the key to operate on
+					item.lock,     // will be compared to what's in the cache right now
+					item.body,     // the new value if comparison succeeds
+					int(item.exp.Seconds()),
+				)
+			}
+
+			// Flush and read results. Here `err` is a connection-level error and
+			// `batchReply` is secretly an array of EVALSHA replies (some of which can
+			// be redis.Error).
+			batchReply, err := conn.Do("")
+			if err != nil {
+				return err
+			}
+
+			replies := batchReply.([]interface{})
+			if len(replies) != len(toSwap) {
+				panic(fmt.Sprintf("Redis protocol violation: %d != %d", len(replies), len(toSwap)))
+			}
+
+			// If we get a NOSCRIPT error, need to load the CAS script and redo
+			// operations that failed. Any other error is non-recoverable.
+			toRetry := toSwap[:0]
+			for i, rep := range replies {
+				if err, isErr := rep.(redis.Error); isErr {
+					if strings.HasPrefix(err.Error(), "NOSCRIPT ") {
+						toRetry = append(toRetry, toSwap[i])
+					} else {
+						return err
+					}
+				}
+			}
+			if len(toRetry) == 0 {
+				return nil
+			}
+			toSwap = toRetry
+
+			// Redis doesn't know about the script yet. Load it and retry EVALSHAs.
+			// This should happen very rarely (in theory only after Redis server
+			// restarts or full flushes).
+			logging.Warningf(ctx, "Loading the CAS script into Redis")
+			if _, err = conn.Do("SCRIPT", "LOAD", casScript); err != nil {
+				return err
+			}
+		}
 	})
 }
 
