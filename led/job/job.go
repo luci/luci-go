@@ -301,6 +301,13 @@ func (jd *Definition) generateCommand(ctx context.Context, ks KitchenSupport) ([
 	if bb.FinalBuildProtoPath != "" {
 		ret = append(ret, "--output", path.Join("${ISOLATED_OUTDIR}", bb.FinalBuildProtoPath))
 	}
+	bb.BbagentArgs.Build.Infra.Buildbucket.Hostname = ""
+	if bb.BbagentArgs.CacheDir == "" {
+		bb.BbagentArgs.CacheDir = bb.BbagentArgs.Build.GetInfra().GetBbagent().GetCacheDir()
+	}
+	if bb.BbagentArgs.PayloadPath == "" {
+		bb.BbagentArgs.PayloadPath = "kitchen-checkout"
+	}
 	return append(ret, bbinput.Encode(bb.BbagentArgs)), nil
 }
 
