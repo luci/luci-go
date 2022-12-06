@@ -144,11 +144,6 @@ func (m *BugManager) filterToValidComponents(ctx context.Context, components []s
 	return result, nil
 }
 
-type clusterIssue struct {
-	impact *bugs.ClusterImpact
-	issue  *mpb.Issue
-}
-
 // Update updates the specified list of bugs.
 func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest) ([]bugs.BugUpdateResponse, error) {
 	// Fetch issues for bugs to update.
@@ -160,6 +155,18 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 	var responses []bugs.BugUpdateResponse
 	for i, req := range request {
 		issue := issues[i]
+		if issue == nil {
+			// The bug does not exist, or is in a different monorail project
+			// to the monorail project configured for this project. Take
+			// no action.
+			responses = append(responses, bugs.BugUpdateResponse{
+				IsDuplicate:   false,
+				ShouldArchive: false,
+			})
+			logging.Warningf(ctx, "Monorail issue %s not found, skipping.", req.Bug.ID)
+			continue
+		}
+
 		isDuplicate := issue.Status.Status == DuplicateStatus
 		shouldArchive := shouldArchiveRule(ctx, issue, req.IsManagingBug)
 		if !isDuplicate && !shouldArchive && req.IsManagingBug && req.Impact != nil {
@@ -309,7 +316,10 @@ func mergedIntoBug(issue *mpb.Issue) (*bugs.BugID, error) {
 }
 
 // fetchIssues fetches monorail issues using the internal bug names like
-// {monorail_project}/{issue_id}.
+// {monorail_project}/{issue_id}. Issues in the result will be in 1:1
+// correspondence (by index) to the request. If an issue does not exist,
+// or is from a monorail project other than the one configured for this
+// LUCI project, the corresponding item in the response will be nil.
 func (m *BugManager) fetchIssues(ctx context.Context, request []bugs.BugUpdateRequest) ([]*mpb.Issue, error) {
 	// Calculate the number of requests required, rounding up
 	// to the nearest page.
@@ -324,31 +334,43 @@ func (m *BugManager) fetchIssues(ctx context.Context, request []bugs.BugUpdateRe
 		}
 		requestPage := request[i*monorailPageSize : pageEnd]
 
-		var names []string
+		var ids []string
 		for _, requestItem := range requestPage {
 			if requestItem.Bug.System != bugs.MonorailSystem {
 				// Indicates an implementation error with the caller.
 				panic("monorail bug manager can only deal with monorail bugs")
 			}
-			name, err := toMonorailIssueName(requestItem.Bug.ID)
+			monorailProject, id, err := toMonorailProjectAndID(requestItem.Bug.ID)
 			if err != nil {
 				return nil, err
 			}
-			names = append(names, name)
+			if monorailProject != m.projectCfg.Monorail.Project {
+				// Only query bugs from the same monorail project as what has
+				// been configured for the LUCI Project.
+				continue
+			}
+			ids = append(ids, id)
 		}
-		// Guarantees result array in 1:1 correspondence to requested names.
-		issues, err := m.client.BatchGetIssues(ctx, names)
+
+		// Guarantees result array in 1:1 correspondence to requested IDs.
+		issues, err := m.client.BatchGetIssues(ctx, m.projectCfg.Monorail.Project, ids)
 		if err != nil {
 			return nil, err
-		}
-		for i, issue := range issues {
-			if issue.Status == nil {
-				return nil, errors.Reason("issue %s did not have a status", names[i]).Err()
-			}
 		}
 		response = append(response, issues...)
 	}
 	return response, nil
+}
+
+// toMonorailProjectAndID splits an internal bug name like
+// "{monorail_project}/{numeric_id}" to the monorail project and
+// numeric ID.
+func toMonorailProjectAndID(bug string) (project, id string, err error) {
+	parts := bugs.MonorailBugIDRe.FindStringSubmatch(bug)
+	if parts == nil {
+		return "", "", fmt.Errorf("invalid bug %q", bug)
+	}
+	return parts[1], parts[2], nil
 }
 
 // toMonorailIssueName converts an internal bug name like

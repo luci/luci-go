@@ -54,16 +54,17 @@ func TestClient(t *testing.T) {
 		Convey("Batch get issues", func() {
 			c, err := NewClient(ctx, "monorailhost")
 			So(err, ShouldBeNil)
-			names := []string{
-				"projects/monorailproject/issues/1",
-				"projects/monorailproject/issues/2",
-				"projects/monorailproject/issues/1",
-				"projects/monorailproject/issues/2",
-				"projects/monorailproject/issues/3",
+			ids := []string{
+				"1",
+				"2",
+				"4", // Does not exist.
+				"1",
+				"2",
+				"3",
 			}
-			result, err := c.BatchGetIssues(ctx, names)
+			result, err := c.BatchGetIssues(ctx, "monorailproject", ids)
 			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, []*mpb.Issue{issue1.Issue, issue2.Issue, issue1.Issue, issue2.Issue, issue3.Issue})
+			So(result, ShouldResembleProto, []*mpb.Issue{issue1.Issue, issue2.Issue, nil, issue1.Issue, issue2.Issue, issue3.Issue})
 		})
 		Convey("Make issue", func() {
 			issue := NewIssue(4)

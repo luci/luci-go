@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -104,36 +105,67 @@ func (c *Client) GetIssue(ctx context.Context, name string) (*mpb.Issue, error) 
 }
 
 // BatchGetIssues gets the details of the specified monorail issues.
-// At most 100 issues can be queried at once. It is guaranteed
-// that the i_th issue in the result will match the i_th issue
-// requested. It is valid to request the same issue multiple
-// times in the same request.
-func (c *Client) BatchGetIssues(ctx context.Context, names []string) ([]*mpb.Issue, error) {
-	var deduplicatedNames []string
-	requestedNames := make(map[string]bool)
-	for _, name := range names {
-		if !requestedNames[name] {
-			deduplicatedNames = append(deduplicatedNames, name)
-			requestedNames[name] = true
+// At most <monorailPageSize> issues can be queried at once.
+// It is guaranteed that the i_th issue in the result will match
+// the i_th issue requested. It is valid to request the same issue
+// multiple times in the same request.
+// If an issue does not exist, the issue in the returned slice will
+// be nil.
+func (c *Client) BatchGetIssues(ctx context.Context, project string, ids []string) ([]*mpb.Issue, error) {
+	if len(ids) > monorailPageSize {
+		return nil, errors.Reason("more than %v ids requested at once", monorailPageSize).Err()
+	}
+	if len(ids) == 0 {
+		// No need to make any queries. The query "ID="
+		// returns all issues, so this is needed for
+		// correctness, not just performance.
+		return nil, nil
+	}
+
+	// Use the SearchIssues RPC instead of BatchGetIssues, as the
+	// former does not error out if one of the issues does not
+	// exist, and has far better performance.
+	req := &mpb.SearchIssuesRequest{
+		Projects: []string{project},
+		Query:    fmt.Sprintf("ID=%s", strings.Join(ids, ",")),
+		PageSize: monorailPageSize,
+		OrderBy:  "id",
+	}
+
+	var issues []*mpb.Issue
+	done := false
+	for !done {
+		rsp, err := c.issuesClient.SearchIssues(ctx, req)
+		if err != nil {
+			return nil, errors.Annotate(err, "SearchIssues").Err()
+		}
+		issues = append(issues, rsp.Issues...)
+		// Even though we asked for a page of size monorailPageSize,
+		// the implementation is not required to return that many to us.
+		// We should keep consuming pages until we have all results.
+		req.PageToken = rsp.NextPageToken
+		if rsp.NextPageToken == "" {
+			done = true
 		}
 	}
-	req := mpb.BatchGetIssuesRequest{Names: deduplicatedNames}
-	resp, err := c.issuesClient.BatchGetIssues(ctx, &req)
-	if err != nil {
-		return nil, errors.Annotate(err, "BatchGetIssues %v", deduplicatedNames).Err()
-	}
+
 	issuesByName := make(map[string]*mpb.Issue)
-	for _, issue := range resp.Issues {
+	for _, issue := range issues {
 		issuesByName[issue.Name] = issue
 	}
 	var result []*mpb.Issue
-	for _, name := range names {
-		// Copy the proto to avoid an issue being aliased in
-		// the result if the same issue is requested multiple times.
-		// The caller should be able to assume each issue returned
-		// is a distinct object.
-		issue := &mpb.Issue{}
-		proto.Merge(issue, issuesByName[name])
+	for _, id := range ids {
+		name := fmt.Sprintf("projects/%s/issues/%s", project, id)
+		issue, ok := issuesByName[name]
+		var resultIssue *mpb.Issue
+		if ok {
+			// Copy the proto to avoid an issue being aliased in
+			// the result if the same issue is requested multiple times.
+			// The caller should be able to assume each issue returned
+			// is a distinct object.
+			resultIssue = &mpb.Issue{}
+			proto.Merge(resultIssue, issue)
+		}
 		result = append(result, issue)
 	}
 	return result, nil

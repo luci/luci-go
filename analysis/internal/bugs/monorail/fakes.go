@@ -91,8 +91,46 @@ func (f *fakeIssuesClient) BatchGetIssues(ctx context.Context, in *mpb.BatchGetI
 	return result, nil
 }
 
+// queryRE matches queries supported by the fake, of the form "ID=123123,456456,789789".
+var queryRE = regexp.MustCompile(`ID=([1-9][0-9]*(?:,[1-9][0-9]*)*)`)
+
 func (f *fakeIssuesClient) SearchIssues(ctx context.Context, in *mpb.SearchIssuesRequest, opts ...grpc.CallOption) (*mpb.SearchIssuesResponse, error) {
-	return nil, errors.New("not implemented")
+	if len(in.Projects) != 1 {
+		return nil, errors.New("expected exactly one project to search")
+	}
+	project := in.Projects[0]
+	m := queryRE.FindStringSubmatch(in.Query)
+	if m == nil {
+		return nil, errors.New("query pattern not supported by fake")
+	}
+
+	var result []*mpb.Issue
+	ids := strings.Split(m[1], ",")
+	for _, id := range ids {
+		name := fmt.Sprintf("projects/%s/issues/%s", project, id)
+		issue := f.issueByName(name)
+		if issue != nil {
+			result = append(result, CopyIssue(issue.Issue))
+		}
+	}
+
+	// Test pagination: The first time around, return the first half
+	// of the results. The second time around, return the other half.
+	nextPageToken := "fakeToken"
+	startingOffset := 0
+	endingOffset := len(result) / 2
+	if in.PageToken == "fakeToken" {
+		startingOffset = len(result) / 2
+		endingOffset = len(result)
+		nextPageToken = ""
+	} else if in.PageToken != "" {
+		return nil, errors.New("invalid page token")
+	}
+
+	return &mpb.SearchIssuesResponse{
+		Issues:        result[startingOffset:endingOffset],
+		NextPageToken: nextPageToken,
+	}, nil
 }
 
 func (f *fakeIssuesClient) ListComments(ctx context.Context, in *mpb.ListCommentsRequest, opts ...grpc.CallOption) (*mpb.ListCommentsResponse, error) {

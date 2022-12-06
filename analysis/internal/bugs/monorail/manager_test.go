@@ -540,6 +540,10 @@ func TestManager(t *testing.T) {
 				So(response, ShouldResemble, expectedResponse)
 				So(f, ShouldResembleIssuesStore, originalIssues)
 			})
+			Convey("If issue does not exist, does nothing", func() {
+				f.Issues = nil
+				updateDoesNothing()
+			})
 		})
 		Convey("GetMergedInto", func() {
 			c := NewCreateRequest()
