@@ -17,27 +17,21 @@
 // It interprets command line flags and initializes the serving environment with
 // the following core services:
 //
-// • go.chromium.org/luci/common/logging: logging via Google Cloud Logging and
-// error reporting via Google Cloud Error Reporting.
-//
-// • go.chromium.org/luci/common/trace: Tracing via Google Cloud Trace and
-// profiling Google Cloud Profiler.
-//
-// • go.chromium.org/luci/server/tsmon: monitoring metrics via ProdX.
-//
-// • go.chromium.org/luci/server/auth: sending and receiving RPCs authenticated
-// with Google OAuth2 or OpenID tokens. Support for authorization via LUCI
-// groups and LUCI realms.
-//
-// • go.chromium.org/luci/server/caching: in-process caching.
-//
-// • go.chromium.org/luci/server/warmup: allows other server components to
-// register warmup callbacks that run before the server starts handling
-// requests.
-//
-// • go.chromium.org/luci/server/experiments: simple feature flags support.
-//
-// • go.chromium.org/luci/grpc/prpc: pRPC server and RPC Explorer UI.
+//   - go.chromium.org/luci/common/logging: logging via Google Cloud Logging and
+//     error reporting via Google Cloud Error Reporting.
+//   - go.chromium.org/luci/common/trace: Tracing via Google Cloud Trace and
+//     profiling Google Cloud Profiler.
+//   - go.chromium.org/luci/server/tsmon: monitoring metrics via ProdX.
+//   - go.chromium.org/luci/server/auth: sending and receiving RPCs
+//     authenticated
+//     with Google OAuth2 or OpenID tokens. Support for authorization via LUCI
+//     groups and LUCI realms.
+//   - go.chromium.org/luci/server/caching: in-process caching.
+//   - go.chromium.org/luci/server/warmup: allows other server components to
+//     register warmup callbacks that run before the server starts handling
+//     requests.
+//   - go.chromium.org/luci/server/experiments: simple feature flags support.
+//   - go.chromium.org/luci/grpc/prpc: pRPC server and RPC Explorer UI.
 //
 // Other functionality is optional and provided by modules (objects implementing
 // module.Module interface). They should be passed to the server when it starts
@@ -86,55 +80,43 @@
 // The following modules (in alphabetical order) are a part of the LUCI
 // repository and can be used in any server binary:
 //
-// • go.chromium.org/luci/config/server/cfgmodule: provides LUCI Config client,
-// exposes config validation endpoints used by LUCI Config service.
-//
-// • go.chromium.org/luci/server/analytics: generates Google Analytics js
-// snippets for inclusion in a service's web pages.
-//
-// • go.chromium.org/luci/server/bqlog: implements best effort low-overhead
-// structured logging to BigQuery suitable for debug data like access logs.
-//
-// • go.chromium.org/luci/server/cron: allows registering Cloud Scheduler (aka
-// Appengine cron.yaml) handlers, with proper authentication and monitoring
-// metrics.
-//
-// • go.chromium.org/luci/server/encryptedcookies: implements an authentication
-// scheme for HTTP routes based on encrypted cookies and user sessions in
-// some session store.
-//
-// • go.chromium.org/luci/server/dsmapper: provides a way to apply some function
-// to all datastore entities of some particular kind, in parallel, distributing
-// work via Cloud Tasks.
-//
-// • go.chromium.org/luci/server/gaeemulation: implements
-// go.chromium.org/luci/gae Datastore interface via Google Cloud Datastore API.
-// Named so because because it enables migration of GAEv1 apps to GAEv2 without
-// touching datastore-related code.
-//
-// • go.chromium.org/luci/server/gerritauth: implements authentication using
-// Gerrit JWTs. Useful if a service is used by a Gerrit frontend plugin.
-//
-// • go.chromium.org/luci/server/limiter: a simple load shedding mechanism that
-// puts a limit on a number of concurrent gRPC/pRPC requests the server is
-// handling.
-//
-// • go.chromium.org/luci/server/mailer: sending simple emails.
-//
-// • go.chromium.org/luci/server/redisconn: a Redis client. Also enables Redis
-// as a caching backend for go.chromium.org/luci/server/caching and for
-// go.chromium.org/luci/gae/filter/dscache.
-//
-// • go.chromium.org/luci/server/secrets: enables generation and validation of
-// HMAC-tagged tokens via go.chromium.org/luci/server/tokens.
-//
-// • go.chromium.org/luci/server/span: a Cloud Spanner client. Wraps Spanner API
-// a bit to improve interoperability with other modules (in particular the TQ
-// module).
-//
-// • go.chromium.org/luci/server/tq: implements a task queue mechanism on top of
-// Cloud Tasks and Cloud PubSub. Also implements transactional task enqueuing
-// when submitting tasks in a Cloud Datastore or a Cloud Spanner transaction.
+//   - go.chromium.org/luci/config/server/cfgmodule: provides LUCI Config
+//     client, exposes config validation endpoints used by LUCI Config service.
+//   - go.chromium.org/luci/server/analytics: generates Google Analytics js
+//     snippets for inclusion in a service's web pages.
+//   - go.chromium.org/luci/server/bqlog: implements best effort low-overhead
+//     structured logging to BigQuery suitable for debug data like access logs.
+//   - go.chromium.org/luci/server/cron: allows registering Cloud Scheduler (aka
+//     Appengine cron.yaml) handlers, with proper authentication and monitoring
+//     metrics.
+//   - go.chromium.org/luci/server/encryptedcookies: implements an
+//     authentication scheme for HTTP routes based on encrypted cookies and user
+//     sessions in some session store.
+//   - go.chromium.org/luci/server/dsmapper: provides a way to apply some
+//     function to all datastore entities of some particular kind, in parallel,
+//     distributing work via Cloud Tasks.
+//   - go.chromium.org/luci/server/gaeemulation: implements
+//     go.chromium.org/luci/gae Datastore interface via Google Cloud Datastore
+//     API. Named so because because it enables migration of GAEv1 apps to GAEv2
+//     without touching datastore-related code.
+//   - go.chromium.org/luci/server/gerritauth: implements authentication using
+//     Gerrit JWTs. Useful if a service is used by a Gerrit frontend plugin.
+//   - go.chromium.org/luci/server/limiter: a simple load shedding mechanism
+//     that puts a limit on a number of concurrent pRPC requests the server
+//     is handling.
+//   - go.chromium.org/luci/server/mailer: sending simple emails.
+//   - go.chromium.org/luci/server/redisconn: a Redis client. Also enables Redis
+//     as a caching backend for go.chromium.org/luci/server/caching and for
+//     go.chromium.org/luci/gae/filter/dscache.
+//   - go.chromium.org/luci/server/secrets: enables generation and validation of
+//     HMAC-tagged tokens via go.chromium.org/luci/server/tokens.
+//   - go.chromium.org/luci/server/span: a Cloud Spanner client. Wraps Spanner
+//     API a bit to improve interoperability with other modules (in particular
+//     the TQ module).
+//   - go.chromium.org/luci/server/tq: implements a task queue mechanism on top
+//     of Cloud Tasks and Cloud PubSub. Also implements transactional task
+//     enqueuing when submitting tasks in a Cloud Datastore or a Cloud Spanner
+//     transaction.
 //
 // Most of them need to be configured via corresponding CLI flags to be useful.
 // See implementation of individual modules for details.
@@ -142,11 +124,11 @@
 // An up-to-date list of all known module implementations can be found here:
 // https://source.chromium.org/search?q=%22NewModuleFromFlags()%20module.Module%22
 //
-// pRPC services
+// # pRPC services
 //
 // The server.PRPC field is the primary grpc.ServiceRegistrar that should be
-// used to expose server's public gRPC/pRPC APIs. It is pre-configured with a
-// set of gRPC interceptors that collect performance metrics, catch panics and
+// used to expose server's public pRPC APIs. It is pre-configured with a set of
+// gRPC interceptors that collect performance metrics, catch panics and
 // authenticate requests using OAuth2 access tokens. Modules can add more
 // interceptors to the default interceptor chain.
 //
@@ -373,7 +355,7 @@ type Options struct {
 	CloudProject string // name of the hosting Google Cloud Project
 	CloudRegion  string // name of the hosting Google Cloud region
 
-	TraceSampling string // what portion of traces to upload to Stackdriver (ignored on GAE)
+	TraceSampling string // what portion of traces to upload to Cloud Trace (ignored on GAE)
 
 	TsMonAccount       string        // service account to flush metrics as
 	TsMonServiceName   string        // service name of tsmon target
@@ -381,8 +363,8 @@ type Options struct {
 	TsMonFlushInterval time.Duration // how often to flush metrics
 	TsMonFlushTimeout  time.Duration // timeout for flushing
 
-	ProfilingDisable   bool   // set to true to explicitly disable Stackdriver Profiler
-	ProfilingServiceID string // service name to associated with profiles in Stackdriver Profiler
+	ProfilingProbability float64 // an [0; 1.0] float with a chance to enable Cloud Profiler in the process
+	ProfilingServiceID   string  // service name to associated with profiles in Cloud Profiler
 
 	ContainerImageID string // ID of the container image with this binary, for logs (optional)
 
@@ -419,6 +401,11 @@ func (o *Options) Register(f *flag.FlagSet) {
 	}
 	if o.TsMonFlushTimeout == 0 {
 		o.TsMonFlushTimeout = defaultTsMonFlushTimeout
+	}
+	if o.ProfilingProbability == 0 {
+		o.ProfilingProbability = 1.0
+	} else if o.ProfilingProbability < 0 {
+		o.ProfilingProbability = 0
 	}
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to or '-' to disable")
@@ -490,7 +477,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 		&o.TraceSampling,
 		"trace-sampling",
 		o.TraceSampling,
-		"What portion of traces to upload to Stackdriver. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Ignored on GAE. Default is 0.1qps.",
+		"What portion of traces to upload to Cloud Trace. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Ignored on GAE. Default is 0.1qps.",
 	)
 	f.StringVar(
 		&o.TsMonAccount,
@@ -522,17 +509,17 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.TsMonFlushTimeout,
 		fmt.Sprintf("Timeout for tsmon flush. Default to %s if < 1s or unset. Must be shorter than --ts-mon-flush-interval.", o.TsMonFlushTimeout),
 	)
-	f.BoolVar(
-		&o.ProfilingDisable,
-		"profiling-disable",
-		o.ProfilingDisable,
-		"Pass to explicitly disable Stackdriver Profiler",
+	f.Float64Var(
+		&o.ProfilingProbability,
+		"profiling-probability",
+		o.ProfilingProbability,
+		fmt.Sprintf("A float [0; 1.0] with probability to enable Cloud Profiler for the current process. Default is %f.", o.ProfilingProbability),
 	)
 	f.StringVar(
 		&o.ProfilingServiceID,
 		"profiling-service-id",
 		o.ProfilingServiceID,
-		"Service name to associated with profiles in Stackdriver Profiler. Defaults to the value of -ts-mon-job-name.",
+		"Service name to associated with profiles in Cloud Profiler. Defaults to the value of -ts-mon-job-name.",
 	)
 	f.StringVar(
 		&o.ContainerImageID,
@@ -1566,7 +1553,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 // read by humans but which is parsed by google-fluentd and GAE hosting
 // environment.
 //
-// To support per-request log grouping in Stackdriver Logs UI there must be
+// To support per-request log grouping in Cloud Logging UI there must be
 // two different log streams:
 //   - A stream with top-level HTTP request entries (conceptually like Apache's
 //     access.log, i.e. with one log entry per request).
@@ -1574,7 +1561,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 //     logs via the trace ID field).
 //
 // Both streams are expected to have a particular format and use particular
-// fields for Stackdriver UI to display them correctly. This technique is
+// fields for Cloud Logging UI to display them correctly. This technique is
 // primarily intended for GAE Flex, but it works in many Google environments:
 // https://cloud.google.com/appengine/articles/logging#linking_app_logs_and_requests
 //
@@ -1966,7 +1953,7 @@ func (s *Server) initTSMon() error {
 	return nil
 }
 
-// initTracing initialized Stackdriver opencensus.io trace exporter.
+// initTracing initialized Cloud Trace opencensus.io trace exporter.
 func (s *Server) initTracing() error {
 	if !s.Options.shouldEnableTracing() {
 		return nil
@@ -1978,7 +1965,7 @@ func (s *Server) initTracing() error {
 		if sampling == "" {
 			sampling = "0.1qps"
 		}
-		logging.Infof(s.Context, "Setting up Stackdriver trace exports to %q (%s)", s.Options.CloudProject, sampling)
+		logging.Infof(s.Context, "Setting up Cloud Trace exports to %q (%s)", s.Options.CloudProject, sampling)
 		var err error
 		if s.sampler, err = internal.Sampler(sampling); err != nil {
 			return errors.Annotate(err, "bad -trace-sampling").Err()
@@ -1988,13 +1975,13 @@ func (s *Server) initTracing() error {
 		// a trace, it will let us know through options of the parent span in
 		// X-Cloud-Trace-Context. We will collect only traces from requests that
 		// GAE wants to sample itself.
-		logging.Infof(s.Context, "Setting up Stackdriver trace exports to %q using GAE sampling strategy", s.Options.CloudProject)
+		logging.Infof(s.Context, "Setting up Cloud Trace exports to %q using GAE sampling strategy", s.Options.CloudProject)
 		s.sampler = func(p octrace.SamplingParameters) octrace.SamplingDecision {
 			return octrace.SamplingDecision{Sample: p.ParentContext.IsSampled()}
 		}
 	}
 
-	// Set the token source to call Stackdriver API.
+	// Set the token source to call Cloud Trace API.
 	opts := []option.ClientOption{option.WithTokenSource(s.cloudTS)}
 
 	// State for suppressing repeated ResourceExhausted error messages, otherwise
@@ -2026,7 +2013,7 @@ func (s *Server) initTracing() error {
 		},
 		OnError: func(err error) {
 			if !strings.Contains(err.Error(), "ResourceExhausted") {
-				logging.Warningf(exporterCtx, "Error in Stackdriver trace exporter: %s", err)
+				logging.Warningf(exporterCtx, "Error in Cloud Trace exporter: %s", err)
 				return
 			}
 
@@ -2037,9 +2024,9 @@ func (s *Server) initTracing() error {
 
 			if errorDedup.report.IsZero() || time.Since(errorDedup.report) > 5*time.Minute {
 				if errorDedup.report.IsZero() {
-					logging.Warningf(exporterCtx, "Error in Stackdriver trace exporter: %s", err)
+					logging.Warningf(exporterCtx, "Error in Cloud Trace exporter: %s", err)
 				} else {
-					logging.Warningf(exporterCtx, "Error in Stackdriver trace exporter: %s (%d occurrences in %s since the last report)", err, errorDedup.count, time.Since(errorDedup.report))
+					logging.Warningf(exporterCtx, "Error in Cloud Trace exporter: %s (%d occurrences in %s since the last report)", err, errorDedup.count, time.Since(errorDedup.report))
 				}
 				errorDedup.report = time.Now()
 				errorDedup.count = 0
@@ -2061,20 +2048,41 @@ func (s *Server) initTracing() error {
 	return nil
 }
 
-// initProfiling initialized Stackdriver Profiler.
+// initProfiling initialized Cloud Profiler.
 func (s *Server) initProfiling() error {
 	// Skip if not enough configuration is given.
 	switch {
 	case !s.Options.Prod:
 		return nil // silently skip, no need for log spam in dev mode
 	case s.Options.CloudProject == "":
-		logging.Infof(s.Context, "Stackdriver profiler is disabled: -cloud-project is not set")
-		return nil
-	case s.Options.ProfilingDisable:
-		logging.Infof(s.Context, "Stackdriver profiler is disabled: -profiling-disable is set")
+		logging.Infof(s.Context, "Cloud Profiler is disabled: -cloud-project is not set")
 		return nil
 	case s.Options.ProfilingServiceID == "" && s.Options.TsMonJobName == "":
-		logging.Infof(s.Context, "Stackdriver profiler is disabled: neither -profiling-service-id nor -ts-mon-job-name are set")
+		logging.Infof(s.Context, "Cloud Profiler is disabled: neither -profiling-service-id nor -ts-mon-job-name are set")
+		return nil
+	}
+
+	// Enable profiler based on a given probability. Low probabilities are useful
+	// to avoid hitting Cloud Profiler quotas when running services with many
+	// replicas. Profiles are aggregated anyway, for large enough number of
+	// servers it doesn't matter if only a random subset of them is sampled.
+	sample := rand.Float64()
+	if sample < s.Options.ProfilingProbability {
+		if s.Options.ProfilingProbability >= 1.0 {
+			logging.Infof(s.Context, "Cloud Profiler is enabled")
+		} else {
+			logging.Infof(s.Context,
+				"Cloud Profiler is enabled: rand %.2f < profiling-probability %.2f",
+				sample, s.Options.ProfilingProbability)
+		}
+	} else {
+		if s.Options.ProfilingProbability <= 0 {
+			logging.Infof(s.Context, "Cloud Profiler is disabled")
+		} else {
+			logging.Infof(s.Context,
+				"Cloud Profiler is disabled: rand %.2f >= profiling-probability %.2f",
+				sample, s.Options.ProfilingProbability)
+		}
 		return nil
 	}
 
@@ -2093,11 +2101,11 @@ func (s *Server) initProfiling() error {
 	// uploads profiles. It fails to launch if Service or ServiceVersion do not
 	// pass regexp validation. Make it non-fatal, but still log.
 	if err := profiler.Start(cfg, option.WithTokenSource(s.cloudTS)); err != nil {
-		logging.Errorf(s.Context, "Stackdriver profiler is disabled: failed do start - %s", err)
+		logging.Errorf(s.Context, "Cloud Profiler is disabled: failed do start - %s", err)
 		return nil
 	}
 
-	logging.Infof(s.Context, "Setting up Stackdriver profiler (service %q, version %q)", cfg.Service, cfg.ServiceVersion)
+	logging.Infof(s.Context, "Set up Cloud Profiler (service %q, version %q)", cfg.Service, cfg.ServiceVersion)
 	return nil
 }
 
@@ -2279,7 +2287,7 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 		)
 	}
 
-	// Request info (these are recognized by Stackdriver natively).
+	// Request info (these are recognized by Cloud Trace natively).
 	span.AddAttributes(
 		octrace.StringAttribute("/http/host", r.Host),
 		octrace.StringAttribute("/http/method", r.Method),
