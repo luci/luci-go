@@ -192,6 +192,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	r.LastUpdated = commitTime.In(time.UTC)
 	r.LastUpdatedUser = user
 	r.PredicateLastUpdated = commitTime.In(time.UTC)
+	r.IsManagingBugPriorityLastUpdated = commitTime.In(time.UTC)
 
 	// Log rule changes to provide a way of recovering old system state
 	// if malicious or unintended updates occur.
@@ -223,6 +224,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	user := auth.CurrentUser(ctx).Email
 
 	var predicateUpdated bool
+	var managingBugPriorityUpdated bool
 	var originalRule *rules.FailureAssociationRule
 	var updatedRule *rules.FailureAssociationRule
 	f := func(ctx context.Context) error {
@@ -249,6 +251,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 		updatePredicate := false
 		updatingBug := false
 		updatingManaged := false
+		updateIsManagingBugPriority := false
 		for _, path := range req.UpdateMask.Paths {
 			// Only limited fields may be modified by the client.
 			switch path {
@@ -273,6 +276,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 				updatingManaged = true // Triggers validation.
 				rule.IsManagingBug = req.Rule.IsManagingBug
 			case "is_managing_bug_priority":
+				updateIsManagingBugPriority = true
 				rule.IsManagingBugPriority = req.Rule.IsManagingBugPriority
 			default:
 				return invalidArgumentError(fmt.Errorf("unsupported field mask: %s", path))
@@ -312,11 +316,15 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			}
 		}
 
-		if err := rules.Update(ctx, rule, updatePredicate, user); err != nil {
+		if err := rules.Update(ctx, rule, rules.UpdateOptions{
+			PredicateUpdated:             updatePredicate,
+			IsManagingBugPriorityUpdated: updateIsManagingBugPriority,
+		}, user); err != nil {
 			return invalidArgumentError(err)
 		}
 		updatedRule = rule
 		predicateUpdated = updatePredicate
+		managingBugPriorityUpdated = updateIsManagingBugPriority
 		return nil
 	}
 	commitTime, err := span.ReadWriteTransaction(ctx, f)
@@ -327,6 +335,9 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	updatedRule.LastUpdatedUser = user
 	if predicateUpdated {
 		updatedRule.PredicateLastUpdated = commitTime.In(time.UTC)
+	}
+	if managingBugPriorityUpdated {
+		updatedRule.IsManagingBugPriorityLastUpdated = commitTime.In(time.UTC)
 	}
 	// Log rule changes to provide a way of recovering old system state
 	// if malicious or unintended updates occur.
@@ -388,14 +399,15 @@ func createRulePB(r *rules.FailureAssociationRule, cfg *configpb.ProjectConfig, 
 		definition = r.RuleDefinition
 	}
 	return &pb.Rule{
-		Name:                  ruleName(r.Project, r.RuleID),
-		Project:               r.Project,
-		RuleId:                r.RuleID,
-		RuleDefinition:        definition,
-		Bug:                   createAssociatedBugPB(r.BugID, cfg),
-		IsActive:              r.IsActive,
-		IsManagingBug:         r.IsManagingBug,
-		IsManagingBugPriority: r.IsManagingBugPriority,
+		Name:                             ruleName(r.Project, r.RuleID),
+		Project:                          r.Project,
+		RuleId:                           r.RuleID,
+		RuleDefinition:                   definition,
+		Bug:                              createAssociatedBugPB(r.BugID, cfg),
+		IsActive:                         r.IsActive,
+		IsManagingBug:                    r.IsManagingBug,
+		IsManagingBugPriority:            r.IsManagingBugPriority,
+		IsManagingBugPriorityLastUpdated: timestamppb.New(r.IsManagingBugPriorityLastUpdated),
 		SourceCluster: &pb.ClusterId{
 			Algorithm: r.SourceCluster.Algorithm,
 			Id:        r.SourceCluster.ID,

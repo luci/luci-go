@@ -413,8 +413,9 @@ func (b *BugUpdater) archiveRules(ctx context.Context, ruleIDs []string) error {
 		}
 		for _, r := range rs {
 			r.IsActive = false
-			updatePredicate := true
-			if err := rules.Update(ctx, r, updatePredicate, rules.LUCIAnalysisSystem); err != nil {
+			if err := rules.Update(ctx, r, rules.UpdateOptions{
+				PredicateUpdated: true,
+			}, rules.LUCIAnalysisSystem); err != nil {
 				// Validation error. Actual save happens upon transaction
 				// commit.
 				return errors.Annotate(err, "update rules").Err()
@@ -470,8 +471,9 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 				sourceRule.IsManagingBug = false
 			}
 
-			updatePredicate := false
-			err = rules.Update(ctx, sourceRule, updatePredicate, rules.LUCIAnalysisSystem)
+			err = rules.Update(ctx, sourceRule, rules.UpdateOptions{
+				PredicateUpdated: false,
+			}, rules.LUCIAnalysisSystem)
 			if err != nil {
 				// Indicates validation error. Should never happen.
 				return err
@@ -500,8 +502,9 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 
 			// Disable the source rule.
 			sourceRule.IsActive = false
-			updatePredicate := true
-			err = rules.Update(ctx, sourceRule, updatePredicate, rules.LUCIAnalysisSystem)
+			err = rules.Update(ctx, sourceRule, rules.UpdateOptions{
+				PredicateUpdated: true,
+			}, rules.LUCIAnalysisSystem)
 			if err != nil {
 				// Indicates validation error. Should never happen.
 				return err
@@ -509,7 +512,9 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 
 			// Update the rule on the destination rule.
 			destinationRule.IsActive = true
-			err = rules.Update(ctx, destinationRule, updatePredicate, rules.LUCIAnalysisSystem)
+			err = rules.Update(ctx, destinationRule, rules.UpdateOptions{
+				PredicateUpdated: true,
+			}, rules.LUCIAnalysisSystem)
 			if err != nil {
 				return err
 			}

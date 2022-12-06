@@ -164,9 +164,10 @@ func TestRules(t *testing.T) {
 							LinkText: "mybug.com/111",
 							Url:      "https://monorailhost.com/p/monorailproject/issues/detail?id=111",
 						},
-						IsActive:              true,
-						IsManagingBug:         true,
-						IsManagingBugPriority: true,
+						IsActive:                         true,
+						IsManagingBug:                    true,
+						IsManagingBugPriority:            true,
+						IsManagingBugPriorityLastUpdated: timestamppb.New(ruleManaged.IsManagingBugPriorityLastUpdated),
 						SourceCluster: &pb.ClusterId{
 							Algorithm: ruleManaged.SourceCluster.Algorithm,
 							Id:        ruleManaged.SourceCluster.ID,
@@ -235,9 +236,10 @@ func TestRules(t *testing.T) {
 							LinkText: "b/666",
 							Url:      "https://issuetracker.google.com/issues/666",
 						},
-						IsActive:              true,
-						IsManagingBug:         true,
-						IsManagingBugPriority: true,
+						IsActive:                         true,
+						IsManagingBug:                    true,
+						IsManagingBugPriority:            true,
+						IsManagingBugPriorityLastUpdated: timestamppb.New(ruleBuganizer.IsManagingBugPriorityLastUpdated),
 						SourceCluster: &pb.ClusterId{
 							Algorithm: ruleBuganizer.SourceCluster.Algorithm,
 							Id:        ruleBuganizer.SourceCluster.ID,
@@ -370,9 +372,8 @@ func TestRules(t *testing.T) {
 						System: "monorail",
 						Id:     "monorailproject/2",
 					},
-					IsManagingBug:         false,
-					IsManagingBugPriority: false,
-					IsActive:              false,
+					IsManagingBug: false,
+					IsActive:      false,
 				},
 				UpdateMask: &fieldmaskpb.FieldMask{
 					// On the client side, we use JSON equivalents, i.e. ruleDefinition,
@@ -412,6 +413,7 @@ func TestRules(t *testing.T) {
 						WithActive(false).
 						WithBugManaged(false).
 						WithBugPriorityManaged(false).
+						WithBugPriorityManagedLastUpdated(storedRule.LastUpdated).
 						// Accept whatever the new last updated time is.
 						WithLastUpdated(storedRule.LastUpdated).
 						WithLastUpdatedUser("someone@example.com").
@@ -445,6 +447,33 @@ func TestRules(t *testing.T) {
 
 					expectedRule := ruleManagedBuilder.
 						WithBug(bugs.BugID{System: "buganizer", ID: "99999999"}).
+						// Accept whatever the new last updated time is.
+						WithLastUpdated(storedRule.LastUpdated).
+						WithLastUpdatedUser("someone@example.com").
+						Build()
+
+					// Verify the rule was correctly updated in the database.
+					So(storedRule, ShouldResemble, expectedRule)
+
+					// Verify the returned rule matches what was expected.
+					So(rule, ShouldResembleProto, createRulePB(expectedRule, cfg, true /*includeDefinition*/))
+				})
+				Convey("Managing bug priority updated", func() {
+					request.UpdateMask.Paths = []string{"is_managing_bug_priority"}
+					request.Rule.IsManagingBugPriority = false
+
+					rule, err := srv.Update(ctx, request)
+					So(err, ShouldBeNil)
+
+					storedRule, err := rules.Read(span.Single(ctx), testProject, ruleManaged.RuleID)
+					So(err, ShouldBeNil)
+
+					// Check the rule was updated.
+					So(storedRule.LastUpdated, ShouldNotEqual, ruleManaged.LastUpdated)
+
+					expectedRule := ruleManagedBuilder.
+						WithBugPriorityManaged(false).
+						WithBugPriorityManagedLastUpdated(storedRule.LastUpdated).
 						// Accept whatever the new last updated time is.
 						WithLastUpdated(storedRule.LastUpdated).
 						WithLastUpdatedUser("someone@example.com").
@@ -627,6 +656,7 @@ func TestRules(t *testing.T) {
 						WithCreationTime(storedRule.CreationTime).
 						WithLastUpdated(storedRule.CreationTime).
 						WithPredicateLastUpdated(storedRule.CreationTime).
+						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -660,6 +690,7 @@ func TestRules(t *testing.T) {
 						WithCreationTime(storedRule.CreationTime).
 						WithLastUpdated(storedRule.CreationTime).
 						WithPredicateLastUpdated(storedRule.CreationTime).
+						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.
@@ -691,6 +722,7 @@ func TestRules(t *testing.T) {
 						WithCreationTime(storedRule.CreationTime).
 						WithLastUpdated(storedRule.CreationTime).
 						WithPredicateLastUpdated(storedRule.CreationTime).
+						WithBugPriorityManagedLastUpdated(storedRule.CreationTime).
 						Build()
 
 					// Verify the rule was correctly created in the database.

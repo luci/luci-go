@@ -49,18 +49,19 @@ func NewRule(uniqifier int) *RuleBuilder {
 	}
 
 	rule := FailureAssociationRule{
-		Project:               testProject,
-		RuleID:                hex.EncodeToString(ruleIDBytes[0:16]),
-		RuleDefinition:        "reason LIKE \"%exit code 5%\" AND test LIKE \"tast.arc.%\"",
-		BugID:                 bugID,
-		IsActive:              true,
-		IsManagingBug:         true,
-		IsManagingBugPriority: true,
-		CreationTime:          time.Date(1900, 1, 2, 3, 4, 5, uniqifier, time.UTC),
-		CreationUser:          LUCIAnalysisSystem,
-		LastUpdated:           time.Date(1900, 1, 2, 3, 4, 7, uniqifier, time.UTC),
-		LastUpdatedUser:       "user@google.com",
-		PredicateLastUpdated:  time.Date(1900, 1, 2, 3, 4, 6, uniqifier, time.UTC),
+		Project:                          testProject,
+		RuleID:                           hex.EncodeToString(ruleIDBytes[0:16]),
+		RuleDefinition:                   "reason LIKE \"%exit code 5%\" AND test LIKE \"tast.arc.%\"",
+		BugID:                            bugID,
+		IsActive:                         true,
+		IsManagingBug:                    true,
+		IsManagingBugPriority:            true,
+		IsManagingBugPriorityLastUpdated: time.Date(1900, 1, 2, 3, 4, 8, uniqifier, time.UTC),
+		CreationTime:                     time.Date(1900, 1, 2, 3, 4, 5, uniqifier, time.UTC),
+		CreationUser:                     LUCIAnalysisSystem,
+		LastUpdated:                      time.Date(1900, 1, 2, 3, 4, 7, uniqifier, time.UTC),
+		LastUpdatedUser:                  "user@google.com",
+		PredicateLastUpdated:             time.Date(1900, 1, 2, 3, 4, 6, uniqifier, time.UTC),
 		SourceCluster: clustering.ClusterID{
 			Algorithm: fmt.Sprintf("clusteralg%v-v9", uniqifier),
 			ID:        hex.EncodeToString([]byte(fmt.Sprintf("id%v", uniqifier))),
@@ -100,6 +101,11 @@ func (b *RuleBuilder) WithBugManaged(value bool) *RuleBuilder {
 // is managed by LUCI Analysis.
 func (b *RuleBuilder) WithBugPriorityManaged(isPriorityManaged bool) *RuleBuilder {
 	b.rule.IsManagingBugPriority = isPriorityManaged
+	return b
+}
+
+func (b *RuleBuilder) WithBugPriorityManagedLastUpdated(isManagingBugPriorityLastUpdated time.Time) *RuleBuilder {
+	b.rule.IsManagingBugPriorityLastUpdated = isManagingBugPriorityLastUpdated
 	return b
 }
 
@@ -179,11 +185,12 @@ func SetRulesForTesting(ctx context.Context, rs []*FailureAssociationRule) error
 				"BugID":                r.BugID.ID,
 				"PredicateLastUpdated": r.PredicateLastUpdated,
 				// Uses the value 'NULL' to indicate false, and true to indicate true.
-				"IsActive":               spanner.NullBool{Bool: r.IsActive, Valid: r.IsActive},
-				"IsManagingBug":          spanner.NullBool{Bool: r.IsManagingBug, Valid: r.IsManagingBug},
-				"IsManagingBugPriority":  r.IsManagingBugPriority,
-				"SourceClusterAlgorithm": r.SourceCluster.Algorithm,
-				"SourceClusterId":        r.SourceCluster.ID,
+				"IsActive":                         spanner.NullBool{Bool: r.IsActive, Valid: r.IsActive},
+				"IsManagingBug":                    spanner.NullBool{Bool: r.IsManagingBug, Valid: r.IsManagingBug},
+				"IsManagingBugPriority":            r.IsManagingBugPriority,
+				"IsManagingBugPriorityLastUpdated": r.IsManagingBugPriorityLastUpdated,
+				"SourceClusterAlgorithm":           r.SourceCluster.Algorithm,
+				"SourceClusterId":                  r.SourceCluster.ID,
 			})
 			span.BufferWrite(ctx, ms)
 		}

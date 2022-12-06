@@ -94,6 +94,9 @@ message Rule {
   // of the bug.
   bool is_managing_bug_priority = 15;
 
+  // Output Only. The time is_managing_bug_priority was last updated.
+  google.protobuf.Timestamp is_managing_bug_priority_last_updated = 16;
+
   // The suggested cluster this rule was created from (if any).
   // Until re-clustering is complete and has reduced the residual impact
   // of the source cluster, this cluster ID tells bug filing to ignore
@@ -130,7 +133,7 @@ message Rule {
   // See also https://google.aip.dev/154.
   string etag = 12;
 
-  // Next ID: 16
+  // Next ID: 17
 }
 
 message GetRuleRequest {
