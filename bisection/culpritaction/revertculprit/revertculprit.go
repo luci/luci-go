@@ -30,10 +30,12 @@ import (
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 )
 
@@ -386,7 +388,34 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 			"Sample failed build: %s\n\n"+
 			"If this is a false positive, please report it at %s",
 			analysisURL, buildURL, bugURL))
-	return err
+	if err != nil {
+		return errors.Annotate(err,
+			"error when adding supporting comment to existing revert").Err()
+	}
+
+	// Update culprit for the supporting comment action
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+
+		// set the revert CL URL
+		culpritModel.RevertURL = fmt.Sprintf("https://%s/c/%s/+/%d",
+			gerritClient.Host(ctx), revert.Project, revert.Number)
+		// set the flag to record the revert has a supporting comment from LUCI Bisection
+		culpritModel.HasSupportRevertComment = true
+		culpritModel.SupportRevertCommentTime = clock.Now(ctx)
+
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
+
+	if err != nil {
+		return errors.Annotate(err,
+			"couldn't update suspect details when commenting support for existing revert").Err()
+	}
+
+	return nil
 }
 
 // commentReasonOnCulprit adds a comment from LUCI Bisection on a culprit CL
@@ -422,7 +451,30 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 		analysisURL, reason, buildURL, bugURL)
 
 	_, err = gerritClient.AddComment(ctx, culprit, message)
-	return err
+	if err != nil {
+		return errors.Annotate(err, "error when commenting on culprit").Err()
+	}
+
+	// Update culprit for the comment action
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+
+		// set the flag to note that the culprit has a comment from LUCI Bisection
+		culpritModel.HasCulpritComment = true
+		culpritModel.CulpritCommentTime = clock.Now(ctx)
+
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
+
+	if err != nil {
+		return errors.Annotate(err,
+			"couldn't update suspect details when commenting on the culprit").Err()
+	}
+
+	return nil
 }
 
 // sendRevertForReview adds a comment from LUCI Bisection on a revert CL

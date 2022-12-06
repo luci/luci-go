@@ -159,7 +159,7 @@ type CompileRerunBuild struct {
 	Id int64 `gae:"$id"`
 	// LUCI build data
 	LuciBuild
-	// For backward compatability, because we removed some fields
+	// For backward compatibility due to removed fields.
 	// See https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/gae/service/datastore/pls.go;l=100
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
@@ -199,10 +199,10 @@ type SingleRerun struct {
 	Priority int32 `gae:"priority"`
 }
 
-// RevertDetails encapsulate the details of revert-related actions.
-type RevertDetails struct {
-	// URL to the code review of the revert created by LUCI Bisection.
-	// Empty if no revert has been created.
+// ActionDetails encapsulate the details of actions performed by LUCI Bisection,
+// e.g. creating a revert, commenting on a culprit, etc.
+type ActionDetails struct {
+	// URL to the code review of the revert.
 	RevertURL string `gae:"revert_url"`
 
 	// Whether LUCI Bisection has created the revert
@@ -216,6 +216,18 @@ type RevertDetails struct {
 
 	// Time when the revert for the suspect was bot-committed
 	RevertCommitTime time.Time `gae:"revert_commit_time"`
+
+	// Whether LUCI Bisection has added a supporting comment to an existing revert
+	HasSupportRevertComment bool `gae:"has_support_revert_comment"`
+
+	// Time when LUCI Bisection added a supporting comment to an existing revert
+	SupportRevertCommentTime time.Time `gae:"support_revert_comment_time"`
+
+	// Whether LUCI Bisection has added a comment to the culprit CL
+	HasCulpritComment bool `gae:"has_culprit_comment"`
+
+	// Time when LUCI Bisection commented on the culprit
+	CulpritCommentTime time.Time `gae:"culprit_comment_time"`
 }
 
 // Suspect is the suspect of heuristic analysis.
@@ -259,8 +271,12 @@ type Suspect struct {
 	// Key to the CompileRerunBuild of the parent commit of the suspect, for culprit verification purpose.
 	ParentRerunBuild *datastore.Key `gae:"parent_rerun_build"`
 
-	// Details of revert actions for this suspect
-	RevertDetails
+	// Details of actions performed by LUCI Bisection for this suspect.
+	ActionDetails
+
+	// For backward compatibility due to removed fields.
+	// See https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/gae/service/datastore/pls.go;l=100
+	_ datastore.PropertyMap `gae:"-,extra"`
 }
 
 // CompileHeuristicAnalysis is heuristic analysis for compile failures.

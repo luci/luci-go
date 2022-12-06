@@ -64,42 +64,42 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 		// Set up suspects
 		suspect1 := &model.Suspect{}
 		suspect2 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				RevertURL:        "https://chromium-test-review.googlesource.com/c/test/project/+/100000",
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c),
 			},
 		}
 		suspect3 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				RevertURL:        "https://chromium-test-review.googlesource.com/c/test/project/+/100001",
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Hour * 72),
 			},
 		}
 		suspect4 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				RevertURL:        "https://chromium-test-review.googlesource.com/c/test/project/+/100002",
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Hour * 4),
 			},
 		}
 		suspect5 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				RevertURL:        "https://chromium-test-review.googlesource.com/c/test/project/+/100003",
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Minute * 10),
 			},
 		}
 		suspect6 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				RevertURL:        "https://chromium-test-review.googlesource.com/c/test/project/+/100004",
 				IsRevertCreated:  true,
 				RevertCreateTime: clock.Now(c).Add(-time.Hour * 24),
 			},
 		}
 		suspect7 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				RevertURL:        "",
 				IsRevertCreated:  false,
 				RevertCreateTime: clock.Now(c).Add(-time.Minute * 10),
@@ -153,37 +153,37 @@ func TestCountLatestRevertsCommitted(t *testing.T) {
 		// Set up suspects
 		suspect1 := &model.Suspect{}
 		suspect2 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				IsRevertCommitted: true,
 				RevertCommitTime:  clock.Now(c),
 			},
 		}
 		suspect3 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				IsRevertCommitted: true,
 				RevertCommitTime:  clock.Now(c).Add(-time.Hour * 72),
 			},
 		}
 		suspect4 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				IsRevertCommitted: true,
 				RevertCommitTime:  clock.Now(c).Add(-time.Hour * 4),
 			},
 		}
 		suspect5 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				IsRevertCommitted: true,
 				RevertCommitTime:  clock.Now(c).Add(-time.Minute * 10),
 			},
 		}
 		suspect6 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				IsRevertCommitted: true,
 				RevertCommitTime:  clock.Now(c).Add(-time.Hour * 24),
 			},
 		}
 		suspect7 := &model.Suspect{
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				IsRevertCommitted: false,
 				RevertCommitTime:  clock.Now(c).Add(-time.Minute * 10),
 			},

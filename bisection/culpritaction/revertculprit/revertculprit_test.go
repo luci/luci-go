@@ -170,8 +170,13 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
 		})
 
 		Convey("all Gerrit actions disabled", func() {
@@ -217,8 +222,13 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
 		})
 
 		Convey("already reverted", func() {
@@ -297,8 +307,13 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
 		})
 
 		Convey("revert exists", func() {
@@ -389,8 +404,14 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:                "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:          false,
+				IsRevertCommitted:        false,
+				HasSupportRevertComment:  true,
+				SupportRevertCommentTime: testclock.TestTimeUTC.Round(time.Second),
+				HasCulpritComment:        false,
+			})
 		})
 
 		Convey("revert has auto-revert off flag set", func() {
@@ -475,8 +496,14 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       true,
+				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
+			})
 		})
 
 		Convey("revert was from an irrevertible author", func() {
@@ -561,8 +588,14 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       true,
+				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
+			})
 		})
 
 		Convey("culprit has a downstream dependency", func() {
@@ -666,8 +699,14 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       true,
+				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
+			})
 		})
 
 		Convey("revert creation is disabled", func() {
@@ -754,8 +793,14 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, false)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       true,
+				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
+			})
 		})
 
 		Convey("culprit was committed too long ago", func() {
@@ -855,8 +900,14 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, true)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         true,
+				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
 		})
 
 		Convey("revert commit is disabled", func() {
@@ -956,8 +1007,14 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, true)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, false)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         true,
+				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
 		})
 
 		Convey("revert for culprit is created and bot-committed", func() {
@@ -1066,8 +1123,15 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
-			So(suspect.RevertDetails.IsRevertCreated, ShouldEqual, true)
-			So(suspect.RevertDetails.IsRevertCommitted, ShouldEqual, true)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         true,
+				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
+				IsRevertCommitted:       true,
+				RevertCommitTime:        testclock.TestTimeUTC.Round(time.Second),
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
 		})
 	})
 }

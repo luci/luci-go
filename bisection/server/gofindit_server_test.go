@@ -118,7 +118,7 @@ func TestQueryAnalysis(t *testing.T) {
 			},
 			ReviewUrl:   "http://this/is/review/url",
 			ReviewTitle: "This is review title",
-			RevertDetails: model.RevertDetails{
+			ActionDetails: model.ActionDetails{
 				RevertURL:         "https://this/is/revert/review/url",
 				IsRevertCreated:   true,
 				RevertCreateTime:  (&timestamppb.Timestamp{Seconds: 100}).AsTime(),

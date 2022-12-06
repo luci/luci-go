@@ -55,11 +55,15 @@ interface VerificationDetailsTableProps {
 
 const CULPRIT_ACTION_DESCRIPTIONS: Record<CulpritActionType, string> = {
   CULPRIT_ACTION_TYPE_UNSPECIFIED: '',
+  NO_ACTION:
+    'No actions have been performed by LUCI Bisection for this culprit',
   CULPRIT_AUTO_REVERTED: 'This culprit has been auto-reverted',
   REVERT_CL_CREATED: 'A revert CL has been created for this culprit',
   CULPRIT_CL_COMMENTED:
     'A comment was added on the original code review for this culprit',
   BUG_COMMENTED: 'A comment was added on a related bug',
+  EXISTING_REVERT_CL_COMMENTED:
+    'A comment was added to the code review for an existing revert of this culprit',
 };
 
 const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
@@ -101,7 +105,7 @@ export const VerificationDetailsTable = ({
   details,
 }: VerificationDetailsTableProps) => {
   if (!details.suspectRerun && !details.parentRerun) {
-    return <>No rerun found</>
+    return <>No rerun found</>;
   }
   let culpritRerunBuildLink = EMPTY_LINK;
   if (details.suspectRerun) {
@@ -126,7 +130,9 @@ export const VerificationDetailsTable = ({
                 rel='noreferrer'
                 underline='always'
               >
-                {displayRerunStatus(details.suspectRerun.rerunResult.rerunStatus)}
+                {displayRerunStatus(
+                  details.suspectRerun.rerunResult.rerunStatus
+                )}
               </Link>
             )}
           </TableCell>
@@ -141,7 +147,9 @@ export const VerificationDetailsTable = ({
                 rel='noreferrer'
                 underline='always'
               >
-                {displayRerunStatus(details.parentRerun.rerunResult.rerunStatus)}
+                {displayRerunStatus(
+                  details.parentRerun.rerunResult.rerunStatus
+                )}
               </Link>
             )}
           </TableCell>
@@ -228,17 +236,17 @@ export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
 };
 
 function displayRerunStatus(rerunStatus: RerunStatus): string {
-  switch(rerunStatus) {
+  switch (rerunStatus) {
     case 'RERUN_STATUS_PASSED':
-      return 'Passed'
+      return 'Passed';
     case 'RERUN_STATUS_FAILED':
-      return 'Failed'
+      return 'Failed';
     case 'RERUN_STATUS_IN_PROGRESS':
-      return 'In Progress'
+      return 'In Progress';
     case 'RERUN_STATUS_INFRA_FAILED':
-      return 'Infra failed'
+      return 'Infra failed';
     case 'RERUN_STATUS_CANCELED':
-      return 'Canceled'
+      return 'Canceled';
   }
-  return 'Unknown'
+  return 'Unknown';
 }

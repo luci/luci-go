@@ -71,10 +71,12 @@ export type SuspectConfidenceLevel =
 
 export type CulpritActionType =
   | 'CULPRIT_ACTION_TYPE_UNSPECIFIED'
+  | 'NO_ACTION'
   | 'CULPRIT_AUTO_REVERTED'
   | 'REVERT_CL_CREATED'
   | 'CULPRIT_CL_COMMENTED'
-  | 'BUG_COMMENTED';
+  | 'BUG_COMMENTED'
+  | 'EXISTING_REVERT_CL_COMMENTED';
 
 export type BuildFailureType =
   | 'BUILD_FAILURE_TYPE_UNSPECIFIED'

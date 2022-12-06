@@ -210,21 +210,40 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		}
 		pbCulprit.VerificationDetails = verificationDetails
 
-		// Add culprit action for creating/auto-committing a revert
-		if suspect.IsRevertCreated {
-			culpritAction := &pb.CulpritAction{
+		culpritActions := []*pb.CulpritAction{}
+		if suspect.IsRevertCommitted {
+			// culprit action for auto-committing a revert
+			culpritActions = append(culpritActions, &pb.CulpritAction{
+				ActionType:  pb.CulpritActionType_CULPRIT_AUTO_REVERTED,
 				RevertClUrl: suspect.RevertURL,
-			}
-			if suspect.IsRevertCommitted {
-				culpritAction.ActionType = pb.CulpritActionType_CULPRIT_AUTO_REVERTED
-				culpritAction.ActionTime = timestamppb.New(suspect.RevertCommitTime)
-			} else {
-				culpritAction.ActionType = pb.CulpritActionType_REVERT_CL_CREATED
-				culpritAction.ActionTime = timestamppb.New(suspect.RevertCreateTime)
-			}
-			pbCulprit.CulpritAction = []*pb.CulpritAction{culpritAction}
+				ActionTime:  timestamppb.New(suspect.RevertCommitTime),
+			})
+		} else if suspect.IsRevertCreated {
+			// culprit action for creating a revert
+			culpritActions = append(culpritActions, &pb.CulpritAction{
+				ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
+				RevertClUrl: suspect.RevertURL,
+				ActionTime:  timestamppb.New(suspect.RevertCreateTime),
+			})
+		} else if suspect.HasSupportRevertComment {
+			// culprit action for commenting on an existing revert
+			culpritActions = append(culpritActions, &pb.CulpritAction{
+				ActionType:  pb.CulpritActionType_EXISTING_REVERT_CL_COMMENTED,
+				RevertClUrl: suspect.RevertURL,
+				ActionTime:  timestamppb.New(suspect.SupportRevertCommentTime),
+			})
+		} else if suspect.HasCulpritComment {
+			// culprit action for commenting on the culprit
+			culpritActions = append(culpritActions, &pb.CulpritAction{
+				ActionType: pb.CulpritActionType_CULPRIT_CL_COMMENTED,
+				ActionTime: timestamppb.New(suspect.CulpritCommentTime),
+			})
+		} else {
+			culpritActions = append(culpritActions, &pb.CulpritAction{
+				ActionType: pb.CulpritActionType_NO_ACTION,
+			})
 		}
-
+		pbCulprit.CulpritAction = culpritActions
 		culprits[i] = pbCulprit
 	}
 	result.Culprits = culprits
@@ -232,8 +251,6 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	// TODO (nqmtuan): query for nth-section result
 
 	// TODO (aredulla): add culprit actions for:
-	//     * commenting on culprit CLs
-	//     * commenting on manually created revert CLs
 	//     * commenting on related bugs
 
 	return result, nil

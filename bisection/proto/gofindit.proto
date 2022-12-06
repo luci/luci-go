@@ -334,10 +334,12 @@ enum CulpritActionType {
   // Maybe waiting for a human to review or for the verification process
   // to finish.
   REVERT_CL_CREATED = 3;
-  // LUCI Bisection made a comment on the culprit CL
+  // LUCI Bisection commented on the culprit CL
   CULPRIT_CL_COMMENTED = 4;
   // LUCI Bisection commented on the bug for the failure
   BUG_COMMENTED = 5;
+  // LUCI Bisection commented on an existing revert CL for the culprit CL
+  EXISTING_REVERT_CL_COMMENTED = 6;
 }
 
 // Regression range is (last_passed..first_failed]
