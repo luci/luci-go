@@ -94,8 +94,9 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 			if build.Status&pb.Status_ENDED_MASK == 0 {
 				logging.Infof(ctx, "build %d is still %s; sleeping for %s", build.Id, build.Status, r.intervalArg)
 				time.Sleep(r.intervalArg)
+			} else {
+				return build, nil
 			}
-			return build, nil
 		}
 	})
 }
