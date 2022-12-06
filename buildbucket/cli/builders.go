@@ -63,7 +63,7 @@ type buildersRun struct {
 func (r *buildersRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
-	if err := r.initClients(ctx); err != nil {
+	if err := r.initClients(ctx, nil); err != nil {
 		return r.done(ctx, err)
 	}
 

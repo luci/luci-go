@@ -19,14 +19,12 @@ import (
 	"time"
 
 	"github.com/maruel/subcommands"
-	"google.golang.org/grpc/codes"
-
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/common/retry"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 func cmdCollect(p Params) *subcommands.Command {
@@ -62,7 +60,17 @@ type collectRun struct {
 
 func (r *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	if err := r.initClients(ctx); err != nil {
+	// bb collect should retry infinitely on transient or deadline_exceeded errors.
+	if err := r.initClients(ctx, func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   1 * time.Second,
+				Retries: -1, // infinite retry
+			},
+			MaxDelay:   10 * time.Minute,
+			Multiplier: 2,
+		}
+	}); err != nil {
 		return r.done(ctx, err)
 	}
 
@@ -80,20 +88,14 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 
 		for {
 			build, err := r.buildsClient.GetBuild(ctx, req)
-			switch code := grpcutil.Code(err); {
-			case grpcutil.IsTransientCode(code):
-				logging.Warningf(ctx, "transient error: %s", err)
-
-			case code != codes.OK:
+			if err != nil {
 				return nil, err
-
-			case build.Status&pb.Status_ENDED_MASK == 0:
+			}
+			if build.Status&pb.Status_ENDED_MASK == 0 {
 				logging.Infof(ctx, "build %d is still %s; sleeping for %s", build.Id, build.Status, r.intervalArg)
 				time.Sleep(r.intervalArg)
-
-			default:
-				return build, nil
 			}
+			return build, nil
 		}
 	})
 }

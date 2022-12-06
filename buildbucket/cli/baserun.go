@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
@@ -80,8 +81,9 @@ func (r *baseCommandRun) RegisterJSONFlag() {
 }
 
 // initClients validates -host flag and initializes r.httpClient,
-// r.buildsClient, and r.buildersClient.
-func (r *baseCommandRun) initClients(ctx context.Context) error {
+// r.buildsClient, and r.buildersClient with the retry strategy if rFn is
+// specified. Otherwise, it will use the default one in prpc.DefaultOptions.
+func (r *baseCommandRun) initClients(ctx context.Context, rFn retry.Factory) error {
 	// Create HTTP Client.
 	authOpts, err := r.authFlags.Options()
 	if err != nil {
@@ -118,6 +120,9 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 
 	// Create Buildbucket clients.
 	rpcOpts := prpc.DefaultOptions()
+	if rFn != nil {
+		rpcOpts.Retry = rFn
+	}
 	rpcOpts.Insecure = lhttp.IsLocalHost(r.host)
 	info, err := version.GetCurrentVersion()
 	if err != nil {
