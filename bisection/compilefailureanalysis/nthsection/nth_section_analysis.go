@@ -109,9 +109,11 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 		return errors.Annotate(err, "failed getting rerun props").Err()
 	}
 
-	priority := getRerunPriority(c, nsa, commit, dims)
+	priority, err := getRerunPriority(c, nsa, commit, dims)
+	if err != nil {
+		return errors.Annotate(err, "couldn't getRerunPriority").Err()
+	}
 
-	// TODO(nqmtuan): Support priority here
 	build, err := rerun.TriggerRerun(c, commit, failedBuildID, props, dims, priority)
 	if err != nil {
 		return errors.Annotate(err, "couldn't trigger rerun").Err()
@@ -125,19 +127,30 @@ func RerunCommit(c context.Context, nsa *model.CompileNthSectionAnalysis, commit
 	return nil
 }
 
-func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, dims map[string]string) int32 {
+func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, commit *buildbucketpb.GitilesCommit, dims map[string]string) (int32, error) {
 	// TODO (nqmtuan): Add other priority offset
 	var pri int32 = rerun.PriorityNthSection
 	// If targetting a particular bot
 	if _, ok := dims["id"]; ok {
 		pri += rerun.PriorityScheduleOnSameBotOffset
 	}
-	return rerun.CapPriority(pri)
+
+	// Offset the priority based on run duration
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, nsa.ParentAnalysis.IntID())
+	if err != nil {
+		return 0, errors.Annotate(err, "couldn't get analysis for nthsection %d", nsa.Id).Err()
+	}
+	pri, err = rerun.OffsetPriorityBasedOnRunDuration(c, pri, cfa)
+	if err != nil {
+		return 0, errors.Annotate(err, "couldn't OffsetPriorityBasedOnRunDuration analysis %d", cfa.Id).Err()
+	}
+
+	return rerun.CapPriority(pri), nil
 }
 
 func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (map[string]interface{}, error) {
 	analysisID := nthSectionAnalysis.ParentAnalysis.IntID()
-	compileFailure, err := datastoreutil.GetCompileFailureForAnalysis(c, analysisID)
+	compileFailure, err := datastoreutil.GetCompileFailureForAnalysisID(c, analysisID)
 	if err != nil {
 		return nil, errors.Annotate(err, "get compile failure for analysis %d", analysisID).Err()
 	}

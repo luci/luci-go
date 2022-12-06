@@ -41,7 +41,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	logging.Infof(c, "Verifying suspect %d for build %d", datastore.KeyForObj(c, suspect).IntID(), failedBuildID)
 
 	// Get failed compile targets
-	compileFailure, err := datastoreutil.GetCompileFailureForAnalysis(c, analysisID)
+	compileFailure, err := datastoreutil.GetCompileFailureForAnalysisID(c, analysisID)
 	if err != nil {
 		return err
 	}
@@ -184,6 +184,16 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 			pri += rerun.PriorityAnotherVerificationBuildExistOffset
 			break
 		}
+	}
+
+	// Offset the priority based on run duration
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, suspect.ParentAnalysis.Parent().IntID())
+	if err != nil {
+		return 0, errors.Annotate(err, "couldn't get analysis for suspect %d", suspect.Id).Err()
+	}
+	pri, err = rerun.OffsetPriorityBasedOnRunDuration(c, pri, cfa)
+	if err != nil {
+		return 0, errors.Annotate(err, "couldn't OffsetPriorityBasedOnRunDuration for suspect %d", suspect.Id).Err()
 	}
 
 	return rerun.CapPriority(pri), nil

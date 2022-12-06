@@ -112,7 +112,7 @@ func Analyze(
 }
 
 func updateFailedFiles(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis, signal *model.CompileFailureSignal) error {
-	cfModel, err := datastoreutil.GetCompileFailureForAnalysis(c, heuristicAnalysis.ParentAnalysis.IntID())
+	cfModel, err := datastoreutil.GetCompileFailureForAnalysisID(c, heuristicAnalysis.ParentAnalysis.IntID())
 	if err != nil {
 		return err
 	}

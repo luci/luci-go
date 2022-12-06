@@ -14,6 +14,14 @@
 
 package rerun
 
+import (
+	"context"
+	"time"
+
+	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
+)
+
 // These constants are used for offsetting the buildbucket run priortity
 // The priority ranges from 20 - 255. Lower number means higher priority.
 // See go/luci-bisection-run-prioritization for more details.
@@ -49,4 +57,30 @@ func CapPriority(priority int32) int32 {
 		return 255
 	}
 	return priority
+}
+
+// OffsetPriorityBasedOnRunDuration offsets the priority based on run duration.
+// See go/luci-bisection-run-prioritization
+// We based on the duration of the failed build to adjust the priority
+// We favor faster builds than longer builds
+func OffsetPriorityBasedOnRunDuration(c context.Context, priority int32, cfa *model.CompileFailureAnalysis) (int32, error) {
+	failedBuild, err := datastoreutil.GetFailedBuildForAnalysis(c, cfa)
+	if err != nil {
+		return 0, err
+	}
+
+	duration := failedBuild.EndTime.Sub(failedBuild.StartTime)
+	if duration < 10*time.Minute {
+		return priority - 20, nil
+	}
+	if duration < time.Minute*30 {
+		return priority - 10, nil
+	}
+	if duration < time.Hour {
+		return priority, nil
+	}
+	if duration < 2*time.Hour {
+		return priority + 20, nil
+	}
+	return priority + 40, nil
 }

@@ -112,7 +112,12 @@ func TestAnalyze(t *testing.T) {
 			},
 		}
 
+		fb := &model.LuciFailedBuild{}
+		So(datastore.Put(c, fb), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		cf := &model.CompileFailure{
+			Build:         datastore.KeyForObj(c, fb),
 			OutputTargets: []string{"abc.xyz"},
 		}
 		So(datastore.Put(c, cf), ShouldBeNil)
@@ -159,9 +164,35 @@ func TestAnalyze(t *testing.T) {
 
 func TestGetPriority(t *testing.T) {
 	t.Parallel()
-	c := context.Background()
-	Convey("Has New Targets", t, func() {
-		So(getRerunPriority(c, nil, nil, nil), ShouldEqual, 130)
-		So(getRerunPriority(c, nil, nil, map[string]string{"id": "1"}), ShouldEqual, 115)
+	c := memory.Use(context.Background())
+	Convey("Get Priority", t, func() {
+		fb := &model.LuciFailedBuild{}
+		So(datastore.Put(c, fb), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cf := &model.CompileFailure{
+			Build: datastore.KeyForObj(c, fb),
+		}
+		So(datastore.Put(c, cf), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cfa := &model.CompileFailureAnalysis{
+			CompileFailure: datastore.KeyForObj(c, cf),
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		nsa := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+		}
+		So(datastore.Put(c, nsa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		pri, err := getRerunPriority(c, nsa, nil, nil)
+		So(err, ShouldBeNil)
+		So(pri, ShouldEqual, 110)
+		pri, err = getRerunPriority(c, nsa, nil, map[string]string{"id": "1"})
+		So(err, ShouldBeNil)
+		So(pri, ShouldEqual, 95)
 	})
 }

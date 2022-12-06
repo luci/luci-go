@@ -92,7 +92,7 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 	}
 	analysisID := analysisKey.IntID()
 
-	compileFailure, err := GetCompileFailureForAnalysis(ctx, analysisID)
+	compileFailure, err := GetCompileFailureForAnalysisID(ctx, analysisID)
 	if err != nil {
 		return 0, fmt.Errorf("analysis with ID '%d' did not have a compile failure",
 			analysisID)

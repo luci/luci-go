@@ -19,10 +19,13 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -97,8 +100,13 @@ func TestVerifySuspect(t *testing.T) {
 			"https://chromium.googlesource.com/chromium/src/+log/3425~2..3425^": string(gitilesResponseStr),
 		})
 
+		fb := &model.LuciFailedBuild{}
+		So(datastore.Put(c, fb), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		compileFailure := &model.CompileFailure{
 			Id:            111,
+			Build:         datastore.KeyForObj(c, fb),
 			OutputTargets: []string{"target1"},
 		}
 		So(datastore.Put(c, compileFailure), ShouldBeNil)
@@ -223,25 +231,58 @@ func TestHasNewTargets(t *testing.T) {
 func TestGetPriority(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
 	Convey("GetPriority", t, func() {
+		now := clock.Now(c)
+		fb := &model.LuciFailedBuild{
+			Id: 123,
+			LuciBuild: model.LuciBuild{
+				StartTime: now,
+				EndTime:   now.Add(9 * time.Minute),
+			},
+		}
+		So(datastore.Put(c, fb), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cf := &model.CompileFailure{
+			Build: datastore.KeyForObj(c, fb),
+		}
+		So(datastore.Put(c, cf), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		cfa := &model.CompileFailureAnalysis{
+			CompileFailure: datastore.KeyForObj(c, cf),
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		ha := &model.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+		}
+		So(datastore.Put(c, ha), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		suspect := &model.Suspect{
-			Score:     1,
-			Id:        123,
-			ReviewUrl: "reviewUrl",
+			ParentAnalysis: datastore.KeyForObj(c, ha),
+			Score:          1,
+			Id:             123,
+			ReviewUrl:      "reviewUrl",
 		}
 		So(datastore.Put(c, suspect), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err := getSuspectPriority(c, suspect)
 		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 140)
+		So(pri, ShouldEqual, 120)
 		suspect.Score = 5
 		pri, err = getSuspectPriority(c, suspect)
 		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 120)
+		So(pri, ShouldEqual, 100)
 		suspect.Score = 15
 		pri, err = getSuspectPriority(c, suspect)
 		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 100)
+		So(pri, ShouldEqual, 80)
 
 		// Add another suspect
 		suspect1 := &model.Suspect{
@@ -254,6 +295,6 @@ func TestGetPriority(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = getSuspectPriority(c, suspect)
 		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 120)
+		So(pri, ShouldEqual, 100)
 	})
 }

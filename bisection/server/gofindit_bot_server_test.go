@@ -232,7 +232,13 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			}
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(bbres, nil).Times(1)
 
-			cf := &model.CompileFailure{}
+			fb := &model.LuciFailedBuild{}
+			So(datastore.Put(c, fb), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			cf := &model.CompileFailure{
+				Build: datastore.KeyForObj(c, fb),
+			}
 			So(datastore.Put(c, cf), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 

@@ -251,13 +251,13 @@ func TestGetSuspects(t *testing.T) {
 	})
 }
 
-func TestGetCompileFailureForAnalysis(t *testing.T) {
+func TestGetCompileFailureForAnalysisID(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
 	datastore.GetTestable(c).AutoIndex(true)
 
 	Convey("No analysis found", t, func() {
-		_, err := GetCompileFailureForAnalysis(c, 100)
+		_, err := GetCompileFailureForAnalysisID(c, 100)
 		So(err, ShouldNotBeNil)
 	})
 
@@ -282,7 +282,7 @@ func TestGetCompileFailureForAnalysis(t *testing.T) {
 		So(datastore.Put(c, analysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		cf, err := GetCompileFailureForAnalysis(c, 456)
+		cf, err := GetCompileFailureForAnalysisID(c, 456)
 		So(err, ShouldBeNil)
 		So(cf.Id, ShouldEqual, 123)
 	})

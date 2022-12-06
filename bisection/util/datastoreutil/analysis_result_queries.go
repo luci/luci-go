@@ -120,23 +120,41 @@ func GetSuspects(c context.Context, heuristicAnalysis *model.CompileHeuristicAna
 	return suspects, nil
 }
 
-// GetCompileFailureForAnalysis gets CompileFailure for analysisID.
-func GetCompileFailureForAnalysis(c context.Context, analysisID int64) (*model.CompileFailure, error) {
-	analysis, err := GetCompileFailureAnalysis(c, analysisID)
+// GetCompileFailureForAnalysisID gets CompileFailure for analysisID.
+func GetCompileFailureForAnalysisID(c context.Context, analysisID int64) (*model.CompileFailure, error) {
+	cfa, err := GetCompileFailureAnalysis(c, analysisID)
 	if err != nil {
 		return nil, err
 	}
+	return GetCompileFailureForAnalysis(c, cfa)
+}
+
+// GetCompileFailureForAnalysis gets CompileFailure for analysis
+func GetCompileFailureForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) (*model.CompileFailure, error) {
 	compileFailure := &model.CompileFailure{
-		Id: analysis.CompileFailure.IntID(),
+		Id: cfa.CompileFailure.IntID(),
 		// We need to specify the parent here because this is a multi-part key.
-		Build: analysis.CompileFailure.Parent(),
+		Build: cfa.CompileFailure.Parent(),
 	}
-	err = datastore.Get(c, compileFailure)
+	err := datastore.Get(c, compileFailure)
 	if err != nil {
-		logging.Errorf(c, "Error getting compile failure for analysisID %d: %s", analysisID, err)
-		return nil, err
+		return nil, errors.Annotate(err, "getting compile failure for analysis %d", cfa.Id).Err()
 	}
 	return compileFailure, nil
+}
+
+// GetFailedBuildForAnalysis gets LuciFailedBuild for analysis.
+func GetFailedBuildForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) (*model.LuciFailedBuild, error) {
+	cf, err := GetCompileFailureForAnalysis(c, cfa)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting compile failure for analysis %d", cfa.Id).Err()
+	}
+	build := &model.LuciFailedBuild{Id: cf.Build.IntID()}
+	err = datastore.Get(c, build)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting failed build for analysis %d", cfa.Id).Err()
+	}
+	return build, nil
 }
 
 // GetRerunsForRerunBuild returns all SingleRerun for a rerunBuild
