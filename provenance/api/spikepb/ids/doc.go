@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
-//go:generate cproto -use-grpc-plugin
-
+// Package idspb contains Spike's Intrusion Detection System (IDS) API.
+//
+// These APIs are for SPEE to send instrusion reports to Spike.
 package idspb

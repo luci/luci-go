@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
-//go:generate cproto -use-grpc-plugin
-
-package idspb
+// Package speepb contains Snoopy Policy Engine (SPEE)'s local gRPC server API
+// definitions.
+//
+// These APIs allow policies (plugins) to report events to SPEE, where the
+// events will be used for intrusion detection.
+//
+// network_proxy.proto: It's a copy-paste from BCID's google internal network
+// proxy proto.
+//
+// TODO: Use Copybara for network_proxy.proto.
+package speepb

@@ -14,9 +14,4 @@
 
 //go:generate cproto -use-grpc-plugin
 
-// Package snooperpb contains LUCI's self-reporting local gRPC server API
-// definitions.
-//
-// This defines APIs for self-reporting events via a local process inspection
-// tool (Snooper) and used for attaching provenance metadata to built artifacts.
 package snooperpb
