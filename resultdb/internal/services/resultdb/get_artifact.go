@@ -16,8 +16,9 @@ package resultdb
 
 import (
 	"context"
-	"strings"
 	"time"
+
+	"cloud.google.com/go/storage"
 
 	"google.golang.org/grpc/metadata"
 
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -88,16 +90,35 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, artifacts ...*pb
 		requestHost = val[0]
 	}
 
+	// Client to fetch from Google Storage
+	var gsClient *storage.Client
+
 	for _, a := range artifacts {
 
 		if a.GcsUri != "" {
 			now := clock.Now(ctx).UTC()
 
-			// TODO: Validate whether the path belongs to the realm and change this to
-			// use signed url instead.
-			// Currently return the GCS url directly (gated by the bucket ACL)
-			url, exp := strings.Replace(a.GcsUri, "gs://",
-				"https://console.developers.google.com/storage/browser/", 1), now.Add(7*24*time.Hour)
+			if gsClient == nil {
+				client, err := storage.NewClient(ctx)
+				if err != nil {
+					return err
+				}
+				gsClient = client
+			}
+
+			// TODO: Validate whether the path belongs to the realm.
+			bucket, object := gsutil.Split(a.GcsUri)
+			exp := now.Add(7 * 24 * time.Hour)
+			var opts *storage.SignedURLOptions
+			ctxOpts := ctx.Value(gsutil.Key("signedURLOpts"))
+			if ctxOpts != nil {
+				opts = ctxOpts.(*storage.SignedURLOptions)
+			}
+			url, err := gsutil.GenerateSignedURL(ctx, gsClient, bucket, object, exp, opts)
+
+			if err != nil {
+				return err
+			}
 
 			a.FetchUrl = url
 			a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)

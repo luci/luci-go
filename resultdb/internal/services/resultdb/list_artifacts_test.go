@@ -15,6 +15,7 @@
 package resultdb
 
 import (
+	"context"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -22,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -90,6 +92,10 @@ func TestListArtifacts(t *testing.T) {
 		srv := newTestResultDBService()
 
 		mustFetch := func(req *pb.ListArtifactsRequest) (arts []*pb.Artifact, token string) {
+			// Add SignedURL opts to ctx
+			opts := testutil.GetSignedURLOptions(ctx)
+			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
+
 			res, err := srv.ListArtifacts(ctx, req)
 			So(err, ShouldBeNil)
 			return res.Artifacts, res.NextPageToken
@@ -152,7 +158,7 @@ func TestListArtifacts(t *testing.T) {
 			)
 			actual, _ := mustFetch(req)
 			So(actual, ShouldHaveLength, 1)
-			So(actual[0].FetchUrl, ShouldEqual, "https://console.developers.google.com/storage/browser/bucket1/file1.txt")
+			So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
 		})
 
 	})

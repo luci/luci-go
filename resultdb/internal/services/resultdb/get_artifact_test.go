@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -105,11 +106,13 @@ func TestGetArtifact(t *testing.T) {
 			)
 			const name = "invocations/inv/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}
+			opts := testutil.GetSignedURLOptions(ctx)
+			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
 			art, err := srv.GetArtifact(ctx, req)
 			So(err, ShouldBeNil)
 			So(art.Name, ShouldEqual, name)
 			So(art.ArtifactId, ShouldEqual, "a")
-			So(art.FetchUrl, ShouldEqual, "https://console.developers.google.com/storage/browser/bucket1/file1.txt")
+			So(art.FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
 		})
 
 		Convey(`Does not exist`, func() {
