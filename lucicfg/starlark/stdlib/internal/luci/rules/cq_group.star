@@ -96,8 +96,8 @@ def _cq_group(
         DRY_RUN or FULL_RUN.
       user_limits: a list of cq.user_limit(...) or None. **WARNING**: Please
         contact luci-eng@ before setting this param. They specify per-user
-        limits for given principals. At the time of a Run start, CV looks up
-        and applies the first matching `cq.user_limit(...)` to the Run, and
+        limits/quotas for given principals. At the time of a Run start, CV looks
+        up and applies the first matching cq.user_limit(...) to the Run, and
         postpones the start if limits were reached already. If none of the
         user_limit(s) were applicable, `user_limit_default` will be applied
         instead. Each cq.user_limit(...) must specify at least one user or
