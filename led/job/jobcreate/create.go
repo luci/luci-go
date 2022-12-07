@@ -350,7 +350,8 @@ func FromBuild(build *bbpb.Build, hostname, name string, priorityDiff int, extra
 
 	ret.JobType = &job.Definition_Buildbucket{
 		Buildbucket: &job.Buildbucket{
-			Name: name,
+			Name:                name,
+			FinalBuildProtoPath: "build.proto.json",
 			BbagentArgs: &bbpb.BBAgentArgs{
 				Build: build,
 			},
