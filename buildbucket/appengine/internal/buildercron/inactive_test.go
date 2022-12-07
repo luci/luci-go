@@ -69,7 +69,7 @@ func TestResetExpiredLeases(t *testing.T) {
 
 		var (
 			fresh = now.Add(-1 * time.Hour)
-			old   = now.Add(-1 * (model.BuilderExpirationDuration + time.Hour))
+			old   = now.Add(-1 * model.BuilderExpirationDuration)
 		)
 		So(datastore.Put(ctx, builder), ShouldBeNil)
 		So(statExist(), ShouldBeFalse)
@@ -86,8 +86,16 @@ func TestResetExpiredLeases(t *testing.T) {
 			So(statExist(), ShouldBeFalse)
 		})
 
-		Convey("removes BuilderStat if Builder doesn't exists", func() {
+		Convey("leaves young zombie BuilderStat", func() {
 			So(model.UpdateBuilderStat(ctx, builds, fresh), ShouldBeNil)
+			So(datastore.Delete(ctx, model.BuilderKey(ctx, "prj", "bkt", "bld")), ShouldBeNil)
+			So(RemoveInactiveBuilderStats(ctx), ShouldBeNil)
+			So(statExist(), ShouldBeTrue)
+		})
+
+		Convey("removes old zombie BuilderStat", func() {
+			old := now.Add(-1 * model.BuilderStatZombieDuration)
+			So(model.UpdateBuilderStat(ctx, builds, old), ShouldBeNil)
 			So(datastore.Delete(ctx, model.BuilderKey(ctx, "prj", "bkt", "bld")), ShouldBeNil)
 			So(RemoveInactiveBuilderStats(ctx), ShouldBeNil)
 			So(statExist(), ShouldBeFalse)

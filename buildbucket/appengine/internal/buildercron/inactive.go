@@ -42,13 +42,17 @@ func RemoveInactiveBuilderStats(ctx context.Context) error {
 			toDelete = append(toDelete, datastore.KeyForObj(ctx, stat))
 			return nil
 		}
-		switch r, err := datastore.Exists(ctx, bk); {
-		case err != nil:
-			return err
-		case !r.Any():
-			// The Builder config no longer exists?
-			logging.Infof(ctx, "%s: the Builder no longer exists; removing BuilderStat", stat.ID)
-			toDelete = append(toDelete, datastore.KeyForObj(ctx, stat))
+
+		if clock.Since(ctx, stat.LastScheduled) > model.BuilderStatZombieDuration {
+			// Possibly became a zombie too long.
+			switch r, err := datastore.Exists(ctx, bk); {
+			case err != nil:
+				return err
+			case !r.Any():
+				// The Builder config no longer exists?
+				logging.Infof(ctx, "%s: the Builder no longer exists; removing BuilderStat", stat.ID)
+				toDelete = append(toDelete, datastore.KeyForObj(ctx, stat))
+			}
 		}
 		return nil
 	})

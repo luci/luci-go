@@ -38,6 +38,14 @@ const BuilderStatKind = "Builder"
 // having a build scheduled before its BuilderStat may be deleted.
 const BuilderExpirationDuration = 4 * 7 * 24 * time.Hour // 4 weeks
 
+// BuilderStatZombieDuration is the maximum duration for which a zombie
+// BuilderStat that can exist without having a build scheduled before it may be
+// deleted.
+//
+// Zombie BuilderStat is a BuilderStat entity of which Builder entity doesn't
+// exist.
+const BuilderStatZombieDuration = 6 * time.Hour
+
 // Builder is a Datastore entity that stores builder configuration.
 // It is a child of Bucket entity.
 //
