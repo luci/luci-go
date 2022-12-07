@@ -95,6 +95,9 @@ func (c *client) Log(ctx context.Context, req *gitiles.LogRequest, opts ...grpc.
 		ref = fmt.Sprintf("%s..%s", req.ExcludeAncestorsOf, req.Committish)
 	}
 	path := fmt.Sprintf("/%s/+log/%s", url.PathEscape(req.Project), url.PathEscape(ref))
+	if req.Path != "" {
+		path = fmt.Sprintf("%s/%s", path, req.Path)
+	}
 	var resp struct {
 		Log  []commit `json:"log"`
 		Next string   `json:"next"`

@@ -77,6 +77,8 @@ message LogRequest {
     string exclude_ancestors_of = 2;
     // If true, include tree diff in commits.
     bool tree_diff = 4;
+    // If set to a non-empty value, the log will be for the given path
+    string path = 12;
 
     // Value of next_page_token in LogResponse to continue.
     string page_token = 10;
