@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
+	lucivalidation "go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -62,10 +63,12 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 	if err != nil {
 		return err
 	}
-	if err := validation.ValidateProject(cfg); err != nil {
-		// TODO(tandrii): hard fail.
-		// return errors.Annotate(err, "new project config is not valid").Err()
-		logging.Errorf(ctx, "UpdateProject %q on invalid config: %s", project, err)
+	vctx := &lucivalidation.Context{Context: ctx}
+	if err := validation.ValidateProject(vctx, cfg, project); err != nil {
+		return errors.Annotate(err, "ValidateProject").Err()
+	}
+	if verr := vctx.Finalize(); verr != nil {
+		logging.Errorf(ctx, "UpdateProject %q on invalid config: %s", project, verr)
 	}
 
 	// Write out ConfigHashInfo if missing and all ConfigGroups.

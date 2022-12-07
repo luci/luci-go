@@ -42,20 +42,17 @@ const (
 
 var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
 
-// ValidateProject validates project config and returns error only on blocking
-// errors (ie ignores problems with warning severity).
-func ValidateProject(cfg *cfgpb.Config) error {
-	ctx := &validation.Context{}
-	vd, err := makeProjectConfigValidator(ctx, "") // TODO(ddoman): FIXME
+// ValidateProject validates project config.
+//
+// Validation result is returned via validation ctx, while error returned
+// directly implies internal errors.
+func ValidateProject(ctx *validation.Context, cfg *cfgpb.Config, project string) error {
+	vd, err := makeProjectConfigValidator(ctx, project)
 	if err != nil {
-		return nil
+		return errors.Annotate(err, "makeProjectConfigValidator").Err()
 	}
 	vd.validateProjectConfig(cfg)
-	verr, ok := ctx.Finalize().(*validation.Error)
-	if !ok {
-		return nil
-	}
-	return verr.WithSeverity(validation.Blocking)
+	return nil
 }
 
 // validateProject validates a project-level CQ config.
@@ -69,12 +66,7 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 		ctx.Error(err)
 		return nil
 	}
-	vd, err := makeProjectConfigValidator(ctx, luciconfig.Set(configSet).Project())
-	if err != nil {
-		return errors.Annotate(err, "makeProjectConfigValidator").Err()
-	}
-	vd.validateProjectConfig(&cfg)
-	return nil
+	return ValidateProject(ctx, &cfg, luciconfig.Set(configSet).Project())
 }
 
 type projectConfigValidator struct {

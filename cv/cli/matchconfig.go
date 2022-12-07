@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/sync/parallel"
+	lucivalidation "go.chromium.org/luci/config/validation"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -192,7 +193,11 @@ func loadAndValidateConfig(ctx context.Context, cfgPath string) (*cfgpb.Config, 
 	if err != nil {
 		return nil, err
 	}
-	return ret, validation.ValidateProject(ret)
+	vctx := &lucivalidation.Context{Context: ctx}
+	if err := validation.ValidateProject(vctx, ret, ""); err != nil {
+		return nil, err
+	}
+	return ret, vctx.Finalize()
 }
 
 func (r *matchConfigRun) newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, error) {

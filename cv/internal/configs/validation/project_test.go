@@ -36,25 +36,16 @@ func TestValidateProjectHighLevel(t *testing.T) {
 
 	Convey("ValidateProject works", t, func() {
 		cfg := cfgpb.Config{}
+		vctx := &validation.Context{Context: context.Background()}
 		So(prototext.Unmarshal([]byte(validConfigTextPB), &cfg), ShouldBeNil)
 
 		Convey("OK", func() {
-			So(ValidateProject(&cfg), ShouldBeNil)
-		})
-		Convey("Warnings are OK", func() {
-			cfg.GetConfigGroups()[0].GetVerifiers().GetTryjob().GetBuilders()[0].LocationRegexp = []string{"https://x.googlesource.com/my/repo/[+]/*.cpp"}
-			So(ValidateProject(&cfg), ShouldBeNil)
-
-			// Ensure this test doesn't bitrot and actually tests warnings.
-			vctx := &validation.Context{Context: context.Background()}
-			vd, err := makeProjectConfigValidator(vctx, "prj")
-			So(err, ShouldBeNil)
-			vd.validateProjectConfig(&cfg)
-			So(mustWarn(vctx.Finalize()), ShouldErrLike, "did you mean")
+			So(ValidateProject(vctx, &cfg, "project"), ShouldBeNil)
 		})
 		Convey("Error", func() {
 			cfg.GetConfigGroups()[0].Name = "!invalid! name"
-			So(ValidateProject(&cfg), ShouldErrLike, "must match")
+			So(ValidateProject(vctx, &cfg, "project"), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "must match")
 		})
 	})
 }
