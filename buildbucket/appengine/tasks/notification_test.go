@@ -15,10 +15,7 @@
 package tasks
 
 import (
-	"bytes"
-	"compress/zlib"
 	"context"
-	"io"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -32,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/compression"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 
@@ -286,15 +284,8 @@ func TestNotification(t *testing.T) {
 }
 
 func zlibUncompressBuild(compressed []byte) (*pb.Build, error) {
-	r, err := zlib.NewReader(bytes.NewReader(compressed))
+	originalData, err := compression.ZlibDecompress(compressed)
 	if err != nil {
-		return nil, err
-	}
-	originalData, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	if err := r.Close(); err != nil {
 		return nil, err
 	}
 	b := &pb.Build{}

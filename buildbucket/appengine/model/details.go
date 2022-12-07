@@ -20,7 +20,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/klauspost/compress/zstd"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -29,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/compression"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -41,26 +41,6 @@ import (
 // will take up too much memory when covering different test cases (e.g,
 // compressed property bytes > 4 chunks)
 var maxPropertySize = 1000 * 1000
-
-// Globally shared zstd encoder and decoder. We use only their EncodeAll and
-// DecodeAll methods which are allowed to be used concurrently. Internally, both
-// the encode and the decoder have worker pools (limited by GOMAXPROCS) and each
-// concurrent EncodeAll/DecodeAll call temporary consumes one worker (so overall
-// we do not run more jobs that we have cores for).
-var (
-	zstdEncoder *zstd.Encoder
-	zstdDecoder *zstd.Decoder
-)
-
-func init() {
-	var err error
-	if zstdEncoder, err = zstd.NewWriter(nil); err != nil {
-		panic(err) // this is impossible
-	}
-	if zstdDecoder, err = zstd.NewReader(nil); err != nil {
-		panic(err) // this is impossible
-	}
-}
 
 // defaultStructValues defaults nil or empty values inside the given
 // structpb.Struct. Needed because structpb.Value cannot be marshaled to JSON
@@ -174,7 +154,7 @@ func (bo *BuildOutputProperties) chunkProp(c context.Context) ([]*PropertyChunk,
 
 	// compress propBytes
 	compressed := make([]byte, 0, len(propBytes)/2) // hope for at least 2x compression
-	compressed = zstdEncoder.EncodeAll(propBytes, compressed)
+	compressed = compression.ZstdCompress(propBytes, compressed)
 
 	// to round up the result of integer division.
 	count := (len(compressed) + maxPropertySize - 1) / maxPropertySize
@@ -260,7 +240,7 @@ func (bo *BuildOutputProperties) Get(c context.Context) error {
 	}
 	var propBytes []byte
 	var err error
-	if propBytes, err = zstdDecoder.DecodeAll(compressedBytes, nil); err != nil {
+	if propBytes, err = compression.ZstdDecompress(compressedBytes, nil); err != nil {
 		return errors.Annotate(err, "failed to decompress output properties bytes").Err()
 	}
 	bo.Proto = &structpb.Struct{}

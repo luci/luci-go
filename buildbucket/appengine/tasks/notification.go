@@ -15,10 +15,9 @@
 package tasks
 
 import (
-	"bytes"
-	"compress/zlib"
 	"context"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/compression"
 	"google.golang.org/protobuf/proto"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -95,7 +94,11 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64) error {
 	p.Input.Properties = nil
 	p.Output.Properties = nil
 
-	compressed, err := compress(buildLarge)
+	data, err := proto.Marshal(buildLarge)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal buildLarge").Err()
+	}
+	compressed, err := compression.ZlibCompress(data)
 	if err != nil {
 		return errors.Annotate(err, "failed to compress large fields for %d", buildID).Err()
 	}
@@ -105,21 +108,4 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64) error {
 			BuildLargeFields: compressed,
 		},
 	})
-}
-
-// compress the proto message using zlib.
-func compress(m proto.Message) ([]byte, error) {
-	data, err := proto.Marshal(m)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to marshal").Err()
-	}
-	buf := &bytes.Buffer{}
-	zw := zlib.NewWriter(buf)
-	if _, err := zw.Write(data); err != nil {
-		return nil, errors.Annotate(err, "failed to compress").Err()
-	}
-	if err := zw.Close(); err != nil {
-		return nil, errors.Annotate(err, "error closing zlib writer").Err()
-	}
-	return buf.Bytes(), nil
 }
