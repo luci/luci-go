@@ -67,6 +67,8 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	props := map[string]interface{}{
 		"analysis_id":    analysisID,
 		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(c)),
+		// For culprit verification, we should remove builder cache
+		"should_clobber": true,
 	}
 	if len(failedTargets) > 0 {
 		props["compile_targets"] = failedTargets
