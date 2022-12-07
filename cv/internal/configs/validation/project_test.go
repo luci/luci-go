@@ -46,8 +46,10 @@ func TestValidateProjectHighLevel(t *testing.T) {
 			So(ValidateProject(&cfg), ShouldBeNil)
 
 			// Ensure this test doesn't bitrot and actually tests warnings.
-			vctx := validation.Context{Context: context.Background()}
-			validateProjectConfig(&vctx, &cfg)
+			vctx := &validation.Context{Context: context.Background()}
+			vd, err := makeProjectConfigValidator(vctx, "prj")
+			So(err, ShouldBeNil)
+			vd.validateProjectConfig(&cfg)
 			So(mustWarn(vctx.Finalize()), ShouldErrLike, "did you mean")
 		})
 		Convey("Error", func() {
@@ -97,11 +99,19 @@ func TestValidateProjectDetailed(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	const (
+		configSet = "projects/foo"
+		project   = "foo"
+		path      = "cq.cfg"
+	)
 
 	Convey("Validate Config", t, func() {
 		vctx := &validation.Context{Context: ctx}
-		configSet := "projects/foo"
-		path := "cq.cfg"
+		validateProjectConfig := func(vctx *validation.Context, cfg *cfgpb.Config) {
+			vd, err := makeProjectConfigValidator(vctx, project)
+			So(err, ShouldBeNil)
+			vd.validateProjectConfig(cfg)
+		}
 
 		Convey("Loading bad proto", func() {
 			content := []byte(` bad: "config" `)
@@ -664,6 +674,8 @@ func TestTryjobValidation(t *testing.T) {
 	Convey("Validate Tryjob Verifier Config", t, func() {
 		validate := func(textPB string, parentPB ...string) error {
 			vctx := &validation.Context{Context: ctx}
+			vd, err := makeProjectConfigValidator(vctx, "prj")
+			So(err, ShouldBeNil)
 			v := cfgpb.Verifiers{}
 			switch len(parentPB) {
 			case 0:
@@ -683,7 +695,8 @@ func TestTryjobValidation(t *testing.T) {
 			default:
 				proto.Merge(v.Tryjob, &cfg)
 			}
-			validateTryjobVerifier(vctx, &v, standardModes)
+
+			vd.validateTryjobVerifier(&v, standardModes)
 			return vctx.Finalize()
 		}
 
