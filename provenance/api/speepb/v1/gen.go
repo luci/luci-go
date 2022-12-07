@@ -15,4 +15,8 @@
 //go:generate go install go.chromium.org/luci/grpc/cmd/cproto
 //go:generate cproto -use-grpc-plugin
 
+// Package speepb contains Snoopy Policy Engine (SPEE)'s local gRPC server API
+// definitions.
+//
+// These APIs allow policies (plugins) to report events to SPEE.
 package speepb
