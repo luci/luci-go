@@ -126,7 +126,7 @@ func (c *Client) BatchGetIssues(ctx context.Context, project string, ids []strin
 	// former does not error out if one of the issues does not
 	// exist, and has far better performance.
 	req := &mpb.SearchIssuesRequest{
-		Projects: []string{project},
+		Projects: []string{fmt.Sprintf("projects/%s", project)},
 		Query:    fmt.Sprintf("ID=%s", strings.Join(ids, ",")),
 		PageSize: monorailPageSize,
 		OrderBy:  "id",

@@ -99,6 +99,10 @@ func (f *fakeIssuesClient) SearchIssues(ctx context.Context, in *mpb.SearchIssue
 		return nil, errors.New("expected exactly one project to search")
 	}
 	project := in.Projects[0]
+	if !strings.HasPrefix(project, "projects/") {
+		return nil, errors.Reason("invalid resource name: %s", project).Err()
+	}
+
 	m := queryRE.FindStringSubmatch(in.Query)
 	if m == nil {
 		return nil, errors.New("query pattern not supported by fake")
@@ -107,7 +111,7 @@ func (f *fakeIssuesClient) SearchIssues(ctx context.Context, in *mpb.SearchIssue
 	var result []*mpb.Issue
 	ids := strings.Split(m[1], ",")
 	for _, id := range ids {
-		name := fmt.Sprintf("projects/%s/issues/%s", project, id)
+		name := fmt.Sprintf("%s/issues/%s", project, id)
 		issue := f.issueByName(name)
 		if issue != nil {
 			result = append(result, CopyIssue(issue.Issue))
