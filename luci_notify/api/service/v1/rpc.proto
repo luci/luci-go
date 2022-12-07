@@ -23,6 +23,8 @@ service TreeClosers {
   // Retrieves tree closers associated with the builders from the specified
   // project.
   rpc QueryTreeClosers(QueryTreeClosersRequest) returns (QueryTreeClosersResponse) {};
+  // Checks if the builder in CheckTreeCloserRequest is tree-closer or not
+  rpc CheckTreeCloser(CheckTreeCloserRequest) returns (CheckTreeCloserResponse) {};
 }
 
 // A request message for `QueryTreeClosers` RPC.
@@ -63,4 +65,20 @@ message QueryTreeClosersResponse {
   // A token that can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there are no subsequent pages.
   string next_page_token = 2;
+}
+
+message CheckTreeCloserRequest {
+  // Project of the builder
+  string project = 1;
+  // Bucket of the builder
+  string bucket = 2;
+  // Name of the builder
+  string builder = 3;
+  // Some tree closers are only close if some particular steps failed.
+  string step = 4;
+}
+
+message CheckTreeCloserResponse {
+  // Whether this is a tree closer
+  bool is_tree_closer = 1;
 }
