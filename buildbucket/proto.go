@@ -63,6 +63,7 @@ const (
 	ExperimentBBCanarySoftware    = "luci.buildbucket.canary_software"
 	ExperimentBqExporterGo        = "luci.buildbucket.bq_exporter_go"
 	ExperimentNonProduction       = "luci.non_production"
+	ExperimentOmitPython2         = "luci.buildbucket.omit_python2"
 	ExperimentParentTracking      = "luci.buildbucket.parent_tracking"
 	ExperimentRecipePY3           = "luci.recipes.use_python3"
 	ExperimentWaitForCapacity     = "luci.buildbucket.wait_for_capacity_in_slices"

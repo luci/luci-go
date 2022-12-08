@@ -637,7 +637,12 @@ func mainImpl() int {
 			CacheDir: bbclientInput.input.CacheDir,
 			Env:      environ.System(),
 		}
-		if stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...).Has("luci.recipes.use_python3") {
+		experiments := stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...)
+		nopy2 := experiments.Has(buildbucket.ExperimentOmitPython2)
+		if nopy2 {
+			invokeOpts.Env.Set("LUCI_OMIT_PYTHON2", "true")
+		}
+		if nopy2 || experiments.Has(buildbucket.ExperimentRecipePY3) {
 			invokeOpts.Env.Set("RECIPES_USE_PY3", "true")
 		}
 		// Buildbucket assigns some grace period to the surrounding task which is
