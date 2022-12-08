@@ -49,6 +49,11 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+// Allow hostnames permitted by
+// https://www.rfc-editor.org/rfc/rfc1123#page-13. (Note that
+// the 255 character limit must be seperately applied.)
+var hostnameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]+(\.[a-z0-9-]+)*$`)
+
 func min(i, j int) int {
 	if i < j {
 		return i
@@ -115,6 +120,10 @@ func validateGerritChange(ch *pb.GerritChange) error {
 		return errors.Reason("change must be specified").Err()
 	case ch.Host == "":
 		return errors.Reason("host must be specified").Err()
+	case !hostnameRE.MatchString(ch.Host):
+		return errors.Reason("host does not match pattern %q", hostnameRE).Err()
+	case len(ch.Host) > 255:
+		return errors.Reason("host must not exceed 255 characters").Err()
 	case ch.Patchset == 0:
 		return errors.Reason("patchset must be specified").Err()
 	case ch.Project == "":
