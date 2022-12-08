@@ -17,6 +17,7 @@ package internal
 import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/module"
@@ -34,6 +35,7 @@ func Main(init func(srv *server.Server) error) {
 // MainWithModules is like Main, but accepts additional modules to register.
 func MainWithModules(modules []module.Module, init func(srv *server.Server) error) {
 	defaultModules := []module.Module{
+		gaeemulation.NewModuleFromFlags(),
 		gerritauth.NewModuleFromFlags(),
 		limiter.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
