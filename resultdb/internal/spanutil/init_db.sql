@@ -107,6 +107,11 @@ CREATE TABLE Invocations (
   -- The deadline, but is NULL if the invocation is not active.
   ActiveDeadline TIMESTAMP AS (IF(State = 1, Deadline, NULL)) STORED,
 
+  -- A serialized then compressed google.protobuf.Struct that stores structured,
+  -- domain-specific properties of the invocation.
+  -- See spanutil.Compressed type for details of compression.
+  Properties BYTES(MAX),
+
 ) PRIMARY KEY (InvocationId), 
 -- Add TTL of 1.5 years to Invocations table. The row deletion policy
 -- configured in the parent table will also take effect on the interleaved child
@@ -216,6 +221,10 @@ CREATE TABLE TestResults (
   -- See TestResult.failure_reason for details.
   FailureReason BYTES(MAX),
 
+  -- A serialized then compressed google.protobuf.Struct that stores structured,
+  -- domain-specific properties of the test result.
+  -- See spanutil.Compressed type for details of compression.
+  Properties BYTES(MAX),
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
