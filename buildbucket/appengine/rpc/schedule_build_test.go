@@ -19,7 +19,6 @@ import (
 	"encoding/base64"
 	"math/rand"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -6198,50 +6197,18 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("host", func() {
-				Convey("not specified", func() {
-					req := &pb.ScheduleBuildRequest{
-						GerritChanges: []*pb.GerritChange{
-							{
-								Change:   1,
-								Patchset: 1,
-								Project:  "project",
-							},
+				req := &pb.ScheduleBuildRequest{
+					GerritChanges: []*pb.GerritChange{
+						{
+							Change:   1,
+							Patchset: 1,
+							Project:  "project",
 						},
-						TemplateBuildId: 1,
-					}
-					err := validateSchedule(req, nil, nil)
-					So(err, ShouldErrLike, "host must be specified")
-				})
-				Convey("invalid", func() {
-					req := &pb.ScheduleBuildRequest{
-						GerritChanges: []*pb.GerritChange{
-							{
-								Change:   1,
-								Host:     "https://somehost", // host should not include the protocol.
-								Patchset: 1,
-								Project:  "project",
-							},
-						},
-						TemplateBuildId: 1,
-					}
-					err := validateSchedule(req, nil, nil)
-					So(err, ShouldErrLike, "host does not match pattern")
-				})
-				Convey("too long", func() {
-					req := &pb.ScheduleBuildRequest{
-						GerritChanges: []*pb.GerritChange{
-							{
-								Change:   1,
-								Host:     strings.Repeat("h", 256),
-								Patchset: 1,
-								Project:  "project",
-							},
-						},
-						TemplateBuildId: 1,
-					}
-					err := validateSchedule(req, nil, nil)
-					So(err, ShouldErrLike, "host must not exceed 255 characters")
-				})
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(req, nil, nil)
+				So(err, ShouldErrLike, "host must be specified")
 			})
 
 			Convey("patchset", func() {
