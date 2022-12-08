@@ -307,6 +307,21 @@ func (t *Test) setMaxDuration() {
 	}
 }
 
+// DisableProjectInGerritListener updates the cached config to disable LUCI
+// projects matching a given regexp in Listener.
+func (t *Test) DisableProjectInGerritListener(ctx context.Context, projectRE string) {
+	cfg, err := srvcfg.GetListenerConfig(ctx, nil)
+	if err != nil {
+		panic(err)
+	}
+	existing := stringset.NewFromSlice(cfg.DisabledProjectRegexps...)
+	existing.Add(projectRE)
+	cfg.DisabledProjectRegexps = existing.ToSortedSlice()
+	if err := srvcfg.SetTestListenerConfig(ctx, cfg, nil); err != nil {
+		panic(err)
+	}
+}
+
 func (t *Test) installDS(ctx context.Context) context.Context {
 	if !strings.HasSuffix(t.Env.LogicalHostname, gaeTopLevelDomain) {
 		panic(fmt.Errorf("Env.LogicalHostname %q doesn't end with %q", t.Env.LogicalHostname, gaeTopLevelDomain))

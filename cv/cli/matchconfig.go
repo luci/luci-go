@@ -194,7 +194,7 @@ func loadAndValidateConfig(ctx context.Context, cfgPath string) (*cfgpb.Config, 
 		return nil, err
 	}
 	vctx := &lucivalidation.Context{Context: ctx}
-	if err := validation.ValidateProject(vctx, ret, ""); err != nil {
+	if err := validation.ValidateProjectConfig(vctx, ret); err != nil {
 		return nil, err
 	}
 	return ret, vctx.Finalize()

@@ -31,6 +31,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 )
 
 const (
@@ -38,11 +39,13 @@ const (
 	CQStatusHostPublic = "chromium-cq-status.appspot.com"
 	// CQStatusHostInternal is the internal host of the CQ status app.
 	CQStatusHostInternal = "internal-cq-status.appspot.com"
+
+	dummyProjectSkipListenerValidation = "dummy-project-skip-listener-validation-deabeef-abc"
 )
 
 var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)
 
-// ValidateProject validates project config.
+// ValidateProject validates a project config for a given LUCI project.
 //
 // Validation result is returned via validation ctx, while error returned
 // directly implies internal errors.
@@ -53,6 +56,14 @@ func ValidateProject(ctx *validation.Context, cfg *cfgpb.Config, project string)
 	}
 	vd.validateProjectConfig(cfg)
 	return nil
+}
+
+// ValidateProjectConfig validates a given project config.
+//
+// This is essentially the same as ValidateProject, but skips checking
+// GerritSubscriptions in listener.Settings.
+func ValidateProjectConfig(ctx *validation.Context, cfg *cfgpb.Config) error {
+	return ValidateProject(ctx, cfg, dummyProjectSkipListenerValidation)
 }
 
 // validateProject validates a project-level CQ config.
@@ -70,11 +81,36 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 }
 
 type projectConfigValidator struct {
-	ctx *validation.Context
+	ctx                            *validation.Context
+	subscribedGerritHosts          stringset.Set
+	projectEnabledInGerritListener bool
 }
 
 func makeProjectConfigValidator(ctx *validation.Context, project string) (*projectConfigValidator, error) {
-	return &projectConfigValidator{ctx: ctx}, nil
+	switch project {
+	case "":
+		return nil, errors.Reason("empty project").Err()
+	case dummyProjectSkipListenerValidation:
+		return &projectConfigValidator{ctx: ctx}, nil
+	}
+
+	lCfg, err := srvcfg.GetListenerConfig(ctx.Context, nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "GetListenerConfig").Err()
+	}
+	isEnabled, err := srvcfg.MakeListenerProjectChecker(lCfg)
+	if err != nil {
+		return nil, errors.Annotate(err, "MakeListenerProjectChecker").Err()
+	}
+	ret := &projectConfigValidator{
+		ctx:                            ctx,
+		subscribedGerritHosts:          stringset.New(len(lCfg.GetGerritSubscriptions())),
+		projectEnabledInGerritListener: isEnabled(project),
+	}
+	for _, sub := range lCfg.GetGerritSubscriptions() {
+		ret.subscribedGerritHosts.Add(sub.GetHost())
+	}
+	return ret, nil
 }
 
 func (vd *projectConfigValidator) validateProjectConfig(cfg *cfgpb.Config) {
@@ -262,6 +298,9 @@ func (vd *projectConfigValidator) validateGerritURL(gURL string) {
 	if !strings.HasSuffix(u.Host, ".googlesource.com") {
 		// TODO(tandrii): relax this.
 		vd.ctx.Errorf("only *.googlesource.com hosts supported for now (%q specified)", u.Host)
+	}
+	if vd.projectEnabledInGerritListener && !vd.subscribedGerritHosts.Has(u.Host) {
+		vd.ctx.Errorf("Gerrit pub/sub for %q is not configured; please visit go/luci/cv/gerrit-pubsub#validation-error", u.Host)
 	}
 }
 

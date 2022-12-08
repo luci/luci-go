@@ -26,25 +26,63 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
+	"go.chromium.org/luci/cv/internal/cvtesting"
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func mockListenerSettings(ctx context.Context, hosts ...string) error {
+	var subs []*listenerpb.Settings_GerritSubscription
+	for _, h := range hosts {
+		subs = append(subs, &listenerpb.Settings_GerritSubscription{Host: h})
+	}
+	return srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{GerritSubscriptions: subs}, nil)
+}
+
 func TestValidateProjectHighLevel(t *testing.T) {
 	t.Parallel()
+	const project = "proj"
 
 	Convey("ValidateProject works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
 		cfg := cfgpb.Config{}
-		vctx := &validation.Context{Context: context.Background()}
+		vctx := &validation.Context{Context: ctx}
 		So(prototext.Unmarshal([]byte(validConfigTextPB), &cfg), ShouldBeNil)
+		So(mockListenerSettings(ctx, "chromium-review.googlesource.com"), ShouldBeNil)
 
 		Convey("OK", func() {
-			So(ValidateProject(vctx, &cfg, "project"), ShouldBeNil)
+			So(ValidateProject(vctx, &cfg, project), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
 		})
 		Convey("Error", func() {
 			cfg.GetConfigGroups()[0].Name = "!invalid! name"
-			So(ValidateProject(vctx, &cfg, "project"), ShouldBeNil)
+			So(ValidateProject(vctx, &cfg, project), ShouldBeNil)
+			So(vctx.Finalize(), ShouldErrLike, "must match")
+		})
+	})
+
+	Convey("ValidateProjectConfig works", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		cfg := cfgpb.Config{}
+		vctx := &validation.Context{Context: ctx}
+		So(prototext.Unmarshal([]byte(validConfigTextPB), &cfg), ShouldBeNil)
+
+		Convey("OK", func() {
+			So(ValidateProjectConfig(vctx, &cfg), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+		Convey("Error", func() {
+			cfg.GetConfigGroups()[0].Name = "!invalid! name"
+			So(ValidateProject(vctx, &cfg, project), ShouldBeNil)
 			So(vctx.Finalize(), ShouldErrLike, "must match")
 		})
 	})
@@ -89,7 +127,6 @@ const validConfigTextPB = `
 func TestValidateProjectDetailed(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
 	const (
 		configSet = "projects/foo"
 		project   = "foo"
@@ -97,6 +134,9 @@ func TestValidateProjectDetailed(t *testing.T) {
 	)
 
 	Convey("Validate Config", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
 		vctx := &validation.Context{Context: ctx}
 		validateProjectConfig := func(vctx *validation.Context, cfg *cfgpb.Config) {
 			vd, err := makeProjectConfigValidator(vctx, project)
@@ -113,6 +153,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 		// It's easier to manipulate Go struct than text.
 		cfg := cfgpb.Config{}
 		So(prototext.Unmarshal([]byte(validConfigTextPB), &cfg), ShouldBeNil)
+		So(mockListenerSettings(ctx, "chromium-review.googlesource.com"), ShouldBeNil)
 
 		Convey("OK", func() {
 			Convey("good proto, good config", func() {
@@ -124,6 +165,21 @@ func TestValidateProjectDetailed(t *testing.T) {
 				So(vctx.Finalize(), ShouldBeNil)
 			})
 		})
+
+		Convey("Missing gerrit subscription", func() {
+			// reset the listener settings to make the validation fail.
+			So(mockListenerSettings(ctx), ShouldBeNil)
+
+			Convey("validation fails", func() {
+				So(validateProject(vctx, configSet, path, []byte(validConfigTextPB)), ShouldBeNil)
+				So(vctx.Finalize(), ShouldErrLike, "Gerrit pub/sub")
+			})
+			Convey("OK if the project is disabled in listener settings", func() {
+				ct.DisableProjectInGerritListener(ctx, project)
+				So(validateProject(vctx, configSet, path, []byte(validConfigTextPB)), ShouldBeNil)
+			})
+		})
+		So(mockListenerSettings(ctx, "chromium-review.googlesource.com"), ShouldBeNil)
 
 		Convey("Top-level config", func() {
 			Convey("Top level opts can be omitted", func() {
@@ -348,7 +404,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				err := vctx.Finalize()
 				So(err, ShouldErrLike, "path component not yet allowed in url")
-				So(err, ShouldErrLike, "and 4 other errors")
+				So(err, ShouldErrLike, "and 5 other errors")
 			})
 
 			Convey("current limitations", func() {
@@ -660,9 +716,11 @@ func TestValidateProjectDetailed(t *testing.T) {
 func TestTryjobValidation(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	Convey("Validate Tryjob Verifier Config", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
 		validate := func(textPB string, parentPB ...string) error {
 			vctx := &validation.Context{Context: ctx}
 			vd, err := makeProjectConfigValidator(vctx, "prj")
