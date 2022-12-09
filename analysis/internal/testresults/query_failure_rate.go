@@ -490,7 +490,7 @@ WITH test_variant_verdicts AS (
 				ChangelistChanges,
 				ChangelistPatchsets,
 				ChangelistOwnerKinds,
-				PresubmitRunByAutomation)
+				AnyChangelistsByAutomation)
 				-- Prefer the verdict that is flaky. If both (or neither) are flaky,
 				-- pick the verdict with the highest partition time. If partition
 				-- times are also the same, pick any.
@@ -506,7 +506,7 @@ WITH test_variant_verdicts AS (
 					ANY_VALUE(ChangelistChanges) AS ChangelistChanges,
 					ANY_VALUE(ChangelistPatchsets) AS ChangelistPatchsets,
 					ANY_VALUE(ChangelistOwnerKinds) AS ChangelistOwnerKinds,
-					ANY_VALUE(PresubmitRunByAutomation) As PresubmitRunByAutomation
+					ANY_VALUE(AnyChangelistsByAutomation) As AnyChangelistsByAutomation
 				FROM (
 					-- Flatten test results to test runs.
 					SELECT
@@ -518,7 +518,7 @@ WITH test_variant_verdicts AS (
 						ANY_VALUE(ChangelistChanges) AS ChangelistChanges,
 						ANY_VALUE(ChangelistPatchsets) AS ChangelistPatchsets,
 						ANY_VALUE(ChangelistOwnerKinds) AS ChangelistOwnerKinds,
-						ANY_VALUE(PresubmitRunOwner IS NOT NULL AND PresubmitRunOwner = "automation") AS PresubmitRunByAutomation
+						'A' IN UNNEST(ANY_VALUE(ChangelistOwnerKinds)) AS AnyChangelistsByAutomation
 					FROM TestResults
 					WHERE Project = @project
 						AND PartitionTime >= @afterPartitionTime
@@ -583,7 +583,7 @@ SELECT
 		FROM UNNEST(Verdicts) v WITH OFFSET o
 		WHERE
 			-- Filter out CLs authored by automation.
-			NOT PresubmitRunByAutomation
+			NOT AnyChangelistsByAutomation
 		ORDER BY o
 		LIMIT 10
 	) as RecentVerdicts,
