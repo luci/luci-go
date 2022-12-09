@@ -797,6 +797,7 @@ func TestIngestTestResults(t *testing.T) {
 				tvReq := &rdbpb.QueryTestVariantsRequest{
 					Invocations: []string{inv},
 					PageSize:    10000,
+					ResultLimit: 100,
 					ReadMask:    testVariantReadMask,
 					PageToken:   "expected_token",
 				}

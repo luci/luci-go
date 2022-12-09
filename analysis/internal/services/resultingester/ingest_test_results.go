@@ -234,6 +234,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	// Query test variants from ResultDB.
 	req := &rdbpb.QueryTestVariantsRequest{
 		Invocations: []string{inv.Name},
+		ResultLimit: 100,
 		PageSize:    10000,
 		ReadMask:    testVariantReadMask,
 		PageToken:   payload.PageToken,
