@@ -32,8 +32,6 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/refresher"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
-	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
 // Create creates project config for the first time.
@@ -44,9 +42,6 @@ func Create(ctx context.Context, project string, cfg *cfgpb.Config) {
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 		config.ProjectSet(project): {refresher.ConfigFileName: prototext.Format(cfg)},
 	}))
-	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
-		panic(err)
-	}
 	err := refresher.UpdateProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
 		panic(err)
