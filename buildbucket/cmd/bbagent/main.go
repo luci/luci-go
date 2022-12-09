@@ -719,13 +719,13 @@ func mainImpl() int {
 	}
 
 	retcode = finalizeBuild(cctx, bbclientInput.bbclient, finalBuild, updateMask)
-
 	if retcode == 0 && subprocErr != nil {
 		errors.Walk(subprocErr, func(err error) bool {
 			exit, ok := err.(*exec.ExitError)
 			if ok {
 				retcode = exit.ExitCode()
 				logging.Infof(cctx, "Returning exit code from user subprocess: %d", retcode)
+				logging.Infof(cctx, "Temp logging final build status: %s", finalBuild.Status.String())
 			}
 			return !ok
 		})
