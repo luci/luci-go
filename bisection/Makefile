@@ -12,9 +12,9 @@ format:
 test:
 	go test ./...
 
-ui-test:
+ui-test: build-frontend
 	cd frontend/ui; \
-	npm run jest
+	npm run test
 
 build-frontend:
 	cd frontend/ui; \
