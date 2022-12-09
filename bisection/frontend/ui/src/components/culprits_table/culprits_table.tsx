@@ -76,6 +76,7 @@ const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
   switch (action.actionType) {
     case 'CULPRIT_AUTO_REVERTED':
     case 'REVERT_CL_CREATED':
+    case 'EXISTING_REVERT_CL_COMMENTED':
       linkText = 'revert CL';
       url = action.revertClUrl || '';
       break;

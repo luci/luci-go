@@ -173,21 +173,63 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 		return err
 	}
 	activeReverts := []*gerritpb.ChangeInfo{}
+	abandonedReverts := []*gerritpb.ChangeInfo{}
 	for _, revert := range reverts {
-		if revert.Status == gerritpb.ChangeStatus_MERGED {
-			// there is a merged revert - no further action required
-			return nil
-		}
+		logging.Debugf(ctx, "Existing revert found for culprit %s~%d - revert is %s~%d",
+			culprit.Project, culprit.Number, revert.Project, revert.Number)
 
-		if revert.Status == gerritpb.ChangeStatus_NEW {
+		switch revert.Status {
+		case gerritpb.ChangeStatus_MERGED:
+			// there is a merged revert - no further action required
+			err = saveRevertURL(ctx, gerritClient, culpritModel, revert)
+			if err != nil {
+				// not critical - just log the error
+				logging.Errorf(ctx, err.Error())
+			}
+
+			return nil
+		case gerritpb.ChangeStatus_ABANDONED:
+			abandonedReverts = append(abandonedReverts, revert)
+		case gerritpb.ChangeStatus_NEW:
 			activeReverts = append(activeReverts, revert)
 		}
 	}
 
 	if len(activeReverts) > 0 {
-		// there is an existing revert yet to be merged;
+		// there is an existing revert yet to be merged
+
+		// update the revert URL using the first revert
+		revert := activeReverts[0]
+		err = saveRevertURL(ctx, gerritClient, culpritModel, revert)
+		if err != nil {
+			// not critical - just log the error
+			logging.Errorf(ctx, err.Error())
+		}
+
 		// add a supporting comment to the first revert
 		err = commentSupportOnExistingRevert(ctx, gerritClient, culpritModel, activeReverts[0])
+		if err != nil {
+			logging.Errorf(ctx, err.Error())
+			return err
+		}
+
+		return nil
+	}
+
+	if len(abandonedReverts) > 0 {
+		// there is an abandoned revert
+
+		// update the revert URL using the first revert
+		revert := abandonedReverts[0]
+		err = saveRevertURL(ctx, gerritClient, culpritModel, revert)
+		if err != nil {
+			// not critical - just log the error
+			logging.Errorf(ctx, err.Error())
+		}
+
+		// add a comment on the culprit since the revert has been abandoned
+		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
+			"an abandoned revert already exists")
 		if err != nil {
 			logging.Errorf(ctx, err.Error())
 			return err
@@ -345,8 +387,6 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 
 func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Client,
 	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
-	// TODO: save the existing revert URL in datastore
-
 	lbOwned, err := gerrit.IsOwnedByLUCIBisection(ctx, revert)
 	if err != nil {
 		return errors.Annotate(err,
@@ -400,9 +440,6 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 			return e
 		}
 
-		// set the revert CL URL
-		culpritModel.RevertURL = fmt.Sprintf("https://%s/c/%s/+/%d",
-			gerritClient.Host(ctx), revert.Project, revert.Number)
 		// set the flag to record the revert has a supporting comment from LUCI Bisection
 		culpritModel.HasSupportRevertComment = true
 		culpritModel.SupportRevertCommentTime = clock.Now(ctx)
@@ -500,4 +537,26 @@ func sendRevertForReview(ctx context.Context, gerritClient *gerrit.Client,
 	_, err = gerritClient.SendForReview(ctx, revert, message,
 		reviewerEmails, ccEmails)
 	return err
+}
+
+// saveRevertURL updates the revert URL for the given Suspect
+func saveRevertURL(ctx context.Context, gerritClient *gerrit.Client,
+	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+		// set the revert CL URL
+		culpritModel.RevertURL = util.ConstructGerritCodeReviewURL(ctx, gerritClient, revert)
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
+
+	if err != nil {
+		err = errors.Annotate(err,
+			"couldn't update suspect details for culprit with existing revert").Err()
+		return err
+	}
+
+	return nil
 }

@@ -57,8 +57,7 @@ func createRevert(ctx context.Context, gerritClient *gerrit.Client,
 			return e
 		}
 
-		culpritModel.RevertURL = fmt.Sprintf("https://%s/c/%s/+/%d",
-			gerritClient.Host(ctx), revert.Project, revert.Number)
+		culpritModel.RevertURL = util.ConstructGerritCodeReviewURL(ctx, gerritClient, revert)
 		culpritModel.IsRevertCreated = true
 		culpritModel.RevertCreateTime = clock.Now(ctx)
 

@@ -19,8 +19,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/bisection/internal/gerrit"
+
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/info"
 )
@@ -57,5 +61,29 @@ func TestConstructLUCIBisectionBugURL(t *testing.T) {
 			"status=Available&summary=Wrongly+blamed+" +
 			"https%3A%2F%2Fchromium-test-review.googlesource.com%2Fc%2Fchromium%2Ftest%2Fsrc%2F%2B%2F1234567"
 		So(bugURL, ShouldEqual, expectedBugURL)
+	})
+}
+
+func TestConstructGerritCodeReviewURL(t *testing.T) {
+	ctx := context.Background()
+
+	Convey("construct Gerrit code review URL", t, func() {
+		// Set up mock Gerrit client
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := gerrit.NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up Gerrit client
+		gerritClient, err := gerrit.NewClient(ctx, "chromium-test.googlesource.com")
+		So(err, ShouldBeNil)
+
+		change := &gerritpb.ChangeInfo{
+			Project: "chromium/test",
+			Number:  123456,
+		}
+
+		So(ConstructGerritCodeReviewURL(ctx, gerritClient, change), ShouldEqual,
+			"https://chromium-test.googlesource.com/c/chromium/test/+/123456")
 	})
 }

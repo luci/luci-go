@@ -288,11 +288,18 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				}},
 			}
 			revertRes := &gerritpb.ListChangesResponse{
-				Changes: []*gerritpb.ChangeInfo{{
-					Number:  876549,
-					Project: "chromium/src",
-					Status:  gerritpb.ChangeStatus_MERGED,
-				}},
+				Changes: []*gerritpb.ChangeInfo{
+					{
+						Number:  876548,
+						Project: "chromium/src",
+						Status:  gerritpb.ChangeStatus_ABANDONED,
+					},
+					{
+						Number:  876549,
+						Project: "chromium/src",
+						Status:  gerritpb.ChangeStatus_MERGED,
+					},
+				},
 			}
 			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 				Return(culpritRes, nil).Times(1)
@@ -308,7 +315,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
-				RevertURL:               "",
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
@@ -316,7 +323,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			})
 		})
 
-		Convey("revert exists", func() {
+		Convey("only abandoned revert exists", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
 				Id:             4,
@@ -376,7 +383,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				Changes: []*gerritpb.ChangeInfo{{
 					Number:  876549,
 					Project: "chromium/src",
-					Status:  gerritpb.ChangeStatus_NEW,
+					Status:  gerritpb.ChangeStatus_ABANDONED,
 				}},
 			}
 			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
@@ -385,8 +392,114 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				Return(revertRes, nil).Times(1)
 			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
 				&gerritpb.SetReviewRequest{
-					Project:    revertRes.Changes[0].Project,
-					Number:     revertRes.Changes[0].Number,
+					Project:    culpritRes.Changes[0].Project,
+					Number:     culpritRes.Changes[0].Number,
+					RevisionId: "current",
+					Message: fmt.Sprintf("LUCI Bisection has identified this"+
+						" change as the culprit of a build failure. See the analysis: %s\n\n"+
+						"A revert for this change was not created because an abandoned"+
+						" revert already exists.\n\nSample failed build: %s\n\nIf this is"+
+						" a false positive, please report it at %s",
+						analysisURL, buildURL, bugURL),
+				},
+			)).Times(1)
+
+			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       true,
+				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
+			})
+		})
+
+		Convey("active revert exists", func() {
+			// Setup suspect in datastore
+			heuristicSuspect := &model.Suspect{
+				Id:             5,
+				Type:           model.SuspectType_Heuristic,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			}
+			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			// Set up mock responses
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          876543,
+					Project:         "chromium/src",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "deadbeef",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"deadbeef": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
+							},
+						},
+					},
+				}},
+			}
+			revertRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{
+					{
+						Number:  876548,
+						Project: "chromium/src",
+						Status:  gerritpb.ChangeStatus_ABANDONED,
+					},
+					{
+						Number:  876549,
+						Project: "chromium/src",
+						Status:  gerritpb.ChangeStatus_NEW,
+					},
+				},
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(culpritRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.SetReviewRequest{
+					Project:    revertRes.Changes[1].Project,
+					Number:     revertRes.Changes[1].Number,
 					RevisionId: "current",
 					Message: fmt.Sprintf("LUCI Bisection recommends submitting this"+
 						" revert because it has confirmed the target of this revert is the"+
@@ -417,7 +530,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		Convey("revert has auto-revert off flag set", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
-				Id:             5,
+				Id:             6,
 				Type:           model.SuspectType_Heuristic,
 				Score:          10,
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
@@ -509,7 +622,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		Convey("revert was from an irrevertible author", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
-				Id:             6,
+				Id:             7,
 				Type:           model.SuspectType_Heuristic,
 				Score:          10,
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
@@ -601,7 +714,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		Convey("culprit has a downstream dependency", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
-				Id:             7,
+				Id:             8,
 				Type:           model.SuspectType_Heuristic,
 				Score:          10,
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
@@ -712,7 +825,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		Convey("revert creation is disabled", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
-				Id:             8,
+				Id:             9,
 				Type:           model.SuspectType_Heuristic,
 				Score:          10,
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
@@ -806,7 +919,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		Convey("culprit was committed too long ago", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
-				Id:             9,
+				Id:             10,
 				Type:           model.SuspectType_Heuristic,
 				Score:          10,
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
@@ -913,7 +1026,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		Convey("revert commit is disabled", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
-				Id:             10,
+				Id:             11,
 				Type:           model.SuspectType_Heuristic,
 				Score:          10,
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
@@ -1020,7 +1133,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		Convey("revert for culprit is created and bot-committed", func() {
 			// Setup suspect in datastore
 			heuristicSuspect := &model.Suspect{
-				Id:             11,
+				Id:             12,
 				Type:           model.SuspectType_Heuristic,
 				Score:          10,
 				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),

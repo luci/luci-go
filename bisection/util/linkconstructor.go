@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"net/url"
 
+	"go.chromium.org/luci/bisection/internal/gerrit"
+
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/info"
 )
 
@@ -51,4 +54,10 @@ func ConstructLUCIBisectionBugURL(ctx context.Context, analysisURL string,
 	}
 
 	return "https://bugs.chromium.org/p/chromium/issues/entry?" + queryParams.Encode()
+}
+
+func ConstructGerritCodeReviewURL(ctx context.Context,
+	gerritClient *gerrit.Client, change *gerritpb.ChangeInfo) string {
+	return fmt.Sprintf("https://%s/c/%s/+/%d", gerritClient.Host(ctx),
+		change.Project, change.Number)
 }
