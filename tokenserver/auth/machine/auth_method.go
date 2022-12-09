@@ -66,11 +66,40 @@ var (
 // 'bot:<machine_fqdn>', where <machine_fqdn> is extracted from the token. It is
 // lowercase FQDN of a machine (as specified in the certificate used to mint the
 // token).
+//
+// Full information about the token can be obtained via GetMachineTokenInfo.
 type MachineTokenAuthMethod struct {
 	// certsFetcher is mocked in unit tests.
 	//
 	// In prod it is based on signing.FetchCertificatesForServiceAccount.
 	certsFetcher func(c context.Context, email string) (*signing.PublicCertificates, error)
+}
+
+// MachineTokenInfo contains information extracted from the LUCI machine token.
+type MachineTokenInfo struct {
+	// FQDN is machine's FQDN as asserted by the token.
+	//
+	// It is extracted from the machine certificate use to obtain the machine
+	// token.
+	FQDN string
+	// CA identifies the Certificate Authority that signed the machine cert.
+	//
+	// It is an integer ID of the certificate authority as specified in the
+	// LUCI Token Server configs.
+	CA int64
+	// CertSN is the machine certificate serial number used to get the machine
+	// token.
+	CertSN []byte
+}
+
+// GetMachineTokenInfo returns the information extracted from the machine token.
+//
+// Works only from within a request handler and only if the call was
+// authenticated via a LUCI machine token. In all other cases (anonymous calls,
+// calls authenticated via some other mechanism, etc.) returns nil.
+func GetMachineTokenInfo(ctx context.Context) *MachineTokenInfo {
+	info, _ := auth.CurrentUser(ctx).Extra.(*MachineTokenInfo)
+	return info
 }
 
 // Authenticate extracts peer's identity from the incoming request.
@@ -133,7 +162,14 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 		logTokenError(c, r, body, err, "Bad machine_fqdn - %q", body.MachineFqdn)
 		return nil, nil, ErrBadToken
 	}
-	return &auth.User{Identity: botIdent}, nil, nil
+	return &auth.User{
+		Identity: botIdent,
+		Extra: &MachineTokenInfo{
+			FQDN:   body.MachineFqdn,
+			CA:     body.CaId,
+			CertSN: body.CertSn,
+		},
+	}, nil, nil
 }
 
 // logTokenError adds a warning-level log entry with details about the request.

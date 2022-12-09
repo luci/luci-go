@@ -85,12 +85,21 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		Convey("valid token works", func() {
 			user, err := call(mint(&tokenserver.MachineTokenBody{
 				MachineFqdn: "some-machine.location",
+				CaId:        123,
+				CertSn:      []byte{1, 2, 3},
 				IssuedBy:    "valid-signer@example.com",
 				IssuedAt:    uint64(clock.Now(ctx).Unix()),
 				Lifetime:    3600,
 			}, nil))
 			So(err, ShouldBeNil)
-			So(user, ShouldResemble, &auth.User{Identity: "bot:some-machine.location"})
+			So(user, ShouldResemble, &auth.User{
+				Identity: "bot:some-machine.location",
+				Extra: &MachineTokenInfo{
+					FQDN:   "some-machine.location",
+					CA:     123,
+					CertSN: []byte{1, 2, 3},
+				},
+			})
 		})
 
 		Convey("not header => not applicable", func() {
