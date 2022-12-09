@@ -33,8 +33,8 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/listener"
 )
 
 const (
@@ -94,9 +94,9 @@ func (p *Poller) doOneQuery(ctx context.Context, luciProject string, qs *QuerySt
 	}
 
 	// If pub/sub is enabled for the project, skip incremental-poll.
-	switch yes, err := listener.IsPubsubEnabled(ctx, luciProject); {
+	switch yes, err := srvcfg.IsProjectEnabledInListener(ctx, luciProject); {
 	case err != nil:
-		return errors.Annotate(err, "listener.IsPubsubEnabled").Err()
+		return errors.Annotate(err, "srvcfg.IsProjectEnabledInListener").Err()
 	case yes:
 		return nil
 	}

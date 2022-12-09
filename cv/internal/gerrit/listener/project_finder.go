@@ -16,55 +16,31 @@ package listener
 
 import (
 	"context"
-	"regexp"
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
 // projectFinder looks up LUCI projects watching a given Gerrit host and repo.
 type projectFinder struct {
-	mu                       sync.RWMutex
-	enabledProjectRegexps    []*regexp.Regexp
-	enabledProjectRegexpStrs []string
-}
-
-func isEqual(lhs, rhs []string) bool {
-	if len(lhs) != len(rhs) {
-		return false
-	}
-	for i := range lhs {
-		if lhs[i] != rhs[i] {
-			return false
-		}
-	}
-	return true
+	mu                sync.RWMutex
+	isListenerEnabled func(prj string) bool
 }
 
 // reload reloads the projectFinder with given project regexps.
-func (pf *projectFinder) reload(reStrs []string) error {
-	// optimistic; they are the same most likely.
-	pf.mu.RLock()
-	if isEqual(pf.enabledProjectRegexpStrs, reStrs) {
-		pf.mu.RUnlock()
-		return nil
-	}
-	pf.mu.RUnlock()
-
-	// There is a change. Reload the cached regexps with the new regexps.
-	pf.mu.Lock()
-	defer pf.mu.Unlock()
-	if isEqual(pf.enabledProjectRegexpStrs, reStrs) {
-		return nil
-	}
-	newREs, err := anchorRegexps(reStrs)
+func (pf *projectFinder) reload(s *listenerpb.Settings) error {
+	chk, err := srvcfg.MakeListenerProjectChecker(s)
 	if err != nil {
-		// The config validation shouldn't allow this to happen.
+		// Must be a bug in the validator.
 		return err
 	}
-	pf.enabledProjectRegexpStrs = reStrs
-	pf.enabledProjectRegexps = newREs
+
+	pf.mu.Lock()
+	pf.isListenerEnabled = chk
+	pf.mu.Unlock()
 	return nil
 }
 
@@ -75,14 +51,13 @@ func (pf *projectFinder) lookup(ctx context.Context, host, repo string) ([]strin
 	if err != nil {
 		return nil, errors.Annotate(err, "gobmap.LookupProjects").Err()
 	}
+	matched := make([]string, 0, len(prjs))
+
 	pf.mu.RLock()
 	defer pf.mu.RUnlock()
-	matched := make([]string, 0, len(prjs))
 	for _, prj := range prjs {
-		for _, re := range pf.enabledProjectRegexps {
-			if re.Match([]byte(prj)) {
-				matched = append(matched, prj)
-			}
+		if pf.isListenerEnabled(prj) {
+			matched = append(matched, prj)
 		}
 	}
 	return matched, nil

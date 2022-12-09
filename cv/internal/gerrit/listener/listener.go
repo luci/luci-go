@@ -93,7 +93,7 @@ func (l *Listener) Run(ctx context.Context) {
 }
 
 func (l *Listener) reload(ctx context.Context, s *listenerpb.Settings) error {
-	if err := l.prjFinder.reload(s.GetEnabledProjectRegexps()); err != nil {
+	if err := l.prjFinder.reload(s); err != nil {
 		return errors.Annotate(err, "projectFinder.reload").Err()
 	}
 	if err := l.reloadSubscribers(ctx, s.GetGerritSubscriptions()); err != nil {

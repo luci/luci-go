@@ -87,7 +87,6 @@ func validateListenerSettings(ctx *validation.Context, configSet, path string, c
 		}
 		ctx.Exit()
 	}
-	validateRegexp(ctx, "enabled_project_regexps", cfg.GetEnabledProjectRegexps())
 	validateRegexp(ctx, "disabled_project_regexps", cfg.GetDisabledProjectRegexps())
 
 	// Skip checking subscription configs on error.

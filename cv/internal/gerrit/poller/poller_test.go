@@ -33,10 +33,8 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
-	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
-	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -320,6 +318,15 @@ func TestDiscoversCLs(t *testing.T) {
 			s.QueryStates.GetStates()[0].LastFullTime = timestamppb.New(ct.Clock.Now()) // Force incremental fetch
 			So(datastore.Put(ctx, s), ShouldBeNil)
 
+			Convey("Unless the pubsub is enabled", func() {
+				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
+				So(clUpdater.peekScheduledChanges(), ShouldBeEmpty)
+				qs := mustLoadState().QueryStates.GetStates()[0]
+				So(qs.GetLastIncrTime(), ShouldBeNil)
+			})
+
+			ct.DisableProjectInGerritListener(ctx, lProject)
+
 			Convey("In a typical case, schedules update tasks for new CLs", func() {
 				s.QueryStates.GetStates()[0].Changes = []int64{31, 32, 33}
 				So(datastore.Put(ctx, s), ShouldBeNil)
@@ -342,15 +349,6 @@ func TestDiscoversCLs(t *testing.T) {
 				So(qs.GetChanges(), ShouldResemble, []int64{31, 32, 33, 34, 35, 36})
 			})
 
-			Convey("Unless the pubsub is enabled", func() {
-				settings := &listenerpb.Settings{EnabledProjectRegexps: []string{lProject}}
-				So(srvcfg.SetTestListenerConfig(ctx, settings, nil), ShouldBeNil)
-
-				So(p.poll(ctx, lProject, ct.Clock.Now()), ShouldBeNil)
-				So(clUpdater.peekScheduledChanges(), ShouldBeEmpty)
-				qs := mustLoadState().QueryStates.GetStates()[0]
-				So(qs.GetLastIncrTime(), ShouldBeNil)
-			})
 		})
 	})
 }

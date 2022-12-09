@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -58,7 +59,9 @@ func TestProjectFinder(t *testing.T) {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
-		finder := &projectFinder{}
+		finder := &projectFinder{
+			isListenerEnabled: func(string) bool { return true },
+		}
 		check := func(host, repo string) []string {
 			prjs, err := finder.lookup(ctx, host, repo)
 			So(err, ShouldBeNil)
@@ -67,31 +70,21 @@ func TestProjectFinder(t *testing.T) {
 		createTestLUCIProject(ctx, "chromium", "https://cr-review.gs.com/", "cr/src")
 		createTestLUCIProject(ctx, "chromium-m123", "https://cr-review.gs.com", "cr/src")
 
-		Convey("with no enabled projects", func() {
-			So(check("cr-review.gs.com", "cr/src"), ShouldBeEmpty)
+		lCfg := &listenerpb.Settings{
+			GerritSubscriptions: []*listenerpb.Settings_GerritSubscription{
+				{Host: "cr-review.gs.com"},
+			},
+		}
+
+		Convey("with no disabled projects", func() {
+			So(finder.reload(lCfg), ShouldBeNil)
+			So(check("cr-review.gs.com", "cr/src"), ShouldResemble, []string{"chromium", "chromium-m123"})
 		})
 
-		Convey("with one enabled project", func() {
-			So(finder.reload([]string{"chromium"}), ShouldBeNil)
-			So(check("cr-review.gs.com", "cr/src"), ShouldResemble, []string{"chromium"})
-		})
-
-		Convey("with multi enabled projects", func() {
-			So(finder.reload([]string{"chromium", "chromium-m123"}), ShouldBeNil)
-			So(check("cr-review.gs.com", "cr/src"), ShouldResemble,
-				[]string{"chromium", "chromium-m123"})
-
-			Convey("reload with one less", func() {
-				So(finder.reload([]string{"chromium-m123"}), ShouldBeNil)
-				So(check("cr-review.gs.com", "cr/src"), ShouldResemble,
-					[]string{"chromium-m123"})
-			})
-			Convey("reload with an extra one", func() {
-				createTestLUCIProject(ctx, "chromium-m456", "https://cr-review.gs.com", "cr/src")
-				So(finder.reload([]string{"chromium", "chromium-m123", "chromium-m456"}), ShouldBeNil)
-				So(check("cr-review.gs.com", "cr/src"), ShouldResemble,
-					[]string{"chromium", "chromium-m123", "chromium-m456"})
-			})
+		Convey("with a disabled project", func() {
+			lCfg.DisabledProjectRegexps = []string{"chromium"}
+			So(finder.reload(lCfg), ShouldBeNil)
+			So(check("cr-review.gs.com", "cr/src"), ShouldResemble, []string{"chromium-m123"})
 		})
 	})
 }

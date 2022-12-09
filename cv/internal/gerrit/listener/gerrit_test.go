@@ -51,7 +51,9 @@ func TestGerrit(t *testing.T) {
 		defer cancel()
 		client, closeFn := mockPubSub(ctx)
 		defer closeFn()
-		finder := &projectFinder{}
+		finder := &projectFinder{
+			isListenerEnabled: func(string) bool { return true },
+		}
 		settings := &listenerpb.Settings_GerritSubscription{
 			Host:          "example.org",
 			MessageFormat: listenerpb.Settings_GerritSubscription_JSON,
@@ -140,13 +142,16 @@ func TestGerrit(t *testing.T) {
 				So(sch.tasks, ShouldHaveLength, 0)
 			})
 			Convey("message from an unwatched repo", func() {
+				cfg := &listenerpb.Settings{
+					DisabledProjectRegexps: []string{"chromium"},
+					GerritSubscriptions:    []*listenerpb.Settings_GerritSubscription{settings},
+				}
+				So(finder.reload(cfg), ShouldBeNil)
 				msg.Data = payload
 				process()
 				So(sch.tasks, ShouldHaveLength, 0)
 			})
 			Convey("message from a watched repo", func() {
-				So(finder.reload([]string{"chromium"}), ShouldBeNil)
-
 				Convey("in json", func() {
 					msg.Data = payload
 				})

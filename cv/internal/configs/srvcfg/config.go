@@ -120,3 +120,17 @@ func anchorRegexps(partials []string) ([]*regexp.Regexp, error) {
 	}
 	return nil, me
 }
+
+// IsProjectEnabledInListener returns true if a given project is enabled
+// in the cached Listener config.
+func IsProjectEnabledInListener(ctx context.Context, project string) (bool, error) {
+	cfg, err := GetListenerConfig(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	chk, err := MakeListenerProjectChecker(cfg)
+	if err != nil {
+		return false, err
+	}
+	return chk(project), nil
+}

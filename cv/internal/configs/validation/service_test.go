@@ -150,14 +150,6 @@ func TestListenerConfigValidation(t *testing.T) {
 				So(vctx.Finalize(), ShouldErrLike, `already exists for host "example.org"`)
 			})
 
-			Convey("invalid enabled_project_regexps", func() {
-				cfg := []byte(`
-				enabled_project_regexps: "(123"
-				`)
-				So(validateListenerSettings(vctx, configSet, path, cfg), ShouldBeNil)
-				So(vctx.Finalize(), ShouldErrLike, "missing closing")
-			})
-
 			Convey("invalid disabled_project_regexps", func() {
 				cfg := []byte(`
 					disabled_project_regexps: "(123"

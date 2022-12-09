@@ -156,6 +156,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 	// Delegate most setup to cvtesting.Test.
 	ctx, ctxCancel := t.Test.SetUp()
 	cleanupFns := []func(){ctxCancel}
+	t.Test.DisableProjectInGerritListener(ctx, ".*")
 
 	if (*dsFlakinessFlag) != 0 {
 		t.dsFlakiness = *dsFlakinessFlag
