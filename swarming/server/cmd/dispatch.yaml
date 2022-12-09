@@ -4,3 +4,6 @@ dispatch:
     service: default-go
   - url: "*/prpc/discovery.Discovery/*"
     service: default-go
+  # Serve Swarming RBE endpoints using Go.
+  - url: "*/swarming/api/v1/bot/rbe/*"
+    service: default-go
