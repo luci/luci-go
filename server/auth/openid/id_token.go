@@ -41,6 +41,19 @@ type IDToken struct {
 	Exp           int64  `json:"exp"`
 	Nonce         string `json:"nonce"`
 	Hd            string `json:"hd"`
+
+	// This section is present only for tokens generated via GCE Metadata server
+	// in "full" format.
+	Google struct {
+		ComputeEngine struct {
+			InstanceCreationTimestamp int64  `json:"instance_creation_timestamp"`
+			InstanceID                string `json:"instance_id"`
+			InstanceName              string `json:"instance_name"`
+			ProjectID                 string `json:"project_id"`
+			ProjectNumber             int64  `json:"project_number"`
+			Zone                      string `json:"zone"`
+		} `json:"compute_engine"`
+	} `json:"google"`
 }
 
 const allowedClockSkew = 30 * time.Second
@@ -54,7 +67,7 @@ const allowedClockSkew = 30 * time.Second
 // It is the caller's responsibility to do so.
 //
 // This is a fast local operation.
-func VerifyIDToken(ctx context.Context, token string, keys *JSONWebKeySet, issuer string) (*IDToken, error) {
+func VerifyIDToken(ctx context.Context, token string, keys jwt.SignatureVerifier, issuer string) (*IDToken, error) {
 	// See https://developers.google.com/identity/protocols/OpenIDConnect#validatinganidtoken
 
 	tok := &IDToken{}

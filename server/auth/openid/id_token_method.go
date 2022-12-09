@@ -31,11 +31,11 @@ import (
 // The header value should have form "Bearer <base64 JWT>".
 //
 // There are two variants of tokens signed by Google:
-//   * ID tokens identifying end users. They always have an OAuth2 Client ID as
+//   - ID tokens identifying end users. They always have an OAuth2 Client ID as
 //     an audience (`aud` field). Their `aud` is placed into User.ClientID, so
 //     it is later checked against a whitelist of client IDs by the LUCI auth
 //     stack.
-//   * ID tokens identifying service accounts. They generally can have anything
+//   - ID tokens identifying service accounts. They generally can have anything
 //     at all as an audience, but usually have an URL of the service being
 //     called. Their `aud` is checked against Audience list below.
 type GoogleIDTokenAuthMethod struct {
@@ -86,9 +86,9 @@ func AudienceMatchesHost(ctx context.Context, r *http.Request, aud string) (vali
 // Authenticate extracts user information from the incoming request.
 //
 // It returns:
-//   * (*User, nil) on success.
-//   * (nil, nil) if the method is not applicable.
-//   * (nil, error) if the method is applicable, but credentials are invalid.
+//   - (*User, nil, nil) on success.
+//   - (nil, nil, nil) if the method is not applicable.
+//   - (nil, nil, error) if the method is applicable, but credentials are bad.
 func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
 	header := r.Header.Get("Authorization")
 	if !strings.HasPrefix(header, "Bearer ") {
