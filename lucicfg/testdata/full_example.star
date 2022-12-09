@@ -43,6 +43,14 @@ luci.milo(
     bug_url_template = "https://bugs.chromium.org/p/tutu%%2C%%20all%%20aboard/issues/entry?summary=Bug%%20summary&description=Everything%%20is%%20broken&components=Stuff%%3EHard",
 )
 
+luci.buildbucket_notification_topic(
+    name = "projects/my-cloud-project1/topics/my-topic1",
+)
+luci.buildbucket_notification_topic(
+    name = "projects/my-cloud-project2/topics/my-topic2",
+    compression = "ZSTD",
+)
+
 # Recipes.
 
 luci.recipe(
@@ -465,7 +473,8 @@ luci.cq_group(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "repo",
                     path_regexp = "all/one.txt",
-                    exclude = True),
+                    exclude = True,
+                ),
             ],
             mode_allowlist = [cq.MODE_DRY_RUN, cq.MODE_QUICK_DRY_RUN],
         ),
@@ -477,7 +486,8 @@ luci.cq_group(
                     gerrit_host_regexp = "example.com",
                     gerrit_project_regexp = "repo",
                     path_regexp = "all/two.txt",
-                    exclude = True)
+                    exclude = True,
+                ),
             ],
             experiment_percentage = 50,
         ),
@@ -1202,6 +1212,15 @@ lucicfg.emit(
 #         value: 100
 #       }
 #     }
+#   }
+# }
+# common_config {
+#   builds_notification_topics {
+#     name: "projects/my-cloud-project1/topics/my-topic1"
+#   }
+#   builds_notification_topics {
+#     name: "projects/my-cloud-project2/topics/my-topic2"
+#     compression: ZSTD
 #   }
 # }
 # ===

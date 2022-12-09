@@ -123,6 +123,10 @@ def get_service(kind, why):
         )
     return svc
 
+def get_bb_notification_topics():
+    """Returns all defined buildbucket_notification_topic() nodes, if any."""
+    return graph.children(keys.project(), kinds.BUILDBUCKET_NOTIFICATION_TOPIC)
+
 def get_buckets():
     """Returns all defined bucket() nodes, if any."""
     return graph.children(keys.project(), kinds.BUCKET)
@@ -328,6 +332,18 @@ def gen_buildbucket_cfg(ctx):
             constraints = _buildbucket_constraints(bucket),
             dynamic_builder_template = dynamic_builder_template,
         ))
+
+    topics = [
+        buildbucket_pb.BuildbucketCfg.Topic(
+            name = t.props.name,
+            compression = t.props.compression,
+        )
+        for t in get_bb_notification_topics()
+    ]
+    if topics:
+        cfg.common_config = buildbucket_pb.BuildbucketCfg.CommonConfig(
+            builds_notification_topics = topics,
+        )
 
 def _buildbucket_check_connections():
     """Ensures all luci.bucket_constraints(...) are connected to one and only one luci.bucket(...)."""

@@ -35,11 +35,12 @@ def test_not_supported_location_filter_format():
                 cq.location_filter(
                     gerrit_host_regexp = "invalid-host.com",
                     gerrit_project_regexp = "foo",
-                    path_regexp = r".+\.py"),
+                    path_regexp = r".+\.py",
+                ),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
-        'Gerrit host in location filter did not match expected format',
+        "Gerrit host in location filter did not match expected format",
     )
     assert.fails(
         lambda: luci.cq_tryjob_verifier(
@@ -48,7 +49,8 @@ def test_not_supported_location_filter_format():
             location_filters = [
                 cq.location_filter(
                     gerrit_host_regexp = "chromium-review.googlesource.com",
-                    path_regexp = r".+\.py"),
+                    path_regexp = r".+\.py",
+                ),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
@@ -61,7 +63,8 @@ def test_not_supported_location_filter_format():
             location_filters = [
                 cq.location_filter(
                     path_regexp = r".+\.py",
-                    exclude = True),
+                    exclude = True,
+                ),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
@@ -75,21 +78,25 @@ def test_watching_extensions_but_from_different_set_of_gerrit_repos():
             owner_whitelist = ["project-contributor"],
             location_filters = [
                 cq.location_filter(
-                  gerrit_host_regexp = "chromium-review.googlesource.com",
-                  gerrit_project_regexp = "infra",
-                  path_regexp = ".+\\.py"),
+                    gerrit_host_regexp = "chromium-review.googlesource.com",
+                    gerrit_project_regexp = "infra",
+                    path_regexp = ".+\\.py",
+                ),
                 cq.location_filter(
-                  gerrit_host_regexp = "chromium-review.googlesource.com",
-                  gerrit_project_regexp = "luci-py",
-                  path_regexp = ".+\\.py"),
+                    gerrit_host_regexp = "chromium-review.googlesource.com",
+                    gerrit_project_regexp = "luci-py",
+                    path_regexp = ".+\\.py",
+                ),
                 cq.location_filter(
-                  gerrit_host_regexp = "chromium-review.googlesource.com",
-                  gerrit_project_regexp = "infra",
-                  path_regexp = ".+\\.go"),
+                    gerrit_host_regexp = "chromium-review.googlesource.com",
+                    gerrit_project_regexp = "infra",
+                    path_regexp = ".+\\.go",
+                ),
                 cq.location_filter(
-                  gerrit_host_regexp = "chromium-review.googlesource.com",
-                  gerrit_project_regexp = "luci-go",
-                  path_regexp = ".+\\.go"),
+                    gerrit_host_regexp = "chromium-review.googlesource.com",
+                    gerrit_project_regexp = "luci-go",
+                    path_regexp = ".+\\.go",
+                ),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
@@ -104,9 +111,10 @@ def test_with_gerrit_url_and_without_gerrit_url_together():
             location_filters = [
                 cq.location_filter(path_regexp = r".+\.py"),
                 cq.location_filter(
-                  gerrit_host_regexp = "chromium-review.googlesource.com",
-                  gerrit_project_regexp = "luci-py",
-                  path_regexp = r".+\.py"),
+                    gerrit_host_regexp = "chromium-review.googlesource.com",
+                    gerrit_project_regexp = "luci-py",
+                    path_regexp = r".+\.py",
+                ),
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),

@@ -2656,6 +2656,30 @@ the bucket declaration. In particular useful in functions. For example:
 
 
 
+### luci.buildbucket_notification_topic {#luci.buildbucket-notification-topic}
+
+```python
+luci.buildbucket_notification_topic(name, compression = None)
+```
+
+
+
+Define a buildbucket notification topic.
+
+Buildbucket will publish build notifications (using the luci project scoped
+service account) to this topic every time build status changes. For details,
+see [BuildbucketCfg.builds_notification_topics]
+
+[BuildbucketCfg.builds_notification_topics]: https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/buildbucket/proto/project_config.proto
+
+#### Arguments {#luci.buildbucket-notification-topic-args}
+
+* **name**: a full topic name. e.g. 'projects/my-cloud-project/topics/my-topic'. Required.
+* **compression**: specify a compression method. The default is "ZLIB".
+
+
+
+
 
 
 ## ACLs

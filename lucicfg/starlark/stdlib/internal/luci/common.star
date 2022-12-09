@@ -39,6 +39,7 @@ load("@stdlib//internal/validate.star", "validate")
 #   luci.project -> [luci.cq_group]
 #   luci.project -> [luci.notifiable]
 #   luci.project -> [luci.notifier_template]
+#   luci.project -> [luci.buildbucket_notification_topic]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.bucket -> [luci.bucket_constraints]
@@ -167,6 +168,7 @@ kinds = struct(
     SHADOWED_BUCKET = "luci.shadowed_bucket",
     SHADOW_OF = "luci.shadow_of",
     BUCKET_CONSTRAINTS = "luci.bucket_constraints",
+    BUILDBUCKET_NOTIFICATION_TOPIC = "luci.buildbucket_notification_topic",
 
     # Internal nodes (declared internally as dependency of other nodes).
     BUILDER_REF = "luci.builder_ref",
@@ -188,6 +190,7 @@ keys = struct(
     logdog = lambda: _namespaced_key(kinds.LOGDOG, "..."),
     bucket = lambda ref: _project_scoped_key(kinds.BUCKET, "bucket", ref),
     executable = lambda ref: _project_scoped_key(kinds.EXECUTABLE, "executable", ref),
+    buildbucket_notification_topic = lambda ref: _project_scoped_key(kinds.BUILDBUCKET_NOTIFICATION_TOPIC, "buildbucket_notification_topic", ref),
 
     # TODO(vadimsh): Make them accept keysets if necessary. These currently
     # require strings, not keysets. They are currently not directly used by
