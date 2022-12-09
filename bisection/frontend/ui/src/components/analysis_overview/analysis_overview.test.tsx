@@ -45,8 +45,11 @@ describe('Test AnalysisOverview component', () => {
 
     // check the timestamp cells are displayed
     const timestampFields = ['created time', 'end time'];
+    // Example formatted timestamps:
+    //    * 12:34:56 Dec, 03 2022 PDT
+    //    * 12:34:56 Dec, 03 2022 GMT+10
     const timeFormat = new RegExp(
-      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+\\+\\d{2}$'
+      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+'
     );
     timestampFields.forEach((field) => {
       const fieldLabel = screen.getByText(new RegExp(`^(${field})$`, 'i'));

@@ -45,9 +45,11 @@ describe('Test AnalysisTableRow component', () => {
     expect(analysisLink.textContent).toBe(mockAnalysis.firstFailedBbid);
     expect(analysisLink.getAttribute('href')).not.toBe('');
 
-    // Check the start time is displayed
+    // Check the start time is displayed. Example formatted timestamps:
+    //    * 12:34:56 Dec, 03 2022 PDT
+    //    * 12:34:56 Dec, 03 2022 GMT+10
     const startTimeFormat = new RegExp(
-      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+\\+\\d{2}$'
+      '^\\d{2}:[0-5]\\d:[0-5]\\d [A-Z][a-z]{2}, [A-Z][a-z]{2} [0-3]\\d \\d{4} [A-Z]+'
     );
     expect(screen.queryAllByText(startTimeFormat)).toHaveLength(1);
 
