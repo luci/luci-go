@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -49,6 +50,7 @@ type GoFinditServer struct{}
 
 // GetAnalysis returns the analysis given the analysis id
 func (server *GoFinditServer) GetAnalysis(c context.Context, req *pb.GetAnalysisRequest) (*pb.Analysis, error) {
+	c = loggingutil.SetAnalysisID(c, req.AnalysisId)
 	analysis := &model.CompileFailureAnalysis{
 		Id: req.AnalysisId,
 	}
@@ -76,6 +78,7 @@ func (server *GoFinditServer) QueryAnalysis(c context.Context, req *pb.QueryAnal
 		return nil, status.Errorf(codes.Unimplemented, "only compile failures are supported")
 	}
 	bbid := req.BuildFailure.GetBbid()
+	c = loggingutil.SetQueryBBID(c, bbid)
 	logging.Infof(c, "QueryAnalysis for build %d", bbid)
 
 	analysis, err := datastoreutil.GetAnalysisForBuild(c, bbid)
@@ -87,6 +90,7 @@ func (server *GoFinditServer) QueryAnalysis(c context.Context, req *pb.QueryAnal
 		logging.Infof(c, "No analysis for build %d", bbid)
 		return nil, status.Errorf(codes.NotFound, "analysis not found for build %d", bbid)
 	}
+	c = loggingutil.SetAnalysisID(c, analysis.Id)
 	analysispb, err := GetAnalysisResult(c, analysis)
 	if err != nil {
 		logging.Errorf(c, "Could not get analysis data for build %d: %s", bbid, err)

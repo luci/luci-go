@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/rerun"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -71,6 +72,7 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	c = loggingutil.SetAnalyzedBBID(c, bbmsg.Build.Id)
 	logging.Debugf(c, "Received message for build id %d", bbmsg.Build.Id)
 
 	// Special handling for pubsub message for LUCI Bisection

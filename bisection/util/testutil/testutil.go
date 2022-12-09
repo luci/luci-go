@@ -16,9 +16,14 @@
 package testutil
 
 import (
+	"context"
 	"fmt"
 
+	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func CreateBlamelist(nCommits int) *pb.BlameList {
@@ -29,4 +34,40 @@ func CreateBlamelist(nCommits int) *pb.BlameList {
 		})
 	}
 	return blamelist
+}
+
+func CreateLuciFailedBuild(c context.Context, id int64) *model.LuciFailedBuild {
+	fb := &model.LuciFailedBuild{
+		Id: 123,
+	}
+	So(datastore.Put(c, fb), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return fb
+}
+
+func CreateCompileFailure(c context.Context, fb *model.LuciFailedBuild) *model.CompileFailure {
+	cf := &model.CompileFailure{
+		Id:    fb.Id,
+		Build: datastore.KeyForObj(c, fb),
+	}
+	So(datastore.Put(c, cf), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return cf
+}
+
+func CreateCompileFailureAnalysis(c context.Context, id int64, cf *model.CompileFailure) *model.CompileFailureAnalysis {
+	cfa := &model.CompileFailureAnalysis{
+		Id:             id,
+		CompileFailure: datastore.KeyForObj(c, cf),
+	}
+	So(datastore.Put(c, cfa), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return cfa
+}
+
+func CreateCompileFailureAnalysisAnalysisChain(c context.Context, bbid int64, analysisID int64) (*model.LuciFailedBuild, *model.CompileFailure, *model.CompileFailureAnalysis) {
+	fb := CreateLuciFailedBuild(c, bbid)
+	cf := CreateCompileFailure(c, fb)
+	cfa := CreateCompileFailureAnalysis(c, analysisID, cf)
+	return fb, cf, cfa
 }

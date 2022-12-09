@@ -25,6 +25,7 @@ import (
 	pb "go.chromium.org/luci/bisection/proto"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -47,7 +48,20 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request: %s", err)
 	}
+	c = loggingutil.SetAnalysisID(c, req.AnalysisId)
+	c = loggingutil.SetRerunBBID(c, req.Bbid)
+
 	logging.Infof(c, "Update analysis with rerun_build_id = %d analysis_id = %d gitiles_commit=%v ", req.Bbid, req.AnalysisId, req.GitilesCommit)
+
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, req.AnalysisId)
+	if err != nil {
+		err = errors.Annotate(err, "failed GetCompileFailureAnalysis ID: %d", req.AnalysisId).Err()
+		errors.Log(c, err)
+		return nil, status.Errorf(codes.Internal, "error GetCompileFailureAnalysis")
+	}
+	if cfa.CompileFailure != nil && cfa.CompileFailure.Parent() != nil {
+		c = loggingutil.SetAnalyzedBBID(c, cfa.CompileFailure.Parent().IntID())
+	}
 
 	// Get rerun model
 	rerunModel := &model.CompileRerunBuild{
@@ -81,13 +95,6 @@ func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *
 	if lastRerun.Type != model.RerunBuildType_CulpritVerification && lastRerun.Type != model.RerunBuildType_NthSection {
 		logging.Errorf(c, "Invalid type %v for analysis %d", lastRerun.Type, req.AnalysisId)
 		return nil, status.Errorf(codes.Internal, "Invalid type %v", lastRerun.Type)
-	}
-
-	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, req.AnalysisId)
-	if err != nil {
-		err = errors.Annotate(err, "failed GetCompileFailureAnalysis ID: %d", req.AnalysisId).Err()
-		errors.Log(c, err)
-		return nil, status.Errorf(codes.Internal, "error GetCompileFailureAnalysis")
 	}
 
 	// Culprit verification

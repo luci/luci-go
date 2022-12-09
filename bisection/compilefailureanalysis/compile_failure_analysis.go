@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -88,6 +89,7 @@ func AnalyzeFailure(
 	if e != nil {
 		return nil, e
 	}
+	c = loggingutil.SetAnalysisID(c, analysis.Id)
 
 	// Heuristic analysis
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)

@@ -29,6 +29,7 @@ import (
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -60,6 +61,13 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 
 	analysisID := task.GetAnalysisId()
 	culpritID := task.GetCulpritId()
+
+	ctx, err := loggingutil.UpdateLoggingWithAnalysisID(ctx, analysisID)
+	if err != nil {
+		// not critical, just log
+		err := errors.Annotate(err, "failed UpdateLoggingWithAnalysisID %d", analysisID)
+		logging.Errorf(ctx, "%v", err)
+	}
 
 	logging.Infof(ctx,
 		"Processing revert culprit task for analysis ID=%d, culprit ID=%d",

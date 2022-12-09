@@ -34,6 +34,7 @@ import (
 	pb "go.chromium.org/luci/bisection/proto"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 )
 
 const (
@@ -68,6 +69,12 @@ func RegisterTaskClass() {
 
 // CancelAnalysis cancels all pending and running reruns for an analysis.
 func CancelAnalysis(c context.Context, analysisID int64) error {
+	c, err := loggingutil.UpdateLoggingWithAnalysisID(c, analysisID)
+	if err != nil {
+		// not critical, just log
+		err := errors.Annotate(err, "failed UpdateLoggingWithAnalysisID %d", analysisID)
+		logging.Errorf(c, "%v", err)
+	}
 	logging.Infof(c, "Cancel analysis %d", analysisID)
 
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)

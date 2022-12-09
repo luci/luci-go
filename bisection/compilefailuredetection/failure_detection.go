@@ -27,6 +27,7 @@ import (
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
 
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -71,6 +72,7 @@ func RegisterTaskClass() {
 // AnalyzeBuild analyzes a build and trigger an analysis if necessary.
 // Returns true if a new analysis is triggered, returns false otherwise.
 func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
+	c = loggingutil.SetAnalyzedBBID(c, bbid)
 	logging.Infof(c, "AnalyzeBuild %d", bbid)
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
