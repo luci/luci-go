@@ -23,6 +23,7 @@ import (
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/insecurecleartextkeyset"
 	"github.com/google/tink/go/keyset"
+	tinkpb "github.com/google/tink/go/proto/tink_go_proto"
 	"github.com/google/tink/go/tink"
 
 	"go.chromium.org/luci/common/errors"
@@ -196,21 +197,22 @@ func loadTinkAEADLocked(ctx context.Context, secretName string, subscribe bool) 
 		return nil, errors.Annotate(err, "failed to load Tink AEAD key %q", secretName).Err()
 	}
 
-	aead, err := deserializeKeyset(&secret)
+	aead, info, err := mergedKeyset(&secret)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to deserialize Tink AEAD key %q", secretName).Err()
 	}
+	logging.Infof(ctx, "Loaded Tink AEAD key %q (primary Tink key is %d)", secretName, info.PrimaryKeyId)
 
 	handle := &AEADHandle{}
 	handle.val.Store(aead)
 
 	if subscribe {
 		err := AddRotationHandler(ctx, secretName, func(ctx context.Context, secret Secret) {
-			aead, err := deserializeKeyset(&secret)
+			aead, info, err := mergedKeyset(&secret)
 			if err != nil {
 				logging.Errorf(ctx, "Rotated Tink AEAD key %q is broken, ignoring it: %s", secretName, err)
 			} else {
-				logging.Infof(ctx, "Tink AEAD key %q was rotated", secretName)
+				logging.Infof(ctx, "Tink AEAD key %q was rotated (primary Tink key is %d)", secretName, info.PrimaryKeyId)
 				handle.val.Store(aead)
 			}
 		})
@@ -222,10 +224,56 @@ func loadTinkAEADLocked(ctx context.Context, secretName string, subscribe bool) 
 	return handle, nil
 }
 
-func deserializeKeyset(s *Secret) (tink.AEAD, error) {
-	kh, err := insecurecleartextkeyset.Read(keyset.NewJSONReader(bytes.NewReader(s.Active)))
-	if err != nil {
-		return nil, err
+// mergedKeyset takes a secret with multiple versions of a JSON-serialized
+// unencrypted Tink keyset and builds a merged keyset out of it, and constructs
+// an AEAD primitive that uses all keys there. Additionally returns information
+// about the final keyset.
+//
+// Ignores disabled or deleted keys.
+func mergedKeyset(s *Secret) (tink.AEAD, *tinkpb.KeysetInfo, error) {
+	merged := &tinkpb.Keyset{}
+	seenKeyIDs := map[uint32]bool{}
+
+	// Adds keys from a serialized keyset to `merged`, updating its primary key.
+	appendKeySet := func(blob []byte) error {
+		ks, err := keyset.NewJSONReader(bytes.NewReader(blob)).Read()
+		if err != nil {
+			return errors.Annotate(err, "failed to deserialize Tink keyset").Err()
+		}
+		for _, key := range ks.Key {
+			if key.Status == tinkpb.KeyStatusType_ENABLED && !seenKeyIDs[key.KeyId] {
+				seenKeyIDs[key.KeyId] = true
+				merged.Key = append(merged.Key, key)
+			}
+		}
+		if !seenKeyIDs[ks.PrimaryKeyId] {
+			return errors.Reason("keyset references unknown key %d as primary", ks.PrimaryKeyId).Err()
+		}
+		merged.PrimaryKeyId = ks.PrimaryKeyId
+		return nil
 	}
-	return aead.New(kh)
+
+	// Visit all keysets. Visit the active last, to make sure we pick up its key
+	// as the final primary.
+	for idx, blob := range s.Passive {
+		if err := appendKeySet(blob); err != nil {
+			return nil, nil, errors.Annotate(err, "passive keyset #%d", idx+1).Err()
+		}
+	}
+	if err := appendKeySet(s.Active); err != nil {
+		return nil, nil, errors.Annotate(err, "active keyset").Err()
+	}
+
+	// Build an AEAD primitive out of the merged keyset.
+	kh, err := insecurecleartextkeyset.Read(&keyset.MemReaderWriter{
+		Keyset: merged,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	aead, err := aead.New(kh)
+	if err != nil {
+		return nil, nil, err
+	}
+	return aead, kh.KeysetInfo(), nil
 }

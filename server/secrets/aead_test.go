@@ -22,6 +22,7 @@ import (
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/insecurecleartextkeyset"
 	"github.com/google/tink/go/keyset"
+	tinkpb "github.com/google/tink/go/proto/tink_go_proto"
 
 	"go.chromium.org/luci/server/caching"
 
@@ -35,13 +36,7 @@ func TestAEAD(t *testing.T) {
 	Convey("With context", t, func() {
 		const secretName = "some-secret-name"
 
-		// Prep a valid keyset.
-		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
-		buf := &bytes.Buffer{}
-		So(insecurecleartextkeyset.Write(kh, keyset.NewJSONWriter(buf)), ShouldBeNil)
-
-		goodKey := buf.Bytes()
+		goodKey, _ := genTestKeySet(2)
 		badKey := []byte("this is not a valid keyset")
 
 		store := &fakeStore{expectedName: secretName}
@@ -146,6 +141,59 @@ func TestAEAD(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestMergedKeyset(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		ks1, info1 := genTestKeySet(2)
+		ks2, info2 := genTestKeySet(3)
+		ks3, info3 := genTestKeySet(1)
+
+		merged, mergedInfo, err := mergedKeyset(&Secret{
+			Active: ks3,
+			Passive: [][]byte{
+				ks1,
+				ks2,
+				ks1, // will be ignored
+			},
+		})
+		So(err, ShouldBeNil)
+		So(merged, ShouldNotBeNil)
+
+		So(mergedInfo.PrimaryKeyId, ShouldEqual, info3.PrimaryKeyId)
+		So(mergedInfo.KeyInfo, ShouldResembleProto, []*tinkpb.KeysetInfo_KeyInfo{
+			info1.KeyInfo[0],
+			info1.KeyInfo[1],
+			info2.KeyInfo[0],
+			info2.KeyInfo[1],
+			info2.KeyInfo[2],
+			info3.KeyInfo[0],
+		})
+	})
+}
+
+func genTestKeySet(keys int) ([]byte, *tinkpb.KeysetInfo) {
+	ksm := keyset.NewManager()
+	for i := 0; i < keys; i++ {
+		keyID, err := ksm.Add(aead.AES256GCMKeyTemplate())
+		if err != nil {
+			panic(err)
+		}
+		if err := ksm.SetPrimary(keyID); err != nil {
+			panic(err)
+		}
+	}
+	kh, err := ksm.Handle()
+	if err != nil {
+		panic(err)
+	}
+	buf := &bytes.Buffer{}
+	if err := insecurecleartextkeyset.Write(kh, keyset.NewJSONWriter(buf)); err != nil {
+		panic(err)
+	}
+	return buf.Bytes(), kh.KeysetInfo()
 }
 
 type fakeStore struct {
