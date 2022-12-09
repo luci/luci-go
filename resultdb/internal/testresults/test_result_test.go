@@ -18,7 +18,9 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/server/span"
 
@@ -64,6 +66,13 @@ func TestRead(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 
 		invID := invocations.ID("inv")
+		propertiesBytes, err := proto.Marshal(&structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"key": structpb.NewStringValue("value"),
+			},
+		})
+		So(err, ShouldBeNil)
+
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
@@ -77,6 +86,7 @@ func TestRead(t *testing.T) {
 				"IsUnexpected":    true,
 				"Status":          pb.TestStatus_FAIL,
 				"RunDurationUsec": 1234567,
+				"Properties":      spanutil.Compressed(propertiesBytes),
 			}),
 		)
 
@@ -92,6 +102,11 @@ func TestRead(t *testing.T) {
 			Status:      pb.TestStatus_FAIL,
 			Duration:    &durpb.Duration{Seconds: 1, Nanos: 234567000},
 			VariantHash: "deadbeef",
+			Properties: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key": structpb.NewStringValue("value"),
+				},
+			},
 		})
 	})
 }

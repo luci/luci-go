@@ -19,11 +19,16 @@ import (
 	"regexp"
 	"time"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 )
+
+const MaxSizeProperties = 4 * 1024
 
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
 
@@ -104,4 +109,21 @@ func MustDuration(du *durationpb.Duration) time.Duration {
 	}
 	d := du.AsDuration()
 	return d
+}
+
+// MustMarshal marshals a protobuf message and panics on failure.
+func MustMarshal(m protoreflect.ProtoMessage) []byte {
+	msg, err := proto.Marshal(m)
+	if err != nil {
+		panic(err)
+	}
+	return msg
+}
+
+// ValidateProperties returns a non-nil error if properties is invalid.
+func ValidateProperties(properties *structpb.Struct) error {
+	if proto.Size(properties) > MaxSizeProperties {
+		return errors.Reason("exceeds the maximum size of %d bytes", MaxSizeProperties).Err()
+	}
+	return nil
 }

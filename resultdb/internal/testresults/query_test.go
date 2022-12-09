@@ -22,6 +22,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/proto/mask"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -358,6 +359,18 @@ func TestQueryTestResults(t *testing.T) {
 			expected[0].FailureReason = &pb.FailureReason{
 				PrimaryErrorMessage: "want true, got false",
 			}
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+
+			actual, _ := mustFetch(q)
+			So(actual, ShouldResembleProto, expected)
+		})
+
+		Convey(`Properties`, func() {
+			expected := insert.MakeTestResults("inv1", "WithProperties", nil, pb.TestStatus_PASS)
+			expected[0].Properties = &structpb.Struct{Fields: map[string]*structpb.Value{
+				"key": structpb.NewStringValue("value"),
+			}}
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
 

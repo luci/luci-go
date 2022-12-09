@@ -128,6 +128,7 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
 	case msg.TestMetadata != nil && ec.isErr(ValidateTestMetadata(msg.TestMetadata), "test_metadata"):
 	case msg.FailureReason != nil && ec.isErr(ValidateFailureReason(msg.FailureReason), "failure_reason"):
+	case msg.Properties != nil && ec.isErr(ValidateProperties(msg.Properties), "properties"):
 	}
 	return err
 }

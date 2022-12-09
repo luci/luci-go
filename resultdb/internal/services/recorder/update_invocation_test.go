@@ -15,17 +15,20 @@
 package recorder
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -33,6 +36,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {
@@ -97,7 +101,22 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					Paths: []string{"bigquery_exports"},
 				},
 			}, now)
-			So(err, ShouldErrLike, `bigquery_export[0]: result_type: unspecified`)
+			So(err, ShouldErrLike, `invocation: bigquery_exports[0]: result_type: unspecified`)
+		})
+
+		Convey(`invalid properties`, func() {
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name: "invocations/inv",
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeProperties)),
+						},
+					},
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
+			}, now)
+			So(err, ShouldErrLike, `invocation: properties: exceeds the maximum size of`, `bytes`)
 		})
 
 		Convey(`valid deadline`, func() {
@@ -126,6 +145,26 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					}},
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"bigquery_exports"}},
+			}, now)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`valid properties`, func() {
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name: "invocations/inv",
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key_1": structpb.NewStringValue("value_1"),
+							"key_2": structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"child_key": structpb.NewNumberValue(1),
+								},
+							}),
+						},
+					},
+				},
+				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}, now)
 			So(err, ShouldBeNil)
 		})
@@ -173,8 +212,19 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 			},
 		}
+		validProperties := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"key_1": structpb.NewStringValue("value_1"),
+				"key_2": structpb.NewStructValue(&structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"child_key": structpb.NewNumberValue(1),
+					},
+				}),
+			},
+		}
+
 		updateMask := &field_mask.FieldMask{
-			Paths: []string{"deadline", "bigquery_exports"},
+			Paths: []string{"deadline", "bigquery_exports", "properties"},
 		}
 
 		Convey(`invalid request`, func() {
@@ -189,6 +239,7 @@ func TestUpdateInvocation(t *testing.T) {
 					Name:            "invocations/inv",
 					Deadline:        validDeadline,
 					BigqueryExports: validBigqueryExports,
+					Properties:      validProperties,
 				},
 				UpdateMask: updateMask,
 			}
@@ -204,6 +255,7 @@ func TestUpdateInvocation(t *testing.T) {
 				Name:            "invocations/inv",
 				Deadline:        validDeadline,
 				BigqueryExports: validBigqueryExports,
+				Properties:      validProperties,
 			}
 			req := &pb.UpdateInvocationRequest{
 				Invocation: expected,
@@ -214,16 +266,22 @@ func TestUpdateInvocation(t *testing.T) {
 			So(inv.Name, ShouldEqual, expected.Name)
 			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
 			So(inv.Deadline, ShouldResembleProto, expected.Deadline)
+			So(inv.Properties, ShouldResembleProto, expected.Properties)
 
 			// Read from the database.
 			actual := &pb.Invocation{
 				Name: expected.Name,
 			}
 			invID := invocations.ID("inv")
+			var compressedProperties spanutil.Compressed
 			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
 				"Deadline":        &actual.Deadline,
 				"BigQueryExports": &actual.BigqueryExports,
+				"Properties":      &compressedProperties,
 			})
+			actual.Properties = &structpb.Struct{}
+			err = proto.Unmarshal(compressedProperties, actual.Properties)
+			So(err, ShouldBeNil)
 			So(actual, ShouldResembleProto, expected)
 		})
 	})

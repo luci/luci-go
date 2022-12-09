@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -148,6 +149,15 @@ func TestValidateTestResult(t *testing.T) {
 
 		Convey("with nil duration", func() {
 			msg.Duration = nil
+			So(validate(msg), ShouldBeNil)
+		})
+
+		Convey("with valid properties", func() {
+			msg.Properties = &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key": structpb.NewStringValue("value"),
+				},
+			}
 			So(validate(msg), ShouldBeNil)
 		})
 	})
@@ -290,5 +300,15 @@ func TestValidateTestResult(t *testing.T) {
 				So(validate(msg), ShouldErrLike, "test_metadata: location: repo: required")
 			})
 		})
+
+		Convey("with too big properties", func() {
+			msg.Properties = &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeProperties)),
+				},
+			}
+			So(validate(msg), ShouldErrLike, "properties: exceeds the maximum size")
+		})
+
 	})
 }

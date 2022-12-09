@@ -154,12 +154,14 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 	selectIfIncluded("Variant", "variant")
 	selectIfIncluded("VariantHash", "variant_hash")
 	selectIfIncluded("FailureReason", "failure_reason")
+	selectIfIncluded("Properties", "properties")
 
 	// Build a parser function.
 	var b spanutil.Buffer
 	var summaryHTML spanutil.Compressed
 	var tmd spanutil.Compressed
 	var fr spanutil.Compressed
+	var properties spanutil.Compressed
 	parser = func(row *spanner.Row) (*pb.TestResult, error) {
 		var invID invocations.ID
 		var maybeUnexpected spanner.NullBool
@@ -190,7 +192,8 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 				ptrs = append(ptrs, &tr.VariantHash)
 			case "FailureReason":
 				ptrs = append(ptrs, &fr)
-
+			case "Properties":
+				ptrs = append(ptrs, &properties)
 			default:
 				panic("impossible")
 			}
@@ -212,6 +215,9 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		}
 		if err := populateFailureReason(tr, fr); err != nil {
 			return nil, errors.Annotate(err, "error unmarshalling failure_reason for %s", trName).Err()
+		}
+		if err := populateProperties(tr, properties); err != nil {
+			return nil, errors.Annotate(err, "failed to unmarshal properties").Err()
 		}
 		if err := q.Mask.Trim(tr); err != nil {
 			return nil, errors.Annotate(err, "error trimming fields for %s", trName).Err()

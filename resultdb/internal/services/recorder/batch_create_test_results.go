@@ -16,7 +16,6 @@ package recorder
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -184,18 +183,13 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		"Tags":            ret.Tags,
 	}
 	if ret.TestMetadata != nil {
-		if tmd, err := proto.Marshal(ret.TestMetadata); err != nil {
-			panic(fmt.Sprintf("failed to marshal TestMetadata to bytes: %q", err))
-		} else {
-			row["TestMetadata"] = spanutil.Compressed(tmd)
-		}
+		row["TestMetadata"] = spanutil.Compressed(pbutil.MustMarshal(ret.TestMetadata))
 	}
 	if ret.FailureReason != nil {
-		if fr, err := proto.Marshal(ret.FailureReason); err != nil {
-			panic(fmt.Sprintf("failed to marshal FailureReason to bytes: %q", err))
-		} else {
-			row["FailureReason"] = spanutil.Compressed(fr)
-		}
+		row["FailureReason"] = spanutil.Compressed(pbutil.MustMarshal(ret.FailureReason))
+	}
+	if ret.Properties != nil {
+		row["Properties"] = spanutil.Compressed(pbutil.MustMarshal(ret.Properties))
 	}
 	mutation := spanner.InsertOrUpdateMap("TestResults", spanutil.ToSpannerMap(row))
 	return ret, mutation

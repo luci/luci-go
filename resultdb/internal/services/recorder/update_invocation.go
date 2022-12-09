@@ -52,8 +52,13 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		case "bigquery_exports":
 			for i, bqExport := range req.Invocation.GetBigqueryExports() {
 				if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
-					return errors.Annotate(err, "bigquery_export[%d]", i).Err()
+					return errors.Annotate(err, "invocation: bigquery_exports[%d]", i).Err()
 				}
+			}
+
+		case "properties":
+			if err := pbutil.ValidateProperties(req.Invocation.Properties); err != nil {
+				return errors.Annotate(err, "invocation: properties").Err()
 			}
 
 		default:
@@ -97,6 +102,10 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				bqExports := in.Invocation.BigqueryExports
 				values["BigQueryExports"] = bqExports
 				ret.BigqueryExports = bqExports
+
+			case "properties":
+				values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.Properties))
+				ret.Properties = in.Invocation.Properties
 
 			default:
 				panic("impossible")

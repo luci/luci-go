@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -156,6 +157,13 @@ func TestQueryTestVariants(t *testing.T) {
 			PrimaryErrorMessage: "primary error msg",
 		}
 		failureReasonBytes, _ := proto.Marshal(failureReason)
+		properties := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"key": structpb.NewStringValue("value"),
+			},
+		}
+		propertiesBytes, err := proto.Marshal(properties)
+		So(err, ShouldBeNil)
 
 		testutil.MustApply(ctx,
 			spanutil.InsertMap("TestResults", map[string]interface{}{
@@ -173,6 +181,7 @@ func TestQueryTestVariants(t *testing.T) {
 				"FailureReason":   spanutil.Compressed(failureReasonBytes),
 				"Tags":            pbutil.StringPairsToStrings(strPairs...),
 				"TestMetadata":    spanutil.Compressed(tmdBytes),
+				"Properties":      spanutil.Compressed(propertiesBytes),
 			}),
 		)
 
@@ -222,6 +231,11 @@ func TestQueryTestVariants(t *testing.T) {
 						SummaryHtml: "SummaryHtml",
 						FailureReason: &pb.FailureReason{
 							PrimaryErrorMessage: "primary error msg",
+						},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"key": structpb.NewStringValue("value"),
+							},
 						},
 						Tags: strPairs,
 					},
@@ -357,6 +371,7 @@ func TestQueryTestVariants(t *testing.T) {
 							So(result.Result.Tags, ShouldNotBeNil)
 							if tv.TestId == "T4" {
 								So(result.Result.FailureReason, ShouldNotBeNil)
+								So(result.Result.Properties, ShouldNotBeNil)
 							}
 							So(result, ShouldResembleProto, &pb.TestResultBundle{
 								Result: &pb.TestResult{
@@ -369,6 +384,7 @@ func TestQueryTestVariants(t *testing.T) {
 									Duration:      result.Result.Duration,
 									Tags:          result.Result.Tags,
 									FailureReason: result.Result.FailureReason,
+									Properties:    result.Result.Properties,
 								},
 							})
 						}

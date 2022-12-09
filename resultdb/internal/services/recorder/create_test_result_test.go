@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -42,6 +43,17 @@ import (
 // validCreateTestResultRequest returns a valid CreateTestResultRequest message.
 func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.CreateTestResultRequest {
 	trName := fmt.Sprintf("invocations/%s/tests/%s/results/result-id-0", invName, testID)
+	properties, err := structpb.NewStruct(map[string]interface{}{
+		"key_1": "value_1",
+		"key_2": map[string]interface{}{
+			"child_key": 1,
+		},
+	})
+	if err != nil {
+		// Should never fail.
+		panic(err)
+	}
+
 	return &pb.CreateTestResultRequest{
 		Invocation: invName,
 		RequestId:  "request-id-123",
@@ -66,6 +78,7 @@ func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cre
 			FailureReason: &pb.FailureReason{
 				PrimaryErrorMessage: "got 1, want 0",
 			},
+			Properties: properties,
 		},
 	}
 }

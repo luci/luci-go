@@ -22,6 +22,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -137,6 +138,7 @@ type tvResult struct {
 	SummaryHTML     []byte
 	FailureReason   []byte
 	Tags            []string
+	Properties      []byte
 }
 
 // resultSelectColumns returns a list of columns needed to fetch `tvResult`s
@@ -170,6 +172,7 @@ func (q *Query) resultSelectColumns() []string {
 	selectIfIncluded("SummaryHTML", "results.*.result.summary_html")
 	selectIfIncluded("FailureReason", "results.*.result.failure_reason")
 	selectIfIncluded("Tags", "results.*.result.tags")
+	selectIfIncluded("Properties", "results.*.result.properties")
 
 	return columnSet.ToSortedSlice()
 }
@@ -223,6 +226,15 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 		tr.FailureReason = &pb.FailureReason{}
 
 		if err := q.decompressProto(r.FailureReason, tr.FailureReason); err != nil {
+			return nil, err
+		}
+	}
+	if len(r.Properties) != 0 {
+		// Don't initialize properties when r.Properties is empty so
+		// it won't produce {"Properties": {}} when serialized to JSON.
+		tr.Properties = &structpb.Struct{}
+
+		if err := q.decompressProto(r.Properties, tr.Properties); err != nil {
 			return nil, err
 		}
 	}

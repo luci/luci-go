@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -75,6 +76,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	var summaryHTML spanutil.Compressed
 	var tmd spanutil.Compressed
 	var fr spanutil.Compressed
+	var properties spanutil.Compressed
 	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":         &tr.Variant,
 		"VariantHash":     &tr.VariantHash,
@@ -86,6 +88,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 		"Tags":            &tr.Tags,
 		"TestMetadata":    &tmd,
 		"FailureReason":   &fr,
+		"Properties":      &properties,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -103,6 +106,9 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	}
 	if err := populateFailureReason(tr, fr); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal failure reason").Err()
+	}
+	if err := populateProperties(tr, properties); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal properties").Err()
 	}
 	return tr, nil
 }
@@ -136,4 +142,13 @@ func populateFailureReason(tr *pb.TestResult, fr spanutil.Compressed) error {
 
 	tr.FailureReason = &pb.FailureReason{}
 	return proto.Unmarshal(fr, tr.FailureReason)
+}
+
+func populateProperties(tr *pb.TestResult, properties spanutil.Compressed) error {
+	if len(properties) == 0 {
+		return nil
+	}
+
+	tr.Properties = &structpb.Struct{}
+	return proto.Unmarshal(properties, tr.Properties)
 }

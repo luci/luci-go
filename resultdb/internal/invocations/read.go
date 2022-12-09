@@ -19,6 +19,8 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -71,6 +73,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.ProducerResource,
 		 i.Realm,
 		 i.HistoryTime,
+		 i.Properties,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -87,6 +90,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		var producerResource spanner.NullString
 		var realm spanner.NullString
 		var historyTime *timestamppb.Timestamp
+		var properties spanutil.Compressed
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -98,7 +102,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&included,
 			&producerResource,
 			&realm,
-			&historyTime)
+			&historyTime,
+			&properties)
 		if err != nil {
 			return err
 		}
@@ -112,6 +117,13 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		if historyTime != nil {
 			inv.HistoryOptions = &pb.HistoryOptions{
 				UseInvocationTimestamp: true,
+			}
+		}
+
+		if len(properties) != 0 {
+			inv.Properties = &structpb.Struct{}
+			if err := proto.Unmarshal(properties, inv.Properties); err != nil {
+				return err
 			}
 		}
 
