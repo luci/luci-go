@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "google/api/field_behavior.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
@@ -28,7 +29,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 //
-// Next id: 14.
+// Next id: 15.
 message Invocation {
   reserved 3; // bool interrupted, crbug.com/1078696.
 
@@ -142,6 +143,12 @@ message Invocation {
 
   // Specifies if/how to index the contents of this invocation.
   HistoryOptions history_options = 13;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the invocation.
+  //
+  // The serialized size must be <= 4096 bytes.
+  google.protobuf.Struct properties = 14;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported

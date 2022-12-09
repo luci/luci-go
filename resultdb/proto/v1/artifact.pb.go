@@ -50,10 +50,11 @@ type Artifact struct {
 
 	// Can be used to refer to this artifact.
 	// Format:
-	// - For invocation-level artifacts:
-	//   "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
-	// - For test-result-level artifacts:
-	//   "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+	//   - For invocation-level artifacts:
+	//     "invocations/{INVOCATION_ID}/artifacts/{ARTIFACT_ID}".
+	//   - For test-result-level artifacts:
+	//     "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+	//
 	// where URL_ESCAPED_TEST_ID is the test_id escaped with
 	// https://golang.org/pkg/net/url/#PathEscape (see also https://aip.dev/122),
 	// and ARTIFACT_ID is documented below.

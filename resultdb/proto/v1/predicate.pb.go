@@ -250,6 +250,7 @@ type VariantPredicate struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Predicate:
+	//
 	//	*VariantPredicate_Equals
 	//	*VariantPredicate_Contains
 	Predicate isVariantPredicate_Predicate `protobuf_oneof:"predicate"`
@@ -335,9 +336,9 @@ type ArtifactPredicate struct {
 	// Specifies which edges to follow when retrieving directly/indirectly
 	// included artifacts.
 	// For example,
-	// - to retrieve only invocation-level artifacts, use
-	//   {included_invocations: true}.
-	// - to retrieve only test-result-level artifacts, use {test_results: true}.
+	//   - to retrieve only invocation-level artifacts, use
+	//     {included_invocations: true}.
+	//   - to retrieve only test-result-level artifacts, use {test_results: true}.
 	//
 	// By default, follows all edges.
 	FollowEdges *ArtifactPredicate_EdgeTypeSet `protobuf:"bytes,1,opt,name=follow_edges,json=followEdges,proto3" json:"follow_edges,omitempty"` // defaults to All.

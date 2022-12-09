@@ -446,9 +446,10 @@ type CreateTestResultRequest struct {
 	//
 	// Impl note: this field is used to compute the spanner-level result id, which
 	// will encode tuple (request_id, index_of_request)", where
-	// - request_id is a random GUID if not provided by the user
-	// - index_of_request is 0 in CreateTestResult RPC, or index of the request
-	//   in BatchCreateTestResultsRequest in the batch RPC.
+	//   - request_id is a random GUID if not provided by the user
+	//   - index_of_request is 0 in CreateTestResult RPC, or index of the request
+	//     in BatchCreateTestResultsRequest in the batch RPC.
+	//
 	// TODO(jchinlee): remove this impl note when it is converted into code.
 	RequestId string `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 }
@@ -526,7 +527,6 @@ type BatchCreateTestResultsRequest struct {
 	// A random UUID is recommended.
 	// This request is only idempotent if a `request_id` is provided, so it is
 	// strongly recommended to populate this field.
-	//
 	RequestId string `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 }
 

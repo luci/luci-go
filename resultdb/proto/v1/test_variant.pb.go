@@ -122,7 +122,7 @@ type TestVariant struct {
 	// e.g. a specific bucket, builder and a test suite.
 	Variant *Variant `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
 	// Hash of the variant.
-	// hex(sha256(sorted(''.join('%s:%s\n' for k, v in variant.items())))).
+	// hex(sha256(sorted(”.join('%s:%s\n' for k, v in variant.items())))).
 	VariantHash string `protobuf:"bytes,3,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
 	// Status of the test variant.
 	Status TestVariantStatus `protobuf:"varint,4,opt,name=status,proto3,enum=luci.resultdb.v1.TestVariantStatus" json:"status,omitempty"`
