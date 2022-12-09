@@ -568,31 +568,6 @@ func TestValidateProject(t *testing.T) {
 			So(allErrs, ShouldContainSubstring, `key "is_experimental": reserved key`)
 		})
 	})
-
-	Convey("validateTopicName", t, func() {
-		Convey("wrong topic name", func() {
-			_, _, err := validateTopicName("projects/adsf/")
-			So(err, ShouldErrLike, `topic "projects/adsf/" does not match "^projects/(.*)/topics/(.*)$"`)
-		})
-		Convey("wrong project identifier", func() {
-			_, _, err := validateTopicName("projects/pro/topics/topic1")
-			So(err, ShouldErrLike, `cloud project id "pro" does not match "^[a-z]([a-z0-9-]){4,28}[a-z0-9]$"`)
-		})
-		Convey("wrong topic id prefix", func() {
-			_, _, err := validateTopicName("projects/cloud-project/topics/goog11")
-			So(err, ShouldErrLike, `topic id "goog11" shouldn't begin with the string goog`)
-		})
-		Convey("wrong topic id format", func() {
-			_, _, err := validateTopicName("projects/cloud-project/topics/abc##")
-			So(err, ShouldErrLike, `topic id "abc##" does not match "^[A-Za-z]([0-9A-Za-z\\._\\-~+%]){3,255}$"`)
-		})
-		Convey("success", func() {
-			cloudProj, topic, err := validateTopicName("projects/cloud-project/topics/mytopic")
-			So(err, ShouldBeNil)
-			So(cloudProj, ShouldEqual, "cloud-project")
-			So(topic, ShouldEqual, "mytopic")
-		})
-	})
 }
 
 func TestUpdateProject(t *testing.T) {

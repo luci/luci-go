@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -30,8 +29,6 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
-	"go.chromium.org/luci/buildbucket/protoutil"
-
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
@@ -174,7 +171,7 @@ func init() {
 		Queue:     "backend-go-default",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.NotifyPubSubGo)
-			return PublishBuildsV2Notification(ctx, t.BuildId)
+			return PublishBuildsV2Notification(ctx, t.BuildId, t.Topic)
 		},
 	})
 
@@ -192,10 +189,7 @@ func init() {
 			}
 			return &tq.CustomPayload{
 				Body: blob,
-				Meta: map[string]string{
-					"project":      t.Build.Builder.GetProject(),
-					"is_completed": strconv.FormatBool(protoutil.IsEnded(t.Build.Status)),
-				},
+				Meta: generateBuildsV2Attributes(t.Build),
 			}, nil
 		},
 	})

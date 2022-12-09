@@ -10,6 +10,7 @@ option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskd
 
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import  "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
 // A task to cancel a Swarming task.
 message CancelSwarmingTask {
@@ -76,10 +77,14 @@ message NotifyPubSub {
   bool callback = 2;
 }
 
-// A task to send a build notification on `builds_v2` Pub/Sub.
+// A task to send a build notification when a build status changes.
 message NotifyPubSubGo {
   // ID of a build in the datastore. See model.Build.
   int64 build_id = 1;
+
+  // An external topic which a build notification should be sent to.
+  // If nil or empty, will send to the internal `builds_v2_pubsub` topic.
+  buildbucket.BuildbucketCfg.Topic topic = 2;
 }
 
 // A task to cancel a build.

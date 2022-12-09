@@ -16,8 +16,10 @@ package tasks
 
 import (
 	"context"
+	"strconv"
 
-	"go.chromium.org/luci/buildbucket/appengine/internal/compression"
+	"cloud.google.com/go/pubsub"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -27,8 +29,11 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
+	"go.chromium.org/luci/buildbucket/appengine/internal/compression"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 func notifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
@@ -49,6 +54,11 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 	}); err != nil {
 		return errors.Annotate(err, "failed to enqueue global pubsub notification task: %d", b.ID).Err()
 	}
+	// TODO(yuanjunh@):  Complete in next CL to hook up the entire flow.
+	// 1. enqueue a NotifyPubSubGo task to notify `builds_v2_pubsub` topic
+	// 2. fetch Project entity to see how many extra NotifyPubSubGo tasks needed
+	// to generate to notify external topics.
+
 	if b.PubSubCallback.Topic == "" {
 		return nil
 	}
@@ -64,8 +74,8 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 }
 
 // PublishBuildsV2Notification is the handler of notify-pubsub-go where it
-// fetches all build fields, converts and publishes to builds_v2 pubsub.
-func PublishBuildsV2Notification(ctx context.Context, buildID int64) error {
+// fetches all build fields, converts and publishes to builds_v2_pubsub.
+func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.BuildbucketCfg_Topic) error {
 	b := &model.Build{ID: buildID}
 	switch err := datastore.Get(ctx, b); {
 	case err == datastore.ErrNoSuchEntity:
@@ -94,18 +104,77 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64) error {
 	p.Input.Properties = nil
 	p.Output.Properties = nil
 
-	data, err := proto.Marshal(buildLarge)
+	buildLargeBytes, err := proto.Marshal(buildLarge)
 	if err != nil {
 		return errors.Annotate(err, "failed to marshal buildLarge").Err()
 	}
-	compressed, err := compression.ZlibCompress(data)
+	var compressed []byte
+	// If topic is nil or empty, it gets Compression_ZLIB.
+	switch topic.GetCompression() {
+	case pb.Compression_ZLIB:
+		compressed, err = compression.ZlibCompress(buildLargeBytes)
+	case pb.Compression_ZSTD:
+		compressed = make([]byte, 0, len(buildLargeBytes)/2) // hope for at least 2x compression
+		compressed = compression.ZstdCompress(buildLargeBytes, compressed)
+	default:
+		return tq.Fatal.Apply(errors.Reason("unsupported compression method %s", topic.GetCompression().String()).Err())
+	}
 	if err != nil {
 		return errors.Annotate(err, "failed to compress large fields for %d", buildID).Err()
 	}
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: &taskdefs.BuildsV2PubSub{
-			Build:            p,
-			BuildLargeFields: compressed,
-		},
+
+	msg := &taskdefs.BuildsV2PubSub{
+		Build:            p,
+		BuildLargeFields: compressed,
+		Compression: topic.GetCompression(),
+	}
+
+	if topic.GetName() == "" {
+		//  publish to the internal `builds_v2_pubsub`
+		return tq.AddTask(ctx, &tq.Task{
+			Payload: msg,
+		})
+	}
+	return publishToExternalTopic(ctx, msg, topic.Name, b.Project)
+}
+
+// publishToExternalTopic publishes BuildsV2PubSub msg to the given external
+// topic with the identity of the current luci project scoped account.
+func publishToExternalTopic(ctx context.Context, msg *taskdefs.BuildsV2PubSub, topicName, luciProject string) error {
+	cloudProj, topicID, err := clients.ValidatePubSubTopicName(topicName)
+	if err != nil {
+		return tq.Fatal.Apply(err)
+	}
+
+	psClient, err := clients.NewPubsubClient(ctx, cloudProj, luciProject)
+	defer psClient.Close()
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+
+	blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(msg)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+
+	topic := psClient.Topic(topicID)
+	defer topic.Stop()
+	result := topic.Publish(ctx, &pubsub.Message{
+		Attributes: generateBuildsV2Attributes(msg.GetBuild()),
+		Data:       blob,
 	})
+	_, err = result.Get(ctx)
+	return transient.Tag.Apply(err)
+}
+
+func generateBuildsV2Attributes(b *pb.Build) map[string]string {
+	if b == nil {
+		return map[string]string{}
+	}
+	return map[string]string{
+		"project":      b.Builder.GetProject(),
+		"bucket":       b.Builder.GetBucket(),
+		"builder":      b.Builder.GetBuilder(),
+		"is_completed": strconv.FormatBool(protoutil.IsEnded(b.Status)),
+	}
 }
