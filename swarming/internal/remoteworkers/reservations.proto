@@ -78,7 +78,13 @@ message Reservation {
 
   // The requirements of this reservation. Cannot be modified by
   // UpdateReservation.
-  google.devtools.remoteworkers.v1test2.Worker requirements = 6;
+  // DEPRECATED: use constraints instead.
+  google.devtools.remoteworkers.v1test2.Worker requirements = 6
+      [deprecated = true];
+
+  // The constraints that a worker must satisfy to be eligible to execute this
+  // reservation.
+  repeated Constraint constraints = 13 [(google.api.field_behavior) = OPTIONAL];
 
   // The time after which the client no longer cares about this reservation. The
   // lease must be *completed* by this time, not started.
@@ -115,6 +121,17 @@ message Reservation {
   // reservation represents one of several actions to be performed as part of a
   // particular job, the group ID may be the ID of that job.
   string group_id = 11 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// A constraint that a worker must satisfy to be eligible to execute a
+// reservation.
+message Constraint {
+  // The name of the property to which this constraint applies.
+  string key = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The set of values, at least one of which must be reported by the worker to
+  // be eligible to execute the reservation.
+  repeated string allowed_values = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
 // The state of the reservation.
