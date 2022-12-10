@@ -31,12 +31,17 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 )
@@ -86,9 +91,22 @@ type Server struct {
 // New constructs new Server.
 func New(ctx context.Context, r *router.Router, pollTokenSecret string) (*Server, error) {
 	srv := &Server{
-		router:      r,
+		router: r,
 		middlewares: router.MiddlewareChain{
-			// TODO(vadimsh): Install authentication middleware.
+			// All supported bot authentication schemes. The first matching one wins.
+			auth.Authenticate(
+				// This checks "X-Luci-Gce-Vm-Token" header if present.
+				&openid.GoogleComputeAuthMethod{
+					Header:        "X-Luci-Gce-Vm-Token",
+					AudienceCheck: openid.AudienceMatchesHost,
+				},
+				// This checks "X-Luci-Machine-Token" header if present.
+				&machine.MachineTokenAuthMethod{},
+				// This checks "Authorization" header if present.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+			),
 		},
 	}
 
@@ -137,7 +155,9 @@ func (s *Server) InstallHandler(route string, h Handler) {
 
 		// Log some information about the request.
 		logging.Infof(ctx, "Bot ID: %s", botID(pollState))
+		logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
 		logging.Infof(ctx, "Bot version: %s", body.Version)
+		logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
 		logging.Infof(ctx, "Poll token ID: %s", pollState.Id)
 		logging.Infof(ctx, "RBE: %s", pollState.RbeInstance)
 		if pollState.DebugInfo != nil {
@@ -150,8 +170,15 @@ func (s *Server) InstallHandler(route string, h Handler) {
 			return
 		}
 
-		// TODO(vadimsh): Verify the bot credentials match what's recorded in the
-		// poll token.
+		// Verify bot credentials match what's recorded in the poll token.
+		if err := checkCredentials(ctx, pollState); err != nil {
+			if transient.Tag.In(err) {
+				writeErr(ctx, wrt, status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
+			} else {
+				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
+			}
+			return
+		}
 
 		// Apply verified state stored in PollState on top of whatever was reported
 		// by the bot. Normally functioning bots should report the same values as
@@ -231,6 +258,77 @@ func (s *Server) validatePollToken(tok []byte) (*internalspb.PollState, error) {
 		return nil, errors.Annotate(err, "failed to deserialize PollState").Err()
 	}
 	return &payload, nil
+}
+
+// checkCredentials checks the bot credentials in the context match what is
+// required by the PollState.
+//
+// It ensures the Go portion of the Swarming server authenticates the bot in
+// the exact same way the Python portion did (since the Python portion produced
+// the PollState after it authenticated the bot).
+func checkCredentials(ctx context.Context, pollState *internalspb.PollState) error {
+	switch m := pollState.AuthMethod.(type) {
+	case *internalspb.PollState_GceAuth:
+		gceInfo := openid.GetGoogleComputeTokenInfo(ctx)
+		if gceInfo == nil {
+			return errors.Reason("expecting GCE VM token auth").Err()
+		}
+		if gceInfo.Project != m.GceAuth.GceProject || gceInfo.Instance != m.GceAuth.GceInstance {
+			logging.Errorf(ctx, "Bad GCE VM auth: want %s@%s, got %s@%s",
+				m.GceAuth.GceInstance, m.GceAuth.GceProject,
+				gceInfo.Instance, gceInfo.Project,
+			)
+			return errors.Reason("wrong GCE VM token: %s@%s", gceInfo.Instance, gceInfo.Project).Err()
+		}
+
+	case *internalspb.PollState_ServiceAccountAuth_:
+		peerID := auth.GetState(ctx).PeerIdentity()
+		if peerID.Kind() != identity.User {
+			return errors.Reason("expecting service account credentials").Err()
+		}
+		if peerID.Email() != m.ServiceAccountAuth.ServiceAccount {
+			logging.Errorf(ctx, "Bad service account auth: want %s, got %s",
+				m.ServiceAccountAuth.ServiceAccount,
+				peerID.Email(),
+			)
+			return errors.Reason("wrong service account: %s", peerID.Email()).Err()
+		}
+
+	case *internalspb.PollState_LuciMachineTokenAuth:
+		tokInfo := machine.GetMachineTokenInfo(ctx)
+		if tokInfo == nil {
+			return errors.Reason("expecting LUCI machine token auth").Err()
+		}
+		if tokInfo.FQDN != m.LuciMachineTokenAuth.MachineFqdn {
+			logging.Errorf(ctx, "Bad LUCI machine token FQDN: want %s, got %s",
+				m.LuciMachineTokenAuth.MachineFqdn,
+				tokInfo.FQDN,
+			)
+			return errors.Reason("wrong FQDN in the LUCI machine token: %s", tokInfo.FQDN).Err()
+		}
+
+	case *internalspb.PollState_IpAllowlistAuth:
+		// The actual check is below. Here we just verify the PollState token is
+		// consistent.
+		if pollState.IpAllowlist == "" {
+			return errors.Reason("bad poll token: using IP allowlist auth without an IP allowlist").Err()
+		}
+
+	default:
+		return errors.Reason("unrecognized auth method in the poll token: %v", pollState.AuthMethod).Err()
+	}
+
+	// Verify the bot is in the required IP allowlist (if any).
+	if pollState.IpAllowlist != "" {
+		switch yes, err := auth.IsInWhitelist(ctx, pollState.IpAllowlist); {
+		case err != nil:
+			return errors.Annotate(err, "IP allowlist check failed").Tag(transient.Tag).Err()
+		case !yes:
+			return errors.Reason("bot IP %s is not in the allowlist", auth.GetState(ctx).PeerIP()).Err()
+		}
+	}
+
+	return nil
 }
 
 // writeErr logs a gRPC error and writes it to the HTTP response.

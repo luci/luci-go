@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -31,9 +32,14 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 
@@ -48,6 +54,13 @@ func TestBotHandler(t *testing.T) {
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, now)
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "bot:ignored",
+			UserExtra: &machine.MachineTokenInfo{
+				FQDN: "bot.fqdn",
+			},
+		})
 
 		var pollTokenKey atomic.Value
 		pollTokenKey.Store(secrets.Secret{
@@ -100,6 +113,11 @@ func TestBotHandler(t *testing.T) {
 				EnforcedDimensions: []*internalspb.PollState_Dimension{
 					{Key: "id", Values: []string{"bot-id"}},
 				},
+				AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
+					LuciMachineTokenAuth: &internalspb.PollState_LUCIMachineTokenAuth{
+						MachineFqdn: "bot.fqdn",
+					},
+				},
 			}
 
 			req := RequestBody{
@@ -121,6 +139,41 @@ func TestBotHandler(t *testing.T) {
 			So(resp, ShouldEqual, "\"some-response\"\n")
 			So(seenReq.Body, ShouldResemble, &req)
 			So(seenReq.PollState, ShouldResembleProto, pollToken)
+		})
+
+		Convey("Wrong bot credentials", func() {
+			pollToken := &internalspb.PollState{
+				Id:          "poll-state-id",
+				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
+				RbeInstance: "some-rbe-instance",
+				EnforcedDimensions: []*internalspb.PollState_Dimension{
+					{Key: "id", Values: []string{"bot-id"}},
+				},
+				AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
+					LuciMachineTokenAuth: &internalspb.PollState_LUCIMachineTokenAuth{
+						MachineFqdn: "another.fqdn",
+					},
+				},
+			}
+
+			req := RequestBody{
+				Dimensions: map[string][]string{
+					"id": {"bot-id"},
+				},
+				State: map[string]interface{}{
+					"state": "val",
+				},
+				Version: "some-bot-version",
+				RBEState: RBEState{
+					Instance:  "some-rbe-instance",
+					PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
+				},
+			}
+
+			seenReq, status, resp := call(req, "some-response", nil)
+			So(seenReq, ShouldBeNil)
+			So(status, ShouldEqual, http.StatusUnauthorized)
+			So(resp, ShouldContainSubstring, "bad bot credentials: wrong FQDN in the LUCI machine token")
 		})
 
 		Convey("Bad Content-Type", func() {
@@ -178,6 +231,11 @@ func TestBotHandler(t *testing.T) {
 					{Key: "override-1", Values: []string{"a"}},
 					{Key: "override-2", Values: []string{"b", "a"}},
 					{Key: "inject", Values: []string{"a"}},
+				},
+				AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
+					LuciMachineTokenAuth: &internalspb.PollState_LUCIMachineTokenAuth{
+						MachineFqdn: "bot.fqdn",
+					},
 				},
 			}
 
@@ -270,6 +328,173 @@ func TestValidatePollToken(t *testing.T) {
 			))
 			So(err, ShouldErrLike, "bad poll token HMAC")
 		})
+	})
+}
+
+func TestCheckCredentials(t *testing.T) {
+	t.Parallel()
+
+	Convey("No creds", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: identity.AnonymousIdentity,
+		})
+
+		err := checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_GceAuth{
+				GceAuth: &internalspb.PollState_GCEAuth{
+					GceProject:  "some-project",
+					GceInstance: "some-instance",
+				},
+			},
+		})
+		So(err, ShouldErrLike, "expecting GCE VM token auth")
+
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_ServiceAccountAuth_{
+				ServiceAccountAuth: &internalspb.PollState_ServiceAccountAuth{
+					ServiceAccount: "some-account@example.com",
+				},
+			},
+		})
+		So(err, ShouldErrLike, "expecting service account credentials")
+
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
+				LuciMachineTokenAuth: &internalspb.PollState_LUCIMachineTokenAuth{
+					MachineFqdn: "some.fqdn",
+				},
+			},
+		})
+		So(err, ShouldErrLike, "expecting LUCI machine token auth")
+
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod:  &internalspb.PollState_IpAllowlistAuth{},
+			IpAllowlist: "some-ip-allowlist",
+		})
+		So(err, ShouldErrLike, "is not in the allowlist")
+	})
+
+	Convey("GCE auth", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: "bot:ignored",
+			UserExtra: &openid.GoogleComputeTokenInfo{
+				Project:  "some-project",
+				Instance: "some-instance",
+			},
+		})
+
+		// OK.
+		err := checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_GceAuth{
+				GceAuth: &internalspb.PollState_GCEAuth{
+					GceProject:  "some-project",
+					GceInstance: "some-instance",
+				},
+			},
+		})
+		So(err, ShouldBeNil)
+
+		// Wrong parameters #1.
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_GceAuth{
+				GceAuth: &internalspb.PollState_GCEAuth{
+					GceProject:  "another-project",
+					GceInstance: "some-instance",
+				},
+			},
+		})
+		So(err, ShouldErrLike, "wrong GCE VM token")
+
+		// Wrong parameters #2.
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_GceAuth{
+				GceAuth: &internalspb.PollState_GCEAuth{
+					GceProject:  "some-project",
+					GceInstance: "another-instance",
+				},
+			},
+		})
+		So(err, ShouldErrLike, "wrong GCE VM token")
+	})
+
+	Convey("Service account auth", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: "user:some-account@example.com",
+		})
+
+		// OK.
+		err := checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_ServiceAccountAuth_{
+				ServiceAccountAuth: &internalspb.PollState_ServiceAccountAuth{
+					ServiceAccount: "some-account@example.com",
+				},
+			},
+		})
+		So(err, ShouldBeNil)
+
+		// Wrong email.
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_ServiceAccountAuth_{
+				ServiceAccountAuth: &internalspb.PollState_ServiceAccountAuth{
+					ServiceAccount: "another-account@example.com",
+				},
+			},
+		})
+		So(err, ShouldErrLike, "wrong service account")
+	})
+
+	Convey("Machine token auth", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: "bot:ignored",
+			UserExtra: &machine.MachineTokenInfo{
+				FQDN: "some.fqdn",
+			},
+		})
+
+		// OK.
+		err := checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
+				LuciMachineTokenAuth: &internalspb.PollState_LUCIMachineTokenAuth{
+					MachineFqdn: "some.fqdn",
+				},
+			},
+		})
+		So(err, ShouldBeNil)
+
+		// Wrong FQDN.
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
+				LuciMachineTokenAuth: &internalspb.PollState_LUCIMachineTokenAuth{
+					MachineFqdn: "another.fqdn",
+				},
+			},
+		})
+		So(err, ShouldErrLike, "wrong FQDN in the LUCI machine token")
+	})
+
+	Convey("IP allowlist", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity:       identity.AnonymousIdentity,
+			PeerIPOverride: net.ParseIP("127.1.1.1"),
+			FakeDB: authtest.NewFakeDB(
+				authtest.MockIPWhitelist("127.1.1.1", "good"),
+				authtest.MockIPWhitelist("127.2.2.2", "bad"),
+			),
+		})
+
+		// OK.
+		err := checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod:  &internalspb.PollState_IpAllowlistAuth{},
+			IpAllowlist: "good",
+		})
+		So(err, ShouldBeNil)
+
+		// Wrong IP.
+		err = checkCredentials(ctx, &internalspb.PollState{
+			AuthMethod:  &internalspb.PollState_IpAllowlistAuth{},
+			IpAllowlist: "bad",
+		})
+		So(err, ShouldErrLike, "bot IP 127.1.1.1 is not in the allowlist")
 	})
 }
 
