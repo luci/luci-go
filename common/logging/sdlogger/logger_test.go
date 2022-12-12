@@ -88,7 +88,7 @@ type fakeCloudErrorsSink struct {
 
 func (f *fakeCloudErrorsSink) Write(l *LogEntry) {
 	if l.Severity == ErrorSeverity {
-		errRptEntry := prepErrorReportingEntry(l)
+		errRptEntry := prepErrorReportingEntry(l, nil)
 		f.errRptEntry = &errRptEntry
 	}
 	f.Out.Write(l)
@@ -150,7 +150,7 @@ func TestErrorReporting(t *testing.T) {
 			logging.Errorf(c, "test error")
 
 			So(fakeErrSink.errRptEntry.Error.Error(), ShouldEqual, "test error (Log Trace ID: trace123)")
-			So(fakeErrSink.errRptEntry.Stack, ShouldBeNil)
+			So(fakeErrSink.errRptEntry.Stack, ShouldNotBeNil)
 			So(read(buf), ShouldResemble, &LogEntry{
 				Message:   "test error",
 				Severity:  ErrorSeverity,
@@ -173,5 +173,70 @@ func TestErrorReporting(t *testing.T) {
 				TraceID:   "trace123",
 			})
 		})
+	})
+}
+
+func TestCleanupStack(t *testing.T) {
+	t.Parallel()
+
+	call := func(s string) string {
+		return string(cleanupStack([]byte(s)))
+	}
+
+	Convey("Works", t, func() {
+		stack := `goroutine 19 [running]:
+go.chromium.org/luci/common/logging/sdlogger.prepErrorReportingEntry(0xc0001abea0, 0x0)
+	zzz/go.chromium.org/luci/common/logging/sdlogger/logger.go:210 +0x1d9
+go.chromium.org/luci/common/logging/sdlogger.(*fakeCloudErrorsSink).Write(0xc0001913b0, 0xc0001abea0)
+	zzz/infra/go/src/go.chromium.org/luci/common/logging/sdlogger/logger_test.go:91 +0x65
+go.chromium.org/luci/common/logging/sdlogger.(*jsonLogger).LogCall(0xc0001da0c0, 0x3, 0x0?, {0x1683678, 0xa}, {0x0, 0x0, 0x0})
+	zzz/infra/go/src/go.chromium.org/luci/common/logging/sdlogger/logger.go:311 +0x2f2
+go.chromium.org/luci/common/logging.Errorf({0x176d680?, 0xc0001913e0?}, {0x1683678, 0xa}, {0x0, 0x0, 0x0})
+	zzz/infra/go/src/go.chromium.org/luci/common/logging/exported.go:50 +0x71
+go.chromium.org/luci/common/some/package.SomeCall.func2.2()
+	zzz/infra/go/src/go.chromium.org/luci/common/some/package/file.go:150 +0x166
+`
+
+		expected := `goroutine 19 [running]:
+go.chromium.org/luci/common/some/package.SomeCall.func2.2()
+	zzz/infra/go/src/go.chromium.org/luci/common/some/package/file.go:150 +0x166
+`
+
+		So(call(stack), ShouldEqual, expected)
+	})
+
+	Convey("Skips unexpected stuff", t, func() {
+		So(call(""), ShouldEqual, "")
+		So(call("abc"), ShouldEqual, "abc")
+		So(call("abc\ndef"), ShouldEqual, "abc\ndef")
+	})
+}
+
+// A fuzz test to ensure cleanupStack doesn't panic.
+
+func FuzzCleanupStack(f *testing.F) {
+	stack := `goroutine 19 [running]:
+go.chromium.org/luci/common/logging/sdlogger.prepErrorReportingEntry(0xc0001abea0, 0x0)
+	zzz/go.chromium.org/luci/common/logging/sdlogger/logger.go:210 +0x1d9
+go.chromium.org/luci/common/logging/sdlogger.(*fakeCloudErrorsSink).Write(0xc0001913b0, 0xc0001abea0)
+	zzz/infra/go/src/go.chromium.org/luci/common/logging/sdlogger/logger_test.go:91 +0x65
+go.chromium.org/luci/common/logging/sdlogger.(*jsonLogger).LogCall(0xc0001da0c0, 0x3, 0x0?, {0x1683678, 0xa}, {0x0, 0x0, 0x0})
+	zzz/infra/go/src/go.chromium.org/luci/common/logging/sdlogger/logger.go:311 +0x2f2
+go.chromium.org/luci/common/logging.Errorf({0x176d680?, 0xc0001913e0?}, {0x1683678, 0xa}, {0x0, 0x0, 0x0})
+	zzz/infra/go/src/go.chromium.org/luci/common/logging/exported.go:50 +0x71
+go.chromium.org/luci/common/some/package.SomeCall.func2.2()
+	zzz/infra/go/src/go.chromium.org/luci/common/some/package/file.go:150 +0x166
+`
+	f.Add(stack)
+	f.Fuzz(func(t *testing.T, s string) {
+		out := string(cleanupStack([]byte(s)))
+		switch {
+		case len(out) > len(s):
+			t.Errorf("output is larger than input:\n%q\n%q", s, out)
+		case len(out) == len(s):
+			if out != s {
+				t.Errorf("unexpected mutation:\n%q\n%q", s, out)
+			}
+		}
 	})
 }

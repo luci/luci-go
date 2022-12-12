@@ -1436,6 +1436,9 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	// request log entry.
 	severityTracker := sdlogger.SeverityTracker{Out: s.stdout}
 
+	// End-user client IP is reported to logs in a bunch of places.
+	remoteAddr := getRemoteIP(c.Request)
+
 	// Log the overall request information when the request finishes. Use TraceID
 	// to correlate this log entry with entries emitted by the request handler
 	// below.
@@ -1474,7 +1477,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 				RequestSize:  fmt.Sprintf("%d", c.Request.ContentLength),
 				ResponseSize: fmt.Sprintf("%d", rw.ResponseSize()),
 				UserAgent:    c.Request.UserAgent(),
-				RemoteIP:     getRemoteIP(c.Request),
+				RemoteIP:     remoteAddr,
 				Latency:      fmt.Sprintf("%fs", latency.Seconds()),
 			},
 		}
@@ -1524,9 +1527,15 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 
 		var logSink sdlogger.LogEntryWriter
 		if s.errRptClient != nil {
+			// Substitute the correct RemoteAddr into the request logged by Cloud
+			// Error Reporting. This is important when running on GKE or behind a
+			// layer of HTTP proxies.
+			logReq := *c.Request
+			logReq.RemoteAddr = remoteAddr
 			logSink = &sdlogger.CloudErrorsSink{
-				Client: s.errRptClient,
-				Out:    &severityTracker,
+				Client:  s.errRptClient,
+				Request: &logReq,
+				Out:     &severityTracker,
 			}
 		} else {
 			logSink = &severityTracker
