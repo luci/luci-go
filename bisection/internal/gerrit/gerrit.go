@@ -161,8 +161,10 @@ func (c *Client) CreateRevert(ctx context.Context, change *gerritpb.ChangeInfo, 
 		Message: message,
 	}
 
-	// Set timeout to be 2min for creating a revert
-	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*2)
+	// Set timeout for creating a revert
+	// TODO (aredulla): Decrease this timeout accordingly once the recent Gerrit
+	// revert performance issues have been resolved (see b/261896675).
+	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*10)
 	defer cancel()
 
 	res, err := c.gerritClient.RevertChange(waitCtx, req)
