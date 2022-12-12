@@ -606,6 +606,9 @@ func (c *commandRun) cmdSetAliases(ctx context.Context) error {
 		if v == 0 {
 			delete(secret.VersionAliases, k)
 		} else {
+			if secret.VersionAliases == nil {
+				secret.VersionAliases = make(map[string]int64, 1)
+			}
 			secret.VersionAliases[k] = v
 		}
 	}
@@ -692,6 +695,9 @@ func (c *commandRun) cmdRotationBegin(ctx context.Context) error {
 	}
 
 	// Update the alias map. Don't touch existing aliases, including "previous".
+	if secret.VersionAliases == nil {
+		secret.VersionAliases = make(map[string]int64, 2)
+	}
 	secret.VersionAliases["current"] = current
 	secret.VersionAliases["next"] = next
 	secret, err = c.overrideAliases(ctx, secret.Etag, secret.VersionAliases)
@@ -720,6 +726,9 @@ func (c *commandRun) cmdRotationEnd(ctx context.Context) error {
 		return errors.New("There's no rotation in progress.", userError)
 	}
 
+	if secret.VersionAliases == nil {
+		secret.VersionAliases = make(map[string]int64, 2)
+	}
 	secret.VersionAliases["previous"] = current
 	secret.VersionAliases["current"] = next
 
