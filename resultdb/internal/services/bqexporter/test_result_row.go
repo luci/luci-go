@@ -69,9 +69,10 @@ const maxSummaryLength = 4e6
 
 func invocationProtoToRecord(inv *pb.Invocation) *bqpb.InvocationRecord {
 	return &bqpb.InvocationRecord{
-		Id:    string(invocations.MustParseName(inv.Name)),
-		Tags:  inv.Tags,
-		Realm: inv.Realm,
+		Id:         string(invocations.MustParseName(inv.Name)),
+		Tags:       inv.Tags,
+		Properties: inv.Properties,
+		Realm:      inv.Realm,
 	}
 }
 
@@ -104,6 +105,7 @@ func (i *testResultRowInput) row() protoiface.MessageV1 {
 		PartitionTime: i.exported.CreateTime,
 		TestMetadata:  tr.TestMetadata,
 		FailureReason: tr.FailureReason,
+		Properties:    tr.Properties,
 	}
 
 	if len(ret.SummaryHtml) > maxSummaryLength {

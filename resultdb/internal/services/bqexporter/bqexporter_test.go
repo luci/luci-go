@@ -24,10 +24,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/bq"
 	. "go.chromium.org/luci/common/testing/assertions"
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -63,7 +65,11 @@ func TestExportToBigQuery(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		testutil.MustApply(ctx,
 			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insert.Invocation("b", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("b", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm", "Properties": spanutil.Compressed(pbutil.MustMarshal(&structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"key": structpb.NewStringValue("value"),
+				},
+			}))}),
 			insert.Inclusion("a", "b"))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
@@ -77,6 +83,27 @@ func TestExportToBigQuery(t *testing.T) {
 			// Test results' parent is different from exported.
 			insert.TestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
+			insert.TestResultMessages([]*pb.TestResult{
+				{
+					Name:        pbutil.TestResultName("a", "E", "0"),
+					TestId:      "E",
+					ResultId:    "0",
+					Variant:     pbutil.Variant("k2", "v2", "k3", "v3"),
+					VariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2", "k3", "v3")),
+					Expected:    true,
+					Status:      pb.TestStatus_PASS,
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key_1": structpb.NewStringValue("value_1"),
+							"key_2": structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"child_key": structpb.NewNumberValue(1),
+								},
+							}),
+						},
+					},
+				},
+			}),
 		)...)
 
 		bqExport := &pb.BigQueryExport{
@@ -102,18 +129,45 @@ func TestExportToBigQuery(t *testing.T) {
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
-			So(len(i.insertedMessages), ShouldEqual, 7)
+			So(len(i.insertedMessages), ShouldEqual, 8)
 
-			expectedTestIDs := []string{"A", "B", "C", "D"}
+			expectedTestIDs := []string{"A", "B", "C", "D", "E"}
 			for _, m := range i.insertedMessages {
 				tr := m.Message.(*bqpb.TestResultRow)
 				So(tr.TestId, ShouldBeIn, expectedTestIDs)
 				So(tr.Parent.Id, ShouldBeIn, []string{"a", "b"})
 				So(tr.Parent.Realm, ShouldEqual, "testproject:testrealm")
+				if tr.Parent.Id == "b" {
+					So(tr.Parent.Properties, ShouldResembleProto, &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key": structpb.NewStringValue("value"),
+						},
+					})
+				} else {
+					So(tr.Parent.Properties, ShouldBeNil)
+				}
+
 				So(tr.Exported.Id, ShouldEqual, "a")
 				So(tr.Exported.Realm, ShouldEqual, "testproject:testrealm")
+				So(tr.Exported.Properties, ShouldBeNil)
 				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D")
+
 				So(tr.Name, ShouldEqual, pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId))
+
+				if tr.TestId == "E" {
+					So(tr.Properties, ShouldResembleProto, &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key_1": structpb.NewStringValue("value_1"),
+							"key_2": structpb.NewStructValue(&structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"child_key": structpb.NewNumberValue(1),
+								},
+							}),
+						},
+					})
+				} else {
+					So(tr.Properties, ShouldBeNil)
+				}
 			}
 		})
 

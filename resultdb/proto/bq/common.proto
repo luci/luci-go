@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package luci.resultdb.bq;
 
+import "google/protobuf/struct.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
@@ -28,4 +30,8 @@ message InvocationRecord {
   repeated luci.resultdb.v1.StringPair tags = 2;
   // The LUCI Realm the invocation exists under.
   string realm = 3;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the invocation.
+  google.protobuf.Struct properties = 4 [(bqschema.options).bq_type = "JSON"];
 }
