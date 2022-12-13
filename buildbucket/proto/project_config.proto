@@ -184,7 +184,7 @@ message BuilderConfig {
     // A string interpreted as JSON encapsulating configuration for this
     // backend.
     // TODO(crbug.com/1042991): Move priority, wait_for_capacity, etc. here.
-    string config_json = 2;
+    string config_json = 2 [(luci.text_pb_format) = JSON];
   }
 
   // Name of the builder.
