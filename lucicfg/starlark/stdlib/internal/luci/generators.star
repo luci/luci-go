@@ -310,6 +310,9 @@ def gen_buildbucket_cfg(ctx):
     Args:
       ctx: the generator context.
     """
+
+    # TODO(randymaldoando): crbug/399576 - move builders up a level and
+    # replace swarming in bucket proto.
     buckets = get_buckets()
     if not buckets:
         return
@@ -385,18 +388,12 @@ def _buildbucket_builders(bucket):
     def_swarming_host = None
     builders = []
     for node in graph.children(bucket.key, kinds.BUILDER):
-        swarming_host = node.props.swarming_host
-        if not swarming_host:
-            if not def_swarming_host:
-                def_swarming_host = get_service("swarming", "defining builders").host
-            swarming_host = def_swarming_host
         exe, recipe, properties, experiments = _handle_executable(node)
         combined_experiments = dict(node.props.experiments)
         combined_experiments.update(experiments)
-        builders.append(buildbucket_pb.BuilderConfig(
+        bldr_config = buildbucket_pb.BuilderConfig(
             name = node.props.name,
             description_html = node.props.description_html,
-            swarming_host = swarming_host,
             exe = exe,
             recipe = recipe,
             properties = properties,
@@ -407,7 +404,6 @@ def _buildbucket_builders(bucket):
             grace_period = optional_duration_pb(node.props.grace_period),
             dimensions = _buildbucket_dimensions(node.props.dimensions),
             priority = node.props.priority,
-            swarming_tags = node.props.swarming_tags,
             expiration_secs = optional_sec(node.props.expiration_timeout),
             wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
             build_numbers = _buildbucket_toggle(node.props.build_numbers),
@@ -417,7 +413,22 @@ def _buildbucket_builders(bucket):
                 node.props.task_template_canary_percentage,
             ),
             resultdb = node.props.resultdb,
-        ))
+        )
+        if node.props.task_backend != None:
+            task_backend = graph.node(node.props.task_backend)
+            bldr_config.backend = buildbucket_pb.BuilderConfig.Backend(
+                target = task_backend.props.target,
+                config_json = task_backend.props.config,
+            )
+        else:
+            swarming_host = node.props.swarming_host
+            if not swarming_host:
+                if not def_swarming_host:
+                    def_swarming_host = get_service("swarming", "defining builders").host
+                swarming_host = def_swarming_host
+            bldr_config.swarming_host = swarming_host
+            bldr_config.swarming_tags = node.props.swarming_tags
+        builders.append(bldr_config)
     return buildbucket_pb.Swarming(builders = builders) if builders else None
 
 def _handle_executable(node):

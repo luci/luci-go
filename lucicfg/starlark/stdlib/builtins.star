@@ -43,6 +43,7 @@ load("@stdlib//internal/luci/rules/notifier_template.star", _notifier_template =
 load("@stdlib//internal/luci/rules/notify.star", _notify = "notify")
 load("@stdlib//internal/luci/rules/project.star", _project = "project")
 load("@stdlib//internal/luci/rules/realm.star", _realm = "realm")
+load("@stdlib//internal/luci/rules/task_backend.star", _task_backend = "task_backend")
 load("@stdlib//internal/luci/rules/tree_closer.star", _tree_closer = "tree_closer")
 
 # LUCI helper modules.
@@ -93,6 +94,7 @@ luci = struct(
     cq_tryjob_verifier = _cq_tryjob_verifier,
     bucket_constraints = _bucket_constraints,
     buildbucket_notification_topic = _buildbucket_notification_topic,
+    task_backend = _task_backend,
 )
 acl = _acl
 cq = _cq_helpers

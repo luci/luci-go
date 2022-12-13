@@ -1455,6 +1455,7 @@ luci.builder(
     repo = None,
     resultdb_settings = None,
     test_presentation = None,
+    task_backend = None,
     triggers = None,
     triggered_by = None,
     notifies = None,
@@ -1535,6 +1536,7 @@ Buildbucket.
 * **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles-poller) that trigger this builder if they all poll the same repo.
 * **resultdb_settings**: A buildbucket_pb.BuilderConfig.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
 * **test_presentation**: A [resultdb.test_presentation(...)](#resultdb.test-presentation) struct. A configuration that defines how tests should be rendered in the UI.
+* **task_backend**: the name of the task backend defined via [luci.task_backend(...)](#luci.task-backend). Supports the module-scoped default.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer).
@@ -2676,6 +2678,25 @@ see [BuildbucketCfg.builds_notification_topics]
 
 * **name**: a full topic name. e.g. 'projects/my-cloud-project/topics/my-topic'. Required.
 * **compression**: specify a compression method. The default is "ZLIB".
+
+
+
+
+### luci.task_backend {#luci.task-backend}
+
+```python
+luci.task_backend(name, target, config = None)
+```
+
+
+
+Specifies how Buildbucket should integrate with TaskBackend.
+
+#### Arguments {#luci.task-backend-args}
+
+* **name**: A local name of the task backend. Required.
+* **target**: URI for this backend, e.g. "swarming://chromium-swarm". Required.
+* **config**: A dict with string keys or a proto message to be interpreted as JSON encapsulating configuration for this backend.
 
 
 

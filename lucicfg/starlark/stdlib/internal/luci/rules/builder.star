@@ -68,6 +68,9 @@ def _builder(
         resultdb_settings = None,
         test_presentation = None,
 
+        # TaskBackend.
+        task_backend = None,
+
         # Relations.
         triggers = None,
         triggered_by = None,
@@ -223,6 +226,9 @@ def _builder(
       test_presentation: A resultdb.test_presentation(...) struct. A
         configuration that defines how tests should be rendered in the UI.
 
+      task_backend: the name of the task backend defined via luci.task_backend(...).
+        Supports the module-scoped default.
+
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
       notifies: list of luci.notifier(...) or luci.tree_closer(...) the builder
@@ -263,6 +269,7 @@ def _builder(
         "repo": validate.repo_url("repo", repo, required = False),
         "resultdb": resultdb.validate_settings("settings", resultdb_settings),
         "test_presentation": resultdb.validate_test_presentation("test_presentation", test_presentation),
+        "task_backend": keys.task_backend(task_backend) if task_backend != None else None,
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
@@ -314,6 +321,8 @@ def _builder(
     graph.add_node(builder_key, props = props)
     graph.add_edge(bucket_key, builder_key)
     graph.add_edge(builder_key, executable_key)
+    if props["task_backend"]:
+        graph.add_edge(builder_key, props["task_backend"])
 
     # Allow this builder to be referenced from other nodes via its bucket-scoped
     # name and via a global (perhaps ambiguous) name. See builder_ref.add(...).
@@ -368,7 +377,6 @@ def _builder(
                 pools = pools,
                 service_accounts = service_accounts,
             )
-
     return graph.keyset(builder_key, builder_ref_key, triggerer_key)
 
 def _merge_dicts(defaults, extra):
@@ -430,5 +438,6 @@ builder = lucicfg.rule(
         "task_template_canary_percentage": lambda attr, val: validate.int(attr, val, min = 0, max = 100),
         "resultdb": resultdb.validate_settings,
         "test_presentation": resultdb.validate_test_presentation,
+        "task_backend": lambda _attr, val: keys.task_backend(val),
     }),
 )

@@ -68,6 +68,13 @@ luci.executable(
     cmd = ["cmd"],
 )
 
+# Task Backend
+luci.task_backend(
+    name = "my_test_backend",
+    target = "swarming://chromium",
+    config = {"key": "value"},
+)
+
 # CI bucket.
 
 luci.bucket(
