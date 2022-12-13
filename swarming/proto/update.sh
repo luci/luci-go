@@ -56,6 +56,7 @@ function add_luci_file_metadata() {
 import_dir ${LUCI_ROOT}/appengine/swarming/proto/api api
 import_dir ${LUCI_ROOT}/appengine/swarming/proto/config config
 import_dir ${LUCI_ROOT}/appengine/swarming/proto/internals internals
+import_dir ${LUCI_ROOT}/appengine/swarming/proto/api_v2 api_v2
 
 echo "- adding luci.file_metadata option"
 add_luci_file_metadata config/bots.proto bots.cfg
