@@ -15,7 +15,7 @@ luci_gae_vars:
     PROFILING_PROBABILITY: "0.02"
     REDIS_ADDR: 10.52.56.84:6379
     VPC_CONNECTOR: projects/cr-buildbucket/locations/us-central1/connectors/connector-e2-standard-4
-    DS_CACHE: disable
+    DS_CACHE: redis
 
 vpc_access_connector:
   name: ${VPC_CONNECTOR}

@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/gae/filter/dscache"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -73,6 +75,10 @@ func main() {
 			return errors.Annotate(err, "failed to initiate the global Bigquery client").Err()
 		}
 		srv.Context = clients.WithBqClient(srv.Context, bqClient)
+
+		srv.Context = dscache.AddShardFunctions(srv.Context, func(k *datastore.Key) (shards int, ok bool) {
+			return 0, true
+		})
 
 		srv.PRPC.Authenticator = &auth.Authenticator{
 			Methods: []auth.Method{
