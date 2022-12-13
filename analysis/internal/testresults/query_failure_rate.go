@@ -555,6 +555,9 @@ SELECT
 			COUNTIF(v.HasUnexpectedRun AND v.HasExpectedRun) AS TotalRunFlakyVerdicts,
 			COUNTIF(v.HasUnexpectedRun AND NOT v.HasExpectedRun) AS TotalRunUnexpectedVerdicts
 		FROM UNNEST(Verdicts) v
+		WHERE
+			-- Filter out CLs authored by automation.
+			NOT v.AnyChangelistsByAutomation
 		GROUP BY DaysSinceQueryStart
 		ORDER BY DaysSinceQueryStart DESC
 	) As IntervalStats,
@@ -567,7 +570,9 @@ SELECT
 			v.ChangelistPatchsets,
 			v.ChangelistOwnerKinds,
 		FROM UNNEST(Verdicts) v WITH OFFSET o
-		WHERE v.HasUnexpectedRun AND v.HasExpectedRun
+		WHERE v.HasUnexpectedRun AND v.HasExpectedRun AND
+			-- Filter out CLs authored by automation.
+			NOT v.AnyChangelistsByAutomation
 		ORDER BY o -- Order by descending partition time.
 		LIMIT 10
 	) as RunFlakyExamples,
@@ -583,7 +588,7 @@ SELECT
 		FROM UNNEST(Verdicts) v WITH OFFSET o
 		WHERE
 			-- Filter out CLs authored by automation.
-			NOT AnyChangelistsByAutomation
+			NOT v.AnyChangelistsByAutomation
 		ORDER BY o
 		LIMIT 10
 	) as RecentVerdicts,

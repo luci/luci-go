@@ -185,6 +185,7 @@ func CreateQueryFailureRateTestData(ctx context.Context) error {
 		insertTV(referenceTime.Add(-4*day), var1, "inv2", pass, unspecifiedOwner, 2)
 		insertTV(referenceTime.Add(-2*time.Hour), var1, "inv3", failPass, humanOwner, 1)
 
+		// inv4 should not be used as the CL tested is authored by automation.
 		insertTV(referenceTime.Add(-3*day), var1, "inv4", failPass, automationOwner, 11)
 		insertTV(referenceTime.Add(-3*day), var1, "inv5", passFail, unspecifiedOwner, 3)
 		insertTV(referenceTime.Add(-2*day), var1, "inv6", fail, humanOwner, 4)
@@ -278,7 +279,7 @@ func QueryFailureRateSampleResponse() *pb.QueryTestVariantFailureRateResponse {
 				},
 				{
 					IntervalAge:                3,
-					TotalRunFlakyVerdicts:      2, // inv4, inv5.
+					TotalRunFlakyVerdicts:      1, // inv5.
 					TotalRunUnexpectedVerdicts: 1, // inv7.
 				},
 				{
@@ -296,11 +297,6 @@ func QueryFailureRateSampleResponse() *pb.QueryTestVariantFailureRateResponse {
 					PartitionTime:        timestamppb.New(referenceTime.Add(-2 * time.Hour)),
 					IngestedInvocationId: "inv3",
 					Changelists:          expectedPBChangelist(1, pb.ChangelistOwnerKind_HUMAN),
-				},
-				{
-					PartitionTime:        timestamppb.New(referenceTime.Add(-3 * day)),
-					IngestedInvocationId: "inv4",
-					Changelists:          expectedPBChangelist(11, pb.ChangelistOwnerKind_AUTOMATION),
 				},
 				{
 					PartitionTime:        timestamppb.New(referenceTime.Add(-3 * day)),
