@@ -82,11 +82,12 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 }
 
 // logErrors logs the errors in the given *googleapi.Error.
-func logErrors(c context.Context, err *googleapi.Error) {
-	logging.Errorf(c, "HTTP %d", err.Code)
+func logErrors(c context.Context, name string, err *googleapi.Error) {
+	var errMsgs []string
 	for _, err := range err.Errors {
-		logging.Errorf(c, "%s", err.Message)
+		errMsgs = append(errMsgs, err.Message)
 	}
+	logging.Errorf(c, "failure for %s, HTTP: %d, errors: %s", name, err.Code, strings.Join(errMsgs, ","))
 }
 
 // rateLimitExceeded returns whether the given *googleapi.Error contains a rate
@@ -120,7 +121,7 @@ func checkInstance(c context.Context, vm *model.VM) error {
 				}
 				return errors.Annotate(err, "instance not found").Err()
 			}
-			logErrors(c, gerr)
+			logErrors(c, vm.Hostname, gerr)
 		}
 		return errors.Annotate(err, "failed to fetch instance").Err()
 	}
@@ -160,30 +161,30 @@ func createInstance(c context.Context, payload proto.Message) error {
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
+			logErrors(c, vm.Hostname, gerr)
 			metrics.UpdateFailures(c, gerr.Code, vm)
 			// TODO(b/130826296): Remove this once rate limit returns a transient HTTP error code.
 			if rateLimitExceeded(gerr) {
-				return errors.Annotate(err, "rate limit exceeded creating instance").Err()
+				return errors.Annotate(err, "rate limit exceeded creating instance %s", vm.Hostname).Err()
 			}
 			if gerr.Code == http.StatusTooManyRequests || gerr.Code >= 500 {
-				return errors.Annotate(err, "transiently failed to create instance").Err()
+				return errors.Annotate(err, "transiently failed to create instance %s", vm.Hostname).Err()
 			}
 			if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
-				return errors.Annotate(err, "failed to create instance").Err()
+				return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
 			}
 		}
-		return errors.Annotate(err, "failed to create instance").Err()
+		return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
 	}
 	if op.Error != nil && len(op.Error.Errors) > 0 {
 		for _, err := range op.Error.Errors {
-			logging.Errorf(c, "%s: %s", err.Code, err.Message)
+			logging.Errorf(c, "for vm %s, %s: %s", vm.Hostname, err.Code, err.Message)
 		}
 		metrics.UpdateFailures(c, 200, vm)
 		if err := deleteVM(c, task.Id, vm.Hostname); err != nil {
-			return errors.Annotate(err, "failed to create instance").Err()
+			return errors.Annotate(err, "failed to create instance %s", vm.Hostname).Err()
 		}
-		return errors.Reason("failed to create instance").Err()
+		return errors.Reason("failed to create instance %s", vm.Hostname).Err()
 	}
 	if op.Status == "DONE" {
 		return checkInstance(c, vm)
@@ -227,10 +228,10 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	case err == datastore.ErrNoSuchEntity:
 		return nil
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch VM").Err()
+		return errors.Annotate(err, "failed to fetch VM %s", vm.ID).Err()
 	case vm.URL != task.Url:
 		// Instance is already destroyed and replaced. Don't destroy the new one.
-		logging.Debugf(c, "instance does not exist: %s", task.Url)
+		logging.Debugf(c, "instance %s does not exist: %s", vm.Hostname, task.Url)
 		return nil
 	}
 	logging.Debugf(c, "destroying instance %q", vm.Hostname)
@@ -245,15 +246,15 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 				logging.Debugf(c, "instance does not exist: %s", vm.URL)
 				return deleteBotAsync(c, task.Id, vm.Hostname)
 			}
-			logErrors(c, gerr)
+			logErrors(c, vm.Hostname, gerr)
 		}
-		return errors.Annotate(err, "failed to destroy instance").Err()
+		return errors.Annotate(err, "failed to destroy instance %s", vm.Hostname).Err()
 	}
 	if op.Error != nil && len(op.Error.Errors) > 0 {
 		for _, err := range op.Error.Errors {
 			logging.Errorf(c, "%s: %s", err.Code, err.Message)
 		}
-		return errors.Reason("failed to destroy instance").Err()
+		return errors.Reason("failed to destroy instance %s", vm.Hostname).Err()
 	}
 	if op.Status == "DONE" {
 		logging.Debugf(c, "destroyed instance: %s", op.TargetLink)

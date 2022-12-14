@@ -123,6 +123,7 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 		if p != "config.current_amount" {
 			return nil, status.Errorf(codes.InvalidArgument, "field %q is invalid or immutable", p)
 		}
+		logging.Debugf(c, "update config %s current_amount to %d", req.GetId(), req.GetConfig().GetCurrentAmount())
 	}
 
 	var ret *config.Config

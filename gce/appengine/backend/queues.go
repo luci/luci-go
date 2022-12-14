@@ -124,7 +124,7 @@ func drainVM(c context.Context, vm *model.VM) error {
 			return nil
 		}
 		vm.Drained = true
-		logging.Debugf(c, "set VM %s as drained in db", vm.Hostname, vm.ID)
+		logging.Debugf(c, "set VM %s as drained in db", vm.Hostname)
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
@@ -308,7 +308,7 @@ func reportQuota(c context.Context, payload proto.Message) error {
 	rsp, err := getCompute(c).Regions.List(p.Config.Project).Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
+			logErrors(c, task.Id, gerr)
 		}
 		return errors.Annotate(err, "failed to fetch quota").Err()
 	}

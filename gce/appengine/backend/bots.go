@@ -131,7 +131,7 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 	events, err := srv.Events(vm.Hostname).Context(c).Fields("items/event_type").Start(float64(vm.Created)).Limit(5).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, gerr)
+			logErrors(c, vm.Hostname, gerr)
 		}
 		return errors.Annotate(err, "failed to fetch bot events").Err()
 	}
@@ -189,7 +189,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 				logging.Debugf(c, "bot not found")
 				return manageMissingBot(c, vm)
 			}
-			logErrors(c, gerr)
+			logErrors(c, vm.Hostname, gerr)
 		}
 		return errors.Annotate(err, "failed to fetch bot").Err()
 	}
@@ -256,7 +256,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 				logging.Debugf(c, "bot not found")
 				return nil
 			}
-			logErrors(c, gerr)
+			logErrors(c, vm.Hostname, gerr)
 		}
 		return errors.Annotate(err, "failed to terminate bot").Err()
 	}
@@ -316,7 +316,7 @@ func deleteBot(c context.Context, payload proto.Message) error {
 				logging.Debugf(c, "bot not found")
 				return deleteVM(c, task.Id, vm.Hostname)
 			}
-			logErrors(c, gerr)
+			logErrors(c, vm.Hostname, gerr)
 		}
 		return errors.Annotate(err, "failed to delete bot").Err()
 	}
@@ -341,6 +341,7 @@ func deleteVM(c context.Context, id, hostname string) error {
 		if err := datastore.Delete(c, vm); err != nil {
 			return errors.Annotate(err, "failed to delete VM").Err()
 		}
+		logging.Debugf(c, "deleted VM %s from db", hostname)
 		return nil
 	}, nil)
 }
