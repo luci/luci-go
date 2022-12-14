@@ -101,6 +101,8 @@ func rateLimitExceeded(err *googleapi.Error) bool {
 			return true
 		case strings.Contains(err.Message, "rateLimitExceeded"):
 			return true
+		case strings.Contains(err.Reason, "rateLimitExceeded"):
+			return true
 		}
 	}
 	return false
