@@ -58,8 +58,7 @@ type Changelist struct {
 // PresubmitRun represents information about the presubmit run a test result
 // was part of.
 type PresubmitRun struct {
-	Owner string
-	Mode  pb.PresubmitRunMode
+	Mode pb.PresubmitRunMode
 }
 
 // SortChangelists sorts a slice of changelists to be in ascending
@@ -112,7 +111,7 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 	fields := []string{
 		"Project", "IngestedInvocationId", "SubRealm", "PartitionTime",
 		"BuildStatus",
-		"PresubmitRunMode", "PresubmitRunOwner",
+		"PresubmitRunMode",
 		"GitReferenceHash", "CommitPosition", "CommitHash",
 		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
 		"ChangelistOwnerKinds",
@@ -121,7 +120,6 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 		func(row *spanner.Row) error {
 			inv := &IngestedInvocation{}
 			var presubmitRunMode spanner.NullInt64
-			var presubmitRunOwner spanner.NullString
 			var gitReferenceHash []byte
 			var commitPosition spanner.NullInt64
 			var commitHash spanner.NullString
@@ -134,7 +132,7 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 				row,
 				&inv.Project, &inv.IngestedInvocationID, &inv.SubRealm, &inv.PartitionTime,
 				&inv.BuildStatus,
-				&presubmitRunMode, &presubmitRunOwner,
+				&presubmitRunMode,
 				&gitReferenceHash, &commitPosition, &commitHash,
 				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
 			)
@@ -142,12 +140,9 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 				return err
 			}
 
-			// Data in Spanner should be consistent, so presubmitRunMode.Valid ==
-			//   presubmitRunOwner.Valid.
 			if presubmitRunMode.Valid {
 				inv.PresubmitRun = &PresubmitRun{
-					Mode:  pb.PresubmitRunMode(presubmitRunMode.Int64),
-					Owner: presubmitRunOwner.StringVal,
+					Mode: pb.PresubmitRunMode(presubmitRunMode.Int64),
 				}
 			}
 
@@ -194,10 +189,8 @@ func ReadIngestedInvocations(ctx context.Context, keys spanner.KeySet, fn func(i
 // the IngestedInvocations table. The ingested invocation is not validated.
 func (inv *IngestedInvocation) SaveUnverified() *spanner.Mutation {
 	var presubmitRunMode spanner.NullInt64
-	var presubmitRunOwner spanner.NullString
 	if inv.PresubmitRun != nil {
 		presubmitRunMode = spanner.NullInt64{Valid: true, Int64: int64(inv.PresubmitRun.Mode)}
-		presubmitRunOwner = spanner.NullString{Valid: true, StringVal: inv.PresubmitRun.Owner}
 	}
 
 	var gitReferenceHash []byte
@@ -230,7 +223,6 @@ func (inv *IngestedInvocation) SaveUnverified() *spanner.Mutation {
 		"CommitPosition":       commitPosition,
 		"CommitHash":           commitHash,
 		"PresubmitRunMode":     presubmitRunMode,
-		"PresubmitRunOwner":    presubmitRunOwner,
 		"ChangelistHosts":      changelistHosts,
 		"ChangelistChanges":    changelistChanges,
 		"ChangelistPatchsets":  changelistPatchsets,
@@ -272,7 +264,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 		"IsUnexpected", "RunDurationUsec", "Status",
 		"ExonerationReasons",
 		"SubRealm", "BuildStatus",
-		"PresubmitRunMode", "PresubmitRunOwner",
+		"PresubmitRunMode",
 		"GitReferenceHash", "CommitPosition",
 		"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds",
 	}
@@ -282,7 +274,6 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			var runDurationUsec spanner.NullInt64
 			var isUnexpected spanner.NullBool
 			var presubmitRunMode spanner.NullInt64
-			var presubmitRunOwner spanner.NullString
 			var gitReferenceHash []byte
 			var commitPosition spanner.NullInt64
 			var changelistHosts []string
@@ -296,7 +287,7 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 				&isUnexpected, &runDurationUsec, &tr.Status,
 				&tr.ExonerationReasons,
 				&tr.SubRealm, &tr.BuildStatus,
-				&presubmitRunMode, &presubmitRunOwner,
+				&presubmitRunMode,
 				&gitReferenceHash, &commitPosition,
 				&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
 			)
@@ -309,12 +300,9 @@ func ReadTestResults(ctx context.Context, keys spanner.KeySet, fn func(tr *TestR
 			}
 			tr.IsUnexpected = isUnexpected.Valid && isUnexpected.Bool
 
-			// Data in Spanner should be consistent, so presubmitRunMode.Valid ==
-			//   presubmitRunOwner.Valid.
 			if presubmitRunMode.Valid {
 				tr.PresubmitRun = &PresubmitRun{
-					Mode:  pb.PresubmitRunMode(presubmitRunMode.Int64),
-					Owner: presubmitRunOwner.StringVal,
+					Mode: pb.PresubmitRunMode(presubmitRunMode.Int64),
 				}
 			}
 
@@ -363,7 +351,7 @@ var TestResultSaveCols = []string{
 	"IngestedInvocationId", "RunIndex", "ResultIndex",
 	"IsUnexpected", "RunDurationUsec", "Status",
 	"ExonerationReasons", "SubRealm", "BuildStatus",
-	"PresubmitRunMode", "PresubmitRunOwner",
+	"PresubmitRunMode",
 	"GitReferenceHash", "CommitPosition",
 	"ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets",
 	"ChangelistOwnerKinds",
@@ -379,10 +367,8 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	}
 
 	var presubmitRunMode spanner.NullInt64
-	var presubmitRunOwner spanner.NullString
 	if tr.PresubmitRun != nil {
 		presubmitRunMode = spanner.NullInt64{Valid: true, Int64: int64(tr.PresubmitRun.Mode)}
-		presubmitRunOwner = spanner.NullString{Valid: true, StringVal: tr.PresubmitRun.Owner}
 	}
 
 	var gitReferenceHash []byte
@@ -425,7 +411,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 		tr.IngestedInvocationID, tr.RunIndex, tr.ResultIndex,
 		isUnexpected, runDurationUsec, int64(tr.Status),
 		spanutil.ToSpanner(exonerationReasons), tr.SubRealm, int64(tr.BuildStatus),
-		presubmitRunMode, presubmitRunOwner,
+		presubmitRunMode,
 		gitReferenceHash, commitPosition,
 		changelistHosts, changelistChanges, changelistPatchsets, changelistOwnerKinds,
 	}

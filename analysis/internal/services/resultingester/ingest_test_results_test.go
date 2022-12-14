@@ -226,8 +226,7 @@ func TestIngestTestResults(t *testing.T) {
 				PartitionTime:        timestamppb.New(partitionTime).AsTime(),
 				BuildStatus:          pb.BuildStatus_BUILD_STATUS_FAILURE,
 				PresubmitRun: &testresults.PresubmitRun{
-					Owner: "automation",
-					Mode:  pb.PresubmitRunMode_FULL_RUN,
+					Mode: pb.PresubmitRunMode_FULL_RUN,
 				},
 				GitReferenceHash: expectedGitReference.GitReferenceHash,
 				CommitPosition:   111888,
@@ -304,8 +303,7 @@ func TestIngestTestResults(t *testing.T) {
 						},
 					}).
 					WithPresubmitRun(&testresults.PresubmitRun{
-						Owner: "automation",
-						Mode:  pb.PresubmitRunMode_FULL_RUN,
+						Mode: pb.PresubmitRunMode_FULL_RUN,
 					})
 				if expectCommitPosition {
 					trBuilder = trBuilder.WithCommitPosition(expectedInvocation.GitReferenceHash, expectedInvocation.CommitPosition)

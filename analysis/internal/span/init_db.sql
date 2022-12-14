@@ -480,15 +480,6 @@ CREATE TABLE TestResults (
   -- See luci.analysis.v1.BuildStatus.
   BuildStatus INT64 NOT NULL,
 
-  -- The owner of the presubmit run.
-  -- This owner of the CL on which CQ+1/CQ+2 was clicked
-  -- (even in case of presubmit run with multiple CLs).
-  -- There is scope for this field to become an email address if privacy
-  -- approval is obtained, until then it is "automation" (for automation
-  -- service accounts) and "user" otherwise.
-  -- Only populated for builds part of presubmit runs.
-  PresubmitRunOwner STRING(320),
-
   -- The run mode of the presubmit run (e.g. DRY RUN, FULL RUN).
   -- Only populated for builds part of presubmit runs.
   PresubmitRunMode INT64,

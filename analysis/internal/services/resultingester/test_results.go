@@ -103,8 +103,7 @@ func extractIngestionContext(task *taskspb.IngestTestResults, inv *rdbpb.Invocat
 	var presubmitRun *testresults.PresubmitRun
 	if task.PresubmitRun != nil {
 		presubmitRun = &testresults.PresubmitRun{
-			Mode:  task.PresubmitRun.Mode,
-			Owner: task.PresubmitRun.Owner,
+			Mode: task.PresubmitRun.Mode,
 		}
 	}
 
