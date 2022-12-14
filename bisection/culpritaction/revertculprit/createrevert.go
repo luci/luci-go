@@ -19,16 +19,64 @@ import (
 	"fmt"
 	"strings"
 
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/service/datastore"
 )
+
+// isCulpritRevertible returns:
+//   - whether a revert should be created for the culprit CL;
+//   - the reason it should not be created if applicable; and
+//   - the error if one occurred.
+func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
+	culprit *gerritpb.ChangeInfo) (bool, string, error) {
+	// Check if the culprit's description has disabled autorevert
+	hasFlag, err := gerrit.HasAutoRevertOffFlagSet(ctx, culprit)
+	if err != nil {
+		return false, "", errors.Annotate(err, "error checking for auto-revert flag").Err()
+	}
+	if hasFlag {
+		return false, "auto-revert has been disabled for this CL by its description", nil
+	}
+
+	// Check if the author of the culprit is irrevertible
+	cannotRevert, err := HasIrrevertibleAuthor(ctx, culprit)
+	if err != nil {
+		return false, "", errors.Annotate(err, "error getting culprit's commit author").Err()
+	}
+	if cannotRevert {
+		return false, "LUCI Bisection cannot revert changes from this CL's author", nil
+	}
+
+	// Check if there are other merged changes depending on the culprit
+	hasDep, err := gerritClient.HasDependency(ctx, culprit)
+	if err != nil {
+		return false, "", errors.Annotate(err, "error checking for dependencies").Err()
+	}
+	if hasDep {
+		return false, "there are merged changes depending on it", nil
+	}
+
+	// Check if LUCI Bisection's Gerrit config allows revert creation
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return false, "", errors.Annotate(err, "error fetching configs").Err()
+	}
+	canCreate, reason, err := config.CanCreateRevert(ctx, cfg.GerritConfig)
+	if err != nil {
+		return false, "", errors.Annotate(err, "error checking Create Revert configs").Err()
+	}
+	if !canCreate {
+		return false, reason, nil
+	}
+
+	return true, "", nil
+}
 
 // createRevert creates a revert for the given culprit.
 // Returns a revert for the culprit, created by LUCI Bisection.
@@ -48,24 +96,6 @@ func createRevert(ctx context.Context, gerritClient *gerrit.Client,
 	revert, err := gerritClient.CreateRevert(ctx, culprit, revertDescription)
 	if err != nil {
 		return nil, err
-	}
-
-	// Update revert details for creation
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		e := datastore.Get(ctx, culpritModel)
-		if e != nil {
-			return e
-		}
-
-		culpritModel.RevertURL = util.ConstructGerritCodeReviewURL(ctx, gerritClient, revert)
-		culpritModel.IsRevertCreated = true
-		culpritModel.RevertCreateTime = clock.Now(ctx)
-
-		return datastore.Put(ctx, culpritModel)
-	}, nil)
-	if err != nil {
-		return revert, errors.Annotate(err,
-			"couldn't update suspect revert creation details").Err()
 	}
 
 	return revert, nil

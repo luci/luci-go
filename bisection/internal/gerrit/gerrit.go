@@ -27,6 +27,18 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+// The options to use when querying Gerrit for changes
+var queryOptions = []gerritpb.QueryOption{
+	gerritpb.QueryOption_LABELS,
+	gerritpb.QueryOption_CURRENT_REVISION,
+	gerritpb.QueryOption_CURRENT_COMMIT,
+	gerritpb.QueryOption_DETAILED_ACCOUNTS,
+	gerritpb.QueryOption_MESSAGES,
+	gerritpb.QueryOption_CHANGE_ACTIONS,
+	gerritpb.QueryOption_SKIP_MERGEABLE,
+	gerritpb.QueryOption_CHECK,
+}
+
 // mockedGerritClientKey is the context key to indicate using mocked
 // Gerrit client in tests
 var mockedGerritClientKey = "mock Gerrit client"
@@ -73,17 +85,8 @@ func (c *Client) Host(ctx context.Context) string {
 // queryChanges gets the info for corresponding change(s) given the query string.
 func (c *Client) queryChanges(ctx context.Context, query string) ([]*gerritpb.ChangeInfo, error) {
 	req := &gerritpb.ListChangesRequest{
-		Query: query,
-		Options: []gerritpb.QueryOption{
-			gerritpb.QueryOption_LABELS,
-			gerritpb.QueryOption_CURRENT_REVISION,
-			gerritpb.QueryOption_CURRENT_COMMIT,
-			gerritpb.QueryOption_DETAILED_ACCOUNTS,
-			gerritpb.QueryOption_MESSAGES,
-			gerritpb.QueryOption_CHANGE_ACTIONS,
-			gerritpb.QueryOption_SKIP_MERGEABLE,
-			gerritpb.QueryOption_CHECK,
-		},
+		Query:   query,
+		Options: queryOptions,
 	}
 
 	res, err := c.gerritClient.ListChanges(ctx, req)
@@ -118,6 +121,23 @@ func (c *Client) GetChange(ctx context.Context, project string, commitID string)
 	}
 
 	return changes[0], nil
+}
+
+// RefetchChange queries Gerrit for the given change, and returns the latest
+// state of the change
+func (c *Client) RefetchChange(ctx context.Context, change *gerritpb.ChangeInfo) (*gerritpb.ChangeInfo, error) {
+	req := &gerritpb.GetChangeRequest{
+		Project: change.Project,
+		Number:  change.Number,
+		Options: queryOptions,
+	}
+
+	res, err := c.gerritClient.GetChange(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // GetReverts gets the corresponding revert(s) for the given change.

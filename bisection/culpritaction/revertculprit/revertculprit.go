@@ -18,13 +18,11 @@ package revertculprit
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
-	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
@@ -175,140 +173,55 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	}
 
 	// Check for existing reverts
-	reverts, err := gerritClient.GetReverts(ctx, culprit)
+	existingRevert, err := getMostRelevantRevert(ctx, gerritClient, culprit)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
-	activeReverts := []*gerritpb.ChangeInfo{}
-	abandonedReverts := []*gerritpb.ChangeInfo{}
-	for _, revert := range reverts {
-		logging.Debugf(ctx, "Existing revert found for culprit %s~%d - revert is %s~%d",
-			culprit.Project, culprit.Number, revert.Project, revert.Number)
+	if existingRevert != nil {
+		err = saveRevertURL(ctx, gerritClient, culpritModel, existingRevert)
+		if err != nil {
+			// not critical - just log the error
+			logging.Errorf(ctx, err.Error())
+		}
 
-		switch revert.Status {
+		switch existingRevert.Status {
 		case gerritpb.ChangeStatus_MERGED:
 			// there is a merged revert - no further action required
-			err = saveRevertURL(ctx, gerritClient, culpritModel, revert)
+			return nil
+		case gerritpb.ChangeStatus_NEW:
+			// add a supporting comment to the first revert
+			err = commentSupportOnExistingRevert(ctx, gerritClient, culpritModel, existingRevert)
 			if err != nil {
-				// not critical - just log the error
 				logging.Errorf(ctx, err.Error())
+				return err
 			}
-
 			return nil
 		case gerritpb.ChangeStatus_ABANDONED:
-			abandonedReverts = append(abandonedReverts, revert)
-		case gerritpb.ChangeStatus_NEW:
-			activeReverts = append(activeReverts, revert)
-		}
-	}
-
-	if len(activeReverts) > 0 {
-		// there is an existing revert yet to be merged
-
-		// update the revert URL using the first revert
-		revert := activeReverts[0]
-		err = saveRevertURL(ctx, gerritClient, culpritModel, revert)
-		if err != nil {
-			// not critical - just log the error
-			logging.Errorf(ctx, err.Error())
-		}
-
-		// add a supporting comment to the first revert
-		err = commentSupportOnExistingRevert(ctx, gerritClient, culpritModel, activeReverts[0])
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
+			// add a comment on the culprit since the revert has been abandoned
+			err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
+				"an abandoned revert already exists")
+			if err != nil {
+				logging.Errorf(ctx, err.Error())
+				return err
+			}
+			return nil
+		default:
+			logging.Errorf(ctx,
+				"status was not recognized for existing revert %s~%d [status='%v']",
+				existingRevert.Project, existingRevert.Number, existingRevert.Status)
 		}
 
 		return nil
 	}
 
-	if len(abandonedReverts) > 0 {
-		// there is an abandoned revert
-
-		// update the revert URL using the first revert
-		revert := abandonedReverts[0]
-		err = saveRevertURL(ctx, gerritClient, culpritModel, revert)
-		if err != nil {
-			// not critical - just log the error
-			logging.Errorf(ctx, err.Error())
-		}
-
-		// add a comment on the culprit since the revert has been abandoned
-		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
-			"an abandoned revert already exists")
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		return nil
-	}
-
-	hasFlag, err := gerrit.HasAutoRevertOffFlagSet(ctx, culprit)
-	if err != nil {
-		err = errors.Annotate(err, "issue checking for auto-revert flag").Err()
-		logging.Errorf(ctx, err.Error())
-		return err
-	}
-	if hasFlag {
-		// comment that auto-revert has been disabled for this change
-		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
-			"auto-revert has been disabled for this CL by its description")
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		return nil
-	}
-
-	cannotRevert, err := HasIrrevertibleAuthor(ctx, culprit)
-	if err != nil {
-		err = errors.Annotate(err, "issue getting culprit's commit author").Err()
-		logging.Errorf(ctx, err.Error())
-		return err
-	}
-	if cannotRevert {
-		// comment that the author of the culprit is irrevertible
-		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
-			"LUCI Bisection cannot revert changes from this CL's author")
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		return nil
-	}
-
-	// Check if there are other merged changes depending on the culprit
-	// before trying to revert it
-	hasDep, err := gerritClient.HasDependency(ctx, culprit)
+	shouldRevert, reason, err := isCulpritRevertible(ctx, gerritClient, culprit)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
-	if hasDep {
-		// revert should not be created as the culprit has merged dependencies
-		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
-			"there are merged changes depending on it")
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		return nil
-	}
-
-	// Check if the Gerrit config allows revert creation
-	canCreate, reason, err := config.CanCreateRevert(ctx, cfg.GerritConfig)
-	if err != nil {
-		logging.Errorf(ctx, err.Error())
-		return err
-	}
-	if !canCreate {
-		// cannot create revert based on config
+	if !shouldRevert {
+		// Add a comment on the culprit CL to explain why a revert was not created
 		err = commentReasonOnCulprit(ctx, gerritClient, culpritModel, culprit,
 			reason)
 		if err != nil {
@@ -322,48 +235,76 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	// Create revert
 	revert, err := createRevert(ctx, gerritClient, culpritModel, culprit)
 	if err != nil {
-		// unexpected error from creating the revert
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	err = saveCreationDetails(ctx, gerritClient, culpritModel, revert)
+	if err != nil {
 		logging.Errorf(ctx, err.Error())
 
-		if revert != nil {
-			// a revert was created by LUCI Bisection - add reviewers to it
-			err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
-				"an unexpected error occurred when LUCI Bisection created this revert")
-			if err != nil {
-				logging.Errorf(ctx, err.Error())
-				return err
+		// a revert was created by LUCI Bisection - add reviewers to it
+		shouldReview, reviewErr := isRevertActive(ctx, gerritClient, revert)
+		if reviewErr != nil {
+			logging.Errorf(ctx, reviewErr.Error())
+			return reviewErr
+		}
+		if shouldReview {
+			reviewErr = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
+				"an unexpected error occurred after LUCI Bisection created this revert")
+			if reviewErr != nil {
+				logging.Errorf(ctx, reviewErr.Error())
+				return reviewErr
 			}
 		}
 
-		return nil
+		return err
 	}
 
-	// Check if the culprit was committed recently
-	maxAge := time.Duration(cfg.GerritConfig.MaxRevertibleCulpritAge) * time.Second
-	if !gerrit.IsRecentSubmit(ctx, culprit, maxAge) {
-		// culprit was not submitted recently, so the revert should not be
-		// automatically submitted
-		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
-			"the target of this revert was not committed recently")
-		if err != nil {
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		// no longer submitting revert as it's too old - stop now
-		return nil
-	}
-
-	// Check if the Gerrit config allows revert submission
-	canSubmit, reason, err := config.CanSubmitRevert(ctx, cfg.GerritConfig)
+	// Check again for merged reverts for the culprit, in case
+	// another revert was manually created and merged while waiting for Gerrit
+	// to finish creating the revert.
+	existingReverts, err := gerritClient.GetReverts(ctx, culprit)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
-	if !canSubmit {
-		// cannot submit revert based on config - send the revert to be
-		// manually reviewed instead
-		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert, reason)
+	for _, existingRevert := range existingReverts {
+		if existingRevert.Status == gerritpb.ChangeStatus_MERGED {
+			// A revert has already been merged, so there is no need to commit the
+			// revert created by LUCI Bisection
+			logging.Debugf(ctx, "existing revert %s~%d already merged for culprit %s~%d",
+				existingRevert.Project, existingRevert.Number,
+				culprit.Project, culprit.Number)
+
+			// TODO (aredulla): Abandon the revert created by LUCI Bisection if this
+			// merged revert is different
+
+			return nil
+		}
+	}
+
+	// Check the revert is still active, as creation can take a long time so
+	// it may have been manually updated
+	isActive, err := isRevertActive(ctx, gerritClient, revert)
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	if !isActive {
+		// revert has been manually updated, so no further action is required
+		return nil
+	}
+
+	shouldCommit, reason, err := canCommit(ctx, culprit)
+	if err != nil {
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+	if !shouldCommit {
+		// Send the revert for manual review and add a comment to explain why the
+		// revert was not automatically submitted
+		err = sendRevertForReview(ctx, gerritClient, culpritModel, revert,
+			reason)
 		if err != nil {
 			logging.Errorf(ctx, err.Error())
 			return err
@@ -373,19 +314,22 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	}
 
 	// Commit revert
-	committed, err := commitRevert(ctx, gerritClient, culpritModel, revert)
+	err = commitRevert(ctx, gerritClient, culpritModel, revert)
 	if err != nil {
-		// Send the revert to be manually reviewed if it was not committed
-		if !committed {
-			reviewErr := sendRevertForReview(ctx, gerritClient, culpritModel, revert,
-				"an error occurred when attempting to submit it")
-			if reviewErr != nil {
-				logging.Errorf(ctx, reviewErr.Error())
-				return reviewErr
-			}
+		logging.Errorf(ctx, err.Error())
+
+		// Send the revert to be manually reviewed
+		reviewErr := sendRevertForReview(ctx, gerritClient, culpritModel, revert,
+			"an error occurred when attempting to submit it")
+		if reviewErr != nil {
+			logging.Errorf(ctx, reviewErr.Error())
+			return reviewErr
 		}
 
-		// log and return the unexpected error from committing revert
+		return err
+	}
+	err = saveCommitDetails(ctx, culpritModel)
+	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
 	}
@@ -393,158 +337,69 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	return nil
 }
 
-func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Client,
-	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
-	lbOwned, err := gerrit.IsOwnedByLUCIBisection(ctx, revert)
+// getMostRelevantRevert returns the most relevant revert based on the
+// revert change's status, in the order of merged > active > abandoned > nil.
+func getMostRelevantRevert(ctx context.Context, gerritClient *gerrit.Client,
+	culprit *gerritpb.ChangeInfo) (*gerritpb.ChangeInfo, error) {
+	// Check for existing reverts
+	reverts, err := gerritClient.GetReverts(ctx, culprit)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed handling existing revert when finding owner").Err()
+		return nil, err
 	}
 
-	if lbOwned {
-		// Revert is owned by LUCI Bisection - no further action required
-		return nil
-	}
+	var activeRevert *gerritpb.ChangeInfo = nil
+	var abandonedRevert *gerritpb.ChangeInfo = nil
+	for _, revert := range reverts {
+		logging.Debugf(ctx, "Existing revert found for culprit %s~%d - revert is %s~%d",
+			culprit.Project, culprit.Number, revert.Project, revert.Number)
 
-	// Revert is not owned by LUCI Bisection
-	lbCommented, err := gerrit.HasLUCIBisectionComment(ctx, revert)
-	if err != nil {
-		return errors.Annotate(err,
-			"failed handling existing revert when checking for pre-existing comment").Err()
-	}
-
-	if lbCommented {
-		// Revert already has a comment by LUCI Bisection - no further action
-		// required
-		return nil
-	}
-
-	// If here, revert is not owned by LUCI Bisection and has no supporting comment
-
-	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
-	if err != nil {
-		return err
-	}
-	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
-	buildURL := util.ConstructBuildURL(ctx, bbid)
-	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)
-
-	_, err = gerritClient.AddComment(ctx, revert,
-		fmt.Sprintf("LUCI Bisection recommends submitting this revert because"+
-			" it has confirmed the target of this revert is the culprit of a"+
-			" build failure. See the analysis: %s\n\n"+
-			"Sample failed build: %s\n\n"+
-			"If this is a false positive, please report it at %s",
-			analysisURL, buildURL, bugURL))
-	if err != nil {
-		return errors.Annotate(err,
-			"error when adding supporting comment to existing revert").Err()
-	}
-
-	// Update culprit for the supporting comment action
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		e := datastore.Get(ctx, culpritModel)
-		if e != nil {
-			return e
+		switch revert.Status {
+		case gerritpb.ChangeStatus_MERGED:
+			return revert, nil
+		case gerritpb.ChangeStatus_ABANDONED:
+			if abandonedRevert == nil {
+				abandonedRevert = revert
+			}
+		case gerritpb.ChangeStatus_NEW:
+			if activeRevert == nil {
+				activeRevert = revert
+			}
+		default:
+			logging.Debugf(ctx, "ignoring revert %s~%d due to its unrecognized status %v",
+				revert.Project, revert.Number, revert.Status)
 		}
-
-		// set the flag to record the revert has a supporting comment from LUCI Bisection
-		culpritModel.HasSupportRevertComment = true
-		culpritModel.SupportRevertCommentTime = clock.Now(ctx)
-
-		return datastore.Put(ctx, culpritModel)
-	}, nil)
-
-	if err != nil {
-		return errors.Annotate(err,
-			"couldn't update suspect details when commenting support for existing revert").Err()
 	}
 
-	return nil
+	if activeRevert != nil {
+		// there is an existing revert yet to be merged
+		return activeRevert, nil
+	}
+
+	if abandonedRevert != nil {
+		// there is an abandoned revert
+		return abandonedRevert, nil
+	}
+
+	return nil, nil
 }
 
-// commentReasonOnCulprit adds a comment from LUCI Bisection on a culprit CL
-// explaining why a revert was not automatically created
-func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
-	culpritModel *model.Suspect, culprit *gerritpb.ChangeInfo, reason string) error {
-	// TODO (aredulla): store reason in datastore to allow investigation
-	lbCommented, err := gerrit.HasLUCIBisectionComment(ctx, culprit)
+func isRevertActive(ctx context.Context, gerritClient *gerrit.Client,
+	revert *gerritpb.ChangeInfo) (bool, error) {
+	// Refetch the created revert to get its latest status
+	revert, err := gerritClient.RefetchChange(ctx, revert)
 	if err != nil {
-		return errors.Annotate(err,
-			"failed handling failed revert creation when checking for pre-existing comment").Err()
+		return false, errors.Annotate(err,
+			"error refetching revert created by LUCI Bisection").Err()
 	}
 
-	if lbCommented {
-		// Culprit already has a comment by LUCI Bisection - no further action
-		// required
-		return nil
+	if revert.Status == gerritpb.ChangeStatus_NEW {
+		return true, nil
+	} else {
+		// the revert created by LUCI Bisection has been manually updated
+		logging.Debugf(ctx, "revert %s~%d created by LUCI Bisection was updated"+
+			" manually [status=%v]", revert.Project, revert.Number, revert.Status)
+		return false, nil
 	}
-
-	bbid, err := datastoreutil.GetAssociatedBuildID(ctx, culpritModel)
-	if err != nil {
-		return err
-	}
-	analysisURL := util.ConstructAnalysisURL(ctx, bbid)
-	buildURL := util.ConstructBuildURL(ctx, bbid)
-	bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)
-
-	message := fmt.Sprintf("LUCI Bisection has identified this"+
-		" change as the culprit of a build failure. See the analysis: %s\n\n"+
-		"A revert for this change was not created because %s.\n\n"+
-		"Sample failed build: %s\n\n"+
-		"If this is a false positive, please report it at %s",
-		analysisURL, reason, buildURL, bugURL)
-
-	_, err = gerritClient.AddComment(ctx, culprit, message)
-	if err != nil {
-		return errors.Annotate(err, "error when commenting on culprit").Err()
-	}
-
-	// Update culprit for the comment action
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		e := datastore.Get(ctx, culpritModel)
-		if e != nil {
-			return e
-		}
-
-		// set the flag to note that the culprit has a comment from LUCI Bisection
-		culpritModel.HasCulpritComment = true
-		culpritModel.CulpritCommentTime = clock.Now(ctx)
-
-		return datastore.Put(ctx, culpritModel)
-	}, nil)
-
-	if err != nil {
-		return errors.Annotate(err,
-			"couldn't update suspect details when commenting on the culprit").Err()
-	}
-
-	return nil
-}
-
-// sendRevertForReview adds a comment from LUCI Bisection on a revert CL
-// explaining why a revert was not automatically submitted.
-// TODO: this function will also add arborists on rotation as reviewers to the
-// revert CL
-func sendRevertForReview(ctx context.Context, gerritClient *gerrit.Client,
-	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo, reason string) error {
-	// TODO (aredulla): store reason in datastore to allow investigation
-
-	// Get on-call arborists
-	reviewerEmails, err := rotationproxy.GetOnCallEmails(ctx,
-		culpritModel.GitilesCommit.Project)
-	if err != nil {
-		return errors.Annotate(err, "failed getting reviewers for manual review").Err()
-	}
-
-	// For now, no accounts are additionally CC'd
-	ccEmails := []string{}
-
-	message := fmt.Sprintf("LUCI Bisection could not automatically"+
-		" submit this revert because %s.", reason)
-	_, err = gerritClient.SendForReview(ctx, revert, message,
-		reviewerEmails, ccEmails)
-	return err
 }
 
 // saveRevertURL updates the revert URL for the given Suspect
@@ -564,6 +419,50 @@ func saveRevertURL(ctx context.Context, gerritClient *gerrit.Client,
 		err = errors.Annotate(err,
 			"couldn't update suspect details for culprit with existing revert").Err()
 		return err
+	}
+
+	return nil
+}
+
+func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
+	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
+	// Update revert details for creation
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+
+		culpritModel.RevertURL = util.ConstructGerritCodeReviewURL(ctx, gerritClient, revert)
+		culpritModel.IsRevertCreated = true
+		culpritModel.RevertCreateTime = clock.Now(ctx)
+
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err,
+			"couldn't update suspect revert creation details").Err()
+	}
+
+	return nil
+}
+
+func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
+	// Update revert details for commit action
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+
+		culpritModel.IsRevertCommitted = true
+		culpritModel.RevertCommitTime = clock.Now(ctx)
+
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
+	if err != nil {
+		return errors.Annotate(err,
+			"couldn't update suspect revert commit details").Err()
 	}
 
 	return nil

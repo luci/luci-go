@@ -22,6 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -117,6 +118,51 @@ func TestGetChange(t *testing.T) {
 			changeInfo, err := client.GetChange(ctx, testGerritProject, "abcdefgh")
 			So(err, ShouldBeNil)
 			So(changeInfo, ShouldResemble, expectedChange)
+		})
+	})
+}
+
+func TestRefetchChange(t *testing.T) {
+	t.Parallel()
+
+	Convey("RefetchChange", t, func() {
+		ctx := context.Background()
+
+		// Set up mock Gerrit client
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := NewMockedClient(ctx, ctl)
+		ctx = mockClient.Ctx
+
+		// Set up Gerrit client
+		client, err := NewClient(ctx, testGerritHost)
+		So(err, ShouldBeNil)
+		So(client, ShouldNotBeNil)
+
+		Convey("Latest change is returned", func() {
+			change := &gerritpb.ChangeInfo{
+				Number:  123456,
+				Project: testGerritProject,
+				Status:  gerritpb.ChangeStatus_NEW,
+			}
+
+			// Set up mock response
+			res := &gerritpb.ChangeInfo{
+				Number:  change.Number,
+				Project: change.Project,
+				Status:  gerritpb.ChangeStatus_MERGED,
+			}
+			mockClient.Client.EXPECT().GetChange(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.GetChangeRequest{
+					Project: change.Project,
+					Number:  change.Number,
+					Options: queryOptions,
+				},
+			)).Return(res, nil).Times(1)
+
+			latestChange, err := client.RefetchChange(ctx, change)
+			So(err, ShouldBeNil)
+			So(latestChange, ShouldResemble, res)
 		})
 	})
 }

@@ -16,20 +16,50 @@ package revertculprit
 
 import (
 	"context"
+	"time"
 
+	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
+// canCommit returns:
+//   - whether a revert for the culprit CL can be committed;
+//   - the reason a revert should not be committed if applicable; and
+//   - the error if one occurred.
+func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo) (bool, string, error) {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return false, "", errors.Annotate(err, "error fetching configs").Err()
+	}
+
+	// Check if the culprit was committed recently
+	maxAge := time.Duration(cfg.GerritConfig.MaxRevertibleCulpritAge) * time.Second
+	if !gerrit.IsRecentSubmit(ctx, culprit, maxAge) {
+		// culprit was not submitted recently, so the revert should not be
+		// automatically submitted
+		return false, "the target of this revert was not committed recently", nil
+	}
+
+	// Check if LUCI Bisection's Gerrit config allows revert submission
+	canSubmit, reason, err := config.CanSubmitRevert(ctx, cfg.GerritConfig)
+	if err != nil {
+		return false, "", errors.Annotate(err, "error checking Submit Revert configs").Err()
+	}
+	if !canSubmit {
+		// cannot submit revert based on config
+		return false, reason, nil
+	}
+
+	return true, "", nil
+}
+
 // commitRevert attempts to bot-commit the given revert.
-// Returns whether the revert was successfully committed.
 // Note: this should only be called according to the service-wide configuration
 // data for LUCI Bisection, i.e.
 //   - Gerrit actions are enabled
@@ -37,7 +67,7 @@ import (
 //   - the daily limit of submitted reverts has not yet been reached
 //   - the culprit is not yet older than the maximum revertible culprit age
 func commitRevert(ctx context.Context, gerritClient *gerrit.Client,
-	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) (bool, error) {
+	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
 	// CC on-call arborists
 	ccEmails, err := rotationproxy.GetOnCallEmails(ctx,
 		culpritModel.GitilesCommit.Project)
@@ -49,26 +79,5 @@ func commitRevert(ctx context.Context, gerritClient *gerrit.Client,
 
 	_, err = gerritClient.CommitRevert(ctx, revert,
 		"LUCI Bisection is automatically submitting this revert.", ccEmails)
-	if err != nil {
-		return false, err
-	}
-
-	// Update revert details for commit action
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		e := datastore.Get(ctx, culpritModel)
-		if e != nil {
-			return e
-		}
-
-		culpritModel.IsRevertCommitted = true
-		culpritModel.RevertCommitTime = clock.Now(ctx)
-
-		return datastore.Put(ctx, culpritModel)
-	}, nil)
-	if err != nil {
-		return true, errors.Annotate(err,
-			"couldn't update suspect revert commit details").Err()
-	}
-
-	return true, nil
+	return err
 }

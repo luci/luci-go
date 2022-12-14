@@ -961,6 +961,12 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
 			mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any()).
 				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{revertRes},
+				}, nil).Times(1)
+			mockClient.Client.EXPECT().GetChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
 			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
 				&gerritpb.SetReviewRequest{
 					Project:    revertRes.Project,
@@ -1067,6 +1073,12 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
 				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
 			mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{revertRes},
+				}, nil).Times(1)
+			mockClient.Client.EXPECT().GetChange(gomock.Any(), gomock.Any()).
 				Return(revertRes, nil).Times(1)
 			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
 				&gerritpb.SetReviewRequest{
@@ -1178,6 +1190,12 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
 			mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any()).
 				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{revertRes},
+				}, nil).Times(1)
+			mockClient.Client.EXPECT().GetChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
 			mockClient.Client.EXPECT().GetPureRevert(gomock.Any(), gomock.Any()).
 				Return(pureRevertRes, nil).Times(1)
 			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
@@ -1218,6 +1236,207 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
 				IsRevertCommitted:       true,
 				RevertCommitTime:        testclock.TestTimeUTC.Round(time.Second),
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
+		})
+
+		Convey("revert for culprit is created then manually committed", func() {
+			// Setup suspect in datastore
+			heuristicSuspect := &model.Suspect{
+				Id:             13,
+				Type:           model.SuspectType_Heuristic,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			}
+			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			// Set up mock responses
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          876543,
+					Project:         "chromium/src",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "deadbeef",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"deadbeef": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
+							},
+						},
+					},
+				}},
+			}
+			revertRes := &gerritpb.ChangeInfo{
+				Number:  876549,
+				Project: "chromium/src",
+				Status:  gerritpb.ChangeStatus_NEW,
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(culpritRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{
+						{
+							Number:  876549,
+							Project: "chromium/src",
+							Status:  gerritpb.ChangeStatus_MERGED,
+						},
+					},
+				}, nil).Times(1)
+
+			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         true,
+				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
+		})
+
+		Convey("revert for culprit is created but another revert was merged in the meantime", func() {
+			// Setup suspect in datastore
+			heuristicSuspect := &model.Suspect{
+				Id:             14,
+				Type:           model.SuspectType_Heuristic,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			}
+			So(datastore.Put(ctx, heuristicSuspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			// Set up mock responses
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          876543,
+					Project:         "chromium/src",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "deadbeef",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"deadbeef": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
+							},
+						},
+					},
+				}},
+			}
+			revertRes := &gerritpb.ChangeInfo{
+				Number:  876549,
+				Project: "chromium/src",
+				Status:  gerritpb.ChangeStatus_NEW,
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(culpritRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{
+						{
+							Number:  876549,
+							Project: "chromium/src",
+							Status:  gerritpb.ChangeStatus_NEW,
+						},
+						{
+							Number:  876551,
+							Project: "chromium/src",
+							Status:  gerritpb.ChangeStatus_MERGED,
+						},
+					},
+				}, nil).Times(1)
+
+			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         true,
+				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
+				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
