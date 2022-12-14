@@ -433,7 +433,7 @@ message GitPersonInfo {
 // Source of truth:
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 //
-// Next tag: 23.
+// Next tag: 24.
 message ChangeInfo {
   // The change number.
   int64 number = 1;
@@ -519,6 +519,9 @@ message ChangeInfo {
 
   // The subject of the change (header line of the commit message).
   string subject = 22;
+
+  // The name of the target branch. The refs/heads/ prefix is omitted.
+  string branch = 23;
 }
 
 enum ChangeStatus {
