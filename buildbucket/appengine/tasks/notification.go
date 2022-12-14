@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+// notifyPubSub enqueues tasks to Python side.
 func notifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
 	if task.GetBuildId() == 0 {
 		return errors.Reason("build_id is required").Err()
@@ -46,18 +47,35 @@ func notifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
 }
 
 // NotifyPubSub enqueues tasks to notify Pub/Sub about the given build.
-// TODO(crbug/1091604): Move next to Pub/Sub notification task handler.
-// Currently the task handler is implemented in Python.
 func NotifyPubSub(ctx context.Context, b *model.Build) error {
 	if err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{
 		BuildId: b.ID,
 	}); err != nil {
 		return errors.Annotate(err, "failed to enqueue global pubsub notification task: %d", b.ID).Err()
 	}
-	// TODO(yuanjunh@):  Complete in next CL to hook up the entire flow.
-	// 1. enqueue a NotifyPubSubGo task to notify `builds_v2_pubsub` topic
-	// 2. fetch Project entity to see how many extra NotifyPubSubGo tasks needed
-	// to generate to notify external topics.
+
+	// Enqueues to Go side Cloud Tasks.
+	// TODO(crbug.com/1381210): Enqueue the task for internal builds_v2
+	// notifications once when at least one customer is ready to consume (e.g CV).
+	proj := &model.Project{
+		ID: b.Proto.GetBuilder().GetProject(),
+	}
+	if err := errors.Filter(datastore.Get(ctx, proj), datastore.ErrNoSuchEntity); err != nil {
+		return errors.Annotate(err,"failed to fetch project %s", b.Proto.GetBuilder().GetProject()).Err()
+	}
+	for _, t := range proj.CommonConfig.GetBuildsNotificationTopics() {
+		if t.Name == "" {
+			continue
+		}
+		if err := tq.AddTask(ctx, &tq.Task{
+			Payload:  &taskdefs.NotifyPubSubGo{
+				BuildId: b.ID,
+				Topic: t,
+			},
+		}); err != nil {
+			return errors.Annotate(err, "failed to enqueue notification task: %d for external topic %s ", b.ID, t.Name).Err()
+		}
+	}
 
 	if b.PubSubCallback.Topic == "" {
 		return nil

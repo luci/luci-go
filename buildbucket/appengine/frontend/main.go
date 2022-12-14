@@ -76,7 +76,12 @@ func main() {
 		}
 		srv.Context = clients.WithBqClient(srv.Context, bqClient)
 
+		// Enable dscache on Project entities only. Other datastore entities aren't
+		// ready.
 		srv.Context = dscache.AddShardFunctions(srv.Context, func(k *datastore.Key) (shards int, ok bool) {
+			if k.Kind() == "Project" {
+				return 1, true
+			}
 			return 0, true
 		})
 
