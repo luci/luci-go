@@ -30,6 +30,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
@@ -139,9 +141,52 @@ func cmdStream(p Params) *subcommands.Command {
 				false, text.Doc(`
 				If true, any unexpected pass result will be exonerated.
 			`))
+			r.Flags.TextVar(&r.invProperties, "inv-properties", &invProperties{}, text.Doc(`
+				Stringified JSON object that contains structured,
+				domain-specific properties of the invocation.
+				The command will fail if the 'properties' is already set on the invocation
+				(NOT ENFORCED YET).
+			`))
+			r.Flags.StringVar(&r.invPropertiesFile, "inv-properties-file", "", text.Doc(`
+				Similar to -inv-properties but takes a path to the file that contains the JSON object.
+				Cannot be used when -inv-properties is specified.
+			`))
 			return r
 		},
 	}
+}
+
+type invProperties struct {
+	*structpb.Struct
+}
+
+// Implements encoding.TextUnmarshaler.
+func (s *invProperties) UnmarshalText(text []byte) error {
+	// Treat empty text as nil. This indicates that the properties is not
+	// specified and will not be updated.
+	// '{}' means the properties should be set to an empty object.
+	if len(text) == 0 {
+		s.Struct = nil
+		return nil
+	}
+
+	properties := &structpb.Struct{}
+	if err := protojson.Unmarshal(text, properties); err != nil {
+		return err
+	}
+	s.Struct = properties
+	return nil
+}
+
+// Implements encoding.TextMarshaler.
+func (s *invProperties) MarshalText() (text []byte, err error) {
+	// Serialize nil struct to empty string so nil struct won't be serialized as
+	// '{}'.
+	if s.Struct == nil {
+		return nil, nil
+	}
+
+	return protojson.Marshal(s.Struct)
 }
 
 type streamRun struct {
@@ -160,6 +205,8 @@ type streamRun struct {
 	coerceNegativeDuration  bool
 	locTagsFile             string
 	exonerateUnexpectedPass bool
+	invPropertiesFile       string
+	invProperties           invProperties
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -178,6 +225,9 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 		if err := realms.ValidateRealmName(r.realm, realms.GlobalScope); err != nil {
 			return errors.Annotate(err, "invalid realm").Err()
 		}
+	}
+	if r.invProperties.Struct != nil && r.invPropertiesFile != "" {
+		return errors.Reason("cannot specify both -inv-properties and -inv-properties-file at the same time").Err()
 	}
 	return nil
 }
@@ -242,6 +292,18 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		r.invocation = r.resultdbCtx.CurrentInvocation
 	}
 
+	invProperties, err := r.invPropertiesFromArgs(ctx)
+	if err != nil {
+		return r.done(errors.Annotate(err, "get invocation properties from arguments").Err())
+	}
+	if invProperties != nil {
+		if err := r.updateInvProperties(ctx, invProperties); err != nil {
+			return r.done(err)
+		}
+	} else {
+		panic("stuff")
+	}
+
 	defer func() {
 		// Finalize the invocation if it was created by -new.
 		if r.isNew {
@@ -253,7 +315,7 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 		}
 	}()
 
-	err := r.runTestCmd(ctx, args)
+	err = r.runTestCmd(ctx, args)
 	ec, ok := exitcode.Get(err)
 	if !ok {
 		logging.Errorf(ctx, "rdb-stream: failed to run the test command: %s", err)
@@ -297,7 +359,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		logging.Infof(ctx, "Sent termination signal to subprocess, it has ~%s to terminate", lucictx.GetDeadline(cmdCtx).GracePeriodDuration())
 	}()
 
-	locationTags, err := r.getLocationTags(ctx)
+	locationTags, err := r.locationTagsFromArg(ctx)
 	if err != nil {
 		return errors.Annotate(err, "get location tags").Err()
 	}
@@ -344,7 +406,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	})
 }
 
-func (r *streamRun) getLocationTags(ctx context.Context) (*sinkpb.LocationTags, error) {
+func (r *streamRun) locationTagsFromArg(ctx context.Context) (*sinkpb.LocationTags, error) {
 	if r.locTagsFile == "" {
 		return nil, nil
 	}
@@ -361,6 +423,36 @@ func (r *streamRun) getLocationTags(ctx context.Context) (*sinkpb.LocationTags, 
 		return nil, err
 	}
 	return locationTags, nil
+}
+
+// invPropertiesFromArgs gets invocation-level proeprties from arguments.
+// If r.invProperties is set, return it.
+// If r.invPropertiesFile is set, parse the file and return the value.
+// Return nil if neither are set.
+func (r *streamRun) invPropertiesFromArgs(ctx context.Context) (*structpb.Struct, error) {
+	if r.invProperties.Struct != nil {
+		return r.invProperties.Struct, nil
+	}
+
+	if r.invPropertiesFile == "" {
+		return nil, nil
+	}
+
+	f, err := os.ReadFile(r.invPropertiesFile)
+	switch {
+	case os.IsNotExist(err):
+		logging.Warningf(ctx, "rdb-stream: %s does not exist", r.invPropertiesFile)
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+
+	properties := &structpb.Struct{}
+	if err = protojson.Unmarshal(f, properties); err != nil {
+		return nil, err
+	}
+
+	return properties, nil
 }
 
 func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
@@ -395,6 +487,19 @@ func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucict
 	_, err := r.recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
 		IncludingInvocation: parent.Name,
 		AddInvocations:      []string{child.Name},
+	})
+	return err
+}
+
+// updateInvProperties sets the properties on the invocation.
+func (r *streamRun) updateInvProperties(ctx context.Context, properties *structpb.Struct) error {
+	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
+	_, err := r.recorder.UpdateInvocation(ctx, &pb.UpdateInvocationRequest{
+		Invocation: &pb.Invocation{
+			Name:       r.invocation.Name,
+			Properties: properties,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"properties"}},
 	})
 	return err
 }
