@@ -17,7 +17,7 @@ import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { makeObservable, observable } from 'mobx';
 
-import { getSafeUrlFromBuildset } from '../libs/build_utils';
+import { getSafeUrlFromTagValue } from '../libs/build_utils';
 import commonStyle from '../styles/common_style.css';
 
 /**
@@ -34,14 +34,12 @@ export class BuildTagRowElement extends MobxLitElement {
   }
 
   protected render() {
-    if (this.key === 'buildset') {
-      const url = getSafeUrlFromBuildset(this.value);
-      if (url) {
-        return html`
-          <td>${this.key}:</td>
-          <td><a href=${url} target="_blank">${this.value}</a></td>
-        `;
-      }
+    const url = getSafeUrlFromTagValue(this.value);
+    if (url) {
+      return html`
+        <td>${this.key}:</td>
+        <td><a href=${url} target="_blank">${this.value}</a></td>
+      `;
     }
 
     return html`

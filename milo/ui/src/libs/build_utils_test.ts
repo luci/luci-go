@@ -18,7 +18,7 @@ import {
   getBuildbucketLink,
   getCipdLink,
   getLogdogRawUrl,
-  getSafeUrlFromBuildset,
+  getSafeUrlFromTagValue,
   getURLPathForBuilder,
   getURLPathForProject,
   renderBugUrlTemplate,
@@ -63,20 +63,25 @@ describe('Build Utils Tests', () => {
     });
   });
 
-  describe('getSafeUrlFromBuildset', () => {
+  describe('getSafeUrlFromTagValue', () => {
     it('should get the correct gerrit url', async () => {
-      const url = getSafeUrlFromBuildset('patch/gerrit/chromium-review.googlesource.com/2365643/6');
+      const url = getSafeUrlFromTagValue('patch/gerrit/chromium-review.googlesource.com/2365643/6');
       assert.strictEqual(url, 'https://chromium-review.googlesource.com/c/2365643/6');
     });
 
     it('should get the correct gitiles url', async () => {
-      const url = getSafeUrlFromBuildset(
+      const url = getSafeUrlFromTagValue(
         'commit/gitiles/chromium.googlesource.com/chromium/src/+/6ae002709a6e0df5f61428d962e44a62920e76e1'
       );
       assert.strictEqual(
         url,
         'https://chromium.googlesource.com/chromium/src/+/6ae002709a6e0df5f61428d962e44a62920e76e1'
       );
+    });
+
+    it('should get the correct milo url', async () => {
+      const url = getSafeUrlFromTagValue('milo/build/project_name/bucket/builder_name/42');
+      assert.strictEqual(url, '/ui/p/project_name/builders/bucket/builder_name/42');
     });
   });
 

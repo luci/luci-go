@@ -108,19 +108,31 @@ export function getLogdogRawUrl(logdogURL: string): string | null {
   return `https://${match[2]}/logs/${match[3]}?format=raw`;
 }
 
-export function getSafeUrlFromBuildset(buildset: string): string | null {
+export function getSafeUrlFromTagValue(tagValue: string): string | null {
   {
-    const match = buildset.match(/^patch\/gerrit\/([\w-]+\.googlesource\.com)\/(\d+\/\d+)$/);
+    const match = tagValue.match(/^patch\/gerrit\/([\w-]+\.googlesource\.com)\/(\d+\/\d+)$/);
     if (match) {
       const [, host, cl] = match as string[];
       return `https://${host}/c/${cl}`;
     }
   }
   {
-    const match = buildset.match(/^commit\/gitiles\/([\w-]+\.googlesource\.com\/.+)$/);
+    const match = tagValue.match(/^commit\/gitiles\/([\w-]+\.googlesource\.com\/.+)$/);
     if (match) {
       const [, url] = match as string[];
       return `https://${url}`;
+    }
+  }
+  {
+    const match = tagValue.match(/^milo\/build\/([\w\-\_]+)\/([\w\-\_]+)\/([\w\-\_]+)\/(\d+)$/);
+    if (match) {
+      const [, project, bucket, builder_name, build_number] = match as string[];
+      return router.urlForName('build', {
+        project: project,
+        bucket: bucket,
+        builder: builder_name,
+        build_num_or_id: build_number,
+      });
     }
   }
   return null;
