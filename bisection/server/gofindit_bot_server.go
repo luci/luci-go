@@ -365,9 +365,22 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 			return errors.Annotate(err, "error updateSuspectAsConfirmedCulprit for rerun %d", rerun.Id).Err()
 		}
 
+		// Cancel all remaining runs
+		analysisID := suspect.ParentAnalysis.Parent().IntID()
+		err = tq.AddTask(c, &tq.Task{
+			Title: fmt.Sprintf("cancel_analysis_%d", analysisID),
+			Payload: &taskpb.CancelAnalysisTask{
+				AnalysisId: analysisID,
+			},
+		})
+		if err != nil {
+			// Non-critical, just log the error
+			err := errors.Annotate(err, "schedule canceling analysis %d", analysisID).Err()
+			logging.Errorf(c, err.Error())
+		}
+
 		if suspect.Type == model.SuspectType_Heuristic {
 			// Add task to revert the heuristic confirmed culprit
-			analysisID := suspect.ParentAnalysis.Parent().IntID()
 			err = tq.AddTask(c, &tq.Task{
 				Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
 				Payload: &taskpb.RevertCulpritTask{

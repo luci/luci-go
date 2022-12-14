@@ -21,18 +21,23 @@ import (
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
+	"go.chromium.org/luci/server/tq"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -71,6 +76,9 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	})
 
 	Convey("UpdateAnalysisProgress Culprit Verification", t, func() {
+		c, scheduler := tq.TestingContext(c, nil)
+		cancelanalysis.RegisterTaskClass()
+
 		// Setup the models
 		// Set up suspects
 		analysis := &model.CompileFailureAnalysis{
@@ -192,6 +200,13 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		So(analysis.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 		So(len(analysis.VerifiedCulprits), ShouldEqual, 1)
 		So(analysis.VerifiedCulprits[0], ShouldResemble, datastore.KeyForObj(c, suspect))
+
+		// Assert task
+		task := &tpb.CancelAnalysisTask{
+			AnalysisId: 1234,
+		}
+		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
+		So(scheduler.Tasks().Payloads()[0], assertions.ShouldResembleProto, expected)
 	})
 
 	Convey("UpdateAnalysisProgress NthSection", t, func() {
