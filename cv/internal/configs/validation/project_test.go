@@ -1028,7 +1028,6 @@ func TestTryjobValidation(t *testing.T) {
 					location_filters: {
 						path_regexp: ".+\\.cpp"
 					}
-					triggered_by: "c/d/e"
 				}
 				builders {
 					name: "c/d/e"
@@ -1042,7 +1041,6 @@ func TestTryjobValidation(t *testing.T) {
 				builders {name: "pa/re/nt"}
 				builders {
 					name: "a/b/c"
-					triggered_by: "pa/re/nt"
 					includable_only: true
 				}`),
 				ShouldBeNil)
@@ -1095,86 +1093,6 @@ func TestTryjobValidation(t *testing.T) {
 				"includable_only is not combinable with mode_allowlist")
 
 			So(validate(`builders {name: "one/is/enough" includable_only: true}`), ShouldBeNil)
-		})
-
-		Convey("triggered_by", func() {
-			So(validate(`
-				builders {name: "a/b/0" }
-				builders {name: "a/b/1" triggered_by: "a/b/0"}
-				builders {name: "a/b/21" triggered_by: "a/b/1"}
-				builders {name: "a/b/22" triggered_by: "a/b/1"}
-			`), ShouldBeNil)
-
-			So(validate(`builders {name: "a/b/1" triggered_by: "a/b/0"}`),
-				ShouldErrLike, `triggered_by must refer to an existing builder, but "a/b/0" given`)
-
-			So(validate(`
-				builders {name: "a/b/0" experiment_percentage: 10}
-				builders {name: "a/b/1" triggered_by: "a/b/0"}
-			`), ShouldErrLike,
-				`builders #2 "a/b/1"): triggered_by must refer to an existing builder without`)
-
-			So(validate(`
-				builders {
-					name: "a/b/c"
-					mode_allowlist: "DRY_RUN"
-					triggered_by: "a/b/0"
-				}`), ShouldErrLike,
-				"triggered_by is not combinable with mode_allowlist")
-
-			Convey("doesn't form loops", func() {
-				So(validate(`
-					builders {name: "l/oo/p" triggered_by: "l/oo/p"}
-				`), ShouldErrLike, `triggered_by must refer to an existing builder without`)
-
-				So(validate(`
-					builders {name: "tri/gger/able"}
-					builders {name: "l/oo/p1" triggered_by: "l/oo/p2"}
-					builders {name: "l/oo/p2" triggered_by: "l/oo/p1"}
-				`), ShouldErrLike, `triggered_by must refer to an existing builder without`)
-			})
-
-			Convey("avoids less restrictive location_regexp[_exclude] in children", func() {
-				So(validate(`
-					builders {
-						name: "a/a/parent"
-						location_regexp: ".+/dog/.+"
-						location_regexp: ".+/snake/.+"
-					}
-					builders {
-						name: "a/a/child" triggered_by: "a/a/parent"
-						location_regexp: ".+/dog/.+"
-						location_regexp: ".+/cat/.+"
-					}
-				`), ShouldErrLike, `but these are not in parent: .+/cat/.+`)
-
-				So(validate(`
-					builders {
-						name: "a/a/parent"
-						location_regexp_exclude: ".+/dog/poodle"
-						location_regexp_exclude: ".+/dog/corgi"
-					}
-					builders {
-						name: "a/a/child" triggered_by: "a/a/parent"
-						location_regexp_exclude: ".+/dog/corgi"
-					}
-				`), ShouldErrLike, `these are only in parent: .+/dog/poodle`)
-
-				So(validate(`
-					builders {
-						name: "a/a/parent"
-						location_regexp:         ".+/dog/.+"
-						location_regexp_exclude: ".+/dog/poodle"
-						location_regexp:          ".+/cat/.+"
-					}
-					builders {
-						name: "a/a/child" triggered_by: "a/a/parent"
-						location_regexp_exclude: ".+/dog/poodle"  # necessary to comply with checks, only.
-						location_regexp:         ".+/cat/.+"
-						location_regexp_exclude: ".+/cat/siamese"
-					}
-				`), ShouldBeNil)
-			})
 		})
 	})
 }

@@ -399,6 +399,9 @@ func (vd *projectConfigValidator) validateVerifiers(v *cfgpb.Verifiers, supporte
 	}
 }
 
+// validateTryjobVerifier validates the tryjob verifier in a config.
+//
+// The tryjob verifier generally includes multiple builders.
 func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, supportedModes stringset.Set) {
 	vt := v.Tryjob
 	if vt.RetryConfig != nil {
@@ -416,8 +419,6 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 		// OK
 	}
 
-	// Validation of builders is done in two passes: local and global.
-
 	visitBuilders := func(cb func(b *cfgpb.Verifiers_Tryjob_Builder)) {
 		for i, b := range vt.Builders {
 			enter(vd.ctx, "builders", i, b.Name)
@@ -426,35 +427,24 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 		}
 	}
 
-	// Pass 1, local: verify each builder separately.
-	// Also, populate data structures for second pass.
-	names := stringset.Set{}
-	equi := stringset.Set{} // equivalent_to builder names.
-	// Subset of builders that can be triggered directly
-	// and which can be relied upon to trigger other builders.
-	canStartTriggeringTree := make([]string, 0, len(vt.Builders))
-	triggersMap := map[string][]string{} // who triggers whom.
-	// Find config by name.
-	cfgByName := make(map[string]*cfgpb.Verifiers_Tryjob_Builder, len(vt.Builders))
+	// Here we iterate through all builders here and accumulate a set that
+	// contains all builder names. Names are validated when added to the set.
+	// This includes checking for duplicates. This is done before the main
+	// verification pass below so that all builder names are available below.
+	builderNames := stringset.Set{}
+	equiBuilderNames := stringset.Set{}
+	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
+		vd.validateBuilderName(b.Name, builderNames)
+	})
 
 	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
-		vd.validateBuilderName(b.Name, names)
-		cfgByName[b.Name] = b
-		if b.TriggeredBy != "" {
-			// Don't validate TriggeredBy as builder name, it should just match
-			// another main builder name, which will be validated anyway.
-			triggersMap[b.TriggeredBy] = append(triggersMap[b.TriggeredBy], b.Name)
-			if b.ExperimentPercentage != 0 {
-				vd.ctx.Errorf("experiment_percentage is not combinable with triggered_by")
-			}
-			if b.EquivalentTo != nil {
-				vd.ctx.Errorf("equivalent_to is not combinable with triggered_by")
-			}
-		}
 		if b.EquivalentTo != nil {
-			vd.validateEquivalentBuilder(b.EquivalentTo, equi)
+			vd.validateEquivalentBuilder(b.EquivalentTo, equiBuilderNames)
 			if b.ExperimentPercentage != 0 {
 				vd.ctx.Errorf("experiment_percentage is not combinable with equivalent_to")
+			}
+			if b.EquivalentTo.Name != "" && builderNames.Has(b.EquivalentTo.Name) {
+				vd.ctx.Errorf("equivalent_to.name must not refer to already defined %q builder", b.EquivalentTo.Name)
 			}
 		}
 		if b.ExperimentPercentage != 0 {
@@ -509,8 +499,6 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 				// TODO(crbug/1202952): Remove following restrictions after Tricium is
 				// folded into CV.
 				for i, r := range b.LocationRegexp {
-					// TODO(crbug/1202952): Remove this check after tricium is folded
-					// into CV.
 					if !analyzerLocationReRegexp.MatchString(r) {
 						vd.ctx.Enter("location_regexp #%d", i+1)
 						vd.ctx.Errorf(`location_regexp of an analyzer MUST either be in the format of ".+\.extension" (e.g. ".+\.py) or "https://host-review.googlesource.com/project/[+]/.+\.extension" (e.g. "https://chromium-review.googlesource.com/infra/infra/[+]/.+\.py"). Extension is optional.`)
@@ -522,67 +510,23 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 				}
 			}
 			// TODO(crbug/1191855): See if CV should loosen the following restrictions.
-			if b.TriggeredBy != "" {
-				vd.ctx.Errorf("triggered_by is not combinable with mode_allowlist")
-			}
 			if b.IncludableOnly {
 				vd.ctx.Errorf("includable_only is not combinable with mode_allowlist")
 			}
 		}
-		if b.ExperimentPercentage == 0 && b.TriggeredBy == "" && b.EquivalentTo == nil {
-			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
-		}
-	})
-
-	// Between passes, do a depth-first search into triggers-whom DAG starting
-	// with only those builders which can be triggered directly by CQ.
-	q := canStartTriggeringTree
-	canBeTriggered := stringset.NewFromSlice(q...)
-	for len(q) > 0 {
-		var b string
-		q, b = q[:len(q)-1], q[len(q)-1]
-		for _, whom := range triggersMap[b] {
-			if canBeTriggered.Add(whom) {
-				q = append(q, whom)
-			} else {
-				panic("IMPOSSIBLE: builder |b| starting at |canStartTriggeringTree| " +
-					"isn't triggered by anyone, so it can't be equal to |whom|, which had triggered_by.")
-			}
-		}
-	}
-	// Corollary: all builders with triggered_by but not in canBeTriggered set
-	// are not properly configured, either referring to non-existing builder OR
-	// forming a loop.
-
-	// Pass 2, global: verify builder relationships.
-	visitBuilders(func(b *cfgpb.Verifiers_Tryjob_Builder) {
-		switch {
-		case b.EquivalentTo != nil && b.EquivalentTo.Name != "" && names.Has(b.EquivalentTo.Name):
-			vd.ctx.Errorf("equivalent_to.name must not refer to already defined %q builder", b.EquivalentTo.Name)
-		case b.TriggeredBy != "" && !names.Has(b.TriggeredBy):
-			vd.ctx.Errorf("triggered_by must refer to an existing builder, but %q given", b.TriggeredBy)
-		case b.TriggeredBy != "" && !canBeTriggered.Has(b.TriggeredBy):
-			// Although we can detect actual loops and emit better errors,
-			// this happens so rarely, it's not yet worth the time.
-			vd.ctx.Errorf("triggered_by must refer to an existing builder without "+
-				"equivalent_to or experiment_percentage options. triggered_by "+
-				"relationships must also not form a loop (given: %q)",
-				b.TriggeredBy)
-		case b.TriggeredBy != "":
-			// Reaching here means parent exists in config.
-			parent := cfgByName[b.TriggeredBy]
-			vd.validateParentLocationRegexp(b, parent)
-		}
 	})
 }
 
+// Validate a builder name. If knownNames is non-nil, then add it to the set.
 func (vd *projectConfigValidator) validateBuilderName(name string, knownNames stringset.Set) {
 	if name == "" {
 		vd.ctx.Errorf("name is required")
 		return
 	}
-	if !knownNames.Add(name) {
-		vd.ctx.Errorf("duplicate name %q", name)
+	if knownNames != nil {
+		if !knownNames.Add(name) {
+			vd.ctx.Errorf("duplicate name %q", name)
+		}
 	}
 	parts := strings.Split(name, "/")
 	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
@@ -751,6 +695,7 @@ func (vd *projectConfigValidator) validateUserLimits(limits []*cfgpb.UserLimit, 
 	}
 }
 
+// validateUserLimit validates one cfgpb.UserLimit.
 func (vd *projectConfigValidator) validateUserLimit(limit *cfgpb.UserLimit, namesSeen stringset.Set, principalsRequired bool) {
 	vd.ctx.Enter("name")
 	if !namesSeen.Add(limit.GetName()) {
