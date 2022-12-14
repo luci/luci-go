@@ -131,7 +131,7 @@ describe('Test AnalysisOverview component', () => {
 
   test('if there is a culprit for only the nth section analysis, then it should be the suspect range', async () => {
     let mockAnalysis = createMockAnalysis('4');
-    mockAnalysis.nthSectionResult!.culprit = {
+    mockAnalysis.nthSectionResult!.suspect = {
       host: 'testHost',
       project: 'testProject',
       ref: 'test/ref/dev',
@@ -180,10 +180,10 @@ function verifySuspectRangeLinks(analysis: Analysis) {
     });
     return;
   } else if (analysis.nthSectionResult) {
-    if (analysis.nthSectionResult.culprit) {
+    if (analysis.nthSectionResult.suspect) {
       expect(suspectRangeLinks).toHaveLength(1);
       const nthCulpritLink = suspectRangeLinks[0];
-      expect(analysis.nthSectionResult.culprit.id).toContain(
+      expect(analysis.nthSectionResult.suspect.id).toContain(
         nthCulpritLink.textContent
       );
       expect(nthCulpritLink.getAttribute('href')).not.toBe('');

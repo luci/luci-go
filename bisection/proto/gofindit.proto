@@ -251,14 +251,14 @@ message NthSectionAnalysisResult {
   google.protobuf.Timestamp last_updated_time = 3;
   // Timestamp for the end time of the nth-section analysis
   google.protobuf.Timestamp end_time = 4;
-  // Optional, the culprit GitilesCommit, when status = FOUND
-  buildbucket.v2.GitilesCommit culprit = 5;
+  // Optional, the suspect GitilesCommit, when status = FOUND
+  buildbucket.v2.GitilesCommit suspect = 5;
   // Optional, whether the culprit has been verified, when status = FOUND
   bool verified = 6;
   // Optional, when status = RUNNING.
   // This is the possible range of the culprit.
   // This will be updated as the nth-section progress.
-  RegressionRange remainingNthSectionRange = 7;
+  RegressionRange remaining_nth_section_range = 7;
   // Optional, when status = ERROR
   string error_message = 8;
   // List of the reruns that have been run so far for the nth-section.
@@ -367,6 +367,10 @@ message SingleRerun {
   string bot_id = 6;
   // Result of the rerun
   RerunResult rerun_result = 7;
+  // Gitiles commit of commit to rerun
+  buildbucket.v2.GitilesCommit commit = 8;
+  // Index of the commit to rerun within the blamelist, if this is an nthsection rerun.
+  int32 index = 9;
 }
 
 // RerunResult contains the result of one rerun.

@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -34,21 +35,7 @@ import (
 func TestCountLatestRevertsCreated(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
-
-	datastore.GetTestable(c).AddIndexes(
-		&datastore.IndexDefinition{
-			Kind: "Suspect",
-			SortBy: []datastore.IndexColumn{
-				{
-					Property: "is_revert_created",
-				},
-				{
-					Property: "revert_create_time",
-				},
-			},
-		},
-	)
-	datastore.GetTestable(c).CatchupIndexes()
+	testutil.UpdateIndices(c)
 
 	// Set test clock
 	cl := testclock.New(testclock.TestTimeUTC)
@@ -123,21 +110,7 @@ func TestCountLatestRevertsCreated(t *testing.T) {
 func TestCountLatestRevertsCommitted(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
-
-	datastore.GetTestable(c).AddIndexes(
-		&datastore.IndexDefinition{
-			Kind: "Suspect",
-			SortBy: []datastore.IndexColumn{
-				{
-					Property: "is_revert_committed",
-				},
-				{
-					Property: "revert_commit_time",
-				},
-			},
-		},
-	)
-	datastore.GetTestable(c).CatchupIndexes()
+	testutil.UpdateIndices(c)
 
 	// Set test clock
 	cl := testclock.New(testclock.TestTimeUTC)

@@ -21,7 +21,9 @@ import (
 
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
 
+	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,17 +40,7 @@ func TestQueryAnalysis(t *testing.T) {
 	t.Parallel()
 	server := &GoFinditServer{}
 	c := memory.Use(context.Background())
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "SingleRerun",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "rerun_build",
-			},
-			{
-				Property: "start_time",
-			},
-		},
-	})
+	testutil.UpdateIndices(c)
 	datastore.GetTestable(c).AutoIndex(true)
 
 	Convey("No BuildFailure Info", t, func() {
@@ -114,7 +106,7 @@ func TestQueryAnalysis(t *testing.T) {
 			GitilesCommit: buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
-				Id:      "123xyz",
+				Id:      "commit5",
 			},
 			ReviewUrl:   "http://this/is/review/url",
 			ReviewTitle: "This is review title",
@@ -135,6 +127,20 @@ func TestQueryAnalysis(t *testing.T) {
 		compileFailureAnalysis := &model.CompileFailureAnalysis{
 			CompileFailure:     datastore.KeyForObj(c, compileFailure),
 			FirstFailedBuildId: 119,
+			InitialRegressionRange: &pb.RegressionRange{
+				LastPassed: &buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "ref",
+					Id:      "commit9",
+				},
+				FirstFailed: &buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "ref",
+					Id:      "commit0",
+				},
+			},
 		}
 		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -143,6 +149,17 @@ func TestQueryAnalysis(t *testing.T) {
 			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
 		}
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Create nth section analysis
+		nsa := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
+			Status:         pb.AnalysisStatus_FOUND,
+			StartTime:      (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
+			EndTime:        (&timestamppb.Timestamp{Seconds: 102}).AsTime(),
+			BlameList:      testutil.CreateBlamelist(10),
+		}
+		So(datastore.Put(c, nsa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Add culprit verification rerun build for suspect
@@ -161,7 +178,7 @@ func TestQueryAnalysis(t *testing.T) {
 					Host:    "host1",
 					Project: "proj1",
 					Ref:     "ref",
-					Id:      "123xyz",
+					Id:      "commit5",
 				},
 			},
 		}
@@ -178,7 +195,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Host:    "host1",
 				Project: "proj1",
 				Ref:     "ref",
-				Id:      "123xyz",
+				Id:      "commit5",
 			},
 			CreateTime: (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
 			StartTime:  (&timestamppb.Timestamp{Seconds: 101}).AsTime(),
@@ -204,7 +221,7 @@ func TestQueryAnalysis(t *testing.T) {
 					Host:    "host1",
 					Project: "proj1",
 					Ref:     "ref",
-					Id:      "122abc",
+					Id:      "commit6",
 				},
 			},
 		}
@@ -221,7 +238,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Host:    "host1",
 				Project: "proj1",
 				Ref:     "ref",
-				Id:      "122abc",
+				Id:      "commit6",
 			},
 			CreateTime: (&timestamppb.Timestamp{Seconds: 200}).AsTime(),
 			StartTime:  (&timestamppb.Timestamp{Seconds: 201}).AsTime(),
@@ -244,6 +261,34 @@ func TestQueryAnalysis(t *testing.T) {
 			datastore.KeyForObj(c, suspect),
 		}
 		So(datastore.Put(c, compileFailureAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// nth section rerun
+		rrBuild := &model.CompileRerunBuild{
+			Id: 800999000,
+		}
+		So(datastore.Put(c, rrBuild), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		nthSectionRerun := &model.SingleRerun{
+			Analysis:           datastore.KeyForObj(c, compileFailureAnalysis),
+			NthSectionAnalysis: datastore.KeyForObj(c, nsa),
+			Status:             pb.RerunStatus_RERUN_STATUS_PASSED,
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "commit8",
+			},
+			RerunBuild: datastore.KeyForObj(c, rrBuild),
+			CreateTime: (&timestamppb.Timestamp{Seconds: 300}).AsTime(),
+			StartTime:  (&timestamppb.Timestamp{Seconds: 301}).AsTime(),
+			EndTime:    (&timestamppb.Timestamp{Seconds: 302}).AsTime(),
+			Type:       model.RerunBuildType_NthSection,
+			Priority:   100,
+		}
+
+		So(datastore.Put(c, nthSectionRerun), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		req := &pb.QueryAnalysisRequest{
@@ -269,7 +314,7 @@ func TestQueryAnalysis(t *testing.T) {
 			Commit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
-				Id:      "123xyz",
+				Id:      "commit5",
 			},
 			ReviewUrl:   "http://this/is/review/url",
 			ReviewTitle: "This is review title",
@@ -306,7 +351,7 @@ func TestQueryAnalysis(t *testing.T) {
 			GitilesCommit: &buildbucketpb.GitilesCommit{
 				Host:    "host1",
 				Project: "proj1",
-				Id:      "123xyz",
+				Id:      "commit5",
 			},
 			ReviewUrl:       "http://this/is/review/url",
 			ReviewTitle:     "This is review title",
@@ -333,6 +378,91 @@ func TestQueryAnalysis(t *testing.T) {
 				},
 			},
 		}), ShouldBeTrue)
+
+		nthSectionResult := analysis.NthSectionResult
+		So(nthSectionResult, ShouldNotBeNil)
+		So(proto.Equal(nthSectionResult.StartTime, &timestamppb.Timestamp{Seconds: 100}), ShouldBeTrue)
+		So(proto.Equal(nthSectionResult.EndTime, &timestamppb.Timestamp{Seconds: 102}), ShouldBeTrue)
+		So(nthSectionResult.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
+		diff := cmp.Diff(nthSectionResult.Suspect, &buildbucketpb.GitilesCommit{
+			Host:    "host1",
+			Project: "proj1",
+			Ref:     "ref",
+			Id:      "commit5",
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+
+		diff = cmp.Diff(nthSectionResult.RemainingNthSectionRange, &pb.RegressionRange{
+			LastPassed: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "commit5",
+			},
+			FirstFailed: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "commit5",
+			},
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+
+		So(len(nthSectionResult.Reruns), ShouldEqual, 3)
+
+		diff = cmp.Diff(nthSectionResult.Reruns[0], &pb.SingleRerun{
+			Bbid:      8877665544332211,
+			StartTime: &timestamppb.Timestamp{Seconds: 101},
+			EndTime:   &timestamppb.Timestamp{Seconds: 102},
+			RerunResult: &pb.RerunResult{
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
+			},
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "commit5",
+			},
+			Index: 5,
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+
+		diff = cmp.Diff(nthSectionResult.Reruns[1], &pb.SingleRerun{
+			Bbid:      7766554433221100,
+			StartTime: &timestamppb.Timestamp{Seconds: 201},
+			EndTime:   &timestamppb.Timestamp{Seconds: 202},
+			RerunResult: &pb.RerunResult{
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+			},
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "commit6",
+			},
+			Index: 6,
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+
+		diff = cmp.Diff(nthSectionResult.Reruns[2], &pb.SingleRerun{
+			Bbid:      800999000,
+			StartTime: &timestamppb.Timestamp{Seconds: 301},
+			EndTime:   &timestamppb.Timestamp{Seconds: 302},
+			RerunResult: &pb.RerunResult{
+				RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+			},
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Ref:     "ref",
+				Id:      "commit8",
+			},
+			Index: 8,
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+
+		diff = cmp.Diff(nthSectionResult.BlameList, nsa.BlameList, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
 	})
 
 	Convey("Analysis found for a similar failure", t, func() {

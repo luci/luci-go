@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	tpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -431,25 +432,7 @@ func TestUpdateSucceededBuild(t *testing.T) {
 	t.Parallel()
 
 	c := memory.Use(context.Background())
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "LuciFailedBuild",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "project",
-			},
-			{
-				Property: "bucket",
-			},
-			{
-				Property: "builder",
-			},
-			{
-				Property:   "end_time",
-				Descending: true,
-			},
-		},
-	})
-	datastore.GetTestable(c).CatchupIndexes()
+	testutil.UpdateIndices(c)
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 

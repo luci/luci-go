@@ -21,30 +21,16 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	"go.chromium.org/luci/bisection/util/testutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func TestCanCreateRevert(t *testing.T) {
 	ctx := memory.Use(context.Background())
-
-	datastore.GetTestable(ctx).AddIndexes(
-		&datastore.IndexDefinition{
-			Kind: "Suspect",
-			SortBy: []datastore.IndexColumn{
-				{
-					Property: "is_revert_created",
-				},
-				{
-					Property: "revert_create_time",
-				},
-			},
-		},
-	)
-	datastore.GetTestable(ctx).CatchupIndexes()
+	testutil.UpdateIndices(ctx)
 
 	// Set test clock
 	cl := testclock.New(testclock.TestTimeUTC)
@@ -130,21 +116,7 @@ func TestCanCreateRevert(t *testing.T) {
 
 func TestCanSubmitRevert(t *testing.T) {
 	ctx := memory.Use(context.Background())
-
-	datastore.GetTestable(ctx).AddIndexes(
-		&datastore.IndexDefinition{
-			Kind: "Suspect",
-			SortBy: []datastore.IndexColumn{
-				{
-					Property: "is_revert_committed",
-				},
-				{
-					Property: "revert_commit_time",
-				},
-			},
-		},
-	)
-	datastore.GetTestable(ctx).CatchupIndexes()
+	testutil.UpdateIndices(ctx)
 
 	// Set test clock
 	cl := testclock.New(testclock.TestTimeUTC)

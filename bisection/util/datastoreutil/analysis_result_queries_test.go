@@ -22,6 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -291,17 +292,7 @@ func TestGetCompileFailureForAnalysisID(t *testing.T) {
 func TestGetRerunsForRerunBuild(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "SingleRerun",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "rerun_build",
-			},
-			{
-				Property: "start_time",
-			},
-		},
-	})
+	testutil.UpdateIndices(c)
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
@@ -446,25 +437,7 @@ func TestGetOtherSuspectsWithSameCL(t *testing.T) {
 func TestGetLatestBuildFailureAndAnalysis(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "LuciFailedBuild",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "project",
-			},
-			{
-				Property: "bucket",
-			},
-			{
-				Property: "builder",
-			},
-			{
-				Property:   "end_time",
-				Descending: true,
-			},
-		},
-	})
-	datastore.GetTestable(c).CatchupIndexes()
+	testutil.UpdateIndices(c)
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
@@ -534,6 +507,7 @@ func TestGetLatestBuildFailureAndAnalysis(t *testing.T) {
 func TestGetRerunsForAnalysis(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 

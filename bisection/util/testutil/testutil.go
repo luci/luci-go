@@ -71,3 +71,71 @@ func CreateCompileFailureAnalysisAnalysisChain(c context.Context, bbid int64, an
 	cfa := CreateCompileFailureAnalysis(c, analysisID, cf)
 	return fb, cf, cfa
 }
+
+func UpdateIndices(c context.Context) {
+	datastore.GetTestable(c).AddIndexes(
+		&datastore.IndexDefinition{
+			Kind: "SingleRerun",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "analysis",
+				},
+				{
+					Property: "start_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "Suspect",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "is_revert_created",
+				},
+				{
+					Property: "revert_create_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "Suspect",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "is_revert_committed",
+				},
+				{
+					Property: "revert_commit_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "SingleRerun",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "rerun_build",
+				},
+				{
+					Property: "start_time",
+				},
+			},
+		},
+		&datastore.IndexDefinition{
+			Kind: "LuciFailedBuild",
+			SortBy: []datastore.IndexColumn{
+				{
+					Property: "project",
+				},
+				{
+					Property: "bucket",
+				},
+				{
+					Property: "builder",
+				},
+				{
+					Property:   "end_time",
+					Descending: true,
+				},
+			},
+		},
+	)
+	datastore.GetTestable(c).CatchupIndexes()
+}

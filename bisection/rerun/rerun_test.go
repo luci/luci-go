@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util/testutil"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
@@ -293,18 +294,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 func TestUpdateRerunStartTime(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
-
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "SingleRerun",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "rerun_build",
-			},
-			{
-				Property: "start_time",
-			},
-		},
-	})
+	testutil.UpdateIndices(c)
 
 	// Setup mock for buildbucket
 	ctl := gomock.NewController(t)

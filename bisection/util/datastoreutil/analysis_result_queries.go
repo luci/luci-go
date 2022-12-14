@@ -259,8 +259,10 @@ func GetLatestAnalysisForBuilder(c context.Context, project string, bucket strin
 	return GetAnalysisForBuild(c, build.Id)
 }
 
+// GetRerunsForAnalysis returns all reruns for an analysis
+// The result is sorted by start_time
 func GetRerunsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.SingleRerun, error) {
-	q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
+	q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa)).Order("start_time")
 	reruns := []*model.SingleRerun{}
 	err := datastore.GetAll(c, q, &reruns)
 	if err != nil {

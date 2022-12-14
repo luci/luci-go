@@ -45,35 +45,10 @@ import (
 func TestUpdateAnalysisProgress(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "SingleRerun",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "analysis",
-			},
-			{
-				Property: "start_time",
-			},
-		},
-	})
+	testutil.UpdateIndices(c)
 
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
-
-	// For some reasons, AutoIndex does not work in this case
-	// and it requires an explicit index
-	// datastore.GetTestable(c).AutoIndex(true)
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "SingleRerun",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "rerun_build",
-			},
-			{
-				Property: "start_time",
-			},
-		},
-	})
 
 	Convey("UpdateAnalysisProgress Culprit Verification", t, func() {
 		c, scheduler := tq.TestingContext(c, nil)

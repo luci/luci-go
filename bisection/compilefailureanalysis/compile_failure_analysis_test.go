@@ -36,11 +36,13 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestAnalyzeFailure(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 

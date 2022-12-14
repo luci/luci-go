@@ -164,7 +164,7 @@ export interface HeuristicSuspect {
 
 export interface NthSectionAnalysisResult {
   status: AnalysisStatus;
-  culprit?: GitilesCommit;
+  suspect?: GitilesCommit;
   remainingNthSectionRange?: RegressionRange;
 }
 

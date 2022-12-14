@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -37,6 +38,7 @@ import (
 func TestCancelAnalysis(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 

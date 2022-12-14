@@ -47,8 +47,8 @@ function getSuspectRange(analysis: Analysis): ExternalLink[] {
   if (analysis.nthSectionResult) {
     const result = analysis.nthSectionResult;
 
-    if (result.culprit) {
-      return [linkToCommit(result.culprit)];
+    if (result.suspect) {
+      return [linkToCommit(result.suspect)];
     }
 
     if (

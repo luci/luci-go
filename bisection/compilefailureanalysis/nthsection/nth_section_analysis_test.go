@@ -34,22 +34,13 @@ import (
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestAnalyze(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
-	datastore.GetTestable(c).AddIndexes(&datastore.IndexDefinition{
-		Kind: "SingleRerun",
-		SortBy: []datastore.IndexColumn{
-			{
-				Property: "analysis",
-			},
-			{
-				Property: "start_time",
-			},
-		},
-	})
+	testutil.UpdateIndices(c)
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 

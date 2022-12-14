@@ -32,6 +32,7 @@ import (
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/testutil"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -48,32 +49,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 
 	Convey("RevertHeuristicCulprit", t, func() {
 		ctx := memory.Use(context.Background())
-
-		datastore.GetTestable(ctx).AddIndexes(
-			&datastore.IndexDefinition{
-				Kind: "Suspect",
-				SortBy: []datastore.IndexColumn{
-					{
-						Property: "is_revert_created",
-					},
-					{
-						Property: "revert_create_time",
-					},
-				},
-			},
-			&datastore.IndexDefinition{
-				Kind: "Suspect",
-				SortBy: []datastore.IndexColumn{
-					{
-						Property: "is_revert_committed",
-					},
-					{
-						Property: "revert_commit_time",
-					},
-				},
-			},
-		)
-		datastore.GetTestable(ctx).CatchupIndexes()
+		testutil.UpdateIndices(ctx)
 
 		// Set test clock
 		cl := testclock.New(testclock.TestTimeUTC)

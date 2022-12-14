@@ -17,8 +17,10 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -252,12 +254,95 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	}
 	result.Culprits = culprits
 
-	// TODO (nqmtuan): query for nth-section result
+	nthSectionResult, err := getNthSectionResult(c, analysis)
+	if err != nil {
+		return nil, errors.Annotate(err, "getNthSectionResult for analysis %d", analysis.Id).Err()
+	}
+	result.NthSectionResult = nthSectionResult
 
 	// TODO (aredulla): add culprit actions for:
 	//     * commenting on related bugs
 
 	return result, nil
+}
+
+func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (*pb.NthSectionAnalysisResult, error) {
+	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting nthsection analysis").Err()
+	}
+	if nsa == nil {
+		return nil, nil
+	}
+	result := &pb.NthSectionAnalysisResult{
+		Status:    nsa.Status,
+		StartTime: timestamppb.New(nsa.StartTime),
+		EndTime:   timestamppb.New(nsa.EndTime),
+		BlameList: nsa.BlameList,
+	}
+
+	// Get all reruns for the current analysis
+	// This should contain all reruns for nth section and culprit verification
+	reruns, err := datastoreutil.GetRerunsForAnalysis(c, cfa)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rerun := range reruns {
+		rerunResult := &pb.SingleRerun{
+			StartTime: timestamppb.New(rerun.StartTime),
+			EndTime:   timestamppb.New(rerun.EndTime),
+			RerunResult: &pb.RerunResult{
+				RerunStatus: rerun.Status,
+			},
+			Bbid:   rerun.RerunBuild.IntID(),
+			Commit: &rerun.GitilesCommit,
+		}
+		index, err := findRerunIndexInBlameList(rerun, nsa.BlameList)
+		if err != nil {
+			return nil, errors.Annotate(err, "couldn't find index for rerun").Err()
+		}
+		rerunResult.Index = index
+		result.Reruns = append(result.Reruns, rerunResult)
+	}
+
+	// Find remaining regression range
+	snapshot, err := nthsection.CreateSnapshot(c, nsa)
+	if err != nil {
+		return nil, errors.Annotate(err, "couldn't create snapshot").Err()
+	}
+	ff, lp, err := snapshot.GetCurrentRegressionRange()
+	if err != nil {
+		return nil, errors.Annotate(err, "getCurrentRegressionRange").Err()
+	}
+	result.RemainingNthSectionRange = &pb.RegressionRange{
+		FirstFailed: getCommitFromIndex(ff, nsa.BlameList, cfa),
+		LastPassed:  getCommitFromIndex(lp, nsa.BlameList, cfa),
+	}
+
+	if ff == lp {
+		result.Suspect = getCommitFromIndex(ff, nsa.BlameList, cfa)
+	}
+
+	return result, nil
+}
+
+func findRerunIndexInBlameList(rerun *model.SingleRerun, blamelist *pb.BlameList) (int32, error) {
+	for i, commit := range blamelist.Commits {
+		if commit.Commit == rerun.GitilesCommit.Id {
+			return int32(i), nil
+		}
+	}
+	return -1, fmt.Errorf("couldn't find index for rerun %d", rerun.Id)
+}
+
+func getCommitFromIndex(index int, blamelist *pb.BlameList, cfa *model.CompileFailureAnalysis) *buildbucketpb.GitilesCommit {
+	return &buildbucketpb.GitilesCommit{
+		Id:      blamelist.Commits[index].Commit,
+		Host:    cfa.InitialRegressionRange.FirstFailed.Host,
+		Project: cfa.InitialRegressionRange.FirstFailed.Project,
+		Ref:     cfa.InitialRegressionRange.FirstFailed.Ref,
+	}
 }
 
 // constructSingleRerun constructs a pb.SingleRerun using the details from the
