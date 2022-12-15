@@ -517,6 +517,18 @@ func mainImpl() int {
 		check(ctx, errors.Reason("-host and -build-id are required").Err())
 	}
 
+	experiments := stringset.NewFromSlice(bbclientInput.input.Build.GetInput().GetExperiments()...)
+	if experiments.Has("luci.debug.fatal_do_not_use_big_scary") {
+		// To debug the race issue with bbagent and UpdateBuild
+		// we are going to put bbagent to sleep for 10 min.
+		// Manual calls of UpdateBuild will be done via CLI
+		// during this time.
+		secrets, _ := readBuildSecrets(ctx)
+		logging.Infof(ctx, fmt.Sprintf("dumping build token: %s", secrets.BuildToken))
+		time.Sleep(time.Duration(time.Duration.Minutes(10)))
+		os.Exit(0)
+	}
+
 	// Manipulate the context and obtain a context with cancel
 	ctx = setBuildbucketContext(ctx, hostname, secrets)
 	ctx = setRealmContext(ctx, bbclientInput.input)
@@ -663,6 +675,7 @@ func mainImpl() int {
 			}
 		}()
 		defer close(invokeErr)
+
 		subp, err := invoke.Start(dctx, exeArgs, bbclientInput.input.Build, invokeOpts)
 		if err != nil {
 			invokeErr <- err

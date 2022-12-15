@@ -118,7 +118,7 @@ func CancelChildren(ctx context.Context, bID int64) error {
 	return eg.Wait()
 }
 
-//childrenToCancel returns the child build ids that should be canceled with
+// childrenToCancel returns the child build ids that should be canceled with
 // the parent.
 func childrenToCancel(ctx context.Context, bID int64) (children []*model.Build, err error) {
 	q := datastore.NewQuery(model.BuildKind).Eq("parent_id", bID)
@@ -196,6 +196,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		bld.LeaseKey = 0
 
 		protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED)
+		logging.Debugf(ctx, fmt.Sprintf("Build %d status has now been set as canceled.", bld.ID))
 		canceled = true
 
 		toPut := []interface{}{bld}
