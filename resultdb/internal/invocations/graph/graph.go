@@ -17,18 +17,16 @@ package graph
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/gomodule/redigo/redis"
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
@@ -43,35 +41,6 @@ const MaxNodes = 20000
 // because Redis evicts LRU keys only with *some* expiration set,
 // see volatile-lru policy: https://redis.io/topics/lru-cache
 const reachCacheExpiration = 30 * 24 * time.Hour // 30 days
-
-// readReachableInvocation reads summary information about a reachable
-// invocation.
-func readReachableInvocation(ctx context.Context, id invocations.ID) (ReachableInvocation, error) {
-	// Both of these requests should be very cheap, as they check only for the existance of one matching row.
-	var hasTestResults bool
-	opts := &spanner.ReadOptions{Limit: 1}
-	err := span.ReadWithOptions(ctx, "TestResults", id.Key().AsPrefix(), []string{"InvocationId"}, opts).Do(func(r *spanner.Row) error {
-		hasTestResults = true
-		return nil
-	})
-	if err != nil {
-		return ReachableInvocation{}, err
-	}
-
-	var hasTestExonerations bool
-	opts = &spanner.ReadOptions{Limit: 1}
-	err = span.ReadWithOptions(ctx, "TestExonerations", id.Key().AsPrefix(), []string{"InvocationId"}, opts).Do(func(r *spanner.Row) error {
-		hasTestExonerations = true
-		return nil
-	})
-	if err != nil {
-		return ReachableInvocation{}, err
-	}
-	return ReachableInvocation{
-		HasTestResults:      hasTestResults,
-		HasTestExonerations: hasTestExonerations,
-	}, nil
-}
 
 // TooManyTag set in an error indicates that too many invocations
 // matched a condition.
@@ -130,113 +99,43 @@ func ReachableSkipRootCache(ctx context.Context, roots invocations.IDSet) (Reach
 }
 
 func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) (reachable ReachableInvocations, err error) {
-	ctx, ts := trace.StartSpan(ctx, "resultdb.graph.reachable")
-	defer func() { ts.End(err) }()
-
-	originalCtx := ctx
-	eg, ctx := errgroup.WithContext(ctx)
-	defer eg.Wait()
-
-	visited := make(invocations.IDSet, len(roots))
-	reachable = make(ReachableInvocations, len(roots))
-	hasCacheMiss := false
-	var mu sync.Mutex
-
-	spanSem := semaphore.NewWeighted(64) // limits Spanner RPC concurrency.
-
-	var visit func(id invocations.ID, useCache bool) error
-	visit = func(id invocations.ID, useCache bool) error {
-		mu.Lock()
-		defer mu.Unlock()
-
-		// Check if we already started/finished fetching this invocation.
-		if visited.Has(id) {
-			return nil
+	reachable = NewReachableInvocations()
+	uncachedRoots := invocations.NewIDSet()
+	if useRootCache {
+		for id := range roots {
+			// First check the cache.
+			switch reachables, err := reachCache(id).Read(ctx); {
+			case err == redisconn.ErrNotConfigured || err == ErrUnknownReach:
+				// Ignore this error.
+				uncachedRoots.Add(id)
+			case err != nil:
+				logging.Warningf(ctx, "ReachCache: failed to read %s: %s", id, err)
+				uncachedRoots.Add(id)
+			default:
+				// Cache hit. Copy the results to `reachable`.
+				reachable.Union(reachables)
+			}
 		}
-
-		// Mark the invocation as being processed.
-		visited.Add(id)
-
-		// Concurrently fetch the inclusions without a lock.
-		eg.Go(func() error {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-
-			if useCache {
-				// First check the cache.
-				switch reachables, err := reachCache(id).Read(ctx); {
-				case err == redisconn.ErrNotConfigured || err == ErrUnknownReach:
-					// Ignore this error.
-				case err != nil:
-					logging.Warningf(ctx, "ReachCache: failed to read %s: %s", id, err)
-				default:
-					// Cache hit. Copy the results to `reachable` and exit without
-					// recursion.
-					mu.Lock()
-					defer mu.Unlock()
-					reachable.Union(reachables)
-					return nil
-				}
-				// Cache miss. => Read from Spanner.
-			}
-
-			// Find and visit children.
-			if err := spanSem.Acquire(ctx, 1); err != nil {
-				return err
-			}
-			included, err := invocations.ReadIncluded(ctx, id)
-			spanSem.Release(1)
-			if err != nil {
-				return errors.Annotate(err, "reading invocations included in %s", id.Name()).Err()
-			}
-
-			for id := range included {
-				// Always use cache for children.
-				if err := visit(id, true); err != nil {
-					return err
-				}
-			}
-
-			// Read summary information about the current invocation.
-			if err := spanSem.Acquire(ctx, 1); err != nil {
-				return err
-			}
-			inv, err := readReachableInvocation(ctx, id)
-			spanSem.Release(1)
-			if err != nil {
-				return errors.Annotate(err, "reading reachable invocation %s", id.Name()).Err()
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			reachable[id] = inv
-			hasCacheMiss = true
-			return nil
-		})
-		return nil
+	} else {
+		uncachedRoots.Union(roots)
 	}
 
-	// Trigger fetching by requesting all roots.
-	for id := range roots {
-		if err := visit(id, useRootCache); err != nil {
-			return nil, err
-		}
+	if len(uncachedRoots) == 0 {
+		return reachable, nil
 	}
 
-	// Wait for the entire graph to be fetched.
-	if err := eg.Wait(); err != nil {
+	uncachedReachable, err := reachableUncached(ctx, uncachedRoots)
+	if err != nil {
 		return nil, err
 	}
-
-	// Restore the original context as the waitgroup context is cancelled.
-	ctx = originalCtx
+	reachable.Union(uncachedReachable)
 
 	// If we queried for one root and we had a cache miss, try to insert the
 	// reachable invocations, so that the cache will hopefully be populated
 	// next time.
-	if len(roots) == 1 && hasCacheMiss {
+	if len(uncachedRoots) == 1 {
 		var root invocations.ID
-		for id := range roots {
+		for id := range uncachedRoots {
 			root = id
 		}
 		state, err := invocations.ReadState(ctx, root)
@@ -245,12 +144,77 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 		} else if state == resultpb.Invocation_FINALIZED {
 			// Only populate the cache if the invocation exists and is
 			// finalized.
-			reachCache(root).TryWrite(ctx, reachable)
+			reachCache(root).TryWrite(ctx, uncachedReachable)
 		}
 	}
 
 	logging.Debugf(ctx, "%d invocations are reachable from %s", len(reachable), roots.Names())
 	return reachable, nil
+}
+
+// reachableUncached queries the Spanner database for the reachability graph if the data is not in the reach cache.
+func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable ReachableInvocations, err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.graph.reachable")
+	defer func() { ts.End(err) }()
+
+	reachableInvocations := invocations.NewIDSet()
+	reachableInvocations.Union(roots)
+
+	// Find all reachable invocations travesing the graph one level at a time.
+	nextLevel := invocations.NewIDSet()
+	nextLevel.Union(roots)
+	for len(nextLevel) > 0 {
+		nextLevel, err = queryInvocations(ctx, `
+		SELECT
+			ii.IncludedInvocationID,
+		FROM
+			UNNEST(@invocations) inv
+			JOIN IncludedInvocations ii ON inv = ii.InvocationID`, nextLevel)
+		if err != nil {
+			return nil, err
+		}
+
+		// Avoid duplicate lookups and cycles.
+		nextLevel.RemoveAll(reachableInvocations)
+		reachableInvocations.Union(nextLevel)
+	}
+
+	withTestResults, err := queryInvocations(ctx, `SELECT DISTINCT tr.InvocationID FROM UNNEST(@invocations) inv JOIN TestResults tr on tr.InvocationId = inv`, reachableInvocations)
+	if err != nil {
+		return nil, err
+	}
+
+	withExonerations, err := queryInvocations(ctx, `SELECT DISTINCT te.InvocationID FROM UNNEST(@invocations) inv JOIN TestExonerations te on te.InvocationId = inv`, reachableInvocations)
+	if err != nil {
+		return nil, err
+	}
+
+	reachable = make(ReachableInvocations, len(reachableInvocations))
+	for inv := range reachableInvocations {
+		reachable[inv] = ReachableInvocation{
+			HasTestResults:      withTestResults.Has(inv),
+			HasTestExonerations: withExonerations.Has(inv),
+		}
+	}
+	return reachable, nil
+}
+
+func queryInvocations(ctx context.Context, query string, invocationsParam invocations.IDSet) (invocations.IDSet, error) {
+	invs := invocations.NewIDSet()
+	st := spanner.NewStatement(query)
+	st.Params = spanutil.ToSpannerMap(spanutil.ToSpannerMap(map[string]interface{}{
+		"invocations": invocationsParam,
+	}))
+	b := &spanutil.Buffer{}
+	err := span.Query(ctx, st).Do(func(r *spanner.Row) error {
+		var invocationID invocations.ID
+		if err := b.FromSpanner(r, &invocationID); err != nil {
+			return err
+		}
+		invs.Add(invocationID)
+		return nil
+	})
+	return invs, err
 }
 
 // ReachCache is a cache of all invocations reachable from the given
