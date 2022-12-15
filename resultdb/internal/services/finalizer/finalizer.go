@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -245,19 +244,7 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 			return err
 		}
 
-		var reachVarUnion []string
 		err := parallel.FanOutIn(func(work chan<- func() error) {
-			// Read all reachable invocations to cache them after the transaction.
-			work <- func() error {
-				var err error
-				reach, err := graph.ReachableSkipRootCache(ctx, invocations.NewIDSet(invID))
-				if err != nil {
-					return err
-				}
-				reachVarUnion, err = variantUnion(ctx, reach.IDSet())
-				return err
-			}
-
 			work <- func() error {
 				parentInvs, err := parentsInFinalizingState(ctx, invID)
 				if err != nil {
@@ -300,10 +287,9 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 
 		// Update the invocation.
 		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
-			"InvocationId":                    invID,
-			"State":                           pb.Invocation_FINALIZED,
-			"FinalizeTime":                    spanner.CommitTimestamp,
-			"TestResultVariantUnionRecursive": reachVarUnion,
+			"InvocationId": invID,
+			"State":        pb.Invocation_FINALIZED,
+			"FinalizeTime": spanner.CommitTimestamp,
 		}))
 		return nil
 	})
@@ -339,30 +325,4 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 		return nil
 	})
 	return ids, err
-}
-
-// variantUnion computes the variant union of the invocations in reach.
-func variantUnion(ctx context.Context, reach invocations.IDSet) ([]string, error) {
-	// TODO: remove this function and calls when removing Test History API.
-	st := spanner.NewStatement(`
-		SELECT DISTINCT tv
-		FROM Invocations inv, inv.TestResultVariantUnion tv
-		WHERE InvocationId IN UNNEST(@invIDs)
-		ORDER BY tv
-	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
-		"invIDs": reach,
-	})
-
-	varUnion := make([]string, 0)
-	err := spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		var subVariant string
-		if err := spanutil.FromSpanner(row, &subVariant); err != nil {
-			return err
-		}
-
-		varUnion = append(varUnion, subVariant)
-		return nil
-	})
-	return varUnion, err
 }

@@ -97,11 +97,12 @@ CREATE TABLE Invocations (
   -- invocation.
   CommonTestIDPrefix STRING(MAX),
 
-  -- Union of all variants of test results directly included by the invocation.
+  -- DEPRECATED - DO NOT USE:  Union of all variants of test results directly
+  -- included by the invocation.
   TestResultVariantUnion ARRAY<STRING(MAX)>,
 
-  -- Union of all variants of test results included by the invocation,
-  -- directly and indirectly.
+  -- DEPRECATED - DO NOT USE: Union of all variants of test results
+  -- included by the invocation, directly and indirectly.
   TestResultVariantUnionRecursive ARRAY<STRING(MAX)>,
 
   -- The deadline, but is NULL if the invocation is not active.

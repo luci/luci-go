@@ -19,18 +19,16 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/server/tq"
-
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/tq"
 )
 
 func TestShouldFinalize(t *testing.T) {
@@ -211,37 +209,6 @@ func TestFinalizeInvocation(t *testing.T) {
 						ResultType: &pb.BigQueryExport_TestResults_{},
 					},
 				})
-		})
-
-		Convey(`CommonTestIDPrefix and TestResultVariantUnion updated`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.InvocationWithInclusions("inv", pb.Invocation_FINALIZING,
-					map[string]interface{}{
-						"TestResultVariantUnion": []string{"k:v"},
-					},
-					"sub1", "sub2"),
-				insert.InvocationWithInclusions("sub1", pb.Invocation_FINALIZED, nil),
-				insert.InvocationWithInclusions("sub2", pb.Invocation_FINALIZED,
-					map[string]interface{}{
-						"TestResultVariantUnion": []string{"k:v", "k1:v1"},
-					},
-				),
-			)...)
-
-			err := finalizeInvocation(ctx, "inv")
-			So(err, ShouldBeNil)
-
-			var state pb.Invocation_State
-			var finalizeTime time.Time
-			var invVars []string
-			testutil.MustReadRow(ctx, "Invocations", invocations.ID("inv").Key(), map[string]interface{}{
-				"State":                           &state,
-				"FinalizeTime":                    &finalizeTime,
-				"TestResultVariantUnionRecursive": &invVars,
-			})
-			So(state, ShouldEqual, pb.Invocation_FINALIZED)
-			So(finalizeTime, ShouldNotResemble, time.Time{})
-			So(invVars, ShouldResemble, []string{"k1:v1", "k:v"})
 		})
 	})
 }
