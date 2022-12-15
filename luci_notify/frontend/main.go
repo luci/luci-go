@@ -18,21 +18,32 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/server"
+	luciserver "go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/mailer"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	pb "go.chromium.org/luci/luci_notify/api/service/v1"
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/notify"
+	"go.chromium.org/luci/luci_notify/server"
+)
+
+const (
+	AccessGroup = "luci-notify-api-access"
 )
 
 var buildbucketPubSub = metric.NewCounter(
@@ -42,6 +53,17 @@ var buildbucketPubSub = metric.NewCounter(
 	// "success", "transient-failure" or "permanent-failure"
 	field.String("status"),
 )
+
+func checkAPIAccess(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+	switch yes, err := auth.IsMember(ctx, AccessGroup); {
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "error when checking group membership")
+	case !yes:
+		return nil, status.Errorf(codes.PermissionDenied, "%s does not have access to method %s of Luci Notify", auth.CurrentIdentity(ctx), methodName)
+	default:
+		return ctx, nil
+	}
+}
 
 func main() {
 	modules := []module.Module{
@@ -54,7 +76,7 @@ func main() {
 
 	notify.InitDispatcher(&tq.Default)
 
-	server.Main(nil, modules, func(srv *server.Server) error {
+	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
 		// Cron endpoints.
 		cron.RegisterHandler("update-config", config.UpdateHandler)
 		cron.RegisterHandler("update-tree-status", notify.UpdateTreeStatus)
@@ -85,6 +107,11 @@ func main() {
 				buildbucketPubSub.Add(ctx, 1, status)
 			})
 
+		// Installs PRPC service.
+		pb.RegisterTreeCloserServer(srv.PRPC, &pb.DecoratedTreeCloser{
+			Service: &server.TreeCloserServer{},
+			Prelude: checkAPIAccess,
+		})
 		return nil
 	})
 }

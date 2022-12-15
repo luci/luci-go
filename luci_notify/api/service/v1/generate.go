@@ -15,4 +15,4 @@
 package lucinotifypb
 
 //go:generate cproto
-//go:generate svcdec -type TreeClosersServer
+//go:generate svcdec -type TreeCloserServer

@@ -40,142 +40,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A request message for `QueryTreeClosers` RPC.
-type QueryTreeClosersRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Required. Only the tree closers that are associated with the builders in
-	// the project will be returned.
-	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	// Optional. The maximum number of tree closers to return.
-	//
-	// The service may return fewer than this value.
-	// If unspecified, at most 100 tree closers will be returned.
-	// The maximum value is 1000; values above 1000 will be coerced to 1000.
-	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// Optional. A page token, received from a previous `QueryTreeClosers` call.
-	// Provide this to retrieve the subsequent page.
-	//
-	// When paginating, all parameters provided to `QueryTreeClosers`, with the
-	// exception of page_size and page_token, must match the call that provided
-	// the page token.
-	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-}
-
-func (x *QueryTreeClosersRequest) Reset() {
-	*x = QueryTreeClosersRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryTreeClosersRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryTreeClosersRequest) ProtoMessage() {}
-
-func (x *QueryTreeClosersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryTreeClosersRequest.ProtoReflect.Descriptor instead.
-func (*QueryTreeClosersRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *QueryTreeClosersRequest) GetProject() string {
-	if x != nil {
-		return x.Project
-	}
-	return ""
-}
-
-func (x *QueryTreeClosersRequest) GetPageSize() int32 {
-	if x != nil {
-		return x.PageSize
-	}
-	return 0
-}
-
-func (x *QueryTreeClosersRequest) GetPageToken() string {
-	if x != nil {
-		return x.PageToken
-	}
-	return ""
-}
-
-// A response message for `QueryTreeClosers` RPC.
-type QueryTreeClosersResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// A list of builder IDs with their associated tree closers.
-	BuilderTreeClosers []*QueryTreeClosersResponse_BuilderTreeClosers `protobuf:"bytes,1,rep,name=builder_tree_closers,json=builderTreeClosers,proto3" json:"builder_tree_closers,omitempty"`
-	// A token that can be sent as `page_token` to retrieve the next page.
-	// If this field is omitted, there are no subsequent pages.
-	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
-}
-
-func (x *QueryTreeClosersResponse) Reset() {
-	*x = QueryTreeClosersResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryTreeClosersResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryTreeClosersResponse) ProtoMessage() {}
-
-func (x *QueryTreeClosersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryTreeClosersResponse.ProtoReflect.Descriptor instead.
-func (*QueryTreeClosersResponse) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *QueryTreeClosersResponse) GetBuilderTreeClosers() []*QueryTreeClosersResponse_BuilderTreeClosers {
-	if x != nil {
-		return x.BuilderTreeClosers
-	}
-	return nil
-}
-
-func (x *QueryTreeClosersResponse) GetNextPageToken() string {
-	if x != nil {
-		return x.NextPageToken
-	}
-	return ""
-}
-
 type CheckTreeCloserRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -194,7 +58,7 @@ type CheckTreeCloserRequest struct {
 func (x *CheckTreeCloserRequest) Reset() {
 	*x = CheckTreeCloserRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[2]
+		mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -207,7 +71,7 @@ func (x *CheckTreeCloserRequest) String() string {
 func (*CheckTreeCloserRequest) ProtoMessage() {}
 
 func (x *CheckTreeCloserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[2]
+	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -220,7 +84,7 @@ func (x *CheckTreeCloserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckTreeCloserRequest.ProtoReflect.Descriptor instead.
 func (*CheckTreeCloserRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{2}
+	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CheckTreeCloserRequest) GetProject() string {
@@ -263,7 +127,7 @@ type CheckTreeCloserResponse struct {
 func (x *CheckTreeCloserResponse) Reset() {
 	*x = CheckTreeCloserResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -276,7 +140,7 @@ func (x *CheckTreeCloserResponse) String() string {
 func (*CheckTreeCloserResponse) ProtoMessage() {}
 
 func (x *CheckTreeCloserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -289,7 +153,7 @@ func (x *CheckTreeCloserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckTreeCloserResponse.ProtoReflect.Descriptor instead.
 func (*CheckTreeCloserResponse) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CheckTreeCloserResponse) GetIsTreeCloser() bool {
@@ -299,63 +163,6 @@ func (x *CheckTreeCloserResponse) GetIsTreeCloser() bool {
 	return false
 }
 
-type QueryTreeClosersResponse_BuilderTreeClosers struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The canonical ID of the builder (e.g. {project}/{bucket}/{builder}).
-	BuilderId string `protobuf:"bytes,1,opt,name=builder_id,json=builderId,proto3" json:"builder_id,omitempty"`
-	// A list of tree closer hosts that are associated with the builder.
-	TreeCloserHosts []string `protobuf:"bytes,2,rep,name=tree_closer_hosts,json=treeCloserHosts,proto3" json:"tree_closer_hosts,omitempty"`
-}
-
-func (x *QueryTreeClosersResponse_BuilderTreeClosers) Reset() {
-	*x = QueryTreeClosersResponse_BuilderTreeClosers{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryTreeClosersResponse_BuilderTreeClosers) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryTreeClosersResponse_BuilderTreeClosers) ProtoMessage() {}
-
-func (x *QueryTreeClosersResponse_BuilderTreeClosers) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryTreeClosersResponse_BuilderTreeClosers.ProtoReflect.Descriptor instead.
-func (*QueryTreeClosersResponse_BuilderTreeClosers) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(), []int{1, 0}
-}
-
-func (x *QueryTreeClosersResponse_BuilderTreeClosers) GetBuilderId() string {
-	if x != nil {
-		return x.BuilderId
-	}
-	return ""
-}
-
-func (x *QueryTreeClosersResponse_BuilderTreeClosers) GetTreeCloserHosts() []string {
-	if x != nil {
-		return x.TreeCloserHosts
-	}
-	return nil
-}
-
 var File_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDesc = []byte{
@@ -363,62 +170,31 @@ var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDesc = []b
 	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x5f, 0x6e, 0x6f, 0x74, 0x69,
 	0x66, 0x79, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x76,
 	0x31, 0x2f, 0x72, 0x70, 0x63, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0e, 0x6c, 0x75, 0x63,
-	0x69, 0x2e, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76, 0x31, 0x22, 0x6f, 0x0a, 0x17, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x73, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63,
-	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
-	0x12, 0x1b, 0x0a, 0x09, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x08, 0x70, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65, 0x12, 0x1d, 0x0a,
-	0x0a, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x09, 0x70, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x92, 0x02, 0x0a,
-	0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6d, 0x0a, 0x14, 0x62, 0x75, 0x69,
-	0x6c, 0x64, 0x65, 0x72, 0x5f, 0x74, 0x72, 0x65, 0x65, 0x5f, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x72,
-	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6e,
-	0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x72,
-	0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f,
-	0x73, 0x65, 0x72, 0x73, 0x52, 0x12, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x54, 0x72, 0x65,
-	0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x73, 0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65, 0x78, 0x74,
-	0x5f, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0d, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e,
-	0x1a, 0x5f, 0x0a, 0x12, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x54, 0x72, 0x65, 0x65, 0x43,
-	0x6c, 0x6f, 0x73, 0x65, 0x72, 0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65,
-	0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x62, 0x75, 0x69, 0x6c,
-	0x64, 0x65, 0x72, 0x49, 0x64, 0x12, 0x2a, 0x0a, 0x11, 0x74, 0x72, 0x65, 0x65, 0x5f, 0x63, 0x6c,
-	0x6f, 0x73, 0x65, 0x72, 0x5f, 0x68, 0x6f, 0x73, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09,
-	0x52, 0x0f, 0x74, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x48, 0x6f, 0x73, 0x74,
-	0x73, 0x22, 0x78, 0x0a, 0x16, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c,
-	0x6f, 0x73, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70,
-	0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72,
-	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x18, 0x0a,
-	0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
-	0x62, 0x75, 0x69, 0x6c, 0x64, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x74, 0x65, 0x70, 0x18,
-	0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x73, 0x74, 0x65, 0x70, 0x22, 0x3f, 0x0a, 0x17, 0x43,
+	0x69, 0x2e, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76, 0x31, 0x22, 0x78, 0x0a, 0x16, 0x43,
 	0x68, 0x65, 0x63, 0x6b, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x24, 0x0a, 0x0e, 0x69, 0x73, 0x5f, 0x74, 0x72, 0x65,
-	0x65, 0x5f, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0c,
-	0x69, 0x73, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x32, 0xdc, 0x01, 0x0a,
-	0x0b, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x73, 0x12, 0x67, 0x0a, 0x10,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x73,
-	0x12, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65,
-	0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x6c, 0x75, 0x63, 0x69,
-	0x2e, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x64, 0x0a, 0x0f, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54, 0x72,
-	0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x12, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
-	0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54,
-	0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65,
-	0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x3e, 0x5a, 0x3c, 0x67,
-	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
-	0x75, 0x63, 0x69, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x5f, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6c,
-	0x75, 0x63, 0x69, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12,
+	0x16, 0x0a, 0x06, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x65,
+	0x72, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x74, 0x65, 0x70, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x04, 0x73, 0x74, 0x65, 0x70, 0x22, 0x3f, 0x0a, 0x17, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54, 0x72,
+	0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x24, 0x0a, 0x0e, 0x69, 0x73, 0x5f, 0x74, 0x72, 0x65, 0x65, 0x5f, 0x63, 0x6c, 0x6f, 0x73,
+	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0c, 0x69, 0x73, 0x54, 0x72, 0x65, 0x65,
+	0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x32, 0x72, 0x0a, 0x0a, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c,
+	0x6f, 0x73, 0x65, 0x72, 0x12, 0x64, 0x0a, 0x0f, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54, 0x72, 0x65,
+	0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x12, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6e,
+	0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54, 0x72,
+	0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2e, 0x76, 0x31,
+	0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x54, 0x72, 0x65, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x72,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x3e, 0x5a, 0x3c, 0x67, 0x6f,
+	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
+	0x63, 0x69, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x5f, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x2f, 0x61,
+	0x70, 0x69, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x6c, 0x75,
+	0x63, 0x69, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -433,25 +209,19 @@ func file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescGZIP(
 	return file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_goTypes = []interface{}{
-	(*QueryTreeClosersRequest)(nil),                     // 0: luci.notify.v1.QueryTreeClosersRequest
-	(*QueryTreeClosersResponse)(nil),                    // 1: luci.notify.v1.QueryTreeClosersResponse
-	(*CheckTreeCloserRequest)(nil),                      // 2: luci.notify.v1.CheckTreeCloserRequest
-	(*CheckTreeCloserResponse)(nil),                     // 3: luci.notify.v1.CheckTreeCloserResponse
-	(*QueryTreeClosersResponse_BuilderTreeClosers)(nil), // 4: luci.notify.v1.QueryTreeClosersResponse.BuilderTreeClosers
+	(*CheckTreeCloserRequest)(nil),  // 0: luci.notify.v1.CheckTreeCloserRequest
+	(*CheckTreeCloserResponse)(nil), // 1: luci.notify.v1.CheckTreeCloserResponse
 }
 var file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_depIdxs = []int32{
-	4, // 0: luci.notify.v1.QueryTreeClosersResponse.builder_tree_closers:type_name -> luci.notify.v1.QueryTreeClosersResponse.BuilderTreeClosers
-	0, // 1: luci.notify.v1.TreeClosers.QueryTreeClosers:input_type -> luci.notify.v1.QueryTreeClosersRequest
-	2, // 2: luci.notify.v1.TreeClosers.CheckTreeCloser:input_type -> luci.notify.v1.CheckTreeCloserRequest
-	1, // 3: luci.notify.v1.TreeClosers.QueryTreeClosers:output_type -> luci.notify.v1.QueryTreeClosersResponse
-	3, // 4: luci.notify.v1.TreeClosers.CheckTreeCloser:output_type -> luci.notify.v1.CheckTreeCloserResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: luci.notify.v1.TreeCloser.CheckTreeCloser:input_type -> luci.notify.v1.CheckTreeCloserRequest
+	1, // 1: luci.notify.v1.TreeCloser.CheckTreeCloser:output_type -> luci.notify.v1.CheckTreeCloserResponse
+	1, // [1:2] is the sub-list for method output_type
+	0, // [0:1] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_init() }
@@ -461,30 +231,6 @@ func file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTreeClosersRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTreeClosersResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CheckTreeCloserRequest); i {
 			case 0:
 				return &v.state
@@ -496,20 +242,8 @@ func file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_init() {
 				return nil
 			}
 		}
-		file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CheckTreeCloserResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTreeClosersResponse_BuilderTreeClosers); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -527,7 +261,7 @@ func file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_luci_notify_api_service_v1_rpc_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -549,139 +283,90 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// TreeClosersClient is the client API for TreeClosers service.
+// TreeCloserClient is the client API for TreeCloser service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type TreeClosersClient interface {
-	// Retrieves tree closers associated with the builders from the specified
-	// project.
-	QueryTreeClosers(ctx context.Context, in *QueryTreeClosersRequest, opts ...grpc.CallOption) (*QueryTreeClosersResponse, error)
+type TreeCloserClient interface {
 	// Checks if the builder in CheckTreeCloserRequest is tree-closer or not
 	CheckTreeCloser(ctx context.Context, in *CheckTreeCloserRequest, opts ...grpc.CallOption) (*CheckTreeCloserResponse, error)
 }
-type treeClosersPRPCClient struct {
+type treeCloserPRPCClient struct {
 	client *prpc.Client
 }
 
-func NewTreeClosersPRPCClient(client *prpc.Client) TreeClosersClient {
-	return &treeClosersPRPCClient{client}
+func NewTreeCloserPRPCClient(client *prpc.Client) TreeCloserClient {
+	return &treeCloserPRPCClient{client}
 }
 
-func (c *treeClosersPRPCClient) QueryTreeClosers(ctx context.Context, in *QueryTreeClosersRequest, opts ...grpc.CallOption) (*QueryTreeClosersResponse, error) {
-	out := new(QueryTreeClosersResponse)
-	err := c.client.Call(ctx, "luci.notify.v1.TreeClosers", "QueryTreeClosers", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *treeClosersPRPCClient) CheckTreeCloser(ctx context.Context, in *CheckTreeCloserRequest, opts ...grpc.CallOption) (*CheckTreeCloserResponse, error) {
+func (c *treeCloserPRPCClient) CheckTreeCloser(ctx context.Context, in *CheckTreeCloserRequest, opts ...grpc.CallOption) (*CheckTreeCloserResponse, error) {
 	out := new(CheckTreeCloserResponse)
-	err := c.client.Call(ctx, "luci.notify.v1.TreeClosers", "CheckTreeCloser", in, out, opts...)
+	err := c.client.Call(ctx, "luci.notify.v1.TreeCloser", "CheckTreeCloser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-type treeClosersClient struct {
+type treeCloserClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTreeClosersClient(cc grpc.ClientConnInterface) TreeClosersClient {
-	return &treeClosersClient{cc}
+func NewTreeCloserClient(cc grpc.ClientConnInterface) TreeCloserClient {
+	return &treeCloserClient{cc}
 }
 
-func (c *treeClosersClient) QueryTreeClosers(ctx context.Context, in *QueryTreeClosersRequest, opts ...grpc.CallOption) (*QueryTreeClosersResponse, error) {
-	out := new(QueryTreeClosersResponse)
-	err := c.cc.Invoke(ctx, "/luci.notify.v1.TreeClosers/QueryTreeClosers", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *treeClosersClient) CheckTreeCloser(ctx context.Context, in *CheckTreeCloserRequest, opts ...grpc.CallOption) (*CheckTreeCloserResponse, error) {
+func (c *treeCloserClient) CheckTreeCloser(ctx context.Context, in *CheckTreeCloserRequest, opts ...grpc.CallOption) (*CheckTreeCloserResponse, error) {
 	out := new(CheckTreeCloserResponse)
-	err := c.cc.Invoke(ctx, "/luci.notify.v1.TreeClosers/CheckTreeCloser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/luci.notify.v1.TreeCloser/CheckTreeCloser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TreeClosersServer is the server API for TreeClosers service.
-type TreeClosersServer interface {
-	// Retrieves tree closers associated with the builders from the specified
-	// project.
-	QueryTreeClosers(context.Context, *QueryTreeClosersRequest) (*QueryTreeClosersResponse, error)
+// TreeCloserServer is the server API for TreeCloser service.
+type TreeCloserServer interface {
 	// Checks if the builder in CheckTreeCloserRequest is tree-closer or not
 	CheckTreeCloser(context.Context, *CheckTreeCloserRequest) (*CheckTreeCloserResponse, error)
 }
 
-// UnimplementedTreeClosersServer can be embedded to have forward compatible implementations.
-type UnimplementedTreeClosersServer struct {
+// UnimplementedTreeCloserServer can be embedded to have forward compatible implementations.
+type UnimplementedTreeCloserServer struct {
 }
 
-func (*UnimplementedTreeClosersServer) QueryTreeClosers(context.Context, *QueryTreeClosersRequest) (*QueryTreeClosersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryTreeClosers not implemented")
-}
-func (*UnimplementedTreeClosersServer) CheckTreeCloser(context.Context, *CheckTreeCloserRequest) (*CheckTreeCloserResponse, error) {
+func (*UnimplementedTreeCloserServer) CheckTreeCloser(context.Context, *CheckTreeCloserRequest) (*CheckTreeCloserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckTreeCloser not implemented")
 }
 
-func RegisterTreeClosersServer(s prpc.Registrar, srv TreeClosersServer) {
-	s.RegisterService(&_TreeClosers_serviceDesc, srv)
+func RegisterTreeCloserServer(s prpc.Registrar, srv TreeCloserServer) {
+	s.RegisterService(&_TreeCloser_serviceDesc, srv)
 }
 
-func _TreeClosers_QueryTreeClosers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTreeClosersRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TreeClosersServer).QueryTreeClosers(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.notify.v1.TreeClosers/QueryTreeClosers",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TreeClosersServer).QueryTreeClosers(ctx, req.(*QueryTreeClosersRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TreeClosers_CheckTreeCloser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TreeCloser_CheckTreeCloser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckTreeCloserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TreeClosersServer).CheckTreeCloser(ctx, in)
+		return srv.(TreeCloserServer).CheckTreeCloser(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/luci.notify.v1.TreeClosers/CheckTreeCloser",
+		FullMethod: "/luci.notify.v1.TreeCloser/CheckTreeCloser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TreeClosersServer).CheckTreeCloser(ctx, req.(*CheckTreeCloserRequest))
+		return srv.(TreeCloserServer).CheckTreeCloser(ctx, req.(*CheckTreeCloserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _TreeClosers_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "luci.notify.v1.TreeClosers",
-	HandlerType: (*TreeClosersServer)(nil),
+var _TreeCloser_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "luci.notify.v1.TreeCloser",
+	HandlerType: (*TreeCloserServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "QueryTreeClosers",
-			Handler:    _TreeClosers_QueryTreeClosers_Handler,
-		},
-		{
 			MethodName: "CheckTreeCloser",
-			Handler:    _TreeClosers_CheckTreeCloser_Handler,
+			Handler:    _TreeCloser_CheckTreeCloser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
