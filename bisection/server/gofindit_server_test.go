@@ -334,6 +334,12 @@ func TestQueryAnalysis(t *testing.T) {
 					RerunResult: &pb.RerunResult{
 						RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 					},
+					Commit: &buildbucketpb.GitilesCommit{
+						Host:    "host1",
+						Project: "proj1",
+						Ref:     "ref",
+						Id:      "commit5",
+					},
 				},
 				ParentRerun: &pb.SingleRerun{
 					Bbid:      7766554433221100,
@@ -341,6 +347,12 @@ func TestQueryAnalysis(t *testing.T) {
 					EndTime:   &timestamppb.Timestamp{Seconds: 202},
 					RerunResult: &pb.RerunResult{
 						RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+					},
+					Commit: &buildbucketpb.GitilesCommit{
+						Host:    "host1",
+						Project: "proj1",
+						Ref:     "ref",
+						Id:      "commit6",
 					},
 				},
 			},
@@ -367,6 +379,12 @@ func TestQueryAnalysis(t *testing.T) {
 					RerunResult: &pb.RerunResult{
 						RerunStatus: pb.RerunStatus_RERUN_STATUS_FAILED,
 					},
+					Commit: &buildbucketpb.GitilesCommit{
+						Host:    "host1",
+						Project: "proj1",
+						Ref:     "ref",
+						Id:      "commit5",
+					},
 				},
 				ParentRerun: &pb.SingleRerun{
 					Bbid:      7766554433221100,
@@ -374,6 +392,12 @@ func TestQueryAnalysis(t *testing.T) {
 					EndTime:   &timestamppb.Timestamp{Seconds: 202},
 					RerunResult: &pb.RerunResult{
 						RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+					},
+					Commit: &buildbucketpb.GitilesCommit{
+						Host:    "host1",
+						Project: "proj1",
+						Ref:     "ref",
+						Id:      "commit6",
 					},
 				},
 			},
@@ -423,7 +447,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Ref:     "ref",
 				Id:      "commit5",
 			},
-			Index: 5,
+			Index: "5",
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
@@ -440,7 +464,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Ref:     "ref",
 				Id:      "commit6",
 			},
-			Index: 6,
+			Index: "6",
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
@@ -457,7 +481,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Ref:     "ref",
 				Id:      "commit8",
 			},
-			Index: 8,
+			Index: "8",
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 

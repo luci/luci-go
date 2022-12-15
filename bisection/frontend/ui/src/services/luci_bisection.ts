@@ -164,8 +164,22 @@ export interface HeuristicSuspect {
 
 export interface NthSectionAnalysisResult {
   status: AnalysisStatus;
+  startTime: string,
+  endTime: string,
   suspect?: GitilesCommit;
   remainingNthSectionRange?: RegressionRange;
+  reruns: SingleRerun[];
+  blameList: BlameList;
+}
+
+export interface BlameList {
+  commits: BlameListSingleCommit[];
+}
+
+export interface BlameListSingleCommit {
+  commit: string;
+  reviewUrl: string;
+  reviewTitle: string;
 }
 
 export interface GitilesCommit {
@@ -173,7 +187,7 @@ export interface GitilesCommit {
   project: string;
   id: string;
   ref: string;
-  position: string;
+  position?: string;
 }
 
 export interface RegressionRange {
@@ -206,6 +220,8 @@ export interface SingleRerun {
   endTime: string;
   bbid: string;
   rerunResult: RerunResult;
+  commit: GitilesCommit;
+  index?: string;
 }
 
 export interface RerunResult {

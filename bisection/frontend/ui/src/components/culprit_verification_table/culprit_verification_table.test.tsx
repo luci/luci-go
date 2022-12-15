@@ -78,6 +78,12 @@ function createMockAnalysis(): Analysis {
               rerunResult: {
                 rerunStatus: 'RERUN_STATUS_FAILED',
               },
+              commit: {
+                host: 'testHost',
+                project: 'testProject',
+                ref: 'test/ref/dev',
+                id: 'def456def456',
+              },
             },
             parentRerun: {
               startTime: '2022-09-06T07:16:16.398865Z',
@@ -85,6 +91,12 @@ function createMockAnalysis(): Analysis {
               bbid: '8765432187654321',
               rerunResult: {
                 rerunStatus: 'RERUN_STATUS_PASSED',
+              },
+              commit: {
+                host: 'testHost',
+                project: 'testProject',
+                ref: 'test/ref/dev',
+                id: 'def456def456',
               },
             },
           },

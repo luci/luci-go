@@ -52,6 +52,12 @@ export const createMockAnalysis = (id: string): Analysis => {
           position: '103',
         },
       },
+      startTime: '2022-09-06T07:13:16.398865Z',
+      endTime: '2022-09-06T07:13:16.398865Z',
+      reruns: [],
+      blameList: {
+        commits: [],
+      }
     },
   };
 };

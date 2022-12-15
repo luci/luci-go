@@ -30,6 +30,7 @@ import { AnalysisOverview } from '../../components/analysis_overview/analysis_ov
 import { CulpritsTable } from '../../components/culprits_table/culprits_table';
 import { HeuristicAnalysisTable } from '../../components/heuristic_analysis_table/heuristic_analysis_table';
 import { CulpritVerificationTable } from '../../components/culprit_verification_table/culprit_verification_table';
+import { NthSectionAnalysisTable } from '../../components/nthsection_analysis_table/nthsection_analysis_table';
 
 // TODO: uncomment below once revert CL and prime suspect information is added to the analysis response
 // import { RevertCLOverview } from '../../components/revert_cl_overview/revert_cl_overview';
@@ -182,7 +183,6 @@ export const AnalysisDetailsPage = () => {
               />
               <Tab
                 className='rounded-tab'
-                disabled
                 value={AnalysisComponentTabs.NTH_SECTION}
                 label={AnalysisComponentTabs.NTH_SECTION}
               />
@@ -200,8 +200,7 @@ export const AnalysisDetailsPage = () => {
               value={currentTab}
               name={AnalysisComponentTabs.NTH_SECTION}
             >
-              {/* TODO: Replace with nth section analysis results */}
-              Placeholder for nth section analysis details
+              <NthSectionAnalysisTable result={analysis!.nthSectionResult} />
             </TabPanel>
             <TabPanel
               value={currentTab}

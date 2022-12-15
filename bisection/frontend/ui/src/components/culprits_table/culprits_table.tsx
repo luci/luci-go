@@ -31,10 +31,10 @@ import {
   Culprit,
   CulpritAction,
   CulpritActionType,
-  RerunStatus,
   SuspectVerificationDetails,
 } from '../../services/luci_bisection';
 import { getCommitShortHash } from '../../tools/commit_formatters';
+import { displayRerunStatus } from '../../tools/info_display';
 import { EMPTY_LINK, linkToBuild } from '../../tools/link_constructors';
 
 interface CulpritsTableProps {
@@ -235,19 +235,3 @@ export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
     </TableContainer>
   );
 };
-
-function displayRerunStatus(rerunStatus: RerunStatus): string {
-  switch (rerunStatus) {
-    case 'RERUN_STATUS_PASSED':
-      return 'Passed';
-    case 'RERUN_STATUS_FAILED':
-      return 'Failed';
-    case 'RERUN_STATUS_IN_PROGRESS':
-      return 'In Progress';
-    case 'RERUN_STATUS_INFRA_FAILED':
-      return 'Infra failed';
-    case 'RERUN_STATUS_CANCELED':
-      return 'Canceled';
-  }
-  return 'Unknown';
-}

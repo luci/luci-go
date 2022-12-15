@@ -370,7 +370,9 @@ message SingleRerun {
   // Gitiles commit of commit to rerun
   buildbucket.v2.GitilesCommit commit = 8;
   // Index of the commit to rerun within the blamelist, if this is an nthsection rerun.
-  int32 index = 9;
+  // We need to use a string instead of an int here because 0 is a possible value
+  // and 0 value will get lost due to the "omitempty" flag in the generated proto.
+  string index = 9;
 }
 
 // RerunResult contains the result of one rerun.

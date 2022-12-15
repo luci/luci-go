@@ -18,6 +18,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
@@ -302,7 +303,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 		if err != nil {
 			return nil, errors.Annotate(err, "couldn't find index for rerun").Err()
 		}
-		rerunResult.Index = index
+		rerunResult.Index = strconv.FormatInt(int64(index), 10)
 		result.Reruns = append(result.Reruns, rerunResult)
 	}
 
@@ -368,6 +369,7 @@ func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, 
 		RerunResult: &pb.RerunResult{
 			RerunStatus: singleRerun.Status,
 		},
+		Commit: &singleRerun.GitilesCommit,
 	}, nil
 }
 
