@@ -66,9 +66,22 @@ func TestQueryTestVariants(t *testing.T) {
 		}
 
 		fetch := func(q *Query) (tvs []*pb.TestVariant, token string, err error) {
+			queryAlt := &Query{}
+			*queryAlt = *q
+
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			return q.Fetch(ctx)
+			tvs, token, err = q.Fetch(ctx)
+
+			// Run the same query, with UseLargeInvocationGraphQuery = true
+			// and expect it to return exactly the same results.
+			queryAlt.UseLargeInvocationGraphQuery = true
+			tvsB, tokenB, errB := q.Fetch(ctx)
+			So(tvsB, ShouldResembleProto, tvs)
+			So(tokenB, ShouldEqual, token)
+			So(errB, ShouldErrLike, err)
+
+			return tvs, token, err
 		}
 
 		mustFetch := func(q *Query) (tvs []*pb.TestVariant, token string) {

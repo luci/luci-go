@@ -64,6 +64,8 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		ResponseLimitBytes:   testvariants.DefaultResponseLimitBytes,
 		PageToken:            in.PageToken,
 		Mask:                 readMask,
+		// 1000 was determined experimentally as an appropriate cross-over point.
+		UseLargeInvocationGraphQuery: invs.WithTestResultsCount() > 1000,
 	}
 
 	var tvs []*pb.TestVariant

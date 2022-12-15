@@ -43,6 +43,18 @@ func NewReachableInvocations() ReachableInvocations {
 	return make(ReachableInvocations)
 }
 
+// WithTestResultsCount returns the number of invocations in the set
+// with test results.
+func (r ReachableInvocations) WithTestResultsCount() int {
+	count := 0
+	for _, inv := range r {
+		if inv.HasTestResults {
+			count++
+		}
+	}
+	return count
+}
+
 // Union adds other reachable invocations.
 func (r ReachableInvocations) Union(other ReachableInvocations) {
 	for id, invocation := range other {
