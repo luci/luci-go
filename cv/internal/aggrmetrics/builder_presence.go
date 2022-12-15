@@ -89,7 +89,7 @@ func reportBuilders(ctx context.Context, env *common.Env, project string, cg *pr
 				project,
 				cgName,
 				b.GetIncludableOnly(),
-				len(b.GetLocationFilters()) > 0 || (len(b.GetLocationRegexp())+len(b.GetLocationRegexpExclude()) > 0),
+				len(b.GetLocationFilters()) > 0,
 				b.GetExperimentPercentage() > 0,
 			)
 		})

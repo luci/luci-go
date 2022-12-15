@@ -700,45 +700,6 @@ func TestCompute(t *testing.T) {
 					})
 				})
 			})
-			Convey("multi-CL, one CL with merge commit, with location_regexp", func() {
-				// One CL has a file (non-matching) and the other is empty.
-				multiCLIn := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{
-					Name: "luci/test/builder1",
-					LocationRegexp: []string{
-						"https://example.com/repo/[+]/some/.+",
-					},
-				}.generate()})
-				multiCLIn.CLs[0].Detail.GetGerrit().Files = []string{
-					"other/directory/contains/some/file",
-				}
-				multiCLIn.addCL(userA.Email())
-				multiCLIn.CLs[1].Detail.GetGerrit().Files = []string{}
-				multiCLIn.CLs[1].Detail.GetGerrit().Host = "example.com"
-				multiCLIn.CLs[1].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
-				res, err := Compute(ctx, *multiCLIn)
-				So(err, ShouldBeNil)
-				So(res.ComputationFailure, ShouldBeNil)
-				// Builder is triggered because there is a merge commit.
-				So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
-					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
-						SingleQuota: 2,
-						GlobalQuota: 8,
-					},
-					Definitions: []*tryjob.Definition{{
-						Backend: &tryjob.Definition_Buildbucket_{
-							Buildbucket: &tryjob.Definition_Buildbucket{
-								Host: "cr-buildbucket.appspot.com",
-								Builder: &buildbucketpb.BuilderID{
-									Project: "luci",
-									Bucket:  "test",
-									Builder: "builder1",
-								},
-							},
-						},
-						Critical: true,
-					}},
-				})
-			})
 			Convey("multi-CL, one CL with empty filediff, with location_filters", func() {
 				// This test case is the same as the above, but using
 				// location_filters, to test that the behavior is the same for
@@ -1050,27 +1011,23 @@ func TestCompute(t *testing.T) {
 }
 
 type builderConfigGenerator struct {
-	Name                  string
-	Allowlist             string
-	IncludableOnly        bool
-	EquiName              string
-	EquiAllowlist         string
-	ExperimentPercentage  float32
-	LocationRegexp        []string
-	LocationRegexpExclude []string
-	LocationFilters       []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter
-	CancelStale           cfgpb.Toggle
-	Modes                 []string
+	Name                 string
+	Allowlist            string
+	IncludableOnly       bool
+	EquiName             string
+	EquiAllowlist        string
+	ExperimentPercentage float32
+	LocationFilters      []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter
+	CancelStale          cfgpb.Toggle
+	Modes                []string
 }
 
 func (bcg builderConfigGenerator) generate() *cfgpb.Verifiers_Tryjob_Builder {
 	ret := &cfgpb.Verifiers_Tryjob_Builder{
-		Name:                  bcg.Name,
-		IncludableOnly:        bcg.IncludableOnly,
-		LocationRegexp:        bcg.LocationRegexp,
-		LocationRegexpExclude: bcg.LocationRegexpExclude,
-		LocationFilters:       bcg.LocationFilters,
-		CancelStale:           bcg.CancelStale,
+		Name:            bcg.Name,
+		IncludableOnly:  bcg.IncludableOnly,
+		LocationFilters: bcg.LocationFilters,
+		CancelStale:     bcg.CancelStale,
 	}
 	if len(bcg.Modes) != 0 {
 		ret.ModeAllowlist = bcg.Modes

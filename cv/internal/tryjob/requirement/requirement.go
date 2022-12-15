@@ -322,17 +322,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 
 	// Check for location filter match to decide whether to conditionally skip
 	// the builder based on location.
-	switch {
-	case len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0:
-		// If LocationRegexp was specified, use it as the source of truth.
-		// TODO(crbug/1171945): After all projects are migrated to use only
-		// LocationFilters, this can be removed.
-		matched, err := locationMatch(ctx, b.LocationRegexp, b.LocationRegexpExclude, in.CLs)
-		if !matched || err != nil {
-			return skipBuilder, nil, err
-		}
-	case len(b.LocationFilters) > 0:
-		// If only LocationFilters was specified, use it as the source of truth.
+	if len(b.LocationFilters) > 0 {
 		matched, err := locationFilterMatch(ctx, b.LocationFilters, in.CLs)
 		if !matched || err != nil {
 			return skipBuilder, nil, err
