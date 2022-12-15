@@ -21,6 +21,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/gomodule/redigo/redis"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -179,13 +180,27 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable 
 		reachableInvocations.Union(nextLevel)
 	}
 
-	withTestResults, err := queryInvocations(ctx, `SELECT DISTINCT tr.InvocationID FROM UNNEST(@invocations) inv JOIN TestResults tr on tr.InvocationId = inv`, reachableInvocations)
-	if err != nil {
-		return nil, err
-	}
+	var withTestResults invocations.IDSet
+	var withExonerations invocations.IDSet
 
-	withExonerations, err := queryInvocations(ctx, `SELECT DISTINCT te.InvocationID FROM UNNEST(@invocations) inv JOIN TestExonerations te on te.InvocationId = inv`, reachableInvocations)
-	if err != nil {
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		var err error
+		withTestResults, err = queryInvocations(ctx, `SELECT DISTINCT tr.InvocationID FROM UNNEST(@invocations) inv JOIN TestResults tr on tr.InvocationId = inv`, reachableInvocations)
+		if err != nil {
+			return errors.Annotate(err, "querying invocations with test results").Err()
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		var err error
+		withExonerations, err = queryInvocations(ctx, `SELECT DISTINCT te.InvocationID FROM UNNEST(@invocations) inv JOIN TestExonerations te on te.InvocationId = inv`, reachableInvocations)
+		if err != nil {
+			return errors.Annotate(err, "querying invocations with test exonerations").Err()
+		}
+		return nil
+	})
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
