@@ -44,7 +44,6 @@ import (
 	// Ensure registration of validation rules before registering cfgcache.
 	_ "go.chromium.org/luci/cv/internal/configs/validation"
 
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/buildbucket"
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
@@ -57,7 +56,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
@@ -148,11 +146,6 @@ func main() {
 			}
 		}
 
-		// Register pRPC servers.
-		migrationpb.RegisterMigrationServer(srv.PRPC, &migration.MigrationServer{
-			GFactory:    gFactory,
-			RunNotifier: runNotifier,
-		})
 		adminpb.RegisterAdminServer(srv.PRPC, admin.New(
 			&tq.Default, &dsmapper.Default,
 			clUpdater, pmNotifier, runNotifier,

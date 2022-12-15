@@ -210,30 +210,6 @@ func (n *Notifier) NotifyLongOpCompleted(ctx context.Context, runID common.RunID
 	})
 }
 
-// NotifyCQDVerificationCompleted tells RunManager that CQDaemon has completed
-// verifying the provided Run.
-//
-// TODO(crbug/1141880): Remove this event after migration.
-func (n *Notifier) NotifyCQDVerificationCompleted(ctx context.Context, runID common.RunID) error {
-	return n.SendNow(ctx, runID, &eventpb.Event{
-		Event: &eventpb.Event_CqdVerificationCompleted{
-			CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
-		},
-	})
-}
-
-// NotifyCQDTryjobsUpdated tells RunManager that CQDaemon has an update on
-// Tryjobs for the provided Run.
-//
-// TODO(crbug/1141880): Remove this event after migration.
-func (n *Notifier) NotifyCQDTryjobsUpdated(ctx context.Context, runID common.RunID) error {
-	return n.SendNow(ctx, runID, &eventpb.Event{
-		Event: &eventpb.Event_CqdTryjobsUpdated{
-			CqdTryjobsUpdated: &eventpb.CQDTryjobsUpdated{},
-		},
-	})
-}
-
 // SendNow sends the event to Run's eventbox and invokes RunManager immediately.
 func (n *Notifier) SendNow(ctx context.Context, runID common.RunID, evt *eventpb.Event) error {
 	return n.Send(ctx, runID, evt, time.Time{})

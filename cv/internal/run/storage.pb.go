@@ -510,6 +510,7 @@ type Options struct {
 	// consumer of this information to handle it.
 	//
 	// Mutually exclusive with `overridden_tryjobs` option.
+	// This option is ignored if `skip_tryjobs` is true.
 	IncludedTryjobs []string `protobuf:"bytes,6,rep,name=included_tryjobs,json=includedTryjobs,proto3" json:"included_tryjobs,omitempty"`
 	// Overrides all the Tryjobs triggered for this Run regardless of Project
 	// configuration.
@@ -521,6 +522,7 @@ type Options struct {
 	// consumer of this information to handle it.
 	//
 	// Mutually exclusive with `included_tryjobs` option.
+	// This option is ignored if `skip_tryjobs` is true.
 	OverriddenTryjobs []string `protobuf:"bytes,8,rep,name=overridden_tryjobs,json=overriddenTryjobs,proto3" json:"overridden_tryjobs,omitempty"`
 	// Contains the custom Tryjob tags that should be added when launching
 	// Tryjobs for this Run.

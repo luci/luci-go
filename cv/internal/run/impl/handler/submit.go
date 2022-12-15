@@ -50,10 +50,8 @@ import (
 func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
 	switch status := rs.Status; {
 	case run.IsEnded(status):
-		// It is safe to discard this event because this event either:
-		//  * arrives after Run gets cancelled while waiting for submission, or
-		//  * is sent by OnCQDVerificationCompleted handler as a fail-safe and
-		//    Run submission has already completed.
+		// It is safe to discard this event because this event arrives after Run
+		// gets cancelled while waiting for submission.
 		logging.Debugf(ctx, "received ReadyForSubmission event when Run is %s", status)
 		rs = rs.ShallowCopy()
 		// Under certain race conditions, this Run may still occupy the submit

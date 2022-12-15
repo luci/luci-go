@@ -30,7 +30,6 @@ import (
 
 	nativeDatastore "cloud.google.com/go/datastore"
 	"google.golang.org/api/option"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
@@ -58,7 +57,6 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
@@ -116,11 +114,6 @@ type Test struct {
 	// with limited CPU resources.
 	// Set to ~10ms when debugging a hung test.
 	MaxDuration time.Duration
-
-	// InitialMigrationSettings controls CQD -> CV migration.
-	//
-	// If you need to change them, do call UpdateMigrationConfig().
-	InitialMigrationSettings *migrationpb.Settings
 
 	// cleanupFuncs are executed in reverse order in cleanup().
 	cleanupFuncs []func()
@@ -218,21 +211,6 @@ func (t *Test) SetUp() (context.Context, func()) {
 	t.TSMonStore = store.NewInMemory(&target.Task{})
 	tsmon.GetState(ctx).SetStore(t.TSMonStore)
 
-	if t.InitialMigrationSettings == nil {
-		t.InitialMigrationSettings = &migrationpb.Settings{
-			ApiHosts: []*migrationpb.Settings_ApiHost{{
-				Host:          t.Env.LogicalHostname,
-				Prod:          true,
-				ProjectRegexp: []string{".+"},
-			}},
-			UseCvStartMessage: &migrationpb.Settings_UseCVStartMessage{
-				ProjectRegexp: []string{".+"},
-			},
-		}
-	}
-	if err := srvcfg.SetTestMigrationConfig(ctx, proto.Clone(t.InitialMigrationSettings).(*migrationpb.Settings)); err != nil {
-		panic(err)
-	}
 	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
 		panic(err)
 	}
@@ -276,15 +254,6 @@ func (t *Test) TSMonSentDistr(ctx context.Context, m types.Metric, fieldVals ...
 		panic(fmt.Errorf("metric %q value is not a %T, but %T", m.Info().Name, d, v))
 	}
 	return d
-}
-
-// UpdateMigrationConfig updates the config and due to its caching, pushes time
-// forward to invalidate old cache.
-func (t *Test) UpdateMigrationConfig(ctx context.Context, cfg *migrationpb.Settings) {
-	if err := srvcfg.SetTestMigrationConfig(ctx, cfg); err != nil {
-		panic(err)
-	}
-	t.Clock.Add(time.Minute)
 }
 
 func (t *Test) setMaxDuration() {
@@ -524,11 +493,6 @@ func (t *Test) setTestClockTimerCB(ctx context.Context) context.Context {
 	ignoreIf := stringset.NewFromSlice(
 		// Used in clock.WithTimeout(ctx) | clock.WithDeadline(ctx).
 		clock.ContextDeadlineTag,
-		// Used by CQDFake to wait until the next loop.
-		// NOTE: can't import cqdfake package const here due to circular import,
-		// and while it's possible to refactor this, we expect to delete cqdfake
-		// relatively soon.
-		"cqdfake",
 	)
 	t.Clock.SetTimerCallback(func(dur time.Duration, timer clock.Timer) {
 		tags := testclock.GetTags(timer)

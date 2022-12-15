@@ -34,21 +34,16 @@ func TestValidationRules(t *testing.T) {
 
 		patterns, err := r.ConfigPatterns(context.Background())
 		So(err, ShouldBeNil)
-		So(len(patterns), ShouldEqual, 3)
+		So(len(patterns), ShouldEqual, 2)
 		Convey("project-scope cq.cfg", func() {
 			So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
 			So(patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
 			So(patterns[0].Path.Match("commit-queue.cfg"), ShouldBeTrue)
 		})
-		Convey("service-scope migration-settings.cfg", func() {
-			So(patterns[1].ConfigSet.Match("services/commit-queue"), ShouldBeTrue)
-			So(patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
-			So(patterns[1].Path.Match("migration-settings.cfg"), ShouldBeTrue)
-		})
 		Convey("service-scope listener-settings.cfg", func() {
-			So(patterns[2].ConfigSet.Match("services/luci-change-verifier"), ShouldBeTrue)
-			So(patterns[2].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
-			So(patterns[2].Path.Match("listener-settings.cfg"), ShouldBeTrue)
+			So(patterns[1].ConfigSet.Match("services/luci-change-verifier"), ShouldBeTrue)
+			So(patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), ShouldBeFalse)
+			So(patterns[1].Path.Match("listener-settings.cfg"), ShouldBeTrue)
 		})
 	})
 }

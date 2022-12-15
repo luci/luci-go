@@ -22,7 +22,6 @@ import (
 	"math"
 	"math/rand"
 	"strings"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -43,14 +42,11 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
 	bblistener "go.chromium.org/luci/cv/internal/buildbucket/listener"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -60,8 +56,6 @@ import (
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	gerritupdater "go.chromium.org/luci/cv/internal/gerrit/updater"
-	"go.chromium.org/luci/cv/internal/migration"
-	"go.chromium.org/luci/cv/internal/migration/cqdfake"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	pmimpl "go.chromium.org/luci/cv/internal/prjmanager/manager"
 	"go.chromium.org/luci/cv/internal/rpc/admin"
@@ -121,17 +115,12 @@ type Test struct {
 	PMNotifier  *prjmanager.Notifier
 	RunNotifier *run.Notifier
 
-	AdminServer     adminpb.AdminServer
-	MigrationServer migrationpb.MigrationServer
+	AdminServer adminpb.AdminServer
 
 	// dsFlakiness enables ds flakiness for "RunUntil".
 	dsFlakiness     float64
 	dsFlakinessRand rand.Source
 	tqSweepChannel  dispatcher.Channel
-
-	cqdsMu sync.Mutex
-	// cqds are fake CQDaemons indexed by LUCI project name.
-	cqds map[string]*cqdfake.CQDFake
 }
 
 // SetUp sets up the end to end test.
@@ -190,10 +179,6 @@ func (t *Test) SetUp() (context.Context, func()) {
 	tryjobUpdater.RegisterBackend(bbFacade)
 	tryjobCancellator := tjcancel.NewCancellator(tjNotifier)
 	tryjobCancellator.RegisterBackend(bbFacade)
-	t.MigrationServer = &migration.MigrationServer{
-		RunNotifier: t.RunNotifier,
-		GFactory:    gFactory,
-	}
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
 	return ctx, func() {
 		for i := len(cleanupFns) - 1; i >= 0; i-- {
@@ -287,27 +272,6 @@ func (t *Test) RunUntilT(ctx context.Context, targetTasksCount int, stopIf func(
 	if err := ctx.Err(); err != nil {
 		panic(err)
 	}
-}
-
-// MustCQD returns a CQDaemon fake for the given project, starting a new one if
-// necessary, in which case it's lifetime is limited by the given context.
-func (t *Test) MustCQD(ctx context.Context, luciProject string) *cqdfake.CQDFake {
-	t.cqdsMu.Lock()
-	defer t.cqdsMu.Unlock()
-	if cqd, exists := t.cqds[luciProject]; exists {
-		return cqd
-	}
-	cqd := &cqdfake.CQDFake{
-		LUCIProject: luciProject,
-		CV:          t.MigrationServer,
-		GFake:       t.GFake,
-	}
-	cqd.Start(ctx)
-	if t.cqds == nil {
-		t.cqds = make(map[string]*cqdfake.CQDFake, 1)
-	}
-	t.cqds[luciProject] = cqd
-	return cqd
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -451,24 +415,6 @@ func (t *Test) LastMessage(gHost string, gChange int64) *gerritpb.ChangeMessageI
 // ExportedBQAttemptsCount returns number of exported CQ Attempts.
 func (t *Test) ExportedBQAttemptsCount() int {
 	return t.BQFake.RowsCount("", runbq.CVDataset, runbq.CVTable)
-}
-
-// MigrationFetchActiveRuns fetches active Run(s).
-func (t *Test) MigrationFetchActiveRuns(ctx context.Context, project string) []*migrationpb.ActiveRun {
-	req := &migrationpb.FetchActiveRunsRequest{LuciProject: project}
-	res, err := t.MigrationServer.FetchActiveRuns(t.MigrationContext(ctx), req)
-	if err != nil {
-		panic(err)
-	}
-	return res.GetActiveRuns()
-}
-
-// MigrationContext returns context authorized to call to the Migration API.
-func (t *Test) MigrationContext(ctx context.Context) context.Context {
-	return auth.WithState(ctx, &authtest.FakeState{
-		Identity:       "user:e2e-test@example.com",
-		IdentityGroups: []string{migration.AllowGroup},
-	})
 }
 
 // AddCommitter adds a given member into the committer group.

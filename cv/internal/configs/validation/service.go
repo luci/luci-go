@@ -22,43 +22,10 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
-
-// validateMigrationSettings validates a migration-settings file.
-//
-// Validation result is returned via validation ctx, while error returned
-// directly implies only a bug in this code.
-func validateMigrationSettings(ctx *validation.Context, configSet, path string, content []byte) error {
-	ctx.SetFile(path)
-	cfg := migrationpb.Settings{}
-	if err := prototext.Unmarshal(content, &cfg); err != nil {
-		ctx.Error(err)
-		return nil
-	}
-	for i, a := range cfg.GetApiHosts() {
-		ctx.Enter("api_hosts #%d", i+1)
-		switch h := a.GetHost(); h {
-		case "luci-change-verifier-dev.appspot.com":
-		case "luci-change-verifier.appspot.com":
-		default:
-			ctx.Errorf("invalid host (given: %q)", h)
-		}
-		validateRegexp(ctx, "project_regexp", a.GetProjectRegexp())
-		validateRegexp(ctx, "project_regexp_exclude", a.GetProjectRegexpExclude())
-		ctx.Exit()
-	}
-	if u := cfg.GetUseCvStartMessage(); u != nil {
-		ctx.Enter("use_cv_start_message")
-		validateRegexp(ctx, "project_regexp", u.GetProjectRegexp())
-		validateRegexp(ctx, "project_regexp_exclude", u.GetProjectRegexpExclude())
-		ctx.Exit()
-	}
-	return nil
-}
 
 // validateListenerSettings validates a listener-settings file.
 func validateListenerSettings(ctx *validation.Context, configSet, path string, content []byte) error {

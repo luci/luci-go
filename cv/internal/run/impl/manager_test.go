@@ -186,28 +186,6 @@ func TestRunManager(t *testing.T) {
 			},
 			{
 				&eventpb.Event{
-					Event: &eventpb.Event_CqdTryjobsUpdated{
-						CqdTryjobsUpdated: &eventpb.CQDTryjobsUpdated{},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.NotifyCQDTryjobsUpdated(ctx, runID)
-				},
-				"OnCQDTryjobsUpdated",
-			},
-			{
-				&eventpb.Event{
-					Event: &eventpb.Event_CqdVerificationCompleted{
-						CqdVerificationCompleted: &eventpb.CQDVerificationCompleted{},
-					},
-				},
-				func(ctx context.Context) error {
-					return notifier.NotifyCQDVerificationCompleted(ctx, runID)
-				},
-				"OnCQDVerificationCompleted",
-			},
-			{
-				&eventpb.Event{
 					Event: &eventpb.Event_ClsSubmitted{
 						ClsSubmitted: &eventpb.CLsSubmitted{
 							Clids: []int64{1, 2},
@@ -561,24 +539,6 @@ func (fh *fakeHandler) OnTryjobsUpdated(ctx context.Context, rs *state.RunState,
 
 func (fh *fakeHandler) TryResumeSubmission(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
 	fh.addInvocation("TryResumeSubmission")
-	return &handler.Result{
-		State:          rs.ShallowCopy(),
-		PreserveEvents: fh.preserveEvents,
-		PostProcessFn:  fh.postProcessFn,
-	}, nil
-}
-
-func (fh *fakeHandler) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
-	fh.addInvocation("OnCQDTryjobsUpdated")
-	return &handler.Result{
-		State:          rs.ShallowCopy(),
-		PreserveEvents: fh.preserveEvents,
-		PostProcessFn:  fh.postProcessFn,
-	}, nil
-}
-
-func (fh *fakeHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*handler.Result, error) {
-	fh.addInvocation("OnCQDVerificationCompleted")
 	return &handler.Result{
 		State:          rs.ShallowCopy(),
 		PreserveEvents: fh.preserveEvents,

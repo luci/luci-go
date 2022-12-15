@@ -375,26 +375,6 @@ func (t *testHandler) UpdateConfig(ctx context.Context, rs *state.RunState, ver 
 	return res, err
 }
 
-func (t *testHandler) OnCQDTryjobsUpdated(ctx context.Context, rs *state.RunState) (*Result, error) {
-	initialCopy := rs.DeepCopy()
-	res, err := t.inner.OnCQDTryjobsUpdated(ctx, rs)
-	if err != nil {
-		return nil, err
-	}
-	validateStateMutation(rs, initialCopy, res.State)
-	return res, err
-}
-
-func (t *testHandler) OnCQDVerificationCompleted(ctx context.Context, rs *state.RunState) (*Result, error) {
-	initialCopy := rs.DeepCopy()
-	res, err := t.inner.OnCQDVerificationCompleted(ctx, rs)
-	if err != nil {
-		return nil, err
-	}
-	validateStateMutation(rs, initialCopy, res.State)
-	return res, err
-}
-
 func (t *testHandler) OnReadyForSubmission(ctx context.Context, rs *state.RunState) (*Result, error) {
 	initialCopy := rs.DeepCopy()
 	res, err := t.inner.OnReadyForSubmission(ctx, rs)

@@ -20,20 +20,13 @@ import (
 	"regexp"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgcache"
 
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 
 var (
-	cachedMigrationCfg = cfgcache.Register(&cfgcache.Entry{
-		Path:      "migration-settings.cfg",
-		ConfigSet: "services/commit-queue",
-		Type:      (*migrationpb.Settings)(nil),
-	})
 	cachedListenerCfg = cfgcache.Register(&cfgcache.Entry{
 		Path: "listener-settings.cfg",
 		Type: (*listenerpb.Settings)(nil),
@@ -42,31 +35,8 @@ var (
 
 // ImportConfig is called from a cron to import and cache all the configs.
 func ImportConfig(ctx context.Context) error {
-	return parallel.FanOutIn(func(workCh chan<- func() error) {
-		workCh <- func() error {
-			_, err := cachedMigrationCfg.Update(ctx, nil)
-			return err
-		}
-		workCh <- func() error {
-			_, err := cachedListenerCfg.Update(ctx, nil)
-			return err
-		}
-	})
-}
-
-// GetMigrationConfig loads typically cached migration config.
-func GetMigrationConfig(ctx context.Context) (*migrationpb.Settings, error) {
-	switch v, err := cachedMigrationCfg.Get(ctx, &config.Meta{}); {
-	case err != nil:
-		return nil, err
-	default:
-		return v.(*migrationpb.Settings), nil
-	}
-}
-
-// SetTestMigrationConfig is used in tests only.
-func SetTestMigrationConfig(ctx context.Context, m *migrationpb.Settings) error {
-	return cachedMigrationCfg.Set(ctx, m, &config.Meta{})
+	_, err := cachedListenerCfg.Update(ctx, nil)
+	return err
 }
 
 // GetListenerConfig loads cached Listener config.

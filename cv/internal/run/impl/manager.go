@@ -308,9 +308,7 @@ type triageResult struct {
 		events  eventbox.Events
 		tryjobs common.TryjobIDs
 	}
-	cqdVerificationCompletedEvents eventbox.Events
-	cqdTryjobsUpdated              eventbox.Events
-	nextReadyEventTime             time.Time
+	nextReadyEventTime time.Time
 	// These events can be deleted even before the transaction starts.
 	garbage eventbox.Events
 }
@@ -369,10 +367,6 @@ func (tr *triageResult) triage(ctx context.Context, item eventbox.Event, eventLo
 			tr.submissionCompletedEvent.event = item
 			tr.submissionCompletedEvent.sc = new
 		}
-	case *eventpb.Event_CqdVerificationCompleted:
-		tr.cqdVerificationCompletedEvents = append(tr.cqdVerificationCompletedEvents, item)
-	case *eventpb.Event_CqdTryjobsUpdated:
-		tr.cqdTryjobsUpdated = append(tr.cqdTryjobsUpdated, item)
 	case *eventpb.Event_LongOpCompleted:
 		tr.longOpCompleted.events = append(tr.longOpCompleted.events, item)
 		tr.longOpCompleted.results = append(tr.longOpCompleted.results, e.GetLongOpCompleted())
@@ -440,20 +434,6 @@ func (rp *runProcessor) processTriageResults(ctx context.Context, tr *triageResu
 			return nil, err
 		}
 		rs, transitions = applyResult(res, tr.tryjobUpdatedEvents.events, transitions)
-	}
-	if len(tr.cqdTryjobsUpdated) > 0 {
-		res, err := rp.handler.OnCQDTryjobsUpdated(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.cqdTryjobsUpdated, transitions)
-	}
-	if len(tr.cqdVerificationCompletedEvents) > 0 {
-		res, err := rp.handler.OnCQDVerificationCompleted(ctx, rs)
-		if err != nil {
-			return nil, err
-		}
-		rs, transitions = applyResult(res, tr.cqdVerificationCompletedEvents, transitions)
 	}
 	if len(tr.clsSubmittedEvents.events) > 0 {
 		res, err := rp.handler.OnCLsSubmitted(ctx, rs, tr.clsSubmittedEvents.cls)
