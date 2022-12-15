@@ -119,25 +119,6 @@ type Run struct {
 	// LatestTryjobsRefresh is the latest time when Run Manager scheduled async
 	// refresh of Tryjobs.
 	LatestTryjobsRefresh time.Time `gae:",noindex"`
-
-	// UseCVTryjobExecutor indicates Tryjob is handled in CV instead of CQ.
-	//
-	// The plan for migration is, when run starts, this field will be evaluated
-	// based on the migration config settings. If true, CV will hide this Run from
-	// CQDaemon and handle the Tryjobs for this Run exclusively. Otherwise,
-	// use the old flow (i.e. CQDaemon will fetch this Run from CV and handle the
-	// Tryjobs). In case anything goes wrong during the migration, CV will
-	// periodically re-evaluate this field and may set this field back to false.
-	// In that case, CQDaemon will see this Run and continue to handle the
-	// Tryjob. CQDaemon SHOULD be able to reuse all Tryjobs launched by CV.
-	//
-	// Note that, it's NOT possible for this field to turn from false to true
-	// except at the starting time. This is because it may cause unexpected
-	// behavior to turn over the tryjob control of the Run from CQDaemon to CV.
-	//
-	// TODO(crbug/1312255): Delete this field after all Projects have moved to use
-	// Tryjob Executor in CV.
-	UseCVTryjobExecutor bool `gae:",noindex"`
 }
 
 // Mutate mutates the Run by executing `mut`.

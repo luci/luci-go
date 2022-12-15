@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/metrics"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -104,10 +103,6 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return &Result{State: rs}, nil
 	}
 
-	rs.UseCVTryjobExecutor, err = migrationcfg.IsCVInChargeOfTryjob(ctx, impl.Env, rs.ID.LUCIProject())
-	if err != nil {
-		return nil, err
-	}
 	switch result, err := requirement.Compute(ctx, requirement.Input{
 		ConfigGroup: cg.Content,
 		RunOwner:    rs.Owner,
@@ -117,8 +112,6 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 	}); {
 	case err != nil:
 		return nil, err
-	case !rs.UseCVTryjobExecutor:
-		// Let CQDaemon handle Tryjobs.
 	case result.OK():
 		rs.Tryjobs = &run.Tryjobs{
 			Requirement:           result.Requirement,

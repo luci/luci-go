@@ -105,31 +105,6 @@ func populateRunResponse(ctx context.Context, r *run.Run) (resp *apiv0pb.Run, er
 }
 
 func constructTryjobs(ctx context.Context, r *run.Run) []*apiv0pb.Tryjob {
-	if !r.UseCVTryjobExecutor {
-		ret := make([]*apiv0pb.Tryjob, len(r.Tryjobs.GetTryjobs()))
-		for i, tj := range r.Tryjobs.GetTryjobs() {
-			ret[i] = &apiv0pb.Tryjob{
-				Status: versioning.TryjobStatusV0(tj.Status),
-			}
-			if tj.Critical {
-				ret[i].Critical = true
-			}
-			if tj.Reused {
-				ret[i].Reuse = true
-			}
-			if result := tj.GetResult(); result != nil {
-				ret[i].Result = &apiv0pb.Tryjob_Result{
-					Status: versioning.TryjobResultStatusV0(result.Status),
-				}
-				if bb := result.GetBuildbucket(); bb != nil {
-					ret[i].Result.Backend = &apiv0pb.Tryjob_Result_Buildbucket_{
-						Buildbucket: &apiv0pb.Tryjob_Result_Buildbucket{Id: bb.Id},
-					}
-				}
-			}
-		}
-		return ret
-	}
 	var ret []*apiv0pb.Tryjob
 	for i, execution := range r.Tryjobs.GetState().GetExecutions() {
 		definition := r.Tryjobs.GetState().GetRequirement().GetDefinitions()[i]

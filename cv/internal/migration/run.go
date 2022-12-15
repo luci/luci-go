@@ -204,11 +204,11 @@ func saveVerifiedCQDRun(ctx context.Context, req *migrationpb.ReportVerifiedRunR
 // pruneInactiveRuns removes Runs that are no longer active from CQ's PoV.
 //
 // Those Runs include
-//  * Run has associated VerifiedCQDRun
-//  * Run has been scheduled to cancel the Run trigger
-//  * Run uses LUCI CV to execute tryjobs
-//  * Run is triggered by the upload of a new patchset (as opposed to based on
-//    a CQ +1/+2 vote).
+//   - Run has associated VerifiedCQDRun
+//   - Run has been scheduled to cancel the Run trigger
+//   - Run uses LUCI CV to execute tryjobs
+//   - Run is triggered by the upload of a new patchset (as opposed to based on
+//     a CQ +1/+2 vote).
 //
 // Modifies the Runs slice in place, but also returns it for readability.
 func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
@@ -217,9 +217,6 @@ func pruneInactiveRuns(ctx context.Context, in []*run.Run) ([]*run.Run, error) {
 	// filter out Runs using CV to execute tryjob or w/ CancelTrigger long ops,
 	// so that CQD won't process those Runs.
 	for _, r := range in {
-		if r.UseCVTryjobExecutor {
-			continue
-		}
 		isBeingCancelled := false
 		for _, op := range r.OngoingLongOps.GetOps() {
 			if op.GetCancelTriggers() != nil {

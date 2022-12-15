@@ -64,12 +64,11 @@ func TestOnTryjobsUpdated(t *testing.T) {
 		rid := common.MakeRunID(lProject, now, 1, []byte("deadbeef"))
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:                  rid,
-				Status:              run.Status_RUNNING,
-				CreateTime:          now.Add(-2 * time.Minute),
-				StartTime:           now.Add(-1 * time.Minute),
-				CLs:                 common.CLIDs{1},
-				UseCVTryjobExecutor: true,
+				ID:         rid,
+				Status:     run.Status_RUNNING,
+				CreateTime: now.Add(-2 * time.Minute),
+				StartTime:  now.Add(-1 * time.Minute),
+				CLs:        common.CLIDs{1},
 			},
 		}
 		h, _ := makeTestHandler(&ct)
@@ -117,15 +116,6 @@ func TestOnTryjobsUpdated(t *testing.T) {
 				So(res.PreserveEvents, ShouldBeFalse)
 			})
 		}
-
-		Convey("Noop when Run is not using CV Tryjob executor", func() {
-			rs.UseCVTryjobExecutor = false
-			res, err := h.OnTryjobsUpdated(ctx, rs, common.TryjobIDs{123})
-			So(err, ShouldBeNil)
-			So(res.State, ShouldEqual, rs)
-			So(res.SideEffectFn, ShouldBeNil)
-			So(res.PreserveEvents, ShouldBeFalse)
-		})
 	})
 }
 

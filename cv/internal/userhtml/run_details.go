@@ -95,7 +95,9 @@ func loadRunInfo(ctx context.Context, r *run.Run) ([]*run.RunCL, []*uiTryjob, []
 		return err
 	})
 	eg.Go(func() (err error) {
-		if r.UseCVTryjobExecutor {
+		if len(r.Tryjobs.GetState().GetExecutions()) > 0 {
+			// TODO(yiwzhang): backfill Tryjobs data reported from CQDaemon to
+			// Tryjobs.State.Executions
 			for _, execution := range r.Tryjobs.GetState().GetExecutions() {
 				// TODO(yiwzhang): display the tryjob as not-started even if no
 				// attempt has been triggered.

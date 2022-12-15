@@ -29,12 +29,9 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	cvbq "go.chromium.org/luci/cv/internal/common/bq"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/metrics"
-	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -79,19 +76,6 @@ func send(ctx context.Context, env *common.Env, client cvbq.Client, id common.Ru
 	a, err := makeAttempt(ctx, r, cls)
 	if err != nil {
 		return errors.Annotate(err, "failed to make Attempt").Err()
-	}
-
-	// During the migration period when CQDaemon does most checks and triggers
-	// builds, CV can't populate all of the fields of Attempt without the
-	// information from CQDaemon; so for finished Attempts reported by
-	// CQDaemon, we can fill in the remaining fields.
-	//
-	// TODO(crbug/1225047): After CQDaemon turn-down, this will be unnecessary.
-	switch cqda, err := fetchCQDAttempt(ctx, r); {
-	case err != nil:
-		return err
-	case cqda != nil:
-		a = reconcileAttempts(a, cqda)
 	}
 
 	var wg sync.WaitGroup
@@ -202,47 +186,6 @@ func toGerritChange(cl *run.RunCL, submitted, failed common.CLIDsSet, mode run.M
 	return gc
 }
 
-// fetchCQDAttempt fetches an Attempt from CQDaemon if available.
-//
-// Returns nil if no Attempt is available.
-func fetchCQDAttempt(ctx context.Context, r *run.Run) (*cvbqpb.Attempt, error) {
-	v := migration.VerifiedCQDRun{ID: r.ID}
-	switch err := datastore.Get(ctx, &v); {
-	case err == datastore.ErrNoSuchEntity:
-		// A Run may end without a VerifiedCQDRun stored if the Run is canceled.
-		logging.Debugf(ctx, "no VerifiedCQDRun found for Run %q", r.ID)
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch VerifiedCQDRun").Tag(transient.Tag).Err()
-	}
-	return v.Payload.GetRun().GetAttempt(), nil
-}
-
-// reconcileAttempts merges the CV Attempt and CQDaemon Attempt.
-//
-// Modifies and returns the CV Attempt.
-//
-// Once CV does the relevant work (keeping track of builds, reading the CL
-// description footers, and performing checks) these will no longer have to be
-// filled in with the CQDaemon Attempt values.
-func reconcileAttempts(a, cqda *cvbqpb.Attempt) *cvbqpb.Attempt {
-	// The list of Builds will be known to CV after it starts triggering
-	// and tracking builds; until then CQD is the source of truth.
-	a.Builds = cqda.Builds
-	// Substatus generally indicates a failure reason, which is
-	// known once one of the checks fails. CQDaemon may specify
-	// a substatus in the case of abort (substatus: MANUAL_CANCEL)
-	// or failure (FAILED_TRYJOBS etc.).
-	if a.Status == cvbqpb.AttemptStatus_ABORTED || a.Status == cvbqpb.AttemptStatus_FAILURE {
-		a.Status = cqda.Status
-		a.Substatus = cqda.Substatus
-	}
-	a.Status = cqda.Status
-	a.Substatus = cqda.Substatus
-	// The HasCustomRequirement is determined by CL description footers.
-	a.HasCustomRequirement = cqda.HasCustomRequirement
-	return a
-}
-
 // attemptStatus converts a Run status to Attempt status.
 func attemptStatus(ctx context.Context, r *run.Run) (cvbqpb.AttemptStatus, cvbqpb.AttemptSubstatus) {
 	switch r.Status {
@@ -262,7 +205,7 @@ func attemptStatus(ctx context.Context, r *run.Run) (cvbqpb.AttemptStatus, cvbqp
 			// passing checks. (In this case, for backwards compatibility, we
 			// will set status = SUCCESS, substatus = FAILED_SUBMIT.)
 			return cvbqpb.AttemptStatus_SUCCESS, cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-		case r.UseCVTryjobExecutor && r.Tryjobs.GetState().GetStatus() == tryjob.ExecutionState_FAILED:
+		case r.Tryjobs.GetState().GetStatus() == tryjob.ExecutionState_FAILED:
 			return cvbqpb.AttemptStatus_FAILURE, cvbqpb.AttemptSubstatus_FAILED_TRYJOBS
 		default:
 			// TODO(crbug/1342810): use the failure reason stored in Run entity to
@@ -279,87 +222,37 @@ func attemptStatus(ctx context.Context, r *run.Run) (cvbqpb.AttemptStatus, cvbqp
 }
 
 func computeAttemptBuilds(ctx context.Context, r *run.Run) ([]*cvbqpb.Build, error) {
-	if r.UseCVTryjobExecutor {
-		var ret []*cvbqpb.Build
-		for i, execution := range r.Tryjobs.GetState().GetExecutions() {
-			definition := r.Tryjobs.GetState().GetRequirement().GetDefinitions()[i]
-			for _, executionAttempt := range execution.GetAttempts() {
-				if executionAttempt.GetExternalId() == "" {
-					// It's possible that CV fails to launch the tryjob against
-					// buildbucket and has missing external ID.
-					continue
-				}
-				host, buildID, err := tryjob.ExternalID(executionAttempt.GetExternalId()).ParseBuildbucketID()
-				if err != nil {
-					return nil, err
-				}
-				origin := cvbqpb.Build_NOT_REUSED
-				switch {
-				case executionAttempt.GetReused():
-					origin = cvbqpb.Build_REUSED
-				case definition.GetDisableReuse():
-					origin = cvbqpb.Build_NOT_REUSABLE
-				}
-				ret = append(ret, &cvbqpb.Build{
-					Host:     host,
-					Id:       buildID,
-					Critical: definition.GetCritical(),
-					Origin:   origin,
-				})
+	var ret []*cvbqpb.Build
+	for i, execution := range r.Tryjobs.GetState().GetExecutions() {
+		definition := r.Tryjobs.GetState().GetRequirement().GetDefinitions()[i]
+		for _, executionAttempt := range execution.GetAttempts() {
+			if executionAttempt.GetExternalId() == "" {
+				// It's possible that CV fails to launch the tryjob against
+				// buildbucket and has missing external ID.
+				continue
 			}
-		}
-		sort.Slice(ret, func(i, j int) bool {
-			return ret[i].Id < ret[j].Id
-		})
-		return ret, nil
-	}
-
-	runTryjobs := r.Tryjobs.GetTryjobs()
-	if len(runTryjobs) == 0 {
-		return nil, nil
-	}
-	ret := make([]*cvbqpb.Build, len(runTryjobs))
-	cg, err := prjcfg.GetConfigGroup(ctx, r.ID.LUCIProject(), r.ConfigGroupID)
-	if err != nil {
-		return nil, err
-	}
-	buildersCfg := cg.Content.GetVerifiers().GetTryjob().GetBuilders()
-	builderCfgsByName := make(map[string]*cfgpb.Verifiers_Tryjob_Builder, len(buildersCfg))
-	for _, builderCfg := range buildersCfg {
-		builderCfgsByName[builderCfg.Name] = builderCfg
-		// Associate the builder config with the equivalent name as well because
-		// when CQDaemon reports Tryjobs, it just reports the launched builder name.
-		// Therefore, if CQDaemon decides to launch the equivalent builder, the
-		// definition stored in CV will be the equivalent builder instead of the
-		// main builder.
-		if equiName := builderCfg.GetEquivalentTo().GetName(); equiName != "" {
-			builderCfgsByName[equiName] = builderCfg
+			host, buildID, err := tryjob.ExternalID(executionAttempt.GetExternalId()).ParseBuildbucketID()
+			if err != nil {
+				return nil, err
+			}
+			origin := cvbqpb.Build_NOT_REUSED
+			switch {
+			case executionAttempt.GetReused():
+				origin = cvbqpb.Build_REUSED
+			case definition.GetDisableReuse():
+				origin = cvbqpb.Build_NOT_REUSABLE
+			}
+			ret = append(ret, &cvbqpb.Build{
+				Host:     host,
+				Id:       buildID,
+				Critical: definition.GetCritical(),
+				Origin:   origin,
+			})
 		}
 	}
-	for i, tj := range runTryjobs {
-		var err error
-		b := &cvbqpb.Build{}
-		if b.Host, b.Id, err = tryjob.ExternalID(tj.ExternalId).ParseBuildbucketID(); err != nil {
-			return nil, err
-		}
-		builderName := bbBuilderNameFromDef(tj.GetDefinition())
-		builderCfg, ok := builderCfgsByName[builderName]
-		if !ok {
-			logging.Warningf(ctx, "CQDaemon reported tryjob with builder \""+
-				builderName+"\" that is not present in the ConfigGroup. This "+
-				"may happen when builder is removed from the config during the Run")
-		}
-		switch {
-		case tj.GetReused():
-			b.Origin = cvbqpb.Build_REUSED
-		case builderCfg.GetDisableReuse():
-			b.Origin = cvbqpb.Build_NOT_REUSABLE
-		default:
-			b.Origin = cvbqpb.Build_NOT_REUSED
-		}
-		b.Critical = tj.GetCritical()
-		ret[i] = b
-	}
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].Id < ret[j].Id
+	})
 	return ret, nil
 }
 

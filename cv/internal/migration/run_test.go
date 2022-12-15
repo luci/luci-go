@@ -260,24 +260,6 @@ func TestFetchActiveRuns(t *testing.T) {
 			So(runs, ShouldHaveLength, 1)
 			So(runs[0].Id, ShouldEqual, "chromium/1111111111111-deadbeef")
 		})
-		Convey("Excludes runs use CV to execute tryjobs", func() {
-			err := datastore.Put(ctx,
-				&run.Run{
-					ID:     "chromium/1111111111111-deadbeef",
-					Status: run.Status_RUNNING,
-				},
-				&run.Run{
-					ID:                  "chromium/1111111111111-cececece",
-					Status:              run.Status_RUNNING,
-					UseCVTryjobExecutor: true,
-				},
-			)
-			So(err, ShouldBeNil)
-			runs, err := fetchActiveRunsForMigration(ctx, "chromium")
-			So(err, ShouldBeNil)
-			So(runs, ShouldHaveLength, 1)
-			So(runs[0].Id, ShouldEqual, "chromium/1111111111111-deadbeef")
-		})
 
 		Convey("Handles FYI deps", func() {
 			const rid = "chromium/1111111111111-cafecafe"

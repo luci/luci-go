@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/cv/internal/migration/migrationcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -102,22 +101,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		}
 	}
 
-	switch {
-	case !rs.UseCVTryjobExecutor:
-		// once a Run decides not to use CV for tryjob execution, it keeps in that
-		// state for the whole lifetime.
-	case hasExecuteTryjobLongOp(rs):
-		// wait for the existing execute tryjob long op to finish before handing
-		// the control of tryjob to CQDaemon.
-	default:
-		var err error
-		rs.UseCVTryjobExecutor, err = migrationcfg.IsCVInChargeOfTryjob(ctx, impl.Env, rs.ID.LUCIProject())
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if rs.UseCVTryjobExecutor && shouldRefreshTryjobs(ctx, rs) {
+	if shouldRefreshTryjobs(ctx, rs) {
 		executions := rs.Tryjobs.GetState().GetExecutions()
 		errs := errors.NewLazyMultiError(len(executions))
 		poolErr := parallel.WorkPool(min(8, len(executions)), func(workCh chan<- func() error) {

@@ -194,7 +194,6 @@ func (t *Test) SetUp() (context.Context, func()) {
 		RunNotifier: t.RunNotifier,
 		GFactory:    gFactory,
 	}
-	t.UseCVTryjob(ctx, ".*")
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
 	return ctx, func() {
 		for i := len(cleanupFns) - 1; i >= 0; i-- {
@@ -495,23 +494,6 @@ func (t *Test) LogPhase(ctx context.Context, format string, args ...interface{})
 	line := strings.Repeat("=", 80)
 	format = fmt.Sprintf("\n%s\nPHASE: %s\n%s", line, format, line)
 	logging.Debugf(ctx, format, args...)
-}
-
-// UseCVTryjob changes the migration setting s.t. the Run will use CV
-// to manage and launch Tryjobs.
-func (t *Test) UseCVTryjob(ctx context.Context, lProject string) {
-	t.UpdateMigrationConfig(ctx, &migrationpb.Settings{
-		ApiHosts: []*migrationpb.Settings_ApiHost{
-			{
-				Host:          t.Env.LogicalHostname,
-				Prod:          true,
-				ProjectRegexp: []string{".*"},
-			},
-		},
-		UseCvTryjobExecutor: &migrationpb.Settings_UseCVTryjobExecutor{
-			ProjectRegexp: []string{lProject},
-		},
-	})
 }
 
 // MakeCfgSingular return project config with a single ConfigGroup.
