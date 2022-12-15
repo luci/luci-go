@@ -70,6 +70,15 @@ func (e ExternalID) ParseBuildbucketID() (host string, build int64, err error) {
 	return
 }
 
+// MustParseBuildbucketID is like `ParseBuildbucketID` but panics on error
+func (e ExternalID) MustParseBuildbucketID() (string, int64) {
+	host, build, err := e.ParseBuildbucketID()
+	if err != nil {
+		panic(err)
+	}
+	return host, build
+}
+
 // URL returns the Buildbucket URL of the Tryjob.
 func (e ExternalID) URL() (string, error) {
 	switch kind, err := e.Kind(); {

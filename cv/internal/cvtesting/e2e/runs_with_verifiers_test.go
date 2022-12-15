@@ -23,7 +23,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -38,6 +40,7 @@ import (
 	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -136,17 +139,19 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		const gChange = 33
 		const quickLabel = "Quick-Label"
 
-		// Start CQDaemon.
-		ct.MustCQD(ctx, lProject)
-
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
 		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
 			Name:            string(run.QuickDryRun),
 			CqLabelValue:    1,
 			TriggeringValue: 1,
 			TriggeringLabel: quickLabel,
 		}}
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
+		ct.UseCVTryjob(ctx, lProject)
 
 		tStart := ct.Clock.Now()
 
@@ -172,18 +177,25 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		})
 		So(r.Mode, ShouldEqual, run.QuickDryRun)
 
-		ct.LogPhase(ctx, "CQDaemon decides that QuickDryRun has passed and notifies CV")
-		ct.Clock.Add(time.Minute)
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
+		ct.LogPhase(ctx, "All Tryjobs complete successfully")
+		var buildID int64
 		ct.RunUntil(ctx, func() bool {
-			return nil == datastore.Get(ctx, &migration.VerifiedCQDRun{ID: r.ID})
+			// Check whether the build has been successfully triggered and get the
+			// build ID.
+			r = ct.LoadRun(ctx, r.ID)
+			if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+				if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+					_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+					return true
+				}
+			}
+			return false
+		})
+		ct.Clock.Add(time.Minute)
+		ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, buildID, func(b *buildbucketpb.Build) {
+			b.Status = buildbucketpb.Status_SUCCESS
+			b.StartTime = timestamppb.New(ct.Clock.Now())
+			b.EndTime = timestamppb.New(ct.Clock.Now())
 		})
 
 		ct.LogPhase(ctx, "CV finalizes the run and sends BQ and pubsub events")
@@ -202,7 +214,7 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		So(finalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
-		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "Quick dry run: This CL passed")
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "This CL has passed the run")
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 1 })

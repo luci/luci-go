@@ -518,6 +518,8 @@ func (t *Test) setTestClockTimerCB(ctx context.Context) context.Context {
 	moveIf := stringset.NewFromSlice(
 		// Used by tqtesting to wait until ETA of the next task.
 		tqtesting.ClockTag,
+		// Used to retry launching buildbucket tryjob.
+		"retry-launch",
 	)
 	ignoreIf := stringset.NewFromSlice(
 		// Used in clock.WithTimeout(ctx) | clock.WithDeadline(ctx).

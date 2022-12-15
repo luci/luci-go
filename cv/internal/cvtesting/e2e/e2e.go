@@ -496,8 +496,25 @@ func (t *Test) LogPhase(ctx context.Context, format string, args ...interface{})
 	logging.Debugf(ctx, format, args...)
 }
 
+// UseCVTryjob changes the migration setting s.t. the Run will use CV
+// to manage and launch Tryjobs.
+func (t *Test) UseCVTryjob(ctx context.Context, lProject string) {
+	t.UpdateMigrationConfig(ctx, &migrationpb.Settings{
+		ApiHosts: []*migrationpb.Settings_ApiHost{
+			{
+				Host:          t.Env.LogicalHostname,
+				Prod:          true,
+				ProjectRegexp: []string{".*"},
+			},
+		},
+		UseCvTryjobExecutor: &migrationpb.Settings_UseCVTryjobExecutor{
+			ProjectRegexp: []string{lProject},
+		},
+	})
+}
+
 // MakeCfgSingular return project config with a single ConfigGroup.
-func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
+func MakeCfgSingular(cgName, gHost, gRepo, gRef string, builders ...*cfgpb.Verifiers_Tryjob_Builder) *cfgpb.Config {
 	return &cfgpb.Config{
 		ConfigGroups: []*cfgpb.ConfigGroup{
 			{
@@ -519,6 +536,9 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 						DryRunAccessList:         []string{dryRunners},
 						NewPatchsetRunAccessList: []string{newPatchsetRunners},
 					},
+					Tryjob: &cfgpb.Verifiers_Tryjob{
+						Builders: builders,
+					},
 				},
 			},
 		},
@@ -526,7 +546,7 @@ func MakeCfgSingular(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 }
 
 // MakeCfgCombinable return project config with a combinable ConfigGroup.
-func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
+func MakeCfgCombinable(cgName, gHost, gRepo, gRef string, builders ...*cfgpb.Verifiers_Tryjob_Builder) *cfgpb.Config {
 	return &cfgpb.Config{
 		ConfigGroups: []*cfgpb.ConfigGroup{
 			{
@@ -549,6 +569,9 @@ func MakeCfgCombinable(cgName, gHost, gRepo, gRef string) *cfgpb.Config {
 					GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
 						CommitterList:    []string{committers},
 						DryRunAccessList: []string{dryRunners},
+					},
+					Tryjob: &cfgpb.Verifiers_Tryjob{
+						Builders: builders,
 					},
 				},
 			},
