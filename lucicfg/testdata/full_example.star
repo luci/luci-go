@@ -545,11 +545,6 @@ luci.cq_tryjob_verifier(
 )
 
 luci.cq_tryjob_verifier(
-    builder = "triggered builder",
-    cq_group = "main-cq",
-)
-
-luci.cq_tryjob_verifier(
     builder = luci.builder(
         name = "main cq builder",
         bucket = "try",
@@ -650,10 +645,6 @@ lucicfg.emit(
 #         name: "another-project/try/zzz"
 #         includable_only: true
 #         owner_whitelist_group: "another-project-committers"
-#       }
-#       builders {
-#         name: "infra/inline/triggered builder"
-#         triggered_by: "infra/inline/triggerer builder"
 #       }
 #       builders {
 #         name: "infra/inline/triggerer builder"

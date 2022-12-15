@@ -991,10 +991,8 @@ def gen_cq_cfg(ctx):
         )
 
     # Each luci.cq_group(...) results in a separate cq_pb.ConfigGroup.
-    project = get_project()
-    triggering_map = _cq_triggering_map(project)
     cfg.config_groups = [
-        _cq_config_group(g, project, triggering_map)
+        _cq_config_group(g, get_project())
         for g in cq_groups
     ]
 
@@ -1011,7 +1009,7 @@ def _cq_check_connections():
                 trace = v.trace,
             )
 
-def _cq_config_group(cq_group, project, triggering_map):
+def _cq_config_group(cq_group, project):
     """Given a cq_group node returns cq_pb.ConfigGroup."""
     acls = aclimpl.normalize_acls(cq_group.props.acls + project.props.acls)
     gerrit_cq_ability = cq_pb.Verifiers.GerritCQAbility(
@@ -1039,25 +1037,6 @@ def _cq_config_group(cq_group, project, triggering_map):
             for v in graph.children(cq_group.key, kind = kinds.CQ_TRYJOB_VERIFIER)
         ], key = lambda b: b.name),
     )
-
-    # Populate 'triggered_by' in a separate pass now that we know all builders
-    # that belong to the CQ group and can filter 'triggering_map' accordingly.
-    for b in tryjob.builders:
-        # List ALL builders that trigger 'b', across all CQ groups and buckets.
-        all_triggerrers = triggering_map.get(b.name) or []
-
-        # Narrow it down only to the ones in the current CQ group.
-        local_triggerrers = [t for t in all_triggerrers if t in seen]
-
-        # CQ can handle at most one currently.
-        if len(local_triggerrers) > 1:
-            error(
-                "this builder is triggered by multiple builders in its CQ group " +
-                "which confuses CQ config generator",
-                trace = seen[b.name].trace,
-            )
-        elif local_triggerrers:
-            b.triggered_by = local_triggerrers[0]
 
     group_by_gob_host = {}
     for w in cq_group.props.watch:
@@ -1203,19 +1182,6 @@ def _cq_location_filter(node):
         path_regexp = node.path_regexp or ".*",
         exclude = node.exclude,
     )
-
-def _cq_triggering_map(project):
-    """Returns a map {builder name => [list of builders that trigger it]}.
-
-    All names are in CQ format, e.g. "project/bucket/builder".
-    """
-    out = {}
-    for bucket in get_buckets():
-        for builder in graph.children(bucket.key, kinds.BUILDER):
-            for target in triggerer.targets(builder):
-                triggered_by = out.setdefault(_cq_builder_name(target, project), [])
-                triggered_by.append(_cq_builder_name(builder, project))
-    return out
 
 def _cq_builder_name(builder, project):
     """Given Builder node returns a string reference to it for CQ config."""
