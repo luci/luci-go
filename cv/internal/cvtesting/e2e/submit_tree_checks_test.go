@@ -18,13 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -68,15 +64,6 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 			// Only a committer can trigger a FullRun for someone else's CL.
 			ct.AddCommitter("user-2")
 
-			// Start CQDaemon and make it succeed the Run immediately.
-			ct.MustCQD(ctx, lProject).SetVerifyClbk(
-				func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-					r = proto.Clone(r).(*migrationpb.ReportedRun)
-					r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-					r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-					return r
-				},
-			)
 			ct.LogPhase(ctx, "CV starts Runs")
 			var r *run.Run
 			ct.RunUntil(ctx, func() bool {
@@ -134,15 +121,6 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 			// Only a committer can trigger a FullRun for someone else' CL.
 			ct.AddCommitter("user-2")
 
-			// Start CQDaemon and make it succeed the Run immediately.
-			ct.MustCQD(ctx, lProject).SetVerifyClbk(
-				func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-					r = proto.Clone(r).(*migrationpb.ReportedRun)
-					r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-					r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-					return r
-				},
-			)
 			ct.LogPhase(ctx, "CV starts Runs")
 			var rWait, rSubmit *run.Run
 			ct.RunUntil(ctx, func() bool {

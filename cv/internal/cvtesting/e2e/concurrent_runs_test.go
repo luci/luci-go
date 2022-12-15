@@ -20,13 +20,15 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -36,7 +38,7 @@ import (
 
 // TODO(tandrii): this is a slow test (~0.6s on my laptop),
 // but it will become faster once LoadGerritRuns is optimized.
-func TestConcurentRunsSingular(t *testing.T) {
+func TestConcurrentRunsSingular(t *testing.T) {
 	t.Parallel()
 
 	Convey("CV juggles a bunch of concurrent Runs", t, func() {
@@ -51,7 +53,11 @@ func TestConcurentRunsSingular(t *testing.T) {
 		const gChangeFirst = 1001
 		const N = 50
 
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 
@@ -103,23 +109,50 @@ func TestConcurentRunsSingular(t *testing.T) {
 			return actions[idxI].finishTime.Before(actions[idxJ].finishTime)
 		})
 
-		// Start CQDaemon and make it obey finishAt and finalStatus.
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				gChange := r.GetAttempt().GetGerritChanges()[0].GetChange()
-				a := actions[gChange-gChangeFirst]
-				if ct.Clock.Now().Before(a.finishTime) {
-					return r
+		// Making sure the Tryjob ends at ~the finish time.
+		bbClient := ct.BuildbucketFake.MustNewClient(ctx, buildbucketHost, lProject)
+		go func() {
+			timer := clock.NewTimer(ctx)
+			for {
+				timer.Reset(1 * time.Minute)
+				select {
+				case <-ctx.Done():
+					return
+				case <-timer.GetC():
+					req := &bbpb.SearchBuildsRequest{
+						Predicate: &bbpb.BuildPredicate{},
+					}
+					for {
+						res, err := bbClient.SearchBuilds(ctx, req)
+						if err != nil {
+							panic(err)
+						}
+						for _, b := range res.GetBuilds() {
+							if bbutil.IsEnded(b.Status) {
+								continue
+							}
+							gChange := b.GetInput().GetGerritChanges()[0].GetChange()
+							action := actions[gChange-gChangeFirst]
+							if !clock.Now(ctx).Before(action.finishTime) {
+								ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, b.Id, func(b *bbpb.Build) {
+									if action.finalStatus == run.Status_SUCCEEDED {
+										b.Status = bbpb.Status_SUCCESS
+									} else {
+										b.Status = bbpb.Status_FAILURE
+									}
+									b.StartTime = timestamppb.New(ct.Clock.Now())
+									b.EndTime = timestamppb.New(ct.Clock.Now())
+								})
+							}
+						}
+						req.PageToken = res.GetNextPageToken()
+						if req.GetPageToken() == "" {
+							break
+						}
+					}
 				}
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				if a.finalStatus == run.Status_SUCCEEDED {
-					r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				} else {
-					r.Attempt.Status = cvbqpb.AttemptStatus_FAILURE
-				}
-				return r
-			},
-		)
+			}
+		}()
 
 		ct.LogPhase(ctx, fmt.Sprintf("Triggering CQ on %d CLs", len(actions)))
 		for i := range actions {
@@ -175,9 +208,9 @@ func TestConcurentRunsSingular(t *testing.T) {
 			So(r.EndTime, ShouldHappenAfter, a.finishTime)
 		}
 
-		sort.Sort(sort.IntSlice(actualSubmitted))
-		sort.Sort(sort.IntSlice(actualFailed))
-		sort.Sort(sort.IntSlice(actualFinished))
+		sort.Ints(actualSubmitted)
+		sort.Ints(actualFailed)
+		sort.Ints(actualFinished)
 		So(actualSubmitted, ShouldResemble, expectSubmitted)
 		So(actualFailed, ShouldResemble, expectFailed)
 		So(actualFinished, ShouldResemble, expectFinished)

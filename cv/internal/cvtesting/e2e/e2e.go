@@ -194,6 +194,7 @@ func (t *Test) SetUp() (context.Context, func()) {
 		RunNotifier: t.RunNotifier,
 		GFactory:    gFactory,
 	}
+	t.UseCVTryjob(ctx, ".*")
 	t.AdminServer = admin.New(t.TQDispatcher, &dsmapper.Controller{}, clUpdater, t.PMNotifier, t.RunNotifier)
 	return ctx, func() {
 		for i := len(cleanupFns) - 1; i >= 0; i-- {

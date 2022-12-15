@@ -15,15 +15,10 @@
 package e2e
 
 import (
-	"sync/atomic"
 	"testing"
-
-	"google.golang.org/protobuf/proto"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -65,7 +60,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 				gf.Approve(),
 				gf.Updated(ct.Clock.Now()))
 		}
-		// A DryRuner can trigger a FullRun w/ an approval.
+		// A DryRunner can trigger a FullRun w/ an approval.
 		ct.AddDryRunner("user-1")
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), cis...))
 		for i, child := range cis {
@@ -80,20 +75,6 @@ func TestHandleLargeCLStack(t *testing.T) {
 		})
 		r := ct.EarliestCreatedRunOf(ctx, lProject)
 		So(r.CLs, ShouldHaveLength, N)
-
-		ct.LogPhase(ctx, "CQD marks Run verified")
-		verified := atomic.Value{}
-		verified.Store(false)
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				verified.Store(true)
-				return r
-			},
-		)
-		ct.RunUntil(ctx, func() bool { return verified.Load().(bool) })
 
 		ct.LogPhase(ctx, "CV submits all CLs and finishes the Run")
 		ct.RunUntil(ctx, func() bool {

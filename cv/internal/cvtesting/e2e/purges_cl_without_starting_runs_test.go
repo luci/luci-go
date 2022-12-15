@@ -176,7 +176,7 @@ func TestPurgesCLWatchedByTwoProjects(t *testing.T) {
 
 		ct.LogPhase(ctx, "Ensure both PMs no longer track the CL")
 		ct.RunUntil(ctx, func() bool {
-			return 0 == len(ct.LoadProject(ctx, lProject1).State.GetPcls())+len(ct.LoadProject(ctx, lProject2).State.GetPcls())
+			return len(ct.LoadProject(ctx, lProject1).State.GetPcls())+len(ct.LoadProject(ctx, lProject2).State.GetPcls()) == 0
 		})
 	})
 }
@@ -458,7 +458,11 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 		)
 
 		ct.LogPhase(ctx, "CV starts CQ Dry Run")
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 

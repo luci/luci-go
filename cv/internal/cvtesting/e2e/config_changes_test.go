@@ -47,7 +47,12 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 			gChangeSecondCombo  = 25
 			gChangeSecondSingle = 20
 		)
-		cfgFirst := MakeCfgCombinable("main", gHost, gRepoFirst, "refs/heads/.+")
+		builder := &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		}
+		cfgFirst := MakeCfgCombinable("main", gHost, gRepoFirst, "refs/heads/.+", builder)
+		ct.BuildbucketFake.EnsureBuilders(cfgFirst)
 		now := ct.Clock.Now()
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject),
 			// One CL in each repo can run standalone.
@@ -123,7 +128,7 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 		So(runtest.AreRunning(runFirstSingle, runFirstCombo, runSecondSingle), ShouldBeTrue)
 
 		ct.LogPhase(ctx, "CV watches only the second repo, stops Runs on CLs from the first repo, and purges second combo CL")
-		cfgSecond := MakeCfgCombinable("main", gHost, gRepoSecond, "refs/heads/.+")
+		cfgSecond := MakeCfgCombinable("main", gHost, gRepoSecond, "refs/heads/.+", builder)
 		prjcfgtest.Update(ctx, lProject, cfgSecond)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 		ct.RunUntil(ctx, func() bool {

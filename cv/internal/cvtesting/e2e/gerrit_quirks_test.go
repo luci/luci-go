@@ -15,8 +15,10 @@
 package e2e
 
 import (
+	"fmt"
 	"testing"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
@@ -39,7 +41,11 @@ func TestGerritCLDeleted(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChange = 404
 
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		So(ct.PMNotifier.UpdateConfig(ctx, lProject), ShouldBeNil)
 

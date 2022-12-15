@@ -20,12 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -38,7 +35,7 @@ import (
 func TestSubmissionObeySubmitOptions(t *testing.T) {
 	t.Parallel()
 
-	Convey("Burst requests to sumbit", t, func() {
+	Convey("Burst requests to submit", t, func() {
 		ct := Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -71,23 +68,12 @@ func TestSubmissionObeySubmitOptions(t *testing.T) {
 		}
 		// Only a committer can trigger a FullRun for someone else' CL.
 		ct.AddCommitter("user-2")
-
-		// Start CQDaemon and make it succeed the Run immediately.
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
-
 		ct.LogPhase(ctx, fmt.Sprintf("CV starts and creates %d Runs", burstN))
 		ct.RunUntilT(ctx, burstN*5 /* ~5 tasks per Run */, func() bool {
 			return len(ct.LoadRunsOf(ctx, lProject)) == burstN
 		})
 
-		ct.LogPhase(ctx, fmt.Sprintf("CV successfully submitts %d Runs", burstN))
+		ct.LogPhase(ctx, fmt.Sprintf("CV successfully submits %d Runs", burstN))
 		remaining := ct.LoadRunsOf(ctx, lProject)
 		ct.RunUntilT(ctx, burstN*25 /* ~25 tasks per Run */, func() bool {
 			switch err := datastore.Get(ctx, remaining); {

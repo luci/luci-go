@@ -20,19 +20,17 @@ import (
 	"testing"
 	"time"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
+	"go.chromium.org/luci/cv/internal/tryjob"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -50,13 +48,12 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChangeFirst = 1001
 
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
-		cfg.ConfigGroups[0].Verifiers.Tryjob = &cfgpb.Verifiers_Tryjob{Builders: []*cfgpb.Verifiers_Tryjob_Builder{
-			{
-				Name:          "testproject/testbucket/staticanalyzer",
-				ModeAllowlist: []string{string(run.NewPatchsetRun)},
-			},
-		}}
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host:          buildbucketHost,
+			Name:          fmt.Sprintf("%s/test.bucket/static-analyzer", lProject),
+			ModeAllowlist: []string{string(run.NewPatchsetRun)},
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		Convey("A single patchset is uploaded", func() {
@@ -189,23 +186,34 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			So(originalRun.Mode, ShouldEqual, run.NewPatchsetRun)
 
 			// Make the first Run succeed.
-			ct.MustCQD(ctx, lProject).SetVerifyClbk(
-				func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-					r = proto.Clone(r).(*migrationpb.ReportedRun)
-					r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-					r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-					return r
-				},
-			)
-			ct.Clock.Add(5 * time.Minute)
-			now := ct.Clock.Now()
+			ct.LogPhase(ctx, "Tryjob for the first Run has passed")
+			var buildID int64
+			ct.RunUntil(ctx, func() bool {
+				// Check whether the build has been successfully triggered and get the
+				// build ID.
+				r := ct.LoadRun(ctx, originalRun.ID)
+				if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+					if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+						_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+						return true
+					}
+				}
+				return false
+			})
+			ct.Clock.Add(time.Minute)
+			ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, buildID, func(b *buildbucketpb.Build) {
+				b.Status = buildbucketpb.Status_SUCCESS
+				b.StartTime = timestamppb.New(ct.Clock.Now())
+				b.EndTime = timestamppb.New(ct.Clock.Now())
+			})
 			ct.RunUntil(ctx, func() bool {
 				originalRun = ct.LoadRun(ctx, originalRun.ID)
-				return !originalRun.EndTime.IsZero()
+				return run.IsEnded(originalRun.Status)
 			})
 			So(originalRun.Status, ShouldEqual, run.Status_SUCCEEDED)
 
 			// Upload a new patch, wait for it to create a new run.
+			now := ct.Clock.Now()
 			ct.GFake.MutateChange(gHost, gChangeFirst, func(c *gf.Change) {
 				gf.PS(2)(c.Info)
 				gf.PSWithUploader(2, "uploader-100", now)(c.Info)
@@ -318,14 +326,12 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		const gRepo = "re/po"
 		const gRef = "refs/heads/main"
 
-		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
-		cfg.ConfigGroups[0].Verifiers.Tryjob = &cfgpb.Verifiers_Tryjob{Builders: []*cfgpb.Verifiers_Tryjob_Builder{
-			{
-				Name:          "testproject/testbucket/staticanalyzer",
-				ModeAllowlist: []string{string(run.NewPatchsetRun)},
-			},
-		}}
-		cfg.ConfigGroups[0].CombineCls.StabilizationDelay = durationpb.New(2 * time.Minute)
+		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host:          buildbucketHost,
+			Name:          fmt.Sprintf("%s/test.bucket/static-analyzer", lProject),
+			ModeAllowlist: []string{string(run.NewPatchsetRun)},
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 		// A depends on B, both are ready. We should get three runs. Two NPR and one CQ
 		gChangeA, gChangeB := 1002, 1003

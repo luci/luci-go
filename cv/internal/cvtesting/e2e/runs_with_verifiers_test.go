@@ -22,22 +22,17 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/gae/service/datastore"
 
-	cvbqpb "go.chromium.org/luci/cv/api/bigquery/v1"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	migrationpb "go.chromium.org/luci/cv/api/migration"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
-	"go.chromium.org/luci/cv/internal/migration"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/pubsub"
 	"go.chromium.org/luci/cv/internal/tryjob"
@@ -61,7 +56,11 @@ func TestCreatesSingularRun(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChange = 33
 
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		cfg.CqStatusHost = validation.CQStatusHostPublic
 		prjcfgtest.Create(ctx, lProject, cfg)
 
@@ -151,7 +150,6 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 		}}
 		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
-		ct.UseCVTryjob(ctx, lProject)
 
 		tStart := ct.Clock.Now()
 
@@ -221,12 +219,9 @@ func TestCreatesSingularQuickDryRunSuccess(t *testing.T) {
 
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
-		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-			PublicId:    r.ID.PublicID(),
-			LuciProject: lProject,
-			Status:      run.Status_SUCCEEDED,
-			Eversion:    finalRun.EVersion,
-		})
+		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
+		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
+		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
 	})
 }
 
@@ -246,16 +241,17 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		const gChange = 33
 		const quickLabel = "Quick-Label"
 
-		// Start CQDaemon.
-		ct.MustCQD(ctx, lProject)
-
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
 		cfg.GetConfigGroups()[0].AdditionalModes = []*cfgpb.Mode{{
 			Name:            string(run.QuickDryRun),
 			CqLabelValue:    1,
 			TriggeringValue: 1,
 			TriggeringLabel: quickLabel,
 		}}
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -305,18 +301,25 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		})
 		So(fr.Mode, ShouldEqual, run.FullRun)
 
-		ct.LogPhase(ctx, "CQDaemon decides that Full Run has failed and notifies CV")
-		ct.Clock.Add(time.Minute)
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_FAILURE
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
+		ct.LogPhase(ctx, "Tryjob of the Full Run has failed")
+		var buildID int64
 		ct.RunUntil(ctx, func() bool {
-			return nil == datastore.Get(ctx, &migration.VerifiedCQDRun{ID: fr.ID})
+			// Check whether the build has been successfully triggered and get the
+			// build ID.
+			r := ct.LoadRun(ctx, fr.ID)
+			if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+				if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+					_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+					return true
+				}
+			}
+			return false
+		})
+		ct.Clock.Add(time.Minute)
+		ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, buildID, func(b *buildbucketpb.Build) {
+			b.Status = buildbucketpb.Status_FAILURE
+			b.StartTime = timestamppb.New(ct.Clock.Now())
+			b.EndTime = timestamppb.New(ct.Clock.Now())
 		})
 
 		ct.LogPhase(ctx, "CV finalizes the run")
@@ -331,6 +334,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		So(ct.MaxCQVote(ctx, gHost, gChange), ShouldEqual, 0)
 		// Removed the stale Quick-Run vote.
 		So(ct.MaxVote(ctx, gHost, gChange, quickLabel), ShouldEqual, 0)
+		So(ct.LastMessage(gHost, gChange).GetMessage(), ShouldContainSubstring, "This CL has failed the run")
 
 		ct.LogPhase(ctx, "BQ export must complete")
 		ct.RunUntil(ctx, func() bool { return ct.ExportedBQAttemptsCount() == 2 })
@@ -338,19 +342,13 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 2 })
 		// 1st message is for the dry-run cancelled.
-		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-			PublicId:    qdr.ID.PublicID(),
-			LuciProject: lProject,
-			Status:      run.Status_CANCELLED,
-			Eversion:    ct.LoadRun(ctx, qdr.ID).EVersion,
-		})
+		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
+		So(pubsubTask.PublicId, ShouldEqual, qdr.ID.PublicID())
+		So(pubsubTask.Status, ShouldEqual, run.Status_CANCELLED)
 		// 2nd message is for the the full-run failed.
-		So(ct.RunEndedPubSubTasks()[1].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-			PublicId:    fr.ID.PublicID(),
-			LuciProject: lProject,
-			Status:      run.Status_FAILED,
-			Eversion:    ct.LoadRun(ctx, fr.ID).EVersion,
-		})
+		pubsubTask = ct.RunEndedPubSubTasks()[1].Payload.(*pubsub.PublishRunEndedTask)
+		So(pubsubTask.PublicId, ShouldEqual, fr.ID.PublicID())
+		So(pubsubTask.Status, ShouldEqual, run.Status_FAILED)
 	})
 }
 
@@ -370,10 +368,11 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		const gChange = 33
 		const gPatchSet = 6
 
-		// Start CQDaemon.
-		ct.MustCQD(ctx, lProject)
-
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -399,19 +398,25 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 		})
 		So(r.Mode, ShouldEqual, run.FullRun)
 
-		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
-		ct.Clock.Add(time.Minute)
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
+		ct.LogPhase(ctx, "Tryjob has passed and CV should start submitting")
+		var buildID int64
 		ct.RunUntil(ctx, func() bool {
-			res, err := datastore.Exists(ctx, &migration.VerifiedCQDRun{ID: r.ID})
-			return err == nil && res.All()
+			// Check whether the build has been successfully triggered and get the
+			// build ID.
+			r := ct.LoadRun(ctx, r.ID)
+			if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+				if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+					_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+					return true
+				}
+			}
+			return false
+		})
+		ct.Clock.Add(time.Minute)
+		ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, buildID, func(b *buildbucketpb.Build) {
+			b.Status = buildbucketpb.Status_SUCCESS
+			b.StartTime = timestamppb.New(ct.Clock.Now())
+			b.EndTime = timestamppb.New(ct.Clock.Now())
 		})
 
 		ct.LogPhase(ctx, "CV submits the run and sends BQ and Pubsub events")
@@ -435,12 +440,9 @@ func TestCreatesSingularFullRunSuccess(t *testing.T) {
 
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
-		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-			PublicId:    r.ID.PublicID(),
-			LuciProject: lProject,
-			Status:      run.Status_SUCCEEDED,
-			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
-		})
+		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
+		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
+		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
 	})
 }
 
@@ -459,10 +461,11 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 		const gRef = "refs/heads/main"
 		const gChange = 33
 
-		// Start CQDaemon.
-		ct.MustCQD(ctx, lProject)
-
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -493,11 +496,6 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 			gf.Updated(ct.Clock.Now())(c.Info)
 		})
 
-		ct.LogPhase(ctx, "CQDaemon stops working on the Run")
-		ct.RunUntil(ctx, func() bool {
-			return len(ct.MustCQD(ctx, lProject).ActiveAttemptKeys()) == 0
-		})
-
 		ct.LogPhase(ctx, "CV finalizes the Run and sends BQ event")
 		ct.RunUntil(ctx, func() bool {
 			r = ct.LoadRun(ctx, r.ID)
@@ -510,12 +508,9 @@ func TestCreatesSingularDryRunAborted(t *testing.T) {
 
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
-		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-			PublicId:    r.ID.PublicID(),
-			LuciProject: lProject,
-			Status:      run.Status_CANCELLED,
-			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
-		})
+		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
+		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
+		So(pubsubTask.Status, ShouldEqual, run.Status_CANCELLED)
 	})
 }
 
@@ -531,7 +526,11 @@ func TestCreatesSingularRunWithDeps(t *testing.T) {
 		const gRepo = "re/po"
 		const gRef = "refs/heads/main"
 
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -607,10 +606,11 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		const gChange3 = 33
 		const gPatchSet = 6
 
-		// Start CQDaemon.
-		ct.MustCQD(ctx, lProject)
-
-		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -675,19 +675,37 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		sort.Sort(runCLIDs)
 		So(r.CLs, ShouldResemble, clids)
 
-		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
-		ct.Clock.Add(time.Minute)
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
+		ct.LogPhase(ctx, "Tryjob includes all CLs")
+		var buildID int64
 		ct.RunUntil(ctx, func() bool {
-			res, err := datastore.Exists(ctx, &migration.VerifiedCQDRun{ID: r.ID})
-			return err == nil && res.All()
+			// Check whether the build has been successfully triggered and get the
+			// build ID.
+			r := ct.LoadRun(ctx, r.ID)
+			if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+				if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+					_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+					return true
+				}
+			}
+			return false
+		})
+		client := ct.BuildbucketFake.MustNewClient(ctx, buildbucketHost, lProject)
+		b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
+			Id: buildID,
+		})
+		So(err, ShouldBeNil)
+		So(b.GetInput().GetGerritChanges(), ShouldResembleProto, []*buildbucketpb.GerritChange{
+			{Host: gHost, Project: gRepo, Change: gChange2, Patchset: gPatchSet},
+			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
+			{Host: gHost, Project: gRepo, Change: gChange1, Patchset: gPatchSet},
+		})
+
+		ct.LogPhase(ctx, "Tryjob has passed")
+		ct.Clock.Add(time.Minute)
+		ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, buildID, func(b *buildbucketpb.Build) {
+			b.Status = buildbucketpb.Status_SUCCESS
+			b.StartTime = timestamppb.New(ct.Clock.Now())
+			b.EndTime = timestamppb.New(ct.Clock.Now())
 		})
 
 		ct.LogPhase(ctx, "CV submits the run and sends BQ and pubsub events")
@@ -726,12 +744,9 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
-		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-			PublicId:    r.ID.PublicID(),
-			LuciProject: lProject,
-			Status:      run.Status_SUCCEEDED,
-			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
-		})
+		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
+		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
+		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
 	})
 }
 
@@ -753,10 +768,11 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 		const gChange4 = 44
 		const gPatchSet = 1
 
-		// Start CQDaemon.
-		ct.MustCQD(ctx, lProject)
-
-		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		cfg.GetConfigGroups()[0].Verifiers.GerritCqAbility.AllowSubmitWithOpenDeps = true
 		prjcfgtest.Create(ctx, lProject, cfg)
 
@@ -817,19 +833,35 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 		So(r.Mode, ShouldEqual, run.FullRun)
 		So(r.CLs, ShouldResemble, common.CLIDs{ct.LoadGerritCL(ctx, gHost, gChange3).ID})
 
-		ct.LogPhase(ctx, "CQDaemon decides that FullRun has passed and notifies CV to submit")
-		ct.Clock.Add(time.Minute)
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
+		ct.LogPhase(ctx, "Tryjob only includes the CQ-ed CL")
+		var buildID int64
 		ct.RunUntil(ctx, func() bool {
-			res, err := datastore.Exists(ctx, &migration.VerifiedCQDRun{ID: r.ID})
-			return err == nil && res.All()
+			// Check whether the build has been successfully triggered and get the
+			// build ID.
+			r := ct.LoadRun(ctx, r.ID)
+			if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+				if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+					_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+					return true
+				}
+			}
+			return false
+		})
+		client := ct.BuildbucketFake.MustNewClient(ctx, buildbucketHost, lProject)
+		b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
+			Id: buildID,
+		})
+		So(err, ShouldBeNil)
+		So(b.GetInput().GetGerritChanges(), ShouldResembleProto, []*buildbucketpb.GerritChange{
+			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
+		})
+
+		ct.LogPhase(ctx, "Tryjob has passed")
+		ct.Clock.Add(time.Minute)
+		ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, buildID, func(b *buildbucketpb.Build) {
+			b.Status = buildbucketpb.Status_SUCCESS
+			b.StartTime = timestamppb.New(ct.Clock.Now())
+			b.EndTime = timestamppb.New(ct.Clock.Now())
 		})
 
 		ct.LogPhase(ctx, "CV submits the Run, which results in 3 CLs actually landing")
@@ -848,12 +880,9 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 
 		ct.LogPhase(ctx, "RunEnded pubsub message must be sent")
 		ct.RunUntil(ctx, func() bool { return len(ct.RunEndedPubSubTasks()) == 1 })
-		So(ct.RunEndedPubSubTasks()[0].Payload, ShouldResembleProto, &pubsub.PublishRunEndedTask{
-			PublicId:    r.ID.PublicID(),
-			LuciProject: lProject,
-			Status:      run.Status_SUCCEEDED,
-			Eversion:    ct.LoadRun(ctx, r.ID).EVersion,
-		})
+		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
+		So(pubsubTask.PublicId, ShouldEqual, r.ID.PublicID())
+		So(pubsubTask.Status, ShouldEqual, run.Status_SUCCEEDED)
 	})
 }
 
@@ -872,10 +901,11 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 		const gChange1 = 11
 		const gChange2 = 22
 
-		// Start CQDaemon.
-		ct.MustCQD(ctx, lProject)
-
-		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
+		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
 		prjcfgtest.Create(ctx, lProject, cfg)
 
 		tStart := ct.Clock.Now()
@@ -942,14 +972,26 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 		})
 
 		ct.LogPhase(ctx, "CV continues the Run and eventually succeeds")
-		ct.MustCQD(ctx, lProject).SetVerifyClbk(
-			func(r *migrationpb.ReportedRun) *migrationpb.ReportedRun {
-				r = proto.Clone(r).(*migrationpb.ReportedRun)
-				r.Attempt.Status = cvbqpb.AttemptStatus_SUCCESS
-				r.Attempt.Substatus = cvbqpb.AttemptSubstatus_NO_SUBSTATUS
-				return r
-			},
-		)
+		var buildID int64
+		ct.RunUntil(ctx, func() bool {
+			// Check whether the build has been successfully triggered and get the
+			// build ID.
+			r := ct.LoadRun(ctx, r.ID)
+			if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+				if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+					_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+					return true
+				}
+			}
+			return false
+		})
+		ct.Clock.Add(time.Minute)
+		ct.BuildbucketFake.MutateBuild(ctx, buildbucketHost, buildID, func(b *buildbucketpb.Build) {
+			b.Status = buildbucketpb.Status_SUCCESS
+			b.StartTime = timestamppb.New(ct.Clock.Now())
+			b.EndTime = timestamppb.New(ct.Clock.Now())
+		})
+
 		ct.RunUntil(ctx, func() bool {
 			r = ct.LoadRun(ctx, r.ID)
 			proj := ct.LoadProject(ctx, lProject)
