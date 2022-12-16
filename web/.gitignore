@@ -15,4 +15,4 @@ inc/apps/*/*.js.map
 .bower.installed
 
 # Lock files.
-package-lock.json
+/package-lock.json
