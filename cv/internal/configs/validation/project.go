@@ -162,11 +162,11 @@ func (vd *projectConfigValidator) validateProjectConfig(cfg *cfgpb.Config) {
 }
 
 var (
-	configGroupNameRegexp    = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
-	modeNameRegexp           = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
-	analyzerRun              = "ANALYZER_RUN"
-	standardModes            = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN", "NEW_PATCHSET_RUN")
-	analyzerLocationReRegexp = regexp.MustCompile(`^(https://([a-z\-]+)\-review\.googlesource\.com/([a-z0-9_\-/]+)+/\[\+\]/)?\.\+(\\\.[a-z]+)?$`)
+	configGroupNameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
+	modeNameRegexp        = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
+	analyzerRun           = "ANALYZER_RUN"
+	standardModes         = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN", "NEW_PATCHSET_RUN")
+	analyzerPathReRegexp  = regexp.MustCompile(`^\.\+(\\\.[a-z]+)?$`)
 )
 
 func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, knownNames stringset.Set) {
@@ -455,13 +455,6 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 				vd.ctx.Errorf("includable_only is not combinable with experiment_percentage")
 			}
 		}
-		if len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0 {
-			validateRegexp(vd.ctx, "location_regexp", b.LocationRegexp, locationRegexpHeuristic)
-			validateRegexp(vd.ctx, "location_regexp_exclude", b.LocationRegexpExclude, locationRegexpHeuristic)
-			if b.IncludableOnly {
-				vd.ctx.Errorf("includable_only is not combinable with location_regexp[_exclude]")
-			}
-		}
 		if len(b.LocationFilters) > 0 {
 			vd.validateLocationFilters(b.GetLocationFilters())
 			if b.IncludableOnly {
@@ -496,17 +489,20 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 				}
 			}
 			if isAnalyzer {
-				// TODO(crbug/1202952): Remove following restrictions after Tricium is
-				// folded into CV.
-				for i, r := range b.LocationRegexp {
-					if !analyzerLocationReRegexp.MatchString(r) {
-						vd.ctx.Enter("location_regexp #%d", i+1)
-						vd.ctx.Errorf(`location_regexp of an analyzer MUST either be in the format of ".+\.extension" (e.g. ".+\.py) or "https://host-review.googlesource.com/project/[+]/.+\.extension" (e.g. "https://chromium-review.googlesource.com/infra/infra/[+]/.+\.py"). Extension is optional.`)
-						vd.ctx.Exit()
+				// TODO(crbug/1202952): Remove the following check after Tricium is folded into CV.
+				for i, f := range b.LocationFilters {
+					vd.ctx.Enter("location_filters #%d", i+1)
+					if !analyzerPathReRegexp.MatchString(f.PathRegexp) {
+						vd.ctx.Errorf(`analyzer location filter path pattern must match %q.`, analyzerPathReRegexp)
 					}
-				}
-				if len(b.LocationRegexpExclude) > 0 {
-					vd.ctx.Errorf("location_regexp_exclude is not combinable with tryjob run in %s mode", analyzerRun)
+					if (!matchAll(f.GerritProjectRegexp) && matchAll(f.GerritHostRegexp)) ||
+						(matchAll(f.GerritProjectRegexp) && !matchAll(f.GerritHostRegexp)) {
+						vd.ctx.Errorf(`analyzer location filter must include both host and project or neither.`)
+					}
+					if f.Exclude {
+						vd.ctx.Errorf(`location_filters exclude filters are not combinable with analyzer mode`)
+					}
+					vd.ctx.Exit()
 				}
 			}
 			// TODO(crbug/1191855): See if CV should loosen the following restrictions.
@@ -515,6 +511,10 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 			}
 		}
 	})
+}
+
+func matchAll(re string) bool {
+	return re == "" || re == ".*" || re == ".+"
 }
 
 // Validate a builder name. If knownNames is non-nil, then add it to the set.
@@ -579,47 +579,8 @@ func validateRegexp(ctx *validation.Context, field string, values []string, extr
 	}
 }
 
-// locationRegexpHeuristic catches common mistakes in location_regexp[_exclude].
-func locationRegexpHeuristic(ctx *validation.Context, field string, r *regexp.Regexp, value string) {
-	if prefix, _ := r.LiteralPrefix(); !strings.HasPrefix(prefix, "https://") {
-		return
-	}
-	const gsource = ".googlesource.com"
-	idx := strings.Index(value, gsource)
-	if idx == -1 {
-		return
-	}
-	subdomain := value[len("https://"):idx]
-	if strings.HasSuffix(subdomain, "-review") {
-		return
-	}
-	exp := value[:idx] + "-review" + value[idx:]
-	ctx.Warningf("%s %q is probably missing '-review' suffix; did you mean %q?", field, value, exp)
-}
-
-func (vd *projectConfigValidator) validateParentLocationRegexp(child, parent *cfgpb.Verifiers_Tryjob_Builder) {
-	// Child's regexps shouldn't be less restrictive than parent.
-	// While general check is not possible, in known so far use-cases, ensuring
-	// the regexps are exact same expressions suffices and will prevent
-	// accidentally incorrect configs.
-	c := stringset.NewFromSlice(child.LocationRegexp...)
-	p := stringset.NewFromSlice(parent.LocationRegexp...)
-	if !p.Contains(c) {
-		// This func is called in the context of a child.
-		vd.ctx.Errorf("location_regexp of a triggered builder must be a subset of its parent %q,"+
-			" but these are not in parent: %s",
-			parent.Name, strings.Join(c.Difference(p).ToSortedSlice(), ", "))
-	}
-	c = stringset.NewFromSlice(child.LocationRegexpExclude...)
-	p = stringset.NewFromSlice(parent.LocationRegexpExclude...)
-	if !c.Contains(p) {
-		// This func is called in the context of a child.
-		vd.ctx.Errorf("location_regexp_exclude of a triggered builder must contain all those of its parent %q,"+
-			" but these are only in parent: %s",
-			parent.Name, strings.Join(p.Difference(c).ToSortedSlice(), ", "))
-	}
-}
-
+// validateLocationFilters validates that all location filters have valid
+// regular expressions.
 func (vd *projectConfigValidator) validateLocationFilters(filters []*cfgpb.Verifiers_Tryjob_Builder_LocationFilter) {
 	for i, filter := range filters {
 		vd.ctx.Enter("location_filters #%d", i+1)

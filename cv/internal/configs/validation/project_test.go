@@ -800,42 +800,6 @@ func TestTryjobValidation(t *testing.T) {
 			So(validate(`builders {name: "a/b/c" experiment_percentage: 101}`), ShouldNotBeNil)
 		})
 
-		Convey("location_regexps", func() {
-			So(validate(`builders {name: "a/b/c" location_regexp: ""}`),
-				ShouldErrLike, "must not be empty")
-			So(validate(`builders {name: "a/b/c" location_regexp_exclude: "*"}`),
-				ShouldErrLike, "error parsing regexp: missing argument")
-			So(validate(`
-				builders {
-					name: "a/b/c"
-					location_regexp: ".+"
-					location_regexp: ".+"
-				}`), ShouldErrLike, "duplicate")
-
-			So(validate(`
-				builders {
-					name: "a/b/c"
-					location_regexp: "a/.+"
-					location_regexp: "b"
-					location_regexp_exclude: "redundant/but/not/caught"
-				}`), ShouldBeNil)
-
-			So(validate(`
-				builders {
-					name: "a/b/c"
-					experiment_percentage: 50
-					location_regexp: "a/.+"
-					location_regexp: "b"
-					location_regexp_exclude: "redundant/but/not/caught"
-				}`), ShouldBeNil)
-
-			So(mustWarn(validate(`
-				builders {
-					name: "a/b/c"
-					location_regexp: "https://x.googlesource.com/my/repo/[+]/*.cpp"
-				}`)), ShouldErrLike, `did you mean "https://x-review.googlesource.com/my/repo/[+]/*.cpp"?`)
-		})
-
 		Convey("location_filters", func() {
 			So(validate(`
 				builders {
@@ -966,24 +930,32 @@ func TestTryjobValidation(t *testing.T) {
 				So(validate(`
 					builders {
 						name: "a/b/c"
-						location_regexp: ".*"
+						location_filters: {
+							path_regexp: ".*"
+						}
 						mode_allowlist: "ANALYZER_RUN"
 					}`), ShouldErrLike,
-					`location_regexp of an analyzer MUST either be in the format of`)
+					`analyzer location filter path pattern must match`)
 				So(validate(`
 					builders {
 						name: "a/b/c"
-						location_regexp: "chromium-review.googlesource.com/proj/.+\\.go"
+						location_filters: {
+							gerrit_project_regexp: "proj"
+							path_regexp: ".+\\.go"
+						}
 						mode_allowlist: "ANALYZER_RUN"
 					}`), ShouldErrLike,
-					`location_regexp of an analyzer MUST either be in the format of`)
+					`analyzer location filter must include both host and project or neither`)
 				So(validate(`
 					builders {
 						name: "a/b/c"
-						location_regexp_exclude: ".+\\.py"
+						location_filters: {
+							path_regexp: ".+\\.py"
+							exclude: True
+						}
 						mode_allowlist: "ANALYZER_RUN"
 					}`), ShouldErrLike,
-					`location_regexp_exclude is not combinable with tryjob run in ANALYZER_RUN mode`)
+					`location_filters exclude filters are not combinable`)
 				So(validate(`
 				builders {
 					name: "x/y/z"
@@ -999,7 +971,9 @@ func TestTryjobValidation(t *testing.T) {
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "ANALYZER_RUN"
-					location_regexp: ".+\\.go"
+					location_filters: {
+						path_regexp: ".+\\.go"
+					}
 				}`), ShouldBeNil)
 				So(validate(`
 				builders {
@@ -1008,7 +982,11 @@ func TestTryjobValidation(t *testing.T) {
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "ANALYZER_RUN"
-					location_regexp: "https://chromium-review.googlesource.com/infra/[+]/.+\\.go"
+					location_filters: {
+						gerrit_host_regexp: "chromium-review.googlesource.com"
+						gerrit_project_regexp: "proj"
+						path_regexp: ".+\\.go"
+					}
 				}`), ShouldBeNil)
 			})
 		})
@@ -1024,14 +1002,12 @@ func TestTryjobValidation(t *testing.T) {
 			So(validate(`
 				builders {
 					name: "a/b/c"
-					location_regexp: ".+\\.cpp"
 					location_filters: {
 						path_regexp: ".+\\.cpp"
 					}
 				}
 				builders {
 					name: "c/d/e"
-					location_regexp: ".+\\.cpp"
 					location_filters: {
 						path_regexp: ".+\\.cpp"
 					}
@@ -1065,14 +1041,6 @@ func TestTryjobValidation(t *testing.T) {
 				}`),
 				ShouldErrLike,
 				"includable_only is not combinable with experiment_percentage")
-			So(validate(`
-				builders {
-					name: "a/b/c"
-					location_regexp_exclude: ".+\\.cpp"
-					includable_only: true
-				}`),
-				ShouldErrLike,
-				"includable_only is not combinable with location_regexp[_exclude]")
 			So(validate(`
 				builders {
 					name: "a/b/c"
