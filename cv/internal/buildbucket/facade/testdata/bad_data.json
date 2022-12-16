@@ -12,8 +12,7 @@
         "properties": {
             "$recipe_engine/cq/output": "{\"retry\": \"OUTPUT_RETRY_ALLOWED\"}",
             "do_not_retry": 980,
-            "failure_type": {"this": "should not be an object"},
-            "triggered_build_ids": "8832715138311111281"
+            "failure_type": {"this": "should not be an object"}
         }
     }
 }

@@ -169,34 +169,6 @@ func TestParseOutput(t *testing.T) {
 				So(result.err, ShouldBeNil)
 			})
 		})
-		Convey("Triggered ids", func() {
-			Convey("Legacy property only", func() {
-				result := parseBuildResult(ctx, loadTestBuild("triggered_builds_legacy"))
-				So(result.output, ShouldResembleProto, &recipe.Output{
-					TriggeredBuildIds: []int64{8832715138311111281},
-				})
-				So(result.isTransFailure, ShouldBeFalse)
-				So(result.err, ShouldBeNil)
-			})
-			Convey("Proto property only", func() {
-				result := parseBuildResult(ctx, loadTestBuild("triggered_builds_new"))
-				So(result.output, ShouldResembleProto, &recipe.Output{
-					TriggeredBuildIds: []int64{8832715138311111281},
-				})
-				So(result.isTransFailure, ShouldBeFalse)
-			})
-			Convey("Proto overrides legacy", func() {
-				// In this test, legacy has a different triggered build id, the
-				// id set in the protobuf property should be the one in the
-				// returned output.
-				result := parseBuildResult(ctx, loadTestBuild("triggered_builds_conflict"))
-				So(result.output, ShouldResembleProto, &recipe.Output{
-					TriggeredBuildIds: []int64{8832715138311111281},
-				})
-				So(result.isTransFailure, ShouldBeFalse)
-				So(result.err, ShouldBeNil)
-			})
-		})
 		Convey("Do not retry", func() {
 			Convey("Legacy property only", func() {
 				result := parseBuildResult(ctx, loadTestBuild("retry_denied_legacy"))
@@ -236,7 +208,7 @@ func TestParseOutput(t *testing.T) {
 			result := parseBuildResult(ctx, loadTestBuild("bad_data"))
 			So(result.output, ShouldResembleProto, &recipe.Output{})
 			So(result.isTransFailure, ShouldBeFalse)
-			So(result.err.Errors, ShouldHaveLength, 3)
+			So(result.err.Errors, ShouldHaveLength, 2)
 		})
 	})
 }

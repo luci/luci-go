@@ -16,7 +16,6 @@ package bbfacade
 
 import (
 	"context"
-	"strconv"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -126,7 +125,6 @@ var outputPropKeys = []string{
 	// Legacy.
 	"do_not_retry",
 	"failure_type",
-	"triggered_build_ids",
 }
 
 func parseBuildResult(ctx context.Context, b *bbpb.Build) *outputParsingResult {
@@ -172,35 +170,6 @@ func parseBuildResult(ctx context.Context, b *bbpb.Build) *outputParsingResult {
 
 	if failureType := props.GetFields()["failure_type"]; failureType.GetStringValue() == transientFailureType {
 		pr.isTransFailure = true
-	}
-
-	// If this has been set by the protobuf field (there's at least one
-	// triggered build id already), do not change it.
-	if triggeredBuilds, ok := props.GetFields()["triggered_build_ids"]; ok && len(pr.output.TriggeredBuildIds) == 0 {
-		vc.Enter("triggered_build_ids")
-		if _, ok := triggeredBuilds.GetKind().(*structpb.Value_ListValue); ok {
-			for _, v := range triggeredBuilds.GetListValue().GetValues() {
-				// Support both str and int values for robustness.
-				switch v := v.GetKind().(type) {
-				case *structpb.Value_NumberValue:
-					pr.output.TriggeredBuildIds = append(pr.output.TriggeredBuildIds, int64(v.NumberValue))
-				case *structpb.Value_StringValue:
-					// These may be encoded as string to avoid loss of precision
-					// (structpb encodes numeric values as float64).
-					intVal, err := strconv.ParseInt(v.StringValue, 10, 64)
-					if err != nil {
-						vc.Errorf("unable to parse %q as a build_id", v.StringValue)
-						continue
-					}
-					pr.output.TriggeredBuildIds = append(pr.output.TriggeredBuildIds, intVal)
-				default:
-					vc.Errorf("value of unexpected type %+v", v)
-				}
-			}
-		} else {
-			vc.Errorf("expected a list value instead of %+v", triggeredBuilds)
-		}
-		vc.Exit()
 	}
 	vc.Exit()
 	return pr
