@@ -18,7 +18,7 @@ import { useGlobals } from '../context/globals';
 
 const Method = () => {
   const { serviceName, methodName } = useParams();
-  const { descriptors, oauthClientId } = useGlobals();
+  const { descriptors, oauthClient } = useGlobals();
 
   const svc = descriptors.service(serviceName ?? 'unknown');
   if (svc === null) {
@@ -33,7 +33,7 @@ const Method = () => {
     <>
       <p>A method {methodName} of {serviceName}</p>
       <p>{method.help}</p>
-      <p>OAuth client: {oauthClientId}</p>
+      <p>OAuth client ID: {oauthClient.clientId}</p>
     </>
   );
 };

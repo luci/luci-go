@@ -20,25 +20,25 @@ import {
 } from 'react';
 
 import { Descriptors, loadDescriptors } from '../data/prpc';
-import { loadOAuthClientId } from '../data/oauth';
+import { OAuthClient, loadOAuthClient } from '../data/oauth';
 
 // Globals are fetched once and then indefinitely used by all routes.
 export interface Globals {
   // Type information with server's RPC APIs.
   descriptors: Descriptors;
-  // The OAuth client ID to use for making authenticated RPC calls.
-  oauthClientId: string;
+  // The OAuth client to use for getting an access token.
+  oauthClient: OAuthClient;
 }
 
 // loadGlobals loads the globals by querying the server.
 const loadGlobals = async (): Promise<Globals> => {
-  const [descriptors, oauthClientId] = await Promise.all([
+  const [descriptors, oauthClient] = await Promise.all([
     loadDescriptors(),
-    loadOAuthClientId(),
+    loadOAuthClient(),
   ]);
   return {
     descriptors: descriptors,
-    oauthClientId: oauthClientId,
+    oauthClient: oauthClient,
   };
 };
 
