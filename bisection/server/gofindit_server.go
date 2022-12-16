@@ -126,9 +126,12 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		AnalysisId:      analysis.Id,
 		Status:          analysis.Status,
 		CreatedTime:     timestamppb.New(analysis.CreateTime),
-		EndTime:         timestamppb.New(analysis.EndTime),
 		FirstFailedBbid: analysis.FirstFailedBuildId,
 		LastPassedBbid:  analysis.LastPassedBuildId,
+	}
+
+	if analysis.HasEnded() {
+		result.EndTime = timestamppb.New(analysis.EndTime)
 	}
 
 	// Populate Builder and BuildFailureType data
@@ -186,8 +189,10 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	heuristicResult := &pb.HeuristicAnalysisResult{
 		Status:    heuristicAnalysis.Status,
 		StartTime: timestamppb.New(heuristicAnalysis.StartTime),
-		EndTime:   timestamppb.New(heuristicAnalysis.EndTime),
 		Suspects:  pbSuspects,
+	}
+	if heuristicAnalysis.HasEnded() {
+		heuristicResult.EndTime = timestamppb.New(heuristicAnalysis.EndTime)
 	}
 
 	result.HeuristicResult = heuristicResult
@@ -278,8 +283,10 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 	result := &pb.NthSectionAnalysisResult{
 		Status:    nsa.Status,
 		StartTime: timestamppb.New(nsa.StartTime),
-		EndTime:   timestamppb.New(nsa.EndTime),
 		BlameList: nsa.BlameList,
+	}
+	if nsa.HasEnded() {
+		result.EndTime = timestamppb.New(nsa.EndTime)
 	}
 
 	// Get all reruns for the current analysis
@@ -292,12 +299,14 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 	for _, rerun := range reruns {
 		rerunResult := &pb.SingleRerun{
 			StartTime: timestamppb.New(rerun.StartTime),
-			EndTime:   timestamppb.New(rerun.EndTime),
 			RerunResult: &pb.RerunResult{
 				RerunStatus: rerun.Status,
 			},
 			Bbid:   rerun.RerunBuild.IntID(),
 			Commit: &rerun.GitilesCommit,
+		}
+		if rerun.HasEnded() {
+			rerunResult.EndTime = timestamppb.New(rerun.EndTime)
 		}
 		index, err := findRerunIndexInBlameList(rerun, nsa.BlameList)
 		if err != nil {
@@ -362,15 +371,18 @@ func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, 
 		return nil, errors.Annotate(err, "failed getting single rerun").Err()
 	}
 
-	return &pb.SingleRerun{
+	result := &pb.SingleRerun{
 		StartTime: timestamppb.New(singleRerun.StartTime),
-		EndTime:   timestamppb.New(singleRerun.EndTime),
 		Bbid:      rerunBBID,
 		RerunResult: &pb.RerunResult{
 			RerunStatus: singleRerun.Status,
 		},
 		Commit: &singleRerun.GitilesCommit,
-	}, nil
+	}
+	if singleRerun.HasEnded() {
+		result.EndTime = timestamppb.New(singleRerun.EndTime)
+	}
+	return result, nil
 }
 
 // constructSuspectVerificationDetails constructs a pb.SuspectVerificationDetails for the given suspect

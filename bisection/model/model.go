@@ -318,3 +318,19 @@ type CompileNthSectionAnalysis struct {
 	// Note: We call it "suspect" because it has not been verified (by culprit verification component)
 	Suspect *datastore.Key `gae:"suspect"`
 }
+
+func (cfa *CompileFailureAnalysis) HasEnded() bool {
+	return cfa.RunStatus == gofinditpb.AnalysisRunStatus_ENDED || cfa.RunStatus == gofinditpb.AnalysisRunStatus_CANCELED
+}
+
+func (ha *CompileHeuristicAnalysis) HasEnded() bool {
+	return ha.RunStatus == gofinditpb.AnalysisRunStatus_ENDED || ha.RunStatus == gofinditpb.AnalysisRunStatus_CANCELED
+}
+
+func (nsa *CompileNthSectionAnalysis) HasEnded() bool {
+	return nsa.RunStatus == gofinditpb.AnalysisRunStatus_ENDED || nsa.RunStatus == gofinditpb.AnalysisRunStatus_CANCELED
+}
+
+func (rerun *SingleRerun) HasEnded() bool {
+	return rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_CANCELED
+}

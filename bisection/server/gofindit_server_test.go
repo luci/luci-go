@@ -155,6 +155,7 @@ func TestQueryAnalysis(t *testing.T) {
 		nsa := &model.CompileNthSectionAnalysis{
 			ParentAnalysis: datastore.KeyForObj(c, compileFailureAnalysis),
 			Status:         pb.AnalysisStatus_FOUND,
+			RunStatus:      pb.AnalysisRunStatus_ENDED,
 			StartTime:      (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
 			EndTime:        (&timestamppb.Timestamp{Seconds: 102}).AsTime(),
 			BlameList:      testutil.CreateBlamelist(10),
