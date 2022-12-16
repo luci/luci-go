@@ -14,15 +14,28 @@
 
 import { Link, useParams } from 'react-router-dom';
 
+import { useGlobals } from '../context/globals';
+
 const MethodsList = () => {
   const { serviceName } = useParams();
+  const { descriptors } = useGlobals();
+
+  const svc = descriptors.service(serviceName ?? 'unknown');
+  if (svc === null) {
+    return <p>No such service</p>;
+  }
 
   return (
     <>
       <p>List of methods of {serviceName}:</p>
       <ul>
-        <li><Link to="method1">Method 1</Link></li>
-        <li><Link to="method2">Method 2</Link></li>
+        {svc.methods().map((method) => {
+          return (
+            <li key={method.name}>
+              <Link to={method.name}>{method.name}</Link>{method.help}
+            </li>
+          );
+        })}
       </ul>
     </>
   );

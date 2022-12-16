@@ -12,27 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link } from 'react-router-dom';
-
-import { useGlobals } from '../context/globals';
-
-const ServicesList = () => {
-  const { descriptors } = useGlobals();
-
-  return (
-    <>
-      <p>List of services:</p>
-      <ul>
-        {descriptors.services().map((svc) => {
-          return (
-            <li key={svc.name}>
-              <Link to={svc.name}>{svc.name}</Link>{svc.help}
-            </li>
-          );
-        })}
-      </ul>
-    </>
-  );
+// Loads the OAuth client ID from the server.
+export const loadOAuthClientId = async (): Promise<string> => {
+  // TODO: Implement.
+  return 'hello';
 };
-
-export default ServicesList;

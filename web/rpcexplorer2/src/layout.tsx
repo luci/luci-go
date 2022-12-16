@@ -14,6 +14,8 @@
 
 import { Outlet, Link, useParams } from 'react-router-dom';
 
+import { GlobalsWaiter } from './context/globals';
+
 const Layout = () => {
   const { serviceName, methodName } = useParams();
 
@@ -29,7 +31,9 @@ const Layout = () => {
         methodName &&
         <Link to={`/services/${serviceName}/${methodName}`}>{methodName}</Link>
       }
-      <Outlet />
+      <GlobalsWaiter>
+        <Outlet />
+      </GlobalsWaiter>
     </>
   );
 };

@@ -14,11 +14,27 @@
 
 import { useParams } from 'react-router-dom';
 
+import { useGlobals } from '../context/globals';
+
 const Method = () => {
   const { serviceName, methodName } = useParams();
+  const { descriptors, oauthClientId } = useGlobals();
+
+  const svc = descriptors.service(serviceName ?? 'unknown');
+  if (svc === null) {
+    return <p>No such service</p>;
+  }
+  const method = svc.method(methodName ?? 'unknown');
+  if (method === null) {
+    return <p>No such method</p>;
+  }
 
   return (
-    <p>A method {methodName} of {serviceName}</p>
+    <>
+      <p>A method {methodName} of {serviceName}</p>
+      <p>{method.help}</p>
+      <p>OAuth client: {oauthClientId}</p>
+    </>
   );
 };
 

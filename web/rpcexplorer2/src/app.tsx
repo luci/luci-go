@@ -18,6 +18,8 @@ import {
   Navigate,
 } from 'react-router-dom';
 
+import { GlobalsProvider } from './context/globals';
+
 import Layout from './layout';
 import NotFound from './views/not_found';
 import ServicesList from './views/services_list';
@@ -26,19 +28,21 @@ import Method from './views/method';
 
 const App = () => {
   return (
-    <Routes>
-      <Route path='/' element={<Layout />}>
-        <Route index element={<Navigate replace to='/services/' />} />
-        <Route path='services'>
-          <Route index element={<ServicesList />} />
-          <Route path=':serviceName'>
-            <Route index element={<MethodsList />} />
-            <Route path=':methodName' element={<Method />} />
+    <GlobalsProvider>
+      <Routes>
+        <Route path='/' element={<Layout />}>
+          <Route index element={<Navigate replace to='/services/' />} />
+          <Route path='services'>
+            <Route index element={<ServicesList />} />
+            <Route path=':serviceName'>
+              <Route index element={<MethodsList />} />
+              <Route path=':methodName' element={<Method />} />
+            </Route>
           </Route>
+          <Route path='*' element={<NotFound />} />
         </Route>
-        <Route path='*' element={<NotFound />} />
-      </Route>
-    </Routes>
+      </Routes>
+    </GlobalsProvider>
   );
 };
 
