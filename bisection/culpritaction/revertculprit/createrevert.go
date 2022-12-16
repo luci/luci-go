@@ -17,6 +17,7 @@ package revertculprit
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"go.chromium.org/luci/bisection/internal/config"
@@ -135,12 +136,36 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 		fmt.Sprintf("If this is a false positive, please report it at %s",
 			util.ConstructLUCIBisectionBugURL(ctx, analysisURL, culpritModel.ReviewUrl)))
 
+	// Lines in the footer of the description, such as related bugs
+	footerLines := []string{}
+
+	// Add the culprit's description, with each line prefixed with "> "; this is
+	// skipped if the description for the culprit is not available.
+	culpritDescription, err := gerrit.CommitMessage(ctx, culprit)
+	if err == nil {
+		bugPattern := regexp.MustCompile(`(?i)^bug\s*:|=`)
+		prefixedLines := []string{"Original change's description:"}
+		for _, line := range strings.Split(culpritDescription, "\n") {
+			// Check if the line specifies related bugs, so it can be used in the
+			// footer of the revert
+			if bugPattern.MatchString(line) {
+				footerLines = append(footerLines, line)
+			}
+
+			prefixedLines = append(prefixedLines,
+				strings.TrimSpace(fmt.Sprintf("> %s", line)))
+		}
+		paragraphs = append(paragraphs, strings.Join(prefixedLines, "\n"))
+	}
+
 	// Set CQ flags in the last paragraph, i.e. footer of the CL description
-	//
-	// TODO (aredulla): also specify the revert's bug in this footer to be the
-	// same as the culprit's bug
-	paragraphs = append(paragraphs,
-		"No-Presubmit: true\nNo-Tree-Checks: true\nNo-Try: true")
+	cqFlags := []string{
+		"No-Presubmit: true",
+		"No-Tree-Checks: true",
+		"No-Try: true",
+	}
+	footerLines = append(footerLines, cqFlags...)
+	paragraphs = append(paragraphs, strings.Join(footerLines, "\n"))
 
 	return strings.Join(paragraphs, "\n\n"), nil
 }

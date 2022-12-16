@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -58,30 +57,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		ctx = clock.Set(ctx, cl)
 
 		// Setup datastore
-		failedBuild := &model.LuciFailedBuild{
-			Id: 88128398584903,
-			LuciBuild: model.LuciBuild{
-				BuildId:     88128398584903,
-				Project:     "chromium",
-				Bucket:      "ci",
-				Builder:     "android",
-				BuildNumber: 123,
-			},
-			BuildFailureType: pb.BuildFailureType_COMPILE,
-		}
-		So(datastore.Put(ctx, failedBuild), ShouldBeNil)
-		datastore.GetTestable(ctx).CatchupIndexes()
-		compileFailure := &model.CompileFailure{
-			Build: datastore.KeyForObj(ctx, failedBuild),
-		}
-		So(datastore.Put(ctx, compileFailure), ShouldBeNil)
-		datastore.GetTestable(ctx).CatchupIndexes()
-		analysis := &model.CompileFailureAnalysis{
-			Id:             444,
-			CompileFailure: datastore.KeyForObj(ctx, compileFailure),
-		}
-		So(datastore.Put(ctx, analysis), ShouldBeNil)
-		datastore.GetTestable(ctx).CatchupIndexes()
+		failedBuild, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
+			ctx, 88128398584903, 444)
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
@@ -1491,7 +1468,11 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					Revisions: map[string]*gerritpb.RevisionInfo{
 						"deadbeef": {
 							Commit: &gerritpb.CommitInfo{
-								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Message: `Title.
+
+Body is here.
+
+Change-Id: I100deadbeef`,
 								Author: &gerritpb.GitPersonInfo{
 									Name:  "John Doe",
 									Email: "jdoe@example.com",
@@ -1514,14 +1495,29 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				Revisions: map[string]*gerritpb.RevisionInfo{
 					"deadbeff": {
 						Commit: &gerritpb.CommitInfo{
-							Message: fmt.Sprintf("Revert \"Title.\"\n\nThis reverts commit"+
-								" 12ab34cd56ef.\n\nReason for revert:\nLUCI Bisection"+
-								" identified this CL as the culprit of a build failure. See"+
-								" the analysis: %s\n\nSample failed build: %s\n\nIf this is a"+
-								" false positive, please report it at %s\n\n"+
-								"ChangeId: 987654321abcdef\nNo-Presubmit: true\n"+
-								"No-Tree-Checks: true\nNo-Try: true",
-								analysisURL, buildURL, bugURL),
+							Message: fmt.Sprintf(
+								`Revert "Title."
+
+This reverts commit 12ab34cd56ef.
+
+Reason for revert:
+LUCI Bisection identified this CL as the culprit of a build failure. See the analysis: %s
+
+Sample failed build: %s
+
+If this is a false positive, please report it at %s
+
+Original change's description:
+> Title.
+>
+> Body is here.
+>
+> Change-Id: I100deadbeef
+
+Change-Id: 987654321abcdef
+No-Presubmit: true
+No-Tree-Checks: true
+No-Try: true`, analysisURL, buildURL, bugURL),
 						},
 					},
 				},
@@ -1671,6 +1667,164 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
+		})
+	})
+}
+
+func TestGenerateRevertDescription(t *testing.T) {
+	t.Parallel()
+
+	Convey("generateRevertDescription", t, func() {
+		ctx := memory.Use(context.Background())
+
+		// Setup datastore
+		failedBuild, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
+			ctx, 88128398584903, 444)
+		heuristicAnalysis := &model.CompileHeuristicAnalysis{
+			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
+		}
+		So(datastore.Put(ctx, heuristicAnalysis), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+		suspect := &model.Suspect{
+			Id:             1,
+			Type:           model.SuspectType_Heuristic,
+			Score:          10,
+			ParentAnalysis: datastore.KeyForObj(ctx, heuristicAnalysis),
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "test.googlesource.com",
+				Project: "chromium/src",
+				Id:      "deadbeef",
+			},
+			ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+		}
+		So(datastore.Put(ctx, suspect), ShouldBeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		analysisURL := util.ConstructAnalysisURL(ctx, failedBuild.Id)
+		buildURL := util.ConstructBuildURL(ctx, failedBuild.Id)
+		bugURL := util.ConstructLUCIBisectionBugURL(ctx, analysisURL,
+			"https://test-review.googlesource.com/c/chromium/test/+/876543")
+
+		culprit := &gerritpb.ChangeInfo{
+			Number:          876543,
+			Project:         "chromium/src",
+			Status:          gerritpb.ChangeStatus_MERGED,
+			Subject:         "[TestTag] Added new feature",
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Commit: &gerritpb.CommitInfo{
+						Author: &gerritpb.GitPersonInfo{
+							Name:  "John Doe",
+							Email: "jdoe@example.com",
+						},
+					},
+				},
+			},
+		}
+		Convey("culprit has no bug specified", func() {
+			culprit.Revisions["deadbeef"].Commit.Message = `[TestTag] Added new feature
+
+This is the body of the culprit CL.
+
+Change-Id: I100deadbeef`
+			description, err := generateRevertDescription(ctx, suspect, culprit)
+			So(err, ShouldBeNil)
+			So(description, ShouldEqual, fmt.Sprintf(`Revert "[TestTag] Added new feature"
+
+This reverts commit deadbeef.
+
+Reason for revert:
+LUCI Bisection identified this CL as the culprit of a build failure. See the analysis: %s
+
+Sample failed build: %s
+
+If this is a false positive, please report it at %s
+
+Original change's description:
+> [TestTag] Added new feature
+>
+> This is the body of the culprit CL.
+>
+> Change-Id: I100deadbeef
+
+No-Presubmit: true
+No-Tree-Checks: true
+No-Try: true`, analysisURL, buildURL, bugURL))
+		})
+
+		Convey("culprit has a bug specified with BUG =", func() {
+			culprit.Revisions["deadbeef"].Commit.Message = `[TestTag] Added new feature
+
+This is the body of the culprit CL.
+
+BUG = 563412
+Change-Id: I100deadbeef`
+			description, err := generateRevertDescription(ctx, suspect, culprit)
+			So(err, ShouldBeNil)
+			So(description, ShouldEqual, fmt.Sprintf(
+				`Revert "[TestTag] Added new feature"
+
+This reverts commit deadbeef.
+
+Reason for revert:
+LUCI Bisection identified this CL as the culprit of a build failure. See the analysis: %s
+
+Sample failed build: %s
+
+If this is a false positive, please report it at %s
+
+Original change's description:
+> [TestTag] Added new feature
+>
+> This is the body of the culprit CL.
+>
+> BUG = 563412
+> Change-Id: I100deadbeef
+
+BUG = 563412
+No-Presubmit: true
+No-Tree-Checks: true
+No-Try: true`, analysisURL, buildURL, bugURL))
+		})
+
+		Convey("culprit has bugs specified with Bug:", func() {
+			culprit.Revisions["deadbeef"].Commit.Message = `[TestTag] Added new feature
+
+This is the body of the culprit CL.
+
+Bug: 123
+Bug: 765
+Change-Id: I100deadbeef`
+			description, err := generateRevertDescription(ctx, suspect, culprit)
+			So(err, ShouldBeNil)
+			So(description, ShouldEqual, fmt.Sprintf(
+				`Revert "[TestTag] Added new feature"
+
+This reverts commit deadbeef.
+
+Reason for revert:
+LUCI Bisection identified this CL as the culprit of a build failure. See the analysis: %s
+
+Sample failed build: %s
+
+If this is a false positive, please report it at %s
+
+Original change's description:
+> [TestTag] Added new feature
+>
+> This is the body of the culprit CL.
+>
+> Bug: 123
+> Bug: 765
+> Change-Id: I100deadbeef
+
+Bug: 123
+Bug: 765
+No-Presubmit: true
+No-Tree-Checks: true
+No-Try: true`, analysisURL, buildURL, bugURL))
 		})
 	})
 }
