@@ -349,10 +349,9 @@ func TestGetCulprit(t *testing.T) {
 				},
 			},
 		}
-		ok, cul, err := snapshot.GetCulprit()
+		ok, cul := snapshot.GetCulprit()
 		So(ok, ShouldBeTrue)
 		So(cul, ShouldEqual, 15)
-		So(err, ShouldBeNil)
 	})
 
 	Convey("GetCulpritFailed", t, func() {
@@ -362,9 +361,8 @@ func TestGetCulprit(t *testing.T) {
 			BlameList: blamelist,
 			Runs:      []*NthSectionSnapshotRun{},
 		}
-		ok, _, err := snapshot.GetCulprit()
+		ok, _ := snapshot.GetCulprit()
 		So(ok, ShouldBeFalse)
-		So(err, ShouldBeNil)
 	})
 
 	Convey("GetCulpritError", t, func() {
@@ -383,8 +381,8 @@ func TestGetCulprit(t *testing.T) {
 				},
 			},
 		}
-		_, _, err := snapshot.GetCulprit()
-		So(err, ShouldNotBeNil)
+		ok, _ := snapshot.GetCulprit()
+		So(ok, ShouldBeFalse)
 	})
 
 }
@@ -505,6 +503,29 @@ func TestFindNextIndicesToRun(t *testing.T) {
 		So(indices, ShouldResemble, []int{})
 	})
 
+	Convey("FindNextIndicesToRunAllRerunsAreRunning", t, func() {
+		blamelist := testutil.CreateBlamelist(3)
+		snapshot := &NthSectionSnapshot{
+			BlameList: blamelist,
+			Runs: []*NthSectionSnapshotRun{
+				{
+					Index:  0,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				},
+				{
+					Index:  1,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				},
+				{
+					Index:  2,
+					Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+				},
+			},
+		}
+		indices, err := snapshot.FindNextIndicesToRun(2)
+		So(err, ShouldBeNil)
+		So(indices, ShouldResemble, []int{})
+	})
 }
 
 func TestFindNextCommitsToRun(t *testing.T) {

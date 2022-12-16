@@ -215,10 +215,7 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 	}
 
 	// Check if we already found the culprit or not
-	ok, cul, err := snapshot.GetCulprit()
-	if err != nil {
-		return nsa, errors.Annotate(err, "couldn't get culprit").Err()
-	}
+	ok, cul := snapshot.GetCulprit()
 
 	// Found culprit -> Update the nthsection analysis
 	if ok {

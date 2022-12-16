@@ -321,17 +321,22 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 	if err != nil {
 		return nil, errors.Annotate(err, "couldn't create snapshot").Err()
 	}
-	ff, lp, err := snapshot.GetCurrentRegressionRange()
-	if err != nil {
-		return nil, errors.Annotate(err, "getCurrentRegressionRange").Err()
-	}
-	result.RemainingNthSectionRange = &pb.RegressionRange{
-		FirstFailed: getCommitFromIndex(ff, nsa.BlameList, cfa),
-		LastPassed:  getCommitFromIndex(lp, nsa.BlameList, cfa),
-	}
 
-	if ff == lp {
-		result.Suspect = getCommitFromIndex(ff, nsa.BlameList, cfa)
+	ff, lp, err := snapshot.GetCurrentRegressionRange()
+	// GetCurrentRegressionRange return error if the regression is invalid
+	// We don't want to return the error here, but just continue
+	if err != nil {
+		err = errors.Annotate(err, "getCurrentRegressionRange").Err()
+		// Log as Debugf because it is not exactly an error, but just a state of the analysis
+		logging.Debugf(c, err.Error())
+	} else {
+		result.RemainingNthSectionRange = &pb.RegressionRange{
+			FirstFailed: getCommitFromIndex(ff, nsa.BlameList, cfa),
+			LastPassed:  getCommitFromIndex(lp, nsa.BlameList, cfa),
+		}
+		if ff == lp {
+			result.Suspect = getCommitFromIndex(ff, nsa.BlameList, cfa)
+		}
 	}
 
 	return result, nil

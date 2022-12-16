@@ -100,6 +100,8 @@ func (snapshot *NthSectionSnapshot) HasTooManyInfraFailure() bool {
 // that contains the culprit, based on the results of the rerun.
 // Note: In the snapshot blamelist, index 0 refer to first failed,
 // and index (n-1) refer to the commit after last pass
+// This function will return an error if the regression range is invalid
+// (there was a passed rerun which is more recent that a failed rerun)
 func (snapshot *NthSectionSnapshot) GetCurrentRegressionRange() (int, int, error) {
 	firstFailedIdx := 0
 	lastPassedIdx := len(snapshot.BlameList.Commits)
@@ -123,18 +125,20 @@ func (snapshot *NthSectionSnapshot) GetCurrentRegressionRange() (int, int, error
 // GetCulprit returns the result of NthSection
 // The first return value will be true iff there is a result
 // Second value will be the index of the culprit in the blamelist
-func (snapshot *NthSectionSnapshot) GetCulprit() (bool, int, error) {
+func (snapshot *NthSectionSnapshot) GetCulprit() (bool, int) {
 	// GetCurrentRegressionRange returns the range that contain the culprit
 	start, end, err := snapshot.GetCurrentRegressionRange()
+	// If err != nil, it means last pass is later than first failed
+	// In such case, no culprit is found.
 	if err != nil {
-		return false, 0, err
+		return false, 0
 	}
 	// We haven't found the culprit yet
 	if start != end {
-		return false, 0, nil
+		return false, 0
 	}
 	// The regression range only has 1 element: it is the culprit
-	return true, start, nil
+	return true, start
 }
 
 type NthSectionSnapshotChunk struct {
@@ -153,10 +157,7 @@ func (chunk *NthSectionSnapshotChunk) length() int {
 // We can run at indices 2, 5, 8 to break the range into 4 "chunks"
 // [0-1], [3-4], [6-7], [9]. The biggest chunk is of size 2.
 func (snapshot *NthSectionSnapshot) FindNextIndicesToRun(n int) ([]int, error) {
-	hasCulprit, _, err := snapshot.GetCulprit()
-	if err != nil {
-		return nil, err
-	}
+	hasCulprit, _ := snapshot.GetCulprit()
 	// There is a culprit, no need to run anymore
 	if hasCulprit {
 		return []int{}, nil
@@ -244,6 +245,11 @@ func (snapshot *NthSectionSnapshot) findRegressionChunks() ([]*NthSectionSnapsho
 // maxAllocationForEachChunk is to control the allocation: there is not cases
 // where we want to allocate more dividers to a smaller chunks
 func chunking(chunks []*NthSectionSnapshotChunk, start int, nDivider int, maxAllocationForEachChunk int) ([]int, int) {
+	// Base case: There is no chunk
+	// It may mean that all applicable commits for rerun are in progress
+	if len(chunks) == 0 {
+		return []int{0}, 0
+	}
 	// Base case: Only one chunk left
 	if start == len(chunks)-1 {
 		return []int{nDivider}, calculateChunkSize(chunks[start].length(), nDivider)
