@@ -17,6 +17,8 @@ import { BrowserRouter } from 'react-router-dom';
 
 import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';
 
+import App from './app';
+
 /**
  * DO NOT DELETE
  *
@@ -34,7 +36,7 @@ const container = document.getElementById('app-root');
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const root = createRoot(container!);
 root.render(
-    <BrowserRouter>
-      <h1>Hello world!</h1>
+    <BrowserRouter basename='/rpcexplorer'>
+      <App />
     </BrowserRouter>,
 );
