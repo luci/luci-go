@@ -18,7 +18,10 @@ package revertculprit
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/internal/config"
@@ -236,8 +239,30 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	revert, err := createRevert(ctx, gerritClient, culpritModel, culprit)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
-		return err
+
+		if status.Convert(errors.Unwrap(err)).Code() == codes.DeadlineExceeded {
+			// Workaround for Gerrit performance issue with revert creations
+			// (see b/261896675). The request may have timed out but the revert may
+			// have been successfully created, so look for the newly created revert
+			createdRevert, searchErr := searchForCreatedRevert(ctx, gerritClient,
+				culpritModel, culprit)
+			if searchErr != nil {
+				logging.Errorf(ctx, searchErr.Error())
+				return searchErr
+			}
+
+			if createdRevert != nil {
+				logging.Debugf(ctx, "continuing revert process; found created revert")
+				revert = createdRevert
+			} else {
+				logging.Debugf(ctx, "could not find the revert created by LUCI Bisection")
+				return err
+			}
+		} else {
+			return err
+		}
 	}
+
 	err = saveCreationDetails(ctx, gerritClient, culpritModel, revert)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
@@ -381,6 +406,66 @@ func getMostRelevantRevert(ctx context.Context, gerritClient *gerrit.Client,
 	}
 
 	return nil, nil
+}
+
+// searchForCreatedRevert returns the revert CL created by LUCI Bisection
+// when processing the given Suspect, if it exists.
+func searchForCreatedRevert(ctx context.Context, gerritClient *gerrit.Client,
+	culpritModel *model.Suspect, culprit *gerritpb.ChangeInfo) (*gerritpb.ChangeInfo, error) {
+	// Construct the revert description to use for comparison since different
+	// analyses can result in the same culprit CL. The revert description
+	// similarity can be used to ascertain whether a revert CL was created for
+	// this specific Suspect
+	generatedRevertDescription, err := generateRevertDescription(ctx, culpritModel, culprit)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed generating revert description"+
+			" for comparison when searching for created revert").Err()
+	}
+	// Drop the last paragraph for the comparison as Gerrit may have inserted
+	// its own values in the footer
+	paragraphs := strings.Split(generatedRevertDescription, "\n\n")
+	descriptionStart := strings.Join(paragraphs[:len(paragraphs)-1], "\n\n")
+
+	// Check for existing reverts
+	reverts, err := gerritClient.GetReverts(ctx, culprit)
+	if err != nil {
+		return nil, errors.Annotate(err,
+			"failed getting existing reverts when searching for created revert").Err()
+	}
+
+	var createdRevert *gerritpb.ChangeInfo = nil
+	for _, revert := range reverts {
+		lbOwned, err := gerrit.IsOwnedByLUCIBisection(ctx, revert)
+		if err != nil {
+			// non-critical - log the error and move on
+			err = errors.Annotate(err,
+				"error searching for created revert when checking owner").Err()
+			logging.Errorf(ctx, err.Error())
+			continue
+		}
+
+		// Check if the revert was created by LUCI Bisection
+		if lbOwned {
+			revertDescription, err := gerrit.CommitMessage(ctx, revert)
+			if err != nil {
+				// non-critical - log the error and move on
+				err = errors.Annotate(err,
+					"error searching for created revert when getting commit message").Err()
+				logging.Errorf(ctx, err.Error())
+				continue
+			}
+
+			// Check if the description starts as expected, to confirm this revert CL
+			// was the newly-created one for this specific Suspect and not from
+			// another analysis
+			if strings.HasPrefix(revertDescription, descriptionStart) {
+				createdRevert = revert
+				break
+			}
+		}
+	}
+
+	return createdRevert, nil
 }
 
 func isRevertActive(ctx context.Context, gerritClient *gerrit.Client,

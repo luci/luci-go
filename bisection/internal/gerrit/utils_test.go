@@ -88,7 +88,7 @@ func TestHasLUCIBisectionComment(t *testing.T) {
 
 	Convey("LUCI Bisection has commented", t, func() {
 		// Get the service account email value in this test context
-		testEmail, err := getGerritEmailAddress(ctx)
+		testEmail, err := ServiceAccountEmail(ctx)
 		So(err, ShouldBeNil)
 
 		change := &gerritpb.ChangeInfo{
@@ -156,7 +156,7 @@ func TestIsOwnedByLUCIBisection(t *testing.T) {
 
 	Convey("Change is owned by LUCI Bisection", t, func() {
 		// Get the service account email value in this test context
-		testEmail, err := getGerritEmailAddress(ctx)
+		testEmail, err := ServiceAccountEmail(ctx)
 		So(err, ShouldBeNil)
 
 		change := &gerritpb.ChangeInfo{
@@ -487,5 +487,66 @@ func TestAuthorEmail(t *testing.T) {
 		author, err := AuthorEmail(ctx, change)
 		So(err, ShouldBeNil)
 		So(author, ShouldEqual, "jdoe@example.com")
+	})
+}
+
+func TestCommitMessage(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("change does not have enough information", t, func() {
+		change := &gerritpb.ChangeInfo{
+			Project: "chromium/test/src",
+			Number:  234567,
+		}
+		_, err := CommitMessage(ctx, change)
+		So(err, ShouldErrLike, "could not get", "info")
+	})
+
+	Convey("commit message is returned", t, func() {
+		expectedMessage := "Title.\n\nBody is here.\n\nNOAUTOREVERT=true\n\nChange-Id: I100deadbeef"
+		change := &gerritpb.ChangeInfo{
+			Project:         "chromium/test/src",
+			Number:          234567,
+			CurrentRevision: "deadbeef",
+			Revisions: map[string]*gerritpb.RevisionInfo{
+				"deadbeef": {
+					Number: 1,
+					Kind:   gerritpb.RevisionInfo_REWORK,
+					Uploader: &gerritpb.AccountInfo{
+						AccountId:       1000096,
+						Name:            "John Doe",
+						Email:           "jdoe@example.com",
+						SecondaryEmails: []string{"johndoe@chromium.org"},
+						Username:        "jdoe",
+					},
+					Ref:         "refs/changes/123",
+					Description: "first upload",
+					Files: map[string]*gerritpb.FileInfo{
+						"go/to/file.go": {
+							LinesInserted: 32,
+							LinesDeleted:  44,
+							SizeDelta:     -567,
+							Size:          11984,
+						},
+					},
+					Commit: &gerritpb.CommitInfo{
+						Id:      "",
+						Message: expectedMessage,
+						Parents: []*gerritpb.CommitInfo_Parent{
+							{Id: "deadbeef00"},
+						},
+						Author: &gerritpb.GitPersonInfo{
+							Name:  "John Doe",
+							Email: "jdoe@example.com",
+						},
+					},
+				},
+			},
+		}
+
+		message, err := CommitMessage(ctx, change)
+		So(err, ShouldBeNil)
+		So(message, ShouldEqual, expectedMessage)
 	})
 }
