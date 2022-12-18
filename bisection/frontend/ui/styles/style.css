@@ -65,6 +65,8 @@ html {
   --light-active-color: #d9edfc;
   --delete-color: var(--failure-color);
   --mdc-theme-primary: var(--active-color);
+  /* These colors are from LUCI Bisection */
+  --suspect-found-color: #5468ce;
 }
 
 .data-placeholder {

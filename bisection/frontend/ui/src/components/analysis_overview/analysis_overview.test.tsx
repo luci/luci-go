@@ -29,7 +29,6 @@ describe('Test AnalysisOverview component', () => {
 
     const expectedStaticFields = [
       ['analysis ID', 'analysisId'],
-      ['status', 'status'],
       ['buildbucket ID', 'firstFailedBbid'],
       ['failure type', 'buildFailureType'],
     ];
@@ -37,11 +36,14 @@ describe('Test AnalysisOverview component', () => {
     // check static field labels and values are displayed
     expectedStaticFields.forEach(([label, property]) => {
       const fieldLabel = screen.getByText(new RegExp(`^(${label})$`, 'i'));
-      expect(fieldLabel).toBeInTheDocument();
+      expect(fieldLabel).toBeInTheDocument();      
       expect(fieldLabel.nextSibling?.textContent).toBe(
         `${mockAnalysis[property as keyof Analysis]}`
       );
     });
+
+    const statusFieldLabel = screen.getByText('Status');
+    expect(statusFieldLabel.nextSibling?.textContent).toBe('Culprit found');
 
     // check the timestamp cells are displayed
     const timestampFields = ['created time', 'end time'];

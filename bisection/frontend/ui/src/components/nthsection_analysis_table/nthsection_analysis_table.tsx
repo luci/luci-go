@@ -24,10 +24,10 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { displayStatus } from '../../tools/info_display';
 import { linkToCommit, EMPTY_LINK } from '../../tools/link_constructors';
 import { getFormattedTimestamp } from '../../tools/timestamp_formatters';
 
+import { AnalysisStatusInfo } from '../status_info/status_info';
 import { PlainTable } from '../plain_table/plain_table';
 import { NthSectionAnalysisTableRow } from './nthsection_analysis_table_row/nthsection_analysis_table_row';
 
@@ -91,7 +91,9 @@ export const NthSectionAnalysisDetail = ({ result }: Props) => {
           </TableRow>
           <TableRow>
             <TableCell variant='head'>Status</TableCell>
-            <TableCell>{displayStatus(result!.status)}</TableCell>
+            <TableCell>
+              <AnalysisStatusInfo status={result!.status}></AnalysisStatusInfo>
+            </TableCell>
             <TableCell variant='head'>Suspect</TableCell>
             {/* TODO (nqmtuan): Show review title instead */}
             <TableCell>

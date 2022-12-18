@@ -18,10 +18,9 @@ import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
-// import { getCommitShortHash } from '../../../tools/commit_formatters';
-import { displayRerunStatus } from '../../../tools/info_display';
 import { linkToBuild, linkToCommit } from '../../../tools/link_constructors';
 import { getFormattedTimestamp } from '../../../tools/timestamp_formatters';
+import { RerunStatusInfo } from '../../status_info/status_info';
 import { SingleRerun } from '../../../services/luci_bisection';
 
 interface Props {
@@ -58,8 +57,7 @@ export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
           </Link>
         </TableCell>
         <TableCell>
-          {/* TODO: Display in different color*/}
-          {displayRerunStatus(rerunResult.rerunStatus)}
+          <RerunStatusInfo status={rerunResult.rerunStatus}></RerunStatusInfo>
         </TableCell>
         <TableCell>
           <Link

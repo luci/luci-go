@@ -29,6 +29,7 @@ import {
   linkToCommit,
   linkToCommitRange,
 } from '../../tools/link_constructors';
+import { AnalysisStatusInfo } from '../status_info/status_info';
 import { getFormattedTimestamp } from '../../tools/timestamp_formatters';
 
 interface Props {
@@ -157,7 +158,9 @@ export const AnalysisOverview = ({ analysis }: Props) => {
           </TableRow>
           <TableRow>
             <TableCell variant='head'>Status</TableCell>
-            <TableCell>{analysis.status}</TableCell>
+            <TableCell>
+              <AnalysisStatusInfo status={analysis.status}></AnalysisStatusInfo>
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell variant='head'>Suspect range</TableCell>
