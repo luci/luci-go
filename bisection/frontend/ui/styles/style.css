@@ -71,8 +71,6 @@ html {
 
 .data-placeholder {
   color: var(--greyed-out-text-color);
-  opacity: 40%;
-  font-size: 0.6em;
 }
 
 .span-link + .span-link {

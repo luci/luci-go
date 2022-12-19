@@ -43,7 +43,7 @@ describe('Test SearchAnalysisTable component', () => {
 
     renderWithRouterAndClient(<SearchAnalysisTable bbid='123' />);
 
-    await screen.findByText('Buildbucket ID');
+    await screen.findByTestId('search-analysis-table');
 
     // Check there is a link displayed in the table for the analysis
     mockAnalyses.forEach((mockAnalysis) => {
@@ -59,7 +59,7 @@ describe('Test SearchAnalysisTable component', () => {
 
     renderWithRouterAndClient(<SearchAnalysisTable bbid='124' />);
 
-    await screen.findByText('Buildbucket ID');
+    await screen.findByTestId('search-analysis-table');
 
     // Check there is a link displayed in the table for the analysis
     mockAnalyses.forEach((mockAnalysis) => {
@@ -78,7 +78,7 @@ describe('Test SearchAnalysisTable component', () => {
 
     renderWithRouterAndClient(<SearchAnalysisTable bbid='123' />);
 
-    await screen.findByText('Buildbucket ID');
+    await screen.findByTestId('search-analysis-table');
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(
@@ -91,7 +91,7 @@ describe('Test SearchAnalysisTable component', () => {
 
     renderWithRouterAndClient(<SearchAnalysisTable bbid='123' />);
 
-    await screen.findByRole('alert');
+    await screen.findByTestId('search-analysis-table');
 
     expect(screen.getByText('Issue searching by build')).toBeInTheDocument();
     expect(screen.queryByText('Buildbucket ID')).not.toBeInTheDocument();

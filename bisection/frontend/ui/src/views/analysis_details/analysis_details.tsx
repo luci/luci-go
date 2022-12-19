@@ -32,9 +32,8 @@ import { HeuristicAnalysisTable } from '../../components/heuristic_analysis_tabl
 import { CulpritVerificationTable } from '../../components/culprit_verification_table/culprit_verification_table';
 import { NthSectionAnalysisTable } from '../../components/nthsection_analysis_table/nthsection_analysis_table';
 
-// TODO: uncomment below once revert CL and prime suspect information is added to the analysis response
+// TODO: uncomment below once revert CL information is added to the analysis response
 // import { RevertCLOverview } from '../../components/revert_cl_overview/revert_cl_overview';
-// import { SuspectsOverview } from '../../components/suspects_overview/suspects_overview';
 
 import {
   getLUCIBisectionService,
@@ -148,7 +147,7 @@ export const AnalysisDetailsPage = () => {
               <CulpritsTable culprits={analysis!.culprits!} />
             </div>
           )}
-          {/* TODO: add revert CL and prime suspect information to the analysis
+          {/* TODO: add revert CL to the analysis
                     response, then display it below
           {analysis.revertCL! && (
             <div className='section'>
@@ -158,14 +157,7 @@ export const AnalysisDetailsPage = () => {
               <RevertCLOverview revertCL={analysis.revertCL} />
             </div>
           )}
-          {analysis.primeSuspects.length > 0 && (
-            <div className='section'>
-              <Typography variant='h4' gutterBottom>
-                Suspect Summary
-              </Typography>
-              <SuspectsOverview suspects={analysis.primeSuspects} />
-            </div>
-          )} */}
+          */}
           <div className='section'>
             <Typography variant='h5' gutterBottom>
               Analysis Components

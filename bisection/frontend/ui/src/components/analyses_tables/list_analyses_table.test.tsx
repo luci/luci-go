@@ -48,7 +48,7 @@ describe('Test AnalysesTable component', () => {
 
     renderWithRouterAndClient(<ListAnalysesTable />);
 
-    await screen.findByText('Buildbucket ID');
+    await screen.findByTestId('list-analyses-table');
 
     // Check there is a link displayed in the table for each analysis
     mockAnalyses.forEach((mockAnalysis) => {
@@ -67,7 +67,7 @@ describe('Test AnalysesTable component', () => {
 
     renderWithRouterAndClient(<ListAnalysesTable />);
 
-    await screen.findByText('Rows per page:');
+    await screen.findByTestId('list-analyses-table');
 
     // Check the displayed rows label is correct
     expect(screen.getByText('1-25')).toBeInTheDocument();
@@ -99,10 +99,10 @@ describe('Test AnalysesTable component', () => {
 
     renderWithRouterAndClient(<ListAnalysesTable />);
 
-    await screen.findByText('Buildbucket ID');
+    await screen.findByTestId('list-analyses-table');
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.getByText('No analyses found')).toBeInTheDocument();
+    expect(screen.getByText('No analyses')).toBeInTheDocument();
   });
 
   test('if an appropriate message is displayed for an error', async () => {
@@ -110,7 +110,7 @@ describe('Test AnalysesTable component', () => {
 
     renderWithRouterAndClient(<ListAnalysesTable />);
 
-    await screen.findByRole('alert');
+    await screen.findByTestId('list-analyses-table');
 
     expect(screen.getByText('Failed to load analyses')).toBeInTheDocument();
     expect(screen.queryByText('Buildbucket ID')).not.toBeInTheDocument();

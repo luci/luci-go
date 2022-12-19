@@ -40,10 +40,12 @@ interface CulpritsTableCellProps {
 }
 
 const CulpritsTableCell = ({ culprits, status }: CulpritsTableCellProps) => {
-  if (culprits == null || culprits.length === 0) {
+  if (culprits == null || culprits.length == 0) {
     return (
-      <TableCell className='data-placeholder'>
-        {status === 'SUSPECTFOUND' && 'Suspect found (not verified)'}
+      <TableCell>
+        <span className='data-placeholder'>
+          {status === 'SUSPECTFOUND' && 'Suspect found (not verified)'}
+        </span>
       </TableCell>
     );
   }

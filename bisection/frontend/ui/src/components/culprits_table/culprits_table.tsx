@@ -25,7 +25,6 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 import { PlainTable } from '../plain_table/plain_table';
 import {
   Culprit,
@@ -38,7 +37,7 @@ import { displayRerunStatus } from '../../tools/info_display';
 import { EMPTY_LINK, linkToBuild } from '../../tools/link_constructors';
 
 interface CulpritsTableProps {
-  culprits: Culprit[];
+  culprits?: Culprit[];
 }
 
 interface CulpritTableRowProps {
@@ -192,8 +191,10 @@ const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
         {culpritAction.length > 0 ? (
           <CulpritActionTableCell action={culpritAction[0]} />
         ) : (
-          <TableCell className='data-placeholder'>
-            No actions by LUCI Bisection for this culprit
+          <TableCell>
+            <span className='data-placeholder'>
+              No actions by LUCI Bisection for this culprit
+            </span>
           </TableCell>
         )}
       </TableRow>
@@ -207,8 +208,20 @@ const CulpritTableRow = ({ culprit }: CulpritTableRowProps) => {
 };
 
 export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
+  if (!culprits || culprits.length == 0) {
+    return (
+      <span className='data-placeholder' data-testid='culprits-table'>
+        No culprit found
+      </span>
+    );
+  }
+
   return (
-    <TableContainer className='culprits-table' component={Paper}>
+    <TableContainer
+      className='culprits-table'
+      component={Paper}
+      data-testid='culprits-table'
+    >
       <Table size='small'>
         <colgroup>
           <col style={{ width: '35%' }} />
@@ -223,13 +236,9 @@ export const CulpritsTable = ({ culprits }: CulpritsTableProps) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {culprits.length === 0 ? (
-            <NoDataMessageRow message='No culprit found' columns={2} />
-          ) : (
-            culprits.map((culprit) => (
-              <CulpritTableRow key={culprit.commit.id} culprit={culprit} />
-            ))
-          )}
+          {culprits.map((culprit) => (
+            <CulpritTableRow key={culprit.commit.id} culprit={culprit} />
+          ))}
         </TableBody>
       </Table>
     </TableContainer>

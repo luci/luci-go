@@ -24,10 +24,8 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
 import { HeuristicAnalysisTableRow } from './heuristic_analysis_table_row/heuristic_analysis_table_row';
-import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 import {
   HeuristicAnalysisResult,
-  HeuristicSuspect,
   isAnalysisComplete,
 } from '../../services/luci_bisection';
 
@@ -35,28 +33,37 @@ interface Props {
   result?: HeuristicAnalysisResult;
 }
 
-function getInProgressRow() {
-  return (
-    <NoDataMessageRow message='Heuristic analysis is in progress' columns={4} />
-  );
-}
-
-function getRows(suspects: HeuristicSuspect[] | undefined) {
-  if (!suspects || suspects.length === 0) {
-    return <NoDataMessageRow message='No suspects to display' columns={4} />;
-  } else {
-    return suspects.map((suspect) => (
-      <HeuristicAnalysisTableRow
-        key={suspect.gitilesCommit.id}
-        suspect={suspect}
-      />
-    ));
-  }
-}
-
 export const HeuristicAnalysisTable = ({ result }: Props) => {
+  if (!result) {
+    return (
+      <span className='data-placeholder' data-testid='heuristic-analysis-table'>
+        There is no heuristic analysis
+      </span>
+    );
+  }
+
+  if (!isAnalysisComplete(result.status)) {
+    return (
+      <span className='data-placeholder' data-testid='heuristic-analysis-table'>
+        Heuristic analysis is in progress
+      </span>
+    );
+  }
+
+  if (!result.suspects || result.suspects.length == 0) {
+    return (
+      <span className='data-placeholder' data-testid='heuristic-analysis-table'>
+        No suspects found
+      </span>
+    );
+  }
+
   return (
-    <TableContainer component={Paper} className='heuristic-table-container'>
+    <TableContainer
+      component={Paper}
+      className='heuristic-table-container'
+      data-testid='heuristic-analysis-table'
+    >
       <Table className='heuristic-table' size='small'>
         <TableHead>
           <TableRow>
@@ -67,9 +74,12 @@ export const HeuristicAnalysisTable = ({ result }: Props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {result && isAnalysisComplete(result.status)
-            ? getRows(result.suspects)
-            : getInProgressRow()}
+          {result.suspects.map((suspect) => (
+            <HeuristicAnalysisTableRow
+              key={suspect.gitilesCommit.id}
+              suspect={suspect}
+            />
+          ))}
         </TableBody>
       </Table>
     </TableContainer>

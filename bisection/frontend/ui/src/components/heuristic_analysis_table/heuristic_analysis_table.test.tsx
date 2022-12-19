@@ -21,6 +21,17 @@ import { createMockHeuristicSuspect } from '../../testing_tools/mocks/heuristic_
 import { HeuristicAnalysisResult } from '../../services/luci_bisection';
 
 describe('Test HeuristicAnalysisTable component', () => {
+  test('if an appropriate message is displayed for no analysis', async () => {
+    render(<HeuristicAnalysisTable />);
+
+    await screen.findByTestId('heuristic-analysis-table');
+
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(
+      screen.getByText('There is no heuristic analysis')
+    ).toBeInTheDocument();
+  });
+
   test('if heuristic suspects are displayed', async () => {
     const mockSuspects = [
       createMockHeuristicSuspect('ac52e3'),
@@ -34,7 +45,7 @@ describe('Test HeuristicAnalysisTable component', () => {
 
     render(<HeuristicAnalysisTable result={mockHeuristicAnalysisResult} />);
 
-    await screen.findByText('Suspect CL');
+    await screen.findByTestId('heuristic-analysis-table');
 
     expect(screen.queryAllByRole('link')).toHaveLength(mockSuspects.length);
   });
@@ -46,10 +57,10 @@ describe('Test HeuristicAnalysisTable component', () => {
     };
     render(<HeuristicAnalysisTable result={mockHeuristicAnalysisResult} />);
 
-    await screen.findByText('Suspect CL');
+    await screen.findByTestId('heuristic-analysis-table');
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.getByText('No suspects to display')).toBeInTheDocument();
+    expect(screen.getByText('No suspects found')).toBeInTheDocument();
   });
 
   test('if no misleading message is shown for an incomplete analysis', async () => {
@@ -59,11 +70,12 @@ describe('Test HeuristicAnalysisTable component', () => {
     };
     render(<HeuristicAnalysisTable result={mockHeuristicAnalysisResult} />);
 
-    await screen.findByText('Suspect CL');
+    await screen.findByTestId('heuristic-analysis-table');
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(
-      screen.queryByText('No suspects to display')
-    ).not.toBeInTheDocument();
+      screen.getByText('Heuristic analysis is in progress')
+    ).toBeInTheDocument();
+    expect(screen.queryByText('No suspects found')).not.toBeInTheDocument();
   });
 });

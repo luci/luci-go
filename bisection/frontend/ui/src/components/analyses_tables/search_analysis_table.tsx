@@ -29,7 +29,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
 import { AnalysisTableRow } from './analysis_table_row/analysis_table_row';
-import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 import {
   getLUCIBisectionService,
   QueryAnalysisRequest,
@@ -77,7 +76,7 @@ export const SearchAnalysisTable = ({ bbid }: Props) => {
 
   if (isError) {
     return (
-      <div className='section'>
+      <div className='section' data-testid='search-analysis-table'>
         <Alert severity='error'>
           <AlertTitle>Issue searching by build</AlertTitle>
           {/* TODO: display more error detail for input issues e.g.
@@ -102,8 +101,16 @@ export const SearchAnalysisTable = ({ bbid }: Props) => {
     buildIsFirstFailed = analysis.firstFailedBbid === bbid;
   }
 
+  if (!analysis) {
+    return (
+      <span className='data-placeholder' data-testid='search-analysis-table'>
+        No analysis found for build {bbid}
+      </span>
+    );
+  }
+
   return (
-    <>
+    <Box data-testid='search-analysis-table'>
       <TableContainer className='analyses-table-container' component={Paper}>
         <Table className='analyses-table' size='small'>
           <TableHead>
@@ -118,18 +125,11 @@ export const SearchAnalysisTable = ({ bbid }: Props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {analysis ? (
-              <AnalysisTableRow analysis={analysis} />
-            ) : (
-              <NoDataMessageRow
-                message={`No analysis found for build ${bbid}`}
-                columns={7}
-              />
-            )}
+            <AnalysisTableRow analysis={analysis} />
           </TableBody>
         </Table>
       </TableContainer>
-      {analysis && !buildIsFirstFailed && (
+      {!buildIsFirstFailed && (
         <div className='section'>
           <Alert severity='info'>
             <AlertTitle>Found related analysis</AlertTitle>
@@ -138,6 +138,6 @@ export const SearchAnalysisTable = ({ bbid }: Props) => {
           </Alert>
         </div>
       )}
-    </>
+    </Box>
   );
 };

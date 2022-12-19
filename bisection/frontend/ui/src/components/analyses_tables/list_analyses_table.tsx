@@ -32,7 +32,6 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
 import { AnalysisTableRow } from './analysis_table_row/analysis_table_row';
-import { NoDataMessageRow } from '../no_data_message_row/no_data_message_row';
 
 import {
   Analysis,
@@ -124,9 +123,9 @@ export const ListAnalysesTable = () => {
     );
   }
 
-  if (isError || analyses === undefined) {
+  if (isError) {
     return (
-      <div className='section'>
+      <div className='section' data-testid='list-analyses-table'>
         <Alert severity='error'>
           <AlertTitle>Failed to load analyses</AlertTitle>
           {/* TODO: display more error detail for input issues e.g.
@@ -138,10 +137,18 @@ export const ListAnalysesTable = () => {
     );
   }
 
+  if (analyses.length == 0) {
+    return (
+      <span className='data-placeholder' data-testid='list-analyses-table'>
+        No analyses
+      </span>
+    );
+  }
+
   const nextPageToken = pageTokens.get((page + 1) * pageSize);
   const isLastPage = nextPageToken === undefined || nextPageToken === '';
   return (
-    <>
+    <Box data-testid='list-analyses-table'>
       <TableContainer className='analyses-table-container' component={Paper}>
         <Table className='analyses-table' size='small'>
           <TableHead>
@@ -156,49 +163,40 @@ export const ListAnalysesTable = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {analyses.length > 0 ? (
-              analyses.map((analysis) => (
-                <AnalysisTableRow
-                  key={analysis.analysisId}
-                  analysis={analysis}
-                />
-              ))
-            ) : (
-              <NoDataMessageRow message='No analyses found' columns={7} />
-            )}
+            {analyses.map((analysis) => (
+              <AnalysisTableRow key={analysis.analysisId} analysis={analysis} />
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
-      {analyses.length > 0 && (
-        <>
-          {!isFetching || !isPreviousData ? (
-            <TablePagination
-              component='div'
-              count={-1}
-              page={page}
-              onPageChange={handleChangePage}
-              rowsPerPage={pageSize}
-              rowsPerPageOptions={[25, 50, 100, 200]}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              labelDisplayedRows={labelDisplayedRows}
-              // disable the "next" button if there are no more analyses
-              nextIconButtonProps={{ disabled: isLastPage }}
-            />
-          ) : (
-            <Box
-              sx={{ padding: '1rem' }}
-              display='flex'
-              justifyContent='right'
-              alignItems='center'
-            >
-              <CircularProgress size='1.25rem' />
-              <Box sx={{ paddingLeft: '1rem' }}>
-                <Typography variant='caption'>Fetching analyses...</Typography>
-              </Box>
+      <>
+        {!isFetching || !isPreviousData ? (
+          <TablePagination
+            component='div'
+            count={-1}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={pageSize}
+            rowsPerPageOptions={[25, 50, 100, 200]}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelDisplayedRows={labelDisplayedRows}
+            // disable the "next" button if there are no more analyses
+            nextIconButtonProps={{ disabled: isLastPage }}
+          />
+        ) : (
+          <Box
+            sx={{ padding: '1rem' }}
+            display='flex'
+            justifyContent='right'
+            alignItems='center'
+          >
+            <CircularProgress size='1.25rem' />
+            <Box sx={{ paddingLeft: '1rem' }}>
+              <Typography variant='caption'>Fetching analyses...</Typography>
             </Box>
-          )}
-        </>
-      )}
-    </>
+          </Box>
+        )}
+      </>
+    </Box>
   );
 };

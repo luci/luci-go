@@ -46,8 +46,10 @@ function getRows(suspects: HeuristicSuspect[]) {
 export const CulpritVerificationTable = ({ result }: Props) => {
   // TODO: Support nth-section suspects
   const suspects = result?.heuristicResult?.suspects ?? []
-  if (!suspects) {
-    return <>Could not find any culprit verification result</>
+  if (!suspects || suspects.length == 0) {
+    return (
+      <span className='data-placeholder'>No culprit verification results</span>
+    );
   }
   return (
     <TableContainer component={Paper} className='culprit-verification-table-container'>

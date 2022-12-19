@@ -44,34 +44,31 @@ interface RerunProps {
   reruns: SingleRerun[];
 }
 
-function getRows(reruns: SingleRerun[]) {
-  return reruns.map((rerun) => (
-    <NthSectionAnalysisTableRow
-      key={rerun.commit.id}
-      rerun={rerun}
-    />
-  ));
-}
-
 export const NthSectionAnalysisTable = ({ result }: Props) => {
   if (result == null || result == undefined) {
-    return <>There is no nthsection analysis</>;
+    return (
+      <span className='data-placeholder'>There is no nthsection analysis</span>
+    );
   }
 
   const reruns = result?.reruns ?? [];
-  const sortedReruns = reruns.sort((a, b) => parseInt(a.index!) - parseInt(b.index!));
+  const sortedReruns = reruns.sort(
+    (a, b) => parseInt(a.index!) - parseInt(b.index!)
+  );
   return (
     <>
-    <NthSectionAnalysisDetail result={result}></NthSectionAnalysisDetail>
-    <NthSectionAnalysisRerunsTable reruns={sortedReruns}></NthSectionAnalysisRerunsTable>
+      <NthSectionAnalysisDetail result={result}></NthSectionAnalysisDetail>
+      <NthSectionAnalysisRerunsTable
+        reruns={sortedReruns}
+      ></NthSectionAnalysisRerunsTable>
     </>
   );
 };
 
 export const NthSectionAnalysisDetail = ({ result }: Props) => {
-  var commitLink = EMPTY_LINK
+  var commitLink = EMPTY_LINK;
   if (result?.suspect) {
-    commitLink = linkToCommit(result.suspect)
+    commitLink = linkToCommit(result.suspect);
   }
   return (
     <TableContainer>
@@ -114,12 +111,19 @@ export const NthSectionAnalysisDetail = ({ result }: Props) => {
 };
 
 export const NthSectionAnalysisRerunsTable = ({ reruns }: RerunProps) => {
-  if (!reruns) {
-    return <>Could not find any reruns</>;
+  if (!reruns || reruns.length == 0) {
+    return <span className='data-placeholder'>No reruns found</span>;
   }
   return (
-    <TableContainer component={Paper} className='nthsection-analysis-table-container'>
-      <Table className='nthsection-analysis-table' size='small' data-testid='nthsection-analysis-rerun-table'>
+    <TableContainer
+      component={Paper}
+      className='nthsection-analysis-table-container'
+    >
+      <Table
+        className='nthsection-analysis-table'
+        size='small'
+        data-testid='nthsection-analysis-rerun-table'
+      >
         <TableHead>
           <TableRow>
             <TableCell>Index</TableCell>
@@ -132,9 +136,11 @@ export const NthSectionAnalysisRerunsTable = ({ reruns }: RerunProps) => {
         </TableHead>
         <TableBody>
           {/* TODO (nqmtuan): Show the "anchors" (last passed, first failed, number of commits in between etc) */}
-          {getRows(reruns)}
+          {reruns.map((rerun) => (
+            <NthSectionAnalysisTableRow key={rerun.commit.id} rerun={rerun} />
+          ))}
         </TableBody>
       </Table>
     </TableContainer>
   );
-}
+};

@@ -39,7 +39,7 @@ describe('Test CulpritsTable component', () => {
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 
-    await screen.findByText('Culprit CL');
+    await screen.findByTestId('culprits-table');
 
     // Check there is a link to the culprit's code review
     const culpritReviewLink = screen.getByRole('link');
@@ -50,9 +50,7 @@ describe('Test CulpritsTable component', () => {
     }
 
     // Check an appropriate message is displayed for no culprit actions
-    expect(
-      screen.queryByText(new RegExp('no actions', 'i'))
-    ).toBeInTheDocument();
+    expect(screen.getByText(new RegExp('no actions', 'i'))).toBeInTheDocument();
   });
 
   test('if culprit actions are displayed', async () => {
@@ -84,7 +82,7 @@ describe('Test CulpritsTable component', () => {
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 
-    await screen.findByText('Culprit CL');
+    await screen.findByTestId('culprits-table');
 
     // Check there is no misleading message about culprit actions
     expect(
@@ -162,25 +160,17 @@ describe('Test CulpritsTable component', () => {
 
     render(<CulpritsTable culprits={[mockCulprit]} />);
 
-    await screen.findByText('Culprit CL');
+    await screen.findByTestId('culprits-table');
 
-    // Check the culprit's verification build numbers are displayed
-    expect(
-      screen.getByText(
-        'Failed'
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Passed'
-      )
-    ).toBeInTheDocument();
+    // Check the culprit's verification build results are displayed
+    expect(screen.getByText('Failed')).toBeInTheDocument();
+    expect(screen.getByText('Passed')).toBeInTheDocument();
   });
 
   test('if an appropriate message is displayed for no culprits', async () => {
     render(<CulpritsTable culprits={[]} />);
 
-    await screen.findByText('Culprit CL');
+    await screen.findByTestId('culprits-table');
 
     expect(screen.queryAllByTestId('culprit_table_row')).toHaveLength(0);
     expect(screen.getByText('No culprit found')).toBeInTheDocument();
