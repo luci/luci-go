@@ -93,8 +93,6 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		// Number chosen fairly arbitrarily.
 		PageSize:  1000,
 		PageToken: "",
-		// 1000 was determined experimentally as an appropriate cross-over point.
-		UseLargeInvocationGraphQuery: invs.WithTestResultsCount() > 1000,
 	}
 
 	tvs := make([]*pb.TestVariant, 0, len(in.TestVariants))

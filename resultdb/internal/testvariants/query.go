@@ -104,11 +104,6 @@ type Query struct {
 	PageToken string
 	Mask      *mask.Mask
 	TestIDs   []string
-	// UseLargeInvocationGraphQuery if set, enables the use of a query
-	// design which is optimised for large reachable invocation graphs.
-	// The estimated cross-over point for where this is useful to
-	// set is ~1000 invocations with test results.
-	UseLargeInvocationGraphQuery bool
 
 	decompressBuf []byte                 // buffer for decompressing blobs
 	params        map[string]interface{} // query parameters
@@ -263,10 +258,9 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	}
 
 	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
-		"UseLargeInvocationGraphQuery": q.UseLargeInvocationGraphQuery,
-		"ResultColumns":                strings.Join(q.resultSelectColumns(), ", "),
-		"HasTestIds":                   len(q.TestIDs) > 0,
-		"StatusFilter":                 q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
+		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
+		"HasTestIds":    len(q.TestIDs) > 0,
+		"StatusFilter":  q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
 	})
 	if err != nil {
 		return
@@ -631,67 +625,30 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 
 var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testVariantsWithUnexpectedResultsSQL").Parse(`
 	@{USE_ADDITIONAL_PARALLELISM=TRUE}
-	WITH
-	-- We have two query designs.
-	-- Plan A works well for large invocation graphs, but relies on scanning over
-	-- all test results in all invocations.
-	-- Plan B works well for invocations with many test results (it can use the
-	-- UnexpectedTestResults index to limit the number of test variants retrieved)
-	-- but performs poorly if the invocation graph is large.
-	--
-	-- Benchmarked on a chromium linux-rel build with >300,000 test results with
-	-- ~100 invocations, Plan A takes 15 seconds, whereas Plan B takes
-	-- 600 milliseconds.
-	-- Benchmarked on a Chrome OS release orchestrator build with 5000 invocations
-	-- and ~8000 test results, Plan A takes 2 seconds whereas Plan B takes 20 seconds.
-	--
-	-- Experimentally, the cross-over point for the invocations (assuming <300,000
-	-- test results total) is probably at around 1,000 invocations.
-	{{if .UseLargeInvocationGraphQuery}}
-		-- Get test variants and their results.
-		-- Also count the number of unexpected results and total results for each test
-		-- variant, which will be used to classify test variants.
-		test_variants AS (
-			SELECT
-				TestId,
-				VariantHash,
-				ANY_VALUE(Variant) Variant,
-				ANY_VALUE(TestMetadata) TestMetadata,
-				COUNTIF(IsUnexpected) num_unexpected,
-				COUNTIF(Status=@skipStatus) num_skipped,
-				COUNT(TestId) num_total,
-				ARRAY_AGG(STRUCT({{.ResultColumns}})) results,
-			FROM UNNEST(@testResultInvIDs) InvocationID
-			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=APPLY_JOIN} TestResults tr USING (InvocationID)
-			GROUP BY TestId, VariantHash
-			HAVING num_unexpected > 0
-		),
-	{{else}}
-		unexpectedTestVariants AS (
-			SELECT DISTINCT TestId, VariantHash
-			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
-			WHERE IsUnexpected AND InvocationId in UNNEST(@testResultInvIDs)
-		),
+	WITH unexpectedTestVariants AS (
+		SELECT DISTINCT TestId, VariantHash
+		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults, spanner_emulator.disable_query_null_filtered_index_check=true}
+		WHERE IsUnexpected AND InvocationId in UNNEST(@testResultInvIDs)
+	),
 
-		-- Get test variants and their results.
-		-- Also count the number of unexpected results and total results for each test
-		-- variant, which will be used to classify test variants.
-		test_variants AS (
-			SELECT
-				TestId,
-				VariantHash,
-				ANY_VALUE(Variant) Variant,
-				ANY_VALUE(TestMetadata) TestMetadata,
-				COUNTIF(IsUnexpected) num_unexpected,
-				COUNTIF(Status=@skipStatus) num_skipped,
-				COUNT(TestId) num_total,
-				ARRAY_AGG(STRUCT({{.ResultColumns}})) results,
-			FROM unexpectedTestVariants vur
-			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
-			WHERE InvocationId in UNNEST(@testResultInvIDs)
-			GROUP BY TestId, VariantHash
-		),
-	{{end}}
+	-- Get test variants and their results.
+	-- Also count the number of unexpected results and total results for each test
+	-- variant, which will be used to classify test variants.
+	test_variants AS (
+		SELECT
+			TestId,
+			VariantHash,
+			ANY_VALUE(Variant) Variant,
+			ANY_VALUE(TestMetadata) TestMetadata,
+			COUNTIF(IsUnexpected) num_unexpected,
+			COUNTIF(Status=@skipStatus) num_skipped,
+			COUNT(TestId) num_total,
+			ARRAY_AGG(STRUCT({{.ResultColumns}})) results,
+		FROM unexpectedTestVariants vur
+		JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr USING (TestId, VariantHash)
+		WHERE InvocationId in UNNEST(@testResultInvIDs)
+		GROUP BY TestId, VariantHash
+	),
 
 	exonerated AS (
 		SELECT
