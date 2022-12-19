@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
@@ -317,17 +318,25 @@ func TestClusters(t *testing.T) {
 						Algorithm: rulesalgorithm.AlgorithmName,
 						ID:        "11111100000000000000000000000000",
 					},
-					PresubmitRejects1d:             analysis.Counts{Nominal: 1},
-					PresubmitRejects3d:             analysis.Counts{Nominal: 2},
-					PresubmitRejects7d:             analysis.Counts{Nominal: 3},
-					CriticalFailuresExonerated1d:   analysis.Counts{Nominal: 4},
-					CriticalFailuresExonerated3d:   analysis.Counts{Nominal: 5},
-					CriticalFailuresExonerated7d:   analysis.Counts{Nominal: 6},
-					Failures1d:                     analysis.Counts{Nominal: 7},
-					Failures3d:                     analysis.Counts{Nominal: 8},
-					Failures7d:                     analysis.Counts{Nominal: 9},
-					DistinctUserCLsWithFailures7d:  analysis.Counts{Nominal: 10},
-					PostsubmitBuildsWithFailures7d: analysis.Counts{Nominal: 11},
+					MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+						metrics.HumanClsFailedPresubmit.ID: {
+							OneDay:   metrics.Counts{Nominal: 1},
+							ThreeDay: metrics.Counts{Nominal: 2},
+							SevenDay: metrics.Counts{Nominal: 3},
+						},
+						metrics.CriticalFailuresExonerated.ID: {
+							OneDay:   metrics.Counts{Nominal: 4},
+							ThreeDay: metrics.Counts{Nominal: 5},
+							SevenDay: metrics.Counts{Nominal: 6},
+						},
+						metrics.Failures.ID: {
+							OneDay:   metrics.Counts{Nominal: 7},
+							ThreeDay: metrics.Counts{Nominal: 8},
+							SevenDay: metrics.Counts{Nominal: 9},
+						},
+					},
+					DistinctUserCLsWithFailures7d:  metrics.Counts{Nominal: 10},
+					PostsubmitBuildsWithFailures7d: metrics.Counts{Nominal: 11},
 					ExampleFailureReason:           bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
 					TopTestIDs: []analysis.TopCount{
 						{Value: "TestID 1", Count: 2},
@@ -340,7 +349,11 @@ func TestClusters(t *testing.T) {
 						Algorithm: testname.AlgorithmName,
 						ID:        "cccccc00000000000000000000000001",
 					},
-					PresubmitRejects7d:   analysis.Counts{Nominal: 11},
+					MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+						metrics.HumanClsFailedPresubmit.ID: {
+							SevenDay: metrics.Counts{Nominal: 11},
+						},
+					},
 					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 2."},
 					TopTestIDs: []analysis.TopCount{
 						{Value: "TestID 3", Count: 2},
@@ -352,7 +365,11 @@ func TestClusters(t *testing.T) {
 						Algorithm: failurereason.AlgorithmName,
 						ID:        hex.EncodeToString(reasonClusterID),
 					},
-					PresubmitRejects7d:   analysis.Counts{Nominal: 15},
+					MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+						metrics.HumanClsFailedPresubmit.ID: {
+							SevenDay: metrics.Counts{Nominal: 15},
+						},
+					},
 					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 123."},
 					TopTestIDs: []analysis.TopCount{
 						{Value: "TestID_Example", Count: 10},
@@ -641,22 +658,26 @@ func TestClusters(t *testing.T) {
 						Algorithm: rulesalgorithm.AlgorithmName,
 						ID:        rs[0].RuleID,
 					},
-					PresubmitRejects:           1,
-					CriticalFailuresExonerated: 2,
-					Failures:                   3,
-					ExampleFailureReason:       bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
-					ExampleTestID:              "TestID 1",
+					MetricValues: map[metrics.ID]int64{
+						metrics.HumanClsFailedPresubmit.ID:    1,
+						metrics.CriticalFailuresExonerated.ID: 2,
+						metrics.Failures.ID:                   3,
+					},
+					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
+					ExampleTestID:        "TestID 1",
 				},
 				{
 					ClusterID: clustering.ClusterID{
 						Algorithm: "reason-v3",
 						ID:        "cccccc00000000000000000000000001",
 					},
-					PresubmitRejects:           4,
-					CriticalFailuresExonerated: 5,
-					Failures:                   6,
-					ExampleFailureReason:       bigquery.NullString{Valid: true, StringVal: "Example failure reason 2."},
-					ExampleTestID:              "TestID 3",
+					MetricValues: map[metrics.ID]int64{
+						metrics.HumanClsFailedPresubmit.ID:    4,
+						metrics.CriticalFailuresExonerated.ID: 5,
+						metrics.Failures.ID:                   6,
+					},
+					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 2."},
+					ExampleTestID:        "TestID 3",
 				},
 				{
 					ClusterID: clustering.ClusterID{
@@ -664,11 +685,13 @@ func TestClusters(t *testing.T) {
 						Algorithm: rulesalgorithm.AlgorithmName,
 						ID:        "01234567890abcdef01234567890abcdef",
 					},
-					PresubmitRejects:           7,
-					CriticalFailuresExonerated: 8,
-					Failures:                   9,
-					ExampleFailureReason:       bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
-					ExampleTestID:              "TestID 1",
+					MetricValues: map[metrics.ID]int64{
+						metrics.HumanClsFailedPresubmit.ID:    7,
+						metrics.CriticalFailuresExonerated.ID: 8,
+						metrics.Failures.ID:                   9,
+					},
+					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
+					ExampleTestID:        "TestID 1",
 				},
 			}
 			analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}

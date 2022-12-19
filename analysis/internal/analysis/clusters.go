@@ -16,6 +16,7 @@ package analysis
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
@@ -35,44 +37,29 @@ import (
 // Cluster contains detailed information about a cluster, including
 // a statistical summary of a cluster's failures, and their impact.
 type Cluster struct {
-	ClusterID clustering.ClusterID `json:"clusterId"`
-	// Distinct user CLs with presubmit rejects.
-	PresubmitRejects1d Counts `json:"presubmitRejects1d"`
-	PresubmitRejects3d Counts `json:"presubmitRejects3d"`
-	PresubmitRejects7d Counts `json:"presubmitRejects7d"`
-	// Distinct test runs failed.
-	TestRunFails1d Counts `json:"testRunFailures1d"`
-	TestRunFails3d Counts `json:"testRunFailures3d"`
-	TestRunFails7d Counts `json:"testRunFailures7d"`
-	// Total test results with unexpected failures.
-	Failures1d Counts `json:"failures1d"`
-	Failures3d Counts `json:"failures3d"`
-	Failures7d Counts `json:"failures7d"`
-	// Test failures exonerated on critical builders, and for an
-	// exoneration reason other than NOT_CRITICAL.
-	CriticalFailuresExonerated1d Counts `json:"criticalFailuresExonerated1d"`
-	CriticalFailuresExonerated3d Counts `json:"criticalFailuresExonerated3d"`
-	CriticalFailuresExonerated7d Counts `json:"criticalFailuresExonerated7d"`
+	ClusterID clustering.ClusterID
+
+	MetricValues map[metrics.ID]metrics.TimewiseCounts
 
 	// The number of distinct user (i.e not automation generated) CLs
 	// which have failures that are part of this cluster, over the last
 	// 7 days. If this is more than a couple, it is a good indicator the
 	// problem is really in the tree and not only on a few unsubmitted CLs.
-	DistinctUserCLsWithFailures7d Counts
+	DistinctUserCLsWithFailures7d metrics.Counts
 	// The number of postsubmit builds which have failures that are
 	// a part of this cluster. If this is non-zero, it is an indicator
 	// the problem is in the tree and not in a few unsubmitted CLs.
-	PostsubmitBuildsWithFailures7d Counts
+	PostsubmitBuildsWithFailures7d metrics.Counts
 
 	// The realm(s) examples of the cluster are present in.
 	Realms               []string
-	ExampleFailureReason bigquery.NullString `json:"exampleFailureReason"`
+	ExampleFailureReason bigquery.NullString
 	// Top Test IDs included in the cluster, up to 5. Unless the cluster
 	// is empty, will always include at least one Test ID.
-	TopTestIDs []TopCount `json:"topTestIds"`
+	TopTestIDs []TopCount
 	// Top Monorail Components indicates the top monorail components failures
 	// in the cluster are associated with by number of failures, up to 5.
-	TopMonorailComponents []TopCount `json:"topMonorailComponents"`
+	TopMonorailComponents []TopCount
 }
 
 // ExampleTestID returns an example Test ID that is part of the cluster, or
@@ -84,25 +71,13 @@ func (s *Cluster) ExampleTestID() string {
 	return ""
 }
 
-// Counts captures the values of an integer-valued metric in different
-// calculation bases.
-type Counts struct {
-	// The statistic value after impact has been reduced by exoneration.
-	Nominal int64 `json:"nominal"`
-	// The statistic value:
-	// - excluding impact already counted under other higher-priority clusters
-	//   (I.E. bug clusters.)
-	// - after impact has been reduced by exoneration.
-	Residual int64 `json:"residual"`
-}
-
 // TopCount captures the result of the APPROX_TOP_COUNT operator. See:
 // https://cloud.google.com/bigquery/docs/reference/standard-sql/approximate_aggregate_functions#approx_top_count
 type TopCount struct {
 	// Value is the value that was frequently occurring.
-	Value string `json:"value"`
+	Value string
 	// Count is the frequency with which the value occurred.
-	Count int64 `json:"count"`
+	Count int64
 }
 
 // RebuildAnalysis re-builds the cluster summaries analysis from
@@ -116,7 +91,98 @@ func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error 
 
 	dstTable := dataset.Table("cluster_summaries")
 
-	q := c.client.Query(clusterAnalysis)
+	var precomputeList []string
+	selectLists := make([][]string, len(metrics.CalculationBases))
+	for _, metric := range metrics.ComputedMetrics {
+		metricFilterIdentifier := "TRUE"
+		if metric.FilterSQL != "" {
+			metricFilterIdentifier = metric.ColumnName("filter")
+			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.FilterSQL, metricFilterIdentifier))
+		}
+		var itemIdentifier string
+		if metric.CountSQL != "" {
+			itemIdentifier = metric.ColumnName("item")
+			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.CountSQL, itemIdentifier))
+		}
+
+		for i, calculationBasis := range metrics.CalculationBases {
+			// Further restrict to last 1/3/7 days.
+			furtherFilter := fmt.Sprintf("is_%vd", calculationBasis.IntervalDays)
+			if calculationBasis.Residual {
+				furtherFilter += " AND f.is_included_with_high_priority"
+			}
+			var metricExpr string
+			if metric.CountSQL != "" {
+				metricExpr = fmt.Sprintf("COUNT(DISTINCT IF(%s AND %s, %s, NULL))", furtherFilter, metricFilterIdentifier, itemIdentifier)
+			} else {
+				metricExpr = fmt.Sprintf("COUNTIF(%s AND %s)", furtherFilter, metricFilterIdentifier)
+			}
+			// Each permutation will produce one JSON column,
+			// inside of which there will be one field per metric.
+			selectLists[i] = append(selectLists[i], fmt.Sprintf("%s AS %s", metricExpr, metric.BaseColumnName))
+		}
+	}
+	var selectList []string
+	for i, calculationBasis := range metrics.CalculationBases {
+		columnName := fmt.Sprintf("metrics_%s", calculationBasis.ColumnSuffix())
+		expr := `TO_JSON(STRUCT(` + strings.Join(selectLists[i], ",\n") + `))`
+		selectList = append(selectList, fmt.Sprintf("%s AS %s,", expr, columnName))
+	}
+
+	q := c.client.Query(`
+		WITH clustered_failures_latest AS (
+		  SELECT
+			cluster_algorithm,
+			cluster_id,
+			test_result_system,
+			test_result_id,
+			partition_time,
+			ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as f
+		  FROM clustered_failures cf
+		  WHERE partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+		  GROUP BY cluster_algorithm, cluster_id, test_result_system, test_result_id, partition_time
+		  HAVING f.is_included
+		),
+		clustered_failures_precompute AS (
+		  SELECT
+			cluster_algorithm,
+			cluster_id,
+			f,
+			f.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY) as is_1d,
+			f.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY) as is_3d,
+			f.partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY) as is_7d,
+			` + strings.Join(precomputeList, "\n") + `
+			-- The identity of the first changelist that was tested, assuming the
+			-- result was part of a presubmit run, and the owner of the presubmit
+			-- run was a user and not automation. Note SAFE_OFFSET runs NULL
+			-- if the item does not exist, and CONCAT returns NULL if any argument
+			-- is null.
+			IF(f.presubmit_run_owner='user',
+				CONCAT(f.changelists[SAFE_OFFSET(0)].host, '/', f.changelists[SAFE_OFFSET(0)].change),
+				NULL) as presubmit_run_user_cl_id,
+			f.changelists IS NULL OR ARRAY_LENGTH(f.changelists) = 0 AS is_postsubmit,
+		  FROM clustered_failures_latest
+		)
+		SELECT
+			cluster_algorithm,
+			cluster_id,
+			` + strings.Join(selectList, "\n") + `
+
+			-- Analysis of whether the cluster occurs within the tree or only in isolated CLs.
+			-- TODO(b/260631527): Determine whether we still need these metrics.
+			COUNT(DISTINCT IF(is_7d, presubmit_run_user_cl_id, NULL)) as distinct_user_cls_with_failures_7d,
+			COUNT(DISTINCT IF(is_7d AND is_postsubmit, f.ingested_invocation_id, NULL)) as postsubmit_builds_with_failures_7d,
+			COUNT(DISTINCT IF(is_7d AND f.is_included_with_high_priority, presubmit_run_user_cl_id, NULL)) as distinct_user_cls_with_failures_residual_7d,
+			COUNT(DISTINCT IF(is_7d AND is_postsubmit AND f.is_included_with_high_priority, f.ingested_invocation_id, NULL)) as postsubmit_builds_with_failures_residual_7d,
+
+			-- Other analysis.
+			ANY_VALUE(f.failure_reason) as example_failure_reason,
+			ARRAY_AGG(DISTINCT f.realm) as realms,
+			APPROX_TOP_COUNT(f.test_id, 5) as top_test_ids,
+			APPROX_TOP_COUNT(IF(f.bug_tracking_component.system = 'monorail', f.bug_tracking_component.component, NULL), 5) as top_monorail_components,
+		FROM clustered_failures_precompute
+		GROUP BY cluster_algorithm, cluster_id
+	`)
 	q.DefaultDatasetID = dataset.DatasetID
 	q.Dst = dstTable
 	q.CreateDisposition = bigquery.CreateIfNeeded
@@ -144,10 +210,11 @@ func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error 
 // version, or where the latest version of the row has the row not included in a
 // cluster.
 // This is necessary for:
-// - Our QueryClusterSummaries query, which for performance reasons (UI-interactive)
-//   does not do filtering to fetch the latest version of rows and instead uses all
-//   rows.
-// - Keeping the size of the BigQuery table to a minimum.
+//   - Our QueryClusterSummaries query, which for performance reasons (UI-interactive)
+//     does not do filtering to fetch the latest version of rows and instead uses all
+//     rows.
+//   - Keeping the size of the BigQuery table to a minimum.
+//
 // We currently only purge the last 7 days to keep purging costs to a minimum and
 // as this is as far as QueryClusterSummaries looks back.
 func (c *Client) PurgeStaleRows(ctx context.Context, luciProject string) error {
@@ -225,59 +292,12 @@ func (c *Client) ReadClusters(ctx context.Context, luciProject string, clusterID
 	s.Attribute("project", luciProject)
 	defer func() { s.End(err) }()
 
-	dataset, err := bqutil.DatasetForProject(luciProject)
-	if err != nil {
-		return nil, errors.Annotate(err, "getting dataset").Err()
-	}
-
-	q := c.client.Query(`
-		SELECT
-			STRUCT(cluster_algorithm AS Algorithm, cluster_id as ID) as ClusterID,` +
-		selectCounts("critical_failures_exonerated", "CriticalFailuresExonerated", "1d") +
-		selectCounts("critical_failures_exonerated", "CriticalFailuresExonerated", "3d") +
-		selectCounts("critical_failures_exonerated", "CriticalFailuresExonerated", "7d") +
-		selectCounts("presubmit_rejects", "PresubmitRejects", "1d") +
-		selectCounts("presubmit_rejects", "PresubmitRejects", "3d") +
-		selectCounts("presubmit_rejects", "PresubmitRejects", "7d") +
-		selectCounts("test_run_fails", "TestRunFails", "1d") +
-		selectCounts("test_run_fails", "TestRunFails", "3d") +
-		selectCounts("test_run_fails", "TestRunFails", "7d") +
-		selectCounts("failures", "Failures", "1d") +
-		selectCounts("failures", "Failures", "3d") +
-		selectCounts("failures", "Failures", "7d") +
-		selectCounts("distinct_user_cls_with_failures", "DistinctUserCLsWithFailures", "7d") +
-		selectCounts("postsubmit_builds_with_failures", "PostsubmitBuildsWithFailures", "7d") + `
-		    realms as Realms,
-			example_failure_reason.primary_error_message as ExampleFailureReason,
-			top_test_ids as TopTestIDs
-		FROM cluster_summaries
-		WHERE STRUCT(cluster_algorithm AS Algorithm, cluster_id as ID) IN UNNEST(@clusterIDs)
-	`)
-	q.DefaultDatasetID = dataset
-	q.Parameters = []bigquery.QueryParameter{
+	whereClause := `STRUCT(cluster_algorithm AS Algorithm, cluster_id as ID) IN UNNEST(@clusterIDs)`
+	params := []bigquery.QueryParameter{
 		{Name: "clusterIDs", Value: clusterIDs},
 	}
-	job, err := q.Run(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "querying cluster").Err()
-	}
-	it, err := job.Read(ctx)
-	if err != nil {
-		return nil, handleJobReadError(err)
-	}
-	clusters := []*Cluster{}
-	for {
-		row := &Cluster{}
-		err := it.Next(row)
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, errors.Annotate(err, "obtain next cluster row").Err()
-		}
-		clusters = append(clusters, row)
-	}
-	return clusters, nil
+
+	return c.readClustersWhere(ctx, luciProject, whereClause, params)
 }
 
 // ImpactfulClusterReadOptions specifies options for ReadImpactfulClusters().
@@ -305,52 +325,13 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 		return nil, errors.New("thresholds must be specified")
 	}
 
-	dataset, err := bqutil.DatasetForProject(opts.Project)
-	if err != nil {
-		return nil, errors.Annotate(err, "getting dataset").Err()
-	}
+	whereCriticalFailuresExonerated, cfeParams := whereThresholdsMet(metrics.CriticalFailuresExonerated, opts.Thresholds.CriticalFailuresExonerated)
+	whereFailures, failuresParams := whereThresholdsMet(metrics.Failures, opts.Thresholds.TestResultsFailed)
+	wherePresubmits, presubmitParams := whereThresholdsMet(metrics.HumanClsFailedPresubmit, opts.Thresholds.PresubmitRunsFailed)
 
-	whereCriticalFailuresExonerated, cfeParams := whereThresholdsMet("critical_failures_exonerated", opts.Thresholds.CriticalFailuresExonerated)
-	whereFailures, failuresParams := whereThresholdsMet("failures", opts.Thresholds.TestResultsFailed)
-	whereTestRuns, testRunsParams := whereThresholdsMet("test_run_fails", opts.Thresholds.TestRunsFailed)
-	wherePresubmits, presubmitParams := whereThresholdsMet("presubmit_rejects", opts.Thresholds.PresubmitRunsFailed)
-
-	q := c.client.Query(`
-		SELECT
-			STRUCT(cluster_algorithm AS Algorithm, cluster_id as ID) as ClusterID,` +
-		selectCounts("critical_failures_exonerated", "CriticalFailuresExonerated", "1d") +
-		selectCounts("critical_failures_exonerated", "CriticalFailuresExonerated", "3d") +
-		selectCounts("critical_failures_exonerated", "CriticalFailuresExonerated", "7d") +
-		selectCounts("presubmit_rejects", "PresubmitRejects", "1d") +
-		selectCounts("presubmit_rejects", "PresubmitRejects", "3d") +
-		selectCounts("presubmit_rejects", "PresubmitRejects", "7d") +
-		selectCounts("test_run_fails", "TestRunFails", "1d") +
-		selectCounts("test_run_fails", "TestRunFails", "3d") +
-		selectCounts("test_run_fails", "TestRunFails", "7d") +
-		selectCounts("failures", "Failures", "1d") +
-		selectCounts("failures", "Failures", "3d") +
-		selectCounts("failures", "Failures", "7d") +
-		selectCounts("distinct_user_cls_with_failures", "DistinctUserCLsWithFailures", "7d") +
-		selectCounts("postsubmit_builds_with_failures", "PostsubmitBuildsWithFailures", "7d") + `
-			example_failure_reason.primary_error_message as ExampleFailureReason,
-			top_test_ids as TopTestIDs,
-			ARRAY(
-				SELECT AS STRUCT value, count
-				FROM UNNEST(top_monorail_components)
-				WHERE value IS NOT NULL
-			) as TopMonorailComponents
-		FROM cluster_summaries
-		WHERE (` + whereCriticalFailuresExonerated + `) OR (` + whereFailures + `)
-		    OR (` + whereTestRuns + `) OR (` + wherePresubmits + `)
-		    OR (@alwaysIncludeBugClusters AND cluster_algorithm = @ruleAlgorithmName)
-		ORDER BY
-			presubmit_rejects_residual_1d DESC,
-			critical_failures_exonerated_residual_1d DESC,
-			test_run_fails_residual_1d DESC,
-			failures_residual_1d DESC
-	`)
-	q.DefaultDatasetID = dataset
-
+	whereClause := `(` + whereCriticalFailuresExonerated + `) OR (` + whereFailures + `)
+		    OR (` + wherePresubmits + `)
+		    OR (@alwaysIncludeBugClusters AND cluster_algorithm = @ruleAlgorithmName)`
 	params := []bigquery.QueryParameter{
 		{
 			Name:  "ruleAlgorithmName",
@@ -363,8 +344,54 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 	}
 	params = append(params, cfeParams...)
 	params = append(params, failuresParams...)
-	params = append(params, testRunsParams...)
 	params = append(params, presubmitParams...)
+	return c.readClustersWhere(ctx, opts.Project, whereClause, params)
+}
+
+// metricExpression returns a SQL expression for the given metric
+// in the cluster_summaries table. The type of the result will be NULLABLE INTEGER.
+// The value will be NULL only if the metric is not in the underlying table.
+func metricExpression(metric metrics.Definition, basis metrics.CalculationBasis) string {
+	jsonColumnName := fmt.Sprintf("metrics_%s", basis.ColumnSuffix())
+	return fmt.Sprintf("INT64(%s.%s)", jsonColumnName, metric.BaseColumnName)
+}
+
+func (c *Client) readClustersWhere(ctx context.Context, project, whereClause string, params []bigquery.QueryParameter) ([]*Cluster, error) {
+	var selectList []string
+	for _, metric := range metrics.ComputedMetrics {
+		for _, calculationBasis := range metrics.CalculationBases {
+			outputColumnName := metric.ColumnName(calculationBasis.ColumnSuffix())
+			metricSelect := fmt.Sprintf("%s AS %s,", metricExpression(metric, calculationBasis), outputColumnName)
+			selectList = append(selectList, metricSelect)
+		}
+	}
+
+	dataset, err := bqutil.DatasetForProject(project)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting dataset").Err()
+	}
+
+	q := c.client.Query(`
+		SELECT
+			cluster_algorithm,
+			cluster_id,
+			` + strings.Join(selectList, "\n") + `
+			distinct_user_cls_with_failures_residual_7d,
+			distinct_user_cls_with_failures_7d,
+			postsubmit_builds_with_failures_residual_7d,
+			postsubmit_builds_with_failures_7d,
+			example_failure_reason.primary_error_message as example_failure_reason,
+			top_test_ids,
+			realms,
+			ARRAY(
+				SELECT AS STRUCT value, count
+				FROM UNNEST(top_monorail_components)
+				WHERE value IS NOT NULL
+			) as top_monorail_components
+		FROM cluster_summaries
+		WHERE ` + whereClause,
+	)
+	q.DefaultDatasetID = dataset
 	q.Parameters = params
 
 	job, err := q.Run(ctx)
@@ -377,14 +404,55 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 	}
 	clusters := []*Cluster{}
 	for {
-		row := &Cluster{}
-		err := it.Next(row)
+		var rowVals rowLoader
+		err := it.Next(&rowVals)
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
 			return nil, errors.Annotate(err, "obtain next cluster row").Err()
 		}
+		row := &Cluster{}
+		row.ClusterID = clustering.ClusterID{
+			Algorithm: rowVals.String("cluster_algorithm"),
+			ID:        rowVals.String("cluster_id"),
+		}
+		row.MetricValues = make(map[metrics.ID]metrics.TimewiseCounts)
+		for _, metric := range metrics.ComputedMetrics {
+			valid := true
+			var timewiseCounts metrics.TimewiseCounts
+			for _, calculationBasis := range metrics.CalculationBases {
+				outputColumnName := metric.ColumnName(calculationBasis.ColumnSuffix())
+				value := rowVals.NullInt64(outputColumnName)
+				if !value.Valid {
+					valid = false
+					break
+				}
+				timewiseCounts.PutValue(value.Int64, calculationBasis)
+			}
+			if !valid {
+				continue
+			}
+			row.MetricValues[metric.ID] = timewiseCounts
+		}
+
+		row.DistinctUserCLsWithFailures7d = metrics.Counts{
+			Residual: rowVals.Int64("distinct_user_cls_with_failures_residual_7d"),
+			Nominal:  rowVals.Int64("distinct_user_cls_with_failures_7d"),
+		}
+		row.PostsubmitBuildsWithFailures7d = metrics.Counts{
+			Residual: rowVals.Int64("postsubmit_builds_with_failures_residual_7d"),
+			Nominal:  rowVals.Int64("postsubmit_builds_with_failures_7d"),
+		}
+		row.ExampleFailureReason = rowVals.NullString("example_failure_reason")
+		row.TopTestIDs = rowVals.TopCounts("top_test_ids")
+		row.TopMonorailComponents = rowVals.TopCounts("top_monorail_components")
+		row.Realms = rowVals.Strings("realms")
+
+		if err := rowVals.Error(); err != nil {
+			return nil, errors.Annotate(err, "marshalling cluster row").Err()
+		}
+
 		clusters = append(clusters, row)
 	}
 	return clusters, nil
@@ -397,34 +465,27 @@ func valueOrDefault(value *int64, defaultValue int64) int64 {
 	return defaultValue
 }
 
-// selectCounts generates SQL to select a set of Counts.
-func selectCounts(sqlPrefix, fieldPrefix, suffix string) string {
-	return `STRUCT(` +
-		sqlPrefix + `_` + suffix + ` AS Nominal,` +
-		sqlPrefix + `_residual_` + suffix + ` AS Residual` +
-		`) AS ` + fieldPrefix + suffix + `,`
-}
-
 // whereThresholdsMet generates a SQL Where clause to query
 // where a particular metric meets a given threshold.
-func whereThresholdsMet(sqlPrefix string, threshold *configpb.MetricThreshold) (string, []bigquery.QueryParameter) {
+func whereThresholdsMet(metric metrics.Definition, threshold *configpb.MetricThreshold) (string, []bigquery.QueryParameter) {
 	if threshold == nil {
 		threshold = &configpb.MetricThreshold{}
 	}
-	sql := sqlPrefix + "_residual_1d >= @" + sqlPrefix + "_1d OR " +
-		sqlPrefix + "_residual_3d >= @" + sqlPrefix + "_3d OR " +
-		sqlPrefix + "_residual_7d >= @" + sqlPrefix + "_7d"
+
+	sql := fmt.Sprintf("%s >= @%s OR ", metricExpression(metric, metrics.OneDayResidualBasis), metric.ColumnName("1d")) +
+		fmt.Sprintf("%s >= @%s OR ", metricExpression(metric, metrics.ThreeDayResidualBasis), metric.ColumnName("3d")) +
+		fmt.Sprintf("%s >= @%s", metricExpression(metric, metrics.SevenDayResidualBasis), metric.ColumnName("7d"))
 	parameters := []bigquery.QueryParameter{
 		{
-			Name:  sqlPrefix + "_1d",
+			Name:  metric.ColumnName("1d"),
 			Value: valueOrDefault(threshold.OneDay, math.MaxInt64),
 		},
 		{
-			Name:  sqlPrefix + "_3d",
+			Name:  metric.ColumnName("3d"),
 			Value: valueOrDefault(threshold.ThreeDay, math.MaxInt64),
 		},
 		{
-			Name:  sqlPrefix + "_7d",
+			Name:  metric.ColumnName("7d"),
 			Value: valueOrDefault(threshold.SevenDay, math.MaxInt64),
 		},
 	}

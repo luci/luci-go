@@ -16,11 +16,14 @@ package analysis
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/aip"
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/common/errors"
@@ -42,10 +45,12 @@ var ClusteredFailuresTable = aip.NewTable().WithColumns(
 	aip.NewColumn().WithName("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
 ).Build()
 
+const MetricValueColumnSuffix = "value"
+
 var ClusterSummariesTable = aip.NewTable().WithColumns(
-	aip.NewColumn().WithName("presubmit_rejects").WithDatabaseName("PresubmitRejects").Sortable().Build(),
-	aip.NewColumn().WithName("critical_failures_exonerated").WithDatabaseName("CriticalFailuresExonerated").Sortable().Build(),
-	aip.NewColumn().WithName("failures").WithDatabaseName("Failures").Sortable().Build(),
+	aip.NewColumn().WithName("presubmit_rejects").WithDatabaseName(metrics.HumanClsFailedPresubmit.ColumnName(MetricValueColumnSuffix)).Sortable().Build(),
+	aip.NewColumn().WithName("critical_failures_exonerated").WithDatabaseName(metrics.CriticalFailuresExonerated.ColumnName(MetricValueColumnSuffix)).Sortable().Build(),
+	aip.NewColumn().WithName("failures").WithDatabaseName(metrics.Failures.ColumnName(MetricValueColumnSuffix)).Sortable().Build(),
 ).Build()
 
 var ClusterSummariesDefaultOrder = []aip.OrderBy{
@@ -64,13 +69,11 @@ type QueryClusterSummariesOptions struct {
 // ClusterSummary represents a summary of the cluster's failures
 // and their impact.
 type ClusterSummary struct {
-	ClusterID                  clustering.ClusterID
-	PresubmitRejects           int64
-	CriticalFailuresExonerated int64
-	Failures                   int64
-	ExampleFailureReason       bigquery.NullString
-	ExampleTestID              string
-	UniqueTestIDs              int64
+	ClusterID            clustering.ClusterID
+	ExampleFailureReason bigquery.NullString
+	ExampleTestID        string
+	UniqueTestIDs        int64
+	MetricValues         map[metrics.ID]int64
 }
 
 // Queries a summary of clusters in the project.
@@ -104,50 +107,55 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	if err != nil {
 		return nil, errors.Annotate(err, "getting dataset").Err()
 	}
+
 	// The following query does not take into account removals of test failures
 	// from clusters as this dramatically slows down the query. Instead, we
 	// rely upon a periodic job to purge these results from the table.
 	// We avoid double-counting the test failures (e.g. in case of addition
 	// deletion, re-addition) by using APPROX_COUNT_DISTINCT to count the
-	// number of distinct failures in the cluster.
+	// number of distinct failures / other items in the cluster.
+	var precomputeList []string
+	var metricSelectList []string
+	for _, metric := range metrics.DefaultMetrics {
+		itemIdentifier := "unique_test_result_id"
+		if metric.CountSQL != "" {
+			itemIdentifier = metric.ColumnName("item")
+			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.CountSQL, itemIdentifier))
+		}
+		filterIdentifier := "TRUE"
+		if metric.FilterSQL != "" {
+			filterIdentifier = metric.ColumnName("filter")
+			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.FilterSQL, filterIdentifier))
+		}
+		metricIdentifier := metric.ColumnName(MetricValueColumnSuffix)
+		metricSelect := fmt.Sprintf("APPROX_COUNT_DISTINCT(IF(%s,%s,NULL)) AS %s,", filterIdentifier, itemIdentifier, metricIdentifier)
+		metricSelectList = append(metricSelectList, metricSelect)
+	}
+
 	sql := `
-		SELECT
-			STRUCT(cluster_algorithm AS Algorithm,
-				cluster_id AS ID) AS ClusterID,
-			ANY_VALUE(failure_reason.primary_error_message) AS ExampleFailureReason,
-			MIN(test_id) AS ExampleTestID,
-			APPROX_COUNT_DISTINCT(test_id) AS UniqueTestIDs,
-			APPROX_COUNT_DISTINCT(presubmit_cl_blocked) AS PresubmitRejects,
-			APPROX_COUNT_DISTINCT(IF(is_critical_and_exonerated,unique_test_result_id, NULL)) AS CriticalFailuresExonerated,
-			APPROX_COUNT_DISTINCT(unique_test_result_id) AS Failures,
-		FROM (
+		WITH clustered_failure_precompute AS (
 			SELECT
 				cluster_algorithm,
 				cluster_id,
 				test_id,
 				failure_reason,
 				CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) as unique_test_result_id,
-				(build_critical AND
-				-- Exonerated for a reason other than NOT_CRITICAL or UNEXPECTED_PASS.
-				-- Passes are not ingested by LUCI Analysis, but if a test has both an unexpected pass
-				-- and an unexpected failure, it will be exonerated for the unexpected pass.
-				-- TODO(b/250541091): Temporarily exclude OCCURS_ON_MAINLINE.
-				(STRUCT('OCCURS_ON_OTHER_CLS' as Reason) in UNNEST(exonerations)))
-				AS is_critical_and_exonerated,
-				IF(is_ingested_invocation_blocked AND build_critical AND presubmit_run_mode = 'FULL_RUN' AND
-				ARRAY_LENGTH(exonerations) = 0 AND build_status = 'FAILURE' AND presubmit_run_owner = 'user',
-					IF(ARRAY_LENGTH(changelists)>0 AND presubmit_run_owner='user',
-					CONCAT(changelists[OFFSET(0)].host, changelists[OFFSET(0)].change),
-					NULL),
-					NULL)
-				AS presubmit_cl_blocked,
-			FROM clustered_failures cf
+				` + strings.Join(precomputeList, "\n") + `
+			FROM clustered_failures f
 			WHERE
 				is_included_with_high_priority
 				AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
 				AND ` + whereClause + `
 				AND realm IN UNNEST(@realms)
 		)
+		SELECT
+			cluster_algorithm,
+			cluster_id,
+			ANY_VALUE(failure_reason.primary_error_message) AS example_failure_reason,
+			MIN(test_id) AS example_test_id,
+			APPROX_COUNT_DISTINCT(test_id) AS unique_test_ids,
+		    ` + strings.Join(metricSelectList, "\n") + `
+		FROM clustered_failure_precompute
 		GROUP BY
 			cluster_algorithm,
 			cluster_id
@@ -173,13 +181,29 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	}
 	clusters := []*ClusterSummary{}
 	for {
-		row := &ClusterSummary{}
-		err := it.Next(row)
+		var rowVals rowLoader
+		err := it.Next(&rowVals)
 		if err == iterator.Done {
 			break
 		}
 		if err != nil {
 			return nil, errors.Annotate(err, "obtain next cluster summary row").Err()
+		}
+
+		row := &ClusterSummary{}
+		row.ClusterID = clustering.ClusterID{
+			Algorithm: rowVals.String("cluster_algorithm"),
+			ID:        rowVals.String("cluster_id"),
+		}
+		row.ExampleFailureReason = rowVals.NullString("example_failure_reason")
+		row.ExampleTestID = rowVals.String("example_test_id")
+		row.UniqueTestIDs = rowVals.Int64("unique_test_ids")
+		row.MetricValues = make(map[metrics.ID]int64, len(metrics.DefaultMetrics))
+		for _, metric := range metrics.DefaultMetrics {
+			row.MetricValues[metric.ID] = rowVals.Int64(metric.ColumnName(MetricValueColumnSuffix))
+		}
+		if err := rowVals.Error(); err != nil {
+			return nil, errors.Annotate(err, "marshal cluster summary row").Err()
 		}
 		clusters = append(clusters, row)
 	}

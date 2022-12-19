@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis"
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering"
@@ -232,29 +233,18 @@ func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersR
 				// No impact available for cluster (e.g. because no examples
 				// in BigQuery). Use suitable default values (all zeros
 				// for impact).
+				MetricValues: make(map[metrics.ID]metrics.TimewiseCounts),
 			}
 		}
 
 		result := &pb.Cluster{
-			Name:       req.Names[i],
-			HasExample: ok,
-			UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
-				OneDay:   newCounts(c.PresubmitRejects1d),
-				ThreeDay: newCounts(c.PresubmitRejects3d),
-				SevenDay: newCounts(c.PresubmitRejects7d),
-			},
-			CriticalFailuresExonerated: &pb.Cluster_ImpactValues{
-				OneDay:   newCounts(c.CriticalFailuresExonerated1d),
-				ThreeDay: newCounts(c.CriticalFailuresExonerated3d),
-				SevenDay: newCounts(c.CriticalFailuresExonerated7d),
-			},
-			Failures: &pb.Cluster_ImpactValues{
-				OneDay:   newCounts(c.Failures1d),
-				ThreeDay: newCounts(c.Failures3d),
-				SevenDay: newCounts(c.Failures7d),
-			},
-			UserClsWithFailures:          newCounts(c.DistinctUserCLsWithFailures7d),
-			PostsubmitBuildsWithFailures: newCounts(c.PostsubmitBuildsWithFailures7d),
+			Name:                         req.Names[i],
+			HasExample:                   ok,
+			UserClsFailedPresubmit:       createImpactValuesPB(c.MetricValues[metrics.HumanClsFailedPresubmit.ID]),
+			CriticalFailuresExonerated:   createImpactValuesPB(c.MetricValues[metrics.CriticalFailuresExonerated.ID]),
+			Failures:                     createImpactValuesPB(c.MetricValues[metrics.Failures.ID]),
+			UserClsWithFailures:          createCountsPB(c.DistinctUserCLsWithFailures7d),
+			PostsubmitBuildsWithFailures: createCountsPB(c.PostsubmitBuildsWithFailures7d),
 		}
 
 		if !clusterID.IsBugCluster() && ok {
@@ -292,7 +282,15 @@ func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersR
 	}, nil
 }
 
-func newCounts(counts analysis.Counts) *pb.Cluster_Counts {
+func createImpactValuesPB(counts metrics.TimewiseCounts) *pb.Cluster_ImpactValues {
+	return &pb.Cluster_ImpactValues{
+		OneDay:   createCountsPB(counts.OneDay),
+		ThreeDay: createCountsPB(counts.ThreeDay),
+		SevenDay: createCountsPB(counts.SevenDay),
+	}
+}
+
+func createCountsPB(counts metrics.Counts) *pb.Cluster_Counts {
 	return &pb.Cluster_Counts{Nominal: counts.Nominal}
 }
 
@@ -519,9 +517,9 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 	for _, c := range clusters {
 		cs := &pb.ClusterSummary{
 			ClusterId:                  createClusterIdPB(c.ClusterID),
-			PresubmitRejects:           c.PresubmitRejects,
-			CriticalFailuresExonerated: c.CriticalFailuresExonerated,
-			Failures:                   c.Failures,
+			PresubmitRejects:           c.MetricValues[metrics.HumanClsFailedPresubmit.ID],
+			CriticalFailuresExonerated: c.MetricValues[metrics.CriticalFailuresExonerated.ID],
+			Failures:                   c.MetricValues[metrics.Failures.ID],
 		}
 		if c.ClusterID.IsBugCluster() {
 			ruleID := c.ClusterID.ID

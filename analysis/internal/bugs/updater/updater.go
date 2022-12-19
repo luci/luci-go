@@ -21,6 +21,7 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms"
@@ -659,17 +660,13 @@ func sortByBugFilingPreference(cs []*analysis.Cluster) {
 	// As bug filing runs relatively often, except in cases of contention,
 	// the first bug to meet the threshold will be filed.
 	sort.Slice(cs, func(i, j int) bool {
-		presubmitRejects := func(cs *analysis.Cluster) analysis.Counts { return cs.PresubmitRejects7d }
-		criticalFailuresExonerated := func(cs *analysis.Cluster) analysis.Counts { return cs.CriticalFailuresExonerated7d }
-		failures := func(cs *analysis.Cluster) analysis.Counts { return cs.Failures7d }
-
-		if equal, less := rankByMetric(cs[i], cs[j], presubmitRejects); !equal {
+		if equal, less := rankByMetric(cs[i], cs[j], metrics.HumanClsFailedPresubmit.ID); !equal {
 			return less
 		}
-		if equal, less := rankByMetric(cs[i], cs[j], criticalFailuresExonerated); !equal {
+		if equal, less := rankByMetric(cs[i], cs[j], metrics.CriticalFailuresExonerated.ID); !equal {
 			return less
 		}
-		if equal, less := rankByMetric(cs[i], cs[j], failures); !equal {
+		if equal, less := rankByMetric(cs[i], cs[j], metrics.Failures.ID); !equal {
 			return less
 		}
 		// If all else fails, sort by cluster ID. This is mostly to ensure
@@ -681,9 +678,9 @@ func sortByBugFilingPreference(cs []*analysis.Cluster) {
 	})
 }
 
-func rankByMetric(a, b *analysis.Cluster, accessor func(*analysis.Cluster) analysis.Counts) (equal bool, less bool) {
-	valueA := accessor(a).Residual
-	valueB := accessor(b).Residual
+func rankByMetric(a, b *analysis.Cluster, metric metrics.ID) (equal bool, less bool) {
+	valueA := a.MetricValues[metric].SevenDay.Residual
+	valueB := b.MetricValues[metric].SevenDay.Residual
 	// If one cluster we are comparing with is a test name cluster,
 	// give the other cluster an impact boost in the comparison, so
 	// that we bias towards filing it (instead of the test name cluster).
@@ -744,7 +741,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	for _, tc := range cs.TopMonorailComponents {
 		// Any monorail component is associated for more than 30% of the
 		// failures in the cluster should be on the filed bug.
-		if tc.Count > ((cs.Failures7d.Nominal * 3) / 10) {
+		if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
 			monorailComponents = append(monorailComponents, tc.Value)
 		}
 	}

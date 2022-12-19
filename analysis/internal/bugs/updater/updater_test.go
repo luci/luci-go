@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/bugs/monorail"
 	"go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
@@ -253,7 +254,9 @@ func TestRun(t *testing.T) {
 
 			Convey("Dispersion threshold", func() {
 				// Meets impact threshold.
-				suggestedClusters[1].Failures1d.Residual = 100
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+					OneDay: metrics.Counts{Residual: 100},
+				}
 
 				Convey("Met via User CLs with failures", func() {
 					suggestedClusters[1].DistinctUserCLsWithFailures7d.Residual = 3
@@ -275,14 +278,14 @@ func TestRun(t *testing.T) {
 			Convey("1d unexpected failures", func() {
 				Convey("Reason cluster", func() {
 					Convey("Above threshold", func() {
-						suggestedClusters[1].Failures1d.Residual = 100
+						suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 						test()
 
 						// Further updates do nothing.
 						test()
 					})
 					Convey("Below threshold", func() {
-						suggestedClusters[1].Failures1d.Residual = 99
+						suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 99}}
 						expectCreate = false
 						test()
 					})
@@ -300,35 +303,35 @@ func TestRun(t *testing.T) {
 					// 34% more impact is required for a test name cluster to
 					// be filed, compared to a failure reason cluster.
 					Convey("Above threshold", func() {
-						suggestedClusters[1].Failures1d.Residual = 134
+						suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 134}}
 						test()
 
 						// Further updates do nothing.
 						test()
 					})
 					Convey("Below threshold", func() {
-						suggestedClusters[1].Failures1d.Residual = 133
+						suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 133}}
 						expectCreate = false
 						test()
 					})
 				})
 			})
 			Convey("3d unexpected failures", func() {
-				suggestedClusters[1].Failures3d.Residual = 300
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{ThreeDay: metrics.Counts{Residual: 300}}
 				test()
 
 				// Further updates do nothing.
 				test()
 			})
 			Convey("7d unexpected failures", func() {
-				suggestedClusters[1].Failures7d.Residual = 700
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{ThreeDay: metrics.Counts{Residual: 700}}
 				test()
 
 				// Further updates do nothing.
 				test()
 			})
 			Convey("With existing rule filed", func() {
-				suggestedClusters[1].Failures1d.Residual = 100
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 				createTime := time.Date(2021, time.January, 5, 12, 30, 0, 0, time.UTC)
 				rule := rules.NewRule(1).
@@ -366,7 +369,7 @@ func TestRun(t *testing.T) {
 				test()
 			})
 			Convey("With bug updates disabled", func() {
-				suggestedClusters[1].Failures1d.Residual = 100
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 				opts.enableBugUpdates = false
 
@@ -374,7 +377,7 @@ func TestRun(t *testing.T) {
 				test()
 			})
 			Convey("Without re-clustering caught up to latest algorithms", func() {
-				suggestedClusters[1].Failures1d.Residual = 100
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 				err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
 					runs.NewRun(0).
@@ -390,7 +393,7 @@ func TestRun(t *testing.T) {
 				test()
 			})
 			Convey("Without re-clustering caught up to latest config", func() {
-				suggestedClusters[1].Failures1d.Residual = 100
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
 
 				err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
 					runs.NewRun(0).
@@ -409,14 +412,18 @@ func TestRun(t *testing.T) {
 		Convey("With both failure reason and test name clusters above bug-filing threshold", func() {
 			// Reason cluster above the 3-day failure threshold.
 			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
-			suggestedClusters[2].Failures3d.Residual = 400
-			suggestedClusters[2].Failures7d.Residual = 400
+			suggestedClusters[2].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+				ThreeDay: metrics.Counts{Residual: 400},
+				SevenDay: metrics.Counts{Residual: 400},
+			}
 			suggestedClusters[2].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Test name cluster with 33% more impact.
 			suggestedClusters[1] = makeTestNameCluster(compiledCfg, 3)
-			suggestedClusters[1].Failures3d.Residual = 532
-			suggestedClusters[1].Failures7d.Residual = 532
+			suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+				ThreeDay: metrics.Counts{Residual: 532},
+				SevenDay: metrics.Counts{Residual: 532},
+			}
 			suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Limit to one bug filed each time, so that
@@ -440,8 +447,10 @@ func TestRun(t *testing.T) {
 				// Reduce impact of the reason-based cluster so that the
 				// test name cluster has >34% more impact than the reason
 				// cluster.
-				suggestedClusters[2].Failures3d.Residual = 390
-				suggestedClusters[2].Failures7d.Residual = 390
+				suggestedClusters[2].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+					ThreeDay: metrics.Counts{Residual: 390},
+					SevenDay: metrics.Counts{Residual: 390},
+				}
 
 				err = updateAnalysisAndBugsForProject(ctx, opts)
 				So(err, ShouldBeNil)
@@ -464,16 +473,23 @@ func TestRun(t *testing.T) {
 			// Use a mix of test name and failure reason clusters for
 			// code path coverage.
 			suggestedClusters[0] = makeTestNameCluster(compiledCfg, 0)
-			suggestedClusters[0].Failures7d.Residual = 940
+			suggestedClusters[0].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+				SevenDay: metrics.Counts{Residual: 940},
+			}
+
 			suggestedClusters[0].PostsubmitBuildsWithFailures7d.Residual = 1
 			suggestedClusters[1] = makeReasonCluster(compiledCfg, 1)
-			suggestedClusters[1].Failures3d.Residual = 300
-			suggestedClusters[1].Failures7d.Residual = 300
+			suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+				ThreeDay: metrics.Counts{Residual: 300},
+				SevenDay: metrics.Counts{Residual: 300},
+			}
 			suggestedClusters[1].PostsubmitBuildsWithFailures7d.Residual = 1
 			suggestedClusters[2] = makeReasonCluster(compiledCfg, 2)
-			suggestedClusters[2].Failures1d.Residual = 200
-			suggestedClusters[2].Failures3d.Residual = 200
-			suggestedClusters[2].Failures7d.Residual = 200
+			suggestedClusters[2].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+				OneDay:   metrics.Counts{Residual: 200},
+				ThreeDay: metrics.Counts{Residual: 200},
+				SevenDay: metrics.Counts{Residual: 200},
+			}
 			suggestedClusters[2].PostsubmitBuildsWithFailures7d.Residual = 1
 
 			// Limit to one bug filed each time, so that
@@ -599,20 +615,14 @@ func TestRun(t *testing.T) {
 				ac.clusters = append(suggestedClusters, bugClusters[1:]...)
 
 				// Copy impact from suggested clusters to new bug clusters.
-				bugClusters[0].Failures7d = suggestedClusters[0].Failures7d
-				bugClusters[1].Failures3d = suggestedClusters[1].Failures3d
-				bugClusters[1].Failures7d = suggestedClusters[1].Failures7d
-				bugClusters[2].Failures1d = suggestedClusters[2].Failures1d
-				bugClusters[2].Failures3d = suggestedClusters[2].Failures3d
-				bugClusters[2].Failures7d = suggestedClusters[2].Failures7d
+				bugClusters[0].MetricValues = suggestedClusters[0].MetricValues
+				bugClusters[1].MetricValues = suggestedClusters[1].MetricValues
+				bugClusters[2].MetricValues = suggestedClusters[2].MetricValues
 
 				// Clear residual impact on suggested clusters
-				suggestedClusters[0].Failures7d.Residual = 0
-				suggestedClusters[1].Failures3d.Residual = 0
-				suggestedClusters[1].Failures7d.Residual = 0
-				suggestedClusters[2].Failures1d.Residual = 0
-				suggestedClusters[2].Failures3d.Residual = 0
-				suggestedClusters[2].Failures7d.Residual = 0
+				suggestedClusters[0].MetricValues = emptyMetricValues()
+				suggestedClusters[1].MetricValues = emptyMetricValues()
+				suggestedClusters[2].MetricValues = emptyMetricValues()
 
 				// Mark reclustering complete.
 				err := runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
@@ -881,13 +891,25 @@ func TestRun(t *testing.T) {
 	})
 }
 
+func emptyMetricValues() map[metrics.ID]metrics.TimewiseCounts {
+	result := make(map[metrics.ID]metrics.TimewiseCounts)
+	for _, m := range metrics.ComputedMetrics {
+		result[m.ID] = metrics.TimewiseCounts{}
+	}
+	return result
+}
+
 func makeTestNameCluster(config *compiledcfg.ProjectConfig, uniqifier int) *analysis.Cluster {
 	testID := fmt.Sprintf("testname-%v", uniqifier)
 	return &analysis.Cluster{
-		ClusterID:  testIDClusterID(config, testID),
-		Failures1d: analysis.Counts{Residual: 9},
-		Failures3d: analysis.Counts{Residual: 29},
-		Failures7d: analysis.Counts{Residual: 69},
+		ClusterID: testIDClusterID(config, testID),
+		MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+			metrics.Failures.ID: {
+				OneDay:   metrics.Counts{Residual: 9},
+				ThreeDay: metrics.Counts{Residual: 29},
+				SevenDay: metrics.Counts{Residual: 69},
+			},
+		},
 		TopTestIDs: []analysis.TopCount{{Value: testID, Count: 1}},
 	}
 }
@@ -903,10 +925,14 @@ func makeReasonCluster(config *compiledcfg.ProjectConfig, uniqifier int) *analys
 	reason := fmt.Sprintf("want %s, got bar", foo.String())
 
 	return &analysis.Cluster{
-		ClusterID:  reasonClusterID(config, reason),
-		Failures1d: analysis.Counts{Residual: 9},
-		Failures3d: analysis.Counts{Residual: 29},
-		Failures7d: analysis.Counts{Residual: 69},
+		ClusterID: reasonClusterID(config, reason),
+		MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+			metrics.Failures.ID: {
+				OneDay:   metrics.Counts{Residual: 9},
+				ThreeDay: metrics.Counts{Residual: 29},
+				SevenDay: metrics.Counts{Residual: 69},
+			},
+		},
 		TopTestIDs: []analysis.TopCount{
 			{Value: fmt.Sprintf("testname-a-%v", uniqifier), Count: 1},
 			{Value: fmt.Sprintf("testname-b-%v", uniqifier), Count: 1},
@@ -917,10 +943,14 @@ func makeReasonCluster(config *compiledcfg.ProjectConfig, uniqifier int) *analys
 
 func makeBugCluster(ruleID string) *analysis.Cluster {
 	return &analysis.Cluster{
-		ClusterID:  bugClusterID(ruleID),
-		Failures1d: analysis.Counts{Residual: 9},
-		Failures3d: analysis.Counts{Residual: 29},
-		Failures7d: analysis.Counts{Residual: 69},
+		ClusterID: bugClusterID(ruleID),
+		MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+			metrics.Failures.ID: {
+				OneDay:   metrics.Counts{Residual: 9},
+				ThreeDay: metrics.Counts{Residual: 29},
+				SevenDay: metrics.Counts{Residual: 69},
+			},
+		},
 		TopTestIDs: []analysis.TopCount{{Value: "testname-0", Count: 1}},
 	}
 }
@@ -978,34 +1008,28 @@ func (f *fakeAnalysisClient) ReadImpactfulClusters(ctx context.Context, opts ana
 	for _, c := range f.clusters {
 		include := opts.AlwaysIncludeBugClusters && c.ClusterID.IsBugCluster()
 		if opts.Thresholds.CriticalFailuresExonerated != nil {
-			include = include ||
-				meetsThreshold(c.CriticalFailuresExonerated1d.Residual, opts.Thresholds.CriticalFailuresExonerated.OneDay) ||
-				meetsThreshold(c.CriticalFailuresExonerated3d.Residual, opts.Thresholds.CriticalFailuresExonerated.ThreeDay) ||
-				meetsThreshold(c.CriticalFailuresExonerated7d.Residual, opts.Thresholds.CriticalFailuresExonerated.SevenDay)
+			include = include || meetsMetricThreshold(c.MetricValues[metrics.CriticalFailuresExonerated.ID], opts.Thresholds.CriticalFailuresExonerated)
 		}
 		if opts.Thresholds.TestResultsFailed != nil {
-			include = include ||
-				meetsThreshold(c.Failures1d.Residual, opts.Thresholds.TestResultsFailed.OneDay) ||
-				meetsThreshold(c.Failures3d.Residual, opts.Thresholds.TestResultsFailed.ThreeDay) ||
-				meetsThreshold(c.Failures7d.Residual, opts.Thresholds.TestResultsFailed.SevenDay)
+			include = include || meetsMetricThreshold(c.MetricValues[metrics.Failures.ID], opts.Thresholds.TestResultsFailed)
 		}
 		if opts.Thresholds.TestRunsFailed != nil {
-			include = include ||
-				meetsThreshold(c.TestRunFails1d.Residual, opts.Thresholds.TestRunsFailed.OneDay) ||
-				meetsThreshold(c.TestRunFails3d.Residual, opts.Thresholds.TestRunsFailed.ThreeDay) ||
-				meetsThreshold(c.TestRunFails7d.Residual, opts.Thresholds.TestRunsFailed.SevenDay)
+			include = include || meetsMetricThreshold(c.MetricValues[metrics.TestRunsFailed.ID], opts.Thresholds.TestRunsFailed)
 		}
 		if opts.Thresholds.PresubmitRunsFailed != nil {
-			include = include ||
-				meetsThreshold(c.PresubmitRejects1d.Residual, opts.Thresholds.PresubmitRunsFailed.OneDay) ||
-				meetsThreshold(c.PresubmitRejects3d.Residual, opts.Thresholds.PresubmitRunsFailed.ThreeDay) ||
-				meetsThreshold(c.PresubmitRejects7d.Residual, opts.Thresholds.PresubmitRunsFailed.SevenDay)
+			include = include || meetsMetricThreshold(c.MetricValues[metrics.HumanClsFailedPresubmit.ID], opts.Thresholds.PresubmitRunsFailed)
 		}
 		if include {
 			results = append(results, c)
 		}
 	}
 	return results, nil
+}
+
+func meetsMetricThreshold(values metrics.TimewiseCounts, threshold *configpb.MetricThreshold) bool {
+	return meetsThreshold(values.OneDay.Residual, threshold.OneDay) ||
+		meetsThreshold(values.ThreeDay.Residual, threshold.ThreeDay) ||
+		meetsThreshold(values.SevenDay.Residual, threshold.SevenDay)
 }
 
 func meetsThreshold(value int64, threshold *int64) bool {

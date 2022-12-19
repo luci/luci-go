@@ -16,6 +16,7 @@ package updater
 
 import (
 	"go.chromium.org/luci/analysis/internal/analysis"
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
 )
 
@@ -25,44 +26,39 @@ import (
 // part of a bug cluster are removed.
 func ExtractResidualImpact(c *analysis.Cluster) *bugs.ClusterImpact {
 	return &bugs.ClusterImpact{
-		CriticalFailuresExonerated: bugs.MetricImpact{
-			OneDay:   c.CriticalFailuresExonerated1d.Residual,
-			ThreeDay: c.CriticalFailuresExonerated3d.Residual,
-			SevenDay: c.CriticalFailuresExonerated7d.Residual,
-		},
-		TestResultsFailed: bugs.MetricImpact{
-			OneDay:   c.Failures1d.Residual,
-			ThreeDay: c.Failures3d.Residual,
-			SevenDay: c.Failures7d.Residual,
-		},
-		TestRunsFailed: bugs.MetricImpact{
-			OneDay:   c.TestRunFails1d.Residual,
-			ThreeDay: c.TestRunFails3d.Residual,
-			SevenDay: c.TestRunFails7d.Residual,
-		},
-		PresubmitRunsFailed: bugs.MetricImpact{
-			OneDay:   c.PresubmitRejects1d.Residual,
-			ThreeDay: c.PresubmitRejects3d.Residual,
-			SevenDay: c.PresubmitRejects7d.Residual,
-		},
+		CriticalFailuresExonerated: extractMetricImpact(c.MetricValues[metrics.CriticalFailuresExonerated.ID]),
+		TestResultsFailed:          extractMetricImpact(c.MetricValues[metrics.Failures.ID]),
+		TestRunsFailed:             extractMetricImpact(c.MetricValues[metrics.TestRunsFailed.ID]),
+		PresubmitRunsFailed:        extractMetricImpact(c.MetricValues[metrics.HumanClsFailedPresubmit.ID]),
+	}
+}
+
+func extractMetricImpact(counts metrics.TimewiseCounts) bugs.MetricImpact {
+	return bugs.MetricImpact{
+		OneDay:   counts.OneDay.Residual,
+		ThreeDay: counts.ThreeDay.Residual,
+		SevenDay: counts.SevenDay.Residual,
 	}
 }
 
 // SetResidualImpact sets the residual impact on a cluster summary.
 func SetResidualImpact(cs *analysis.Cluster, impact *bugs.ClusterImpact) {
-	cs.CriticalFailuresExonerated1d.Residual = impact.CriticalFailuresExonerated.OneDay
-	cs.CriticalFailuresExonerated3d.Residual = impact.CriticalFailuresExonerated.ThreeDay
-	cs.CriticalFailuresExonerated7d.Residual = impact.CriticalFailuresExonerated.SevenDay
+	cs.MetricValues[metrics.CriticalFailuresExonerated.ID] = replaceResidualImpact(
+		cs.MetricValues[metrics.CriticalFailuresExonerated.ID], impact.CriticalFailuresExonerated)
 
-	cs.Failures1d.Residual = impact.TestResultsFailed.OneDay
-	cs.Failures3d.Residual = impact.TestResultsFailed.ThreeDay
-	cs.Failures7d.Residual = impact.TestResultsFailed.SevenDay
+	cs.MetricValues[metrics.Failures.ID] = replaceResidualImpact(
+		cs.MetricValues[metrics.Failures.ID], impact.TestResultsFailed)
 
-	cs.TestRunFails1d.Residual = impact.TestRunsFailed.OneDay
-	cs.TestRunFails3d.Residual = impact.TestRunsFailed.ThreeDay
-	cs.TestRunFails7d.Residual = impact.TestRunsFailed.SevenDay
+	cs.MetricValues[metrics.TestRunsFailed.ID] = replaceResidualImpact(
+		cs.MetricValues[metrics.TestRunsFailed.ID], impact.TestRunsFailed)
 
-	cs.PresubmitRejects1d.Residual = impact.PresubmitRunsFailed.OneDay
-	cs.PresubmitRejects3d.Residual = impact.PresubmitRunsFailed.ThreeDay
-	cs.PresubmitRejects7d.Residual = impact.PresubmitRunsFailed.SevenDay
+	cs.MetricValues[metrics.HumanClsFailedPresubmit.ID] = replaceResidualImpact(
+		cs.MetricValues[metrics.HumanClsFailedPresubmit.ID], impact.PresubmitRunsFailed)
+}
+
+func replaceResidualImpact(counts metrics.TimewiseCounts, impact bugs.MetricImpact) metrics.TimewiseCounts {
+	counts.OneDay.Residual = impact.OneDay
+	counts.ThreeDay.Residual = impact.ThreeDay
+	counts.SevenDay.Residual = impact.SevenDay
+	return counts
 }
