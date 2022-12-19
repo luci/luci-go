@@ -166,12 +166,23 @@ func init() {
 
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "notify-pubsub-go",
-		Kind:      tq.Transactional,
+		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.NotifyPubSubGo)(nil),
 		Queue:     "backend-go-default",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.NotifyPubSubGo)
 			return PublishBuildsV2Notification(ctx, t.BuildId, t.Topic)
+		},
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "notify-pubsub-go-proxy",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.NotifyPubSubGoProxy)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.NotifyPubSubGoProxy)
+			return EnqueueNotifyPubSubGo(ctx, t.BuildId, t.Project)
 		},
 	})
 

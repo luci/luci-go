@@ -163,16 +163,19 @@ func TestResetExpiredLeases(t *testing.T) {
 			Convey("adds TQ tasks", func() {
 				tasks := sch.Tasks()
 				notifyIDs := []int64{}
+				notifyGoIDs := []int64{}
 
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
 					case *taskdefs.NotifyPubSub:
 						notifyIDs = append(notifyIDs, v.GetBuildId())
+					case *taskdefs.NotifyPubSubGoProxy:
+						notifyGoIDs = append(notifyGoIDs, v.GetBuildId())
 					default:
 						panic("invalid task payload")
 					}
 				}
-				So(notifyIDs, ShouldResemble, []int64{b.ID})
+				So(notifyGoIDs, ShouldResemble, []int64{b.ID})
 			})
 		})
 	})
@@ -257,6 +260,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				bqIDs := []int64{}
 				rdbIDs := []int64{}
 				expected := []int64{b1.ID, b2.ID}
+				notifyGoIDs := []int64{}
 
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
@@ -266,6 +270,9 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 						bqIDs = append(bqIDs, v.GetBuildId())
 					case *taskdefs.FinalizeResultDB:
 						rdbIDs = append(rdbIDs, v.GetBuildId())
+					case *taskdefs.NotifyPubSubGoProxy:
+						notifyGoIDs = append(notifyGoIDs, v.GetBuildId())
+
 					default:
 						panic("invalid task payload")
 					}
@@ -278,6 +285,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				sortIDs(bqIDs)
 				sortIDs(rdbIDs)
 				sortIDs(expected)
+				sortIDs(notifyGoIDs)
 
 				So(notifyIDs, ShouldHaveLength, 2)
 				So(notifyIDs, ShouldResemble, expected)
@@ -285,6 +293,8 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				So(bqIDs, ShouldResemble, expected)
 				So(rdbIDs, ShouldHaveLength, 2)
 				So(rdbIDs, ShouldResemble, expected)
+				So(notifyGoIDs, ShouldHaveLength, 2)
+				So(notifyGoIDs, ShouldResemble, expected)
 			})
 		})
 	})

@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -562,6 +564,11 @@ func TestUpdateBuild(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, newToken))
 		return newToken, ctx
 	}
+	sortTasksByClassName := func(tasks tqtesting.TaskList) {
+		sort.Slice(tasks, func(i, j int) bool {
+			return tasks[i].Class < tasks[j].Class
+		})
+	}
 
 	t.Parallel()
 
@@ -944,10 +951,13 @@ func TestUpdateBuild(t *testing.T) {
 				req.Build.Status = pb.Status_STARTED
 				So(updateBuild(ctx, req), ShouldBeRPCOK)
 
-				// TQ task for pubsub-notification.
+				// TQ tasks for pubsub-notification.
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 1)
+				sortTasksByClassName(tasks)
+				So(tasks, ShouldHaveLength, 2)
 				So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, build.ID)
+				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 2)
+				So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
 
 				// BuildStarted metric should be set 1.
 				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
@@ -962,7 +972,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				So(tasks, ShouldHaveLength, 3)
+				So(tasks, ShouldHaveLength, 4)
 				sum := 0
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
@@ -975,11 +985,14 @@ func TestUpdateBuild(t *testing.T) {
 					case *taskdefs.FinalizeResultDB:
 						sum += 4
 						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+					case *taskdefs.NotifyPubSubGoProxy:
+						sum += 8
+						So(v.GetBuildId(), ShouldEqual, req.Build.Id)
 					default:
 						panic("invalid task payload")
 					}
 				}
-				So(sum, ShouldEqual, 7)
+				So(sum, ShouldEqual, 15)
 
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
@@ -1085,7 +1098,7 @@ func TestUpdateBuild(t *testing.T) {
 					So(build.CancelTime, ShouldBeNil)
 
 					tasks := sch.Tasks()
-					So(tasks, ShouldHaveLength, 3)
+					So(tasks, ShouldHaveLength, 4)
 					sum := 0
 					for _, task := range tasks {
 						switch v := task.Payload.(type) {
@@ -1098,11 +1111,14 @@ func TestUpdateBuild(t *testing.T) {
 						case *taskdefs.FinalizeResultDB:
 							sum += 4
 							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
+						case *taskdefs.NotifyPubSubGoProxy:
+							sum += 8
+							So(v.GetBuildId(), ShouldEqual, req.Build.Id)
 						default:
 							panic("invalid task payload")
 						}
 					}
-					So(sum, ShouldEqual, 7)
+					So(sum, ShouldEqual, 15)
 
 					// BuildCompleted metric should be set to 1 with SUCCESS.
 					fvs := fv(model.Success.String(), "", "", false)
@@ -1143,7 +1159,7 @@ func TestUpdateBuild(t *testing.T) {
 					// One pubsub notification for the status update in the request,
 					// one CancelBuildTask for the requested build,
 					// one CancelBuildTask for the child build.
-					So(sch.Tasks(), ShouldHaveLength, 3)
+					So(sch.Tasks(), ShouldHaveLength, 4)
 
 				})
 
@@ -1178,7 +1194,7 @@ func TestUpdateBuild(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					So(build.CancelTime.AsTime(), ShouldEqual, t0)
 					So(build.SummaryMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
-					So(sch.Tasks(), ShouldHaveLength, 2)
+					So(sch.Tasks(), ShouldHaveLength, 3)
 
 				})
 

@@ -458,7 +458,7 @@ func TestSyncBuild(t *testing.T) {
 				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: googleapi: got HTTP response code 400")
-				So(sch.Tasks(), ShouldHaveLength, 3)
+				So(sch.Tasks(), ShouldHaveLength, 4)
 			})
 
 			Convey("create swarming http 500 err", func() {
@@ -480,7 +480,7 @@ func TestSyncBuild(t *testing.T) {
 				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: googleapi: got HTTP response code 500")
-				So(sch.Tasks(), ShouldHaveLength, 3)
+				So(sch.Tasks(), ShouldHaveLength, 4)
 			})
 
 			Convey("swarming task creation success but update build fail", func() {
@@ -807,11 +807,11 @@ func TestSyncBuild(t *testing.T) {
 						So(syncedInfra.Proto.Swarming.BotDimensions, ShouldResembleProto, tCase.expected.botDimensions)
 					}
 					if protoutil.IsEnded(syncedBuild.Status) {
-						// FinalizeResultDB, ExportBigQuery, NotifyPubSub and a continuation sync task.
-						So(sch.Tasks(), ShouldHaveLength, 4)
+						// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
+						So(sch.Tasks(), ShouldHaveLength, 5)
 					} else if syncedBuild.Status == pb.Status_STARTED {
-						// NotifyPubSub and a continuation sync task.
-						So(sch.Tasks(), ShouldHaveLength, 2)
+						// NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
+						So(sch.Tasks(), ShouldHaveLength, 3)
 					}
 				})
 			}
@@ -1060,8 +1060,8 @@ func TestSubNotify(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cached, ShouldResemble, []byte{1})
 
-			// FinalizeResultDB, ExportBigQuery, NotifyPubSub tasks.
-			So(sch.Tasks(), ShouldHaveLength, 3)
+			// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy tasks.
+			So(sch.Tasks(), ShouldHaveLength, 4)
 		})
 
 		Convey("status unchanged(in STARTED) while bot dimensions changed", func() {

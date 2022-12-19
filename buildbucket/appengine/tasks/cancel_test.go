@@ -78,7 +78,7 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			})
-			So(sch.Tasks(), ShouldHaveLength, 2)
+			So(sch.Tasks(), ShouldHaveLength, 3)
 		})
 
 		Convey("ended", func() {
@@ -140,7 +140,7 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			})
-			So(sch.Tasks(), ShouldHaveLength, 3)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 		})
 
 		Convey("resultdb finalization", func() {
@@ -176,7 +176,7 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			})
-			So(sch.Tasks(), ShouldHaveLength, 3)
+			So(sch.Tasks(), ShouldHaveLength, 4)
 		})
 	})
 

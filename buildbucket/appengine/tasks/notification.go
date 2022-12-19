@@ -54,27 +54,13 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 		return errors.Annotate(err, "failed to enqueue global pubsub notification task: %d", b.ID).Err()
 	}
 
-	// Enqueues to Go side Cloud Tasks.
-	// TODO(crbug.com/1381210): Enqueue the task for internal builds_v2
-	// notifications once when at least one customer is ready to consume (e.g CV).
-	proj := &model.Project{
-		ID: b.Proto.GetBuilder().GetProject(),
-	}
-	if err := errors.Filter(datastore.Get(ctx, proj), datastore.ErrNoSuchEntity); err != nil {
-		return errors.Annotate(err,"failed to fetch project %s", b.Proto.GetBuilder().GetProject()).Err()
-	}
-	for _, t := range proj.CommonConfig.GetBuildsNotificationTopics() {
-		if t.Name == "" {
-			continue
-		}
-		if err := tq.AddTask(ctx, &tq.Task{
-			Payload:  &taskdefs.NotifyPubSubGo{
-				BuildId: b.ID,
-				Topic: t,
-			},
-		}); err != nil {
-			return errors.Annotate(err, "failed to enqueue notification task: %d for external topic %s ", b.ID, t.Name).Err()
-		}
+	if err := tq.AddTask(ctx, &tq.Task{
+		Payload:  &taskdefs.NotifyPubSubGoProxy{
+			BuildId: b.ID,
+			Project: b.Proto.GetBuilder().GetProject(),
+		},
+	}); err != nil {
+		return errors.Annotate(err, "failed to enqueue NotifyPubSubGoProxy task: %d", b.ID).Err()
 	}
 
 	if b.PubSubCallback.Topic == "" {
@@ -90,6 +76,34 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 	}
 	return nil
 }
+
+// EnqueueNotifyPubSubGo dispatches NotifyPubSubGo tasks to send builds_v2
+// notifications.
+func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) error {
+	// TODO(crbug.com/1381210): Enqueue the task for internal builds_v2
+	// notifications once at least one customer is ready to consume (e.g CV).
+	proj := &model.Project{
+		ID: project,
+	}
+	if err := errors.Filter(datastore.Get(ctx, proj), datastore.ErrNoSuchEntity); err != nil {
+		return errors.Annotate(err,"failed to fetch project %s for %d", project, buildID).Err()
+	}
+	for _, t := range proj.CommonConfig.GetBuildsNotificationTopics() {
+		if t.Name == "" {
+			continue
+		}
+		if err := tq.AddTask(ctx, &tq.Task{
+			Payload:  &taskdefs.NotifyPubSubGo{
+				BuildId: buildID,
+				Topic: t,
+			},
+		}); err != nil {
+			return errors.Annotate(err, "failed to enqueue notification task: %d for external topic %s ", buildID, t.Name).Err()
+		}
+	}
+	return nil
+}
+
 
 // PublishBuildsV2Notification is the handler of notify-pubsub-go where it
 // fetches all build fields, converts and publishes to builds_v2_pubsub.

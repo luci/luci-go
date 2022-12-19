@@ -115,3 +115,13 @@ message BuildsV2PubSub {
   // programming languages.
   buildbucket.v2.Compression compression = 3;
 }
+
+// NotifyPubSubGoProxy tasks dispatch NotifyPubSubGo tasks to send builds_v2
+// notifications.
+message NotifyPubSubGoProxy {
+  // ID of a build in the datastore. See model.Build.
+  int64 build_id = 1;
+
+  // The project that the build belongs to.
+  string project = 2;
+}

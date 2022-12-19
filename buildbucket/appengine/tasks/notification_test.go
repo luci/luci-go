@@ -52,16 +52,6 @@ func TestNotification(t *testing.T) {
 		ctx, sch := tq.TestingContext(ctx, nil)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		So(datastore.Put(ctx, &model.Project{
-			ID: "project_with_external_topics",
-			CommonConfig: &pb.BuildbucketCfg_CommonConfig{
-				BuildsNotificationTopics: []*pb.BuildbucketCfg_Topic{
-					{
-						Name: "projects/my-cloud-project/topics/my-topic",
-					},
-				},
-			},
-		}), ShouldBeNil)
 
 		sortTasksByClassName := func(tasks tqtesting.TaskList) {
 			sort.Slice(tasks, func(i, j int) bool {
@@ -75,16 +65,19 @@ func TestNotification(t *testing.T) {
 					ID: 123,
 					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
-							Project: "project_no_external_topics",
+							Project: "project",
 						},
 					},
 				})
 			}, nil)
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 1)
+			sortTasksByClassName(tasks)
+			So(tasks, ShouldHaveLength, 2)
 			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, 123)
 			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetCallback(), ShouldBeFalse)
+			So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 123)
+			So(tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
 		})
 
 		Convey("w/ callback", func() {
@@ -99,30 +92,7 @@ func TestNotification(t *testing.T) {
 					PubSubCallback: cb,
 					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
-							Project: "project_no_external_topics",
-						},
-					},
-				})
-			}, nil)
-			So(txErr, ShouldBeNil)
-			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 2)
-
-			n1 := tasks[0].Payload.(*taskdefs.NotifyPubSub)
-			n2 := tasks[1].Payload.(*taskdefs.NotifyPubSub)
-			So(n1.GetBuildId(), ShouldEqual, 123)
-			So(n2.GetBuildId(), ShouldEqual, 123)
-			// One w/ callback and one w/o callback.
-			So(n1.GetCallback() != n2.GetCallback(), ShouldBeTrue)
-		})
-
-		Convey("has external topics", func() {
-			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return NotifyPubSub(ctx, &model.Build{
-					ID: 123,
-					Proto: &pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project_with_external_topics",
+							Project: "project",
 						},
 					},
 				})
@@ -130,12 +100,42 @@ func TestNotification(t *testing.T) {
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()
 			sortTasksByClassName(tasks)
-			So(tasks, ShouldHaveLength, 2)
-			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, 123)
-			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetCallback(), ShouldBeFalse)
-			taskGo1 := tasks[1].Payload.(*taskdefs.NotifyPubSubGo)
-			So(taskGo1.BuildId, ShouldEqual, 123)
-			So(taskGo1.Topic, ShouldResembleProto, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"})
+			So(tasks, ShouldHaveLength, 3)
+
+			n1 := tasks[0].Payload.(*taskdefs.NotifyPubSub)
+			n2 := tasks[1].Payload.(*taskdefs.NotifyPubSub)
+			So(n1.GetBuildId(), ShouldEqual, 123)
+			So(n2.GetBuildId(), ShouldEqual, 123)
+			// One w/ callback and one w/o callback.
+			So(n1.GetCallback() != n2.GetCallback(), ShouldBeTrue)
+
+			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 123)
+			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
+		})
+	})
+
+	Convey("EnqueueNotifyPubSubGo", t, func() {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{})
+		ctx = txndefer.FilterRDS(ctx)
+		ctx, sch := tq.TestingContext(ctx, nil)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		So(datastore.Put(ctx, &model.Project{
+			ID: "project_with_external_topics",
+			CommonConfig: &pb.BuildbucketCfg_CommonConfig{
+				BuildsNotificationTopics: []*pb.BuildbucketCfg_Topic{
+					{
+						Name: "projects/my-cloud-project/topics/my-topic",
+					},
+				},
+			},
+		}), ShouldBeNil)
+
+		Convey("no project entity", func() {
+			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_no_external_topics")
+			So(txErr, ShouldBeNil)
+			tasks := sch.Tasks()
+			So(tasks, ShouldHaveLength, 0)
 		})
 
 		Convey("empty project.common_config", func() {
@@ -143,21 +143,20 @@ func TestNotification(t *testing.T) {
 				ID: "project_empty",
 				CommonConfig: &pb.BuildbucketCfg_CommonConfig{},
 			}), ShouldBeNil)
-			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-				return NotifyPubSub(ctx, &model.Build{
-					ID: 123,
-					Proto: &pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project_empty",
-						},
-					},
-				})
-			}, nil)
+			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_empty")
+			So(txErr, ShouldBeNil)
+			tasks := sch.Tasks()
+			So(tasks, ShouldHaveLength, 0)
+		})
+
+		Convey("has external topics", func() {
+			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_with_external_topics")
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()
 			So(tasks, ShouldHaveLength, 1)
-			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), ShouldEqual, 123)
-			So(tasks[0].Payload.(*taskdefs.NotifyPubSub).GetCallback(), ShouldBeFalse)
+			taskGo0 := tasks[0].Payload.(*taskdefs.NotifyPubSubGo)
+			So(taskGo0.BuildId, ShouldEqual, 123)
+			So(taskGo0.Topic, ShouldResembleProto, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"})
 		})
 	})
 

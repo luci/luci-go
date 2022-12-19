@@ -692,6 +692,65 @@ func (x *BuildsV2PubSub) GetCompression() proto.Compression {
 	return proto.Compression(0)
 }
 
+// NotifyPubSubGoProxy tasks dispatch NotifyPubSubGo tasks to send builds_v2
+// notifications.
+type NotifyPubSubGoProxy struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// ID of a build in the datastore. See model.Build.
+	BuildId int64 `protobuf:"varint,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	// The project that the build belongs to.
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+}
+
+func (x *NotifyPubSubGoProxy) Reset() {
+	*x = NotifyPubSubGoProxy{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotifyPubSubGoProxy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyPubSubGoProxy) ProtoMessage() {}
+
+func (x *NotifyPubSubGoProxy) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyPubSubGoProxy.ProtoReflect.Descriptor instead.
+func (*NotifyPubSubGoProxy) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *NotifyPubSubGoProxy) GetBuildId() int64 {
+	if x != nil {
+		return x.BuildId
+	}
+	return 0
+}
+
+func (x *NotifyPubSubGoProxy) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDesc = []byte{
@@ -764,12 +823,16 @@ var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDe
 	0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b, 0x2e,
 	0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x43,
 	0x6f, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x63, 0x6f, 0x6d, 0x70,
-	0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x6f, 0x2e, 0x63, 0x68,
-	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
-	0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x61, 0x70, 0x70, 0x65,
-	0x6e, 0x67, 0x69, 0x6e, 0x65, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x64, 0x65, 0x66, 0x73,
-	0x3b, 0x74, 0x61, 0x73, 0x6b, 0x64, 0x65, 0x66, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x72, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x4a, 0x0a, 0x13, 0x4e, 0x6f, 0x74, 0x69, 0x66,
+	0x79, 0x50, 0x75, 0x62, 0x53, 0x75, 0x62, 0x47, 0x6f, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x12, 0x19,
+	0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03,
+	0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f,
+	0x6a, 0x65, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a,
+	0x65, 0x63, 0x74, 0x42, 0x40, 0x5a, 0x3e, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69,
+	0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x61, 0x70, 0x70, 0x65, 0x6e, 0x67, 0x69, 0x6e,
+	0x65, 0x2f, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x2f, 0x64, 0x65, 0x66, 0x73, 0x3b, 0x74, 0x61, 0x73,
+	0x6b, 0x64, 0x65, 0x66, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -784,7 +847,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawD
 	return file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_goTypes = []interface{}{
 	(*CancelSwarmingTask)(nil),         // 0: taskdefs.CancelSwarmingTask
 	(*CreateSwarmingTask)(nil),         // 1: taskdefs.CreateSwarmingTask
@@ -798,14 +861,15 @@ var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_goTyp
 	(*NotifyPubSubGo)(nil),             // 9: taskdefs.NotifyPubSubGo
 	(*CancelBuildTask)(nil),            // 10: taskdefs.CancelBuildTask
 	(*BuildsV2PubSub)(nil),             // 11: taskdefs.BuildsV2PubSub
-	(*proto.BuildbucketCfg_Topic)(nil), // 12: buildbucket.BuildbucketCfg.Topic
-	(*proto.Build)(nil),                // 13: buildbucket.v2.Build
-	(proto.Compression)(0),             // 14: buildbucket.v2.Compression
+	(*NotifyPubSubGoProxy)(nil),        // 12: taskdefs.NotifyPubSubGoProxy
+	(*proto.BuildbucketCfg_Topic)(nil), // 13: buildbucket.BuildbucketCfg.Topic
+	(*proto.Build)(nil),                // 14: buildbucket.v2.Build
+	(proto.Compression)(0),             // 15: buildbucket.v2.Compression
 }
 var file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_depIdxs = []int32{
-	12, // 0: taskdefs.NotifyPubSubGo.topic:type_name -> buildbucket.BuildbucketCfg.Topic
-	13, // 1: taskdefs.BuildsV2PubSub.build:type_name -> buildbucket.v2.Build
-	14, // 2: taskdefs.BuildsV2PubSub.compression:type_name -> buildbucket.v2.Compression
+	13, // 0: taskdefs.NotifyPubSubGo.topic:type_name -> buildbucket.BuildbucketCfg.Topic
+	14, // 1: taskdefs.BuildsV2PubSub.build:type_name -> buildbucket.v2.Build
+	15, // 2: taskdefs.BuildsV2PubSub.compression:type_name -> buildbucket.v2.Compression
 	3,  // [3:3] is the sub-list for method output_type
 	3,  // [3:3] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
@@ -963,6 +1027,18 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotifyPubSubGoProxy); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -970,7 +1046,7 @@ func file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_init
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_appengine_tasks_defs_tasks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
