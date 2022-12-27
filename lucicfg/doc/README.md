@@ -2339,8 +2339,6 @@ luci.cq_tryjob_verifier(
     includable_only = None,
     disable_reuse = None,
     experiment_percentage = None,
-    location_regexp = None,
-    location_regexp_exclude = None,
     location_filters = None,
     owner_whitelist = None,
     equivalent_builder = None,
@@ -2379,26 +2377,6 @@ the file is considered included (not skipped) or excluded (skipped); if the
 last matching LocationFilter has exclude set to true, then the builder is
 skipped. If none of the LocationFilters match, then the file is considered
 included if the first rule is an exclude rule; else the file is excluded.
-
-Note that `location_regexp` and `location_regexp_exclude` is the deprecated
-way to perform filtering. You may continue to use them but they are
-mutually exclusive with `location_filters`. See crbug.com/1171945.
-
-  * If `location_regexp` is specified and no file in a CL matches any of the
-    `location_regexp`, then the CQ will not care about this verifier.
-  * If a file in a CL matches any `location_regexp_exclude`, then this file
-    won't be considered when matching `location_regexp`.
-  * If `location_regexp_exclude` is specified, but `location_regexp` is not,
-    `location_regexp` is implied to be `.*`.
-  * If neither `location_regexp` nor `location_regexp_exclude` are specified
-    (default), the verifier will be used on all CLs.
-
-The matches are done against the following string:
-
-    <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
-
-The file path is relative to the repo root, and it uses the Unix `/`
-directory separator.
 
 The comparison is a full match. The pattern is implicitly anchored with `^`
 and `$`, so there is no need add them. The pattern must use [Google
@@ -2519,21 +2497,16 @@ changes should be required as Tricium is merged into CV.
 
 However, the following restrictions apply until CV takes on Tricium:
 
-* Most CQ features are not supported except for `location_regexp` and
+* Most CQ features are not supported except for `location_filters` and
   `owner_whitelist`. If provided, they must meet the following conditions:
-    * `location_regexp` must either start with `.+\.` or
-      `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\.`.
-      They can optionally be followed by a file extension name which
-      instructs Tricium to run this analyzer only on certain type of files.
-        * If the gerrit url one is used, the generated Tricium config will
-          watch the repos specified in location_regexp instead of the one
-          watched by the containing cq_group. Note that, the exact same set
-          of Gerrit repos should be specified across all analyzers in this
-          cq_group and across each unique file extension.
+    * `location_filters` must match either host and project or neither, and
+      match only a file extension, or all paths. Note that, the exact same
+      set of Gerrit repos should be specified across all analyzers in this
+      cq_group and across each unique file extension.
     * `owner_whitelist` must be the same for all analyzers declared
       in this cq_group.
-* Analyzer will run on changes targeting **all refs** of the Gerrit repos
-  watched by the containing cq_group (or repos derived from location_regexp,
+* Analyzers will run on changes targeting **all refs** of the Gerrit repos
+  watched by the containing cq_group (or repos derived from location_filters,
   see above) even though refs or refs_exclude may be provided.
 * All analyzers must be declared in a single [luci.cq_group(...)](#luci.cq-group).
 
@@ -2552,7 +2525,7 @@ For example:
             ),
             luci.cq_tryjob_verifier(
                 builder = "go-linter",
-                location_regexp = [".+\.go"]
+                location_filters = [cq.location_filter(path_regexp = ".+\.go")]
                 owner_whitelist = ["project-committer"],
                 mode_allowlist = [cq.MODE_ANALYZER_RUN],
             ),
@@ -2582,11 +2555,9 @@ break CQ. This can be done by asking lucicfg to track only Tricium config:
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq-group) declaration.
 * **result_visibility**: can be used to restrict the visibility of the tryjob results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL` and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full visibility: builder name and full summary markdown are included in the Gerrit comment.
 * **cancel_stale**: Controls whether not yet finished builds previously triggered by CQ will be cancelled as soon as a substantially different patchset is uploaded to a CL. Default is True, meaning CQ will cancel. In LUCI Change Verifier (aka CV, successor of CQ), changing this option will only take effect on newly-created Runs once config propagates to CV. Ongoing Runs will retain the old behavior. (TODO(crbug/1127991): refactor this doc after migration. As of 09/2020, CV implementation is WIP)
-* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in the CL description.
+* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in the CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
-* **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decision whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements. May be combined with `location_regexp` and `location_regexp_exclude`.
-* **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.
-* **location_regexp_exclude**: a list of regexps that define a set of files to completely skip when evaluating whether the verifier should be applied to a CL or not. See the explanation above for all details.
+* **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decision whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
 * **location_filters**: a list of [cq.location_filter(...)](#cq.location-filter).
 * **owner_whitelist**: a list of groups with accounts of CL owners to enable this builder for. If set, only CLs owned by someone from any one of these groups will be verified by this builder.
 * **equivalent_builder**: an optional alternative builder for the CQ to choose instead. If provided, the CQ will choose only one of the equivalent builders as required based purely on the given CL and CL's owner and **regardless** of the possibly already completed try jobs.

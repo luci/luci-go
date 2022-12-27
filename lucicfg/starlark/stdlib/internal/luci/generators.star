@@ -1131,8 +1131,6 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         disable_reuse = verifier.props.disable_reuse,
         experiment_percentage = verifier.props.experiment_percentage,
         owner_whitelist_group = verifier.props.owner_whitelist,
-        location_regexp = verifier.props.location_regexp,
-        location_regexp_exclude = verifier.props.location_regexp_exclude,
         location_filters = [_cq_location_filter(n) for n in verifier.props.location_filters],
         equivalent_to = _cq_equivalent_to(verifier, project),
         mode_allowlist = verifier.props.mode_allowlist,
@@ -1444,7 +1442,7 @@ def _tricium_config(verifiers, cq_group, project):
             watching_gerrit_projects = gerrit_projs
         elif watching_gerrit_projects != gerrit_projs:
             error(
-                "The location_regexp of analyzer %s specifies a different set of Gerrit repos from the other analyzer; got: %s other: %s" % (
+                "The location_filters of analyzer %s specifies a different set of Gerrit repos from the other analyzer; got: %s other: %s" % (
                     verifier,
                     ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in gerrit_projs],
                     ["%s-review.googlesource.com/%s" % (host, proj) for host, proj in watching_gerrit_projects],

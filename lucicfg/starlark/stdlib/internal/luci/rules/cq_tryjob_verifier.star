@@ -31,8 +31,6 @@ def _cq_tryjob_verifier(
         disable_reuse = None,
         cancel_stale = None,
         experiment_percentage = None,
-        location_regexp = None,
-        location_regexp_exclude = None,
         location_filters = None,
         owner_whitelist = None,
         equivalent_builder = None,
@@ -66,26 +64,6 @@ def _cq_tryjob_verifier(
     last matching LocationFilter has exclude set to true, then the builder is
     skipped. If none of the LocationFilters match, then the file is considered
     included if the first rule is an exclude rule; else the file is excluded.
-
-    Note that `location_regexp` and `location_regexp_exclude` is the deprecated
-    way to perform filtering. You may continue to use them but they are
-    mutually exclusive with `location_filters`. See crbug.com/1171945.
-
-      * If `location_regexp` is specified and no file in a CL matches any of the
-        `location_regexp`, then the CQ will not care about this verifier.
-      * If a file in a CL matches any `location_regexp_exclude`, then this file
-        won't be considered when matching `location_regexp`.
-      * If `location_regexp_exclude` is specified, but `location_regexp` is not,
-        `location_regexp` is implied to be `.*`.
-      * If neither `location_regexp` nor `location_regexp_exclude` are specified
-        (default), the verifier will be used on all CLs.
-
-    The matches are done against the following string:
-
-        <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
-
-    The file path is relative to the repo root, and it uses the Unix `/`
-    directory separator.
 
     The comparison is a full match. The pattern is implicitly anchored with `^`
     and `$`, so there is no need add them. The pattern must use [Google
@@ -206,22 +184,19 @@ def _cq_tryjob_verifier(
 
     However, the following restrictions apply until CV takes on Tricium:
 
-    * Most CQ features are not supported except for `location_regexp` and
+    * Most CQ features are not supported except for `location_filters` and
       `owner_whitelist`. If provided, they must meet the following conditions:
-        * `location_regexp` must either start with `.+\\.` or
-          `https://{HOST}-review.googlesource.com/{PROJECT}/[+]/.+\\.`.
-          They can optionally be followed by a file extension name which
-          instructs Tricium to run this analyzer only on certain type of files.
-            * If the gerrit url one is used, the generated Tricium config will
-              watch the repos specified in location_regexp instead of the one
-              watched by the containing cq_group. Note that, the exact same set
-              of Gerrit repos should be specified across all analyzers in this
-              cq_group and across each unique file extension.
+        * `location_filters` must specify either both host_regexp and
+          project_regexp or neither. For path_regexp, it must match file
+          extension only (e.g. `.+\\.py`) or everything. Note that, the exact
+          same set of Gerrit repos should be specified across all analyzers in
+          this cq_group and across each unique file extension.
         * `owner_whitelist` must be the same for all analyzers declared
           in this cq_group.
-    * Analyzer will run on changes targeting **all refs** of the Gerrit repos
-      watched by the containing cq_group (or repos derived from location_regexp,
-      see above) even though refs or refs_exclude may be provided.
+    * Analyzers will run on changes targeting **all refs** of the Gerrit repos
+      watched by the containing cq_group (or repos derived from
+      location_filters, see above) even though refs or refs_exclude may be
+      provided.
     * All analyzers must be declared in a single luci.cq_group(...).
 
     For example:
@@ -239,7 +214,7 @@ def _cq_tryjob_verifier(
                 ),
                 luci.cq_tryjob_verifier(
                     builder = "go-linter",
-                    location_regexp = [".+\\.go"]
+                    location_filters = [cq.location_filter(path_regexp = ".+\\.go")]
                     owner_whitelist = ["project-committer"],
                     mode_allowlist = [cq.MODE_ANALYZER_RUN],
                 ),
@@ -288,10 +263,9 @@ def _cq_tryjob_verifier(
       includable_only: if True, this builder will only be triggered by CQ if it
         is also specified via `CQ-Include-Trybots:` on CL description. Default
         is False. See the explanation above for all details. For builders with
-        `experiment_percentage` or `location_regexp` or
-        `location_regexp_exclude`, don't specify `includable_only`. Such
-        builders can already be forcefully added via `CQ-Include-Trybots:` in
-        the CL description.
+        `experiment_percentage` or `location_filters`, don't specify
+        `includable_only`. Such builders can already be forcefully added via
+        `CQ-Include-Trybots:` in the CL description.
       disable_reuse: if True, a fresh build will be required for each CQ
         attempt. Default is False, meaning the CQ may re-use a successful build
         triggered before the current CQ attempt started. This option is
@@ -303,14 +277,7 @@ def _cq_tryjob_verifier(
         as experimental. Such verifier is only triggered on a given percentage
         of the CLs and the outcome does not affect the decision whether a CL can
         land or not. This is typically used to test new builders and estimate
-        their capacity requirements. May be combined with `location_regexp` and
-        `location_regexp_exclude`.
-      location_regexp: a list of regexps that define a set of files whose
-        modification trigger this verifier. See the explanation above for all
-        details.
-      location_regexp_exclude: a list of regexps that define a set of files to
-        completely skip when evaluating whether the verifier should be applied
-        to a CL or not. See the explanation above for all details.
+        their capacity requirements.
       location_filters: a list of cq.location_filter(...).
       owner_whitelist: a list of groups with accounts of CL owners to enable
         this builder for. If set, only CLs owned by someone from any one of
@@ -341,20 +308,9 @@ def _cq_tryjob_verifier(
     """
     builder = keys.builder_ref(builder, attr = "builder", allow_external = True)
 
-    location_regexp = validate.list("location_regexp", location_regexp)
-    for r in location_regexp:
-        validate.string("location_regexp", r)
-    location_regexp_exclude = validate.list("location_regexp_exclude", location_regexp_exclude)
-    for r in location_regexp_exclude:
-        validate.string("location_regexp_exclude", r)
-
     location_filters = validate.list("location_filters", location_filters)
     for lf in location_filters:
         cqimpl.validate_location_filter("location_filters", lf)
-
-    # Note: CQ does this itself implicitly, but we want configs to be explicit.
-    if location_regexp_exclude and not location_regexp:
-        location_regexp = [".*"]
 
     owner_whitelist = validate.list("owner_whitelist", owner_whitelist)
     for o in owner_whitelist:
@@ -391,26 +347,6 @@ def _cq_tryjob_verifier(
     if cq.MODE_ANALYZER_RUN in mode_allowlist:
         _validate_analyzer_location(location_filters)
 
-    # location_filters and location_regexp cannot be used together;
-    # location_filters should replace location_regexp[_exclude].
-    if location_regexp and location_filters:
-        fail('"location_filters" can not be used together with "location_regexp" or "location_regexp_exclude"')
-
-    # Fill location_filters in based on location_regexp and
-    # location_regexp_exclude, if they are specified.
-    if len(location_filters) == 0:
-        location_filters = []
-        for r in location_regexp:
-            location_filters.append(_make_location_filter(r, exclude = False))
-        for r in location_regexp_exclude:
-            location_filters.append(_make_location_filter(r, exclude = True))
-
-    # Validate location_filters used by analyzers.
-    # TODO(crbug/1202952): Remove these restrictions after Tricium is
-    # folded into CV.
-    if cq.MODE_ANALYZER_RUN in mode_allowlist:
-        _validate_analyzer_location(location_filters)
-
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
             fail('"equivalent_builder_percentage" can be used only together with "equivalent_builder"')
@@ -418,10 +354,8 @@ def _cq_tryjob_verifier(
             fail('"equivalent_builder_whitelist" can be used only together with "equivalent_builder"')
 
     if includable_only:
-        if location_regexp:
-            fail('"includable_only" can not be used together with "location_regexp"')
-        if location_regexp_exclude:
-            fail('"includable_only" can not be used together with "location_regexp_exclude"')
+        if location_filters:
+            fail('"includable_only" can not be used together with "location_filters"')
         if experiment_percentage:
             fail('"includable_only" can not be used together with "experiment_percentage"')
         if mode_allowlist:
@@ -448,8 +382,6 @@ def _cq_tryjob_verifier(
             max = 100.0,
             required = False,
         ),
-        "location_regexp": location_regexp,
-        "location_regexp_exclude": location_regexp_exclude,
         "location_filters": location_filters,
         "owner_whitelist": owner_whitelist,
         "mode_allowlist": mode_allowlist,
@@ -484,7 +416,7 @@ def _cq_tryjob_verifier(
     return graph.keyset(key)
 
 def _validate_analyzer_location(location_filters):
-    """Validates location_regexp/location_filters for analyzers.
+    """Validates location_filters for analyzers.
 
     Some parts of Tricium config are generated from location_filters. But
     because of the way that Tricium watches one set of repos per config and
@@ -563,99 +495,13 @@ def _validate_analyzer_location(location_filters):
     ref_gerrit_urls = sorted(ref_gerrit_urls)
     for ext, gerrit_urls in ext_to_gerrit_urls.items():
         if sorted(gerrit_urls) != ref_gerrit_urls:
-            fail('each extension specified in "location_regexp" or ' +
-                 '"location_filters" of an analyzer MUST have the same set ' +
-                 "of gerrit URLs; got %s for extension %s, but %s for extension %s." % (
+            fail('each extension specified in "location_filters" of an analyzer ' +
+                 "MUST have the same set of gerrit URLs; " +
+                 "got %s for extension %s, but %s for extension %s." % (
                      sorted(gerrit_urls),
                      ext,
                      ref_gerrit_urls,
                      ref_ext,
                  ))
-
-def _make_location_filter(regexp, exclude = False):
-    """Helper method to convert a location regexp to a location filter.
-
-    Note that this is not foolproof and is only meant to work with location
-    regexps have been found in actual configs; in theory, location regexps can
-    be any valid regular expression and could come in many different variations,
-    but in practice only some types of patterns have been found.
-
-    For example, the host/project + path separator is "/+/" and could be matched
-    by various different regexps but but in actual configs, "/[+]/" is always used.
-
-    Args:
-      regexp: A location_regexp string, which is a regexp that's meant to match
-        a string of the format: <gerrit_url>/<gerrit_project>/+/path>.
-      exclude: Whether this is an exclude rule.
-    """
-    if regexp == ".*" or regexp == ".+":
-        # Match everything.
-        return cq.location_filter(exclude = exclude)
-
-    # Pattern matching path, potentially matching at either root directory or
-    # subdirectory, e.g ".*/OWNERS".
-    if "[+]" not in regexp and (regexp.startswith(".*/") or regexp.startswith(".+/")):
-        # Because the character immediately preceeding the path part is "/",
-        # a regexp like this could match at the root or a subdirectory.
-        path_regexp = "(%s)?%s" % (regexp[:len(".*/")], regexp[len(".*/"):])
-        return cq.location_filter(path_regexp = path_regexp, exclude = exclude)
-
-    # Pattern matching path, but not at root directory, e.g ".*OWNERS",
-    # .+pubkeys.+pub". Note that some
-    # such patterns could potentially also match host or project in addition to
-    # path, but in all observed such patterns, the intent is to match path.
-    if "[+]" not in regexp and (regexp.startswith(".*") or regexp.startswith(".+")):
-        return cq.location_filter(path_regexp = regexp, exclude = exclude)
-
-    # The most common case: match only path, starting at root directory, e.g.
-    # ".+/[+]/gpu/.+" or ".+[+]/dashboard/.+".
-    if regexp.startswith(".+/[+]/"):
-        return cq.location_filter(path_regexp = regexp[len(".+/[+]/"):], exclude = exclude)
-    if regexp.startswith(".+[+]/"):
-        return cq.location_filter(path_regexp = regexp[len(".+[+]/"):], exclude = exclude)
-
-    # Pattern matching exact host and project with path pattern, e.g.
-    # "https://chromium-review.googlesource.com/chromiumos/config/[+]/.+"
-    groups = re.submatches(r"https?://([^/]+)/([/a-z0-9_/\-\.]+)/\[\+\]/(.*)", regexp)
-    if groups:
-        return cq.location_filter(
-            gerrit_host_regexp = groups[1],
-            gerrit_project_regexp = groups[2],
-            path_regexp = groups[3],
-            exclude = exclude,
-        )
-
-    # Pattern matching host and path pattern both not project, e.g.
-    # "https://chromium-review.googlesource.com/.*/[+]/.+"
-    # Note that this doesn't occur in real configs at this time, but is possible.
-    groups = re.submatches(r"https?://([^/]+)/(\.[\+\*])/\[\+\]/(.*)", regexp)
-    if groups:
-        return cq.location_filter(
-            gerrit_host_regexp = groups[1],
-            gerrit_project_regexp = groups[2],
-            path_regexp = groups[3],
-            exclude = exclude,
-        )
-
-    # Pattern matching only project or project and path, such as
-    # ".+/chromeos/overlays/[+]/sys-boot/.+". Note that theoretically this
-    # could match a Gerrit project like "foo/chromeos/overlays", but most
-    # likely the intent is to match exactly the project "chromeos/overlays".
-    groups = re.submatches(r"(.+)/\[\+\]/?(.*)", regexp)
-    if groups and not regexp.startswith("https://"):
-        project_regexp = groups[1]
-        for prefix in (".+/", ".*/"):
-            if project_regexp.startswith(prefix):
-                project_regexp = "(%s)?%s" % (project_regexp[:len(prefix)], project_regexp[len(prefix):])
-                break
-        return cq.location_filter(
-            gerrit_project_regexp = project_regexp,
-            path_regexp = groups[2],
-            exclude = exclude,
-        )
-
-    # None of our possible cases above matched. Shouldn't happen.
-    fail("'location_regexp' didn't match any expected patterns, " +
-         "failed to convert to location_filters. Got %s." % regexp)
 
 cq_tryjob_verifier = lucicfg.rule(impl = _cq_tryjob_verifier)

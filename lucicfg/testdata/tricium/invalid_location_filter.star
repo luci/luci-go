@@ -100,7 +100,7 @@ def test_watching_extensions_but_from_different_set_of_gerrit_repos():
             ],
             mode_allowlist = [cq.MODE_ANALYZER_RUN],
         ),
-        'each extension specified in "location_regexp" or "location_filters" of an analyzer MUST have the same set of gerrit URLs',
+        'each extension specified in "location_filters" of an analyzer MUST have the same set of gerrit URLs',
     )
 
 def test_with_gerrit_url_and_without_gerrit_url_together():

@@ -50,4 +50,4 @@ luci.cq_group(
 # Traceback (most recent call last):
 #   //testdata/tricium/analyzers_watch_different_repos.star: in <toplevel>
 #   ...
-# Error: The location_regexp of analyzer luci.cq_tryjob_verifier("spell-checker") specifies a different set of Gerrit repos from the other analyzer; got: ["example-review.googlesource.com/repo1", "example-review.googlesource.com/repo2"] other: ["example-review.googlesource.com/repo1"]
+# Error: The location_filters of analyzer luci.cq_tryjob_verifier("spell-checker") specifies a different set of Gerrit repos from the other analyzer; got: ["example-review.googlesource.com/repo1", "example-review.googlesource.com/repo2"] other: ["example-review.googlesource.com/repo1"]
