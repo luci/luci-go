@@ -426,7 +426,6 @@ message Verifiers {
       //  builder {name: "win-debug" includable_only: true}  # opt in only.
       //
       // Not combinable with:
-      //   * location_regexp[_exclude]
       //   * location_filters
       //   * experiment_percentage
       bool includable_only = 9;
@@ -466,8 +465,7 @@ message Verifiers {
       // experimental. It is only triggered on a given percentage of the CLs
       // and the outcome does not affect the decision of whether a CL can land
       // or not. This is typically used to test new builders and estimate their
-      // capacity requirements. May be combined with location_regexp and
-      // location_regexp_exclude or location_filters.
+      // capacity requirements. May be combined with location_filters.
       float experiment_percentage = 4;
 
       // Optionally specified alternative builder for CQ to choose instead.
@@ -480,57 +478,6 @@ message Verifiers {
       // trigger the equivalent builders regardless of the equivalent
       // percentage.
       EquivalentBuilder equivalent_to = 5;
-
-      // Optional. Require this builder only if location_regexp matches a file
-      // in this CL.
-      //
-      // Replaced by location_filters. See crbug.com/1171945.
-      //
-      // This means:
-      //   * If specified and no file in a CL matches any of the
-      //     location_regexp, then CQ will not care about this builder.
-      //   * If a file in a CL matches any location_regexp_exclude, then this
-      //     file won't be considered when matching location_regexp.
-      //
-      // If location_regexp is not specified (default), builder will be used
-      // on all CLs.
-      //
-      // The location_regexp matches are done against the following string:
-      //   <gerrit_url>/<gerrit_project_name>/+/<cl_file_path>
-      // File path must be relative to root of the repo, and it uses Unix /
-      // directory separators.
-      //
-      // The comparison is a full match; the pattern is implicitly anchored with
-      // "^" and "$", so there is no need add them.
-      //
-      // CQ uses Google's re2 syntax for regexp, documented here:
-      // https://github.com/google/re2/wiki/Syntax.
-      //
-      // Touching a file means either adding, modifying or removing it.
-      //
-      // These options currently can not be combined with the
-      // `GerritCQAbility.allow_submit_with_open_deps` option.
-      // If you need to combine , please talk to CQ owners.
-      //
-      // Examples:
-      //
-      //   location_regexp:
-      //   "https://chromium-review.googlesource.com/chromium/src/[+]/third_party/blink/.+"
-      //     will enable builder for all CLs touching any file in
-      //     third_party/blink directory of the chromium/src repo, but not
-      //     just the directory itself.
-      //
-      //   location_regexp:         "https://example.com/repo/[+]/.+"
-      //   location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
-      //     will match a CL which touches at least one file other than
-      //     'one.txt' inside all/ directory of the Gerrit project "repo".
-      //
-      //   location_regexp_exclude: "https://example.com/.+/[+]/one.txt"
-      //     will match a CL which touches at least one file other than
-      //     'one.txt' in any repository OR belongs to any other Gerrit server.
-      //     Note, in this case location_regexp defaults to ".*".
-      repeated string location_regexp = 6 [deprecated = true];
-      repeated string location_regexp_exclude = 7 [deprecated = true];
 
       // Optional. Require this builder only if a file in the CL is included
       // by location_filters.
