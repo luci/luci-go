@@ -159,6 +159,7 @@ func (c *testResultChannel) report(ctx context.Context, b *buffer.Batch) error {
 					Tags:          tags,
 					TestMetadata:  tr.GetTestMetadata(),
 					FailureReason: tr.GetFailureReason(),
+					Properties:    tr.GetProperties(),
 				},
 			}
 		}

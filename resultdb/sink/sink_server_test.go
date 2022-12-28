@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -226,6 +227,53 @@ func TestReportTestResults(t *testing.T) {
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
 				So(err, ShouldErrLike, "failure_reason: primary_error_message exceeds the maximum size of 1024 bytes")
+			})
+		})
+
+		Convey("properties", func() {
+			Convey("specified", func() {
+				tr.Properties = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key_1": structpb.NewStringValue("value_1"),
+						"key_2": structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"child_key": structpb.NewNumberValue(1),
+							},
+						}),
+					},
+				}
+				expectedTR.Properties = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key_1": structpb.NewStringValue("value_1"),
+						"key_2": structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"child_key": structpb.NewNumberValue(1),
+							},
+						}),
+					},
+				}
+				checkResults()
+			})
+
+			Convey("nil", func() {
+				tr.Properties = nil
+				expectedTR.Properties = nil
+				checkResults()
+			})
+
+			Convey("properties too large", func() {
+				tr.Properties = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeProperties)),
+					},
+				}
+
+				sink, err := newSinkServer(ctx, cfg)
+				So(err, ShouldBeNil)
+
+				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
+				_, err = sink.ReportTestResults(ctx, req)
+				So(err, ShouldErrLike, `properties: exceeds the maximum size of`, `bytes`)
 			})
 		})
 

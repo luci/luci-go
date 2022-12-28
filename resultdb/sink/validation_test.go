@@ -15,8 +15,12 @@
 package sink
 
 import (
+	"strings"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/structpb"
+
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
@@ -47,6 +51,33 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
 			So(err, ShouldBeNil)
+		})
+
+		Convey(`Properties`, func() {
+			Convey(`Valid Properties`, func() {
+				tr.Properties = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key_1": structpb.NewStringValue("value_1"),
+						"key_2": structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"child_key": structpb.NewNumberValue(1),
+							},
+						}),
+					},
+				}
+				err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+				So(err, ShouldBeNil)
+			})
+
+			Convey(`Large Properties`, func() {
+				tr.Properties = &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeProperties)),
+					},
+				}
+				err := validateTestResult(testclock.TestRecentTimeUTC, tr)
+				So(err, ShouldErrLike, `properties: exceeds the maximum size of`, `bytes`)
+			})
 		})
 	})
 }
