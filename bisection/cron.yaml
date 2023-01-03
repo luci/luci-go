@@ -16,3 +16,7 @@ cron:
 - description: "Update cached config to latest from LUCI Config"
   url: /internal/cron/update-config
   schedule: every 10 minutes
+
+- description: "Global metrics collection"
+  url: /internal/cron/collect-global-metrics
+  schedule: every 5 minutes

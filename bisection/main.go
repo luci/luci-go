@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/frontend/handlers"
 	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/metrics"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/pubsub"
 	"go.chromium.org/luci/bisection/server"
@@ -188,6 +189,7 @@ func main() {
 
 		// GAE crons
 		cron.RegisterHandler("update-config", config.Update)
+		cron.RegisterHandler("collect-global-metrics", metrics.CollectGlobalMetrics)
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass()
