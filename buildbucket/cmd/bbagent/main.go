@@ -518,7 +518,7 @@ func mainImpl() int {
 	}
 
 	experiments := stringset.NewFromSlice(bbclientInput.input.Build.GetInput().GetExperiments()...)
-	if experiments.Has("luci.debug.fatal_do_not_use_big_scary") {
+	if experiments.Has("luci.debug.dump_buildsecret_for_manual_debugging") {
 		// To debug the race issue with bbagent and UpdateBuild
 		// we are going to put bbagent to sleep for 10 min.
 		// Manual calls of UpdateBuild will be done via CLI
