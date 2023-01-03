@@ -28,10 +28,36 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
 
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/server/tq"
+)
+
+var (
+	bbCounter = metric.NewCounter(
+		"bisection/ingestion/buildbucket",
+		"The number of Buildbucket pubsub received, by project and outcome.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// The outcome action of the ingestion
+		// "unsupported", "update_rerun", "update_succeeded_build", "ignore", "analyze"
+		field.String("outcome"),
+	)
+)
+
+// OutcomeType is used for sending metrics to tsmon
+type OutcomeType string
+
+const (
+	OutcomeTypeUnsupported          OutcomeType = "unsupported"
+	OutcomeTypeUpdateRerun          OutcomeType = "update_rerun"
+	OutcomeTypeUpdateSucceededBuild OutcomeType = "update_succeeded_build"
+	OutcomeTypeIgnore               OutcomeType = "ignore"
+	OutcomeTypeAnalyze              OutcomeType = "analyze"
 )
 
 type pubsubMessage struct {
@@ -78,6 +104,7 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 	// Special handling for pubsub message for LUCI Bisection
 	if bbmsg.Build.Project == "chromium" && bbmsg.Build.Bucket == "luci.chromium.findit" {
 		logging.Infof(c, "Received pubsub for luci bisection build %d", bbmsg.Build.Id)
+		bbCounter.Add(c, 1, bbmsg.Build.Project, OutcomeTypeUpdateRerun)
 		if bbmsg.Build.Status == bbv1.StatusStarted {
 			return rerun.UpdateRerunStartTime(c, bbmsg.Build.Id)
 		}
@@ -88,17 +115,20 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 	// TODO (nqmtuan): Move this into config
 	if !(bbmsg.Build.Project == "chromium" && bbmsg.Build.Bucket == "luci.chromium.ci") {
 		logging.Debugf(c, "Unsupported build for bucket (%q, %q). Exiting early...", bbmsg.Build.Project, bbmsg.Build.Bucket)
+		bbCounter.Add(c, 1, bbmsg.Build.Project, OutcomeTypeUnsupported)
 		return nil
 	}
 
 	// Just ignore non-completed builds
 	if bbmsg.Build.Status != bbv1.StatusCompleted {
 		logging.Debugf(c, "Build status = %s. Exiting early...", bbmsg.Build.Status)
+		bbCounter.Add(c, 1, bbmsg.Build.Project, OutcomeTypeIgnore)
 		return nil
 	}
 
 	// If the build is succeeded -> some running analysis may not be necessary
 	if bbmsg.Build.Result == bbv1.ResultSuccess {
+		bbCounter.Add(c, 1, bbmsg.Build.Project, OutcomeTypeUpdateSucceededBuild)
 		err := compilefailuredetection.UpdateSucceededBuild(c, bbmsg.Build.Id)
 		if err != nil {
 			return errors.Annotate(err, "UpdateSucceededBuild").Err()
@@ -109,6 +139,7 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 	// If the build is not succeed, and not failed either
 	if bbmsg.Build.Result != bbv1.ResultFailure {
 		logging.Debugf(c, "Result = %s. Exiting early...", bbmsg.Build.Result)
+		bbCounter.Add(c, 1, bbmsg.Build.Project, OutcomeTypeIgnore)
 		return nil
 	}
 
@@ -124,6 +155,7 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 		logging.Errorf(c, "Failed creating task in task queue for build %d", bbmsg.Build.Id)
 		return err
 	}
+	bbCounter.Add(c, 1, bbmsg.Build.Project, OutcomeTypeAnalyze)
 
 	return nil
 }

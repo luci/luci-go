@@ -35,6 +35,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -43,6 +45,16 @@ import (
 const (
 	taskClass = "build-failure-ingestion"
 	queue     = "build-failure-ingestion"
+)
+
+var (
+	analysisCounter = metric.NewCounter(
+		"bisection/compile/analysis/trigger",
+		"The number of Compile Failure Analysis triggered by LUCI Bisection.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+	)
 )
 
 // RegisterTaskClass registers the task class for tq dispatcher.
@@ -107,13 +119,11 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 	}
 
 	// No analysis for the regression range. Trigger one.
-	// For now, it just triggers a heuristic analysis, which runs very fast.
-	// In the future, once we have nth-section analysis, we should put in a task
-	// queue and return immediately.
 	_, err = compilefailureanalysis.AnalyzeFailure(c, cf, firstFailedBuild.Id, lastPassedBuild.Id)
 	if err != nil {
 		return false, err
 	}
+	analysisCounter.Add(c, 1, build.Builder.Project)
 	return true, nil
 }
 
