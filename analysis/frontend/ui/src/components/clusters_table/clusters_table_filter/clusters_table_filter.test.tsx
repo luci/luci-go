@@ -28,7 +28,7 @@ describe('Test ClustersTableFilter component', () => {
     render(
         <ClustersTableFilter
           failureFilter=""
-          setFailureFilter={identityFunction}/>,
+          handleFailureFilterChanged={identityFunction}/>,
     );
 
     await screen.findByTestId('clusters_table_filter');
@@ -40,7 +40,7 @@ describe('Test ClustersTableFilter component', () => {
     render(
         <ClustersTableFilter
           failureFilter="some restriction"
-          setFailureFilter={identityFunction}/>,
+          handleFailureFilterChanged={identityFunction}/>,
     );
 
     await screen.findByTestId('clusters_table_filter');

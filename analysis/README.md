@@ -63,12 +63,6 @@ cd frontend/ui
 npm run test
 ```
 
-You can debug the UI unit tests by visiting the server started by the following command with your browser:
-```
-cd frontend/ui
-npm run test-watch
-```
-
 ## Deployment
 
 ### Developer Testing {#test-deployment}

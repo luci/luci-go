@@ -15,8 +15,7 @@
 import fetchMock from 'fetch-mock-jest';
 
 import {
-  BatchGetClustersRequest,
-  BatchGetClustersResponse,
+  GetClusterRequest,
   Cluster,
   ClusterExoneratedTestVariant,
   ClusterSummary,
@@ -34,58 +33,76 @@ export const getMockCluster = (id: string,
     algorithm = 'reason-v2',
     title = ''): Cluster => {
   return {
-    'name': `projects/${project}/clusters/${algorithm}/${id}`,
-    'hasExample': true,
-    'title': title,
-    'userClsFailedPresubmit': {
-      'oneDay': { 'nominal': '98' },
-      'threeDay': { 'nominal': '158' },
-      'sevenDay': { 'nominal': '167' },
+    name: `projects/${project}/clusters/${algorithm}/${id}`,
+    hasExample: true,
+    title: title,
+    metrics: {
+      'human-cls-failed-presubmit': {
+        oneDay: { nominal: '98' },
+        threeDay: { nominal: '158' },
+        sevenDay: { nominal: '167' },
+      },
+      'critical-failures-exonerated': {
+        oneDay: { nominal: '5625' },
+        threeDay: { nominal: '14052' },
+        sevenDay: { nominal: '13800' },
+      },
+      'failures': {
+        oneDay: { nominal: '7625' },
+        threeDay: { nominal: '16052' },
+        sevenDay: { nominal: '15800' },
+      },
     },
-    'criticalFailuresExonerated': {
-      'oneDay': { 'nominal': '5625' },
-      'threeDay': { 'nominal': '14052' },
-      'sevenDay': { 'nominal': '13800' },
-    },
-    'failures': {
-      'oneDay': { 'nominal': '7625' },
-      'threeDay': { 'nominal': '16052' },
-      'sevenDay': { 'nominal': '15800' },
-    },
-    'equivalentFailureAssociationRule': '',
+    equivalentFailureAssociationRule: '',
   };
 };
 
 export const getMockRuleClusterSummary = (id: string): ClusterSummary => {
   return {
-    'clusterId': {
+    clusterId: {
       'algorithm': 'rules-v2',
       'id': id,
     },
-    'title': 'reason LIKE "blah%"',
-    'bug': {
+    title: 'reason LIKE "blah%"',
+    bug: {
       'system': 'buganizer',
       'id': '123456789',
       'linkText': 'b/123456789',
       'url': 'https://buganizer/123456789',
     },
-    'presubmitRejects': '27',
-    'criticalFailuresExonerated': '918',
-    'failures': '1871',
+    metrics: {
+      'human-cls-failed-presubmit': {
+        value: '27',
+      },
+      'critical-failures-exonerated': {
+        value: '918',
+      },
+      'failures': {
+        value: '1871',
+      },
+    },
   };
 };
 
 export const getMockSuggestedClusterSummary = (id: string, algorithm = 'reason-v3'): ClusterSummary => {
   return {
-    'clusterId': {
+    clusterId: {
       'algorithm': algorithm,
       'id': id,
     },
-    'bug': undefined,
-    'title': 'reason LIKE "blah%"',
-    'presubmitRejects': '29',
-    'criticalFailuresExonerated': '919',
-    'failures': '1872',
+    bug: undefined,
+    title: 'reason LIKE "blah%"',
+    metrics: {
+      'human-cls-failed-presubmit': {
+        value: '29',
+      },
+      'critical-failures-exonerated': {
+        value: '919',
+      },
+      'failures': {
+        value: '1872',
+      },
+    },
   };
 };
 
@@ -109,26 +126,17 @@ export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest,
   }, { overwriteRoutes: true });
 };
 
-export const mockBatchGetCluster = (
+export const mockGetCluster = (
     project: string,
     algorithm: string,
     id: string,
-    responseCluster: Cluster) => {
-  const request: BatchGetClustersRequest = {
-    parent: `projects/${encodeURIComponent(project)}`,
-    names: [
-      `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
-    ],
-  };
-
-  const response: BatchGetClustersResponse = {
-    clusters: [
-      responseCluster,
-    ],
+    response: Cluster) => {
+  const request: GetClusterRequest = {
+    name: `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
   };
 
   fetchMock.post({
-    url: 'http://localhost/prpc/luci.analysis.v1.Clusters/BatchGet',
+    url: 'http://localhost/prpc/luci.analysis.v1.Clusters/Get',
     body: request,
   }, {
     headers: {

@@ -65,16 +65,16 @@ type token struct {
 	value string
 }
 
-type lexer struct {
+type filterLexer struct {
 	input string
 	next  *token
 }
 
-func NewLexer(input string) *lexer {
-	return &lexer{input: input}
+func NewLexer(input string) *filterLexer {
+	return &filterLexer{input: input}
 }
 
-func (l *lexer) Peek() (*token, error) {
+func (l *filterLexer) Peek() (*token, error) {
 	if l.next == nil {
 		var err error
 		l.next, err = l.Next()
@@ -85,7 +85,7 @@ func (l *lexer) Peek() (*token, error) {
 	return l.next, nil
 }
 
-func (l *lexer) Next() (*token, error) {
+func (l *filterLexer) Next() (*token, error) {
 	if l.next != nil {
 		next := l.next
 		l.next = nil
@@ -425,7 +425,7 @@ func ParseFilter(filter string) (*Filter, error) {
 }
 
 type parser struct {
-	lexer lexer
+	lexer filterLexer
 }
 
 func newParser(input string) *parser {

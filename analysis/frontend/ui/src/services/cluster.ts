@@ -18,6 +18,7 @@ import {
   AssociatedBug,
   Changelist,
   ClusterId,
+  MetricId,
   Variant,
 } from './shared_models';
 
@@ -36,8 +37,8 @@ export class ClustersService {
     this.client = client;
   }
 
-  async batchGet(request: BatchGetClustersRequest): Promise<BatchGetClustersResponse> {
-    return this.client.call(ClustersService.SERVICE, 'BatchGet', request);
+  async get(request: GetClusterRequest): Promise<Cluster> {
+    return this.client.call(ClustersService.SERVICE, 'Get', request);
   }
 
   async getReclusteringProgress(request: GetReclusteringProgressRequest): Promise<ReclusteringProgress> {
@@ -57,21 +58,13 @@ export class ClustersService {
   }
 }
 
-export interface BatchGetClustersRequest {
-  // The LUCI project shared by all clusters to retrieve.
-  // Required.
-  // Format: projects/{project}.
-  parent: string;
-
-  // The resource name of the clusters retrieve.
+export interface GetClusterRequest {
+  // The resource name of the cluster to retrieve.
   // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}.
-  // At most 1,000 clusters may be requested at a time.
-  names: string[];
+  name: string;
 }
 
-export interface BatchGetClustersResponse {
-  clusters?: Cluster[];
-}
+export type ClusterMetrics = { [metricId: string]: TimewiseCounts; };
 
 export interface Cluster {
   // The resource name of the cluster.
@@ -82,14 +75,9 @@ export interface Cluster {
   // A human-readable name for the cluster.
   // Only populated for suggested clusters where has_example = true.
   title?: string;
-  // The total number of user changelists which failed presubmit.
-  userClsFailedPresubmit: ImpactValues;
-  // The total number of failures in the cluster that occurred on tryjobs
-  // that were critical (presubmit-blocking) and were exonerated for a
-  // reason other than NOT_CRITICAL or UNEXPECTED_PASS.
-  criticalFailuresExonerated: ImpactValues;
-  // The total number of failures in the cluster.
-  failures: ImpactValues;
+  // The values of metrics associated with the cluster. The map key is the ID
+  // of the metric (e.g. "human-cls-failed-presubmit").
+  metrics?: ClusterMetrics;
   // The failure association rule equivalent to the cluster. Populated only
   // for suggested clusters where has_example = true; for rule-based
   // clusters, lookup the rule instead. Used to facilitate creating a new
@@ -97,12 +85,12 @@ export interface Cluster {
   equivalentFailureAssociationRule: string | undefined;
 }
 
-export interface ImpactValues {
-  // The impact for the last day.
+export interface TimewiseCounts {
+  // The metric value for the last day.
   oneDay: Counts;
-  // The impact for the last three days.
+  // The metric value for the last three days.
   threeDay: Counts;
-  // The impact for the last week.
+  // The metric value for the last week.
   sevenDay: Counts;
 }
 
@@ -145,16 +133,18 @@ export interface QueryClusterSummariesRequest {
   // The LUCI project.
   project: string;
 
-  // An AIP-160 style filter on the failures that are used as input to
+  // An AIP-160-style filter on the failures that are used as input to
   // clustering.
   failureFilter: string;
 
-  // An AIP-132 style order_by clause, which specifies the sort order
+  // An AIP-132-style order_by clause, which specifies the sort order
   // of the result.
   orderBy: string;
-}
 
-export type SortableMetricName = 'presubmit_rejects' | 'critical_failures_exonerated' | 'failures';
+  // The resource name(s) of the metrics to include for each cluster
+  // in the response.
+  metrics?: string[];
+}
 
 export interface QueryClusterSummariesResponse {
   clusterSummaries?: ClusterSummary[];
@@ -168,17 +158,14 @@ export interface ClusterSummary {
   // The bug associated with the cluster. This is only present for
   // clusters defined by failure association rules.
   bug?: AssociatedBug;
-  // The number of distinct user CLs rejected by the cluster.
+  // The values of cluster metrics. The key of the map is the identifier
+  // of the metric (e.g. "human-cls-failed-presubmit").
+  metrics?: { [metricID: MetricId]: MetricValue };
+}
+
+export interface MetricValue {
   // 64-bit integer serialized as a string.
-  presubmitRejects?: string;
-  // The number of failures that were critical (on builders critical
-  // to CQ succeeding and not exonerated for non-criticality)
-  // and exonerated.
-  // 64-bit integer serialized as a string.
-  criticalFailuresExonerated?: string;
-  // The total number of test results in the cluster.
-  // 64-bit integer serialized as a string.
-  failures?: string;
+  value?: string;
 }
 
 export interface QueryClusterFailuresRequest {

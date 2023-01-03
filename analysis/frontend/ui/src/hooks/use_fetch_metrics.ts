@@ -15,28 +15,22 @@
 import { useQuery, UseQueryResult } from 'react-query';
 
 import {
-  GetClusterRequest,
-  getClustersService,
-  Cluster,
-} from '@/services/cluster';
+  ListMetricsRequest,
+  getMetricsService,
+  Metric,
+} from '@/services/metrics';
 import { prpcRetrier } from '@/services/shared_models';
 
-const useFetchCluster = (
-    project: string,
-    algorithm: string,
-    id: string,
-): UseQueryResult<Cluster, Error> => {
-  const clustersService = getClustersService();
-  return useQuery(['cluster', project, algorithm, id], async () => {
-    const request: GetClusterRequest = {
-      name: `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
-    };
+const useFetchMetrics = (): UseQueryResult<Metric[], Error> => {
+  const metricsService = getMetricsService();
+  return useQuery(['metrics'], async () => {
+    const request: ListMetricsRequest = {};
 
-    const response = await clustersService.get(request);
-    return response;
+    const response = await metricsService.list(request);
+    return response.metrics || [];
   }, {
     retry: prpcRetrier,
   });
 };
 
-export default useFetchCluster;
+export default useFetchMetrics;

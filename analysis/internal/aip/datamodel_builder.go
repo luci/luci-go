@@ -14,8 +14,6 @@
 
 package aip
 
-import "strings"
-
 type ColumnBuilder struct {
 	column Column
 }
@@ -25,9 +23,15 @@ func NewColumn() *ColumnBuilder {
 	return &ColumnBuilder{Column{columnType: ColumnTypeString}}
 }
 
-// WithName specifies the user-visible name of the column.
-func (c *ColumnBuilder) WithName(name string) *ColumnBuilder {
-	c.column.name = name
+// WithFieldPath specifies the field path the column maps to
+// in the returned resource. Field paths are described in AIP-161.
+//
+// For convenience, the field path is described here as a set of
+// segments where each segment is joined by the traversal operator (.).
+// E.g. the field path "metrics.`some-metric`.value" would be specified
+// as ["metrics", "some-metric", "value"].
+func (c *ColumnBuilder) WithFieldPath(segments ...string) *ColumnBuilder {
+	c.column.fieldPath = NewFieldPath(segments...)
 	return c
 }
 
@@ -102,17 +106,16 @@ func (t *TableBuilder) WithColumns(columns ...*Column) *TableBuilder {
 
 // Build returns the built table.
 func (t *TableBuilder) Build() *Table {
-	columnByName := make(map[string]*Column)
+	columnByFieldPath := make(map[string]*Column)
 	for _, c := range t.columns {
-		lowerName := strings.ToLower(c.name)
-		if _, ok := columnByName[lowerName]; ok {
-			panic("multiple columns with the same name: " + lowerName)
+		if _, ok := columnByFieldPath[c.fieldPath.String()]; ok {
+			panic("multiple columns with the same field path: " + c.fieldPath.String())
 		}
-		columnByName[strings.ToLower(c.name)] = c
+		columnByFieldPath[c.fieldPath.String()] = c
 	}
 
 	return &Table{
-		columns:      t.columns,
-		columnByName: columnByName,
+		columns:           t.columns,
+		columnByFieldPath: columnByFieldPath,
 	}
 }

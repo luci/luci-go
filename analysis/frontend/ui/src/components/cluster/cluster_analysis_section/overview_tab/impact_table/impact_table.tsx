@@ -23,21 +23,27 @@ import TableRow from '@mui/material/TableRow';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
 import {
   Cluster,
+  ClusterMetrics,
   Counts,
 } from '@/services/cluster';
-
-const userClsFailedPresubmitTooltipText = 'The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in this cluster.';
-const criticalFailuresExoneratedTooltipText = 'The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree. If this number is non-zero, it means a test variant which was configured to be presubmit-blocking is not stable enough to do so, and should be fixed or made non-blocking.';
-const totalFailuresTooltipText = 'The total number of test results in this cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.';
+import {
+  Metric,
+} from '@/services/metrics';
 
 interface Props {
     cluster: Cluster;
+    metrics: Metric[];
 }
 
-const ImpactTable = ({ cluster }: Props) => {
+const ImpactTable = ({ cluster, metrics }: Props) => {
   const metric = (counts: Counts): string => {
     return counts.nominal || '0';
   };
+
+  let clusterMetrics: ClusterMetrics = {};
+  if (cluster.metrics !== undefined) {
+    clusterMetrics = cluster.metrics;
+  }
 
   return (
     <TableContainer component={Box}>
@@ -51,24 +57,19 @@ const ImpactTable = ({ cluster }: Props) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          <TableRow>
-            <TableCell>User CLs Failed Presubmit <HelpTooltip text={userClsFailedPresubmitTooltipText} /></TableCell>
-            <TableCell align="right">{metric(cluster.userClsFailedPresubmit.oneDay)}</TableCell>
-            <TableCell align="right">{metric(cluster.userClsFailedPresubmit.threeDay)}</TableCell>
-            <TableCell align="right">{metric(cluster.userClsFailedPresubmit.sevenDay)}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Presubmit-Blocking Failures Exonerated <HelpTooltip text={criticalFailuresExoneratedTooltipText} /></TableCell>
-            <TableCell align="right">{metric(cluster.criticalFailuresExonerated.oneDay)}</TableCell>
-            <TableCell align="right">{metric(cluster.criticalFailuresExonerated.threeDay)}</TableCell>
-            <TableCell align="right">{metric(cluster.criticalFailuresExonerated.sevenDay)}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Total Failures <HelpTooltip text={totalFailuresTooltipText} /></TableCell>
-            <TableCell align="right">{metric(cluster.failures.oneDay)}</TableCell>
-            <TableCell align="right">{metric(cluster.failures.threeDay)}</TableCell>
-            <TableCell align="right">{metric(cluster.failures.sevenDay)}</TableCell>
-          </TableRow>
+          {
+            metrics.filter((m) => m.isDefault && m.metricId in clusterMetrics).map((m) => {
+              const timewiseCounts = clusterMetrics[m.metricId];
+              return (
+                <TableRow key={m.metricId}>
+                  <TableCell>{m.humanReadableName} <HelpTooltip text={m.description} /></TableCell>
+                  <TableCell align="right">{metric(timewiseCounts.oneDay)}</TableCell>
+                  <TableCell align="right">{metric(timewiseCounts.threeDay)}</TableCell>
+                  <TableCell align="right">{metric(timewiseCounts.sevenDay)}</TableCell>
+                </TableRow>
+              );
+            })
+          }
         </TableBody>
       </Table>
     </TableContainer>

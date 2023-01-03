@@ -21,18 +21,22 @@ import {
   getMockRuleClusterSummary,
   getMockSuggestedClusterSummary,
 } from '@/testing_tools/mocks/cluster_mock';
+import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 
 import ClustersTableRow from './clusters_table_row';
 
 describe('Test ClustersTableRow component', () => {
   it('given a rule cluster', async () => {
+    const metrics = getMockMetricsList();
     const mockCluster = getMockRuleClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
         <table>
           <tbody>
             <ClustersTableRow
               project='testproject'
-              cluster={mockCluster}/>
+              cluster={mockCluster}
+              metrics={metrics}
+            />
           </tbody>
         </table>,
     );
@@ -40,27 +44,34 @@ describe('Test ClustersTableRow component', () => {
     await screen.findByText(mockCluster.title);
 
     expect(screen.getByText(mockCluster.bug?.linkText || '')).toBeInTheDocument();
-    expect(screen.getByText(mockCluster.presubmitRejects || '0')).toBeInTheDocument();
-    expect(screen.getByText(mockCluster.criticalFailuresExonerated || '0')).toBeInTheDocument();
-    expect(screen.getByText(mockCluster.failures || '0')).toBeInTheDocument();
+    for (let i = 0; i < metrics.length; i++) {
+      const metricValues = mockCluster?.metrics || {};
+      const metricValue = metricValues[metrics[i].metricId] || { value: '' };
+      expect(screen.getByText(metricValue.value || '0')).toBeInTheDocument();
+    }
   });
 
   it('given a suggested cluster', async () => {
+    const metrics = getMockMetricsList();
     const mockCluster = getMockSuggestedClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
         <table>
           <tbody>
             <ClustersTableRow
               project='testproject'
-              cluster={mockCluster}/>
+              cluster={mockCluster}
+              metrics={metrics}
+            />
           </tbody>
         </table>,
     );
 
     await screen.findByText(mockCluster.title);
 
-    expect(screen.getByText(mockCluster.presubmitRejects || '0')).toBeInTheDocument();
-    expect(screen.getByText(mockCluster.criticalFailuresExonerated || '0')).toBeInTheDocument();
-    expect(screen.getByText(mockCluster.failures || '0')).toBeInTheDocument();
+    for (let i = 0; i < metrics.length; i++) {
+      const metricValues = mockCluster?.metrics || {};
+      const metricValue = metricValues[metrics[i].metricId] || { value: '' };
+      expect(screen.getByText(metricValue.value || '0')).toBeInTheDocument();
+    }
   });
 });

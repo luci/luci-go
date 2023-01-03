@@ -25,12 +25,12 @@ import (
 func TestWhereClause(t *testing.T) {
 	Convey("WhereClause", t, func() {
 		table := NewTable().WithColumns(
-			NewColumn().WithName("foo").WithDatabaseName("db_foo").FilterableImplicitly().Build(),
-			NewColumn().WithName("bar").WithDatabaseName("db_bar").FilterableImplicitly().Build(),
-			NewColumn().WithName("baz").WithDatabaseName("db_baz").Filterable().Build(),
-			NewColumn().WithName("kv").WithDatabaseName("db_kv").KeyValue().Filterable().Build(),
-			NewColumn().WithName("bool").WithDatabaseName("db_bool").Bool().Filterable().Build(),
-			NewColumn().WithName("unfilterable").WithDatabaseName("unfilterable").Build(),
+			NewColumn().WithFieldPath("foo").WithDatabaseName("db_foo").FilterableImplicitly().Build(),
+			NewColumn().WithFieldPath("bar").WithDatabaseName("db_bar").FilterableImplicitly().Build(),
+			NewColumn().WithFieldPath("baz").WithDatabaseName("db_baz").Filterable().Build(),
+			NewColumn().WithFieldPath("kv").WithDatabaseName("db_kv").KeyValue().Filterable().Build(),
+			NewColumn().WithFieldPath("bool").WithDatabaseName("db_bool").Bool().Filterable().Build(),
+			NewColumn().WithFieldPath("unfilterable").WithDatabaseName("unfilterable").Build(),
 		).Build()
 
 		Convey("Empty filter", func() {

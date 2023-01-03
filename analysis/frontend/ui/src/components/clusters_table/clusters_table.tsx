@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState } from 'react';
-import { useQuery } from 'react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, ParamKeyValuePair } from 'react-router-dom';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
 
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import {
-  getClustersService,
-  QueryClusterSummariesRequest,
-  SortableMetricName,
-} from '@/services/cluster';
-import { prpcRetrier } from '@/services/shared_models';
+import useFetchMetrics from '@/hooks/use_fetch_metrics';
+import { Metric } from '@/services/metrics';
 
 import ClustersTableFilter from './clusters_table_filter/clusters_table_filter';
-import ClustersTableHead from './clusters_table_head/clusters_table_head';
-import ClustersTableRow from './clusters_table_row/clusters_table_row';
+import { OrderBy } from './clusters_table_head/clusters_table_head';
+import ClustersTableContent from './clusters_table_content/clusters_table_content';
 
 interface Props {
     project: string;
@@ -42,84 +34,82 @@ const ClustersTable = ({
 }: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [sortMetric, setCurrentSortMetric] = useState<SortableMetricName>('critical_failures_exonerated');
-  const [isAscending, setIsAscending] = useState(false);
-
-  const clustersService = getClustersService();
-
   const {
     isLoading,
     isSuccess,
-    data: clusters,
+    data: allMetrics,
     error,
-  } = useQuery(
-      ['clusters', project, searchParams.get('q') || '', sortMetric, isAscending ? 'asc' : 'desc'],
-      async () => {
-        const request : QueryClusterSummariesRequest = {
-          project: project,
-          failureFilter: searchParams.get('q') || '',
-          orderBy: sortMetric + (isAscending ? '' : ' desc'),
-        };
+  } = useFetchMetrics();
 
-        return await clustersService.queryClusterSummaries(request);
-      }, {
-        retry: prpcRetrier,
-      },
-  );
+  const metrics = allMetrics?.filter((m) => m.isDefault) || [];
 
-  const onFailureFilterChanged = (filter: string) => {
-    setSearchParams({ 'q': filter }, { replace: true });
-  };
-
-  const toggleSort = (metric: SortableMetricName) => {
-    if (metric === sortMetric) {
-      setIsAscending(!isAscending);
-    } else {
-      setCurrentSortMetric(metric);
-      setIsAscending(false);
+  let orderBy: OrderBy | undefined;
+  const orderByMetricId = searchParams.get('orderBy') || '';
+  if (orderByMetricId) {
+    // Ensure the metric we are being asked to order by
+    // is one of the metrics we are querying.
+    if (metrics.some((m) => m.metricId == orderByMetricId)) {
+      orderBy = {
+        metric: orderByMetricId,
+        isAscending: searchParams.get('orderDir') === 'asc',
+      };
     }
+  }
+
+  // Prepare the default order by, but do not assign it
+  // to orderBy to avoid it becoming part of the URL
+  // on a query change. Only 'order by's explicitly selected
+  // by the user should form part of the URL.
+  let defaultOrderBy: OrderBy | undefined;
+  let maxSortPriorityMetric: Metric | undefined;
+  for (let i = 0; i < metrics.length; i++) {
+    if (maxSortPriorityMetric === undefined || metrics[i].sortPriority > maxSortPriorityMetric.sortPriority) {
+      maxSortPriorityMetric = metrics[i];
+    }
+  }
+  if (maxSortPriorityMetric) {
+    defaultOrderBy = {
+      metric: maxSortPriorityMetric.metricId,
+      isAscending: false,
+    };
+  }
+
+  const failureFilter = searchParams.get('q') || '';
+
+  const handleOrderByChanged = (newOrderBy: OrderBy) => {
+    updateSearchParams(failureFilter, newOrderBy);
   };
 
-  const rows = clusters?.clusterSummaries || [];
+  const handleFailureFilterChanged = (newFilter: string) => {
+    if (newFilter == failureFilter) {
+      return;
+    }
+    updateSearchParams(newFilter, orderBy);
+  };
+
+  const updateSearchParams = (failureFilter: string, orderBy?: OrderBy) => {
+    const params : ParamKeyValuePair[] = [];
+    if (failureFilter !== '') {
+      params.push(['q', failureFilter]);
+    }
+    if (orderBy) {
+      params.push(['orderBy', orderBy.metric]);
+      if (orderBy.isAscending) {
+        params.push(['orderDir', 'asc']);
+      }
+    }
+    setSearchParams(params);
+  };
 
   return (
     <Grid container columnGap={2} rowGap={2}>
       <ClustersTableFilter
-        failureFilter={searchParams.get('q') || ''}
-        setFailureFilter={onFailureFilterChanged}/>
-      <Grid item xs={12}>
-        <Table size="small" sx={{ overflowWrap: 'anywhere' }}>
-          <ClustersTableHead
-            toggleSort={toggleSort}
-            sortMetric={sortMetric}
-            isAscending={isAscending}/>
-          {
-            isSuccess && (
-              <TableBody data-testid='clusters_table_body'>
-                {
-                  rows.map((row) => (
-                    <ClustersTableRow
-                      key={`${row.clusterId.algorithm}:${row.clusterId.id}`}
-                      project={project}
-                      cluster={row}/>
-                  ))
-                }
-              </TableBody>
-            )
-          }
-        </Table>
-      </Grid>
-      {
-        isSuccess && rows.length === 0 && (
-          <Grid container item alignItems="center" justifyContent="center">
-            Hooray! There are no failures matching the specified criteria.
-          </Grid>
-        )
-      }
+        failureFilter={failureFilter}
+        handleFailureFilterChanged={handleFailureFilterChanged}/>
       {
         error && (
           <LoadErrorAlert
-            entityName="clusters"
+            entityName="metrics"
             error={error}
           />
         )
@@ -129,6 +119,16 @@ const ClustersTable = ({
           <Grid container item alignItems="center" justifyContent="center">
             <CircularProgress />
           </Grid>
+        )
+      }
+      {
+        isSuccess && metrics !== undefined && (
+          <ClustersTableContent
+            project={project}
+            failureFilter={failureFilter}
+            orderBy={orderBy || defaultOrderBy}
+            metrics={metrics}
+            handleOrderByChanged={handleOrderByChanged} />
         )
       }
     </Grid>

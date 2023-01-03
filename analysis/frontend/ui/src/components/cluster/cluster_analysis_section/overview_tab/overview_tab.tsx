@@ -26,7 +26,7 @@ import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import ImpactTable from '@/components/cluster/cluster_analysis_section/overview_tab/impact_table/impact_table';
-import useFetchCluster from '@/hooks/use_fetch_cluster';
+import useFetchClusterAndMetrics from '@/hooks/use_fetch_cluster_and_metrics';
 import { ClusterContext } from '../../cluster_context';
 
 interface Props {
@@ -41,10 +41,11 @@ const OverviewTab = ({
 
   const {
     isLoading,
-    isSuccess,
-    data: cluster,
-    error,
-  } = useFetchCluster(clusterId.project, clusterId.algorithm, clusterId.id);
+    clusterError,
+    metricsError,
+    cluster,
+    metrics,
+  } = useFetchClusterAndMetrics(clusterId.project, clusterId.algorithm, clusterId.id);
   return (
     <TabPanel value={value}>
       <PanelHeading>Impact</PanelHeading>
@@ -56,16 +57,24 @@ const OverviewTab = ({
         )
       }
       {
-        error && (
+        !isLoading && metricsError && (
           <LoadErrorAlert
-            entityName="cluster impact"
-            error={error}
+            entityName="metrics"
+            error={metricsError}
           />
         )
       }
       {
-        isSuccess && cluster && (
-          <ImpactTable cluster={cluster}></ImpactTable>
+        !isLoading && !metricsError && clusterError && (
+          <LoadErrorAlert
+            entityName="cluster impact"
+            error={clusterError}
+          />
+        )
+      }
+      {
+        cluster && metrics && (
+          <ImpactTable cluster={cluster} metrics={metrics}></ImpactTable>
         )
       }
       <Typography paddingTop='2rem'>To see examples of failures in this cluster, view <Link component={RouterLink} to='#recent-failures'>Recent Failures</Link>.</Typography>

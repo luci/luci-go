@@ -56,7 +56,7 @@ func TestRules(t *testing.T) {
 				`test like "%arc%"`,
 				`test not like "%arc%"`,
 				`not test like "%arc%"`,
-				`regexp_contains(test, "^arc\\.")`,
+				`regexp_contains (test, "^arc\\.")`,
 				`not regexp_contains(test, "^arc\\.")`,
 				`test = "arc.Boot" AND reason LIKE "%failed%"`,
 			}

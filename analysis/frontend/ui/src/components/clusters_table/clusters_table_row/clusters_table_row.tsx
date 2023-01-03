@@ -21,14 +21,20 @@ import TableRow from '@mui/material/TableRow';
 import { ClusterSummary } from '@/services/cluster';
 import { linkToCluster } from '@/tools/urlHandling/links';
 
+import {
+  Metric,
+} from '@/services/metrics';
+
 interface Props {
   project: string,
   cluster: ClusterSummary,
+  metrics: Metric[],
 }
 
 const ClustersTableRow = ({
   project,
   cluster,
+  metrics,
 }: Props) => {
   return (
     <TableRow>
@@ -41,9 +47,15 @@ const ClustersTableRow = ({
             <Link href={cluster.bug.url} underline="hover">{cluster.bug.linkText}</Link>
         }
       </TableCell>
-      <TableCell className="number">{cluster.presubmitRejects || '0'}</TableCell>
-      <TableCell className="number">{cluster.criticalFailuresExonerated || '0'}</TableCell>
-      <TableCell className="number">{cluster.failures || '0'}</TableCell>
+      {
+        metrics.map((metric) => {
+          const metrics = cluster.metrics || {};
+          const metricValue = metrics[metric.metricId] || { value: '' };
+          return (
+            <TableCell key={metric.metricId} className="number">{metricValue.value || '0'}</TableCell>
+          );
+        })
+      }
     </TableRow>
   );
 };

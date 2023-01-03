@@ -52,7 +52,7 @@ const MaxClusterRequestSize = 1000
 const MaxBatchGetClustersRequestSize = 1000
 
 type AnalysisClient interface {
-	ReadClusters(ctx context.Context, luciProject string, clusterIDs []clustering.ClusterID) ([]*analysis.Cluster, error)
+	ReadCluster(ctx context.Context, luciProject string, clusterID clustering.ClusterID) (*analysis.Cluster, error)
 	ReadClusterFailures(ctx context.Context, options analysis.ReadClusterFailuresOptions) (cfs []*analysis.ClusterFailure, err error)
 	ReadClusterExoneratedTestVariants(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantsOptions) (tvs []*analysis.ExoneratedTestVariant, err error)
 	QueryClusterSummaries(ctx context.Context, luciProject string, options *analysis.QueryClusterSummariesOptions) ([]*analysis.ClusterSummary, error)
@@ -165,22 +165,14 @@ func validateTestResult(i int, tr *pb.ClusterRequest_TestResult) error {
 	return nil
 }
 
-func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersRequest) (*pb.BatchGetClustersResponse, error) {
-	project, err := parseProjectName(req.Parent)
+func (c *clustersServer) Get(ctx context.Context, req *pb.GetClusterRequest) (*pb.Cluster, error) {
+	project, clusterID, err := parseClusterName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Annotate(err, "parent").Err())
-	}
-	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
-		return nil, err
+		return nil, invalidArgumentError(errors.Annotate(err, "name").Err())
 	}
 
-	if len(req.Names) > MaxBatchGetClustersRequestSize {
-		return nil, invalidArgumentError(fmt.Errorf(
-			"too many names: at most %v clusters can be retrieved in one request", MaxBatchGetClustersRequestSize))
-	}
-	if len(req.Names) == 0 {
-		// Return INVALID_ARGUMENT if no names specified, as per google.aip.dev/231.
-		return nil, invalidArgumentError(errors.New("names must be specified"))
+	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster, perms.PermExpensiveClusterQueries); err != nil {
+		return nil, err
 	}
 
 	cfg, err := readProjectConfig(ctx, project)
@@ -188,21 +180,7 @@ func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersR
 		return nil, err
 	}
 
-	// The cluster ID requested in each request item.
-	clusterIDs := make([]clustering.ClusterID, 0, len(req.Names))
-
-	for i, name := range req.Names {
-		clusterProject, clusterID, err := parseClusterName(name)
-		if err != nil {
-			return nil, invalidArgumentError(errors.Annotate(err, "name %v", i).Err())
-		}
-		if clusterProject != project {
-			return nil, invalidArgumentError(fmt.Errorf("name %v: project must match parent project (%q)", i, project))
-		}
-		clusterIDs = append(clusterIDs, clusterID)
-	}
-
-	clusters, err := c.analysisClient.ReadClusters(ctx, project, clusterIDs)
+	cluster, err := c.analysisClient.ReadCluster(ctx, project, clusterID)
 	if err != nil {
 		if err == analysis.ProjectNotExistsErr {
 			return nil, appstatus.Error(codes.NotFound,
@@ -211,79 +189,56 @@ func (c *clustersServer) BatchGet(ctx context.Context, req *pb.BatchGetClustersR
 		return nil, err
 	}
 
-	readClusterByID := make(map[clustering.ClusterID]*analysis.Cluster)
-	for _, c := range clusters {
-		readClusterByID[c.ClusterID] = c
-	}
-
 	readableRealms, err := perms.QueryRealms(ctx, project, nil, rdbperms.PermListTestResults)
 	if err != nil {
 		return nil, err
 	}
 	readableRealmsSet := stringset.NewFromSlice(readableRealms...)
 
-	// As per google.aip.dev/231, the order of responses must be the
-	// same as the names in the request.
-	results := make([]*pb.Cluster, 0, len(clusterIDs))
-	for i, clusterID := range clusterIDs {
-		c, ok := readClusterByID[clusterID]
-		if !ok {
-			c = &analysis.Cluster{
-				ClusterID: clusterID,
-				// No impact available for cluster (e.g. because no examples
-				// in BigQuery). Use suitable default values (all zeros
-				// for impact).
-				MetricValues: make(map[metrics.ID]metrics.TimewiseCounts),
-			}
-		}
-
-		result := &pb.Cluster{
-			Name:                         req.Names[i],
-			HasExample:                   ok,
-			UserClsFailedPresubmit:       createImpactValuesPB(c.MetricValues[metrics.HumanClsFailedPresubmit.ID]),
-			CriticalFailuresExonerated:   createImpactValuesPB(c.MetricValues[metrics.CriticalFailuresExonerated.ID]),
-			Failures:                     createImpactValuesPB(c.MetricValues[metrics.Failures.ID]),
-			UserClsWithFailures:          createCountsPB(c.DistinctUserCLsWithFailures7d),
-			PostsubmitBuildsWithFailures: createCountsPB(c.PostsubmitBuildsWithFailures7d),
-		}
-
-		if !clusterID.IsBugCluster() && ok {
-			example := &clustering.Failure{
-				TestID: c.ExampleTestID(),
-				Reason: &pb.FailureReason{
-					PrimaryErrorMessage: c.ExampleFailureReason.StringVal,
-				},
-			}
-
-			// Whether the user has access to at least one test result in the cluster.
-			canSeeAtLeastOneExample := false
-			for _, r := range c.Realms {
-				if readableRealmsSet.Has(r) {
-					canSeeAtLeastOneExample = true
-					break
-				}
-			}
-			if canSeeAtLeastOneExample {
-				// While the user has access to at least one test result in the cluster,
-				// they may not have access to the randomly selected example we retrieved
-				// from the cluster_summaries table. Therefore, we must be careful not
-				// to disclose any aspect of this example other than the
-				// clustering key it has in common with all other examples
-				// in the cluster.
-				hasAccessToGivenExample := false
-				result.Title = suggestedClusterTitle(c.ClusterID, example, hasAccessToGivenExample, cfg)
-				result.EquivalentFailureAssociationRule = failureAssociationRule(c.ClusterID, example, cfg)
-			}
-		}
-		results = append(results, result)
+	exists := len(cluster.Realms) > 0
+	result := &pb.Cluster{
+		Name:       req.Name,
+		HasExample: exists,
+		Metrics:    make(map[string]*pb.Cluster_TimewiseCounts),
 	}
-	return &pb.BatchGetClustersResponse{
-		Clusters: results,
-	}, nil
+	for metricID, metricValue := range cluster.MetricValues {
+		result.Metrics[string(metricID)] = createTimewiseCountsPB(metricValue)
+	}
+
+	if !clusterID.IsBugCluster() && exists {
+		example := &clustering.Failure{
+			TestID: cluster.ExampleTestID(),
+			Reason: &pb.FailureReason{
+				PrimaryErrorMessage: cluster.ExampleFailureReason.StringVal,
+			},
+		}
+
+		// Whether the user has access to at least one test result in the cluster.
+		canSeeAtLeastOneExample := false
+		for _, r := range cluster.Realms {
+			if readableRealmsSet.Has(r) {
+				canSeeAtLeastOneExample = true
+				break
+			}
+		}
+		if canSeeAtLeastOneExample {
+			// While the user has access to at least one test result in the cluster,
+			// they may not have access to the randomly selected example we retrieved
+			// from the cluster_summaries table. Therefore, we must be careful not
+			// to disclose any aspect of this example other than the
+			// clustering key it has in common with all other examples
+			// in the cluster.
+			hasAccessToGivenExample := false
+			result.Title = suggestedClusterTitle(cluster.ClusterID, example, hasAccessToGivenExample, cfg)
+			result.EquivalentFailureAssociationRule = failureAssociationRule(cluster.ClusterID, example, cfg)
+		}
+	}
+
+	return result, nil
 }
 
-func createImpactValuesPB(counts metrics.TimewiseCounts) *pb.Cluster_ImpactValues {
-	return &pb.Cluster_ImpactValues{
+func createTimewiseCountsPB(counts metrics.TimewiseCounts) *pb.Cluster_TimewiseCounts {
+	return &pb.Cluster_TimewiseCounts{
 		OneDay:   createCountsPB(counts.OneDay),
 		ThreeDay: createCountsPB(counts.ThreeDay),
 		SevenDay: createCountsPB(counts.SevenDay),
@@ -480,6 +435,11 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 				bqErr = invalidArgumentError(errors.Annotate(err, "order_by").Err())
 				return nil
 			}
+			opts.Metrics, err = metricsByName(req.Metrics)
+			if err != nil {
+				bqErr = invalidArgumentError(errors.Annotate(err, "metrics").Err())
+				return nil
+			}
 			opts.Realms, err = perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
 			if err != nil {
 				bqErr = err
@@ -516,11 +476,13 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 	result := []*pb.ClusterSummary{}
 	for _, c := range clusters {
 		cs := &pb.ClusterSummary{
-			ClusterId:                  createClusterIdPB(c.ClusterID),
-			PresubmitRejects:           c.MetricValues[metrics.HumanClsFailedPresubmit.ID],
-			CriticalFailuresExonerated: c.MetricValues[metrics.CriticalFailuresExonerated.ID],
-			Failures:                   c.MetricValues[metrics.Failures.ID],
+			ClusterId: createClusterIdPB(c.ClusterID),
+			Metrics:   make(map[string]*pb.ClusterSummary_MetricValue),
 		}
+		for id, metricValue := range c.MetricValues {
+			cs.Metrics[string(id)] = &pb.ClusterSummary_MetricValue{Value: metricValue}
+		}
+
 		if c.ClusterID.IsBugCluster() {
 			ruleID := c.ClusterID.ID
 			rule := ruleset.ActiveRulesByID[ruleID]
@@ -562,6 +524,22 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 		result = append(result, cs)
 	}
 	return &pb.QueryClusterSummariesResponse{ClusterSummaries: result}, nil
+}
+
+func metricsByName(names []string) ([]metrics.Definition, error) {
+	results := make([]metrics.Definition, 0, len(names))
+	for _, name := range names {
+		id, err := parseMetricName(name)
+		if err != nil {
+			return nil, err
+		}
+		metric, err := metrics.ByID(id)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, metric)
+	}
+	return results, nil
 }
 
 func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.QueryClusterFailuresRequest) (*pb.QueryClusterFailuresResponse, error) {

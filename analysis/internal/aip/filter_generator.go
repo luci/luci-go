@@ -145,27 +145,27 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		return "", fmt.Errorf("invalid comparable")
 	}
 	if len(restriction.Comparable.Member.Fields) > 0 {
-		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
+		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
 		if err != nil {
 			return "", err
 		}
 		if !column.keyValue {
-			return "", fmt.Errorf("fields are only supported for key value columns.  Try removing the '.' from after your column named %q", column.name)
+			return "", fmt.Errorf("fields are only supported for key value columns.  Try removing the '.' from after your column named %q", column.fieldPath.String())
 		}
 		if len(restriction.Comparable.Member.Fields) > 1 {
-			return "", fmt.Errorf("expected only a single '.' in keyvalue column named %q", column.name)
+			return "", fmt.Errorf("expected only a single '.' in keyvalue column named %q", column.fieldPath.String())
 		}
 		key := w.bind(restriction.Comparable.Member.Fields[0])
 		if restriction.Comparator == ":" {
 			value, err := w.likeArgValue(restriction.Arg, column.columnType)
 			if err != nil {
-				return "", errors.Annotate(err, "argument for field %s", column.name).Err()
+				return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 			}
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", column.databaseName, key, value), nil
 		}
 		value, err := w.argValue(restriction.Arg, column.columnType)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
+			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
 		if restriction.Comparator == "=" {
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value = %s))", column.databaseName, key, value), nil
@@ -189,33 +189,33 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
 	} else if restriction.Comparator == "=" {
-		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
+		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
 		if err != nil {
 			return "", err
 		}
 		arg, err := w.argValue(restriction.Arg, column.columnType)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
+			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
 		return fmt.Sprintf("(COALESCE(%s, %s) = %s)", column.databaseName, columnDefaultValue(column.columnType), arg), nil
 	} else if restriction.Comparator == "!=" {
-		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
+		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
 		if err != nil {
 			return "", err
 		}
 		arg, err := w.argValue(restriction.Arg, column.columnType)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
+			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
 		return fmt.Sprintf("(COALESCE(%s, %s) <> %s)", column.databaseName, columnDefaultValue(column.columnType), arg), nil
 	} else if restriction.Comparator == ":" {
-		column, err := w.table.FilterableColumnByName(restriction.Comparable.Member.Value)
+		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
 		if err != nil {
 			return "", err
 		}
 		arg, err := w.likeArgValue(restriction.Arg, column.columnType)
 		if err != nil {
-			return "", errors.Annotate(err, "argument for field %s", column.name).Err()
+			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
 		return fmt.Sprintf("(%s LIKE %s)", column.databaseName, arg), nil
 	} else {

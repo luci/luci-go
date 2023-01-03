@@ -46,9 +46,9 @@ func (t ColumnType) String() string {
 
 // Column represents the schema of a Database column.
 type Column struct {
-	// The externally-visible name of the column. This may be used in AIP-160
-	// filters and order by clauses.
-	name string
+	// The externally-visible field path this column maps to.
+	// This path may be referenced in AIP-160 filters and AIP-132 order by clauses.
+	fieldPath FieldPath
 
 	// The database name of the column.
 	// Important: Only assign assign safe constants to this field.
@@ -79,15 +79,15 @@ type Table struct {
 	// The columns in the database table.
 	columns []*Column
 
-	// A mapping from externally-visible column name to the column
+	// A mapping from externally-visible field path to the column
 	// definition. The column name used as a key is in lowercase.
-	columnByName map[string]*Column
+	columnByFieldPath map[string]*Column
 }
 
-// FilterableColumnByName returns the database name of the filterable column
-// with the given externally-visible name.
-func (t *Table) FilterableColumnByName(name string) (*Column, error) {
-	col := t.columnByName[strings.ToLower(name)]
+// FilterableColumnByFieldPath returns the database name of the filterable column
+// with the given field path.
+func (t *Table) FilterableColumnByFieldPath(path FieldPath) (*Column, error) {
+	col := t.columnByFieldPath[path.String()]
 	if col != nil && col.filterable {
 		return col, nil
 	}
@@ -95,16 +95,16 @@ func (t *Table) FilterableColumnByName(name string) (*Column, error) {
 	columnNames := []string{}
 	for _, column := range t.columns {
 		if column.filterable {
-			columnNames = append(columnNames, column.name)
+			columnNames = append(columnNames, column.fieldPath.String())
 		}
 	}
-	return nil, fmt.Errorf("no filterable field named %q, valid fields are %s", name, strings.Join(columnNames, ", "))
+	return nil, fmt.Errorf("no filterable field %q, valid fields are %s", path.String(), strings.Join(columnNames, ", "))
 }
 
-// SortableColumnByName returns the sortable database column
-// with the given externally-visible name.
-func (t *Table) SortableColumnByName(name string) (*Column, error) {
-	col := t.columnByName[strings.ToLower(name)]
+// SortableColumnByFieldPath returns the sortable database column
+// with the given externally-visible field path.
+func (t *Table) SortableColumnByFieldPath(path FieldPath) (*Column, error) {
+	col := t.columnByFieldPath[path.String()]
 	if col != nil && col.sortable {
 		return col, nil
 	}
@@ -112,10 +112,10 @@ func (t *Table) SortableColumnByName(name string) (*Column, error) {
 	columnNames := []string{}
 	for _, column := range t.columns {
 		if column.sortable {
-			columnNames = append(columnNames, column.name)
+			columnNames = append(columnNames, column.fieldPath.String())
 		}
 	}
-	return nil, fmt.Errorf("no sortable field named %q, valid fields are %s", name, strings.Join(columnNames, ", "))
+	return nil, fmt.Errorf("no sortable field named %q, valid fields are %s", path.String(), strings.Join(columnNames, ", "))
 }
 
 func columnDefaultValue(columnType ColumnType) string {

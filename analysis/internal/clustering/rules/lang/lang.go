@@ -15,16 +15,17 @@
 // Package lang parses failure association rule predicates. The predicate
 // syntax defined here is intended to be a subset of BigQuery Standard SQL's
 // Expression syntax, with the same semantics. This provides a few benefits:
-// - Well-known and understood syntax and semantics.
-// - Ability to leverage existing high-quality documentation to communicate
-//   language concepts to end-users.
-// - Simplified debugging of LUCI Analysis (by allowing direct copy- paste of
-//   expressions into BigQuery to verify clustering is correct).
-// - Possibility of using BigQuery as an execution engine in future.
+//   - Well-known and understood syntax and semantics.
+//   - Ability to leverage existing high-quality documentation to communicate
+//     language concepts to end-users.
+//   - Simplified debugging of LUCI Analysis (by allowing direct copy- paste of
+//     expressions into BigQuery to verify clustering is correct).
+//   - Possibility of using BigQuery as an execution engine in future.
 //
 // Rules permitted by this package look similar to:
-//  reason LIKE "% exited with code 5 %" AND NOT
-//    ( test = "arc.Boot" OR test = "arc.StartStop" )
+//
+//	reason LIKE "% exited with code 5 %" AND NOT
+//	  ( test = "arc.Boot" OR test = "arc.StartStop" )
 //
 // The grammar for the language in Extended Backus-Naur form follows. The
 // top-level production rule is BoolExpr.

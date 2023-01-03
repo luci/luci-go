@@ -22,7 +22,7 @@ import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
   getMockCluster,
-  mockBatchGetCluster,
+  mockGetCluster,
 } from '@/testing_tools/mocks/cluster_mock';
 
 import { ClusterContextProvider } from '../cluster_context';
@@ -43,7 +43,7 @@ describe('test ClusterInfo component', () => {
     const id = '14ee3dde813f66adc0595e4a21aa1743';
     const mockCluster = getMockCluster(id, project, algorithm, 'ninja://chrome/android');
 
-    mockBatchGetCluster(project, algorithm, id, mockCluster);
+    mockGetCluster(project, algorithm, id, mockCluster);
 
     renderWithRouterAndClient(
         <ClusterContextProvider project={project} clusterAlgorithm={algorithm} clusterId={id}>
@@ -63,7 +63,7 @@ describe('test ClusterInfo component', () => {
     const id = '14ee3dde813f66adc0595e4a21aa1743';
     const mockCluster = getMockCluster(id, project, algorithm, 'ninja://chrome/android');
 
-    mockBatchGetCluster(project, algorithm, id, mockCluster);
+    mockGetCluster(project, algorithm, id, mockCluster);
 
     renderWithRouterAndClient(
         <ClusterContextProvider project={project} clusterAlgorithm={algorithm} clusterId={id}>

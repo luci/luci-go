@@ -17,55 +17,65 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
-import { SortableMetricName } from '@/services/cluster';
+import {
+  MetricId,
+} from '@/services/shared_models';
+
+import {
+  Metric,
+} from '@/services/metrics';
 
 interface Props {
-    toggleSort: (metric: SortableMetricName) => void,
-    sortMetric: SortableMetricName,
-    isAscending: boolean,
+    orderBy?: OrderBy,
+    metrics: Metric[],
+    handleOrderByChanged: (orderBy: OrderBy) => void,
+}
+
+export interface OrderBy {
+  metric: MetricId,
+  isAscending: boolean,
 }
 
 const ClustersTableHead = ({
-  toggleSort,
-  sortMetric,
-  isAscending,
+  orderBy,
+  metrics,
+  handleOrderByChanged,
 }: Props) => {
+  const toggleSort = (metric: MetricId) => {
+    if (orderBy && orderBy.metric === metric) {
+      handleOrderByChanged({
+        metric: metric,
+        isAscending: !orderBy.isAscending,
+      });
+    } else {
+      handleOrderByChanged({
+        metric: metric,
+        isAscending: false,
+      });
+    }
+  };
+
   return (
     <TableHead data-testid="clusters_table_head">
       <TableRow>
         <TableCell>Cluster</TableCell>
         <TableCell sx={{ width: '150px' }}>Bug</TableCell>
-        <TableCell
-          sortDirection={sortMetric === 'presubmit_rejects' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer', width: '100px' }}>
-          <TableSortLabel
-            aria-label="Sort by User CLs failed Presubmit"
-            active={sortMetric === 'presubmit_rejects'}
-            direction={isAscending ? 'asc' : 'desc'}
-            onClick={() => toggleSort('presubmit_rejects')}>
-              User Cls Failed Presubmit
-          </TableSortLabel>
-        </TableCell>
-        <TableCell
-          sortDirection={sortMetric === 'critical_failures_exonerated' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer', width: '100px' }}>
-          <TableSortLabel
-            active={sortMetric === 'critical_failures_exonerated'}
-            direction={isAscending ? 'asc' : 'desc'}
-            onClick={() => toggleSort('critical_failures_exonerated')}>
-              Presubmit-Blocking Failures Exonerated
-          </TableSortLabel>
-        </TableCell>
-        <TableCell
-          sortDirection={sortMetric === 'failures' ? (isAscending ? 'asc' : 'desc') : false}
-          sx={{ cursor: 'pointer', width: '100px' }}>
-          <TableSortLabel
-            active={sortMetric === 'failures'}
-            direction={isAscending ? 'asc' : 'desc'}
-            onClick={() => toggleSort('failures')}>
-              Total Failures
-          </TableSortLabel>
-        </TableCell>
+        {
+          metrics.map((metric: Metric) => (
+            <TableCell
+              key={metric.metricId}
+              sortDirection={(orderBy && (orderBy.metric === metric.metricId)) ? (orderBy.isAscending ? 'asc' : 'desc') : false}
+              sx={{ cursor: 'pointer', width: '100px' }}>
+              <TableSortLabel
+                aria-label={`Sort by ${metric.humanReadableName}`}
+                active={orderBy && (orderBy.metric === metric.metricId)}
+                direction={(orderBy && orderBy.isAscending) ? 'asc' : 'desc'}
+                onClick={() => toggleSort(metric.metricId)}>
+                {metric.humanReadableName}
+              </TableSortLabel>
+            </TableCell>
+          ))
+        }
       </TableRow>
     </TableHead>
   );

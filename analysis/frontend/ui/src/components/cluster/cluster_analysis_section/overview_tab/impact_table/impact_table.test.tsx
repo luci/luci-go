@@ -20,15 +20,17 @@ import {
 } from '@testing-library/react';
 
 import { getMockCluster } from '@/testing_tools/mocks/cluster_mock';
+import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 
 import ImpactTable from './impact_table';
 
 describe('Test ImpactTable component', () => {
   it('given a cluster, should display it', async () => {
+    const metrics = getMockMetricsList();
     const cluster = getMockCluster('1234567890abcdef1234567890abcdef');
-    render(<ImpactTable cluster={cluster} />);
+    render(<ImpactTable cluster={cluster} metrics={metrics} />);
 
-    await screen.findByText('User CLs Failed Presubmit');
+    await screen.findByText('User Cls Failed Presubmit');
     // Check for 7d unexpected failures total.
     expect(screen.getByText('15800')).toBeInTheDocument();
 

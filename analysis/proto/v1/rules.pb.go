@@ -78,7 +78,7 @@ type Rule struct {
 	// Determines whether LUCI Analysis is managing the bug priority updates
 	// of the bug.
 	IsManagingBugPriority bool `protobuf:"varint,15,opt,name=is_managing_bug_priority,json=isManagingBugPriority,proto3" json:"is_managing_bug_priority,omitempty"`
-	// Output Only. Tracks field is_managing_bug_priority updates.
+	// Output Only. The time is_managing_bug_priority was last updated.
 	IsManagingBugPriorityLastUpdated *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=is_managing_bug_priority_last_updated,json=isManagingBugPriorityLastUpdated,proto3" json:"is_managing_bug_priority_last_updated,omitempty"`
 	// The suggested cluster this rule was created from (if any).
 	// Until re-clustering is complete and has reduced the residual impact

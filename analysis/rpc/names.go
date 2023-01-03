@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -28,7 +29,6 @@ import (
 // Regular expressions for matching resource names used in APIs.
 var (
 	GenericKeyPattern = "[a-z0-9\\-]+"
-	RuleNameRe        = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
 	// ClusterNameRe performs partial validation of a cluster resource name.
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
@@ -43,18 +43,20 @@ var (
 	// Cluster algorithm and ID must be further validated by
 	// ClusterID.Validate().
 	ClusterExoneratedTestVariantsNameRe = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/clusters/(` + GenericKeyPattern + `)/(` + GenericKeyPattern + `)/exoneratedTestVariants$`)
+	MetricNameRe                        = regexp.MustCompile(`^metrics/(` + metrics.MetricIDPattern + `)$`)
 	ProjectNameRe                       = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)$`)
 	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/config$`)
 	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/reclusteringProgress$`)
+	RuleNameRe                          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
 )
 
-// parseRuleName parses a rule resource name into its constituent ID parts.
-func parseRuleName(name string) (project, ruleID string, err error) {
-	match := RuleNameRe.FindStringSubmatch(name)
+// parseMetricName parses a metric resource name into a metric ID.
+func parseMetricName(name string) (metrics.ID, error) {
+	match := MetricNameRe.FindStringSubmatch(name)
 	if match == nil {
-		return "", "", errors.New("invalid rule name, expected format: projects/{project}/rules/{rule_id}")
+		return "", errors.New("invalid metric name, expected format: metrics/{metric_id}")
 	}
-	return match[1], match[2], nil
+	return metrics.ID(match[1]), nil
 }
 
 // parseProjectName parses a project resource name into a project ID.
@@ -85,9 +87,21 @@ func parseReclusteringProgressName(name string) (project string, err error) {
 	return match[1], nil
 }
 
+// parseRuleName parses a rule resource name into its constituent ID parts.
+func parseRuleName(name string) (project, ruleID string, err error) {
+	match := RuleNameRe.FindStringSubmatch(name)
+	if match == nil {
+		return "", "", errors.New("invalid rule name, expected format: projects/{project}/rules/{rule_id}")
+	}
+	return match[1], match[2], nil
+}
+
 // parseClusterName parses a cluster resource name into its constituent ID
 // parts. Algorithm aliases are resolved to concrete algorithm names.
 func parseClusterName(name string) (project string, clusterID clustering.ClusterID, err error) {
+	if name == "" {
+		return "", clustering.ClusterID{}, errors.Reason("must be specified").Err()
+	}
 	match := ClusterNameRe.FindStringSubmatch(name)
 	if match == nil {
 		return "", clustering.ClusterID{}, errors.New("invalid cluster name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}")

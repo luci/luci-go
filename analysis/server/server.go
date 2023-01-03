@@ -98,12 +98,13 @@ func Main(init func(srv *luciserver.Server) error) {
 			return errors.Annotate(err, "creating analysis client").Err()
 		}
 
-		analysispb.RegisterClustersServer(srv.PRPC, rpc.NewClustersServer(ac))
-		analysispb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
-		analysispb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
-		analysispb.RegisterInitDataGeneratorServer(srv.PRPC, rpc.NewInitDataGeneratorServer())
-		analysispb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
 		adminpb.RegisterAdminServer(srv.PRPC, admin.CreateServer())
+		analysispb.RegisterClustersServer(srv.PRPC, rpc.NewClustersServer(ac))
+		analysispb.RegisterInitDataGeneratorServer(srv.PRPC, rpc.NewInitDataGeneratorServer())
+		analysispb.RegisterMetricsServer(srv.PRPC, rpc.NewMetricsServer())
+		analysispb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
+		analysispb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
+		analysispb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
 
 		// Test History service needs to connect back to an old Spanner
 		// database to service some queries.

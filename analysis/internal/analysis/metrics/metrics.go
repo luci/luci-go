@@ -19,11 +19,16 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"go.chromium.org/luci/common/errors"
 )
 
-// metricIDRE defines the valid format for metric identifiers.
+// MetricIDPattern defines the valid format for metric identifiers.
 // Metric identifiers must be valid google.aip.dev/122 resource ID segments.
-var metricIDRE = regexp.MustCompile(`^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$`)
+const MetricIDPattern = `[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?`
+
+// metricIDRE defines a regular expression that matches valid metrc identifiers.
+var metricIDRE = regexp.MustCompile(`^` + MetricIDPattern + `$`)
 
 // Standard metrics.
 var (
@@ -31,7 +36,12 @@ var (
 	// presubmit (CQ) run because of failure(s) in this cluster. Excludes
 	// changelists authored by automation.
 	HumanClsFailedPresubmit = metricBuilder{
-		ID: "human-cls-failed-presubmit",
+		ID:                "human-cls-failed-presubmit",
+		HumanReadableName: "User Cls Failed Presubmit",
+		Description:       "The number of distinct developer changelists that failed at least one presubmit (CQ) run because of failure(s) in this cluster.",
+		SortPriority:      30,
+		IsDefault:         true,
+
 		// Human presubmit full-runs failed due to a failure in the cluster.
 		FilterSQL: `f.is_ingested_invocation_blocked AND COALESCE(ARRAY_LENGTH(f.exonerations) = 0, TRUE) AND f.build_status = 'FAILURE' ` +
 			`AND f.build_critical AND f.presubmit_run_mode = 'FULL_RUN' AND f.presubmit_run_owner='user'`,
@@ -48,7 +58,12 @@ var (
 	// means a test variant which was configured to be presubmit-blocking is
 	// not stable enough to do so, and should be fixed or made non-blocking.
 	CriticalFailuresExonerated = metricBuilder{
-		ID: "critical-failures-exonerated",
+		ID:                "critical-failures-exonerated",
+		HumanReadableName: "Presubmit-blocking Failures Exonerated",
+		Description:       "The number of failures on test variants which were configured to be presubmit-blocking, which were exonerated (i.e. did not actually block presubmit) because infrastructure determined the test variant to be failing or too flaky at tip-of-tree. If this number is non-zero, it means a test variant which was configured to be presubmit-blocking is not stable enough to do so, and should be fixed or made non-blocking.",
+		SortPriority:      40,
+		IsDefault:         true,
+
 		// Exonerated for a reason other than NOT_CRITICAL or UNEXPECTED_PASS.
 		// Passes are not ingested by LUCI Analysis, but if a test has both an unexpected pass
 		// and an unexpected failure, it will be exonerated for the unexpected pass.
@@ -59,7 +74,11 @@ var (
 	// The number of test runs that failed. Test runs are generally
 	// equivalent to swarming tasks.
 	TestRunsFailed = metricBuilder{
-		ID:        "test-runs-failed",
+		ID:                "test-runs-failed",
+		HumanReadableName: "Test Runs Failed",
+		Description:       "The number of distinct test runs (i.e. swarming tasks or builds) failed due to failures in this cluster.",
+		SortPriority:      20,
+
 		FilterSQL: `f.is_test_run_blocked`,
 		CountSQL:  `f.test_run_id`,
 	}.Build()
@@ -69,17 +88,27 @@ var (
 	// abort or fail, so by definition the only test results counted here
 	// will be an unexpected fail/crash/abort.
 	Failures = metricBuilder{
-		ID: "failures",
+		ID:                "failures",
+		HumanReadableName: "Total Failures",
+		Description:       "The total number of test results in this cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.",
+		SortPriority:      10,
+		IsDefault:         true,
 	}.Build()
 
 	// ComputedMetrics is the set of metrics computed for each cluster and
 	// stored on the cluster summaries table.
 	ComputedMetrics = []Definition{HumanClsFailedPresubmit, CriticalFailuresExonerated, TestRunsFailed, Failures}
-
-	// DefaultMetrics is the list of all standard (system-defined) metrics
-	// shown on UI surfaces.
-	DefaultMetrics = []Definition{HumanClsFailedPresubmit, CriticalFailuresExonerated, Failures}
 )
+
+// ByID returns the metric with the given ID, if any.
+func ByID(id ID) (Definition, error) {
+	for _, metric := range ComputedMetrics {
+		if metric.ID == id {
+			return metric, nil
+		}
+	}
+	return Definition{}, errors.Reason("no metric with ID %q", id.String()).Err()
+}
 
 // metricBuilder provides a way of building a new metric definition.
 type metricBuilder struct {
@@ -89,26 +118,26 @@ type metricBuilder struct {
 	// resource name.
 	ID string
 
-	// The predicate on failures, that defines when an item is eligible to be
-	// counted. Fields on the clustered_failures table may be accessed via the
-	// prefix "f.".
-	// For example, to count over failures on critical builds, use:
-	// "f.build_critical".
-	// If no filtering is desired, leave this blank.
+	// A human readable name for the metric. Appears on the user interface.
+	HumanReadableName string
+
+	// A human readable descripton of the metric. Appears on the user interface
+	// behind a help tooltip.
+	Description string
+
+	// Used to define the default sort order for metrics.
+	// See Definition.SortPriority.
+	SortPriority int
+
+	// IsDefault indicates whether this metric is shown by default in the UI.
+	IsDefault bool
+
+	// A predicate on failures, that defines which failures are included in
+	// the metric. See Definition.FilterSQL for more details.
 	FilterSQL string
 
-	// An expression that defines the distinct items to count. Fields on the
-	// clustered_failures table may be accessed via the prefix "f.".
-	//
-	// For example, to count distinct changelists, use:
-	// `IF(ARRAY_LENGTH(f.changelists)>0,
-	//	  CONCAT(f.changelists[OFFSET(0)].host, f.changelists[OFFSET(0)].change),
-	// NULL)`
-	//
-	// While this may return NULL for items not to be counted, it is generally
-	// preferred to use FilterSQL for that purpose.
-	//
-	// If failures are to be counted instead of distinct items, leave this blank.
+	// An expression that defines the distinct items to count.
+	// See Definition.CountSQL for more details.
 	CountSQL string
 }
 
@@ -116,18 +145,36 @@ func (m metricBuilder) Build() Definition {
 	if !metricIDRE.MatchString(m.ID) {
 		panic(fmt.Sprintf("metric ID %q does not match expected pattern", m.ID))
 	}
+	// The UI makes assumptions that these fields will be set.
+	if m.HumanReadableName == "" {
+		panic("human readable name must be set")
+	}
+	if m.Description == "" {
+		panic("description must be set")
+	}
+	if m.SortPriority <= 0 {
+		panic("sort priority must be set to a positive integer")
+	}
 	return Definition{
-		ID:             ID(m.ID),
-		Name:           fmt.Sprintf("metrics/%s", m.ID),
-		BaseColumnName: strings.ReplaceAll(m.ID, "-", "_"),
-		FilterSQL:      m.FilterSQL,
-		CountSQL:       m.CountSQL,
+		ID:                ID(m.ID),
+		HumanReadableName: m.HumanReadableName,
+		Description:       m.Description,
+		SortPriority:      m.SortPriority,
+		IsDefault:         m.IsDefault,
+		Name:              fmt.Sprintf("metrics/%s", m.ID),
+		BaseColumnName:    strings.ReplaceAll(m.ID, "-", "_"),
+		FilterSQL:         m.FilterSQL,
+		CountSQL:          m.CountSQL,
 	}
 }
 
 // ID is an identifier of a metric. For example, "human-cls-failed-presubmit".
 // It should be a valid AIP-122 Resource ID Segment.
 type ID string
+
+func (i ID) String() string {
+	return string(i)
+}
 
 // Definition describes a metric.
 type Definition struct {
@@ -140,17 +187,47 @@ type Definition struct {
 	// E.g. "metrics/human-cls-failed-presubmit"
 	Name string
 
+	// A human readable name for the metric. Appears on the user interface.
+	HumanReadableName string
+
+	// A human readable descripton of the metric. Appears on the user interface
+	// behind a help tooltip.
+	Description string
+
+	// SortPriority is a number that defines the order by which metrics are
+	// sorted by default. By default, the metric with the highest sort priority
+	// will define the primary sort order, followed by the metric with the
+	// second highest sort priority, and so on.
+	SortPriority int
+
+	// IsDefault indicates whether this metric is shown by default in the UI.
+	IsDefault bool
+
 	// BaseColumnName is the name of the metric to use in SQL column names.
 	// It is the same as the identifier ID, but with hypens (-) replaced with
 	// underscores.
 	BaseColumnName string
 
-	// A predicate on failures, that defines which failures are included in
-	// the metric. See MetricSpec.FilterSQL for more details.
+	// The predicate on failures, that defines when an item is eligible to be
+	// counted. Fields on the clustered_failures table may be accessed via the
+	// prefix "f.".
+	// For example, to count over failures on critical builds, use:
+	// "f.build_critical".
+	//
+	// If no filtering is desired, this is left blank.
 	FilterSQL string
 
-	// An expression that defines the distinct items to count.
-	// See MetricSpec.CountSQL for more details.
+	// An expression that defines the distinct items to count. Fields on the
+	// clustered_failures table may be accessed via the prefix "f.".
+	//
+	// For example, to count distinct changelists, use:
+	// `IF(ARRAY_LENGTH(f.changelists)>0,
+	//	  CONCAT(f.changelists[OFFSET(0)].host, f.changelists[OFFSET(0)].change),
+	// NULL)`
+	// While this may return NULL for items not to be counted, it is generally
+	// preferred to use FilterSQL for that purpose.
+	//
+	// If failures are to be counted instead of distinct items, this is left blank.
 	CountSQL string
 }
 

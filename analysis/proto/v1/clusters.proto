@@ -75,7 +75,7 @@ service Clusters {
     // test failures by LUCI Analysis (e.g. for cluster impact calculations).
     rpc Cluster(ClusterRequest) returns (ClusterResponse) {};
 
-    // Reads information about the given clusters.
+    // Reads information about the given cluster.
     //
     // Please consult LUCI Analysis owners before adding additional calls to
     // this RPC, as the implementation currently calls back to BigQuery and as
@@ -85,9 +85,8 @@ service Clusters {
     // the largest LUCI Project, which translates to a cost of 0.5 US cents
     // per query at published pricing (US$5/TB analyzed for BigQuery).
     //
-    // Changes to this RPC should comply with https://google.aip.dev/231.
-    rpc BatchGet(BatchGetClustersRequest)
-        returns (BatchGetClustersResponse) {};
+    // Changes to this RPC should comply with https://google.aip.dev/131.
+    rpc Get(GetClusterRequest) returns (luci.analysis.v1.Cluster) {};
 
     // Reads current progress re-clustering the given project. Re-clustering
     // means updating the clusters each failure is in to reflect the latest
@@ -214,22 +213,11 @@ message ClusteringVersion {
     google.protobuf.Timestamp config_version = 3;
 }
 
-message BatchGetClustersRequest {
-    // The LUCI project shared by all clusters to retrieve.
-    // Required.
-    // Format: projects/{project}.
-    string parent = 1;
-
-    // The resource name of the clusters retrieve.
+message GetClusterRequest {
+    // The resource name of the cluster to retrieve.
     // Format: projects/{project}/clusters/{cluster_algorithm}/{cluster_id}.
-    // Designed to conform to aip.dev/231.
-    // At most 1,000 clusters may be requested at a time.
-    repeated string names = 2;
-}
-
-message BatchGetClustersResponse {
-    // The clusters requested.
-    repeated Cluster clusters = 1;
+    // Designed to conform to aip.dev/131.
+    string name = 1;
 }
 
 message Cluster {
@@ -250,7 +238,7 @@ message Cluster {
         int64 nominal = 1;
     }
 
-    message ImpactValues {
+    message TimewiseCounts {
         // The impact value for the last day.
         Counts one_day = 2;
         // The impact value for the last three days.
@@ -259,24 +247,27 @@ message Cluster {
         Counts seven_day = 4;
     }
 
-    // The total number of user changelists which failed presubmit.
-    ImpactValues user_cls_failed_presubmit = 4;
-
-    // The total number of failures in the cluster that occurred on tryjobs
-    // that were critical (presubmit-blocking) and were exonerated for a
-    // reason other than NOT_CRITICAL or UNEXPECTED_PASS.
-    ImpactValues critical_failures_exonerated = 5;
-
-    // The total number of failures in the cluster.
-    ImpactValues failures = 6;
-
-    // The number of user changelists that had failures in this cluster,
-    // over the last week.
-    Counts user_cls_with_failures = 8;
-
-    // The number of postsubmit builds that had failures in this cluster,
-    // over the last week.
-    Counts postsubmit_builds_with_failures = 9;
+    // The values of metrics associated with the cluster. The map key is the ID
+    // of the metric (e.g. "human-cls-failed-presubmit").
+    //
+    // The following metrics are currently defined:
+    // - "human-cls-failed-presubmit": 
+    //   The number of distinct developer changelists that failed at least one
+    //   presubmit (CQ) run because of failure(s) in this cluster. Excludes
+    //   changelists authored by automation.
+    // - "critical-failures-exonerated":
+    //   The number of failures on test variants which were configured to be
+    //   presubmit-blocking, which were exonerated (i.e. did not actually block
+    //   presubmit) because infrastructure determined the test variant to be
+    //   failing or too flaky at tip-of-tree. If this number is non-zero, it
+    //   means a test variant which was configured to be presubmit-blocking is
+    //   not stable enough to do so, and should be fixed or made non-blocking.
+    // - "failures":
+    //   The total number of test results in this cluster. LUCI Analysis only
+    //   clusters test results which are unexpected and have a status of crash,
+    //   abort or fail, so by definition the only test results counted here
+    //   will be an unexpected fail/crash/abort.
+    map<string, TimewiseCounts> metrics = 10;
 
     // The failure association rule equivalent to the cluster. Populated only
     // for suggested clusters where has_example = true.
@@ -286,6 +277,8 @@ message Cluster {
     // cluster ID.
     // Used to facilitate creating a new rule based on a suggested cluster.
     string equivalent_failure_association_rule = 7;
+
+    // Next ID: 11.
 }
 
 // Designed to conform with aip.dev/131.
@@ -361,13 +354,29 @@ message QueryClusterSummariesRequest {
     string failure_filter = 2;
 
     // A comma-seperated list of fields to order the response by.
-    // Valid fields are "presubmit_rejects", "critical_failures_exonerated"
-    // and "failures".
-    // The default sorting order is ascending, to specify descending order
-    // for a field append a " desc" suffix.
-    // E.g. "presubmit_rejects desc, failures desc".
-    // See the order by section on aip.dev/132 for more details.
+    //
+    // The default sorting order is ascending; to specify descending order
+    // for a field append a " desc" suffix. The dot syntax can be used
+    // to navigate fields and map keys, and the backtick character (``) used
+    // to escape field names that do not match `[a-zA-Z_][a-zA-Z0-9_]`.
+    //
+    // The only sortable columns that are supported currently are metric
+    // fields.
+    //
+    // For example, to sort by human CLs failed presubmit descending, use:
+    // "metrics.`human-cls-failed-presubmit`.value desc".
+    // To sort by human CLs failed presubmit followed by failures, use:
+    // "metrics.`human-cls-failed-presubmit`.value desc, metrics.`failures`.value desc"
+    //
+    // For more details, see aip.dev/132 for ordering syntax, and
+    // aip.dev/161#map-fields for navigating map fields.
     string order_by = 3;
+
+    // The resource name(s) of the metrics to include in the cluster summaries.
+    // Format: metrics/{metric_id}.
+    // See the metrics field on the luci.analysis.v1.Cluster message for details
+    // about valid metric identifiers.
+    repeated string metrics = 4;
 }
 
 message QueryClusterSummariesResponse {
@@ -386,22 +395,24 @@ message ClusterSummary {
     // rules algorithm clusters.
     luci.analysis.v1.AssociatedBug bug = 3;
 
-    // The number of distinct developer changelists that failed at least one
-    // presubmit (CQ) run because of failure(s) in this cluster.
-    int64 presubmit_rejects = 4;
+    message MetricValue {
+        // The residual value of the cluster metric.
+        // For bug clusters, the residual metric value is the metric value
+        // calculated using all of the failures in the cluster.
+        // For suggested clusters, the residual metric value is calculated
+        // using the failures in the cluster which are not also part of a
+        // bug cluster. In this way, measures attributed the bug clusters
+        // are not counted again against suggested clusters.
+        int64 value = 1;
+    }
 
-    // The number of failures on test variants which were configured to be
-    // presubmit-blocking, which were exonerated (i.e. did not actually block
-    // presubmit) because infrastructure determined the test variant to be
-    // failing or too flaky at tip-of-tree. If this number is non-zero, it
-    // means a test variant which was configured to be presubmit-blocking is
-    // not stable enough to do so, and should be fixed or made non-blocking.
-    int64 critical_failures_exonerated = 5;
+    // The values of cluster metrics. The key of the map is the identifier
+    // of the metric (e.g. "human-cls-failed-presubmit").
+    // See the metrics field on the luci.analysis.v1.Cluster message for details
+    // about valid metric identifiers.
+    map<string, MetricValue> metrics = 7;
 
-    // The total number of test results in this cluster. LUCI Analysis only
-    // clusters test results which are unexpected and have a status of crash,
-    // abort or fail.
-    int64 failures = 6;
+    // Next ID: 8.
 }
 
 message QueryClusterFailuresRequest {

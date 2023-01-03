@@ -17,6 +17,7 @@ package analysis
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
@@ -31,39 +32,30 @@ import (
 )
 
 var ClusteredFailuresTable = aip.NewTable().WithColumns(
-	aip.NewColumn().WithName("test_id").WithDatabaseName("test_id").FilterableImplicitly().Build(),
-	aip.NewColumn().WithName("failure_reason").WithDatabaseName("failure_reason.primary_error_message").FilterableImplicitly().Build(),
-	aip.NewColumn().WithName("realm").WithDatabaseName("realm").Filterable().Build(),
-	aip.NewColumn().WithName("ingested_invocation_id").WithDatabaseName("ingested_invocation_id").Filterable().Build(),
-	aip.NewColumn().WithName("cluster_algorithm").WithDatabaseName("cluster_algorithm").Filterable().Build(),
-	aip.NewColumn().WithName("cluster_id").WithDatabaseName("cluster_id").Filterable().Build(),
-	aip.NewColumn().WithName("variant_hash").WithDatabaseName("variant_hash").Filterable().Build(),
-	aip.NewColumn().WithName("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
-	aip.NewColumn().WithName("variant").WithDatabaseName("variant").KeyValue().Filterable().Build(),
-	aip.NewColumn().WithName("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
-	aip.NewColumn().WithName("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
-	aip.NewColumn().WithName("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
+	aip.NewColumn().WithFieldPath("test_id").WithDatabaseName("test_id").FilterableImplicitly().Build(),
+	aip.NewColumn().WithFieldPath("failure_reason").WithDatabaseName("failure_reason.primary_error_message").FilterableImplicitly().Build(),
+	aip.NewColumn().WithFieldPath("realm").WithDatabaseName("realm").Filterable().Build(),
+	aip.NewColumn().WithFieldPath("ingested_invocation_id").WithDatabaseName("ingested_invocation_id").Filterable().Build(),
+	aip.NewColumn().WithFieldPath("cluster_algorithm").WithDatabaseName("cluster_algorithm").Filterable().Build(),
+	aip.NewColumn().WithFieldPath("cluster_id").WithDatabaseName("cluster_id").Filterable().Build(),
+	aip.NewColumn().WithFieldPath("variant_hash").WithDatabaseName("variant_hash").Filterable().Build(),
+	aip.NewColumn().WithFieldPath("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
+	aip.NewColumn().WithFieldPath("variant").WithDatabaseName("variant").KeyValue().Filterable().Build(),
+	aip.NewColumn().WithFieldPath("tags").WithDatabaseName("tags").KeyValue().Filterable().Build(),
+	aip.NewColumn().WithFieldPath("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
+	aip.NewColumn().WithFieldPath("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
 ).Build()
 
 const MetricValueColumnSuffix = "value"
-
-var ClusterSummariesTable = aip.NewTable().WithColumns(
-	aip.NewColumn().WithName("presubmit_rejects").WithDatabaseName(metrics.HumanClsFailedPresubmit.ColumnName(MetricValueColumnSuffix)).Sortable().Build(),
-	aip.NewColumn().WithName("critical_failures_exonerated").WithDatabaseName(metrics.CriticalFailuresExonerated.ColumnName(MetricValueColumnSuffix)).Sortable().Build(),
-	aip.NewColumn().WithName("failures").WithDatabaseName(metrics.Failures.ColumnName(MetricValueColumnSuffix)).Sortable().Build(),
-).Build()
-
-var ClusterSummariesDefaultOrder = []aip.OrderBy{
-	{Name: "presubmit_rejects", Descending: true},
-	{Name: "critical_failures_exonerated", Descending: true},
-	{Name: "failures", Descending: true},
-}
 
 type QueryClusterSummariesOptions struct {
 	// A filter on the underlying failures to include in the clusters.
 	FailureFilter *aip.Filter
 	OrderBy       []aip.OrderBy
 	Realms        []string
+	// Metrics is the set of metrics to query. If a metric is referenced
+	// in the OrderBy clause, it must also be included here.
+	Metrics []metrics.Definition
 }
 
 // ClusterSummary represents a summary of the cluster's failures
@@ -76,7 +68,42 @@ type ClusterSummary struct {
 	MetricValues         map[metrics.ID]int64
 }
 
-// Queries a summary of clusters in the project.
+// metricFieldName returns the protocol buffer field path that
+// func metricFieldName(id metrics.ID) string {
+// 	return fmt.Sprintf("metrics.`%s`.value", string(m.ID))
+// }
+
+func defaultOrder(ms []metrics.Definition) []aip.OrderBy {
+	sortedMetrics := make([]metrics.Definition, len(ms))
+	copy(sortedMetrics, ms)
+
+	// Sort by SortPriority descending.
+	sort.Slice(sortedMetrics, func(i, j int) bool {
+		return sortedMetrics[i].SortPriority > sortedMetrics[j].SortPriority
+	})
+
+	var result []aip.OrderBy
+	for _, m := range sortedMetrics {
+		result = append(result, aip.OrderBy{
+			FieldPath:  aip.NewFieldPath("metrics", string(m.ID), "value"),
+			Descending: true,
+		})
+	}
+	return result
+}
+
+// ClusterSummariesTable returns the schema of the table returned by
+// the cluster summaries query. This can be used to validate
+func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip.Table {
+	var columns []*aip.Column
+	for _, metric := range queriedMetrics {
+		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
+		columns = append(columns, aip.NewColumn().WithFieldPath("metrics", string(metric.ID), "value").WithDatabaseName(metricColumnName).Sortable().Build())
+	}
+	return aip.NewTable().WithColumns(columns...).Build()
+}
+
+// QueryClusterSummaries queries a summary of clusters in the project.
 // The subset of failures included in the clustering may be filtered.
 // If the dataset for the LUCI project does not exist, returns
 // ProjectNotExistsErr.
@@ -97,8 +124,10 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 		return nil, errors.Annotate(err, "failure_filter").Tag(InvalidArgumentTag).Err()
 	}
 
-	order := aip.MergeWithDefaultOrder(ClusterSummariesDefaultOrder, options.OrderBy)
-	orderByClause, err := ClusterSummariesTable.OrderByClause(order)
+	resultTable := ClusterSummariesTable(options.Metrics)
+
+	order := aip.MergeWithDefaultOrder(defaultOrder(options.Metrics), options.OrderBy)
+	orderByClause, err := resultTable.OrderByClause(order)
 	if err != nil {
 		return nil, errors.Annotate(err, "order_by").Tag(InvalidArgumentTag).Err()
 	}
@@ -116,7 +145,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	// number of distinct failures / other items in the cluster.
 	var precomputeList []string
 	var metricSelectList []string
-	for _, metric := range metrics.DefaultMetrics {
+	for _, metric := range options.Metrics {
 		itemIdentifier := "unique_test_result_id"
 		if metric.CountSQL != "" {
 			itemIdentifier = metric.ColumnName("item")
@@ -127,8 +156,8 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 			filterIdentifier = metric.ColumnName("filter")
 			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.FilterSQL, filterIdentifier))
 		}
-		metricIdentifier := metric.ColumnName(MetricValueColumnSuffix)
-		metricSelect := fmt.Sprintf("APPROX_COUNT_DISTINCT(IF(%s,%s,NULL)) AS %s,", filterIdentifier, itemIdentifier, metricIdentifier)
+		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
+		metricSelect := fmt.Sprintf("APPROX_COUNT_DISTINCT(IF(%s,%s,NULL)) AS %s,", filterIdentifier, itemIdentifier, metricColumnName)
 		metricSelectList = append(metricSelectList, metricSelect)
 	}
 
@@ -198,8 +227,8 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 		row.ExampleFailureReason = rowVals.NullString("example_failure_reason")
 		row.ExampleTestID = rowVals.String("example_test_id")
 		row.UniqueTestIDs = rowVals.Int64("unique_test_ids")
-		row.MetricValues = make(map[metrics.ID]int64, len(metrics.DefaultMetrics))
-		for _, metric := range metrics.DefaultMetrics {
+		row.MetricValues = make(map[metrics.ID]int64, len(options.Metrics))
+		for _, metric := range options.Metrics {
 			row.MetricValues[metric.ID] = rowVals.Int64(metric.ColumnName(MetricValueColumnSuffix))
 		}
 		if err := rowVals.Error(); err != nil {

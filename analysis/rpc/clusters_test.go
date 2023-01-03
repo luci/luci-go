@@ -283,7 +283,7 @@ func TestClusters(t *testing.T) {
 				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
 			})
 		})
-		Convey("BatchGet", func() {
+		Convey("Get", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
 					Realm:      "testproject:@root",
@@ -312,214 +312,236 @@ func TestClusters(t *testing.T) {
 			a := &failurereason.Algorithm{}
 			reasonClusterID := a.Cluster(compiledTestProjectCfg, example)
 
-			analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{
-				{
-					ClusterID: clustering.ClusterID{
-						Algorithm: rulesalgorithm.AlgorithmName,
-						ID:        "11111100000000000000000000000000",
-					},
-					MetricValues: map[metrics.ID]metrics.TimewiseCounts{
-						metrics.HumanClsFailedPresubmit.ID: {
-							OneDay:   metrics.Counts{Nominal: 1},
-							ThreeDay: metrics.Counts{Nominal: 2},
-							SevenDay: metrics.Counts{Nominal: 3},
-						},
-						metrics.CriticalFailuresExonerated.ID: {
-							OneDay:   metrics.Counts{Nominal: 4},
-							ThreeDay: metrics.Counts{Nominal: 5},
-							SevenDay: metrics.Counts{Nominal: 6},
-						},
-						metrics.Failures.ID: {
-							OneDay:   metrics.Counts{Nominal: 7},
-							ThreeDay: metrics.Counts{Nominal: 8},
-							SevenDay: metrics.Counts{Nominal: 9},
-						},
-					},
-					DistinctUserCLsWithFailures7d:  metrics.Counts{Nominal: 10},
-					PostsubmitBuildsWithFailures7d: metrics.Counts{Nominal: 11},
-					ExampleFailureReason:           bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
-					TopTestIDs: []analysis.TopCount{
-						{Value: "TestID 1", Count: 2},
-						{Value: "TestID 2", Count: 1},
-					},
-					Realms: []string{"testproject:realm1", "testproject:realm2"},
-				},
-				{
-					ClusterID: clustering.ClusterID{
-						Algorithm: testname.AlgorithmName,
-						ID:        "cccccc00000000000000000000000001",
-					},
-					MetricValues: map[metrics.ID]metrics.TimewiseCounts{
-						metrics.HumanClsFailedPresubmit.ID: {
-							SevenDay: metrics.Counts{Nominal: 11},
-						},
-					},
-					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 2."},
-					TopTestIDs: []analysis.TopCount{
-						{Value: "TestID 3", Count: 2},
-					},
-					Realms: []string{"testproject:realm2", "testproject:realm3"},
-				},
-				{
-					ClusterID: clustering.ClusterID{
-						Algorithm: failurereason.AlgorithmName,
-						ID:        hex.EncodeToString(reasonClusterID),
-					},
-					MetricValues: map[metrics.ID]metrics.TimewiseCounts{
-						metrics.HumanClsFailedPresubmit.ID: {
-							SevenDay: metrics.Counts{Nominal: 15},
-						},
-					},
-					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 123."},
-					TopTestIDs: []analysis.TopCount{
-						{Value: "TestID_Example", Count: 10},
-					},
-					Realms: []string{"testproject:realm1", "testproject:realm3"},
-				},
-			}
+			analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{}
 
-			request := &pb.BatchGetClustersRequest{
-				Parent: "projects/testproject",
-				Names: []string{
-					// Rule for which data exists.
-					"projects/testproject/clusters/rules/11111100000000000000000000000000",
-
-					// Rule for which no data exists.
-					"projects/testproject/clusters/rules/1111110000000000000000000000ffff",
-
-					// Suggested cluster for which cluster ID matches the example
-					// provided for the cluster.
-					"projects/testproject/clusters/" + failurereason.AlgorithmName + "/" + hex.EncodeToString(reasonClusterID),
-
-					// Suggested cluster for which data exists, but cluster ID mismatches
-					// the example provided for the cluster. This could be because
-					// configuration has changed and re-clustering is not yet complete.
-					"projects/testproject/clusters/" + testname.AlgorithmName + "/cccccc00000000000000000000000001",
-
-					// Suggested cluster for which no impact data exists.
-					"projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
-				},
-			}
-
-			expectedResponse := &pb.BatchGetClustersResponse{
-				Clusters: []*pb.Cluster{
-					{
-						Name:       "projects/testproject/clusters/rules/11111100000000000000000000000000",
-						HasExample: true,
-						UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
-							OneDay:   &pb.Cluster_Counts{Nominal: 1},
-							ThreeDay: &pb.Cluster_Counts{Nominal: 2},
-							SevenDay: &pb.Cluster_Counts{Nominal: 3},
-						},
-						CriticalFailuresExonerated: &pb.Cluster_ImpactValues{
-							OneDay:   &pb.Cluster_Counts{Nominal: 4},
-							ThreeDay: &pb.Cluster_Counts{Nominal: 5},
-							SevenDay: &pb.Cluster_Counts{Nominal: 6},
-						},
-						Failures: &pb.Cluster_ImpactValues{
-							OneDay:   &pb.Cluster_Counts{Nominal: 7},
-							ThreeDay: &pb.Cluster_Counts{Nominal: 8},
-							SevenDay: &pb.Cluster_Counts{Nominal: 9},
-						},
-						UserClsWithFailures:          &pb.Cluster_Counts{Nominal: 10},
-						PostsubmitBuildsWithFailures: &pb.Cluster_Counts{Nominal: 11},
-					},
-					{
-						Name:                         "projects/testproject/clusters/rules/1111110000000000000000000000ffff",
-						HasExample:                   false,
-						UserClsFailedPresubmit:       emptyMetricValues(),
-						CriticalFailuresExonerated:   emptyMetricValues(),
-						Failures:                     emptyMetricValues(),
-						UserClsWithFailures:          &pb.Cluster_Counts{},
-						PostsubmitBuildsWithFailures: &pb.Cluster_Counts{},
-					},
-					{
-						Name:       "projects/testproject/clusters/" + failurereason.AlgorithmName + "/" + hex.EncodeToString(reasonClusterID),
-						Title:      "Example failure reason %.",
-						HasExample: true,
-						UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
-							OneDay:   &pb.Cluster_Counts{},
-							ThreeDay: &pb.Cluster_Counts{},
-							SevenDay: &pb.Cluster_Counts{Nominal: 15},
-						},
-						CriticalFailuresExonerated:       emptyMetricValues(),
-						Failures:                         emptyMetricValues(),
-						UserClsWithFailures:              &pb.Cluster_Counts{},
-						PostsubmitBuildsWithFailures:     &pb.Cluster_Counts{},
-						EquivalentFailureAssociationRule: `reason LIKE "Example failure reason %."`,
-					},
-					{
-						Name:       "projects/testproject/clusters/" + testname.AlgorithmName + "/cccccc00000000000000000000000001",
-						Title:      "(definition unavailable due to ongoing reclustering)",
-						HasExample: true,
-						UserClsFailedPresubmit: &pb.Cluster_ImpactValues{
-							OneDay:   &pb.Cluster_Counts{},
-							ThreeDay: &pb.Cluster_Counts{},
-							SevenDay: &pb.Cluster_Counts{Nominal: 11},
-						},
-						CriticalFailuresExonerated:       emptyMetricValues(),
-						Failures:                         emptyMetricValues(),
-						UserClsWithFailures:              &pb.Cluster_Counts{},
-						PostsubmitBuildsWithFailures:     &pb.Cluster_Counts{},
-						EquivalentFailureAssociationRule: ``,
-					},
-					{
-						Name:                         "projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
-						HasExample:                   false,
-						UserClsFailedPresubmit:       emptyMetricValues(),
-						CriticalFailuresExonerated:   emptyMetricValues(),
-						Failures:                     emptyMetricValues(),
-						UserClsWithFailures:          &pb.Cluster_Counts{},
-						PostsubmitBuildsWithFailures: &pb.Cluster_Counts{},
-					},
-				},
+			request := &pb.GetClusterRequest{
+				Name: "projects/testproject/clusters/rules/22222200000000000000000000000000",
 			}
 
 			Convey("Not authorised to get cluster", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
-				response, err := server.BatchGet(ctx, request)
+				response, err := server.Get(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.get")
 				So(response, ShouldBeNil)
 			})
 			Convey("Not authorised to perform expensive queries", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermExpensiveClusterQueries)
 
-				response, err := server.BatchGet(ctx, request)
+				response, err := server.Get(ctx, request)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.clusters.expensiveQueries")
 				So(response, ShouldBeNil)
 			})
 			Convey("With a valid request", func() {
-				Convey("No duplicate requests", func() {
+				analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{
+					{
+						ClusterID: clustering.ClusterID{
+							Algorithm: rulesalgorithm.AlgorithmName,
+							ID:        "11111100000000000000000000000000",
+						},
+						MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+							metrics.HumanClsFailedPresubmit.ID: {
+								OneDay:   metrics.Counts{Nominal: 1},
+								ThreeDay: metrics.Counts{Nominal: 2},
+								SevenDay: metrics.Counts{Nominal: 3},
+							},
+							metrics.CriticalFailuresExonerated.ID: {
+								OneDay:   metrics.Counts{Nominal: 4},
+								ThreeDay: metrics.Counts{Nominal: 5},
+								SevenDay: metrics.Counts{Nominal: 6},
+							},
+							metrics.Failures.ID: {
+								OneDay:   metrics.Counts{Nominal: 7},
+								ThreeDay: metrics.Counts{Nominal: 8},
+								SevenDay: metrics.Counts{Nominal: 9},
+							},
+						},
+						DistinctUserCLsWithFailures7d:  metrics.Counts{Nominal: 13},
+						PostsubmitBuildsWithFailures7d: metrics.Counts{Nominal: 14},
+						ExampleFailureReason:           bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
+						TopTestIDs: []analysis.TopCount{
+							{Value: "TestID 1", Count: 2},
+							{Value: "TestID 2", Count: 1},
+						},
+						Realms: []string{"testproject:realm1", "testproject:realm2"},
+					},
+				}
+				request := &pb.GetClusterRequest{
+					Name: "projects/testproject/clusters/rules/11111100000000000000000000000000",
+				}
+				expectedResponse := &pb.Cluster{
+					Name:       "projects/testproject/clusters/rules/11111100000000000000000000000000",
+					HasExample: true,
+					Metrics: map[string]*pb.Cluster_TimewiseCounts{
+						metrics.HumanClsFailedPresubmit.ID.String(): {
+							OneDay:   &pb.Cluster_Counts{Nominal: 1},
+							ThreeDay: &pb.Cluster_Counts{Nominal: 2},
+							SevenDay: &pb.Cluster_Counts{Nominal: 3},
+						},
+						metrics.CriticalFailuresExonerated.ID.String(): {
+							OneDay:   &pb.Cluster_Counts{Nominal: 4},
+							ThreeDay: &pb.Cluster_Counts{Nominal: 5},
+							SevenDay: &pb.Cluster_Counts{Nominal: 6},
+						},
+						metrics.Failures.ID.String(): {
+							OneDay:   &pb.Cluster_Counts{Nominal: 7},
+							ThreeDay: &pb.Cluster_Counts{Nominal: 8},
+							SevenDay: &pb.Cluster_Counts{Nominal: 9},
+						},
+					},
+				}
+
+				Convey("Rule with clustered failures", func() {
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(err, ShouldBeNil)
 					So(response, ShouldResembleProto, expectedResponse)
 				})
-				Convey("No test result list permission", func() {
-					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
+				Convey("Rule without clustered failures", func() {
+					analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{}
 
-					// Run
-					response, err := server.BatchGet(ctx, request)
-
-					// Verify
-					for _, r := range expectedResponse.Clusters {
-						r.Title = ""
-						r.EquivalentFailureAssociationRule = ""
+					expectedResponse.HasExample = false
+					expectedResponse.Metrics = map[string]*pb.Cluster_TimewiseCounts{
+						metrics.HumanClsFailedPresubmit.ID.String():    emptyMetricValues(),
+						metrics.CriticalFailuresExonerated.ID.String(): emptyMetricValues(),
+						metrics.TestRunsFailed.ID.String():             emptyMetricValues(),
+						metrics.Failures.ID.String():                   emptyMetricValues(),
 					}
+
+					// Run
+					response, err := server.Get(ctx, request)
+
+					// Verify
 					So(err, ShouldBeNil)
 					So(response, ShouldResembleProto, expectedResponse)
 				})
-				Convey("Duplicate requests", func() {
-					// Even if request items are duplicated, the request
-					// should still succeed and return correct results.
-					request.Names = append(request.Names, request.Names...)
-					expectedResponse.Clusters = append(expectedResponse.Clusters, expectedResponse.Clusters...)
+				Convey("Suggested cluster with example failure matching cluster definition", func() {
+					// Suggested cluster for which there are clustered failures, and
+					// the cluster ID matches the example provided for the cluster.
+					analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{
+						{
+							ClusterID: clustering.ClusterID{
+								Algorithm: failurereason.AlgorithmName,
+								ID:        hex.EncodeToString(reasonClusterID),
+							},
+							MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+								metrics.HumanClsFailedPresubmit.ID: {
+									SevenDay: metrics.Counts{Nominal: 15},
+								},
+							},
+							ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 123."},
+							TopTestIDs: []analysis.TopCount{
+								{Value: "TestID_Example", Count: 10},
+							},
+							Realms: []string{"testproject:realm1", "testproject:realm3"},
+						},
+					}
+
+					request := &pb.GetClusterRequest{
+						Name: "projects/testproject/clusters/" + failurereason.AlgorithmName + "/" + hex.EncodeToString(reasonClusterID),
+					}
+					expectedResponse := &pb.Cluster{
+						Name:       "projects/testproject/clusters/" + failurereason.AlgorithmName + "/" + hex.EncodeToString(reasonClusterID),
+						Title:      "Example failure reason %.",
+						HasExample: true,
+						Metrics: map[string]*pb.Cluster_TimewiseCounts{
+							metrics.HumanClsFailedPresubmit.ID.String(): {
+								OneDay:   &pb.Cluster_Counts{},
+								ThreeDay: &pb.Cluster_Counts{},
+								SevenDay: &pb.Cluster_Counts{Nominal: 15},
+							},
+						},
+						EquivalentFailureAssociationRule: `reason LIKE "Example failure reason %."`,
+					}
 
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedResponse)
+
+					Convey("No test result list permission", func() {
+						authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
+
+						// Run
+						response, err := server.Get(ctx, request)
+
+						// Verify
+						expectedResponse.Title = ""
+						expectedResponse.EquivalentFailureAssociationRule = ""
+						So(err, ShouldBeNil)
+						So(response, ShouldResembleProto, expectedResponse)
+					})
+				})
+				Convey("Suggested cluster with example failure not matching cluster definition", func() {
+					// Suggested cluster for which there are clustered failures,
+					// but cluster ID mismatches the example provided for the cluster.
+					// This could be because clustering configuration has changed and
+					// re-clustering is not yet complete.
+					analysisClient.clustersByProject["testproject"] = []*analysis.Cluster{
+						{
+							ClusterID: clustering.ClusterID{
+								Algorithm: testname.AlgorithmName,
+								ID:        "cccccc00000000000000000000000001",
+							},
+							MetricValues: map[metrics.ID]metrics.TimewiseCounts{
+								metrics.HumanClsFailedPresubmit.ID: {
+									SevenDay: metrics.Counts{Nominal: 11},
+								},
+							},
+							ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 2."},
+							TopTestIDs: []analysis.TopCount{
+								{Value: "TestID 3", Count: 2},
+							},
+							Realms: []string{"testproject:realm2", "testproject:realm3"},
+						},
+					}
+
+					request := &pb.GetClusterRequest{
+						Name: "projects/testproject/clusters/" + testname.AlgorithmName + "/cccccc00000000000000000000000001",
+					}
+					expectedResponse := &pb.Cluster{
+						Name:       "projects/testproject/clusters/" + testname.AlgorithmName + "/cccccc00000000000000000000000001",
+						Title:      "(definition unavailable due to ongoing reclustering)",
+						HasExample: true,
+						Metrics: map[string]*pb.Cluster_TimewiseCounts{
+							metrics.HumanClsFailedPresubmit.ID.String(): {
+								OneDay:   &pb.Cluster_Counts{},
+								ThreeDay: &pb.Cluster_Counts{},
+								SevenDay: &pb.Cluster_Counts{Nominal: 11},
+							},
+						},
+						EquivalentFailureAssociationRule: ``,
+					}
+
+					// Run
+					response, err := server.Get(ctx, request)
+
+					// Verify
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedResponse)
+				})
+				Convey("Suggested cluster without clustered failures", func() {
+					// Suggested cluster for which no impact data exists.
+					request := &pb.GetClusterRequest{
+						Name: "projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
+					}
+					expectedResponse := &pb.Cluster{
+						Name:       "projects/testproject/clusters/reason-v3/cccccc0000000000000000000000ffff",
+						HasExample: false,
+						Metrics: map[string]*pb.Cluster_TimewiseCounts{
+							metrics.HumanClsFailedPresubmit.ID.String():    emptyMetricValues(),
+							metrics.CriticalFailuresExonerated.ID.String(): emptyMetricValues(),
+							metrics.TestRunsFailed.ID.String():             emptyMetricValues(),
+							metrics.Failures.ID.String():                   emptyMetricValues(),
+						},
+					}
+
+					// Run
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(err, ShouldBeNil)
@@ -527,88 +549,51 @@ func TestClusters(t *testing.T) {
 				})
 			})
 			Convey("With invalid request", func() {
-				Convey("Invalid parent", func() {
-					request.Parent = "blah"
+				Convey("No name specified", func() {
+					request.Name = ""
 
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "parent: invalid project name, expected format: projects/{project}")
-				})
-				Convey("No names specified", func() {
-					request.Names = []string{}
-
-					// Run
-					response, err := server.BatchGet(ctx, request)
-
-					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "names must be specified")
-				})
-				Convey("Parent does not match request items", func() {
-					// Request asks for project "blah" but parent asks for
-					// project "testproject".
-					So(request.Parent, ShouldEqual, "projects/testproject")
-					request.Names[1] = "projects/blah/clusters/reason-v3/cccccc00000000000000000000000001"
-
-					// Run
-					response, err := server.BatchGet(ctx, request)
-
-					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `name 1: project must match parent project ("testproject")`)
+					So(err, ShouldBeRPCInvalidArgument, "name: must be specified")
 				})
 				Convey("Invalid name", func() {
-					request.Names[1] = "invalid"
+					request.Name = "invalid"
 
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name 1: invalid cluster name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}")
+					So(err, ShouldBeRPCInvalidArgument, "name: invalid cluster name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}")
 				})
 				Convey("Invalid cluster algorithm in name", func() {
-					request.Names[1] = "projects/blah/clusters/reason/cccccc00000000000000000000000001"
+					request.Name = "projects/blah/clusters/reason/cccccc00000000000000000000000001"
 
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name 1: invalid cluster identity: algorithm not valid")
+					So(err, ShouldBeRPCInvalidArgument, "name: invalid cluster identity: algorithm not valid")
 				})
 				Convey("Invalid cluster ID in name", func() {
-					request.Names[1] = "projects/blah/clusters/reason-v3/123"
+					request.Name = "projects/blah/clusters/reason-v3/123"
 
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "name 1: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
-				})
-				Convey("Too many request items", func() {
-					var names []string
-					for i := 0; i < 1001; i++ {
-						names = append(names, "projects/testproject/clusters/rules/11111100000000000000000000000000")
-					}
-					request.Names = names
-
-					// Run
-					response, err := server.BatchGet(ctx, request)
-
-					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, "too many names: at most 1000 clusters can be retrieved in one request")
+					So(err, ShouldBeRPCInvalidArgument, "name: invalid cluster identity: ID is not valid lowercase hexadecimal bytes")
 				})
 				Convey("Dataset does not exist", func() {
 					delete(analysisClient.clustersByProject, "testproject")
 
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
@@ -619,7 +604,7 @@ func TestClusters(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					// Run
-					response, err := server.BatchGet(ctx, request)
+					response, err := server.Get(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
@@ -699,7 +684,12 @@ func TestClusters(t *testing.T) {
 			request := &pb.QueryClusterSummariesRequest{
 				Project:       "testproject",
 				FailureFilter: "test_id:\"pita.Boot\" failure_reason:\"failed to boot\"",
-				OrderBy:       "presubmit_rejects desc, critical_failures_exonerated, failures desc",
+				OrderBy:       "metrics.`human-cls-failed-presubmit`.value desc, metrics.`critical-failures-exonerated`.value desc, metrics.failures.value desc",
+				Metrics: []string{
+					"metrics/human-cls-failed-presubmit",
+					"metrics/critical-failures-exonerated",
+					"metrics/failures",
+				},
 			}
 			Convey("Not authorised to list clusters", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListClusters)
@@ -751,29 +741,35 @@ func TestClusters(t *testing.T) {
 								LinkText: "crbug.com/7654321",
 								Url:      "https://bugs.chromium.org/p/chromium/issues/detail?id=7654321",
 							},
-							PresubmitRejects:           1,
-							CriticalFailuresExonerated: 2,
-							Failures:                   3,
+							Metrics: map[string]*pb.ClusterSummary_MetricValue{
+								metrics.HumanClsFailedPresubmit.ID.String():    {Value: 1},
+								metrics.CriticalFailuresExonerated.ID.String(): {Value: 2},
+								metrics.Failures.ID.String():                   {Value: 3},
+							},
 						},
 						{
 							ClusterId: &pb.ClusterId{
 								Algorithm: "reason-v3",
 								Id:        "cccccc00000000000000000000000001",
 							},
-							Title:                      `Example failure reason 2.`,
-							PresubmitRejects:           4,
-							CriticalFailuresExonerated: 5,
-							Failures:                   6,
+							Title: `Example failure reason 2.`,
+							Metrics: map[string]*pb.ClusterSummary_MetricValue{
+								metrics.HumanClsFailedPresubmit.ID.String():    {Value: 4},
+								metrics.CriticalFailuresExonerated.ID.String(): {Value: 5},
+								metrics.Failures.ID.String():                   {Value: 6},
+							},
 						},
 						{
 							ClusterId: &pb.ClusterId{
 								Algorithm: "rules",
 								Id:        "01234567890abcdef01234567890abcdef",
 							},
-							Title:                      `(rule archived)`,
-							PresubmitRejects:           7,
-							CriticalFailuresExonerated: 8,
-							Failures:                   9,
+							Title: `(rule archived)`,
+							Metrics: map[string]*pb.ClusterSummary_MetricValue{
+								metrics.HumanClsFailedPresubmit.ID.String():    {Value: 7},
+								metrics.CriticalFailuresExonerated.ID.String(): {Value: 8},
+								metrics.Failures.ID.String():                   {Value: 9},
+							},
 						},
 					},
 				}
@@ -799,6 +795,18 @@ func TestClusters(t *testing.T) {
 					// Instead, it should generate a description of the
 					// content of the cluster based on what the user can see.
 					expectedResponse.ClusterSummaries[0].Title = "Selected failures in TestID 1"
+
+					response, err := server.QueryClusterSummaries(ctx, request)
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedResponse)
+				})
+				Convey("Without metrics", func() {
+					request.Metrics = []string{}
+					request.OrderBy = ""
+
+					for _, item := range expectedResponse.ClusterSummaries {
+						item.Metrics = make(map[string]*pb.ClusterSummary_MetricValue)
+					}
 
 					response, err := server.QueryClusterSummaries(ctx, request)
 					So(err, ShouldBeNil)
@@ -834,7 +842,7 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `failure_filter: no filterable field named "test"`)
+					So(err, ShouldBeRPCInvalidArgument, `failure_filter: no filterable field "test"`)
 				})
 				Convey("Failure filter references unimplemented feature", func() {
 					request.FailureFilter = "test<=\"blah\""
@@ -846,15 +854,27 @@ func TestClusters(t *testing.T) {
 					So(response, ShouldBeNil)
 					So(err, ShouldBeRPCInvalidArgument, "failure_filter: comparator operator not implemented yet")
 				})
-				Convey("Order by syntax invalid", func() {
-					request.OrderBy = "presubmit_rejects asc"
+				Convey("Order by references metric that is not selected", func() {
+					request.Metrics = []string{"metrics/failures"}
+					request.OrderBy = "metrics.`human-cls-failed-presubmit`.value desc"
 
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
 
 					// Verify
 					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCInvalidArgument, `order_by: invalid ordering "presubmit_rejects asc"`)
+					So(err, ShouldBeRPCInvalidArgument, "order_by: no sortable field named \"metrics.`human-cls-failed-presubmit`.value\", valid fields are metrics.failures.value")
+				})
+				Convey("Order by syntax invalid", func() {
+					// To sort in ascending order, "desc" should be omittted. "asc" is not valid syntax.
+					request.OrderBy = "metrics.`human-cls-failed-presubmit`.value asc"
+
+					// Run
+					response, err := server.QueryClusterSummaries(ctx, request)
+
+					// Verify
+					So(response, ShouldBeNil)
+					So(err, ShouldBeRPCInvalidArgument, `order_by: syntax error: 1:44: unexpected token "asc"`)
 				})
 				Convey("Order by syntax references invalid column", func() {
 					request.OrderBy = "not_exists desc"
@@ -1364,8 +1384,8 @@ func removePermission(perms []authtest.RealmPermission, permission realms.Permis
 	return result
 }
 
-func emptyMetricValues() *pb.Cluster_ImpactValues {
-	return &pb.Cluster_ImpactValues{
+func emptyMetricValues() *pb.Cluster_TimewiseCounts {
+	return &pb.Cluster_TimewiseCounts{
 		OneDay:   &pb.Cluster_Counts{},
 		ThreeDay: &pb.Cluster_Counts{},
 		SevenDay: &pb.Cluster_Counts{},
@@ -1430,25 +1450,23 @@ func newFakeAnalysisClient() *fakeAnalysisClient {
 	}
 }
 
-func (f *fakeAnalysisClient) ReadClusters(ctx context.Context, project string, clusterIDs []clustering.ClusterID) ([]*analysis.Cluster, error) {
+func (f *fakeAnalysisClient) ReadCluster(ctx context.Context, project string, clusterID clustering.ClusterID) (*analysis.Cluster, error) {
 	clusters, ok := f.clustersByProject[project]
 	if !ok {
 		return nil, analysis.ProjectNotExistsErr
 	}
 
-	var results []*analysis.Cluster
+	var result *analysis.Cluster
 	for _, c := range clusters {
-		include := false
-		for _, ci := range clusterIDs {
-			if ci == c.ClusterID {
-				include = true
-			}
-		}
-		if include {
-			results = append(results, c)
+		if c.ClusterID == clusterID {
+			result = c
+			break
 		}
 	}
-	return results, nil
+	if result == nil {
+		return analysis.EmptyCluster(clusterID), nil
+	}
+	return result, nil
 }
 
 func (f *fakeAnalysisClient) QueryClusterSummaries(ctx context.Context, project string, options *analysis.QueryClusterSummariesOptions) ([]*analysis.ClusterSummary, error) {
@@ -1466,16 +1484,30 @@ func (f *fakeAnalysisClient) QueryClusterSummaries(ctx context.Context, project 
 	if err != nil {
 		return nil, analysis.InvalidArgumentTag.Apply(errors.Annotate(err, "failure_filter").Err())
 	}
-	_, err = analysis.ClusterSummariesTable.OrderByClause(options.OrderBy)
+	_, err = analysis.ClusterSummariesTable(options.Metrics).OrderByClause(options.OrderBy)
 	if err != nil {
 		return nil, analysis.InvalidArgumentTag.Apply(errors.Annotate(err, "order_by").Err())
 	}
 
 	var results []*analysis.ClusterSummary
 	for _, c := range clusters {
-		results = append(results, c)
+		results = append(results, copyClusterSummary(c, options.Metrics))
 	}
 	return results, nil
+}
+
+func copyClusterSummary(cs *analysis.ClusterSummary, queriedMetrics []metrics.Definition) *analysis.ClusterSummary {
+	result := &analysis.ClusterSummary{
+		ClusterID:            cs.ClusterID,
+		ExampleFailureReason: cs.ExampleFailureReason,
+		ExampleTestID:        cs.ExampleTestID,
+		UniqueTestIDs:        cs.UniqueTestIDs,
+		MetricValues:         make(map[metrics.ID]int64),
+	}
+	for _, m := range queriedMetrics {
+		result.MetricValues[m.ID] = cs.MetricValues[m.ID]
+	}
+	return result
 }
 
 func (f *fakeAnalysisClient) ReadClusterFailures(ctx context.Context, options analysis.ReadClusterFailuresOptions) ([]*analysis.ClusterFailure, error) {

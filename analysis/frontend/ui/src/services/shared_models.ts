@@ -21,6 +21,9 @@ export interface ClusterId {
   id: string;
 }
 
+// MetricId represents the identifier of a LUCI Analysis metric.
+export type MetricId = string;
+
 export interface AssociatedBug {
   system: string;
   id: string;

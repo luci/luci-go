@@ -21,18 +21,18 @@ import (
 
 // MergeWithDefaultOrder merges the specified order with the given
 // defaultOrder. The merge occurs as follows:
-// - Ordering specified in `order` takes precedence.
-// - For columns not specified in the `order` that appear in `defaultOrder`,
-//   ordering is applied in the order they apply in defaultOrder.
+//   - Ordering specified in `order` takes precedence.
+//   - For columns not specified in the `order` that appear in `defaultOrder`,
+//     ordering is applied in the order they apply in defaultOrder.
 func MergeWithDefaultOrder(defaultOrder []OrderBy, order []OrderBy) []OrderBy {
 	result := make([]OrderBy, 0, len(order)+len(defaultOrder))
 	seenColumns := make(map[string]struct{})
 	for _, o := range order {
 		result = append(result, o)
-		seenColumns[strings.ToLower(o.Name)] = struct{}{}
+		seenColumns[o.FieldPath.String()] = struct{}{}
 	}
 	for _, o := range defaultOrder {
-		if _, ok := seenColumns[strings.ToLower(o.Name)]; !ok {
+		if _, ok := seenColumns[o.FieldPath.String()]; !ok {
 			result = append(result, o)
 		}
 	}
@@ -56,12 +56,12 @@ func (t *Table) OrderByClause(order []OrderBy) (string, error) {
 		if i > 0 {
 			result.WriteString(", ")
 		}
-		column, err := t.SortableColumnByName(o.Name)
+		column, err := t.SortableColumnByFieldPath(o.FieldPath)
 		if err != nil {
 			return "", err
 		}
 		if _, ok := seenColumns[column.databaseName]; ok {
-			return "", fmt.Errorf("field appears in order_by multiple times: %q", o.Name)
+			return "", fmt.Errorf("field appears in order_by multiple times: %q", o.FieldPath.String())
 		}
 		seenColumns[column.databaseName] = struct{}{}
 		result.WriteString(column.databaseName)

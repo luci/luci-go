@@ -29,10 +29,10 @@ func TestParseOrderBy(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(result, ShouldResemble, []OrderBy{
 				{
-					Name: "foo",
+					FieldPath: NewFieldPath("foo"),
 				},
 				{
-					Name: "bar",
+					FieldPath: NewFieldPath("bar"),
 				},
 			})
 
@@ -40,7 +40,7 @@ func TestParseOrderBy(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(result, ShouldResemble, []OrderBy{
 				{
-					Name: "foo",
+					FieldPath: NewFieldPath("foo"),
 				},
 			})
 		})
@@ -49,21 +49,21 @@ func TestParseOrderBy(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(result, ShouldResemble, []OrderBy{
 				{
-					Name:       "foo",
+					FieldPath:  NewFieldPath("foo"),
 					Descending: true,
 				},
 				{
-					Name: "bar",
+					FieldPath: NewFieldPath("bar"),
 				},
 			})
 		})
 		Convey("Redundant space characters in the syntax are insignificant", func() {
 			expectedResult := []OrderBy{
 				{
-					Name: "foo",
+					FieldPath: NewFieldPath("foo"),
 				},
 				{
-					Name:       "bar",
+					FieldPath:  NewFieldPath("bar"),
 					Descending: true,
 				},
 			}
@@ -80,26 +80,46 @@ func TestParseOrderBy(t *testing.T) {
 			So(result, ShouldResemble, expectedResult)
 		})
 		Convey("Subfields are specified with a . character", func() {
-			result, err := ParseOrderBy("foo.bar, foo.foo desc")
+			result, err := ParseOrderBy("foo.bar, foo.foo.bar desc")
 			So(err, ShouldBeNil)
 			So(result, ShouldResemble, []OrderBy{
 				{
-					Name: "foo.bar",
+					FieldPath: NewFieldPath("foo", "bar"),
 				},
 				{
-					Name:       "foo.foo",
+					FieldPath:  NewFieldPath("foo", "foo", "bar"),
+					Descending: true,
+				},
+			})
+		})
+		Convey("Quoted strings can be used instead of string literals", func() {
+			result, err := ParseOrderBy("foo.`bar`, foo.foo.`a-backtick-```.bar desc")
+			So(err, ShouldBeNil)
+			So(result, ShouldResemble, []OrderBy{
+				{
+					FieldPath: NewFieldPath("foo", "bar"),
+				},
+				{
+					FieldPath:  NewFieldPath("foo", "foo", "a-backtick-`", "bar"),
 					Descending: true,
 				},
 			})
 		})
 		Convey("Invalid input is rejected", func() {
 			_, err := ParseOrderBy("`something")
-			So(err, ShouldErrLike, "invalid ordering \"`something\"")
+			So(err, ShouldErrLike, "syntax error: 1:1: invalid input text \"`something\"")
 		})
 		Convey("Empty order by", func() {
-			result, err := ParseOrderBy("   ")
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 0)
+			Convey("Spaces only", func() {
+				result, err := ParseOrderBy("   ")
+				So(err, ShouldBeNil)
+				So(result, ShouldHaveLength, 0)
+			})
+			Convey("Totally empty", func() {
+				result, err := ParseOrderBy("")
+				So(err, ShouldBeNil)
+				So(result, ShouldHaveLength, 0)
+			})
 		})
 	})
 }

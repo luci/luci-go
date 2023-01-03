@@ -20,24 +20,25 @@ import {
 } from '@testing-library/react';
 
 import { identityFunction } from '@/testing_tools/functions';
+import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 
 import ClustersTableHead from './clusters_table_head';
 
 describe('Test ClustersTableHead', () => {
   it('should display sortable table head', async () => {
+    const metrics = getMockMetricsList();
     render(
         <table>
           <ClustersTableHead
-            isAscending={false}
-            toggleSort={identityFunction}
-            sortMetric={'critical_failures_exonerated'}/>
+            metrics={metrics}
+            handleOrderByChanged={identityFunction}/>
         </table>,
     );
 
     await (screen.findByTestId('clusters_table_head'));
 
     expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument();
-    expect(screen.getByText('Presubmit-Blocking Failures Exonerated')).toBeInTheDocument();
+    expect(screen.getByText('Presubmit-blocking Failures Exonerated')).toBeInTheDocument();
     expect(screen.getByText('Total Failures')).toBeInTheDocument();
   });
 });

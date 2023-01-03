@@ -39,6 +39,8 @@ import (
 type Cluster struct {
 	ClusterID clustering.ClusterID
 
+	// MetricValues the values of cluster metrics. Only metrics which
+	// have been computed for the cluster are populated.
 	MetricValues map[metrics.ID]metrics.TimewiseCounts
 
 	// The number of distinct user (i.e not automation generated) CLs
@@ -285,19 +287,43 @@ func (c *Client) PurgeStaleRows(ctx context.Context, luciProject string) error {
 	return nil
 }
 
-// ReadCluster reads information about a list of clusters.
+// EmptyCluster returns a Cluster entry for a cluster without any
+// clustered failures.
+func EmptyCluster(clusterID clustering.ClusterID) *Cluster {
+	emptyCluster := &Cluster{
+		ClusterID:    clusterID,
+		MetricValues: make(map[metrics.ID]metrics.TimewiseCounts),
+	}
+	for _, metric := range metrics.ComputedMetrics {
+		// Because there are no failures in the cluster, all metrics are zero-valued.
+		emptyCluster.MetricValues[metric.ID] = metrics.TimewiseCounts{}
+	}
+	return emptyCluster
+}
+
+// ReadCluster reads information about a cluster.
 // If the dataset for the LUCI project does not exist, returns ProjectNotExistsErr.
-func (c *Client) ReadClusters(ctx context.Context, luciProject string, clusterIDs []clustering.ClusterID) (cs []*Cluster, err error) {
-	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/ReadClusters")
+// If information for the cluster could not be found (e.g. because there are no examples),
+// returns an empty cluster.
+func (c *Client) ReadCluster(ctx context.Context, luciProject string, clusterID clustering.ClusterID) (cl *Cluster, err error) {
+	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/ReadCluster")
 	s.Attribute("project", luciProject)
 	defer func() { s.End(err) }()
 
-	whereClause := `STRUCT(cluster_algorithm AS Algorithm, cluster_id as ID) IN UNNEST(@clusterIDs)`
+	whereClause := `cluster_algorithm = @clusterAlgorithm AND cluster_id = @clusterID`
 	params := []bigquery.QueryParameter{
-		{Name: "clusterIDs", Value: clusterIDs},
+		{Name: "clusterAlgorithm", Value: clusterID.Algorithm},
+		{Name: "clusterID", Value: clusterID.ID},
 	}
 
-	return c.readClustersWhere(ctx, luciProject, whereClause, params)
+	clusters, err := c.readClustersWhere(ctx, luciProject, whereClause, params)
+	if err != nil {
+		return nil, err
+	}
+	if len(clusters) == 0 {
+		return EmptyCluster(clusterID), nil
+	}
+	return clusters[0], nil
 }
 
 // ImpactfulClusterReadOptions specifies options for ReadImpactfulClusters().

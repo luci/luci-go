@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import Search from '@mui/icons-material/Search';
@@ -26,7 +26,7 @@ import Typography from '@mui/material/Typography';
 
 interface Props {
     failureFilter: string,
-    setFailureFilter: (filter: string) => void
+    handleFailureFilterChanged: (filter: string) => void
 }
 
 const FilterHelp = () => {
@@ -56,10 +56,16 @@ const FilterHelp = () => {
 
 const ClustersTableFilter = ({
   failureFilter,
-  setFailureFilter,
+  handleFailureFilterChanged,
 }: Props) => {
-  const [filter, setFilter] = useState<string>(failureFilter);
+  const [isDirty, setDirty] = useState<boolean>(false);
   const [filterHelpAnchorEl, setFilterHelpAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!isDirty && inputRef.current) {
+      inputRef.current.value = failureFilter;
+    }
+  }, [isDirty, failureFilter]);
 
   return (
     <Grid container item xs={12} columnGap={2} data-testid="clusters_table_filter">
@@ -67,17 +73,25 @@ const ClustersTableFilter = ({
         <FormControl fullWidth data-testid="failure_filter">
           <TextField
             id="failure_filter"
-            value={filter}
+            inputRef={inputRef}
             variant='outlined'
             label='Filter failures'
             placeholder='Filter test failures used in clusters'
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={() => {
+              setDirty(true);
+            }}
             onKeyUp={(e) => {
-              if (e.key == 'Enter') {
-                setFailureFilter(filter);
+              if (e.key == 'Enter' && inputRef.current) {
+                handleFailureFilterChanged(inputRef.current.value);
+                setDirty(false);
               }
             }}
-            onBlur={()=> setFailureFilter(filter)}
+            onBlur={()=> {
+              if (inputRef.current) {
+                handleFailureFilterChanged(inputRef.current.value);
+                setDirty(false);
+              }
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

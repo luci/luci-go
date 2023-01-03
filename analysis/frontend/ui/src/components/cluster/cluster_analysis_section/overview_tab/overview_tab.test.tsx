@@ -21,15 +21,16 @@ import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
   getMockCluster,
-  mockBatchGetCluster,
+  mockGetCluster,
 } from '@/testing_tools/mocks/cluster_mock';
+import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 
 import { ClusterContextProvider } from '../../cluster_context';
 import ImpactTab from './overview_tab';
-
 describe('test ImpactSection component', () => {
   beforeEach(() => {
     mockFetchAuthState();
+    mockFetchMetrics();
   });
 
   afterEach(() => {
@@ -40,7 +41,7 @@ describe('test ImpactSection component', () => {
   it('given an algorithm, should fetch cluster for that algorithm', async () => {
     const cluster = getMockCluster('123456');
 
-    mockBatchGetCluster('chrome', 'rules', '123456', cluster);
+    mockGetCluster('chrome', 'rules', '123456', cluster);
 
     renderTabWithRouterAndClient(
         <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>

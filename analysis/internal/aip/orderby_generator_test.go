@@ -24,10 +24,10 @@ import (
 func TestOrderByClause(t *testing.T) {
 	Convey("OrderByClause", t, func() {
 		table := NewTable().WithColumns(
-			NewColumn().WithName("foo").WithDatabaseName("db_foo").Sortable().Build(),
-			NewColumn().WithName("bar").WithDatabaseName("db_bar").Sortable().Build(),
-			NewColumn().WithName("baz").WithDatabaseName("db_baz").Sortable().Build(),
-			NewColumn().WithName("unsortable").WithDatabaseName("unsortable").Build(),
+			NewColumn().WithFieldPath("foo").WithDatabaseName("db_foo").Sortable().Build(),
+			NewColumn().WithFieldPath("bar").WithDatabaseName("db_bar").Sortable().Build(),
+			NewColumn().WithFieldPath("baz").WithDatabaseName("db_baz").Sortable().Build(),
+			NewColumn().WithFieldPath("unsortable").WithDatabaseName("unsortable").Build(),
 		).Build()
 
 		Convey("Empty order by", func() {
@@ -38,7 +38,7 @@ func TestOrderByClause(t *testing.T) {
 		Convey("Single order by", func() {
 			result, err := table.OrderByClause([]OrderBy{
 				{
-					Name: "foo",
+					FieldPath: NewFieldPath("foo"),
 				},
 			})
 			So(err, ShouldBeNil)
@@ -47,14 +47,14 @@ func TestOrderByClause(t *testing.T) {
 		Convey("Multiple order by", func() {
 			result, err := table.OrderByClause([]OrderBy{
 				{
-					Name:       "foo",
+					FieldPath:  NewFieldPath("foo"),
 					Descending: true,
 				},
 				{
-					Name: "bar",
+					FieldPath: NewFieldPath("bar"),
 				},
 				{
-					Name:       "baz",
+					FieldPath:  NewFieldPath("baz"),
 					Descending: true,
 				},
 			})
@@ -64,7 +64,7 @@ func TestOrderByClause(t *testing.T) {
 		Convey("Unsortable field in order by", func() {
 			_, err := table.OrderByClause([]OrderBy{
 				{
-					Name:       "unsortable",
+					FieldPath:  NewFieldPath("unsortable"),
 					Descending: true,
 				},
 			})
@@ -73,10 +73,10 @@ func TestOrderByClause(t *testing.T) {
 		Convey("Repeated field in order by", func() {
 			_, err := table.OrderByClause([]OrderBy{
 				{
-					Name: "foo",
+					FieldPath: NewFieldPath("foo"),
 				},
 				{
-					Name: "foo",
+					FieldPath: NewFieldPath("foo"),
 				},
 			})
 			So(err, ShouldErrLike, `field appears in order_by multiple times: "foo"`)
@@ -88,12 +88,12 @@ func TestMergeWithDefaultOrder(t *testing.T) {
 	Convey("MergeWithDefaultOrder", t, func() {
 		defaultOrder := []OrderBy{
 			{
-				Name:       "foo",
+				FieldPath:  NewFieldPath("foo"),
 				Descending: true,
 			}, {
-				Name: "bar",
+				FieldPath: NewFieldPath("bar"),
 			}, {
-				Name:       "baz",
+				FieldPath:  NewFieldPath("baz"),
 				Descending: true,
 			},
 		}
@@ -104,27 +104,27 @@ func TestMergeWithDefaultOrder(t *testing.T) {
 		Convey("Non-empty order", func() {
 			order := []OrderBy{
 				{
-					Name:       "other",
+					FieldPath:  NewFieldPath("other"),
 					Descending: true,
 				},
 				{
-					Name: "baz",
+					FieldPath: NewFieldPath("baz"),
 				},
 			}
 			result := MergeWithDefaultOrder(defaultOrder, order)
 			So(result, ShouldResemble, []OrderBy{
 				{
-					Name:       "other",
+					FieldPath:  NewFieldPath("other"),
 					Descending: true,
 				},
 				{
-					Name: "baz",
+					FieldPath: NewFieldPath("baz"),
 				},
 				{
-					Name:       "foo",
+					FieldPath:  NewFieldPath("foo"),
 					Descending: true,
 				}, {
-					Name: "bar",
+					FieldPath: NewFieldPath("bar"),
 				},
 			})
 		})
