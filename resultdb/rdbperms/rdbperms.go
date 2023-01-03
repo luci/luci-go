@@ -23,7 +23,9 @@ var (
 	PermGetTestResult = realms.RegisterPermission("resultdb.testResults.get")
 	PermGetArtifact   = realms.RegisterPermission("resultdb.artifacts.get")
 
-	PermListTestExonerations = realms.RegisterPermission("resultdb.testExonerations.list")
-	PermListTestResults      = realms.RegisterPermission("resultdb.testResults.list")
-	PermListArtifacts        = realms.RegisterPermission("resultdb.artifacts.list")
+	PermListTestExonerations        = realms.RegisterPermission("resultdb.testExonerations.list")
+	PermListLimitedTestExonerations = realms.RegisterPermission("resultdb.testExonerations.listLimited")
+	PermListTestResults             = realms.RegisterPermission("resultdb.testResults.list")
+	PermListLimitedTestResults      = realms.RegisterPermission("resultdb.testResults.listLimited")
+	PermListArtifacts               = realms.RegisterPermission("resultdb.artifacts.list")
 )
