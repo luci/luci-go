@@ -525,7 +525,9 @@ func mainImpl() int {
 		// during this time.
 		secrets, _ := readBuildSecrets(ctx)
 		logging.Infof(ctx, fmt.Sprintf("dumping build token: %s", secrets.BuildToken))
-		time.Sleep(time.Duration(time.Duration.Minutes(10)))
+		logging.Infof(ctx, "going to sleep for 10 minutes")
+		time.Sleep(10 * time.Minute)
+		logging.Infof(ctx, "finished sleeping")
 		os.Exit(0)
 	}
 
