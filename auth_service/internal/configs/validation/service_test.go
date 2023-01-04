@@ -333,3 +333,195 @@ func TestSecurityConfigValidation(t *testing.T) {
 
 	})
 }
+
+func TestImportsConfigValidation(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	Convey("validate imports.cfg", t, func() {
+		vctx := &validation.Context{Context: ctx}
+		path := "imports.cfg"
+		configSet := ""
+
+		Convey("Loading bad proto", func() {
+			content := []byte(` bad: "config" `)
+			So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+		})
+
+		Convey("load config bad config structure", func() {
+			Convey("no urls", func() {
+				Convey("url field required in tarball entry", func() {
+					content := []byte(`
+						tarball {
+							systems: "s1"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "url field required")
+				})
+
+				Convey("url field required in plainlist entry", func() {
+					content := []byte(`
+						plainlist {
+							group: "test-group"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "url field required")
+				})
+			})
+
+			Convey("tarball_upload entry \"ball\" is specified twice", func() {
+				content := []byte(`
+					tarball_upload {
+						name: "ball"
+						authorized_uploader: "abc@example.com"
+						systems: "s"
+					}
+					tarball_upload {
+						name: "ball"
+						authorized_uploader: "abc@example.com"
+						systems: "s"
+					}
+				`)
+				So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "specified twice")
+			})
+
+			Convey("bad authorized_uploader", func() {
+				Convey("authorized_uploader is required in tarball_upload entry", func() {
+					content := []byte(`
+						tarball_upload {
+							name: "ball"
+							systems: "s"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "authorized_uploader is required in tarball_upload entry")
+				})
+
+				Convey("invalid email \"not an email\" in tarball_upload entry \"ball\"", func() {
+					content := []byte(`
+						tarball_upload {
+							name: "ball"
+							authorized_uploader: "not an email"
+							systems: "s"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "not an email")
+				})
+			})
+
+			Convey("bad systems", func() {
+				Convey("tarball entry with URL \"https//example.com/tarball\" needs systems field", func() {
+					content := []byte(`
+						tarball {
+							url: "http://example.com/tarball"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "needs a \"systems\" field")
+				})
+
+				Convey("tarball_upload entry with name \"ball\" needs systems field", func() {
+					content := []byte(`
+						tarball_upload {
+							name: "ball"
+							authorized_uploader: "abc@example.com"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "needs a \"systems\" field")
+				})
+
+				Convey("\"tarball_upload\" entry with name \"conflicting\" specifies duplicated system(s)", func() {
+					content := []byte(`
+						tarball {
+							url: "http://example.com/tarball1"
+							systems: "s1"
+							systems: "s2"
+						}
+
+						tarball {
+							url: "http://example.com/tarball2"
+							systems: "s3"
+							systems: "s4"
+						}
+
+						tarball_upload {
+							name: "tarball3"
+							authorized_uploader: "abc@example.com"
+							systems: "s5"
+							systems: "s6"
+						}
+
+						tarball_upload {
+							name: "conflicting"
+							authorized_uploader: "abc@example.com"
+							systems: "external" # this one is predefined
+							systems: "s1"
+							systems: "s3"
+							systems: "s5"
+							systems: "ok"
+						}
+					  `)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "\"conflicting\" is specifying a duplicated system(s): [external s1 s3 s5]")
+				})
+			})
+
+			Convey("bad plainlists", func() {
+				Convey("\"plainlist\" entry \"http://example.com/plainlist\" needs a \"group\" field", func() {
+					content := []byte(`
+						plainlist {
+							url: "http://example.com/plainlist"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "entry \"http://example.com/plainlist\" needs a \"group\" field")
+				})
+
+				Convey("group \"gr\" is imported twice", func() {
+					content := []byte(`
+						plainlist {
+							url: "http://example.com/plainlist1"
+							group: "gr"
+						}
+						plainlist {
+							url: "http://example.com/plainlist2"
+							group: "gr"
+						}
+					`)
+					So(validateImportsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "the group \"gr\" is imported twice")
+				})
+			})
+		})
+
+		Convey("load config happy config", func() {
+			okCfg := []byte(`
+				# Realistic config.
+				tarball_upload {
+					name: "should be ignored"
+					authorized_uploader: "example-service-account@example.com"
+					systems: "zzz"
+				}
+				tarball {
+					url: "https://fake_tarball"
+					groups: "ldap/new"
+					oauth_scopes: "scope"
+					systems: "ldap"
+				}
+				plainlist {
+					url: "example.com"
+					group: "test-group"
+				}
+			`)
+			So(validateImportsCfg(vctx, configSet, path, okCfg), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+	})
+}

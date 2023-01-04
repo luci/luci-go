@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"sort"
 	"strings"
 
 	"google.golang.org/protobuf/encoding/prototext"
@@ -143,6 +144,113 @@ func validateSecurityCfg(ctx *validation.Context, configSet, path string, conten
 	}
 	ctx.Exit()
 
+	return nil
+}
+
+func validateImportsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	ctx.SetFile(path)
+	cfg := configspb.GroupImporterConfig{}
+	urlErr := errors.New("url field required")
+	ctx.Enter("validating imports.cfg")
+	defer ctx.Exit()
+
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
+		ctx.Error(err)
+	}
+
+	ctx.Enter("checking tarball URLs...")
+	for _, tb := range cfg.GetTarball() {
+		if tb.Url == "" {
+			ctx.Error(urlErr)
+		}
+	}
+	ctx.Exit()
+
+	ctx.Enter("checking plainlist URLs...")
+	for _, pl := range cfg.GetPlainlist() {
+		if pl.Url == "" {
+			ctx.Error(urlErr)
+		}
+	}
+	ctx.Exit()
+
+	ctx.Enter("validating tarball_upload names...")
+	tarballUploadNames := make(map[string]bool)
+	for _, entry := range cfg.GetTarballUpload() {
+		entryName := entry.GetName()
+		if entryName == "" {
+			ctx.Error(errors.New("Some tarball_upload entry doesn't have a name"))
+		}
+
+		if tarballUploadNames[entryName] {
+			ctx.Errorf("tarball_upload entry %s is specified twice", entryName)
+		}
+		tarballUploadNames[entryName] = true
+
+		authorizedUploader := entry.GetAuthorizedUploader()
+		if authorizedUploader == nil {
+			ctx.Errorf("authorized_uploader is required in tarball_upload entry %s", entryName)
+		}
+
+		for _, email := range authorizedUploader {
+			_, err := identity.MakeIdentity(fmt.Sprintf("user:%s", email))
+			if err != nil {
+				ctx.Error(err)
+			}
+		}
+	}
+	ctx.Exit()
+
+	ctx.Enter("validating systems")
+	seenSystems := make(map[string]bool)
+	seenSystems["external"] = true
+	for _, entry := range cfg.GetTarball() {
+		title := fmt.Sprintf(`"tarball" entry with URL %q`, entry.GetUrl())
+		if err := validateSystems(entry.GetSystems(), seenSystems, title); err != nil {
+			ctx.Error(err)
+		}
+	}
+	for _, entry := range cfg.GetTarballUpload() {
+		title := fmt.Sprintf(`"tarball_upload" entry with name %q`, entry.GetName())
+		if err := validateSystems(entry.GetSystems(), seenSystems, title); err != nil {
+			ctx.Error(err)
+		}
+	}
+	ctx.Exit()
+
+	ctx.Enter("validating plainlist groups")
+	seenGroups := make(map[string]bool)
+	for _, entry := range cfg.GetPlainlist() {
+		group := entry.GetGroup()
+		if group == "" {
+			ctx.Errorf(`"plainlist" entry %q needs a "group" field`, entry.GetUrl())
+		}
+		if seenGroups[group] {
+			ctx.Errorf(`the group %q is imported twice`, group)
+		}
+		seenGroups[group] = true
+	}
+	ctx.Exit()
+
+	return nil
+}
+
+func validateSystems(systems []string, seenSystems map[string]bool, title string) error {
+	if systems == nil {
+		return errors.New(fmt.Sprintf(`%s needs a "systems" field`, title))
+	}
+	twice := []string{}
+	for _, system := range systems {
+		if seenSystems[system] {
+			twice = append(twice, system)
+		} else {
+			seenSystems[system] = true
+		}
+	}
+	if len(twice) > 0 {
+		sort.Strings(twice)
+		return errors.New(fmt.Sprintf("%s is specifying a duplicated system(s): %v", title, twice))
+	}
 	return nil
 }
 
