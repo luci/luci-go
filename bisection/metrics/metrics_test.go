@@ -17,11 +17,15 @@ package metrics
 import (
 	"context"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -36,7 +40,7 @@ func TestCollectGlobalMetrics(t *testing.T) {
 		createRunningAnalysis(c, 123, "chromium")
 		createRunningAnalysis(c, 456, "chromeos")
 		createRunningAnalysis(c, 789, "chromium")
-		err := CollectGlobalMetrics(c)
+		err := collectMetricsForRunningAnalyses(c)
 		So(err, ShouldBeNil)
 		So(runningAnalysesGauge.Get(c, "chromium"), ShouldEqual, 2)
 		So(runningAnalysesGauge.Get(c, "chromeos"), ShouldEqual, 1)
@@ -48,24 +52,82 @@ func TestCollectGlobalMetrics(t *testing.T) {
 			"chromeos": 1,
 		})
 	})
-}
 
-func createRunningAnalysis(c context.Context, id int64, proj string) {
-		fb := &model.LuciFailedBuild{
-			Id: id,
+	Convey("For running reruns", t, func() {
+		cl := testclock.New(testclock.TestTimeUTC)
+		c = clock.Set(c, cl)
+		testutil.UpdateIndices(c)
+
+		// Create a rerun for chromium
+		cfa1 := createRunningAnalysis(c, 123, "chromium")
+
+		rrBuild1 := &model.CompileRerunBuild{
 			LuciBuild: model.LuciBuild{
-				Project: proj,
+				Status: buildbucketpb.Status_STATUS_UNSPECIFIED,
 			},
 		}
-		So(datastore.Put(c, fb), ShouldBeNil)
+		So(datastore.Put(c, rrBuild1), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		cf := testutil.CreateCompileFailure(c, fb)
-		cfa := &model.CompileFailureAnalysis{
-			Id: id,
-			CompileFailure: datastore.KeyForObj(c, cf),
-			RunStatus: pb.AnalysisRunStatus_STARTED,
+		rerun1 := &model.SingleRerun{
+			Analysis:   datastore.KeyForObj(c, cfa1),
+			RerunBuild: datastore.KeyForObj(c, rrBuild1),
+			CreateTime: clock.Now(c).Add(-10 * time.Second),
+			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
 		}
-		So(datastore.Put(c, cfa), ShouldBeNil)
+		So(datastore.Put(c, rerun1), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
+
+		// Create another rerun for chromeos
+		cfa2 := createRunningAnalysis(c, 456, "chromeos")
+
+		rrBuild2 := &model.CompileRerunBuild{
+			LuciBuild: model.LuciBuild{
+				Status: buildbucketpb.Status_STARTED,
+			},
+		}
+		So(datastore.Put(c, rrBuild2), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		rerun2 := &model.SingleRerun{
+			Analysis:   datastore.KeyForObj(c, cfa2),
+			RerunBuild: datastore.KeyForObj(c, rrBuild2),
+			CreateTime: clock.Now(c).Add(time.Minute),
+			Status:     pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+		}
+		So(datastore.Put(c, rerun2), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		err := collectMetricsForRunningReruns(c)
+		So(err, ShouldBeNil)
+		So(runningRerunGauge.Get(c, "chromium", "pending", ""), ShouldEqual, 1)
+		So(runningRerunGauge.Get(c, "chromium", "running", ""), ShouldEqual, 0)
+		So(runningRerunGauge.Get(c, "chromeos", "pending", ""), ShouldEqual, 0)
+		So(runningRerunGauge.Get(c, "chromeos", "running", ""), ShouldEqual, 1)
+		dist := rerunAgeMetric.Get(c, "chromium", "pending", "")
+		So(dist.Count(), ShouldEqual, 1)
+		dist = rerunAgeMetric.Get(c, "chromeos", "running", "")
+		So(dist.Count(), ShouldEqual, 1)
+	})
+}
+
+func createRunningAnalysis(c context.Context, id int64, proj string) *model.CompileFailureAnalysis {
+	fb := &model.LuciFailedBuild{
+		Id: id,
+		LuciBuild: model.LuciBuild{
+			Project: proj,
+		},
+	}
+	So(datastore.Put(c, fb), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+
+	cf := testutil.CreateCompileFailure(c, fb)
+	cfa := &model.CompileFailureAnalysis{
+		Id:             id,
+		CompileFailure: datastore.KeyForObj(c, cf),
+		RunStatus:      pb.AnalysisRunStatus_STARTED,
+	}
+	So(datastore.Put(c, cfa), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return cfa
 }

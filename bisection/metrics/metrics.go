@@ -18,9 +18,12 @@ package metrics
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
@@ -68,6 +71,13 @@ var (
 		field.String("platform"),
 	)
 )
+
+// rerunKey is keys for maps for runningRerunGauge and rerunAgeMetric
+type rerunKey struct {
+	Project  string
+	Status   string
+	Platform string
+}
 
 func init() {
 	// Register metrics as global metrics, which has the effort of
@@ -138,7 +148,85 @@ func retrieveRunningAnalyses(c context.Context) (map[string]int, error) {
 }
 
 func collectMetricsForRunningReruns(c context.Context) error {
-	// TODO (nqmtuan): Implement metrics for running reruns
+	// Query all in-progress single reruns in the last 7 days.
+	// We set the limit to 7 days because there maybe cases that for some reasons
+	// (e.g. crashes) that a rerun status may not be updated.
+	// Any reruns more than 7 days are surely canceled by buildbucket, so it is
+	// safe to exclude them.
+	cutoffTime := clock.Now(c).Add(-time.Hour * 7 * 24)
+	q := datastore.NewQuery("SingleRerun").Eq("Status", pb.RerunStatus_RERUN_STATUS_IN_PROGRESS).Gt("create_time", cutoffTime)
+	reruns := []*model.SingleRerun{}
+	err := datastore.GetAll(c, q, &reruns)
+	if err != nil {
+		return errors.Annotate(err, "couldn't get running reruns").Err()
+	}
+
+	// Get the metrics for rerun count and rerun age
+	// Maps where each key is one project-status-platform combination
+	rerunCountMap := map[rerunKey]int64{}
+	rerunAgeMap := map[rerunKey]*distribution.Distribution{}
+	for _, rerun := range reruns {
+		proj, err := projectForRerun(c, rerun)
+		if err != nil {
+			return errors.Annotate(err, "projectForRerun %d", rerun.Id).Err()
+		}
+
+		rerunBuild := &model.CompileRerunBuild{
+			Id: rerun.RerunBuild.IntID(),
+		}
+		err = datastore.Get(c, rerunBuild)
+		if err != nil {
+			return errors.Annotate(err, "couldn't get rerun build %d", rerun.RerunBuild.IntID()).Err()
+		}
+
+		// TODO (nqmtuan): Populate the platform information for rerun in datastore,
+		// so we can send the real one to tsmon.
+		var key rerunKey = rerunKey{
+			Project: proj,
+		}
+		if rerunBuild.Status == buildbucketpb.Status_STATUS_UNSPECIFIED || rerunBuild.Status == buildbucketpb.Status_SCHEDULED {
+			key.Status = "pending"
+		}
+		if rerunBuild.Status == buildbucketpb.Status_STARTED {
+			key.Status = "running"
+		}
+		if key.Status != "" {
+			rerunCountMap[key] = rerunCountMap[key] + 1
+			if _, ok := rerunAgeMap[key]; !ok {
+				rerunAgeMap[key] = distribution.New(rerunAgeMetric.Bucketer())
+			}
+			rerunAgeMap[key].Add(rerunAgeInSeconds(c, rerun))
+		}
+	}
+
+	// Send metrics to tsmon
+	for k, count := range rerunCountMap {
+		runningRerunGauge.Set(c, count, k.Project, k.Status, k.Platform)
+	}
+
+	for k, dist := range rerunAgeMap {
+		rerunAgeMetric.Set(c, dist, k.Project, k.Status, k.Platform)
+	}
+
 	return nil
 }
 
+func projectForRerun(c context.Context, rerun *model.SingleRerun) (string, error) {
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, rerun.Analysis.IntID())
+	if err != nil {
+		return "", err
+	}
+	build, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
+	if err != nil {
+		return "", errors.Annotate(err, "getting build for analysis %d", cfa.Id).Err()
+	}
+	if build == nil {
+		return "", fmt.Errorf("build for analysis %d does not exist", cfa.Id)
+	}
+	return build.Project, nil
+}
+
+func rerunAgeInSeconds(c context.Context, rerun *model.SingleRerun) float64 {
+	dur := clock.Now(c).Sub(rerun.CreateTime)
+	return dur.Seconds()
+}

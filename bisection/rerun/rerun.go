@@ -247,7 +247,7 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "builder", "start_time"},
+			Paths: []string{"id", "builder", "start_time", "status"},
 		},
 	})
 	if err != nil {

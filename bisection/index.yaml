@@ -26,6 +26,11 @@ indexes:
   - name: analysis
   - name: start_time
 
+- kind: SingleRerun
+  properties:
+  - name: Status
+  - name: create_time
+
 - kind: LuciFailedBuild
   properties:
   - name: project
