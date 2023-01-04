@@ -27,8 +27,10 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/internal/lucinotify"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 
 	"go.chromium.org/luci/common/clock"
@@ -90,6 +92,14 @@ func AnalyzeFailure(
 		return nil, e
 	}
 	c = loggingutil.SetAnalysisID(c, analysis.Id)
+
+	// Check if the analysis is for tree closer, if yes, set the flag.
+	err := setTreeCloser(c, analysis)
+	if err != nil {
+		// Non-critical, just continue
+		err := errors.Annotate(err, "failed to check tree closer").Err()
+		logging.Errorf(c, err.Error())
+	}
 
 	// Heuristic analysis
 	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)
@@ -200,4 +210,31 @@ func findRegressionRange(
 		FirstFailed: firstFailedBuild.GetInput().GetGitilesCommit(),
 		LastPassed:  lastPassedBuild.GetInput().GetGitilesCommit(),
 	}, nil
+}
+
+// setTreeCloser checks and updates the analysis if it is for a treecloser failure.
+func setTreeCloser(c context.Context, cfa *model.CompileFailureAnalysis) error {
+	fb, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
+	if err != nil {
+		return errors.Annotate(err, "getBuild").Err()
+	}
+	if fb == nil {
+		return fmt.Errorf("couldn't find build for analysis %d", cfa.Id)
+	}
+
+	// TODO (nqmtuan): Pass in step name when we support arbitrary
+	// step name which may not be "compile"
+	isTreeCloser, err := lucinotify.CheckTreeCloser(c, fb.Project, fb.Bucket, fb.Builder, "compile")
+	if err != nil {
+		return err
+	}
+
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		e := datastore.Get(c, cfa)
+		if e != nil {
+			return e
+		}
+		cfa.IsTreeCloser = isTreeCloser
+		return datastore.Put(c, cfa)
+	}, nil)
 }

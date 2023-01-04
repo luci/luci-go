@@ -33,10 +33,12 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/logdog"
+	"go.chromium.org/luci/bisection/internal/lucinotify"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	"go.chromium.org/luci/bisection/util/testutil"
+	lnpb "go.chromium.org/luci/luci_notify/api/service/v1"
 )
 
 func TestAnalyzeFailure(t *testing.T) {
@@ -95,6 +97,14 @@ func TestAnalyzeFailure(t *testing.T) {
 		"https://logs.chromium.org/logs/stdout_log": "stdout_log",
 	})
 
+	// Mock luci notify
+	lnmock := lucinotify.NewMockedClient(c, ctl)
+	c = lnmock.Ctx
+	resp := &lnpb.CheckTreeCloserResponse{
+		IsTreeCloser: true,
+	}
+	lnmock.Client.EXPECT().CheckTreeCloser(gomock.Any(), gomock.Any(), gomock.Any()).Return(resp, nil).Times(1)
+
 	Convey("AnalyzeFailure analysis is created", t, func() {
 		// Set up the config
 		testCfg := &configpb.Config{
@@ -104,7 +114,7 @@ func TestAnalyzeFailure(t *testing.T) {
 		}
 		So(config.SetTestConfig(c, testCfg), ShouldBeNil)
 
-		failed_build := &model.LuciFailedBuild{
+		fb := &model.LuciFailedBuild{
 			Id: 88128398584903,
 			LuciBuild: model.LuciBuild{
 				BuildId:     88128398584903,
@@ -118,29 +128,27 @@ func TestAnalyzeFailure(t *testing.T) {
 			},
 			BuildFailureType: pb.BuildFailureType_COMPILE,
 		}
-		So(datastore.Put(c, failed_build), ShouldBeNil)
+		So(datastore.Put(c, fb), ShouldBeNil)
 
-		compile_failure := &model.CompileFailure{
-			Build: datastore.KeyForObj(c, failed_build),
-		}
-		So(datastore.Put(c, compile_failure), ShouldBeNil)
+		cf := testutil.CreateCompileFailure(c, fb)
 
-		compile_failure_analysis, err := AnalyzeFailure(c, compile_failure, 123, 456)
+		cfa, err := AnalyzeFailure(c, cf, 123, 456)
 		So(err, ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
+		So(cfa.IsTreeCloser, ShouldBeTrue)
 
-		err = datastore.Get(c, compile_failure)
+		err = datastore.Get(c, cf)
 		So(err, ShouldBeNil)
-		So(compile_failure.OutputTargets, ShouldResemble, []string{"obj/net/net_unittests__library/ssl_server_socket_unittest.o"})
+		So(cf.OutputTargets, ShouldResemble, []string{"obj/net/net_unittests__library/ssl_server_socket_unittest.o"})
 
 		// Make sure that the analysis is created
-		q := datastore.NewQuery("CompileFailureAnalysis").Eq("compile_failure", datastore.KeyForObj(c, compile_failure))
+		q := datastore.NewQuery("CompileFailureAnalysis").Eq("compile_failure", datastore.KeyForObj(c, cf))
 		analyses := []*model.CompileFailureAnalysis{}
 		datastore.GetAll(c, q, &analyses)
 		So(len(analyses), ShouldEqual, 1)
 
 		// Make sure the heuristic analysis and nthsection analysis are run
-		q = datastore.NewQuery("CompileHeuristicAnalysis").Ancestor(datastore.KeyForObj(c, compile_failure_analysis))
+		q = datastore.NewQuery("CompileHeuristicAnalysis").Ancestor(datastore.KeyForObj(c, cfa))
 		heuristic_analyses := []*model.CompileHeuristicAnalysis{}
 		datastore.GetAll(c, q, &heuristic_analyses)
 		So(len(heuristic_analyses), ShouldEqual, 1)

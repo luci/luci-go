@@ -198,6 +198,11 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 		return 0, errors.Annotate(err, "couldn't OffsetPriorityBasedOnRunDuration for suspect %d", suspect.Id).Err()
 	}
 
+	// Offset the priority if it is a tree closer
+	if cfa.IsTreeCloser {
+		pri += rerun.PriorityTreeClosureOffset
+	}
+
 	return rerun.CapPriority(pri), nil
 }
 

@@ -140,6 +140,9 @@ type CompileFailureAnalysis struct {
 	// Indicates whether the analysis should be cancelled or not,
 	// such as in the situation where the corresponding builder start passing again
 	ShouldCancel bool `gae:"should_cancel"`
+	// Is this analysis for a tree closer failure.
+	// If it is, all reruns of this analysis should have higher priority.
+	IsTreeCloser bool `gae:"is_tree_closer"`
 }
 
 // CompileFailureInRerunBuild is a compile failure in a rerun build.

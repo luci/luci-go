@@ -296,5 +296,12 @@ func TestGetPriority(t *testing.T) {
 		pri, err = getSuspectPriority(c, suspect)
 		So(err, ShouldBeNil)
 		So(pri, ShouldEqual, 100)
+
+		cfa.IsTreeCloser = true
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		pri, err = getSuspectPriority(c, suspect)
+		So(err, ShouldBeNil)
+		So(pri, ShouldEqual, 30)
 	})
 }

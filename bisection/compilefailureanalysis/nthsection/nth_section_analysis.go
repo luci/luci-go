@@ -145,6 +145,11 @@ func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, c
 		return 0, errors.Annotate(err, "couldn't OffsetPriorityBasedOnRunDuration analysis %d", cfa.Id).Err()
 	}
 
+	// Offset the priority if it is a tree closer
+	if cfa.IsTreeCloser {
+		pri += rerun.PriorityTreeClosureOffset
+	}
+
 	return rerun.CapPriority(pri), nil
 }
 
