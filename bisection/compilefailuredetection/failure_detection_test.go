@@ -390,6 +390,16 @@ func TestFailureDetection(t *testing.T) {
 					Ref:     "1",
 				},
 			},
+			Infra: &buildbucketpb.BuildInfra{
+				Swarming: &buildbucketpb.BuildInfra_Swarming{
+					TaskDimensions: []*buildbucketpb.RequestedDimension{
+						{
+							Key:   "os",
+							Value: "Mac-12.4",
+						},
+					},
+				},
+			},
 		}
 
 		// Create a CompileFailure record in datastore
@@ -423,6 +433,7 @@ func TestFailureDetection(t *testing.T) {
 					Status:     buildbucketpb.Status_FAILURE,
 				},
 				BuildFailureType: pb.BuildFailureType_COMPILE,
+				Platform:         model.PlatformMac,
 			})
 		})
 	})

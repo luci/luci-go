@@ -19,6 +19,7 @@ package compilefailuredetection
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
@@ -88,7 +89,7 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 	logging.Infof(c, "AnalyzeBuild %d", bbid)
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "builder", "input", "status", "steps", "number", "start_time", "end_time", "create_time"},
+			Paths: []string{"id", "builder", "input", "status", "steps", "number", "start_time", "end_time", "create_time", "infra.swarming.task_dimensions"},
 		},
 	})
 	if err != nil {
@@ -336,6 +337,7 @@ func createCompileFailureModel(c context.Context, failedBuild *buildbucketpb.Bui
 				GitilesCommit: gitilesCommit,
 			},
 			BuildFailureType: pb.BuildFailureType_COMPILE,
+			Platform:         platformForBuild(c, failedBuild),
 		}
 		e := datastore.Put(c, buildModel)
 		if e != nil {
@@ -381,4 +383,28 @@ func hasCompileStepStatus(c context.Context, build *buildbucketpb.Build, status 
 		}
 	}
 	return false
+}
+
+func platformForBuild(c context.Context, build *buildbucketpb.Build) model.Platform {
+	if build.GetInfra() == nil || build.GetInfra().GetSwarming() == nil || build.GetInfra().GetSwarming().GetTaskDimensions() == nil {
+		return model.PlatformUnspecified
+	}
+	dimens := build.GetInfra().GetSwarming().GetTaskDimensions()
+	for _, d := range dimens {
+		if d.Key == "os" {
+			val := strings.ToLower(d.Value)
+			if strings.Contains(val, "linux") || strings.Contains(val, "ubuntu") {
+				return model.PlatformLinux
+			}
+			if strings.Contains(val, "win") {
+				return model.PlatformWindows
+			}
+			if strings.Contains(val, "mac") {
+				return model.PlatformMac
+			}
+			logging.Warningf(c, "Unknown OS platform: %s", val)
+			return model.PlatformUnknown
+		}
+	}
+	return model.PlatformUnspecified
 }

@@ -166,7 +166,7 @@ func collectMetricsForRunningReruns(c context.Context) error {
 	rerunCountMap := map[rerunKey]int64{}
 	rerunAgeMap := map[rerunKey]*distribution.Distribution{}
 	for _, rerun := range reruns {
-		proj, err := projectForRerun(c, rerun)
+		proj, platform, err := projectAndPlatformForRerun(c, rerun)
 		if err != nil {
 			return errors.Annotate(err, "projectForRerun %d", rerun.Id).Err()
 		}
@@ -179,10 +179,9 @@ func collectMetricsForRunningReruns(c context.Context) error {
 			return errors.Annotate(err, "couldn't get rerun build %d", rerun.RerunBuild.IntID()).Err()
 		}
 
-		// TODO (nqmtuan): Populate the platform information for rerun in datastore,
-		// so we can send the real one to tsmon.
-		var key rerunKey = rerunKey{
-			Project: proj,
+		var key = rerunKey{
+			Project:  proj,
+			Platform: platform,
 		}
 		if rerunBuild.Status == buildbucketpb.Status_STATUS_UNSPECIFIED || rerunBuild.Status == buildbucketpb.Status_SCHEDULED {
 			key.Status = "pending"
@@ -211,19 +210,19 @@ func collectMetricsForRunningReruns(c context.Context) error {
 	return nil
 }
 
-func projectForRerun(c context.Context, rerun *model.SingleRerun) (string, error) {
+func projectAndPlatformForRerun(c context.Context, rerun *model.SingleRerun) (string, string, error) {
 	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, rerun.Analysis.IntID())
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	build, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
 	if err != nil {
-		return "", errors.Annotate(err, "getting build for analysis %d", cfa.Id).Err()
+		return "", "", errors.Annotate(err, "getting build for analysis %d", cfa.Id).Err()
 	}
 	if build == nil {
-		return "", fmt.Errorf("build for analysis %d does not exist", cfa.Id)
+		return "", "", fmt.Errorf("build for analysis %d does not exist", cfa.Id)
 	}
-	return build.Project, nil
+	return build.Project, string(build.Platform), nil
 }
 
 func rerunAgeInSeconds(c context.Context, rerun *model.SingleRerun) float64 {

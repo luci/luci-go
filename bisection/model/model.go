@@ -55,6 +55,18 @@ const (
 	SuspectType_NthSection SuspectType = "NthSection"
 )
 
+type Platform string
+
+const (
+	// The build didn't specified a platform
+	PlatformUnspecified Platform = "unspecified"
+	// Platform is not win, mac or linux
+	PlatformUnknown Platform = "unknown"
+	PlatformWindows Platform = "win"
+	PlatformMac     Platform = "mac"
+	PlatformLinux   Platform = "linux"
+)
+
 // LuciBuild represents one LUCI build
 type LuciBuild struct {
 	BuildId     int64  `gae:"build_id"`
@@ -77,6 +89,8 @@ type LuciFailedBuild struct {
 	FailureType string `gae:"failure_type"`
 	// Failure type for the build
 	BuildFailureType gofinditpb.BuildFailureType `gae:"build_failure_type"`
+	// The platform of the failure
+	Platform Platform `gae:"platform"`
 }
 
 // CompileFailure represents a compile failure in one or more targets.

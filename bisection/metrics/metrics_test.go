@@ -37,9 +37,9 @@ func TestCollectGlobalMetrics(t *testing.T) {
 	c, _ = tsmon.WithDummyInMemory(c)
 
 	Convey("For running analyses", t, func() {
-		createRunningAnalysis(c, 123, "chromium")
-		createRunningAnalysis(c, 456, "chromeos")
-		createRunningAnalysis(c, 789, "chromium")
+		createRunningAnalysis(c, 123, "chromium", model.PlatformLinux)
+		createRunningAnalysis(c, 456, "chromeos", model.PlatformLinux)
+		createRunningAnalysis(c, 789, "chromium", model.PlatformLinux)
 		err := collectMetricsForRunningAnalyses(c)
 		So(err, ShouldBeNil)
 		So(runningAnalysesGauge.Get(c, "chromium"), ShouldEqual, 2)
@@ -59,7 +59,7 @@ func TestCollectGlobalMetrics(t *testing.T) {
 		testutil.UpdateIndices(c)
 
 		// Create a rerun for chromium
-		cfa1 := createRunningAnalysis(c, 123, "chromium")
+		cfa1 := createRunningAnalysis(c, 123, "chromium", model.PlatformLinux)
 
 		rrBuild1 := &model.CompileRerunBuild{
 			LuciBuild: model.LuciBuild{
@@ -79,7 +79,7 @@ func TestCollectGlobalMetrics(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Create another rerun for chromeos
-		cfa2 := createRunningAnalysis(c, 456, "chromeos")
+		cfa2 := createRunningAnalysis(c, 456, "chromeos", model.PlatformMac)
 
 		rrBuild2 := &model.CompileRerunBuild{
 			LuciBuild: model.LuciBuild{
@@ -100,23 +100,24 @@ func TestCollectGlobalMetrics(t *testing.T) {
 
 		err := collectMetricsForRunningReruns(c)
 		So(err, ShouldBeNil)
-		So(runningRerunGauge.Get(c, "chromium", "pending", ""), ShouldEqual, 1)
-		So(runningRerunGauge.Get(c, "chromium", "running", ""), ShouldEqual, 0)
-		So(runningRerunGauge.Get(c, "chromeos", "pending", ""), ShouldEqual, 0)
-		So(runningRerunGauge.Get(c, "chromeos", "running", ""), ShouldEqual, 1)
-		dist := rerunAgeMetric.Get(c, "chromium", "pending", "")
+		So(runningRerunGauge.Get(c, "chromium", "pending", "linux"), ShouldEqual, 1)
+		So(runningRerunGauge.Get(c, "chromium", "running", "linux"), ShouldEqual, 0)
+		So(runningRerunGauge.Get(c, "chromeos", "pending", "mac"), ShouldEqual, 0)
+		So(runningRerunGauge.Get(c, "chromeos", "running", "mac"), ShouldEqual, 1)
+		dist := rerunAgeMetric.Get(c, "chromium", "pending", "linux")
 		So(dist.Count(), ShouldEqual, 1)
-		dist = rerunAgeMetric.Get(c, "chromeos", "running", "")
+		dist = rerunAgeMetric.Get(c, "chromeos", "running", "mac")
 		So(dist.Count(), ShouldEqual, 1)
 	})
 }
 
-func createRunningAnalysis(c context.Context, id int64, proj string) *model.CompileFailureAnalysis {
+func createRunningAnalysis(c context.Context, id int64, proj string, platform model.Platform) *model.CompileFailureAnalysis {
 	fb := &model.LuciFailedBuild{
 		Id: id,
 		LuciBuild: model.LuciBuild{
 			Project: proj,
 		},
+		Platform: platform,
 	}
 	So(datastore.Put(c, fb), ShouldBeNil)
 	datastore.GetTestable(c).CatchupIndexes()
