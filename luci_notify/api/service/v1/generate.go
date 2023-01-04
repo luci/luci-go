@@ -15,4 +15,6 @@
 package lucinotifypb
 
 //go:generate cproto
+//go:generate mockgen -source rpc.pb.go -destination rpc.mock.pb.go -package lucinotifypb -write_package_comment=false
+//go:generate goimports -w rpc.mock.pb.go
 //go:generate svcdec -type TreeCloserServer
