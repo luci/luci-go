@@ -16,8 +16,12 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -92,4 +96,36 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 	default:
 		return nil, errors.Annotate(err, "error getting GroupImporterConfig").Err()
 	}
+}
+
+func loadGroupFile(identities string, domain string) ([]identity.Identity, error) {
+	members := make(map[identity.Identity]bool)
+	memsSplit := strings.Split(identities, "\n")
+	for _, uid := range memsSplit {
+		uid = strings.TrimSpace(uid)
+		if uid == "" {
+			continue
+		}
+		var d string
+		if domain == "" {
+			d = uid
+		} else {
+			d = domain
+		}
+		emailIdent, err := identity.MakeIdentity(fmt.Sprintf("user:%s@%s", uid, d))
+		if err != nil {
+			return nil, err
+		}
+		members[emailIdent] = true
+	}
+
+	membersSorted := make([]identity.Identity, 0, len(members))
+	for mem := range members {
+		membersSorted = append(membersSorted, mem)
+	}
+	sort.Slice(membersSorted, func(i, j int) bool {
+		return membersSorted[i].Value() < membersSorted[j].Value()
+	})
+
+	return membersSorted, nil
 }
