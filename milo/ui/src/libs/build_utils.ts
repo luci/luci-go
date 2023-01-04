@@ -124,7 +124,7 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
     }
   }
   {
-    const match = tagValue.match(/^milo\/build\/([\w\-\_]+)\/([\w\-\_]+)\/([\w\-\_]+)\/(\d+)$/);
+    const match = tagValue.match(/^build\/milo\/([\w\-\_\ ]+)\/([\w\-\_\ ]+)\/([\w\-\_\ ]+)\/(\d+)$/);
     if (match) {
       const [, project, bucket, builder_name, build_number] = match as string[];
       return router.urlForName('build', {
@@ -133,6 +133,13 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
         builder: builder_name,
         build_num_or_id: build_number,
       });
+    }
+  }
+  {
+    const match = tagValue.match(/^task\/swarming\/(chrome-swarming|chromium-swarm)\/(.+)$/);
+    if (match) {
+      const [, instance, taskId] = match as string[];
+      return getURLForSwarmingTask(`${instance}.appspot.com`, taskId);
     }
   }
   return null;

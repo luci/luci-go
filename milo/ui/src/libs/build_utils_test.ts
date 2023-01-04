@@ -80,8 +80,12 @@ describe('Build Utils Tests', () => {
     });
 
     it('should get the correct milo url', async () => {
-      const url = getSafeUrlFromTagValue('milo/build/project_name/bucket/builder_name/42');
-      assert.strictEqual(url, '/ui/p/project_name/builders/bucket/builder_name/42');
+      const url = getSafeUrlFromTagValue('build/milo/project_name/bucket/Builder name/42');
+      assert.strictEqual(url, '/ui/p/project_name/builders/bucket/Builder%20name/42');
+    });
+    it('should get the correct swarming url', async () => {
+      const url = getSafeUrlFromTagValue('task/swarming/chrome-swarming/deadbeef');
+      assert.strictEqual(url, 'https://chrome-swarming.appspot.com/task?id=deadbeef&o=true&w=true');
     });
   });
 
