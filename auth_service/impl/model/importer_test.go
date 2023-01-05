@@ -15,6 +15,9 @@
 package model
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"strings"
@@ -99,4 +102,55 @@ func TestLoadGroupFile(t *testing.T) {
 			So(err, ShouldErrLike, `auth: bad value "bad id@example.com" for identity kind "user"`)
 		})
 	})
+}
+
+func TestExtractTarArchive(t *testing.T) {
+	t.Parallel()
+	Convey("valid tarball with skippable files", t, func() {
+		expected := map[string][]byte{
+			"at_root":             []byte("a\nb"),
+			"ldap/ bad name":      []byte("a\nb"),
+			"ldap/group-a":        []byte("a\nb"),
+			"ldap/group-b":        []byte("a\nb"),
+			"ldap/group-c":        []byte("a\nb"),
+			"ldap/deeper/group-a": []byte("a\nb"),
+			"not-ldap/group-a":    []byte("a\nb"),
+		}
+		bundle := buildTargz(expected)
+		entries, err := extractTarArchive(bytes.NewReader(bundle))
+		So(err, ShouldBeNil)
+		So(entries, ShouldResemble, expected)
+	})
+}
+
+func buildTargz(files map[string][]byte) []byte {
+	var buf bytes.Buffer
+	gzw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gzw)
+	for name, body := range files {
+		hdr := &tar.Header{
+			Name: name,
+			Mode: 0600,
+			Size: int64(len(body)),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return nil
+		}
+		if _, err := tw.Write(body); err != nil {
+			return nil
+		}
+	}
+	if err := tw.Flush(); err != nil {
+		return nil
+	}
+	if err := tw.Close(); err != nil {
+		return nil
+	}
+	if err := gzw.Flush(); err != nil {
+		return nil
+	}
+	if err := gzw.Close(); err != nil {
+		return nil
+	}
+	return buf.Bytes()
 }

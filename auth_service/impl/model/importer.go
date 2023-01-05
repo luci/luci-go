@@ -15,8 +15,11 @@
 package model
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"time"
@@ -128,4 +131,35 @@ func loadGroupFile(identities string, domain string) ([]identity.Identity, error
 	})
 
 	return membersSorted, nil
+}
+
+// extractTarArchive unpacks a tar archive and returns a map
+// of filename -> fileobj pairs.
+func extractTarArchive(r io.Reader) (map[string][]byte, error) {
+	entries := make(map[string][]byte)
+	gzr, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+
+	tr := tar.NewReader(gzr)
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		fileContents, err := io.ReadAll(tr)
+		if err != nil {
+			return nil, err
+		}
+		entries[header.Name] = fileContents
+	}
+
+	if err := gzr.Close(); err != nil {
+		return nil, err
+	}
+	return entries, nil
 }
