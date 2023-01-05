@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 
@@ -218,6 +219,38 @@ func SubNotify(ctx context.Context, body io.Reader) error {
 	}
 
 	return cache.Set(ctx, nt.messageID, []byte{1}, 10*time.Minute)
+}
+
+func HandleCancelSwarmingTask(ctx context.Context, hostname string, taskID string, realm string) error {
+	// Validate
+	switch err := realms.ValidateRealmName(realm, realms.GlobalScope); {
+	case err != nil:
+		return tq.Fatal.Apply(err)
+	case hostname == "":
+		return errors.Reason("hostname is empty").Tag(tq.Fatal).Err()
+	case taskID == "":
+		return errors.Reason("taskID is empty").Tag(tq.Fatal).Err()
+	}
+
+	// Send the cancellation request.
+	project, _ := realms.Split(realm)
+	swarm, err := clients.NewSwarmingClient(ctx, hostname, project)
+	if err != nil {
+		return errors.Annotate(err, "failed to create a swarming client for task %s in %s", taskID, hostname).Tag(tq.Fatal).Err()
+	}
+	res, err := swarm.CancelTask(ctx, taskID, &swarming.SwarmingRpcsTaskCancelRequest{KillRunning: true})
+	if err != nil {
+		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code >= 500 {
+			return errors.Annotate(err, "transient error in cancelling the task %s", taskID).Tag(transient.Tag).Err()
+		}
+		return errors.Annotate(err, "fatal error in cancelling the task %s", taskID).Tag(tq.Fatal).Err()
+	}
+
+	// Non-okay in the body indicates the task may have already ended. Hence, just logging it.
+	if !res.Ok {
+		logging.Warningf(ctx, "Swarming response for cancelling task %s: %+v", taskID, res)
+	}
+	return nil
 }
 
 // unpackMsg unpacks swarming-go pubsub message and extracts message id,

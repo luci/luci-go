@@ -820,6 +820,71 @@ func TestSyncBuild(t *testing.T) {
 
 }
 
+func TestHandleCancelSwarmingTask(t *testing.T) {
+	t.Parallel()
+	Convey("HandleCancelSwarmingTask", t, func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		now := testclock.TestRecentTimeUTC
+		mockSwarm := clients.NewMockSwarmingClient(ctl)
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = context.WithValue(ctx, &clients.MockSwarmingClientKey, mockSwarm)
+		ctx = memory.UseWithAppID(ctx, "dev~app-id")
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		Convey("wrong", func() {
+			Convey("empty hostname", func() {
+				err := HandleCancelSwarmingTask(ctx, "", "task123", "project:bucket")
+				So(err, ShouldErrLike, "hostname is empty")
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+
+			Convey("empty taskID", func() {
+				err := HandleCancelSwarmingTask(ctx, "hostname", "", "project:bucket")
+				So(err, ShouldErrLike, "taskID is empty")
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+
+			Convey("wrong realm", func() {
+				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "bad_realm")
+				So(err, ShouldErrLike, `bad global realm name "bad_realm"`)
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+
+			Convey("swarming http 500", func() {
+				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(nil, &googleapi.Error{Code: 500, Message: "swarming internal error"})
+				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
+
+				So(err, ShouldErrLike, "transient error in cancelling the task task123")
+				So(transient.Tag.In(err), ShouldBeTrue)
+			})
+
+			Convey("swarming http <500", func() {
+				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(nil, &googleapi.Error{Code: 400, Message: "bad request"})
+				err := HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket")
+
+				So(err, ShouldErrLike, "fatal error in cancelling the task task123")
+				So(tq.Fatal.In(err), ShouldBeTrue)
+			})
+		})
+
+		Convey("success", func() {
+			Convey("response.ok", func() {
+				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(&swarming.SwarmingRpcsCancelResponse{Ok: true}, nil)
+				So(HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), ShouldBeNil)
+			})
+
+			Convey("!response.ok", func() {
+				mockSwarm.EXPECT().CancelTask(ctx, "task123", gomock.Any()).Return(&swarming.SwarmingRpcsCancelResponse{Ok: false, WasRunning: false}, nil)
+				So(HandleCancelSwarmingTask(ctx, "hostname", "task123", "project:bucket"), ShouldBeNil)
+			})
+		})
+	})
+}
+
 func TestSubNotify(t *testing.T) {
 	t.Parallel()
 	Convey("SubNotify", t, func() {

@@ -12,14 +12,25 @@ import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import  "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
-// A task to cancel a Swarming task.
+// A task to cancel a Swarming task in Python.
 message CancelSwarmingTask {
   // Hostname (e.g. "chromium-swarm.appspot.com") where the task should be
   // cancelled.
   string hostname = 1;
   // Swarming task ID to cancel.
   string task_id = 2;
-  // LUCI realm the task belongs to or "" if realms is disabled.
+  // LUCI realm the task belongs to.
+  string realm = 3;
+}
+
+// A task to cancel a Swarming task in Go.
+message CancelSwarmingTaskGo {
+  // Hostname (e.g. "chromium-swarm.appspot.com") where the task should be
+  // cancelled.
+  string hostname = 1;
+  // Swarming task ID to cancel.
+  string task_id = 2;
+  // LUCI realm the task belongs to.
   string realm = 3;
 }
 
