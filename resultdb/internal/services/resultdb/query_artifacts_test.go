@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -69,6 +70,7 @@ func TestQueryArtifacts(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListArtifacts},
 			},
 		})
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		testutil.MustApply(
 			ctx,

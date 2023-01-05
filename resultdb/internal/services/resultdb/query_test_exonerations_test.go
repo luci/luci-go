@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -57,6 +58,7 @@ func TestQueryTestExonerations(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
 			},
 		})
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertEx := insert.TestExonerations

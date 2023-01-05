@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/tsmon"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -43,6 +45,7 @@ func TestQueryTestResultStatistics(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
 			},
 		})
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		incCount := func(invID invocations.ID, count int64) {
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

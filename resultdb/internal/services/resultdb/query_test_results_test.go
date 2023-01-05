@@ -21,6 +21,8 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/tsmon"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -84,6 +86,7 @@ func TestQueryTestResults(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
 			},
 		})
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertTRs := insert.TestResults

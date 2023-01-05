@@ -49,6 +49,9 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, appstatus.BadRequest(err)
 	}
 
+	// Query is valid - increment the queryInvocationsCount metric
+	queryInvocationsCount.Add(ctx, 1, "QueryArtifacts", len(in.Invocations))
+
 	// Open a transaction.
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()

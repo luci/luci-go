@@ -50,6 +50,9 @@ func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.Query
 		return nil, appstatus.BadRequest(err)
 	}
 
+	// Query is valid - increment the queryInvocationsCount metric
+	queryInvocationsCount.Add(ctx, 1, "QueryTestExonerations", len(in.Invocations))
+
 	// Open a transaction.
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()

@@ -88,6 +88,9 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, appstatus.BadRequest(err)
 	}
 
+	// Query is valid - increment the queryInvocationsCount metric
+	queryInvocationsCount.Add(ctx, 1, "QueryTestResults", len(in.Invocations))
+
 	// Open a transaction.
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
