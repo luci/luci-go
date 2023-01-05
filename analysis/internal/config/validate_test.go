@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -132,17 +133,31 @@ func TestProjectConfigValidator(t *testing.T) {
 		So(validate(cfg), ShouldBeNil)
 	})
 
-	Convey("valid config is valid", t, func() {
-		cfg := CreatePlaceholderProjectConfig()
+	Convey("valid monorail config is valid", t, func() {
+		cfg := CreateMonorailPlaceholderProjectConfig()
 		So(validate(cfg), ShouldBeNil)
 	})
 
+	Convey("valid buganizer config is valid", t, func() {
+		cfg := CreateBuganizerPlaceholderProjectConfig()
+		So(validate(cfg), ShouldBeNil)
+	})
+
+	Convey("unspecified bug system defaults to monorail", t, func() {
+		cfg := CreateMonorailPlaceholderProjectConfig()
+		cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
+		So(validate(cfg), ShouldBeNil)
+	})
+
+	Convey("must be specified", t, func() {
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_BUGANIZER)
+		cfg.Monorail = nil
+		cfg.Buganizer = nil
+		So(validate(cfg), ShouldErrLike, "either a monorail or buganizer configuration must be specified")
+	})
+
 	Convey("monorail", t, func() {
-		cfg := CreatePlaceholderProjectConfig()
-		Convey("must be specified", func() {
-			cfg.Monorail = nil
-			So(validate(cfg), ShouldErrLike, "monorail must be specified")
-		})
+		cfg := CreateMonorailPlaceholderProjectConfig()
 
 		Convey("project must be specified", func() {
 			cfg.Monorail.Project = ""
@@ -184,7 +199,7 @@ func TestProjectConfigValidator(t *testing.T) {
 
 			Convey("threshold is not specified", func() {
 				priorities[0].Threshold = nil
-				So(validate(cfg), ShouldErrLike, "impact thresolds must be specified")
+				So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
 			})
 
 			Convey("last priority thresholds must be satisfied by the bug-filing threshold", func() {
@@ -289,17 +304,79 @@ func TestProjectConfigValidator(t *testing.T) {
 			So(validate(cfg), ShouldErrLike, "invalid display prefix")
 		})
 	})
-	Convey("bug filing threshold", t, func() {
-		cfg := CreatePlaceholderProjectConfig()
+
+	Convey("Buganizer", t, func() {
+		cfg := CreateBuganizerPlaceholderProjectConfig()
+
+		Convey("default component must be specified", func() {
+			cfg.Buganizer.DefaultComponent = nil
+			So(validate(cfg), ShouldErrLike, "default component must be specified")
+		})
+
+		Convey("invalid default component", func() {
+			cfg.Buganizer.DefaultComponent.Id = 0
+			So(validate(cfg), ShouldErrLike, "invalid buganizer default component id: 0")
+		})
+
+		Convey("priorities", func() {
+			priorityMappings := cfg.Buganizer.PriorityMappings
+			Convey("priority_mappings not specified", func() {
+				cfg.Buganizer.PriorityMappings = nil
+				So(validate(cfg), ShouldErrLike, "priority_mappings must be specified")
+			})
+
+			Convey("priority_mappings are zero length", func() {
+				cfg.Buganizer.PriorityMappings = []*configpb.BuganizerProject_PriorityMapping{}
+				So(validate(cfg), ShouldErrLike, "at least one buganizer priority mapping must be specified")
+			})
+
+			Convey("priority value is empty", func() {
+				priorityMappings[0].Priority = -1
+				So(validate(cfg), ShouldErrLike, "invalid priority: -1")
+			})
+
+			Convey("threshold is not specified", func() {
+				priorityMappings[0].Threshold = nil
+				So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
+			})
+
+			Convey("last priority thresholds must be satisfied by the bug-filing threshold", func() {
+				lastPriority := priorityMappings[len(priorityMappings)-1]
+				bugFilingThres := cfg.BugFilingThreshold
+
+				// Test validation applies to all metrics.
+				Convey("critical test failures exonerated", func() {
+					bugFilingThres.CriticalFailuresExonerated = &configpb.MetricThreshold{OneDay: proto.Int64(70)}
+					lastPriority.Threshold.CriticalFailuresExonerated = nil
+					So(validate(cfg), ShouldErrLike, "critical_failures_exonerated / one_day): one_day threshold must be set, with a value of at most 70")
+				})
+			})
+			// Other thresholding validation cases tested under bug-filing threshold and are
+			// not repeated given the implementation is shared.
+		})
+
+		Convey("priority hysteresis", func() {
+			Convey("value too high", func() {
+				cfg.Buganizer.PriorityHysteresisPercent = 1001
+				So(validate(cfg), ShouldErrLike, "value must not exceed 1000 percent")
+			})
+			Convey("value is negative", func() {
+				cfg.Buganizer.PriorityHysteresisPercent = -1
+				So(validate(cfg), ShouldErrLike, "value must not be negative")
+			})
+		})
+	})
+
+	Convey("bug filing threshold", t, WithBothProjectConfigs(func(cfg *configpb.ProjectConfig, name string) {
 		threshold := cfg.BugFilingThreshold
 		So(threshold, ShouldNotBeNil)
 
-		Convey("must be specified", func() {
+		Convey(fmt.Sprintf("%s - must be specified", name), func() {
 			cfg.BugFilingThreshold = nil
-			So(validate(cfg), ShouldErrLike, "impact thresolds must be specified")
+			So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
 		})
 
-		Convey("handles unset metric thresholds", func() {
+		Convey(fmt.Sprintf("%s - handles unset metric thresholds", name), func() {
 			threshold := cfg.BugFilingThreshold
 			threshold.CriticalFailuresExonerated = nil
 			threshold.TestResultsFailed = nil
@@ -308,7 +385,7 @@ func TestProjectConfigValidator(t *testing.T) {
 			So(threshold, ShouldNotBeNil)
 		})
 
-		Convey("metric values are not negative", func() {
+		Convey(fmt.Sprintf("%s - metric values are not negative", name), func() {
 			// Test by threshold period.
 			Convey("one day", func() {
 				threshold.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
@@ -346,10 +423,11 @@ func TestProjectConfigValidator(t *testing.T) {
 				So(validate(cfg), ShouldErrLike, "value must be non-negative")
 			})
 		})
-	})
+	}))
 
 	Convey("realm config", t, func() {
-		cfg := CreatePlaceholderProjectConfig()
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+
 		So(len(cfg.Realms), ShouldEqual, 1)
 		realm := cfg.Realms[0]
 
@@ -451,10 +529,11 @@ func TestProjectConfigValidator(t *testing.T) {
 	})
 
 	Convey("clustering", t, func() {
-		cfg := CreatePlaceholderProjectConfig()
+		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
+
 		clustering := cfg.Clustering
 
-		Convey("may not be specified", func() {
+		Convey(" may not be specified", func() {
 			cfg.Clustering = nil
 			So(validate(cfg), ShouldBeNil)
 		})

@@ -63,3 +63,21 @@ func Get(ctx context.Context) (*configpb.Config, error) {
 func SetTestConfig(ctx context.Context, cfg *configpb.Config) error {
 	return cachedCfg.Set(ctx, cfg, &config.Meta{})
 }
+
+// WithBothProjectConfigs Runs a test with both
+// Monorail and Buganizer configs.
+func WithBothProjectConfigs(f func(cfg *configpb.ProjectConfig, name string)) func() {
+	return func() {
+		monorailCfg := CreateMonorailPlaceholderProjectConfig()
+		buganizerCfg := CreateBuganizerPlaceholderProjectConfig()
+		f(monorailCfg, "monorail")
+		f(buganizerCfg, "buganizer")
+	}
+}
+
+func WithBothBugSystems(f func(system configpb.ProjectConfig_BugSystem, name string)) func() {
+	return func() {
+		f(configpb.ProjectConfig_MONORAIL, "monorail")
+		f(configpb.ProjectConfig_BUGANIZER, "buganizer")
+	}
+}

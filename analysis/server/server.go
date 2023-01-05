@@ -24,6 +24,7 @@ import (
 	adminpb "go.chromium.org/luci/analysis/internal/admin/proto"
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analyzedtestvariants"
+	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	"go.chromium.org/luci/analysis/internal/bugs/updater"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
@@ -78,6 +79,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		legacydb.NewModuleFromFlags(),
 		scopedauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
+		buganizer.NewModuleFromFlags(),
 	}
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
 		// Register pPRC servers.

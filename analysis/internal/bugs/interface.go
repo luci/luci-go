@@ -15,9 +15,10 @@
 package bugs
 
 import (
-	"errors"
+	"time"
 
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/common/errors"
 )
 
 type BugUpdateRequest struct {
@@ -32,6 +33,14 @@ type BugUpdateRequest struct {
 	// If this if false, the BugUpdateRequest is only made to determine if the
 	// bug is the duplicate of another bug and if the rule should be archived.
 	IsManagingBug bool
+	// Whether the user enabled priority updates for the Bug.
+	// If this is false, the bug priority will not change.
+	IsManagingBugPriority bool
+	// The time when the field `IsManagingBugPriority` was last updated.
+	// This is used to determine whether or not we should make priority updates by
+	// if the user manually took control of the bug priority before
+	// or after automatic priority updates were (re-)enabled.
+	IsManagingBugPriorityLastUpdated time.Time
 	// The identity of the rule associated with the bug.
 	RuleID string
 }
@@ -48,6 +57,11 @@ type BugUpdateResponse struct {
 	// - The bug is managed by the user (IsManagingBug = false), and the
 	//   bug has been closed for the last 30 days.
 	ShouldArchive bool
+
+	// DisableRulePriorityUpdates indicates that the rules `IsManagingBugUpdates`
+	// field should be disabled.
+	// This is set when a user manually takes control of the priority of a bug.
+	DisableRulePriorityUpdates bool
 }
 
 // UpdateDuplicateSourceRequest represents a request to update the source
@@ -77,6 +91,7 @@ type CreateRequest struct {
 	// Impact describes the impact of cluster.
 	Impact *ClusterImpact
 	// The monorail components (if any) to use.
+	// This value is ignored for Buganizer.
 	MonorailComponents []string
 }
 

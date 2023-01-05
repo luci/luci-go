@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package monorail
+package bugs
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+
+	"go.chromium.org/luci/analysis/internal/clustering"
+)
 
 // Commentary represents part of a bug comment.
 type Commentary struct {
@@ -50,4 +55,23 @@ func MergeCommentary(cs ...Commentary) string {
 
 	// Bodies (and the final footer) are separated by a blank line.
 	return strings.Join(bodies, "\n\n")
+}
+
+// GenerateInitialIssueDescription generates the description that should
+// be used when the issue is first created.
+// It adds information about actioning the bug and what to do
+// if the component is not correct.
+func GenerateInitialIssueDescription(description *clustering.ClusterDescription, appID string) string {
+	commentary := Commentary{
+		Body: fmt.Sprintf(DescriptionTemplate, description.Description),
+		Footer: fmt.Sprintf("How to action this bug: https://%s.appspot.com/help#new-bug-filed\n"+
+			"Provide feedback: https://%s.appspot.com/help#feedback", appID, appID),
+	}
+
+	componentSelectionCommentary := Commentary{
+		Footer: fmt.Sprintf("Was this bug filed in the wrong component? See:"+
+			"https://%s.appspot.com/help#component-selection", appID),
+	}
+
+	return MergeCommentary(commentary, componentSelectionCommentary)
 }

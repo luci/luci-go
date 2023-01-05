@@ -29,6 +29,9 @@ func createAssociatedBugPB(b bugs.BugID, cfg *configpb.ProjectConfig) *pb.Associ
 
 	switch b.System {
 	case bugs.MonorailSystem:
+		if cfg.Monorail == nil {
+			break
+		}
 		project, id, err := b.MonorailProjectAndID()
 		if err != nil {
 			// Fallback to basic name and blank URL.

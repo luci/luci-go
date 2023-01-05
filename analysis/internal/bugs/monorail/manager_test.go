@@ -64,10 +64,11 @@ func TestManager(t *testing.T) {
 		cl, err := NewClient(UseFakeIssuesClient(ctx, f, user), "myhost")
 		So(err, ShouldBeNil)
 		monorailCfgs := ChromiumTestConfig()
-		bugFilingThreshold := ChromiumTestBugFilingThreshold()
+		bugFilingThreshold := bugs.TestBugFilingThreshold()
 		projectCfg := &configpb.ProjectConfig{
 			Monorail:           monorailCfgs,
 			BugFilingThreshold: bugFilingThreshold,
+			BugSystem:          configpb.ProjectConfig_MONORAIL,
 		}
 		bm, err := NewBugManager(cl, "luci-analysis-test", "luciproject", projectCfg)
 		So(err, ShouldBeNil)
@@ -76,8 +77,8 @@ func TestManager(t *testing.T) {
 		ctx, tc := testclock.UseTime(ctx, now)
 
 		Convey("Create", func() {
-			c := NewCreateRequest()
-			c.Impact = ChromiumLowP1Impact()
+			createRequest := NewCreateRequest()
+			createRequest.Impact = bugs.LowP1Impact()
 
 			expectedIssue := &mpb.Issue{
 				Name:             "projects/chromium/issues/100",
@@ -114,10 +115,10 @@ func TestManager(t *testing.T) {
 					"Expected_Value"
 					my_expr.evaluate(123)
 						Which is: "Unexpected_Value"`
-				c.Description.Title = reason
-				c.Description.Description = "A cluster of failures has been found with reason: " + reason
+				createRequest.Description.Title = reason
+				createRequest.Description.Description = "A cluster of failures has been found with reason: " + reason
 
-				bug, err := bm.Create(ctx, c)
+				bug, err := bm.Create(ctx, createRequest)
 				So(err, ShouldBeNil)
 				So(bug, ShouldEqual, "chromium/100")
 				So(len(f.Issues), ShouldEqual, 1)
@@ -137,10 +138,10 @@ func TestManager(t *testing.T) {
 				So(issue.NotifyCount, ShouldEqual, 1)
 			})
 			Convey("With test name failure cluster", func() {
-				c.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
-				c.Description.Description = "A test is failing " + c.Description.Title
+				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
+				createRequest.Description.Description = "A test is failing " + createRequest.Description.Title
 
-				bug, err := bm.Create(ctx, c)
+				bug, err := bm.Create(ctx, createRequest)
 				So(err, ShouldBeNil)
 				So(bug, ShouldEqual, "chromium/100")
 				So(len(f.Issues), ShouldEqual, 1)
@@ -160,7 +161,7 @@ func TestManager(t *testing.T) {
 			Convey("Without Restrict-View-Google", func() {
 				monorailCfgs.FileWithoutRestrictViewGoogle = true
 
-				bug, err := bm.Create(ctx, c)
+				bug, err := bm.Create(ctx, createRequest)
 				So(err, ShouldBeNil)
 				So(bug, ShouldEqual, "chromium/100")
 				So(len(f.Issues), ShouldEqual, 1)
@@ -174,14 +175,14 @@ func TestManager(t *testing.T) {
 			})
 			Convey("Does nothing if in simulation mode", func() {
 				bm.Simulate = true
-				_, err := bm.Create(ctx, c)
+				_, err := bm.Create(ctx, createRequest)
 				So(err, ShouldEqual, bugs.ErrCreateSimulated)
 				So(len(f.Issues), ShouldEqual, 0)
 			})
 		})
 		Convey("Update", func() {
 			c := NewCreateRequest()
-			c.Impact = ChromiumP2Impact()
+			c.Impact = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
@@ -216,14 +217,14 @@ func TestManager(t *testing.T) {
 				updateDoesNothing()
 			})
 			Convey("If impact changed", func() {
-				bugsToUpdate[0].Impact = ChromiumP3Impact()
+				bugsToUpdate[0].Impact = bugs.P3Impact()
 				Convey("Does not reduce priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = ChromiumHighP3Impact()
+					bugsToUpdate[0].Impact = bugs.HighP3Impact()
 
 					updateDoesNothing()
 				})
 				Convey("Does not update bug if IsManagingBug false", func() {
-					bugsToUpdate[0].Impact = ChromiumClosureImpact()
+					bugsToUpdate[0].Impact = bugs.ClosureImpact()
 					bugsToUpdate[0].IsManagingBug = false
 
 					updateDoesNothing()
@@ -236,7 +237,7 @@ func TestManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Reduces priority in response to reduced impact", func() {
-					bugsToUpdate[0].Impact = ChromiumP3Impact()
+					bugsToUpdate[0].Impact = bugs.P3Impact()
 					originalNotifyCount := f.Issues[0].NotifyCount
 					response, err := bm.Update(ctx, bugsToUpdate)
 					So(err, ShouldBeNil)
@@ -261,12 +262,12 @@ func TestManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Does not increase priority if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = ChromiumLowP1Impact()
+					bugsToUpdate[0].Impact = bugs.LowP1Impact()
 
 					updateDoesNothing()
 				})
 				Convey("Increases priority in response to increased impact (single-step)", func() {
-					bugsToUpdate[0].Impact = ChromiumP1Impact()
+					bugsToUpdate[0].Impact = bugs.P1Impact()
 
 					originalNotifyCount := f.Issues[0].NotifyCount
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -291,7 +292,7 @@ func TestManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Increases priority in response to increased impact (multi-step)", func() {
-					bugsToUpdate[0].Impact = ChromiumP0Impact()
+					bugsToUpdate[0].Impact = bugs.P0Impact()
 
 					originalNotifyCount := f.Issues[0].NotifyCount
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -361,9 +362,9 @@ func TestManager(t *testing.T) {
 				})
 			})
 			Convey("If impact falls below lowest priority threshold", func() {
-				bugsToUpdate[0].Impact = ChromiumClosureImpact()
+				bugsToUpdate[0].Impact = bugs.ClosureImpact()
 				Convey("Update leaves bug open if impact within hysteresis range", func() {
-					bugsToUpdate[0].Impact = ChromiumP3LowestBeforeClosureImpact()
+					bugsToUpdate[0].Impact = bugs.P3LowestBeforeClosureImpact()
 
 					// Update may reduce the priority from P2 to P3, but the
 					// issue should be left open. This is because hysteresis on
@@ -395,7 +396,7 @@ func TestManager(t *testing.T) {
 					updateDoesNothing()
 
 					Convey("Does not reopen bug if impact within hysteresis range", func() {
-						bugsToUpdate[0].Impact = ChromiumHighestNotFiledImpact()
+						bugsToUpdate[0].Impact = bugs.HighestNotFiledImpact()
 
 						updateDoesNothing()
 					})
@@ -416,7 +417,7 @@ func TestManager(t *testing.T) {
 					})
 
 					Convey("If impact increases, bug is re-opened with correct priority", func() {
-						bugsToUpdate[0].Impact = ChromiumP3Impact()
+						bugsToUpdate[0].Impact = bugs.P3Impact()
 						Convey("Issue has owner", func() {
 							// Update issue owner.
 							updateReq := updateOwnerRequest(f.Issues[0].Issue.Name, "users/100")
@@ -547,7 +548,7 @@ func TestManager(t *testing.T) {
 		})
 		Convey("GetMergedInto", func() {
 			c := NewCreateRequest()
-			c.Impact = ChromiumP2Impact()
+			c.Impact = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
@@ -595,7 +596,7 @@ func TestManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateSource", func() {
 			c := NewCreateRequest()
-			c.Impact = ChromiumP2Impact()
+			c.Impact = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")
@@ -638,7 +639,7 @@ func TestManager(t *testing.T) {
 		})
 		Convey("UpdateDuplicateDestination", func() {
 			c := NewCreateRequest()
-			c.Impact = ChromiumP2Impact()
+			c.Impact = bugs.P2Impact()
 			bug, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
 			So(bug, ShouldEqual, "chromium/100")

@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -43,8 +44,8 @@ var textPBMultiline = prototext.MarshalOptions{
 func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("SetTestProjectConfig updates context config", t, func() {
-		projectA := CreatePlaceholderProjectConfig()
+	Convey("SetTestProjectConfig updates context config", t, func(){
+		projectA := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
 		projectA.LastUpdated = timestamppb.New(time.Now())
 		configs := make(map[string]*configpb.ProjectConfig)
 		configs["a"] = projectA
@@ -59,9 +60,9 @@ func TestProjectConfig(t *testing.T) {
 		So(cfg["a"], ShouldResembleProto, projectA)
 	})
 
-	Convey("With mocks", t, func() {
-		projectA := CreatePlaceholderProjectConfig()
-		projectB := CreatePlaceholderProjectConfig()
+	Convey("With mocks", t, WithBothBugSystems(func(system configpb.ProjectConfig_BugSystem, name string) {
+		projectA := CreateConfigWithBothBuganizerAndMonorail(system)
+		projectB := CreateConfigWithBothBuganizerAndMonorail(system)
 		projectB.Monorail.PriorityFieldId = 1
 
 		configs := map[config.Set]cfgmem.Files{
@@ -74,7 +75,7 @@ func TestProjectConfig(t *testing.T) {
 		ctx = cfgclient.Use(ctx, cfgmem.New(configs))
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey("Update works", func() {
+		Convey(fmt.Sprintf("%s - Update works", name), func() {
 			// Initial update.
 			creationTime := clock.Now(ctx)
 			err := updateProjects(ctx)
@@ -98,8 +99,8 @@ func TestProjectConfig(t *testing.T) {
 			tc.Add(1 * time.Second)
 
 			// Real update.
-			projectC := CreatePlaceholderProjectConfig()
-			newProjectB := CreatePlaceholderProjectConfig()
+			projectC := CreateConfigWithBothBuganizerAndMonorail(system)
+			newProjectB := CreateConfigWithBothBuganizerAndMonorail(system)
 			newProjectB.Monorail.PriorityFieldId = 2
 			delete(configs, "projects/a")
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
@@ -153,7 +154,7 @@ func TestProjectConfig(t *testing.T) {
 			})
 		})
 
-		Convey("Validation works", func() {
+		Convey(fmt.Sprintf("%s - Validation works", name), func() {
 			configs["projects/b"]["${appid}.cfg"] = `bad data`
 			creationTime := clock.Now(ctx)
 			err := updateProjects(ctx)
@@ -169,7 +170,7 @@ func TestProjectConfig(t *testing.T) {
 			So(projects["a"], ShouldResembleProto, withLastUpdated(projectA, creationTime))
 		})
 
-		Convey("Update retains existing config if new config is invalid", func() {
+		Convey(fmt.Sprintf("%s - Update retains existing config if new config is invalid", name), func() {
 			// Initial update.
 			creationTime := clock.Now(ctx)
 			err := updateProjects(ctx)
@@ -186,9 +187,9 @@ func TestProjectConfig(t *testing.T) {
 			tc.Add(1 * time.Second)
 
 			// Attempt to update with an invalid config for project B.
-			newProjectA := CreatePlaceholderProjectConfig()
+			newProjectA := CreateConfigWithBothBuganizerAndMonorail(system)
 			newProjectA.Monorail.Project = "new-project-a"
-			newProjectB := CreatePlaceholderProjectConfig()
+			newProjectB := CreateConfigWithBothBuganizerAndMonorail(system)
 			newProjectB.Monorail.Project = ""
 			configs["projects/a"]["${appid}.cfg"] = textPBMultiline.Format(newProjectA)
 			configs["projects/b"]["${appid}.cfg"] = textPBMultiline.Format(newProjectB)
@@ -209,7 +210,7 @@ func TestProjectConfig(t *testing.T) {
 			So(projects["a"], ShouldResembleProto, withLastUpdated(newProjectA, updateTime))
 			So(projects["b"], ShouldResembleProto, withLastUpdated(projectB, creationTime))
 		})
-	})
+	}))
 }
 
 // withLastUpdated returns a copy of the given ProjectConfig with the
@@ -223,8 +224,8 @@ func withLastUpdated(cfg *configpb.ProjectConfig, lastUpdated time.Time) *config
 func TestProject(t *testing.T) {
 	t.Parallel()
 
-	Convey("Project", t, func() {
-		pjChromium := CreatePlaceholderProjectConfig()
+	Convey("Project", t, WithBothBugSystems(func(system configpb.ProjectConfig_BugSystem, name string) {
+		pjChromium := CreateConfigWithBothBuganizerAndMonorail(system)
 		configs := map[string]*configpb.ProjectConfig{
 			"chromium": pjChromium,
 		}
@@ -232,25 +233,25 @@ func TestProject(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		SetTestProjectConfig(ctx, configs)
 
-		Convey("success", func() {
+		Convey(fmt.Sprintf("%s - success", name), func() {
 			pj, err := Project(ctx, "chromium")
 			So(err, ShouldBeNil)
 			So(pj, ShouldResembleProto, pjChromium)
 		})
 
-		Convey("not found", func() {
+		Convey(fmt.Sprintf("%s - not found", name), func() {
 			pj, err := Project(ctx, "random")
 			So(err, ShouldEqual, NotExistsErr)
 			So(pj, ShouldBeNil)
 		})
-	})
+	}))
 }
 
 func TestRealm(t *testing.T) {
 	t.Parallel()
 
-	Convey("Realm", t, func() {
-		pj := CreatePlaceholderProjectConfig()
+	Convey("Realm", t, WithBothBugSystems(func(system configpb.ProjectConfig_BugSystem, name string) {
+		pj := CreateConfigWithBothBuganizerAndMonorail(system)
 		configs := map[string]*configpb.ProjectConfig{
 			"chromium": pj,
 		}
@@ -258,16 +259,16 @@ func TestRealm(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		SetTestProjectConfig(ctx, configs)
 
-		Convey("success", func() {
+		Convey(fmt.Sprintf("%s - success", name), func() {
 			rj, err := Realm(ctx, "chromium:ci")
 			So(err, ShouldBeNil)
 			So(rj, ShouldResembleProto, pj.Realms[0])
 		})
 
-		Convey("not found", func() {
+		Convey(fmt.Sprintf("%s - not found", name), func() {
 			rj, err := Realm(ctx, "chromium:random")
 			So(err, ShouldEqual, RealmNotExistsErr)
 			So(rj, ShouldBeNil)
 		})
-	})
+	}))
 }

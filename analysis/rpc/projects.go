@@ -56,10 +56,12 @@ func (*projectServer) GetConfig(ctx context.Context, req *pb.GetProjectConfigReq
 
 	response := &pb.ProjectConfig{
 		Name: fmt.Sprintf("projects/%s/config", project),
-		Monorail: &pb.ProjectConfig_Monorail{
+	}
+	if cfg.Config.Monorail != nil {
+		response.Monorail = &pb.ProjectConfig_Monorail{
 			Project:       cfg.Config.Monorail.Project,
 			DisplayPrefix: cfg.Config.Monorail.DisplayPrefix,
-		},
+		}
 	}
 	return response, nil
 }

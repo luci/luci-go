@@ -50,12 +50,8 @@ type Config struct {
 	//
 	// If this is unset or zero, re-clustering is disabled.
 	ReclusteringWorkers int64 `protobuf:"varint,3,opt,name=reclustering_workers,json=reclusteringWorkers,proto3" json:"reclustering_workers,omitempty"`
-	// The frequency by which to re-cluster. This is specified as a
-	// number of minutes. Maximum value is 9, which is one minute less than
-	// the 10 minute hard request deadline for autoscaled GAE instances:
-	// https://cloud.google.com/appengine/docs/standard/go/how-instances-are-managed.
-	//
-	// If this is unset or zero, re-clustering is disabled.
+	// Deprecated November 2022. Setting this has no effect. Field retained
+	// to maintain backwards compatibility with old configuration files.
 	ReclusteringIntervalMinutes int64 `protobuf:"varint,4,opt,name=reclustering_interval_minutes,json=reclusteringIntervalMinutes,proto3" json:"reclustering_interval_minutes,omitempty"`
 	// Controls whether LUCI Analysis will interact with bug-filing systems.
 	// Can be used to stop LUCI Analysis auto-bug filing and updates in

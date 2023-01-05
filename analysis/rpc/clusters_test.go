@@ -75,11 +75,10 @@ func TestClusters(t *testing.T) {
 		server := NewClustersServer(analysisClient)
 
 		configVersion := time.Date(2025, time.August, 12, 0, 1, 2, 3, time.UTC)
-		projectCfg := config.CreatePlaceholderProjectConfig()
+		projectCfg := config.CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
 		projectCfg.LastUpdated = timestamppb.New(configVersion)
 		projectCfg.Monorail.DisplayPrefix = "crbug.com"
 		projectCfg.Monorail.MonorailHostname = "bugs.chromium.org"
-
 		configs := make(map[string]*configpb.ProjectConfig)
 		configs["testproject"] = projectCfg
 		err := config.SetTestProjectConfig(ctx, configs)
@@ -120,7 +119,7 @@ func TestClusters(t *testing.T) {
 		err = rules.SetRulesForTesting(ctx, rs)
 		So(err, ShouldBeNil)
 
-		Convey("Unauthorised requests are rejected", func() {
+		Convey("requests are rejected", func() {
 			// Ensure no access to luci-analysis-access.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
@@ -166,7 +165,6 @@ func TestClusters(t *testing.T) {
 					},
 				},
 			}
-
 			Convey("Not authorised to cluster", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetClustersByFailure)
 
@@ -244,6 +242,18 @@ func TestClusters(t *testing.T) {
 						ConfigVersion:     timestamppb.New(configVersion),
 					},
 				})
+			})
+			Convey("With no monorail configuration", func() {
+				//Setup
+				projectCfg.Monorail = nil
+				configs := make(map[string]*configpb.ProjectConfig)
+				configs["testproject"] = projectCfg
+				err := config.SetTestProjectConfig(ctx, configs)
+				So(err, ShouldBeNil)
+				// Run
+				response, err := server.Cluster(ctx, request)
+				So(err, ShouldBeNil)
+				So(response.ClusteredTestResults[0].Clusters[1].Bug.Url, ShouldEqual, "")
 			})
 			Convey("With missing test ID", func() {
 				request.TestResults[1].TestId = ""

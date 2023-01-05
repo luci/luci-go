@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/bugs"
+	"go.chromium.org/luci/analysis/internal/bugs/buganizer"
 	"go.chromium.org/luci/analysis/internal/bugs/monorail"
 	"go.chromium.org/luci/analysis/internal/clustering/runs"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -152,24 +153,34 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		})
 	}()
 
-	mc, err := monorail.NewClient(ctx, monorailHost)
+	monorailClient, err := monorail.NewClient(ctx, monorailHost)
 	if err != nil {
 		return err
 	}
 
-	ac, err := analysis.NewClient(ctx, gcpProject)
+	analysisClient, err := analysis.NewClient(ctx, gcpProject)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err := ac.Close(); err != nil && retErr == nil {
+		if err := analysisClient.Close(); err != nil && retErr == nil {
 			retErr = errors.Annotate(err, "closing analysis client").Err()
 		}
 	}()
 
-	projectsWithDataset, err := ac.ProjectsWithDataset(ctx)
+	projectsWithDataset, err := analysisClient.ProjectsWithDataset(ctx)
 	if err != nil {
 		return errors.Annotate(err, "querying projects with dataset").Err()
+	}
+
+	buganizerClient, err := createBuganizerClient(ctx)
+
+	if err != nil {
+		return errors.Annotate(err, "creating a buganizer client").Err()
+	}
+
+	if buganizerClient != nil {
+		defer buganizerClient.Close()
 	}
 
 	taskGenerator := func(c chan<- func() error) {
@@ -183,12 +194,14 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 			opts := updateOptions{
 				appID:              gcpProject,
 				project:            project,
-				analysisClient:     ac,
-				monorailClient:     mc,
+				analysisClient:     analysisClient,
+				monorailClient:     monorailClient,
+				buganizerClient:    buganizerClient,
 				simulateBugUpdates: simulate,
 				enableBugUpdates:   enable,
 				maxBugsFiledPerRun: 1,
 			}
+
 			// Assign project to local variable to ensure it can be
 			// accessed correctly inside function closures.
 			project := project
@@ -218,11 +231,34 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 	return parallel.WorkPool(workerCount, taskGenerator)
 }
 
+func createBuganizerClient(ctx context.Context) (buganizer.Client, error) {
+	buganizerClientMode := ctx.Value(&buganizer.BuganizerClientModeKey)
+	var buganizerClient buganizer.Client
+	var err error
+	if buganizerClientMode != nil {
+		switch buganizerClientMode {
+		case buganizer.ModeProvided:
+			// TODO (b/263906102)
+			buganizerClient, err = buganizer.NewRPCClient(ctx)
+			if err != nil {
+				return nil, errors.Annotate(err, "create new buganizer client").Err()
+			}
+		case buganizer.ModeDisable:
+			break
+		default:
+			return nil, errors.New("Unrecognized buganizer-mode value used.")
+		}
+	}
+
+	return buganizerClient, err
+}
+
 type updateOptions struct {
 	appID              string
 	project            string
 	analysisClient     AnalysisClient
 	monorailClient     *monorail.Client
+	buganizerClient    buganizer.Client
 	enableBugUpdates   bool
 	simulateBugUpdates bool
 	maxBugsFiledPerRun int
@@ -257,17 +293,35 @@ func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (r
 	if opts.enableBugUpdates {
 		mgrs := make(map[string]BugManager)
 
-		mbm, err := monorail.NewBugManager(opts.monorailClient, opts.appID, opts.project, projectCfg.Config)
-		if err != nil {
-			return errors.Annotate(err, "create monorail bug manager").Err()
+		if projectCfg.Config.Monorail != nil {
+			// Create Monorail bug manager
+			monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.appID, opts.project, projectCfg.Config)
+			if err != nil {
+				return errors.Annotate(err, "create monorail bug manager").Err()
+			}
+
+			monorailBugManager.Simulate = opts.simulateBugUpdates
+			mgrs[bugs.MonorailSystem] = monorailBugManager
+
 		}
+		if projectCfg.Config.Buganizer != nil {
+			if opts.buganizerClient == nil {
+				return errors.New("buganizerClient cannot be nil.")
+			}
+			// Create Buganizer bug manager
+			buganizerBugManager := buganizer.NewBugManager(
+				opts.buganizerClient,
+				opts.appID,
+				opts.project,
+				projectCfg.Config,
+				opts.simulateBugUpdates,
+			)
 
-		mbm.Simulate = opts.simulateBugUpdates
-		mgrs[bugs.MonorailSystem] = mbm
-
-		bu := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg)
-		bu.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
-		if err := bu.Run(ctx, progress); err != nil {
+			mgrs[bugs.BuganizerSystem] = buganizerBugManager
+		}
+		bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg)
+		bugUpdater.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
+		if err := bugUpdater.Run(ctx, progress); err != nil {
 			return errors.Annotate(err, "update bugs").Err()
 		}
 	}

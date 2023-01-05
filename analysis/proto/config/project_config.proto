@@ -20,7 +20,6 @@ import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/analysis/proto/config/test_variant_analysis_config.proto";
 
-
 option go_package = "go.chromium.org/luci/analysis/proto/config;configpb";
 
 // ProjectConfig is the project-specific configuration data for LUCI Analysis.
@@ -29,8 +28,25 @@ message ProjectConfig {
   // The project metadata (eg. display name).
   ProjectMetadata project_metadata = 6;
 
+  // An enum that represents the bug filing system that the project uses.
+  enum BugSystem {
+    // An unspecified bug system, Do not use, this will
+    // break LUCI Analysis bug filing functionality.
+    BUG_SYSTEM_UNSPECIFIED = 0;
+    // Use Monorail to file bugs.
+    MONORAIL = 1;
+    // Use Buganizer to file bugs.
+    BUGANIZER = 2;
+  }
+
+  // The bug system to use for filing bugs.
+  BugSystem bug_system = 7;
+
   // The monorail configuration to use when filing bugs.
   MonorailProject monorail = 1;
+
+  // The Buganzier configuration to use when filing bugs.
+  BuganizerProject buganizer = 8;
 
   // The threshold at which to file bugs.
   // If reason cluster's impact exceeds the given threshold,
@@ -53,6 +69,8 @@ message ProjectConfig {
 
   // Configuration for how to cluster test results.
   Clustering clustering = 5;
+
+  // Next ID: 9
 }
 
 
@@ -62,6 +80,58 @@ message ProjectMetadata {
   // Indicates the preferred display name for the project in the UI.
   // Deprecated: not used anymore.
   string display_name = 1;
+}
+
+// ImpactThreshold specifies a condition on a cluster's impact metrics.
+// The threshold is considered satisfied if any of the individual metric
+// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+// are combined using an OR-semantic). If no threshold is set on any individual
+// metric, the threshold as a whole is unsatisfiable.
+message ImpactThreshold {
+  // The number of test results that were unexpected failures.
+  MetricThreshold test_results_failed = 4;
+
+  // The number of test runs that failed.
+  // A test run (also known as a 'shard' (chromium) or 'task' (Chrome OS))
+  // is considered failed if all tries of test(s) in it unexpectedly failed.
+  // The failed test run is attributed to the last failure of each of the
+  // test(s) that failed on all tries.
+  MetricThreshold test_runs_failed = 5;
+
+  // The number of presubmit runs that failed.
+  MetricThreshold presubmit_runs_failed = 6;
+
+  // The number of test failures on critical builders that were exonerated,
+  // with an exoneration reason other than NOT_CRITICAL.
+  MetricThreshold critical_failures_exonerated = 7;
+
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only.
+  optional int64 unexpected_failures_1d = 1;
+
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only.
+  optional int64 unexpected_failures_3d = 2;
+
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only.
+  optional int64 unexpected_failures_7d = 3;
+}
+
+// MetricThreshold specifies thresholds for a particular metric.
+// The threshold is considered satisfied if any of the individual metric
+// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+// are combined using an OR-semantic). If no threshold is set, the threshold
+// as a whole is unsatisfiable.
+message MetricThreshold {
+  // The threshold for one day.
+  optional int64 one_day = 1;
+
+  // The threshold for three day.
+  optional int64 three_day = 2;
+
+  // The threshold for seven days.
+  optional int64 seven_day = 3;
 }
 
 // MonorailProject describes the configuration to use when filing bugs
@@ -160,58 +230,6 @@ message MonorailPriority {
 
   // The threshold at which to apply the priority.
   ImpactThreshold threshold = 2;
-}
-
-// ImpactThreshold specifies a condition on a cluster's impact metrics.
-// The threshold is considered satisfied if any of the individual metric
-// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-// are combined using an OR-semantic). If no threshold is set on any individual
-// metric, the threshold as a whole is unsatisfiable.
-message ImpactThreshold {
-  // The number of test results that were unexpected failures.
-  MetricThreshold test_results_failed = 4;
-
-  // The number of test runs that failed.
-  // A test run (also known as a 'shard' (chromium) or 'task' (Chrome OS))
-  // is considered failed if all tries of test(s) in it unexpectedly failed.
-  // The failed test run is attributed to the last failure of each of the
-  // test(s) that failed on all tries.
-  MetricThreshold test_runs_failed = 5;
-
-  // The number of presubmit runs that failed.
-  MetricThreshold presubmit_runs_failed = 6;
-
-  // The number of test failures on critical builders that were exonerated,
-  // with an exoneration reason other than NOT_CRITICAL.
-  MetricThreshold critical_failures_exonerated = 7;
-
-  // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only.
-  optional int64 unexpected_failures_1d = 1;
-
-  // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only.
-  optional int64 unexpected_failures_3d = 2;
-
-  // Deprecated. No longer has any effect. Retained for textproto
-  // compatibility only.
-  optional int64 unexpected_failures_7d = 3;
-}
-
-// MetricThreshold specifies thresholds for a particular metric.
-// The threshold is considered satisfied if any of the individual metric
-// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
-// are combined using an OR-semantic). If no threshold is set, the threshold
-// as a whole is unsatisfiable.
-message MetricThreshold {
-  // The threshold for one day.
-  optional int64 one_day = 1;
-
-  // The threshold for three day.
-  optional int64 three_day = 2;
-
-  // The threshold for seven days.
-  optional int64 seven_day = 3;
 }
 
 // Configurations per realm.
@@ -337,4 +355,66 @@ message TestNameClusteringRule {
   // the matched test name before substitution to ensure captured parts
   // of the test name are matched literally and not interpreted.
   string like_template = 3;
+}
+
+// This enum represents the Buganizer priorities.
+// It is equivalent to the one in Buganizer API.
+enum BuganizerPriority {
+  // Priority unspecified, Do not use this value.
+  BUGANIZER_PRIORITY_UNSPECIFIED = 0;
+  // P0, Highest priority.
+  P0 = 1;
+  P1 = 2;
+  P2 = 3;
+  P3 = 4;
+  P4 = 5;
+}
+
+// Defines the required details for a Buganizer component.
+message BuganizerComponent {
+  // The id of the component that we will use to file bugs in.
+  int64 id = 1;
+}
+
+// The Buganizer configuration, this should only be
+// used when the bug tracking system ins Buganizer.
+message BuganizerProject {
+  // The default Buganizer component.
+  // This component will be used if we failed to find
+  // a component for a cluster.
+  BuganizerComponent default_component = 1;
+
+  // Controls the amount of hysteresis used in setting bug priorities.
+  // Once a bug is assigned a given priority, its priority will only be
+  // increased if it exceeds the next priority's thresholds by the
+  // specified percentage margin, and decreased if the current priority's
+  // thresholds exceed the bug's impact by the given percentage margin.
+  //
+  // A value of 100 indicates impact may be double the threshold for
+  // the next highest priority value, (or half the threshold of the
+  // current priority value,) before a bug's priority is increased
+  // (or decreased).
+  //
+  // Valid values are from 0 (no hystersis) to 1,000 (10x hysteresis).
+  int64 priority_hysteresis_percent = 2;
+
+  // A mapping between a Buganizer priority to an Impact Threshold.
+  // We use this to determine that which priority to set for a bug.
+  message PriorityMapping {
+
+    // The Buganizer priority that will be mapped to a threshold.
+    BuganizerPriority priority = 1;
+
+    // The threshold at which to apply the priority.
+    ImpactThreshold threshold = 2;
+  }
+
+  // A list of priority mappings that will be used to determine the
+  // priority of the bug based on the threshold.
+  // The priorities must be the ones in BuganizerPriority.
+  // They must be in descending order of highest to lowset priority
+  // and without duplicates.
+  // In order to meet a higher priority, the impact must match all lower
+  // priorities' criteria first.
+  repeated PriorityMapping priority_mappings = 3;
 }

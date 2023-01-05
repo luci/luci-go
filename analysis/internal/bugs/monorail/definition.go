@@ -28,30 +28,10 @@ import (
 )
 
 const (
-	DescriptionTemplate = `%s
-
-This bug has been automatically filed by LUCI Analysis in response to a cluster of test failures.`
-
-	SourceBugRuleUpdatedTemplate = `Because this bug was merged into another bug, LUCI Analysis has` +
-		` merged the failure association rule for this bug into the rule for the canonical bug.
-
-See failure impact and configure the failure association rule for the canoncial bug at: %s`
-
-	DestinationBugRuleUpdatedMessage = `Because another bug was merged into this bug, LUCI Analysis has` +
-		` merged the failure association rule for that bug into the rule for this bug.`
-
-	LinkTemplate = `See failure impact and configure the failure association rule for this bug at: %s`
-)
-
-const (
 	manualPriorityLabel = "LUCI-Analysis-Manual-Priority"
 	restrictViewLabel   = "Restrict-View-Google"
 	autoFiledLabel      = "LUCI-Analysis-Auto-Filed"
 )
-
-// whitespaceRE matches blocks of whitespace, including new lines tabs and
-// spaces.
-var whitespaceRE = regexp.MustCompile(`[ \t\n]+`)
 
 // priorityRE matches chromium monorail priority values.
 var priorityRE = regexp.MustCompile(`^Pri-([0123])$`)
@@ -101,7 +81,7 @@ var ArchivedStatuses = map[string]struct{}{
 	"Obsolete": {},
 }
 
-// Generator provides access to a methods to generate a new bug and/or bug
+// Generator provides access to methods to generate a new bug and/or bug
 // updates for a cluster.
 type Generator struct {
 	// The GAE app id, e.g. "luci-analysis".
@@ -133,7 +113,7 @@ func NewGenerator(appID, project string, projectCfg *configpb.ProjectConfig) (*G
 // are the cluster-specific bug title and description.
 func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clustering.ClusterDescription, components []string) *mpb.MakeIssueRequest {
 	issue := &mpb.Issue{
-		Summary: fmt.Sprintf("Tests are failing: %v", sanitiseTitle(description.Title, 150)),
+		Summary: bugs.GenerateBugSummary(description.Title),
 		State:   mpb.IssueContentState_ACTIVE,
 		Status:  &mpb.Issue_StatusValue{Status: UntriagedStatus},
 		FieldValues: []*mpb.FieldValue{
@@ -170,21 +150,10 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 		})
 	}
 
-	commentary := Commentary{
-		Body: fmt.Sprintf(DescriptionTemplate, description.Description),
-		Footer: fmt.Sprintf("How to action this bug: https://%s.appspot.com/help#new-bug-filed\n"+
-			"Provide feedback: https://%s.appspot.com/help#feedback", g.appID, g.appID),
-	}
-
-	componentSelectionCommentary := Commentary{
-		Footer: fmt.Sprintf("Was this bug filed in the wrong component? See:"+
-			"https://%s.appspot.com/help#component-selection", g.appID),
-	}
-
 	return &mpb.MakeIssueRequest{
 		Parent:      fmt.Sprintf("projects/%s", g.monorailCfg.Project),
 		Issue:       issue,
-		Description: MergeCommentary(commentary, componentSelectionCommentary),
+		Description: bugs.GenerateInitialIssueDescription(description, g.appID),
 		NotifyType:  mpb.NotifyType_EMAIL,
 	}
 }
@@ -194,7 +163,7 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 // e.g. "chromium/100".
 func (g *Generator) linkToRuleComment(bugName string) string {
 	bugLink := fmt.Sprintf("https://%s.appspot.com/b/%s", g.appID, bugName)
-	return fmt.Sprintf(LinkTemplate, bugLink)
+	return fmt.Sprintf(bugs.LinkTemplate, bugLink)
 }
 
 // PrepareLinkComment prepares a request that adds links to LUCI Analysis to
@@ -246,7 +215,7 @@ func (g *Generator) UpdateDuplicateSource(bugName, errorMessage, destinationRule
 		comment = strings.Join([]string{errorMessage, g.linkToRuleComment(bugName)}, "\n\n")
 	} else {
 		bugLink := fmt.Sprintf("https://%s.appspot.com/p/%s/rules/%s", g.appID, g.project, destinationRuleID)
-		comment = fmt.Sprintf(SourceBugRuleUpdatedTemplate, bugLink)
+		comment = fmt.Sprintf(bugs.SourceBugRuleUpdatedTemplate, bugLink)
 	}
 
 	req := &mpb.ModifyIssuesRequest{
@@ -277,7 +246,7 @@ func (g *Generator) UpdateDuplicateDestination(bugName string) (*mpb.ModifyIssue
 		},
 	}
 
-	comment := strings.Join([]string{DestinationBugRuleUpdatedMessage, g.linkToRuleComment(bugName)}, "\n\n")
+	comment := strings.Join([]string{bugs.DestinationBugRuleUpdatedMessage, g.linkToRuleComment(bugName)}, "\n\n")
 	req := &mpb.ModifyIssuesRequest{
 		Deltas: []*mpb.IssueDelta{
 			delta,
@@ -321,7 +290,7 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 		},
 	}
 
-	var commentary []Commentary
+	var commentary []bugs.Commentary
 	notify := false
 	issueVerified := issueVerified(issue)
 	if !g.isCompatibleWithVerified(impact, issueVerified) {
@@ -359,7 +328,7 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 		panic("invalid monorail issue name: " + issue.Name)
 	}
 
-	c := Commentary{
+	c := bugs.Commentary{
 		Footer: g.linkToRuleComment(bugName),
 	}
 	commentary = append(commentary, c)
@@ -369,7 +338,7 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 			delta,
 		},
 		NotifyType:     mpb.NotifyType_NO_NOTIFICATION,
-		CommentContent: MergeCommentary(commentary...),
+		CommentContent: bugs.MergeCommentary(commentary...),
 	}
 	if notify {
 		update.NotifyType = mpb.NotifyType_EMAIL
@@ -377,7 +346,7 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 	return update
 }
 
-func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) Commentary {
+func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) bugs.Commentary {
 	resolved := g.clusterResolved(impact)
 	var status string
 	var body strings.Builder
@@ -403,7 +372,7 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 		}
 
 		body.WriteString("Because:\n")
-		body.WriteString(g.explainThresholdsMet(impact, g.bugFilingThreshold))
+		body.WriteString(bugs.ExplainThresholdsMet(impact, g.bugFilingThreshold))
 		body.WriteString("LUCI Analysis has re-opened the bug.")
 
 		trailer = fmt.Sprintf("Why issues are re-opened: https://%s.appspot.com/help#bug-reopened", g.appID)
@@ -411,25 +380,25 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 	update.Issue.Status = &mpb.Issue_StatusValue{Status: status}
 	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "status")
 
-	c := Commentary{
+	c := bugs.Commentary{
 		Body:   body.String(),
 		Footer: trailer,
 	}
 	return c
 }
 
-func prepareManualPriorityUpdate(issue *mpb.Issue, update *mpb.IssueDelta) Commentary {
+func prepareManualPriorityUpdate(issue *mpb.Issue, update *mpb.IssueDelta) bugs.Commentary {
 	update.Issue.Labels = []*mpb.Issue_LabelValue{{
 		Label: manualPriorityLabel,
 	}}
 	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "labels")
-	c := Commentary{
+	c := bugs.Commentary{
 		Body: fmt.Sprintf("The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, remove the %s label.", manualPriorityLabel),
 	}
 	return c
 }
 
-func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) Commentary {
+func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) bugs.Commentary {
 	newPriority := g.clusterPriority(impact)
 
 	update.Issue.FieldValues = []*mpb.FieldValue{
@@ -454,14 +423,14 @@ func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb
 		body.WriteString(g.priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex))
 		body.WriteString(fmt.Sprintf("LUCI Analysis has decreased the bug priority from %v to %v.", oldPriority, newPriority))
 	}
-	c := Commentary{
+	c := bugs.Commentary{
 		Body:   body.String(),
 		Footer: fmt.Sprintf("Why priority is updated: https://%s.appspot.com/help#priority-updated", g.appID),
 	}
 	return c
 }
 
-// hasManuallySetPriority returns whether the the given issue has a manually
+// hasManuallySetPriority returns whether the given issue has a manually
 // controlled priority, based on its comments.
 func hasManuallySetPriority(comments []*mpb.Comment) bool {
 	// Example comment showing a user changing priority:
@@ -589,6 +558,9 @@ func (g *Generator) isCompatibleWithVerified(impact *bugs.ClusterImpact, verifie
 // isCompatibleWithPriority returns whether the impact of the current cluster
 // is compatible with the issue having the given priority, based on
 // configured thresholds and hysteresis.
+//
+// An unknown priority that is not in the configuration will be considered
+// Incompatible.
 func (g *Generator) isCompatibleWithPriority(impact *bugs.ClusterImpact, issuePriority string) bool {
 	index := g.indexOfPriority(issuePriority)
 	if index >= len(g.monorailCfg.Priorities) {
@@ -622,7 +594,7 @@ func (g *Generator) isCompatibleWithPriority(impact *bugs.ClusterImpact, issuePr
 //
 // Example output:
 // "- Presubmit Runs Failed (1-day) < 15, and
-//  - Test Runs Failed (1-day) < 100"
+//   - Test Runs Failed (1-day) < 100"
 func (g *Generator) priorityDecreaseJustification(oldPriorityIndex, newPriorityIndex int) string {
 	if newPriorityIndex <= oldPriorityIndex {
 		// Priority did not change or increased.
@@ -642,25 +614,7 @@ func (g *Generator) priorityDecreaseJustification(oldPriorityIndex, newPriorityI
 		failedToMeetThreshold = bugs.InflateThreshold(failedToMeetThreshold, -hysteresisPerc)
 	}
 
-	return explainThresholdNotMet(failedToMeetThreshold)
-}
-
-func explainThresholdNotMet(thresoldNotMet *configpb.ImpactThreshold) string {
-	explanation := bugs.ExplainThresholdNotMet(thresoldNotMet)
-
-	var message strings.Builder
-	// As there may be multiple ways in which we could have met the
-	// threshold for the next-higher priority (due to the OR-
-	// disjunction of different metric thresholds), we must explain
-	// we did not meet any of them.
-	for i, exp := range explanation {
-		message.WriteString(fmt.Sprintf("- %s (%v-day) < %v", exp.Metric, exp.TimescaleDays, exp.Threshold))
-		if i < (len(explanation) - 1) {
-			message.WriteString(", and")
-		}
-		message.WriteString("\n")
-	}
-	return message.String()
+	return bugs.ExplainThresholdNotMetMessage(failedToMeetThreshold)
 }
 
 // priorityIncreaseJustification outputs a human-readable justification
@@ -699,35 +653,7 @@ func (g *Generator) priorityIncreaseJustification(impact *bugs.ClusterImpact, ol
 		}
 		thresholdsMet = append(thresholdsMet, metThreshold)
 	}
-	return g.explainThresholdsMet(impact, thresholdsMet...)
-}
-
-func (g *Generator) explainThresholdsMet(impact *bugs.ClusterImpact, thresholds ...*configpb.ImpactThreshold) string {
-	var explanations []bugs.ThresholdExplanation
-	for _, t := range thresholds {
-		// There may be multiple ways in which we could have met the
-		// threshold for the next-higher priority (due to the OR-
-		// disjunction of different metric thresholds). This obtains
-		// just one of the ways in which we met it.
-		explanations = append(explanations, impact.ExplainThresholdMet(t))
-	}
-
-	// Remove redundant explanations.
-	// E.g. "Presubmit Runs Failed (1-day) >= 15"
-	// and "Presubmit Runs Failed (1-day) >= 30" can be merged to just
-	// "Presubmit Runs Failed (1-day) >= 30", because the latter
-	// trivially implies the former.
-	explanations = bugs.MergeThresholdMetExplanations(explanations)
-
-	var message strings.Builder
-	for i, exp := range explanations {
-		message.WriteString(fmt.Sprintf("- %s (%v-day) >= %v", exp.Metric, exp.TimescaleDays, exp.Threshold))
-		if i < (len(explanations) - 1) {
-			message.WriteString(", and")
-		}
-		message.WriteString("\n")
-	}
-	return message.String()
+	return bugs.ExplainThresholdsMet(impact, thresholdsMet...)
 }
 
 // clusterPriority returns the desired priority of the bug, if no hysteresis
@@ -736,8 +662,8 @@ func (g *Generator) clusterPriority(impact *bugs.ClusterImpact) string {
 	return g.clusterPriorityWithInflatedThresholds(impact, 0)
 }
 
-// clusterPriority returns the desired priority of the bug, if thresholds
-// are inflated or deflated with the given percentage.
+// clusterPriorityWithInflatedThresholds returns the desired priority of the bug,
+// if thresholds are inflated or deflated with the given percentage.
 //
 // See bugs.InflateThreshold for the interpretation of inflationPercent.
 func (g *Generator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterImpact, inflationPercent int64) string {
@@ -761,19 +687,4 @@ func (g *Generator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterIm
 func (g *Generator) clusterResolved(impact *bugs.ClusterImpact) bool {
 	lowestPriority := g.monorailCfg.Priorities[len(g.monorailCfg.Priorities)-1]
 	return !impact.MeetsThreshold(lowestPriority.Threshold)
-}
-
-// sanitiseTitle removes tabs and line breaks from input, replacing them with
-// spaces, and truncates the output to the given number of runes.
-func sanitiseTitle(input string, maxLength int) string {
-	// Replace blocks of whitespace, including new lines and tabs, with just a
-	// single space.
-	strippedInput := whitespaceRE.ReplaceAllString(input, " ")
-
-	// Truncate to desired length.
-	runes := []rune(strippedInput)
-	if len(runes) > maxLength {
-		return string(runes[0:maxLength-3]) + "..."
-	}
-	return strippedInput
 }

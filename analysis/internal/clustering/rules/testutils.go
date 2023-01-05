@@ -35,7 +35,8 @@ const testProject = "myproject"
 // RuleBuilder provides methods to build a failure asociation rule
 // for testing.
 type RuleBuilder struct {
-	rule FailureAssociationRule
+	rule      FailureAssociationRule
+	uniqifier int
 }
 
 // NewRule starts building a new Rule.
@@ -68,8 +69,21 @@ func NewRule(uniqifier int) *RuleBuilder {
 		},
 	}
 	return &RuleBuilder{
-		rule: rule,
+		rule:      rule,
+		uniqifier: uniqifier,
 	}
+}
+
+// WithBugSystem specifies the bug system to use on the rule.
+func (b *RuleBuilder) WithBugSystem(bugSystem string) *RuleBuilder {
+	var bugID bugs.BugID
+	if bugSystem == bugs.MonorailSystem {
+		bugID = bugs.BugID{System: bugSystem, ID: fmt.Sprintf("chromium/%v", b.uniqifier)}
+	} else {
+		bugID = bugs.BugID{System: bugSystem, ID: fmt.Sprintf("%v", b.uniqifier)}
+	}
+	b.rule.BugID = bugID
+	return b
 }
 
 // WithProject specifies the project to use on the rule.

@@ -71,46 +71,65 @@ func TestProjects(t *testing.T) {
 		Convey("GetConfig", func() {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
-					Realm:      "testproject:@root",
+					Realm:      "testprojectmonorail:@root",
+					Permission: perms.PermGetConfig,
+				},
+				{
+					Realm:      "testprojectbuganizer:@root",
 					Permission: perms.PermGetConfig,
 				},
 			}
 
 			// Setup.
 			configs := make(map[string]*configpb.ProjectConfig)
-			projectTest := config.CreatePlaceholderProjectConfig()
-			projectTest.Monorail.Project = "monorailproject"
-			projectTest.Monorail.DisplayPrefix = "displayprefix.com"
-			configs["testproject"] = projectTest
+			monorailProjectTest := config.CreateMonorailPlaceholderProjectConfig()
+			monorailProjectTest.Monorail.Project = "monorailproject"
+			monorailProjectTest.Monorail.DisplayPrefix = "displayprefix.com"
+
+			buganizerProjectTest := config.CreateBuganizerPlaceholderProjectConfig()
+
+			configs["testprojectmonorail"] = monorailProjectTest
+			configs["testprojectbuganizer"] = buganizerProjectTest
 			config.SetTestProjectConfig(ctx, configs)
 
-			request := &pb.GetProjectConfigRequest{
-				Name: "projects/testproject/config",
+			requestMonorail := &pb.GetProjectConfigRequest{
+				Name: "projects/testprojectmonorail/config",
+			}
+
+			requestBuganizer := &pb.GetProjectConfigRequest{
+				Name: "projects/testprojectbuganizer/config",
 			}
 
 			Convey("No permission to get project config", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
-				response, err := server.GetConfig(ctx, request)
+				response, err := server.GetConfig(ctx, requestMonorail)
 				So(err, ShouldBeRPCPermissionDenied, "caller does not have permission analysis.config.get")
 				So(response, ShouldBeNil)
 			})
-			Convey("Valid request", func() {
-				response, err := server.GetConfig(ctx, request)
+			Convey("Valid request monorail", func() {
+				response, err := server.GetConfig(ctx, requestMonorail)
 				So(err, ShouldBeNil)
 				So(response, ShouldResembleProto, &pb.ProjectConfig{
-					Name: "projects/testproject/config",
+					Name: "projects/testprojectmonorail/config",
 					Monorail: &pb.ProjectConfig_Monorail{
 						Project:       "monorailproject",
 						DisplayPrefix: "displayprefix.com",
 					},
 				})
 			})
+			Convey("Valid request buganizer", func() {
+				response, err := server.GetConfig(ctx, requestBuganizer)
+				So(err, ShouldBeNil)
+				So(response, ShouldResembleProto, &pb.ProjectConfig{
+					Name: "projects/testprojectbuganizer/config",
+				})
+			})
 			Convey("Invalid request", func() {
-				request.Name = "blah"
+				requestMonorail.Name = "blah"
 
 				// Run
-				response, err := server.GetConfig(ctx, request)
+				response, err := server.GetConfig(ctx, requestMonorail)
 
 				// Verify
 				So(err, ShouldBeRPCInvalidArgument, "name: invalid project config name, expected format: projects/{project}/config")
@@ -121,7 +140,7 @@ func TestProjects(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Run
-				response, err := server.GetConfig(ctx, request)
+				response, err := server.GetConfig(ctx, requestMonorail)
 
 				// Verify
 				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
@@ -138,17 +157,23 @@ func TestProjects(t *testing.T) {
 					Realm:      "chrome:@root",
 					Permission: perms.PermGetConfig,
 				},
+				{
+					Realm:      "chromeos:@root",
+					Permission: perms.PermGetConfig,
+				},
 			}
 
 			// Setup
-			projectChromium := config.CreatePlaceholderProjectConfig()
-			projectChrome := config.CreatePlaceholderProjectConfig()
-			projectSecret := config.CreatePlaceholderProjectConfig()
+			projectChromium := config.CreateMonorailPlaceholderProjectConfig()
+			projectChrome := config.CreateMonorailPlaceholderProjectConfig()
+			projectSecret := config.CreateMonorailPlaceholderProjectConfig()
+			projectChromeOS := config.CreateBuganizerPlaceholderProjectConfig()
 
 			configs := make(map[string]*configpb.ProjectConfig)
 			configs["chromium"] = projectChromium
 			configs["chrome"] = projectChrome
 			configs["secret"] = projectSecret
+			configs["chromeos"] = projectChromeOS
 			config.SetTestProjectConfig(ctx, configs)
 
 			request := &pb.ListProjectsRequest{}
@@ -175,6 +200,11 @@ func TestProjects(t *testing.T) {
 						Name:        "projects/chrome",
 						DisplayName: "Chrome",
 						Project:     "chrome",
+					},
+					{
+						Name:        "projects/chromeos",
+						DisplayName: "Chromeos",
+						Project:     "chromeos",
 					},
 					{
 						Name:        "projects/chromium",

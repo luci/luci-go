@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package config
 
 import (
@@ -50,8 +51,35 @@ func createPlaceholderMonorailProject() *configpb.MonorailProject {
 	}
 }
 
+func createBuganizerPlaceholderProject() *configpb.BuganizerProject {
+	return &configpb.BuganizerProject{
+		DefaultComponent: &configpb.BuganizerComponent{
+			Id: 1,
+		},
+		PriorityHysteresisPercent: 10,
+		PriorityMappings: []*configpb.BuganizerProject_PriorityMapping{
+			{
+				Priority: configpb.BuganizerPriority_P0,
+				Threshold: &configpb.ImpactThreshold{
+					TestResultsFailed: &configpb.MetricThreshold{
+						OneDay: proto.Int64(1500),
+					},
+				},
+			},
+			{
+				Priority: configpb.BuganizerPriority_P1,
+				Threshold: &configpb.ImpactThreshold{
+					TestResultsFailed: &configpb.MetricThreshold{
+						OneDay: proto.Int64(500),
+					},
+				},
+			},
+		},
+	}
+}
+
 // Creates a placeholder impact threshold config
-func createPlaceholderImpactThreshold() *configpb.ImpactThreshold {
+func CreatePlaceholderImpactThreshold() *configpb.ImpactThreshold {
 	return &configpb.ImpactThreshold{
 		TestResultsFailed: &configpb.MetricThreshold{
 			OneDay: proto.Int64(1000),
@@ -103,10 +131,32 @@ func createPlaceholderRealms() []*configpb.RealmConfig {
 }
 
 // Creates a placeholder project config with key "chromium".
-func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
+func CreateMonorailPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
 		Monorail:           createPlaceholderMonorailProject(),
-		BugFilingThreshold: createPlaceholderImpactThreshold(),
+		BugSystem:          configpb.ProjectConfig_MONORAIL,
+		BugFilingThreshold: CreatePlaceholderImpactThreshold(),
+		Realms:             createPlaceholderRealms(),
+		Clustering:         createPlaceholderClustering(),
+	}
+}
+
+func CreateBuganizerPlaceholderProjectConfig() *configpb.ProjectConfig {
+	return &configpb.ProjectConfig{
+		Buganizer:          createBuganizerPlaceholderProject(),
+		BugSystem:          configpb.ProjectConfig_BUGANIZER,
+		BugFilingThreshold: CreatePlaceholderImpactThreshold(),
+		Realms:             createPlaceholderRealms(),
+		Clustering:         createPlaceholderClustering(),
+	}
+}
+
+func CreateConfigWithBothBuganizerAndMonorail(bugSystem configpb.ProjectConfig_BugSystem) *configpb.ProjectConfig {
+	return &configpb.ProjectConfig{
+		Monorail:           createPlaceholderMonorailProject(),
+		Buganizer:          createBuganizerPlaceholderProject(),
+		BugSystem:          bugSystem,
+		BugFilingThreshold: CreatePlaceholderImpactThreshold(),
 		Realms:             createPlaceholderRealms(),
 		Clustering:         createPlaceholderClustering(),
 	}

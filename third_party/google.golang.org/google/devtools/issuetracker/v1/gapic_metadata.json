@@ -1,0 +1,163 @@
+{
+  "schema": "1.0",
+  "comment": "This file maps proto services/RPCs to the corresponding library clients/methods.",
+  "language": "go",
+  "protoPackage": "google.devtools.issuetracker.v1",
+  "libraryPackage": "google.golang.org/google/devtools/issuetracker/v1",
+  "services": {
+    "IssueTracker": {
+      "clients": {
+        "grpc": {
+          "libraryClient": "Client",
+          "rpcs": {
+            "BatchGetIssues": {
+              "methods": [
+                "BatchGetIssues"
+              ]
+            },
+            "CreateHotlistEntry": {
+              "methods": [
+                "CreateHotlistEntry"
+              ]
+            },
+            "CreateIssue": {
+              "methods": [
+                "CreateIssue"
+              ]
+            },
+            "CreateIssueComment": {
+              "methods": [
+                "CreateIssueComment"
+              ]
+            },
+            "CreateIssueRelationship": {
+              "methods": [
+                "CreateIssueRelationship"
+              ]
+            },
+            "DeleteHotlistEntry": {
+              "methods": [
+                "DeleteHotlistEntry"
+              ]
+            },
+            "GetComponent": {
+              "methods": [
+                "GetComponent"
+              ]
+            },
+            "GetIssue": {
+              "methods": [
+                "GetIssue"
+              ]
+            },
+            "ListAttachments": {
+              "methods": [
+                "ListAttachments"
+              ]
+            },
+            "ListIssueComments": {
+              "methods": [
+                "ListIssueComments"
+              ]
+            },
+            "ListIssueRelationships": {
+              "methods": [
+                "ListIssueRelationships"
+              ]
+            },
+            "ListIssueUpdates": {
+              "methods": [
+                "ListIssueUpdates"
+              ]
+            },
+            "ListIssues": {
+              "methods": [
+                "ListIssues"
+              ]
+            },
+            "ModifyIssue": {
+              "methods": [
+                "ModifyIssue"
+              ]
+            }
+          }
+        },
+        "rest": {
+          "libraryClient": "Client",
+          "rpcs": {
+            "BatchGetIssues": {
+              "methods": [
+                "BatchGetIssues"
+              ]
+            },
+            "CreateHotlistEntry": {
+              "methods": [
+                "CreateHotlistEntry"
+              ]
+            },
+            "CreateIssue": {
+              "methods": [
+                "CreateIssue"
+              ]
+            },
+            "CreateIssueComment": {
+              "methods": [
+                "CreateIssueComment"
+              ]
+            },
+            "CreateIssueRelationship": {
+              "methods": [
+                "CreateIssueRelationship"
+              ]
+            },
+            "DeleteHotlistEntry": {
+              "methods": [
+                "DeleteHotlistEntry"
+              ]
+            },
+            "GetComponent": {
+              "methods": [
+                "GetComponent"
+              ]
+            },
+            "GetIssue": {
+              "methods": [
+                "GetIssue"
+              ]
+            },
+            "ListAttachments": {
+              "methods": [
+                "ListAttachments"
+              ]
+            },
+            "ListIssueComments": {
+              "methods": [
+                "ListIssueComments"
+              ]
+            },
+            "ListIssueRelationships": {
+              "methods": [
+                "ListIssueRelationships"
+              ]
+            },
+            "ListIssueUpdates": {
+              "methods": [
+                "ListIssueUpdates"
+              ]
+            },
+            "ListIssues": {
+              "methods": [
+                "ListIssues"
+              ]
+            },
+            "ModifyIssue": {
+              "methods": [
+                "ModifyIssue"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

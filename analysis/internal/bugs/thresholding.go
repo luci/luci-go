@@ -15,6 +15,9 @@
 package bugs
 
 import (
+	"fmt"
+	"strings"
+
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
@@ -248,4 +251,56 @@ func MergeThresholdMetExplanations(explanations []ThresholdExplanation) []Thresh
 		}
 	}
 	return results
+}
+
+// ExplainThresholdNotMetMessage generates a message that explains why the threshold
+// was not met.
+//
+// It combines the reasons of multiple threshold and why we didn't meet them.
+func ExplainThresholdNotMetMessage(thresoldNotMet *configpb.ImpactThreshold) string {
+	explanation := ExplainThresholdNotMet(thresoldNotMet)
+
+	var message strings.Builder
+	// As there may be multiple ways in which we could have met the
+	// threshold for the next-higher priority (due to the OR-
+	// disjunction of different metric thresholds), we must explain why
+	// we did not meet any of them.
+	for i, exp := range explanation {
+		message.WriteString(fmt.Sprintf("- %s (%v-day) < %v", exp.Metric, exp.TimescaleDays, exp.Threshold))
+		if i < (len(explanation) - 1) {
+			message.WriteString(", and")
+		}
+		message.WriteString("\n")
+	}
+	return message.String()
+}
+
+// ExplainThresholdsMet creates a threshold explanation of how the cluster's impact met
+// the threshold of a priority.
+func ExplainThresholdsMet(impact *ClusterImpact, thresholds ...*configpb.ImpactThreshold) string {
+	var explanations []ThresholdExplanation
+	for _, t := range thresholds {
+		// There may be multiple ways in which we could have met the
+		// threshold for the next-higher priority (due to the OR-
+		// disjunction of different metric thresholds). This obtains
+		// just one of the ways in which we met it.
+		explanations = append(explanations, impact.ExplainThresholdMet(t))
+	}
+
+	// Remove redundant explanations.
+	// E.g. "Presubmit Runs Failed (1-day) >= 15"
+	// and "Presubmit Runs Failed (1-day) >= 30" can be merged to just
+	// "Presubmit Runs Failed (1-day) >= 30", because the latter
+	// trivially implies the former.
+	explanations = MergeThresholdMetExplanations(explanations)
+
+	var message strings.Builder
+	for i, exp := range explanations {
+		message.WriteString(fmt.Sprintf("- %s (%v-day) >= %v", exp.Metric, exp.TimescaleDays, exp.Threshold))
+		if i < (len(explanations) - 1) {
+			message.WriteString(", and")
+		}
+		message.WriteString("\n")
+	}
+	return message.String()
 }
