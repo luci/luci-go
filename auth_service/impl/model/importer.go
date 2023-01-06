@@ -20,13 +20,19 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+
+	"google.golang.org/protobuf/encoding/prototext"
 )
 
 // Imports groups from some external tar.gz bundle or plain text list.
@@ -80,6 +86,11 @@ type GroupImporterConfig struct {
 	ModifiedTS time.Time `gae:"modified_ts"`
 }
 
+const GroupNameRE = `^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`
+
+// k: groupName, v: list of identities belonging to group k.
+type groupBundle = map[string][]identity.Identity
+
 // GetGroupImporterConfig fetches the GroupImporterConfig entity from the datastore.
 //
 //	Returns GroupImporterConfig entity if present.
@@ -101,6 +112,86 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 	}
 }
 
+// ingestTarball handles upload of tarball's specified in 'tarball_upload' config entries.
+// expected to be called in an auth context of the upload PUT request.
+func ingestTarball(ctx context.Context, name string, content io.Reader) (map[string]groupBundle, error) {
+	g, err := GetGroupImporterConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	gConfigProto, err := g.ToProto()
+	if err != nil {
+		return nil, errors.Annotate(err, "issue getting proto from config entity").Err()
+	}
+	caller := auth.CurrentIdentity(ctx)
+	entry := &configspb.GroupImporterConfig_TarballUploadEntry{}
+
+	// make sure that tarball_upload entry we're looking for is specified in config
+	for _, tbu := range gConfigProto.GetTarballUpload() {
+		if tbu.Name == name {
+			entry.Name = tbu.GetName()
+			entry.AuthorizedUploader = tbu.GetAuthorizedUploader()
+			entry.Domain = tbu.GetDomain()
+			entry.Systems = tbu.GetSystems()
+			entry.Groups = tbu.GetGroups()
+			break
+		}
+	}
+
+	if entry.Name == "" {
+		return nil, errors.New("entry not found in tarball upload names")
+	}
+	if !contains(caller.Email(), entry.AuthorizedUploader) {
+		return nil, errors.New(fmt.Sprintf("%q is not an authorized uploader", caller.Email()))
+	}
+
+	bundles, err := loadTarball(ctx, content, entry.GetDomain(), entry.GetSystems(), entry.GetGroups())
+	if err != nil {
+		return nil, errors.Annotate(err, "bad tarball").Err()
+	}
+	return bundles, nil
+}
+
+// loadTarball unzips tarball with groups and deserializes them.
+func loadTarball(ctx context.Context, content io.Reader, domain string, systems, groups []string) (map[string]groupBundle, error) {
+	// map looks like: K: system, V: { K: groupName, V: []identities }
+	bundles := make(map[string]groupBundle)
+	entries, err := extractTarArchive(content)
+	if err != nil {
+		return nil, err
+	}
+	re, err := regexp.Compile(GroupNameRE)
+	if err != nil {
+		return nil, err
+	}
+
+	// verify system/groupname and then parse blob if valid
+	for filename, fileobj := range entries {
+		chunks := strings.Split(filename, "/")
+		if len(chunks) != 2 || !re.MatchString(chunks[1]) {
+			logging.Warningf(ctx, "Skipping file %s, not a valid name", filename)
+			continue
+		}
+		if groups != nil && !contains(filename, groups) {
+			continue
+		}
+		system := chunks[0]
+		if !contains(system, systems) {
+			logging.Warningf(ctx, "Skipping file %s, not allowed", filename)
+			continue
+		}
+		identities, err := loadGroupFile(string(fileobj), domain)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := bundles[system]; !ok {
+			bundles[system] = make(groupBundle)
+		}
+		bundles[system][filename] = identities
+	}
+	return bundles, nil
+}
+
 func loadGroupFile(identities string, domain string) ([]identity.Identity, error) {
 	members := make(map[identity.Identity]bool)
 	memsSplit := strings.Split(identities, "\n")
@@ -109,13 +200,13 @@ func loadGroupFile(identities string, domain string) ([]identity.Identity, error
 		if uid == "" {
 			continue
 		}
-		var d string
+		var ident string
 		if domain == "" {
-			d = uid
+			ident = fmt.Sprintf("user:%s", uid)
 		} else {
-			d = domain
+			ident = fmt.Sprintf("user:%s@%s", uid, domain)
 		}
-		emailIdent, err := identity.MakeIdentity(fmt.Sprintf("user:%s@%s", uid, d))
+		emailIdent, err := identity.MakeIdentity(ident)
 		if err != nil {
 			return nil, err
 		}
@@ -162,4 +253,24 @@ func extractTarArchive(r io.Reader) (map[string][]byte, error) {
 		return nil, err
 	}
 	return entries, nil
+}
+
+// TODO(cjacomet): replace with slices.Contains when
+// gae runtime is confirmed 1.18+.
+func contains(key string, search []string) bool {
+	for _, val := range search {
+		if val == key {
+			return true
+		}
+	}
+	return false
+}
+
+// ToProto converts the GroupImporterConfig entity to the proto equivalent.
+func (g *GroupImporterConfig) ToProto() (*configspb.GroupImporterConfig, error) {
+	gConfig := &configspb.GroupImporterConfig{}
+	if err := prototext.Unmarshal([]byte(g.ConfigProto), gConfig); err != nil {
+		return nil, err
+	}
+	return gConfig, nil
 }
