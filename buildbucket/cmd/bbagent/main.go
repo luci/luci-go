@@ -518,9 +518,8 @@ func mainImpl() int {
 	}
 
 	isChildBuild := len(bbclientInput.input.Build.AncestorIds) > 0
-	canOutliveParent := bbclientInput.input.Build.GetCanOutliveParent()
 	experiments := stringset.NewFromSlice(bbclientInput.input.Build.GetInput().GetExperiments()...)
-	if experiments.Has("luci.debug.dump_buildsecret_for_manual_debugging") && isChildBuild && !canOutliveParent {
+	if experiments.Has("luci.debug.dump_buildsecret_for_manual_debugging") && isChildBuild {
 		// To debug the race issue with bbagent and UpdateBuild
 		// we are going to put bbagent to sleep for 10 min.
 		// Manual calls of UpdateBuild will be done via CLI
