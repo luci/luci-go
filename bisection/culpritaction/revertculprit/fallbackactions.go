@@ -79,6 +79,12 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 			"error when adding supporting comment to existing revert").Err()
 	}
 
+	// Update tsmon metrics
+	err = updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeCommentRevert)
+	if err != nil {
+		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+	}
+
 	// Update culprit for the supporting comment action
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		e := datastore.Get(ctx, culpritModel)
@@ -97,7 +103,6 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 		return errors.Annotate(err,
 			"couldn't update suspect details when commenting support for existing revert").Err()
 	}
-
 	return nil
 }
 
@@ -140,6 +145,12 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 		return errors.Annotate(err, "error when commenting on culprit").Err()
 	}
 
+	// Update tsmon metrics
+	err = updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeCommentCulprit)
+	if err != nil {
+		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+	}
+
 	// Update culprit for the comment action
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		e := datastore.Get(ctx, culpritModel)
@@ -158,7 +169,6 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 		return errors.Annotate(err,
 			"couldn't update suspect details when commenting on the culprit").Err()
 	}
-
 	return nil
 }
 

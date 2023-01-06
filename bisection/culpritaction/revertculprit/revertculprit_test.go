@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -56,9 +57,12 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 		cl := testclock.New(testclock.TestTimeUTC)
 		ctx = clock.Set(ctx, cl)
 
+		// Setup tsmon
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+
 		// Setup datastore
 		failedBuild, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
-			ctx, 88128398584903, 444)
+			ctx, 88128398584903, "chromium", 444)
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
@@ -375,6 +379,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
 		})
 
 		Convey("active revert exists", func() {
@@ -480,6 +485,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				SupportRevertCommentTime: testclock.TestTimeUTC.Round(time.Second),
 				HasCulpritComment:        false,
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_revert"), ShouldEqual, 1)
 		})
 
 		Convey("revert has auto-revert off flag set", func() {
@@ -572,6 +578,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
 		})
 
 		Convey("revert was from an irrevertible author", func() {
@@ -664,6 +671,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
 		})
 
 		Convey("culprit has a downstream dependency", func() {
@@ -775,6 +783,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
 		})
 
 		Convey("revert creation is disabled", func() {
@@ -869,6 +878,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasCulpritComment:       true,
 				CulpritCommentTime:      testclock.TestTimeUTC.Round(time.Second),
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "comment_culprit"), ShouldEqual, 1)
 		})
 
 		Convey("culprit was committed too long ago", func() {
@@ -982,6 +992,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
 		})
 
 		Convey("revert commit is disabled", func() {
@@ -1095,6 +1106,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
 		})
 
 		Convey("revert for culprit is created and bot-committed", func() {
@@ -1218,6 +1230,8 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), ShouldEqual, 1)
 		})
 
 		Convey("revert for culprit is created then manually committed", func() {
@@ -1316,6 +1330,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
 		})
 
 		Convey("revert for culprit is created but another revert was merged in the meantime", func() {
@@ -1419,6 +1434,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
 		})
 
 		Convey("revert can be created and bot-committed even if creation request times out", func() {
@@ -1583,6 +1599,8 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
 			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), ShouldEqual, 1)
 		})
 
 		Convey("revert is not bot-committed for non-timeout error when creating a revert", func() {
@@ -1679,7 +1697,7 @@ func TestGenerateRevertDescription(t *testing.T) {
 
 		// Setup datastore
 		failedBuild, _, analysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
-			ctx, 88128398584903, 444)
+			ctx, 88128398584903, "chromium", 444)
 		heuristicAnalysis := &model.CompileHeuristicAnalysis{
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}

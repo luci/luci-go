@@ -30,7 +30,7 @@ func TestLogging(t *testing.T) {
 	c := memory.Use(context.Background())
 
 	Convey("Logging", t, func() {
-		testutil.CreateCompileFailureAnalysisAnalysisChain(c, 123, 456)
+		testutil.CreateCompileFailureAnalysisAnalysisChain(c, 123, "chromium", 456)
 		c, err := UpdateLoggingWithAnalysisID(c, 456)
 		So(err, ShouldBeNil)
 

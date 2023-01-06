@@ -36,9 +36,12 @@ func CreateBlamelist(nCommits int) *pb.BlameList {
 	return blamelist
 }
 
-func CreateLuciFailedBuild(c context.Context, id int64) *model.LuciFailedBuild {
+func CreateLUCIFailedBuild(c context.Context, id int64, project string) *model.LuciFailedBuild {
 	fb := &model.LuciFailedBuild{
-		Id: 123,
+		Id: id,
+		LuciBuild: model.LuciBuild{
+			Project: project,
+		},
 	}
 	So(datastore.Put(c, fb), ShouldBeNil)
 	datastore.GetTestable(c).CatchupIndexes()
@@ -65,8 +68,8 @@ func CreateCompileFailureAnalysis(c context.Context, id int64, cf *model.Compile
 	return cfa
 }
 
-func CreateCompileFailureAnalysisAnalysisChain(c context.Context, bbid int64, analysisID int64) (*model.LuciFailedBuild, *model.CompileFailure, *model.CompileFailureAnalysis) {
-	fb := CreateLuciFailedBuild(c, bbid)
+func CreateCompileFailureAnalysisAnalysisChain(c context.Context, bbid int64, project string, analysisID int64) (*model.LuciFailedBuild, *model.CompileFailure, *model.CompileFailureAnalysis) {
+	fb := CreateLUCIFailedBuild(c, bbid, project)
 	cf := CreateCompileFailure(c, fb)
 	cfa := CreateCompileFailureAnalysis(c, analysisID, cf)
 	return fb, cf, cfa

@@ -511,8 +511,14 @@ func saveRevertURL(ctx context.Context, gerritClient *gerrit.Client,
 
 func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
 	culpritModel *model.Suspect, revert *gerritpb.ChangeInfo) error {
+	// Update tsmon metrics
+	err := updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeCreateRevert)
+	if err != nil {
+		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+	}
+
 	// Update revert details for creation
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		e := datastore.Get(ctx, culpritModel)
 		if e != nil {
 			return e
@@ -528,13 +534,18 @@ func saveCreationDetails(ctx context.Context, gerritClient *gerrit.Client,
 		return errors.Annotate(err,
 			"couldn't update suspect revert creation details").Err()
 	}
-
 	return nil
 }
 
 func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
+	// Update tsmon metrics
+	err := updateCulpritActionCounter(ctx, culpritModel, "compile", ActionTypeSubmitRevert)
+	if err != nil {
+		logging.Errorf(ctx, errors.Annotate(err, "updateCulpritActionCounter").Err().Error())
+	}
+
 	// Update revert details for commit action
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		e := datastore.Get(ctx, culpritModel)
 		if e != nil {
 			return e
@@ -549,6 +560,5 @@ func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
 		return errors.Annotate(err,
 			"couldn't update suspect revert commit details").Err()
 	}
-
 	return nil
 }
