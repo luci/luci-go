@@ -22,13 +22,17 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"go.chromium.org/luci/gae/impl/memory"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	grpcStatus "google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -358,6 +362,133 @@ func TestCreateInvocations(t *testing.T) {
 			err := CreateInvocations(ctx, builds)
 			So(err, ShouldBeNil)
 			So(builds[0].Proto.Infra.Resultdb.Invocation, ShouldEqual, "")
+		})
+	})
+}
+
+func TestFinalizeInvocation(t *testing.T) {
+	t.Parallel()
+
+	Convey("finalize invocations", t, func() {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mockClient := rdbPb.NewMockRecorderClient(ctl)
+		ctx := memory.Use(context.Background())
+		ctx = SetMockRecorder(ctx, mockClient)
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+
+		So(datastore.Put(ctx, &model.Build{
+			ID:                  1,
+			Project:             "project",
+			BucketID:            "bucket",
+			BuilderID:           "builder",
+			ResultDBUpdateToken: "token",
+			Proto: &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_SUCCESS,
+			},
+		}), ShouldBeNil)
+
+		Convey("no exists", func() {
+			So(FinalizeInvocation(ctx, 1), ShouldErrLike, "build 1 or buildInfra not found")
+		})
+
+		Convey("no resultdb hostname", func() {
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
+				Proto: &pb.BuildInfra{
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Invocation: "invocation",
+					},
+				},
+			}), ShouldBeNil)
+
+			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), gomock.Any()).Times(0)
+			So(FinalizeInvocation(ctx, 1), ShouldBeNil)
+		})
+
+		Convey("no invocation", func() {
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
+				Proto: &pb.BuildInfra{
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Hostname: "hostname",
+					},
+				},
+			}), ShouldBeNil)
+
+			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), gomock.Any()).Times(0)
+			So(FinalizeInvocation(ctx, 1), ShouldBeNil)
+		})
+
+		Convey("success", func() {
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
+				Proto: &pb.BuildInfra{
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Hostname:   "hostname",
+						Invocation: "invocation",
+					},
+				},
+			}), ShouldBeNil)
+
+			expectedCtx := metadata.AppendToOutgoingContext(ctx, "update-token", "token")
+			mockClient.EXPECT().FinalizeInvocation(expectedCtx, proto.MatcherEqual(&rdbPb.FinalizeInvocationRequest{
+				Name: "invocation",
+			})).Return(&rdbPb.Invocation{}, nil)
+
+			So(FinalizeInvocation(ctx, 1), ShouldBeNil)
+		})
+
+		Convey("resultDB server fatal err", func() {
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
+				Proto: &pb.BuildInfra{
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Hostname:   "hostname",
+						Invocation: "invocation",
+					},
+				},
+			}), ShouldBeNil)
+
+			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), proto.MatcherEqual(&rdbPb.FinalizeInvocationRequest{
+				Name: "invocation",
+			})).Return(nil, grpcStatus.Error(codes.PermissionDenied, "permission denied"))
+
+			err := FinalizeInvocation(ctx, 1)
+			So(err, ShouldNotBeNil)
+			So(tq.Fatal.In(err), ShouldBeTrue)
+		})
+
+		Convey("resultDB server retryable err", func() {
+			So(datastore.Put(ctx, &model.BuildInfra{
+				ID:    1,
+				Build: datastore.KeyForObj(ctx, &model.Build{ID: 1}),
+				Proto: &pb.BuildInfra{
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Hostname:   "hostname",
+						Invocation: "invocation",
+					},
+				},
+			}), ShouldBeNil)
+
+			mockClient.EXPECT().FinalizeInvocation(gomock.Any(), proto.MatcherEqual(&rdbPb.FinalizeInvocationRequest{
+				Name: "invocation",
+			})).Return(nil, grpcStatus.Error(codes.Internal, "internal error"))
+
+			err := FinalizeInvocation(ctx, 1)
+			So(err, ShouldNotBeNil)
+			So(transient.Tag.In(err), ShouldBeTrue)
 		})
 	})
 }

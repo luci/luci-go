@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -135,6 +136,17 @@ func init() {
 		Kind:      tq.Transactional,
 		Prototype: (*taskdefs.FinalizeResultDB)(nil),
 		Queue:     "backend-default",
+	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "finalize-resultdb-go",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.FinalizeResultDBGo)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.FinalizeResultDBGo)
+			return resultdb.FinalizeInvocation(ctx, t.BuildId)
+		},
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{

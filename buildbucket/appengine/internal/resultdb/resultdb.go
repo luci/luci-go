@@ -23,12 +23,17 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/tq"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -134,6 +139,43 @@ func CreateInvocations(ctx context.Context, builds []*model.Build) errors.MultiE
 
 	if merr.First() != nil {
 		return merr
+	}
+	return nil
+}
+
+// FinalizeInvocation calls ResultDB to finalize the build's invocation.
+func FinalizeInvocation(ctx context.Context, buildID int64) error {
+	b := &model.Build{ID: buildID}
+	infra := &model.BuildInfra{
+		Build: datastore.KeyForObj(ctx, b),
+	}
+	switch err := datastore.Get(ctx, b, infra); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity):
+		return errors.Annotate(err, "build %d or buildInfra not found", buildID).Tag(tq.Fatal).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Tag(transient.Tag).Err()
+	}
+	rdb := infra.Proto.Resultdb
+	if rdb.Hostname == "" || rdb.Invocation == "" {
+		// If there's no hostname or no invocation, it means resultdb integration
+		// is not enabled for this build.
+		return nil
+	}
+
+	recorderClient, err := newRecorderClient(ctx, rdb.Hostname, b.Project)
+	if err != nil {
+		return errors.Annotate(err, "failed to create a recorder client for build %d", buildID).Tag(tq.Fatal).Err()
+	}
+
+	ctx = metadata.AppendToOutgoingContext(ctx, "update-token", b.ResultDBUpdateToken)
+	if _, err := recorderClient.FinalizeInvocation(ctx, &rdbPb.FinalizeInvocationRequest{Name: rdb.Invocation}); err != nil {
+		code := grpcutil.Code(err)
+		if code == codes.FailedPrecondition || code == codes.PermissionDenied {
+			return errors.Annotate(err, "Fatal rpc error when finalizing %s for build %d", rdb.Invocation, buildID).Tag(tq.Fatal).Err()
+		} else {
+			// Retry other errors.
+			return transient.Tag.Apply(err)
+		}
 	}
 	return nil
 }
