@@ -16,6 +16,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/maruel/subcommands"
 
@@ -56,8 +57,21 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 		if s == nil {
 			s = &vpython.Spec{}
 		}
+		if s.PythonVersion == "" {
+			s.PythonVersion = a.DefaultSpec.PythonVersion
+		}
 		if s.Virtualenv == nil {
-			s.Virtualenv = &a.opts.EnvConfig.Package
+			if a.opts.EnvConfig.Package.Name != "" {
+				s.Virtualenv = &a.opts.EnvConfig.Package
+			} else {
+				var ok bool
+				s.Virtualenv, ok = a.opts.EnvConfig.PackageMap[s.PythonVersion]
+				if !ok {
+					return fmt.Errorf(
+						"no virtualenv provided and no default for Python version %q",
+						s.PythonVersion)
+				}
+			}
 		}
 
 		// Verify that the spec can be normalized. This may modify it, so we will

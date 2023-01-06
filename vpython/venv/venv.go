@@ -606,8 +606,19 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 
 	logging.Debugf(c, "Creating VirtualEnv at: %s", e.Root)
 
+	virtualEnvPy := "virtualenv.pyz"
+	legacy := false
+	_, err = os.Stat(filepath.Join(venvDir, virtualEnvPy))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			virtualEnvPy = "virtualenv.py"
+			legacy = true
+		} else {
+			return errors.Annotate(err, "could not stat virtualenv.pyz").Err()
+		}
+	}
 	cmd := e.Config.systemInterpreter().MkIsolatedCommand(c,
-		python.ScriptTarget{Path: "virtualenv.py"},
+		python.ScriptTarget{Path: virtualEnvPy},
 		"--no-download",
 		e.Root)
 	defer cmd.Cleanup()
@@ -620,18 +631,20 @@ func (e *Env) installVirtualEnv(c context.Context, pkgDir string, env []string) 
 		return errors.Annotate(err, "failed to create VirtualEnv").Err()
 	}
 
-	logging.Debugf(c, "Making VirtualEnv relocatable at: %s", e.Root)
-	cmd = e.Interpreter().MkIsolatedCommand(c,
-		python.ScriptTarget{Path: "virtualenv.py"},
-		"--relocatable",
-		e.Root)
-	defer cmd.Cleanup()
-	cmd.Env = env
-	cmd.Dir = venvDir
-	dumpOutput = attachOutputForLogging(c, logging.Debug, cmd.Cmd)
-	if err := cmd.Run(); err != nil {
-		dumpOutput(c, logging.Error)
-		return errors.Annotate(err, "failed to make VirtualEnv relocatable").Err()
+	if legacy {
+		logging.Debugf(c, "Making VirtualEnv relocatable at: %s", e.Root)
+		cmd = e.Interpreter().MkIsolatedCommand(c,
+			python.ScriptTarget{Path: virtualEnvPy},
+			"--relocatable",
+			e.Root)
+		defer cmd.Cleanup()
+		cmd.Env = env
+		cmd.Dir = venvDir
+		dumpOutput = attachOutputForLogging(c, logging.Debug, cmd.Cmd)
+		if err := cmd.Run(); err != nil {
+			dumpOutput(c, logging.Error)
+			return errors.Annotate(err, "failed to make VirtualEnv relocatable").Err()
+		}
 	}
 
 	return nil

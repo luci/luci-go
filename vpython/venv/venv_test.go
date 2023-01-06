@@ -246,9 +246,11 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 			BaseDir:    tdir,
 			MaxHashLen: 4,
 			SetupEnv:   environ.System(),
-			Package: vpython.Spec_Package{
-				Name:    "foo/bar/virtualenv",
-				Version: "unresolved",
+			PackageMap: map[string]*vpython.Spec_Package{
+				"2.7": &vpython.Spec_Package{ // default python version
+					Name:    "foo/bar/virtualenv",
+					Version: "unresolved",
+				},
 			},
 			UnversionedPython: []string{ri.py.Python},
 			Loader:            tl,

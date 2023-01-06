@@ -205,9 +205,11 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		BaseDir:           filepath.Join(outDir, ".env"),
 		SetupEnv:          environ.System(),
 		UnversionedPython: []string{py.Python},
-		Package: vpython.Spec_Package{
-			Name:    "foo/bar/virtualenv",
-			Version: "whatever",
+		PackageMap: map[string]*vpython.Spec_Package{
+			"2.7": &vpython.Spec_Package{ // default python version
+				Name:    "foo/bar/virtualenv",
+				Version: "whatever",
+			},
 		},
 		Loader: tl,
 		Spec:   &vpython.Spec{},
