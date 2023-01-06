@@ -276,7 +276,7 @@ func TestCancelBuild(t *testing.T) {
 									"update_time",
 									"cancel_time",
 									"status",
-									"summary_markdown",
+									"cancellation_markdown",
 								},
 							},
 						},
@@ -290,10 +290,10 @@ func TestCancelBuild(t *testing.T) {
 							Bucket:  "bucket",
 							Builder: "builder",
 						},
-						UpdateTime:      timestamppb.New(now),
-						CancelTime:      timestamppb.New(now),
-						Status:          pb.Status_STARTED,
-						SummaryMarkdown: "summary",
+						UpdateTime:           timestamppb.New(now),
+						CancelTime:           timestamppb.New(now),
+						Status:               pb.Status_STARTED,
+						CancellationMarkdown: "summary",
 					})
 					So(sch.Tasks(), ShouldHaveLength, 1)
 				})

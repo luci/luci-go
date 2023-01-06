@@ -112,3 +112,36 @@ func TestExePayloadPath(t *testing.T) {
 		So(ExePayloadPath(b), ShouldEqual, "kitchen-checkout")
 	})
 }
+
+func TestCombineSummaries(t *testing.T) {
+	t.Parallel()
+
+	Convey("Variants of CombineCancelSummary", t, func() {
+		Convey("No cancel message", func() {
+			b := &pb.Build{
+				SummaryMarkdown: "summary",
+			}
+			So(CombineCancelSummary(b), ShouldEqual, "summary")
+		})
+
+		Convey("No summary message", func() {
+			b := &pb.Build{
+				CancellationMarkdown: "cancellation",
+			}
+			So(CombineCancelSummary(b), ShouldEqual, "cancellation")
+		})
+
+		Convey("Summary and cancel message", func() {
+			b := &pb.Build{
+				SummaryMarkdown:      "summary",
+				CancellationMarkdown: "cancellation",
+			}
+			So(CombineCancelSummary(b), ShouldEqual, "summary\ncancellation")
+		})
+
+		Convey("Neither summary nor CancelMessage", func() {
+			b := &pb.Build{}
+			So(CombineCancelSummary(b), ShouldBeEmpty)
+		})
+	})
+}

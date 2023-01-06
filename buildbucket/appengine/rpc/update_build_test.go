@@ -1148,14 +1148,14 @@ func TestUpdateBuild(t *testing.T) {
 						Fields: &fieldmaskpb.FieldMask{
 							Paths: []string{
 								"cancel_time",
-								"summary_markdown",
+								"cancellation_markdown",
 							},
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
 					So(build.CancelTime.AsTime(), ShouldEqual, t0)
-					So(build.SummaryMarkdown, ShouldEqual, "canceled because its parent 10 has terminated")
+					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 10 has terminated")
 					// One pubsub notification for the status update in the request,
 					// one CancelBuildTask for the requested build,
 					// one CancelBuildTask for the child build.
@@ -1186,14 +1186,14 @@ func TestUpdateBuild(t *testing.T) {
 						Fields: &fieldmaskpb.FieldMask{
 							Paths: []string{
 								"cancel_time",
-								"summary_markdown",
+								"cancellation_markdown",
 							},
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
 					So(build.CancelTime.AsTime(), ShouldEqual, t0)
-					So(build.SummaryMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
+					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
 					So(sch.Tasks(), ShouldHaveLength, 3)
 
 				})

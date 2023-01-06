@@ -478,9 +478,9 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 				// CanceledBy as "buildbucket".
 				b.Proto.CanceledBy = "buildbucket"
 				if parent == nil {
-					b.Proto.SummaryMarkdown = fmt.Sprintf("canceled because its parent %d is missing", parentID)
+					b.Proto.CancellationMarkdown = fmt.Sprintf("canceled because its parent %d is missing", parentID)
 				} else {
-					b.Proto.SummaryMarkdown = fmt.Sprintf("canceled because its parent %d has terminated", parentID)
+					b.Proto.CancellationMarkdown = fmt.Sprintf("canceled because its parent %d has terminated", parentID)
 				}
 				if err := tasks.ScheduleCancelBuildTask(ctx, b.ID, b.Proto.GracePeriod.AsDuration()); err != nil {
 					return appstatus.Errorf(codes.Internal, "failed to schedule CancelBuildTask for build %d: %s", b.ID, err)

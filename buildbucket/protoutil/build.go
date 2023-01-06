@@ -15,6 +15,7 @@
 package protoutil
 
 import (
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/data/strpair"
@@ -109,4 +110,19 @@ func ExePayloadPath(b *pb.Build) string {
 // CacheDir returns the cache dir of the build.
 func CacheDir(b *pb.Build) string {
 	return b.GetInfra().GetBbagent().GetCacheDir()
+}
+
+// CombineCancelSummary combines SummaryMarkdown and CancelMarkdown into a single string.
+func CombineCancelSummary(b *pb.Build) string {
+	if len(b.CancellationMarkdown) > 0 {
+		if len(b.SummaryMarkdown) > 0 {
+			combinedSummaryMarkdown := []string{
+				b.SummaryMarkdown,
+				b.CancellationMarkdown,
+			}
+			return strings.Join(combinedSummaryMarkdown, "\n")
+		}
+		return b.CancellationMarkdown
+	}
+	return b.SummaryMarkdown
 }

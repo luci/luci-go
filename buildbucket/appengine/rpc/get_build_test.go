@@ -76,6 +76,8 @@ func TestGetBuild(t *testing.T) {
 								{Host: "h2"},
 							},
 						},
+						CancellationMarkdown: "cancelled",
+						SummaryMarkdown:      "summary",
 					},
 				}
 				So(datastore.Put(ctx, build), ShouldBeNil)
@@ -242,6 +244,8 @@ func TestGetBuild(t *testing.T) {
 						Steps: []*pb.Step{
 							{Name: "step"},
 						},
+						CancellationMarkdown: "cancelled",
+						SummaryMarkdown:      "summary\ncancelled",
 					})
 				})
 			})

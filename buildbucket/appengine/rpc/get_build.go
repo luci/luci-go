@@ -121,10 +121,17 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 		return nil, err
 	}
 
-	return bld.ToProto(ctx, m, func(b *pb.Build) error {
+	bp, err := bld.ToProto(ctx, m, func(b *pb.Build) error {
 		if readPerm == bbperms.BuildsGet {
 			return nil
 		}
 		return perm.RedactBuild(ctx, nil, b)
 	})
+	if err != nil {
+		return nil, err
+	}
+	bp.SummaryMarkdown = protoutil.CombineCancelSummary(bp)
+
+	return bp, nil
+
 }

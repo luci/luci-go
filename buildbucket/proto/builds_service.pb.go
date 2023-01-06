@@ -886,7 +886,8 @@ type CancelBuildRequest struct {
 
 	// ID of the build to cancel.
 	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Required. Value for Build.summary_markdown.
+	// Required. Value for Build.cancellation_markdown. Will be appended to
+	// Build.summary_markdown when exporting to bigquery and returned via GetBuild.
 	SummaryMarkdown string `protobuf:"bytes,2,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
 	// Fields to include in the response. See also GetBuildRequest.fields.
 	//

@@ -484,7 +484,8 @@ message CancelBuildRequest {
   // ID of the build to cancel.
   int64 id = 1;
 
-  // Required. Value for Build.summary_markdown.
+  // Required. Value for Build.cancellation_markdown. Will be appended to
+  // Build.summary_markdown when exporting to bigquery and returned via GetBuild.
   string summary_markdown = 2;
 
   // Fields to include in the response. See also GetBuildRequest.fields.

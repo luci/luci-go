@@ -161,7 +161,11 @@ func TestBQ(t *testing.T) {
 			})
 		})
 
-		Convey("success", func() {
+		Convey("summary markdown and cancelation reason are concatenated", func() {
+			b.Proto.SummaryMarkdown = "summary"
+			b.Proto.CancellationMarkdown = "cancelled"
+			So(datastore.Put(ctx, b), ShouldBeNil)
+
 			So(ExportBuild(ctx, 123), ShouldBeNil)
 			rows := fakeBq.GetRows("raw", "completed_builds")
 			So(len(rows), ShouldEqual, 1)
@@ -174,7 +178,38 @@ func TestBQ(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				Status: pb.Status_CANCELED,
+				Status:               pb.Status_CANCELED,
+				SummaryMarkdown:      "summary\ncancelled",
+				CancellationMarkdown: "cancelled",
+				Steps: []*pb.Step{{
+					Name: "step",
+					Logs: []*pb.Log{{Name: "log1"}},
+				}},
+				Infra:  &pb.BuildInfra{Buildbucket: &pb.BuildInfra_Buildbucket{}},
+				Input:  &pb.Build_Input{},
+				Output: &pb.Build_Output{},
+			})
+		})
+
+		Convey("success", func() {
+			b.Proto.CancellationMarkdown = "cancelled"
+			So(datastore.Put(ctx, b), ShouldBeNil)
+
+			So(ExportBuild(ctx, 123), ShouldBeNil)
+			rows := fakeBq.GetRows("raw", "completed_builds")
+			So(len(rows), ShouldEqual, 1)
+			So(rows[0].InsertID, ShouldEqual, "123")
+			p, _ := rows[0].Message.(*pb.Build)
+			So(p, ShouldResembleProto, &pb.Build{
+				Id: 123,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status:               pb.Status_CANCELED,
+				SummaryMarkdown:      "cancelled",
+				CancellationMarkdown: "cancelled",
 				Steps: []*pb.Step{{
 					Name: "step",
 					Logs: []*pb.Log{{Name: "log1"}},

@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 // maxBuildSizeInBQ is (10MB-5KB) as the maximum allowed request size in either
@@ -69,6 +70,8 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 		}
 	}
 
+	p.SummaryMarkdown = protoutil.CombineCancelSummary(p)
+
 	// Check if the cleaned Build too large.
 	pj, err := protojson.Marshal(p)
 	if err != nil {
@@ -91,7 +94,6 @@ func ExportBuild(ctx context.Context, buildID int64) error {
 			},
 		}
 	}
-
 	// Set timeout to avoid a hanging call.
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()

@@ -57,7 +57,7 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 		now := timestamppb.New(clock.Now(ctx).UTC())
 		bld.Proto.CancelTime = now
 		bld.Proto.UpdateTime = now
-		bld.Proto.SummaryMarkdown = summary
+		bld.Proto.CancellationMarkdown = summary
 		canceledBy := "buildbucket"
 		if auth.CurrentIdentity(ctx) != identity.AnonymousIdentity {
 			canceledBy = string(auth.CurrentIdentity(ctx))

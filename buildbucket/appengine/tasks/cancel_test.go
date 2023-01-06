@@ -215,11 +215,11 @@ func TestCancelBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				UpdateTime:      timestamppb.New(now),
-				Status:          pb.Status_STARTED,
-				CancelTime:      timestamppb.New(now),
-				CanceledBy:      "buildbucket",
-				SummaryMarkdown: "summary",
+				UpdateTime:           timestamppb.New(now),
+				Status:               pb.Status_STARTED,
+				CancelTime:           timestamppb.New(now),
+				CanceledBy:           "buildbucket",
+				CancellationMarkdown: "summary",
 			})
 			So(sch.Tasks(), ShouldHaveLength, 1)
 		})
@@ -341,10 +341,10 @@ func TestCancelBuild(t *testing.T) {
 					Bucket:  "bucket",
 					Builder: "builder",
 				},
-				UpdateTime:      timestamppb.New(now),
-				CancelTime:      timestamppb.New(now),
-				SummaryMarkdown: "summary",
-				CanceledBy:      "buildbucket",
+				UpdateTime:           timestamppb.New(now),
+				CancelTime:           timestamppb.New(now),
+				CancellationMarkdown: "summary",
+				CanceledBy:           "buildbucket",
 			})
 			ids := make([]int, len(sch.Tasks()))
 			for i, task := range sch.Tasks() {
