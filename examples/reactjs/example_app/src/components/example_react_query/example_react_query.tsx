@@ -35,13 +35,15 @@ const ExampleReactQuery = () => {
   }
 
   return (
-    <Grid container>
-      <Grid item>
-        <>
-          {data}
-        </>
+    <article>
+      <Grid container data-testid="test-component">
+        <Grid item>
+          <>
+            {data && 'loaded'}
+          </>
+        </Grid>
       </Grid>
-    </Grid>
+    </article>
   );
 };
 

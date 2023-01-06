@@ -21,8 +21,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import {
   useGetExampleByNameQuery,
-} from '../../services/example_service_rtkquery';
-import { useAppSelector } from '../../store/custom_hooks';
+} from '@/services/example_service_rtkquery';
+import { useAppSelector } from '@/store/custom_hooks';
 
 interface Props {
     exampleProp: string;
@@ -33,8 +33,7 @@ const Example = ({
 }: Props) => {
   const count = useAppSelector((state) => state.counter.value);
 
-  const { data, error, isLoading } = useGetExampleByNameQuery('user');
-
+  const { data, error, isLoading } = useGetExampleByNameQuery('mama');
   if (isLoading) {
     return <CircularProgress />;
   }
@@ -42,7 +41,7 @@ const Example = ({
   if (error) {
     return (
       <Alert severity='error'>
-        <>Failed to load data: {error}</>
+        <>Failed to load data</>
       </Alert>
     );
   }
@@ -55,7 +54,7 @@ const Example = ({
       </Grid>
       <Grid>
         <>
-          {data}
+          {data && 'loaded'}
         </>
       </Grid>
     </div>

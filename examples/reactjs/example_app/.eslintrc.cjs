@@ -69,6 +69,7 @@ module.exports = {
     'import',
   ],
   'rules': {
+    'max-len': 0,
     'quotes': ['error', 'single'],
     'semi': ['error', 'always'],
     'object-curly-spacing': ['error', 'always', { 'objectsInObjects': true }],

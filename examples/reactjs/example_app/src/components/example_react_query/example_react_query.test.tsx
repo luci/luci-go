@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  */
 import '@testing-library/jest-dom';
 
-import { Request } from 'node-fetch';
+import 'node-fetch';
 
 /**
  * This import must be declared before any use of `fetch`
@@ -28,19 +28,14 @@ import { Request } from 'node-fetch';
  * if you run it in a constructor of a class), your mocks will fail.
  */
 import fetchMock from 'fetch-mock-jest';
-import { Provider } from 'react-redux';
 
 import {
   render,
   screen,
 } from '@testing-library/react';
 
-import { store } from '@/store/store';
-import Example from './example';
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-window.Request = Request;
+import { QueryClient, QueryClientProvider } from 'react-query';
+import ExampleReactQuery from './example_react_query';
 
 describe('<Example />', () => {
   afterEach(() => {
@@ -48,21 +43,23 @@ describe('<Example />', () => {
     fetchMock.reset();
   });
 
-  /**
-   * This test has been disabled as it needs different
-   *  set-up to work with react query.
-   */
-  // eslint-disable-next-line jest/no-disabled-tests
-  it.skip('Wait for component to load', async () => {
-    fetchMock.mock('/api/v2/user/user', ['user']);
+  it('Wait for component to load', async () => {
+    fetchMock.mock('/path/to/api', {});
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
     render(
-        <Provider store={store}>
-          <Example exampleProp='test'/>,
-        </Provider>,
+        <QueryClientProvider client={client}>
+          <ExampleReactQuery />
+        </QueryClientProvider>,
     );
 
     await screen.findByRole('article');
 
-    expect(screen.getByText('test')).toBeInTheDocument();
+    expect(screen.getByTestId('test-component')).toBeInTheDocument();
   });
 });
