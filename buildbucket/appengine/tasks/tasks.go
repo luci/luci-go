@@ -69,6 +69,17 @@ func init() {
 		Queue:     "backend-default",
 	})
 
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "cancel-swarming-task-go",
+		Kind:      tq.FollowsContext,
+		Prototype: (*taskdefs.CancelSwarmingTaskGo)(nil),
+		Queue:     "backend-go-default",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.CancelSwarmingTaskGo)
+			return HandleCancelSwarmingTask(ctx, t.Hostname, t.TaskId, t.Realm)
+		},
+	})
+
 	// TODO(crbug.com/1328646): Delete it after swarming-build-create migration is done.
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID: "create-swarming-task",
