@@ -83,6 +83,21 @@ func ValidateResultLimit(resultLimit int32) error {
 	return nil
 }
 
+type AccessLevel int
+
+const (
+	// The access level is invalid; either an error occurred when checking the
+	// caller's access, or the caller does not have any kind of access to data in
+	// the realms of the invocations being queried.
+	AccessLevelInvalid AccessLevel = iota
+	// Simplified Access Level 1. The caller has access to metadata only, such as
+	// pass/fail status of tests, test IDs and sanitised failure reasons.
+	AccessLevelSAL1
+	// The caller has access to all data in the realms of the invocations being
+	// queried.
+	AccessLevelUnrestricted
+)
+
 // Query specifies test variants to fetch.
 type Query struct {
 	ReachableInvocations graph.ReachableInvocations
@@ -104,6 +119,9 @@ type Query struct {
 	PageToken string
 	Mask      *mask.Mask
 	TestIDs   []string
+	// The level of access the user has to test results and test exoneration data.
+	// TODO: use this to apply SAL1 metadata masks to the response.
+	AccessLevel AccessLevel
 
 	decompressBuf []byte                 // buffer for decompressing blobs
 	params        map[string]interface{} // query parameters

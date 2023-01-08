@@ -16,6 +16,7 @@ package permissions
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 
@@ -35,7 +36,7 @@ func VerifyInvocation(ctx context.Context, id invocations.ID, permissions ...rea
 	return VerifyInvocations(ctx, invocations.NewIDSet(id), permissions...)
 }
 
-// VerifyInvocations is checks multiple invocations' realms for the specified
+// VerifyInvocations checks multiple invocations' realms for the specified
 // permissions.
 // There must not already be a transaction in the given context.
 func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions ...realms.Permission) (err error) {
@@ -50,26 +51,20 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 		return err
 	}
 
-	checked := stringset.New(1)
-	for id, realm := range realms {
-		if !checked.Add(realm) {
-			continue
-		}
-		// Note: HasPermission does not make RPCs.
-		for _, permission := range permissions {
-			switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
-			case err != nil:
-				return err
-			case !allowed:
-				return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s in realm of invocation %s`, permission, id)
-			}
-		}
+	// Note: HasPermissionsInRealms does not make RPCs.
+	verified, desc, err := HasPermissionsInRealms(ctx, realms, permissions...)
+	if err != nil {
+		return err
 	}
+	if !verified {
+		return appstatus.Errorf(codes.PermissionDenied, desc)
+	}
+
 	return nil
 }
 
 // VerifyInvocationsByName does the same as VerifyInvocations but accepts
-// an invocation name instead of an invocations.ID.
+// invocation names instead of an invocations.IDSet.
 // There must not already be a transaction in the given context.
 func VerifyInvocationsByName(ctx context.Context, invNames []string, permissions ...realms.Permission) error {
 	ids, err := invocations.ParseNames(invNames)
@@ -80,8 +75,33 @@ func VerifyInvocationsByName(ctx context.Context, invNames []string, permissions
 }
 
 // VerifyInvocationByName does the same as VerifyInvocation but accepts
-// invocation names instead of an invocations.IDSet.
+// an invocation name instead of an invocations.ID.
 // There must not already be a transaction in the given context.
 func VerifyInvocationByName(ctx context.Context, invName string, permissions ...realms.Permission) error {
 	return VerifyInvocationsByName(ctx, []string{invName}, permissions...)
+}
+
+// HasPermissionsInRealms checks multiple invocations' realms for the specified
+// permissions. Returns:
+//   - whether the caller has all permissions in all invocations' realms
+//   - description of the first identified missing permission for an invocation
+//     (if applicable)
+//   - an error if one occurred
+func HasPermissionsInRealms(ctx context.Context, realms map[invocations.ID]string, permissions ...realms.Permission) (bool, string, error) {
+	checked := stringset.New(1)
+	for id, realm := range realms {
+		if !checked.Add(realm) {
+			continue
+		}
+		// Note: HasPermission does not make RPCs.
+		for _, permission := range permissions {
+			switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
+			case err != nil:
+				return false, "", err
+			case !allowed:
+				return false, fmt.Sprintf(`caller does not have permission %s in realm of invocation %s`, permission, id), nil
+			}
+		}
+	}
+	return true, "", nil
 }

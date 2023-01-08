@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/internal/testvariants"
+	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
@@ -40,6 +42,8 @@ func TestQueryTestVariants(t *testing.T) {
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
+				{Realm: "testproject:testlimitedrealm", Permission: rdbperms.PermListLimitedTestResults},
+				{Realm: "testproject:testlimitedrealm", Permission: rdbperms.PermListLimitedTestExonerations},
 			},
 		})
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -59,6 +63,13 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestResults("inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 		)...)
+		testutil.MustApply(
+			ctx,
+			insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testlimitedrealm"}),
+		)
+		testutil.MustApply(ctx, testutil.CombineMutations(
+			insert.TestResults("inv2", "T4", nil, pb.TestStatus_PASS),
+		)...)
 
 		srv := &resultDBServer{}
 
@@ -66,27 +77,39 @@ func TestQueryTestVariants(t *testing.T) {
 			req := &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0"},
 			}
-			// Test PermListTestResults is required.
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:someone@example.com",
-				IdentityPermissions: []authtest.RealmPermission{
-					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
-				},
-			})
-			_, err := srv.QueryTestVariants(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.testResults.list")
-
-			// Test PermListTestExonerations is required.
+			// Test PermListLimitedTestResults is required if the user does not have
+			// both PermListTestResults and PermListTestExonerations.
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestResults},
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedTestExonerations},
+				},
+			})
+			_, err := srv.QueryTestVariants(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(err, ShouldErrLike, "resultdb.testResults.listLimited")
+
+			// Test PermListLimitedTestExonerations is required if the user does not
+			// have both PermListTestResults and PermListTestExonerations.
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
+					{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedTestResults},
 				},
 			})
 			_, err = srv.QueryTestVariants(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.testExonerations.list")
+			So(err, ShouldErrLike, "resultdb.testExonerations.listLimited")
+		})
+
+		Convey(`Query succeeds with limited permissions`, func() {
+			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
+				Invocations: []string{"invocations/inv2"},
+			})
+			So(err, ShouldBeNil)
+			So(len(res.TestVariants), ShouldEqual, 1)
 		})
 
 		Convey(`Valid with included invocation`, func() {
@@ -179,6 +202,66 @@ func TestValidateQueryTestVariantsRequest(t *testing.T) {
 				ResultLimit: -1,
 			})
 			So(err, ShouldErrLike, `result_limit: negative`)
+		})
+	})
+}
+
+func TestDetermineListAccessLevel(t *testing.T) {
+	Convey("determineListAccessLevel", t, func() {
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:r1", Permission: rdbperms.PermListArtifacts},
+				{Realm: "testproject:r1", Permission: rdbperms.PermListTestExonerations},
+				{Realm: "testproject:r1", Permission: rdbperms.PermListTestResults},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListLimitedTestExonerations},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListLimitedTestResults},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListTestExonerations},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListTestResults},
+				{Realm: "testproject:r3", Permission: rdbperms.PermListLimitedTestExonerations},
+				{Realm: "testproject:r3", Permission: rdbperms.PermListLimitedTestResults},
+			},
+		})
+		testutil.MustApply(
+			ctx,
+			insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r0"}),
+			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r1"}),
+			insert.Invocation("i2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r2"}),
+			insert.Invocation("i2b", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r2"}),
+			insert.Invocation("i3", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r3"}),
+			insert.Invocation("i3b", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r3"}),
+		)
+
+		Convey("Access denied", func() {
+			ids := invocations.NewIDSet(invocations.ID("i0"), invocations.ID("i2"))
+			accessLevel, err := determineListAccessLevel(ctx, ids)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(accessLevel, ShouldEqual, testvariants.AccessLevelInvalid)
+		})
+		Convey("No common access level", func() {
+			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i3"))
+			accessLevel, err := determineListAccessLevel(ctx, ids)
+			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
+			So(accessLevel, ShouldEqual, testvariants.AccessLevelInvalid)
+		})
+		Convey("Limited access", func() {
+			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i2b"),
+				invocations.ID("i3"), invocations.ID("i3b"))
+			accessLevel, err := determineListAccessLevel(ctx, ids)
+			So(err, ShouldBeNil)
+			So(accessLevel, ShouldEqual, testvariants.AccessLevelSAL1)
+		})
+		Convey("Full access", func() {
+			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"),
+				invocations.ID("i2b"))
+			accessLevel, err := determineListAccessLevel(ctx, ids)
+			So(err, ShouldBeNil)
+			So(accessLevel, ShouldEqual, testvariants.AccessLevelUnrestricted)
+		})
+		Convey("No invocations", func() {
+			accessLevel, err := determineListAccessLevel(ctx, invocations.NewIDSet())
+			So(err, ShouldBeNil)
+			So(accessLevel, ShouldEqual, testvariants.AccessLevelInvalid)
 		})
 	})
 }

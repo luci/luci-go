@@ -14,6 +14,7 @@
 package permissions
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,7 +30,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 )
 
-func TestBatchGetTestVariants(t *testing.T) {
+func TestVerifyInvocations(t *testing.T) {
 	Convey(`VerifyInvocations`, t, func() {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
@@ -111,6 +112,79 @@ func TestBatchGetTestVariants(t *testing.T) {
 			ids := invocations.NewIDSet()
 			err := VerifyInvocations(ctx, ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
 			So(err, ShouldBeNil)
+		})
+	})
+}
+
+func TestHasPermissionsInRealms(t *testing.T) {
+	Convey("HasPermissionsInRealms", t, func() {
+		ctx := auth.WithState(context.Background(), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:r1", Permission: rdbperms.PermListArtifacts},
+				{Realm: "testproject:r1", Permission: rdbperms.PermListTestExonerations},
+				{Realm: "testproject:r1", Permission: rdbperms.PermListTestResults},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListLimitedTestExonerations},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListLimitedTestResults},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListTestExonerations},
+				{Realm: "testproject:r2", Permission: rdbperms.PermListTestResults},
+			},
+		})
+
+		Convey("Missing permissions", func() {
+			// Case: user has no permissions in one of the realms
+			realms := map[invocations.ID]string{
+				"i0": "testproject:r0",
+			}
+			verified, desc, err := HasPermissionsInRealms(ctx, realms,
+				rdbperms.PermListTestResults)
+			So(err, ShouldBeNil)
+			So(verified, ShouldEqual, false)
+			So(desc, ShouldContainSubstring, "resultdb.testResults.list in realm of invocation i0")
+
+			// Case: user has some permissions in all realms, but not the specified
+			//       permissions for all realms
+			realms = map[invocations.ID]string{
+				"i1":  "testproject:r1",
+				"i2":  "testproject:r2",
+				"i2b": "testproject:r2",
+			}
+			verified, desc, err = HasPermissionsInRealms(ctx, realms,
+				rdbperms.PermListTestResults, rdbperms.PermListLimitedTestResults)
+			So(err, ShouldBeNil)
+			So(verified, ShouldEqual, false)
+			So(desc, ShouldContainSubstring, "resultdb.testResults.listLimited in realm of invocation i1")
+		})
+		Convey("All permissions present", func() {
+			realms := map[invocations.ID]string{
+				"i1":  "testproject:r1",
+				"i2":  "testproject:r2",
+				"i2b": "testproject:r2",
+			}
+			verified, desc, err := HasPermissionsInRealms(ctx, realms,
+				rdbperms.PermListTestResults, rdbperms.PermListTestExonerations)
+			So(err, ShouldBeNil)
+			So(verified, ShouldEqual, true)
+			So(desc, ShouldEqual, "")
+		})
+		Convey("Empty realms", func() {
+			realms := map[invocations.ID]string{}
+			verified, desc, err := HasPermissionsInRealms(ctx, realms,
+				rdbperms.PermListTestResults)
+			So(err, ShouldBeNil)
+			So(verified, ShouldEqual, true)
+			So(desc, ShouldEqual, "")
+		})
+		Convey("No permissions specified", func() {
+			realms := map[invocations.ID]string{
+				"i1":  "testproject:r1",
+				"i2":  "testproject:r2",
+				"i2b": "testproject:r2",
+			}
+			verified, desc, err := HasPermissionsInRealms(ctx, realms)
+			So(err, ShouldBeNil)
+			So(verified, ShouldEqual, true)
+			So(desc, ShouldEqual, "")
 		})
 	})
 }

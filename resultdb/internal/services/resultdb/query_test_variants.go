@@ -18,8 +18,11 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
@@ -31,9 +34,55 @@ import (
 	"go.chromium.org/luci/server/span"
 )
 
+// determineListAccessLevel determines the list access level the caller has for
+// a set of invocations.
+// There must not already be a transaction in the given context.
+func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a testvariants.AccessLevel, err error) {
+	if len(ids) == 0 {
+		// nothing to check, so the caller's access is unconfirmed
+		return testvariants.AccessLevelInvalid, nil
+	}
+
+	ctx, ts := trace.StartSpan(ctx, "resultdb.query_test_variants.determineListAccessLevel")
+	defer func() { ts.End(err) }()
+
+	realms, err := invocations.ReadRealms(span.Single(ctx), ids)
+	if err != nil {
+		return testvariants.AccessLevelInvalid, err
+	}
+
+	// Check for unrestricted access
+	hasUnrestricted, _, err := permissions.HasPermissionsInRealms(ctx, realms,
+		rdbperms.PermListTestResults, rdbperms.PermListTestExonerations)
+	if err != nil {
+		return testvariants.AccessLevelInvalid, err
+	}
+	if hasUnrestricted {
+		return testvariants.AccessLevelUnrestricted, nil
+	}
+
+	// Check for restricted access
+	hasRestricted, desc, err := permissions.HasPermissionsInRealms(ctx, realms,
+		rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations)
+	if err != nil {
+		return testvariants.AccessLevelInvalid, err
+	}
+	if hasRestricted {
+		return testvariants.AccessLevelSAL1, nil
+	}
+
+	// Caller does not have access
+	return testvariants.AccessLevelInvalid, appstatus.Errorf(codes.PermissionDenied, desc)
+}
+
 // QueryTestVariants implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
-	if err := permissions.VerifyInvocationsByName(ctx, in.Invocations, rdbperms.PermListTestResults, rdbperms.PermListTestExonerations); err != nil {
+	ids, err := invocations.ParseNames(in.Invocations)
+	if err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
+	accessLevel, err := determineListAccessLevel(ctx, ids)
+	if err != nil {
 		return nil, err
 	}
 
@@ -53,7 +102,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	defer cancel()
 
 	// Get the transitive closure.
-	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	invs, err := graph.Reachable(ctx, ids)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to read the reach").Err()
 	}
@@ -67,6 +116,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		ResponseLimitBytes:   testvariants.DefaultResponseLimitBytes,
 		PageToken:            in.PageToken,
 		Mask:                 readMask,
+		AccessLevel:          accessLevel,
 	}
 
 	var tvs []*pb.TestVariant
