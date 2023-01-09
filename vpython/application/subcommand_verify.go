@@ -61,16 +61,12 @@ func (cr *verifyCommandRun) Run(app subcommands.Application, args []string, env 
 			s.PythonVersion = a.DefaultSpec.PythonVersion
 		}
 		if s.Virtualenv == nil {
-			if a.opts.EnvConfig.Package.Name != "" {
-				s.Virtualenv = &a.opts.EnvConfig.Package
-			} else {
-				var ok bool
-				s.Virtualenv, ok = a.opts.EnvConfig.PackageMap[s.PythonVersion]
-				if !ok {
-					return fmt.Errorf(
-						"no virtualenv provided and no default for Python version %q",
-						s.PythonVersion)
-				}
+			var ok bool
+			s.Virtualenv, ok = a.opts.EnvConfig.PackageMap[s.PythonVersion]
+			if !ok {
+				return fmt.Errorf(
+					"no virtualenv provided and no default for Python version %q",
+					s.PythonVersion)
 			}
 		}
 

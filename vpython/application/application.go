@@ -92,10 +92,6 @@ type Config struct {
 	// populating some or all of its fields.
 	SpecLoader spec.Loader
 
-	// DEPRECATED: use VENVPackageMap
-	// VENVPackage is the VirtualEnv package to use for bootstrap generation.
-	VENVPackage vpythonAPI.Spec_Package
-
 	// Provides the VirtualEnv package to use for bootstrap generation.
 	// The map is keyed by Python minor version, e.g. "3.8".
 	VENVPackageMap map[string]*vpythonAPI.Spec_Package
@@ -396,7 +392,6 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 				BaseDir:           "", // (Determined below).
 				MaxHashLen:        6,
 				SetupEnv:          env,
-				Package:           cfg.VENVPackage,
 				PackageMap:        cfg.VENVPackageMap,
 				Python:            cfg.InterpreterPaths,
 				PruneThreshold:    cfg.PruneThreshold,

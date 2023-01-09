@@ -71,12 +71,6 @@ type Config struct {
 	// fully defined and matching VirtualEnv
 	OverrideName string
 
-	// DEPRECATED: use PackageMap instead
-	// Package is the VirtualEnv package to install. It must be non-nil and
-	// valid. It will be used if the environment specification doesn't supply an
-	// overriding one.
-	Package vpython.Spec_Package
-
 	// Specifies the VirtualEnv package to install, for each Python
 	// minor version. It will be used if the environment specification
 	// doesn't supply an overriding one.
@@ -207,16 +201,12 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	// If the environment doesn't specify a VirtualEnv package (expected), use
 	// our default.
 	if e.Spec.Virtualenv == nil {
-		if cfg.Package.Name != "" {
-			e.Spec.Virtualenv = &cfg.Package
-		} else {
-			var ok bool
-			e.Spec.Virtualenv, ok = cfg.PackageMap[e.Spec.PythonVersion]
-			if !ok {
-				return nil, fmt.Errorf(
-					"no virtualenv provided and no default for Python version %q",
-					e.Spec.PythonVersion)
-			}
+		var ok bool
+		e.Spec.Virtualenv, ok = cfg.PackageMap[e.Spec.PythonVersion]
+		if !ok {
+			return nil, fmt.Errorf(
+				"no virtualenv provided and no default for Python version %q",
+				e.Spec.PythonVersion)
 		}
 	}
 
