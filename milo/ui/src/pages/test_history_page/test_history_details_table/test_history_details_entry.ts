@@ -23,6 +23,7 @@ import { fromPromise } from 'mobx-utils';
 
 import '../../../components/expandable_entry';
 import '../../../components/result_entry';
+import '../../../components/changelists_badge';
 import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../../libs/constants';
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
@@ -230,6 +231,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
           <a href=${this.invocationUrl} @click=${(e: Event) => e.stopImmediatePropagation()} target="_blank">
             ${this.verdictBundle.verdict.invocationId}
           </a>
+          <milo-changelists-badge .changelists=${this.verdictBundle.verdict.changelists || []}></milo-changelists-badge>
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>

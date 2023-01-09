@@ -47,6 +47,19 @@ export interface TimeRange {
   readonly latest?: string;
 }
 
+export interface Changelist {
+  readonly host: string;
+  readonly change: string;
+  readonly patchset: number;
+  readonly ownerKind: ChangelistOwnerKind;
+}
+
+export const enum ChangelistOwnerKind {
+  Unspecified = 'CHANGELIST_OWNER_UNSPECIFIED',
+  Human = 'HUMAN',
+  Automation = 'AUTOMATION',
+}
+
 export interface TestVerdictPredicate {
   readonly subRealm?: string;
   readonly variantPredicate?: VariantPredicate;
@@ -69,6 +82,7 @@ export interface TestVerdict {
   readonly status: TestVerdictStatus;
   readonly partitionTime: string;
   readonly passedAvgDuration?: string;
+  readonly changelists?: readonly Changelist[];
 }
 
 export interface QueryTestHistoryResponse {
