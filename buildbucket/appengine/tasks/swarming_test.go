@@ -500,7 +500,7 @@ func TestSyncBuild(t *testing.T) {
 				So(currentInfra.Proto.Swarming.TaskId, ShouldEqual, "old task ID")
 				// One task should be pushed into CancelSwarmingTask queue since update build failed.
 				So(sch.Tasks(), ShouldHaveLength, 1)
-				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CancelSwarmingTask{
+				So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CancelSwarmingTaskGo{
 					Hostname: "swarm",
 					TaskId:   "new task ID",
 					Realm:    "proj:bucket",

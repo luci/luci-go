@@ -72,7 +72,7 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 					return tasks.ExportBigQuery(ctx, b.ID, strings.Contains(b.ExperimentsString(), buildbucket.ExperimentBqExporterGo))
 				}
 				workC <- func() error {
-					return tasks.FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{BuildId: b.ID})
+					return tasks.FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{BuildId: b.ID})
 				}
 			}
 			workC <- func() error { return datastore.Put(ctx, toUpdate) }

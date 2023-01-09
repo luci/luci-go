@@ -450,7 +450,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		case isEndedStatus:
 			b.ClearLease()
 			shouldCancelChildren = true
-			invTask := &taskdefs.FinalizeResultDB{BuildId: b.ID}
+			invTask := &taskdefs.FinalizeResultDBGo{BuildId: b.ID}
 			err := parallel.FanOutIn(func(tks chan<- func() error) {
 				tks <- func() error { return tasks.NotifyPubSub(ctx, b) }
 				tks <- func() error {

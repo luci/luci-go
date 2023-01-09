@@ -167,7 +167,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		}
 
 		if sw := inf.Proto.GetSwarming(); sw.GetHostname() != "" && sw.TaskId != "" {
-			if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
+			if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTaskGo{
 				Hostname: sw.Hostname,
 				TaskId:   sw.TaskId,
 				Realm:    bld.Realm(),
@@ -176,7 +176,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 			}
 		}
 		if rdb := inf.Proto.GetResultdb(); rdb.GetHostname() != "" && rdb.Invocation != "" {
-			if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{
+			if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{
 				BuildId: bld.ID,
 			}); err != nil {
 				return errors.Annotate(err, "failed to enqueue resultdb finalization task: %d", bld.ID).Err()

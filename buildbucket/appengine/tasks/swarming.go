@@ -579,7 +579,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	if err != nil {
 		logging.Errorf(ctx, "created a task, but failed to update datastore with the error:%s \n"+
 			"cancelling task %s, best effort", err, res.TaskId)
-		if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTask{
+		if err := CancelSwarmingTask(ctx, &taskdefs.CancelSwarmingTaskGo{
 			Hostname: build.Proto.Infra.Swarming.Hostname,
 			TaskId:   res.TaskId,
 			Realm:    build.Realm(),
@@ -630,7 +630,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 // to an end status, e.g. finalizing the resultdb invocation, exporting to Bq,
 // and notify pubsub topics.
 func sendOnBuildCompletion(ctx context.Context, bld *model.Build) error {
-	if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDB{
+	if err := FinalizeResultDB(ctx, &taskdefs.FinalizeResultDBGo{
 		BuildId: bld.ID,
 	}); err != nil {
 		return errors.Annotate(err, "failed to enqueue resultDB finalization task: %d", bld.ID).Err()

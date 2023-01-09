@@ -268,7 +268,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 						notifyIDs = append(notifyIDs, v.GetBuildId())
 					case *taskdefs.ExportBigQuery:
 						bqIDs = append(bqIDs, v.GetBuildId())
-					case *taskdefs.FinalizeResultDB:
+					case *taskdefs.FinalizeResultDBGo:
 						rdbIDs = append(rdbIDs, v.GetBuildId())
 					case *taskdefs.NotifyPubSubGoProxy:
 						notifyGoIDs = append(notifyGoIDs, v.GetBuildId())

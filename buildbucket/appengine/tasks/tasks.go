@@ -287,7 +287,7 @@ func init() {
 
 // CancelSwarmingTask enqueues a task queue task to cancel the given Swarming
 // task.
-func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTask) error {
+func CancelSwarmingTask(ctx context.Context, task *taskdefs.CancelSwarmingTaskGo) error {
 	switch {
 	case task.GetHostname() == "":
 		return errors.Reason("hostname is required").Err()
@@ -369,7 +369,7 @@ func ExportBigQuery(ctx context.Context, buildID int64, routeToGo bool) error {
 
 // FinalizeResultDB enqueues a task queue task to finalize the invocation for
 // the given build in ResultDB.
-func FinalizeResultDB(ctx context.Context, task *taskdefs.FinalizeResultDB) error {
+func FinalizeResultDB(ctx context.Context, task *taskdefs.FinalizeResultDBGo) error {
 	if task.GetBuildId() == 0 {
 		return errors.Reason("build_id is required").Err()
 	}

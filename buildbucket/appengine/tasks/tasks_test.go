@@ -49,13 +49,13 @@ func TestTasks(t *testing.T) {
 				})
 
 				Convey("empty", func() {
-					task := &taskdef.CancelSwarmingTask{}
+					task := &taskdef.CancelSwarmingTaskGo{}
 					So(CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
 				Convey("hostname", func() {
-					task := &taskdef.CancelSwarmingTask{
+					task := &taskdef.CancelSwarmingTaskGo{
 						TaskId: "id",
 					}
 					So(CancelSwarmingTask(ctx, task), ShouldErrLike, "hostname is required")
@@ -63,7 +63,7 @@ func TestTasks(t *testing.T) {
 				})
 
 				Convey("task id", func() {
-					task := &taskdef.CancelSwarmingTask{
+					task := &taskdef.CancelSwarmingTaskGo{
 						Hostname: "example.com",
 					}
 					So(CancelSwarmingTask(ctx, task), ShouldErrLike, "task_id is required")
@@ -73,7 +73,7 @@ func TestTasks(t *testing.T) {
 
 			Convey("valid", func() {
 				Convey("empty realm", func() {
-					task := &taskdef.CancelSwarmingTask{
+					task := &taskdef.CancelSwarmingTaskGo{
 						Hostname: "example.com",
 						TaskId:   "id",
 					}
@@ -84,7 +84,7 @@ func TestTasks(t *testing.T) {
 				})
 
 				Convey("non-empty realm", func() {
-					task := &taskdef.CancelSwarmingTask{
+					task := &taskdef.CancelSwarmingTaskGo{
 						Hostname: "example.com",
 						TaskId:   "id",
 						Realm:    "realm",
@@ -169,13 +169,13 @@ func TestTasks(t *testing.T) {
 				})
 
 				Convey("empty", func() {
-					task := &taskdef.FinalizeResultDB{}
+					task := &taskdef.FinalizeResultDBGo{}
 					So(FinalizeResultDB(ctx, task), ShouldErrLike, "build_id is required")
 					So(sch.Tasks(), ShouldBeEmpty)
 				})
 
 				Convey("zero", func() {
-					task := &taskdef.FinalizeResultDB{
+					task := &taskdef.FinalizeResultDBGo{
 						BuildId: 0,
 					}
 					So(FinalizeResultDB(ctx, task), ShouldErrLike, "build_id is required")
@@ -184,7 +184,7 @@ func TestTasks(t *testing.T) {
 			})
 
 			Convey("valid", func() {
-				task := &taskdef.FinalizeResultDB{
+				task := &taskdef.FinalizeResultDBGo{
 					BuildId: 1,
 				}
 				So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
