@@ -78,7 +78,7 @@ export class OAuthClient {
     // which is very close to expiration.
     this.cachedToken = {
       token: response.access_token,
-      expiry: Date.now() + parseInt(response.expires_in) - 60,
+      expiry: Date.now() + (parseInt(response.expires_in) - 60) * 1000,
     };
 
     // Resolve all waiting promises successfully.
@@ -108,7 +108,7 @@ export class OAuthClient {
 export const loadOAuthClient = async (): Promise<OAuthClient> => {
   const response = await fetch('/auth/api/v1/server/client_id', {
     credentials: 'omit',
-    headers: {'Accept': 'application/json'},
+    headers: { 'Accept': 'application/json' },
   });
   const json = await response.json();
   return new OAuthClient(json.client_id || defaultOAuthClientId);

@@ -21,7 +21,7 @@ const MethodsList = () => {
   const { descriptors } = useGlobals();
 
   const svc = descriptors.service(serviceName ?? 'unknown');
-  if (svc === null) {
+  if (svc === undefined) {
     return <p>No such service</p>;
   }
 
@@ -29,7 +29,7 @@ const MethodsList = () => {
     <>
       <p>List of methods of {serviceName}:</p>
       <ul>
-        {svc.methods().map((method) => {
+        {svc.methods.map((method) => {
           return (
             <li key={method.name}>
               <Link to={method.name}>{method.name}</Link>{method.help}

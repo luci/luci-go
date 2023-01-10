@@ -23,7 +23,7 @@ const ServicesList = () => {
     <>
       <p>List of services:</p>
       <ul>
-        {descriptors.services().map((svc) => {
+        {descriptors.services.map((svc) => {
           return (
             <li key={svc.name}>
               <Link to={svc.name}>{svc.name}</Link>{svc.help}
