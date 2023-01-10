@@ -37,14 +37,14 @@ func main() {
 		secrets.NewModuleFromFlags(),
 	}
 
-	pollTokenSecret := flag.String(
-		"poll-token-secret",
-		"sm://poll-token-hmac",
-		"A name of a secret with poll token HMAC key.",
+	hmacSecret := flag.String(
+		"shared-hmac-secret",
+		"sm://shared-hmac",
+		"A name of a secret with an HMAC key to use to produce various tokens.",
 	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		botSrv, err := botsrv.New(srv.Context, srv.Routes, *pollTokenSecret)
+		botSrv, err := botsrv.New(srv.Context, srv.Routes, *hmacSecret)
 		if err != nil {
 			return err
 		}

@@ -62,15 +62,15 @@ func TestBotHandler(t *testing.T) {
 			},
 		})
 
-		var pollTokenKey atomic.Value
-		pollTokenKey.Store(secrets.Secret{
+		var hmacSecretKey atomic.Value
+		hmacSecretKey.Store(secrets.Secret{
 			Active:  []byte("secret"),
 			Passive: [][]byte{[]byte("also-secret")},
 		})
 
 		srv := &Server{
 			router:       router.New(),
-			pollTokenKey: pollTokenKey,
+			hmacSecretKey: hmacSecretKey,
 		}
 
 		var lastRequest *Request
@@ -277,13 +277,13 @@ func TestValidatePollToken(t *testing.T) {
 	t.Parallel()
 
 	Convey("With server", t, func() {
-		var pollTokenKey atomic.Value
-		pollTokenKey.Store(secrets.Secret{
+		var hmacSecretKey atomic.Value
+		hmacSecretKey.Store(secrets.Secret{
 			Active:  []byte("secret"),
 			Passive: [][]byte{[]byte("also-secret")},
 		})
 
-		srv := &Server{pollTokenKey: pollTokenKey}
+		srv := &Server{hmacSecretKey: hmacSecretKey}
 
 		Convey("Good token", func() {
 			original := &internalspb.PollState{Id: "some-id"}

@@ -85,11 +85,11 @@ type Response interface{}
 type Server struct {
 	router       *router.Router
 	middlewares  router.MiddlewareChain
-	pollTokenKey atomic.Value // stores secrets.Secret
+	hmacSecretKey atomic.Value // stores secrets.Secret
 }
 
 // New constructs new Server.
-func New(ctx context.Context, r *router.Router, pollTokenSecret string) (*Server, error) {
+func New(ctx context.Context, r *router.Router, hmacSecret string) (*Server, error) {
 	srv := &Server{
 		router: r,
 		middlewares: router.MiddlewareChain{
@@ -111,15 +111,15 @@ func New(ctx context.Context, r *router.Router, pollTokenSecret string) (*Server
 	}
 
 	// Load the initial value of the key used to HMAC-tag poll tokens.
-	key, err := secrets.StoredSecret(ctx, pollTokenSecret)
+	key, err := secrets.StoredSecret(ctx, hmacSecret)
 	if err != nil {
 		return nil, err
 	}
-	srv.pollTokenKey.Store(key)
+	srv.hmacSecretKey.Store(key)
 
 	// Update the cached value whenever the secret rotates.
-	err = secrets.AddRotationHandler(ctx, pollTokenSecret, func(_ context.Context, key secrets.Secret) {
-		srv.pollTokenKey.Store(key)
+	err = secrets.AddRotationHandler(ctx, hmacSecret, func(_ context.Context, key secrets.Secret) {
+		srv.hmacSecretKey.Store(key)
 	})
 	if err != nil {
 		return nil, err
@@ -236,7 +236,7 @@ func (s *Server) validatePollToken(tok []byte) (*internalspb.PollState, error) {
 
 	// Verify the HMAC. It must be produced using any of the secret versions.
 	valid := false
-	secret := s.pollTokenKey.Load().(secrets.Secret)
+	secret := s.hmacSecretKey.Load().(secrets.Secret)
 	for _, key := range secret.Blobs() {
 		// See rbe_pb2.TaggedMessage.
 		mac := hmac.New(sha256.New, key)

@@ -11,5 +11,5 @@ To run locally:
 
 ```
 cd server/cmd
-go run main.go -poll-token-secret devsecret://aaaa
+go run main.go -shared-hmac-secret devsecret://aaaa
 ```
