@@ -631,7 +631,7 @@ type NotifyPubSubGo struct {
 	// ID of a build in the datastore. See model.Build.
 	BuildId int64 `protobuf:"varint,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 	// An external topic which a build notification should be sent to.
-	// If nil or empty, will send to the internal `builds_v2_pubsub` topic.
+	// If nil or empty, will send to the internal `builds_v2` topic.
 	Topic *proto.BuildbucketCfg_Topic `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`
 }
 

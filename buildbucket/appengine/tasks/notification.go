@@ -55,7 +55,7 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 	}
 
 	if err := tq.AddTask(ctx, &tq.Task{
-		Payload:  &taskdefs.NotifyPubSubGoProxy{
+		Payload: &taskdefs.NotifyPubSubGoProxy{
 			BuildId: b.ID,
 			Project: b.Proto.GetBuilder().GetProject(),
 		},
@@ -86,16 +86,16 @@ func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) e
 		ID: project,
 	}
 	if err := errors.Filter(datastore.Get(ctx, proj), datastore.ErrNoSuchEntity); err != nil {
-		return errors.Annotate(err,"failed to fetch project %s for %d", project, buildID).Err()
+		return errors.Annotate(err, "failed to fetch project %s for %d", project, buildID).Err()
 	}
 	for _, t := range proj.CommonConfig.GetBuildsNotificationTopics() {
 		if t.Name == "" {
 			continue
 		}
 		if err := tq.AddTask(ctx, &tq.Task{
-			Payload:  &taskdefs.NotifyPubSubGo{
+			Payload: &taskdefs.NotifyPubSubGo{
 				BuildId: buildID,
-				Topic: t,
+				Topic:   t,
 			},
 		}); err != nil {
 			return errors.Annotate(err, "failed to enqueue notification task: %d for external topic %s ", buildID, t.Name).Err()
@@ -104,9 +104,8 @@ func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) e
 	return nil
 }
 
-
 // PublishBuildsV2Notification is the handler of notify-pubsub-go where it
-// fetches all build fields, converts and publishes to builds_v2_pubsub.
+// fetches all build fields, converts and publishes to builds_v2 topic.
 func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.BuildbucketCfg_Topic) error {
 	b := &model.Build{ID: buildID}
 	switch err := datastore.Get(ctx, b); {
@@ -158,11 +157,11 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 	msg := &taskdefs.BuildsV2PubSub{
 		Build:            p,
 		BuildLargeFields: compressed,
-		Compression: topic.GetCompression(),
+		Compression:      topic.GetCompression(),
 	}
 
 	if topic.GetName() == "" {
-		//  publish to the internal `builds_v2_pubsub`
+		//  publish to the internal `builds_v2` topic.
 		return tq.AddTask(ctx, &tq.Task{
 			Payload: msg,
 		})

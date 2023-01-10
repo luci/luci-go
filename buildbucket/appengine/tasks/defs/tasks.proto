@@ -100,7 +100,7 @@ message NotifyPubSubGo {
   int64 build_id = 1;
 
   // An external topic which a build notification should be sent to.
-  // If nil or empty, will send to the internal `builds_v2_pubsub` topic.
+  // If nil or empty, will send to the internal `builds_v2` topic.
   buildbucket.BuildbucketCfg.Topic topic = 2;
 }
 
