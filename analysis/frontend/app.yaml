@@ -33,6 +33,10 @@ automatic_scaling:
 # Deployment for more (go/luci/how_to_deploy.md) (Googlers only).
 #
 # IMPORTANT: Keep in sync between app.yaml and service-result-ingestion.yaml.
+# IMPORTANT: Keep in sync with app.star files in
+# https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/main/apps/luci-analysis/
+# and in
+# https://chrome-internal.googlesource.com/infradata/gae/+/refs/heads/main/apps/weetbix/
 luci_gae_vars:
   luci-analysis-dev:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
