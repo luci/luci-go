@@ -19,6 +19,8 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
@@ -26,13 +28,75 @@ import (
 	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/loggingutil"
+	"go.chromium.org/luci/server/tq"
 
+	taskpb "go.chromium.org/luci/bisection/task/proto"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 )
+
+const (
+	taskClass = "culprit-verification"
+	queue     = "culprit-verification"
+)
+
+// RegisterTaskClass registers the task class for tq dispatcher
+func RegisterTaskClass() {
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        taskClass,
+		Prototype: (*taskpb.CulpritVerificationTask)(nil),
+		Queue:     queue,
+		Kind:      tq.NonTransactional,
+		Handler: func(c context.Context, payload proto.Message) error {
+			task := payload.(*taskpb.CulpritVerificationTask)
+			analysisID := task.GetAnalysisId()
+			suspectID := task.GetSuspectId()
+			parentKey := task.GetParentKey()
+			logging.Infof(c, "Process CulpritVerificationTask with analysisID = %d suspectID = %d", analysisID, suspectID)
+			err := processCulpritVerificationTask(c, analysisID, suspectID, parentKey)
+			if err != nil {
+				err := errors.Annotate(err, "processCulpritVerificationTask analysisID=%d suspectID=%d", analysisID, suspectID).Err()
+				logging.Errorf(c, err.Error())
+				// If the error is transient, return err to retry
+				if transient.Tag.In(err) {
+					return err
+				}
+				return nil
+			}
+			return nil
+		},
+	})
+}
+
+func processCulpritVerificationTask(c context.Context, analysisID int64, suspectID int64, parentKeyStr string) error {
+	c, err := loggingutil.UpdateLoggingWithAnalysisID(c, analysisID)
+	if err != nil {
+		// not critical, just log
+		err := errors.Annotate(err, "failed UpdateLoggingWithAnalysisID %d", analysisID)
+		logging.Errorf(c, "%v", err)
+	}
+
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
+	if err != nil {
+		return errors.Annotate(err, "failed getting CompileFailureAnalysis").Err()
+	}
+
+	parentKey, err := datastore.NewKeyEncoded(parentKeyStr)
+	if err != nil {
+		return errors.Annotate(err, "couldn't decode parent key for suspect").Err()
+	}
+
+	suspect, err := datastoreutil.GetSuspect(c, suspectID, parentKey)
+	if err != nil {
+		return errors.Annotate(err, "couldn't get suspect").Err()
+	}
+	return VerifySuspect(c, suspect, cfa.FirstFailedBuildId, analysisID)
+}
 
 // VerifySuspect verifies if a suspect is indeed the culprit.
 // analysisID is CompileFailureAnalysis ID. It is meant to be propagated all the way to the

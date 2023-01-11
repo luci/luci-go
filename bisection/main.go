@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
+	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/frontend/handlers"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/metrics"
@@ -195,6 +196,7 @@ func main() {
 		compilefailuredetection.RegisterTaskClass()
 		revertculprit.RegisterTaskClass()
 		cancelanalysis.RegisterTaskClass()
+		culpritverification.RegisterTaskClass()
 
 		return nil
 	})

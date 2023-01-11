@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
+	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
@@ -53,6 +54,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	Convey("UpdateAnalysisProgress Culprit Verification", t, func() {
 		c, scheduler := tq.TestingContext(c, nil)
 		cancelanalysis.RegisterTaskClass()
+		culpritverification.RegisterTaskClass()
 
 		// Setup the models
 		// Set up suspects
@@ -195,7 +197,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		// Set up the config
 		testCfg := &configpb.Config{
 			AnalysisConfig: &configpb.AnalysisConfig{
-				NthsectionEnabled: true,
+				NthsectionEnabled:          true,
+				CulpritVerificationEnabled: true,
 			},
 		}
 		So(config.SetTestConfig(c, testCfg), ShouldBeNil)
@@ -301,6 +304,8 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		})
 
 		Convey("Culprit found", func() {
+			c, scheduler := tq.TestingContext(c, nil)
+
 			cf := &model.CompileFailure{}
 			So(datastore.Put(c, cf), ShouldBeNil)
 			datastore.GetTestable(c).CatchupIndexes()
@@ -399,6 +404,15 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			So(datastore.Get(c, cfa), ShouldBeNil)
 			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
 			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+
+			// Assert task
+			task := &tpb.CulpritVerificationTask{
+				AnalysisId: cfa.Id,
+				SuspectId:  nsa.Suspect.IntID(),
+				ParentKey:  datastore.KeyForObj(c, nsa).Encode(),
+			}
+			expected := proto.Clone(task).(*tpb.CulpritVerificationTask)
+			So(scheduler.Tasks().Payloads()[0], assertions.ShouldResembleProto, expected)
 		})
 
 		Convey("Nthsection couldn't find suspect", func() {

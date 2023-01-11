@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 syntax = "proto3";
 
 package proto;
@@ -38,4 +37,14 @@ message RevertCulpritTask {
 message CancelAnalysisTask {
   // The analysis ID that we need to cancel.
   int64 analysis_id = 1;
+}
+
+// Payload for Culprit Verification
+message CulpritVerificationTask {
+  // The analysis ID
+  int64 analysis_id = 1;
+  // The ID of the suspect for culprit verification
+  int64 suspect_id = 2;
+  // The encoded datastore key of suspect parent
+  string parent_key = 3;
 }

@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
+	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
@@ -222,6 +223,31 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 		err := storeNthSectionResultToDatastore(c, nsa, snapshot.BlameList.Commits[cul], req)
 		if err != nil {
 			return nsa, errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
+		}
+
+		// Run culprit verification
+		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c)
+		if err != nil {
+			return nsa, errors.Annotate(err, "couldn't fetch shouldRunCulpritVerification config").Err()
+		}
+		if shouldRunCulpritVerification {
+			// We run culprit verification in a task queue here because this is inside the
+			// updateBotStatus endpoint. The culprit verification process may take some time,
+			// because it needs to schedule build, and we don't want it to block.
+			suspectID := nsa.Suspect.IntID()
+			err = tq.AddTask(c, &tq.Task{
+				Title: fmt.Sprintf("culprit_verification_%d_%d", req.AnalysisId, suspectID),
+				Payload: &taskpb.CulpritVerificationTask{
+					SuspectId:  suspectID,
+					AnalysisId: req.AnalysisId,
+					ParentKey:  nsa.Suspect.Parent().Encode(),
+				},
+			})
+			if err != nil {
+				// Non-critical, just log the error
+				err := errors.Annotate(err, "schedule culprit verification task %d_%d", req.AnalysisId, suspectID).Err()
+				logging.Errorf(c, err.Error())
+			}
 		}
 		return nsa, nil
 	}

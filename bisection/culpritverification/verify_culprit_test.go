@@ -137,8 +137,9 @@ func TestVerifySuspect(t *testing.T) {
 		So(datastore.Put(c, suspect), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		err := VerifySuspect(c, suspect, 8000, 444)
+		err := processCulpritVerificationTask(c, 444, suspect.Id, suspect.ParentAnalysis.Encode())
 		So(err, ShouldBeNil)
+		So(datastore.Get(c, suspect), ShouldBeNil)
 		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_UnderVerification)
 		datastore.GetTestable(c).CatchupIndexes()
 
