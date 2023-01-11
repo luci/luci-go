@@ -83,8 +83,8 @@ type Response interface{}
 
 // Server knows how to authenticate bot requests and route them to handlers.
 type Server struct {
-	router       *router.Router
-	middlewares  router.MiddlewareChain
+	router        *router.Router
+	middlewares   router.MiddlewareChain
 	hmacSecretKey atomic.Value // stores secrets.Secret
 }
 
@@ -147,8 +147,8 @@ func (s *Server) InstallHandler(route string, h Handler) {
 		}
 
 		// Validate the HMAC tag on the poll token and deserialize it.
-		pollState, err := s.validatePollToken(body.RBEState.PollToken)
-		if err != nil {
+		pollState := &internalspb.PollState{}
+		if err := s.validateToken(body.RBEState.PollToken, pollState); err != nil {
 			writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
 			return
 		}
@@ -223,15 +223,16 @@ func (s *Server) InstallHandler(route string, h Handler) {
 	})
 }
 
-// validatePollToken checks the poll token HMAC and deserializes it.
-func (s *Server) validatePollToken(tok []byte) (*internalspb.PollState, error) {
+// validateToken deserializes a TaggedMessage, checks the HMAC and deserializes
+// the payload into `msg`.
+func (s *Server) validateToken(tok []byte, msg proto.Message) error {
 	// Deserialize the envelope.
 	var envelope internalspb.TaggedMessage
 	if err := proto.Unmarshal(tok, &envelope); err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize TaggedMessage").Err()
+		return errors.Annotate(err, "failed to deserialize TaggedMessage").Err()
 	}
-	if envelope.PayloadType != internalspb.TaggedMessage_POLL_STATE {
-		return nil, errors.Reason("invalid payload type %v", envelope.PayloadType).Err()
+	if expected := taggedMessagePayload(msg); envelope.PayloadType != expected {
+		return errors.Reason("invalid payload type %v, expecting %v", envelope.PayloadType, expected).Err()
 	}
 
 	// Verify the HMAC. It must be produced using any of the secret versions.
@@ -249,15 +250,58 @@ func (s *Server) validatePollToken(tok []byte) (*internalspb.PollState, error) {
 		}
 	}
 	if !valid {
-		return nil, errors.Reason("bad poll token HMAC").Err()
+		return errors.Reason("bad token HMAC").Err()
 	}
 
 	// The payload can be trusted.
-	var payload internalspb.PollState
-	if err := proto.Unmarshal(envelope.Payload, &payload); err != nil {
-		return nil, errors.Annotate(err, "failed to deserialize PollState").Err()
+	if err := proto.Unmarshal(envelope.Payload, msg); err != nil {
+		return errors.Annotate(err, "failed to deserialize token payload").Err()
 	}
-	return &payload, nil
+	return nil
+}
+
+// generateToken wraps `msg` into a serialized TaggedMessage.
+//
+// The produced token can be validated and deserialized with validateToken.
+func (s *Server) generateToken(msg proto.Message) ([]byte, error) {
+	payload, err := proto.Marshal(msg)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to serialize the token payload").Err()
+	}
+
+	// The future token, but without HMAC yet.
+	envelope := internalspb.TaggedMessage{
+		PayloadType: taggedMessagePayload(msg),
+		Payload:     payload,
+	}
+
+	// See rbe_pb2.TaggedMessage.
+	secret := s.hmacSecretKey.Load().(secrets.Secret).Active
+	mac := hmac.New(sha256.New, secret)
+	_, _ = fmt.Fprintf(mac, "%d\n", envelope.PayloadType)
+	_, _ = mac.Write(envelope.Payload)
+	envelope.HmacSha256 = mac.Sum(nil)
+
+	token, err := proto.Marshal(&envelope)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to serialize the token").Err()
+	}
+	return token, nil
+}
+
+// taggedMessagePayload examines the type of msg and returns the corresponding
+// enum variant.
+//
+// Panics if it is a completely unexpected message.
+func taggedMessagePayload(msg proto.Message) internalspb.TaggedMessage_PayloadType {
+	switch msg.(type) {
+	case *internalspb.PollState:
+		return internalspb.TaggedMessage_POLL_STATE
+	case *internalspb.BotSession:
+		return internalspb.TaggedMessage_BOT_SESSION
+	default:
+		panic(fmt.Sprintf("unexpected message type %T", msg))
+	}
 }
 
 // checkCredentials checks the bot credentials in the context match what is

@@ -69,7 +69,7 @@ func TestBotHandler(t *testing.T) {
 		})
 
 		srv := &Server{
-			router:       router.New(),
+			router:        router.New(),
 			hmacSecretKey: hmacSecretKey,
 		}
 
@@ -273,7 +273,7 @@ func TestBotHandler(t *testing.T) {
 	})
 }
 
-func TestValidatePollToken(t *testing.T) {
+func TestValidateToken(t *testing.T) {
 	t.Parallel()
 
 	Convey("With server", t, func() {
@@ -288,45 +288,83 @@ func TestValidatePollToken(t *testing.T) {
 		Convey("Good token", func() {
 			original := &internalspb.PollState{Id: "some-id"}
 
-			extracted, err := srv.validatePollToken(genPollToken(
+			extracted := &internalspb.PollState{}
+			err := srv.validateToken(genPollToken(
 				original,
 				internalspb.TaggedMessage_POLL_STATE,
 				[]byte("secret"),
-			))
+			), extracted)
 			So(err, ShouldBeNil)
 			So(extracted, ShouldResembleProto, original)
 
 			// Non-active secret is also OK.
-			extracted, err = srv.validatePollToken(genPollToken(
+			extracted = &internalspb.PollState{}
+			err = srv.validateToken(genPollToken(
 				original,
 				internalspb.TaggedMessage_POLL_STATE,
 				[]byte("also-secret"),
-			))
+			), extracted)
 			So(err, ShouldBeNil)
 			So(extracted, ShouldResembleProto, original)
 		})
 
 		Convey("Bad TaggedMessage proto", func() {
-			_, err := srv.validatePollToken([]byte("what is this"))
+			err := srv.validateToken([]byte("what is this"), &internalspb.PollState{})
 			So(err, ShouldErrLike, "failed to deserialize TaggedMessage")
 		})
 
 		Convey("Wrong type", func() {
-			_, err := srv.validatePollToken(genPollToken(
+			err := srv.validateToken(genPollToken(
 				&internalspb.PollState{Id: "some-id"},
 				123,
 				[]byte("secret"),
-			))
+			), &internalspb.PollState{})
 			So(err, ShouldErrLike, "invalid payload type")
 		})
 
 		Convey("Bad MAC", func() {
-			_, err := srv.validatePollToken(genPollToken(
+			err := srv.validateToken(genPollToken(
 				&internalspb.PollState{Id: "some-id"},
 				internalspb.TaggedMessage_POLL_STATE,
 				[]byte("some-other-secret"),
-			))
-			So(err, ShouldErrLike, "bad poll token HMAC")
+			), &internalspb.PollState{})
+			So(err, ShouldErrLike, "bad token HMAC")
+		})
+	})
+}
+
+func TestGenerateToken(t *testing.T) {
+	t.Parallel()
+
+	Convey("With server", t, func() {
+		var hmacSecretKey atomic.Value
+		hmacSecretKey.Store(secrets.Secret{
+			Active:  []byte("secret"),
+			Passive: [][]byte{[]byte("also-secret")},
+		})
+
+		srv := &Server{hmacSecretKey: hmacSecretKey}
+
+		Convey("PollState", func() {
+			original := &internalspb.PollState{Id: "testing"}
+			tok, err := srv.generateToken(original)
+			So(err, ShouldBeNil)
+
+			decoded := &internalspb.PollState{}
+			So(srv.validateToken(tok, decoded), ShouldBeNil)
+
+			So(decoded, ShouldResembleProto, original)
+		})
+
+		Convey("BotSession", func() {
+			original := &internalspb.BotSession{RbeBotSessionId: "testing"}
+			tok, err := srv.generateToken(original)
+			So(err, ShouldBeNil)
+
+			decoded := &internalspb.BotSession{}
+			So(srv.validateToken(tok, decoded), ShouldBeNil)
+
+			So(decoded, ShouldResembleProto, original)
 		})
 	})
 }
