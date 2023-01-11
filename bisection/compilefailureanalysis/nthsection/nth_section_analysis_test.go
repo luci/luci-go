@@ -181,16 +181,16 @@ func TestGetPriority(t *testing.T) {
 
 		pri, err := getRerunPriority(c, nsa, nil, nil)
 		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 110)
+		So(pri, ShouldEqual, 230)
 		pri, err = getRerunPriority(c, nsa, nil, map[string]string{"id": "1"})
 		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 95)
+		So(pri, ShouldEqual, 215)
 
 		cfa.IsTreeCloser = true
 		So(datastore.Put(c, cfa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		pri, err = getRerunPriority(c, nsa, nil, nil)
 		So(err, ShouldBeNil)
-		So(pri, ShouldEqual, 40)
+		So(pri, ShouldEqual, 160)
 	})
 }
