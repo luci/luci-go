@@ -24,26 +24,26 @@ import (
 func TestReachableInvocations(t *testing.T) {
 	Convey(`ReachableInvocations`, t, func() {
 		invs := make(ReachableInvocations)
-		invs["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true}
-		invs["1"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: false}
-		invs["2"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true}
-		invs["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false}
-		invs["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true}
-		invs["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false}
+		invs["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA"}
+		invs["1"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"}
+		invs["2"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"}
+		invs["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC"}
+		invs["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB"}
+		invs["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA"}
 
 		Convey(`Batches`, func() {
 			So(invs.batches(2), ShouldResemble, []ReachableInvocations{
 				{
-					"3": ReachableInvocation{HasTestResults: false, HasTestExonerations: false},
-					"4": ReachableInvocation{HasTestResults: false, HasTestExonerations: true},
+					"3": ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC"},
+					"4": ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB"},
 				},
 				{
-					"0": ReachableInvocation{HasTestResults: true, HasTestExonerations: true},
-					"1": ReachableInvocation{HasTestResults: true, HasTestExonerations: false},
+					"0": ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA"},
+					"1": ReachableInvocation{HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"},
 				},
 				{
-					"2": ReachableInvocation{HasTestResults: true, HasTestExonerations: true},
-					"5": ReachableInvocation{HasTestResults: false, HasTestExonerations: false},
+					"2": ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"},
+					"5": ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA"},
 				},
 			})
 		})

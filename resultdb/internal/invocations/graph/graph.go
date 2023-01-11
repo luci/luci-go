@@ -161,7 +161,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable 
 	reachableInvocations := invocations.NewIDSet()
 	reachableInvocations.Union(roots)
 
-	// Find all reachable invocations travesing the graph one level at a time.
+	// Find all reachable invocations traversing the graph one level at a time.
 	nextLevel := invocations.NewIDSet()
 	nextLevel.Union(roots)
 	for len(nextLevel) > 0 {
@@ -182,6 +182,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable 
 
 	var withTestResults invocations.IDSet
 	var withExonerations invocations.IDSet
+	var realms map[invocations.ID]string
 
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
@@ -200,15 +201,26 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable 
 		}
 		return nil
 	})
+	eg.Go(func() error {
+		var err error
+		realms, err = invocations.QueryRealms(ctx, reachableInvocations)
+		if err != nil {
+			return errors.Annotate(err, "querying realms of reachable invocations").Err()
+		}
+		return nil
+	})
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
-	reachable = make(ReachableInvocations, len(reachableInvocations))
-	for inv := range reachableInvocations {
+	// Limit the returned reachable invocations to those that exist in the
+	// Invocations table; they will have a realm.
+	reachable = make(ReachableInvocations, len(realms))
+	for inv, realm := range realms {
 		reachable[inv] = ReachableInvocation{
 			HasTestResults:      withTestResults.Has(inv),
 			HasTestExonerations: withExonerations.Has(inv),
+			Realm:               realm,
 		}
 	}
 	return reachable, nil
@@ -245,7 +257,7 @@ type reachCache invocations.ID
 
 // key returns the Redis key.
 func (c reachCache) key() string {
-	return fmt.Sprintf("reach2:%s", c)
+	return fmt.Sprintf("reach3:%s", c)
 }
 
 // Write writes the new value.

@@ -104,6 +104,39 @@ func TestReadBatch(t *testing.T) {
 	})
 }
 
+func TestQueryRealms(t *testing.T) {
+	Convey(`TestQueryRealms`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		Convey(`Works`, func() {
+			testutil.MustApply(ctx,
+				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
+				insertInvocation("inv1", map[string]interface{}{"Realm": "1"}),
+				insertInvocation("inv2", map[string]interface{}{"Realm": "2"}),
+			)
+
+			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
+			So(err, ShouldBeNil)
+			So(realms, ShouldResemble, map[ID]string{
+				"inv0": "0",
+				"inv1": "1",
+				"inv2": "2",
+			})
+		})
+		Convey(`Valid with missing invocation `, func() {
+			testutil.MustApply(ctx,
+				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
+			)
+
+			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))
+			So(err, ShouldBeNil)
+			So(realms, ShouldResemble, map[ID]string{
+				"inv0": "0",
+			})
+		})
+	})
+}
+
 func TestReadRealms(t *testing.T) {
 	Convey(`TestReadRealms`, t, func() {
 		ctx := testutil.SpannerTestContext(t)

@@ -30,6 +30,8 @@ message ReachableInvocations {
         bool has_test_results = 2;
         // Whether the invocation has any test exonerations.
         bool has_test_exonerations = 3;
+        // The realm of the invocation.
+        string realm = 4;
     }
     // The invocations reachable. This includes the root invocation
     // (the invocation for which this cache entry is) itself.

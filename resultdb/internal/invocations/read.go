@@ -205,24 +205,48 @@ func ReadRealm(ctx context.Context, id ID) (string, error) {
 	return realm, err
 }
 
+// QueryRealms returns the invocations' realms where available from the
+// Invocations table.
+// Makes a single RPC.
+func QueryRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.invocations.QueryRealms")
+	ts.Attribute("cr.dev/count", len(ids))
+	defer func() { ts.End(err) }()
+
+	realms = map[ID]string{}
+	st := spanner.NewStatement(`
+		SELECT
+			i.InvocationId,
+			i.Realm
+		FROM UNNEST(@invIDs) inv
+		JOIN Invocations i
+		ON i.InvocationId = inv`)
+	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+		"invIDs": ids,
+	})
+	b := &spanutil.Buffer{}
+	err = spanutil.Query(ctx, st, func(r *spanner.Row) error {
+		var invocationID ID
+		var realm spanner.NullString
+		if err := b.FromSpanner(r, &invocationID, &realm); err != nil {
+			return err
+		}
+		realms[invocationID] = realm.StringVal
+		return nil
+	})
+	return realms, err
+}
+
 // ReadRealms returns the invocations' realms.
+// Returns a NotFound error if unable to get the realm for any of the requested
+// invocations.
 // Makes a single RPC.
 func ReadRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.invocations.ReadRealms")
 	ts.Attribute("cr.dev/count", len(ids))
 	defer func() { ts.End(err) }()
 
-	realms = make(map[ID]string, len(ids))
-	var b spanutil.Buffer
-	err = span.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationId", "Realm"}).Do(func(row *spanner.Row) error {
-		var id ID
-		var realm spanner.NullString
-		if err := b.FromSpanner(row, &id, &realm); err != nil {
-			return err
-		}
-		realms[id] = realm.StringVal
-		return nil
-	})
+	realms, err = QueryRealms(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

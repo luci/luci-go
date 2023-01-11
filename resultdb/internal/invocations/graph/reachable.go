@@ -31,6 +31,8 @@ type ReachableInvocation struct {
 	HasTestResults bool
 	// HasTestResults stores whether the invocation has any test exonerations.
 	HasTestExonerations bool
+	// The realm of the invocation.
+	Realm string
 }
 
 // ReachableInvocations is a set of reachable invocations,
@@ -124,6 +126,7 @@ func (r ReachableInvocations) marshal() ([]byte, error) {
 			InvocationId:        string(id),
 			HasTestResults:      inv.HasTestResults,
 			HasTestExonerations: inv.HasTestExonerations,
+			Realm:               inv.Realm,
 		})
 	}
 	message := &internalpb.ReachableInvocations{
@@ -155,6 +158,7 @@ func unmarshalReachableInvocations(value []byte) (ReachableInvocations, error) {
 		result[invocations.ID(entry.InvocationId)] = ReachableInvocation{
 			HasTestResults:      entry.HasTestResults,
 			HasTestExonerations: entry.HasTestExonerations,
+			Realm:               entry.Realm,
 		}
 	}
 	return ReachableInvocations(result), nil

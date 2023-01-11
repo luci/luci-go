@@ -51,7 +51,9 @@ func TestReachable(t *testing.T) {
 		Convey(`a -> []`, func() {
 			testutil.MustApply(ctx, node("a")...)
 			expected := ReachableInvocations{
-				"a": ReachableInvocation{},
+				"a": ReachableInvocation{
+					Realm: insert.TestRealm,
+				},
 			}
 			So(mustRead("a"), ShouldResemble, expected)
 		})
@@ -68,11 +70,15 @@ func TestReachable(t *testing.T) {
 			expected := ReachableInvocations{
 				"a": ReachableInvocation{
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
-				"b": ReachableInvocation{},
+				"b": ReachableInvocation{
+					Realm: insert.TestRealm,
+				},
 				"c": ReachableInvocation{
 					HasTestResults:      true,
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
 			}
 			So(mustRead("a"), ShouldResemble, expected)
@@ -90,11 +96,15 @@ func TestReachable(t *testing.T) {
 			expected := ReachableInvocations{
 				"a": ReachableInvocation{
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
-				"b": ReachableInvocation{},
+				"b": ReachableInvocation{
+					Realm: insert.TestRealm,
+				},
 				"c": ReachableInvocation{
 					HasTestResults:      true,
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
 			}
 			So(mustRead("a"), ShouldResemble, expected)
@@ -137,7 +147,9 @@ func TestBatchedReachable(t *testing.T) {
 		Convey(`a -> []`, func() {
 			testutil.MustApply(ctx, insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, nil)...)
 			expected := ReachableInvocations{
-				"a": ReachableInvocation{},
+				"a": ReachableInvocation{
+					Realm: insert.TestRealm,
+				},
 			}
 			So(mustRead("a"), ShouldResemble, expected)
 		})
@@ -154,11 +166,15 @@ func TestBatchedReachable(t *testing.T) {
 			expected := ReachableInvocations{
 				"a": ReachableInvocation{
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
-				"b": ReachableInvocation{},
+				"b": ReachableInvocation{
+					Realm: insert.TestRealm,
+				},
 				"c": ReachableInvocation{
 					HasTestResults:      true,
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
 			}
 			So(mustRead("a"), ShouldResemble, expected)
@@ -176,11 +192,15 @@ func TestBatchedReachable(t *testing.T) {
 			expected := ReachableInvocations{
 				"a": ReachableInvocation{
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
-				"b": ReachableInvocation{},
+				"b": ReachableInvocation{
+					Realm: insert.TestRealm,
+				},
 				"c": ReachableInvocation{
 					HasTestResults:      true,
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				},
 			}
 			So(mustRead("a"), ShouldResemble, expected)
@@ -200,11 +220,14 @@ func TestBatchedReachable(t *testing.T) {
 				nodes...,
 			)...)
 			expectedInvs := NewReachableInvocations()
-			expectedInvs["a"] = ReachableInvocation{}
+			expectedInvs["a"] = ReachableInvocation{
+				Realm: insert.TestRealm,
+			}
 			for _, id := range nodeSet {
 				expectedInvs[id] = ReachableInvocation{
 					HasTestResults:      true,
 					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
 				}
 			}
 			So(mustRead("a"), ShouldResemble, expectedInvs)
@@ -310,12 +333,15 @@ func TestReachCache(t *testing.T) {
 		invs["inv"] = ReachableInvocation{
 			HasTestResults:      true,
 			HasTestExonerations: true,
+			Realm:               insert.TestRealm,
 		}
 		invs["a"] = ReachableInvocation{
 			HasTestResults: true,
+			Realm:          insert.TestRealm,
 		}
 		invs["b"] = ReachableInvocation{
 			HasTestExonerations: true,
+			Realm:               insert.TestRealm,
 		}
 
 		Convey(`Read`, func() {
@@ -326,7 +352,7 @@ func TestReachCache(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(actual, ShouldResemble, invs)
 			So(conn.received, ShouldResemble, [][]interface{}{
-				{"GET", "reach2:inv"},
+				{"GET", "reach3:inv"},
 			})
 		})
 
@@ -341,8 +367,8 @@ func TestReachCache(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(conn.received, ShouldResemble, [][]interface{}{
-				{"SET", "reach2:inv", conn.received[0][2]},
-				{"EXPIRE", "reach2:inv", 2592000},
+				{"SET", "reach3:inv", conn.received[0][2]},
+				{"EXPIRE", "reach3:inv", 2592000},
 			})
 			actual, err := unmarshalReachableInvocations(conn.received[0][2].([]byte))
 			So(err, ShouldBeNil)
