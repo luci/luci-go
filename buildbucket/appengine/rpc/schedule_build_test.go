@@ -5585,6 +5585,8 @@ func TestScheduleBuild(t *testing.T) {
 				defer ctl.Finish()
 				mockRdbClient := rdbPb.NewMockRecorderClient(ctl)
 				ctx = resultdb.SetMockRecorder(ctx, mockRdbClient)
+				deadline := testclock.TestRecentTimeUTC.Add(time.Second * 10800).Add(time.Second * 21600)
+				ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 				mockRdbClient.EXPECT().CreateInvocation(gomock.Any(), luciCmProto.MatcherEqual(
 					&rdbPb.CreateInvocationRequest{
 						InvocationId: "build-9021868963221610321",
@@ -5593,6 +5595,7 @@ func TestScheduleBuild(t *testing.T) {
 							ProducerResource: "//app.appspot.com/builds/9021868963221610321",
 							HistoryOptions:   historyOptions,
 							Realm:            "project:bucket",
+							Deadline:         timestamppb.New(deadline),
 						},
 						RequestId: "build-9021868963221610321",
 					}), gomock.Any()).Return(nil, grpcStatus.Error(codes.Internal, "internal error"))

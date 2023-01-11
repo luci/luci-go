@@ -22,14 +22,17 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"go.chromium.org/luci/gae/impl/memory"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	grpcStatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/tq"
@@ -49,6 +52,7 @@ func TestCreateInvocations(t *testing.T) {
 		defer ctl.Finish()
 		mockClient := rdbPb.NewMockRecorderClient(ctl)
 		ctx := SetMockRecorder(context.Background(), mockClient)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = memory.UseInfo(ctx, "cr-buildbucket-dev")
 
 		bqExports := []*rdbPb.BigQueryExport{}
@@ -99,6 +103,7 @@ func TestCreateInvocations(t *testing.T) {
 				&rdbPb.CreateInvocationRequest{
 					InvocationId: "build-1",
 					Invocation: &rdbPb.Invocation{
+						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						HistoryOptions:   historyOptions,
@@ -114,6 +119,7 @@ func TestCreateInvocations(t *testing.T) {
 				&rdbPb.CreateInvocationRequest{
 					InvocationId: "build-2",
 					Invocation: &rdbPb.Invocation{
+						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/2",
 						HistoryOptions:   historyOptions,
@@ -134,7 +140,7 @@ func TestCreateInvocations(t *testing.T) {
 			So(builds[1].Proto.Infra.Resultdb.Invocation, ShouldEqual, "invocations/build-2")
 		})
 
-		Convey("build with number", func() {
+		Convey("build with number and expirations", func() {
 			builds := []*model.Build{
 				{
 					ID: 1,
@@ -154,15 +160,19 @@ func TestCreateInvocations(t *testing.T) {
 								BqExports:      bqExports,
 							},
 						},
+						ExecutionTimeout:  durationpb.New(1000),
+						SchedulingTimeout: durationpb.New(1000),
 					},
 				},
 			}
 
+			deadline := testclock.TestRecentTimeUTC.Add(2000)
 			sha256Bldr := sha256.Sum256([]byte("proj1/bucket/builder"))
 			mockClient.EXPECT().CreateInvocation(gomock.Any(), proto.MatcherEqual(
 				&rdbPb.CreateInvocationRequest{
 					InvocationId: "build-1",
 					Invocation: &rdbPb.Invocation{
+						Deadline:         timestamppb.New(deadline),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						HistoryOptions:   historyOptions,
@@ -221,6 +231,7 @@ func TestCreateInvocations(t *testing.T) {
 				&rdbPb.CreateInvocationRequest{
 					InvocationId: "build-1",
 					Invocation: &rdbPb.Invocation{
+						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						HistoryOptions:   historyOptions,
@@ -308,6 +319,7 @@ func TestCreateInvocations(t *testing.T) {
 				&rdbPb.CreateInvocationRequest{
 					InvocationId: "build-1",
 					Invocation: &rdbPb.Invocation{
+						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
 						HistoryOptions:   historyOptions,
@@ -319,6 +331,7 @@ func TestCreateInvocations(t *testing.T) {
 				&rdbPb.CreateInvocationRequest{
 					InvocationId: "build-2",
 					Invocation: &rdbPb.Invocation{
+						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/2",
 						HistoryOptions:   historyOptions,

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -35,6 +36,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -61,6 +63,7 @@ func CreateInvocations(ctx context.Context, builds []*model.Build) errors.MultiE
 	if host == "" {
 		return nil
 	}
+	now := clock.Now(ctx).UTC()
 
 	_ = parallel.WorkPool(64, func(ch chan<- func() error) {
 		for i, b := range builds {
@@ -88,10 +91,12 @@ func CreateInvocations(ctx context.Context, builds []*model.Build) errors.MultiE
 
 				// Make a call to create build id invocation.
 				invID := fmt.Sprintf("build-%d", b.Proto.Id)
+				deadline := now.Add(b.Proto.ExecutionTimeout.AsDuration()).Add(b.Proto.SchedulingTimeout.AsDuration())
 				reqForBldID := &rdbPb.CreateInvocationRequest{
 					InvocationId: invID,
 					Invocation: &rdbPb.Invocation{
 						BigqueryExports:  b.Proto.GetInfra().GetResultdb().GetBqExports(),
+						Deadline:         timestamppb.New(deadline),
 						ProducerResource: fmt.Sprintf("//%s/builds/%d", bbHost, b.Proto.Id),
 						Realm:            realm,
 						HistoryOptions: &rdbPb.HistoryOptions{
