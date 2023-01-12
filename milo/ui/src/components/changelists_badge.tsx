@@ -72,7 +72,7 @@ export function ChangelistsBadge({ changelists }: ChangelistBadgeProps) {
         }
         window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
       }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => e.stopPropagation()}
     />
   );
 }
