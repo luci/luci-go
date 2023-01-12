@@ -533,7 +533,7 @@ func TestCommitRevert(t *testing.T) {
 				Labels: map[string]int32{
 					"Owners-Override": 1,
 					"Bot-Commit":      1,
-					"CQ":              2,
+					"Commit-Queue":    2,
 				},
 				Reviewers: map[string]*gerritpb.AddReviewerResult{
 					"90000": {

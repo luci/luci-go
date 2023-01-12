@@ -267,7 +267,7 @@ func (c *Client) CommitRevert(ctx context.Context, change *gerritpb.ChangeInfo,
 	req.Labels = map[string]int32{
 		"Owners-Override": 1,
 		"Bot-Commit":      1,
-		"CQ":              2,
+		"Commit-Queue":    2,
 	}
 
 	res, err := c.setReview(ctx, req)

@@ -1198,7 +1198,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					Labels: map[string]int32{
 						"Owners-Override": 1,
 						"Bot-Commit":      1,
-						"CQ":              2,
+						"Commit-Queue":    2,
 					},
 					Reviewers: []*gerritpb.ReviewerInput{
 						{
@@ -1567,7 +1567,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 					Labels: map[string]int32{
 						"Owners-Override": 1,
 						"Bot-Commit":      1,
-						"CQ":              2,
+						"Commit-Queue":    2,
 					},
 					Reviewers: []*gerritpb.ReviewerInput{
 						{
