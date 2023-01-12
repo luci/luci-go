@@ -46,40 +46,31 @@ import (
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 )
 
-// Handler handles an authenticated request from a bot.
-//
-// It returns a response that will be serialized and sent to the bot as JSON or
-// a gRPC error code that will be converted into an HTTP error.
-type Handler func(ctx context.Context, r *Request) (Response, error)
+// RequestBody should be implemented by a JSON-serializable struct representing
+// format of some particular request.
+type RequestBody interface {
+	ExtractPollToken() []byte               // the poll token, if present
+	ExtractDimensions() map[string][]string // dimensions reported by the bot, if present
+}
 
-// Request is an authenticated request from a bot.
+// Request is extracted from an authenticated request from a bot.
 type Request struct {
-	Body      *RequestBody           // the parsed request body
-	PollState *internalspb.PollState // validated deserialized poll token
-}
-
-// RequestBody is a JSON structure of the bot request payload.
-type RequestBody struct {
-	// Dimensions is dimensions reported by the bot.
-	Dimensions map[string][]string `json:"dimensions"`
-	// State is the state reported by the bot.
-	State map[string]interface{} `json:"state"`
-	// Version is the bot version.
-	Version string `json:"version"`
-	// RBEState is RBE-related state reported by the bot.
-	RBEState RBEState `json:"rbe_state"`
-}
-
-// RBEState is RBE-related state reported by the bot.
-type RBEState struct {
-	// Instance if the full RBE instance name to use.
-	Instance string `json:"instance"`
-	// PollToken is base64-encoded HMAC-tagged internalspb.PollState.
-	PollToken []byte `json:"poll_token"`
+	BotID      string                 // validated bot ID
+	PollState  *internalspb.PollState // validated poll state
+	Dimensions map[string][]string    // validated dimensions
 }
 
 // Response is serialized as JSON and sent to the bot.
-type Response interface{}
+type Response any
+
+// Handler handles an authenticated request from a bot.
+//
+// It takes a raw deserialized request body and all authenticated data extracted
+// from it.
+//
+// It returns a response that will be serialized and sent to the bot as JSON or
+// a gRPC error code that will be converted into an HTTP error.
+type Handler[B any] func(ctx context.Context, body *B, req *Request) (Response, error)
 
 // Server knows how to authenticate bot requests and route them to handlers.
 type Server struct {
@@ -128,8 +119,14 @@ func New(ctx context.Context, r *router.Router, hmacSecret string) (*Server, err
 	return srv, nil
 }
 
+// RequestBodyConstraint is needed to make Go generics type checker happy.
+type RequestBodyConstraint[B any] interface {
+	RequestBody
+	*B
+}
+
 // InstallHandler installs a bot request handler at the given route.
-func (s *Server) InstallHandler(route string, h Handler) {
+func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
 	s.router.POST(route, s.middlewares, func(c *router.Context) {
 		ctx := c.Context
 		req := c.Request
@@ -140,23 +137,25 @@ func (s *Server) InstallHandler(route string, h Handler) {
 			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "bad content type %q", ct))
 			return
 		}
-		var body RequestBody
-		if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
+		body := new(B)
+		if err := json.NewDecoder(req.Body).Decode(body); err != nil {
 			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "failed to deserialized the request: %s", err))
 			return
 		}
 
 		// Validate the HMAC tag on the poll token and deserialize it.
 		pollState := &internalspb.PollState{}
-		if err := s.validateToken(body.RBEState.PollToken, pollState); err != nil {
+		if err := s.validateToken(RB(body).ExtractPollToken(), pollState); err != nil {
 			writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
 			return
 		}
 
+		// Extract bot ID from the validated PollToken.
+		botID := botID(pollState)
+
 		// Log some information about the request.
-		logging.Infof(ctx, "Bot ID: %s", botID(pollState))
+		logging.Infof(ctx, "Bot ID: %s", botID)
 		logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
-		logging.Infof(ctx, "Bot version: %s", body.Version)
 		logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
 		logging.Infof(ctx, "Poll token ID: %s", pollState.Id)
 		logging.Infof(ctx, "RBE: %s", pollState.RbeInstance)
@@ -180,29 +179,31 @@ func (s *Server) InstallHandler(route string, h Handler) {
 			return
 		}
 
+		// Bot ID must be present.
+		if botID == "" {
+			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no bot ID"))
+			return
+		}
+
 		// Apply verified state stored in PollState on top of whatever was reported
 		// by the bot. Normally functioning bots should report the same values as
 		// stored in the token.
-		if body.RBEState.Instance != pollState.RbeInstance {
-			logging.Errorf(ctx, "RBE instance mismatch: reported %q, expecting %q",
-				body.RBEState.Instance, pollState.RbeInstance,
-			)
-			body.RBEState.Instance = pollState.RbeInstance
-		}
+		dims := RB(body).ExtractDimensions()
 		for _, dim := range pollState.EnforcedDimensions {
-			reported := body.Dimensions[dim.Key]
+			reported := dims[dim.Key]
 			if !strSliceEq(reported, dim.Values) {
 				logging.Errorf(ctx, "Dimension %q mismatch: reported %v, expecting %v",
 					dim.Key, reported, dim.Values,
 				)
-				body.Dimensions[dim.Key] = dim.Values
+				dims[dim.Key] = dim.Values
 			}
 		}
 
 		// The request is valid, dispatch it to the handler.
-		resp, err := h(ctx, &Request{
-			Body:      &body,
-			PollState: pollState,
+		resp, err := h(ctx, body, &Request{
+			BotID:      botID,
+			PollState:  pollState,
+			Dimensions: dims,
 		})
 		if err != nil {
 			writeErr(ctx, wrt, err)
@@ -385,17 +386,19 @@ func writeErr(ctx context.Context, w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), httpCode)
 }
 
-// botID extracts the bot ID from PollState, for logs.
+// botID extracts the bot ID from PollState.
+//
+// Returns "" if it is not present.
 func botID(s *internalspb.PollState) string {
 	for _, dim := range s.EnforcedDimensions {
 		if dim.Key == "id" {
 			if len(dim.Values) > 0 {
 				return dim.Values[0]
 			}
-			return "<unknown>"
+			return ""
 		}
 	}
-	return "<unknown>"
+	return ""
 }
 
 // strSliceEq is true if two string slices are equal.

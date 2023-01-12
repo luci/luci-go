@@ -47,6 +47,14 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+type testRequest struct {
+	Dimensions map[string][]string
+	PollToken  []byte
+}
+
+func (r *testRequest) ExtractPollToken() []byte               { return r.PollToken }
+func (r *testRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
+
 func TestBotHandler(t *testing.T) {
 	t.Parallel()
 
@@ -73,15 +81,17 @@ func TestBotHandler(t *testing.T) {
 			hmacSecretKey: hmacSecretKey,
 		}
 
+		var lastBody *testRequest
 		var lastRequest *Request
 		var nextResponse Response
 		var nextError error
-		srv.InstallHandler("/test", func(_ context.Context, r *Request) (Response, error) {
+		InstallHandler(srv, "/test", func(_ context.Context, body *testRequest, r *Request) (Response, error) {
+			lastBody = body
 			lastRequest = r
 			return nextResponse, nextError
 		})
 
-		callRaw := func(body []byte, ct string, mockedResp Response, mockedErr error) (req *Request, status int, resp string) {
+		callRaw := func(body []byte, ct string, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
 			lastRequest = nil
 			nextResponse = mockedResp
 			nextError = mockedErr
@@ -96,10 +106,10 @@ func TestBotHandler(t *testing.T) {
 				So(res.Header.Get("Content-Type"), ShouldEqual, "application/json; charset=utf-8")
 			}
 			respBody, _ := io.ReadAll(res.Body)
-			return lastRequest, res.StatusCode, string(respBody)
+			return lastBody, lastRequest, res.StatusCode, string(respBody)
 		}
 
-		call := func(body RequestBody, mockedResp Response, mockedErr error) (req *Request, status int, resp string) {
+		call := func(body testRequest, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
 			blob, err := json.Marshal(&body)
 			So(err, ShouldBeNil)
 			return callRaw(blob, "application/json; charset=utf-8", mockedResp, mockedErr)
@@ -120,24 +130,17 @@ func TestBotHandler(t *testing.T) {
 				},
 			}
 
-			req := RequestBody{
+			req := testRequest{
 				Dimensions: map[string][]string{
 					"id": {"bot-id"},
 				},
-				State: map[string]interface{}{
-					"state": "val",
-				},
-				Version: "some-bot-version",
-				RBEState: RBEState{
-					Instance:  "some-rbe-instance",
-					PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
-				},
+				PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
 			}
 
-			seenReq, status, resp := call(req, "some-response", nil)
+			body, seenReq, status, resp := call(req, "some-response", nil)
 			So(status, ShouldEqual, http.StatusOK)
 			So(resp, ShouldEqual, "\"some-response\"\n")
-			So(seenReq.Body, ShouldResemble, &req)
+			So(body, ShouldResemble, &req)
 			So(seenReq.PollState, ShouldResembleProto, pollToken)
 		})
 
@@ -156,71 +159,60 @@ func TestBotHandler(t *testing.T) {
 				},
 			}
 
-			req := RequestBody{
+			req := testRequest{
 				Dimensions: map[string][]string{
 					"id": {"bot-id"},
 				},
-				State: map[string]interface{}{
-					"state": "val",
-				},
-				Version: "some-bot-version",
-				RBEState: RBEState{
-					Instance:  "some-rbe-instance",
-					PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
-				},
+				PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
 			}
 
-			seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call(req, "some-response", nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusUnauthorized)
 			So(resp, ShouldContainSubstring, "bad bot credentials: wrong FQDN in the LUCI machine token")
 		})
 
 		Convey("Bad Content-Type", func() {
-			seenReq, status, resp := callRaw([]byte("ignored"), "application/x-www-form-urlencoded", nil, nil)
+			_, seenReq, status, resp := callRaw([]byte("ignored"), "application/x-www-form-urlencoded", nil, nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusBadRequest)
 			So(resp, ShouldContainSubstring, "bad content type")
 		})
 
 		Convey("Not JSON", func() {
-			seenReq, status, resp := callRaw([]byte("what is this"), "application/json; charset=utf-8", nil, nil)
+			_, seenReq, status, resp := callRaw([]byte("what is this"), "application/json; charset=utf-8", nil, nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusBadRequest)
 			So(resp, ShouldContainSubstring, "failed to deserialized")
 		})
 
 		Convey("Wrong poll token", func() {
-			req := RequestBody{
-				RBEState: RBEState{
-					PollToken: genPollToken(&internalspb.PollState{
-						Id:     "poll-state-id",
-						Expiry: timestamppb.New(now.Add(5 * time.Minute)),
-					}, 123, []byte("also-secret")),
-				},
+			req := testRequest{
+				PollToken: genPollToken(&internalspb.PollState{
+					Id:     "poll-state-id",
+					Expiry: timestamppb.New(now.Add(5 * time.Minute)),
+				}, 123, []byte("also-secret")),
 			}
-			seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call(req, "some-response", nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusUnauthorized)
 			So(resp, ShouldContainSubstring, "failed to verify poll token: invalid payload type")
 		})
 
 		Convey("Expired poll token", func() {
-			req := RequestBody{
-				RBEState: RBEState{
-					PollToken: genPollToken(&internalspb.PollState{
-						Id:     "poll-state-id",
-						Expiry: timestamppb.New(now.Add(-5 * time.Minute)),
-					}, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
-				},
+			req := testRequest{
+				PollToken: genPollToken(&internalspb.PollState{
+					Id:     "poll-state-id",
+					Expiry: timestamppb.New(now.Add(-5 * time.Minute)),
+				}, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
 			}
-			seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call(req, "some-response", nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusUnauthorized)
 			So(resp, ShouldContainSubstring, "poll state token expired 5m0s ago")
 		})
 
-		Convey("Poll state token overrides", func() {
+		Convey("Poll state token dimension overrides", func() {
 			pollToken := &internalspb.PollState{
 				Id:          "poll-state-id",
 				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
@@ -239,7 +231,7 @@ func TestBotHandler(t *testing.T) {
 				},
 			}
 
-			req := RequestBody{
+			req := testRequest{
 				Dimensions: map[string][]string{
 					"id":         {"wrong-bot-id"},
 					"keep":       {"a", "b"},
@@ -247,15 +239,12 @@ func TestBotHandler(t *testing.T) {
 					"override-2": {"a", "b"},
 					"keep-extra": {"a"},
 				},
-				RBEState: RBEState{
-					Instance:  "wrong-rbe-instance",
-					PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
-				},
+				PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
 			}
 
-			seenReq, status, _ := call(req, nil, nil)
+			body, seenReq, status, _ := call(req, nil, nil)
 			So(status, ShouldEqual, http.StatusOK)
-			So(seenReq.Body, ShouldResemble, &RequestBody{
+			So(body, ShouldResemble, &testRequest{
 				Dimensions: map[string][]string{
 					"id":         {"correct-bot-id"},
 					"keep":       {"a", "b"},
@@ -264,11 +253,9 @@ func TestBotHandler(t *testing.T) {
 					"keep-extra": {"a"},
 					"inject":     {"a"},
 				},
-				RBEState: RBEState{
-					Instance:  "correct-rbe-instance",
-					PollToken: req.RBEState.PollToken,
-				},
+				PollToken: req.PollToken,
 			})
+			So(seenReq.BotID, ShouldEqual, "correct-bot-id")
 		})
 	})
 }

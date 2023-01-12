@@ -48,13 +48,41 @@ func main() {
 		if err != nil {
 			return err
 		}
-		botSrv.InstallHandler("/swarming/api/v1/bot/rbe/ping", pingHandler)
+		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
 		return nil
 	})
 }
 
-func pingHandler(ctx context.Context, r *botsrv.Request) (botsrv.Response, error) {
-	logging.Infof(ctx, "Dimensions: %v", r.Body.Dimensions)
+////////////////////////////////////////////////////////////////////////////////
+
+// pingRequest is a JSON structure of the ping request payload.
+type pingRequest struct {
+	// Dimensions is dimensions reported by the bot.
+	Dimensions map[string][]string `json:"dimensions"`
+	// State is the state reported by the bot.
+	State map[string]interface{} `json:"state"`
+	// Version is the bot version.
+	Version string `json:"version"`
+	// RBEState is RBE-related state reported by the bot.
+	RBEState struct {
+		// Instance if the full RBE instance name to use.
+		Instance string `json:"instance"`
+		// PollToken is base64-encoded HMAC-tagged internalspb.PollState.
+		PollToken []byte `json:"poll_token"`
+	} `json:"rbe_state"`
+}
+
+func (r *pingRequest) ExtractPollToken() []byte               { return r.RBEState.PollToken }
+func (r *pingRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
+
+func pingHandler(ctx context.Context, body *pingRequest, r *botsrv.Request) (botsrv.Response, error) {
+	logging.Infof(ctx, "Dimensions: %v", r.Dimensions)
 	logging.Infof(ctx, "PollState: %v", r.PollState)
+	logging.Infof(ctx, "Bot version: %s", body.Version)
+	if body.RBEState.Instance != r.PollState.RbeInstance {
+		logging.Errorf(ctx, "RBE instance mismatch: reported %q, expecting %q",
+			body.RBEState.Instance, r.PollState.RbeInstance,
+		)
+	}
 	return nil, nil
 }
