@@ -310,7 +310,13 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 		}
 		index, err := findRerunIndexInBlameList(rerun, nsa.BlameList)
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't find index for rerun").Err()
+			// There is only one case where we cannot find the rerun in blamelist
+			// It is when the rerun is part of the culprit verification and is
+			// the "last pass" revision.
+			// In this case, we should just log and continue, and the run will appear
+			// as part of culprit verification component.
+			logging.Warningf(c, errors.Annotate(err, "couldn't find index for rerun").Err().Error())
+			continue
 		}
 		rerunResult.Index = strconv.FormatInt(int64(index), 10)
 		result.Reruns = append(result.Reruns, rerunResult)

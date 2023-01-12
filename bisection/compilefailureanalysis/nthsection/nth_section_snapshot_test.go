@@ -328,6 +328,22 @@ func TestGetRegressionRange(t *testing.T) {
 		_, _, err := snapshot.GetCurrentRegressionRange()
 		So(err, ShouldNotBeNil)
 	})
+
+	Convey("GetRegressionRangeErrorFirstFailedEqualsLastPass", t, func() {
+		// Create a blamelist with 100 commit
+		blamelist := testutil.CreateBlamelist(100)
+		snapshot := &NthSectionSnapshot{
+			BlameList: blamelist,
+			Runs: []*NthSectionSnapshotRun{
+				{
+					Index:  0,
+					Status: pb.RerunStatus_RERUN_STATUS_PASSED,
+				},
+			},
+		}
+		_, _, err := snapshot.GetCurrentRegressionRange()
+		So(err, ShouldNotBeNil)
+	})
 }
 
 func TestGetCulprit(t *testing.T) {

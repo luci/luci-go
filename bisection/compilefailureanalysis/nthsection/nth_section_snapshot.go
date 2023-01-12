@@ -116,8 +116,8 @@ func (snapshot *NthSectionSnapshot) GetCurrentRegressionRange() (int, int, error
 			}
 		}
 	}
-	if firstFailedIdx > lastPassedIdx {
-		return 0, 0, fmt.Errorf("invalid regression range - firstFailedIdx > lastPassedIdx: (%d, %d)", firstFailedIdx, lastPassedIdx)
+	if firstFailedIdx >= lastPassedIdx {
+		return 0, 0, fmt.Errorf("invalid regression range - firstFailedIdx >= lastPassedIdx: (%d, %d)", firstFailedIdx, lastPassedIdx)
 	}
 	return firstFailedIdx, lastPassedIdx - 1, nil
 }
