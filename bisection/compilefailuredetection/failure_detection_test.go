@@ -390,6 +390,15 @@ func TestFailureDetection(t *testing.T) {
 					Ref:     "1",
 				},
 			},
+			Output: &buildbucketpb.Build_Output{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:     "chromium.googlesource.com",
+					Project:  "chromium/src",
+					Id:       "refs/heads/gfiTest",
+					Ref:      "1",
+					Position: 456,
+				},
+			},
 			Infra: &buildbucketpb.BuildInfra{
 				Swarming: &buildbucketpb.BuildInfra_Swarming{
 					TaskDimensions: []*buildbucketpb.RequestedDimension{
@@ -422,10 +431,11 @@ func TestFailureDetection(t *testing.T) {
 					Builder:     "ios",
 					BuildNumber: 124,
 					GitilesCommit: buildbucketpb.GitilesCommit{
-						Host:    "chromium.googlesource.com",
-						Project: "chromium/src",
-						Id:      "refs/heads/gfiTest",
-						Ref:     "1",
+						Host:     "chromium.googlesource.com",
+						Project:  "chromium/src",
+						Id:       "refs/heads/gfiTest",
+						Ref:      "1",
+						Position: 456,
 					},
 					CreateTime: (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
 					EndTime:    (&timestamppb.Timestamp{Seconds: 101}).AsTime(),
@@ -459,6 +469,7 @@ func TestUpdateSucceededBuild(t *testing.T) {
 			Bucket:  "bucket",
 			Builder: "builder",
 		},
+		Number: 13,
 	}
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
@@ -474,10 +485,11 @@ func TestUpdateSucceededBuild(t *testing.T) {
 		bf := &model.LuciFailedBuild{
 			Id: 123,
 			LuciBuild: model.LuciBuild{
-				Project: "project",
-				Bucket:  "bucket",
-				Builder: "builder",
-				EndTime: clock.Now(c),
+				Project:     "project",
+				Bucket:      "bucket",
+				Builder:     "builder",
+				EndTime:     clock.Now(c),
+				BuildNumber: 12,
 			},
 		}
 
@@ -511,5 +523,57 @@ func TestUpdateSucceededBuild(t *testing.T) {
 		}
 		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
 		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
+	})
+}
+
+func TestShouldCancelAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	Convey("Should cancel analysis", t, func() {
+		fb := &model.LuciFailedBuild{
+			LuciBuild: model.LuciBuild{
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Position: 10,
+				},
+				BuildNumber: 100,
+			},
+		}
+
+		So(datastore.Put(c, fb), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		cf := testutil.CreateCompileFailure(c, fb)
+		cfa := testutil.CreateCompileFailureAnalysis(c, 789, cf)
+
+		build := &buildbucketpb.Build{
+			Output: &buildbucketpb.Build_Output{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Position: 11,
+				},
+			},
+		}
+
+		shouldCancel, err := shouldCancelAnalysis(c, cfa, build)
+		So(err, ShouldBeNil)
+		So(shouldCancel, ShouldBeTrue)
+
+		build = &buildbucketpb.Build{
+			Number: 101,
+		}
+		shouldCancel, err = shouldCancelAnalysis(c, cfa, build)
+		So(err, ShouldBeNil)
+		So(shouldCancel, ShouldBeTrue)
+
+		build = &buildbucketpb.Build{
+			Output: &buildbucketpb.Build_Output{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Position: 9,
+				},
+			},
+			Number: 101,
+		}
+		shouldCancel, err = shouldCancelAnalysis(c, cfa, build)
+		So(err, ShouldBeNil)
+		So(shouldCancel, ShouldBeFalse)
 	})
 }

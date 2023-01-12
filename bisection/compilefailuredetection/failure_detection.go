@@ -89,7 +89,7 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 	logging.Infof(c, "AnalyzeBuild %d", bbid)
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "builder", "input", "status", "steps", "number", "start_time", "end_time", "create_time", "infra.swarming.task_dimensions"},
+			Paths: []string{"id", "builder", "input", "status", "steps", "number", "start_time", "end_time", "create_time", "infra.swarming.task_dimensions", "output.gitiles_commit"},
 		},
 	})
 	if err != nil {
@@ -130,11 +130,13 @@ func AnalyzeBuild(c context.Context, bbid int64) (bool, error) {
 
 // UpdateSucceededBuild will be called when we got notification for a succeeded build
 // It will set the ShouldCancel flag of the analysis for the corresponding build.
+// Is should only do so if the commit for succeeded build is later than the commit
+// for the analysis
 func UpdateSucceededBuild(c context.Context, bbid int64) error {
 	logging.Infof(c, "Received succeeded build %d", bbid)
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "builder"},
+			Paths: []string{"id", "builder", "input.gitiles_commit", "output.gitiles_commit", "number"},
 		},
 	})
 
@@ -148,6 +150,15 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 	}
 
 	if analysis == nil {
+		return nil
+	}
+
+	shouldCancel, err := shouldCancelAnalysis(c, analysis, build)
+	if err != nil {
+		return errors.Annotate(err, "shouldCancelAnalysis %d", analysis.Id).Err()
+	}
+	if !shouldCancel {
+		logging.Infof(c, "The build under analysis is more recent than the succeeded build")
 		return nil
 	}
 
@@ -174,6 +185,20 @@ func UpdateSucceededBuild(c context.Context, bbid int64) error {
 	}
 
 	return nil
+}
+
+// shouldCancelAnalysis returns true if the succeeded build is more recent than
+// the build being analyzed.
+func shouldCancelAnalysis(c context.Context, cfa *model.CompileFailureAnalysis, succededBuild *buildbucketpb.Build) (bool, error) {
+	build, err := datastoreutil.GetFailedBuildForAnalysis(c, cfa)
+	if err != nil {
+		return false, errors.Annotate(err, "getFailedBuildForAnalysis %d", cfa.Id).Err()
+	}
+	if succededBuild.GetOutput() != nil && succededBuild.GetOutput().GetGitilesCommit() != nil && succededBuild.GetOutput().GetGitilesCommit().Position > 0 && build.Position > 0 {
+		return succededBuild.GetOutput().GetGitilesCommit().Position > build.Position, nil
+	}
+	// Else, fallback to build number
+	return succededBuild.GetNumber() > int32(build.BuildNumber), nil
 }
 
 func shouldAnalyzeBuild(c context.Context, build *buildbucketpb.Build) bool {
@@ -317,28 +342,24 @@ func createCompileFailureModel(c context.Context, failedBuild *buildbucketpb.Bui
 	// If it exists, we just update the entities.
 	var compileFailure *model.CompileFailure
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
-		var gitilesCommit buildbucketpb.GitilesCommit
-		input := failedBuild.GetInput()
-		if input != nil && input.GitilesCommit != nil {
-			gitilesCommit = *(input.GitilesCommit)
-		}
+		gitilesCommit := util.GetGitilesCommitForBuild(failedBuild)
 		buildModel := &model.LuciFailedBuild{
 			Id: failedBuild.Id,
 			LuciBuild: model.LuciBuild{
-				BuildId:       failedBuild.Id,
-				Project:       failedBuild.GetBuilder().Project,
-				Bucket:        failedBuild.GetBuilder().Bucket,
-				Builder:       failedBuild.GetBuilder().Builder,
-				BuildNumber:   int(failedBuild.Number),
-				Status:        failedBuild.Status,
-				StartTime:     failedBuild.StartTime.AsTime(),
-				EndTime:       failedBuild.EndTime.AsTime(),
-				CreateTime:    failedBuild.CreateTime.AsTime(),
-				GitilesCommit: gitilesCommit,
+				BuildId:     failedBuild.Id,
+				Project:     failedBuild.GetBuilder().Project,
+				Bucket:      failedBuild.GetBuilder().Bucket,
+				Builder:     failedBuild.GetBuilder().Builder,
+				BuildNumber: int(failedBuild.Number),
+				Status:      failedBuild.Status,
+				StartTime:   failedBuild.StartTime.AsTime(),
+				EndTime:     failedBuild.EndTime.AsTime(),
+				CreateTime:  failedBuild.CreateTime.AsTime(),
 			},
 			BuildFailureType: pb.BuildFailureType_COMPILE,
 			Platform:         platformForBuild(c, failedBuild),
 		}
+		proto.Merge(&buildModel.GitilesCommit, gitilesCommit)
 		e := datastore.Put(c, buildModel)
 		if e != nil {
 			return e
