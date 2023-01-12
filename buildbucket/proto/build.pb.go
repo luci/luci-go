@@ -213,6 +213,12 @@ type Build struct {
 	// Verified LUCI identity that created this build.
 	CreatedBy string `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
 	// Verified LUCI identity that canceled this build.
+	//
+	// Special values:
+	// * buildbucket: The build is canceled by buildbucket. This can happen if the
+	// build's parent has ended, and the build cannot outlive its parent.
+	// * backend: The build's backend task is canceled. For example the build's
+	// Swarming task is killed.
 	CanceledBy string `protobuf:"bytes,23,opt,name=canceled_by,json=canceledBy,proto3" json:"canceled_by,omitempty"`
 	// When the build was created.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`

@@ -163,6 +163,12 @@ message Build {
   string created_by = 4 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Verified LUCI identity that canceled this build.
+  //
+  // Special values:
+  // * buildbucket: The build is canceled by buildbucket. This can happen if the
+  // build's parent has ended, and the build cannot outlive its parent.
+  // * backend: The build's backend task is canceled. For example the build's
+  // Swarming task is killed.
   string canceled_by = 23 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // When the build was created.

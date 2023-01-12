@@ -140,6 +140,14 @@ func validateUpdate(ctx context.Context, req *pb.UpdateBuildRequest, bs *model.B
 			if err := validateAgentDataPurposes(ctx, req); err != nil {
 				return errors.Annotate(err, "build.infra.buildbucket.agent.purposes").Err()
 			}
+		case "build.cancel_time":
+			if req.Build.CancelTime.AsTime().After(clock.Now(ctx)) {
+				return errors.Reason("build.cancel_time cannot be in the future").Err()
+			}
+		case "build.cancellation_markdown":
+			if err := validateSummaryMarkdown(req.Build.CancellationMarkdown); err != nil {
+				return errors.Annotate(err, "build.cancellation_markdown").Err()
+			}
 		default:
 			return errors.Reason("unsupported path %q", p).Err()
 		}
@@ -469,8 +477,16 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			panic(fmt.Sprintf("invalid status %q for UpdateBuild", b.Proto.Status))
 		}
 
-		// Check parent.
-		if !isEndedStatus && b.Proto.CancelTime == nil && parentID != 0 && !b.Proto.CanOutliveParent {
+		// Check cancel signal from backend, e.g. user kills the swarming task.
+		if mustIncludes(updateMask, req, "cancel_time") == mask.IncludeEntirely {
+			shouldCancelChildren = true
+			b.Proto.CanceledBy = "backend"
+
+			if err := tasks.ScheduleCancelBuildTask(ctx, b.ID, b.Proto.GracePeriod.AsDuration()); err != nil {
+				return appstatus.Errorf(codes.Internal, "failed to schedule CancelBuildTask for build %d: %s", b.ID, err)
+			}
+		} else if !isEndedStatus && b.Proto.CancelTime == nil && parentID != 0 && !b.Proto.CanOutliveParent {
+			// Check parent.
 			if parent == nil || protoutil.IsEnded(parent.Status) {
 				// Start the cancel process.
 				b.Proto.CancelTime = timestamppb.New(now)

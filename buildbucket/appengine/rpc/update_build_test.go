@@ -1318,6 +1318,51 @@ func TestUpdateBuild(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(child.Proto.CancelTime, ShouldNotBeNil)
 				})
+
+				Convey("build gets cancel signal from backend, should cancel children", func() {
+					tk, ctx = updateContextForNewBuildToken(ctx, 20)
+					So(datastore.Put(ctx, &model.Build{
+						ID: 20,
+						Proto: &pb.Build{
+							Id: 20,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+						},
+						UpdateToken: tk,
+					}), ShouldBeNil)
+					// Child of the requested build.
+					So(datastore.Put(ctx, &model.Build{
+						ID: 21,
+						Proto: &pb.Build{
+							Id: 21,
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							AncestorIds:      []int64{20},
+							CanOutliveParent: false,
+						},
+						UpdateToken: tk,
+					}), ShouldBeNil)
+					req.Build.Id = 20
+					req.UpdateMask.Paths = []string{"build.cancel_time", "build.cancellation_markdown"}
+					req.Build.CancelTime = timestamppb.New(t0.Add(-time.Minute))
+					req.Build.CancellationMarkdown = "swarming task is cancelled"
+					_, err := srv.UpdateBuild(ctx, req)
+					So(err, ShouldBeRPCOK)
+
+					child, err := getBuild(ctx, 21)
+					So(err, ShouldBeNil)
+					So(child.Proto.CancelTime, ShouldNotBeNil)
+
+					// One CancelBuildTask for the requested build,
+					// one CancelBuildTask for the child build.
+					So(sch.Tasks(), ShouldHaveLength, 2)
+				})
 			})
 		})
 	})
