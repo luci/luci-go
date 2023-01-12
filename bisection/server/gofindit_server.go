@@ -450,7 +450,7 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	case nil:
 		// Continue
 	default:
-		return nil, err
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	// Override the page size if necessary
@@ -476,13 +476,13 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	// Construct the next page token
 	nextPageToken, err := listAnalysesPageTokenVault.PageToken(c, nextCursor)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	// Get the result for each compile failure analysis
@@ -504,7 +504,7 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 		}
 	})
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	return &pb.ListAnalysesResponse{
