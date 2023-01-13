@@ -48,11 +48,13 @@ import (
 )
 
 type testRequest struct {
-	Dimensions map[string][]string
-	PollToken  []byte
+	Dimensions   map[string][]string
+	PollToken    []byte
+	SessionToken []byte
 }
 
 func (r *testRequest) ExtractPollToken() []byte               { return r.PollToken }
+func (r *testRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *testRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
 
 func TestBotHandler(t *testing.T) {
@@ -115,9 +117,9 @@ func TestBotHandler(t *testing.T) {
 			return callRaw(blob, "application/json; charset=utf-8", mockedResp, mockedErr)
 		}
 
-		Convey("Happy path", func() {
-			pollToken := &internalspb.PollState{
-				Id:          "poll-state-id",
+		makePollState := func(id string) *internalspb.PollState {
+			return &internalspb.PollState{
+				Id:          id,
 				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
 				RbeInstance: "some-rbe-instance",
 				EnforcedDimensions: []*internalspb.PollState_Dimension{
@@ -129,23 +131,77 @@ func TestBotHandler(t *testing.T) {
 					},
 				},
 			}
+		}
+
+		Convey("Happy path with poll token", func() {
+			pollState := makePollState("poll-state-id")
 
 			req := testRequest{
 				Dimensions: map[string][]string{
 					"id": {"bot-id"},
 				},
-				PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
+				PollToken: genToken(pollState, []byte("also-secret")),
 			}
 
 			body, seenReq, status, resp := call(req, "some-response", nil)
 			So(status, ShouldEqual, http.StatusOK)
 			So(resp, ShouldEqual, "\"some-response\"\n")
 			So(body, ShouldResemble, &req)
-			So(seenReq.PollState, ShouldResembleProto, pollToken)
+			So(seenReq.BotID, ShouldEqual, "bot-id")
+			So(seenReq.SessionID, ShouldEqual, "")
+			So(seenReq.PollState, ShouldResembleProto, pollState)
+		})
+
+		Convey("Happy path with session token", func() {
+			pollState := makePollState("poll-state-id")
+
+			req := testRequest{
+				Dimensions: map[string][]string{
+					"id": {"bot-id"},
+				},
+				SessionToken: genToken(&internalspb.BotSession{
+					RbeBotSessionId: "bot-session-id",
+					PollState:       pollState,
+					Expiry:          timestamppb.New(now.Add(5 * time.Minute)),
+				}, []byte("also-secret")),
+			}
+
+			body, seenReq, status, resp := call(req, "some-response", nil)
+			So(status, ShouldEqual, http.StatusOK)
+			So(resp, ShouldEqual, "\"some-response\"\n")
+			So(body, ShouldResemble, &req)
+			So(seenReq.BotID, ShouldEqual, "bot-id")
+			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
+			So(seenReq.PollState, ShouldResembleProto, pollState)
+		})
+
+		Convey("Happy path with both tokens", func() {
+			pollStateInPollToken := makePollState("in-poll-token")
+			pollStateInSessionToken := makePollState("in-session-token")
+
+			req := testRequest{
+				Dimensions: map[string][]string{
+					"id": {"bot-id"},
+				},
+				PollToken: genToken(pollStateInPollToken, []byte("also-secret")),
+				SessionToken: genToken(&internalspb.BotSession{
+					RbeBotSessionId: "bot-session-id",
+					PollState:       pollStateInSessionToken,
+					Expiry:          timestamppb.New(now.Add(5 * time.Minute)),
+				}, []byte("also-secret")),
+			}
+
+			body, seenReq, status, resp := call(req, "some-response", nil)
+			So(status, ShouldEqual, http.StatusOK)
+			So(resp, ShouldEqual, "\"some-response\"\n")
+			So(body, ShouldResemble, &req)
+			So(seenReq.BotID, ShouldEqual, "bot-id")
+			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
+			So(seenReq.PollState, ShouldResembleProto, pollStateInPollToken)
 		})
 
 		Convey("Wrong bot credentials", func() {
-			pollToken := &internalspb.PollState{
+			pollState := &internalspb.PollState{
 				Id:          "poll-state-id",
 				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
 				RbeInstance: "some-rbe-instance",
@@ -163,7 +219,7 @@ func TestBotHandler(t *testing.T) {
 				Dimensions: map[string][]string{
 					"id": {"bot-id"},
 				},
-				PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
+				PollToken: genToken(pollState, []byte("also-secret")),
 			}
 
 			_, seenReq, status, resp := call(req, "some-response", nil)
@@ -188,10 +244,10 @@ func TestBotHandler(t *testing.T) {
 
 		Convey("Wrong poll token", func() {
 			req := testRequest{
-				PollToken: genPollToken(&internalspb.PollState{
-					Id:     "poll-state-id",
-					Expiry: timestamppb.New(now.Add(5 * time.Minute)),
-				}, 123, []byte("also-secret")),
+				PollToken: genToken(&internalspb.BotSession{
+					RbeBotSessionId: "not-a-poll-token",
+					Expiry:          timestamppb.New(now.Add(5 * time.Minute)),
+				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
 			So(seenReq, ShouldBeNil)
@@ -199,21 +255,61 @@ func TestBotHandler(t *testing.T) {
 			So(resp, ShouldContainSubstring, "failed to verify poll token: invalid payload type")
 		})
 
-		Convey("Expired poll token", func() {
+		Convey("Wrong session token", func() {
 			req := testRequest{
-				PollToken: genPollToken(&internalspb.PollState{
-					Id:     "poll-state-id",
-					Expiry: timestamppb.New(now.Add(-5 * time.Minute)),
-				}, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
+				SessionToken: genToken(&internalspb.PollState{
+					Id:     "not-a-session-token",
+					Expiry: timestamppb.New(now.Add(5 * time.Minute)),
+				}, []byte("also-secret")),
 			}
 			_, seenReq, status, resp := call(req, "some-response", nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "poll state token expired 5m0s ago")
+			So(resp, ShouldContainSubstring, "failed to verify session token: invalid payload type")
 		})
 
-		Convey("Poll state token dimension overrides", func() {
-			pollToken := &internalspb.PollState{
+		Convey("Expired poll token", func() {
+			req := testRequest{
+				PollToken: genToken(&internalspb.PollState{
+					Id:     "poll-state-id",
+					Expiry: timestamppb.New(now.Add(-5 * time.Minute)),
+				}, []byte("also-secret")),
+			}
+			_, seenReq, status, resp := call(req, "some-response", nil)
+			So(seenReq, ShouldBeNil)
+			So(status, ShouldEqual, http.StatusUnauthorized)
+			So(resp, ShouldContainSubstring, "poll token expired 5m0s ago")
+		})
+
+		Convey("Expired session token", func() {
+			req := testRequest{
+				SessionToken: genToken(&internalspb.BotSession{
+					RbeBotSessionId: "session-id",
+					Expiry:          timestamppb.New(now.Add(-5 * time.Minute)),
+					PollState:       makePollState("poll-state-id"),
+				}, []byte("also-secret")),
+			}
+			_, seenReq, status, resp := call(req, "some-response", nil)
+			So(seenReq, ShouldBeNil)
+			So(status, ShouldEqual, http.StatusUnauthorized)
+			So(resp, ShouldContainSubstring, "session token expired 5m0s ago")
+		})
+
+		Convey("Session token with no session ID", func() {
+			req := testRequest{
+				SessionToken: genToken(&internalspb.BotSession{
+					Expiry:    timestamppb.New(now.Add(5 * time.Minute)),
+					PollState: makePollState("poll-state-id"),
+				}, []byte("also-secret")),
+			}
+			_, seenReq, status, resp := call(req, "some-response", nil)
+			So(seenReq, ShouldBeNil)
+			So(status, ShouldEqual, http.StatusBadRequest)
+			So(resp, ShouldContainSubstring, "no session ID")
+		})
+
+		Convey("Poll state dimension overrides", func() {
+			pollState := &internalspb.PollState{
 				Id:          "poll-state-id",
 				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
 				RbeInstance: "correct-rbe-instance",
@@ -239,7 +335,7 @@ func TestBotHandler(t *testing.T) {
 					"override-2": {"a", "b"},
 					"keep-extra": {"a"},
 				},
-				PollToken: genPollToken(pollToken, internalspb.TaggedMessage_POLL_STATE, []byte("also-secret")),
+				PollToken: genToken(pollState, []byte("also-secret")),
 			}
 
 			body, seenReq, status, _ := call(req, nil, nil)
@@ -276,21 +372,13 @@ func TestValidateToken(t *testing.T) {
 			original := &internalspb.PollState{Id: "some-id"}
 
 			extracted := &internalspb.PollState{}
-			err := srv.validateToken(genPollToken(
-				original,
-				internalspb.TaggedMessage_POLL_STATE,
-				[]byte("secret"),
-			), extracted)
+			err := srv.validateToken(genToken(original, []byte("secret")), extracted)
 			So(err, ShouldBeNil)
 			So(extracted, ShouldResembleProto, original)
 
 			// Non-active secret is also OK.
 			extracted = &internalspb.PollState{}
-			err = srv.validateToken(genPollToken(
-				original,
-				internalspb.TaggedMessage_POLL_STATE,
-				[]byte("also-secret"),
-			), extracted)
+			err = srv.validateToken(genToken(original, []byte("also-secret")), extracted)
 			So(err, ShouldBeNil)
 			So(extracted, ShouldResembleProto, original)
 		})
@@ -300,19 +388,9 @@ func TestValidateToken(t *testing.T) {
 			So(err, ShouldErrLike, "failed to deserialize TaggedMessage")
 		})
 
-		Convey("Wrong type", func() {
-			err := srv.validateToken(genPollToken(
-				&internalspb.PollState{Id: "some-id"},
-				123,
-				[]byte("secret"),
-			), &internalspb.PollState{})
-			So(err, ShouldErrLike, "invalid payload type")
-		})
-
 		Convey("Bad MAC", func() {
-			err := srv.validateToken(genPollToken(
+			err := srv.validateToken(genToken(
 				&internalspb.PollState{Id: "some-id"},
-				internalspb.TaggedMessage_POLL_STATE,
 				[]byte("some-other-secret"),
 			), &internalspb.PollState{})
 			So(err, ShouldErrLike, "bad token HMAC")
@@ -523,19 +601,19 @@ func TestCheckCredentials(t *testing.T) {
 	})
 }
 
-func genPollToken(state *internalspb.PollState, typ internalspb.TaggedMessage_PayloadType, secret []byte) []byte {
-	payload, err := proto.Marshal(state)
+func genToken(msg proto.Message, secret []byte) []byte {
+	payload, err := proto.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}
 
 	mac := hmac.New(sha256.New, secret)
-	_, _ = fmt.Fprintf(mac, "%d\n", typ)
+	_, _ = fmt.Fprintf(mac, "%d\n", taggedMessagePayload(msg))
 	_, _ = mac.Write(payload)
 	digest := mac.Sum(nil)
 
 	blob, err := proto.Marshal(&internalspb.TaggedMessage{
-		PayloadType: typ,
+		PayloadType: taggedMessagePayload(msg),
 		Payload:     payload,
 		HmacSha256:  digest,
 	})

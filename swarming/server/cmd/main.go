@@ -73,6 +73,7 @@ type pingRequest struct {
 }
 
 func (r *pingRequest) ExtractPollToken() []byte               { return r.RBEState.PollToken }
+func (r *pingRequest) ExtractSessionToken() []byte            { return nil }
 func (r *pingRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
 
 func pingHandler(ctx context.Context, body *pingRequest, r *botsrv.Request) (botsrv.Response, error) {

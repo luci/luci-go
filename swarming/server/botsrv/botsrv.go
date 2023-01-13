@@ -14,7 +14,7 @@
 
 // Package botsrv knows how to authenticate calls from Swarming RBE bots.
 //
-// It checks PollState tokens and bot credentials.
+// It checks PollState/BotSession tokens and bot credentials.
 package botsrv
 
 import (
@@ -50,12 +50,14 @@ import (
 // format of some particular request.
 type RequestBody interface {
 	ExtractPollToken() []byte               // the poll token, if present
+	ExtractSessionToken() []byte            // the session token, if present
 	ExtractDimensions() map[string][]string // dimensions reported by the bot, if present
 }
 
 // Request is extracted from an authenticated request from a bot.
 type Request struct {
 	BotID      string                 // validated bot ID
+	SessionID  string                 // validated RBE bot session ID, if present
 	PollState  *internalspb.PollState // validated poll state
 	Dimensions map[string][]string    // validated dimensions
 }
@@ -143,11 +145,53 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			return
 		}
 
-		// Validate the HMAC tag on the poll token and deserialize it.
-		pollState := &internalspb.PollState{}
-		if err := s.validateToken(RB(body).ExtractPollToken(), pollState); err != nil {
-			writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
-			return
+		// To authenticate the bot we need either a poll token, a session token or
+		// both (in which case the poll token is preferred, since it should be
+		// more recently produced in this case). If we have a poll token, we
+		// validate it to directly get PollState. If we have a session token, we
+		// validate it and grab PollState from within it. This PollState is then
+		// used to check bot credentials.
+		//
+		// This scheme is necessary because poll tokens can be produced only by
+		// Python Swarming server when bot calls "/bot/poll" endpoint. When the bot
+		// is running a task, it isn't polling Python Swarming server and its poll
+		// token expires. For that reason when running a task, we use the session
+		// token instead, which has the most recently validated PollState stored in
+		// it in a "frozen" state.
+		//
+		// When the bot is polling for tasks, it sends both poll token and session
+		// token to us, which is allows us to put up-to-date PollState into the
+		// session token. This happens in UpdateBotSession handler.
+
+		var pollTokenState *internalspb.PollState
+		var sessionState *internalspb.BotSession
+
+		// If have a poll token, validate and deserialize it.
+		if pollToken := RB(body).ExtractPollToken(); len(pollToken) != 0 {
+			pollTokenState = &internalspb.PollState{}
+			if err := s.validateToken(pollToken, pollTokenState); err != nil {
+				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
+				return
+			}
+		}
+		// If have a session token, validate and deserialize it as well.
+		if sessionToken := RB(body).ExtractSessionToken(); len(sessionToken) != 0 {
+			sessionState = &internalspb.BotSession{}
+			if err := s.validateToken(sessionToken, sessionState); err != nil {
+				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify session token: %s", err))
+				return
+			}
+		}
+
+		// Prefer the state from the poll token. It is fresher. Fallback to the
+		// state stored in the session token if there's no poll token.
+		pollState := pollTokenState
+		if pollState == nil {
+			pollState = sessionState.GetPollState()
+			if pollState == nil {
+				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "no poll state available"))
+				return
+			}
 		}
 
 		// Extract bot ID from the validated PollToken.
@@ -162,14 +206,35 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		if pollState.DebugInfo != nil {
 			logging.Infof(ctx, "Poll token age: %s", clock.Now(ctx).Sub(pollState.DebugInfo.Created.AsTime()))
 		}
-
-		// Refuse to use expired tokens.
-		if exp := clock.Now(ctx).Sub(pollState.Expiry.AsTime()); exp > 0 {
-			writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "poll state token expired %s ago", exp))
-			return
+		if sessionState != nil {
+			logging.Infof(ctx, "Session ID: %s", sessionState.RbeBotSessionId)
 		}
 
-		// Verify bot credentials match what's recorded in the poll token.
+		// Any explicitly passed tokens must be non-expired.
+		//
+		// We do these checks here (instead of right after getting the tokens), to
+		// have some information logged already for debugging expired tokens.
+		//
+		// Note that it is normal for the PollState stored *inside* BotSession to
+		// be expired (as long as BotSession itself is not expired). It just means
+		// the bot didn't call "/bot/poll" (to get a new poll token) for a long time
+		// when running a task. For that reason we don't check expiry of
+		// `pollState` (which could come from BotSession), only `pollTokenState`
+		// (which is always what is passed explicitly in the handler).
+		if pollTokenState != nil {
+			if exp := clock.Now(ctx).Sub(pollTokenState.Expiry.AsTime()); exp > 0 {
+				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "poll token expired %s ago", exp))
+				return
+			}
+		}
+		if sessionState != nil {
+			if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
+				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "session token expired %s ago", exp))
+				return
+			}
+		}
+
+		// Verify bot credentials match what's recorded in the validated poll state.
 		if err := checkCredentials(ctx, pollState); err != nil {
 			if transient.Tag.In(err) {
 				writeErr(ctx, wrt, status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
@@ -182,6 +247,11 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		// Bot ID must be present.
 		if botID == "" {
 			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no bot ID"))
+			return
+		}
+		// Session ID must be present if there's a session token.
+		if sessionState != nil && sessionState.RbeBotSessionId == "" {
+			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no session ID"))
 			return
 		}
 
@@ -202,6 +272,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		// The request is valid, dispatch it to the handler.
 		resp, err := h(ctx, body, &Request{
 			BotID:      botID,
+			SessionID:  sessionState.GetRbeBotSessionId(),
 			PollState:  pollState,
 			Dimensions: dims,
 		})
