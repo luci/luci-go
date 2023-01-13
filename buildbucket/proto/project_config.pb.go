@@ -1419,7 +1419,7 @@ type BuildbucketCfg_CommonConfig struct {
 	// A list of PubSub topics that Buildbucket will publish notifications for
 	// build status changes in this project.
 	// The message data schema can be found in message `BuildsV2PubSub` in
-	// https://chromium.googlesource.com/infra/luci/luci-go/+/main/buildbucket/appengine/tasks/defs/tasks.proto
+	// https://chromium.googlesource.com/infra/luci/luci-go/+/main/buildbucket/proto/notification.proto
 	// Attributes on the pubsub messages:
 	// - "project"
 	// - "bucket"

@@ -88,7 +88,7 @@ func TestNotification(t *testing.T) {
 					UserData:  []byte("user_data"),
 				}
 				return NotifyPubSub(ctx, &model.Build{
-					ID: 123,
+					ID:             123,
 					PubSubCallback: cb,
 					Proto: &pb.Build{
 						Builder: &pb.BuilderID{
@@ -140,7 +140,7 @@ func TestNotification(t *testing.T) {
 
 		Convey("empty project.common_config", func() {
 			So(datastore.Put(ctx, &model.Project{
-				ID: "project_empty",
+				ID:           "project_empty",
 				CommonConfig: &pb.BuildbucketCfg_CommonConfig{},
 			}), ShouldBeNil)
 			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_empty")
@@ -248,7 +248,7 @@ func TestNotification(t *testing.T) {
 				So(tasks, ShouldHaveLength, 1)
 				So(tasks[0].Message.Attributes["project"], ShouldEqual, "project")
 				So(tasks[0].Message.Attributes["is_completed"], ShouldEqual, "true")
-				So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
+				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
 					Id: 123,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -264,8 +264,8 @@ func TestNotification(t *testing.T) {
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
 				})
-				So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
-				bLargeBytes := tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields()
+				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
+				bLargeBytes := tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields()
 				buildLarge, err := zlibUncompressBuild(bLargeBytes)
 				So(err, ShouldBeNil)
 				So(buildLarge, ShouldResembleProto, &pb.Build{
@@ -336,7 +336,7 @@ func TestNotification(t *testing.T) {
 
 				tasks := sch.Tasks()
 				So(tasks, ShouldHaveLength, 1)
-				So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
+				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), ShouldResembleProto, &pb.Build{
 					Id: 456,
 					Builder: &pb.BuilderID{
 						Project: "project",
@@ -352,8 +352,8 @@ func TestNotification(t *testing.T) {
 					Input:  &pb.Build_Input{},
 					Output: &pb.Build_Output{},
 				})
-				So(tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
-				bLargeBytes := tasks[0].Payload.(*taskdefs.BuildsV2PubSub).GetBuildLargeFields()
+				So(tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields(), ShouldNotBeNil)
+				bLargeBytes := tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields()
 				buildLarge, err := zlibUncompressBuild(bLargeBytes)
 				So(err, ShouldBeNil)
 				So(buildLarge, ShouldResembleProto, &pb.Build{
@@ -386,7 +386,7 @@ func TestNotification(t *testing.T) {
 				So(publishedMsg.Attributes["bucket"], ShouldEqual, "bucket")
 				So(publishedMsg.Attributes["builder"], ShouldEqual, "builder")
 				So(publishedMsg.Attributes["is_completed"], ShouldEqual, "true")
-				buildMsg := &taskdefs.BuildsV2PubSub{}
+				buildMsg := &pb.BuildsV2PubSub{}
 				err = protojson.Unmarshal(publishedMsg.Data, buildMsg)
 				So(err, ShouldBeNil)
 				So(buildMsg.Build, ShouldResembleProto, &pb.Build{
@@ -462,7 +462,7 @@ func TestNotification(t *testing.T) {
 				So(publishedMsg.Attributes["bucket"], ShouldEqual, "bucket")
 				So(publishedMsg.Attributes["builder"], ShouldEqual, "builder")
 				So(publishedMsg.Attributes["is_completed"], ShouldEqual, "true")
-				buildMsg := &taskdefs.BuildsV2PubSub{}
+				buildMsg := &pb.BuildsV2PubSub{}
 				err = protojson.Unmarshal(publishedMsg.Data, buildMsg)
 				So(err, ShouldBeNil)
 				So(buildMsg.Build, ShouldResembleProto, &pb.Build{

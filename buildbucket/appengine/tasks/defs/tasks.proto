@@ -8,8 +8,6 @@ package taskdefs;
 
 option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskdefs";
 
-import "go.chromium.org/luci/buildbucket/proto/build.proto";
-import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import  "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
 // A task to cancel a Swarming task in Python.
@@ -111,26 +109,6 @@ message NotifyPubSubGo {
 message CancelBuildTask {
   // ID of a build in the datastore. See model.Build.
   int64 build_id = 1;
-}
-
-// BuildsV2PubSub is the "builds_v2" pubsub topic message data schema.
-// Attributes of this pubsub message:
-// - "project"
-// - "bucket"
-// - "builder"
-// - "is_completed" (The value is either "true" or "false" in string.)
-message BuildsV2PubSub {
-  // Contains all field except large fields
-  buildbucket.v2.Build build = 1;
-  // A Compressed bytes in proto binary format of buildbucket.v2.Build where
-  // it only contains the large build fields - build.input.properties,
-  // build.output.properties and build.steps.
-  bytes build_large_fields = 2;
-
-  // The compression method the above `build_large_fields` uses. By default, it
-  // is ZLIB as this is the most common one and is the built-in lib in many
-  // programming languages.
-  buildbucket.v2.Compression compression = 3;
 }
 
 // NotifyPubSubGoProxy tasks dispatch NotifyPubSubGo tasks to send builds_v2

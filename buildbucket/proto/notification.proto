@@ -10,7 +10,11 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
 // A notification about a build.
+// Deprecated: this is no longer in use anymore.
 message Notification {
   // When this notification was created.
   google.protobuf.Timestamp timestamp = 1;
@@ -33,7 +37,17 @@ message NotificationConfig {
   // Target Cloud PubSub topic.
   // Usually has format "projects/{cloud project}/topics/{topic name}".
   //
-  // The PubSub message data is a Notification message in binary format.
+  // The PubSub message data schema is:
+  //     {
+  //      'build': ${BuildMessage},
+  //      'user_data': ${NotificationConfig.user_data}
+  //      'hostname': 'cr-buildbucket.appspot.com',
+  //    }
+  // where the BuildMessage is
+  // https://chromium.googlesource.com/infra/infra.git/+/b3204748243a9e4bf815a7024e921be46e3e1747/appengine/cr-buildbucket/legacy/api_common.py#94
+  //
+  // Note: The above data schema is in a legacy format and will be changed soon.
+  // So for new users who want to use this, please contact LUCI owners first.
   //
   // <buildbucket-app-id>@appspot.gserviceaccount.com must have
   // "pubsub.topics.publish" permissions on the topic, where
@@ -43,4 +57,24 @@ message NotificationConfig {
   // Will be available in Notification.user_data.
   // Max length: 4096.
   bytes user_data = 2;
+}
+
+// BuildsV2PubSub is the "builds_v2" pubsub topic message data schema.
+// Attributes of this pubsub message:
+// - "project"
+// - "bucket"
+// - "builder"
+// - "is_completed" (The value is either "true" or "false" in string.)
+message BuildsV2PubSub {
+  // Contains all field except large fields
+  Build build = 1;
+  // A Compressed bytes in proto binary format of buildbucket.v2.Build where
+  // it only contains the large build fields - build.input.properties,
+  // build.output.properties and build.steps.
+  bytes build_large_fields = 2;
+
+  // The compression method the above `build_large_fields` uses. By default, it
+  // is ZLIB as this is the most common one and is the built-in lib in many
+  // programming languages.
+  Compression compression = 3;
 }

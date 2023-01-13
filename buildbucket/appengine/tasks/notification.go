@@ -154,7 +154,7 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 		return errors.Annotate(err, "failed to compress large fields for %d", buildID).Err()
 	}
 
-	msg := &taskdefs.BuildsV2PubSub{
+	msg := &pb.BuildsV2PubSub{
 		Build:            p,
 		BuildLargeFields: compressed,
 		Compression:      topic.GetCompression(),
@@ -171,7 +171,7 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 
 // publishToExternalTopic publishes BuildsV2PubSub msg to the given external
 // topic with the identity of the current luci project scoped account.
-func publishToExternalTopic(ctx context.Context, msg *taskdefs.BuildsV2PubSub, topicName, luciProject string) error {
+func publishToExternalTopic(ctx context.Context, msg *pb.BuildsV2PubSub, topicName, luciProject string) error {
 	cloudProj, topicID, err := clients.ValidatePubSubTopicName(topicName)
 	if err != nil {
 		return tq.Fatal.Apply(err)

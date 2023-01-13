@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
+	pb "go.chromium.org/luci/buildbucket/proto"
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
@@ -212,10 +213,10 @@ func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "builds_v2",
 		Kind:      tq.NonTransactional,
-		Prototype: (*taskdefs.BuildsV2PubSub)(nil),
+		Prototype: (*pb.BuildsV2PubSub)(nil),
 		Topic:     "builds_v2",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-			t := m.(*taskdefs.BuildsV2PubSub)
+			t := m.(*pb.BuildsV2PubSub)
 			blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(m)
 			if err != nil {
 				logging.Errorf(ctx, "failed to marshal builds_v2 pubsub message body - %s", err)
