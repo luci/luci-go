@@ -1,5 +1,5 @@
 service: pubsub
-runtime: go116
+runtime: go119
 
 instance_class: F4_1G
 

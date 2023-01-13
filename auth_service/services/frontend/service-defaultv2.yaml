@@ -1,4 +1,4 @@
-runtime: go116
+runtime: go119
 service: defaultv2
 
 # luci_gae_vars is interpreted by gae.py, for apps deployed manually.
