@@ -1,5 +1,5 @@
 service: default
-runtime: go116
+runtime: go119
 app_engine_apis: true
 
 instance_class: F4

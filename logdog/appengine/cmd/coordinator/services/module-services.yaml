@@ -13,7 +13,7 @@
 # limitations under the License.
 
 service: services
-runtime: go116
+runtime: go119
 app_engine_apis: true
 
 instance_class: F4_1G
