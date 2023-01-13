@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/server/botsrv"
+	"go.chromium.org/luci/swarming/server/hmactoken"
 )
 
 func main() {
@@ -44,10 +45,11 @@ func main() {
 	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		botSrv, err := botsrv.New(srv.Context, srv.Routes, *hmacSecret)
+		tokenSecret, err := hmactoken.NewRotatingSecret(srv.Context, *hmacSecret)
 		if err != nil {
 			return err
 		}
+		botSrv := botsrv.New(srv.Context, srv.Routes, tokenSecret)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
 		return nil
 	})

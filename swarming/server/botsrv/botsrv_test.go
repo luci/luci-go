@@ -17,15 +17,11 @@ package botsrv
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -42,6 +38,7 @@ import (
 	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/hmactoken"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -72,15 +69,12 @@ func TestBotHandler(t *testing.T) {
 			},
 		})
 
-		var hmacSecretKey atomic.Value
-		hmacSecretKey.Store(secrets.Secret{
-			Active:  []byte("secret"),
-			Passive: [][]byte{[]byte("also-secret")},
-		})
-
 		srv := &Server{
-			router:        router.New(),
-			hmacSecretKey: hmacSecretKey,
+			router: router.New(),
+			hmacSecret: hmactoken.NewStaticSecret(secrets.Secret{
+				Active:  []byte("secret"),
+				Passive: [][]byte{[]byte("also-secret")},
+			}),
 		}
 
 		var lastBody *testRequest
@@ -356,84 +350,6 @@ func TestBotHandler(t *testing.T) {
 	})
 }
 
-func TestValidateToken(t *testing.T) {
-	t.Parallel()
-
-	Convey("With server", t, func() {
-		var hmacSecretKey atomic.Value
-		hmacSecretKey.Store(secrets.Secret{
-			Active:  []byte("secret"),
-			Passive: [][]byte{[]byte("also-secret")},
-		})
-
-		srv := &Server{hmacSecretKey: hmacSecretKey}
-
-		Convey("Good token", func() {
-			original := &internalspb.PollState{Id: "some-id"}
-
-			extracted := &internalspb.PollState{}
-			err := srv.validateToken(genToken(original, []byte("secret")), extracted)
-			So(err, ShouldBeNil)
-			So(extracted, ShouldResembleProto, original)
-
-			// Non-active secret is also OK.
-			extracted = &internalspb.PollState{}
-			err = srv.validateToken(genToken(original, []byte("also-secret")), extracted)
-			So(err, ShouldBeNil)
-			So(extracted, ShouldResembleProto, original)
-		})
-
-		Convey("Bad TaggedMessage proto", func() {
-			err := srv.validateToken([]byte("what is this"), &internalspb.PollState{})
-			So(err, ShouldErrLike, "failed to deserialize TaggedMessage")
-		})
-
-		Convey("Bad MAC", func() {
-			err := srv.validateToken(genToken(
-				&internalspb.PollState{Id: "some-id"},
-				[]byte("some-other-secret"),
-			), &internalspb.PollState{})
-			So(err, ShouldErrLike, "bad token HMAC")
-		})
-	})
-}
-
-func TestGenerateToken(t *testing.T) {
-	t.Parallel()
-
-	Convey("With server", t, func() {
-		var hmacSecretKey atomic.Value
-		hmacSecretKey.Store(secrets.Secret{
-			Active:  []byte("secret"),
-			Passive: [][]byte{[]byte("also-secret")},
-		})
-
-		srv := &Server{hmacSecretKey: hmacSecretKey}
-
-		Convey("PollState", func() {
-			original := &internalspb.PollState{Id: "testing"}
-			tok, err := srv.generateToken(original)
-			So(err, ShouldBeNil)
-
-			decoded := &internalspb.PollState{}
-			So(srv.validateToken(tok, decoded), ShouldBeNil)
-
-			So(decoded, ShouldResembleProto, original)
-		})
-
-		Convey("BotSession", func() {
-			original := &internalspb.BotSession{RbeBotSessionId: "testing"}
-			tok, err := srv.generateToken(original)
-			So(err, ShouldBeNil)
-
-			decoded := &internalspb.BotSession{}
-			So(srv.validateToken(tok, decoded), ShouldBeNil)
-
-			So(decoded, ShouldResembleProto, original)
-		})
-	})
-}
-
 func TestCheckCredentials(t *testing.T) {
 	t.Parallel()
 
@@ -602,23 +518,9 @@ func TestCheckCredentials(t *testing.T) {
 }
 
 func genToken(msg proto.Message, secret []byte) []byte {
-	payload, err := proto.Marshal(msg)
+	tok, err := hmactoken.NewStaticSecret(secrets.Secret{Active: secret}).GenerateToken(msg)
 	if err != nil {
 		panic(err)
 	}
-
-	mac := hmac.New(sha256.New, secret)
-	_, _ = fmt.Fprintf(mac, "%d\n", taggedMessagePayload(msg))
-	_, _ = mac.Write(payload)
-	digest := mac.Sum(nil)
-
-	blob, err := proto.Marshal(&internalspb.TaggedMessage{
-		PayloadType: taggedMessagePayload(msg),
-		Payload:     payload,
-		HmacSha256:  digest,
-	})
-	if err != nil {
-		panic(err)
-	}
-	return blob
+	return tok
 }

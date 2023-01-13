@@ -19,17 +19,12 @@ package botsrv
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
-	"sync/atomic"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -40,10 +35,10 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/hmactoken"
 )
 
 // RequestBody should be implemented by a JSON-serializable struct representing
@@ -76,14 +71,14 @@ type Handler[B any] func(ctx context.Context, body *B, req *Request) (Response, 
 
 // Server knows how to authenticate bot requests and route them to handlers.
 type Server struct {
-	router        *router.Router
-	middlewares   router.MiddlewareChain
-	hmacSecretKey atomic.Value // stores secrets.Secret
+	router      *router.Router
+	middlewares router.MiddlewareChain
+	hmacSecret  *hmactoken.Secret
 }
 
 // New constructs new Server.
-func New(ctx context.Context, r *router.Router, hmacSecret string) (*Server, error) {
-	srv := &Server{
+func New(ctx context.Context, r *router.Router, hmacSecret *hmactoken.Secret) *Server {
+	return &Server{
 		router: r,
 		middlewares: router.MiddlewareChain{
 			// All supported bot authentication schemes. The first matching one wins.
@@ -101,24 +96,8 @@ func New(ctx context.Context, r *router.Router, hmacSecret string) (*Server, err
 				},
 			),
 		},
+		hmacSecret: hmacSecret,
 	}
-
-	// Load the initial value of the key used to HMAC-tag poll tokens.
-	key, err := secrets.StoredSecret(ctx, hmacSecret)
-	if err != nil {
-		return nil, err
-	}
-	srv.hmacSecretKey.Store(key)
-
-	// Update the cached value whenever the secret rotates.
-	err = secrets.AddRotationHandler(ctx, hmacSecret, func(_ context.Context, key secrets.Secret) {
-		srv.hmacSecretKey.Store(key)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return srv, nil
 }
 
 // RequestBodyConstraint is needed to make Go generics type checker happy.
@@ -169,7 +148,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		// If have a poll token, validate and deserialize it.
 		if pollToken := RB(body).ExtractPollToken(); len(pollToken) != 0 {
 			pollTokenState = &internalspb.PollState{}
-			if err := s.validateToken(pollToken, pollTokenState); err != nil {
+			if err := s.hmacSecret.ValidateToken(pollToken, pollTokenState); err != nil {
 				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
 				return
 			}
@@ -177,7 +156,7 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		// If have a session token, validate and deserialize it as well.
 		if sessionToken := RB(body).ExtractSessionToken(); len(sessionToken) != 0 {
 			sessionState = &internalspb.BotSession{}
-			if err := s.validateToken(sessionToken, sessionState); err != nil {
+			if err := s.hmacSecret.ValidateToken(sessionToken, sessionState); err != nil {
 				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify session token: %s", err))
 				return
 			}
@@ -293,87 +272,6 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			logging.Errorf(ctx, "Error writing the response: %s", werr)
 		}
 	})
-}
-
-// validateToken deserializes a TaggedMessage, checks the HMAC and deserializes
-// the payload into `msg`.
-func (s *Server) validateToken(tok []byte, msg proto.Message) error {
-	// Deserialize the envelope.
-	var envelope internalspb.TaggedMessage
-	if err := proto.Unmarshal(tok, &envelope); err != nil {
-		return errors.Annotate(err, "failed to deserialize TaggedMessage").Err()
-	}
-	if expected := taggedMessagePayload(msg); envelope.PayloadType != expected {
-		return errors.Reason("invalid payload type %v, expecting %v", envelope.PayloadType, expected).Err()
-	}
-
-	// Verify the HMAC. It must be produced using any of the secret versions.
-	valid := false
-	secret := s.hmacSecretKey.Load().(secrets.Secret)
-	for _, key := range secret.Blobs() {
-		// See rbe_pb2.TaggedMessage.
-		mac := hmac.New(sha256.New, key)
-		_, _ = fmt.Fprintf(mac, "%d\n", envelope.PayloadType)
-		_, _ = mac.Write(envelope.Payload)
-		expected := mac.Sum(nil)
-		if hmac.Equal(expected, envelope.HmacSha256) {
-			valid = true
-			break
-		}
-	}
-	if !valid {
-		return errors.Reason("bad token HMAC").Err()
-	}
-
-	// The payload can be trusted.
-	if err := proto.Unmarshal(envelope.Payload, msg); err != nil {
-		return errors.Annotate(err, "failed to deserialize token payload").Err()
-	}
-	return nil
-}
-
-// generateToken wraps `msg` into a serialized TaggedMessage.
-//
-// The produced token can be validated and deserialized with validateToken.
-func (s *Server) generateToken(msg proto.Message) ([]byte, error) {
-	payload, err := proto.Marshal(msg)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to serialize the token payload").Err()
-	}
-
-	// The future token, but without HMAC yet.
-	envelope := internalspb.TaggedMessage{
-		PayloadType: taggedMessagePayload(msg),
-		Payload:     payload,
-	}
-
-	// See rbe_pb2.TaggedMessage.
-	secret := s.hmacSecretKey.Load().(secrets.Secret).Active
-	mac := hmac.New(sha256.New, secret)
-	_, _ = fmt.Fprintf(mac, "%d\n", envelope.PayloadType)
-	_, _ = mac.Write(envelope.Payload)
-	envelope.HmacSha256 = mac.Sum(nil)
-
-	token, err := proto.Marshal(&envelope)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to serialize the token").Err()
-	}
-	return token, nil
-}
-
-// taggedMessagePayload examines the type of msg and returns the corresponding
-// enum variant.
-//
-// Panics if it is a completely unexpected message.
-func taggedMessagePayload(msg proto.Message) internalspb.TaggedMessage_PayloadType {
-	switch msg.(type) {
-	case *internalspb.PollState:
-		return internalspb.TaggedMessage_POLL_STATE
-	case *internalspb.BotSession:
-		return internalspb.TaggedMessage_BOT_SESSION
-	default:
-		panic(fmt.Sprintf("unexpected message type %T", msg))
-	}
 }
 
 // checkCredentials checks the bot credentials in the context match what is
