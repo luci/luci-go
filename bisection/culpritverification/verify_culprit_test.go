@@ -330,3 +330,32 @@ func TestGetPriority(t *testing.T) {
 		So(pri, ShouldEqual, 30)
 	})
 }
+
+func TestCheckSuspectWithSameCommitExist(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+
+	Convey("CheckSuspectWithSameCommitExist", t, func() {
+		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8000, "chromium", 555)
+		nsa := testutil.CreateNthSectionAnalysis(c, cfa)
+		suspect := testutil.CreateNthSectionSuspect(c, nsa)
+
+		exist, err := checkSuspectWithSameCommitExist(c, cfa, suspect)
+		So(err, ShouldBeNil)
+		So(exist, ShouldBeFalse)
+
+		ha := testutil.CreateHeuristicAnalysis(c, cfa)
+		s1 := testutil.CreateHeuristicSuspect(c, ha, model.SuspectVerificationStatus_Unverified)
+
+		exist, err = checkSuspectWithSameCommitExist(c, cfa, suspect)
+		So(err, ShouldBeNil)
+		So(exist, ShouldBeFalse)
+
+		s1.VerificationStatus = model.SuspectVerificationStatus_UnderVerification
+		So(datastore.Put(c, s1), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		exist, err = checkSuspectWithSameCommitExist(c, cfa, suspect)
+		So(err, ShouldBeNil)
+		So(exist, ShouldBeTrue)
+	})
+}

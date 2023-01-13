@@ -75,6 +75,45 @@ func CreateCompileFailureAnalysisAnalysisChain(c context.Context, bbid int64, pr
 	return fb, cf, cfa
 }
 
+func CreateHeuristicAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) *model.CompileHeuristicAnalysis {
+	ha := &model.CompileHeuristicAnalysis{
+		ParentAnalysis: datastore.KeyForObj(c, cfa),
+	}
+	So(datastore.Put(c, ha), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return ha
+}
+
+func CreateNthSectionAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) *model.CompileNthSectionAnalysis {
+	nsa := &model.CompileNthSectionAnalysis{
+		ParentAnalysis: datastore.KeyForObj(c, cfa),
+	}
+	So(datastore.Put(c, nsa), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return nsa
+}
+
+func CreateHeuristicSuspect(c context.Context, ha *model.CompileHeuristicAnalysis, status model.SuspectVerificationStatus) *model.Suspect {
+	suspect := &model.Suspect{
+		ParentAnalysis:     datastore.KeyForObj(c, ha),
+		Type:               model.SuspectType_Heuristic,
+		VerificationStatus: status,
+	}
+	So(datastore.Put(c, suspect), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return suspect
+}
+
+func CreateNthSectionSuspect(c context.Context, nsa *model.CompileNthSectionAnalysis) *model.Suspect {
+	suspect := &model.Suspect{
+		ParentAnalysis: datastore.KeyForObj(c, nsa),
+		Type:           model.SuspectType_NthSection,
+	}
+	So(datastore.Put(c, suspect), ShouldBeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+	return suspect
+}
+
 func UpdateIndices(c context.Context) {
 	datastore.GetTestable(c).AddIndexes(
 		&datastore.IndexDefinition{

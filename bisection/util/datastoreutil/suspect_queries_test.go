@@ -273,3 +273,28 @@ func TestGetSuspect(t *testing.T) {
 		})
 	})
 }
+
+func TestFetchSuspectsForAnalysis(t *testing.T) {
+	c := memory.Use(context.Background())
+
+	Convey("FetchSuspectsForAnalysis", t, func() {
+		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8000, "chromium", 555)
+		suspects, err := FetchSuspectsForAnalysis(c, cfa)
+		So(err, ShouldBeNil)
+		So(len(suspects), ShouldEqual, 0)
+
+		ha := testutil.CreateHeuristicAnalysis(c, cfa)
+		testutil.CreateHeuristicSuspect(c, ha, model.SuspectVerificationStatus_Unverified)
+
+		suspects, err = FetchSuspectsForAnalysis(c, cfa)
+		So(err, ShouldBeNil)
+		So(len(suspects), ShouldEqual, 1)
+
+		nsa := testutil.CreateNthSectionAnalysis(c, cfa)
+		testutil.CreateNthSectionSuspect(c, nsa)
+
+		suspects, err = FetchSuspectsForAnalysis(c, cfa)
+		So(err, ShouldBeNil)
+		So(len(suspects), ShouldEqual, 2)
+	})
+}

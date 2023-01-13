@@ -114,6 +114,16 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return nil
 	}
 
+	// Check if there is any suspect with the same commit being verified
+	// If yes, we don't run verification for this suspect anymore
+	suspectExist, err := checkSuspectWithSameCommitExist(c, cfa, suspect)
+	if err != nil {
+		return errors.Annotate(err, "checkSuspectWithSameCommitExist").Err()
+	}
+	if suspectExist {
+		return nil
+	}
+
 	// Get failed compile targets
 	compileFailure, err := datastoreutil.GetCompileFailureForAnalysisID(c, analysisID)
 	if err != nil {
@@ -184,6 +194,24 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return err
 	}
 	return nil
+}
+
+func checkSuspectWithSameCommitExist(c context.Context, cfa *model.CompileFailureAnalysis, suspect *model.Suspect) (bool, error) {
+	suspects, err := datastoreutil.FetchSuspectsForAnalysis(c, cfa)
+	if err != nil {
+		return false, errors.Annotate(err, "fetchSuspectsForAnalysis").Err()
+	}
+	for _, s := range suspects {
+		// Need to be of different suspect
+		if s.Id != suspect.Id {
+			if s.GitilesCommit.Id == suspect.GitilesCommit.Id {
+				if s.VerificationStatus != model.SuspectVerificationStatus_Unverified {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
 }
 
 func hasNewTarget(c context.Context, failedFiles []string, changelog *model.ChangeLog) bool {

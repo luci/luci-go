@@ -105,3 +105,42 @@ func GetAssociatedBuildID(ctx context.Context, suspect *model.Suspect) (int64, e
 
 	return compileFailure.Build.IntID(), nil
 }
+
+// GetSuspectsForAnalysis returns all suspects (from heuristic and nthsection) for an analysis
+func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.Suspect, error) {
+	suspects := []*model.Suspect{}
+	ha, err := GetHeuristicAnalysis(c, cfa)
+	if err != nil {
+		return nil, errors.Annotate(err, "getHeuristicAnalysis").Err()
+	}
+	if ha != nil {
+		haSuspects, err := fetchSuspectsForParentKey(c, datastore.KeyForObj(c, ha))
+		if err != nil {
+			return nil, errors.Annotate(err, "fetchSuspects heuristic analysis").Err()
+		}
+		suspects = append(suspects, haSuspects...)
+	}
+
+	nsa, err := GetNthSectionAnalysis(c, cfa)
+	if err != nil {
+		return nil, errors.Annotate(err, "getNthSectionAnalysis").Err()
+	}
+	if nsa != nil {
+		haSuspects, err := fetchSuspectsForParentKey(c, datastore.KeyForObj(c, nsa))
+		if err != nil {
+			return nil, errors.Annotate(err, "fetchSuspects nthsection analysis").Err()
+		}
+		suspects = append(suspects, haSuspects...)
+	}
+	return suspects, nil
+}
+
+func fetchSuspectsForParentKey(c context.Context, parentKey *datastore.Key) ([]*model.Suspect, error) {
+	suspects := []*model.Suspect{}
+	q := datastore.NewQuery("Suspect").Ancestor(parentKey)
+	err := datastore.GetAll(c, q, &suspects)
+	if err != nil {
+		return nil, err
+	}
+	return suspects, nil
+}
