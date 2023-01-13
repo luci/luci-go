@@ -115,17 +115,15 @@ func sendAndRetry(ctx context.Context, client *http.Client, req *http.Request, r
 	var errorFunc = retry.errorFunc()
 
 	for {
-		t := time.NewTimer(pause)
 		select {
 		case <-ctx.Done():
-			t.Stop()
 			// If we got an error and the context has been canceled, return an error acknowledging
 			// both the context cancelation and the service error.
 			if err != nil {
 				return resp, wrappedCallErr{ctx.Err(), err}
 			}
 			return resp, ctx.Err()
-		case <-t.C:
+		case <-time.After(pause):
 		}
 
 		if ctx.Err() != nil {
