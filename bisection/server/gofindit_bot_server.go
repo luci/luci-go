@@ -481,17 +481,18 @@ func updateSuspectAsConfirmedCulprit(c context.Context, suspect *model.Suspect) 
 		logging.Warningf(c, "found more than 2 suspects for analysis %d", analysis.Id)
 	}
 
-	return datastore.RunInTransaction(c, func(ctx context.Context) error {
+	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
 		e := datastore.Get(c, analysis)
 		if e != nil {
 			return e
 		}
 		analysis.VerifiedCulprits = verifiedCulprits
-		analysis.Status = pb.AnalysisStatus_FOUND
-		analysis.RunStatus = pb.AnalysisRunStatus_ENDED
-		analysis.EndTime = clock.Now(c)
 		return datastore.Put(c, analysis)
 	}, nil)
+	if err != nil {
+		return err
+	}
+	return statusupdater.UpdateAnalysisStatus(c, analysis)
 }
 
 func getSuspectStatus(c context.Context, rerunStatus pb.RerunStatus, parentRerunStatus pb.RerunStatus) model.SuspectVerificationStatus {

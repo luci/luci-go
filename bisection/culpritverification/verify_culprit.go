@@ -104,6 +104,16 @@ func processCulpritVerificationTask(c context.Context, analysisID int64, suspect
 func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int64, analysisID int64) error {
 	logging.Infof(c, "Verifying suspect %d for build %d", datastore.KeyForObj(c, suspect).IntID(), failedBuildID)
 
+	// Check if the analysis has found any culprits, if yes, exit early
+	cfa, err := datastoreutil.GetCompileFailureAnalysis(c, analysisID)
+	if err != nil {
+		return err
+	}
+	if len(cfa.VerifiedCulprits) > 0 {
+		logging.Infof(c, "culprit found for analysis %d, no need to trigger any verification runs", analysisID)
+		return nil
+	}
+
 	// Get failed compile targets
 	compileFailure, err := datastoreutil.GetCompileFailureForAnalysisID(c, analysisID)
 	if err != nil {

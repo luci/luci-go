@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestVerifySuspect(t *testing.T) {
@@ -195,6 +196,29 @@ func TestVerifySuspect(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(singleReruns), ShouldEqual, 1)
 	})
+
+	Convey("Verify Suspect should not trigger any rerun if culprit found", t, func() {
+		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8001, "chromium", 555)
+
+		suspect := &model.Suspect{}
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		cfa.VerifiedCulprits = []*datastore.Key{
+			datastore.KeyForObj(c, suspect),
+		}
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+		err := VerifySuspect(c, suspect, 8001, 555)
+		So(err, ShouldBeNil)
+
+		// Check that no rerun was created
+		q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
+		singleReruns := []*model.SingleRerun{}
+		err = datastore.GetAll(c, q, &singleReruns)
+		So(err, ShouldBeNil)
+		So(len(singleReruns), ShouldEqual, 0)
+	})
+
 }
 
 func TestHasNewTargets(t *testing.T) {
