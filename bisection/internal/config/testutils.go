@@ -40,6 +40,11 @@ const sampleConfigFileContents = `
 		}
 
 		max_revertible_culprit_age: 123
+
+		nthsection_settings: {
+			enabled: false
+			action_when_verification_error: false
+		}
 	}
 	analysis_config {
 		culprit_verification_enabled: true

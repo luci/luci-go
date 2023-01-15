@@ -26,8 +26,11 @@ func validateConfig(ctx *validation.Context, cfg *configpb.Config) {
 		ctx.Errorf("missing Gerrit config")
 		return
 	}
+	if cfg.AnalysisConfig == nil {
+		ctx.Errorf("missing Analysis config")
+		return
+	}
 	validateGerritConfig(ctx, cfg.GerritConfig)
-	// TODO(nqmtuan): Validate analysis config when we actually have it
 }
 
 // Validates the settings in a GerritConfig
@@ -44,6 +47,7 @@ func validateGerritConfig(ctx *validation.Context, cfg *configpb.GerritConfig) {
 		return
 	}
 	validateCulpritAge(ctx, cfg.MaxRevertibleCulpritAge)
+	// TODO (nqmtuan): validate nthsection_config when we have it
 }
 
 // Helper to validate the maximum revertible culprit age in a GerritConfig

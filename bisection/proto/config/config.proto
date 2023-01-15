@@ -53,6 +53,17 @@ message GerritConfig {
   // If a culprit is older than this limit, LUCI Bisection will skip
   // submitting its corresponding revert.
   int64 max_revertible_culprit_age = 4;
+
+  // Settings for culprit actions for nthsection
+  message NthSectionSettings {
+    // Whether culprit action for nthsection culprit is enabled
+    bool enabled = 1;
+    // Whether we should perform actions on nthsection culprits even when
+    // culprit verification errored
+    bool action_when_verification_error = 2;
+  }
+
+  NthSectionSettings nthsection_settings = 5;
 }
 
 // GerritConfig is the configuration data for running analysis
