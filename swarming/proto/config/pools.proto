@@ -148,6 +148,23 @@ message Pool {
     int32 rbe_mode_percent = 2;
   }
   RBEMigration rbe_migration = 13;
+
+  // Controls the scheduling algorithm used by Swarming to schedule tasks.
+  // _gen_queue_number() in server/task_to_run.py uses this to control the
+  // queue_number of a task, which the ordering of tasks to run is based on.
+  enum SchedulingAlgorithm {
+    // Unknown or unspecified scheduling algorithm.
+    SCHEDULING_ALGORITHM_UNKNOWN = 0;
+    // First in first out (FIFO) scheduling algorithm.
+    //
+    // First task that comes in is scheduled first.
+    SCHEDULING_ALGORITHM_FIFO = 1;
+    // Last in first out (LIFO) scheduling algorithm.
+    //
+    // Last task that comes in is scheduled first.
+    SCHEDULING_ALGORITHM_LIFO = 2;
+  }
+  SchedulingAlgorithm scheduling_algorithm = 14;
 }
 
 
