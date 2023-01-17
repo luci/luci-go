@@ -82,11 +82,11 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 func manageMissingBot(c context.Context, vm *model.VM) error {
 	// Set that the bot has not yet connected to Swarming.
 	switch {
+	// the case that the VM is drained is not handled here due to b/264921632, that some newly created VM
+	// can be set to drained immidiately, but hasn't been connected to Swarming. If we destroy it here, there's
+	// a small chance that the bot is up during the destroyment and pick up a test but fail it.
 	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
 		logging.Debugf(c, "deadline %d exceeded", vm.Created+vm.Lifetime)
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
-	case vm.Drained:
-		logging.Debugf(c, "VM drained")
 		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	case vm.Timeout > 0 && vm.Created+vm.Timeout < time.Now().Unix():
 		logging.Debugf(c, "timeout %d exceeded", vm.Created+vm.Timeout)
@@ -103,10 +103,10 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 	// Termination can be skipped if the bot is deleted, dead, or already terminated.
 	switch {
 	case bot.Deleted:
-		logging.Debugf(c, "bot deleted")
+		logging.Debugf(c, "bot deleted (%s)", vm.Hostname)
 		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	case bot.IsDead:
-		logging.Debugf(c, "bot dead")
+		logging.Debugf(c, "bot dead (%s)", vm.Hostname)
 		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	}
 	// This value of vm.Connected may be several seconds old, because the VM was fetched
@@ -137,7 +137,7 @@ func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm 
 	}
 	for _, e := range events.Items {
 		if e.EventType == "bot_terminate" {
-			logging.Debugf(c, "bot terminated")
+			logging.Debugf(c, "bot terminated (%s)", vm.Hostname)
 			return destroyInstanceAsync(c, vm.ID, vm.URL)
 		}
 	}
@@ -186,7 +186,7 @@ func manageBot(c context.Context, payload proto.Message) error {
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
-				logging.Debugf(c, "bot not found")
+				logging.Debugf(c, "bot not found (%s)", vm.Hostname)
 				return manageMissingBot(c, vm)
 			}
 			logErrors(c, vm.Hostname, gerr)
@@ -253,7 +253,7 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
 				// Bot is already deleted.
-				logging.Debugf(c, "bot not found")
+				logging.Debugf(c, "bot not found (%s)", vm.Hostname)
 				return nil
 			}
 			logErrors(c, vm.Hostname, gerr)
@@ -313,7 +313,7 @@ func deleteBot(c context.Context, payload proto.Message) error {
 		if gerr, ok := err.(*googleapi.Error); ok {
 			if gerr.Code == http.StatusNotFound {
 				// Bot is already deleted.
-				logging.Debugf(c, "bot not found")
+				logging.Debugf(c, "bot not found (%s)", vm.Hostname)
 				return deleteVM(c, task.Id, vm.Hostname)
 			}
 			logErrors(c, vm.Hostname, gerr)

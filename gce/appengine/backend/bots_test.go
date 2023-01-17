@@ -292,8 +292,9 @@ func TestManageBot(t *testing.T) {
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					// For now, won't destroy a instance if it's set to drained but
+					// hasn't connected to swarming yet
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
 				})
 
 				Convey("timeout", func() {
