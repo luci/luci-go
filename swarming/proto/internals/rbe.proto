@@ -169,3 +169,42 @@ message BotSession {
   // Expiration time of this message. It should not be used once it expires.
   google.protobuf.Timestamp expiry = 3;
 }
+
+
+// TaskPayload is used as an RBE task payload.
+//
+// It is serialized as anypb.Any when passed to RBE, and its full proto name
+// is thus sensitive.
+message TaskPayload {
+  // Swarming task attempt ID (i.e. packed TaskRunResult entity key).
+  //
+  // The bot will use it in an RPC to Python Swarming server to mark the task as
+  // being worked on and to get all other task properties.
+  string task_id = 1;
+
+  // If true, the bot should not contact Python Swarming, don't execute
+  // anything, just immediately move the reservation into COMPLETED state.
+  // `task_id` is ignored.
+  //
+  // This is useful during initial development to test RBE task distribution
+  // mechanism in isolation from other Swarming guts.
+  bool noop = 2;
+}
+
+
+// TaskResult is used as an RBE task result.
+//
+// TaskResult represents an outcome of a reservation that was completed by a bot
+// (successfully or not). If a bot never saw the reservation, or crashed midway,
+// TaskResult is not available. There's more generic Reservation.status field
+// for these cases in the RBE API.
+//
+// TaskResult is serialized into anypb.Any when passed to RBE, and its full
+// proto name is thus sensitive.
+//
+// Note that the corresponding TaskPayload is available in the same RBE
+// Reservation proto that contains TaskResult, so TaskPayload fields are not
+// duplicated in the TaskResult.
+message TaskResult {
+  // Empty for now.
+}

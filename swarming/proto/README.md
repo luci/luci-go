@@ -4,7 +4,7 @@ Source:
 
 *   Repo: https://chromium.googlesource.com/infra/luci/luci-py
 *   Path: appengine/swarming/proto
-*   Revision: bdcbf818d62e08345eef8fde171c7d9beb56f62a
+*   Revision: 26cce66de18b3d32f880ceb64a067b98d2950d01
 
 ## Updating
 
