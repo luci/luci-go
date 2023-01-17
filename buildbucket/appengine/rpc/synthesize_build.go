@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"sort"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -73,6 +74,25 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 
 	if bktCfg.Proto.GetShadow() != "" && bktCfg.Proto.Shadow != builder.Bucket {
 		bld.Builder.Bucket = bktCfg.Proto.Shadow
+		if shadowBldrCfg := bldrCfg.Config.GetShadowBuilderAdjustments(); shadowBldrCfg != nil {
+			if shadowBldrCfg.ServiceAccount != "" {
+				bld.Infra.Swarming.TaskServiceAccount = shadowBldrCfg.ServiceAccount
+			}
+			if shadowBldrCfg.Pool != "" {
+				poolIdx := sort.Search(len(bld.Infra.Swarming.TaskDimensions), func(i int) bool {
+					return bld.Infra.Swarming.TaskDimensions[i].Key == "pool"
+				})
+				if poolIdx < len(bld.Infra.Swarming.TaskDimensions) {
+					bld.Infra.Swarming.TaskDimensions[poolIdx].Value = shadowBldrCfg.Pool
+				} else {
+					bld.Infra.Swarming.TaskDimensions = append(bld.Infra.Swarming.TaskDimensions, &pb.RequestedDimension{
+						Key:   "pool",
+						Value: shadowBldrCfg.Pool,
+					})
+				}
+				sortRequestedDimension(bld.Infra.Swarming.TaskDimensions)
+			}
+		}
 	}
 	return bld, nil
 }

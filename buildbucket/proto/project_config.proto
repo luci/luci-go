@@ -52,7 +52,7 @@ message Acl {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 35.
+// Next tag: 36.
 message BuilderConfig {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -418,6 +418,15 @@ message BuilderConfig {
   // Description that helps users understand the purpose of the builder, in
   // HTML.
   string description_html = 30;
+
+  // Configurations that need to be replaced when running a led build for this
+  // Builder.
+  message ShadowBuilderAdjustments {
+    string service_account = 1;
+    string pool = 2;
+  }
+
+  ShadowBuilderAdjustments shadow_builder_adjustments = 35;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.

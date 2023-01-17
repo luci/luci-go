@@ -143,7 +143,13 @@ func TestSynthesizeBuild(t *testing.T) {
 				Parent: model.BucketKey(ctx, "project", "bucket"),
 				ID:     "builder",
 				Config: &pb.BuilderConfig{
-					Name: "builder",
+					Name:           "builder",
+					ServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+					Dimensions:     []string{"pool:pool1"},
+					ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
+						ServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+						Pool:           "pool2",
+					},
 				},
 			}), ShouldBeNil)
 
@@ -227,7 +233,14 @@ func TestSynthesizeBuild(t *testing.T) {
 									},
 								},
 							},
-							Priority: 30,
+							Priority:           30,
+							TaskServiceAccount: "sa@chops-service-accounts.iam.gserviceaccount.com",
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key:   "pool",
+									Value: "pool1",
+								},
+							},
 						},
 					},
 					Input: &pb.Build_Input{
@@ -274,7 +287,7 @@ func TestSynthesizeBuild(t *testing.T) {
 				expected := &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
+						Bucket:  "bucket.shadow",
 						Builder: "builder",
 					},
 					Exe: &pb.Executable{
@@ -316,7 +329,14 @@ func TestSynthesizeBuild(t *testing.T) {
 									},
 								},
 							},
-							Priority: 30,
+							Priority:           30,
+							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key:   "pool",
+									Value: "pool2",
+								},
+							},
 						},
 					},
 					Input: &pb.Build_Input{
@@ -342,7 +362,6 @@ func TestSynthesizeBuild(t *testing.T) {
 				b, err := srv.SynthesizeBuild(ctx, req)
 				So(err, ShouldBeNil)
 
-				expected.Builder.Bucket = "bucket.shadow"
 				So(b, ShouldResembleProto, expected)
 			})
 
@@ -363,7 +382,7 @@ func TestSynthesizeBuild(t *testing.T) {
 				expected := &pb.Build{
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket:  "bucket",
+						Bucket:  "bucket.shadow",
 						Builder: "builder",
 					},
 					Exe: &pb.Executable{
@@ -409,7 +428,14 @@ func TestSynthesizeBuild(t *testing.T) {
 									},
 								},
 							},
-							Priority: 30,
+							Priority:           30,
+							TaskServiceAccount: "shadow@chops-service-accounts.iam.gserviceaccount.com",
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key:   "pool",
+									Value: "pool2",
+								},
+							},
 						},
 					},
 					Input: &pb.Build_Input{
@@ -442,7 +468,6 @@ func TestSynthesizeBuild(t *testing.T) {
 				b, err := srv.SynthesizeBuild(ctx, req)
 				So(err, ShouldBeNil)
 
-				expected.Builder.Bucket = "bucket.shadow"
 				So(b, ShouldResembleProto, expected)
 			})
 

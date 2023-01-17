@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -562,13 +563,16 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *p
 	for _, d := range dims {
 		taskDims = append(taskDims, d...)
 	}
-	sort.Slice(taskDims, func(i, j int) bool {
-		if taskDims[i].Key == taskDims[j].Key {
-			return taskDims[i].Expiration.GetSeconds() < taskDims[j].Expiration.GetSeconds()
-		}
-		return taskDims[i].Key < taskDims[j].Key
-	})
+	sortRequestedDimension(taskDims)
 	build.Infra.Swarming.TaskDimensions = taskDims
+}
+
+func sortRequestedDimension(dims []*pb.RequestedDimension) {
+	sort.Slice(dims, sortby.Chain{
+		// Sort by key then expiration.
+		func(i, j int) bool { return dims[i].Key < dims[j].Key },
+		func(i, j int) bool { return dims[i].Expiration.GetSeconds() < dims[j].Expiration.GetSeconds() },
+	}.Use)
 }
 
 // setExecutable computes the executable from the given request and builder
