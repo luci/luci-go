@@ -45,7 +45,9 @@ func cmdCollect(p Params) *subcommands.Command {
 			r.RegisterDefaultFlags(p)
 			r.RegisterFieldFlags()
 			r.Flags.DurationVar(&r.intervalArg, "interval", time.Minute, doc(`
-				duration to wait between requests
+				duration to wait between requests.
+
+				Lower bound is 20s. Smaller values will be reset to 20s.
 			`))
 			return r
 		},
@@ -79,6 +81,12 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		return r.done(ctx, err)
 	}
 
+	inverval := r.intervalArg
+	if inverval < 20*time.Second {
+		logging.Infof(ctx, "Got interval %s which is smaller than the lower bound 20s, reset it to 20s.", r.intervalArg)
+		inverval = 20 * time.Second
+	}
+
 	return r.PrintAndDone(ctx, args, unordered, func(ctx context.Context, arg string) (*pb.Build, error) {
 		req, err := protoutil.ParseGetBuildRequest(arg)
 		if err != nil {
@@ -92,8 +100,8 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 				return nil, err
 			}
 			if build.Status&pb.Status_ENDED_MASK == 0 {
-				logging.Infof(ctx, "build %d is still %s; sleeping for %s", build.Id, build.Status, r.intervalArg)
-				time.Sleep(r.intervalArg)
+				logging.Infof(ctx, "build %d is still %s; sleeping for %s", build.Id, build.Status, inverval)
+				time.Sleep(inverval)
 			} else {
 				return build, nil
 			}
