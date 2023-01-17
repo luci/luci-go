@@ -133,8 +133,8 @@ func TestBackendTask(t *testing.T) {
 		})
 
 		Convey("target not in global config", func() {
-			backendSettings := []*pb.BackendSettings{}
-			settingsCfg := &pb.SettingsCfg{Backend: backendSettings}
+			backendSetting := []*pb.BackendSetting{}
+			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			err := config.SetTestSettingsCfg(ctx, settingsCfg)
 			So(err, ShouldBeNil)
 			err = CreateBackendTask(ctx, 1)
@@ -142,12 +142,12 @@ func TestBackendTask(t *testing.T) {
 		})
 
 		Convey("target is in global config", func() {
-			backendSettings := []*pb.BackendSettings{}
-			backendSettings = append(backendSettings, &pb.BackendSettings{
+			backendSetting := []*pb.BackendSetting{}
+			backendSetting = append(backendSetting, &pb.BackendSetting{
 				Target:   "swarming://mytarget",
 				Hostname: "hostname",
 			})
-			settingsCfg := &pb.SettingsCfg{Backend: backendSettings}
+			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			err := config.SetTestSettingsCfg(ctx, settingsCfg)
 			So(err, ShouldBeNil)
 			err = CreateBackendTask(ctx, 1)

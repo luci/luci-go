@@ -692,7 +692,7 @@ func TestCreateBuild(t *testing.T) {
 			Identity: "user:caller@example.com",
 		})
 		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
-			Backend: []*pb.BackendSettings{
+			Backends: []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
 					Hostname: "chromium-swarm.appspot.com",

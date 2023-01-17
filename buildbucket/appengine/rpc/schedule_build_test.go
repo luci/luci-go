@@ -3446,7 +3446,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			s := &pb.SettingsCfg{
-				Backend: []*pb.BackendSettings{
+				Backends: []*pb.BackendSetting{
 					{
 						Target:   "swarming://chromium-swarm",
 						Hostname: "chromium-swarm.appspot.com",

@@ -41,11 +41,11 @@ message SettingsCfg {
   repeated string known_public_gerrit_hosts = 3;
 
   // List of known backend configufations.
-  repeated BackendSettings backend = 7;
+  repeated BackendSetting backends = 7;
 }
 
-// Backend settings.
-message BackendSettings {
+// Backend setting.
+message BackendSetting {
   // Target backend. e.g. "swarming://chromium-swarm".
   string target = 1;
 

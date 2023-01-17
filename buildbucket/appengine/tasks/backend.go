@@ -97,7 +97,7 @@ func computeHostnameFromTarget(ctx context.Context, target string) (hostname str
 	if err != nil {
 		return "", errors.Annotate(err, "could not get global settings config").Err()
 	}
-	for _, config := range globalCfg.Backend {
+	for _, config := range globalCfg.Backends {
 		if config.Target == target {
 			return config.Hostname, nil
 		}
