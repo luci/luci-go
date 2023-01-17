@@ -89,7 +89,11 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		return nil, err
 	}
 
-	if err := s.populateFetchURLs(ctx, arts...); err != nil {
+	realm, err := invocations.ReadRealm(span.Single(ctx), invID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.populateFetchURLs(ctx, []string{realm}, arts...); err != nil {
 		return nil, err
 	}
 

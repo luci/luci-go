@@ -48,12 +48,12 @@ func TestProjectConfigValidator(t *testing.T) {
 	})
 
 	Convey("valid config is valid", t, func() {
-		cfg := createPlaceholderProjectConfig()
+		cfg := CreatePlaceholderProjectConfig()
 		So(validate(cfg), ShouldBeNil)
 	})
 
 	Convey("invalid config", t, func() {
-		cfg := createPlaceholderProjectConfig()
+		cfg := CreatePlaceholderProjectConfig()
 		Convey("realm is specified more than once", func() {
 			cfg.RealmGcsAllowlist = append(cfg.RealmGcsAllowlist,
 				&configpb.RealmGcsAllowList{
@@ -67,7 +67,7 @@ func TestProjectConfigValidator(t *testing.T) {
 	})
 
 	Convey("realm GCS allow list", t, func() {
-		cfg := createPlaceholderProjectConfig()
+		cfg := CreatePlaceholderProjectConfig()
 		So(cfg.RealmGcsAllowlist, ShouldNotBeNil)
 		So(len(cfg.RealmGcsAllowlist), ShouldEqual, 1)
 		So(len(cfg.RealmGcsAllowlist[0].GcsBucketPrefixes), ShouldEqual, 1)

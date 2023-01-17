@@ -57,14 +57,15 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 	defer cancel()
 
 	// Get the transitive closure.
-	invs, err := graph.Reachable(ctx, invocations.MustParseNames(in.Invocations))
+	invs := invocations.MustParseNames(in.Invocations)
+	reachableInvs, err := graph.Reachable(ctx, invs)
 	if err != nil {
 		return nil, err
 	}
 
 	// Query artifacts.
 	q := artifacts.Query{
-		InvocationIDs:       invs.IDSet(),
+		InvocationIDs:       reachableInvs.IDSet(),
 		TestResultPredicate: in.GetPredicate().GetTestResultPredicate(),
 		PageSize:            pagination.AdjustPageSize(in.PageSize),
 		PageToken:           in.PageToken,
@@ -78,7 +79,14 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
-	if err := s.populateFetchURLs(ctx, arts...); err != nil {
+	realms := make([]string, 0, len(invs))
+	for id := range invs {
+		ri, ok := reachableInvs[id]
+		if ok {
+			realms = append(realms, ri.Realm)
+		}
+	}
+	if err := s.populateFetchURLs(ctx, realms, arts...); err != nil {
 		return nil, err
 	}
 

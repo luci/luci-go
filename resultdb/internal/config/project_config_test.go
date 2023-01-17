@@ -41,7 +41,7 @@ func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
 	Convey("SetTestProjectConfig updates context config", t, func() {
-		projectA := createPlaceholderProjectConfig()
+		projectA := CreatePlaceholderProjectConfig()
 		configs := make(map[string]*configpb.ProjectConfig)
 		configs["a"] = projectA
 
@@ -56,8 +56,8 @@ func TestProjectConfig(t *testing.T) {
 	})
 
 	Convey("With mocks", t, func() {
-		projectA := createPlaceholderProjectConfig()
-		projectB := createPlaceholderProjectConfig()
+		projectA := CreatePlaceholderProjectConfig()
+		projectB := CreatePlaceholderProjectConfig()
 		So(len(projectB.RealmGcsAllowlist), ShouldEqual, 1)
 		projectB.RealmGcsAllowlist[0].Realm = "b"
 
@@ -90,8 +90,8 @@ func TestProjectConfig(t *testing.T) {
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			// Real update.
-			projectC := createPlaceholderProjectConfig()
-			newProjectB := createPlaceholderProjectConfig()
+			projectC := CreatePlaceholderProjectConfig()
+			newProjectB := CreatePlaceholderProjectConfig()
 			So(len(newProjectB.RealmGcsAllowlist), ShouldEqual, 1)
 			newProjectB.RealmGcsAllowlist[0].Realm = "newb"
 			delete(configs, "projects/a")
@@ -167,10 +167,10 @@ func TestProjectConfig(t *testing.T) {
 			So(projects["b"], ShouldResembleProto, projectB)
 
 			// Attempt to update with an invalid config for project B.
-			newProjectA := createPlaceholderProjectConfig()
+			newProjectA := CreatePlaceholderProjectConfig()
 			So(len(newProjectA.RealmGcsAllowlist), ShouldEqual, 1)
 			newProjectA.RealmGcsAllowlist[0].Realm = "newa"
-			newProjectB := createPlaceholderProjectConfig()
+			newProjectB := CreatePlaceholderProjectConfig()
 			So(len(newProjectB.RealmGcsAllowlist), ShouldEqual, 1)
 			newProjectB.RealmGcsAllowlist[0].Realm = ""
 			configs["projects/a"]["${appid}.cfg"] = textPBMultiline.Format(newProjectA)
@@ -198,7 +198,7 @@ func TestProject(t *testing.T) {
 	t.Parallel()
 
 	Convey("Project", t, func() {
-		pjChromium := createPlaceholderProjectConfig()
+		pjChromium := CreatePlaceholderProjectConfig()
 		configs := map[string]*configpb.ProjectConfig{
 			"chromium": pjChromium,
 		}
@@ -214,7 +214,7 @@ func TestProject(t *testing.T) {
 
 		Convey("not found", func() {
 			pj, err := Project(ctx, "random")
-			So(err, ShouldErrLike, "no config found for project random")
+			So(err, ShouldErrLike, ErrNotFoundProjectConfig)
 			So(pj, ShouldBeNil)
 		})
 	})

@@ -16,6 +16,7 @@ package resultdb
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -24,14 +25,18 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/pbutil"
+	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 )
 
@@ -52,6 +57,64 @@ func validateGetArtifactRequest(req *pb.GetArtifactRequest) error {
 	return nil
 }
 
+// isAllowedBucketPrefix returns true if the requested object in bucket is allowed to be accessed by all the given
+// globalRealms.
+func isAllowedBucketPrefix(ctx context.Context, bucket string, object string, globalRealms []string) (isAllowed bool, err error) {
+
+	// A single realm is passed in most cases (e.g. GetArtifact and
+	// ListArtifacts). When multiple realms are passed (e.g. QueryArtifacts),
+	// check that the access is allowed in all realms.
+	for _, globalRealm := range globalRealms {
+		project, realm := realms.Split(globalRealm)
+		cfg, err := config.Project(ctx, project)
+		if err != nil {
+			if errors.Is(err, config.ErrNotFoundProjectConfig) {
+				return false, nil
+			}
+			return false, err
+		}
+
+		var allowList *configpb.RealmGcsAllowList
+		for _, list := range cfg.RealmGcsAllowlist {
+			if list.Realm == realm {
+				allowList = list
+				break
+			}
+		}
+		if allowList == nil {
+			return false, nil
+		}
+
+		var allowedPrefixes *configpb.GcsBucketPrefixes
+		for _, prefixes := range allowList.GcsBucketPrefixes {
+			if prefixes.Bucket == bucket {
+				allowedPrefixes = prefixes
+				break
+			}
+		}
+		if allowedPrefixes == nil {
+			return false, nil
+		}
+
+		var isAllowed bool
+		for _, prefix := range allowedPrefixes.AllowedPrefixes {
+			if prefix == "*" {
+				isAllowed = true
+				break
+			}
+			if ok := strings.HasPrefix(object, prefix); ok {
+				isAllowed = true
+				break
+			}
+		}
+
+		if !isAllowed {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 // GetArtifact implements pb.ResultDBServer.
 func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error) {
 	if err := verifyReadArtifactPermission(ctx, in.Name); err != nil {
@@ -70,7 +133,13 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 		return nil, err
 	}
 
-	if err := s.populateFetchURLs(ctx, art); err != nil {
+	invIDStr, _, _, _, _ := pbutil.ParseArtifactName(in.Name)
+	realm, err := invocations.ReadRealm(ctx, invocations.ID(invIDStr))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.populateFetchURLs(ctx, []string{realm}, art); err != nil {
 		return nil, err
 	}
 
@@ -78,10 +147,10 @@ func (s *resultDBServer) GetArtifact(ctx context.Context, in *pb.GetArtifactRequ
 }
 
 // populateFetchURLs populates FetchUrl and FetchUrlExpiration fields
-// of the artifacts.
+// of the artifacts. Uses queriedRealms for GCS Artifacts ACL checking.
 //
 // Must be called from within some gRPC request handler.
-func (s *resultDBServer) populateFetchURLs(ctx context.Context, artifacts ...*pb.Artifact) error {
+func (s *resultDBServer) populateFetchURLs(ctx context.Context, queriedRealms []string, artifacts ...*pb.Artifact) error {
 	// Extract Host header (may be empty) from the request to use it as a basis
 	// for generating artifact URLs.
 	requestHost := ""
@@ -106,9 +175,23 @@ func (s *resultDBServer) populateFetchURLs(ctx context.Context, artifacts ...*pb
 				gsClient = client
 			}
 
-			// TODO: Validate whether the path belongs to the realm.
 			bucket, object := gsutil.Split(a.GcsUri)
+
+			isAllowed, err := isAllowedBucketPrefix(ctx, bucket, object, queriedRealms)
+			if err != nil {
+				return err
+			}
+
 			exp := now.Add(7 * 24 * time.Hour)
+			if !isAllowed {
+				logging.Infof(ctx,
+					"realms: %v are not allowed to access object: %s in bucket: %s",
+					queriedRealms, object, bucket)
+				a.FetchUrl = ""
+				a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
+				continue
+			}
+
 			var opts *storage.SignedURLOptions
 			ctxOpts := ctx.Value(gsutil.Key("signedURLOpts"))
 			if ctxOpts != nil {

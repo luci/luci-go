@@ -33,8 +33,9 @@ func createPlaceholderRealmGcsAllowlist() []*configpb.RealmGcsAllowList {
 	}
 }
 
-// Creates a placeholder project config with default values.
-func createPlaceholderProjectConfig() *configpb.ProjectConfig {
+// CreatePlaceholderProjectConfig creates a placeholder project config with
+// default values.
+func CreatePlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
 		RealmGcsAllowlist: createPlaceholderRealmGcsAllowlist(),
 	}

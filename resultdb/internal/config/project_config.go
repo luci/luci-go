@@ -48,6 +48,11 @@ var (
 		field.String("project"), field.String("status"))
 )
 
+var (
+	// Returned if configuration for a given project does not exist.
+	ErrNotFoundProjectConfig = fmt.Errorf("no project config found")
+)
+
 type cachedProjectConfig struct {
 	_extra datastore.PropertyMap `gae:"-,extra"`
 	_kind  string                `gae:"$kind,resultdb.ProjectConfig"`
@@ -297,6 +302,8 @@ func SetTestProjectConfig(ctx context.Context, cfg map[string]*configpb.ProjectC
 }
 
 // Project returns the configurations of the requested project.
+// Returns an ErrNotFoundProjectConfig error if config for the given project
+// does not exist.
 func Project(ctx context.Context, project string) (*configpb.ProjectConfig, error) {
 	configs, err := Projects(ctx)
 	if err != nil {
@@ -305,5 +312,5 @@ func Project(ctx context.Context, project string) (*configpb.ProjectConfig, erro
 	if c, ok := configs[project]; ok {
 		return c, nil
 	}
-	return nil, fmt.Errorf("no config found for project %s", project)
+	return nil, ErrNotFoundProjectConfig
 }
