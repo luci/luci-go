@@ -130,6 +130,7 @@ export const NthSectionAnalysisRerunsTable = ({ reruns }: RerunProps) => {
             <TableCell>Commit</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Run</TableCell>
+            <TableCell>Type</TableCell>
             <TableCell>Start time</TableCell>
             <TableCell>End time</TableCell>
           </TableRow>

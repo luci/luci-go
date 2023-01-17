@@ -222,6 +222,7 @@ export interface SingleRerun {
   rerunResult: RerunResult;
   commit: GitilesCommit;
   index?: string;
+  type: string;
 }
 
 export interface RerunResult {

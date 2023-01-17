@@ -70,6 +70,7 @@ function createMockAnalysis(): NthSectionAnalysisResult {
           rerunStatus: 'RERUN_STATUS_FAILED',
         },
         index: "5",
+        type: "NthSection",
       },
       {
         bbid: '6666',
@@ -85,6 +86,7 @@ function createMockAnalysis(): NthSectionAnalysisResult {
           rerunStatus: 'RERUN_STATUS_PASSED',
         },
         index: "6",
+        type: "NthSection",
       }
     ],
     blameList: {

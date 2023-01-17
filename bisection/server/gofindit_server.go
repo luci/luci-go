@@ -304,6 +304,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 			},
 			Bbid:   rerun.RerunBuild.IntID(),
 			Commit: &rerun.GitilesCommit,
+			Type:   string(rerun.Type),
 		}
 		if rerun.HasEnded() {
 			rerunResult.EndTime = timestamppb.New(rerun.EndTime)

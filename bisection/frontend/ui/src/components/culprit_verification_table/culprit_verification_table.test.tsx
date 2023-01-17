@@ -84,6 +84,7 @@ function createMockAnalysis(): Analysis {
                 ref: 'test/ref/dev',
                 id: 'def456def456',
               },
+              type: "Culprit Verification",
             },
             parentRerun: {
               startTime: '2022-09-06T07:16:16.398865Z',
@@ -98,6 +99,7 @@ function createMockAnalysis(): Analysis {
                 ref: 'test/ref/dev',
                 id: 'def456def456',
               },
+              type: "Culprit Verification",
             },
           },
           score: '10',

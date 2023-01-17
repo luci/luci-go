@@ -140,6 +140,7 @@ describe('Test CulpritsTable component', () => {
             ref: 'test/ref/dev',
             id: 'def456def456',
           },
+          type: "Culprit Verification",
         },
         parentRerun: {
           startTime: '2022-09-06T07:16:16.398865Z',
@@ -154,6 +155,7 @@ describe('Test CulpritsTable component', () => {
             ref: 'test/ref/dev',
             id: 'def456def455',
           },
+          type: "Culprit Verification",
         },
       },
     };

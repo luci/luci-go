@@ -35,6 +35,7 @@ export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
     rerunResult,
     commit,
     index,
+    type,
   } = rerun;
 
   const buildLink = linkToBuild(bbid);
@@ -68,6 +69,9 @@ export const NthSectionAnalysisTableRow = ({ rerun }: Props) => {
           >
             {buildLink.linkText}
           </Link>
+        </TableCell>
+        <TableCell>
+          {type}
         </TableCell>
         <TableCell>
           {getFormattedTimestamp(startTime)}

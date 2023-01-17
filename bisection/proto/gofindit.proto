@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 syntax = "proto3";
 
 package gofindit;
@@ -23,7 +22,6 @@ import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
 option go_package = "go.chromium.org/luci/bisection/proto;gofindit";
-
 
 // GoFinditService contains API called from LUCI Bisection clients such as
 // SoM, Milo, ... to query or trigger analysis
@@ -48,8 +46,8 @@ service GoFinditService {
   // Update the information of an analysis.
   // At the mean time, it is only used for update the bugs associated with an
   // analysis.
-  // Mainly used by SoM, since LUCI Bisection does not have any information about
-  // bugs created by sheriffs.
+  // Mainly used by SoM, since LUCI Bisection does not have any information
+  // about bugs created by sheriffs.
   rpc UpdateAnalysis(UpdateAnalysisRequest) returns (Analysis);
 }
 
@@ -57,12 +55,13 @@ service GoFinditService {
 // the progress on analysis
 service GoFinditBotService {
   // RPC called from bots to update the analysis progress
-  rpc UpdateAnalysisProgress(UpdateAnalysisProgressRequest) returns (UpdateAnalysisProgressResponse);
+  rpc UpdateAnalysisProgress(UpdateAnalysisProgressRequest)
+      returns (UpdateAnalysisProgressResponse);
 }
 
 message GetAnalysisRequest {
   // ID of the analysis
-  int64 analysis_id = 1 [(google.api.field_behavior) = REQUIRED];
+  int64 analysis_id = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 message QueryAnalysisRequest {
@@ -123,7 +122,7 @@ message TriggerAnalysisResponse {
 // Note: Existing bugs associated with the analysis will be replaced.
 message UpdateAnalysisRequest {
   // ID of the analysis
-  string analysis_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string analysis_id = 1 [ (google.api.field_behavior) = REQUIRED ];
   repeated BugInfo bug_info = 2;
 }
 
@@ -173,14 +172,14 @@ message Analysis {
   // Result of heuristic analysis
   HeuristicAnalysisResult heuristic_result = 9;
   // Result of nth-section analysis
-  NthSectionAnalysisResult nth_section_result= 10;
+  NthSectionAnalysisResult nth_section_result = 10;
   // Builder for the first failed build
   buildbucket.v2.BuilderID builder = 13;
   // Type of the failure associated with the analysis
   BuildFailureType build_failure_type = 14;
   // The culprits for the analysis
-  // For some rare cases, we may get more than one culprits for a regression range.
-  // So we set it as repeated field.
+  // For some rare cases, we may get more than one culprits for a regression
+  // range. So we set it as repeated field.
   repeated Culprit culprits = 15;
 }
 
@@ -227,12 +226,13 @@ message HeuristicSuspect {
   string reviewUrl = 2;
   // Score is an integer representing the how confident we believe the suspect
   // is indeed the culprit.
-	// A higher score means a stronger signal that the suspect is responsible for
+  // A higher score means a stronger signal that the suspect is responsible for
   // a failure.
   int32 score = 3;
   // The reason why heuristic analysis thinks the suspect is a possible culprit.
   string justification = 4;
-  // Whether the suspect has been verified by the culprit verification component.
+  // Whether the suspect has been verified by the culprit verification
+  // component.
   bool verified = 5;
   // The level of confidence we have for the suspect.
   SuspectConfidenceLevel confidence_level = 6;
@@ -267,13 +267,12 @@ message NthSectionAnalysisResult {
   // The runs are sorted by the start timestamp.
   repeated SingleRerun reruns = 9;
   // The blame list of commits to run the nthsection analysis on
-  // The commits are sorted by recency, with the most recent commit at the beginning.
+  // The commits are sorted by recency, with the most recent commit at the
+  // beginning.
   BlameList blameList = 10;
 }
 
-message BlameList {
-  repeated BlameListSingleCommit commits = 1;
-}
+message BlameList { repeated BlameListSingleCommit commits = 1; }
 
 message BlameListSingleCommit {
   string commit = 1;
@@ -346,7 +345,8 @@ enum CulpritActionType {
 message RegressionRange {
   buildbucket.v2.GitilesCommit last_passed = 1;
   buildbucket.v2.GitilesCommit first_failed = 2;
-  // How many revisions between last passed (exclusively) and first failed (inclusively).
+  // How many revisions between last passed (exclusively) and first failed
+  // (inclusively).
   int32 number_of_revisions = 3;
 }
 
@@ -369,10 +369,13 @@ message SingleRerun {
   RerunResult rerun_result = 7;
   // Gitiles commit of commit to rerun
   buildbucket.v2.GitilesCommit commit = 8;
-  // Index of the commit to rerun within the blamelist, if this is an nthsection rerun.
-  // We need to use a string instead of an int here because 0 is a possible value
-  // and 0 value will get lost due to the "omitempty" flag in the generated proto.
+  // Index of the commit to rerun within the blamelist, if this is an nthsection
+  // rerun. We need to use a string instead of an int here because 0 is a
+  // possible value and 0 value will get lost due to the "omitempty" flag in the
+  // generated proto.
   string index = 9;
+  // Type of rerun: either "Culprit Verification" or "NthSection"
+  string type = 10;
 }
 
 // RerunResult contains the result of one rerun.

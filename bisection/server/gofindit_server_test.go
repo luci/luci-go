@@ -449,6 +449,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Id:      "commit5",
 			},
 			Index: "5",
+			Type:  "Culprit Verification",
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
@@ -466,6 +467,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Id:      "commit6",
 			},
 			Index: "6",
+			Type:  "Culprit Verification",
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
@@ -483,6 +485,7 @@ func TestQueryAnalysis(t *testing.T) {
 				Id:      "commit8",
 			},
 			Index: "8",
+			Type:  "NthSection",
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
