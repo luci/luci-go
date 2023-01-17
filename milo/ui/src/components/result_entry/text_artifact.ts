@@ -100,7 +100,7 @@ export class TextArtifactElement extends MobxLitElement {
         margin: 0;
         font-size: 12px;
         white-space: pre-wrap;
-        overflow-wrap: break-word;
+        overflow-wrap: break-anywhere;
       }
     `,
   ];
