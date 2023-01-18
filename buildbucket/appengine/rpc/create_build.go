@@ -288,25 +288,15 @@ func validateDimensions(dims []*pb.RequestedDimension) error {
 	return nil
 }
 
-func validateInfraBackendTaskTarget(target string) error {
-	invalidKeywordsForTaskBackendTarget := []string{"http", "rpc"}
-	for _, word := range invalidKeywordsForTaskBackendTarget {
-		if strings.Contains(target, word) {
-			return errors.Reason("backend task target contains invalid keyword: %s.", word).Err()
-		}
-	}
-	split := strings.Split(target, "://")
-	if len(split) != 2 {
-		return errors.Reason("backend task target was not properly formatted.").Err()
-	}
-	return nil
-}
-
 func validateInfraBackend(ctx context.Context, ib *pb.BuildInfra_Backend) error {
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		return errors.Annotate(err, "error fetching service config").Err()
+	}
 	if ib == nil {
 		return nil
 	}
-	return validateInfraBackendTaskTarget(ib.GetTask().GetId().GetTarget())
+	return config.ValidateTaskBackendTarget(globalCfg, ib.GetTask().GetId().GetTarget())
 }
 
 func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {

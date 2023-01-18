@@ -169,6 +169,22 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 			},
 		})
 
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Backends: []*pb.BackendSetting{
+				{
+					Target:   "swarming://chromium-swarm",
+					Hostname: "chromium-swarm.appspot.com",
+				},
+			},
+			Experiment: &pb.ExperimentSettings{
+				Experiments: []*pb.ExperimentSettings_Experiment{
+					{
+						Name: "luci.wellknown.exp",
+					},
+				},
+			},
+		}), ShouldBeNil)
+
 		Convey("works", func() {
 			_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 			So(err, ShouldBeNil)
@@ -530,7 +546,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
 							Task: &pb.Task{
 								Id: &pb.TaskID{
-									Target: "swarming://chromium-swarming.appspot.com",
+									Target: "swarming://chromium-swarm",
 								},
 							},
 						}
@@ -542,7 +558,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
 							Task: &pb.Task{
 								Id: &pb.TaskID{
-									Target: "swarming://chromium-swarming.appspot.com",
+									Target: "swarming://chromium-swarm",
 								},
 							},
 						}
@@ -554,24 +570,12 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
 							Task: &pb.Task{
 								Id: &pb.TaskID{
-									Target: "swarmingchromium-swarming.appspot.com",
+									Target: "swarming://v8-swarm",
 								},
 							},
 						}
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						So(err, ShouldErrLike, `build: infra: backend: backend task target was not properly formatted.`)
-					})
-					Convey("targetIsNotValidHttp", func() {
-						req.Build.Infra.Swarming = nil
-						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
-							Task: &pb.Task{
-								Id: &pb.TaskID{
-									Target: "https://swarmingchromium-swarming.appspot.com",
-								},
-							},
-						}
-						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						So(err, ShouldErrLike, `build: infra: backend: backend task target contains invalid keyword: http.`)
+						So(err, ShouldErrLike, `build: infra: backend: provided backend target was not in global config`)
 					})
 				})
 			})
