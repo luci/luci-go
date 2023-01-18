@@ -481,7 +481,6 @@ var messages = []string{
 	"Selamat Maju Jaya!",
 	"Ia manuia",
 	"Suwertehin ka sana",
-	"Удачи!",
 	"Հաջողությո'ւն",
 	"Іске сәт",
 	"Амжилт хүсье",
