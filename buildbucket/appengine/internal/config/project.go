@@ -477,7 +477,6 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			ctx.Errorf("mutually exclusive fields swarming and dynamic_builder_template both exist in bucket %q", bucket.Name)
 		}
 		bucketNames.Add(bucket.Name)
-		// TODO(crbug/1399576): Change this once bucket proto replaces Swarming message name
 		if s := bucket.Swarming; s != nil {
 			validateProjectSwarming(ctx, s, wellKnownExperiments)
 		}
@@ -568,32 +567,6 @@ func validateBucketName(bucket, project string) error {
 	return nil
 }
 
-// ValidateTaskBackendTarget validates the target value for a
-// buildbucket task backend.
-func ValidateTaskBackendTarget(globalCfg *pb.SettingsCfg, target string) error {
-	for _, config := range globalCfg.Backend {
-		if config.Target == target {
-			return nil
-		}
-	}
-	return errors.Reason("provided backend target was not in global config").Err()
-}
-
-func validateTaskBackend(ctx *validation.Context, backend *pb.BuilderConfig_Backend) {
-	globalCfg, err := GetSettingsCfg(ctx.Context)
-	if err != nil {
-		ctx.Errorf("could not get global settings config")
-	}
-
-	// validating backend.Target
-	err = ValidateTaskBackendTarget(globalCfg, backend.GetTarget())
-	if err != nil {
-		ctx.Errorf("error validating task backend: %s", err)
-	}
-	// TODO(randymaldonado@): Once backend.config_json has values populated and we know what will be in it
-	// create validation for that.
-}
-
 // validateBuilderCfg validate a Builder config message.
 func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownExperiments stringset.Set) {
 	// TODO(iannucci): also validate builder allowed_property_overrides field. See
@@ -604,24 +577,15 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 		ctx.Errorf("name must match %s", builderRegex)
 	}
 
-	// task backend validation
-	if b.GetBackend() != nil && b.GetSwarmingHost() != "" {
-		ctx.Errorf("only one of swarming host or task backend is allowed")
-	} else if b.GetBackend() != nil {
-		// validate task backend
-		validateTaskBackend(ctx, b.Backend)
-	} else {
-		// validate swarming_host
-		validateHostname(ctx, "swarming_host", b.SwarmingHost)
+	validateHostname(ctx, "swarming_host", b.SwarmingHost)
 
-		// validate swarming_tags
-		for i, swarmingTag := range b.SwarmingTags {
-			ctx.Enter("swarming_tags #%d", i)
-			if swarmingTag != "vpython:native-python-wrapper" {
-				ctx.Errorf("Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
-			}
-			ctx.Exit()
+	// swarming_tags
+	for i, swarmingTag := range b.SwarmingTags {
+		ctx.Enter("swarming_tags #%d", i)
+		if swarmingTag != "vpython:native-python-wrapper" {
+			ctx.Errorf("Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
 		}
+		ctx.Exit()
 	}
 
 	validateDimensions(ctx, b.Dimensions)

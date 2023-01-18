@@ -129,7 +129,7 @@ func TestValidateProject(t *testing.T) {
 
 	Convey("validate project_config.Swarming", t, func() {
 		vctx := &validation.Context{
-			Context: memory.Use(context.Background()),
+			Context: context.Background(),
 		}
 		wellKnownExperiments := stringset.NewFromSlice("luci.well_known")
 		toBBSwarmingCfg := func(content string) *pb.Swarming {
@@ -472,63 +472,6 @@ func TestValidateProject(t *testing.T) {
 			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "bad!"): value must be in [0, 100]`)
 			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "negative"): value must be in [0, 100]`)
 			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "luci.bad"): unknown experiment has reserved prefix "luci."`)
-		})
-
-		Convey("task backend and swarming in builder", func() {
-			backendSettings := []*pb.BackendSettings{
-				{
-					Target:   "swarming://chromium-swarm",
-					Hostname: "swarming_hostname",
-				},
-			}
-			settingsCfg := &pb.SettingsCfg{Backend: backendSettings}
-			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
-			content := `
-				builders {
-					name: "b1"
-					swarming_host: "example.com"
-					exe {
-						cipd_package: "infra/executable/bar"
-						cipd_version: "refs/heads/main"
-					}
-					properties: "{}"
-					backend: {
-						target: "swarming://chromium-swarm"
-					}
-				}
-			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
-			ve, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 1)
-			So(ve.Errors[0].Error(), ShouldContainSubstring, "only one of swarming host or task backend is allowed")
-		})
-
-		Convey("task backend and no swarming in builder", func() {
-			backendSettings := []*pb.BackendSettings{
-				{
-					Target:   "swarming://chromium-swarm",
-					Hostname: "swarming_hostname",
-				},
-			}
-			settingsCfg := &pb.SettingsCfg{Backend: backendSettings}
-			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
-			content := `
-				builders {
-					name: "b1"
-					exe {
-						cipd_package: "infra/executable/bar"
-						cipd_version: "refs/heads/main"
-					}
-					properties: "{}"
-					backend: {
-						target: "swarming://chromium-swarm"
-					}
-				}
-			`
-			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
-			_, ok := vctx.Finalize().(*validation.Error)
-			So(ok, ShouldEqual, false)
 		})
 	})
 
