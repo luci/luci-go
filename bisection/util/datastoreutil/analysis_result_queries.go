@@ -107,8 +107,8 @@ func GetHeuristicAnalysis(c context.Context, analysis *model.CompileFailureAnaly
 	return heuristicAnalysis, nil
 }
 
-// GetSuspects returns the heuristic suspects identified by the given heuristic analysis
-func GetSuspects(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) ([]*model.Suspect, error) {
+// GetSuspectsForHeuristicAnalysis returns the heuristic suspects identified by the given heuristic analysis
+func GetSuspectsForHeuristicAnalysis(c context.Context, heuristicAnalysis *model.CompileHeuristicAnalysis) ([]*model.Suspect, error) {
 	// Getting the suspects for heuristic analysis
 	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, heuristicAnalysis)).Order("-score")
@@ -118,6 +118,24 @@ func GetSuspects(c context.Context, heuristicAnalysis *model.CompileHeuristicAna
 	}
 
 	return suspects, nil
+}
+
+// GetSuspectForNthSectionAnalysis returns the heuristic suspects identified by the given heuristic analysis
+func GetSuspectForNthSectionAnalysis(c context.Context, nthsectionAnalysis *model.CompileNthSectionAnalysis) (*model.Suspect, error) {
+	// Getting the suspects for nthsection analysis
+	suspects := []*model.Suspect{}
+	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, nthsectionAnalysis))
+	err := datastore.GetAll(c, q, &suspects)
+	if err != nil {
+		return nil, err
+	}
+	if len(suspects) == 0 {
+		return nil, nil
+	}
+	if len(suspects) > 0 {
+		logging.Warningf(c, "nthsectionAnalysis has more than 1 suspect %d", len(suspects))
+	}
+	return suspects[0], nil
 }
 
 // GetCompileFailureForAnalysisID gets CompileFailure for analysisID.

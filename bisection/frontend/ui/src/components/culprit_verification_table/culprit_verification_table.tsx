@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import './culprit_verification_table.css';
 
 import Paper from '@mui/material/Paper';
@@ -23,18 +22,15 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
+import { Analysis, Suspect } from '../../services/luci_bisection';
 import { CulpritVerificationTableRow } from './culprit_verification_table_row/culprit_verification_table_row';
 
-import {
-  Analysis,
-  HeuristicSuspect,
-} from '../../services/luci_bisection';
 
 interface Props {
   result?: Analysis;
 }
 
-function getRows(suspects: HeuristicSuspect[]) {
+function getRows(suspects: Suspect[]) {
   return suspects.map((suspect) => (
     <CulpritVerificationTableRow
       key={suspect.gitilesCommit.id}
@@ -43,17 +39,41 @@ function getRows(suspects: HeuristicSuspect[]) {
   ));
 }
 
+function getSuspects(result: Analysis | undefined): Suspect[] {
+  const heuristicSuspects = result?.heuristicResult?.suspects ?? [];
+  const suspects = heuristicSuspects.map((s) => ({
+    gitilesCommit: s.gitilesCommit,
+    reviewUrl: s.reviewUrl,
+    reviewTitle: s.reviewTitle,
+    verificationDetails: s.verificationDetails,
+    type: 'Heuristic',
+  }));
+  if (result?.nthSectionResult?.suspect) {
+    const s = result.nthSectionResult.suspect;
+    suspects.push({
+      gitilesCommit: s.gitilesCommit,
+      reviewUrl: s.reviewUrl,
+      reviewTitle: s.reviewTitle,
+      verificationDetails: s.verificationDetails,
+      type: 'NthSection',
+    });
+  }
+  return suspects;
+}
+
 export const CulpritVerificationTable = ({ result }: Props) => {
-  // TODO: Support nth-section suspects
-  const suspects = result?.heuristicResult?.suspects ?? []
+  const suspects = getSuspects(result);
   if (!suspects || suspects.length == 0) {
     return (
-      <span className='data-placeholder'>No culprit verification results</span>
+      <span className="data-placeholder">No culprit verification results</span>
     );
   }
   return (
-    <TableContainer component={Paper} className='culprit-verification-table-container'>
-      <Table className='culprit-verification-table' size='small'>
+    <TableContainer
+      component={Paper}
+      className="culprit-verification-table-container"
+    >
+      <Table className="culprit-verification-table" size="small">
         <TableHead>
           <TableRow>
             <TableCell>Suspect CL</TableCell>
@@ -62,9 +82,7 @@ export const CulpritVerificationTable = ({ result }: Props) => {
             <TableCell>Reruns</TableCell>
           </TableRow>
         </TableHead>
-        <TableBody>
-          {getRows(suspects)}
-        </TableBody>
+        <TableBody>{getRows(suspects)}</TableBody>
       </Table>
     </TableContainer>
   );

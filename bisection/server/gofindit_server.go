@@ -155,47 +155,44 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	if err != nil {
 		return nil, err
 	}
-	if heuristicAnalysis == nil {
-		// No heuristic analysis associated with the compile failure analysis
-		return result, nil
-	}
-
-	suspects, err := datastoreutil.GetSuspects(c, heuristicAnalysis)
-	if err != nil {
-		return nil, err
-	}
-
-	pbSuspects := make([]*pb.HeuristicSuspect, len(suspects))
-	for i, suspect := range suspects {
-		pbSuspects[i] = &pb.HeuristicSuspect{
-			GitilesCommit:   &suspect.GitilesCommit,
-			ReviewUrl:       suspect.ReviewUrl,
-			Score:           int32(suspect.Score),
-			Justification:   suspect.Justification,
-			ConfidenceLevel: heuristic.GetConfidenceLevel(suspect.Score),
-		}
-
-		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+	if heuristicAnalysis != nil {
+		suspects, err := datastoreutil.GetSuspectsForHeuristicAnalysis(c, heuristicAnalysis)
 		if err != nil {
-			return nil, errors.Annotate(err, "couldn't constructSuspectVerificationDetails").Err()
+			return nil, err
 		}
-		pbSuspects[i].VerificationDetails = verificationDetails
 
-		// TODO: check access permissions before including the review title.
-		//       For now, we will include it by default as LUCI Bisection access
-		//       should already be restricted to internal users only.
-		pbSuspects[i].ReviewTitle = suspect.ReviewTitle
-	}
-	heuristicResult := &pb.HeuristicAnalysisResult{
-		Status:    heuristicAnalysis.Status,
-		StartTime: timestamppb.New(heuristicAnalysis.StartTime),
-		Suspects:  pbSuspects,
-	}
-	if heuristicAnalysis.HasEnded() {
-		heuristicResult.EndTime = timestamppb.New(heuristicAnalysis.EndTime)
-	}
+		pbSuspects := make([]*pb.HeuristicSuspect, len(suspects))
+		for i, suspect := range suspects {
+			pbSuspects[i] = &pb.HeuristicSuspect{
+				GitilesCommit:   &suspect.GitilesCommit,
+				ReviewUrl:       suspect.ReviewUrl,
+				Score:           int32(suspect.Score),
+				Justification:   suspect.Justification,
+				ConfidenceLevel: heuristic.GetConfidenceLevel(suspect.Score),
+			}
 
-	result.HeuristicResult = heuristicResult
+			verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+			if err != nil {
+				return nil, errors.Annotate(err, "couldn't constructSuspectVerificationDetails").Err()
+			}
+			pbSuspects[i].VerificationDetails = verificationDetails
+
+			// TODO: check access permissions before including the review title.
+			//       For now, we will include it by default as LUCI Bisection access
+			//       should already be restricted to internal users only.
+			pbSuspects[i].ReviewTitle = suspect.ReviewTitle
+		}
+		heuristicResult := &pb.HeuristicAnalysisResult{
+			Status:    heuristicAnalysis.Status,
+			StartTime: timestamppb.New(heuristicAnalysis.StartTime),
+			Suspects:  pbSuspects,
+		}
+		if heuristicAnalysis.HasEnded() {
+			heuristicResult.EndTime = timestamppb.New(heuristicAnalysis.EndTime)
+		}
+
+		result.HeuristicResult = heuristicResult
+	}
 
 	// Get culprits
 	culprits := make([]*pb.Culprit, len(analysis.VerifiedCulprits))
@@ -341,9 +338,26 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 			FirstFailed: getCommitFromIndex(ff, nsa.BlameList, cfa),
 			LastPassed:  getCommitFromIndex(lp, nsa.BlameList, cfa),
 		}
-		if ff == lp {
-			result.Suspect = getCommitFromIndex(ff, nsa.BlameList, cfa)
+	}
+
+	// Find suspect
+	suspect, err := datastoreutil.GetSuspectForNthSectionAnalysis(c, nsa)
+	if err != nil {
+		return nil, err
+	}
+	if suspect != nil {
+		pbSuspect := &pb.NthSectionSuspect{
+			GitilesCommit: &suspect.GitilesCommit,
+			ReviewUrl:     suspect.ReviewUrl,
+			ReviewTitle:   suspect.ReviewTitle,
 		}
+
+		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+		if err != nil {
+			return nil, errors.Annotate(err, "couldn't constructSuspectVerificationDetails").Err()
+		}
+		pbSuspect.VerificationDetails = verificationDetails
+		result.Suspect = pbSuspect
 	}
 
 	return result, nil

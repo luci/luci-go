@@ -50,10 +50,17 @@ function createMockAnalysis(): NthSectionAnalysisResult {
     endTime: '2022-09-06T07:13:16.893998Z',
     status: 'SUSPECTFOUND',
     suspect: {
-      host: 'testHost',
-      project: 'testProject',
-      ref: 'test/ref/dev',
-      id: 'commit5',
+      gitilesCommit: {
+        host: 'testHost',
+        project: 'testProject',
+        ref: 'test/ref/dev',
+        id: 'commit5',
+      },
+      reviewUrl: 'http://this/is/review/url',
+      reviewTitle: 'Review title',
+      verificationDetails: {
+        status: "Vindicated",
+      },
     },
     reruns: [
       {

@@ -49,7 +49,7 @@ function getSuspectRange(analysis: Analysis): ExternalLink[] {
     const result = analysis.nthSectionResult;
 
     if (result.suspect) {
-      return [linkToCommit(result.suspect)];
+      return [linkToCommit(result.suspect.gitilesCommit)];
     }
 
     if (

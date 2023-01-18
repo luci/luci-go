@@ -19,11 +19,11 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
 import { getCommitShortHash } from '../../../tools/commit_formatters';
-import { HeuristicSuspect } from '../../../services/luci_bisection';
+import { Suspect } from '../../../services/luci_bisection';
 import { VerificationDetailsTable } from '../../culprits_table/culprits_table';
 
 interface Props {
-  suspect: HeuristicSuspect;
+  suspect: Suspect;
 }
 
 export const CulpritVerificationTableRow = ({ suspect }: Props) => {
@@ -31,7 +31,8 @@ export const CulpritVerificationTableRow = ({ suspect }: Props) => {
     gitilesCommit,
     reviewUrl,
     reviewTitle,
-    verificationDetails
+    verificationDetails,
+    type,
   } = suspect;
 
   let suspectDescription = getCommitShortHash(gitilesCommit.id);
@@ -53,7 +54,7 @@ export const CulpritVerificationTableRow = ({ suspect }: Props) => {
           </Link>
         </TableCell>
         <TableCell className='overview-cell'>
-          Heuristic
+          {type}
         </TableCell>
         <TableCell className='overview-cell'>
           {verificationDetails.status}

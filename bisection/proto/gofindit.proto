@@ -243,6 +243,8 @@ message HeuristicSuspect {
 }
 
 message NthSectionAnalysisResult {
+  reserved 5;
+
   // The status of the nth-section analysis.
   AnalysisStatus status = 1;
   // Timestamp for the start time of the nth-section analysis
@@ -251,8 +253,6 @@ message NthSectionAnalysisResult {
   google.protobuf.Timestamp last_updated_time = 3;
   // Timestamp for the end time of the nth-section analysis
   google.protobuf.Timestamp end_time = 4;
-  // Optional, the suspect GitilesCommit, when status = FOUND
-  buildbucket.v2.GitilesCommit suspect = 5;
   // Optional, whether the culprit has been verified, when status = FOUND
   bool verified = 6;
   // Optional, when status = RUNNING.
@@ -270,6 +270,19 @@ message NthSectionAnalysisResult {
   // The commits are sorted by recency, with the most recent commit at the
   // beginning.
   BlameList blameList = 10;
+  // Optional, when nthsection found a suspect
+  NthSectionSuspect suspect = 11;
+}
+
+message NthSectionSuspect {
+  // A suspect revision of nthsection analysis.
+  buildbucket.v2.GitilesCommit gitiles_commit = 1;
+  // Review URL for the commit
+  string reviewUrl = 2;
+  // Title of the review for the commit
+  string reviewTitle = 3;
+  // The details of suspect verification for the suspect
+  SuspectVerificationDetails verification_details = 4;
 }
 
 message BlameList { repeated BlameListSingleCommit commits = 1; }

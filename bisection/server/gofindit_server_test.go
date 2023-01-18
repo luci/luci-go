@@ -163,6 +163,21 @@ func TestQueryAnalysis(t *testing.T) {
 		So(datastore.Put(c, nsa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
+		// Create suspect for nthsection
+		nthSectionSuspect := &model.Suspect{
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit6",
+			},
+			ReviewUrl:          "http://this/is/review/url1",
+			ReviewTitle:        "This is review title1",
+			VerificationStatus: model.SuspectVerificationStatus_Vindicated,
+			ParentAnalysis:     datastore.KeyForObj(c, nsa),
+		}
+		So(datastore.Put(c, nthSectionSuspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
 		// Add culprit verification rerun build for suspect
 		suspectRerunBuild := &model.CompileRerunBuild{
 			Id: 8877665544332211,
@@ -409,11 +424,17 @@ func TestQueryAnalysis(t *testing.T) {
 		So(proto.Equal(nthSectionResult.StartTime, &timestamppb.Timestamp{Seconds: 100}), ShouldBeTrue)
 		So(proto.Equal(nthSectionResult.EndTime, &timestamppb.Timestamp{Seconds: 102}), ShouldBeTrue)
 		So(nthSectionResult.Status, ShouldEqual, pb.AnalysisStatus_FOUND)
-		diff := cmp.Diff(nthSectionResult.Suspect, &buildbucketpb.GitilesCommit{
-			Host:    "host1",
-			Project: "proj1",
-			Ref:     "ref",
-			Id:      "commit5",
+		diff := cmp.Diff(nthSectionResult.Suspect, &pb.NthSectionSuspect{
+			GitilesCommit: &buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit6",
+			},
+			ReviewUrl:   "http://this/is/review/url1",
+			ReviewTitle: "This is review title1",
+			VerificationDetails: &pb.SuspectVerificationDetails{
+				Status: string(model.SuspectVerificationStatus_Vindicated),
+			},
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 

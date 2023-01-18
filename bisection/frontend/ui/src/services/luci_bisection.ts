@@ -166,10 +166,18 @@ export interface NthSectionAnalysisResult {
   status: AnalysisStatus;
   startTime: string,
   endTime: string,
-  suspect?: GitilesCommit;
+  suspect?: Suspect;
   remainingNthSectionRange?: RegressionRange;
   reruns: SingleRerun[];
   blameList: BlameList;
+}
+
+export interface Suspect {
+  gitilesCommit: GitilesCommit;
+  reviewUrl: string;
+  reviewTitle?: string;
+  verificationDetails: SuspectVerificationDetails
+  type?: string;
 }
 
 export interface BlameList {

@@ -183,7 +183,7 @@ func TestGetHeuristicAnalysis(t *testing.T) {
 	})
 }
 
-func TestGetSuspects(t *testing.T) {
+func TestGetSuspectsForHeuristicAnalysis(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
 	datastore.GetTestable(c).AutoIndex(true)
@@ -196,7 +196,7 @@ func TestGetSuspects(t *testing.T) {
 		So(datastore.Put(c, heuristicAnalysis), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		suspects, err := GetSuspects(c, heuristicAnalysis)
+		suspects, err := GetSuspectsForHeuristicAnalysis(c, heuristicAnalysis)
 		So(err, ShouldBeNil)
 		So(len(suspects), ShouldEqual, 0)
 	})
@@ -242,13 +242,47 @@ func TestGetSuspects(t *testing.T) {
 
 		datastore.GetTestable(c).CatchupIndexes()
 
-		suspects, err := GetSuspects(c, heuristicAnalysis)
+		suspects, err := GetSuspectsForHeuristicAnalysis(c, heuristicAnalysis)
 		So(err, ShouldBeNil)
 		So(len(suspects), ShouldEqual, 4)
 		So(suspects[0].Score, ShouldEqual, 4)
 		So(suspects[1].Score, ShouldEqual, 3)
 		So(suspects[2].Score, ShouldEqual, 2)
 		So(suspects[3].Score, ShouldEqual, 1)
+	})
+}
+
+func TestGetSuspectForNthSectionAnalysis(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+
+	Convey("No suspects found", t, func() {
+		nthSectionAnalysis := &model.CompileNthSectionAnalysis{}
+		So(datastore.Put(c, nthSectionAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect, err := GetSuspectForNthSectionAnalysis(c, nthSectionAnalysis)
+		So(err, ShouldBeNil)
+		So(suspect, ShouldBeNil)
+	})
+
+	Convey("Suspect found", t, func() {
+		nthSectionAnalysis := &model.CompileNthSectionAnalysis{}
+		So(datastore.Put(c, nthSectionAnalysis), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect := &model.Suspect{
+			ParentAnalysis: datastore.KeyForObj(c, nthSectionAnalysis),
+			Id:             123,
+		}
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect, err := GetSuspectForNthSectionAnalysis(c, nthSectionAnalysis)
+		So(err, ShouldBeNil)
+		So(suspect, ShouldNotBeNil)
+		So(suspect.Id, ShouldEqual, 123)
 	})
 }
 

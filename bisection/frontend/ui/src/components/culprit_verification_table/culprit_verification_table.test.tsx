@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
+import { Analysis } from '../../services/luci_bisection';
 import { CulpritVerificationTable } from './culprit_verification_table';
-
-import {
-  Analysis,
-} from '../../services/luci_bisection';
 
 
 describe('Test CulpritVerificationTable component', () => {
   test('if all information is displayed', async () => {
-    const mockAnalysis = createMockAnalysis()
+    const mockAnalysis = createMockAnalysis();
 
     render(<CulpritVerificationTable result={mockAnalysis} />);
 
@@ -36,17 +32,34 @@ describe('Test CulpritVerificationTable component', () => {
     expect(screen.getByText('def456d: CL 1')).toBeInTheDocument();
     expect(screen.getByText('Heuristic')).toBeInTheDocument();
     expect(screen.getByText('Confirmed Culprit')).toBeInTheDocument();
-    expect(screen.getByText('Failed')).toHaveAttribute('href', 'https://ci.chromium.org/b/8877665544332211')
-    expect(screen.getByText('Passed')).toHaveAttribute('href', 'https://ci.chromium.org/b/8765432187654321');
+    expect(screen.getByText('Failed')).toHaveAttribute(
+        'href',
+        'https://ci.chromium.org/b/8877665544332211',
+    );
+    expect(screen.getByText('Passed')).toHaveAttribute(
+        'href',
+        'https://ci.chromium.org/b/8765432187654321',
+    );
+    expect(screen.getByText('def4def: CL 2')).toBeInTheDocument();
+    expect(screen.getByText('NthSection')).toBeInTheDocument();
+    expect(screen.getByText('Error')).toBeInTheDocument();
+    expect(screen.getByText('Infra failed')).toHaveAttribute(
+        'href',
+        'https://ci.chromium.org/b/8877665544332216',
+    );
+    expect(screen.getByText('Canceled')).toHaveAttribute(
+        'href',
+        'https://ci.chromium.org/b/8765432187654327',
+    );
   });
 });
 
 function createMockAnalysis(): Analysis {
   return {
-    analysisId: "1234",
+    analysisId: '1234',
     status: 'FOUND',
     lastPassedBbid: '0',
-    firstFailedBbid: "1234",
+    firstFailedBbid: '1234',
     createdTime: '2022-09-06T07:13:16.398865Z',
     lastUpdatedTime: '2022-09-06T07:13:16.893998Z',
     endTime: '2022-09-06T07:13:16.893998Z',
@@ -68,7 +81,8 @@ function createMockAnalysis(): Analysis {
             position: '298',
           },
           reviewTitle: 'CL 1',
-          reviewUrl: 'https://chromium-review.googlesource.com/placeholder/+/92345',
+          reviewUrl:
+            'https://chromium-review.googlesource.com/placeholder/+/92345',
           verificationDetails: {
             status: 'Confirmed Culprit',
             suspectRerun: {
@@ -84,7 +98,7 @@ function createMockAnalysis(): Analysis {
                 ref: 'test/ref/dev',
                 id: 'def456def456',
               },
-              type: "Culprit Verification",
+              type: 'Culprit Verification',
             },
             parentRerun: {
               startTime: '2022-09-06T07:16:16.398865Z',
@@ -99,14 +113,68 @@ function createMockAnalysis(): Analysis {
                 ref: 'test/ref/dev',
                 id: 'def456def456',
               },
-              type: "Culprit Verification",
+              type: 'Culprit Verification',
             },
           },
           score: '10',
           justification: 'Justification',
           confidenceLevel: 'HIGH',
         },
-      ]
+      ],
+    },
+    nthSectionResult: {
+      status: 'SUSPECTFOUND',
+      startTime: '2022-09-06T07:13:16.398865Z',
+      endTime: '2022-09-06T07:13:16.398865Z',
+      blameList: {
+        commits: [],
+      },
+      reruns: [],
+      suspect: {
+        gitilesCommit: {
+          host: 'testHost',
+          project: 'testProject',
+          ref: 'test/ref/dev',
+          id: 'def4def457',
+          position: '298',
+        },
+        reviewTitle: 'CL 2',
+        reviewUrl:
+          'https://chromium-review.googlesource.com/placeholder/+/99999',
+        verificationDetails: {
+          status: 'Error',
+          suspectRerun: {
+            startTime: '2022-09-06T07:13:16.398865Z',
+            endTime: '2022-09-06T07:13:18.398865Z',
+            bbid: '8877665544332216',
+            rerunResult: {
+              rerunStatus: 'RERUN_STATUS_INFRA_FAILED',
+            },
+            commit: {
+              host: 'testHost',
+              project: 'testProject',
+              ref: 'test/ref/dev',
+              id: 'def456def456',
+            },
+            type: 'Culprit Verification',
+          },
+          parentRerun: {
+            startTime: '2022-09-06T07:16:16.398865Z',
+            endTime: '2022-09-06T07:16:31.398865Z',
+            bbid: '8765432187654327',
+            rerunResult: {
+              rerunStatus: 'RERUN_STATUS_CANCELED',
+            },
+            commit: {
+              host: 'testHost',
+              project: 'testProject',
+              ref: 'test/ref/dev',
+              id: 'def456def456',
+            },
+            type: 'Culprit Verification',
+          },
+        },
+      },
     },
   };
-};
+}

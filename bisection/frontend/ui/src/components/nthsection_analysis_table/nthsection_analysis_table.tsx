@@ -24,7 +24,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-import { linkToCommit, EMPTY_LINK } from '../../tools/link_constructors';
+import { EMPTY_LINK } from '../../tools/link_constructors';
+import { getCommitShortHash } from '../../tools/commit_formatters';
 import { getFormattedTimestamp } from '../../tools/timestamp_formatters';
 
 import { AnalysisStatusInfo } from '../status_info/status_info';
@@ -68,7 +69,11 @@ export const NthSectionAnalysisTable = ({ result }: Props) => {
 export const NthSectionAnalysisDetail = ({ result }: Props) => {
   var commitLink = EMPTY_LINK;
   if (result?.suspect) {
-    commitLink = linkToCommit(result.suspect);
+    commitLink.url = result.suspect.reviewUrl;
+    commitLink.linkText = getCommitShortHash(result.suspect.gitilesCommit.id);
+    if (result.suspect.reviewTitle) { 
+      commitLink.linkText += `: ${result.suspect.reviewTitle}`;
+    }
   }
   return (
     <TableContainer>
@@ -92,7 +97,6 @@ export const NthSectionAnalysisDetail = ({ result }: Props) => {
               <AnalysisStatusInfo status={result!.status}></AnalysisStatusInfo>
             </TableCell>
             <TableCell variant='head'>Suspect</TableCell>
-            {/* TODO (nqmtuan): Show review title instead */}
             <TableCell>
               <Link
                 href={commitLink.url}
