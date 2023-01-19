@@ -16,6 +16,7 @@ package casimpl
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -54,6 +55,7 @@ working directory, '-paths :foo' is sufficient.`,
 			c := archiveRun{}
 			c.Init(authFlags)
 			c.Flags.Var(&c.paths, "paths", "File(s)/Directory(ies) to archive. Specify as <working directory>:<relative path to file/dir>")
+			c.Flags.StringVar(&c.pathsJSON, "paths-json", "", "JSON file listing file(s)/directory(ies) to archive. File should contain a JSON array of 2-arrays of the form [<working directory>, <relative path to file/dir>]")
 			c.Flags.StringVar(&c.dumpDigest, "dump-digest", "", "Dump uploaded CAS root digest to file in the format of '<Hash>/<Size>'")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump upload stats to json file.")
 			return &c
@@ -64,6 +66,7 @@ working directory, '-paths :foo' is sufficient.`,
 type archiveRun struct {
 	commonFlags
 	paths      scatterGather
+	pathsJSON  string
 	dumpDigest string
 	dumpJSON   string
 }
@@ -110,6 +113,17 @@ func (c *archiveRun) doArchive(ctx context.Context) error {
 	ctx, err := casclient.ContextWithMetadata(ctx, "cas")
 	if err != nil {
 		return err
+	}
+
+	if (len(c.paths) == 0) == (c.pathsJSON == "") {
+		return errors.Reason("exactly one of -paths or -paths-json must be specified").Err()
+	}
+	if c.pathsJSON != "" {
+		paths, err := loadPathsJSON(c.pathsJSON)
+		if err != nil {
+			return errors.Annotate(err, "failed to read -paths-json").Err()
+		}
+		c.paths = paths
 	}
 
 	root, err := getRoot(c.paths)
@@ -209,4 +223,22 @@ func (c *archiveRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 
 	return 0
+}
+
+func loadPathsJSON(pathsJSON string) (scatterGather, error) {
+	b, err := os.ReadFile(pathsJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	var unmarshaled [][2]string
+	if err := json.Unmarshal(b, &unmarshaled); err != nil {
+		return nil, err
+	}
+
+	res := make(scatterGather)
+	for _, item := range unmarshaled {
+		res.Add(item[0], item[1])
+	}
+	return res, nil
 }

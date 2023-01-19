@@ -15,6 +15,9 @@
 package casimpl
 
 import (
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -36,5 +39,31 @@ func TestGetRoot(t *testing.T) {
 
 		_, err = getRoot(dirs)
 		So(err, ShouldNotBeNil)
+	})
+}
+
+func TestLoadPathsJSON(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Basic`, t, func() {
+		dir := t.TempDir()
+		input := [][2]string{
+			{dir, "foo.txt"},
+			{dir, "bar.txt"},
+		}
+		b, err := json.Marshal(input)
+		So(err, ShouldBeNil)
+
+		pathsJSON := filepath.Join(dir, "paths.json")
+		err = os.WriteFile(pathsJSON, b, 0o600)
+		So(err, ShouldBeNil)
+
+		res, err := loadPathsJSON(pathsJSON)
+		So(err, ShouldBeNil)
+
+		So(res, ShouldResemble, scatterGather{
+			"foo.txt": dir,
+			"bar.txt": dir,
+		})
 	})
 }
