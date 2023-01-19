@@ -1,4 +1,7 @@
+# Note: the order is important. The first match wins.
 dispatch:
+  - url: "*/internal/tasks/t/verify-upload/*"
+    service: verification
   - url: "*/internal/tasks/*"
     service: backend
   - url: "*/internal/pubsub/*"
