@@ -65,6 +65,12 @@ func validateSettingsCfg(ctx *validation.Context, configSet, path string, conten
 		ctx.Exit()
 	}
 
+	for i, backend := range cfg.GetBackends() {
+		ctx.Enter("Backends.BackendSetting #%d", i)
+		validateHostname(ctx, "BackendSetting.hostname", backend.GetHostname())
+		ctx.Exit()
+	}
+
 	validateHostname(ctx, "logdog.hostname", cfg.Logdog.GetHostname())
 	validateHostname(ctx, "resultdb.hostname", cfg.Resultdb.GetHostname())
 	return nil

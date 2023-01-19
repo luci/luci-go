@@ -175,6 +175,34 @@ func TestConfig(t *testing.T) {
 			So(vctx.Finalize().Error(), ShouldContainSubstring, "default_value and minimum_value must both be 0 when inactive is true")
 		})
 
+		Convey("invalid backend", func() {
+			content := []byte(`
+				backends {
+					target: "swarming://chromium-swarm"
+					hostname: "swarming://chromium-swarm"
+				}
+			`)
+			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "BackendSetting.hostname must not contain '://")
+		})
+
+		Convey("valid empty target backend", func() {
+			content := []byte(`
+				logdog {
+					hostname: "logs.chromium.org"
+				}
+				resultdb {
+					hostname: "results.api.cr.dev"
+				}
+				backends {
+					target: ""
+					hostname: "chromium-swarm-dev.appspot.com"
+				}
+			`)
+			So(validateSettingsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+
 		Convey("OK", func() {
 			var okCfg = `
 				swarming {
@@ -214,6 +242,10 @@ func TestConfig(t *testing.T) {
 					}
 					# inactive experiments
 					experiments { name: "luci.use_realms" inactive: true }
+				}
+				backends {
+					target: "swarming://chromium-swarm"
+					hostname: "chromium-swarm.appspot.com"
 				}
 			`
 			So(validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), ShouldBeNil)
