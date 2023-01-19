@@ -153,4 +153,11 @@ var (
 		field.String("result"),     // OK | retry | transient | fatal
 		field.Int("retry"),         // 0 for first try, incrementing until cap.
 	)
+
+	ServerRunning = metric.NewInt(
+		"tq/server/running",
+		"Number of task handlers currently running",
+		nil,
+		field.String("task_class"), // matches TaskClass.ID
+	)
 )

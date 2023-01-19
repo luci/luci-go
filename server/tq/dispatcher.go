@@ -762,6 +762,19 @@ func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
 	})
 }
 
+// ReportMetrics writes gauge metrics to tsmon.
+//
+// This should be called before tsmon flush. By reporting them only here, we
+// can avoid hitting tsmon state every time some gauge value changes (which
+// can happen very often).
+func (d *Dispatcher) ReportMetrics(ctx context.Context) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	for id, cls := range d.clsByID {
+		metrics.ServerRunning.Set(ctx, int64(atomic.LoadInt32(&cls.running)), id)
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
@@ -1171,6 +1184,9 @@ func (d *Dispatcher) handlePush(ctx context.Context, body []byte, info Execution
 		return errors.Annotate(err, "malformed body of task class %q", cls.ID).Tag(httpStatus400).Err()
 	}
 
+	atomic.AddInt32(&cls.running, 1)
+	defer atomic.AddInt32(&cls.running, -1)
+
 	ctx = context.WithValue(ctx, &executionInfoKey, &info)
 
 	start := clock.Now(ctx)
@@ -1271,6 +1287,7 @@ type taskClassImpl struct {
 	disp      *Dispatcher
 	protoType protoreflect.MessageType
 	backend   taskBackend
+	running   int32
 }
 
 // envelope is what we put into all Cloud Tasks.

@@ -452,6 +452,20 @@ func TestPushHandler(t *testing.T) {
 				So(latCount, ShouldEqual, 1)
 				So(latSum, ShouldEqual, float64(now.Sub(etaValue).Milliseconds()+fakeDelayMS))
 			})
+
+			Convey("ServerRunning metric", func() {
+				handlerCb = func(ctx context.Context) {
+					d.ReportMetrics(ctx)
+				}
+				callWithHeaders(nil)
+
+				// Was reported while the handler was running.
+				So(metric(metrics.ServerRunning, "test-1"), ShouldEqual, 1)
+
+				// Should report 0 now, since the handler is not running anymore.
+				d.ReportMetrics(ctx)
+				So(metric(metrics.ServerRunning, "test-1"), ShouldEqual, 0)
+			})
 		})
 	})
 }

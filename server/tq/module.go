@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
@@ -372,6 +373,9 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 		}
 		disp.InstallTasksRoutes(host.Routes(), m.opts.ServingPrefix)
 	}
+
+	// Report gauge metrics on flush.
+	tsmon.RegisterCallbackIn(ctx, disp.ReportMetrics)
 
 	return submitter, nil
 }
