@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -157,6 +158,9 @@ func (m *loginSessionsModule) Initialize(ctx context.Context, host module.Host, 
 		Loader:          templates.AssetsLoader(assets.Assets()),
 		DebugMode:       func(context.Context) bool { return !opts.Prod },
 		DefaultTemplate: "base",
+		FuncMap: template.FuncMap{
+			"includeCSS": func(name string) template.CSS { return template.CSS(assets.GetAsset(name)) },
+		},
 	}
 	if err := m.tmpl.EnsureLoaded(ctx); err != nil {
 		return nil, err

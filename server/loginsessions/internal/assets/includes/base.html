@@ -5,102 +5,28 @@
 <head>
 <title>Command line application login</title>
 <style>
-body {
-  font-family: "Roboto", sans-serif;
-}
-
-h2 {
-  text-align: center;
-  margin-top: 0px;
-  margin-bottom: 20px;
-}
-
-hr {
-  border: 0;
-  height: 1px;
-  background: #333;
-  background-image: linear-gradient(to right, #ccc, #333, #ccc);
-  margin-bottom: 25px;
-}
-
+{{includeCSS "third_party/bootstrap/bootstrap.min.css"}}
 .container {
   width: 700px;
   padding-top: 30px;
   margin: auto;
 }
-
-.content {
-  position: relative;
-  max-width: 700px;
-  padding: 25px 40px 25px 40px;
-  margin: 0 auto 100px;
-  background: #ffffff;
-  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+h2 {
+  text-align: center;
+  margin-top: 0px;
+  margin-bottom: 20px;
 }
-
-.info {
-  padding-top: 2px;
-  padding-bottom: 2px;
-}
-
-.info ul {
-  margin-top: 6px;
-  margin-bottom: 6px;
-}
-
-.alert {
-  background-color: #f8d7da;
-  color: #842029;
-  border-radius: 6px;
-  padding: 15px;
-  margin-bottom: 15px;
-}
-
-.buttons {
-  display: flex;
-  justify-content: center;
-  column-gap: 20px;
-  margin-top: 20px;
-}
-
-.button-form {
-  flex: 50%;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  outline: 0;
-  border: 0;
-  background: #212529;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-button:hover, button:active, button:focus {
-  background: #424649;
-}
-
-.confirmation-form input {
-  width: 100%;
-  padding: 12px;
-  background: #f2f2f2;
-  outline: 0;
-  border: 0;
-  box-sizing: border-box;
-  font-size: 14px;
-}
-
 </style>
 </head>
 
 <body>
   <div class="container">
-    <div class="content">
-      <h2>{{block "title" .}}{{end}}</h2>
-      <hr>
-      <div>{{template "content" .}}</div>
+    <div class="shadow p-3 mb-5 bg-body-tertiary rounded">
+      <div class="card-body">
+        <h2 class="card-title">{{block "title" .}}{{end}}</h2>
+        <hr>
+        <div>{{template "content" .}}</div>
+      </div>
     </div>
   </div>
 </body>

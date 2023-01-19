@@ -2,23 +2,25 @@
 
 {{define "content"}}
 
-<div class="alert" role="alert">
+<div class="alert alert-danger" role="alert">
 Proceed only if you initiated the login flow yourself by running a command line
 application in a terminal. If you received this link from someone else or don't
 know what this is <b>stop now</b>. If you proceed, whoever gave you the link
 will be able to impersonate you.
 </div>
-
-<div class="info"><b>Application:</b> {{.Session.ExecutableName}}</div>
-<div class="info"><b>Hostname:</b> {{.Session.ClientHostname}}</div>
-<div class="info">
-  <b>Scopes:</b>
-  <ul>
-    {{range .Session.OauthScopes}}
-    <li>{{.}}</li>
-    {{end}}
-  </ul>
+<div class="alert alert-info">
+  <div><b>Application:</b> {{.Session.ExecutableName}}</div>
+  <div><b>Hostname:</b> {{.Session.ClientHostname}}</div>
+  <div>
+    <b>Scopes:</b>
+    <ul>
+      {{range .Session.OauthScopes}}
+      <li>{{.}}</li>
+      {{end}}
+    </ul>
+  </div>
 </div>
+
 
 <p>
 After clicking Proceed you'll be redirected to {{.OAuthClient.ProviderName}}
@@ -26,19 +28,19 @@ page where you can pick the account to login with. After that you'll be
 redirected back to this site to finish the login process.
 </p>
 
-<div class="buttons">
-  <div class="button-form">
+<div class="row">
+  <div class="col">
     <form action="{{.OAuthClient.AuthorizationEndpoint}}" method="GET">
       {{- range $key, $value := .OAuthRedirectParams }}
       <input type="hidden" name="{{$key}}" value="{{$value}}">
       {{- end}}
-      <button type="submit">Proceed</button>
+      <button class="btn btn-primary w-100" type="submit">Proceed</button>
     </form>
   </div>
-  <div class="button-form">
+  <div class="col">
     <form action="/cli/cancel" method="POST">
       <input type="hidden" name="state" value="{{.OAuthState}}">
-      <button type="submit">Cancel</button>
+      <button class="btn btn-secondary w-100" type="submit">Cancel</button>
     </form>
   </div>
 </div>

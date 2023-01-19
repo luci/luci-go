@@ -10,17 +10,18 @@ be trying to impersonate you.
 </p>
 
 {{if .BadCode}}
-<div class="alert" role="alert">
+<div class="alert alert-warning" role="alert">
 Invalid or expired code. Make sure to copy the code that is shown in the
 terminal right now. It changes with time.
 </div>
 {{end}}
 
-<div class="confirmation-form">
+<div class="row py-2">
   <form method="POST" id="confirmation">
     <input
         type="text"
         id="confirmation_code"
+        class="form-control"
         name="confirmation_code"
         placeholder="Confirmation code"
         autocomplete="off"
@@ -29,14 +30,14 @@ terminal right now. It changes with time.
   </form>
 </div>
 
-<div class="buttons">
-  <div class="button-form">
-    <button type="submit" form="confirmation">Confirm</button>
+<div class="row">
+  <div class="col">
+    <button class="btn btn-primary w-100" type="submit" form="confirmation">Confirm</button>
   </div>
-  <div class="button-form">
+  <div class="col">
     <form action="/cli/cancel" method="POST">
       <input type="hidden" name="state" value="{{.OAuthState}}">
-      <button type="submit">Cancel</button>
+      <button class="btn btn-secondary w-100" type="submit">Cancel</button>
     </form>
   </div>
 </div>
