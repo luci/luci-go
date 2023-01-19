@@ -96,17 +96,25 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 	}
 }
 
+// minPendingForBotConnected is the minimal minutes (10 minutes) to wait for the swarming bot in the VM to connect to Swarming.
+const minPendingForBotConnected = 10 * time.Minute
+
 // manageExistingBot manages an existing Swarming bot.
 func manageExistingBot(c context.Context, bot *swarming.SwarmingRpcsBotInfo, vm *model.VM) error {
 	// A bot connected to Swarming may be executing workload.
 	// To destroy the instance, terminate the bot first to avoid interruptions.
 	// Termination can be skipped if the bot is deleted, dead, or already terminated.
-	switch {
-	case bot.Deleted:
-		logging.Debugf(c, "bot deleted (%s)", vm.Hostname)
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
-	case bot.IsDead:
-		logging.Debugf(c, "bot dead (%s)", vm.Hostname)
+	if bot.Deleted || bot.IsDead {
+		if bot.Deleted {
+			logging.Debugf(c, "bot deleted (%s)", vm.Hostname)
+		} else {
+			logging.Debugf(c, "bot dead (%s)", vm.Hostname)
+		}
+		// A bot may be returned as deleted or dead if a bot with the same ID was previously connected to Swarming, but this new VM's bot hasn't connected yet
+		if time.Since(time.Unix(vm.Created, 0)) <= minPendingForBotConnected {
+			logging.Debugf(c, "bot %s is newly created, wait for %s minutes at least to destroy", vm.Hostname, minPendingForBotConnected.Minutes())
+			return nil
+		}
 		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	}
 	// This value of vm.Connected may be several seconds old, because the VM was fetched

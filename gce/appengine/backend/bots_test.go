@@ -347,6 +347,8 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
+						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
+						Created: time.Now().Unix() - 10000,
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -358,6 +360,28 @@ func TestManageBot(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
+				})
+
+				Convey("deleted but newly created", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId:   "id",
+							Deleted: true,
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Config:   "config",
+						Hostname: "name",
+						URL:      "url",
+						Created:  time.Now().Unix() - 10,
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					// Won't destroy the instance if it's a newly created VM
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
 				})
 
 				Convey("dead", func() {
@@ -373,6 +397,8 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
+						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
+						Created: time.Now().Unix() - 10000,
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -384,6 +410,29 @@ func TestManageBot(t *testing.T) {
 						ID: "id",
 					}
 					So(datastore.Get(c, v), ShouldBeNil)
+				})
+
+				Convey("dead but newly created", func() {
+					rt.Handler = func(_ interface{}) (int, interface{}) {
+						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
+							BotId:       "id",
+							FirstSeenTs: "2019-03-13T00:12:29.882948",
+							IsDead:      true,
+						}
+					}
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Config:   "config",
+						Hostname: "name",
+						URL:      "url",
+						Created:  time.Now().Unix() - 10,
+					})
+					err := manageBot(c, &tasks.ManageBot{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					// won't destroy the instance if it's a newly created VM
+					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
 				})
 
 				Convey("terminated", func() {
