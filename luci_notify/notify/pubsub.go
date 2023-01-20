@@ -15,9 +15,12 @@
 package notify
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"sort"
@@ -27,8 +30,8 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -38,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -410,20 +414,54 @@ type Build struct {
 func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	// sent by pubsub.
 	// This struct is just convenient for unwrapping the json message
+	// See https://cloud.google.com/pubsub/docs/push#receive_push
 	var msg struct {
 		Message struct {
-			Data []byte
+			Data       []byte
+			Attributes map[string]interface{}
 		}
-		Attributes map[string]interface{}
 	}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		return nil, errors.Annotate(err, "could not decode message").Err()
 	}
 
-	if v, ok := msg.Attributes["version"].(string); ok && v != "v1" {
-		// Ignore v2 pubsub messages. TODO(nodir): use v2.
-		return nil, nil
+	// Handle the message from `builds_v2` pubsub topic.
+	if v, ok := msg.Message.Attributes["version"].(string); ok && v == "v2" {
+		buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
+		if err := protojson.Unmarshal(msg.Message.Data, buildsV2Msg); err != nil {
+			return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
+		}
+		// TODO(crbug.com/1408909): remove the logging after migration is done.
+		logging.Debugf(c, "receiving builds_v2 pubsub msg for build %d, status %s", buildsV2Msg.Build.GetId(), buildsV2Msg.Build.GetStatus())
+		// Double check the received build is completed, although the new subscription has a filter for it.
+		if buildsV2Msg.Build.Status&buildbucketpb.Status_ENDED_MASK != buildbucketpb.Status_ENDED_MASK {
+			logging.Infof(c, "Received build %d that hasn't completed yet, ignoring...", buildsV2Msg.Build.GetId())
+			return nil, nil
+		}
+		largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+		}
+		largeFields := &buildbucketpb.Build{}
+		if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
+			return nil, errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+		}
+		proto.Merge(buildsV2Msg.Build, largeFields)
+
+		emails, err := extractEmailNotifyValues(buildsV2Msg.Build, "")
+		if err != nil {
+			return nil, errors.Annotate(err, "could not decode email_notify in builds_v2 pubsub message for build %d", buildsV2Msg.Build.GetId()).Err()
+		}
+
+		return &Build{
+			BuildbucketHostname: buildsV2Msg.Build.GetInfra().GetBuildbucket().GetHostname(),
+			Build:               *buildsV2Msg.Build,
+			EmailNotify:         emails,
+		}, nil
 	}
+
+	// TODO(crbug.com/1408909): remove the handling for old messages after migration is done.
+	// Handle the message from `builds` pubsub topic.
 	var message struct {
 		Build    bbv1.LegacyApiCommonBuildMessage
 		Hostname string
@@ -471,4 +509,20 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		Build:               *res,
 		EmailNotify:         emails,
 	}, nil
+}
+
+// zlibDecompress decompresses data using zlib.
+func zlibDecompress(compressed []byte) ([]byte, error) {
+	r, err := zlib.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+	originalData, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.Close(); err != nil {
+		return nil, err
+	}
+	return originalData, nil
 }

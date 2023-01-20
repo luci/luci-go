@@ -16,13 +16,21 @@ package notify
 
 import (
 	"bytes"
+	"compress/zlib"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/impl/memory"
@@ -44,7 +52,6 @@ import (
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -673,4 +680,201 @@ func mockCheckoutReturnsErrorFunc() CheckoutFunc {
 	return func(_ context.Context, _ *Build) (Checkout, error) {
 		return nil, errors.New("Some error")
 	}
+}
+
+func TestExtractBuild(t *testing.T) {
+	t.Parallel()
+
+	Convey("builds_v2 pubsub message", t, func() {
+		Convey("success", func() {
+			ctx := memory.Use(context.Background())
+			props := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"email_notify": structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{
+						structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"email": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "abc@gmail.com",
+									},
+								},
+							},
+						}),
+					}}),
+				},
+			}
+			originalBuild := &buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: buildbucketpb.Status_SUCCESS,
+				Infra: &buildbucketpb.BuildInfra{
+					Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+						Hostname: "buildbuckt.com",
+					},
+				},
+				Input: &buildbucketpb.Build_Input{},
+				Output: &buildbucketpb.Build_Output{
+					Properties: props,
+				},
+				Steps: []*buildbucketpb.Step{{Name: "step1"}},
+			}
+			pubsubMsg, err := makeBuildsV2PubsubMsg(originalBuild)
+			So(err, ShouldBeNil)
+			b, err := extractBuild(ctx, &http.Request{Body: pubsubMsg})
+			So(err, ShouldBeNil)
+			So(b.Id, ShouldEqual, originalBuild.Id)
+			So(b.Builder, ShouldResembleProto, originalBuild.Builder)
+			So(b.Status, ShouldEqual, buildbucketpb.Status_SUCCESS)
+			So(b.Infra, ShouldResembleProto, originalBuild.Infra)
+			So(b.Input, ShouldResembleProto, originalBuild.Input)
+			So(b.Output, ShouldResembleProto, originalBuild.Output)
+			So(b.Steps, ShouldResembleProto, originalBuild.Steps)
+			So(b.BuildbucketHostname, ShouldEqual, originalBuild.Infra.Buildbucket.Hostname)
+			So(b.EmailNotify, ShouldResemble, []EmailNotify{{Email: "abc@gmail.com"}})
+		})
+
+		Convey("success with no email_notify field", func() {
+			ctx := memory.Use(context.Background())
+			props := &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"other": structpb.NewListValue(&structpb.ListValue{Values: []*structpb.Value{
+						structpb.NewStructValue(&structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"other": {
+									Kind: &structpb.Value_StringValue{
+										StringValue: "other",
+									},
+								},
+							},
+						}),
+					}}),
+				},
+			}
+			originalBuild := &buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: buildbucketpb.Status_CANCELED,
+				Infra: &buildbucketpb.BuildInfra{
+					Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+						Hostname: "buildbuckt.com",
+					},
+				},
+				Input: &buildbucketpb.Build_Input{},
+				Output: &buildbucketpb.Build_Output{
+					Properties: props,
+				},
+				Steps: []*buildbucketpb.Step{{Name: "step1"}},
+			}
+			pubsubMsg, err := makeBuildsV2PubsubMsg(originalBuild)
+			So(err, ShouldBeNil)
+			b, err := extractBuild(ctx, &http.Request{Body: pubsubMsg})
+			So(err, ShouldBeNil)
+			So(b.Id, ShouldEqual, originalBuild.Id)
+			So(b.Builder, ShouldResembleProto, originalBuild.Builder)
+			So(b.Status, ShouldEqual, buildbucketpb.Status_CANCELED)
+			So(b.Infra, ShouldResembleProto, originalBuild.Infra)
+			So(b.Input, ShouldResembleProto, originalBuild.Input)
+			So(b.Output, ShouldResembleProto, originalBuild.Output)
+			So(b.Steps, ShouldResembleProto, originalBuild.Steps)
+			So(b.BuildbucketHostname, ShouldEqual, originalBuild.Infra.Buildbucket.Hostname)
+			So(b.EmailNotify, ShouldBeNil)
+		})
+
+		Convey("incompleted build", func() {
+			ctx := memory.Use(context.Background())
+			originalBuild := &buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: buildbucketpb.Status_SCHEDULED,
+				Infra: &buildbucketpb.BuildInfra{
+					Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+						Hostname: "buildbuckt.com",
+					},
+				},
+				Input:  &buildbucketpb.Build_Input{},
+				Output: &buildbucketpb.Build_Output{},
+				Steps:  []*buildbucketpb.Step{{Name: "step1"}},
+			}
+			pubsubMsg, err := makeBuildsV2PubsubMsg(originalBuild)
+			So(err, ShouldBeNil)
+			b, err := extractBuild(ctx, &http.Request{Body: pubsubMsg})
+			So(err, ShouldBeNil)
+			So(b, ShouldBeNil)
+		})
+
+	})
+}
+
+func makeBuildsV2PubsubMsg(b *buildbucketpb.Build) (io.ReadCloser, error) {
+	copyB := proto.Clone(b).(*buildbucketpb.Build)
+	large := &buildbucketpb.Build{
+		Input: &buildbucketpb.Build_Input{
+			Properties: copyB.GetInput().GetProperties(),
+		},
+		Output: &buildbucketpb.Build_Output{
+			Properties: copyB.GetOutput().GetProperties(),
+		},
+		Steps: copyB.GetSteps(),
+	}
+	if copyB.Input != nil {
+		copyB.Input.Properties = nil
+	}
+	if copyB.Output != nil {
+		copyB.Output.Properties = nil
+	}
+	copyB.Steps = nil
+	compress := func(data []byte) ([]byte, error) {
+		buf := &bytes.Buffer{}
+		zw := zlib.NewWriter(buf)
+		if _, err := zw.Write(data); err != nil {
+			return nil, errors.Annotate(err, "failed to compress").Err()
+		}
+		if err := zw.Close(); err != nil {
+			return nil, errors.Annotate(err, "error closing zlib writer").Err()
+		}
+		return buf.Bytes(), nil
+	}
+	largeBytes, err := proto.Marshal(large)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to marshal large").Err()
+	}
+	compressedLarge, err := compress(largeBytes)
+	if err != nil {
+		return nil, err
+	}
+	data, _ := protojson.Marshal(&buildbucketpb.BuildsV2PubSub{
+		Build:            copyB,
+		BuildLargeFields: compressedLarge,
+	})
+	isCompleted := copyB.Status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK
+	attrs := map[string]interface{}{
+		"project":      copyB.Builder.GetProject(),
+		"bucket":       copyB.Builder.GetBucket(),
+		"builder":      copyB.Builder.GetBuilder(),
+		"is_completed": strconv.FormatBool(isCompleted),
+		"version":      "v2",
+	}
+	msg := struct {
+		Message struct {
+			Data       string
+			Attributes map[string]interface{}
+		}
+	}{struct {
+		Data       string
+		Attributes map[string]interface{}
+	}{Data: base64.StdEncoding.EncodeToString(data), Attributes: attrs}}
+	jmsg, _ := json.Marshal(msg)
+	return io.NopCloser(bytes.NewReader(jmsg)), nil
 }
