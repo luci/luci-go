@@ -104,6 +104,7 @@ func TestListChanges(t *testing.T) {
 						Created:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 						Updated:   timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 						Submitted: timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
+						Branch:    "master",
 					},
 				},
 				MoreChanges: true,
@@ -355,6 +356,7 @@ func TestGetChange(t *testing.T) {
 						},
 					},
 				},
+				Branch: "master",
 			}
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -645,6 +647,7 @@ func TestRestCreateChange(t *testing.T) {
 			Created:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 			Updated:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 			Submitted:   timestamppb.New(parseTime("0001-01-01T00:00:00.00000000Z")),
+			Branch:      "master",
 		})
 
 		var ci changeInput
@@ -1131,6 +1134,7 @@ func TestRevertChange(t *testing.T) {
 						Message: "Patch Set 1:\n\nThis is the message added to the revert CL.",
 					},
 				},
+				Branch: "master",
 			}
 
 			var actualRequest *http.Request

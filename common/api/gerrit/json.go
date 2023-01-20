@@ -120,6 +120,7 @@ func (ci *changeInfo) ToProto() (*gerritpb.ChangeInfo, error) {
 		Submitted:          timestamppb.New(ci.Submitted.Time),
 		RevertOf:           ci.RevertOf,
 		CherryPickOfChange: ci.CherryPickOfChange,
+		Branch:             ci.Branch,
 	}
 	if ci.Revisions != nil {
 		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
