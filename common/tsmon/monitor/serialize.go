@@ -78,7 +78,7 @@ func SerializeCells(cells []types.Cell, now time.Time) []*pb.MetricsCollection {
 // the metric metadata fields populated.
 func SerializeDataSet(c types.Cell) *pb.MetricsDataSet {
 	d := pb.MetricsDataSet{}
-	d.MetricName = proto.String(metricNamePrefix + c.Name)
+	d.MetricName = proto.String(MetricNamePrefix + c.Name)
 	d.FieldDescriptor = field.SerializeDescriptor(c.Fields)
 	d.Description = proto.String(c.Description)
 

@@ -15,5 +15,6 @@
 package monitor
 
 const (
-	metricNamePrefix = "/chrome/infra/"
+	// MetricNamePrefix is the prefix for all tsmon metrics.
+	MetricNamePrefix = "/chrome/infra/"
 )

@@ -316,6 +316,8 @@ type MetricsDataSet struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Metric name.
+	// Regex: ^(/[a-zA-Z0-9_-]+)+$
 	MetricName      *string                                 `protobuf:"bytes,1,opt,name=metric_name,json=metricName" json:"metric_name,omitempty"`
 	FieldDescriptor []*MetricsDataSet_MetricFieldDescriptor `protobuf:"bytes,2,rep,name=field_descriptor,json=fieldDescriptor" json:"field_descriptor,omitempty"`
 	StreamKind      *StreamKind                             `protobuf:"varint,3,opt,name=stream_kind,json=streamKind,enum=ts_mon.proto.StreamKind" json:"stream_kind,omitempty"`
@@ -412,6 +414,7 @@ type MetricsData struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Value:
+	//
 	//	*MetricsData_BoolValue
 	//	*MetricsData_StringValue
 	//	*MetricsData_Int64Value
@@ -630,6 +633,7 @@ type MetricsCollection_RootLabels struct {
 
 	Key *string `protobuf:"bytes,1,req,name=key" json:"key,omitempty"`
 	// Types that are assignable to Value:
+	//
 	//	*MetricsCollection_RootLabels_StringValue
 	//	*MetricsCollection_RootLabels_Int64Value
 	//	*MetricsCollection_RootLabels_BoolValue
@@ -730,6 +734,8 @@ type MetricsDataSet_MetricFieldDescriptor struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Metric field name.
+	// Regex: ^[A-Za-z_][A-Za-z0-9_]*$
 	Name      *string                                         `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	FieldType *MetricsDataSet_MetricFieldDescriptor_FieldType `protobuf:"varint,2,opt,name=field_type,json=fieldType,enum=ts_mon.proto.MetricsDataSet_MetricFieldDescriptor_FieldType" json:"field_type,omitempty"`
 }
@@ -787,6 +793,7 @@ type MetricsData_MetricField struct {
 
 	Name *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// Types that are assignable to Value:
+	//
 	//	*MetricsData_MetricField_StringValue
 	//	*MetricsData_MetricField_Int64Value
 	//	*MetricsData_MetricField_BoolValue
@@ -893,6 +900,7 @@ type MetricsData_Distribution struct {
 	Minimum               *float64 `protobuf:"fixed64,4,opt,name=minimum" json:"minimum,omitempty"`
 	Maximum               *float64 `protobuf:"fixed64,5,opt,name=maximum" json:"maximum,omitempty"`
 	// Types that are assignable to BucketOptions:
+	//
 	//	*MetricsData_Distribution_LinearBuckets
 	//	*MetricsData_Distribution_ExponentialBuckets
 	//	*MetricsData_Distribution_ExplicitBuckets

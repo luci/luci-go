@@ -20,14 +20,18 @@ package registry
 
 import (
 	"fmt"
+	"regexp"
 	"sync"
 
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
 var (
-	registry = map[metricRegistryKey]types.Metric{}
-	lock     = sync.RWMutex{}
+	registry          = map[metricRegistryKey]types.Metric{}
+	lock              = sync.RWMutex{}
+	metricNameRe      = regexp.MustCompile("^(/[a-zA-Z0-9_-]+)+$")
+	metricFieldNameRe = regexp.MustCompile("^[A-Za-z_][A-Za-z0-9_]*$")
 )
 
 type metricRegistryKey struct {
@@ -37,21 +41,35 @@ type metricRegistryKey struct {
 
 // Add adds a metric to the metric registry.
 //
-// Panics if a metric with such name is already defined.
+// Panics if
+// - the metric name is invalid.
+// - a metric with the same name and target type is defined already.
+// - a field name is invalid.
 func Add(m types.Metric) {
 	key := metricRegistryKey{
 		MetricName: m.Info().Name,
 		TargetType: m.Info().TargetType,
 	}
+	fields := m.Info().Fields
 
 	lock.Lock()
 	defer lock.Unlock()
 
-	if _, ok := registry[key]; ok {
-		panic(fmt.Sprintf(
-			"A metric %q with target %q was already registered",
-			m.Info().Name, m.Info().TargetType.Name,
-		))
+	switch _, exist := registry[key]; {
+	case key.MetricName == "":
+		panic(fmt.Errorf("empty metric name"))
+	case !metricNameRe.MatchString(monitor.MetricNamePrefix + key.MetricName):
+		panic(fmt.Errorf("invalid metric name %q: doesn't match %s", key.MetricName, metricNameRe))
+	case exist:
+		panic(fmt.Errorf("duplicate metric name: metric %q with target %q is registered already",
+			key.MetricName, key.TargetType.Name))
+	default:
+		for _, f := range fields {
+			if !metricFieldNameRe.MatchString(f.Name) {
+				panic(fmt.Errorf("invalid field name %q: doesn't match %s",
+					f.Name, metricFieldNameRe))
+			}
+		}
 	}
 	registry[key] = m
 }
