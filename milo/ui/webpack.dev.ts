@@ -21,8 +21,8 @@ import { DefinePlugin } from 'webpack';
 import merge from 'webpack-merge';
 import Workbox from 'workbox-webpack-plugin';
 
+import cypressConfig from './cypress.config';
 import common from './webpack.common';
-const cypressConfig: Cypress.ConfigOptions = require('./cypress.json');
 
 const DEBUG_SW = process.env.DEBUG_SW === 'true';
 
@@ -68,7 +68,7 @@ export default merge(common, {
     historyApiFallback: {
       index: '/ui/index.html',
     },
-    port: Number(new URL(cypressConfig.baseUrl || 'https://localhost:8080').port),
+    port: Number(new URL(cypressConfig.e2e?.baseUrl || 'https://localhost:8080').port),
     setupMiddlewares: (middlewares, devServer) => {
       // This won't happen, but it helps TSC infer the type.
       if (!devServer.app) {
