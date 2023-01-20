@@ -46,10 +46,10 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
-func TestRevertHeuristicCulprit(t *testing.T) {
+func TestRevertCulprit(t *testing.T) {
 	t.Parallel()
 
-	Convey("RevertHeuristicCulprit", t, func() {
+	Convey("RevertCulprit", t, func() {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
 
@@ -67,6 +67,11 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
 		}
 		So(datastore.Put(ctx, heuristicAnalysis), ShouldBeNil)
+
+		nsa := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(ctx, analysis),
+		}
+		So(datastore.Put(ctx, nsa), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		analysisURL := util.ConstructAnalysisURL(ctx, failedBuild.Id)
@@ -117,16 +122,122 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			}
 			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
-				" %s; must be %s to be reverted", heuristicSuspect.GitilesCommit.Id,
-				heuristicSuspect.VerificationStatus,
-				model.SuspectVerificationStatus_ConfirmedCulprit)
+				" %s and should not be reverted", heuristicSuspect.GitilesCommit.Id,
+				heuristicSuspect.VerificationStatus)
 			So(err, ShouldErrLike, expectedErr)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
 			suspect, err := datastoreutil.GetSuspect(ctx,
 				heuristicSuspect.Id, heuristicSuspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
+		})
+
+		Convey("nthsection actions must be enabled", func() {
+			// Set up suspect in datastore
+			nthsectionSuspect := &model.Suspect{
+				Type:           model.SuspectType_NthSection,
+				ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+			}
+			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
+						Enabled: false,
+					},
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			err := RevertCulprit(ctx, nthsectionSuspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				nthsectionSuspect.Id, nthsectionSuspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
+		})
+
+		Convey("nthsection suspect must have correct status", func() {
+			// Set up suspect in datastore
+			nthsectionSuspect := &model.Suspect{
+				Type:           model.SuspectType_NthSection,
+				ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				VerificationStatus: model.SuspectVerificationStatus_VerificationError,
+			}
+			So(datastore.Put(ctx, nthsectionSuspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
+						Enabled:                     true,
+						ActionWhenVerificationError: false,
+					},
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			err := RevertCulprit(ctx, nthsectionSuspect)
+			expectedErr := fmt.Sprintf("suspect (commit %s) has verification status"+
+				" %s and should not be reverted", nthsectionSuspect.GitilesCommit.Id,
+				nthsectionSuspect.VerificationStatus)
+			So(err, ShouldErrLike, expectedErr)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				nthsectionSuspect.Id, nthsectionSuspect.ParentAnalysis)
 			So(err, ShouldBeNil)
 			So(suspect, ShouldNotBeNil)
 			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
@@ -173,7 +284,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			}
 			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -265,7 +376,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 				Return(revertRes, nil).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -363,7 +474,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -469,7 +580,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -562,7 +673,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -655,7 +766,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -767,7 +878,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -862,7 +973,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -976,7 +1087,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1090,7 +1201,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1213,7 +1324,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 				},
 			)).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1314,7 +1425,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					},
 				}, nil).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1418,7 +1529,7 @@ func TestRevertHeuristicCulprit(t *testing.T) {
 					},
 				}, nil).Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1582,7 +1693,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				},
 			)).Times(1)
 
-			err = RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err = RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1670,7 +1781,7 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				Return(nil, status.Errorf(codes.Internal, "revert creation failed internally")).
 				Times(1)
 
-			err := RevertHeuristicCulprit(ctx, heuristicSuspect)
+			err := RevertCulprit(ctx, heuristicSuspect)
 			So(err, ShouldNotBeNil)
 
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -1686,6 +1797,237 @@ No-Try: true`, analysisURL, buildURL, bugURL),
 				HasCulpritComment:       false,
 			})
 		})
+
+		Convey("revert for nthsection suspect is created although verification error", func() {
+			// Setup suspect in datastore
+			suspect := &model.Suspect{
+				Id:                 16,
+				ParentAnalysis:     datastore.KeyForObj(ctx, nsa),
+				VerificationStatus: model.SuspectVerificationStatus_VerificationError,
+				Type:               model.SuspectType_NthSection,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl: "https://test-review.googlesource.com/c/chromium/test/+/876543",
+			}
+			So(datastore.Put(ctx, suspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
+						Enabled:                     true,
+						ActionWhenVerificationError: true,
+					},
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			// Set up mock responses
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          876543,
+					Project:         "chromium/src",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "deadbeef",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"deadbeef": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
+							},
+						},
+					},
+				}},
+			}
+			revertRes := &gerritpb.ChangeInfo{
+				Number:  876549,
+				Project: "chromium/src",
+				Status:  gerritpb.ChangeStatus_NEW,
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(culpritRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{
+						{
+							Number:  876549,
+							Project: "chromium/src",
+							Status:  gerritpb.ChangeStatus_MERGED,
+						},
+					},
+				}, nil).Times(1)
+
+			err := RevertCulprit(ctx, suspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err = datastoreutil.GetSuspect(ctx,
+				suspect.Id, suspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         true,
+				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+		})
+
+		Convey("revert for culprit is created and bot-committed for nthsection", func() {
+			// Setup suspect in datastore
+			suspect := &model.Suspect{
+				Id:             14,
+				Type:           model.SuspectType_NthSection,
+				ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "12ab34cd56ef",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/876543",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			}
+			So(datastore.Put(ctx, suspect), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Set the service-level config for this test
+			testCfg := &configpb.Config{
+				GerritConfig: &configpb.GerritConfig{
+					ActionsEnabled: true,
+					CreateRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 10,
+					},
+					SubmitRevertSettings: &configpb.GerritConfig_RevertActionSettings{
+						Enabled:    true,
+						DailyLimit: 4,
+					},
+					MaxRevertibleCulpritAge: 21600, // 6 hours
+					NthsectionSettings: &configpb.GerritConfig_NthSectionSettings{
+						Enabled:                     true,
+						ActionWhenVerificationError: true,
+					},
+				},
+			}
+			So(config.SetTestConfig(ctx, testCfg), ShouldBeNil)
+
+			// Set up mock responses
+			culpritRes := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          876543,
+					Project:         "chromium/src",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 3)),
+					CurrentRevision: "deadbeef",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"deadbeef": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Title.\n\nBody is here.\n\nChange-Id: I100deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "John Doe",
+									Email: "jdoe@example.com",
+								},
+							},
+						},
+					},
+				}},
+			}
+			revertRes := &gerritpb.ChangeInfo{
+				Number:  876549,
+				Project: "chromium/src",
+				Status:  gerritpb.ChangeStatus_NEW,
+			}
+			pureRevertRes := &gerritpb.PureRevertInfo{
+				IsPureRevert: true,
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(culpritRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().GetRelatedChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.GetRelatedChangesResponse{}, nil).Times(1)
+			mockClient.Client.EXPECT().RevertChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(&gerritpb.ListChangesResponse{
+					Changes: []*gerritpb.ChangeInfo{revertRes},
+				}, nil).Times(1)
+			mockClient.Client.EXPECT().GetChange(gomock.Any(), gomock.Any()).
+				Return(revertRes, nil).Times(1)
+			mockClient.Client.EXPECT().GetPureRevert(gomock.Any(), gomock.Any()).
+				Return(pureRevertRes, nil).Times(1)
+			mockClient.Client.EXPECT().SetReview(gomock.Any(), proto.MatcherEqual(
+				&gerritpb.SetReviewRequest{
+					Project:    revertRes.Project,
+					Number:     revertRes.Number,
+					RevisionId: "current",
+					Message:    "LUCI Bisection is automatically submitting this revert.",
+					Labels: map[string]int32{
+						"Owners-Override": 1,
+						"Bot-Commit":      1,
+						"Commit-Queue":    2,
+					},
+					Reviewers: []*gerritpb.ReviewerInput{
+						{
+							Reviewer: "jdoe@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_CC,
+						},
+						{
+							Reviewer: "esmith@example.com",
+							State:    gerritpb.ReviewerInput_REVIEWER_INPUT_STATE_CC,
+						},
+					},
+				},
+			)).Times(1)
+
+			err := RevertCulprit(ctx, suspect)
+			So(err, ShouldBeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err = datastoreutil.GetSuspect(ctx,
+				suspect.Id, suspect.ParentAnalysis)
+			So(err, ShouldBeNil)
+			So(suspect, ShouldNotBeNil)
+			So(suspect.ActionDetails, ShouldResemble, model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         true,
+				RevertCreateTime:        testclock.TestTimeUTC.Round(time.Second),
+				IsRevertCommitted:       true,
+				RevertCommitTime:        testclock.TestTimeUTC.Round(time.Second),
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+			})
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "create_revert"), ShouldEqual, 1)
+			So(culpritActionCounter.Get(ctx, "chromium", "compile", "submit_revert"), ShouldEqual, 1)
+		})
+
 	})
 }
 

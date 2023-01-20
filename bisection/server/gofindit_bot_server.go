@@ -402,20 +402,18 @@ func updateSuspectWithRerunData(c context.Context, rerun *model.SingleRerun) err
 			logging.Errorf(c, err.Error())
 		}
 
-		if suspect.Type == model.SuspectType_Heuristic {
-			// Add task to revert the heuristic confirmed culprit
-			err = tq.AddTask(c, &tq.Task{
-				Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
-				Payload: &taskpb.RevertCulpritTask{
-					AnalysisId: analysisID,
-					CulpritId:  suspect.Id,
-				},
-			})
-			if err != nil {
-				return errors.Annotate(err,
-					"error creating task in task queue to revert heuristic culprit (analysis ID=%d, suspect ID=%d)",
-					analysisID, suspect.Id).Err()
-			}
+		// Add task to revert the heuristic confirmed culprit
+		err = tq.AddTask(c, &tq.Task{
+			Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
+			Payload: &taskpb.RevertCulpritTask{
+				AnalysisId: analysisID,
+				CulpritId:  suspect.Id,
+			},
+		})
+		if err != nil {
+			return errors.Annotate(err,
+				"error creating task in task queue to revert culprit (analysis ID=%d, suspect ID=%d)",
+				analysisID, suspect.Id).Err()
 		}
 	}
 	return nil

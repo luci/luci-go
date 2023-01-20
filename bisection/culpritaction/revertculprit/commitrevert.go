@@ -32,7 +32,7 @@ import (
 //   - whether a revert for the culprit CL can be committed;
 //   - the reason a revert should not be committed if applicable; and
 //   - the error if one occurred.
-func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo) (bool, string, error) {
+func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo, culpritModel *model.Suspect) (bool, string, error) {
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return false, "", errors.Annotate(err, "error fetching configs").Err()
@@ -56,6 +56,12 @@ func canCommit(ctx context.Context, culprit *gerritpb.ChangeInfo) (bool, string,
 		return false, reason, nil
 	}
 
+	// We can only proceed to commit if it is a confirmed culprit
+	// This is for the case that a we may create a revert on verification error of an
+	// nthsection suspect. But we definitely don't want to auto submit the revert.
+	if culpritModel.VerificationStatus != model.SuspectVerificationStatus_ConfirmedCulprit {
+		return false, "the suspect is not verified", nil
+	}
 	return true, "", nil
 }
 

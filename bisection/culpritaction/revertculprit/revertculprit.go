@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -110,39 +111,50 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 		return nil
 	}
 
-	// Revert heuristic culprit
-	if culprit.Type == model.SuspectType_Heuristic {
-		err = RevertHeuristicCulprit(ctx, culprit)
-		if err != nil {
-			// If the error is transient, return err to retry
-			if transient.Tag.In(err) {
-				return err
-			}
-
-			// non-transient error, so do not retry
-			logging.Errorf(ctx, err.Error())
-			return nil
+	// Revert culprit
+	err = RevertCulprit(ctx, culprit)
+	if err != nil {
+		// If the error is transient, return err to retry
+		if transient.Tag.In(err) {
+			return err
 		}
+
+		// non-transient error, so do not retry
+		logging.Errorf(ctx, err.Error())
 		return nil
 	}
-
-	// TODO (aredulla): add functionality to revert nth section culprit
-
-	logging.Infof(ctx, "Culprit type '%s' not supported for revert", culprit.Type)
 	return nil
 }
 
-// RevertHeuristicCulprit attempts to automatically revert a culprit
-// identified as a result of a heuristic analysis.
-// If an unexpected error occurs, it is logged and returned.
-func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) error {
-	// Check the culprit verification status
-	if culpritModel.VerificationStatus != model.SuspectVerificationStatus_ConfirmedCulprit {
-		return fmt.Errorf("suspect (commit %s) has verification status %s; must be %s to be reverted",
-			culpritModel.GitilesCommit.Id, culpritModel.VerificationStatus,
-			model.SuspectVerificationStatus_ConfirmedCulprit)
+func shouldCreateRevert(ctx context.Context, culpritModel *model.Suspect, cfg *configpb.Config) (bool, error) {
+	// We only proceed with heuristic culprit if it is a confirmed culprit
+	if culpritModel.Type == model.SuspectType_Heuristic {
+		if culpritModel.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
+			return true, nil
+		}
+		return false, fmt.Errorf("suspect (commit %s) has verification status %s and should not be reverted",
+			culpritModel.GitilesCommit.Id, culpritModel.VerificationStatus)
 	}
+	// Nthsection
+	if culpritModel.Type == model.SuspectType_NthSection {
+		settings := cfg.GerritConfig.NthsectionSettings
+		if !settings.Enabled {
+			logging.Infof(ctx, "Nthsection settings is disabled")
+			return false, nil
+		}
+		if culpritModel.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit || (settings.ActionWhenVerificationError && culpritModel.VerificationStatus == model.SuspectVerificationStatus_VerificationError) {
+			return true, nil
+		}
+		return false, fmt.Errorf("suspect (commit %s) has verification status %s and should not be reverted",
+			culpritModel.GitilesCommit.Id, culpritModel.VerificationStatus)
+	}
+	return false, fmt.Errorf("unsupported suspect type: %s", culpritModel.Type)
+}
 
+// RevertCulprit attempts to automatically revert a culprit
+// identified as a result of a heuristic analysis or an nthsection analysis.
+// If an unexpected error occurs, it is logged and returned.
+func RevertCulprit(ctx context.Context, culpritModel *model.Suspect) error {
 	// Get config for LUCI Bisection
 	cfg, err := config.Get(ctx)
 	if err != nil {
@@ -152,6 +164,15 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 	// Check if Gerrit actions are disabled
 	if !cfg.GerritConfig.ActionsEnabled {
 		logging.Infof(ctx, "Gerrit actions have been disabled")
+		return nil
+	}
+
+	// Check the culprit verification status
+	shouldTakeAction, err := shouldCreateRevert(ctx, culpritModel, cfg)
+	if err != nil {
+		return err
+	}
+	if !shouldTakeAction {
 		return nil
 	}
 
@@ -320,7 +341,7 @@ func RevertHeuristicCulprit(ctx context.Context, culpritModel *model.Suspect) er
 		return nil
 	}
 
-	shouldCommit, reason, err := canCommit(ctx, culprit)
+	shouldCommit, reason, err := canCommit(ctx, culprit, culpritModel)
 	if err != nil {
 		logging.Errorf(ctx, err.Error())
 		return err
