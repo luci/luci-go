@@ -80,8 +80,16 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 // EnqueueNotifyPubSubGo dispatches NotifyPubSubGo tasks to send builds_v2
 // notifications.
 func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) error {
-	// TODO(crbug.com/1381210): Enqueue the task for internal builds_v2
-	// notifications once at least one customer is ready to consume (e.g CV).
+	// Enqueue a task for publishing to the internal global "builds_v2" topic.
+	err := tq.AddTask(ctx, &tq.Task{
+		Payload: &taskdefs.NotifyPubSubGo{
+			BuildId: buildID,
+		},
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to enqueue a notification task to builds_v2 topic for build %d", buildID).Err()
+	}
+
 	proj := &model.Project{
 		ID: project,
 	}
@@ -132,8 +140,12 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 		Steps: p.Steps,
 	}
 	p.Steps = nil
-	p.Input.Properties = nil
-	p.Output.Properties = nil
+	if p.Input != nil {
+		p.Input.Properties = nil
+	}
+	if p.Output != nil {
+		p.Output.Properties = nil
+	}
 
 	buildLargeBytes, err := proto.Marshal(buildLarge)
 	if err != nil {
@@ -207,5 +219,6 @@ func generateBuildsV2Attributes(b *pb.Build) map[string]string {
 		"bucket":       b.Builder.GetBucket(),
 		"builder":      b.Builder.GetBuilder(),
 		"is_completed": strconv.FormatBool(protoutil.IsEnded(b.Status)),
+		"version":      "v2",
 	}
 }

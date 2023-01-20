@@ -135,7 +135,10 @@ func TestNotification(t *testing.T) {
 			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_no_external_topics")
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 0)
+			So(tasks, ShouldHaveLength, 1)
+			So(tasks[0].Payload, ShouldResembleProto, &taskdefs.NotifyPubSubGo{
+				BuildId: 123,
+			})
 		})
 
 		Convey("empty project.common_config", func() {
@@ -146,17 +149,22 @@ func TestNotification(t *testing.T) {
 			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_empty")
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 0)
+			So(tasks, ShouldHaveLength, 1)
+			So(tasks[0].Payload, ShouldResembleProto, &taskdefs.NotifyPubSubGo{
+				BuildId: 123,
+			})
 		})
 
 		Convey("has external topics", func() {
 			txErr := EnqueueNotifyPubSubGo(ctx, 123, "project_with_external_topics")
 			So(txErr, ShouldBeNil)
 			tasks := sch.Tasks()
-			So(tasks, ShouldHaveLength, 1)
+			So(tasks, ShouldHaveLength, 2)
 			taskGo0 := tasks[0].Payload.(*taskdefs.NotifyPubSubGo)
+			taskGo1 := tasks[1].Payload.(*taskdefs.NotifyPubSubGo)
 			So(taskGo0.BuildId, ShouldEqual, 123)
-			So(taskGo0.Topic, ShouldResembleProto, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"})
+			So(taskGo1.BuildId, ShouldEqual, 123)
+			So(taskGo0.Topic.GetName()+taskGo1.Topic.GetName(), ShouldEqual, "projects/my-cloud-project/topics/my-topic")
 		})
 	})
 
