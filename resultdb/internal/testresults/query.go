@@ -39,6 +39,25 @@ import (
 // AllFields is a field mask that selects all TestResults fields.
 var AllFields = mask.All(&pb.TestResult{})
 
+// limitedFields is a field mask for TestResult to use when the caller only
+// has the listLimited permission for test results.
+var limitedFields = mask.MustFromReadMask(&pb.TestResult{},
+	"name",
+	"test_id",
+	"result_id",
+	"expected",
+	"status",
+	"start_time",
+	"duration",
+	"variant_hash",
+	"failure_reason.primary_error_message",
+)
+
+// limitedReasonLength is the length to which the failure reason's primary error
+// message will be truncated for a TestResult when the caller only has the
+// listLimited permission for test results.
+const limitedReasonLength = 140
+
 // defaultListMask is the default field mask to use for QueryTestResults and
 // ListTestResults requests.
 var defaultListMask = mask.MustFromReadMask(&pb.TestResult{},
@@ -465,4 +484,24 @@ func (*Query) genStatement(templateName string, input map[string]interface{}) sp
 		panic(fmt.Sprintf("failed to generate a SQL statement: %s", err))
 	}
 	return spanner.Statement{SQL: sql.String(), Params: input["params"].(map[string]interface{})}
+}
+
+// ToLimitedData limits the given TestResult to the fields allowed when
+// the caller only has the listLimited permission for test results.
+func ToLimitedData(ctx context.Context, tr *pb.TestResult) error {
+	if err := limitedFields.Trim(tr); err != nil {
+		return err
+	}
+
+	if tr.FailureReason != nil {
+		runes := []rune(tr.FailureReason.PrimaryErrorMessage)
+		if len(runes) > limitedReasonLength {
+			// Truncate the error message.
+			tr.FailureReason.PrimaryErrorMessage = string(runes[:limitedReasonLength]) + "..."
+		}
+	}
+
+	tr.IsMasked = true
+
+	return nil
 }

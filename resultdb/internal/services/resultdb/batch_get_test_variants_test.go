@@ -120,6 +120,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			})
+
+			for _, tv := range res.TestVariants {
+				So(tv.IsMasked, ShouldBeFalse)
+			}
 		})
 
 		Convey(`Valid request without included invocation`, func() {
@@ -138,6 +142,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 				fmt.Sprintf("50/test1/%s", variantHash("e", "f")),
 				fmt.Sprintf("50/test3/%s", variantHash("c", "d")),
 			})
+
+			for _, tv := range res.TestVariants {
+				So(tv.IsMasked, ShouldBeFalse)
+			}
 		})
 
 		Convey(`Valid request with missing included invocation`, func() {
@@ -163,6 +171,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			})
+
+			for _, tv := range res.TestVariants {
+				So(tv.IsMasked, ShouldBeFalse)
+			}
 		})
 
 		Convey(`Requesting > 500 variants fails`, func() {
@@ -194,6 +206,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			})
+
+			for _, tv := range res.TestVariants {
+				So(tv.IsMasked, ShouldBeFalse)
+			}
 		})
 
 		Convey(`Request doesn't return variants from other invocations`, func() {
@@ -224,6 +240,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			})
+
+			for _, tv := range res.TestVariants {
+				So(tv.IsMasked, ShouldBeFalse)
+			}
 		})
 	})
 }

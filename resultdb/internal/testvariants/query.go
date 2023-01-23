@@ -16,6 +16,7 @@ package testvariants
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/resultdb/internal/exonerations"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -35,6 +37,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/auth"
 )
 
 const (
@@ -90,9 +94,9 @@ const (
 	// caller's access, or the caller does not have any kind of access to data in
 	// the realms of the invocations being queried.
 	AccessLevelInvalid AccessLevel = iota
-	// Simplified Access Level 1. The caller has access to metadata only, such as
+	// Limited access. The caller has access to metadata only, such as
 	// pass/fail status of tests, test IDs and sanitised failure reasons.
-	AccessLevelSAL1
+	AccessLevelLimited
 	// The caller has access to all data in the realms of the invocations being
 	// queried.
 	AccessLevelUnrestricted
@@ -120,7 +124,6 @@ type Query struct {
 	Mask      *mask.Mask
 	TestIDs   []string
 	// The level of access the user has to test results and test exoneration data.
-	// TODO: use this to apply SAL1 metadata masks to the response.
 	AccessLevel AccessLevel
 
 	decompressBuf []byte                 // buffer for decompressing blobs
@@ -160,10 +163,16 @@ type tvResult struct {
 }
 
 // resultSelectColumns returns a list of columns needed to fetch `tvResult`s
-// according to the fieldmask. `IsUnexpected` is always selected.
+// according to the fieldmask. `InvocationId`, `ResultId` and `IsUnexpected` are
+// always selected.
 func (q *Query) resultSelectColumns() []string {
-	columnSet := stringset.New(1)
-	columnSet.Add("IsUnexpected")
+	// Note: `InvocationId` and `ResultId` are necessary to construct
+	// TestResult.Name, so they must be included.
+	columnSet := stringset.NewFromSlice(
+		"InvocationId",
+		"ResultId",
+		"IsUnexpected",
+	)
 
 	// Select extra columns depending on the mask.
 	readMask := q.Mask
@@ -182,8 +191,6 @@ func (q *Query) resultSelectColumns() []string {
 		}
 	}
 
-	selectIfIncluded("InvocationId", "results.*.result.name")
-	selectIfIncluded("ResultId", "results.*.result.name", "results.*.result.result_id")
 	selectIfIncluded("Status", "results.*.result.status")
 	selectIfIncluded("StartTime", "results.*.result.start_time")
 	selectIfIncluded("RunDurationUsec", "results.*.result.duration")
@@ -224,9 +231,9 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 		ResultId: r.ResultID,
 		Status:   pb.TestStatus(r.Status),
 	}
-	if r.InvocationID != "" && testID != "" && r.ResultID != "" {
-		tr.Name = pbutil.TestResultName(string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID)
-	}
+	tr.Name = pbutil.TestResultName(
+		string(invocations.IDFromRowID(r.InvocationID)), testID, r.ResultID)
+
 	if r.StartTime.Valid {
 		tr.StartTime = pbutil.MustTimestampProto(r.StartTime.Time)
 	}
@@ -266,6 +273,112 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	return tr, nil
 }
 
+// toLimitedData limits the given TestVariant (and its test results and test
+// exonerations) to the fields allowed when the caller only has listLimited
+// permissions for test results and test exonerations. If the caller has
+// permission to get test results / test exonerations in the realm of the
+// immediate parent invocation, the test result / test exoneration will not be
+// restricted.
+func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
+	resultPerms map[string]bool, exonerationPerms map[string]bool) error {
+	shouldMaskMetadata := true
+	shouldMaskVariant := true
+	for _, resultBundle := range tv.Results {
+		tr := resultBundle.Result
+		invID, _, _, err := pbutil.ParseTestResultName(tr.Name)
+		if err != nil {
+			return err
+		}
+
+		// Get the immediate invocation to which this test result belongs.
+		reachableInv, ok := q.ReachableInvocations[invocations.ID(invID)]
+		if !ok {
+			return fmt.Errorf("error finding realm: invocation %s not found", invID)
+		}
+
+		// Check if the caller has permission to get test results in the immediate
+		// invocation's realm.
+		allowedResult, ok := resultPerms[reachableInv.Realm]
+		if !ok {
+			// The test result permission in this realm hasn't been checked before.
+			allowedResult, err = auth.HasPermission(ctx,
+				rdbperms.PermGetTestResult, reachableInv.Realm, nil)
+			if err != nil {
+				return errors.Annotate(err,
+					"error checking permission for test result data restriction").Err()
+			}
+			// Record whether the caller has permission to get test results in the
+			// realm so the HasPermission result can be re-used.
+			resultPerms[reachableInv.Realm] = allowedResult
+		}
+
+		if allowedResult {
+			shouldMaskMetadata = false
+			shouldMaskVariant = false
+		} else {
+			// Restrict test result data.
+			if err := testresults.ToLimitedData(ctx, tr); err != nil {
+				return err
+			}
+		}
+	}
+
+	if shouldMaskMetadata {
+		// All test results have been masked to limited data only, so the test
+		// metadata should be masked.
+		tv.TestMetadata = nil
+		tv.IsMasked = true
+	}
+
+	for _, exoneration := range tv.Exonerations {
+		invID, _, _, err := pbutil.ParseTestExonerationName(exoneration.Name)
+		if err != nil {
+			return err
+		}
+
+		// Get the immediate invocation to which this test exoneration belongs.
+		reachableInv, ok := q.ReachableInvocations[invocations.ID(invID)]
+		if !ok {
+			return fmt.Errorf("error finding realm: invocation %s not found", invID)
+		}
+
+		// Check if the caller has permission to get test exonreations in the
+		// immediate invocation's realm.
+		allowedExoneration, ok := exonerationPerms[reachableInv.Realm]
+		if !ok {
+			// The test exoneration permission in this realm hasn't been checked
+			// before.
+			allowedExoneration, err = auth.HasPermission(ctx,
+				rdbperms.PermGetTestExoneration, reachableInv.Realm, nil)
+			if err != nil {
+				return errors.Annotate(err,
+					"error checking permission for test exoneration data restriction").Err()
+			}
+			// Record whether the caller has permission to get test exonerations in
+			// the realm so the HasPermission result can be re-used.
+			exonerationPerms[reachableInv.Realm] = allowedExoneration
+		}
+
+		if allowedExoneration {
+			shouldMaskVariant = false
+		} else {
+			// Restrict test exoneration data.
+			if err := exonerations.ToLimitedData(ctx, exoneration); err != nil {
+				return err
+			}
+		}
+	}
+
+	if shouldMaskVariant {
+		// All test results and test exonerations have been masked to limited data
+		// only, so the variant definition should be masked.
+		tv.Variant = nil
+		tv.IsMasked = true
+	}
+
+	return nil
+}
+
 func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*pb.TestVariant) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.run")
 	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations))
@@ -292,10 +405,16 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		tv := &pb.TestVariant{}
 		var tvStatus int64
 		var results []*tvResult
+		var exonerationIDs []string
+		var exonerationInvocationIDs []string
 		var exonerationExplanationHTMLs [][]byte
 		var exonerationReasons []int64
 		var tmd spanutil.Compressed
-		if err := b.FromSpanner(row, &tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &results, &exonerationExplanationHTMLs, &exonerationReasons); err != nil {
+		err := b.FromSpanner(row,
+			&tv.TestId, &tv.VariantHash, &tv.Variant, &tmd, &tvStatus, &results,
+			&exonerationIDs, &exonerationInvocationIDs, &exonerationExplanationHTMLs,
+			&exonerationReasons)
+		if err != nil {
 			return err
 		}
 
@@ -315,6 +434,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 			if err != nil {
 				return err
 			}
+
 			tv.Results[i] = &pb.TestResultBundle{
 				Result: tr,
 			}
@@ -326,15 +446,22 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		}
 
 		tv.Exonerations = make([]*pb.TestExoneration, len(exonerationReasons))
-		for i := range exonerationReasons {
-			// Due to query design, length of exonerationExplanationHTMLs
-			// should be identical to exonerationReasons.
-			ex := exonerationExplanationHTMLs[i]
+		for i, exonerationID := range exonerationIDs {
+			// Due to query design, exonerationIDs, exonerationInvocationIDs,
+			// exonerationExplanationHTMLs and exonerationReasons should all be
+			// the same length.
+
 			e := &pb.TestExoneration{}
+			e.Name = pbutil.TestExonerationName(
+				string(invocations.IDFromRowID(exonerationInvocationIDs[i])),
+				tv.TestId, exonerationID)
+
+			ex := exonerationExplanationHTMLs[i]
 			if e.ExplanationHtml, err = q.decompressText(ex); err != nil {
 				return err
 			}
 			e.Reason = pb.ExonerationReason(exonerationReasons[i])
+
 			tv.Exonerations[i] = e
 		}
 		return f(tv)
@@ -345,8 +472,25 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 	responseSize := 0
 	tvs = make([]*pb.TestVariant, 0, q.PageSize)
 
+	// resultPerms and exonerationPerms are maps in which:
+	// * the key is a realm, and
+	// * the value is whether the caller has permission in that realm to get
+	//   either test results (resultPerms),
+	//   or test exonerations (exonerationPerms).
+	// They are populated by Query.toLimitedData as the test variants are fetched
+	// so that each realm/permission combination is checked at most once.
+	resultPerms := make(map[string]bool)
+	exonerationPerms := make(map[string]bool)
+
 	// Fetch test variants with unexpected results.
 	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
+		// Restrict test variant data as required.
+		if q.AccessLevel != AccessLevelUnrestricted {
+			if err := q.toLimitedData(ctx, tv, resultPerms, exonerationPerms); err != nil {
+				return err
+			}
+		}
+
 		// Apply field mask.
 		if err := q.trim(tv); err != nil {
 			return err
@@ -535,11 +679,22 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	responseSize := 0
 	tvs = make([]*pb.TestVariant, 0, q.PageSize)
 
+	// resultPerms and exonerationPerms are maps in which:
+	// * the key is a realm, and
+	// * the value is whether the caller has permission in that realm to get
+	//   either test results (resultPerms),
+	//   or test exonerations (exonerationPerms).
+	// They are populated by Query.toLimitedData as the test variants are fetched so
+	// that each realm/permission combination is checked at most once.
+	resultPerms := make(map[string]bool)
+	exonerationPerms := make(map[string]bool)
+
 	// The last test variant we have completely processed.
 	var lastProcessedTestID string
 	var lastProcessedVariantHash string
 
 	finished, err := q.queryTestVariants(ctx, func(tv *pb.TestVariant) error {
+
 		lastProcessedTestID = tv.TestId
 		lastProcessedVariantHash = tv.VariantHash
 
@@ -548,6 +703,13 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		isOnlyExpected := tv.Results[0].Result.Expected
 		if isOnlyExpected {
 			tv.Status = pb.TestVariantStatus_EXPECTED
+
+			// Restrict test variant data as required.
+			if q.AccessLevel != AccessLevelUnrestricted {
+				if err := q.toLimitedData(ctx, tv, resultPerms, exonerationPerms); err != nil {
+					return err
+				}
+			}
 
 			// Apply field mask.
 			if err := q.trim(tv); err != nil {
@@ -672,7 +834,9 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 		SELECT
 			TestId,
 			VariantHash,
-			ARRAY_AGG(ExplanationHTML) ExonertionExplanationHTMLs,
+			ARRAY_AGG(ExonerationId) ExonerationIDs,
+			ARRAY_AGG(InvocationId) InvocationIDs,
+			ARRAY_AGG(ExplanationHTML) ExonerationExplanationHTMLs,
 			ARRAY_AGG(Reason) ExonerationReasons
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@testExonerationInvIDs)
@@ -696,7 +860,9 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 				SELECT AS STRUCT *
 				FROM UNNEST(tv.results)
 				LIMIT @testResultLimit) results,
-			exonerated.ExonertionExplanationHTMLs,
+			exonerated.ExonerationIDs,
+			exonerated.InvocationIDs,
+			exonerated.ExonerationExplanationHTMLs,
 			exonerated.ExonerationReasons
 		FROM test_variants tv
 		LEFT JOIN exonerated USING(TestId, VariantHash)
@@ -710,8 +876,10 @@ var testVariantsWithUnexpectedResultsSQLTmpl = template.Must(template.New("testV
 		TestMetadata,
 		TvStatus,
 		results,
-		ExonertionExplanationHTMLs,
-		ExonerationReasons,
+		ExonerationIDs,
+		InvocationIDs,
+		ExonerationExplanationHTMLs,
+		ExonerationReasons
 	FROM testVariantsWithUnexpectedResults
 	WHERE
 	{{if .HasTestIds}}

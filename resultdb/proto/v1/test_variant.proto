@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
@@ -53,6 +54,15 @@ message TestVariant {
   // metadata. This RPC relies on this rule and returns test metadata from
   // *arbitrary* result of the test variant.
   TestMetadata test_metadata = 7;
+
+  // Whether the
+  //    - test metadata; or
+  //    - the variant definition; or
+  //    - both the test metadata and variant definition
+  // have been masked from the test variant.
+  //
+  // Output only.
+  bool is_masked = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // Outcomes of an execution of the test variant.

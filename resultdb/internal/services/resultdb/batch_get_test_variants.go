@@ -58,6 +58,10 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		return nil, err
 	}
 
+	// Caller has permissions rdbperms.PermListTestResults and
+	// rdbperms.PermListTestExonerations, so they have unrestricted access
+	accessLevel := testvariants.AccessLevelUnrestricted
+
 	if err := validateBatchGetTestVariantsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
@@ -90,6 +94,7 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 		Predicate:            &pb.TestVariantPredicate{},
 		ResultLimit:          testvariants.AdjustResultLimit(in.ResultLimit),
 		ResponseLimitBytes:   testvariants.DefaultResponseLimitBytes,
+		AccessLevel:          accessLevel,
 		// Number chosen fairly arbitrarily.
 		PageSize:  1000,
 		PageToken: "",

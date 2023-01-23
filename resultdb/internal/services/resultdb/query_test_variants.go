@@ -61,14 +61,14 @@ func determineListAccessLevel(ctx context.Context, ids invocations.IDSet) (a tes
 		return testvariants.AccessLevelUnrestricted, nil
 	}
 
-	// Check for restricted access
-	hasRestricted, desc, err := permissions.HasPermissionsInRealms(ctx, realms,
+	// Check for limited access
+	hasLimited, desc, err := permissions.HasPermissionsInRealms(ctx, realms,
 		rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations)
 	if err != nil {
 		return testvariants.AccessLevelInvalid, err
 	}
-	if hasRestricted {
-		return testvariants.AccessLevelSAL1, nil
+	if hasLimited {
+		return testvariants.AccessLevelLimited, nil
 	}
 
 	// Caller does not have access

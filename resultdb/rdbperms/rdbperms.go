@@ -19,9 +19,10 @@ import (
 )
 
 var (
-	PermGetInvocation = realms.RegisterPermission("resultdb.invocations.get")
-	PermGetTestResult = realms.RegisterPermission("resultdb.testResults.get")
-	PermGetArtifact   = realms.RegisterPermission("resultdb.artifacts.get")
+	PermGetInvocation      = realms.RegisterPermission("resultdb.invocations.get")
+	PermGetTestExoneration = realms.RegisterPermission("resultdb.testExonerations.get")
+	PermGetTestResult      = realms.RegisterPermission("resultdb.testResults.get")
+	PermGetArtifact        = realms.RegisterPermission("resultdb.artifacts.get")
 
 	PermListTestExonerations        = realms.RegisterPermission("resultdb.testExonerations.list")
 	PermListLimitedTestExonerations = realms.RegisterPermission("resultdb.testExonerations.listLimited")

@@ -39,12 +39,21 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/rdbperms"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
 )
 
 func TestQueryTestVariants(t *testing.T) {
 	Convey(`QueryTestVariants`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{Realm: "testproject:testresultrealm", Permission: rdbperms.PermGetTestResult},
+				{Realm: "testproject:testexonerationrealm", Permission: rdbperms.PermGetTestExoneration},
+			},
+		})
 
 		reachableInvs := make(graph.ReachableInvocations)
 		reachableInvs["inv0"] = graph.ReachableInvocation{
@@ -63,6 +72,7 @@ func TestQueryTestVariants(t *testing.T) {
 			PageSize:             100,
 			ResultLimit:          10,
 			ResponseLimitBytes:   DefaultResponseLimitBytes,
+			AccessLevel:          AccessLevelUnrestricted,
 		}
 
 		fetch := func(q *Query) (tvs []*pb.TestVariant, token string, err error) {
@@ -247,20 +257,24 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 			So(len(tvs[7].Exonerations), ShouldEqual, 3)
 			So(tvs[7].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+				Name:            "invocations/inv0/tests/T1/exonerations/0",
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			})
 
 			So(tvs[7].Exonerations[1], ShouldResembleProto, &pb.TestExoneration{
+				Name:            "invocations/inv0/tests/T1/exonerations/1",
 				ExplanationHtml: "explanation 1",
 				Reason:          pb.ExonerationReason_NOT_CRITICAL,
 			})
 			So(tvs[7].Exonerations[2], ShouldResembleProto, &pb.TestExoneration{
+				Name:            "invocations/inv0/tests/T1/exonerations/2",
 				ExplanationHtml: "explanation 2",
 				Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
 			})
 			So(len(tvs[8].Exonerations), ShouldEqual, 1)
 			So(tvs[8].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+				Name:            "invocations/inv2/tests/T2/exonerations/0",
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 			})
@@ -395,6 +409,7 @@ func TestQueryTestVariants(t *testing.T) {
 								So(exoneration.Reason, ShouldNotBeZeroValue)
 							}
 							So(exoneration, ShouldResembleProto, &pb.TestExoneration{
+								Name:            exoneration.Name,
 								ExplanationHtml: exoneration.ExplanationHtml,
 								Reason:          exoneration.Reason,
 							})
@@ -589,6 +604,179 @@ func TestQueryTestVariants(t *testing.T) {
 				"50/T6/e3b0c44298fc1c14",
 				"50/T7/e3b0c44298fc1c14",
 				"50/T9/e3b0c44298fc1c14",
+			})
+		})
+
+		Convey(`Querying with limited access works`, func() {
+			q.AccessLevel = AccessLevelLimited
+
+			Convey(`with only limited access`, func() {
+				tvs, _ := mustFetch(q)
+				So(getTVStrings(tvs), ShouldResemble, []string{
+					"10/T4/c467ccce5a16dc72",
+					"10/T5/e3b0c44298fc1c14",
+					"10/Ty/e3b0c44298fc1c14",
+					"20/Tz/e3b0c44298fc1c14",
+					"30/T5/c467ccce5a16dc72",
+					"30/T8/e3b0c44298fc1c14",
+					"30/Tx/e3b0c44298fc1c14",
+					"40/T1/e3b0c44298fc1c14",
+					"40/T2/e3b0c44298fc1c14",
+				})
+
+				// Check the test variant and its test results and test exonerations
+				// have all been masked.
+				for _, tv := range tvs {
+					So(tv.TestMetadata, ShouldBeNil)
+					So(tv.Variant, ShouldBeNil)
+					So(tv.IsMasked, ShouldBeTrue)
+
+					for _, tr := range tv.Results {
+						So(tr.Result.IsMasked, ShouldBeTrue)
+					}
+
+					for _, te := range tv.Exonerations {
+						So(te.IsMasked, ShouldBeTrue)
+					}
+				}
+
+				// Check test results and exonerations for data that should
+				// still be available after masking to limited data.
+				So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
+					{
+						Result: &pb.TestResult{
+							Name:      "invocations/inv1/tests/T4/results/0",
+							ResultId:  "0",
+							Expected:  false,
+							Status:    pb.TestStatus_FAIL,
+							StartTime: startTime,
+							Duration:  duration,
+							FailureReason: &pb.FailureReason{
+								PrimaryErrorMessage: "primary error msg",
+							},
+							IsMasked: true,
+						},
+					},
+				})
+				So(len(tvs[8].Exonerations), ShouldEqual, 1)
+				So(tvs[8].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+					Name:            "invocations/inv2/tests/T2/exonerations/0",
+					ExplanationHtml: "explanation 0",
+					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
+					IsMasked:        true,
+				})
+				So(len(tvs[2].Results), ShouldEqual, 10)
+			})
+
+			Convey(`with unrestricted test result access`, func() {
+				reachableInvs := make(graph.ReachableInvocations)
+				reachableInvs["inv0"] = graph.ReachableInvocation{
+					HasTestResults:      true,
+					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
+				}
+				reachableInvs["inv1"] = graph.ReachableInvocation{
+					HasTestResults: true,
+					Realm:          "testproject:testresultrealm",
+				}
+				reachableInvs["inv2"] = graph.ReachableInvocation{
+					HasTestExonerations: true,
+					Realm:               insert.TestRealm,
+				}
+				q.ReachableInvocations = reachableInvs
+
+				tvs, _ := mustFetch(q)
+				So(getTVStrings(tvs), ShouldResemble, []string{
+					"10/T4/c467ccce5a16dc72",
+					"10/T5/e3b0c44298fc1c14",
+					"10/Ty/e3b0c44298fc1c14",
+					"20/Tz/e3b0c44298fc1c14",
+					"30/T5/c467ccce5a16dc72",
+					"30/T8/e3b0c44298fc1c14",
+					"30/Tx/e3b0c44298fc1c14",
+					"40/T1/e3b0c44298fc1c14",
+					"40/T2/e3b0c44298fc1c14",
+				})
+
+				// Check all the test exonerations have been masked.
+				for _, tv := range tvs {
+					for _, te := range tv.Exonerations {
+						So(te.IsMasked, ShouldBeTrue)
+					}
+				}
+
+				// The only test result for the below test variant should be unmasked
+				// as the user has access to unrestricted test results in inv1's realm.
+				// Thus, the test variant should also be unmasked.
+				So(tvs[0].IsMasked, ShouldBeFalse)
+				So(tvs[0].TestMetadata, ShouldResembleProto, tmd)
+				So(tvs[0].Variant, ShouldNotBeNil)
+				So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
+					{
+						Result: &pb.TestResult{
+							Name:        "invocations/inv1/tests/T4/results/0",
+							ResultId:    "0",
+							Expected:    false,
+							Status:      pb.TestStatus_FAIL,
+							StartTime:   startTime,
+							Duration:    duration,
+							SummaryHtml: "SummaryHtml",
+							FailureReason: &pb.FailureReason{
+								PrimaryErrorMessage: "primary error msg",
+							},
+							Properties: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"key": structpb.NewStringValue("value"),
+								},
+							},
+							Tags: strPairs,
+						},
+					},
+				})
+
+				// Both test results for the below test variant should have been masked.
+				// Thus, the test variant should be masked.
+				So(tvs[5].IsMasked, ShouldBeTrue)
+				So(tvs[5].TestMetadata, ShouldBeNil)
+				So(tvs[5].Variant, ShouldBeNil)
+				So(len(tvs[5].Results), ShouldEqual, 2)
+				for _, tr := range tvs[5].Results {
+					So(tr.Result.IsMasked, ShouldBeTrue)
+				}
+
+				// The below test variant should have both a masked and
+				// unmasked test result due to the different invocations' realms.
+				// Thus, the test variant should be unmasked.
+				So(tvs[8].IsMasked, ShouldBeFalse)
+				So(tvs[8].Results, ShouldResembleProto, []*pb.TestResultBundle{
+					{
+						Result: &pb.TestResult{
+							Name:     "invocations/inv0/tests/T2/results/0",
+							ResultId: "0",
+							Expected: true,
+							Status:   pb.TestStatus_PASS,
+							Duration: duration,
+							IsMasked: true,
+						},
+					},
+					{
+						Result: &pb.TestResult{
+							Name:        "invocations/inv1/tests/T2/results/0",
+							ResultId:    "0",
+							Expected:    false,
+							Status:      pb.TestStatus_FAIL,
+							Duration:    duration,
+							SummaryHtml: "SummaryHtml",
+						},
+					},
+				})
+				So(len(tvs[8].Exonerations), ShouldEqual, 1)
+				So(tvs[8].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+					Name:            "invocations/inv2/tests/T2/exonerations/0",
+					ExplanationHtml: "explanation 0",
+					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
+					IsMasked:        true,
+				})
 			})
 		})
 

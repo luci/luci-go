@@ -20,6 +20,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/tsmon"
@@ -44,6 +45,8 @@ func TestQueryTestVariants(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListTestExonerations},
 				{Realm: "testproject:testlimitedrealm", Permission: rdbperms.PermListLimitedTestResults},
 				{Realm: "testproject:testlimitedrealm", Permission: rdbperms.PermListLimitedTestExonerations},
+				{Realm: "testproject:testresultrealm", Permission: rdbperms.PermGetTestResult},
+				{Realm: "testproject:testexonerationrealm", Permission: rdbperms.PermGetTestExoneration},
 			},
 		})
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -65,13 +68,33 @@ func TestQueryTestVariants(t *testing.T) {
 		)...)
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testlimitedrealm"}),
+			insert.InvocationWithInclusions("inv2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testlimitedrealm"}, "inv3", "inv4", "inv5")...,
+		)
+		testutil.MustApply(
+			ctx,
+			insert.Invocation("inv3", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testresultrealm"}),
+			insert.Invocation("inv4", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testexonerationrealm"}),
+			insert.Invocation("inv5", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testlimitedrealm"}),
 		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv2", "T4", nil, pb.TestStatus_PASS),
+			insert.TestResults("inv2", "T1002", pbutil.Variant("k0", "v0"), pb.TestStatus_FAIL),
+			insert.TestResults("inv3", "T1003", pbutil.Variant("k1", "v1"), pb.TestStatus_FAIL),
+			insert.TestResults("inv4", "T1004", pbutil.Variant("k2", "v2"), pb.TestStatus_FAIL),
+			insert.TestResults("inv5", "T1005", pbutil.Variant("k3", "v3"), pb.TestStatus_FAIL),
+			insert.TestExonerations("inv3", "T1003", pbutil.Variant("k1", "v1"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
+			insert.TestExonerations("inv4", "T1004", pbutil.Variant("k2", "v2"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
+			insert.TestExonerations("inv5", "T1005", pbutil.Variant("k3", "v3"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 		)...)
 
 		srv := &resultDBServer{}
+
+		getTVStrings := func(tvs []*pb.TestVariant) []string {
+			tvStrings := make([]string, len(tvs))
+			for i, tv := range tvs {
+				tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
+			}
+			return tvStrings
+		}
 
 		Convey(`Permission denied`, func() {
 			req := &pb.QueryTestVariantsRequest{
@@ -104,12 +127,109 @@ func TestQueryTestVariants(t *testing.T) {
 			So(err, ShouldErrLike, "resultdb.testExonerations.listLimited")
 		})
 
-		Convey(`Query succeeds with limited permissions`, func() {
+		Convey(`Valid with limited list permission`, func() {
 			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv2"},
 			})
 			So(err, ShouldBeNil)
-			So(len(res.TestVariants), ShouldEqual, 1)
+			So(len(res.TestVariants), ShouldEqual, 4)
+
+			// Check the returned test variants are appropriately masked.
+			duration := &durationpb.Duration{Seconds: 0, Nanos: 234567000}
+			So(res.TestVariants, ShouldResembleProto, []*pb.TestVariant{
+				{
+					TestId:      "T1002",
+					VariantHash: pbutil.VariantHash(pbutil.Variant("k0", "v0")),
+					Status:      pb.TestVariantStatus_UNEXPECTED,
+					Results: []*pb.TestResultBundle{
+						{
+							Result: &pb.TestResult{
+								Name:     "invocations/inv2/tests/T1002/results/0",
+								ResultId: "0",
+								Status:   pb.TestStatus_FAIL,
+								Duration: duration,
+								IsMasked: true,
+							},
+						},
+					},
+					IsMasked: true,
+				},
+				{
+					TestId:      "T1003",
+					Variant:     pbutil.Variant("k1", "v1"),
+					VariantHash: pbutil.VariantHash(pbutil.Variant("k1", "v1")),
+					Status:      pb.TestVariantStatus_EXONERATED,
+					Results: []*pb.TestResultBundle{
+						{
+							Result: &pb.TestResult{
+								Name:        "invocations/inv3/tests/T1003/results/0",
+								ResultId:    "0",
+								Status:      pb.TestStatus_FAIL,
+								Duration:    duration,
+								SummaryHtml: "SummaryHtml",
+							},
+						},
+					},
+					Exonerations: []*pb.TestExoneration{
+						{
+							Name:            "invocations/inv3/tests/T1003/exonerations/0",
+							ExplanationHtml: "explanation 0",
+							Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+							IsMasked:        true,
+						},
+					},
+				},
+				{
+					TestId:      "T1004",
+					Variant:     pbutil.Variant("k2", "v2"),
+					VariantHash: pbutil.VariantHash(pbutil.Variant("k2", "v2")),
+					Status:      pb.TestVariantStatus_EXONERATED,
+					Results: []*pb.TestResultBundle{
+						{
+							Result: &pb.TestResult{
+								Name:     "invocations/inv4/tests/T1004/results/0",
+								ResultId: "0",
+								Status:   pb.TestStatus_FAIL,
+								Duration: duration,
+								IsMasked: true,
+							},
+						},
+					},
+					Exonerations: []*pb.TestExoneration{
+						{
+							Name:            "invocations/inv4/tests/T1004/exonerations/0",
+							ExplanationHtml: "explanation 0",
+							Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+						},
+					},
+					IsMasked: true,
+				},
+				{
+					TestId:      "T1005",
+					VariantHash: pbutil.VariantHash(pbutil.Variant("k3", "v3")),
+					Status:      pb.TestVariantStatus_EXONERATED,
+					Results: []*pb.TestResultBundle{
+						{
+							Result: &pb.TestResult{
+								Name:     "invocations/inv5/tests/T1005/results/0",
+								ResultId: "0",
+								Status:   pb.TestStatus_FAIL,
+								Duration: duration,
+								IsMasked: true,
+							},
+						},
+					},
+					Exonerations: []*pb.TestExoneration{
+						{
+							Name:            "invocations/inv5/tests/T1005/exonerations/0",
+							ExplanationHtml: "explanation 0",
+							Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+							IsMasked:        true,
+						},
+					},
+					IsMasked: true,
+				},
+			})
 		})
 
 		Convey(`Valid with included invocation`, func() {
@@ -120,13 +240,6 @@ func TestQueryTestVariants(t *testing.T) {
 			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
 			So(len(res.TestVariants), ShouldEqual, 3)
-			getTVStrings := func(tvs []*pb.TestVariant) []string {
-				tvStrings := make([]string, len(tvs))
-				for i, tv := range tvs {
-					tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
-				}
-				return tvStrings
-			}
 			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
 				"10/T2/e3b0c44298fc1c14",
 				"30/T1/c467ccce5a16dc72",
@@ -142,13 +255,6 @@ func TestQueryTestVariants(t *testing.T) {
 			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
 			So(len(res.TestVariants), ShouldEqual, 1)
-			getTVStrings := func(tvs []*pb.TestVariant) []string {
-				tvStrings := make([]string, len(tvs))
-				for i, tv := range tvs {
-					tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
-				}
-				return tvStrings
-			}
 			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
 				"30/T1/c467ccce5a16dc72",
 			})
@@ -167,13 +273,6 @@ func TestQueryTestVariants(t *testing.T) {
 			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
 			So(len(res.TestVariants), ShouldEqual, 3)
-			getTVStrings := func(tvs []*pb.TestVariant) []string {
-				tvStrings := make([]string, len(tvs))
-				for i, tv := range tvs {
-					tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
-				}
-				return tvStrings
-			}
 			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
 				"10/T2/e3b0c44298fc1c14",
 				"30/T1/c467ccce5a16dc72",
@@ -249,7 +348,7 @@ func TestDetermineListAccessLevel(t *testing.T) {
 				invocations.ID("i3"), invocations.ID("i3b"))
 			accessLevel, err := determineListAccessLevel(ctx, ids)
 			So(err, ShouldBeNil)
-			So(accessLevel, ShouldEqual, testvariants.AccessLevelSAL1)
+			So(accessLevel, ShouldEqual, testvariants.AccessLevelLimited)
 		})
 		Convey("Full access", func() {
 			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"),

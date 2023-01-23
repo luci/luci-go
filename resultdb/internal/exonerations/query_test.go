@@ -15,6 +15,7 @@
 package exonerations
 
 import (
+	"context"
 	"sort"
 	"testing"
 
@@ -78,5 +79,42 @@ func TestQueryTestExonerations(t *testing.T) {
 				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 			},
 		})
+	})
+}
+
+func TestToLimitedData(t *testing.T) {
+	ctx := context.Background()
+
+	Convey(`ToLimitedData masks fields`, t, func() {
+		invocationID := "inv0"
+		testID := "FooBar"
+		exonerationID := "123"
+		name := pbutil.TestExonerationName(invocationID, testID, exonerationID)
+		variant := pbutil.Variant("v", "a")
+		variantHash := pbutil.VariantHash(variant)
+
+		testExoneration := &pb.TestExoneration{
+			Name:            name,
+			TestId:          testID,
+			Variant:         variant,
+			ExonerationId:   exonerationID,
+			ExplanationHtml: "explanation 0",
+			VariantHash:     variantHash,
+			Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+		}
+
+		expected := &pb.TestExoneration{
+			Name:            name,
+			TestId:          testID,
+			ExonerationId:   exonerationID,
+			ExplanationHtml: "explanation 0",
+			VariantHash:     variantHash,
+			Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+			IsMasked:        true,
+		}
+
+		err := ToLimitedData(ctx, testExoneration)
+		So(err, ShouldBeNil)
+		So(testExoneration, ShouldResembleProto, expected)
 	})
 }

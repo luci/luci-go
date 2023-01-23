@@ -19,11 +19,24 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/proto/mask"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+// LimitedFields is a field mask for TestExoneration to use when the caller
+// only has the listLimited permission for test exonerations.
+var limitedFields = mask.MustFromReadMask(&pb.TestExoneration{},
+	"name",
+	"test_id",
+	"exoneration_id",
+	"variant_hash",
+	"explanation_html",
+	"reason",
 )
 
 // Query specifies test exonerations to fetch.
@@ -93,4 +106,16 @@ func (q *Query) Fetch(ctx context.Context) (tes []*pb.TestExoneration, nextPageT
 		nextPageToken = pagination.Token(string(invID), testID, exID)
 	}
 	return
+}
+
+// ToLimitedData limits the given TestExoneration to the fields allowed when
+// the caller only has the listLimited permission for test exonerations.
+func ToLimitedData(ctx context.Context, te *pb.TestExoneration) error {
+	if err := limitedFields.Trim(te); err != nil {
+		return err
+	}
+
+	te.IsMasked = true
+
+	return nil
 }

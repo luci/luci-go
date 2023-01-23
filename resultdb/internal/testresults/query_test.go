@@ -15,6 +15,7 @@
 package testresults
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"testing"
@@ -22,8 +23,11 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
+	durpb "google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -555,6 +559,125 @@ func TestQueryTestResults(t *testing.T) {
 				// Compare sql strings ignoring whitespaces.
 				So(strings.Join(strings.Fields(st.SQL), " "), ShouldEqual, strings.Join(strings.Fields(expected), " "))
 			})
+		})
+	})
+}
+
+func TestToLimitedData(t *testing.T) {
+	ctx := context.Background()
+
+	Convey(`ToLimitedData`, t, func() {
+		invID := "inv0"
+		testID := "FooBar"
+		resultID := "123"
+		name := pbutil.TestResultName(invID, testID, resultID)
+		variant := pbutil.Variant()
+		variantHash := pbutil.VariantHash(variant)
+
+		Convey(`masks fields`, func() {
+			testResult := &pb.TestResult{
+				Name:        name,
+				TestId:      testID,
+				ResultId:    resultID,
+				Variant:     variant,
+				Expected:    true,
+				Status:      pb.TestStatus_PASS,
+				SummaryHtml: "SummaryHtml",
+				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
+				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
+				Tags:        pbutil.StringPairs("k1", "v1", "k2", "v2"),
+				VariantHash: variantHash,
+				TestMetadata: &pb.TestMetadata{
+					Name: "name",
+					Location: &pb.TestLocation{
+						Repo:     "https://chromium.googlesource.com/chromium/src",
+						FileName: "//artifact_dir/a_test.cc",
+						Line:     54,
+					},
+				},
+				FailureReason: &pb.FailureReason{
+					PrimaryErrorMessage: "an error message",
+				},
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key": structpb.NewStringValue("value"),
+					},
+				},
+			}
+			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
+
+			expected := &pb.TestResult{
+				Name:        name,
+				TestId:      testID,
+				ResultId:    resultID,
+				Expected:    true,
+				Status:      pb.TestStatus_PASS,
+				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
+				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
+				VariantHash: variantHash,
+				FailureReason: &pb.FailureReason{
+					PrimaryErrorMessage: "an error message",
+				},
+				IsMasked: true,
+			}
+			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
+
+			err := ToLimitedData(ctx, testResult)
+			So(err, ShouldBeNil)
+			So(testResult, ShouldResembleProto, expected)
+		})
+
+		Convey(`truncates primary error message`, func() {
+			testResult := &pb.TestResult{
+				Name:        name,
+				TestId:      testID,
+				ResultId:    resultID,
+				Variant:     variant,
+				Expected:    false,
+				Status:      pb.TestStatus_FAIL,
+				SummaryHtml: "SummaryHtml",
+				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
+				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
+				Tags:        pbutil.StringPairs("k1", "v1", "k2", "v2"),
+				VariantHash: variantHash,
+				TestMetadata: &pb.TestMetadata{
+					Name: "name",
+					Location: &pb.TestLocation{
+						Repo:     "https://chromium.googlesource.com/chromium/src",
+						FileName: "//artifact_dir/a_test.cc",
+						Line:     54,
+					},
+				},
+				FailureReason: &pb.FailureReason{
+					PrimaryErrorMessage: strings.Repeat("a very long error message", 10),
+				},
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key": structpb.NewStringValue("value"),
+					},
+				},
+			}
+			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
+
+			expected := &pb.TestResult{
+				Name:        name,
+				TestId:      testID,
+				ResultId:    resultID,
+				Expected:    false,
+				Status:      pb.TestStatus_FAIL,
+				StartTime:   &timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
+				Duration:    &durpb.Duration{Seconds: int64(123), Nanos: 234567000},
+				VariantHash: variantHash,
+				FailureReason: &pb.FailureReason{
+					PrimaryErrorMessage: strings.Repeat("a very long error message", 10)[:limitedReasonLength] + "...",
+				},
+				IsMasked: true,
+			}
+			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
+
+			err := ToLimitedData(ctx, testResult)
+			So(err, ShouldBeNil)
+			So(testResult, ShouldResembleProto, expected)
 		})
 	})
 }
