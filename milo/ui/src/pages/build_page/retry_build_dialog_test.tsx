@@ -24,6 +24,7 @@ import { BuildPageInstance } from '../../store/build_page';
 import { RetryBuildDialog } from './retry_build_dialog';
 
 describe('RetryBuildDialog', () => {
+  let sandbox: sinon.SinonSandbox;
   let timer: sinon.SinonFakeTimers;
   let store: Instance<typeof Store>;
   let retryBuildStub: sinon.SinonStub<
@@ -31,10 +32,11 @@ describe('RetryBuildDialog', () => {
     ReturnType<BuildPageInstance['retryBuild']>
   >;
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    sandbox = sinon.createSandbox();
+    timer = sandbox.useFakeTimers();
     store = Store.create();
     unprotect(store);
-    retryBuildStub = sinon.stub(store.buildPage!, 'retryBuild');
+    retryBuildStub = sandbox.stub(store.buildPage!, 'retryBuild');
     protect(store);
     retryBuildStub.resolves({
       builder: { project: 'proj', bucket: 'bucket', builder: 'builder' },
@@ -43,14 +45,15 @@ describe('RetryBuildDialog', () => {
   });
 
   afterEach(() => {
-    timer.restore();
+    unprotect(store);
+    sandbox.restore();
+    protect(store);
     destroy(store);
   });
 
   it('should redirect to the new build', async () => {
-    const onCloseSpy = sinon.spy();
-    const routerGoStub = sinon.stub(Router, 'go');
-    after(() => routerGoStub.restore());
+    const onCloseSpy = sandbox.spy();
+    const routerGoStub = sandbox.stub(Router, 'go');
 
     render(
       <StoreProvider value={store}>
