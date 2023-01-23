@@ -1011,6 +1011,12 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 		WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
 	}
 
+	if cfg.GetDescriptionHtml() != "" {
+		b.BuilderInfo = &pb.Build_BuilderInfo{
+			Description: cfg.GetDescriptionHtml(),
+		}
+	}
+
 	if req.Critical != pb.Trinary_UNSET {
 		b.Critical = req.Critical
 	}

@@ -42,7 +42,7 @@ import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 // represents a state of a build at completion time and does not change after
 // that. All fields are included.
 //
-// Next id: 34.
+// Next id: 35.
 message Build {
   // Defines what to build/test.
   //
@@ -139,6 +139,18 @@ message Build {
   // which may change after build has ended.
   BuilderID builder = 2 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED,
                           (visible_with) = BUILDS_GET_LIMITED_PERMISSION ];
+
+  // Information of the builder, propagated from builder config.
+  //
+  // The info captures the state of the builder at creation time.
+  // If any information is updated, all future builds will have the new
+  // information, while the the historical builds persist the old infromation.
+  message BuilderInfo {
+    string description = 1;
+
+    // TODO(crbug.com/1093655): add builder tags.
+  }
+  BuilderInfo builder_info = 34 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Human-readable identifier of the build with the following properties:
   // - unique within the builder

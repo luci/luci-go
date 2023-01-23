@@ -29,6 +29,7 @@ import (
 	grpcStatus "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -5217,6 +5218,29 @@ func TestScheduleBuild(t *testing.T) {
 							RequestID:  "id",
 						})
 					})
+
+					Convey("builder description", func() {
+						So(datastore.Put(ctx, &model.Builder{
+							Parent: model.BucketKey(ctx, "project", "bucket"),
+							ID:     "builder",
+							Config: &pb.BuilderConfig{
+								BuildNumbers:    pb.Toggle_YES,
+								Name:            "builder",
+								SwarmingHost:    "host",
+								DescriptionHtml: "test builder description",
+							},
+						}), ShouldBeNil)
+						req.Mask = &pb.BuildMask{
+							Fields: &fieldmaskpb.FieldMask{
+								Paths: []string{
+									"builder_info",
+								},
+							},
+						}
+						rsp, err := srv.ScheduleBuild(ctx, req)
+						So(err, ShouldBeNil)
+						So(rsp.BuilderInfo.Description, ShouldEqual, "test builder description")
+					})
 				})
 			})
 		})
@@ -5297,7 +5321,6 @@ func TestScheduleBuild(t *testing.T) {
 							SwarmingHost: "host",
 						},
 					}), ShouldBeNil)
-
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldBeNil)
 					So(rsp, ShouldResembleProto, &pb.Build{
