@@ -29,8 +29,12 @@ var errNotImplementedInDev = errors.New("this feature is not available in develo
 
 // DevServerDB implements authdb.DB by allowing everything.
 //
-// It can be used locally during development to skip fully configuring auth.
-// Must not be used for real production applications.
+// It is used locally during development or in local integration tests to skip
+// fully configuring a real auth DB. It must not be used for real production
+// applications.
+//
+// DevServerDB also hardcodes a single IP allowlist called "localhost" that
+// matches any loopback IP address. It may be useful in local integration tests.
 type DevServerDB struct{}
 
 func (DevServerDB) IsAllowedOAuthClientID(ctx context.Context, email, clientID string) (bool, error) {
@@ -72,6 +76,9 @@ func (DevServerDB) GetWhitelistForIdentity(ctx context.Context, ident identity.I
 }
 
 func (DevServerDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
+	if whitelist == "localhost" {
+		return ip.IsLoopback(), nil
+	}
 	return false, nil
 }
 
