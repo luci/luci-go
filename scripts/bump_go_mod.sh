@@ -29,6 +29,7 @@ deps=(
   cloud.google.com/go/bigtable@latest
   cloud.google.com/go/cloudtasks@latest
   cloud.google.com/go/compute@latest
+  cloud.google.com/go/compute/metadata@latest
   cloud.google.com/go/datastore@latest
   cloud.google.com/go/errorreporting@latest
   cloud.google.com/go/iam@latest
@@ -51,7 +52,7 @@ deps=(
   github.com/gorhill/cronexpr@latest
   github.com/jordan-wright/email@latest
   github.com/julienschmidt/httprouter@latest
-  github.com/klauspost/compress@v1.15.9  # newer versions don't support go1.16
+  github.com/klauspost/compress@latest
   github.com/luci/gtreap@latest
   github.com/maruel/subcommands@latest
   github.com/mattn/go-tty@latest
@@ -67,8 +68,16 @@ deps=(
   github.com/smartystreets/goconvey@latest
   github.com/yosuke-furukawa/json5@latest
   go.starlark.net@latest
+  golang.org/x/crypto@latest
+  golang.org/x/net@latest
+  golang.org/x/oauth2@latest
+  golang.org/x/sync@latest
+  golang.org/x/sys@latest
+  golang.org/x/term@latest
+  golang.org/x/time@latest
+  golang.org/x/tools@latest
   google.golang.org/api@latest
-  google.golang.org/appengine@d981f2f002  # "@latest" picks up quite old v1.6.7
+  google.golang.org/appengine@504804fb50  # "@latest" picks up quite old v1.6.7
   google.golang.org/genproto@latest
   google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
   google.golang.org/grpc@latest
