@@ -30,7 +30,6 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -83,7 +82,7 @@ func useTaskBackendClientForTesting(ctx context.Context, client *MockTaskBackend
 func TestBackendTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("assert createBackendTask", t, func() {
+	Convey("assert NewBackendClient", t, func() {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mc := NewMockedClient(context.Background(), ctl)
@@ -97,21 +96,14 @@ func TestBackendTask(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
 
-		build := &model.Build{
-			ID: 1,
-			Proto: &pb.Build{
-				Builder: &pb.BuilderID{
-					Builder: "builder",
-					Bucket:  "bucket",
-					Project: "project",
-				},
-				Id: 1,
+		build := &pb.Build{
+			Builder: &pb.BuilderID{
+				Builder: "builder",
+				Bucket:  "bucket",
+				Project: "project",
 			},
-		}
-		bk := datastore.KeyForObj(ctx, build)
-		infra := &model.BuildInfra{
-			Build: bk,
-			Proto: &pb.BuildInfra{
+			Id: 1,
+			Infra: &pb.BuildInfra{
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Id: &pb.TaskID{
@@ -125,10 +117,9 @@ func TestBackendTask(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, build, infra), ShouldBeNil)
 
 		Convey("global settings not defined", func() {
-			err := CreateBackendTask(ctx, 1)
+			_, err := NewBackendClient(ctx, build)
 			So(err, ShouldErrLike, "could not get global settings config")
 		})
 
@@ -137,7 +128,7 @@ func TestBackendTask(t *testing.T) {
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			err := config.SetTestSettingsCfg(ctx, settingsCfg)
 			So(err, ShouldBeNil)
-			err = CreateBackendTask(ctx, 1)
+			_, err = NewBackendClient(ctx, build)
 			So(err, ShouldErrLike, "could not find target in global config settings")
 		})
 
@@ -150,7 +141,7 @@ func TestBackendTask(t *testing.T) {
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			err := config.SetTestSettingsCfg(ctx, settingsCfg)
 			So(err, ShouldBeNil)
-			err = CreateBackendTask(ctx, 1)
+			_, err = NewBackendClient(ctx, build)
 			So(err, ShouldBeNil)
 		})
 

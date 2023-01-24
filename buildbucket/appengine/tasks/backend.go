@@ -69,26 +69,31 @@ func newTaskBackendClient(ctx context.Context, host string, project string) (Tas
 	}), nil
 }
 
-// Client is the client to communicate with TaskBackend.
+// BackendClient is the client to communicate with TaskBackend.
 // It wraps a pb.TaskBackendClient.
-type Client struct {
+type BackendClient struct {
 	client TaskBackendClient
 }
 
-// NewClient creates a client to communicate with Buildbucket.
-func NewClient(ctx context.Context, host string, project string) (*Client, error) {
-	client, err := newTaskBackendClient(ctx, host, project)
+// NewBackendClient creates a client to communicate with Buildbucket.
+func NewBackendClient(ctx context.Context, bld *pb.Build) (*BackendClient, error) {
+	hostnname, err := computeHostnameFromTarget(ctx, bld.Infra.Backend.Task.Id.Target)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{
+	client, err := newTaskBackendClient(ctx, hostnname, bld.Builder.Project)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BackendClient{
 		client: client,
 	}, nil
 }
 
 // RunTask returns for the requested task.
-func (c *Client) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *BackendClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return c.client.RunTask(ctx, taskReq)
 }
 
@@ -143,20 +148,15 @@ func CreateBackendTask(ctx context.Context, buildID int64) error {
 		return transient.Tag.Apply(errors.Annotate(err, "failed to fetch build %d or buildInfra", buildID).Err())
 	}
 
+	// Create a backend task client
+	backend, err := NewBackendClient(ctx, bld.Proto)
+	if err != nil {
+		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
+	}
+
 	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra)
 	if err != nil {
 		return tq.Fatal.Apply(err)
-	}
-
-	hostname, err := computeHostnameFromTarget(ctx, infra.Proto.Backend.Task.Id.Target)
-	if err != nil {
-		return tq.Fatal.Apply(err)
-	}
-
-	// Create a backend task client
-	backend, err := NewClient(ctx, hostname, bld.Proto.Builder.Project)
-	if err != nil {
-		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}
 
 	// Create a backend task via RunTask
