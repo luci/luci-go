@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
+
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
@@ -259,7 +260,7 @@ func init() {
 		Queue:     "backend-go-default",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CreateBackendBuildTask)
-			return SyncBuild(ctx, t.GetBuildId(), 0)
+			return CreateBackendTask(ctx, t.GetBuildId())
 		},
 	})
 
