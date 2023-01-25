@@ -132,7 +132,8 @@ func TestBotHandler(t *testing.T) {
 
 			req := testRequest{
 				Dimensions: map[string][]string{
-					"id": {"bot-id"},
+					"id":   {"bot-id"},
+					"pool": {"pool"},
 				},
 				PollToken: genToken(pollState, []byte("also-secret")),
 			}
@@ -151,7 +152,8 @@ func TestBotHandler(t *testing.T) {
 
 			req := testRequest{
 				Dimensions: map[string][]string{
-					"id": {"bot-id"},
+					"id":   {"bot-id"},
+					"pool": {"pool"},
 				},
 				SessionToken: genToken(&internalspb.BotSession{
 					RbeBotSessionId: "bot-session-id",
@@ -175,7 +177,8 @@ func TestBotHandler(t *testing.T) {
 
 			req := testRequest{
 				Dimensions: map[string][]string{
-					"id": {"bot-id"},
+					"id":   {"bot-id"},
+					"pool": {"pool"},
 				},
 				PollToken: genToken(pollStateInPollToken, []byte("also-secret")),
 				SessionToken: genToken(&internalspb.BotSession{
@@ -324,6 +327,7 @@ func TestBotHandler(t *testing.T) {
 			req := testRequest{
 				Dimensions: map[string][]string{
 					"id":         {"wrong-bot-id"},
+					"pool":       {"pool"},
 					"keep":       {"a", "b"},
 					"override-1": {"a", "b"},
 					"override-2": {"a", "b"},
@@ -337,6 +341,7 @@ func TestBotHandler(t *testing.T) {
 			So(body, ShouldResemble, &testRequest{
 				Dimensions: map[string][]string{
 					"id":         {"correct-bot-id"},
+					"pool":       {"pool"},
 					"keep":       {"a", "b"},
 					"override-1": {"a"},
 					"override-2": {"b", "a"},

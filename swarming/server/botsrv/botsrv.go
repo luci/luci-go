@@ -248,6 +248,12 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			}
 		}
 
+		// There must be `pool` dimension with at least one value (perhaps more).
+		if len(dims["pool"]) == 0 {
+			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no pool dimension"))
+			return
+		}
+
 		// The request is valid, dispatch it to the handler.
 		resp, err := h(ctx, body, &Request{
 			BotID:      botID,

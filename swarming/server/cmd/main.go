@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
+	"go.chromium.org/luci/swarming/server/rbe"
 )
 
 func main() {
@@ -49,8 +50,18 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		rbeSessions, err := rbe.NewSessionServer(srv.Context, tokenSecret)
+		if err != nil {
+			return err
+		}
+
 		botSrv := botsrv.New(srv.Context, srv.Routes, tokenSecret)
+
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
+		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
+		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
+
 		return nil
 	})
 }
