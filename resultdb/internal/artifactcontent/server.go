@@ -32,14 +32,13 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tokens"
-
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tokens"
 )
 
 var artifactNameTokenKind = tokens.TokenKind{
@@ -98,17 +97,9 @@ func (s *Server) handleOPTIONS(c *router.Context) {
 
 // setAccessControlHeaders allows CORS.
 func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
-	// Don't write out access control headers if the origin is unspecified.
-	const originHeader = "Origin"
-	origin := c.Request.Header.Get(originHeader)
-	if origin == "" {
-		return
-	}
-
 	h := c.Writer.Header()
-	h.Add("Access-Control-Allow-Origin", origin)
-	h.Add("Vary", originHeader)
-	h.Add("Access-Control-Allow-Credentials", "true")
+	h.Add("Access-Control-Allow-Origin", "*")
+	h.Add("Access-Control-Allow-Credentials", "false")
 
 	if preflight {
 		h.Add("Access-Control-Allow-Headers", "Origin, Authorization")
@@ -200,12 +191,10 @@ func (r *contentRequest) parseRequest(ctx context.Context, req *http.Request) er
 
 // checkAccess ensures that the requester has access to the artifact content.
 //
-// If the URL is signed, checks access using token query string param.
-// Otherwise, uses OAuth 2.0.
+// Checks access using signed token query string param.
 func (r *contentRequest) checkAccess(ctx context.Context, req *http.Request) error {
 	token := req.URL.Query().Get("token")
 	if token == "" {
-		// TODO(nodir): fallback to OAuth 2.0.
 		return appstatus.Errorf(codes.Unauthenticated, "no token")
 	}
 
