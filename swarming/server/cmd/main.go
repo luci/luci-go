@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/rbe"
+	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
 )
 
 func main() {
@@ -43,6 +45,12 @@ func main() {
 		"shared-hmac-secret",
 		"sm://shared-hmac",
 		"A name of a secret with an HMAC key to use to produce various tokens.",
+	)
+
+	exposeIntegrationMocks := flag.Bool(
+		"expose-integration-mocks",
+		false,
+		"If set, expose endpoints for running integration tests. Must be used locally only.",
 	)
 
 	server.Main(nil, modules, func(srv *server.Server) error {
@@ -61,6 +69,18 @@ func main() {
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
+
+		// Helpers for running local integration tests. They fake some of Swarming
+		// Python server behavior.
+		if *exposeIntegrationMocks {
+			if srv.Options.Prod {
+				return errors.Reason("-expose-integration-mocks should not be used with -prod").Err()
+			}
+			integrationmocks.RegisterIntegrationMocksServer(srv.PRPC, integrationmocks.New(
+				srv.Context,
+				tokenSecret,
+			))
+		}
 
 		return nil
 	})
