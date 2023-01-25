@@ -34,7 +34,6 @@ package auth
 import (
 	"context"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -467,12 +466,6 @@ func (opts *Options) PopulateDefaults() {
 		opts.MinTokenLifetime = 2 * time.Minute
 	}
 
-	// TODO(vadimsh): This is temporary, to simplify the rollout of new login
-	// flow that replaces OOB flow.
-	if opts.LoginSessionsHost == "" {
-		opts.LoginSessionsHost = os.Getenv("LUCI_AUTH_LOGIN_SESSIONS_HOST")
-	}
-
 	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
 	if opts.SecretsDir != "" && !filepath.IsAbs(opts.SecretsDir) {
 		var err error
@@ -488,10 +481,10 @@ func (opts *Options) PopulateDefaults() {
 //
 // Invoked by Authenticator if AutoSelectMethod is passed as Method in Options.
 // It picks the first applicable method in this order:
-//   * ServiceAccountMethod (if the service account private key is configured).
-//   * LUCIContextMethod (if running inside LUCI_CONTEXT with an auth server).
-//   * GCEMetadataMethod (if running on GCE and GCEAllowAsDefault is true).
-//   * UserCredentialsMethod (if no other method applies).
+//   - ServiceAccountMethod (if the service account private key is configured).
+//   - LUCIContextMethod (if running inside LUCI_CONTEXT with an auth server).
+//   - GCEMetadataMethod (if running on GCE and GCEAllowAsDefault is true).
+//   - UserCredentialsMethod (if no other method applies).
 //
 // Beware: it may do relatively heavy calls on first usage (to detect GCE
 // environment). Fast after that.
@@ -794,12 +787,12 @@ func (a *Authenticator) GetEmail() (string, error) {
 // first attempt to use it.
 //
 // Returns:
-//   * nil if we have a valid cached token or can mint one on the fly.
-//   * ErrLoginRequired if we have no cached token and need to bother the user.
-//   * ErrInsufficientAccess if the configured auth method can't mint the token
+//   - nil if we have a valid cached token or can mint one on the fly.
+//   - ErrLoginRequired if we have no cached token and need to bother the user.
+//   - ErrInsufficientAccess if the configured auth method can't mint the token
 //     we require (e.g when using GCE method and the instance doesn't have all
 //     requested OAuth scopes).
-//   * Generic error on other unexpected errors.
+//   - Generic error on other unexpected errors.
 func (a *Authenticator) CheckLoginRequired() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -1099,9 +1092,10 @@ func (a *Authenticator) ensureInitialized() error {
 // factories set requiresAuth to true.
 //
 // Returns:
-//   (true, nil) if successfully initialized the authenticator with some token.
-//   (false, nil) to disable authentication (for OptionalLogin mode).
-//   (false, err) on errors.
+//
+//	(true, nil) if successfully initialized the authenticator with some token.
+//	(false, nil) to disable authentication (for OptionalLogin mode).
+//	(false, err) on errors.
 func (a *Authenticator) doLoginIfRequired(requiresAuth bool) (useAuth bool, err error) {
 	err = a.CheckLoginRequired() // also initializes guts for effectiveLoginMode()
 	effectiveMode := a.effectiveLoginMode()

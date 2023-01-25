@@ -88,33 +88,45 @@ const (
 
 	// TokenServerDevHost is the host of the LUCI Token Server dev instance.
 	TokenServerDevHost = "luci-token-server-dev.appspot.com"
+
+	// LoginSessionsHost is the host to use for CLI login UI by default.
+	LoginSessionsHost = "ci.chromium.org"
 )
 
 var (
-	oauthInit         sync.Once
-	oauthClientID     string
-	oauthClientSecret string
+	oauthInit              sync.Once
+	oauthClientID          string
+	oauthClientSecret      string
+	oauthLoginSessionsHost string
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
 // defaults.
 func DefaultAuthOptions() auth.Options {
 	// This is temporary until the client ID becomes default.
-	oauthInit.Do(func() {
-		if os.Getenv("LUCI_AUTH_LOGIN_SESSIONS_HOST") != "" {
-			oauthClientID = "446450136466-mj75ourhccki9fffaq8bc1e50di315po.apps.googleusercontent.com"
-			oauthClientSecret = "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"
-		} else {
-			oauthClientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
-			oauthClientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
-		}
-	})
-	return auth.Options{
+	authOpts := auth.Options{
 		TokenServerHost: TokenServerHost,
-		ClientID:        oauthClientID,
-		ClientSecret:    oauthClientSecret,
 		SecretsDir:      SecretsDir(),
 	}
+
+	// TODO(crbug/1406354): Remove opt out flag Feb 1, 2023.
+	oauthInit.Do(func() {
+		if os.Getenv("LUCI_OOB_AUTH") != "" {
+			oauthClientID = "446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com"
+			oauthClientSecret = "uBfbay2KCy9t4QveJ-dOqHtp"
+			oauthLoginSessionsHost = ""
+		} else {
+			oauthClientID = "446450136466-mj75ourhccki9fffaq8bc1e50di315po.apps.googleusercontent.com"
+			oauthClientSecret = "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"
+			oauthLoginSessionsHost = LoginSessionsHost
+		}
+	})
+
+	authOpts.ClientID = oauthClientID
+	authOpts.ClientSecret = oauthClientSecret
+	authOpts.LoginSessionsHost = oauthLoginSessionsHost
+
+	return authOpts
 }
 
 // SetDefaultAuthOptions sets the chromeinfra defaults on `opts`, returning the
@@ -125,6 +137,7 @@ func SetDefaultAuthOptions(opts auth.Options) auth.Options {
 	ret.TokenServerHost = TokenServerHost
 	ret.ClientID = dflts.ClientID
 	ret.ClientSecret = dflts.ClientSecret
+	ret.LoginSessionsHost = dflts.LoginSessionsHost
 	ret.SecretsDir = dflts.SecretsDir
 	return ret
 }
