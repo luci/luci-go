@@ -18,8 +18,10 @@ option (luci.file_metadata) = {
 
 // Schema for settings.cfg service config file in luci-config.
 message SettingsCfg {
+  reserved 5;   // used to be isolate
   reserved 7;   // used to be mp (machine provider settings)
   reserved 10;  // used to be dimension_acls
+  reserved 17;  // used to be use_lifo, see pools.proto Pool.SchedulingAlgorithm
 
   // id to inject into pages if applicable.
   string google_analytics = 1;
@@ -35,8 +37,6 @@ message SettingsCfg {
   // Enable ts_mon based monitoring.
   bool enable_ts_monitoring = 4;
 
-  // (deprecated) isolate field is not used.
-  reserved 5;
 
   // (deprecated, see pools.proto) Configuration for swarming-cipd integration.
   CipdSettings cipd = 6;
@@ -72,9 +72,6 @@ message SettingsCfg {
   // This originally added things to child-src, which was deprecated:
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/child-src
   repeated string extra_child_src_csp_url = 16;
-
-  // Whether tasks should be run in FIFO or LIFO order.
-  bool use_lifo = 17;
 
   // Whether swarming should batch notifications to the external scheduler.
   bool enable_batch_es_notifications = 18;
