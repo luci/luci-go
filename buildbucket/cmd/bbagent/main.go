@@ -678,7 +678,7 @@ func mainImpl() int {
 								CancelTime:           timestamppb.New(clock.Now(ctx)),
 								CancellationMarkdown: "backend task is interrupted",
 							},
-							UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.cancelTime,build.cancellationMarkdown"}},
+							UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.cancel_time,build.cancellation_markdown"}},
 						})
 					if err != nil {
 						logging.Errorf(ctx, "failed to update the build's cancel_time: %s", err)
