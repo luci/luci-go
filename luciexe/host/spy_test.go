@@ -26,6 +26,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -51,8 +52,8 @@ func TestSpy(t *testing.T) {
 		}()
 
 		Convey(`butler active within Run`, func(c C) {
-			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) {
-				bs, err := bootstrap.Get()
+			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
+				bs, _ := bootstrap.Get()
 
 				stream, err := bs.Client.NewDatagramStream(
 					ctx, luciexe.BuildProtoStreamSuffix,

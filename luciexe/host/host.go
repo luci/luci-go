@@ -28,6 +28,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucictx"
 )
 
 var maxLogFlushWaitTime = 30 * time.Second
@@ -54,7 +55,7 @@ var maxLogFlushWaitTime = 30 * time.Second
 // running. Be careful when using Run concurrently with other code. You MUST
 // completely drain the returned channel in order to be guaranteed that all
 // side-effects of Run have been unwound.
-func Run(ctx context.Context, options *Options, cb func(context.Context, Options)) (<-chan *bbpb.Build, error) {
+func Run(ctx context.Context, options *Options, cb func(context.Context, Options, <-chan lucictx.DeadlineEvent, func())) (<-chan *bbpb.Build, error) {
 	var opts Options
 	if options != nil {
 		opts = *options
@@ -141,11 +142,22 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 	})
 	cleanup = nil
 
+	// Buildbucket assigns some grace period to the surrounding task which is
+	// more than what the user requested in `input.Build.GracePeriod`. We
+	// reserve the difference here so the user task only gets what they asked
+	// for.
+	deadline := lucictx.GetDeadline(ctx)
+	toReserve := deadline.GracePeriodDuration() - opts.BaseBuild.GracePeriod.AsDuration()
+	logging.Infof(
+		ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
+		toReserve, lucictx.GetDeadline(ctx).GracePeriodDuration())
+	dctx, shutdown := lucictx.TrackSoftDeadline(ctx, toReserve)
+
 	go func() {
 		defer userCleanup.run(ctx)
 		logging.Infof(ctx, "invoking host environment callback")
 
-		cb(ctx, opts)
+		cb(dctx, opts, lucictx.SoftDeadlineDone(dctx), shutdown)
 	}()
 
 	return buildCh, nil

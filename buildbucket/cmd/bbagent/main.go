@@ -644,7 +644,7 @@ func mainImpl() int {
 	shutdownCh := newCloseOnceCh()
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
-	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options) {
+	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options, deadlineEvntCh <-chan lucictx.DeadlineEvent, shutdown func()) {
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
 		logging.Infof(ctx, "  (cache dir): %q", bbclientInput.input.CacheDir)
 		invokeOpts := &invoke.Options{
@@ -660,26 +660,37 @@ func mainImpl() int {
 		if nopy2 || experiments.Has(buildbucket.ExperimentRecipePY3) {
 			invokeOpts.Env.Set("RECIPES_USE_PY3", "true")
 		}
-		// Buildbucket assigns some grace period to the surrounding task which is
-		// more than what the user requested in `input.Build.GracePeriod`. We
-		// reserve the difference here so the user task only gets what they asked
-		// for.
-		deadline := lucictx.GetDeadline(ctx)
-		toReserve := deadline.GracePeriodDuration() - bbclientInput.input.Build.GracePeriod.AsDuration()
-		logging.Infof(
-			ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
-			toReserve, lucictx.GetDeadline(ctx).GracePeriodDuration())
-		dctx, shutdown := lucictx.TrackSoftDeadline(ctx, toReserve)
+
 		go func() {
 			select {
 			case <-shutdownCh.ch:
 				shutdown()
-			case <-dctx.Done():
+			case evt := <-deadlineEvntCh:
+				// Got interrupt signal.
+				// Try to send the cancel time back to Buildbucket at best effort.
+				// So error of this update is only logged.
+				if evt == lucictx.InterruptEvent {
+					_, err := bbclientInput.bbclient.UpdateBuild(
+						ctx,
+						&bbpb.UpdateBuildRequest{
+							Build: &bbpb.Build{
+								Id:                   bbclientInput.input.Build.Id,
+								CancelTime:           timestamppb.New(clock.Now(ctx)),
+								CancellationMarkdown: "backend task is interrupted",
+							},
+							UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.cancelTime,build.cancellationMarkdown"}},
+						})
+					if err != nil {
+						logging.Errorf(ctx, "failed to update the build's cancel_time: %s", err)
+					}
+					shutdown()
+				}
+			case <-ctx.Done():
 			}
 		}()
 		defer close(invokeErr)
 
-		subp, err := invoke.Start(dctx, exeArgs, bbclientInput.input.Build, invokeOpts)
+		subp, err := invoke.Start(ctx, exeArgs, bbclientInput.input.Build, invokeOpts)
 		if err != nil {
 			invokeErr <- err
 			return

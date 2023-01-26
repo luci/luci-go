@@ -86,7 +86,7 @@ func TestAuth(t *testing.T) {
 		defer closer()
 
 		Convey(`default`, func(c C) {
-			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) {
+			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
 				c.Convey("Task account is available", func() {
 					a := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 						Method: auth.LUCIContextMethod,

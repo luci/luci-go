@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
+	"go.chromium.org/luci/lucictx"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -42,7 +43,7 @@ func TestButler(t *testing.T) {
 		defer closer()
 
 		Convey(`butler active within Run`, func(c C) {
-			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options) {
+			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
 				bs, err := bootstrap.Get()
 				c.So(err, ShouldBeNil)
 				c.So(bs.Client, ShouldNotBeNil)
