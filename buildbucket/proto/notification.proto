@@ -65,6 +65,7 @@ message NotificationConfig {
 // - "bucket"
 // - "builder"
 // - "is_completed" (The value is either "true" or "false" in string.)
+// - "version" (The value is "v2". To help distinguish messages from the old `builds` topic)
 message BuildsV2PubSub {
   // Contains all field except large fields
   Build build = 1;

@@ -189,6 +189,7 @@ func (x *NotificationConfig) GetUserData() []byte {
 // - "bucket"
 // - "builder"
 // - "is_completed" (The value is either "true" or "false" in string.)
+// - "version" (The value is "v2". To help distinguish messages from the old `builds` topic)
 type BuildsV2PubSub struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
