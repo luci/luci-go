@@ -428,7 +428,8 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	// Handle the message from `builds_v2` pubsub topic.
 	if v, ok := msg.Message.Attributes["version"].(string); ok && v == "v2" {
 		buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
-		if err := protojson.Unmarshal(msg.Message.Data, buildsV2Msg); err != nil {
+		opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
+		if err := opts.Unmarshal(msg.Message.Data, buildsV2Msg); err != nil {
 			return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
 		}
 		// TODO(crbug.com/1408909): remove the logging after migration is done.
