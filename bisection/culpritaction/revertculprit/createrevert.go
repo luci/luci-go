@@ -143,7 +143,7 @@ func generateRevertDescription(ctx context.Context, culpritModel *model.Suspect,
 	// skipped if the description for the culprit is not available.
 	culpritDescription, err := gerrit.CommitMessage(ctx, culprit)
 	if err == nil {
-		bugPattern := regexp.MustCompile(`(?i)^bug\s*:|=`)
+		bugPattern := regexp.MustCompile(`(?i)^bug\s*[:=]`)
 		prefixedLines := []string{"Original change's description:"}
 		for _, line := range strings.Split(culpritDescription, "\n") {
 			// Check if the line specifies related bugs, so it can be used in the
