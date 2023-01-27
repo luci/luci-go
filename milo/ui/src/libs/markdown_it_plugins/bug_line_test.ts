@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { fixture } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
@@ -26,7 +26,6 @@ describe('bug_line', () => {
   it('can render single bug line correctly', async () => {
     const md = MarkdownIt('zero', { breaks: true }).enable('newline').use(bugLine);
 
-    after(fixtureCleanup);
     const ele = await fixture(md.render(singleBugLine));
 
     const anchors = ele.querySelectorAll('a');
@@ -51,7 +50,6 @@ describe('bug_line', () => {
     const md = MarkdownIt('zero', { breaks: true }).enable('newline').use(bugLine);
 
     it('can renders multiple bug lines with soft break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -67,7 +65,6 @@ describe('bug_line', () => {
     });
 
     it('can renders multiple bug lines with hard break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleBugLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -87,7 +84,6 @@ describe('bug_line', () => {
     const md = MarkdownIt('zero', { breaks: false }).enable('newline').use(bugLine);
 
     it('can renders multiple bug lines with soft break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -103,7 +99,6 @@ describe('bug_line', () => {
     });
 
     it('can renders multiple bug lines with hard break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleBugLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');

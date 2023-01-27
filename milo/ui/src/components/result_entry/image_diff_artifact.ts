@@ -14,7 +14,8 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html } from 'lit-element';
+import { html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import '../expandable_entry';

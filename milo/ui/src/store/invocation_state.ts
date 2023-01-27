@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { deepEqual } from 'fast-equals';
-import { html } from 'lit-html';
+import { html } from 'lit';
 import { autorun, comparer, computed } from 'mobx';
 import { addDisposer, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';

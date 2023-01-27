@@ -14,7 +14,8 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import { css, customElement, html } from 'lit-element';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 

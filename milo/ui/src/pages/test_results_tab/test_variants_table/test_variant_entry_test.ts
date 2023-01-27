@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { aTimeout, expect, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
-import { customElement, LitElement } from 'lit-element';
+import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
+import { expect } from 'chai';
+import { LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { destroy } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
@@ -89,8 +91,6 @@ class TestVariantEntryTestContextElement extends LitElement {
 }
 
 describe('test_variant_entry_test', () => {
-  afterEach(fixtureCleanup);
-
   it('should only query the necessary clusters', async () => {
     const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
     after(() => destroy(store));

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 
 import './tooltip';
@@ -20,7 +20,6 @@ import { HideTooltipEventDetail, ShowTooltipEventDetail, TooltipElement } from '
 
 describe('instant tooltip', () => {
   it('should only display one tooltip at a time', async () => {
-    after(fixtureCleanup);
     const tooltipContainer = await fixture<TooltipElement>(html`<milo-tooltip></milo-tooltip>`);
 
     const tooltip1 = document.createElement('div');
@@ -48,7 +47,6 @@ describe('instant tooltip', () => {
   });
 
   it('should hide tooltip after specified delay', async () => {
-    after(fixtureCleanup);
     const tooltipContainer = await fixture<TooltipElement>(html`<milo-tooltip></milo-tooltip>`);
 
     const tooltip = document.createElement('div');
@@ -76,7 +74,6 @@ describe('instant tooltip', () => {
   });
 
   it('should handle race condition correctly', async () => {
-    after(fixtureCleanup);
     const tooltipContainer = await fixture<TooltipElement>(html`<milo-tooltip></milo-tooltip>`);
 
     const tooltip1 = document.createElement('div');

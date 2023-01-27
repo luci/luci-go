@@ -14,10 +14,11 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
-import { css, customElement, html } from 'lit-element';
-import { classMap } from 'lit-html/directives/class-map';
-import { repeat } from 'lit-html/directives/repeat';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { repeat } from 'lit/directives/repeat.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/dot_spinner';

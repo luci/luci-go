@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render } from 'lit-html';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { render } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { DateTime, Duration } from 'luxon';
 import { action, computed, makeObservable, untracked } from 'mobx';
 import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';

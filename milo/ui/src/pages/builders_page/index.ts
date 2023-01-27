@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import { css, customElement, html } from 'lit-element';
-import { repeat } from 'lit-html/directives/repeat';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';

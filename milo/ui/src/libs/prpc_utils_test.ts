@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { PrpcClient } from '@chopsui/prpc-client';
-import { assert } from '@open-wc/testing/index-no-side-effects';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 
 import { genCacheKeyForPrpcRequest, removeDefaultProps } from './prpc_utils';
@@ -27,7 +27,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.strictEqual(key1, key2);
+    expect(key1).to.eq(key2);
   });
 
   it('should generate different keys for requests with different hosts', async () => {
@@ -39,7 +39,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.notStrictEqual(key1, key2);
+    expect(key1).to.not.eq(key2);
   });
 
   it('should generate different keys for requests with different access tokens', async () => {
@@ -51,7 +51,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.notStrictEqual(key1, key2);
+    expect(key1).to.not.eq(key2);
   });
 
   it('should generate different keys for requests with different secure modes', async () => {
@@ -63,7 +63,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.notStrictEqual(key1, key2);
+    expect(key1).to.not.eq(key2);
   });
 
   it('should generate different keys for requests with different services', async () => {
@@ -74,7 +74,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.notStrictEqual(key1, key2);
+    expect(key1).to.not.eq(key2);
   });
 
   it('should generate different keys for requests with different methods', async () => {
@@ -85,7 +85,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.notStrictEqual(key1, key2);
+    expect(key1).to.not.eq(key2);
   });
 
   it('should generate different keys for requests with different bodies', async () => {
@@ -96,7 +96,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.notStrictEqual(key1, key2);
+    expect(key1).to.not.eq(key2);
   });
 
   it('should generate different keys for requests with different critical headers', async () => {
@@ -107,7 +107,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args), ['header-key']);
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args), ['header-key']);
-    assert.notStrictEqual(key1, key2);
+    expect(key1).to.not.eq(key2);
   });
 
   it('should generate different keys for requests with different default critical headers', async () => {
@@ -155,7 +155,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.strictEqual(key1, key2);
+    expect(key1).to.eq(key2);
   });
 
   it('should generate identical keys for identical requests with different header key cases', async () => {
@@ -166,7 +166,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.strictEqual(key1, key2);
+    expect(key1).to.eq(key2);
   });
 
   it('should generate different keys when prefix are different', async () => {
@@ -188,7 +188,7 @@ describe('genCacheKeyForPrpcRequest', () => {
 
     const key1 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(0).args));
     const key2 = await genCacheKeyForPrpcRequest('prefix', new Request(...fetchStub.getCall(1).args));
-    assert.strictEqual(key1, key2);
+    expect(key1).to.eq(key2);
   });
 });
 
@@ -218,6 +218,6 @@ describe('removeDefaultProps', () => {
     });
 
     // The original object should not be modified.
-    assert.strictEqual(JSON.stringify(original), originalStr);
+    expect(JSON.stringify(original)).to.eq(originalStr);
   });
 });

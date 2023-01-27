@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { fixture, html } from '@open-wc/testing-helpers';
 import { expect } from 'chai';
 
 import './step_cluster';
@@ -45,7 +45,6 @@ describe('bp_step_cluster', () => {
     const ele = await fixture<BuildPageStepClusterElement>(html`
       <milo-bp-step-cluster .store=${Store.create()} .steps=${[step1, step2, step3]}></milo-bp-step-cluster>
     `);
-    after(fixtureCleanup);
 
     // The duration should equals endTime - startTime. Not a sum of all
     // durations. Because steps can run in parallel.

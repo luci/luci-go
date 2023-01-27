@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { Router } from '@vaadin/router';
-import { css, customElement, html } from 'lit-element';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { destroy } from 'mobx-state-tree';
 
 import './tooltip';

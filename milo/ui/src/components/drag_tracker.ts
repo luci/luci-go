@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { customElement, LitElement } from 'lit-element';
-import { html } from 'lit-html';
+import { html, LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 
 export interface DragEventDetails {
   // relative to the start.

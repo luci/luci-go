@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { fixture } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
@@ -26,7 +26,6 @@ describe('reviewer_line', () => {
   it('does not treat "R=" prefix as part of the email address', async () => {
     const md = MarkdownIt('zero', { breaks: true, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
 
-    after(fixtureCleanup);
     const ele = await fixture(md.render(singleReviewerLine));
 
     const anchors = ele.querySelectorAll('a');
@@ -40,7 +39,6 @@ describe('reviewer_line', () => {
     const md = MarkdownIt('zero', { breaks: true, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -56,7 +54,6 @@ describe('reviewer_line', () => {
     });
 
     it('can renders multiple reviewer lines with hard break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -76,7 +73,6 @@ describe('reviewer_line', () => {
     const md = MarkdownIt('zero', { breaks: false, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
@@ -92,7 +88,6 @@ describe('reviewer_line', () => {
     });
 
     it('can renders multiple reviewer lines with hard break correctly', async () => {
-      after(fixtureCleanup);
       const ele = await fixture(md.render(multipleReviewerLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');

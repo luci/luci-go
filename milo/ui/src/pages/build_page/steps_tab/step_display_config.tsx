@@ -26,7 +26,7 @@ import {
   Theme,
   Typography,
 } from '@mui/material';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createRoot, Root } from 'react-dom/client';

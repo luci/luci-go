@@ -14,7 +14,8 @@
 
 import { render, RenderResult, screen } from '@testing-library/react';
 import { expect } from 'chai';
-import { customElement, html, LitElement } from 'lit-element';
+import { html, LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import sinon from 'sinon';
 
 import './hotkey';

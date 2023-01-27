@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { customElement, html } from 'lit-element';
+import { html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { DateTime, Duration } from 'luxon';
 import { autorun, computed, makeObservable, observable } from 'mobx';
 

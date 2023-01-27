@@ -91,7 +91,7 @@
 
 import 'reflect-metadata';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { PropertyValues } from 'lit-element';
+import { PropertyValues } from 'lit';
 
 interface ContextEventDetail {
   onCtxUpdate(newCtxValue: unknown): void;

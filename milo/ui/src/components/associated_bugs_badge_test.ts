@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect, fixture, fixtureCleanup, html, oneEvent } from '@open-wc/testing/index-no-side-effects';
+import { fixture, oneEvent } from '@open-wc/testing-helpers';
+import { expect } from 'chai';
+import { html } from 'lit';
 
 import './associated_bugs_badge';
 import { Cluster } from '../services/luci_analysis';
@@ -60,8 +62,6 @@ const cluster3: Cluster = {
 };
 
 describe('associated_bugs_badge_test', () => {
-  afterEach(fixtureCleanup);
-
   it('should remove duplicated bugs', async () => {
     const ele = await fixture<AssociatedBugsBadgeElement>(html`
       <milo-associated-bugs-badge .clusters=${[cluster1, cluster2, cluster3, cluster1]}></milo-associated-bugs-badge>

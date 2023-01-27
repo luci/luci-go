@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache, { EmotionCache } from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
 import { Router } from '@vaadin/router';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';

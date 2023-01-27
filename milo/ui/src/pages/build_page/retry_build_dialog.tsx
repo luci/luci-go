@@ -17,7 +17,7 @@ import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { Router } from '@vaadin/router';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useCallback } from 'react';

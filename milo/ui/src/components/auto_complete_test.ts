@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { fixture } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
+import { html } from 'lit';
 import sinon, { SinonSpy } from 'sinon';
 
 import './auto_complete';
@@ -52,7 +53,6 @@ describe('auto_complete_test', () => {
     suggestionSpy = sinon.spy(autoSuggestionEle, 'onSuggestionSelected');
     completeSpy = sinon.spy(autoSuggestionEle, 'onComplete');
   });
-  after(fixtureCleanup);
 
   it('should be able to select suggestion with key strokes', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');

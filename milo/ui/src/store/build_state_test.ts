@@ -15,8 +15,8 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
 import chaiSubset from 'chai-subset';
-import { render } from 'lit-html';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { render } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { DateTime } from 'luxon';
 import { action, computed, makeAutoObservable } from 'mobx';
 import { destroy } from 'mobx-state-tree';

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { html } from 'lit-html';
+import { html } from 'lit';
 
 import { Suggestion } from '../../components/auto_complete';
 import { TestVariant } from '../../services/resultdb';

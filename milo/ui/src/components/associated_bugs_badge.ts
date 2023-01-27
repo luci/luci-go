@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import '@material/mwc-menu';
-import { css, customElement } from 'lit-element';
-import { html, render } from 'lit-html';
+import { css, html, render } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import './associated_bugs_tooltip';

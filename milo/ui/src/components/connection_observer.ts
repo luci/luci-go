@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { customElement, html, property } from 'lit-element';
+import { html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
 export interface ConnectionEventDetail<T> {
@@ -31,8 +32,28 @@ export type ConnectionEvent<T> = CustomEvent<ConnectionEventDetail<T>>;
  */
 @customElement('milo-connection-observer')
 export class ConnectionObserverElement<T> extends MobxLitElement {
-  @observable.ref @property({ type: String, attribute: 'event-type' }) eventType = 'connected';
-  @observable.ref @property({ type: Object }) data!: T;
+  static get properties() {
+    return {
+      eventType: {
+        attribute: 'event-type',
+        type: String,
+      },
+      data: {
+        type: Object,
+      },
+    };
+  }
+
+  set eventType(newVal: string) {
+    this._eventType = newVal;
+  }
+
+  set data(newVal: T) {
+    this._data = newVal;
+  }
+
+  @observable.ref _eventType = 'connected';
+  @observable.ref _data!: T;
 
   disconnectedListeners: Array<(data: T) => void> = [];
 
@@ -44,11 +65,11 @@ export class ConnectionObserverElement<T> extends MobxLitElement {
   connectedCallback() {
     super.connectedCallback();
     this.dispatchEvent(
-      new CustomEvent<ConnectionEventDetail<T>>(this.eventType, {
+      new CustomEvent<ConnectionEventDetail<T>>(this._eventType, {
         bubbles: true,
         composed: true,
         detail: {
-          data: this.data,
+          data: this._data,
           addDisconnectedCB: (cb: (data: T) => void) => {
             this.disconnectedListeners.push(cb);
           },
@@ -59,7 +80,7 @@ export class ConnectionObserverElement<T> extends MobxLitElement {
 
   disconnectedCallback() {
     for (const cb of this.disconnectedListeners) {
-      cb(this.data);
+      cb(this._data);
     }
     super.disconnectedCallback();
   }

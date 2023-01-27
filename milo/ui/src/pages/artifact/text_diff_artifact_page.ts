@@ -14,8 +14,9 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as Diff2Html from 'diff2html';
-import { css, customElement, html } from 'lit-element';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 

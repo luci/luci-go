@@ -14,8 +14,9 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import '../../components/auto_complete';

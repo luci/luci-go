@@ -14,7 +14,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import Hotkeys, { HotkeysEvent, KeyHandler } from 'hotkeys-js';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { useEffect } from 'react';
 import * as React from 'react';
@@ -66,7 +66,7 @@ export function Hotkey({ hotkey, handler, filter, children }: HotkeyProps) {
 export class HotkeyElement extends MobxLitElement {
   @observable.ref key!: string;
   handler!: KeyHandler;
-  @observable.ref filter?: Extract<HotkeyProps, 'filter'>;
+  filter?: Extract<HotkeyProps, 'filter'>;
 
   private readonly parent: HTMLSpanElement;
   private readonly root: Root;

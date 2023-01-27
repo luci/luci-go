@@ -26,7 +26,7 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';

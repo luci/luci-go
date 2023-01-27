@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { html, TemplateResult } from 'lit-html';
+import { html, TemplateResult } from 'lit';
 
 /**
- * Return a lit-html template that highlight the substring (case-insensitive)
+ * Return a lit-element template that highlight the substring (case-insensitive)
  * in the given fullString.
  */
 export function highlight(fullString: string, subString: string): TemplateResult {

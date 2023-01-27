@@ -75,8 +75,7 @@
     // 1. stop relying on lit-element reactive properties, and
     // 2. use mobx reactive properties instead, and
     // 3. use LitElement.updated to emulate property update if necessary.
-    //
-    // @property() decorators can still be used to define attributes.
+    // 4. use `static get properties() { return {...} }` to define attributes if needed.
     //
     // [1]: https://mobx.js.org/migrating-from-4-or-5.html#getting-started
     // [2]: https://lit.dev/docs/components/properties/#avoiding-issues-with-class-fields

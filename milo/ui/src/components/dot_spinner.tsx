@@ -15,7 +15,8 @@
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache, keyframes } from '@emotion/react';
 import { Box, BoxProps, styled } from '@mui/material';
-import { customElement, LitElement } from 'lit-element';
+import { LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { createRoot, Root } from 'react-dom/client';
 
 import commonStyle from '../styles/common_style.css';

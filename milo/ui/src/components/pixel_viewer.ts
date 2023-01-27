@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { axisLeft, axisTop, scaleLinear, select as d3Select } from 'd3';
-import { css, customElement, html, PropertyValues } from 'lit-element';
+import { css, html, PropertyValues } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { autorun, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { consumer, createContextLink } from '../libs/context';

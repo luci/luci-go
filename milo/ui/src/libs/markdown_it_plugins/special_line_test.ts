@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { fixture } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 import Token from 'markdown-it/lib/token';
@@ -30,7 +30,6 @@ describe('special_line', () => {
   it('can handle regex matching empty prefix (e.g. lookahead regex)', async () => {
     const md = MarkdownIt('zero', { breaks: true, linkify: true }).use(lookaheadLine);
 
-    after(fixtureCleanup);
     const ele = await fixture(md.render('abc=content'));
     assert.equal(ele.textContent, 'special');
   });

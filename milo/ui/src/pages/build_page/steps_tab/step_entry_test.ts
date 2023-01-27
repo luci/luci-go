@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
-import { css, customElement, LitElement } from 'lit-element';
+import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
+import { css, LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 
 import './step_entry';
 import { provider } from '../../../libs/context';
@@ -60,7 +61,5 @@ describe('bp_step_entry', () => {
       </milo-bp-step-entry-test-notifier-provider>
     `);
     await aTimeout(10);
-
-    after(fixtureCleanup);
   });
 });

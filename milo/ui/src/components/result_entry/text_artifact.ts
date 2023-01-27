@@ -14,7 +14,8 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement, html, property } from 'lit-element';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
@@ -34,6 +35,19 @@ import commonStyle from '../../styles/common_style.css';
 @customElement('text-artifact')
 @consumer
 export class TextArtifactElement extends MobxLitElement {
+  static get properties() {
+    return {
+      artifactId: {
+        attribute: 'artifact-id',
+        type: String,
+      },
+      invLevel: {
+        attribute: 'inv-level',
+        type: Boolean,
+      },
+    };
+  }
+
   @observable.ref
   @consumeArtifacts()
   artifacts!: Map<string, Artifact>;
@@ -42,12 +56,20 @@ export class TextArtifactElement extends MobxLitElement {
   @consumeArtifactsFinalized()
   finalized = false;
 
-  @observable.ref @property({ attribute: 'artifact-id' }) artifactID!: string;
-  @observable.ref @property({ attribute: 'inv-level', type: Boolean }) isInvLevelArtifact = false;
+  set artifactId(newVal: string) {
+    this._artifactId = newVal;
+  }
+
+  set invLevel(newVal: boolean) {
+    this._invLevel = newVal;
+  }
+
+  @observable.ref _artifactId!: string;
+  @observable.ref _invLevel = false;
 
   @computed
   private get fetchUrl(): string {
-    const artifact = this.artifacts.get((this.isInvLevelArtifact ? 'inv-level/' : '') + this.artifactID);
+    const artifact = this.artifacts.get((this._invLevel ? 'inv-level/' : '') + this._artifactId);
     // TODO(crbug/1206109): use permanent raw artifact URL.
     return artifact ? artifact.fetchUrl : '';
   }
@@ -73,10 +95,10 @@ export class TextArtifactElement extends MobxLitElement {
   }
 
   protected render = reportRenderError(this, () => {
-    const label = this.isInvLevelArtifact ? 'Inv-level artifact' : 'Artifact';
+    const label = this._invLevel ? 'Inv-level artifact' : 'Artifact';
 
     if (this.finalized && this.fetchUrl === '') {
-      return html`<div>${label}: <i>${this.artifactID}</i> not found.</div>`;
+      return html`<div>${label}: <i>${this._artifactId}</i> not found.</div>`;
     }
 
     if (this.content === null) {
@@ -84,7 +106,7 @@ export class TextArtifactElement extends MobxLitElement {
     }
 
     if (this.content === '') {
-      return html`<div>${label}: <i>${this.artifactID}</i> is empty.</div>`;
+      return html`<div>${label}: <i>${this._artifactId}</i> is empty.</div>`;
     }
 
     return html`<pre>${this.content}</pre>`;

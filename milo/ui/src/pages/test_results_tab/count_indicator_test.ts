@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { customElement, html, LitElement } from 'lit-element';
+import { html, LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 import sinon from 'sinon';
 
@@ -82,7 +83,6 @@ describe('Test Count Indicator', () => {
     queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
     queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
 
-    after(fixtureCleanup);
     const provider = await fixture<ContextProvider>(html`
       <milo-trt-count-indicator-context-provider .invocationState=${store.invocationPage.invocation}>
         <milo-trt-count-indicator></milo-trt-count-indicator>

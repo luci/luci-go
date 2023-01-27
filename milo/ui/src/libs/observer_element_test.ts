@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { css, customElement } from 'lit-element';
+import { css } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
 import * as sinon from 'sinon';
 
@@ -109,12 +110,11 @@ describe('enterViewObserver', () => {
     `);
     entries = listView.querySelectorAll<EnterViewObserverTestEntryElement>('milo-enter-view-observer-test-entry');
   });
-  afterEach(fixtureCleanup);
 
   it('should notify entries in the view.', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
-      assert.equal(entry.onEnterCallCount, i <= 10 ? 1 : 0);
+      assert.equal(entry.onEnterCallCount, i <= 10 ? 1 : 0, `entry ${i} call count`);
     });
   });
 
@@ -124,7 +124,7 @@ describe('enterViewObserver', () => {
     await aTimeout(20);
 
     entries.forEach((entry, i) => {
-      assert.equal(entry.onEnterCallCount, i <= 15 ? 1 : 0);
+      assert.equal(entry.onEnterCallCount, i <= 15 ? 1 : 0, `entry ${i} call count`);
     });
   });
 
@@ -136,23 +136,21 @@ describe('enterViewObserver', () => {
     await aTimeout(20);
 
     entries.forEach((entry, i) => {
-      assert.equal(entry.onEnterCallCount, i <= 15 ? 1 : 0);
+      assert.equal(entry.onEnterCallCount, i <= 15 ? 1 : 0, `entry ${i} call count`);
     });
   });
 
   it('different instances can have different notifiers', async () => {
     const notifier1 = new IntersectionNotifier();
     const notifier2 = new IntersectionNotifier();
-    const notifierStub1 = sinon.stub(notifier1);
-    const notifierStub2 = sinon.stub(notifier2);
-
-    const provider1 = await fixture<EnterViewObserverNotifierProviderElement>(html`
+    const notifierSpy1 = sinon.spy(notifier1);
+    const notifierSpy2 = sinon.spy(notifier2);
+    const provider1 = await fixture(html`
       <milo-enter-view-observer-notifier-provider-test .notifier=${notifier1}>
         <milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>
       </milo-enter-view-observer-notifier-provider-test>
     `);
-
-    const provider2 = await fixture<EnterViewObserverNotifierProviderElement>(html`
+    const provider2 = await fixture(html`
       <milo-enter-view-observer-notifier-provider-test .notifier=${notifier2}>
         <milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>
       </milo-enter-view-observer-notifier-provider-test>
@@ -161,24 +159,24 @@ describe('enterViewObserver', () => {
     const entry1 = provider1.querySelector('milo-enter-view-observer-test-entry') as EnterViewObserverTestEntryElement;
     const entry2 = provider2.querySelector('milo-enter-view-observer-test-entry') as EnterViewObserverTestEntryElement;
 
+    assert.strictEqual(notifierSpy1.subscribe.callCount, 1);
+    assert.strictEqual(notifierSpy1.subscribe.getCall(0).args[0], entry1);
+    assert.strictEqual(notifierSpy2.subscribe.callCount, 1);
+    assert.strictEqual(notifierSpy2.subscribe.getCall(0).args[0], entry2);
+
     fixtureCleanup();
 
-    assert.strictEqual(notifierStub1.subscribe.callCount, 1);
-    assert.strictEqual(notifierStub1.subscribe.getCall(0).args[0], entry1);
-    assert.strictEqual(notifierStub2.subscribe.callCount, 1);
-    assert.strictEqual(notifierStub2.subscribe.getCall(0).args[0], entry2);
-
-    assert.strictEqual(notifierStub1.unsubscribe.callCount, 1);
-    assert.strictEqual(notifierStub1.unsubscribe.getCall(0).args[0], entry1);
-    assert.strictEqual(notifierStub2.unsubscribe.callCount, 1);
-    assert.strictEqual(notifierStub2.unsubscribe.getCall(0).args[0], entry2);
+    assert.strictEqual(notifierSpy2.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierSpy2.unsubscribe.getCall(0).args[0], entry2);
+    assert.strictEqual(notifierSpy1.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierSpy1.unsubscribe.getCall(0).args[0], entry1);
   });
 
   it('updating observer should works correctly', async () => {
     const notifier1 = new IntersectionNotifier();
     const notifier2 = new IntersectionNotifier();
-    const notifierStub1 = sinon.stub(notifier1);
-    const notifierStub2 = sinon.stub(notifier2);
+    const notifierSpy1 = sinon.spy(notifier1);
+    const notifierSpy2 = sinon.spy(notifier2);
 
     const provider = await fixture<EnterViewObserverNotifierProviderElement>(html`
       <milo-enter-view-observer-notifier-provider-test .notifier=${notifier1}>
@@ -187,20 +185,18 @@ describe('enterViewObserver', () => {
     `);
     const entry = provider.querySelector('milo-enter-view-observer-test-entry') as EnterViewObserverTestEntryElement;
 
-    assert.strictEqual(notifierStub1.subscribe.callCount, 1);
-    assert.strictEqual(notifierStub1.subscribe.getCall(0).args[0], entry);
+    assert.strictEqual(notifierSpy1.subscribe.callCount, 1);
+    assert.strictEqual(notifierSpy1.subscribe.getCall(0).args[0], entry);
 
     provider.notifier = notifier2;
     await aTimeout(20);
-    assert.strictEqual(notifierStub2.subscribe.callCount, 1);
-    assert.strictEqual(notifierStub2.subscribe.getCall(0).args[0], entry);
-    assert.strictEqual(notifierStub1.unsubscribe.callCount, 1);
-    assert.strictEqual(notifierStub1.unsubscribe.getCall(0).args[0], entry);
+    assert.strictEqual(notifierSpy2.subscribe.callCount, 1);
+    assert.strictEqual(notifierSpy2.subscribe.getCall(0).args[0], entry);
+    assert.strictEqual(notifierSpy1.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierSpy1.unsubscribe.getCall(0).args[0], entry);
 
-    fixtureCleanup();
-
-    assert.strictEqual(notifierStub2.unsubscribe.callCount, 1);
-    assert.strictEqual(notifierStub2.unsubscribe.getCall(0).args[0], entry);
+    assert.strictEqual(notifierSpy2.unsubscribe.callCount, 1);
+    assert.strictEqual(notifierSpy2.unsubscribe.getCall(0).args[0], entry);
   });
 });
 
@@ -240,7 +236,6 @@ describe('lazyRendering', () => {
     `);
     entries = listView.querySelectorAll<LazyRenderingElement>('milo-lazy-rendering-test-entry');
   });
-  afterEach(fixtureCleanup);
 
   it('should only render content for elements entered the view.', async () => {
     await aTimeout(20);
@@ -316,7 +311,6 @@ describe('progressiveNotifier', () => {
     `);
     entries = listView.querySelectorAll<ProgressiveRenderingElement>('milo-progressive-rendering-test-entry');
   });
-  afterEach(fixtureCleanup);
 
   it('should only render content for elements entered the view.', async () => {
     await aTimeout(20);

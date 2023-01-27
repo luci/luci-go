@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { fixture } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { customElement, html, LitElement } from 'lit-element';
+import { html, LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
 import { MiloBaseElement } from '../components/milo_base';
@@ -309,9 +310,6 @@ export class ContextConsumerWrapper extends LitElement {
 // DOM then reconnected to DOM.
 describe('context', () => {
   describe('ContextProvider', () => {
-    beforeEach(fixtureCleanup);
-    after(fixtureCleanup);
-
     it('should provide context to descendent context consumers', async () => {
       const outerProvider = await fixture<OuterContextProvider>(html`
         <milo-outer-context-provider-test>

@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { property, customElement, LitElement, css } from "lit-element";
-import { DateTime } from "luxon";
-import commonStyle from '../styles/common_style.css';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import {
   axisBottom,
   axisLeft,
@@ -26,12 +24,17 @@ import {
   Selection,
   timeMillisecond,
 } from 'd3';
-import { PREDEFINED_TIME_INTERVALS } from "../libs/constants";
-import { roundDown } from "../libs/utils";
-import { displayDuration, NUMERIC_TIME_FORMAT } from "../libs/time_utils";
-import { enumerate } from "../libs/iter_utils";
-import { html, render } from "lit-html";
-import { HideTooltipEventDetail, ShowTooltipEventDetail } from "./tooltip";
+import { css, html, render } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { DateTime } from 'luxon';
+import { makeObservable, observable } from 'mobx';
+
+import { PREDEFINED_TIME_INTERVALS } from '../libs/constants';
+import { enumerate } from '../libs/iter_utils';
+import { displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
+import { roundDown } from '../libs/utils';
+import commonStyle from '../styles/common_style.css';
+import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
 const TOP_AXIS_HEIGHT = 35;
 const BOTTOM_AXIS_HEIGHT = 25;
@@ -66,27 +69,21 @@ export interface TimelineBlock {
 }
 
 @customElement('milo-timeline')
-export class Timeline extends LitElement {
+export class Timeline extends MobxLitElement {
   // The time to start the timeline.
   // Blocks that are not between startTime and endTime will be rendered as a blank row.
-  @property({ attribute: false })
-  declare startTime: DateTime;
+  @observable.ref startTime = DateTime.now();
   // Label for the start time rendered in the timeline header.
-  @property({ attribute: false })
-  declare startTimeLabel: string;
+  @observable.ref startTimeLabel = 'Start Time';
   // The time to end the timeline.
   // Blocks that are not between startTime and endTime will be rendered as a blank row.
-  @property({ attribute: false })
-  declare endTime: DateTime;
+  @observable.ref endTime = DateTime.now();
   // Label for the end time rendered in the timeline header.
-  @property({ attribute: false })
-  declare endTimeLabel: string;
+  @observable.ref endTimeLabel = 'End Time';
   // The blocks of time to render on the timeline.
-  @property({ attribute: false })
-  declare blocks: TimelineBlock[];
+  @observable.ref blocks: TimelineBlock[] = [];
 
-  @property()
-  private width = MIN_GRAPH_WIDTH;
+  @observable.ref private width = MIN_GRAPH_WIDTH;
 
   private headerEle!: HTMLDivElement;
   private footerEle!: HTMLDivElement;
@@ -102,14 +99,9 @@ export class Timeline extends LitElement {
   // prevTimeout is the id of the timeout set in the previous render call.  If it is null there is no pending timeout.
   private prevTimeout: number | null = null;
 
-
   constructor() {
     super();
-    this.startTime = DateTime.now();
-    this.endTime = DateTime.now();
-    this.startTimeLabel = 'Start Time';
-    this.endTimeLabel = 'End Time';
-    this.blocks = [];
+    makeObservable(this);
   }
 
   render() {
@@ -319,6 +311,7 @@ export class Timeline extends LitElement {
       }
       this.prevTimeout = window.setTimeout(() => {
         this.prevTimeout = null;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         blockText.each(function () {
           const textBBox = this.getBBox();
@@ -381,8 +374,8 @@ export class Timeline extends LitElement {
   }
 
   /**
-    * Installs handlers for interacting with a inv object.
-    */
+   * Installs handlers for interacting with a inv object.
+   */
   private installBlockInteractionHandlers<T extends BaseType>(
     ele: Selection<T, unknown, null, undefined>,
     block: TimelineBlock
@@ -412,11 +405,12 @@ export class Timeline extends LitElement {
                   </tr>
                   <tr>
                     <td>Ended:</td>
-                    <td>${block.end
-              ? block.end.toFormat(NUMERIC_TIME_FORMAT) +
-              ` (after ${displayDuration(block.end.diff(this.startTime))})`
-              : 'N/A'
-            }</td>
+                    <td>${
+                      block.end
+                        ? block.end.toFormat(NUMERIC_TIME_FORMAT) +
+                          ` (after ${displayDuration(block.end.diff(this.startTime))})`
+                        : 'N/A'
+                    }</td>
                   </tr>
                   <tr>
                     <td>Duration:</td>
@@ -443,105 +437,107 @@ export class Timeline extends LitElement {
   }
   static styles = [
     commonStyle,
-    css`#timeline {
-            display: grid;
-            grid-template-rows: ${TOP_AXIS_HEIGHT}px 1fr ${BOTTOM_AXIS_HEIGHT}px;
-            grid-template-columns: ${SIDE_PANEL_WIDTH}px 1fr;
-            grid-template-areas:
-              'header header'
-              'side-panel body'
-              'footer footer';
-          }
+    css`
+      #timeline {
+        display: grid;
+        grid-template-rows: ${TOP_AXIS_HEIGHT}px 1fr ${BOTTOM_AXIS_HEIGHT}px;
+        grid-template-columns: ${SIDE_PANEL_WIDTH}px 1fr;
+        grid-template-areas:
+          'header header'
+          'side-panel body'
+          'footer footer';
+      }
 
-          #header {
-            grid-area: header;
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 2;
-          }
+      #header {
+        grid-area: header;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 2;
+      }
 
-          #footer {
-            grid-area: footer;
-            position: sticky;
-            bottom: 0;
-            background: white;
-            z-index: 2;
-          }
+      #footer {
+        grid-area: footer;
+        position: sticky;
+        bottom: 0;
+        background: white;
+        z-index: 2;
+      }
 
-          #side-panel {
-            grid-area: side-panel;
-            z-index: 1;
-            font-weight: 500;
-          }
+      #side-panel {
+        grid-area: side-panel;
+        z-index: 1;
+        font-weight: 500;
+      }
 
-          #body {
-            grid-area: body;
-          }
+      #body {
+        grid-area: body;
+      }
 
-          #body path.domain {
-            stroke: none;
-          }
+      #body path.domain {
+        stroke: none;
+      }
 
-          svg {
-            width: 100%;
-            height: 100%;
-          }
+      svg {
+        width: 100%;
+        height: 100%;
+      }
 
-          text {
-            fill: var(--default-text-color);
-          }
+      text {
+        fill: var(--default-text-color);
+      }
 
-          #relative-time {
-            fill: red;
-          }
+      #relative-time {
+        fill: red;
+      }
 
-          .grid line {
-            stroke: var(--divider-color);
-          }
+      .grid line {
+        stroke: var(--divider-color);
+      }
 
-          .clickable {
-            cursor: pointer;
-          }
-          .not-intractable {
-            pointer-events: none;
-          }
-          .hyperlink {
-            text-decoration: underline;
-          }
-          .nowrap {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
+      .clickable {
+        cursor: pointer;
+      }
+      .not-intractable {
+        pointer-events: none;
+      }
+      .hyperlink {
+        text-decoration: underline;
+      }
+      .nowrap {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-          .scheduled > rect {
-            stroke: var(--scheduled-color);
-            fill: var(--scheduled-bg-color);
-          }
-          .started > rect {
-            stroke: var(--started-color);
-            fill: var(--started-bg-color);
-          }
-          .success > rect {
-            stroke: var(--success-color);
-            fill: var(--success-bg-color);
-          }
-          .failure > rect {
-            stroke: var(--failure-color);
-            fill: var(--failure-bg-color);
-          }
-          .infra-failure > rect {
-            stroke: var(--critical-failure-color);
-            fill: var(--critical-failure-bg-color);
-          }
-          .canceled > rect {
-            stroke: var(--canceled-color);
-            fill: var(--canceled-bg-color);
-          }
+      .scheduled > rect {
+        stroke: var(--scheduled-color);
+        fill: var(--scheduled-bg-color);
+      }
+      .started > rect {
+        stroke: var(--started-color);
+        fill: var(--started-bg-color);
+      }
+      .success > rect {
+        stroke: var(--success-color);
+        fill: var(--success-bg-color);
+      }
+      .failure > rect {
+        stroke: var(--failure-color);
+        fill: var(--failure-bg-color);
+      }
+      .infra-failure > rect {
+        stroke: var(--critical-failure-color);
+        fill: var(--critical-failure-bg-color);
+      }
+      .canceled > rect {
+        stroke: var(--canceled-color);
+        fill: var(--canceled-bg-color);
+      }
 
-          .invisible {
-            opacity: 0;
-          }`
-  ]
+      .invisible {
+        opacity: 0;
+      }
+    `,
+  ];
 }

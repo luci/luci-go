@@ -14,7 +14,7 @@
 
 // TODO(weiweilin): figure out a clean way to dedupe with tr_search_query.ts
 
-import { html } from 'lit-html';
+import { html } from 'lit';
 
 import { Suggestion } from '../../components/auto_complete';
 import { VariantPredicate } from '../../services/luci_analysis';

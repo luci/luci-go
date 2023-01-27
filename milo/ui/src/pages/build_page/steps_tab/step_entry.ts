@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { css, customElement } from 'lit-element';
-import { html, render } from 'lit-html';
-import { classMap } from 'lit-html/directives/class-map';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html, render } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/copy_to_clipboard';

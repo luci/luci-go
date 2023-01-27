@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { fixture } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
@@ -27,7 +27,6 @@ const md = MarkdownIt('zero', { linkify: true }).enable('linkify').use(bugnizerL
 
 describe('bugnizer_link', () => {
   it('can render links correctly', async () => {
-    after(fixtureCleanup);
     const ele = await fixture(md.render(bugnizerLinks));
 
     const anchors = ele.querySelectorAll('a');

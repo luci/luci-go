@@ -17,7 +17,7 @@ import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Feedback, MoreVert } from '@mui/icons-material';
 import { Box, IconButton, Link, LinkProps, styled } from '@mui/material';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createRoot, Root } from 'react-dom/client';

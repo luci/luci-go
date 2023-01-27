@@ -16,7 +16,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { Fragment, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';

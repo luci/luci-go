@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { AxisScale, axisTop, scaleTime, select as d3Select, timeDay, timeFormat } from 'd3';
-import { css, customElement, html } from 'lit-element';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';

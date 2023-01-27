@@ -21,12 +21,12 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import * as CodeMirror from 'codemirror';
 import foldGutterStyle from 'codemirror/addon/fold/foldgutter.css';
 import codemirrorStyle from 'codemirror/lib/codemirror.css';
-import { css, customElement } from 'lit-element';
-import { html } from 'lit-html';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
 /**
- * A lit-element wrapper of codemirror
+ * A Lit wrapper of codemirror
  */
 @customElement('milo-code-mirror-editor')
 export class CodeMirrorEditorElement extends MobxLitElement {

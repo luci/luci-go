@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import './hotkey';

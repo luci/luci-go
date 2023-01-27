@@ -14,8 +14,9 @@
 
 import '@material/mwc-button';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement, html, TemplateResult } from 'lit-element';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { css, html, TemplateResult } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { action, computed, makeObservable, observable } from 'mobx';
 
 import '../../components/build_tag_row';
@@ -264,7 +265,7 @@ export class OverviewTabElement extends MobxLitElement {
       <table>
         <tr>
           <td>Buildbucket ID:</td>
-          <td><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} target="_blank"></td>
+          <td><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} .target=${'_blank'}></td>
         </tr>
         ${
           build.infra?.swarming
@@ -283,7 +284,7 @@ export class OverviewTabElement extends MobxLitElement {
                 </tr>
                 <tr>
                   <td>Bot:</td>
-                  <td>${botLink ? html`<milo-link .link=${botLink} target="_blank"></milo-link>` : 'N/A'}</td>
+                  <td>${botLink ? html`<milo-link .link=${botLink} .target=${'_blank'}></milo-link>` : 'N/A'}</td>
                 </tr>
                 <tr>
                   <td>Service Account:</td>
@@ -305,14 +306,16 @@ export class OverviewTabElement extends MobxLitElement {
             ? html`
                 <tr>
                   <td>Recipe:</td>
-                  <td><milo-link .link=${this.build.recipeLink} target="_blank"></milo-link></td>
+                  <td><milo-link .link=${this.build.recipeLink} .target=${'_blank'}></milo-link></td>
                 </tr>
               `
             : ''
         }
         <tr>
           <td>ResultDB Invocation:</td>
-          <td>${invocationLink ? html`<milo-link .link=${invocationLink} target="_blank"></milo-link>` : 'None'}</td>
+          <td>${
+            invocationLink ? html`<milo-link .link=${invocationLink} .target=${'_blank'}></milo-link>` : 'None'
+          }</td>
         </tr>
       </table>
     `;

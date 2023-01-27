@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 import { DateTime, Duration } from 'luxon';
 
@@ -23,7 +23,6 @@ describe('relative_timestamp_test', () => {
   it('should display timestamp in the past correctly', async () => {
     const past = DateTime.now().minus(Duration.fromObject({ seconds: 20, millisecond: 500 }));
 
-    after(fixtureCleanup);
     const ele = await fixture<RelativeTimestampElement>(html`
       <milo-relative-timestamp .timestamp=${past}></milo-relative-timestamp>
     `);
@@ -34,7 +33,6 @@ describe('relative_timestamp_test', () => {
   it('should display timestamp in the future correctly', async () => {
     const past = DateTime.now().plus(Duration.fromObject({ seconds: 20, millisecond: 500 }));
 
-    after(fixtureCleanup);
     const ele = await fixture<RelativeTimestampElement>(html`
       <milo-relative-timestamp .timestamp=${past}></milo-relative-timestamp>
     `);
@@ -45,7 +43,6 @@ describe('relative_timestamp_test', () => {
     this.timeout(10000);
     const past = DateTime.now().plus(Duration.fromObject({ seconds: 2, millisecond: 500 }));
 
-    after(fixtureCleanup);
     const ele = await fixture<RelativeTimestampElement>(html`
       <milo-relative-timestamp .timestamp=${past}></milo-relative-timestamp>
     `);

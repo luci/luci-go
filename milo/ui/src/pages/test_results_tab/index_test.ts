@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { customElement, html, LitElement } from 'lit-element';
+import { html, LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { computed } from 'mobx';
 import { destroy } from 'mobx-state-tree';
 import sinon, { SinonStub } from 'sinon';

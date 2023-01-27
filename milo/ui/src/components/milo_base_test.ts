@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { fixture, html } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 
 import { MiloBaseElement } from './milo_base';
 
@@ -39,7 +39,6 @@ describe('milo_base', () => {
       }
     }
 
-    after(fixtureCleanup);
     const testBaseElement = await fixture<TestBaseElement>(html`<milo-test-base></milo-test-base>`);
 
     assert.deepEqual(records, []);

@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { css, customElement } from 'lit-element';
-import { html } from 'lit-html';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { DateTime } from 'luxon';
 import { autorun, computed, makeObservable, observable } from 'mobx';
 
@@ -77,17 +77,23 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
             // this.numRequestsCompleted += 1;
             this.batchRequestComplete();
             if (delayedInvs.length) {
-              this.store.services.resultDb?.getInvocation({ name: delayedInvs.pop()! }, {skipUpdate: true}).then(invocationReceivedCallback).catch((e) => {
+              this.store.services.resultDb
+                ?.getInvocation({ name: delayedInvs.pop()! }, { skipUpdate: true })
+                .then(invocationReceivedCallback)
+                .catch((e) => {
+                  // TODO(mwarton): display the error to the user.
+                  console.error(e);
+                });
+            }
+          };
+          for (const invocationName of invs) {
+            this.store.services.resultDb
+              ?.getInvocation({ name: invocationName }, { skipUpdate: true })
+              .then(invocationReceivedCallback)
+              .catch((e) => {
                 // TODO(mwarton): display the error to the user.
                 console.error(e);
-              })
-            }
-          }
-          for (const invocationName of invs) {
-            this.store.services.resultDb?.getInvocation({ name: invocationName }, {skipUpdate: true}).then(invocationReceivedCallback).catch((e) => {
-              // TODO(mwarton): display the error to the user.
-              console.error(e);
-            })
+              });
           }
         } catch (e) {
           // TODO(mwarton): display the error to the user.
@@ -132,8 +138,7 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
       return html``;
     }
 
-
-    const blocks: TimelineBlock[] = this.includedInvocations.map(i => ({
+    const blocks: TimelineBlock[] = this.includedInvocations.map((i) => ({
       text: stripInvocationPrefix(i.name),
       href: `/ui/inv/${stripInvocationPrefix(i.name)}/invocation-details`,
       start: DateTime.fromISO(i.createTime),

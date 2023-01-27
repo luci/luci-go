@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { customElement, LitElement } from 'lit-element';
+import { LitElement } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import * as sinon from 'sinon';
 
 import './error_handler';
@@ -42,7 +43,6 @@ class ErrorHandlerTestOnErrorReturnsPropElement extends MobxLitElement {
 
 describe('errorHandler', () => {
   it('should render error message by default', async () => {
-    after(fixtureCleanup);
     const errorHandlerEle = await fixture<ErrorHandlerTestDefaultElement>(html`
       <milo-error-handler-test-default>
         <div></div>
@@ -55,7 +55,6 @@ describe('errorHandler', () => {
   });
 
   it('should update error message when received a new error event', async () => {
-    after(fixtureCleanup);
     const errorHandlerEle = await fixture<ErrorHandlerTestDefaultElement>(html`
       <milo-error-handler-test-default>
         <div></div>
@@ -71,7 +70,6 @@ describe('errorHandler', () => {
   });
 
   it('should render the original content when onErrorRender returns false', async () => {
-    after(fixtureCleanup);
     const errorHandlerEle = await fixture<ErrorHandlerTestOnErrorReturnsPropElement>(html`
       <milo-error-handler-test-on-error-returns-prop>
         <div></div>
@@ -326,7 +324,6 @@ class ErrorHandlerTestRecoverElement extends LitElement {
 
 describe('forwardWithoutMsg', () => {
   it('should dispatch an error event to the parent element with the same error but no message', async () => {
-    after(fixtureCleanup);
     const parentEle = await fixture(html`
       <div>
         <milo-error-handler-test-forward-without-msg>
@@ -353,7 +350,6 @@ describe('forwardWithoutMsg', () => {
   });
 
   it('should recover from the error if e.preventDefault() is called', async () => {
-    after(fixtureCleanup);
     const parentEle = await fixture(html`
       <milo-error-handler-test-recover>
         <milo-error-handler-test-forward-without-msg>
@@ -374,7 +370,6 @@ describe('forwardWithoutMsg', () => {
   });
 
   it('can recover from the error even when the error is forwarded multiple times', async () => {
-    after(fixtureCleanup);
     const parentEle = await fixture<ErrorHandlerTestRecoverElement>(html`
       <milo-error-handler-test-recover>
         <milo-error-handler-test-forward-without-msg id="outer">

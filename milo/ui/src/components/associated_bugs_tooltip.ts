@@ -14,8 +14,8 @@
 
 import '@material/mwc-menu';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement } from 'lit-element';
-import { html } from 'lit-html';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
 import { Cluster, makeRuleLink } from '../services/luci_analysis';

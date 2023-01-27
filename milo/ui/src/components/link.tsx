@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
-import { customElement, property } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createRoot, Root } from 'react-dom/client';
@@ -42,12 +42,7 @@ export const MiloLink = observer(({ link, target }: MiloLinkProps) => {
 @customElement('milo-link')
 export class MiloLinkElement extends MobxLitElement {
   @observable.ref link!: Link;
-
-  @observable.ref
-  // needed to ensure `target="_blank" works instead of requiring
-  // `.target=${'_blank'}``
-  @property()
-  target?: string;
+  @observable.ref target?: string;
 
   private readonly cache: EmotionCache;
   private readonly parent: HTMLDivElement;

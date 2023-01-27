@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { fixture, html } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import MarkdownIt from 'markdown-it';
 
 import { defaultTarget } from './default_target';
@@ -46,7 +46,6 @@ describe('default_target', () => {
     const ele = await fixture(html`<div>${unsafeHTML(md.render(links))}</div>`);
     anchors = ele.querySelectorAll('a');
   });
-  after(fixtureCleanup);
 
   it('can set default target', () => {
     const anchor1 = anchors.item(0);

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fixture, fixtureCleanup, html } from '@open-wc/testing/index-no-side-effects';
+import { fixture, html } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 import { initDefaultTrustedTypesPolicy, sanitizeHTML } from './sanitize_html';
 
@@ -39,7 +39,6 @@ describe('sanitize_html', () => {
     root = await fixture(html`${unsafeHTML(sanitizeHTML(DIRTY_HTML))}`);
     anchors = root.querySelectorAll('a');
   });
-  after(fixtureCleanup);
 
   it('should set rel="noopener" when target attribute is set to _blank', () => {
     const anchor = anchors.item(0);

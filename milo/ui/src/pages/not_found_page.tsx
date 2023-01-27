@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache, { EmotionCache } from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { createRoot, Root } from 'react-dom/client';
 
 import commonStyle from '../styles/common_style.css';

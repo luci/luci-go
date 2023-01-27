@@ -23,8 +23,8 @@ import {
   Selection,
   timeMillisecond,
 } from 'd3';
-import { css, customElement, html } from 'lit-element';
-import { render } from 'lit-html';
+import { css, html, render } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { DateTime } from 'luxon';
 import { autorun, makeObservable, observable } from 'mobx';
 

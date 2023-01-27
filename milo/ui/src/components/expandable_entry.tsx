@@ -15,8 +15,9 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { Box } from '@mui/material';
-import { css, customElement, html } from 'lit-element';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { makeObservable, observable } from 'mobx';
 import { createContext, useContext } from 'react';
 

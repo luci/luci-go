@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
-import { css, customElement, html } from 'lit-element';
-import { render } from 'lit-html';
-import { styleMap } from 'lit-html/directives/style-map';
+import { css, html, render } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { DateTime } from 'luxon';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 

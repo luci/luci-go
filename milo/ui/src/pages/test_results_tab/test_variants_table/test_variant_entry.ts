@@ -14,9 +14,10 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, customElement, html } from 'lit-element';
-import { repeat } from 'lit-html/directives/repeat';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 

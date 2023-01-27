@@ -17,7 +17,7 @@ import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Search } from '@mui/icons-material';
 import { Box, FormControl, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
-import { customElement } from 'lit-element';
+import { customElement } from 'lit/decorators.js';
 import { debounce } from 'lodash-es';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';

@@ -22,7 +22,8 @@ import {
   timeMinute,
   timeSecond,
 } from 'd3';
-import { css, customElement, html } from 'lit-element';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';

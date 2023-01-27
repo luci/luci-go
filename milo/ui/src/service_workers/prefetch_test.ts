@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout } from '@open-wc/testing/index-no-side-effects';
+import { aTimeout } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 

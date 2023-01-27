@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { customElement, html, PropertyValues } from 'lit-element';
+import { html, PropertyValues } from 'lit';
+import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
 
 import { MiloBaseElement } from '../components/milo_base';
