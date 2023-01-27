@@ -179,9 +179,6 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   }
 
   firstUpdated() {
-    if (!this.step.succeededRecursively) {
-      this.expanded = true;
-    }
     if (this.step.isPinned) {
       this.expanded = true;
 
