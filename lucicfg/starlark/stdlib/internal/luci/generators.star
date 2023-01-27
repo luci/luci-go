@@ -322,19 +322,37 @@ def gen_buildbucket_cfg(ctx):
     set_config(ctx, buildbucket.cfg_file, cfg)
     _buildbucket_check_connections()
 
+    shadow_bucket_constraints = _buildbucket_shadow_bucket_constraints(buckets)
     for bucket in buckets:
         swarming = _buildbucket_builders(bucket)
         dynamic_builder_template = {} if bucket.props.dynamic else None
         if dynamic_builder_template != None and swarming != None:
             error("dynamic bucket \"%s\" must not have pre-defined builders" % bucket.props.name, trace = bucket.trace)
+
+        constraints = _buildbucket_constraints(bucket)
+        if shadow_bucket_constraints and shadow_bucket_constraints.get(bucket.props.name):
+            if not constraints:
+                constraints = buildbucket_pb.Bucket.Constraints()
+            additional_constraints = shadow_bucket_constraints[bucket.props.name]
+            constraints.pools.extend(additional_constraints.pools)
+            constraints.pools = sorted(set(constraints.pools))
+            constraints.service_accounts.extend(additional_constraints.service_accounts)
+            constraints.service_accounts = sorted(set(constraints.service_accounts))
+
         cfg.buckets.append(buildbucket_pb.Bucket(
             name = bucket.props.name,
             acls = _buildbucket_acls(get_bucket_acls(bucket)),
             swarming = swarming,
             shadow = _buildbucket_shadow(bucket),
-            constraints = _buildbucket_constraints(bucket),
+            constraints = constraints,
             dynamic_builder_template = dynamic_builder_template,
         ))
+
+    if shadow_bucket_constraints:
+        _gen_shadow_service_account_bindings(
+            ctx.output[output_path(realms_cfg(get_project()))],
+            shadow_bucket_constraints,
+        )
 
     topics = [
         buildbucket_pb.BuildbucketCfg.Topic(
@@ -383,6 +401,36 @@ def _buildbucket_identity(a):
         return "project:" + a.project
     fail("impossible")
 
+def _buildbucket_shadow_bucket_constraints(buckets):
+    """a list of luci.bucket(...) nodes => a dict of bucket name to constraints."""
+    shadow_bucket_constraints = {}
+    for bucket in buckets:
+        service_accounts = []
+        pools = []
+        for node in graph.children(bucket.key, kinds.BUILDER):
+            if node.props.shadow_service_account:
+                service_accounts.append(node.props.shadow_service_account)
+            if node.props.shadow_pool:
+                pools.append(node.props.shadow_pool)
+
+        if len(service_accounts) == 0 and len(pools) == 0:
+            continue
+        shadow = _buildbucket_shadow(bucket)
+        if not shadow:
+            error(
+                "builders in bucket %s set shadow_service_account or shadow_pool, but the bucket does not have a shadow bucket" %
+                bucket.props.name,
+                trace = bucket.trace,
+            )
+            return None
+        constraints = shadow_bucket_constraints.setdefault(shadow, struct(
+            service_accounts = [],
+            pools = [],
+        ))
+        constraints.service_accounts.extend(service_accounts)
+        constraints.pools.extend(pools)
+    return shadow_bucket_constraints
+
 def _buildbucket_builders(bucket):
     """luci.bucket(...) node => buildbucket_pb.Swarming or None."""
     def_swarming_host = None
@@ -428,6 +476,12 @@ def _buildbucket_builders(bucket):
                 swarming_host = def_swarming_host
             bldr_config.swarming_host = swarming_host
             bldr_config.swarming_tags = node.props.swarming_tags
+
+        if node.props.shadow_service_account or node.props.shadow_pool:
+            bldr_config.shadow_builder_adjustments = buildbucket_pb.BuilderConfig.ShadowBuilderAdjustments(
+                service_account = node.props.shadow_service_account,
+                pool = node.props.shadow_pool,
+            )
         builders.append(bldr_config)
     return buildbucket_pb.Swarming(builders = builders) if builders else None
 
@@ -538,6 +592,25 @@ def _buildbucket_constraints(bucket):
     if len(pools) == 0 and len(service_accounts) == 0:
         return None
     return buildbucket_pb.Bucket.Constraints(pools = pools, service_accounts = service_accounts)
+
+def _gen_shadow_service_account_bindings(realms_cfg, shadow_bucket_constraints):
+    """Mutates realms.cfg by adding `role/buildbucket.builderServiceAccount` bindings.
+
+    This function is to add builders' shadow_service_accounts to their shadow
+    buckets as builder service accounts.
+
+    Args:
+      realms_cfg: realms_pb.RealmsCfg to mutate.
+      shadow_bucket_constraints: a dict of bucket name to constraints
+    """
+    for bucket, constraints in shadow_bucket_constraints.items():
+        principals = ["user:" + account for account in constraints.service_accounts]
+        if len(principals) == 0:
+            continue
+        realms.append_binding_pb(realms_cfg, keys.realm(bucket).id, realms_pb.Binding(
+            role = "role/buildbucket.builderServiceAccount",
+            principals = principals,
+        ))
 
 ################################################################################
 ## scheduler.cfg.

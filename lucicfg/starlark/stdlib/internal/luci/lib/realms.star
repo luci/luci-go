@@ -370,6 +370,11 @@ def _append_binding_pb(realms_cfg, realm, binding):
     """
     for r in realms_cfg.realms:
         if r.name == realm:
+            for b in r.bindings:
+                if b.role == binding.role and b.conditions == binding.conditions:
+                    b.principals.extend(binding.principals)
+                    b.principals = sorted(set(b.principals))
+                    return
             r.bindings.append(binding)
             return
     realms_cfg.realms.append(realms_pb.Realm(

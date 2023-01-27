@@ -1456,6 +1456,8 @@ luci.builder(
     resultdb_settings = None,
     test_presentation = None,
     task_backend = None,
+    shadow_service_account = None,
+    shadow_pool = None,
     triggers = None,
     triggered_by = None,
     notifies = None,
@@ -1537,6 +1539,8 @@ Buildbucket.
 * **resultdb_settings**: A buildbucket_pb.BuilderConfig.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
 * **test_presentation**: A [resultdb.test_presentation(...)](#resultdb.test-presentation) struct. A configuration that defines how tests should be rendered in the UI.
 * **task_backend**: the name of the task backend defined via [luci.task_backend(...)](#luci.task-backend). Supports the module-scoped default.
+* **shadow_service_account**: If set, then led builds created for this Builder will instead use this service account. This is useful to allow users to automatically have their testing builds assume a service account which is different than your production service account. When specified, the shadow_service_account will also be included into the shadow bucket's constraints (see [luci.bucket_constraints(...)](#luci.bucket-constraints)). Which also means it will be granted the `role/buildbucket.builderServiceAccount` role in the shadow bucket realm.
+* **shadow_pool**: If set, then led builds created for this Builder will instead be set to use this alternate pool instead. This would allow you to grant users the ability to create led builds in the alternate pool without allowing them to create builds in the production pool. When specified, the shadow_pool will also be included into the shadow bucket's constraints (see [luci.bucket_constraints(...)](#luci.bucket-constraints)).
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
 * **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree-closer).
@@ -2499,15 +2503,17 @@ However, the following restrictions apply until CV takes on Tricium:
 
 * Most CQ features are not supported except for `location_filters` and
   `owner_whitelist`. If provided, they must meet the following conditions:
-    * `location_filters` must match either host and project or neither, and
-      match only a file extension, or all paths. Note that, the exact same
-      set of Gerrit repos should be specified across all analyzers in this
-      cq_group and across each unique file extension.
+    * `location_filters` must specify either both host_regexp and
+      project_regexp or neither. For path_regexp, it must match file
+      extension only (e.g. `.+\.py`) or everything. Note that, the exact
+      same set of Gerrit repos should be specified across all analyzers in
+      this cq_group and across each unique file extension.
     * `owner_whitelist` must be the same for all analyzers declared
       in this cq_group.
 * Analyzers will run on changes targeting **all refs** of the Gerrit repos
-  watched by the containing cq_group (or repos derived from location_filters,
-  see above) even though refs or refs_exclude may be provided.
+  watched by the containing cq_group (or repos derived from
+  location_filters, see above) even though refs or refs_exclude may be
+  provided.
 * All analyzers must be declared in a single [luci.cq_group(...)](#luci.cq-group).
 
 For example:
@@ -2555,7 +2561,7 @@ break CQ. This can be done by asking lucicfg to track only Tricium config:
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq-group) declaration.
 * **result_visibility**: can be used to restrict the visibility of the tryjob results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL` and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full visibility: builder name and full summary markdown are included in the Gerrit comment.
 * **cancel_stale**: Controls whether not yet finished builds previously triggered by CQ will be cancelled as soon as a substantially different patchset is uploaded to a CL. Default is True, meaning CQ will cancel. In LUCI Change Verifier (aka CV, successor of CQ), changing this option will only take effect on newly-created Runs once config propagates to CV. Ongoing Runs will retain the old behavior. (TODO(crbug/1127991): refactor this doc after migration. As of 09/2020, CV implementation is WIP)
-* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in the CL description.
+* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_filters`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in the CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decision whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
 * **location_filters**: a list of [cq.location_filter(...)](#cq.location-filter).
@@ -2607,18 +2613,11 @@ builder’s bucket. I.e.
 adds 'ci-sa@service-account.com' to bucket ci’s constraints.
 
 Can also be used to add constraints to a bucket outside of
-the bucket declaration. In particular useful in functions. For example:
+the bucket declaration. For example:
 
     luci.bucket(name = 'ci')
     luci.bucket(name = 'ci.shadow', shadows = 'ci')
-
-    def ci_builder(name, ..., shadow_pool = None):
-      luci.builder(name = name, bucket = 'ci', ...)
-        if shadow_pool:
-          luci.bucket_constraints(
-              bucket = 'ci.shadow',
-              pools = [shadow_pool],
-          )
+    luci.bucket_constraints(bucket = 'ci.shadow', pools = [shadow_pool])
 
 #### Arguments {#luci.bucket-constraints-args}
 

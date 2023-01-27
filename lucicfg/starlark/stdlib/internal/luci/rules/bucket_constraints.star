@@ -56,18 +56,11 @@ def _bucket_constraints(
     adds 'ci-sa@service-account.com' to bucket ci’s constraints.
 
     Can also be used to add constraints to a bucket outside of
-    the bucket declaration. In particular useful in functions. For example:
+    the bucket declaration. For example:
 
         luci.bucket(name = 'ci')
         luci.bucket(name = 'ci.shadow', shadows = 'ci')
-
-        def ci_builder(name, ..., shadow_pool = None):
-          luci.builder(name = name, bucket = 'ci', ...)
-            if shadow_pool:
-              luci.bucket_constraints(
-                  bucket = 'ci.shadow',
-                  pools = [shadow_pool],
-              )
+        luci.bucket_constraints(bucket = 'ci.shadow', pools = [shadow_pool])
 
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).

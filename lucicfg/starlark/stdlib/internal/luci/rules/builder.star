@@ -71,6 +71,10 @@ def _builder(
         # TaskBackend.
         task_backend = None,
 
+        # led build adjustments.
+        shadow_service_account = None,
+        shadow_pool = None,
+
         # Relations.
         triggers = None,
         triggered_by = None,
@@ -229,6 +233,21 @@ def _builder(
       task_backend: the name of the task backend defined via luci.task_backend(...).
         Supports the module-scoped default.
 
+      shadow_service_account: If set, then led builds created for this Builder
+        will instead use this service account. This is useful to allow users to
+        automatically have their testing builds assume a service account which
+        is different than your production service account.
+        When specified, the shadow_service_account will also be included into
+        the shadow bucket's constraints (see luci.bucket_constraints(...)).
+        Which also means it will be granted the
+        `role/buildbucket.builderServiceAccount` role in the shadow bucket realm.
+      shadow_pool: If set, then led builds created for this Builder will instead
+        be set to use this alternate pool instead. This would allow you to grant
+        users the ability to create led builds in the alternate pool without
+        allowing them to create builds in the production pool.
+        When specified, the shadow_pool will also be included into
+        the shadow bucket's constraints (see luci.bucket_constraints(...)).
+
       triggers: builders this builder triggers.
       triggered_by: builders or pollers this builder is triggered by.
       notifies: list of luci.notifier(...) or luci.tree_closer(...) the builder
@@ -270,6 +289,8 @@ def _builder(
         "resultdb": resultdb.validate_settings("settings", resultdb_settings),
         "test_presentation": resultdb.validate_test_presentation("test_presentation", test_presentation),
         "task_backend": keys.task_backend(task_backend) if task_backend != None else None,
+        "shadow_service_account": validate.string("shadow_service_account", shadow_service_account, required = False),
+        "shadow_pool": validate.string("shadow_pool", shadow_pool, required = False),
     }
 
     # Merge explicitly passed properties with the module-scoped defaults.
