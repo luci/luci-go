@@ -23,10 +23,19 @@ import { createRoot, Root } from 'react-dom/client';
 // Let individual hotkey element set the filters instead.
 Hotkeys.filter = () => true;
 
+export type FilterFn = (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => boolean;
+
+// By default, prevent hotkeys from reacting to events from input related elements
+// enclosed in shadow DOM.
+const DEFAULT_FILTER_FN = (keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {
+  const tagName = (keyboardEvent.composedPath()[0] as Partial<HTMLElement>).tagName || '';
+  return !['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName);
+};
+
 export interface HotkeyProps {
   readonly hotkey: string;
   readonly handler: KeyHandler;
-  readonly filter?: (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => boolean;
+  readonly filter?: FilterFn;
   readonly children: React.ReactNode;
 }
 
@@ -36,14 +45,7 @@ export interface HotkeyProps {
  * disconnected.
  */
 export function Hotkey({ hotkey, handler, filter, children }: HotkeyProps) {
-  const filterFn =
-    filter ??
-    // By default, prevent hotkeys from reacting to events from input related elements
-    // enclosed in shadow DOM.
-    ((keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {
-      const tagName = (keyboardEvent.composedPath()[0] as Partial<HTMLElement>).tagName || '';
-      return !['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName);
-    });
+  const filterFn = filter ?? DEFAULT_FILTER_FN;
 
   const handle: KeyHandler = (keyboardEvent, hotkeysEvent) => {
     if (!filterFn(keyboardEvent, hotkeysEvent)) {
@@ -66,7 +68,13 @@ export function Hotkey({ hotkey, handler, filter, children }: HotkeyProps) {
 export class HotkeyElement extends MobxLitElement {
   @observable.ref key!: string;
   handler!: KeyHandler;
-  filter?: Extract<HotkeyProps, 'filter'>;
+  filter?: FilterFn;
+
+  // Ensures the function references never change even when new functions are
+  // assigned to `this.handler` or `this.filter`.
+  // This helps reducing updates.
+  private handlerFn: KeyHandler = (...params) => this.handler(...params);
+  private filterFn: FilterFn = (...params) => (this.filter ?? DEFAULT_FILTER_FN)(...params);
 
   private readonly parent: HTMLSpanElement;
   private readonly root: Root;
@@ -80,7 +88,7 @@ export class HotkeyElement extends MobxLitElement {
 
   protected render() {
     this.root.render(
-      <Hotkey hotkey={this.key} handler={this.handler} filter={this.filter}>
+      <Hotkey hotkey={this.key} handler={this.handlerFn} filter={this.filterFn}>
         <slot></slot>
       </Hotkey>
     );
