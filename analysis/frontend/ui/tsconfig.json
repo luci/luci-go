@@ -15,6 +15,7 @@
         "allowSyntheticDefaultImports": true,
         "experimentalDecorators": true,
         "noEmit": true,
+        "noEmitOnError": true,
         "jsx": "react-jsx",
         "lib": ["dom", "dom.iterable", "esnext"],
         "plugins": [
