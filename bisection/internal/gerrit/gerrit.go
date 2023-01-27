@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/auth"
 )
@@ -175,6 +176,7 @@ func (c *Client) HasDependency(ctx context.Context, change *gerritpb.ChangeInfo)
 
 // CreateRevert creates a revert change in Gerrit for the specified change.
 func (c *Client) CreateRevert(ctx context.Context, change *gerritpb.ChangeInfo, message string) (*gerritpb.ChangeInfo, error) {
+	logging.Debugf(ctx, "gerrit Client.CreateRevert message: '%s'", message)
 	req := &gerritpb.RevertChangeRequest{
 		Project: change.Project,
 		Number:  change.Number,
