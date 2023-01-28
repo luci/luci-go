@@ -198,6 +198,7 @@ func TestSessionServer(t *testing.T) {
 			expectedExpiry := now.Add(sessionTokenExpiry).Round(time.Second)
 
 			msg := resp.(*UpdateBotSessionResponse)
+			So(msg.Status, ShouldEqual, "OK")
 			So(msg.SessionExpiry, ShouldEqual, expectedExpiry.Unix())
 			So(msg.Lease, ShouldBeNil)
 
@@ -232,7 +233,38 @@ func TestSessionServer(t *testing.T) {
 			}, fakeRequest)
 
 			So(err, ShouldBeNil)
-			So(resp.(*UpdateBotSessionResponse).Lease, ShouldBeNil)
+
+			msg := resp.(*UpdateBotSessionResponse)
+			So(msg.Status, ShouldEqual, "OK")
+			So(msg.Lease, ShouldBeNil)
+		})
+
+		Convey("UpdateBotSession TERMINATING by RBE", func() {
+			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
+				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_OK)
+				return &remoteworkers.BotSession{
+					Name:   fakeSessionID,
+					Status: remoteworkers.BotStatus_BOT_TERMINATING,
+					Leases: []*remoteworkers.Lease{
+						// Will be ignored.
+						{
+							Id:      fakeFirstLeaseID,
+							Payload: payload(fakeFirstTaskID),
+							State:   remoteworkers.LeaseState_PENDING,
+						},
+					},
+				}, nil
+			})
+
+			resp, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
+				Status: "OK",
+			}, fakeRequest)
+
+			So(err, ShouldBeNil)
+
+			msg := resp.(*UpdateBotSessionResponse)
+			So(msg.Status, ShouldEqual, "BOT_TERMINATING")
+			So(msg.Lease, ShouldBeNil)
 		})
 
 		Convey("UpdateBotSession IDLE => PENDING", func() {

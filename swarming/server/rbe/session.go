@@ -240,6 +240,13 @@ type UpdateBotSessionResponse struct {
 	// The bot should call `/bot/rbe/session/update` again before that time.
 	SessionExpiry int64 `json:"session_expiry"`
 
+	// The session status as seen by the server, as remoteworkers.BotStatus enum.
+	//
+	// Possible values:
+	//   * OK: if the session is healthy.
+	//   * BOT_TERMINATING: if the session has expired.
+	Status string `json:"status"`
+
 	// The lease the bot should be working on or should cancel now, if any.
 	//
 	// Possible lease states here:
@@ -324,17 +331,27 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		return nil, err
 	}
 
-	// The RBE backend should not be updating the bot status itself. Verify this
-	// by logging when/if this happens. The only observed exception is a response
-	// to BOT_TERMINATING status (which is OK for some reason).
-	if session.Status != botStatus && botStatus != remoteworkers.BotStatus_BOT_TERMINATING {
+	// The RBE backend always replies with either OK or BOT_TERMINATING status.
+	// Note that it replies with OK status even if we told it we want the session
+	// terminated. The only time it replies with BOT_TERMINATING is when the
+	// session was *already* dead (either closed by the bot previously or timed
+	// out by the RBE server).
+	sessionHealthy := botStatus == remoteworkers.BotStatus_OK
+	switch session.Status {
+	case remoteworkers.BotStatus_OK:
+		// Do nothing. This is fine. Trust `botStatus` was applied.
+	case remoteworkers.BotStatus_BOT_TERMINATING:
+		// The session was already closed previously.
+		sessionHealthy = false
+	default: // i.e. all other "unhealthy" or "not ready" statuses
 		logging.Errorf(ctx, "Unexpected status change from RBE: %s => %s", botStatus, session.Status)
+		sessionHealthy = false
 	}
 
-	if botStatus == remoteworkers.BotStatus_BOT_TERMINATING {
-		// RBE should not assign leases to a terminating bot.
+	if !sessionHealthy {
+		// RBE should not assign leases to a terminating or unhealthy bot.
 		for _, lease := range session.Leases {
-			logging.Errorf(ctx, "Unexpected RBE lease for terminating bot: %s", lease)
+			logging.Errorf(ctx, "Unexpected RBE lease: %s", lease)
 		}
 		session.Leases = nil
 	} else {
@@ -423,6 +440,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	return &UpdateBotSessionResponse{
 		SessionToken:  sessionToken,
 		SessionExpiry: tokenExpiry.Unix(),
+		Status:        remoteworkers.BotStatus_name[int32(session.Status)],
 		Lease:         respLease,
 	}, nil
 }

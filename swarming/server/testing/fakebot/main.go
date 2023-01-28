@@ -81,28 +81,29 @@ func run(ctx context.Context) error {
 		}
 	}()
 
-	// Get the initial poll token and create the session.
-	if err := bot.RefreshPollToken(ctx); err != nil {
-		return errors.Annotate(err, "generating poll token").Err()
-	}
-	if err := bot.CreateSession(ctx); err != nil {
-		return errors.Annotate(err, "creating bot session").Err()
-	}
-
 	for loopCtx.Err() == nil {
 		// Pretend to poll Swarming Python to get the fresh poll token.
 		if err := bot.RefreshPollToken(ctx); err != nil {
-			return errors.Annotate(err, "updating poll token").Err()
+			return errors.Annotate(err, "getting poll token").Err()
+		}
+
+		// Create a new session if there's no current healthy session.
+		if !bot.HasSession() {
+			if err := bot.CreateSession(ctx); err != nil {
+				return errors.Annotate(err, "creating bot session").Err()
+			}
 		}
 
 		// Wait for a lease. This also closes the previous lease, if any.
 		var err error
-		if lease, err = bot.UpdateSession(ctx, true, "OK", lease); err != nil {
+		switch lease, err = bot.UpdateSession(ctx, true, "OK", lease); {
+		case err != nil:
 			return errors.Annotate(err, "polling for a task").Err()
-		}
-
-		// If got a lease, launch the worker loop.
-		if lease != nil {
+		case !bot.HasSession():
+			logging.Errorf(ctx, "Bot session was closed by the server")
+			lease = nil
+		case lease != nil:
+			// If got a lease, launch the worker loop.
 			lease, err = workerLoop(ctx, loopCtx, bot, lease)
 			if err != nil {
 				return errors.Annotate(err, "when working on a lease").Err()
@@ -181,6 +182,7 @@ type Bot struct {
 
 	sessionToken  []byte
 	sessionID     string
+	sessionStatus string
 	sessionExpiry time.Time
 }
 
@@ -267,7 +269,7 @@ func (b *Bot) RefreshPollToken(ctx context.Context) error {
 
 // HasSession is true if we have an active session.
 func (b *Bot) HasSession() bool {
-	return len(b.sessionToken) != 0
+	return len(b.sessionToken) != 0 && b.sessionStatus == "OK"
 }
 
 // CreateSession creates a new bot session.
@@ -285,6 +287,7 @@ func (b *Bot) CreateSession(ctx context.Context) error {
 
 	b.sessionToken = resp.SessionToken
 	b.sessionID = resp.SessionID
+	b.sessionStatus = "OK"
 	b.sessionExpiry = time.Unix(resp.SessionExpiry, 0).UTC()
 
 	logging.Infof(ctx, "Created the session: %s", b.sessionID)
@@ -293,6 +296,10 @@ func (b *Bot) CreateSession(ctx context.Context) error {
 
 // UpdateSession updates the session.
 func (b *Bot) UpdateSession(ctx context.Context, withPollToken bool, status string, lease *rbe.Lease) (*rbe.Lease, error) {
+	if !b.HasSession() {
+		return nil, errors.Reason("no healthy session").Err()
+	}
+
 	if lease != nil {
 		logging.Infof(ctx, "Updating the session: %s [%s=%s]", status, lease.ID, lease.State)
 	} else {
@@ -317,6 +324,7 @@ func (b *Bot) UpdateSession(ctx context.Context, withPollToken bool, status stri
 	}
 
 	b.sessionToken = resp.SessionToken
+	b.sessionStatus = resp.Status
 	b.sessionExpiry = time.Unix(resp.SessionExpiry, 0).UTC()
 
 	return resp.Lease, nil
