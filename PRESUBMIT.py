@@ -22,7 +22,8 @@ import os
 import re
 import sys
 
-
+# Note that the URL http://www.apache.org/licenses/LICENSE-2.0
+# is not indented.
 COPYRIGHT_TEMPLATE = """
 Copyright YEARPATTERN The LUCI Authors.
 
@@ -30,7 +31,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,7 +46,7 @@ def header(input_api):
   allowed_years = (str(s) for s in reversed(xrange(2011, current_year + 1)))
   years_re = '(' + '|'.join(allowed_years) + ')'
   lines = [
-    ('.*? ' + re.escape(line)) if line else '.*?'
+    (r'[#/]?[#/]?[ \t]*' + re.escape(line)) if line else '.*?'
     for line in COPYRIGHT_TEMPLATE.splitlines()
   ]
   lines[0] = lines[0].replace('YEARPATTERN', years_re)
