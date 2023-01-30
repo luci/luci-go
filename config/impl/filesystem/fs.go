@@ -16,7 +16,7 @@
 //
 // May be useful during local development.
 //
-// Layout
+// # Layout
 //
 // A "Config Folder" has the following format:
 //   - ./services/<servicename>/...
@@ -27,9 +27,9 @@
 // a single non-slash-containing filesystem path token. "services", "projects",
 // ".json", and slashes are all literal text.
 //
-// This package allows two modes of operation
+// # This package allows two modes of operation
 //
-// Symlink Mode
+// # Symlink Mode
 //
 // This mode allows you to simulate the evolution of multiple configuration
 // versions during the duration of your test. Lay out your entire directory
@@ -45,7 +45,7 @@
 // configuration. You would pass the path to `current` as the basePath in the
 // constructor of New.
 //
-// Sloppy Version Mode
+// # Sloppy Version Mode
 //
 // The folder will be scanned each time a config file is accessed, and the
 // Revision will be derived based on the current content of all config files.
@@ -54,7 +54,7 @@
 // be able to easily modify configs manually during the development without
 // restarting the server or messing with symlinks.
 //
-// Quirks
+// # Quirks
 //
 // This implementation is quite dumb, and will scan the entire directory each
 // time configs are accessed, caching the whole thing in memory (content, hashes
@@ -152,11 +152,11 @@ func deriveRevision(c *scannedConfigs) string {
 
 // New returns an implementation of the config service which reads configuration
 // from the local filesystem. `basePath` may be one of two things:
-//   * A folder containing the following:
+//   - A folder containing the following:
 //     ./services/servicename/...               # service confinguations
 //     ./projects/projectname.json              # project information configuration
 //     ./projects/projectname/...               # project configurations
-//   * A symlink to a folder as organized above:
+//   - A symlink to a folder as organized above:
 //     -> /path/to/revision/folder
 //
 // If a symlink is used, all Revision fields will be the 'revision' portion of

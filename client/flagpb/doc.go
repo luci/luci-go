@@ -18,20 +18,21 @@
 // Currently flagpb supports only untyped messages, not proto.Message.
 // Support for the latter could be added too.
 //
-// Syntax
+// # Syntax
 //
 // Flag syntax by example. First line is flagpb, second is jsonpb.
-//  -x=42 -b -s hello
-//  {"x": 42, "b": true, "s": "hello"}
 //
-//  -m.x 3 -m.s world
-//  {"m": {"x": 3, "s": "world"}}
+//	-x=42 -b -s hello
+//	{"x": 42, "b": true, "s": "hello"}
 //
-//  -rx 1 -rx 2
-//  {"rx": [1, 2]}
+//	-m.x 3 -m.s world
+//	{"m": {"x": 3, "s": "world"}}
 //
-//  -rm.x 1 -rm -rm.x 2
-//  {"rm": [{"x": 1}, {"x": 2}]}
+//	-rx 1 -rx 2
+//	{"rx": [1, 2]}
+//
+//	-rm.x 1 -rm -rm.x 2
+//	{"rm": [{"x": 1}, {"x": 2}]}
 //
 // where x fields are int32, m are message fields, b are boolean and
 // s are strings. Fields with "r" prefix are repeated.

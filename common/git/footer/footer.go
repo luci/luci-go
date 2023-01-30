@@ -78,9 +78,9 @@ func ParseLines(lines []string) strpair.Map {
 // SplitLines splits a commit message to non-footer and footer lines.
 //
 // Footer lines are all lines in the last paragraph of the message if it:
-//  * contains at least one valid footer (it may contains lines that are not
-//    valid footers in the middle).
-//  * is not the only paragraph in the message.
+//   - contains at least one valid footer (it may contains lines that are not
+//     valid footers in the middle).
+//   - is not the only paragraph in the message.
 //
 // One exception is that if the last paragraph starts with text then followed
 // by valid footers, footer lines will only contain all lines after the first

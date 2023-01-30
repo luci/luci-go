@@ -37,9 +37,9 @@ var protocolRegistry = map[string]dialFactory{}
 type dialFactory func(addr string) (dialer, error)
 
 // dialer is called by Client for every new stream created, and is expected to:
-//   * open a connection (as appropriate) to the dialer's destination
-//   * "handshake" with the opened connection (if needed)
-//   * return an appropriate writer type around the connection.
+//   - open a connection (as appropriate) to the dialer's destination
+//   - "handshake" with the opened connection (if needed)
+//   - return an appropriate writer type around the connection.
 type dialer interface {
 	// if forProcess is true, this must do its best to return an *os.File.
 	//
@@ -62,29 +62,30 @@ type Client struct {
 
 // New instantiates a new Client instance. This type of instance will be parsed
 // from the supplied path string, which takes the form:
-//   <protocol>:<protocol-specific-spec>
 //
-// Supported protocols
+//	<protocol>:<protocol-specific-spec>
+//
+// # Supported protocols
 //
 // Below is the list of all supported protocols:
 //
-//   unix:/path/to/socket (POSIX only)
+//	unix:/path/to/socket (POSIX only)
 //
 // Connects to a UNIX domain socket at "/path/to/socket".
 // This is the preferred protocol for Linux/Mac.
 //
-//   net.pipe:name (Windows only)
+//	net.pipe:name (Windows only)
 //
 // Connects to a local Windows named pipe "\\.\pipe\name". This is the preferred
 // protocol for Windows.
 //
-//   null (All platforms)
+//	null (All platforms)
 //
 // Sinks all connections and writes into a null data sink. Useful for tests, or
 // for running programs which use logdog but you don't care about their logdog
 // outputs.
 //
-//   fake:$id
+//	fake:$id
 //
 // Connects to an in-memory Fake created in this package by calling NewFake.
 // The string `fake:$id` can be obtained by calling the Fake's StreamServerPath

@@ -637,9 +637,10 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 // checking that the refresh token (also stored there) is still valid.
 //
 // Returns:
-//   session, private, nil: if the session was successfully refreshed.
-//   nil, nil, nil: if the refresh token was revoked and the session is closed.
-//   nil, nil, err: if there was some unexpected error refreshing the session.
+//
+//	session, private, nil: if the session was successfully refreshed.
+//	nil, nil, nil: if the refresh token was revoked and the session is closed.
+//	nil, nil, err: if there was some unexpected error refreshing the session.
 //
 // Note that errors may contain sensitive details and should not be returned to
 // the caller as is.

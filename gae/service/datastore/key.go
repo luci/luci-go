@@ -120,10 +120,12 @@ func (kc KeyContext) NewKey(kind, stringID string, intID int64, parent *Key) *Ke
 //
 // elems is pairs of (string, string|int|int32|int64) pairs, which correspond to
 // Kind/id pairs. Example:
-//   MkKeyContext("aid", "namespace").MakeKey("Parent", 1, "Child", "id")
+//
+//	MkKeyContext("aid", "namespace").MakeKey("Parent", 1, "Child", "id")
 //
 // Would create the key:
-//   aid:namespace:/Parent,1/Child,id
+//
+//	aid:namespace:/Parent,1/Child,id
 //
 // If elems is not parsable (e.g. wrong length, wrong types, etc.) this method
 // will panic.
@@ -236,7 +238,8 @@ func (k *Key) StringID() string { return k.toks[len(k.toks)-1].StringID }
 func (k *Key) IntID() int64 { return k.toks[len(k.toks)-1].IntID }
 
 // String returns a human-readable representation of the key in the form of
-//   AID:NS:/Kind,id/Kind,id/...
+//
+//	AID:NS:/Kind,id/Kind,id/...
 func (k *Key) String() string {
 	b := bytes.NewBuffer(make([]byte, 0, 512))
 	fmt.Fprintf(b, "%s:%s:", k.kc.AppID, k.kc.Namespace)
@@ -259,9 +262,9 @@ func (k *Key) IsIncomplete() bool {
 // Valid determines if a key is valid, according to a couple of rules:
 //   - k is not nil
 //   - every token of k:
-//     - (if !allowSpecial) token's kind doesn't start with '__'
-//     - token's kind and appid are non-blank
-//     - token is not incomplete
+//   - (if !allowSpecial) token's kind doesn't start with '__'
+//   - token's kind and appid are non-blank
+//   - token is not incomplete
 //   - all tokens have the same namespace and appid
 func (k *Key) Valid(allowSpecial bool, kc KeyContext) bool {
 	if !kc.Matches(k.kc) {
@@ -435,7 +438,8 @@ func (k *Key) HasAncestor(other *Key) bool {
 // GQL returns a correctly formatted Cloud Datastore GQL key literal.
 //
 // The flavor of GQL that this emits is defined here:
-//   https://cloud.google.com/datastore/docs/apis/gql/gql_reference
+//
+//	https://cloud.google.com/datastore/docs/apis/gql/gql_reference
 func (k *Key) GQL() string {
 	ret := &bytes.Buffer{}
 	fmt.Fprintf(ret, "KEY(DATASET(%s)", gqlQuoteString(k.kc.AppID))

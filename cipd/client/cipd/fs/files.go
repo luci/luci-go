@@ -212,9 +212,9 @@ type ScanOptions struct {
 //
 // Symlinks are preserved (see Symlink() method of File interface), but the
 // following rules apply:
-//   * Relative symlinks pointing outside of the root are forbidden.
-//   * An absolute symlink with the target outside the root is kept as such.
-//   * An absolute symlink with the target within the root becomes relative.
+//   - Relative symlinks pointing outside of the root are forbidden.
+//   - An absolute symlink with the target outside the root is kept as such.
+//   - An absolute symlink with the target within the root becomes relative.
 //
 // If 'dir' is a symlink itself, it is emitted as such (with all above rules
 // applying), except when 'dir == root' (lexicographically, as cleaned absolute

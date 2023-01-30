@@ -181,8 +181,9 @@ func (uo userOptions) isHTML() bool {
 // For web browsers, default to HTML mode, unless ?format=raw is specified.
 // For CLI tools, default to raw mode, unless ?format=html is specified.
 // HTML mode has two modes, "lite" and "full".  Lite is default, unless:
-//   * The user has a cookie specifying preference to full mode.
-//   * A URL fragment is detected in the path.
+//   - The user has a cookie specifying preference to full mode.
+//   - A URL fragment is detected in the path.
+//
 // If we can't figure anything out, default to HTML lite mode.
 // We do this before path parsing to figure out which mode we want
 // to render parsing errors in.

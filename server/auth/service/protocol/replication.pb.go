@@ -1024,8 +1024,9 @@ func (x *SignedAuthDB) GetSignature() []byte {
 // Published by Primary into 'auth-db-changed' PubSub topic. The body of the
 // message is base64 encoded serialized ChangeNotification. Additional
 // attributes are:
-//  X-AuthDB-SigKey-v1: <id of a public key>
-//  X-AuthDB-SigVal-v1: <base64 encoded RSA-SHA256(blob) signature>
+//
+//	X-AuthDB-SigKey-v1: <id of a public key>
+//	X-AuthDB-SigVal-v1: <base64 encoded RSA-SHA256(blob) signature>
 type ChangeNotification struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1078,8 +1079,9 @@ func (x *ChangeNotification) GetRevision() *AuthDBRevision {
 //
 // Primary signs the entire serialized message with its private key and appends
 // two headers to HTTP request that carries the blob:
-//  X-AuthDB-SigKey-v1: <id of a public key>
-//  X-AuthDB-SigVal-v1: <base64 encoded RSA-SHA256(SHA512(blob)) signature>
+//
+//	X-AuthDB-SigKey-v1: <id of a public key>
+//	X-AuthDB-SigVal-v1: <base64 encoded RSA-SHA256(SHA512(blob)) signature>
 //
 // Binary serialization of ReplicationPushRequest is sometimes misleadingly
 // called "AuthDB blob". It is stored in Datastore (as is) and in Google Storage

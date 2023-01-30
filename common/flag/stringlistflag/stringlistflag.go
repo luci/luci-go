@@ -26,9 +26,10 @@ import (
 // strings.
 //
 // For example, this allows you to construct a flag that would behave like:
-//   -myflag Foo
-//   -myflag Bar
-//   -myflag Bar
+//
+//	-myflag Foo
+//	-myflag Bar
+//	-myflag Bar
 //
 // And then myflag would be []string{"Foo", "Bar", "Bar"}
 type Flag []string

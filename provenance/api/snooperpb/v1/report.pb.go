@@ -45,29 +45,29 @@ const (
 // task reaches `compile` stage.
 //
 // Below is a brief rationale behind each steps:
-//   * STARTED: provenance of an artifact captures sources that goes into a
-//              build. A single compute resource typically outlives a task, in
-//              other words, a single machine can run multiple tasks in it's
-//              lifetime. Task start indicates the capturing time window began.
-//   * FETCH: typically a task depends on a bunch of dependencies that are
-//            fetched to set up the environment before compiling the artifact.
-//            Fetch indicates that the task is currently installing these deps.
-//   * COMPILE: ideally in compile step, there shouldn't be any new fetching.
-//   * UPLOAD: after finishing compilation, this step indicates built artifacts
-//             are being uploaded to its destination. A single task can have
-//             multiple produced artifacts.
-//   * UPLOAD_COMPLETE: it indicates all produced artifacts have been uploaded.
-//                      This is crucial to closing the capturing time window for
-//                      provenance generation.
-//   * TEST: often a task runs regression tests after an artifact has been
-//           produced. Some times requirements around this tests is an open
-//           environment which might not be safe for other task phases. To
-//           support effective tests, some policies can be lifted at this stage.
-//           (Although it is highly encouraged to schedule tests on a separate
-//           machine when possible to minimize risks of cross-contamination).
-//   * COMPLETE: complete indicates whether a task execution finished. This is
-//               crucial for server to set as this creates a clear boundary
-//               between subsequent tasks on a same machine.
+//   - STARTED: provenance of an artifact captures sources that goes into a
+//     build. A single compute resource typically outlives a task, in
+//     other words, a single machine can run multiple tasks in it's
+//     lifetime. Task start indicates the capturing time window began.
+//   - FETCH: typically a task depends on a bunch of dependencies that are
+//     fetched to set up the environment before compiling the artifact.
+//     Fetch indicates that the task is currently installing these deps.
+//   - COMPILE: ideally in compile step, there shouldn't be any new fetching.
+//   - UPLOAD: after finishing compilation, this step indicates built artifacts
+//     are being uploaded to its destination. A single task can have
+//     multiple produced artifacts.
+//   - UPLOAD_COMPLETE: it indicates all produced artifacts have been uploaded.
+//     This is crucial to closing the capturing time window for
+//     provenance generation.
+//   - TEST: often a task runs regression tests after an artifact has been
+//     produced. Some times requirements around this tests is an open
+//     environment which might not be safe for other task phases. To
+//     support effective tests, some policies can be lifted at this stage.
+//     (Although it is highly encouraged to schedule tests on a separate
+//     machine when possible to minimize risks of cross-contamination).
+//   - COMPLETE: complete indicates whether a task execution finished. This is
+//     crucial for server to set as this creates a clear boundary
+//     between subsequent tasks on a same machine.
 type TaskStage int32
 
 const (
@@ -134,8 +134,9 @@ func (TaskStage) EnumDescriptor() ([]byte, []int) {
 
 // Identifies storage location of a particular artifact. This will be used to
 // attach provenance:
-//      * GCS: provenance will be uploaded alongside the artifact.
-//      * CIPD: provenance will be added to package metadata.
+//   - GCS: provenance will be uploaded alongside the artifact.
+//   - CIPD: provenance will be added to package metadata.
+//
 // Currently we support provenance for two types of artifacts (gcs, cipd).
 type Artifact struct {
 	state         protoimpl.MessageState

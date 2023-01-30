@@ -153,7 +153,7 @@ func Namespace(c context.Context, namespace string) (context.Context, error) {
 // is valid to use if the namespace you're using is statically known, or known
 // to conform to the regex. The regex in question is:
 //
-//   ^[0-9A-Za-z._-]{0,100}$
+//	^[0-9A-Za-z._-]{0,100}$
 func MustNamespace(c context.Context, namespace string) context.Context {
 	ret, err := Namespace(c, namespace)
 	if err != nil {

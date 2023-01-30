@@ -35,9 +35,9 @@ func MakeCLResourceID(clid common.CLID) ResourceID {
 // Typically used before a Gerrit CL is mutated.
 //
 // Returns:
-//  * new time-limited context,
-//  * best-effort lease cancellation func,
-//  * and an error, if any.
+//   - new time-limited context,
+//   - best-effort lease cancellation func,
+//   - and an error, if any.
 func ApplyOnCL(ctx context.Context, clid common.CLID, duration time.Duration, requester string) (context.Context, func(), error) {
 	leaseExpireTime := clock.Now(ctx).Add(duration)
 	if d, ok := ctx.Deadline(); ok && d.Before(leaseExpireTime) {

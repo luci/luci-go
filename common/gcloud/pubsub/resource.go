@@ -80,13 +80,12 @@ func validateResource(v, collection string) error {
 // in: https://cloud.google.com/pubsub/overview#names
 //
 // As of 'v1', a resource must:
-// - start with a letter.
-// - end with a lowercase letter or number.
-// - contain only letters, numbers, dashes (-), underscores (_) periods (.),
-//   tildes (~), pluses (+), or percent signs (%).
-// - be between 3 and 255 characters in length.
-// - cannot begin with the string goog.
-//
+//   - start with a letter.
+//   - end with a lowercase letter or number.
+//   - contain only letters, numbers, dashes (-), underscores (_) periods (.),
+//     tildes (~), pluses (+), or percent signs (%).
+//   - be between 3 and 255 characters in length.
+//   - cannot begin with the string goog.
 func validateResourceName(s string) error {
 	if l := len(s); l < 3 || l > 255 {
 		return fmt.Errorf("length (%d) must be between 3 and 255", l)

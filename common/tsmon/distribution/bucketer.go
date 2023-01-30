@@ -39,9 +39,11 @@ func NewBucketer(width, growthFactor float64, numFiniteBuckets int) *Bucketer {
 }
 
 // FixedWidthBucketer returns a Bucketer that uses numFiniteBuckets+2 buckets:
-//   bucket[0] covers (-Inf...0)
-//   bucket[i] covers [width*(i-1)...width*i) for i > 0 and i <= numFiniteBuckets
-//   bucket[numFiniteBuckets+1] covers [width*numFiniteBuckets...+Inf)
+//
+//	bucket[0] covers (-Inf...0)
+//	bucket[i] covers [width*(i-1)...width*i) for i > 0 and i <= numFiniteBuckets
+//	bucket[numFiniteBuckets+1] covers [width*numFiniteBuckets...+Inf)
+//
 // The width must be greater than 0, and the number of finite buckets must be
 // greater than 0.
 func FixedWidthBucketer(width float64, numFiniteBuckets int) *Bucketer {
@@ -49,9 +51,10 @@ func FixedWidthBucketer(width float64, numFiniteBuckets int) *Bucketer {
 }
 
 // GeometricBucketer returns a Bucketer that uses numFiniteBuckets+2 buckets:
-//   bucket[0] covers (−Inf, 1)
-//   bucket[i] covers [growthFactor^(i−1), growthFactor^i) for i > 0 and i <= numFiniteBuckets
-//   bucket[numFiniteBuckets+1] covers [growthFactor^(numFiniteBuckets−1), +Inf)
+//
+//	bucket[0] covers (−Inf, 1)
+//	bucket[i] covers [growthFactor^(i−1), growthFactor^i) for i > 0 and i <= numFiniteBuckets
+//	bucket[numFiniteBuckets+1] covers [growthFactor^(numFiniteBuckets−1), +Inf)
 //
 // growthFactor must be positive, and the number of finite buckets must be
 // greater than 0.

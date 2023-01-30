@@ -62,29 +62,34 @@ func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
 // Example usage:
 // // At top of file
 // var schemaApplyer = bq.NewSchemaApplyer(
-//   caching.RegisterLRUCache(50) // depending on how many different
-//                                // tables will be used.
+//
+//	caching.RegisterLRUCache(50) // depending on how many different
+//	                             // tables will be used.
+//
 // )
 //
 // ...
 // // In method.
 // table := client.Dataset("my_dataset").Table("my_table")
 // schema := ... // e.g. from SchemaConverter.
-// spec := &bigquery.TableMetadata{
-//    TimePartitioning: &bigquery.TimePartitioning{
-//      Field:      "partition_time",
-//      Expiration: 540 * time.Day,
-//    },
-//    Schema: schema.Relax(), // Ensure no mandatory fields.
-// }
+//
+//	spec := &bigquery.TableMetadata{
+//	   TimePartitioning: &bigquery.TimePartitioning{
+//	     Field:      "partition_time",
+//	     Expiration: 540 * time.Day,
+//	   },
+//	   Schema: schema.Relax(), // Ensure no mandatory fields.
+//	}
+//
 // err := schemaApplyer.EnsureBQTable(ctx, table, spec)
-// if err != nil {
-//    if transient.Tag.In(err) {
-//       // Handle retriable error.
-//    } else {
-//       // Handle fatal error.
-//    }
-// }
+//
+//	if err != nil {
+//	   if transient.Tag.In(err) {
+//	      // Handle retriable error.
+//	   } else {
+//	      // Handle fatal error.
+//	   }
+//	}
 func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.

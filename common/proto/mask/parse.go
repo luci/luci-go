@@ -71,7 +71,7 @@ type parseCtx struct {
 // advanceToField advances the context to the next field of current message.
 // Returns the canonical form of field name. Returns error when the supplied
 // field doesn't exist in message or the current message descriptor is nil
-//(meaning scalar field).
+// (meaning scalar field).
 //
 // If isJSONName is true, we will assume the given field name is JSON name and
 // look up the JSON name instead of the field name.

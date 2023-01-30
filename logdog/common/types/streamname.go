@@ -52,6 +52,7 @@ const (
 //   - Underscore (_)
 //   - Hyphen (-)
 //   - Period (.)
+//
 // - Must begin with an alphanumeric character.
 type StreamName string
 
@@ -82,10 +83,10 @@ func Construct(parts ...string) string {
 // This method is guaranteed to return a valid stream name. In order to ensure
 // that the arbitrary input can meet this standard, the following
 // transformations will be applied as needed:
-// - If the segment doesn't begin with an alphanumeric character, the fill
-//   string will be prepended.
-// - Any character disallowed in the segment will be replaced with an
-//   underscore. This includes segment separators within a segment string.
+//   - If the segment doesn't begin with an alphanumeric character, the fill
+//     string will be prepended.
+//   - Any character disallowed in the segment will be replaced with an
+//     underscore. This includes segment separators within a segment string.
 //
 // An empty string can be passed for "fill" to just error if a replacement is
 // needed.
@@ -252,9 +253,9 @@ func (s StreamName) SegmentCount() int {
 //
 // For example:
 //
-//	- Split("foo/bar/baz") ("foo/bar", "baz")
-//	- Split("foo") ("", "foo")
-//	- Split("") ("", "")
+//   - Split("foo/bar/baz") ("foo/bar", "baz")
+//   - Split("foo") ("", "foo")
+//   - Split("") ("", "")
 func (s StreamName) Split() (prefix, last StreamName) {
 	lidx := strings.LastIndex(string(s), StreamNameSepStr)
 	if lidx < 0 {
@@ -287,10 +288,11 @@ func (s StreamName) MarshalJSON() ([]byte, error) {
 // Namespaces returns a slice of all the namespaces this StreamName is within.
 //
 // For example:
-//    "a/b/c".Namespaces() ->
-//       "a/b/"
-//       "a/"
-//       ""
+//
+//	"a/b/c".Namespaces() ->
+//	   "a/b/"
+//	   "a/"
+//	   ""
 func (s StreamName) Namespaces() (ret []StreamName) {
 	var namespace StreamName
 	for {
@@ -313,9 +315,9 @@ func (s StreamName) Namespaces() (ret []StreamName) {
 //
 // For example:
 //
-//    "".AsNamespace() -> ""
-//    "foo".AsNamespace() -> "foo/"
-//    "bar/".AsNamespace() -> "bar/"
+//	"".AsNamespace() -> ""
+//	"foo".AsNamespace() -> "foo/"
+//	"bar/".AsNamespace() -> "bar/"
 func (s StreamName) AsNamespace() StreamName {
 	if len(s) == 0 || strings.HasSuffix(string(s), StreamNameSepStr) {
 		return s

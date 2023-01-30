@@ -52,7 +52,7 @@ type ActionTakeEvalFn func(rcl *run.RunCL, ci *gerritpb.ChangeInfo) time.Time
 // been take on a Gerrit CL.
 //
 // Checks against CV's own cache (CL entity in Datastore) first. If the action
-// is not taken and cache is too old (before `now-StaleCLAgeThreshold``),
+// is not taken and cache is too old (before `now-StaleCLAgeThreshold“),
 // then fetch the latest change info from Gerrit and check.
 func IsActionTakenOnGerritCL(ctx context.Context, gf gerrit.Factory, rcl *run.RunCL, gerritQueryOpts []gerritpb.QueryOption, evalFn ActionTakeEvalFn) (time.Time, error) {
 	cl := changelist.CL{ID: rcl.ID}

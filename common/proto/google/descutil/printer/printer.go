@@ -109,11 +109,11 @@ func (p *Printer) MaybeLeadingComments(ptr interface{}) {
 //
 // e.g.
 //
-//   p := NewPrinter(os.Stdout)
-//   p.AppendLeadingComments(protodesc.ToDescriptorProto(myMsg.ProtoReflect()), []string{
-//     "This is a line.",
-//     "This is the next line.",
-//   })
+//	p := NewPrinter(os.Stdout)
+//	p.AppendLeadingComments(protodesc.ToDescriptorProto(myMsg.ProtoReflect()), []string{
+//	  "This is a line.",
+//	  "This is the next line.",
+//	})
 func (p *Printer) AppendLeadingComments(ptr interface{}, lines []string) {
 	loc, ok := p.sourceCodeInfo[ptr]
 	if !ok {

@@ -22,11 +22,11 @@
 // CQ-Depend footer starts with "CQ-Depend:" prefix and contains comma
 // separated values:
 //
-//     CQ-Depend: VALUE[,VALUE]*
+//	CQ-Depend: VALUE[,VALUE]*
 //
 // where each VALUE is:
 //
-//     [SUBDOMAIN:]NUMBER
+//	[SUBDOMAIN:]NUMBER
 //
 // where if SUBDOMAIN is specified, it is a subdomain w/o "-review" suffix of a
 // Gerrit host, e.g., just "chrome-internal" for
@@ -35,44 +35,43 @@
 // For example, if a CL on chromium-review.googlesource.com has the following
 // description:
 //
-//     Example CL with explicit dependencies.
+//	Example CL with explicit dependencies.
 //
-//     This: is footer, because it is in the last paragraph.
-//       It may have non "key: value" lines,
-//       the next line says CL depends on chromium-review.googlesource.com/123.
-//     CQ-Depend: 123
-//       and multiple CQ-Depend lines are allowed, such as next line saying
-//       this CL also depends on pdfium-review.googlesource.com/987.
-//     CQ-Depend: pdfium:987
-//       Prefix is just "pdfium" and "-review" is implicitly inferred.
-//       For practicality, the following is not valid:
-//     CQ-Depend: pdfium-review:456
-//       It's OK to specify multiple comma separated CQ-Depend values:
-//     CQ-Depend: 123,pdfium:987
-//
+//	This: is footer, because it is in the last paragraph.
+//	  It may have non "key: value" lines,
+//	  the next line says CL depends on chromium-review.googlesource.com/123.
+//	CQ-Depend: 123
+//	  and multiple CQ-Depend lines are allowed, such as next line saying
+//	  this CL also depends on pdfium-review.googlesource.com/987.
+//	CQ-Depend: pdfium:987
+//	  Prefix is just "pdfium" and "-review" is implicitly inferred.
+//	  For practicality, the following is not valid:
+//	CQ-Depend: pdfium-review:456
+//	  It's OK to specify multiple comma separated CQ-Depend values:
+//	CQ-Depend: 123,pdfium:987
 //
 // Error handling:
 //
-//   * Valid CQ-Depend lines are ignored entirely if not in the last paragraph
+//   - Valid CQ-Depend lines are ignored entirely if not in the last paragraph
 //     of CL's description (because they aren't Git/Gerrit footers).
 //     For example, in this description CQ-Depend is ignored:
 //
-//        Title.
+//     Title.
 //
-//        CQ-Depend: valid:123
-//        But this isn't last paragraph.
+//     CQ-Depend: valid:123
+//     But this isn't last paragraph.
 //
-//        Change-Id: Ideadbeef
-//        This-is: the last paragraph.
+//     Change-Id: Ideadbeef
+//     This-is: the last paragraph.
 //
-//   * Each CQ-Depend line is parsed independently; any invalid ones are
+//   - Each CQ-Depend line is parsed independently; any invalid ones are
 //     silently ignored. For example,
-//        CQ-Depend: not valid, and so it is ignored.
-//        CQ-Depend: valid:123
+//     CQ-Depend: not valid, and so it is ignored.
+//     CQ-Depend: valid:123
 //
-//   * In a single CQ-Depend line, each value is processed independently,
+//   - In a single CQ-Depend line, each value is processed independently,
 //     and invalid values are ignored. For example:
-//        CQ-Depend: x:123, bad, 456
+//     CQ-Depend: x:123, bad, 456
 //     will result in just 2 dependencies: "x:123" and "456".
 //
 // See also Lint method, which reports all such misuses of CQ-Depend.

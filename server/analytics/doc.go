@@ -16,29 +16,30 @@
 //
 // Usage as a server module:
 //
-//   func main() {
-//     modules := []module.Module{
-//       analytics.NewModuleFromFlags(),
-//     }
-//     server.Main(nil, modules, func(srv *server.Server) error {
-//       srv.Routes.GET("/", ..., func(c *router.Context) {
-//         templates.MustRender(c.Context, c.Writer, "page.html", templates.Args{
-//           "GTagSnippet": analytics.GTagSnippet(c.Context),
-//           ...
-//         })
-//       return nil
-//     })
-//     ...
-//   }
+//	func main() {
+//	  modules := []module.Module{
+//	    analytics.NewModuleFromFlags(),
+//	  }
+//	  server.Main(nil, modules, func(srv *server.Server) error {
+//	    srv.Routes.GET("/", ..., func(c *router.Context) {
+//	      templates.MustRender(c.Context, c.Writer, "page.html", templates.Args{
+//	        "GTagSnippet": analytics.GTagSnippet(c.Context),
+//	        ...
+//	      })
+//	    return nil
+//	  })
+//	  ...
+//	}
 //
 // templates/page.html:
-//   <html>
-//     <head>
-//       {{.GTagSnippet}}
-//       ...
-//     </head>
-//     <body>
-//       ...
-//     </body>
-//   </html>
+//
+//	<html>
+//	  <head>
+//	    {{.GTagSnippet}}
+//	    ...
+//	  </head>
+//	  <body>
+//	    ...
+//	  </body>
+//	</html>
 package analytics

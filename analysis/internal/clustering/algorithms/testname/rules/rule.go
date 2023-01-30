@@ -34,12 +34,12 @@ var likeRewriter = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 // substitutionRE matches use of the '$' operator which
 // may be used in templates to substitute in values.
 // Captured usages are either:
-// - ${name}, which tells the template to insert the value
-//   of the capture group with that name.
-// - $$, which tells the template insert a literal '$'
-//   into the output.
-// - $, which indicates an invalid use of the '$' operator
-//   ($ not followed by $ or {name}).
+//   - ${name}, which tells the template to insert the value
+//     of the capture group with that name.
+//   - $$, which tells the template insert a literal '$'
+//     into the output.
+//   - $, which indicates an invalid use of the '$' operator
+//     ($ not followed by $ or {name}).
 var substitutionRE = regexp.MustCompile(`\$\{(\w+?)\}|\$\$?`)
 
 // Evaluator evaluates a test name clustering rule on

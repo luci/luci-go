@@ -58,20 +58,21 @@ var propReaderReservations = inputPropertyReservations{}
 //
 // Attempting to reserve duplicate namespaces will panic. The namespace refers
 // to the top-level property key. It is recommended that:
-//   * The `ns` begins with '$'.
-//   * The value after the '$' is the canonical Go package name for your
+//   - The `ns` begins with '$'.
+//   - The value after the '$' is the canonical Go package name for your
 //     library.
 //
 // Using the generated function will parse the relevant input property namespace
 // as JSONPB, returning the parsed message (and an error, if any).
 //
-//   var myPropertyReader func(context.Context) *MyPropertyMsg
-//   func init() {
-//     MakePropertyReader("$some/namespace", &myPropertyReader)
-//   }
+//	var myPropertyReader func(context.Context) *MyPropertyMsg
+//	func init() {
+//	  MakePropertyReader("$some/namespace", &myPropertyReader)
+//	}
 //
 // In Go2 this will be less weird:
-//   MakePropertyReader[T proto.Message](ns string) func(context.Context) T
+//
+//	MakePropertyReader[T proto.Message](ns string) func(context.Context) T
 func MakePropertyReader(ns string, fnptr interface{}) {
 	fn, msgT := getReaderFnValue(fnptr)
 	mkMsg := func() proto.Message {

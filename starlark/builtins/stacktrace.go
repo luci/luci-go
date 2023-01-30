@@ -64,15 +64,15 @@ func (s *CapturedStacktrace) String() string { return s.backtrace }
 
 // Stacktrace is stacktrace(...) builtin.
 //
-//  def stacktrace(skip=0):
-//    """Capture and returns a stack trace of the caller.
+//	def stacktrace(skip=0):
+//	  """Capture and returns a stack trace of the caller.
 //
-//    A captured stacktrace is an opaque object that can be stringified to get a
-//    nice looking trace (e.g. for error messages).
+//	  A captured stacktrace is an opaque object that can be stringified to get a
+//	  nice looking trace (e.g. for error messages).
 //
-//    Args:
-//      skip: how many inner most frames to skip.
-//    """
+//	  Args:
+//	    skip: how many inner most frames to skip.
+//	  """
 var Stacktrace = starlark.NewBuiltin("stacktrace", func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	skip := starlark.MakeInt(0)
 	if err := starlark.UnpackArgs("stacktrace", args, kwargs, "skip?", &skip); err != nil {

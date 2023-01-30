@@ -36,21 +36,21 @@ import (
 //
 // Example:
 //
-//    Say we're given a list of arguments which look like ("_" means a bad value
-//    that we drop):
+//	  Say we're given a list of arguments which look like ("_" means a bad value
+//	  that we drop):
 //
-//     input: A B _ C D _ _ E
-//      Idxs: 0 1 2 3 4 5 6 7
-//   dropped:     2     5 6
+//	   input: A B _ C D _ _ E
+//	    Idxs: 0 1 2 3 4 5 6 7
+//	 dropped:     2     5 6
 //
-//  DropKeys(input): A B C D E
-//                   0 1 2 3 4
+//	DropKeys(input): A B C D E
+//	                 0 1 2 3 4
 //
-//  OriginalIndex(0) -> 0
-//  OriginalIndex(1) -> 1
-//  OriginalIndex(2) -> 3
-//  OriginalIndex(3) -> 4
-//  OriginalIndex(4) -> 7
+//	OriginalIndex(0) -> 0
+//	OriginalIndex(1) -> 1
+//	OriginalIndex(2) -> 3
+//	OriginalIndex(3) -> 4
+//	OriginalIndex(4) -> 7
 //
 // Methods on this type are NOT goroutine safe.
 type DroppedArgTracker []int

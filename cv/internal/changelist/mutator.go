@@ -105,16 +105,19 @@ type tjNotifier interface {
 // keep the code clean and readable. For example,
 //
 // ```
-// cl, err := mu.Update(ctx, project, clid, func (cl *changelist.CL) error {
-//   if cl.Snapshot == nil {
-//     return ErrStopMutation // noop
-//   }
-//   cl.Snapshot = nil
-//   return nil
-// })
-// if err != nil {
-//   return errors.Annotate(err, "failed to reset Snapshot").Err()
-// }
+//
+//	cl, err := mu.Update(ctx, project, clid, func (cl *changelist.CL) error {
+//	  if cl.Snapshot == nil {
+//	    return ErrStopMutation // noop
+//	  }
+//	  cl.Snapshot = nil
+//	  return nil
+//	})
+//
+//	if err != nil {
+//	  return errors.Annotate(err, "failed to reset Snapshot").Err()
+//	}
+//
 // doSomething(ctx, cl)
 // ```
 var ErrStopMutation = errors.New("stop CL mutation")

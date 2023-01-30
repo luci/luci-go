@@ -65,8 +65,8 @@ type CredentialsClient struct {
 // The caller must have "roles/iam.serviceAccountTokenCreator" role in the
 // service account's IAM policy and caller's OAuth token must have one of the
 // scopes:
-//  * https://www.googleapis.com/auth/iam
-//  * https://www.googleapis.com/auth/cloud-platform
+//   - https://www.googleapis.com/auth/iam
+//   - https://www.googleapis.com/auth/cloud-platform
 //
 // Returns ID of the signing key and the signature on success.
 //
@@ -98,8 +98,8 @@ func (cl *CredentialsClient) SignBlob(ctx context.Context, serviceAccount string
 // The caller must have "roles/iam.serviceAccountTokenCreator" role in the
 // service account's IAM policy and caller's OAuth token must have one of the
 // scopes:
-//  * https://www.googleapis.com/auth/iam
-//  * https://www.googleapis.com/auth/cloud-platform
+//   - https://www.googleapis.com/auth/iam
+//   - https://www.googleapis.com/auth/cloud-platform
 //
 // Returns ID of the signing key and the signed JWT on success.
 //

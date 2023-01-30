@@ -31,19 +31,19 @@ import (
 //
 // Consider this module.star Starlark code, for example:
 //
-//     def _func():
-//       """Doc string."""
-//     exported = struct(func = _func, const = 123)
+//	def _func():
+//	  """Doc string."""
+//	exported = struct(func = _func, const = 123)
 //
 // It will produce the following symbol tree:
 //
-//    Struct('module.star', *ast.Module, [
-//      Term('_func', *ast.Function _func),
-//      Struct('exported', *ast.Namespace exported, [
-//        Term('func', *ast.Function _func),
-//        Term('const', *ast.Var const),
-//      ]),
-//    ])
+//	Struct('module.star', *ast.Module, [
+//	  Term('_func', *ast.Function _func),
+//	  Struct('exported', *ast.Namespace exported, [
+//	    Term('func', *ast.Function _func),
+//	    Term('const', *ast.Var const),
+//	  ]),
+//	])
 //
 // Notice that both '_func' and 'exported.func' point to exact same AST node
 // where the function was actually defined.
@@ -127,10 +127,10 @@ func (l *Loader) Load(module string) (syms *Struct, err error) {
 // contains symbols from the top-level module scope. There's NO chaining of
 // scopes, because the following is NOT a valid definition:
 //
-//    struct(
-//        k1 = v,
-//        nested = struct(k2 = k1),  # k1 is undefined!
-//    )
+//	struct(
+//	    k1 = v,
+//	    nested = struct(k2 = k1),  # k1 is undefined!
+//	)
 //
 // Only symbols defined at the module scope (e.g. variables) can be referenced
 // from inside struct definitions.

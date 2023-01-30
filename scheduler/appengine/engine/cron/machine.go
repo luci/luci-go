@@ -26,17 +26,17 @@ import (
 // Whoever hosts the cron machine is supposed to store this state in some
 // persistent store between events. It's mutated by Machine. So the usage
 // pattern is:
-//   * Deserialize State, construct Machine instance with it.
-//   * Invoke some Machine method (e.g Enable()) to advance the state.
-//   * Acknowledge all actions emitted by the machine (see Machine.Actions).
-//   * Serialize the mutated state (available in Machine.State).
+//   - Deserialize State, construct Machine instance with it.
+//   - Invoke some Machine method (e.g Enable()) to advance the state.
+//   - Acknowledge all actions emitted by the machine (see Machine.Actions).
+//   - Serialize the mutated state (available in Machine.State).
 //
 // If appropriate, all of the above should be done in a transaction.
 //
 // Machine assumes that whoever hosts it handles TickLaterAction with following
 // semantics:
-//   * A scheduled tick can't be "unscheduled".
-//   * A scheduled tick may come more than one time.
+//   - A scheduled tick can't be "unscheduled".
+//   - A scheduled tick may come more than one time.
 //
 // So the machine just ignores ticks it doesn't expect.
 //

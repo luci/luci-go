@@ -29,9 +29,10 @@ import (
 // and resolves it into a concrete package instance, ensuring it exists.
 //
 // Returns gRPC-tagged errors:
-//   InvalidArgument if the version string format is invalid.
-//   NotFound if there's no such package or such version.
-//   FailedPrecondition if the tag resolves to multiple instances.
+//
+//	InvalidArgument if the version string format is invalid.
+//	NotFound if there's no such package or such version.
+//	FailedPrecondition if the tag resolves to multiple instances.
 func ResolveVersion(c context.Context, pkg, version string) (*Instance, error) {
 	// Pick a resolution method based on the format of the version string.
 	var iid string

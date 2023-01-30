@@ -14,8 +14,8 @@
 
 // Package gs implements a versatile Google Storage client on top of the
 // standard Google Storage Go API. It adds:
-//	- The ability to read from specific byte offsets.
-//	- Exponential backoff retries on transient errors.
-//	- Logging
-//	- The ability to easily stub a Google Storage interface.
+//   - The ability to read from specific byte offsets.
+//   - Exponential backoff retries on transient errors.
+//   - Logging
+//   - The ability to easily stub a Google Storage interface.
 package gs

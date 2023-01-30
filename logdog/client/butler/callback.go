@@ -44,7 +44,7 @@ type StreamChunkCallback func(*logpb.LogEntry)
 // If multiple callbacks are all interested in the same stream, the first one
 // wins.
 //
-// Wrapping
+// # Wrapping
 //
 // If `wrap` is true, the callback is wrapped internally to buffer LogEntries
 // until they're complete.

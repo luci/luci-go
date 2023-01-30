@@ -152,9 +152,10 @@ func (r *bufferingReaderAt) recycleBuf(b []byte) {
 // and forgets it right away, all under the lock).
 //
 // Returns one of:
-//   (full block, nil) on success
-//   (partial or full block, io.EOF) when reading the final block
-//   (partial block, err) on read errors
+//
+//	(full block, nil) on success
+//	(partial or full block, io.EOF) when reading the final block
+//	(partial block, err) on read errors
 func (r *bufferingReaderAt) readBlock(offset int64) (data []byte, err error) {
 	// Have it cached already?
 	if b, ok := r.lru.get(offset); ok {

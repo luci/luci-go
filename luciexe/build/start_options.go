@@ -146,9 +146,10 @@ func OptSend(lim rate.Limit, callback func(int64, *bbpb.Build)) StartOption {
 // report an error and quit the build.
 //
 // Example:
-//   msg := &MyOutputMessage{}
-//   state, ctx := Start(ctx, inputBuild, OptParseProperties(msg))
-//   # `msg` has been populated from inputBuild.InputProperties
+//
+//	msg := &MyOutputMessage{}
+//	state, ctx := Start(ctx, inputBuild, OptParseProperties(msg))
+//	# `msg` has been populated from inputBuild.InputProperties
 func OptParseProperties(msg proto.Message) StartOption {
 	return func(s *State) {
 		s.topLevelInputProperties = msg
@@ -176,11 +177,11 @@ func OptStrictInputProperties() StartOption {
 //
 // Usage
 //
-//   var writer func(*MyMessage)
-//   var merger func(*MyMessage)
+//	var writer func(*MyMessage)
+//	var merger func(*MyMessage)
 //
-//   // one function may be nil and will be skipped
-//   ... = Start(, ..., OptOutputProperties(&writer, &merger))
+//	// one function may be nil and will be skipped
+//	... = Start(, ..., OptOutputProperties(&writer, &merger))
 //
 // in go2 this can be improved (possibly by making State a generic type):
 func OptOutputProperties(writeFnptr, mergeFnptr interface{}) StartOption {

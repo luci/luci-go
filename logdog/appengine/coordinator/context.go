@@ -35,9 +35,9 @@ var projectConfigCtxKey = "logdog.coordinator.ProjectConfig"
 // Checks the project exists, but doesn't do any ACL checks.
 //
 // It will return a user-facing wrapped gRPC error on failure:
-//	- InvalidArgument if the project name is invalid.
-//	- PermissionDenied/Unauthenticated if the project doesn't exist.
-//	- Internal if an internal error occurred.
+//   - InvalidArgument if the project name is invalid.
+//   - PermissionDenied/Unauthenticated if the project doesn't exist.
+//   - Internal if an internal error occurred.
 func WithProjectNamespace(c *context.Context, project string) error {
 	ctx := *c
 

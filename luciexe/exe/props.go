@@ -30,23 +30,23 @@ import (
 // `outputs` is a mapping of a property name to an output structure. An output
 // structure may be one of two things:
 //
-//  * a non-nil proto.Message. The data in this field will be interpreted as
-//    JSONPB and Unmarshaled into the proto.Message.
-//  * a valid "encoding/json" unmarshal target. The data in this field will be
-//    unmarshaled into with the stdlib "encoding/json" package.
+//   - a non-nil proto.Message. The data in this field will be interpreted as
+//     JSONPB and Unmarshaled into the proto.Message.
+//   - a valid "encoding/json" unmarshal target. The data in this field will be
+//     unmarshaled into with the stdlib "encoding/json" package.
 //
 // This function will scan the props (usually `build.Input.Properties`) and
 // unmarshal them as appropriate into the outputs.
 //
 // Example:
 //
-//   myProto := &myprotos.Message{}
-//   myStruct := &MyStruct{}
-//   err := ParseProperties(build.Input.Properties, map[string]interface{}{
-//     "proto": myProto, "$namespaced/struct": myStruct})
-//   // handle err :)
-//   fmt.Println("Got:", myProto.Field)
-//   fmt.Println("Got:", myStruct.Field)
+//	myProto := &myprotos.Message{}
+//	myStruct := &MyStruct{}
+//	err := ParseProperties(build.Input.Properties, map[string]interface{}{
+//	  "proto": myProto, "$namespaced/struct": myStruct})
+//	// handle err :)
+//	fmt.Println("Got:", myProto.Field)
+//	fmt.Println("Got:", myStruct.Field)
 func ParseProperties(props *structpb.Struct, outputs map[string]interface{}) error {
 	ret := errors.NewLazyMultiError(len(outputs))
 
@@ -90,24 +90,24 @@ var Null = nullType{}
 // `inputs` is a mapping of a property name to an input structure. An input
 // structure may be one of two things:
 //
-//  * a non-nil proto.Message. The data in this field will be interpreted as
-//    JSONPB and Unmarshaled into the proto.Message.
-//  * a valid "encoding/json" marshal source. The data in this field will be
-//    interpreted as json and marshaled with the stdlib "encoding/json" package.
-//  * The `Null` value in this package. The top-level property will be set to
-//    JSON `null`.
-//  * nil. The top-level property will be removed.
+//   - a non-nil proto.Message. The data in this field will be interpreted as
+//     JSONPB and Unmarshaled into the proto.Message.
+//   - a valid "encoding/json" marshal source. The data in this field will be
+//     interpreted as json and marshaled with the stdlib "encoding/json" package.
+//   - The `Null` value in this package. The top-level property will be set to
+//     JSON `null`.
+//   - nil. The top-level property will be removed.
 //
 // This function will scan the inputs and marshal them as appropriate into
 // `props` (usually `build.Output.Properties`).
 //
 // Example:
 //
-//   myProto := &myprotos.Message{Field: "something"}
-//   myStruct := &MyStruct{Field: 100}
-//   err := WriteProperties(build.Output.Properties, map[string]interface{}{
-//     "proto": myProto, "$namespaced/struct": myStruct})
-//   // handle err :)
+//	myProto := &myprotos.Message{Field: "something"}
+//	myStruct := &MyStruct{Field: 100}
+//	err := WriteProperties(build.Output.Properties, map[string]interface{}{
+//	  "proto": myProto, "$namespaced/struct": myStruct})
+//	// handle err :)
 func WriteProperties(props *structpb.Struct, inputs map[string]interface{}) error {
 	if props.Fields == nil {
 		props.Fields = make(map[string]*structpb.Value, len(inputs))

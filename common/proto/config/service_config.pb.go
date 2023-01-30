@@ -358,25 +358,25 @@ func (*Project_GitilesLocation) isProject_Location() {}
 // which this Team needs to perform in order to keep current with LUCI.
 //
 // We recommend subscribing to the following mailing lists as well:
-//   * luci-announce@ - Announcements of new LUCI functionality.
-//   * luci-outages@ - Announcements of LUCI system outages/downtime.
-//   * luci-releases@ - (noisy) Announcements of new LUCI service deployments.
+//   - luci-announce@ - Announcements of new LUCI functionality.
+//   - luci-outages@ - Announcements of LUCI system outages/downtime.
+//   - luci-releases@ - (noisy) Announcements of new LUCI service deployments.
 //
 // We also recommend directing LUCI questions/discussion to:
-//   * go/luci-users-chat - Chatroom open to all users of LUCI. Good place to
+//   - go/luci-users-chat - Chatroom open to all users of LUCI. Good place to
 //     ask/answer questions about the use of LUCI services.
-//   * go/luci-dev-chat - Chatroom for developing LUCI services, or
+//   - go/luci-dev-chat - Chatroom for developing LUCI services, or
 //     systems which tightly interact with LUCI services.
-//   * luci-eng@ - Email list for LUCI related questions.
+//   - luci-eng@ - Email list for LUCI related questions.
 //
 // Bugs should be filed to:
-//   * go/bug-a-trooper - General bug reports related to the operation of
+//   - go/bug-a-trooper - General bug reports related to the operation of
 //     specific builders/machines which happen to run in LUCI. This is a general
 //     Chrome-area bug and will be triaged (usually within 24h).
-//   * go/luci-bug - Bug reports/feature requests for LUCI services.
-//   * go/luci-trooper-bug - Bug reports against LUCI services which
+//   - go/luci-bug - Bug reports/feature requests for LUCI services.
+//   - go/luci-trooper-bug - Bug reports against LUCI services which
 //     need quick attention from a trooper.
-//   * oncall/chrome-ops-foundation - Oncall rotation for ChOps Foundation
+//   - oncall/chrome-ops-foundation - Oncall rotation for ChOps Foundation
 //     (primary responders for LUCI service outages). It's a good idea to check
 //     go/luci-users-chat and luci-outages@ too.
 //

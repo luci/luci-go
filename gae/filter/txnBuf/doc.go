@@ -21,6 +21,7 @@
 // Put/Delete operations you've done since the beginning of the transaction.
 //
 // If you've installed this transaction buffer, then:
+//
 //   - All mutations will be reflected in all read operations (see LIMITATIONS).
 //     Without the buffer, read operations always observe the state of the
 //     entity group(s) at the time that the transaction started.
@@ -46,6 +47,7 @@
 //     a subsequent inner-inner transaction delete some of those entities.
 //
 // LIMITATIONS (only inside of a transaction)
+//
 //   - KeysOnly/Projection/Count queries are supported, but may incur additional
 //     costs.
 //
@@ -70,7 +72,7 @@
 //   - No parallel access* to datastore while in a transaction; all nested
 //     operations are serialized. This is done for simplicity and correctness.
 //
-//     * The exception is that callbacks inside of
+//   - The exception is that callbacks inside of
 //     a Run/GetMulti/DeleteMulti/PutMulti query MAY read/write the current
 //     transaction. Modifications to the datastore during query executions will
 //     not affect the query results (e.g. the query has snapshot consistency

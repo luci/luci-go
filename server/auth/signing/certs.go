@@ -133,10 +133,10 @@ func FetchCertificatesFromLUCIService(ctx context.Context, serviceURL string) (*
 //
 // Usage (roughly):
 //
-//   certs, err := signing.FetchCertificatesForServiceAccount(ctx, <email>)
-//   if certs.CheckSignature(<key id>, <blob>, <signature>) == nil {
-//     <signature is valid!>
-//   }
+//	certs, err := signing.FetchCertificatesForServiceAccount(ctx, <email>)
+//	if certs.CheckSignature(<key id>, <blob>, <signature>) == nil {
+//	  <signature is valid!>
+//	}
 func FetchCertificatesForServiceAccount(ctx context.Context, email string) (*PublicCertificates, error) {
 	// Do only basic validation and offload full validation to the google backend.
 	if !strings.HasSuffix(email, ".gserviceaccount.com") {

@@ -107,7 +107,8 @@ func (s *Server) serve(ctx context.Context, l net.Listener, wg *sync.WaitGroup) 
 // handleTokenRequest handles the OAuth2 flow.
 //
 // The body of the request is documented here (among many other places):
-//   https://developers.google.com/identity/protocols/OAuth2InstalledApp#offline
+//
+//	https://developers.google.com/identity/protocols/OAuth2InstalledApp#offline
 //
 // We ignore client_id and client_secret, since we aren't really running OAuth2.
 func (s *Server) handleTokenRequest(rw http.ResponseWriter, r *http.Request) error {

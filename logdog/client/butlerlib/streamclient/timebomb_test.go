@@ -39,8 +39,8 @@ func init() {
 // timebomb forcibly crashes the test executable after timebombFuse time.
 //
 // Fuse times (x5 on windows):
-//   * 1 second in non-race mode
-//   * 10 seconds in race mode
+//   - 1 second in non-race mode
+//   - 10 seconds in race mode
 //
 // use like `defer timebomb()()`
 func timebomb() func() {

@@ -31,26 +31,26 @@
 // have to be filtered out).
 //
 // Properties (where N is current size of the set):
-//   * Batch 'Add' with configurable QPS limit, O(1) performance.
-//   * Transactional consistent 'Pop' (1 QPS limit), O(N) performance.
-//   * Non-transactional consistent 'List' (1 QPS limit), O(N) performance.
-//   * Popped items can't be re-added until their tombstones expire.
+//   - Batch 'Add' with configurable QPS limit, O(1) performance.
+//   - Transactional consistent 'Pop' (1 QPS limit), O(N) performance.
+//   - Non-transactional consistent 'List' (1 QPS limit), O(N) performance.
+//   - Popped items can't be re-added until their tombstones expire.
 //
 // These properties make dsset suitable for multiple producers, single consumer
 // queues, where order of items is not important, each item has a unique
 // identifier, and the queue size is small.
 //
 // Structurally dsset consists of N+1 entity groups:
-//   * N separate entity groups that contain N shards of the set.
-//   * 1 entity group (with a configurable root) that holds tombstones.
+//   - N separate entity groups that contain N shards of the set.
+//   - 1 entity group (with a configurable root) that holds tombstones.
 //
 // It is safe to increase number of shards at any time. Decreasing number of
 // shards is dangerous (but can be done with some more coding).
 //
 // More shards make:
-//   * Add() less contentious (so it can support more QPS).
-//   * List() and CleanupGarbage() slower and more expensive.
-//   * Pop() is not affected by number of shards.
+//   - Add() less contentious (so it can support more QPS).
+//   - List() and CleanupGarbage() slower and more expensive.
+//   - Pop() is not affected by number of shards.
 package dsset
 
 import (
@@ -79,37 +79,37 @@ const batchSize = 500
 // 'Pop' and takes care of cleaning up of the garbage. This requires a mix of
 // transactional and non-transactional actions:
 //
-//   listing, err := set.List(ctx)
-//   if err != nil {
-//     return err
-//   }
+//	listing, err := set.List(ctx)
+//	if err != nil {
+//	  return err
+//	}
 //
-//   if err := dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
-//     return err
-//   }
+//	if err := dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
+//	  return err
+//	}
 //
-//   ... Fetch any additional info associated with 'listing.Items' ...
+//	... Fetch any additional info associated with 'listing.Items' ...
 //
-//   var garbage dsset.Garbage
-//   err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-//     op, err := set.BeginPop(ctx, listing)
-//     if err != nil {
-//       return err
-//     }
-//     for _, itm := range listing.items {
-//       if op.Pop(item.ID) {
-//         // The item was indeed in the set and we've just removed it!
-//       } else {
-//         // Some other transaction has popped it already.
-//       }
-//     }
-//     garbage, err = dsset.FinishPop(ctx, op)
-//     return err
-//   }, nil)
-//   if err == nil {
-//     dsset.CleanupGarbage(ctx, garbage)  // best-effort cleanup
-//   }
-//   return err
+//	var garbage dsset.Garbage
+//	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+//	  op, err := set.BeginPop(ctx, listing)
+//	  if err != nil {
+//	    return err
+//	  }
+//	  for _, itm := range listing.items {
+//	    if op.Pop(item.ID) {
+//	      // The item was indeed in the set and we've just removed it!
+//	    } else {
+//	      // Some other transaction has popped it already.
+//	    }
+//	  }
+//	  garbage, err = dsset.FinishPop(ctx, op)
+//	  return err
+//	}, nil)
+//	if err == nil {
+//	  dsset.CleanupGarbage(ctx, garbage)  // best-effort cleanup
+//	}
+//	return err
 type Set struct {
 	ID              string         // global ID, used to construct datastore keys
 	ShardCount      int            // number of entity groups to use for storage

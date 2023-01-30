@@ -15,7 +15,7 @@
 // Package dscache provides a transparent cache for RawDatastore which is
 // backed by Memcache.
 //
-// Inspiration
+// # Inspiration
 //
 // Although this is not a port of any particular implementation, it takes
 // inspiration from these fine libraries:
@@ -23,12 +23,12 @@
 //   - https://github.com/qedus/nds
 //   - https://github.com/mjibson/goon
 //
-// Algorithm
+// # Algorithm
 //
 // Memcache contains cache entries for single datastore entities. The memcache
 // key looks like
 //
-//   "gae:" | vers | ":" | shard | ":" | Base64_std_nopad(SHA1(datastore.Key))
+//	"gae:" | vers | ":" | shard | ":" | Base64_std_nopad(SHA1(datastore.Key))
 //
 // Where:
 //   - vers is an ascii-hex-encoded number (currently 1).
@@ -48,7 +48,7 @@
 //   - 0 "entity" (cached value)
 //   - 1 "lock"   (someone is mutating this entry)
 //
-// Algorithm - Put and Delete
+// # Algorithm - Put and Delete
 //
 // On a Put (or Delete), an empty value is unconditionally written to
 // memcache with a MutationLockTimeout expiration (default 2 min), and
@@ -63,7 +63,7 @@
 // Get will write its own lock, get the value from datastore, and compare and
 // swap to populate the value (detailed below).
 //
-// Algorithm - Get
+// # Algorithm - Get
 //
 // On a Get, "Add" a lock for it (which only does something if there's no entry
 // in memcache yet) with a nonce value. We immediately Get the memcache entries
@@ -81,7 +81,7 @@
 // the object to memcache. The CAS will succeed if nothing else touched the
 // memcache in the meantime (like a Put, a memcache expiration/eviction, etc.).
 //
-// Algorithm - Transactions
+// # Algorithm - Transactions
 //
 // In a transaction, all Put memcache operations are held until the very end of
 // the transaction. Right before the transaction is committed, all accumulated
@@ -104,13 +104,13 @@
 // Gets and Queries in a transaction pass right through without reading or
 // writing memcache.
 //
-// Cache control
+// # Cache control
 //
 // An entity may expose the following metadata (see
 // datastore.PropertyLoadSaver.GetMeta) to control the behavior of its cache.
 //
 //   - `gae:"$dscache.enable,<true|false>"` - whether or not this entity should
-//      be cached at all. If ommitted, dscache defaults to true.
+//     be cached at all. If ommitted, dscache defaults to true.
 //   - `gae:"$dscache.expiration,#seconds"` - the number of seconds of
 //     persistence to use when this item is cached. 0 is infinite. If omitted,
 //     defaults to CacheDuration.
@@ -127,7 +127,7 @@
 // The purpose of sharding is to alleviate hot memcache keys, as recommended by
 // https://cloud.google.com/appengine/articles/best-practices-for-app-engine-memcache#distribute-load .
 //
-// Caveats
+// # Caveats
 //
 // A couple things to note that may differ from other appengine datastore
 // caching libraries (like goon, nds, or ndb).
@@ -138,7 +138,7 @@
 //   - Queries do not interact with the cache at all.
 //   - Negative lookups (e.g. ErrNoSuchEntity) are cached.
 //
-// DANGER ZONE
+// # DANGER ZONE
 //
 // As mentioned in the Put/Delete/Transactions sections above, if the memcache
 // Set fails, that's a HARD ERROR. The reason for this is that otherwise in the

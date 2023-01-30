@@ -36,10 +36,10 @@ import (
 // component, it should use copy-on-write approach.
 //
 // Project Manager guarantees that for each CL of the given component:
-//   * there is a PCL via Supporter interface,
-//   * and for each such CL's dependency, either:
-//      * dep is not yet loaded,
-//      * OR dep must be itself a component's CL.
+//   - there is a PCL via Supporter interface,
+//   - and for each such CL's dependency, either:
+//   - dep is not yet loaded,
+//   - OR dep must be itself a component's CL.
 //
 // May return special, possibly wrapped, ErrOutdatedPMState to signal that
 // Triage function has detected outdated PMState.

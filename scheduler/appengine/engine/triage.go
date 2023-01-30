@@ -50,9 +50,9 @@ var errTriagePrepareFail = errors.New("error while fetching sets, see logs", tra
 // or waiting).
 //
 // There are 3 stages of the triage operation:
-//   * Pre-transaction to gather pending events.
-//   * Transaction to "atomically" consume the events.
-//   * Post-transaction to cleanup garbage, update monitoring, etc.
+//   - Pre-transaction to gather pending events.
+//   - Transaction to "atomically" consume the events.
+//   - Post-transaction to cleanup garbage, update monitoring, etc.
 type triageOp struct {
 	// jobID is ID of the job being examined, must be provided externally.
 	jobID string

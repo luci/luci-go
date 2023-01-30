@@ -833,14 +833,13 @@ func (x *NoopTask) GetTriggersCount() int64 {
 // commits.
 //
 // GitilesTask will trigger other jobs if either:
-//   * ref's tip has changed (e.g. new commit landed on a ref),
-//   * a ref has just been created from Scheduler point of view, which is
+//   - ref's tip has changed (e.g. new commit landed on a ref),
+//   - a ref has just been created from Scheduler point of view, which is
 //     treated as a single new commit.
 //     For example, if you configure new GitilesTask or add a ref not previously
 //     watched to the existing GitilesTask, then Scheduler will "discover" this
 //     ref as newly created and emit exactly 1 trigger for the ref's current
 //     tip.
-//
 //
 // LIMITATIONS:
 //

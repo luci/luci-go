@@ -99,7 +99,7 @@ type NotifyFn func(ctx context.Context, runID common.RunID, eta time.Time) error
 //
 // Succeeds iff both
 //  1. queue is empty or the requested Run is the first in the waitlist and no
-//    Run is occupying the current submission slot at this moment
+//     Run is occupying the current submission slot at this moment
 //  2. acquisition of the current slot satisfies the rate limit.
 //
 // Otherwise, this Run will be added to the waitlist and will be notified later

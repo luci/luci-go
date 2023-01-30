@@ -16,31 +16,31 @@
 
 // Package swarming provides access to the .
 //
-// Creating a client
+// # Creating a client
 //
 // Usage example:
 //
-//   import "go.chromium.org/luci/common/api/swarming/swarming/v1"
-//   ...
-//   ctx := context.Background()
-//   swarmingService, err := swarming.NewService(ctx)
+//	import "go.chromium.org/luci/common/api/swarming/swarming/v1"
+//	...
+//	ctx := context.Background()
+//	swarmingService, err := swarming.NewService(ctx)
 //
 // In this example, Google Application Default Credentials are used for authentication.
 //
 // For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
 //
-// Other authentication options
+// # Other authentication options
 //
 // To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
 //
-//   swarmingService, err := swarming.NewService(ctx, option.WithAPIKey("AIza..."))
+//	swarmingService, err := swarming.NewService(ctx, option.WithAPIKey("AIza..."))
 //
 // To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
 //
-//   config := &oauth2.Config{...}
-//   // ...
-//   token, err := config.Exchange(ctx, ...)
-//   swarmingService, err := swarming.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//	config := &oauth2.Config{...}
+//	// ...
+//	token, err := config.Exchange(ctx, ...)
+//	swarmingService, err := swarming.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
 //
 // See https://godoc.org/google.golang.org/api/option/ for details on options.
 package swarming // import "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	googleapi "google.golang.org/api/googleapi"
 	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
+	googleapi "google.golang.org/api/googleapi"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
@@ -2579,11 +2579,12 @@ func (c *BotTasksCall) Limit(limit int64) *BotTasksCall {
 // Sort sets the optional parameter "sort":
 //
 // Possible values:
-//   "ABANDONED_TS"
-//   "COMPLETED_TS"
-//   "CREATED_TS" (default)
-//   "MODIFIED_TS"
-//   "STARTED_TS"
+//
+//	"ABANDONED_TS"
+//	"COMPLETED_TS"
+//	"CREATED_TS" (default)
+//	"MODIFIED_TS"
+//	"STARTED_TS"
 func (c *BotTasksCall) Sort(sort string) *BotTasksCall {
 	c.urlParams_.Set("sort", sort)
 	return c
@@ -2598,21 +2599,22 @@ func (c *BotTasksCall) Start(start float64) *BotTasksCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
-//   "BOT_DIED"
-//   "CANCELED"
-//   "CLIENT_ERROR"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
-//   "DEDUPED"
-//   "EXPIRED"
-//   "KILLED"
-//   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
+//
+//	"ALL" (default)
+//	"BOT_DIED"
+//	"CANCELED"
+//	"CLIENT_ERROR"
+//	"COMPLETED"
+//	"COMPLETED_FAILURE"
+//	"COMPLETED_SUCCESS"
+//	"DEDUPED"
+//	"EXPIRED"
+//	"KILLED"
+//	"NO_RESOURCE"
+//	"PENDING"
+//	"PENDING_RUNNING"
+//	"RUNNING"
+//	"TIMED_OUT"
 func (c *BotTasksCall) State(state string) *BotTasksCall {
 	c.urlParams_.Set("state", state)
 	return c
@@ -3268,9 +3270,10 @@ func (c *BotsListCall) Dimensions(dimensions ...string) *BotsListCall {
 // InMaintenance sets the optional parameter "in_maintenance":
 //
 // Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
+//
+//	"FALSE"
+//	"NONE" (default)
+//	"TRUE"
 func (c *BotsListCall) InMaintenance(inMaintenance string) *BotsListCall {
 	c.urlParams_.Set("in_maintenance", inMaintenance)
 	return c
@@ -3279,9 +3282,10 @@ func (c *BotsListCall) InMaintenance(inMaintenance string) *BotsListCall {
 // IsBusy sets the optional parameter "is_busy":
 //
 // Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
+//
+//	"FALSE"
+//	"NONE" (default)
+//	"TRUE"
 func (c *BotsListCall) IsBusy(isBusy string) *BotsListCall {
 	c.urlParams_.Set("is_busy", isBusy)
 	return c
@@ -3290,9 +3294,10 @@ func (c *BotsListCall) IsBusy(isBusy string) *BotsListCall {
 // IsDead sets the optional parameter "is_dead":
 //
 // Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
+//
+//	"FALSE"
+//	"NONE" (default)
+//	"TRUE"
 func (c *BotsListCall) IsDead(isDead string) *BotsListCall {
 	c.urlParams_.Set("is_dead", isDead)
 	return c
@@ -3307,9 +3312,10 @@ func (c *BotsListCall) Limit(limit int64) *BotsListCall {
 // Quarantined sets the optional parameter "quarantined":
 //
 // Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
+//
+//	"FALSE"
+//	"NONE" (default)
+//	"TRUE"
 func (c *BotsListCall) Quarantined(quarantined string) *BotsListCall {
 	c.urlParams_.Set("quarantined", quarantined)
 	return c
@@ -5066,21 +5072,22 @@ func (c *TasksCountCall) Start(start float64) *TasksCountCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
-//   "BOT_DIED"
-//   "CANCELED"
-//   "CLIENT_ERROR"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
-//   "DEDUPED"
-//   "EXPIRED"
-//   "KILLED"
-//   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
+//
+//	"ALL" (default)
+//	"BOT_DIED"
+//	"CANCELED"
+//	"CLIENT_ERROR"
+//	"COMPLETED"
+//	"COMPLETED_FAILURE"
+//	"COMPLETED_SUCCESS"
+//	"DEDUPED"
+//	"EXPIRED"
+//	"KILLED"
+//	"NO_RESOURCE"
+//	"PENDING"
+//	"PENDING_RUNNING"
+//	"RUNNING"
+//	"TIMED_OUT"
 func (c *TasksCountCall) State(state string) *TasksCountCall {
 	c.urlParams_.Set("state", state)
 	return c
@@ -5443,11 +5450,12 @@ func (c *TasksListCall) Limit(limit int64) *TasksListCall {
 // Sort sets the optional parameter "sort":
 //
 // Possible values:
-//   "ABANDONED_TS"
-//   "COMPLETED_TS"
-//   "CREATED_TS" (default)
-//   "MODIFIED_TS"
-//   "STARTED_TS"
+//
+//	"ABANDONED_TS"
+//	"COMPLETED_TS"
+//	"CREATED_TS" (default)
+//	"MODIFIED_TS"
+//	"STARTED_TS"
 func (c *TasksListCall) Sort(sort string) *TasksListCall {
 	c.urlParams_.Set("sort", sort)
 	return c
@@ -5462,21 +5470,22 @@ func (c *TasksListCall) Start(start float64) *TasksListCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
-//   "BOT_DIED"
-//   "CANCELED"
-//   "CLIENT_ERROR"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
-//   "DEDUPED"
-//   "EXPIRED"
-//   "KILLED"
-//   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
+//
+//	"ALL" (default)
+//	"BOT_DIED"
+//	"CANCELED"
+//	"CLIENT_ERROR"
+//	"COMPLETED"
+//	"COMPLETED_FAILURE"
+//	"COMPLETED_SUCCESS"
+//	"DEDUPED"
+//	"EXPIRED"
+//	"KILLED"
+//	"NO_RESOURCE"
+//	"PENDING"
+//	"PENDING_RUNNING"
+//	"RUNNING"
+//	"TIMED_OUT"
 func (c *TasksListCall) State(state string) *TasksListCall {
 	c.urlParams_.Set("state", state)
 	return c
@@ -5857,11 +5866,12 @@ func (c *TasksRequestsCall) Limit(limit int64) *TasksRequestsCall {
 // Sort sets the optional parameter "sort":
 //
 // Possible values:
-//   "ABANDONED_TS"
-//   "COMPLETED_TS"
-//   "CREATED_TS" (default)
-//   "MODIFIED_TS"
-//   "STARTED_TS"
+//
+//	"ABANDONED_TS"
+//	"COMPLETED_TS"
+//	"CREATED_TS" (default)
+//	"MODIFIED_TS"
+//	"STARTED_TS"
 func (c *TasksRequestsCall) Sort(sort string) *TasksRequestsCall {
 	c.urlParams_.Set("sort", sort)
 	return c
@@ -5876,21 +5886,22 @@ func (c *TasksRequestsCall) Start(start float64) *TasksRequestsCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
-//   "BOT_DIED"
-//   "CANCELED"
-//   "CLIENT_ERROR"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
-//   "DEDUPED"
-//   "EXPIRED"
-//   "KILLED"
-//   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
+//
+//	"ALL" (default)
+//	"BOT_DIED"
+//	"CANCELED"
+//	"CLIENT_ERROR"
+//	"COMPLETED"
+//	"COMPLETED_FAILURE"
+//	"COMPLETED_SUCCESS"
+//	"DEDUPED"
+//	"EXPIRED"
+//	"KILLED"
+//	"NO_RESOURCE"
+//	"PENDING"
+//	"PENDING_RUNNING"
+//	"RUNNING"
+//	"TIMED_OUT"
 func (c *TasksRequestsCall) State(state string) *TasksRequestsCall {
 	c.urlParams_.Set("state", state)
 	return c

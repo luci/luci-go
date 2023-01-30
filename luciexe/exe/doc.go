@@ -16,20 +16,20 @@
 //
 // The simplest luciexe is:
 //
-//   import (
-//     "context"
+//	import (
+//	  "context"
 //
-//     "go.chromium.org/luci/luciexe/exe"
+//	  "go.chromium.org/luci/luciexe/exe"
 //
-//     bbpb "go.chromium.org/luci/buildbucket/proto"
-//   )
+//	  bbpb "go.chromium.org/luci/buildbucket/proto"
+//	)
 //
-//   func main() {
-//     exe.Run(func(ctx context.Context, input *bbpb.Build, userArgs []string, send exe.BuildSender) error {
-//       ... do whatever you want here ...
-//       return nil // nil error indicates successful build.
-//     })
-//   }
+//	func main() {
+//	  exe.Run(func(ctx context.Context, input *bbpb.Build, userArgs []string, send exe.BuildSender) error {
+//	    ... do whatever you want here ...
+//	    return nil // nil error indicates successful build.
+//	  })
+//	}
 //
 // See Also: https://go.chromium.org/luci/luciexe
 package exe

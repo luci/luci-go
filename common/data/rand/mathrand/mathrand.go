@@ -173,8 +173,7 @@ func Read(c context.Context, p []byte) (n int, err error) { return Get(c).Read(p
 // To produce a different normal distribution, callers can adjust the output
 // using:
 //
-//  sample = NormFloat64(ctx) * desiredStdDev + desiredMean
-//
+//	sample = NormFloat64(ctx) * desiredStdDev + desiredMean
 func NormFloat64(c context.Context) float64 { return Get(c).NormFloat64() }
 
 // ExpFloat64 returns an exponentially distributed float64 in the range
@@ -185,8 +184,7 @@ func NormFloat64(c context.Context) float64 { return Get(c).NormFloat64() }
 // To produce a distribution with a different rate parameter, callers can adjust
 // the output using:
 //
-//  sample = ExpFloat64(ctx) / desiredRateParameter
-//
+//	sample = ExpFloat64(ctx) / desiredRateParameter
 func ExpFloat64(c context.Context) float64 { return Get(c).ExpFloat64() }
 
 // WithGoRand invokes the supplied "fn" while holding an exclusive lock

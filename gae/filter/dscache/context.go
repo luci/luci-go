@@ -66,8 +66,9 @@ func FilterRDS(ctx context.Context, impl Cache) context.Context {
 // nil functions will cause a panic.
 //
 // So:
-//   ctx = AddShardFunctions(ctx, A, B, C)
-//   ctx = AddShardFunctions(ctx, D, E, F)
+//
+//	ctx = AddShardFunctions(ctx, A, B, C)
+//	ctx = AddShardFunctions(ctx, D, E, F)
 //
 // Would evaluate `D, E, F, A, B, C`
 func AddShardFunctions(ctx context.Context, shardFns ...ShardFunction) context.Context {

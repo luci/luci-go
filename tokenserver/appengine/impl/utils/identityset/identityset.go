@@ -185,9 +185,9 @@ func (s *Set) ToStrings() []string {
 // FromStrings constructs a Set by parsing a slice of strings.
 //
 // Each string is either:
-//  * "<kind>:<id>" identity string.
-//  * "group:<name>" group reference.
-//  * "*" token to mean "All identities".
+//   - "<kind>:<id>" identity string.
+//   - "group:<name>" group reference.
+//   - "*" token to mean "All identities".
 //
 // Any string that matches 'skip' predicate is skipped.
 func FromStrings(str []string, skip func(string) bool) (*Set, error) {

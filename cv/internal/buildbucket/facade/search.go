@@ -72,23 +72,24 @@ func init() {
 // `cb` is invoked for each matching Tryjob converted from Buildbucket build
 // until `cb` returns false or all matching Tryjobs are exhausted or error
 // occurs. The Tryjob `cb` receives only populates following fields:
-//   * ExternalID
-//   * Definition
-//   * Status
-//   * Result
+//   - ExternalID
+//   - Definition
+//   - Status
+//   - Result
 //
 // Also, the Tryjobs are guaranteed to have decreasing build ID (in other
 // word, from newest to oldest) ONLY within the same host.
 // For example, for following matching builds:
-//   * host: A, build: 100, create time: now
-//   * host: A, build: 101, create time: now - 2min
-//   * host: B, build: 1000, create time: now - 1min
-//   * host: B, build: 1001, create time: now - 3min
+//   - host: A, build: 100, create time: now
+//   - host: A, build: 101, create time: now - 2min
+//   - host: B, build: 1000, create time: now - 1min
+//   - host: B, build: 1001, create time: now - 3min
+//
 // It is possible that `cb` is called in following orders:
-//   * host: B, build: 1000, create time: now - 1min
-//   * host: A, build: 100, create time: now
-//   * host: B, build: 1001, create time: now - 3min
-//   * host: A, build: 101, create time: now - 2min
+//   - host: B, build: 1000, create time: now - 1min
+//   - host: A, build: 100, create time: now
+//   - host: B, build: 1001, create time: now - 3min
+//   - host: A, build: 101, create time: now - 2min
 //
 // TODO(crbug/1369200): Fix the edge case that may cause Search failing to
 // return newer builds before older builds across different patchsets.
@@ -153,16 +154,16 @@ func makeStopFunction() (shouldStop func() bool, stop func()) {
 // is returned or all matching builds have been exhausted.
 //
 // Algorithm for searching:
-//  * Pick the CL with smallest (patchset - min_equivalent_patchset) as the
-//    search predicate
-//  * Page the search response and accept a build if
-//    * The Gerrit changes of the build matches the input CLs. Match means
-//      host and change number are the same and the patchset is in between
-//      cl.min_equivalent_patchset and cl.patchset
-//    * The builder of the build should be either the main builder or the
-//      equivalent builder of any of the input definitions
-//    * The requested properties only have keys specified in
-//      `AcceptedPropertyKeys`
+//   - Pick the CL with smallest (patchset - min_equivalent_patchset) as the
+//     search predicate
+//   - Page the search response and accept a build if
+//   - The Gerrit changes of the build matches the input CLs. Match means
+//     host and change number are the same and the patchset is in between
+//     cl.min_equivalent_patchset and cl.patchset
+//   - The builder of the build should be either the main builder or the
+//     equivalent builder of any of the input definitions
+//   - The requested properties only have keys specified in
+//     `AcceptedPropertyKeys`
 type searchWorker struct {
 	bbHost              string
 	luciProject         string

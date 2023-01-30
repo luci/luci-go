@@ -146,12 +146,12 @@ var missingProjectMarker = "missing project"
 // ProjectConfig loads the project config protobuf from the config service.
 //
 // This function will return following errors:
-//	- nil, if the project exists and the configuration successfully loaded
-//	- config.ErrNoConfig if the project configuration was not present.
-//	- ErrInvalidConfig if the project configuration was present, but could not
-//	  be loaded.
-//	- Some other error if an error occurred that does not fit one of the
-//	  previous categories.
+//   - nil, if the project exists and the configuration successfully loaded
+//   - config.ErrNoConfig if the project configuration was not present.
+//   - ErrInvalidConfig if the project configuration was present, but could not
+//     be loaded.
+//   - Some other error if an error occurred that does not fit one of the
+//     previous categories.
 func ProjectConfig(ctx context.Context, projectID string) (*svcconfig.ProjectConfig, error) {
 	store := store(ctx)
 	if projectID == "" {

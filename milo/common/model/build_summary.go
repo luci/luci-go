@@ -39,7 +39,8 @@ import (
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like
-//   0 ++ project ++ console ++ manifest_name ++ url ++ revision.decode('hex')
+//
+//	0 ++ project ++ console ++ manifest_name ++ url ++ revision.decode('hex')
 //
 // This is used to index this BuildSummary as the row for any consoles that it
 // shows up in that use the Manifest/RepoURL/Revision indexing scheme.
@@ -47,7 +48,8 @@ import (
 // (++ is cmpbin concatenation)
 //
 // Example:
-//   0 ++ "chromium" ++ "main" ++ "UNPATCHED" ++ "https://.../src.git" ++ deadbeef
+//
+//	0 ++ "chromium" ++ "main" ++ "UNPATCHED" ++ "https://.../src.git" ++ deadbeef
 //
 // The list of interested consoles is compiled at build summarization time.
 type ManifestKey []byte

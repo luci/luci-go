@@ -42,10 +42,10 @@ func (f *CommandLineFlag) String() string {
 //
 // A Target is identified through type assertion, and will be one of:
 //
-//	- NoTarget
-//	- ScriptTarget
-//	- CommandTarget
-//	- ModuleTarget
+//   - NoTarget
+//   - ScriptTarget
+//   - CommandTarget
+//   - ModuleTarget
 type Target interface {
 	// buildArgsForTarget returns the arguments to pass to the interpreter to
 	// invoke this target.

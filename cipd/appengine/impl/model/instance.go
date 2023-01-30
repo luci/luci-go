@@ -234,9 +234,10 @@ func CheckInstanceExists(c context.Context, inst *Instance) error {
 // Can be called as part of a transaction. Updates 'inst' in place.
 //
 // Returns gRPC-tagged errors:
-//    NotFound if there's no such instance or package.
-//    FailedPrecondition if some processors are still running.
-//    Aborted if some processors have failed.
+//
+//	NotFound if there's no such instance or package.
+//	FailedPrecondition if some processors are still running.
+//	Aborted if some processors have failed.
 func CheckInstanceReady(c context.Context, inst *Instance) error {
 	if err := CheckInstanceExists(c, inst); err != nil {
 		return err

@@ -51,8 +51,8 @@ const DefaultWriteCountBudget = 500
 const XGTransactionGroupLimit = 25
 
 // sizeTracker tracks the size of a buffered transaction. The rules are simple:
-//   * deletes count for the size of their key, but 0 data
-//   * puts count for the size of their key plus the 'EstimateSize' for their
+//   - deletes count for the size of their key, but 0 data
+//   - puts count for the size of their key plus the 'EstimateSize' for their
 //     data.
 type sizeTracker struct {
 	keyToSize map[string]int64

@@ -38,10 +38,11 @@ func init() {
 // RegisterVars registers placeholders that can be used in config set names.
 //
 // Registers:
-//    ${appid} - expands into a GAE app ID of the running service.
-//    ${config_service_appid} - expands into a GAE app ID of a LUCI Config
-//        service that the running service is using (or empty string if
-//        unconfigured).
+//
+//	${appid} - expands into a GAE app ID of the running service.
+//	${config_service_appid} - expands into a GAE app ID of a LUCI Config
+//	    service that the running service is using (or empty string if
+//	    unconfigured).
 //
 // This function is called during init() with the default var set.
 func RegisterVars(vars *vars.VarSet) {

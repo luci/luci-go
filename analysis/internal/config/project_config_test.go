@@ -44,7 +44,7 @@ var textPBMultiline = prototext.MarshalOptions{
 func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("SetTestProjectConfig updates context config", t, func(){
+	Convey("SetTestProjectConfig updates context config", t, func() {
 		projectA := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
 		projectA.LastUpdated = timestamppb.New(time.Now())
 		configs := make(map[string]*configpb.ProjectConfig)

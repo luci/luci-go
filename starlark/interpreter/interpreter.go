@@ -20,8 +20,7 @@
 // many files that reference each other, thus allowing decomposing code into
 // small logical chunks and enabling code reuse.
 //
-//
-// Modules and packages
+// # Modules and packages
 //
 // Two main new concepts are modules and packages. A package is a collection
 // of Starlark files living under the same root. A module is just one such
@@ -41,15 +40,14 @@
 // Modules from one package may refer to modules from another package by using
 // the following syntax:
 //
-//   load("@<package alias>//<path within the package>", ...)
+//	load("@<package alias>//<path within the package>", ...)
 //
 // Presently the mapping between a package alias (e.g. 'stdlib') and package's
 // source code (a collection of *.star files under a single root) is static and
 // supplied by Go code that uses the interpreter. This may change in the future
 // to allow loading packages dynamically, e.g. over the network.
 //
-//
-// Special packages
+// # Special packages
 //
 // There are two special package aliases recognized natively by the interpreter:
 // '__main__' and 'stdlib'.
@@ -65,7 +63,6 @@
 // global namespace of all other modules (except ones loaded by
 // '@stdlib//builtins.star' itself). This allows to implement in Starlark
 // built-in global functions exposed by the interpreter.
-//
 //
 // Exec'ing modules
 //
@@ -95,8 +92,7 @@
 // sequentially, and only once. Thus 'exec'-ed scripts essentially form a tree,
 // traversed exactly once in the depth first order.
 //
-//
-// Built-in symbols
+// # Built-in symbols
 //
 // In addition to 'exec' builtin implemented by the interpreter itself, users
 // of the interpreter can also supply arbitrary "predeclared" symbols they want

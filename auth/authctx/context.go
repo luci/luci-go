@@ -372,10 +372,10 @@ func (ac *Context) Authenticator() *auth.Authenticator {
 // be inherited by subprocesses that support it.
 //
 // It does two inter-dependent things:
-//   1. Updates LUCI_CONTEXT in 'ctx' so that LUCI tools can use the local
-//      token server.
-//   2. Mutates 'env' so that various third party tools can also use local
-//      tokens.
+//  1. Updates LUCI_CONTEXT in 'ctx' so that LUCI tools can use the local
+//     token server.
+//  2. Mutates 'env' so that various third party tools can also use local
+//     tokens.
 //
 // To successfully launch a subprocess, LUCI_CONTEXT in returned context.Context
 // *must* be exported into 'env' (e.g. via lucictx.Export(...) followed by

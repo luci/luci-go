@@ -38,13 +38,17 @@ type propertiesFlag struct {
 //
 // If a flag value starts with @, properties are read from the JSON file at the
 // path that follows @. Example:
-//  -p @my_properties.json
+//
+//	-p @my_properties.json
+//
 // This form can be used only in the first flag value.
 //
 // Otherwise, a flag value must have name=value form.
 // If the property value is valid JSON, then it is parsed as JSON;
 // otherwise treated as a string. Example:
-//  -p foo=1 -p 'bar={"a": 2}'
+//
+//	-p foo=1 -p 'bar={"a": 2}'
+//
 // Different property names can be specified multiple times.
 //
 // Panics if props is nil.

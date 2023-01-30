@@ -185,11 +185,13 @@ func addWithIndent(buf *strings.Builder, section, text string) {
 //
 // Depending on Convey's config, ShouldResemble-like response may be JSON
 // in the following format:
+//
 //	 {
 //		 "Message": ...
 //		 "Actual": ...
 //		 "Expected": ...
 //	 }
+//
 // If so, we want just the value of the "Message" part.
 func poorifyIfConveyJSON(msg string) string {
 	out := map[string]interface{}{}

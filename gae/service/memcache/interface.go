@@ -149,10 +149,11 @@ func Delete(c context.Context, keys ...string) error {
 // CompareAndSwap calls.
 //
 // Example:
-//   itm := memcache.NewItem(context, "aKey")
-//   memcache.Get(context, itm) // check error
-//   itm.SetValue(append(itm.Value(), []byte("more bytes")))
-//   memcache.CompareAndSwap(context, itm) // check error
+//
+//	itm := memcache.NewItem(context, "aKey")
+//	memcache.Get(context, itm) // check error
+//	itm.SetValue(append(itm.Value(), []byte("more bytes")))
+//	memcache.CompareAndSwap(context, itm) // check error
 //
 // If only one item is provided its error will be returned directly. If more
 // than one item is provided, an errors.MultiError will be returned in the

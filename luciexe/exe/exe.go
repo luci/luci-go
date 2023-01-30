@@ -66,17 +66,17 @@ var InfraErrorTag = errors.BoolTag{Key: errors.NewTagKey("infra_error")}
 // MainFn is the function signature you must implement in your callback to Run.
 //
 // Args:
-//  - ctx: The context will be canceled when the program receives the os
-//   Interrupt or SIGTERM (on unix) signal. The context also has standard go
-//   logging setup.
-//  - input: The initial Build state, as read from stdin. The build is not
-//   protected by a mutex of any sort, so the `MainFn` is responsible
-//   for protecting it if it can be modified from multiple goroutines.
-//  - userArgs: All command line arguments supplied after first `ArgsDelim`.
-//  - send: A send func which should be called after modifying the provided
-//   build. The BuildSender is synchronous and locked; it may only be called
-//   once at a time. It will marshal the current build, then send it. Writes
-//   to the build should be synchronized with calls to the BuildSender.
+//   - ctx: The context will be canceled when the program receives the os
+//     Interrupt or SIGTERM (on unix) signal. The context also has standard go
+//     logging setup.
+//   - input: The initial Build state, as read from stdin. The build is not
+//     protected by a mutex of any sort, so the `MainFn` is responsible
+//     for protecting it if it can be modified from multiple goroutines.
+//   - userArgs: All command line arguments supplied after first `ArgsDelim`.
+//   - send: A send func which should be called after modifying the provided
+//     build. The BuildSender is synchronous and locked; it may only be called
+//     once at a time. It will marshal the current build, then send it. Writes
+//     to the build should be synchronized with calls to the BuildSender.
 //
 // input.Output.Properties is initialized to an empty Struct so you can use
 // WriteProperties right away.

@@ -83,9 +83,9 @@ type cAction struct {
 // Doesn't modify the state itself.
 //
 // Returns:
-//  * an action per each component that needs acting upon;
-//  * indication whether the state should be stored for debugging purpose;
-//  * error, if any.
+//   - an action per each component that needs acting upon;
+//   - indication whether the state should be stored for debugging purpose;
+//   - error, if any.
 func (h *Handler) triageComponents(ctx context.Context, s *State) ([]*cAction, bool, error) {
 	var sup itriager.PMState
 	sup, err := s.makeTriageSupporter(ctx)

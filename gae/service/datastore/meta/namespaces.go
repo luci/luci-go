@@ -34,9 +34,9 @@ type NamespacesCallback func(string) error
 //
 // This is done by issuing a datastore query for kind "__namespace__". The
 // resulting keys will have IDs for the namespaces, namely:
-//	- The empty namespace will have integer ID 1. This will be forwarded to the
-//	  callback as "".
-//	- Other namespaces will have non-zero string IDs.
+//   - The empty namespace will have integer ID 1. This will be forwarded to the
+//     callback as "".
+//   - Other namespaces will have non-zero string IDs.
 func Namespaces(c context.Context, cb NamespacesCallback) error {
 	q := ds.NewQuery("__namespace__").KeysOnly(true)
 

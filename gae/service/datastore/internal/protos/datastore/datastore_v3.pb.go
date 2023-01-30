@@ -6,9 +6,11 @@
 Package datastore is a generated protocol buffer package.
 
 It is generated from these files:
+
 	google.golang.org/appengine/internal/datastore/datastore_v3.proto
 
 It has these top-level messages:
+
 	Action
 	PropertyValue
 	Property

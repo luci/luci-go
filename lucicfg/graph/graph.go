@@ -131,15 +131,15 @@ func (e *DanglingEdgeError) Backtrace() string {
 // graph (so AddNode/AddEdge return errors), making it queryable.
 //
 // Graph implements starlark.HasAttrs interface and have the following methods:
-//   * key(kind1: string, id1: string, kind2: string, id2: string, ...): graph.key
-//   * add_node(key: graph.key, props={}, idempotent=False, trace=stacktrace()): graph.node
-//   * add_edge(parent: graph.Key, child: graph.Key, title='', trace=stacktrace())
-//   * finalize(): []string
-//   * node(key: graph.key): graph.node
-//   * children(parent: graph.key, order_by='key'): []graph.node
-//   * descendants(root: graph.key, callback=None, order_by='key', topology='breadth'): []graph.node
-//   * parents(child: graph.key, order_by='key'): []graph.node
-//   * sorted_nodes(nodes: iterable<graph.node>, order_by='key'): []graph.node
+//   - key(kind1: string, id1: string, kind2: string, id2: string, ...): graph.key
+//   - add_node(key: graph.key, props={}, idempotent=False, trace=stacktrace()): graph.node
+//   - add_edge(parent: graph.Key, child: graph.Key, title=”, trace=stacktrace())
+//   - finalize(): []string
+//   - node(key: graph.key): graph.node
+//   - children(parent: graph.key, order_by='key'): []graph.node
+//   - descendants(root: graph.key, callback=None, order_by='key', topology='breadth'): []graph.node
+//   - parents(child: graph.key, order_by='key'): []graph.node
+//   - sorted_nodes(nodes: iterable<graph.node>, order_by='key'): []graph.node
 type Graph struct {
 	KeySet
 
@@ -360,9 +360,10 @@ func (g *Graph) Node(k *Key) (*Node, error) {
 // Children returns direct children of a node (given by its key).
 //
 // The order of the result depends on a value of 'orderBy':
-//   'key': nodes are ordered lexicographically by their keys (smaller first).
-//   'def': nodes are ordered by the order edges to them were defined during
-//        the execution (earlier first).
+//
+//	'key': nodes are ordered lexicographically by their keys (smaller first).
+//	'def': nodes are ordered by the order edges to them were defined during
+//	     the execution (earlier first).
 //
 // Any other value of 'orderBy' causes an error.
 //
@@ -381,9 +382,10 @@ func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
 //
 // The order of enumeration of direct children of a node depends on a value of
 // 'orderBy':
-//   'key': nodes are ordered lexicographically by their keys (smaller first).
-//   'def': nodes are ordered by the order edges to them were defined during
-//        the execution (earlier first).
+//
+//	'key': nodes are ordered lexicographically by their keys (smaller first).
+//	'def': nodes are ordered by the order edges to them were defined during
+//	     the execution (earlier first).
 //
 // '~' in front (i.e. ~key' and '~def') means "reverse order".
 //
@@ -526,9 +528,10 @@ func filteredChildren(cur *Node, orderBy string, visitor Visitor) ([]*Node, erro
 // Parents returns direct parents of a node (given by its key).
 //
 // The order of the result depends on a value of 'orderBy':
-//   'key': nodes are ordered lexicographically by their keys (smaller first).
-//   'def': nodes are ordered by the order edges to them were defined during
-//        the execution (earlier first).
+//
+//	'key': nodes are ordered lexicographically by their keys (smaller first).
+//	'def': nodes are ordered by the order edges to them were defined during
+//	     the execution (earlier first).
 //
 // Any other value of 'orderBy' causes an error.
 //
@@ -542,8 +545,9 @@ func (g *Graph) Parents(child *Key, orderBy string) ([]*Node, error) {
 // SortNodes sorts a slice of nodes of this graph in-place.
 //
 // The order of the result depends on the value of 'orderBy':
-//   'key': nodes are ordered lexicographically by their keys (smaller first).
-//   'def': nodes are ordered by the order they were defined in the graph.
+//
+//	'key': nodes are ordered lexicographically by their keys (smaller first).
+//	'def': nodes are ordered by the order they were defined in the graph.
 //
 // Any other value of 'orderBy' causes an error.
 func (g *Graph) SortNodes(nodes []*Node, orderBy string) error {

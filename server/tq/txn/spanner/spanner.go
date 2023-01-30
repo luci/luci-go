@@ -30,9 +30,11 @@ import (
 // database prior to using this package.
 //
 // CREATE TABLE TQReminders (
-//   ID STRING(MAX) NOT NULL,
-//   FreshUntil TIMESTAMP NOT NULL,
-//   Payload BYTES(102400) NOT NULL,
+//
+//	ID STRING(MAX) NOT NULL,
+//	FreshUntil TIMESTAMP NOT NULL,
+//	Payload BYTES(102400) NOT NULL,
+//
 // ) PRIMARY KEY (ID ASC);
 //
 // If you ever need to change this, change also user-visible server/tq doc.

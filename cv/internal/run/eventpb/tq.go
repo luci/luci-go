@@ -95,8 +95,8 @@ func Register(tqd *tq.Dispatcher) TasksBinding {
 // Dispatch ensures invocation of RunManager via ManageRunTask.
 //
 // RunManager will be invoked at approximately no earlier than both:
-//  * eta time (if given)
-//  * next possible.
+//   - eta time (if given)
+//   - next possible.
 //
 // To avoid actually dispatching TQ tasks in tests, use runtest.MockDispatch().
 func (tr TasksBinding) Dispatch(ctx context.Context, runID string, eta time.Time) error {

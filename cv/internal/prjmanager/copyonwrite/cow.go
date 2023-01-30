@@ -55,10 +55,10 @@ var Deletion = deletion{}
 type deletion struct{}
 
 // Modifier takes a pointer to an existing COW object and returns:
-// * special DeleteMe, if this object should be deleted from Slice;
-// * the same object, if there are no modifications;
-// * new object, if there were modifications. If working with SortedSlice,
-//   the new object must have the same sorting key.
+//   - special DeleteMe, if this object should be deleted from Slice;
+//   - the same object, if there are no modifications;
+//   - new object, if there were modifications. If working with SortedSlice,
+//     the new object must have the same sorting key.
 type Modifier func(interface{}) interface{}
 
 // Update modifies existing elements and adds new ones to Slice.

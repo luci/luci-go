@@ -76,8 +76,8 @@ var metrics = map[string]queryStat{
 //
 // This is done by issuing a datastore query for kind "__namespace__". The
 // resulting keys will have IDs for the namespaces, namely:
-//	- The default namespace will have integer ID 1.
-//	- Other namespaces will have string IDs.
+//   - The default namespace will have integer ID 1.
+//   - Other namespaces will have string IDs.
 func getProjectNamespaces(c context.Context) ([]string, error) {
 	q := datastore.NewQuery("__namespace__").KeysOnly(true)
 

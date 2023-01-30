@@ -30,10 +30,11 @@ type IndexColumn struct {
 
 // ParseIndexColumn takes a spec in the form of /\s*-?\s*.+\s*/, and
 // returns an IndexColumn. Examples are:
-//   `- Field `:  IndexColumn{Property: "Field", Descending: true}
-//   `Something`: IndexColumn{Property: "Something", Descending: false}
 //
-// `+Field` is invalid. `` is invalid.
+//	`- Field `:  IndexColumn{Property: "Field", Descending: true}
+//	`Something`: IndexColumn{Property: "Something", Descending: false}
+//
+// `+Field` is invalid. “ is invalid.
 func ParseIndexColumn(spec string) (IndexColumn, error) {
 	col := IndexColumn{}
 	spec = strings.TrimSpace(spec)
@@ -110,7 +111,8 @@ func (i IndexColumn) String() string {
 // is valid for the `ORDER BY` clause.
 //
 // The flavor of GQL that this emits is defined here:
-//   https://cloud.google.com/datastore/docs/apis/gql/gql_reference
+//
+//	https://cloud.google.com/datastore/docs/apis/gql/gql_reference
 func (i IndexColumn) GQL() string {
 	if i.Descending {
 		return gqlQuoteName(i.Property) + " DESC"

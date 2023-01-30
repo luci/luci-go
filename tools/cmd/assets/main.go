@@ -17,7 +17,8 @@
 // be used only for small files, like HTML templates.
 //
 // This utility is used via `go generate`. Corresponding incantation:
-//   //go:generate assets
+//
+//	//go:generate assets
 package main
 
 import (

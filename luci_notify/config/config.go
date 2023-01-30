@@ -47,12 +47,12 @@ type parsedProjectConfigSet struct {
 //
 // To support large projects with many entities, updates occur over multiple
 // transactions:
-// - In the first transaction(s), the builders and tree closers configured in
-//   the provided project configset are created/updated. Old builders and
-//   tree closers will be retained.
-// - In the last transaction, the stored project revision, and project-level
-//   properties (e.g. TreeClosingEnabled) will be updated. Old builders and
-//   tree closers are deleted.
+//   - In the first transaction(s), the builders and tree closers configured in
+//     the provided project configset are created/updated. Old builders and
+//     tree closers will be retained.
+//   - In the last transaction, the stored project revision, and project-level
+//     properties (e.g. TreeClosingEnabled) will be updated. Old builders and
+//     tree closers are deleted.
 //
 // Between the first and last transactions, a configuration that is a mix of
 // the old and the new configuration will be in effect. This could take the

@@ -59,19 +59,20 @@ func (i IndexSetting) String() string {
 // PropertyLoadSaver) for the struct conversion.
 //
 // Example:
-//   type Complex complex
-//   func (c *Complex) ToProperty() (ret Property, err error) {
-//     // something like:
-//     err = ret.SetValue(fmt.Sprint(*c), true)
-//     return
-//   }
-//   func (c *Complex) FromProperty(p Property) (err error) {
-//     ... load *c from p ...
-//   }
 //
-//   type MyStruct struct {
-//     Complexity []Complex // acts like []complex, but can be serialized to DS
-//   }
+//	type Complex complex
+//	func (c *Complex) ToProperty() (ret Property, err error) {
+//	  // something like:
+//	  err = ret.SetValue(fmt.Sprint(*c), true)
+//	  return
+//	}
+//	func (c *Complex) FromProperty(p Property) (err error) {
+//	  ... load *c from p ...
+//	}
+//
+//	type MyStruct struct {
+//	  Complexity []Complex // acts like []complex, but can be serialized to DS
+//	}
 type PropertyConverter interface {
 	// TODO(riannucci): Allow a convertable to return multiple values.  This is
 	// eminently doable (as long as the single-slice restriction is kept).  It
@@ -88,13 +89,14 @@ type PropertyConverter interface {
 // datastore.
 //
 // Note that indexes may only contain values of the following types:
-//   PTNull
-//   PTInt
-//   PTBool
-//   PTFloat
-//   PTString
-//   PTGeoPoint
-//   PTKey
+//
+//	PTNull
+//	PTInt
+//	PTBool
+//	PTFloat
+//	PTString
+//	PTGeoPoint
+//	PTKey
 //
 // The biggest impact of this is that if you do a Projection query, you'll only
 // get back Properties with the above types (e.g. if you store a PTTime value,
@@ -108,7 +110,9 @@ type PropertyType byte
 //go:generate stringer -type=PropertyType
 
 // These constants are in the order described by
-//   https://cloud.google.com/appengine/docs/go/datastore/entities#Go_Value_type_ordering
+//
+//	https://cloud.google.com/appengine/docs/go/datastore/entities#Go_Value_type_ordering
+//
 // with a slight divergence for the Int/Time split.
 //
 // NOTE: this enum can only occupy 7 bits, because we use the high bit to encode
@@ -409,18 +413,19 @@ func (p *Property) Type() PropertyType { return p.propType }
 // have a Property, its value is valid.
 //
 // value is the property value. The valid types are:
-//	- int64
-//	- time.Time
-//	- bool
-//	- string
-//    (only the first 1500 bytes is indexable)
-//	- []byte
-//    (only the first 1500 bytes is indexable)
-//	- blobstore.Key
-//    (only the first 1500 bytes is indexable)
-//	- float64
-//	- *Key
-//	- GeoPoint
+//   - int64
+//   - time.Time
+//   - bool
+//   - string
+//     (only the first 1500 bytes is indexable)
+//   - []byte
+//     (only the first 1500 bytes is indexable)
+//   - blobstore.Key
+//     (only the first 1500 bytes is indexable)
+//   - float64
+//   - *Key
+//   - GeoPoint
+//
 // This set is smaller than the set of valid struct field types that the
 // datastore can load and save. A Property Value cannot be a slice (apart
 // from []byte); use multiple Properties instead. Also, a Value's type
@@ -471,14 +476,14 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 //
 // The returned type will be the PropertyType used in the index. The returned
 // value will be one of:
-//	- bool
-//	- int64
-//	- float64
-//	- string
-//	- []byte
-//	- GeoPoint
-//	- PropertyMap
-//	- *Key
+//   - bool
+//   - int64
+//   - float64
+//   - string
+//   - []byte
+//   - GeoPoint
+//   - PropertyMap
+//   - *Key
 func (p Property) IndexTypeAndValue() (PropertyType, interface{}) {
 	switch t := p.propType; t {
 	case PTNull, PTInt, PTBool, PTFloat, PTGeoPoint, PTPropertyMap, PTKey:
@@ -499,11 +504,12 @@ func (p Property) IndexTypeAndValue() (PropertyType, interface{}) {
 // into a different datatype. For example, if you have a PTInt property, you
 // could Project(PTTime) to convert it to a time.Time. The following conversions
 // are supported:
-//   PTString <-> PTBlobKey
-//   PTString <-> PTBytes
-//   PTXXX <-> PTXXX (i.e. identity)
-//   PTInt <-> PTTime
-//   PTNull <-> Anything
+//
+//	PTString <-> PTBlobKey
+//	PTString <-> PTBytes
+//	PTXXX <-> PTXXX (i.e. identity)
+//	PTInt <-> PTTime
+//	PTNull <-> Anything
 func (p *Property) Project(to PropertyType) (interface{}, error) {
 	if to == PTNull {
 		return nil, nil
@@ -596,6 +602,7 @@ func (p *Property) Equal(other *Property) bool {
 // indicating where it would sort relative to the other in datastore.
 //
 // It returns:
+//
 //	<0 if the Property would sort before `other`.
 //	>0 if the Property would after before `other`.
 //	0 if the Property equals `other`.
@@ -708,7 +715,8 @@ func (p *Property) EstimateSize() int64 {
 // is valid for a comparison value in the `WHERE` clause.
 //
 // The flavor of GQL that this emits is defined here:
-//   https://cloud.google.com/datastore/docs/apis/gql/gql_reference
+//
+//	https://cloud.google.com/datastore/docs/apis/gql/gql_reference
 //
 // NOTE: GeoPoint values are emitted with speculated future syntax. There is
 // currently no syntax for literal GeoPoint values.
@@ -899,14 +907,14 @@ type PropertyData interface {
 // corresponding to 0 is equivalent to unset, and corresponding to >1 is an
 // error. So:
 //
-//   {
-//     "$id": {MkProperty(1)}, // GetProperty("id") -> 1, nil
-//     "$foo": {}, // GetProperty("foo") -> nil, ErrMetaFieldUnset
-//     // GetProperty("bar") -> nil, ErrMetaFieldUnset
-//     "$meep": {
-//       MkProperty("hi"),
-//       MkProperty("there")}, // GetProperty("meep") -> nil, error!
-//   }
+//	{
+//	  "$id": {MkProperty(1)}, // GetProperty("id") -> 1, nil
+//	  "$foo": {}, // GetProperty("foo") -> nil, ErrMetaFieldUnset
+//	  // GetProperty("bar") -> nil, ErrMetaFieldUnset
+//	  "$meep": {
+//	    MkProperty("hi"),
+//	    MkProperty("there")}, // GetProperty("meep") -> nil, error!
+//	}
 //
 // Additionally, Save returns a copy of the map with the meta keys omitted (e.g.
 // these keys are not going to be serialized to the datastore).
@@ -1041,11 +1049,13 @@ func isMetaKey(k string) bool {
 // homogenized type of dflt, then dflt will be returned.
 //
 // Type homogenization:
-//   signed integer types -> int64
-//   bool                 -> Toggle fields (bool)
+//
+//	signed integer types -> int64
+//	bool                 -> Toggle fields (bool)
 //
 // Example:
-//   pls.GetMetaDefault("foo", 100).(int64)
+//
+//	pls.GetMetaDefault("foo", 100).(int64)
 func GetMetaDefault(getter MetaGetter, key string, dflt interface{}) interface{} {
 	dflt = UpconvertUnderlyingType(dflt)
 	cur, ok := getter.GetMeta(key)

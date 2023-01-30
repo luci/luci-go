@@ -389,7 +389,7 @@ func TestBuild(t *testing.T) {
 				So(b.Proto.Output, ShouldBeNil)
 
 				Convey("one missing, one found", func() {
-					b1 :=  &pb.Build{
+					b1 := &pb.Build{
 						Id: 1,
 					}
 					b2 := &pb.Build{

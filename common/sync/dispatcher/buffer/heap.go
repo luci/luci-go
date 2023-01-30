@@ -19,8 +19,8 @@ import (
 )
 
 // batchHeap maintains sorted order based on
-//   * (nextSend, id) if onlyID is false
-//   * (id,) if onlyID is true
+//   - (nextSend, id) if onlyID is false
+//   - (id,) if onlyID is true
 type batchHeap struct {
 	onlyID bool
 	data   []*Batch

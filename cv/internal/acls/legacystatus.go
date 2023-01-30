@@ -50,9 +50,9 @@ var legacyCQStatusHostCache = layered.Cache{
 // Returns true if user has access.
 //
 // Each LUCI project can configure cq status app usage in 3 diff ways:
-//  * (P) public via "chromium-cq-status.appspot.com"
-//  * (I) internal via "internal-cq-stauts.appspot.com"
-//  * (N) none
+//   - (P) public via "chromium-cq-status.appspot.com"
+//   - (I) internal via "internal-cq-stauts.appspot.com"
+//   - (N) none
 //
 // Thus, the project config can be used to infer visibility of project's Runs.
 //

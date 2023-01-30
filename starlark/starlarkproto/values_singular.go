@@ -156,26 +156,27 @@ func starlarkToUint(v starlark.Value, k protoreflect.Kind, max uint64) uint64 {
 //
 // This is Starlark => Starlark converter. Such converter is involved when
 // executing following Starlark statements:
-//   msg.scalar = <some starlark value>
-//   msg.repeated[123] = <some starlark value>
-//   msg.dict[<some starlark value>] = <some starlark value>
+//
+//	msg.scalar = <some starlark value>
+//	msg.repeated[123] = <some starlark value>
+//	msg.dict[<some starlark value>] = <some starlark value>
 //
 // It ensures that *Message fields at all times conform to the proto message
 // schema.
 //
 // Some notable conversion rules:
-//   * converter([u]int(32|64)) checks int fits within the corresponding range.
-//   * converter(float[32|64]) implicitly converts ints to floats.
-//   * converter(Message) implicitly converts dicts and Nones to messages.
+//   - converter([u]int(32|64)) checks int fits within the corresponding range.
+//   - converter(float[32|64]) implicitly converts ints to floats.
+//   - converter(Message) implicitly converts dicts and Nones to messages.
 //
 // The following invariant holds (and relied upon by 'assign'): for all possible
 // 'fd' and all possible 'x' the following doesn't panic:
 //
-//    v, err := converter(l, fd).Convert(x)
-//    if err != nil {
-//      return err // type of 'x' is incompatible with 'fd'
-//    }
-//    p := toProtoSingular(fd, v) // compatible values can be converted to proto
+//	v, err := converter(l, fd).Convert(x)
+//	if err != nil {
+//	  return err // type of 'x' is incompatible with 'fd'
+//	}
+//	p := toProtoSingular(fd, v) // compatible values can be converted to proto
 func converter(l *Loader, fd protoreflect.FieldDescriptor) typed.Converter {
 	// Note: primitive type converters need "stable" addresses, since converters
 	// are compared by identity when checking type compatibility. So we use

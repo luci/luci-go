@@ -37,11 +37,11 @@ import (
 //
 // Run consists of:
 //
-//	- Identify the target Python script to run (if there is one).
-//	- Identifying the Python interpreter to use.
-//	- Composing the environment specification.
-//	- Constructing the virtual environment (download, install).
-//	- Execute the Python process with the supplied arguments.
+//   - Identify the target Python script to run (if there is one).
+//   - Identifying the Python interpreter to use.
+//   - Composing the environment specification.
+//   - Constructing the virtual environment (download, install).
+//   - Execute the Python process with the supplied arguments.
 //
 // The Python subprocess is bound to the lifetime of ctx, and will be terminated
 // if ctx is cancelled.

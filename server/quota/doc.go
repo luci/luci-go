@@ -49,23 +49,23 @@
 //
 // Common identifier atoms:
 //
-//  - app_id - The app_id allows multiple logical applications to share the same
-//    Redis instance. This should reflect the service that the account or policy
-//    belongs to. For example this would allow a single deployment to have quota
-//    accounts/policies for an application "cv" and "rdb" in the same binary.
-//  - realm - For administration purposes, Accounts and PolicyConfigs belong to
-//    a realm (though likely not the same one). Typically, PolicyConfigs will
-//    belong to a project's @project realm. Accounts will belong to realms which
-//    make sense in the context of the application. `realm` here is a global
-//    realm (i.e. `project:something`).
-//  - resource_type (ASI) - A given Policy or Account can only deal in a single
-//    resource_type. This value only needs to make sense to the application.
-//  - namespace (ASI) - Namespace allows the Application to segment a given
-//    realm into multiple sub-domains. For example, Buildbucket could use the
-//    namespace to indicate that a given Account is being used for a single
-//    builder within a bucket. This only needs to make sense to the application.
-//  - name (ASI) - Name is the name of the entity. This only needs to make sense
-//    to the application.
+//   - app_id - The app_id allows multiple logical applications to share the same
+//     Redis instance. This should reflect the service that the account or policy
+//     belongs to. For example this would allow a single deployment to have quota
+//     accounts/policies for an application "cv" and "rdb" in the same binary.
+//   - realm - For administration purposes, Accounts and PolicyConfigs belong to
+//     a realm (though likely not the same one). Typically, PolicyConfigs will
+//     belong to a project's @project realm. Accounts will belong to realms which
+//     make sense in the context of the application. `realm` here is a global
+//     realm (i.e. `project:something`).
+//   - resource_type (ASI) - A given Policy or Account can only deal in a single
+//     resource_type. This value only needs to make sense to the application.
+//   - namespace (ASI) - Namespace allows the Application to segment a given
+//     realm into multiple sub-domains. For example, Buildbucket could use the
+//     namespace to indicate that a given Account is being used for a single
+//     builder within a bucket. This only needs to make sense to the application.
+//   - name (ASI) - Name is the name of the entity. This only needs to make sense
+//     to the application.
 //
 // # Data Model - PolicyConfig
 //
@@ -93,10 +93,10 @@
 // only be used for PolicyConfigs that the application knows are no longer in
 // use. However, in the event that a PolicyConfig is purged while Accounts still
 // list it:
-//   * Operations on those Accounts without supplying a new Policy reference
+//   - Operations on those Accounts without supplying a new Policy reference
 //     will continue to use the snapshot of the policy stored in the Account.
 //     We could potentially make this produce a warning or error, however.
-//   * Operations on Accounts that supply a new Policy reference must have that
+//   - Operations on Accounts that supply a new Policy reference must have that
 //     Policy exist, as usual, and it will replace the referenced/snapshotted
 //     policy in the Account.
 //
@@ -299,12 +299,12 @@
 // made the implementation nice due to its simplicity, but had two noticeable
 // drawbacks:
 //
-//   1. Low quantity quotas (e.g. builds per day) were difficult to express
-//      naturally (for example, the application would have to have accounts in
-//      fractional builds, like 100,000 == one build).
-//   2. Even if the application expressed account values in this way, this leads
-//      to an effectively "analog" replenismhent system which would lead to
-//      mistakes when setting quotas.
+//  1. Low quantity quotas (e.g. builds per day) were difficult to express
+//     naturally (for example, the application would have to have accounts in
+//     fractional builds, like 100,000 == one build).
+//  2. Even if the application expressed account values in this way, this leads
+//     to an effectively "analog" replenismhent system which would lead to
+//     mistakes when setting quotas.
 //
 // Consider the case where you want to restrict users to "10 builds per day".
 // You first make the accounts hold thousandths of a build, and then set
@@ -314,8 +314,8 @@
 //
 // Not quite. Consider that the user can wait until their quota is full (10
 // builds) and then they:
-//   * Run 10 builds in hour 0
-//   * Run one build every ~2 hours for the next 24 hours.
+//   - Run 10 builds in hour 0
+//   - Run one build every ~2 hours for the next 24 hours.
 //
 // Oops... our 10/day quota actually allows the user to burst up to 19/day.
 // Mondays are gonna be spicy.
@@ -325,12 +325,12 @@
 // Quota refills are tricky; originally we started the clock at account creation
 // time, but realized this would lead to two issues:
 //
-//   1. Every quota account would refresh at seemingly-random times, which makes
-//      debugging more difficult. This would not be beneficial for 'load
-//      distribution' in a system (it should explicitly use short term quotas or
-//      some othe rate limiting techniques instead).
-//   2. This would lead to very difficult to reason-about behaviors when
-//      policies change for a given account.
+//  1. Every quota account would refresh at seemingly-random times, which makes
+//     debugging more difficult. This would not be beneficial for 'load
+//     distribution' in a system (it should explicitly use short term quotas or
+//     some othe rate limiting techniques instead).
+//  2. This would lead to very difficult to reason-about behaviors when
+//     policies change for a given account.
 //
 // In the case of policy changes, the only sensible thing to do while
 // maintaining the interval based refill events would be to reset the refill
@@ -399,50 +399,50 @@
 // Data in Redis is stored using a version-prefixed "array" encoding of the
 // structure. For example, an Account like:
 //
-//   {
-//     "balance": 1938,
-//     "last_update": 1662142122,
-//     "last_refill": 1662076800,
-//     "last_policy_change": 1660439785,
-//     "options": 1,
-//     "policy_key": "cv~chromium:@project~$mo+]^aHaN<Jl6//WO=sVWaccSe^oYp[q.sdL,JjE",
-//     "policy_name": "policyname",
-//     "policy_limit": 10000,
-//     "policy_refill": {
-//       "units": 100,
-//       "interval": 600,
-//       "offset": 0
-//     }
-//   }
+//	{
+//	  "balance": 1938,
+//	  "last_update": 1662142122,
+//	  "last_refill": 1662076800,
+//	  "last_policy_change": 1660439785,
+//	  "options": 1,
+//	  "policy_key": "cv~chromium:@project~$mo+]^aHaN<Jl6//WO=sVWaccSe^oYp[q.sdL,JjE",
+//	  "policy_name": "policyname",
+//	  "policy_limit": 10000,
+//	  "policy_refill": {
+//	    "units": 100,
+//	    "interval": 600,
+//	    "offset": 0
+//	  }
+//	}
 //
 // Will currently be encoded like (the prepended 0s are version identifiers for
 // the remaining encoded object. If we need to change the schema we can use this
 // to switch between decoders):
 //
-//   msgpack(0) +
-//   msgpack([
-//     1938,
-//     1662142122,
-//     1662076800,
-//     1660439785,
-//     1,
-//     "cv~chromium:@project~$mo+]^aHaN<Jl6//WO=sVWaccSe^oYp[q.sdL,JjE",
-//     "policyname",
-//     10000,
-//     [
-//       100,
-//       600,
-//       0
-//     ]
-//   ])
+//	msgpack(0) +
+//	msgpack([
+//	  1938,
+//	  1662142122,
+//	  1662076800,
+//	  1660439785,
+//	  1,
+//	  "cv~chromium:@project~$mo+]^aHaN<Jl6//WO=sVWaccSe^oYp[q.sdL,JjE",
+//	  "policyname",
+//	  10000,
+//	  [
+//	    100,
+//	    600,
+//	    0
+//	  ]
+//	])
 //
 // Which is 105 bytes that looks like:
 //
-//   00 99 cd 07 92 ce 63 12 46 aa ce 63 11 47 80 ce 62 f8 4c e9 01 d9 3e 63 76 7e
-//   63 68 72 6f 6d 69 75 6d 3a 40 70 72 6f 6a 65 63 74 7e 24 6d 6f 2b 5d 5e 61 48
-//   61 4e 3c 4a 6c 36 2f 2f 57 4f 3d 73 56 57 61 63 63 53 65 5e 6f 59 70 5b 71 2e
-//   73 64 4c 2c 4a 6a 45 aa 70 6f 6c 69 63 79 6e 61 6d 65 cd 27 10 93 64 cd 02 58
-//   00
+//	00 99 cd 07 92 ce 63 12 46 aa ce 63 11 47 80 ce 62 f8 4c e9 01 d9 3e 63 76 7e
+//	63 68 72 6f 6d 69 75 6d 3a 40 70 72 6f 6a 65 63 74 7e 24 6d 6f 2b 5d 5e 61 48
+//	61 4e 3c 4a 6c 36 2f 2f 57 4f 3d 73 56 57 61 63 63 53 65 5e 6f 59 70 5b 71 2e
+//	73 64 4c 2c 4a 6a 45 aa 70 6f 6c 69 63 79 6e 61 6d 65 cd 27 10 93 64 cd 02 58
+//	00
 //
 // (Note that a JSON object encoding (the other encoder available in Redis) of
 // the same would be roughly 247 bytes or more. Doing a JSON array encoding is

@@ -58,23 +58,24 @@ func MostSevereError(err error) error {
 // TQIfy converts CV error semantics to server/TQ, and logs error if necessary.
 //
 // Usage:
-//   func tqHandler(ctx ..., payload...) error {
-//     err := doStuff(ctx, ...)
-//     return TQIfy{}.Error(ctx, err)
-//   }
+//
+//	func tqHandler(ctx ..., payload...) error {
+//	  err := doStuff(ctx, ...)
+//	  return TQIfy{}.Error(ctx, err)
+//	}
 //
 // Given that:
-//  * TQ lib recognizes these error kinds:
-//    * tq.Ignore => HTTP 204, no retries
-//    * tq.Fatal => HTTP 202, no retries, but treated with alertable in our
-//      monitoring configuration;
-//    * transient.Tag => HTTP 500, will be retried;
-//    * else => HTTP 429, will be retried.
+//   - TQ lib recognizes these error kinds:
+//   - tq.Ignore => HTTP 204, no retries
+//   - tq.Fatal => HTTP 202, no retries, but treated with alertable in our
+//     monitoring configuration;
+//   - transient.Tag => HTTP 500, will be retried;
+//   - else => HTTP 429, will be retried.
 //
 // OTOH, CV uses
-//  * transient.Tag to treat all _transient_ situations, where retry should
-//    help
-//  * else => permanent errors, where retries aren't helpful.
+//   - transient.Tag to treat all _transient_ situations, where retry should
+//     help
+//   - else => permanent errors, where retries aren't helpful.
 //
 // Most _transient_ situations in CV are due to expected issues such as Gerrit
 // giving stale data. Getting HTTP 500s in this case is an unfortunate noise,

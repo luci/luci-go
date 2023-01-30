@@ -49,9 +49,9 @@ type ClientFactory interface {
 //
 // The standard Pub/Sub library has several issues, especially when used from
 // AppEngine:
-//	- It uses an empty Context, discarding AppEngine context.
-//	- It uses a buffer, which expects a lifecycle beyond that of a simple
-//	  AppEngine Request.
+//   - It uses an empty Context, discarding AppEngine context.
+//   - It uses a buffer, which expects a lifecycle beyond that of a simple
+//     AppEngine Request.
 type UnbufferedPublisher struct {
 	// AECtx is the AppEngine context used to create a pubsub client.
 	AECtx context.Context

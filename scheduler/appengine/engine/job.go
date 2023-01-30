@@ -249,8 +249,9 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 // CronTickTime returns time when the cron job is expected to start again.
 //
 // May return:
-//  Zero time if the job is using relative schedule, or not a cron job at all.
-//  schedule.DistantFuture if the job is paused.
+//
+//	Zero time if the job is using relative schedule, or not a cron job at all.
+//	schedule.DistantFuture if the job is paused.
 func (e *Job) CronTickTime() time.Time {
 	// Note: LastTick is "last scheduled tick", it is in the future.
 	return e.Cron.LastTick.When

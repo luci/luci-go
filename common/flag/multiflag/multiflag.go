@@ -16,16 +16,17 @@
 // of switching between multiple registered sub-flags, each of which have their
 // own set of parameter flags.
 //
-// Example
+// # Example
 //
 // This can be used to construct complex option flags. For example:
-//   -backend mysql,address="192.168.1.1",port="12345"
-//   -backend sqlite3,path="/path/to/database"
+//
+//	-backend mysql,address="192.168.1.1",port="12345"
+//	-backend sqlite3,path="/path/to/database"
 //
 // In this example, a MultiFlag is defined and bound to the option name,
 // "backend". This MultiFlag has (at least) two registered Options:
-//   1) mysql, whose FlagSet binds "address" and "port" options.
-//   2) sqlite3, whose FlagSet binds "path".
+//  1. mysql, whose FlagSet binds "address" and "port" options.
+//  2. sqlite3, whose FlagSet binds "path".
 //
 // The MultiFlag Option that is selected (e.g., "mysql") has the remainder of
 // its option string parsed into its FlagSet, populating its "address" and
@@ -70,8 +71,8 @@ type Option interface {
 // For example, one can construct flag that, depending on its options, chooses
 // one of two sets of sub-properties:
 //
-//   -myflag foo,foovalue=123
-//   -myflag bar,barvalue=456,barothervalue="hello"
+//	-myflag foo,foovalue=123
+//	-myflag bar,barvalue=456,barothervalue="hello"
 //
 // "myflag" is the name of the MultiFlag's top-level flag, as registered with a
 // flag.FlagSet. The first token in the flag's value selects which Option should

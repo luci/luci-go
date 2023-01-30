@@ -183,20 +183,20 @@ func recentInvQuery(c context.Context, j *Job, lastScanned int64) *invListQuery 
 //
 // Intended usage:
 //
-//  it.start(...)
-//  defer it.stop()
-//  for len(results) != pageSize {
-//    switch item, err := it.next(); {
-//    case err != nil:
-//      return nil, err // RPC error
-//    case item == nil:
-//      ...
-//      return results, nil // fetched all available results
-//    default:
-//      results = append(results, item)
-//    }
-//  }
-//  return results // fetched the full page
+//	it.start(...)
+//	defer it.stop()
+//	for len(results) != pageSize {
+//	  switch item, err := it.next(); {
+//	  case err != nil:
+//	    return nil, err // RPC error
+//	  case item == nil:
+//	    ...
+//	    return results, nil // fetched all available results
+//	  default:
+//	    results = append(results, item)
+//	  }
+//	}
+//	return results // fetched the full page
 type invDatastoreIter struct {
 	results chan *Invocation // receives results of the query
 	done    chan struct{}    // closed when 'stop' is called

@@ -22,7 +22,7 @@
 // Note that the Pub/Sub layer is assumed to provide both a total length (so no
 // need to length-prefix) and integrity (so no need to checksum).
 //
-// Header
+// # Header
 //
 // The header is a fixed four bytes which positively identify the message as a
 // Butler Pub/Sub message and describe the remaining data. Variant parameters
@@ -32,7 +32,7 @@
 //   - 0x10 0x6d 0x06 0x00 (LogDog protocol ButlerLogBundle Raw)
 //   - 0x10 0x6d 0x06 0x62 (LogDog protocol ButlerLogBundle GZip compressed)
 //
-// Data
+// # Data
 //
 // The data component is described by the header, and consists of all data in
 // the Pub/Sub message past the last header byte.

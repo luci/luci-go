@@ -956,13 +956,13 @@ func (b byLenThenAlpha) Less(i, j int) bool {
 }
 
 // resolveValidPackageDirs scans the .cipd/pkgs dir and returns:
-//   * a numeric set of all number-style directories seen.
-//   * a map of description (e.g. subdir + pkgname) to the correct pkg folder
+//   - a numeric set of all number-style directories seen.
+//   - a map of description (e.g. subdir + pkgname) to the correct pkg folder
 //
 // This also will delete (EnsureDirectoryGone) any folders or files in the pkgs
 // directory which are:
-//   * invalid (contain no description.json and no current instance symlink)
-//   * duplicate (where multiple directories contain the same description.json)
+//   - invalid (contain no description.json and no current instance symlink)
+//   - duplicate (where multiple directories contain the same description.json)
 //
 // Duplicate detection always prefers the folder with the shortest path name
 // that sorts alphabetically earlier.

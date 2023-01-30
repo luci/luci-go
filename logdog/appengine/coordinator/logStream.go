@@ -38,12 +38,13 @@ import (
 // migration logic and scripts can translate appropriately.
 //
 // History:
-//   1 - Contained _Tags and _C queryable fields
-//   2 - Removed _Tags and _C queryable fields and applied noindex to
-//       most fields, since query filtering is now implemented in-memory instead
-//       of via datastore filters.
-//   3 - Removed all non-indexed fields which are redundant with content in
-//       Descriptor.
+//
+//	1 - Contained _Tags and _C queryable fields
+//	2 - Removed _Tags and _C queryable fields and applied noindex to
+//	    most fields, since query filtering is now implemented in-memory instead
+//	    of via datastore filters.
+//	3 - Removed all non-indexed fields which are redundant with content in
+//	    Descriptor.
 const CurrentSchemaVersion = "3"
 
 // ErrPathNotFound is the canonical error returned when a Log Stream Path is not found.

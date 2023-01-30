@@ -36,7 +36,8 @@ const niFmtStr = "dummy: method %s.%s is not implemented"
 //
 // It walks the stack to find out what interface and method it's being
 // called from. For example, it might return a message which looks like:
-//   dummy: method Datastore.Get is not implemented
+//
+//	dummy: method Datastore.Get is not implemented
 //
 // This allows the various dummy objects below to have clear boilerplate which
 // avoids copy+paste errors (such as if each one of them filled in the template

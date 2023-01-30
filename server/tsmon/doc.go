@@ -15,8 +15,8 @@
 // Package tsmon adapts common/tsmon library to a server-side environment.
 //
 // It provides a bunch of useful things:
-//   * Hooks up tsmon library configuration to the server settings so it can
+//   - Hooks up tsmon library configuration to the server settings so it can
 //     be changed on the fly without restarts.
-//   * Provides a middleware that captures request metrics.
-//   * Periodically reports Go runtime memory stats and some other metrics.
+//   - Provides a middleware that captures request metrics.
+//   - Periodically reports Go runtime memory stats and some other metrics.
 package tsmon

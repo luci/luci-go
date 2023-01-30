@@ -529,11 +529,12 @@ func (x *Job) GetPaused() bool {
 }
 
 // JobState describes current Job state as one of these strings:
-//   "DISABLED"
-//   "PAUSED"
-//   "RUNNING"
-//   "SCHEDULED"
-//   "WAITING"
+//
+//	"DISABLED"
+//	"PAUSED"
+//	"RUNNING"
+//	"SCHEDULED"
+//	"WAITING"
 type JobState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

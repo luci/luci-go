@@ -102,10 +102,11 @@ func TagID(t *api.Tag) string {
 // most recent instance state.
 //
 // Returns gRPC-tagged errors:
-//    NotFound if there's no such instance or package.
-//    FailedPrecondition if some processors are still running.
-//    Aborted if some processors have failed.
-//    Internal on tag ID collision.
+//
+//	NotFound if there's no such instance or package.
+//	FailedPrecondition if some processors are still running.
+//	Aborted if some processors have failed.
+//	Internal on tag ID collision.
 func AttachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 	return Txn(c, "AttachTags", func(c context.Context) error {
 		if err := CheckInstanceReady(c, inst); err != nil {
@@ -177,8 +178,9 @@ func DetachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 // exists.
 //
 // Returns gRPC-tagged errors:
-//   NotFound if there's no such tag at all.
-//   FailedPrecondition if the tag resolves to multiple instances.
+//
+//	NotFound if there's no such tag at all.
+//	FailedPrecondition if the tag resolves to multiple instances.
 func ResolveTag(c context.Context, pkg string, tag *api.Tag) (string, error) {
 	// TODO(vadimsh): Cache the result of the resolution. This is generally not
 	// trivial to do right without race conditions, preserving the consistency

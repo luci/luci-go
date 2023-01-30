@@ -80,11 +80,11 @@ var (
 // permissions).
 //
 // ACLs are enforced with the following implication:
-//  * if a caller lacks "scheduler.jobs.get" permission for a job, methods
-//    behave as if the job doesn't exist.
-//  * if a caller has "scheduler.jobs.get" permission but lacks some other
-//    permission required to execute an action (e.g. "scheduler.jobs.abort"),
-//    ErrNoPermission will be returned.
+//   - if a caller lacks "scheduler.jobs.get" permission for a job, methods
+//     behave as if the job doesn't exist.
+//   - if a caller has "scheduler.jobs.get" permission but lacks some other
+//     permission required to execute an action (e.g. "scheduler.jobs.abort"),
+//     ErrNoPermission will be returned.
 //
 // Use EngineInternal if you need to skip ACL checks.
 type Engine interface {

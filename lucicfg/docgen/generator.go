@@ -289,17 +289,17 @@ func (s *symbol) Anchor(sub ...string) string {
 //
 // Like this:
 //
-//     luci.recipe(
-//         # Required arguments.
-//         name,
-//         cipd_package,
+//	luci.recipe(
+//	    # Required arguments.
+//	    name,
+//	    cipd_package,
 //
-//         # Optional arguments.
-//         cipd_version = None,
-//         recipe = None,
+//	    # Optional arguments.
+//	    cipd_version = None,
+//	    recipe = None,
 //
-//         **kwargs,
-//     )
+//	    **kwargs,
+//	)
 //
 // This is apparently very non-trivial to generate using text/template while
 // keeping all spaces and newlines strict.

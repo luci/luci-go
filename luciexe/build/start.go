@@ -39,11 +39,11 @@ import (
 // You must End the returned State. To automatically map errors and panics to
 // their correct visual representation, End the State like:
 //
-//    var err error
-//    state, ctx := build.Start(ctx, initialBuild, ...)
-//    defer func() { state.End(err) }()
+//	var err error
+//	state, ctx := build.Start(ctx, initialBuild, ...)
+//	defer func() { state.End(err) }()
 //
-//    err = opThatErrsOrPanics(ctx)
+//	err = opThatErrsOrPanics(ctx)
 //
 // NOTE: A panic will still crash the program as usual. This does NOT
 // `recover()` the panic. Please use conventional Go error handling and control

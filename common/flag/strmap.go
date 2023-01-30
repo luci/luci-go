@@ -28,7 +28,9 @@ type strMapFlag map[string]string
 // StringMap returns a flag.Getter for parsing map[string]string from a
 // a set of colon-separated strings.
 // Example:
-//   -f a:1 -f b:3
+//
+//	-f a:1 -f b:3
+//
 // The flag.Getter.Set implementation returns an error if the key is already
 // in the map.
 // Panics if m is nil.

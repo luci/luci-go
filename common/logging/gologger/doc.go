@@ -19,31 +19,28 @@
 //
 // Default usage (logging to stderr):
 //
-//   import (
-//     "go.chromium.org/luci/common/logging"
-//     "go.chromium.org/luci/common/logging/gologger"
-//   )
+//	import (
+//	  "go.chromium.org/luci/common/logging"
+//	  "go.chromium.org/luci/common/logging/gologger"
+//	)
 //
-//   ...
+//	...
 //
-//   ctx := context.Background()
-//   ctx = gologger.StdConfig.Use(ctx)
-//   logging.Infof(ctx, "Hello %s", "world")
-//
+//	ctx := context.Background()
+//	ctx = gologger.StdConfig.Use(ctx)
+//	logging.Infof(ctx, "Hello %s", "world")
 //
 // If you want more control over where log goes or how it looks, instantiate
 // custom LoggerConfig struct:
 //
-//   logCfg := gologger.LoggerConfig{Out: logFileWriter}
-//   ctx = logCfg.Use(ctx)
-//
+//	logCfg := gologger.LoggerConfig{Out: logFileWriter}
+//	ctx = logCfg.Use(ctx)
 //
 // If you know what you are doing you even can prepare go-logging.Logger
 // instance yourself and plug it in into luci-go/common/logging:
 //
-//   logCfg := gologger.LoggerConfig{Logger: goLoggingLogger}
-//   ctx = logCfg.Use(ctx)
-//
+//	logCfg := gologger.LoggerConfig{Logger: goLoggingLogger}
+//	ctx = logCfg.Use(ctx)
 //
 // Note that you almost never want to change logging level of the go-logging
 // logger (that's why LoggerConfig doesn't expose it), use logging.SetLevel

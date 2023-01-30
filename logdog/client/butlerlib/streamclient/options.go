@@ -51,9 +51,9 @@ func RenderOptions(opts ...Option) (flags streamproto.Flags, forProcess bool) {
 //
 // By default:
 //
-//   * Text streams have the type "text/plain"
-//   * Binary streams have the type "application/octet-stream"
-//   * Datagram streams have the type "application/x-logdog-datagram"
+//   - Text streams have the type "text/plain"
+//   - Binary streams have the type "application/octet-stream"
+//   - Datagram streams have the type "application/x-logdog-datagram"
 func WithContentType(contentType string) Option {
 	return func(o *options) {
 		o.desc.ContentType = contentType
@@ -120,31 +120,31 @@ func WithTagMap(tags map[string]string) Option {
 // the Stream open from the butler's point of view, which will prevent the butler
 // from closing down.
 //
-//    stdout, _ = logdogServ.Client.NewStream(
-//      ..., streamclient.ForProcess())
-//    cmd.Stdout = stdout
+//	stdout, _ = logdogServ.Client.NewStream(
+//	  ..., streamclient.ForProcess())
+//	cmd.Stdout = stdout
 //
-//    cmd.Start()
-//    cmd.Wait()
+//	cmd.Start()
+//	cmd.Wait()
 //
-//    stdout.Close()
+//	stdout.Close()
 //
 // Using this has some caveats, depending on the underlying stream
 // implementation:
 //
-// Local
+// # Local
 //
 // Clients created with NewLocal ignore this option.
 //
-// Fake
+// # Fake
 //
 // Clients created with NewFake ignore this option.
 //
-// Null
+// # Null
 //
 // The "null" protocol will return an open File pointing to os.DevNull.
 //
-// Windows - NamedPipe
+// # Windows - NamedPipe
 //
 // This stream will be opened as a synchronous *os.File, and so will be suitable
 // for os/exec's specific optimizations for this type (namely: it will be passed
@@ -157,7 +157,7 @@ func WithTagMap(tags map[string]string) Option {
 // completion ports, which allows the go process to be much more efficient with
 // its thread count.
 //
-// Mac and Linux - Unix Domain Sockets
+// # Mac and Linux - Unix Domain Sockets
 //
 // This stream will be dialed as a regular unix socket, but will be converted to
 // an *os.File via `"net".UnixConn.File()`, and the original file handle

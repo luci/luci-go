@@ -98,9 +98,9 @@ var oauthValidationCache = layered.Cache{
 //
 // There's no solution currently that preserves all of correctness, performance,
 // usability and availability:
-//   * Using /tokeninfo (like is done currently) sacrifices availability.
-//   * Using /userinfo sacrifices correctness (no client ID or scopes check).
-//   * Using OpenID ID tokens scarifies usability for the clients.
+//   - Using /tokeninfo (like is done currently) sacrifices availability.
+//   - Using /userinfo sacrifices correctness (no client ID or scopes check).
+//   - Using OpenID ID tokens scarifies usability for the clients.
 type GoogleOAuth2Method struct {
 	// Scopes is a list of OAuth scopes to check when authenticating the token.
 	Scopes []string

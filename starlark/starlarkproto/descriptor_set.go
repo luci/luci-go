@@ -32,13 +32,13 @@ import (
 // Implements starlark.Value and starlark.HasAttrs interfaces. Usage from
 // Starlark side may look like this:
 //
-//     load(".../wellknown_descpb.star", "wellknown_descpb")
-//     myprotos_descpb = proto.new_descriptor_set(
-//         name = "myprotos",
-//         deps = [wellknown_descpb],
-//         blob = io.read_file("myprotos.descpb"),
-//     )
-//     myprotos_descpb.register()
+//	load(".../wellknown_descpb.star", "wellknown_descpb")
+//	myprotos_descpb = proto.new_descriptor_set(
+//	    name = "myprotos",
+//	    deps = [wellknown_descpb],
+//	    blob = io.read_file("myprotos.descpb"),
+//	)
+//	myprotos_descpb.register()
 //
 // By default register() registers the descriptor set in the default loader,
 // i.e. ds.register() is same as ds.register(loader=proto.default_loader()).

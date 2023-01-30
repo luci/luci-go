@@ -53,30 +53,31 @@ var propModifierReservations = outputPropertyReservations{}
 //
 // Attempting to reserve duplicate namespaces will panic. The namespace refers
 // to the top-level property key. It is recommended that:
-//   * The `ns` begins with '$'.
-//   * The value after the '$' is the canonical Go package name for your
+//   - The `ns` begins with '$'.
+//   - The value after the '$' is the canonical Go package name for your
 //     library.
 //
 // You should call this at init()-time like:
 //
-//   var propWriter func(context.Context, *MyMessage)
-//   var propMerger func(context.Context, *MyMessage)
+//	var propWriter func(context.Context, *MyMessage)
+//	var propMerger func(context.Context, *MyMessage)
 //
-//   func init() {
-//     // one of the two function pointers may be nil
-//     MakePropertyModifier("$some/namespace", &propWriter, &propMerger)
-//   }
+//	func init() {
+//	  // one of the two function pointers may be nil
+//	  MakePropertyModifier("$some/namespace", &propWriter, &propMerger)
+//	}
 //
 // Note that all MakePropertyModifier invocations must happen BEFORE the build
 // is Started. Otherwise invoking the returned writer/merger functions will
 // panic.
 //
 // In Go2 this will be less weird:
-//   type PropertyModifier[T proto.Message] interface {
-//     Write(context.Context, value T) // assigns 'value'
-//     Merge(context.Context, value T) // does proto.Merge(current, value)
-//   }
-//   func MakePropertyModifier[T proto.Message](ns string) PropertyModifier[T]
+//
+//	type PropertyModifier[T proto.Message] interface {
+//	  Write(context.Context, value T) // assigns 'value'
+//	  Merge(context.Context, value T) // does proto.Merge(current, value)
+//	}
+//	func MakePropertyModifier[T proto.Message](ns string) PropertyModifier[T]
 func MakePropertyModifier(ns string, writeFnptr, mergeFnptr interface{}) {
 	propModifierReservations.reserve(ns, 1)
 	writer, merger, _ := getWriteMergerFnValues(true, writeFnptr, mergeFnptr)

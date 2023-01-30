@@ -213,14 +213,15 @@ func prepend(c codes.Code, exp []interface{}) []interface{} {
 // len(expected) must be at least 1.
 //
 // Example:
-//   // err must have a NotFound status
-//   So(s, ShouldBeLikeStatus, codes.NotFound)
 //
-//   // and its message must contain "item not found"
-//   So(s, ShouldBeLikeStatus, codes.NotFound, "item not found")
+//	// err must have a NotFound status
+//	So(s, ShouldBeLikeStatus, codes.NotFound)
 //
-//   // and it must have a DebugInfo detail.
-//   So(s, ShouldBeLikeStatus, codes.NotFound, "item not found", &errdetails.DebugInfo{Details: "x"})
+//	// and its message must contain "item not found"
+//	So(s, ShouldBeLikeStatus, codes.NotFound, "item not found")
+//
+//	// and it must have a DebugInfo detail.
+//	So(s, ShouldBeLikeStatus, codes.NotFound, "item not found", &errdetails.DebugInfo{Details: "x"})
 func ShouldBeLikeStatus(actual interface{}, expected ...interface{}) string {
 	if ret := assertions.ShouldHaveSameTypeAs(actual, (*status.Status)(nil)); ret != "" {
 		return ret

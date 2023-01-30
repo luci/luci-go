@@ -14,7 +14,7 @@
 
 // Package bq is a library for working with BigQuery.
 //
-// Limits
+// # Limits
 //
 // Please see BigQuery docs:
 // https://cloud.google.com/bigquery/quotas#streaminginserts for the most
@@ -27,13 +27,13 @@
 // sizes to determine the batch size with the ideal balance of throughput and
 // latency for your use case.
 //
-// Authentication
+// # Authentication
 //
 // Authentication for the Cloud projects happens
 // during client creation: https://godoc.org/cloud.google.com/go#pkg-examples.
 // What form this takes depends on the application.
 //
-// Monitoring
+// # Monitoring
 //
 // You can use tsmon (https://godoc.org/go.chromium.org/luci/common/tsmon) to
 // track upload latency and errors.

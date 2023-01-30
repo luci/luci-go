@@ -58,10 +58,10 @@ const StepSep = "|"
 // described in the proto files.
 //
 // Unsupported fields:
-//   * Substep.annotation_stream,
-//   * Step.link,
-//   * Link.isolate_object,
-//   * Link.dm_link.
+//   - Substep.annotation_stream,
+//   - Step.link,
+//   - Link.isolate_object,
+//   - Link.dm_link.
 func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, constructLogURL bool, defaultLogdogHost, defaultLogdogPrefix string) ([]*pb.Step, error) {
 	sc := &stepConverter{
 		defaultLogdogHost:   defaultLogdogHost,
@@ -80,13 +80,13 @@ func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, cons
 // ConvertRootStep converts an annotation root step to a Build proto msg.
 //
 // This function will populate following fields in the return build.
-//   * EndTime
-//   * StartTime
-//   * Steps
-//   * Status
-//   * SummaryMarkdown
-//   * Output.Logs
-//   * Output.Properties
+//   - EndTime
+//   - StartTime
+//   - Steps
+//   - Status
+//   - SummaryMarkdown
+//   - Output.Logs
+//   - Output.Properties
 func ConvertRootStep(c context.Context, rootStep *annotpb.Step) (*pb.Build, error) {
 	sc := &stepConverter{
 		steps: map[string]*pb.Step{},

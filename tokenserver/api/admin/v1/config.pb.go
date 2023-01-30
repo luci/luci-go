@@ -303,16 +303,16 @@ func (x *DelegationPermissions) GetRules() []*DelegationRule {
 // DelegationRule describes a single allowed case of using delegation tokens.
 //
 // An incoming MintDelegationTokenRequest is basically a tuple of:
-//  * 'requestor_id' - an identity of whoever makes the request.
-//  * 'delegated_identity' - an identity to delegate.
-//  * 'audience' - a set of identities that will be able to use the token.
-//  * 'services' - a set of services that should accept the token.
+//   - 'requestor_id' - an identity of whoever makes the request.
+//   - 'delegated_identity' - an identity to delegate.
+//   - 'audience' - a set of identities that will be able to use the token.
+//   - 'services' - a set of services that should accept the token.
 //
 // A request matches a rule iff:
-//  * 'requestor_id' is in 'requestor' set.
-//  * 'delegated_identity' is in 'allowed_to_impersonate' set.
-//  * 'audience' is a subset of 'allowed_audience' set.
-//  * 'services' is a subset of 'target_service' set.
+//   - 'requestor_id' is in 'requestor' set.
+//   - 'delegated_identity' is in 'allowed_to_impersonate' set.
+//   - 'audience' is a subset of 'allowed_audience' set.
+//   - 'services' is a subset of 'target_service' set.
 //
 // The presence of a matching rule permits to mint the token. The rule also
 // provides an upper bound on allowed validity_duration, and the rule's name

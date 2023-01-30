@@ -140,16 +140,16 @@ var StateChangedTag = errors.BoolTag{Key: errors.NewTagKey("Run Creator: state c
 //
 // Returns 3 kinds of errors:
 //
-//   * tagged with transient.Tag, meaning it's reasonable to retry.
+//   - tagged with transient.Tag, meaning it's reasonable to retry.
 //     Typically due to contention on simultaneously updated CL entity or
 //     transient Datastore Get/Put problem.
 //
-//   * tagged with StateChangedTag.
+//   - tagged with StateChangedTag.
 //     This means the desired Run might still be possible to create,
 //     but it must be re-validated against updated CLs or Project config
 //     version.
 //
-//   * all other errors are non retryable and typically indicate a bug or severe
+//   - all other errors are non retryable and typically indicate a bug or severe
 //     misconfiguration. For example, lack of ProjectStateOffload entity.
 func (rb *Creator) Create(ctx context.Context, clMutator *changelist.Mutator, pm pmNotifier, rm rmNotifier) (ret *run.Run, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/prjmanager/run/Create")

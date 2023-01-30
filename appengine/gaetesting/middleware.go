@@ -32,9 +32,9 @@ import (
 var goLogger = flag.Bool("test.gologger", false, "Enable console logging during test.")
 
 // TestingContext returns context with base services installed:
-//   * go.chromium.org/luci/gae/impl/memory (in-memory appengine services)
-//   * go.chromium.org/luci/server/caching (access to process cache)
-//   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
+//   - go.chromium.org/luci/gae/impl/memory (in-memory appengine services)
+//   - go.chromium.org/luci/server/caching (access to process cache)
+//   - go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContext() context.Context {
 	ctx := context.Background()
 	ctx = memory.Use(ctx)
@@ -43,9 +43,9 @@ func TestingContext() context.Context {
 
 // TestingContextWithAppID returns context with the specified App ID and base
 // services installed:
-//   * go.chromium.org/luci/gae/impl/memory (in-memory appengine services)
-//   * go.chromium.org/luci/server/caching (access to process cache)
-//   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
+//   - go.chromium.org/luci/gae/impl/memory (in-memory appengine services)
+//   - go.chromium.org/luci/server/caching (access to process cache)
+//   - go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContextWithAppID(appID string) context.Context {
 	ctx := context.Background()
 	ctx = memory.UseWithAppID(ctx, appID)

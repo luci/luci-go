@@ -22,7 +22,7 @@ import (
 // DeprecatedProcessor will find, and produce a Result for every
 // deprecated field which is set. Deprecated fields are marked like:
 //
-//   type name = <tag> [deprecated = true];
+//	type name = <tag> [deprecated = true];
 //
 // You may also optionally clear the data in deprecated fields.
 type DeprecatedProcessor struct {

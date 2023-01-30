@@ -3586,7 +3586,6 @@ func GetApplication(params Parameters) *cli.Application {
 }
 
 // Main runs the CIPD CLI.
-//
 func Main(params Parameters, args []string) int {
 	return subcommands.Run(GetApplication(params), fixflagpos.FixSubcommands(args))
 }

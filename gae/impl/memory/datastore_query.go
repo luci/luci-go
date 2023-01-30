@@ -35,9 +35,10 @@ const MaxQueryComponents = 100
 const MaxIndexColumns = 64
 
 // A queryCursor is:
-//   {#orders} ++ IndexColumn* ++ RawRowData
-//   IndexColumn will always contain __key__ as the last column, and so #orders
-//     must always be >= 1
+//
+//	{#orders} ++ IndexColumn* ++ RawRowData
+//	IndexColumn will always contain __key__ as the last column, and so #orders
+//	  must always be >= 1
 type queryCursor []byte
 
 func newCursor(s string) (ds.Cursor, error) {

@@ -21,7 +21,8 @@
 // The `get*` subcommands writes a job definition from some external source.
 // The `launch` subcommand reads a job definition and launches it in Swarming.
 // The `edit*` subcommands reads a job definition, manipulates it, then writes
-//   the evolved job definition out.
+//
+//	the evolved job definition out.
 //
 // led subcommands are meant to be connected in a UNIX pipeline, starting with
 // a 'get' subcommand, and ending with the 'launch' subcommand.

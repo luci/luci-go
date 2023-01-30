@@ -91,9 +91,10 @@ const (
 // Method implements a particular low-level authentication mechanism.
 //
 // It may also optionally implement a bunch of other interfaces:
-//   UsersAPI: if the method supports login and logout URLs.
-//   Warmable: if the method supports warm up.
-//   HasHandlers: if the method needs to install HTTP handlers.
+//
+//	UsersAPI: if the method supports login and logout URLs.
+//	Warmable: if the method supports warm up.
+//	HasHandlers: if the method needs to install HTTP handlers.
 //
 // Methods are not usually used directly, but passed to Authenticator{...} that
 // knows how to apply them.

@@ -77,7 +77,7 @@ type HostOptions struct {
 // their initialization to inject useful functionality into the server.
 //
 // TODO(vadimsh):
-//  * Allow adding a middleware to the default middleware chain.
+//   - Allow adding a middleware to the default middleware chain.
 type Host interface {
 	// ServiceRegistrar is a registrar that can be used to register gRPC services.
 	ServiceRegistrar() grpc.ServiceRegistrar

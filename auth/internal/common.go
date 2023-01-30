@@ -207,8 +207,8 @@ func EqualCacheKeys(a, b *CacheKey) bool {
 // duration.
 //
 // The function returns True in any of the following conditions:
-//  * The token is not valid.
-//  * The token expires before now+lifetime.
+//   - The token is not valid.
+//   - The token expires before now+lifetime.
 //
 // In all other cases it returns False.
 func TokenExpiresIn(ctx context.Context, t *Token, lifetime time.Duration) bool {
@@ -230,11 +230,11 @@ func TokenExpiresIn(ctx context.Context, t *Token, lifetime time.Duration) bool 
 // doesn't necessarily imply the token will expire before now+lifetime.
 //
 // The function returns True in any of the following conditions:
-//  * The token is not valid.
-//  * The token expires before now+lifetime.
-//  * The token expiration time is between (now+lifetime, now+lifetime+rnd),
-//    where rnd is a uniformly distributed random number between 0 and
-//    expiryRandInterval sec (which is set to 30 sec).
+//   - The token is not valid.
+//   - The token expires before now+lifetime.
+//   - The token expiration time is between (now+lifetime, now+lifetime+rnd),
+//     where rnd is a uniformly distributed random number between 0 and
+//     expiryRandInterval sec (which is set to 30 sec).
 //
 // This is useful for processes that use multiple service account keys at
 // around the same time. Without randomization, access tokens for such keys

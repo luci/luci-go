@@ -152,10 +152,10 @@ func InstallHandlers(r *router.Router) { classicEnv.InstallHandlers(r) }
 //
 // These routes are needed for various services provided in Base context to
 // work:
-//  * Authentication related routes (gaeauth)
-//  * Settings pages (gaesettings)
-//  * Various housekeeping crons (tsmon, gaeconfig)
-//  * Warmup (warmup)
+//   - Authentication related routes (gaeauth)
+//   - Settings pages (gaesettings)
+//   - Various housekeeping crons (tsmon, gaeconfig)
+//   - Warmup (warmup)
 //
 // They must be installed into a default module, but it is also safe to
 // install them into a non-default module. This may be handy if you want to

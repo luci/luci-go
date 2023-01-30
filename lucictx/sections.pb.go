@@ -595,7 +595,8 @@ func (x *ResultSink) GetAuthToken() string {
 //
 // If the entire Deadline is missing from `LUCI_CONTEXT`, it should be assumed to
 // be:
-//     {soft_deadline: infinity, grace_period: 30}
+//
+//	{soft_deadline: infinity, grace_period: 30}
 //
 // Intermediate applications can 'reserve' portions of `soft_deadline` and
 // `grace_period` by reducing them and then enforcing the reduced times.

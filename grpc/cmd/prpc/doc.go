@@ -14,59 +14,59 @@
 
 // Command prpc can make RPCs to pRPC servers and display their description.
 //
-// Subcommand call
+// # Subcommand call
 //
 // call subcommand reads from stdin, sends a request to a specified service
 // at a specified server in a special format (defaults to json) and
 // prints the response back to stdout.
 //
-//  $ echo '{"name": "Lucy"}' | prpc call :8080 helloworld.Greeter.SayHello
-//  {
-//          "message": "Hello Lucy"
-//  }
+//	$ echo '{"name": "Lucy"}' | prpc call :8080 helloworld.Greeter.SayHello
+//	{
+//	        "message": "Hello Lucy"
+//	}
 //
-// Subcommand show
+// # Subcommand show
 //
 // show subcommand resolves a name and describes the referenced entity
 // in proto-like syntax. If name is not specified, lists available services.
 //
-//  $ prpc show :8080
-//  helloworld.Greeter
-//  discovery.Discovery
+//	$ prpc show :8080
+//	helloworld.Greeter
+//	discovery.Discovery
 //
 // Show a service:
 //
-//  $ prpc show :8080 helloworld.Greeter
-//  // The greeting service definition.
-//  service Greeter {
-//          // Sends a greeting
-//          rpc SayHello(HelloRequest) returns (HelloReply) {};
-//  }
+//	$ prpc show :8080 helloworld.Greeter
+//	// The greeting service definition.
+//	service Greeter {
+//	        // Sends a greeting
+//	        rpc SayHello(HelloRequest) returns (HelloReply) {};
+//	}
 //
 // Show a method:
 //
-//  $ prpc show :8080 helloworld.Greeter.SayHello
-//  // The greeting service definition.
-//  service Greeter {
-//          // Sends a greeting
-//          rpc SayHello(HelloRequest) returns (HelloReply) {};
-//  }
+//	$ prpc show :8080 helloworld.Greeter.SayHello
+//	// The greeting service definition.
+//	service Greeter {
+//	        // Sends a greeting
+//	        rpc SayHello(HelloRequest) returns (HelloReply) {};
+//	}
 //
-//  // The request message containing the user's name.
-//  message HelloRequest {
-//          string name = 1;
-//  }
+//	// The request message containing the user's name.
+//	message HelloRequest {
+//	        string name = 1;
+//	}
 //
-//  // The response message containing the greetings
-//  message HelloReply {
-//          string message = 1;
-//  }
+//	// The response message containing the greetings
+//	message HelloReply {
+//	        string message = 1;
+//	}
 //
 // Show a type:
 //
-//  $ prpc show :8080 helloworld.HelloReply
-//  // The response message containing the greetings
-//  message HelloReply {
-//          string message = 1;
-//  }
+//	$ prpc show :8080 helloworld.HelloReply
+//	// The response message containing the greetings
+//	message HelloReply {
+//	        string message = 1;
+//	}
 package main

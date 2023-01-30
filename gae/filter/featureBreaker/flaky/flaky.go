@@ -18,9 +18,10 @@
 // NOTE: Emulates only datastore errors currently.
 //
 // To install it:
-//   ctx, fb := featureBreaker.FilterRDS(ctx, nil)
-//   fb.BreakFeaturesWithCallback(
-//     flaky.Errors(...), featureBreaker.DatastoreFeatures...)
+//
+//	ctx, fb := featureBreaker.FilterRDS(ctx, nil)
+//	fb.BreakFeaturesWithCallback(
+//	  flaky.Errors(...), featureBreaker.DatastoreFeatures...)
 package flaky
 
 import (

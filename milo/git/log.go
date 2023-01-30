@@ -182,11 +182,12 @@ var gitHash = regexp.MustCompile("^[0-9a-fA-F]{40}$")
 // cache with C99, C98, ... C1, too.
 //
 // The last byte of a cache value specifies how to interpret the rest:
-//   0:       the rest is protobuf-marshalled gitilespb.LogResponse message
-//   1-99:    the rest is byte id of a descendant commit that
-//            the commit-in-cache-key is reachable from.
-//            The last byte indicates the distance between the two commits.
-//   100-255: reserved for future.
+//
+//	0:       the rest is protobuf-marshalled gitilespb.LogResponse message
+//	1-99:    the rest is byte id of a descendant commit that
+//	         the commit-in-cache-key is reachable from.
+//	         The last byte indicates the distance between the two commits.
+//	100-255: reserved for future.
 type logReq struct {
 	factory   *implementation
 	host      string

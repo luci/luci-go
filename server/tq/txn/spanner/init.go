@@ -20,7 +20,7 @@
 //
 // This package is normally imported unnamed:
 //
-//   import _ "go.chromium.org/luci/server/tq/txn/spanner"
+//	import _ "go.chromium.org/luci/server/tq/txn/spanner"
 package spanner
 
 import (

@@ -30,8 +30,9 @@ type movingAverage struct {
 // newMovingAverage makes a new movingAverage
 //
 // Args:
-//   window - The number of values to track.; if this is <= 0, panics.
-//   seed - A seed value.
+//
+//	window - The number of values to track.; if this is <= 0, panics.
+//	seed - A seed value.
 func newMovingAverage(window, seed int) *movingAverage {
 	if window <= 0 {
 		panic(errors.New("window must be positive"))

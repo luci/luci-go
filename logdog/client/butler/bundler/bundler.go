@@ -323,21 +323,24 @@ func (b *Bundler) makeBundles() {
 //     produce a more optimally-packed bundle.
 //
 // At a high level, Next operates as follows:
-//   1) Freeze all stream state.
-//   2) Scan streams for data that has exceeded its threshold; if data is found:
+//
+//  1. Freeze all stream state.
+//
+//  2. Scan streams for data that has exceeded its threshold; if data is found:
 //     - Aggressively pack expired data into a Bundle until the stream is
-//       drained (which will be unregistered later) or can't generate a new
-//       bundle entry with the current data in the stream buffer (e.g. only
-//       partial size header exists in buffer). This will allow more data
-//       coming in when the stream is revisisted in the next bundle round.
+//     drained (which will be unregistered later) or can't generate a new
+//     bundle entry with the current data in the stream buffer (e.g. only
+//     partial size header exists in buffer). This will allow more data
+//     coming in when the stream is revisisted in the next bundle round.
 //     - Optimally pack the remainder of the Bundle with any available data.
 //     - Return the Bundle.
 //
-//   3) Examine the remaining data sizes, waiting for either:
+//  3. Examine the remaining data sizes, waiting for either:
 //     - Enough stream data to fill our Bundle.
 //     - Our timeout, if the Bundler is not closed.
-//   4) Pack a Bundle with the remaining data optimally, emphasizing streams
-//      with older data.
+//
+//  4. Pack a Bundle with the remaining data optimally, emphasizing streams
+//     with older data.
 //
 // Returns true if bundle some data was added that should be sent immediately.
 func (b *Bundler) bundleRoundLocked(bb *builder, state *streamState) bool {

@@ -16,9 +16,10 @@
 // colon-delimited key-value pair strings.
 //
 // Example of pairs:
-//   master:tryserver.chromium.linux
-//   builder:linux_chromium_rel_ng
-//   buildset:patch/gerrit/chromium-review.googlesource.com/677784/5
+//
+//	master:tryserver.chromium.linux
+//	builder:linux_chromium_rel_ng
+//	buildset:patch/gerrit/chromium-review.googlesource.com/677784/5
 package strpair
 
 import (

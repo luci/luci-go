@@ -16,12 +16,13 @@
 // map[string]string with the supplied parameter. The parameter is expressed as
 // a key[=value] option.
 //
-// Example
+// # Example
 //
 // Assuming the flag option, "opt", is bound to a stringmapflag.Value, and the
 // following arguments are parsed:
-//    -opt foo=bar
-//    -opt baz
+//
+//	-opt foo=bar
+//	-opt baz
 //
 // The resulting map would be equivalent to:
 // map[string]string {"foo": "bar", "baz": ""}

@@ -20,21 +20,19 @@
 //
 // Minimal example of using flags parsing:
 //
-//
-//  authFlags := authcli.Flags{}
-//  defaults := ... // prepare default auth.Options
-//  authFlags.Register(flag.CommandLine, defaults)
-//  flag.Parse()
-//  opts, err := authFlags.Options()
-//  if err != nil {
-//    // handle error
-//  }
-//  authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
-//  httpClient, err := authenticator.Client()
-//  if err != nil {
-//    // handle error
-//  }
-//
+//	authFlags := authcli.Flags{}
+//	defaults := ... // prepare default auth.Options
+//	authFlags.Register(flag.CommandLine, defaults)
+//	flag.Parse()
+//	opts, err := authFlags.Options()
+//	if err != nil {
+//	  // handle error
+//	}
+//	authenticator := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
+//	httpClient, err := authenticator.Client()
+//	if err != nil {
+//	  // handle error
+//	}
 //
 // This assumes that either a service account credentials are used (passed via
 // -service-account-json), or the user has previously ran "login" subcommand and
@@ -52,36 +50,35 @@
 // the context. This ensures consistent logging style between all subcommands
 // of a CLI application:
 //
+//	import (
+//	  ...
+//	  "go.chromium.org/luci/client/authcli"
+//	  "go.chromium.org/luci/common/cli"
+//	)
 //
-//  import (
-//    ...
-//    "go.chromium.org/luci/client/authcli"
-//    "go.chromium.org/luci/common/cli"
-//  )
+//	func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
+//	  return &cli.Application{
+//	    Name:  "app_name",
 //
-//  func GetApplication(defaultAuthOpts auth.Options) *cli.Application {
-//    return &cli.Application{
-//      Name:  "app_name",
+//	    Context: func(ctx context.Context) context.Context {
+//	      ... configure logging, etc. ...
+//	      return ctx
+//	    },
 //
-//      Context: func(ctx context.Context) context.Context {
-//        ... configure logging, etc. ...
-//        return ctx
-//      },
+//	    Commands: []*subcommands.Command{
+//	      authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
+//	      authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
+//	      authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
+//	      ...
+//	    },
+//	  }
+//	}
 //
-//      Commands: []*subcommands.Command{
-//        authcli.SubcommandInfo(defaultAuthOpts, "auth-info", false),
-//        authcli.SubcommandLogin(defaultAuthOpts, "auth-login", false),
-//        authcli.SubcommandLogout(defaultAuthOpts, "auth-logout", false),
-//        ...
-//      },
-//    }
-//  }
-//
-//  func main() {
-//    defaultAuthOpts := ...
-//    app := GetApplication(defaultAuthOpts)
-//    os.Exit(subcommands.Run(app, nil))
-//  }
+//	func main() {
+//	  defaultAuthOpts := ...
+//	  app := GetApplication(defaultAuthOpts)
+//	  os.Exit(subcommands.Run(app, nil))
+//	}
 package authcli
 
 import (

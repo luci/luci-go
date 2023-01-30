@@ -16,31 +16,31 @@
 
 // Package config provides access to the Configuration Service.
 //
-// Creating a client
+// # Creating a client
 //
 // Usage example:
 //
-//   import "go.chromium.org/luci/common/api/luci_config/config/v1"
-//   ...
-//   ctx := context.Background()
-//   configService, err := config.NewService(ctx)
+//	import "go.chromium.org/luci/common/api/luci_config/config/v1"
+//	...
+//	ctx := context.Background()
+//	configService, err := config.NewService(ctx)
 //
 // In this example, Google Application Default Credentials are used for authentication.
 //
 // For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
 //
-// Other authentication options
+// # Other authentication options
 //
 // To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
 //
-//   configService, err := config.NewService(ctx, option.WithAPIKey("AIza..."))
+//	configService, err := config.NewService(ctx, option.WithAPIKey("AIza..."))
 //
 // To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
 //
-//   config := &oauth2.Config{...}
-//   // ...
-//   token, err := config.Exchange(ctx, ...)
-//   configService, err := config.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//	config := &oauth2.Config{...}
+//	// ...
+//	token, err := config.Exchange(ctx, ...)
+//	configService, err := config.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
 //
 // See https://godoc.org/google.golang.org/api/option/ for details on options.
 package config // import "go.chromium.org/luci/common/api/luci_config/config/v1"
@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	googleapi "google.golang.org/api/googleapi"
 	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
+	googleapi "google.golang.org/api/googleapi"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"

@@ -16,17 +16,17 @@
 // status to/from an error. It designed to prevent accidental exposure of
 // internal statuses to RPC clients, for example Spanner's statuses.
 //
-// Attaching a status
+// # Attaching a status
 //
 // Use ToError, Error and Errorf to create new status-annotated errors.
 // Use Attach and Attachf to annotate existing errors with a status.
 //
-//   if req.PageSize < 0  {
-//      return appstatus.Errorf(codes.InvalidArgument, "page size cannot be negative")
-//   }
-//   if err := checkState(); err != nil {
-//     return appstatus.Attachf(err, codes.PreconditionFailed, "invalid state")
-//   }
+//	if req.PageSize < 0  {
+//	   return appstatus.Errorf(codes.InvalidArgument, "page size cannot be negative")
+//	}
+//	if err := checkState(); err != nil {
+//	  return appstatus.Attachf(err, codes.PreconditionFailed, "invalid state")
+//	}
 //
 // This may be done deep in the function call hierarchy.
 //
@@ -37,20 +37,20 @@
 // package supports its propagation all the way to the requester
 // unless there is code that explicitly throws it away.
 //
-// Returning a status
+// # Returning a status
 //
 // Use GRPCifyAndLog right before returning the error from a gRPC method
 // handler. Usually it is done in a Postlude of a service decorator, see
 // ../cmd/svcdec.
 //
-//   func NewMyServer() pb.MyServer {
-//     return &pb.DecoratedMyServer{
-//       Service:  &actualImpl{},
-//       Postlude: func(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-//         return appstatus.GRPCifyAndLog(ctx, err)
-//       },
-//     }
-//   }
+//	func NewMyServer() pb.MyServer {
+//	  return &pb.DecoratedMyServer{
+//	    Service:  &actualImpl{},
+//	    Postlude: func(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+//	      return appstatus.GRPCifyAndLog(ctx, err)
+//	    },
+//	  }
+//	}
 //
 // It recognizes only appstatus-annotated errors and treats any other error as
 // internal. This behavior is important to avoid accidentally returning errors

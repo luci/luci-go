@@ -130,9 +130,9 @@ func (s *Slot) Get(c context.Context, fetcher Fetcher) (value interface{}, err e
 // is going to do the fetch if no one is fetching it now.
 //
 // Returns:
-//   * (true, known value, nil) if the current goroutine should refetch.
-//   * (false, known value, nil) if the fetch is no longer necessary.
-//   * (false, nil, err) if the initial fetch failed.
+//   - (true, known value, nil) if the current goroutine should refetch.
+//   - (false, known value, nil) if the fetch is no longer necessary.
+//   - (false, nil, err) if the initial fetch failed.
 func (s *Slot) initiateFetch(c context.Context, fetcher Fetcher, now time.Time) (bool, interface{}, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

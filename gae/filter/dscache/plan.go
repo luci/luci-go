@@ -90,11 +90,11 @@ func (p *plan) empty() bool {
 // makeFetchPlan takes the input facts and makes a plan about what to do with them.
 //
 // Possible scenarios:
-//   * all entries we got from memcache are valid data, and so we don't need
+//   - all entries we got from memcache are valid data, and so we don't need
 //     to call through to the underlying datastore at all.
-//   * some entries are 'lock' entries, owned by us, and so we should get them
+//   - some entries are 'lock' entries, owned by us, and so we should get them
 //     from datastore and then attempt to save them back to memcache.
-//   * some entries are 'lock' entries, owned by something else, so we should
+//   - some entries are 'lock' entries, owned by something else, so we should
 //     get them from datastore and then NOT save them to memcache.
 //
 // Or some combination thereof. This also handles memcache entries with invalid

@@ -20,15 +20,15 @@
 // datastore entity (for faster fetches).
 //
 // The defining properties of policy configs are:
-//  * They are global (i.e they are service configs, not per-project ones).
-//  * The content is mostly static.
-//  * They are queried from performance critical RPC handlers.
+//   - They are global (i.e they are service configs, not per-project ones).
+//   - The content is mostly static.
+//   - They are queried from performance critical RPC handlers.
 //
 // This suggests to heavily cache policies in local instance memory in a form
 // most suitable for querying.
 //
 // Thus policies have 3 representations:
-//  * Text protos: that's how they are stored in LUCI Config.
-//  * Binary protos: that's how Token Server stores them in the datastore.
-//  * Queryable state: that's how Token Server keeps them in the local memory.
+//   - Text protos: that's how they are stored in LUCI Config.
+//   - Binary protos: that's how Token Server stores them in the datastore.
+//   - Queryable state: that's how Token Server keeps them in the local memory.
 package policy

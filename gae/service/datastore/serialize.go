@@ -299,7 +299,9 @@ func (s Serializer) PropertySlicePartially(vals PropertySlice) SerializedPslice 
 }
 
 // SerializedPmap maps from
-//   prop name -> [<serialized DSProperty>, ...]
+//
+//	prop name -> [<serialized DSProperty>, ...]
+//
 // includes special values '__key__' and '__ancestor__' which contains all of
 // the ancestor entries for this key.
 type SerializedPmap map[string]SerializedPslice

@@ -110,7 +110,8 @@ func writeProtoStringLines(w *bytes.Buffer, skip int, lines []string) {
 // string. The scanner then loops back to its initial state.
 //
 // Not that nothing special needs to be done for e.g.
-//   some_key: "string with << angles"
+//
+//	some_key: "string with << angles"
 //
 // Such a line would be left alone, because the trailing quote (which is
 // mandatory in text proto) cause the starting regex to not match.
@@ -125,15 +126,17 @@ func writeProtoStringLines(w *bytes.Buffer, skip int, lines []string) {
 // matching close marker.
 //
 // Example:
-//   this: <<EOF
-//	   would
-//	   turn \ninto
-//       a "single"
-//     line
-//   EOF
+//
+//	  this: <<EOF
+//		   would
+//		   turn \ninto
+//	      a "single"
+//	    line
+//	  EOF
 //
 // Turns into the same as:
-//   this: "would\nturn \\ninto\n  a \"single\"\nline"
+//
+//	this: "would\nturn \\ninto\n  a \"single\"\nline"
 func ParseMultilineStrings(text string) (string, error) {
 	terminator := ""
 	terminatorRE := (*regexp.Regexp)(nil)

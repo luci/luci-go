@@ -82,19 +82,19 @@ type SendFn func(data *buffer.Batch) error
 // NewChannel produces a new Channel ready to listen and send work items.
 //
 // Args:
-//   * `ctx` will be used for cancellation and logging. When the `ctx` is
+//   - `ctx` will be used for cancellation and logging. When the `ctx` is
 //     canceled, the Channel will:
-//       * drop all incoming data on Channel.C; All new data will be dropped
-//         (calling DropFn).
-//       * drop all existing unleased batches (calling DropFn)
-//       * ignore all errors from SendFn (i.e. even if ErrorFn returns
-//         'retry=true', the batch will be dropped anyway)
-//       If you want to gracefully drain the Channel, you must close the channel
-//       and wait for DrainC before canceling the context.
-//   * `send` is required, and defines the function to use to process Batches
+//   - drop all incoming data on Channel.C; All new data will be dropped
+//     (calling DropFn).
+//   - drop all existing unleased batches (calling DropFn)
+//   - ignore all errors from SendFn (i.e. even if ErrorFn returns
+//     'retry=true', the batch will be dropped anyway)
+//     If you want to gracefully drain the Channel, you must close the channel
+//     and wait for DrainC before canceling the context.
+//   - `send` is required, and defines the function to use to process Batches
 //     of data. This function MUST respect `ctx.Done`, or the Channel cannot
 //     drain properly.
-//   * `opts` is optional (see Options for the defaults).
+//   - `opts` is optional (see Options for the defaults).
 //
 // The Channel MUST be Close()'d when you're done with it, or the Channel will
 // not terminate. This applies even if you cancel it via ctx. The caller is

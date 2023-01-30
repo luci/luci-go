@@ -93,8 +93,8 @@ const defaultSearchPageSize = 5
 // SearchBuilds implements buildbucket.Client.
 //
 // Support paging and the following predicates:
-//  * gerrit_changes
-//  * include_experimental
+//   - gerrit_changes
+//   - include_experimental
 //
 // Use `defaultSearchPageSize` if page size is not specified in the input.
 func (c *Client) SearchBuilds(ctx context.Context, in *bbpb.SearchBuildsRequest, opts ...grpc.CallOption) (*bbpb.SearchBuildsResponse, error) {
@@ -298,9 +298,9 @@ func mkInputProps(builderCfg *bbpb.BuilderConfig, requestedProps *structpb.Struc
 // Batch implements buildbucket.Client.
 //
 // Supports:
-//  * CancelBuild
-//  * GetBuild
-//  * ScheduleBuild
+//   - CancelBuild
+//   - GetBuild
+//   - ScheduleBuild
 func (c *Client) Batch(ctx context.Context, in *bbpb.BatchRequest, opts ...grpc.CallOption) (*bbpb.BatchResponse, error) {
 	responses := make([]*bbpb.BatchResponse_Response, len(in.GetRequests()))
 	for i, req := range in.GetRequests() {

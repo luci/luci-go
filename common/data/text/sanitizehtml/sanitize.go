@@ -146,15 +146,15 @@ func (s *sanitizer) visitChildren(n *html.Node) {
 //
 // Unless explicitly specified, attributes are stripped.
 // Allowed elements:
-//  - p, br, hr
-//  - h1, h2, h3, h4, h5, h6
-//  - strong, em
-//  - a
-//    - if href attribute is not a valid absolute HTTP(s) link, it is replaced
-//      with an innocuous one.
-//    - alt attribute is allowed
-//  - ul, ol, li
-//  - code, pre
+//   - p, br, hr
+//   - h1, h2, h3, h4, h5, h6
+//   - strong, em
+//   - a
+//   - if href attribute is not a valid absolute HTTP(s) link, it is replaced
+//     with an innocuous one.
+//   - alt attribute is allowed
+//   - ul, ol, li
+//   - code, pre
 //
 // Elements <script> and <style> are ignored entirely.
 // For all other HTML nodes, Sanitize ignores the node, but visits its children.

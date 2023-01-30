@@ -17,9 +17,9 @@
 //
 // This is a special implementation of storage.Storage, and does not fully
 // conform to the API expecations. Namely:
-//	- It is read-only. Mutation methods will return storage.ErrReadOnly.
-//	- Storage methods ignore the supplied Path argument, instead opting for
-//	  the archive configured in its Options.
+//   - It is read-only. Mutation methods will return storage.ErrReadOnly.
+//   - Storage methods ignore the supplied Path argument, instead opting for
+//     the archive configured in its Options.
 package archive
 
 import (

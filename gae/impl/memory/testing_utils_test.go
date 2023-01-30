@@ -37,14 +37,12 @@ var Multi = &multiMarker
 
 // If you want an entry that is single to be treated as multi-, prepend it
 // with Multi. Terminate each set of property tokens with Next.
-//   pmap(
-//     "prop", "val", 0, 100, Next,
-//     "other", "val", 0, 100, Next,
-//     "name", Multi, "value", Next,
-//   )
 //
-//
-//
+//	pmap(
+//	  "prop", "val", 0, 100, Next,
+//	  "other", "val", 0, 100, Next,
+//	  "name", Multi, "value", Next,
+//	)
 func pmap(stuff ...interface{}) ds.PropertyMap {
 	ret := ds.PropertyMap{}
 

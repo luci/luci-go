@@ -1752,8 +1752,9 @@ func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareCh
 // GET /client?platform=...&version=...
 //
 // Where:
-//    platform: linux-amd64, windows-386, etc.
-//    version: a package version identifier (instance ID, a ref or a tag).
+//
+//	platform: linux-amd64, windows-386, etc.
+//	version: a package version identifier (instance ID, a ref or a tag).
 //
 // On success issues HTTP 302 redirect to the signed Google Storage URL.
 // On errors returns HTTP 4** with an error message.
@@ -1821,8 +1822,9 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 // GET /dl/<package>/+/<version>.
 //
 // Where:
-//    package: a CIPD package name (e.g. "a/b/c/linux-amd64").
-//    version: a package version identifier (instance ID, a ref or a tag).
+//
+//	package: a CIPD package name (e.g. "a/b/c/linux-amd64").
+//	version: a package version identifier (instance ID, a ref or a tag).
 //
 // On success issues HTTP 302 redirect to the signed Google Storage URL.
 // On errors returns HTTP 4** with an error message.
@@ -1875,8 +1877,9 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 // GET /bootstrap/<package>/+/<version>.
 //
 // Where:
-//    package: a CIPD package name (e.g. "a/b/c/linux-amd64").
-//    version: a package version identifier (instance ID, a ref or a tag).
+//
+//	package: a CIPD package name (e.g. "a/b/c/linux-amd64").
+//	version: a package version identifier (instance ID, a ref or a tag).
 //
 // Works only with bootstrap packages (per bootstrap.cfg file). See also
 // DescribeBootstrapBundle.
@@ -1945,26 +1948,28 @@ func (impl *repoImpl) handleBootstrapDownload(ctx *router.Context) error {
 // GET /_ah/api/repo/v1/client?package_name=...&instance_id=...
 //
 // Where:
-//    package_name: full name of a CIPD client package.
-//    instance_id: a hex digest with instance ID.
+//
+//	package_name: full name of a CIPD client package.
+//	instance_id: a hex digest with instance ID.
 //
 // Returns:
-//    {
-//      "status": "...",
-//      "error_message": "...",
-//      "client_binary": {
-//        "file_name": "cipd",
-//        "sha1": "...",
-//        "fetch_url": "...",
-//        "size": "..."
-//      },
-//      "instance": {
-//        "package_name": "...",
-//        "instance_id": "...",
-//        "registered_by": "...",
-//        "registered_ts": "<int64 timestamp in microseconds>"
-//      }
-//    }
+//
+//	{
+//	  "status": "...",
+//	  "error_message": "...",
+//	  "client_binary": {
+//	    "file_name": "cipd",
+//	    "sha1": "...",
+//	    "fetch_url": "...",
+//	    "size": "..."
+//	  },
+//	  "instance": {
+//	    "package_name": "...",
+//	    "instance_id": "...",
+//	    "registered_by": "...",
+//	    "registered_ts": "<int64 timestamp in microseconds>"
+//	  }
+//	}
 func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
@@ -2009,21 +2014,23 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 // GET /_ah/api/repo/v1/instance?package_name=...&instance_id=...
 //
 // Where:
-//    package_name: full name of a package.
-//    instance_id: a hex digest with instance ID.
+//
+//	package_name: full name of a package.
+//	instance_id: a hex digest with instance ID.
 //
 // Returns:
-//    {
-//      "status": "...",
-//      "error_message": "...",
-//      "fetch_url": "...",
-//      "instance": {
-//        "package_name": "...",
-//        "instance_id": "...",
-//        "registered_by": "...",
-//        "registered_ts": "<int64 timestamp in microseconds>"
-//      }
-//    }
+//
+//	{
+//	  "status": "...",
+//	  "error_message": "...",
+//	  "fetch_url": "...",
+//	  "instance": {
+//	    "package_name": "...",
+//	    "instance_id": "...",
+//	    "registered_by": "...",
+//	    "registered_ts": "<int64 timestamp in microseconds>"
+//	  }
+//	}
 func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
@@ -2068,15 +2075,17 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 // GET /_ah/api/repo/v1/instance/resolve?package_name=...&version=...
 //
 // Where:
-//    package_name: full name of a package.
-//    version: a package version identifier (instance ID, a ref or a tag).
+//
+//	package_name: full name of a package.
+//	version: a package version identifier (instance ID, a ref or a tag).
 //
 // Returns:
-//    {
-//      "status": "...",
-//      "error_message": "...",
-//      "instance_id": "..."
-//    }
+//
+//	{
+//	  "status": "...",
+//	  "error_message": "...",
+//	  "instance_id": "..."
+//	}
 func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 

@@ -36,8 +36,8 @@ import (
 // with symbols defined in some registered `*.proto` file.
 //
 // Loader is also a Starlark value itself, with the following methods:
-//   * add_descriptor_set(ds) - see AddDescriptorSet.
-//   * module(path) - see Module.
+//   - add_descriptor_set(ds) - see AddDescriptorSet.
+//   - module(path) - see Module.
 //
 // Can be used concurrently. Non-freezable.
 type Loader struct {

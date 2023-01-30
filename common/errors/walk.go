@@ -18,11 +18,11 @@ package errors
 // invoke the supplied callback for each layered error recursively. If the
 // callback returns true, Walk will continue its traversal.
 //
-//	- If walk encounters a MultiError, the callback is called once for the
-//	  outer MultiError, then once for each inner error.
-//	- If walk encounters a Wrapped error, the callback is called for the outer
-//	  and inner error.
-//	- If an inner error is, itself, a container, Walk will recurse into it.
+//   - If walk encounters a MultiError, the callback is called once for the
+//     outer MultiError, then once for each inner error.
+//   - If walk encounters a Wrapped error, the callback is called for the outer
+//     and inner error.
+//   - If an inner error is, itself, a container, Walk will recurse into it.
 //
 // If err is nil, the callback will not be invoked.
 func Walk(err error, fn func(error) bool) {

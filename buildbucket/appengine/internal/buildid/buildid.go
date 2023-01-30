@@ -20,20 +20,20 @@
 // Build has no parent.
 //
 // Build id is a 64 bits integer.
-// - 1 highest order bit is set to 0 to keep value positive.
-// - 43 bits are 43 lower bits of bitwise-inverted time since
-//  beginningOfTheWorld at 1ms resolution.
-//  It is good for 2**43 / 365.3 / 24 / 60 / 60 / 1000 = 278 years
-//  or 2010 + 278 = year 2288.
-// - 16 bits are set to a random value. Assuming an instance is internally
-//  consistent with itself, it can ensure to not reuse the same 16 bits in two
-//  consecutive requests and/or throttle itself to one request per
-//  millisecond. Using random value reduces to 2**-15 the probability of
-//  collision on exact same timestamp at 1ms resolution, so a maximum
-//  theoretical rate of 65536000 requests/sec but an effective rate in the
-//  range of ~64k qps without much transaction conflicts. We should be fine.
-// - 4 bits are 0. This is to represent the 'version' of the entity
-//  schema.
+//   - 1 highest order bit is set to 0 to keep value positive.
+//   - 43 bits are 43 lower bits of bitwise-inverted time since
+//     beginningOfTheWorld at 1ms resolution.
+//     It is good for 2**43 / 365.3 / 24 / 60 / 60 / 1000 = 278 years
+//     or 2010 + 278 = year 2288.
+//   - 16 bits are set to a random value. Assuming an instance is internally
+//     consistent with itself, it can ensure to not reuse the same 16 bits in two
+//     consecutive requests and/or throttle itself to one request per
+//     millisecond. Using random value reduces to 2**-15 the probability of
+//     collision on exact same timestamp at 1ms resolution, so a maximum
+//     theoretical rate of 65536000 requests/sec but an effective rate in the
+//     range of ~64k qps without much transaction conflicts. We should be fine.
+//   - 4 bits are 0. This is to represent the 'version' of the entity
+//     schema.
 //
 // The idea is taken from Swarming TaskRequest entity:
 // https://source.chromium.org/chromium/_/chromium/infra/luci/luci-py/+/a4a91d5e1e14b8b866b68b68bc1055b0b8ffef3b:appengine/swarming/server/task_request.py;l=1380-1404

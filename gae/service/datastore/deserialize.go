@@ -56,7 +56,7 @@ type Deserializer struct {
 // Deserialize is a Deserializer without KeyContext (i.e. appid/namespace
 // encoded in Keys will be returned). Useful for inline invocations like:
 //
-//   datastore.Deserialize.Time(...)
+//	datastore.Deserialize.Time(...)
 var Deserialize Deserializer
 
 // Key deserializes a key from the buffer. The value of context must match

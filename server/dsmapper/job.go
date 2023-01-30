@@ -266,10 +266,11 @@ func getJob(ctx context.Context, id JobID) (*Job, error) {
 // getJobInState fetches a Job entity and checks its state.
 //
 // Returns:
-//   (*Job, nil) if the job is there and its state matches one of given states.
-//   (nil, nil) if the job is there, but in a different state.
-//   (nil, transient error) on datastore fetch errors.
-//   (nil, fatal error) if there's no such job at all.
+//
+//	(*Job, nil) if the job is there and its state matches one of given states.
+//	(nil, nil) if the job is there, but in a different state.
+//	(nil, transient error) on datastore fetch errors.
+//	(nil, fatal error) if there's no such job at all.
 func getJobInState(ctx context.Context, id JobID, states ...dsmapperpb.State) (*Job, error) {
 	job, err := getJob(ctx, id)
 	if err != nil {
@@ -353,10 +354,11 @@ func (s *shard) info() *dsmapperpb.ShardInfo {
 // state and its ProcessTaskNum matches the given taskNum.
 //
 // Returns:
-//   (*shard, nil) if the shard is there and matches the criteria.
-//   (nil, nil) if the shard is there, but it doesn't match the criteria.
-//   (nil, transient error) on datastore fetch errors.
-//   (nil, fatal error) if there's no such shard at all.
+//
+//	(*shard, nil) if the shard is there and matches the criteria.
+//	(nil, nil) if the shard is there, but it doesn't match the criteria.
+//	(nil, transient error) on datastore fetch errors.
+//	(nil, fatal error) if there's no such shard at all.
 func getActiveShard(ctx context.Context, shardID, taskNum int64) (*shard, error) {
 	sh := &shard{ID: shardID}
 	switch err := datastore.Get(ctx, sh); {

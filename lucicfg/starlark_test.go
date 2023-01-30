@@ -306,9 +306,9 @@ func errorOnDiff(t *testing.T, got, exp string) bool {
 // errorOnMismatch emits an error to T if got doesn't match a pattern pat.
 //
 // The pattern is syntax is:
-//   * A line "[space]...[space]" matches zero or more arbitrary lines.
-//   * Trigram "???" matches [0-9a-zA-Z]+.
-//   * The rest should match as is.
+//   - A line "[space]...[space]" matches zero or more arbitrary lines.
+//   - Trigram "???" matches [0-9a-zA-Z]+.
+//   - The rest should match as is.
 func errorOnPatternMismatch(t *testing.T, got, pat string) {
 	t.Helper()
 

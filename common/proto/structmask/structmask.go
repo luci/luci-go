@@ -83,8 +83,10 @@ var leafNode = &node{}
 // children.
 //
 // *node pointers have two special values:
-//   nil - no filter is present (e.g. if `star == nil`, then do not recurse).
-///  leafNode - a filter that grabs all remaining values unfiltered.
+//
+//	nil - no filter is present (e.g. if `star == nil`, then do not recurse).
+//
+// /  leafNode - a filter that grabs all remaining values unfiltered.
 type node struct {
 	star   *node            // a filter to apply to all dict fields or list indexes, if any
 	fields map[string]*node // a filter for individual dict fields

@@ -29,31 +29,31 @@ import (
 //
 // Inject it into the context when testing handlers that expect an auth state:
 //
-//   ctx = auth.WithState(ctx, &authtest.FakeState{
-//     Identity: "user:user@example.com",
-//     IdentityGroups: []string{"admins"},
-//     IdentityPermissions: []authtest.RealmPermission{
-//       {"proj:realm1", perm1},
-//       {"proj:realm1", perm2},
-//     }
-//   })
-//   auth.IsMember(ctx, "admins") -> returns true.
-//   auth.HasPermission(ctx, perm1, "proj:realm1", nil) -> returns true.
+//	ctx = auth.WithState(ctx, &authtest.FakeState{
+//	  Identity: "user:user@example.com",
+//	  IdentityGroups: []string{"admins"},
+//	  IdentityPermissions: []authtest.RealmPermission{
+//	    {"proj:realm1", perm1},
+//	    {"proj:realm1", perm2},
+//	  }
+//	})
+//	auth.IsMember(ctx, "admins") -> returns true.
+//	auth.HasPermission(ctx, perm1, "proj:realm1", nil) -> returns true.
 //
 // Note that IdentityGroups, IdentityPermissions, PeerIPWhitelists and Error
 // are effective only when FakeDB is nil. They are used as a shortcut to
 // construct the corresponding FakeDB on the fly. If you need to prepare a more
 // complex fake state, pass NewFakeDB(...) as FakeDB instead:
 //
-//   ctx = auth.WithState(ctx, &authtest.FakeState{
-//     Identity: "user:user@example.com",
-//     FakeDB: NewFakeDB(
-//       authtest.MockMembership("user:user@example.com", "group"),
-//       authtest.MockMembership("user:another@example.com", "group"),
-//       authtest.MockPermission("user:user@example.com", "proj:realm1", perm1),
-//       ...
-//     ),
-//   })
+//	ctx = auth.WithState(ctx, &authtest.FakeState{
+//	  Identity: "user:user@example.com",
+//	  FakeDB: NewFakeDB(
+//	    authtest.MockMembership("user:user@example.com", "group"),
+//	    authtest.MockMembership("user:another@example.com", "group"),
+//	    authtest.MockPermission("user:user@example.com", "proj:realm1", perm1),
+//	    ...
+//	  ),
+//	})
 type FakeState struct {
 	// Identity is main identity associated with the request.
 	//

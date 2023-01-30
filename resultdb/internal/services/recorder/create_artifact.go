@@ -59,15 +59,15 @@ const (
 // artifactCreationHandler can handle artifact creation requests.
 //
 // Request:
-//  - Router parameter "artifact" MUST be a valid artifact name.
-//  - The request body MUST be the artifact contents.
-//  - The request MUST include an Update-Token header with the value of
-//    invocation's update token.
-//  - The request MUST include a Content-Length header. It must be <= MaxArtifactContentSize.
-//  - The request MUST include a Content-Hash header with value "sha256:{hash}"
-//    where {hash} is a lower-case hex-encoded SHA256 hash of the artifact
-//    contents.
-//  - The request SHOULD have a Content-Type header.
+//   - Router parameter "artifact" MUST be a valid artifact name.
+//   - The request body MUST be the artifact contents.
+//   - The request MUST include an Update-Token header with the value of
+//     invocation's update token.
+//   - The request MUST include a Content-Length header. It must be <= MaxArtifactContentSize.
+//   - The request MUST include a Content-Hash header with value "sha256:{hash}"
+//     where {hash} is a lower-case hex-encoded SHA256 hash of the artifact
+//     contents.
+//   - The request SHOULD have a Content-Type header.
 type artifactCreationHandler struct {
 	// RBEInstance is the full name of the RBE instance used for artifact storage.
 	// Format: projects/{project}/instances/{instance}.

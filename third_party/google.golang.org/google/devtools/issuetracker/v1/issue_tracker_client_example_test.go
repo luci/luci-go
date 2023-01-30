@@ -17,9 +17,9 @@ package issuetracker_test
 import (
 	"context"
 
-	"google.golang.org/api/iterator"
 	issuetrackerpb "go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 	issuetracker "go.chromium.org/luci/third_party/google.golang.org/google/devtools/issuetracker/v1"
+	"google.golang.org/api/iterator"
 )
 
 func ExampleNewClient() {

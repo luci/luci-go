@@ -533,9 +533,9 @@ func (b RecentQueryBuilder) keysForProject(ctx context.Context, project string) 
 }
 
 // selectLatest returns up to the limit of Run IDs ordered by:
-//  * DESC Created (== ASC InverseTS, or latest first)
-//  * ASC  Project
-//  * ASC  RunID (the remaining part of RunID)
+//   - DESC Created (== ASC InverseTS, or latest first)
+//   - ASC  Project
+//   - ASC  RunID (the remaining part of RunID)
 //
 // IDs in each input slice must be be in Created DESC order.
 //
@@ -580,7 +580,9 @@ func (b RecentQueryBuilder) selectLatest(inputs ...[]*datastore.Key) []*datastor
 
 // rangeOfProjectIDs returns (min..max) non-existent Run IDs, such that
 // the following
-//     min < $RunID  < max
+//
+//	min < $RunID  < max
+//
 // for all valid $RunID belonging to the given project.
 func rangeOfProjectIDs(project string) (string, string) {
 	// ID starts with the LUCI Project name followed by '/' and a 13-digit

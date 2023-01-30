@@ -25,16 +25,17 @@ import (
 //
 // No-op if both `logURL` and `viewURL` are absolute urls. Absolute url here
 // means url that has valid scheme. A valid scheme must be
-// `[a-zA-Z][a-zA-Z0-9+-.]*`` according to
+// `[a-zA-Z][a-zA-Z0-9+-.]*“ according to
 // https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
 //
 // If `logURL` is relative, calculate the return urls using `calcFn`. The
 // provided `viewURL` will be omitted.
 //
 // Returns error if any of the following conditions are true:
-//  * `logURL` is an absolute url but `viewURL` is empty.
-//  * `logURL` is an absolute url but `viewURL` is not an absolute url.
-//  * `logURL` is a relative url but not a valid logdog stream.
+//   - `logURL` is an absolute url but `viewURL` is empty.
+//   - `logURL` is an absolute url but `viewURL` is not an absolute url.
+//   - `logURL` is a relative url but not a valid logdog stream.
+//
 // The input `logURL` and `viewURL` will be returned verbatim on errors.
 func absolutizeURLs(logURL, viewURL string, ns types.StreamName, calcFn CalcURLFn) (retLogURL, retViewURL string, err error) {
 	retLogURL, retViewURL = logURL, viewURL

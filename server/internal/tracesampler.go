@@ -28,8 +28,8 @@ import (
 // Sampler constructs an object that decides how often to sample traces.
 //
 // The spec is a string in one of the forms:
-//   * `X%` - to sample approximately X percent of requests.
-//   * `Xqps` - to produce approximately X samples per second.
+//   - `X%` - to sample approximately X percent of requests.
+//   - `Xqps` - to produce approximately X samples per second.
 //
 // Returns an error if the spec can't be parsed.
 func Sampler(spec string) (trace.Sampler, error) {

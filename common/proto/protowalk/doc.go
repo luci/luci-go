@@ -20,11 +20,11 @@
 //
 // This package also comes with stock implementations for the following common
 // field annotations:
-//   * google.api.field_behavior = REQUIRED
-//   * google.api.field_behavior = OUTPUT_ONLY
-//   * deprecated = true
+//   - google.api.field_behavior = REQUIRED
+//   - google.api.field_behavior = OUTPUT_ONLY
+//   - deprecated = true
 //
-// How it works
+// # How it works
 //
 // 1. Register a FieldProcessor using RegisterFieldProcessor.
 //

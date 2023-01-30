@@ -19,7 +19,8 @@
 // installed. It is installed by default in LUCI server contexts.
 //
 // This package is normally imported unnamed:
-//   import _ "go.chromium.org/luci/server/tq/txn/datastore"
+//
+//	import _ "go.chromium.org/luci/server/tq/txn/datastore"
 //
 // Will take ownership of entities with kinds "tq.*" (e.g. "tq.Reminder").
 package datastore

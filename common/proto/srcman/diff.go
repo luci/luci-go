@@ -23,16 +23,16 @@ import (
 // pointers, slices or strings.
 //
 // It generates a Stat value of:
-//   * EQUAL if they're both nil/empty/zero
-//   * ADDED if a is nil and b is not
-//   * REMOVED if b is nil and a is not
-//   * For strings:
-//     * EQUAL/MODIFIED depending on string equality
-//   * For slices:
-//     * MODIFIED if they have differing lengths
-//     * Whatever the callback method returns
-//   * For others
-//     * Whatever the callback method returns
+//   - EQUAL if they're both nil/empty/zero
+//   - ADDED if a is nil and b is not
+//   - REMOVED if b is nil and a is not
+//   - For strings:
+//   - EQUAL/MODIFIED depending on string equality
+//   - For slices:
+//   - MODIFIED if they have differing lengths
+//   - Whatever the callback method returns
+//   - For others
+//   - Whatever the callback method returns
 //
 // The callback method is required for non-string types.
 func zeroCmpTwo(a, b interface{}, modCb func() ManifestDiff_Stat) ManifestDiff_Stat {
@@ -77,9 +77,9 @@ func zeroCmpTwo(a, b interface{}, modCb func() ManifestDiff_Stat) ManifestDiff_S
 }
 
 // modifiedTracker is a simplistic structure. It:
-//   * tracks the status of anything you feed to add(). If you feed a status
+//   - tracks the status of anything you feed to add(). If you feed a status
 //     other than EQUAL, it flips to true.
-//   * returns MODIFIED from status() if its bool value is true, otherwise EQUAL.
+//   - returns MODIFIED from status() if its bool value is true, otherwise EQUAL.
 //
 // It's used for semi-transparently computing `Overall` Stat values for diff
 // entries containing many interesting fields.

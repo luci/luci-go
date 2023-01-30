@@ -221,48 +221,48 @@ const minTokenLifetime = 3 * time.Minute
 // handle is called by http.Server in a separate goroutine to handle a request.
 //
 // It implements the server side of local_auth RPC protocol:
-//  * Each request is POST to /rpc/LuciLocalAuthService.<Method>
-//  * Request content type is "application/json; ...".
-//  * The sender must set Content-Length header.
-//  * Response content type is also "application/json".
-//  * The server sets Content-Length header in the response.
-//  * Protocol-level errors have non-200 HTTP status code.
-//  * Logic errors have 200 HTTP status code and error is communicated in
-//    the response body.
+//   - Each request is POST to /rpc/LuciLocalAuthService.<Method>
+//   - Request content type is "application/json; ...".
+//   - The sender must set Content-Length header.
+//   - Response content type is also "application/json".
+//   - The server sets Content-Length header in the response.
+//   - Protocol-level errors have non-200 HTTP status code.
+//   - Logic errors have 200 HTTP status code and error is communicated in
+//     the response body.
 //
 // Supported methods are:
 //
 // GetOAuthToken:
 //
-//    Request body:
-//    {
-//      "scopes": [<string scope1>, <string scope2>, ...],
-//      "secret": <string from LUCI_CONTEXT.local_auth.secret>,
-//      "account_id": <ID of some account from LUCI_CONTEXT.local_auth.accounts>
-//    }
-//    Response body:
-//    {
-//      "error_code": <int, on success not set or 0>,
-//      "error_message": <string, on success not set>,
-//      "access_token": <string with actual token (on success)>,
-//      "expiry": <int with unix timestamp in seconds (on success)>
-//    }
+//	Request body:
+//	{
+//	  "scopes": [<string scope1>, <string scope2>, ...],
+//	  "secret": <string from LUCI_CONTEXT.local_auth.secret>,
+//	  "account_id": <ID of some account from LUCI_CONTEXT.local_auth.accounts>
+//	}
+//	Response body:
+//	{
+//	  "error_code": <int, on success not set or 0>,
+//	  "error_message": <string, on success not set>,
+//	  "access_token": <string with actual token (on success)>,
+//	  "expiry": <int with unix timestamp in seconds (on success)>
+//	}
 //
 // GetIDToken:
 //
-//    Request body:
-//    {
-//      "audience": <string>,
-//      "secret": <string from LUCI_CONTEXT.local_auth.secret>,
-//      "account_id": <ID of some account from LUCI_CONTEXT.local_auth.accounts>
-//    }
-//    Response body:
-//    {
-//      "error_code": <int, on success not set or 0>,
-//      "error_message": <string, on success not set>,
-//      "id_token": <string with actual token (on success)>,
-//      "expiry": <int with unix timestamp in seconds (on success)>
-//    }
+//	Request body:
+//	{
+//	  "audience": <string>,
+//	  "secret": <string from LUCI_CONTEXT.local_auth.secret>,
+//	  "account_id": <ID of some account from LUCI_CONTEXT.local_auth.accounts>
+//	}
+//	Response body:
+//	{
+//	  "error_code": <int, on success not set or 0>,
+//	  "error_message": <string, on success not set>,
+//	  "id_token": <string with actual token (on success)>,
+//	  "expiry": <int with unix timestamp in seconds (on success)>
+//	}
 //
 // See also python counterpart of this code:
 // https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/utils/auth_server.py

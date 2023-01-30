@@ -113,12 +113,12 @@ func GetKeyContext(c context.Context) KeyContext {
 //
 // Datastore has built-in constraints that it applies to some operations:
 //
-//	- For Get, there is a maximum number of elements that can be processed in a
-//	  single RPC (see Constriants.MaxGetSize).
-//	- For Put, there is a maximum number of elements that can be processed in a
-//	  single RPC (see Constriants.MaxPutSize).
-//	- For Delete, there is a maximum number of elements that can be processed in
-//	  a single RPC (see Constriants.MaxDeleteSize).
+//   - For Get, there is a maximum number of elements that can be processed in a
+//     single RPC (see Constriants.MaxGetSize).
+//   - For Put, there is a maximum number of elements that can be processed in a
+//     single RPC (see Constriants.MaxPutSize).
+//   - For Delete, there is a maximum number of elements that can be processed in
+//     a single RPC (see Constriants.MaxDeleteSize).
 //
 // Batching masks these limitations, providing an interface that meets user
 // expectations. Behind the scenes, it splits large operations into a series of

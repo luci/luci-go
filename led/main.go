@@ -19,14 +19,14 @@
 // be gone soon (~mid 2020).
 //
 // Subpackages include:
-//   * ledcli        - The implementation of the CLI executable, paramaterized
-//                     with an object to handle kitchen jobs.
-//   * ledcmd        - Implementation of 'heavyweight' led subcommands, usually
-//                     those which interact with external services.
-//   * job           - The job definition which is passed between subcommands,
-//                     as well as structured editing APIs.
-//   * job/jobcreate - Library for generating jobs from external sources
-//   * job/jobexport - Library for exporting jobs to external sinks
+//   - ledcli        - The implementation of the CLI executable, paramaterized
+//     with an object to handle kitchen jobs.
+//   - ledcmd        - Implementation of 'heavyweight' led subcommands, usually
+//     those which interact with external services.
+//   - job           - The job definition which is passed between subcommands,
+//     as well as structured editing APIs.
+//   - job/jobcreate - Library for generating jobs from external sources
+//   - job/jobexport - Library for exporting jobs to external sinks
 package main
 
 import "go.chromium.org/luci/led/ledcli"

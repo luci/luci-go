@@ -137,12 +137,12 @@ func (r *Realms) Data(realm string) *protocol.RealmData {
 // permission in the given realm.
 //
 // Each returned binding is a tuple (condition, groups, identities):
-//   * Condition: a predicate over realms.Attrs map that evaluates to true if
+//   - Condition: a predicate over realms.Attrs map that evaluates to true if
 //     this binding is "active". Inactive bindings should be skipped.
-//   * Groups: a set of groups with principals that have the permission,
+//   - Groups: a set of groups with principals that have the permission,
 //     represented by a sorted slice of group indexes in a graph.QueryableGraph
 //     which was passed to Build().
-//   * Identities: a set of identity strings that were specified in the realm
+//   - Identities: a set of identity strings that were specified in the realm
 //     ACL directly (not via a group).
 //
 // The permission should be specified as its index obtained via PermissionIndex.

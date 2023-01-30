@@ -17,7 +17,6 @@ package usertext
 // StoppedRun is the default message put in the reason of the attention set
 // change when CV stops a run.
 //
-//
 // Ideally, modules set the message with the reason of the stop so that
 // users are given more detailed info for the reason of the attention set
 // changes that they received a notification for.

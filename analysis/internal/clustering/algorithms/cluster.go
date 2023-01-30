@@ -107,10 +107,11 @@ func init() {
 // Cluster(...) will always return a set of ClusterResults which
 // are as- or more-recent than the existing ClusterResults.
 // This is defined as the following postcondition:
-//  returned.AlgorithmsVersion > existing.AlgorithmsVersion ||
-//  (returned.AlgorithmsVersion == existing.AlgorithmsVersion &&
-//    returned.ConfigVersion >= existing.ConfigVersion &&
-//    returned.RulesVersion >= existing.RulesVersion)
+//
+//	returned.AlgorithmsVersion > existing.AlgorithmsVersion ||
+//	(returned.AlgorithmsVersion == existing.AlgorithmsVersion &&
+//	  returned.ConfigVersion >= existing.ConfigVersion &&
+//	  returned.RulesVersion >= existing.RulesVersion)
 func Cluster(config *compiledcfg.ProjectConfig, ruleset *cache.Ruleset, existing clustering.ClusterResults, failures []*clustering.Failure) clustering.ClusterResults {
 	if existing.AlgorithmsVersion > AlgorithmsVersion {
 		// We are running out-of-date clustering algorithms. Do not

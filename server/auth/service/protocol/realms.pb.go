@@ -155,9 +155,9 @@ func (x *Realms) GetRealms() []*Realm {
 // message for the definition of what "belonging to the realm" means.
 //
 // Examples of permissions:
-//   * buildbucket.build.create
-//   * swarming.pool.listBots
-//   * swarming.task.cancel
+//   - buildbucket.build.create
+//   - swarming.pool.listBots
+//   - swarming.task.cancel
 //
 // Note that permission names are composed of generic terms, not some specific
 // IDs of service deployments or resources. Generally, using a concrete
@@ -334,9 +334,9 @@ func (*Condition_Restrict) isCondition_Op() {}
 // that transcend project boundaries).
 //
 // A full realm name has form "<project>:<realm>", where:
-//   * "<project>" is a name of the LUCI project that defined the realm or
+//   - "<project>" is a name of the LUCI project that defined the realm or
 //     literal "@internal" for internal realms.
-//   * "<realm>" is a name of the realm from a realms.cfg config file. This name
+//   - "<realm>" is a name of the realm from a realms.cfg config file. This name
 //     is also known as a project-scoped name, since it makes sense only within
 //     a scope of some concrete LUCI project.
 //

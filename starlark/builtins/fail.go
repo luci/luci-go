@@ -49,14 +49,14 @@ func (f *Failure) Backtrace() string {
 
 // Fail is fail(*args, sep=" ", trace=None) builtin.
 //
-//  def fail(*args, sep=" ", trace=None):
-//    """Aborts the script execution with an error message."
+//	def fail(*args, sep=" ", trace=None):
+//	  """Aborts the script execution with an error message."
 //
-//    Args:
-//      args: values to print in the message.
-//      sep: separator to use between values from `args`.
-//      trace: a trace (as returned by stacktrace()) to attach to the error.
-//    """
+//	  Args:
+//	    args: values to print in the message.
+//	    sep: separator to use between values from `args`.
+//	    trace: a trace (as returned by stacktrace()) to attach to the error.
+//	  """
 //
 // Custom stack traces are recoverable through FailureCollector. This is due
 // to Starlark's insistence on stringying all errors. If there's no

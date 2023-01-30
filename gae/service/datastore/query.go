@@ -48,7 +48,6 @@ var (
 // >  datastore.NewQuery(...).Lte("$id", ...)
 // One should use:
 // >  datastore.NewQuery(...).Lte("__key__", ...)
-//
 type Query struct {
 	queryFields
 

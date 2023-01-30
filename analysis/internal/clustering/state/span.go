@@ -35,10 +35,10 @@ import (
 )
 
 // Entry represents the clustering state of a chunk, consisting of:
-// - Metadata about what test results were clustered.
-// - Metadata about how the test results were clustered (the algorithms
-//   and failure association rules used).
-// - The clusters each test result are in.
+//   - Metadata about what test results were clustered.
+//   - Metadata about how the test results were clustered (the algorithms
+//     and failure association rules used).
+//   - The clusters each test result are in.
 type Entry struct {
 	// Project is the LUCI Project the chunk belongs to.
 	Project string

@@ -42,7 +42,8 @@ var modeToVote = map[run.Mode]int32{
 // particular CL.
 //
 // TODO(crbug/1242951): Use the changelist.CL insteat of gerritpb.ChangeInfo,
-//                      and remove TriggerNewPatchsetRunAfterPS.
+//
+//	and remove TriggerNewPatchsetRunAfterPS.
 type FindInput struct {
 	// ChangeInfo is required. It should contain the most recent information
 	// about the CL to find the triggers in. E.g. label votes and patchsets.

@@ -583,9 +583,10 @@ func (f *fsImpl) CleanupTrash(ctx context.Context) {
 // was unlinked from FS) results in ERROR_ACCESS_DENIED. Moving works though.
 //
 // Returns:
-//   ("", nil) if initial os.Remove(...) succeeded.
-//   ("<path in trash>", nil) if move to the trash succeeded.
-//   ("", non-nil) if move to the trash failed (this is also logged).
+//
+//	("", nil) if initial os.Remove(...) succeeded.
+//	("<path in trash>", nil) if move to the trash succeeded.
+//	("", non-nil) if move to the trash failed (this is also logged).
 func (f *fsImpl) moveToTrash(ctx context.Context, path string) (string, error) {
 	if runtime.GOOS != "windows" {
 		if err := os.Remove(path); err == nil || os.IsNotExist(err) {

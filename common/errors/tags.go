@@ -81,7 +81,8 @@ func (t TagValue) Apply(err error) error {
 // BoolTag is an error tag implementation which holds a boolean value.
 //
 // It should be constructed like:
-//   var myTag = errors.BoolTag{Key: errors.NewTagKey("some description")}
+//
+//	var myTag = errors.BoolTag{Key: errors.NewTagKey("some description")}
 type BoolTag struct{ Key TagKey }
 
 // GenerateErrorTagValue implements TagValueGenerator, and returns a default
@@ -116,33 +117,36 @@ func (b BoolTag) In(err error) bool {
 // Use this with a BoolTag or your own custom tag implementation.
 //
 // Example (bool tag):
-//   var myTag = errors.BoolTag{Key: errors.NewTagKey("this error is a user error")}
 //
-//   err = myTag.Apply(err)
-//   myTag.In(err) // == true
+//	var myTag = errors.BoolTag{Key: errors.NewTagKey("this error is a user error")}
 //
-//   err2 := myTag.Off().Apply(err)
-//   myTag.In(err2) // == false
+//	err = myTag.Apply(err)
+//	myTag.In(err) // == true
+//
+//	err2 := myTag.Off().Apply(err)
+//	myTag.In(err2) // == false
 //
 // Example (custom tag)
-//   type SomeType int
-//   type myTag struct { Key errors.TagKey }
-//   func (m myTag) With(value SomeType) errors.TagValue {
-//     return errors.TagValue{Key: m.Key, Value: value}
-//   }
-//   func (m myTag) In(err error) (v SomeType, ok bool) {
-//     d, ok := errors.TagValueIn(m.Key, err)
-//     if ok {
-//       v = d.(SomeType)
-//     }
-//     return
-//   }
-//   var MyTag = myTag{errors.NewTagKey("has a SomeType")}
+//
+//	type SomeType int
+//	type myTag struct { Key errors.TagKey }
+//	func (m myTag) With(value SomeType) errors.TagValue {
+//	  return errors.TagValue{Key: m.Key, Value: value}
+//	}
+//	func (m myTag) In(err error) (v SomeType, ok bool) {
+//	  d, ok := errors.TagValueIn(m.Key, err)
+//	  if ok {
+//	    v = d.(SomeType)
+//	  }
+//	  return
+//	}
+//	var MyTag = myTag{errors.NewTagKey("has a SomeType")}
 //
 // You could then use it like:
-//   err = MyTag.With(100).Apply(err)
-//   MyTag.In(err) // == true
-//   errors.ValueIn(err) // == (SomeType(100), true)
+//
+//	err = MyTag.With(100).Apply(err)
+//	MyTag.In(err) // == true
+//	errors.ValueIn(err) // == (SomeType(100), true)
 func NewTagKey(description string) TagKey {
 	return &tagDescription{description}
 }

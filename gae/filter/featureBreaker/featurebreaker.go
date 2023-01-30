@@ -39,14 +39,17 @@ type BreakFeatureCallback func(ctx context.Context, feature string) error
 // this package.  A feature is the Name of some method on the filtered service.
 //
 // So if you had:
-//   c, fb := FilterMC(...)
-//   mc := gae.GetMC(c)
+//
+//	c, fb := FilterMC(...)
+//	mc := gae.GetMC(c)
 //
 // you could do:
-//   fb.BreakFeatures(memcache.ErrServerError, "Add", "Set")
+//
+//	fb.BreakFeatures(memcache.ErrServerError, "Add", "Set")
 //
 // and then
-//   mc.Add(...) and mc.Set(...)
+//
+//	mc.Add(...) and mc.Set(...)
 //
 // would return the error.
 //

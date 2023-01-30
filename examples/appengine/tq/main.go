@@ -19,17 +19,17 @@
 // there which may interfere with the production server/tq deployment in this
 // project, so use some experimental Cloud Project for this:
 //
-//   $ go run . -cloud-project your-experimental-project
-//   $ curl http://127.0.0.1:8800/count-down/10
-//   <observe logs>
-//   $ curl http://127.0.0.1:8800/internal/tasks/c/sweep
-//   <observe logs>
+//	$ go run . -cloud-project your-experimental-project
+//	$ curl http://127.0.0.1:8800/count-down/10
+//	<observe logs>
+//	$ curl http://127.0.0.1:8800/internal/tasks/c/sweep
+//	<observe logs>
 //
 // To test this for real, deploy the GAE app:
 //
-//   $ gae.py upload -A your-experimental-project --switch
-//   $ curl https://<your-experimental-project>.appspot.com/count-down/10
-//   <observe logs>
+//	$ gae.py upload -A your-experimental-project --switch
+//	$ curl https://<your-experimental-project>.appspot.com/count-down/10
+//	<observe logs>
 //
 // Again, be careful with what Cloud Project you are updating.
 package main

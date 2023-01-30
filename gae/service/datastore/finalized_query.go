@@ -222,7 +222,8 @@ func gqlQuoteString(s string) string {
 // is equivalent to this query.
 //
 // The flavor of GQL that this emits is defined here:
-//   https://cloud.google.com/datastore/docs/apis/gql/gql_reference
+//
+//	https://cloud.google.com/datastore/docs/apis/gql/gql_reference
 //
 // NOTE: Cursors are omitted because currently there's currently no syntax for
 // literal cursors.

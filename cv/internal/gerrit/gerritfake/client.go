@@ -223,8 +223,8 @@ func (client *Client) ListFiles(ctx context.Context, in *gerritpb.ListFilesReque
 // SetReview sets various review bits on a change.
 //
 // Currently, only support following functionalities:
-//  - Post Message.
-//  - Set votes on a label (by project itself or on behalf of other user)
+//   - Post Message.
+//   - Set votes on a label (by project itself or on behalf of other user)
 //
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
 func (client *Client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
@@ -475,11 +475,11 @@ type parsedListChangesQuery struct {
 // parseListChangesQuery parses ListChangesRequest.Query for CV needs.
 //
 // It has lots of shortcomings:
-//  * silently allows to repeat and overwrite prior instance of predicate,
-//    e.g. "status:new status:merged" is treated as "status:merged".
-//  * restricts (.. OR .. ) clauses only to project: predicates
-//  * doesn't support OR without ()
-//  * and many others.
+//   - silently allows to repeat and overwrite prior instance of predicate,
+//     e.g. "status:new status:merged" is treated as "status:merged".
+//   - restricts (.. OR .. ) clauses only to project: predicates
+//   - doesn't support OR without ()
+//   - and many others.
 //
 // TODO(tandrii): this should be replaced by a proper library solution,
 // perhaps the only implementing parsing & evaluation of https://aip.dev/160

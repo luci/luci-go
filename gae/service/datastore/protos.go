@@ -28,16 +28,17 @@ import (
 //
 // **Modern format**: first byte reserved for denoting format and is thus not
 // compatible with legacy format. Options supported currently:
-//     "nocompress"   - (same as default) no compression.
-//                      Able to read compressed items in modern format.
-//     "zstd"          - compress serialized proto with zstd encoding.
-//                      Able to read non-compressed items in modern format.
+//
+//	"nocompress"   - (same as default) no compression.
+//	                 Able to read compressed items in modern format.
+//	"zstd"          - compress serialized proto with zstd encoding.
+//	                 Able to read non-compressed items in modern format.
 //
 // **Legacy formats**: not compatible between each other or modern formats.
 // Options supported:
-//     "legacy"       - reads/writes serialized proto message. Useful for
-//                      migrating off `proto-gae` tool.
 //
+//	"legacy"       - reads/writes serialized proto message. Useful for
+//	                 migrating off `proto-gae` tool.
 type protoOption string
 
 const (

@@ -107,10 +107,10 @@ func (c *Client) Query(_ context.Context, in *logs_api.QueryRequest, _ ...grpc.C
 
 // OpenTextStream returns a stream for text (line delimited) data.
 //
-//  - Lines are always delimited with "\n".
-//  - Write calls will always have an implied "\n" at the end, if the input
-//    data doesn't have one. If you want to do multiple Write calls to affect
-//    the same line, you'll need to buffer it yourself.
+//   - Lines are always delimited with "\n".
+//   - Write calls will always have an implied "\n" at the end, if the input
+//     data doesn't have one. If you want to do multiple Write calls to affect
+//     the same line, you'll need to buffer it yourself.
 func (c *Client) OpenTextStream(prefix, path logdog_types.StreamName, flags ...*streamproto.Flags) (*Stream, error) {
 	return c.open(logpb.StreamType_TEXT, prefix, path, flags...)
 }

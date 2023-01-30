@@ -42,11 +42,11 @@
 //   - extract the sign (S) and magnitude (M) of V
 //   - Find the position of the highest bit (P), minus 1.
 //   - write (bits):
-//     - SPPPPPPP MMMMMMMM MM000000
-//     - S is 1
-//     - P's are the log2(M)-1
-//     - M's are the magnitude of V
-//     - 0's are padding
+//   - SPPPPPPP MMMMMMMM MM000000
+//   - S is 1
+//   - P's are the log2(M)-1
+//   - M's are the magnitude of V
+//   - 0's are padding
 //   - Additionally, if the number is negative, invert the bits of all the bytes
 //     (e.g. XOR 0xFF). This makes the sign bit S 0 for negative numbers, and
 //     makes the ordering of the numbers correct when compared bytewise.

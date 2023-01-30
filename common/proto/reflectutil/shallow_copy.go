@@ -23,8 +23,8 @@ import (
 //
 // This is a safe alterative to the "obvious" implementation:
 //
-//    tmp := *underlyingMsgValue
-//    return &tmp
+//	tmp := *underlyingMsgValue
+//	return &tmp
 //
 // Unfortunately, protobuf holds many internal structures which are
 // unsafe to shallow copy, and `go vet` has been hinted to complain

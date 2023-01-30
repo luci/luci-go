@@ -29,9 +29,9 @@ import (
 // Mutates order of `cells` as a side effect.
 //
 // Caveats:
-//   * Totally ignores cell.Target for now.
-//   * Ignores cell.Units, it is always empty for some reason.
-//   * Distributions are replaced with the average value they hold.
+//   - Totally ignores cell.Target for now.
+//   - Ignores cell.Units, it is always empty for some reason.
+//   - Distributions are replaced with the average value they hold.
 func formatCellsAsHTML(cells []types.Cell) template.HTML {
 	// Sort by the metric name, then by field values.
 	sort.Slice(cells, func(i, j int) bool {

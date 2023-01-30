@@ -16,5 +16,6 @@
 //
 // When running them, it's recommended to limit benchmarking duration to below a
 // second, since accuracy of the benchmarked CPU time isn't important, e.g.:
-//   go test -bench=BenhcmarkFunc -benchtime=100ms
+//
+//	go test -bench=BenhcmarkFunc -benchtime=100ms
 package benchmarks

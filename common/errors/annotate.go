@@ -110,8 +110,8 @@ func (s *stackContext) renderPublic(inner error) string {
 
 // render renders the frame as a single entry in a stack trace. This looks like:
 //
-//  reason: "The literal content of the reason field: %(key2)d"
-//  internal reason: I am an internal reason formatted with key1: value
+//	reason: "The literal content of the reason field: %(key2)d"
+//	internal reason: I am an internal reason formatted with key1: value
 func (s *stackContext) render() lines {
 	siz := len(s.tags)
 	if s.internalReason != "" {
@@ -579,7 +579,7 @@ func Annotate(err error, reason string, args ...interface{}) *Annotator {
 // all the formatting directives you would normally use with Annotate, in case
 // your originating error needs tags or an internal reason.
 //
-//   errors.Reason("something bad: %d", value).Tag(transient.Tag).Err()
+//	errors.Reason("something bad: %d", value).Tag(transient.Tag).Err()
 //
 // Prefer this form to errors.New(fmt.Sprintf("..."))
 func Reason(reason string, args ...interface{}) *Annotator {

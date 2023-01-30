@@ -170,7 +170,7 @@ func QueryRealmsNonEmpty(ctx context.Context, project string, attrs realms.Attrs
 //  1. an optional subRealm argument allows results to be limited to a
 //     specific realm (matching `<project>:<subRealm>`).
 //  2. a list of subRealms is returned instead of a list of realms
-//    (e.g. ["realm1", "realm2"] instead of ["project:realm1", "project:realm2"])
+//     (e.g. ["realm1", "realm2"] instead of ["project:realm1", "project:realm2"])
 func QuerySubRealmsNonEmpty(ctx context.Context, project, subRealm string, attrs realms.Attrs, permissions ...realms.Permission) ([]string, error) {
 	if project == "" {
 		return nil, errors.New("project must be specified")

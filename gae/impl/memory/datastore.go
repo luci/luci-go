@@ -43,9 +43,9 @@ func useRDS(c context.Context) context.Context {
 // suitable for embedding for doing in-memory data organization.
 //
 // It's configured by default with the following settings:
-//   * AutoIndex(true)
-//   * Consistent(true)
-//   * DisableSpecialEntities(true)
+//   - AutoIndex(true)
+//   - Consistent(true)
+//   - DisableSpecialEntities(true)
 //
 // These settings can of course be changed by using the Testable interface.
 func NewDatastore(c context.Context, inf info.RawInterface) ds.RawInterface {

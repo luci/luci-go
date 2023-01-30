@@ -36,9 +36,11 @@ import (
 // Initialize it with a bunch of mocks like:
 //
 // db := authtest.NewFakeDB(
-//   authtest.MockMembership("user:a@example.com", "group"),
-//   authtest.MockPermission("user:a@example.com", "proj:realm", perm),
-//   ...
+//
+//	authtest.MockMembership("user:a@example.com", "group"),
+//	authtest.MockPermission("user:a@example.com", "proj:realm", perm),
+//	...
+//
 // )
 //
 // The list of mocks can also be extended later via db.AddMocks(...).

@@ -66,13 +66,13 @@ type Rule struct {
 //
 // Parsed pattern "*.cluster.${upstream}.membership_healthy" results in
 //
-//   pattern{
-//     str: "*.cluster.${upstream}.membership_healthy",
-//     len: 4,
-//     vars: {"upstream": 2},
-//     static: [{1, "cluster"}, {3, "membership_healthy"}]
-//     suffix: "membership_healthy",
-//   }
+//	pattern{
+//	  str: "*.cluster.${upstream}.membership_healthy",
+//	  len: 4,
+//	  vars: {"upstream": 2},
+//	  static: [{1, "cluster"}, {3, "membership_healthy"}]
+//	  suffix: "membership_healthy",
+//	}
 type pattern struct {
 	str    string
 	len    int

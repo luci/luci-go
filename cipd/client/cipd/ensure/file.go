@@ -122,8 +122,8 @@ func ParseFile(r io.Reader) (*File, error) {
 // VersionResolver transforms a {PackageName, Version} tuple (corresponding to
 // the given `def`) into a resolved pin.
 //
-//  - `pkg` is guaranteed to pass common.ValidatePackageName
-//  - `vers` is guaranteed to pass common.ValidateInstanceVersion
+//   - `pkg` is guaranteed to pass common.ValidatePackageName
+//   - `vers` is guaranteed to pass common.ValidateInstanceVersion
 //
 // VersionResolver should expect to be called concurrently from multiple
 // goroutines.

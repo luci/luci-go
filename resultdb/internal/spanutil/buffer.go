@@ -57,6 +57,7 @@ type Ptr interface {
 //   - pb.Variant
 //   - pb.StringPair
 //   - proto.Message
+//
 // TODO(nodir): move to buffer.go
 type Buffer struct {
 	NullString  spanner.NullString

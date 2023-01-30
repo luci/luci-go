@@ -102,14 +102,14 @@ func (n *Notifier) NotifyPurgeCompleted(ctx context.Context, luciProject string,
 //
 // Unlike other event-sending of Notifier, this one only creates an event and
 // doesn't create a task. This is fine because:
-//   * if Run creation transaction fails, then this event isn't actually
+//   - if Run creation transaction fails, then this event isn't actually
 //     created anyways.
-//   * if Project Manager observes the Run creation success, then it'll act as if
+//   - if Project Manager observes the Run creation success, then it'll act as if
 //     this event was received in the upcoming state transition. Yes, it won't
 //     process this event immediately, but at this point the event is a noop,
 //     so it'll be cleared out from the eventbox upon next invocation of
 //     Project Manager. So there is no need to create a TQ task.
-//   * else, namely Run creation succeeds but Project Manager sees it as a
+//   - else, namely Run creation succeeds but Project Manager sees it as a
 //     failure OR Project Manager fails at any point before it can act on
 //     RunCreation, then the existing TQ task running Project Manager will be
 //     retried. So once again there is no need to create a TQ task.

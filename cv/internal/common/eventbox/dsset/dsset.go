@@ -32,10 +32,10 @@
 // have to be filtered out).
 //
 // Properties (where N is current size of the set):
-//   * Batch 'Add', O(1) performance.
-//   * Transactional consistent 'Pop' (1 QPS limit), O(N) performance.
-//   * Non-transactional consistent 'List', O(N) performance.
-//   * Popped items can't be re-added until their tombstones expire.
+//   - Batch 'Add', O(1) performance.
+//   - Transactional consistent 'Pop' (1 QPS limit), O(N) performance.
+//   - Non-transactional consistent 'List', O(N) performance.
+//   - Popped items can't be re-added until their tombstones expire.
 //
 // These properties make dsset suitable for multiple producers, single consumer
 // queues, where order of items is not important, each item has a unique
@@ -43,8 +43,8 @@
 //
 // Structurally dsset places 2 kinds of entities under provided Set's parent
 // entity:
-//   * items of the set.
-//   * tombstones, recording deleted items.
+//   - items of the set.
+//   - tombstones, recording deleted items.
 //
 // This code is a fork of dsset for classic Datastore, which had to work around
 // 1 write per second per entity group limit using shards. See
@@ -74,32 +74,32 @@ import (
 // 'Pop' and takes care of cleaning up of the garbage. This requires a mix of
 // transactional and non-transactional actions:
 //
-//   listing, err := set.List(ctx)
-//   if err != nil {
-//     return err
-//   }
+//	listing, err := set.List(ctx)
+//	if err != nil {
+//	  return err
+//	}
 //
-//   if err := dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
-//     return err
-//   }
+//	if err := dsset.CleanupGarbage(ctx, listing.Garbage); err != nil {
+//	  return err
+//	}
 //
-//   ... Fetch any additional info associated with 'listing.Items' ...
+//	... Fetch any additional info associated with 'listing.Items' ...
 //
-//   err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-//     op, err := set.BeginPop(ctx, listing)
-//     if err != nil {
-//       return err
-//     }
-//     for _, itm := range listing.items {
-//       if op.Pop(item.ID) {
-//         // The item was indeed in the set and we've just removed it!
-//       } else {
-//         // Some other transaction has popped it already.
-//       }
-//     }
-//     return dsset.FinishPop(ctx, op)
-//   }, nil)
-//   return err
+//	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+//	  op, err := set.BeginPop(ctx, listing)
+//	  if err != nil {
+//	    return err
+//	  }
+//	  for _, itm := range listing.items {
+//	    if op.Pop(item.ID) {
+//	      // The item was indeed in the set and we've just removed it!
+//	    } else {
+//	      // Some other transaction has popped it already.
+//	    }
+//	  }
+//	  return dsset.FinishPop(ctx, op)
+//	}, nil)
+//	return err
 type Set struct {
 	// Parent points to the datastore owning the set.
 	//

@@ -32,27 +32,28 @@ const RunKind = "Run"
 //
 // RunID is string like `luciProject/inverseTS-1-hexHashDigest` consisting of
 // 7 parts:
-//   1. The LUCI Project that this Run belongs to.
-//      Purpose: separates load on Datastore from different projects.
-//   2. `/` separator.
-//   3. InverseTS, defined as (`endOfTheWorld` - CreateTime) in ms precision,
-//      left-padded with zeros to 13 digits. See `Run.CreateTime` Doc.
-//      Purpose: ensures queries by default orders runs of the same project by
-//      most recent first.
-//   4. `-` separator.
-//   5. Digest version (see part 7).
-//   6. `-` separator.
-//   7. A hex digest string uniquely identifying the set of CLs involved in
-//      this Run.
-//      Purpose: ensures two simultaneously started Runs in the same project
-//      won't have the same RunID.
+//  1. The LUCI Project that this Run belongs to.
+//     Purpose: separates load on Datastore from different projects.
+//  2. `/` separator.
+//  3. InverseTS, defined as (`endOfTheWorld` - CreateTime) in ms precision,
+//     left-padded with zeros to 13 digits. See `Run.CreateTime` Doc.
+//     Purpose: ensures queries by default orders runs of the same project by
+//     most recent first.
+//  4. `-` separator.
+//  5. Digest version (see part 7).
+//  6. `-` separator.
+//  7. A hex digest string uniquely identifying the set of CLs involved in
+//     this Run.
+//     Purpose: ensures two simultaneously started Runs in the same project
+//     won't have the same RunID.
 type RunID string
 
 // CV will be dead on ~292.3 years after first LUCI design doc was created.
 //
 // Computed as https://play.golang.com/p/hDQ-EhlSLu5
-//   luci := time.Date(2014, time.May, 9, 1, 26, 0, 0, time.UTC)
-//   endOfTheWorld := luci.Add(time.Duration(1<<63 - 1))
+//
+//	luci := time.Date(2014, time.May, 9, 1, 26, 0, 0, time.UTC)
+//	endOfTheWorld := luci.Add(time.Duration(1<<63 - 1))
 var endOfTheWorld = time.Date(2306, time.August, 19, 1, 13, 16, 854775807, time.UTC)
 
 func MakeRunID(luciProject string, createTime time.Time, digestVersion int, clsDigest []byte) RunID {
@@ -70,10 +71,10 @@ func MakeRunID(luciProject string, createTime time.Time, digestVersion int, clsD
 // Validate returns an error if Run ID is not valid.
 //
 // If validate returns nil,
-//  * it means all other methods on RunID will work fine instead of panicking,
-//  * it doesn't mean Run ID is possible to generate using the MakeRunID.
-//    This is especially relevant in CV tests, where specifying short Run IDs is
-//    useful.
+//   - it means all other methods on RunID will work fine instead of panicking,
+//   - it doesn't mean Run ID is possible to generate using the MakeRunID.
+//     This is especially relevant in CV tests, where specifying short Run IDs is
+//     useful.
 func (id RunID) Validate() (err error) {
 	defer func() {
 		if err != nil {

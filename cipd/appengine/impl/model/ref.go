@@ -67,9 +67,10 @@ func (e *Ref) Proto() *api.Ref {
 // most recent instance state.
 //
 // Returns gRPC-tagged errors:
-//    NotFound if there's no such instance or package.
-//    FailedPrecondition if some processors are still running.
-//    Aborted if some processors have failed.
+//
+//	NotFound if there's no such instance or package.
+//	FailedPrecondition if some processors are still running.
+//	Aborted if some processors have failed.
 func SetRef(c context.Context, ref string, inst *Instance) error {
 	return Txn(c, "SetRef", func(c context.Context) error {
 		if err := CheckInstanceReady(c, inst); err != nil {

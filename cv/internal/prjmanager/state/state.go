@@ -28,18 +28,19 @@ import (
 // would otherwise have to be copied, too.
 //
 // To illustrate correct and incorrect usages:
-//     s0 := &State{...}
-//     s1, _, err := s0.Mut1()
-//     if err != nil {
-//       // ... := s0.Mut2()             // NOT OK, 2nd call on s0
-//       return proto.Marshal(s0.PB)     // OK
-//     }
-//     //  ... := s0.Mut2()              // NOT OK, 2nd call on s0
-//     s2, _, err := s1.Mut2()           // OK, s1 may be s0 if Mut1() was noop
-//     if err != nil {
-//       // return proto.Marshal(s0.PB)  // OK
-//       return proto.Marshal(s0.PB)     // OK
-//     }
+//
+//	s0 := &State{...}
+//	s1, _, err := s0.Mut1()
+//	if err != nil {
+//	  // ... := s0.Mut2()             // NOT OK, 2nd call on s0
+//	  return proto.Marshal(s0.PB)     // OK
+//	}
+//	//  ... := s0.Mut2()              // NOT OK, 2nd call on s0
+//	s2, _, err := s1.Mut2()           // OK, s1 may be s0 if Mut1() was noop
+//	if err != nil {
+//	  // return proto.Marshal(s0.PB)  // OK
+//	  return proto.Marshal(s0.PB)     // OK
+//	}
 type State struct {
 	// PB is the serializable part of State mutated using copy-on-write approach
 	// https://en.wikipedia.org/wiki/Copy-on-write

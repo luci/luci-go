@@ -105,9 +105,9 @@ func (k PathMapKey) String() string {
 // MustMakePathItem will return a PathItem from `item` or panic.
 //
 // `item` can be a:
-//   * int                          (PathListIdx)
-//   * protoreflect.FieldDescriptor (PathField)
-//   * protoreflect.MapKey          (PathMapKey)
+//   - int                          (PathListIdx)
+//   - protoreflect.FieldDescriptor (PathField)
+//   - protoreflect.MapKey          (PathMapKey)
 func MustMakePathItem(item interface{}) PathItem {
 	switch x := item.(type) {
 	case int:

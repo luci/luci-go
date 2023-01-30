@@ -45,16 +45,16 @@ type RefSet struct {
 // NewRefSet creates an instance of the RefSet.
 //
 // Each entry in the refs parameter can be either
-//   * a fully-qualified ref with at least 2 slashes, e.g. `refs/heads/master`,
+//   - a fully-qualified ref with at least 2 slashes, e.g. `refs/heads/master`,
 //     `refs/tags/v1.2.3`, or
-//   * a regular expression with "regexp:" prefix to match multiple refs, e.g.
+//   - a regular expression with "regexp:" prefix to match multiple refs, e.g.
 //     `regexp:refs/heads/.*` or `regexp:refs/branch-heads/\d+\.\d+`.
 //
 // The regular expression must have:
-//   * a literal prefix with at least 2 slashes, e.g. `refs/release-\d+/foo` is
+//   - a literal prefix with at least 2 slashes, e.g. `refs/release-\d+/foo` is
 //     not allowed, because the literal prefix `refs/release-` contains only one
 //     slash, and
-//   * must not start with ^ or end with $ as they will be added automatically.
+//   - must not start with ^ or end with $ as they will be added automatically.
 //
 // See also ValidateRefSet function.
 func NewRefSet(refs []string) RefSet {

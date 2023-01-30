@@ -86,11 +86,11 @@ var _ Loggable = (*Step)(nil)
 // You MUST call Step.End. To automatically map errors and panics to their
 // correct visual representation, End the Step like:
 //
-//    var err error
-//    step, ctx := build.StartStep(ctx, "Step name")
-//    defer func() { step.End(err) }()
+//	var err error
+//	step, ctx := build.StartStep(ctx, "Step name")
+//	defer func() { step.End(err) }()
 //
-//    err = opThatErrsOrPanics(ctx)
+//	err = opThatErrsOrPanics(ctx)
 //
 // NOTE: A panic will still crash the program as usual. This does NOT
 // `recover()` the panic. Please use conventional Go error handling and control
@@ -174,11 +174,11 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 //
 // End must be invoked like:
 //
-//    var err error
-//    step, ctx := build.StartStep(ctx, ...)  // or build.ScheduleStep
-//    defer func() { step.End(err) }()
+//	var err error
+//	step, ctx := build.StartStep(ctx, ...)  // or build.ScheduleStep
+//	defer func() { step.End(err) }()
 //
-//    err = opThatErrsOrPanics()
+//	err = opThatErrsOrPanics()
 //
 // NOTE: A panic will still crash the program as usual. This does NOT
 // `recover()` the panic. Please use conventional Go error handling and control
@@ -219,8 +219,8 @@ func (s *Step) End(err error) {
 // `name` is the user-provided name for the log.
 //
 // `openStream` is a callback which takes
-//   * `dedupedName` - the deduplicated version of `name`
-//   * `relLdName` - The logdog stream name, relative to this process'
+//   - `dedupedName` - the deduplicated version of `name`
+//   - `relLdName` - The logdog stream name, relative to this process'
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
 func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
 	relLdName := ""

@@ -247,7 +247,7 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 			MaxHashLen: 4,
 			SetupEnv:   environ.System(),
 			PackageMap: map[string]*vpython.Spec_Package{
-				"2.7": &vpython.Spec_Package{ // default python version
+				"2.7": { // default python version
 					Name:    "foo/bar/virtualenv",
 					Version: "unresolved",
 				},

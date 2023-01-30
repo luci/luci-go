@@ -20,19 +20,19 @@
 //
 // Usage:
 //
-//   func main() {
-//     modules := []module.Module{
-//       gaeemulation.NewModuleFromFlags(),
-//     }
-//     server.Main(nil, modules, func(srv *server.Server) error {
-//       srv.Routes.GET("/", ..., func(c *router.Context) {
-//         ent := Entity{ID: "..."}
-//         err := datastore.Get(c.Context, &ent)
-//         ...
-//       })
-//       return nil
-//     })
-//   }
+//	func main() {
+//	  modules := []module.Module{
+//	    gaeemulation.NewModuleFromFlags(),
+//	  }
+//	  server.Main(nil, modules, func(srv *server.Server) error {
+//	    srv.Routes.GET("/", ..., func(c *router.Context) {
+//	      ent := Entity{ID: "..."}
+//	      err := datastore.Get(c.Context, &ent)
+//	      ...
+//	    })
+//	    return nil
+//	  })
+//	}
 //
 // TODO(vadimsh): Currently provides datastore API only.
 package gaeemulation

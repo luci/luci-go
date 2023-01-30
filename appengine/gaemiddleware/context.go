@@ -131,7 +131,7 @@ func (e *Environment) InstallHandlers(r *router.Router) {
 //
 // In addition to Environment-specific handlers, InstallHandlersWithMiddleware
 // installs:
-//  * Warmup Handler (warmup)
+//   - Warmup Handler (warmup)
 func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base router.MiddlewareChain) {
 	warmup.InstallHandlersDeprecated(r, base)
 

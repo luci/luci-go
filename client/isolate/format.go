@@ -40,31 +40,31 @@ var osPathSeparator = string(os.PathSeparator)
 
 // LoadIsolateAsConfig parses one .isolate file and returns a Configs instance.
 //
-//  Arguments:
-//    isolateDir: only used to load relative includes so it doesn't depend on
-//                cwd.
-//    value: is the loaded dictionary that was defined in the gyp file.
+//	Arguments:
+//	  isolateDir: only used to load relative includes so it doesn't depend on
+//	              cwd.
+//	  value: is the loaded dictionary that was defined in the gyp file.
 //
-//  The expected format is strict, anything diverting from the format below will
-//  result in error:
-//  {
-//    'includes': [
-//      'foo.isolate',
-//    ],
-//    'conditions': [
-//      ['OS=="vms" and foo=42', {
-//        'variables': {
-//          'files': [
-//            ...
-//          ],
-//        },
-//      }],
-//      ...
-//    ],
-//    'variables': {
-//      ...
-//    },
-//  }
+//	The expected format is strict, anything diverting from the format below will
+//	result in error:
+//	{
+//	  'includes': [
+//	    'foo.isolate',
+//	  ],
+//	  'conditions': [
+//	    ['OS=="vms" and foo=42', {
+//	      'variables': {
+//	        'files': [
+//	          ...
+//	        ],
+//	      },
+//	    }],
+//	    ...
+//	  ],
+//	  'variables': {
+//	    ...
+//	  },
+//	}
 func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 	// isolateDir must be in native style.
 	if !filepath.IsAbs(isolateDir) {
@@ -112,7 +112,8 @@ func LoadIsolateAsConfig(isolateDir string, content []byte) (*Configs, error) {
 // the information unprocessed but filtered for the specific OS.
 //
 // Returns:
-//   dependencies, relDir, error.
+//
+//	dependencies, relDir, error.
 //
 // relDir and dependencies are fixed to use os.PathSeparator.
 func LoadIsolateForConfig(isolateDir string, content []byte, configVariables map[string]string) (

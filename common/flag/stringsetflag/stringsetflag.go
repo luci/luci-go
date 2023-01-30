@@ -29,9 +29,10 @@ import (
 // strings.
 //
 // For example, this allows you to construct a flag that would behave like:
-//   -myflag Foo
-//   -myflag Bar
-//   -myflag Bar
+//
+//	-myflag Foo
+//	-myflag Bar
+//	-myflag Bar
 //
 // And then myflag.Data.Has("Bar") would be true.
 type Flag struct{ Data stringset.Set }

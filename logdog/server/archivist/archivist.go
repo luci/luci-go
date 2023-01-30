@@ -350,7 +350,8 @@ func (a *Archivist) archiveTaskImpl(ctx context.Context, task *logdog.ArchiveTas
 //
 // `desc` is a binary-encoded LogStreamDescriptor
 // `terminalIndex` should be the terminal index of the archived stream. If it's
-//   <0 (an empty stream) we skip the expunge.
+//
+//	<0 (an empty stream) we skip the expunge.
 func (a *Archivist) expungeStorage(ctx context.Context, project string, desc []byte, terminalIndex int64) {
 	if terminalIndex < 0 {
 		// no log rows

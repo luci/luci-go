@@ -55,11 +55,11 @@ func (la legacyAuth) PubSub() *auth.Authenticator { return la.a }
 // RealmsAwareAuth returns an authentication scheme with realms-aware logic.
 //
 // The given context will be used to:
-//   1. Grab the current realm name from LUCI_CONTEXT.
-//   2. Construct a transport that uses the default account for auth (thus the
-//      context should have the default task account selected in it).
-//   3. Switch into "system" local account and construct a transport that uses
-//      this account for PubSub calls.
+//  1. Grab the current realm name from LUCI_CONTEXT.
+//  2. Construct a transport that uses the default account for auth (thus the
+//     context should have the default task account selected in it).
+//  3. Switch into "system" local account and construct a transport that uses
+//     this account for PubSub calls.
 //
 // If there's no realm in the context, degrades to LegacyAuth using the "system"
 // local account for all calls, as was the way before the realms mode.

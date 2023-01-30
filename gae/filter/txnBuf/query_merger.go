@@ -27,9 +27,9 @@ import (
 // queryToIter takes a FinalizedQuery and returns an iterator function which
 // will produce either *items or errors.
 //
-//  - d is the raw datastore to run this query on
-//  - filter is a function which will return true if the given key should be
-//    excluded from the result set.
+//   - d is the raw datastore to run this query on
+//   - filter is a function which will return true if the given key should be
+//     excluded from the result set.
 func queryToIter(stopChan chan struct{}, fq *ds.FinalizedQuery, d ds.RawInterface) func() (*item, error) {
 	c := make(chan *item)
 
@@ -255,12 +255,12 @@ func runMergedQueries(fq *ds.FinalizedQuery, sizes *sizeTracker,
 // toComparableString computes the byte-sortable 'order' string for the given
 // key/PropertyMap.
 //
-//   * start/end are byte sequences which are the inequality bounds of the
+//   - start/end are byte sequences which are the inequality bounds of the
 //     query, if any. These are a serialized datastore.Property. If the
 //     inequality column is inverted, then start and end are also inverted and
 //     swapped with each other.
-//   * order is the list of sort orders in the actual executing queries.
-//   * k / pm are the data to derive a sortable string for.
+//   - order is the list of sort orders in the actual executing queries.
+//   - k / pm are the data to derive a sortable string for.
 //
 // The result of this function is the series of serialized properties, one per
 // order column, which represent this key/pm's first entry in the composite

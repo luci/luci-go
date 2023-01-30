@@ -61,12 +61,12 @@ func AttachStatus(err error, status bbpb.Status, details *bbpb.StatusDetails) er
 // error.
 //
 // This returns:
-//   * (SUCCESS, nil) on nil error
-//   * Any values attached with AttachStatus.
-//   * (CANCELED, nil) on context.Canceled
-//   * (INFRA_FAILURE, &bbpb.StatusDetails{Timeout: {}}) on
+//   - (SUCCESS, nil) on nil error
+//   - Any values attached with AttachStatus.
+//   - (CANCELED, nil) on context.Canceled
+//   - (INFRA_FAILURE, &bbpb.StatusDetails{Timeout: {}}) on
 //     context.DeadlineExceeded
-//   * (FAILURE, nil) otherwise
+//   - (FAILURE, nil) otherwise
 //
 // This function is used internally by Step.End and State.End, but is provided
 // publically for completeness.

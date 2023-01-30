@@ -18,7 +18,7 @@
 // The interface also serves as an API abstraction boundary between the current
 // Coordinator service definition and the Collector's logic.
 //
-// Cache
+// # Cache
 //
 // Coordinator methods are called very heavily during Collector operation. In
 // production, the Coordinator instance should be wrapped in a Cache structure

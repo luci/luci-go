@@ -155,8 +155,8 @@ func (m *Matcher) ConfigHash() string {
 }
 
 // TODO(tandrii): add "main" branch too to ease migration once either:
-//   * CQDaemon is no longer involved,
-//   * CQDaemon does the same at the same time.
+//   - CQDaemon is no longer involved,
+//   - CQDaemon does the same at the same time.
 var defaultRefRegexpInclude = []string{"refs/heads/master"}
 var defaultRefRegexpExclude = []string{"^$" /* matches nothing */}
 

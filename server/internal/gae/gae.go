@@ -19,16 +19,16 @@
 // see e.g. https://github.com/golang/appengine/issues/265.
 //
 // Following sources were used as a base:
-//  * Repo: https://github.com/golang/appengine
-//  * Revision: 6d50fa847719498e759db6d80533dde0284307b3
+//   - Repo: https://github.com/golang/appengine
+//   - Revision: 6d50fa847719498e759db6d80533dde0284307b3
 //
 // Some proto files were copied, and their proto package and `go_package`
 // updated to reflect their new location to avoid clashing with real GAE SDK
 // protos in the registry and to conform to modern protoc-gen-go requirement
 // of using full Go package paths:
-//   * v2/internal/base/api_base.proto => base/
-//   * v2/internal/mail/mail_service.proto => mail/
-//   * v2/internal/remote_api/remote_api.proto => remote_api/
+//   - v2/internal/base/api_base.proto => base/
+//   - v2/internal/mail/mail_service.proto => mail/
+//   - v2/internal/remote_api/remote_api.proto => remote_api/
 //
 // The rest is written from scratch based on what the SDK is doing.
 package gae

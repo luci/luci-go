@@ -155,16 +155,16 @@ func updateBaseFromUserBuild(base, build *bbpb.Build) {
 // Only used for legacy CrOS builders, see crbug.com/1310155.
 //
 // Merges:
-//   * properties will be 'merged' by replacing top-level keys. If the
-//   parent build and this sub-build both write in the same top-level keys
-//   the sub-build value wins.
+//   - properties will be 'merged' by replacing top-level keys. If the
+//     parent build and this sub-build both write in the same top-level keys
+//     the sub-build value wins.
 //
 // The following fields COULD be merged, but aren't, because this
 // functionality is legacy, and we're not trying to make it do
 // anything more than is necessary:
-//   * gitiles_commit will NOT be merged
-//   * the sub-build's output.logs will NOT be merged.
-//   * the sub-build's summary_markdown will NOT be merged.
+//   - gitiles_commit will NOT be merged
+//   - the sub-build's output.logs will NOT be merged.
+//   - the sub-build's summary_markdown will NOT be merged.
 func updateBuildFromGlobalSubBuild(parent, subBuild *bbpb.Build) {
 	subOut := subBuild.GetOutput()
 	if subP := subOut.GetProperties(); subP != nil {

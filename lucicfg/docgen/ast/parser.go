@@ -264,9 +264,10 @@ func ParseModule(filename, body string) (*Module, error) {
 // caller.
 //
 // Only the following forms are recognized:
-//   Var: <var> = <literal>|<complex expr>
-//   Reference: <var> = <var>[.<field>]*
-//   Namespace: <var> = struct(...)
+//
+//	Var: <var> = <literal>|<complex expr>
+//	Reference: <var> = <var>[.<field>]*
+//	Namespace: <var> = struct(...)
 func parseAssignmentRHS(rhs syntax.Expr) Node {
 	// <var> = <literal>.
 	if literal := matchSingleLiteral(rhs); literal != nil {

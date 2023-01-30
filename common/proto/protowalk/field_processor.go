@@ -37,9 +37,9 @@ type FieldSelector func(field protoreflect.FieldDescriptor) ProcessAttr
 //
 // This should be called once per FieldProcessor, per process like:
 //
-//    func init() {
-//      protowalk.RegisterFieldProcessor(&MyFP{}, MyFPFieldSelector)
-//    }
+//	func init() {
+//	  protowalk.RegisterFieldProcessor(&MyFP{}, MyFPFieldSelector)
+//	}
 //
 // Calling RegisterFieldProcessor twice for the same FieldProcessor will panic.
 func RegisterFieldProcessor(fp FieldProcessor, selector FieldSelector) {

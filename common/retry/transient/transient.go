@@ -50,17 +50,18 @@ func (i *transientOnlyIterator) Next(ctx context.Context, err error) time.Durati
 // Returns nil if f is nil.
 //
 // Example:
-//   err := retry.Retry(c, transient.Only(retry.Default), func() error {
-//     if condition == "red" {
-//		   // This error isn't transient, so it won't be retried.
-//		   return errors.New("fatal bad condition")
-//     } elif condition == "green" {
-//		   // This isn't an error, so it won't be retried.
-//		   return nil
-//     }
-//     // This will get retried, because it's transient.
-//     return errors.New("dunno what's wrong", transient.Tag)
-//   })
+//
+//	  err := retry.Retry(c, transient.Only(retry.Default), func() error {
+//	    if condition == "red" {
+//			   // This error isn't transient, so it won't be retried.
+//			   return errors.New("fatal bad condition")
+//	    } elif condition == "green" {
+//			   // This isn't an error, so it won't be retried.
+//			   return nil
+//	    }
+//	    // This will get retried, because it's transient.
+//	    return errors.New("dunno what's wrong", transient.Tag)
+//	  })
 func Only(next retry.Factory) retry.Factory {
 	if next == nil {
 		return nil

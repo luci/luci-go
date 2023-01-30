@@ -23,9 +23,9 @@ import (
 // The nil Transaction represents no transaction context.
 //
 // TODO: Add some functionality here. Ideas include:
-//	- Active() bool: is the transaction currently active?
-//	- AffectedGroups() []*ds.Key: list the groups that have been referenced in
-//	  this Transaction so far.
+//   - Active() bool: is the transaction currently active?
+//   - AffectedGroups() []*ds.Key: list the groups that have been referenced in
+//     this Transaction so far.
 type Transaction interface{}
 
 // WithoutTransaction returns a Context that isn't bound to a transaction.

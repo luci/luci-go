@@ -80,14 +80,15 @@ func ShouldContainErr(actual interface{}, expected ...interface{}) string {
 // nil.
 //
 // Example:
-//   // Usage                          Equivalent To
-//   So(err, ShouldErrLike, "custom")    // `err.Error()` ShouldContainSubstring "custom"
-//   So(err, ShouldErrLike, io.EOF)      // `err.Error()` ShouldContainSubstring io.EOF.Error()
-//   So(err, ShouldErrLike, "EOF")       // `err.Error()` ShouldContainSubstring "EOF"
-//   So(err, ShouldErrLike,
-//      "thing", "other", "etc.")        // `err.Error()` contains all of these substrings.
-//   So(nilErr, ShouldErrLike, nil)      // nilErr ShouldBeNil
-//   So(nonNilErr, ShouldErrLike, "")    // nonNilErr ShouldNotBeNil
+//
+//	// Usage                          Equivalent To
+//	So(err, ShouldErrLike, "custom")    // `err.Error()` ShouldContainSubstring "custom"
+//	So(err, ShouldErrLike, io.EOF)      // `err.Error()` ShouldContainSubstring io.EOF.Error()
+//	So(err, ShouldErrLike, "EOF")       // `err.Error()` ShouldContainSubstring "EOF"
+//	So(err, ShouldErrLike,
+//	   "thing", "other", "etc.")        // `err.Error()` contains all of these substrings.
+//	So(nilErr, ShouldErrLike, nil)      // nilErr ShouldBeNil
+//	So(nonNilErr, ShouldErrLike, "")    // nonNilErr ShouldNotBeNil
 func ShouldErrLike(actual interface{}, expected ...interface{}) string {
 	if len(expected) == 0 {
 		return "ShouldErrLike requires 1 or more expected values, got 0"

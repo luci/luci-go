@@ -150,9 +150,11 @@ func (f *Fake) Projects(ctx context.Context, in *ProjectsRequest, opts ...grpc.C
 // refs keys are references, keys are revisions.
 // Example:
 // f.SetRepository(
-//   "foo",
-//   []string{"refs/heads/master", "rev1"},
-//   []*git.Commit{ {Id: "rev1", Parents: []string{"rev0"}}, {Id: "rev0"} }
+//
+//	"foo",
+//	[]string{"refs/heads/master", "rev1"},
+//	[]*git.Commit{ {Id: "rev1", Parents: []string{"rev0"}}, {Id: "rev0"} }
+//
 // )
 // Represents following repository:
 // name: foo

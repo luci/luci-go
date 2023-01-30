@@ -14,7 +14,7 @@
 
 // Package terminal is just a way to forward
 //
-//   "golang.org/x/crypto/ssh/terminal".IsTerminal(fd int)
+//	"golang.org/x/crypto/ssh/terminal".IsTerminal(fd int)
 //
 // In a way that will work on appengine (specifically; it doesn't break
 // appengine's compilation).

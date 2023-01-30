@@ -90,10 +90,11 @@ func HitRevocationEndpoint(ctx context.Context, doc *openid.DiscoveryDoc, params
 // hitEndpoint sends a request to an OpenID provider's token endpoint.
 //
 // Returns:
-//   (body, nil) on a HTTP 200 reply.
-//   (nil, *EndpointError) on recognized fatal errors.
-//   (nil, non-transient error) on unrecognized fatal errors.
-//   (nil, transient error) on transient errors.
+//
+//	(body, nil) on a HTTP 200 reply.
+//	(nil, *EndpointError) on recognized fatal errors.
+//	(nil, non-transient error) on unrecognized fatal errors.
+//	(nil, transient error) on transient errors.
 func hitEndpoint(ctx context.Context, endpoint string, params map[string]string) ([]byte, error) {
 	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
 	if err != nil {

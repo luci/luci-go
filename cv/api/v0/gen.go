@@ -15,10 +15,10 @@
 // Package cvpb contains v0 (preliminary) version of CV API.
 //
 // !!!!! WARNING !!!!!
-//   * Use at your own risk.
-//   * We will stop supporting this v0 API without notice.
-//   * No backwards compatibility guaranteed.
-//   * Please, contact CV maintainers at luci-eng@ before using this and
+//   - Use at your own risk.
+//   - We will stop supporting this v0 API without notice.
+//   - No backwards compatibility guaranteed.
+//   - Please, contact CV maintainers at luci-eng@ before using this and
 //     we may provide additional guarantees to you/your service.
 package cvpb
 

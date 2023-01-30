@@ -127,6 +127,7 @@ type statusAndTimeRange struct {
 //   - 10:20: CONSISTENTLY_EXPECTED -> FLAKY
 //   - 10:30: FLAKY -> CONSISTENTLY_EXPECTED
 //   - 10:50: CONSISTENTLY_EXPECTED -> FLAKY
+//
 // If b.options.Predicate.Status = FLAKY, the timeRanges will be
 // [10:00, 10:10), [10:20, 10:30) and [10:50, 11:00).
 // If b.options.Predicate.Status is not specified, the timeRanges will be

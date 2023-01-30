@@ -138,14 +138,14 @@ type cacheEntryKey struct {
 // registration (registerP), and one for stream termination (terminateP).
 //
 // There are three states to promise evaluation:
-//	- If the promise is nil, it will be populated. Any concurrent requests
-//	  will block pending population (via lock) and will obtain a reference to
-//	  the populated promise.
-//	- If the promise succeeded, or failed non-transiently, its result will be
-//	  retained and all subsequent calls will see this result.
-//	- If the promise failed transiently, it will be set to nil. This will cause
-//	  the next caller to generate a new promise (retry). Concurrent users of the
-//	  transiently-failing Promise will all receive a transient error.
+//   - If the promise is nil, it will be populated. Any concurrent requests
+//     will block pending population (via lock) and will obtain a reference to
+//     the populated promise.
+//   - If the promise succeeded, or failed non-transiently, its result will be
+//     retained and all subsequent calls will see this result.
+//   - If the promise failed transiently, it will be set to nil. This will cause
+//     the next caller to generate a new promise (retry). Concurrent users of the
+//     transiently-failing Promise will all receive a transient error.
 type cacheEntry struct {
 	sync.Mutex
 	cacheEntryKey

@@ -80,9 +80,10 @@ var bucketCache = layered.Cache{
 // the datastore.
 //
 // Returns:
-//   bucket, nil - on success.
-//   nil, nil - if the bucket is absent.
-//   nil, err - on internal errors.
+//
+//	bucket, nil - on success.
+//	nil, nil - if the bucket is absent.
+//	nil, err - on internal errors.
 func getBucket(ctx context.Context, project, bucket string) (*pb.Bucket, error) {
 	if project == "" {
 		return nil, errors.Reason("project name is empty").Err()
@@ -297,9 +298,10 @@ func getCachedPerm(ctx context.Context, bucketPermCache map[string]realms.Permis
 // RedactBuild redacts fields from the given build based on whether the user has
 // appropriate permissions to see those fields.
 // The relevant permissions are:
-//   bbperms.BuildsGet: can see all fields
-//   bbperms.BuildsGetLimited: can see a limited set of fields excluding detailed builder output
-//   bbperms.BuildsList: can see only basic fields required to list builds
+//
+//	bbperms.BuildsGet: can see all fields
+//	bbperms.BuildsGetLimited: can see a limited set of fields excluding detailed builder output
+//	bbperms.BuildsList: can see only basic fields required to list builds
 //
 // Returns an error if the user does not have at least bbperms.BuildsList.
 //

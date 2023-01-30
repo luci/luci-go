@@ -104,16 +104,16 @@ type callEnv struct {
 // As an input it takes a service account email and a name of a LUCI Realm the
 // caller is operating in. To authorize the call the token server checks the
 // following conditions:
-//   1. The caller has luci.serviceAccounts.mintToken permission in the
-//      realm, allowing them to "impersonate" all service accounts belonging
-//      to this realm.
-//   2. The service account has luci.serviceAccounts.existInRealm permission
-//      in the realm. This makes the account "belong" to the realm.
-//   3. Realm's LUCI project has the service account associated with it in
-//      the project_owned_accounts.cfg global config file. This makes sure
-//      different LUCI projects can't just arbitrary use each others accounts
-//      by adding them to their respective realms.cfg. See also comments for
-//      ServiceAccountsProjectMapping in api/admin/v1/config.proto.
+//  1. The caller has luci.serviceAccounts.mintToken permission in the
+//     realm, allowing them to "impersonate" all service accounts belonging
+//     to this realm.
+//  2. The service account has luci.serviceAccounts.existInRealm permission
+//     in the realm. This makes the account "belong" to the realm.
+//  3. Realm's LUCI project has the service account associated with it in
+//     the project_owned_accounts.cfg global config file. This makes sure
+//     different LUCI projects can't just arbitrary use each others accounts
+//     by adding them to their respective realms.cfg. See also comments for
+//     ServiceAccountsProjectMapping in api/admin/v1/config.proto.
 func (r *MintServiceAccountTokenRPC) MintServiceAccountToken(ctx context.Context, req *minter.MintServiceAccountTokenRequest) (*minter.MintServiceAccountTokenResponse, error) {
 	state := auth.GetState(ctx)
 	env := &callEnv{

@@ -24,16 +24,16 @@ import (
 // RegexpMatcher returns a function (with given name) that allows Starlark code
 // to do regular expression matches:
 //
-//  def submatches(pattern, str):
-//    """Returns a tuple of submatches with the leftmost match of the regular
-//    expression.
+//	def submatches(pattern, str):
+//	  """Returns a tuple of submatches with the leftmost match of the regular
+//	  expression.
 //
-//    The returned tuple has the full match as a first item, followed by
-//    subexpression matches.
+//	  The returned tuple has the full match as a first item, followed by
+//	  subexpression matches.
 //
-//    If the string doesn't match the expression returns an empty tuple. Fails if
-//    the regular expression can't be compiled.
-//    """
+//	  If the string doesn't match the expression returns an empty tuple. Fails if
+//	  the regular expression can't be compiled.
+//	  """
 //
 // Uses Go regexp engine, which is slightly different from Python's. API also
 // explicitly does NOT try to mimic Python's 're' module.

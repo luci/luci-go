@@ -89,7 +89,7 @@ func (h *commitHeap) Pop() interface{} {
 // commit position return by Gerrit. The Key describes the query that was used
 // to retrieve the log and follows the following format:
 //
-//   host|project|ref|exclude_ref|limit
+//	host|project|ref|exclude_ref|limit
 //
 // When the ref moves, entity is updated with the new CommitID and updated Log.
 // The Log field is an encoded list of commits, which is a created by encoding a

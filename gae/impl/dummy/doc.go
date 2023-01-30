@@ -16,15 +16,16 @@
 // Interfaces.
 //
 // In particular, this includes:
-//   * datastore.Interface
-//   * memcache.Interface
-//   * taskqueue.Interface
-//   * info.Interface
-//   * module.Interface
+//   - datastore.Interface
+//   - memcache.Interface
+//   - taskqueue.Interface
+//   - info.Interface
+//   - module.Interface
 //
 // These dummy implementations panic with an appropriate error message when
 // any of their methods are called. The message looks something like:
-//   dummy: method Interface.Method is not implemented
+//
+//	dummy: method Interface.Method is not implemented
 //
 // The dummy implementations are useful when implementing the interfaces
 // themselves, or when implementing filters, since it allows your stub

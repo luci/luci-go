@@ -16,31 +16,31 @@
 
 // Package buildbucket provides access to the Build Bucket Service.
 //
-// Creating a client
+// # Creating a client
 //
 // Usage example:
 //
-//   import "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-//   ...
-//   ctx := context.Background()
-//   buildbucketService, err := buildbucket.NewService(ctx)
+//	import "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+//	...
+//	ctx := context.Background()
+//	buildbucketService, err := buildbucket.NewService(ctx)
 //
 // In this example, Google Application Default Credentials are used for authentication.
 //
 // For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
 //
-// Other authentication options
+// # Other authentication options
 //
 // To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
 //
-//   buildbucketService, err := buildbucket.NewService(ctx, option.WithAPIKey("AIza..."))
+//	buildbucketService, err := buildbucket.NewService(ctx, option.WithAPIKey("AIza..."))
 //
 // To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
 //
-//   config := &oauth2.Config{...}
-//   // ...
-//   token, err := config.Exchange(ctx, ...)
-//   buildbucketService, err := buildbucket.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//	config := &oauth2.Config{...}
+//	// ...
+//	token, err := config.Exchange(ctx, ...)
+//	buildbucketService, err := buildbucket.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
 //
 // See https://godoc.org/google.golang.org/api/option/ for details on options.
 package buildbucket // import "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	googleapi "google.golang.org/api/googleapi"
 	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
+	googleapi "google.golang.org/api/googleapi"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
@@ -1865,9 +1865,10 @@ func (c *SearchCall) Canary(canary bool) *SearchCall {
 // CancelationReason sets the optional parameter "cancelation_reason":
 //
 // Possible values:
-//   "CANCELED_EXPLICITLY"
-//   "TIMEOUT"
-//   "UNSET"
+//
+//	"CANCELED_EXPLICITLY"
+//	"TIMEOUT"
+//	"UNSET"
 func (c *SearchCall) CancelationReason(cancelationReason string) *SearchCall {
 	c.urlParams_.Set("cancelation_reason", cancelationReason)
 	return c
@@ -1894,11 +1895,12 @@ func (c *SearchCall) CreationTsLow(creationTsLow int64) *SearchCall {
 // FailureReason sets the optional parameter "failure_reason":
 //
 // Possible values:
-//   "BUILDBUCKET_FAILURE"
-//   "BUILD_FAILURE"
-//   "INFRA_FAILURE"
-//   "INVALID_BUILD_DEFINITION"
-//   "UNSET"
+//
+//	"BUILDBUCKET_FAILURE"
+//	"BUILD_FAILURE"
+//	"INFRA_FAILURE"
+//	"INVALID_BUILD_DEFINITION"
+//	"UNSET"
 func (c *SearchCall) FailureReason(failureReason string) *SearchCall {
 	c.urlParams_.Set("failure_reason", failureReason)
 	return c
@@ -1920,10 +1922,11 @@ func (c *SearchCall) MaxBuilds(maxBuilds int64) *SearchCall {
 // Result sets the optional parameter "result":
 //
 // Possible values:
-//   "CANCELED"
-//   "FAILURE"
-//   "SUCCESS"
-//   "UNSET"
+//
+//	"CANCELED"
+//	"FAILURE"
+//	"SUCCESS"
+//	"UNSET"
 func (c *SearchCall) Result(result string) *SearchCall {
 	c.urlParams_.Set("result", result)
 	return c
@@ -1944,10 +1947,11 @@ func (c *SearchCall) StartCursor(startCursor string) *SearchCall {
 // Status sets the optional parameter "status":
 //
 // Possible values:
-//   "COMPLETED"
-//   "INCOMPLETE"
-//   "SCHEDULED"
-//   "STARTED"
+//
+//	"COMPLETED"
+//	"INCOMPLETE"
+//	"SCHEDULED"
+//	"STARTED"
 func (c *SearchCall) Status(status string) *SearchCall {
 	c.urlParams_.Set("status", status)
 	return c

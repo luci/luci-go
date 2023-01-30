@@ -196,10 +196,10 @@ func IsTransientCode(code codes.Code) bool {
 //
 // Intended to be used in defer section of gRPC handlers like so:
 //
-//   func (...) Method(...) (resp *pb.Response, err error) {
-//     defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
-//     ...
-//   }
+//	func (...) Method(...) (resp *pb.Response, err error) {
+//	  defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+//	  ...
+//	}
 func GRPCifyAndLogErr(ctx context.Context, err error) error {
 	if err == nil {
 		return nil

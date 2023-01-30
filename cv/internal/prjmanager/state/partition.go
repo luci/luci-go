@@ -25,12 +25,12 @@ import (
 // repartition updates components.
 //
 // On success, guarantees the following:
-//   * .Pcls contains all referenced by components CLs.
+//   - .Pcls contains all referenced by components CLs.
 //     However, some deps of those CLs may be missing.
-//   * .Pcls doesn't contain any CLs not in components.
-//   * .CreatedRuns is nil,
-//   * .RepartitionRequired is false.
-//   * pclIndex is up-to-date.
+//   - .Pcls doesn't contain any CLs not in components.
+//   - .CreatedRuns is nil,
+//   - .RepartitionRequired is false.
+//   - pclIndex is up-to-date.
 func (s *State) repartition(cat *categorizedCLs) {
 	s.ensurePCLIndex()
 	plan := s.planPartition(cat)

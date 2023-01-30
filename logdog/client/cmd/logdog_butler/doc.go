@@ -15,5 +15,6 @@
 // Package main is entry point for the command-line LogDog Butler application.
 //
 // Install via:
-//   go install go.chromium.org/luci/logdog/client/cmd/logdog_butler
+//
+//	go install go.chromium.org/luci/logdog/client/cmd/logdog_butler
 package main

@@ -39,9 +39,9 @@ type BatchItem struct {
 //
 // ErrorFn and SendFn may manipulate the contents of the Batch (Data and Meta)
 // to do things such as:
-//   * Associate a UID with the Batch (e.g. in the Meta field) to identify it to
+//   - Associate a UID with the Batch (e.g. in the Meta field) to identify it to
 //     remote services for deduplication.
-//   * Remove already-processed items from Data in case the SendFn partially
+//   - Remove already-processed items from Data in case the SendFn partially
 //     succeeded.
 //
 // The dispatcher accounts for the number of work items in the Batch as it

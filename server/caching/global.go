@@ -35,12 +35,12 @@ var ErrCacheMiss = errors.New("cache miss")
 // library when running on GAE Standard).
 //
 // BlobCache has the following properties:
-//   * All service processes share this cache (thus 'global').
-//   * The global cache is namespaced (see GlobalCache function below).
-//   * It is strongly consistent.
-//   * Items can be evicted at random times.
-//   * Key size is <250 bytes.
-//   * Item size is <1 Mb.
+//   - All service processes share this cache (thus 'global').
+//   - The global cache is namespaced (see GlobalCache function below).
+//   - It is strongly consistent.
+//   - Items can be evicted at random times.
+//   - Key size is <250 bytes.
+//   - Item size is <1 Mb.
 type BlobCache interface {
 	// Get returns a cached item or ErrCacheMiss if it's not in the cache.
 	Get(c context.Context, key string) ([]byte, error)

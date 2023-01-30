@@ -24,7 +24,8 @@ import (
 )
 
 // BuilderID is the universal ID of a builder, and has the form:
-//   buildbucket/bucket/builder
+//
+//	buildbucket/bucket/builder
 type BuilderID string
 
 // Split breaks the BuilderID into pieces.

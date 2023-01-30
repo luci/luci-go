@@ -698,8 +698,9 @@ var gitilesBuildsetRe = regexp.MustCompile(`^commit/gitiles/([^/]+)/(.+?)/\+/([a
 // parseGitilesBuildset parses Gitiles buildset tag into a proto.
 //
 // Example input:
-//   commit/gitiles/chromium.googlesource.com/chromium/src/+/
-//   4fa74ef7511f4167d15a5a6d464df06e41ffbd70
+//
+//	commit/gitiles/chromium.googlesource.com/chromium/src/+/
+//	4fa74ef7511f4167d15a5a6d464df06e41ffbd70
 //
 // Returns nil if `t` doesn't look like a gitiles buildset.
 func parseGitilesBuildset(t string) *bbpb.GitilesCommit {

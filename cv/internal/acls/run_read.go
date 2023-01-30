@@ -58,7 +58,8 @@ func checkRunRead(ctx context.Context, r *run.Run) (bool, error) {
 // package error is returned.
 //
 // Example:
-//   r, err := run.LoadRuns(ctx, id, acls.NewRunReadChecker())
+//
+//	r, err := run.LoadRuns(ctx, id, acls.NewRunReadChecker())
 func NewRunReadChecker() run.LoadRunChecker { return runReadChecker{} }
 
 // runNotFoundMsg is used as textual reason for gRPC NotFound code.

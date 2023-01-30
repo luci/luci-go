@@ -45,16 +45,16 @@ import (
 // will idempotently create a Cloud Task and delete the record in the database.
 //
 // DistributedSweeperOptions tune some of parameters of this process. Roughly:
-//   1. Sweep() call in Dispatcher creates SweepShards jobs that each scan
-//      a portion of the database for old reminders.
-//   2. Each such job is allowed to process no more than TasksPerScan reminder
-//      records. This caps its runtime and memory usage. TasksPerScan should be
-//      small enough so that all sweeping jobs finish before the next Sweep()
-//      call, but large enough so that it makes meaningful progress.
-//   3. If a sweeping job detects there's more than TasksPerScan items it needs
-//      to cover, it launches SecondaryScanShards follow-up jobs that cover the
-//      remaining items. This should be happening in rare circumstances, only if
-//      the database is slow or has a large backlog.
+//  1. Sweep() call in Dispatcher creates SweepShards jobs that each scan
+//     a portion of the database for old reminders.
+//  2. Each such job is allowed to process no more than TasksPerScan reminder
+//     records. This caps its runtime and memory usage. TasksPerScan should be
+//     small enough so that all sweeping jobs finish before the next Sweep()
+//     call, but large enough so that it makes meaningful progress.
+//  3. If a sweeping job detects there's more than TasksPerScan items it needs
+//     to cover, it launches SecondaryScanShards follow-up jobs that cover the
+//     remaining items. This should be happening in rare circumstances, only if
+//     the database is slow or has a large backlog.
 type DistributedSweeperOptions struct {
 	// SweepShards defines how many jobs to produce in each Sweep.
 	//

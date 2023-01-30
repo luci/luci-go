@@ -15,35 +15,36 @@
 // Package mask provides utility functions for google protobuf field mask
 //
 // Supports advanced field mask semantics:
-//  - Refer to fields and map keys using . literals:
-//    - Supported map key types: string, integer, bool. (double, float, enum,
+//   - Refer to fields and map keys using . literals:
+//   - Supported map key types: string, integer, bool. (double, float, enum,
 //     and bytes keys are not supported by protobuf or this implementation)
-//    - Fields: "publisher.name" means field "name" of field "publisher"
-//    - String map keys: "metadata.year" means string key 'year' of map field
+//   - Fields: "publisher.name" means field "name" of field "publisher"
+//   - String map keys: "metadata.year" means string key 'year' of map field
 //     metadata
-//    - Integer map keys (e.g. int32): 'year_ratings.0' means integer key 0 of
+//   - Integer map keys (e.g. int32): 'year_ratings.0' means integer key 0 of
 //     a map field year_ratings
-//    - Bool map keys: 'access_text.true' means boolean key true of a map field
+//   - Bool map keys: 'access_text.true' means boolean key true of a map field
 //     access_text
-//  - String map keys that cannot be represented as an unquoted string literal,
-//   must be quoted using backticks: metadata.`year.published`, metadata.`17`,
-//   metadata.``. Backtick can be escaped with ``: a.`b``c` means map key "b`c"
-//   of map field a.
-//  - Refer to all map keys using a * literal: "topics.*.archived" means field
-//   "archived" of all map values of map field "topic".
-//  - Refer to all elements of a repeated field using a * literal: authors.*.name
-//  - Refer to all fields of a message using * literal: publisher.*.
-//  - Prohibit addressing a single element in repeated fields: authors.0.name
+//   - String map keys that cannot be represented as an unquoted string literal,
+//     must be quoted using backticks: metadata.`year.published`, metadata.`17`,
+//     metadata.“. Backtick can be escaped with “: a.`b“c` means map key "b`c"
+//     of map field a.
+//   - Refer to all map keys using a * literal: "topics.*.archived" means field
+//     "archived" of all map values of map field "topic".
+//   - Refer to all elements of a repeated field using a * literal: authors.*.name
+//   - Refer to all fields of a message using * literal: publisher.*.
+//   - Prohibit addressing a single element in repeated fields: authors.0.name
 //
 // FieldMask.paths string grammar:
-//   path = segment {'.' segment}
-//   segment = literal | star | quoted_string;
-//   literal = string | integer | boolean
-//   string = (letter | '_') {letter | '_' | digit}
-//   integer = ['-'] digit {digit};
-//   boolean = 'true' | 'false';
-//   quoted_string = '`' { utf8-no-backtick | '``' } '`'
-//   star = '*'
+//
+//	path = segment {'.' segment}
+//	segment = literal | star | quoted_string;
+//	literal = string | integer | boolean
+//	string = (letter | '_') {letter | '_' | digit}
+//	integer = ['-'] digit {digit};
+//	boolean = 'true' | 'false';
+//	quoted_string = '`' { utf8-no-backtick | '``' } '`'
+//	star = '*'
 package mask
 
 import (
@@ -62,11 +63,12 @@ import (
 // Mask is a tree representation of a field Mask. Serves as a tree node too.
 // Each node represents a segment of a path, e.g. "bar" in "foo.bar.qux".
 // A Field Mask with paths ["a","b.c"] is parsed as
-//    <root>
-//    /    \
-//  "a"    "b"
-//         /
-//       "c"
+//
+//	  <root>
+//	  /    \
+//	"a"    "b"
+//	       /
+//	     "c"
 //
 // Zero value is not valid. Use IsEmpty() to check if the mask is zero.
 type Mask struct {

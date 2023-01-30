@@ -44,15 +44,15 @@ const (
 //
 // A metric line "a.b.c:1234|c" is represented by
 //
-//   m := StatsdMetric{
-//     Name: [][]byte{
-//       {'a'},
-//       {'b'},
-//       {'c'},
-//     },
-//     Type: StatsdMetricCounter,
-//     Value: []byte("1234"),
-//   }
+//	m := StatsdMetric{
+//	  Name: [][]byte{
+//	    {'a'},
+//	    {'b'},
+//	    {'c'},
+//	  },
+//	  Type: StatsdMetricCounter,
+//	  Value: []byte("1234"),
+//	}
 type StatsdMetric struct {
 	Name  [][]byte
 	Type  StatsdMetricType

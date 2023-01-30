@@ -48,14 +48,14 @@ func done(err error) int {
 //
 // Example:
 //
-//   func main() int {
-//   	return Main(context.Background(), func(ctx context.Context, out io.WriteCloser) int {
-//   		for i := 0; i < 100000 && ctx.Err() == nil; i++ {
-//   			fmt.Fprintln(out, i)
-//   		}
-//   		return 0
-//   	})
-//   }
+//	func main() int {
+//		return Main(context.Background(), func(ctx context.Context, out io.WriteCloser) int {
+//			for i := 0; i < 100000 && ctx.Err() == nil; i++ {
+//				fmt.Fprintln(out, i)
+//			}
+//			return 0
+//		})
+//	}
 func Main(ctx context.Context, fn func(ctx context.Context, out io.WriteCloser) int) int {
 	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
 		return fn(ctx, os.Stdout)

@@ -33,33 +33,34 @@
 // (via "standard.InstallHandlers").
 //
 // The minimal usage example (from GAE standard):
-//  import (
-//    ...
 //
-//    "go.chromium.org/luci/appengine/gaemiddleware/standard"
-//    "go.chromium.org/luci/common/logging"
-//    "go.chromium.org/luci/server/router"
-//  )
+//	import (
+//	  ...
 //
-//  func init() {
-//    r := router.New()
-//    standard.InstallHandlers(r)
+//	  "go.chromium.org/luci/appengine/gaemiddleware/standard"
+//	  "go.chromium.org/luci/common/logging"
+//	  "go.chromium.org/luci/server/router"
+//	)
 //
-//    r.GET("/", standard.Base(), indexPage)
+//	func init() {
+//	  r := router.New()
+//	  standard.InstallHandlers(r)
 //
-//    http.DefaultServeMux.Handle("/", r)
-//  }
+//	  r.GET("/", standard.Base(), indexPage)
 //
-//  func indexPage(c *router.Context) {
-//    logging.Infof(c.Context, "Handling the page")
-//    ...
-//  }
+//	  http.DefaultServeMux.Handle("/", r)
+//	}
+//
+//	func indexPage(c *router.Context) {
+//	  logging.Infof(c.Context, "Handling the page")
+//	  ...
+//	}
 //
 // It registers various routes required for LUCI framework functionality in the
 // router, and sets up an application route (indexPage) configured to use GAE
 // services.
 //
-// Handlers setup
+// # Handlers setup
 //
 // Some default registered routes are intended for use only by administrators or
 // internally by GAE itself (crons, task queues). While LUCI framework does
@@ -74,20 +75,21 @@
 // own cookie-based authentication mechanism (that doesn't work with OAuth2).
 //
 // Thus the recommended handlers list is:
-//  handlers:
-//  - url: /(internal|admin)/.*
-//    script: _go_app
-//    secure: always
-//    login: admin
 //
-//  - url: /.*
-//    script: _go_app
-//    secure: always
+//	handlers:
+//	- url: /(internal|admin)/.*
+//	  script: _go_app
+//	  secure: always
+//	  login: admin
+//
+//	- url: /.*
+//	  script: _go_app
+//	  secure: always
 //
 // See https://cloud.google.com/appengine/docs/standard/go/config/appref for
 // more info about app.yaml.
 //
-// Cron setup
+// # Cron setup
 //
 // Some of the default LUCI services installed in BaseProd require cron jobs
 // for their operation.

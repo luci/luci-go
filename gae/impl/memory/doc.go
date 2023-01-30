@@ -16,11 +16,13 @@
 // backs to local memory ONLY. This is useful for unittesting, and is also used
 // for the nested-transaction filter implementation.
 //
-// Debug EnvVars
+// # Debug EnvVars
 //
 // To debug backend store memory access for a binary that uses this memory
 // implementation, you may set the flag:
-//   -luci.gae.store_trace_folder
+//
+//	-luci.gae.store_trace_folder
+//
 // to `/path/to/some/folder`. Every memory store will be assigned a numbered
 // file in that folder, and all access to that store will be logged to that
 // file. Setting this to "-" will cause the trace information to dump to stdout.

@@ -15,8 +15,8 @@
 // Package cas contains implementation of cipd.Storage service RPC service.
 //
 // There are two instances of the implementation available:
-//   * The internal one, that doesn't do any ACL checks and that can be used
+//   - The internal one, that doesn't do any ACL checks and that can be used
 //     internally by the CIPD backend. Get it with Internal().
-//   * The publicly exposed one. It wraps the internal one, adding ACLs. Get it
+//   - The publicly exposed one. It wraps the internal one, adding ACLs. Get it
 //     with Public().
 package cas

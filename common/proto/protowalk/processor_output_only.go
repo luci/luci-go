@@ -24,7 +24,7 @@ import (
 // OutputOnlyProcessor implements the recommended behavior of
 // aip.dev/203#output-only, namely that fields marked like:
 //
-//   type name = <tag> [(google.api.field_behavior) = OUTPUT_ONLY];
+//	type name = <tag> [(google.api.field_behavior) = OUTPUT_ONLY];
 //
 // Should be cleared by the server (without raising an error) if
 // a user request includes a value for them.

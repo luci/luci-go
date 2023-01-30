@@ -25,9 +25,10 @@ import (
 // AssetsLoader returns Loader that loads templates from the given assets map.
 //
 // The directory with templates is expected to have special structure:
-//  * 'pages/' contain all top-level templates that will be loaded
-//  * 'includes/' contain templates that will be associated with every top-level template from 'pages/'.
-//  * 'widgets/' contain all standalone templates that will be loaded without templates from 'includes/'
+//   - 'pages/' contain all top-level templates that will be loaded
+//   - 'includes/' contain templates that will be associated with every top-level template from 'pages/'.
+//   - 'widgets/' contain all standalone templates that will be loaded without templates from 'includes/'
+//
 // Only templates from 'pages/' and 'widgets/' are included in the output map.
 func AssetsLoader(assets map[string]string) Loader {
 	return func(c context.Context, funcMap template.FuncMap) (map[string]*template.Template, error) {
@@ -76,9 +77,10 @@ func AssetsLoader(assets map[string]string) Loader {
 // FileSystemLoader returns Loader that loads templates from file system.
 //
 // The directory with templates is expected to have special structure:
-//  * 'pages/' contain all top-level templates that will be loaded
-//  * 'includes/' contain templates that will be associated with every top-level template from 'pages/'.
-//  * 'widgets/' contain all standalone templates that will be loaded without templates from 'includes/'
+//   - 'pages/' contain all top-level templates that will be loaded
+//   - 'includes/' contain templates that will be associated with every top-level template from 'pages/'.
+//   - 'widgets/' contain all standalone templates that will be loaded without templates from 'includes/'
+//
 // Only templates from 'pages/' and 'widgets/' are included in the output map.
 func FileSystemLoader(path string) Loader {
 	return func(c context.Context, funcMap template.FuncMap) (map[string]*template.Template, error) {

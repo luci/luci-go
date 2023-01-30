@@ -27,14 +27,14 @@ package realms
 //
 // One then can create a binding like:
 //
-//   role: "role/service.entities.creator"
-//   principals: ["user:restricted-creator@example.com"]
-//   conditions: {
-//     restrict {
-//       attribute: "service.entity.name"
-//       values: ["name1", "name2"]
-//     }
-//   }
+//	role: "role/service.entities.creator"
+//	principals: ["user:restricted-creator@example.com"]
+//	conditions: {
+//	  restrict {
+//	    attribute: "service.entity.name"
+//	    values: ["name1", "name2"]
+//	  }
+//	}
 //
 // That binding encodes that "user:restricted-creator@example.com" can create
 // entities *only* if they are named "name1" or "name2".

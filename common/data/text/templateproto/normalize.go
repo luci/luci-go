@@ -301,8 +301,8 @@ func (s *Schema) Zero() *Value {
 }
 
 // NormalizeJSON is used to take some free-form JSON and validates that:
-//   * it only contains a valid JSON object (e.g. `{...stuff...}`); OR
-//   * it only contains a valid JSON array (e.g. `[...stuff...]`)
+//   - it only contains a valid JSON object (e.g. `{...stuff...}`); OR
+//   - it only contains a valid JSON array (e.g. `[...stuff...]`)
 //
 // If obj is true, this looks for an object, if it's false, it looks for an
 // array.

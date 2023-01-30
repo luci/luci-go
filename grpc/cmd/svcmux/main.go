@@ -18,7 +18,8 @@
 // of the requested version.
 //
 // Example of usage:
-// 	//go:generate svcmux -type GreetServer
+//
+//	//go:generate svcmux -type GreetServer
 package main
 
 import (

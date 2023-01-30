@@ -76,17 +76,17 @@ type RPCError struct {
 // MintMachineToken signs the request using the signer and sends it.
 //
 // It will update in-place the following fields of the request:
-//   * Certificate will be set to ASN1 cert corresponding to the signer key.
-//   * SignatureAlgorithm will be set to the algorithm used to sign the request.
-//   * IssuedAt will be set to the current time.
+//   - Certificate will be set to ASN1 cert corresponding to the signer key.
+//   - SignatureAlgorithm will be set to the algorithm used to sign the request.
+//   - IssuedAt will be set to the current time.
 //
 // The rest of the fields must be already populated by the caller and will be
 // sent to the server as is.
 //
 // Returns:
-//   * TokenResponse on success.
-//   * Non-transient error on fatal errors.
-//   * Transient error on transient errors.
+//   - TokenResponse on success.
+//   - Non-transient error on fatal errors.
+//   - Transient error on transient errors.
 //
 // You can sniff error for RPCError type to grab more error details.
 func (c *Client) MintMachineToken(ctx context.Context, req *minter.MachineTokenRequest, opts ...grpc.CallOption) (*minter.MachineTokenResponse, error) {

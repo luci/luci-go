@@ -60,10 +60,10 @@ var ArchivalStateKey = "_ArchivalState"
 //
 // This structure has additional datastore fields imposed by the
 // PropertyLoadSaver.
-//	  - _Terminated is true if the LogStream has been terminated.
-//	  - _ArchivePending is true if the LogStream currently has an archive task
-//	    dispatched.
-//	  - _ArchivalState is true if the LogStream has been archived.
+//   - _Terminated is true if the LogStream has been terminated.
+//   - _ArchivePending is true if the LogStream currently has an archive task
+//     dispatched.
+//   - _ArchivalState is true if the LogStream has been archived.
 //
 // See services API's LogStreamState message type.
 type LogStreamState struct {

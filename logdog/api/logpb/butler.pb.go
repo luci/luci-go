@@ -25,7 +25,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-//
 // This enumerates the possible contents of published Butler data.
 type ButlerMetadata_ContentType int32
 
@@ -122,7 +121,6 @@ func (ButlerMetadata_Compression) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_logdog_api_logpb_butler_proto_rawDescGZIP(), []int{0, 1}
 }
 
-//
 // ButlerMetadata appears as a frame at the beginning of Butler published data
 // to describe the remainder of the contents.
 type ButlerMetadata struct {
@@ -190,7 +188,6 @@ func (x *ButlerMetadata) GetProtoVersion() string {
 	return ""
 }
 
-//
 // A message containing log data in transit from the Butler.
 //
 // The Butler is capable of conserving bandwidth by bundling collected log
@@ -315,7 +312,6 @@ func (x *ButlerLogBundle) GetSecret() []byte {
 	return nil
 }
 
-//
 // A bundle Entry describes a set of LogEntry messages originating from the
 // same log stream.
 type ButlerLogBundle_Entry struct {

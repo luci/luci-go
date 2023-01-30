@@ -122,10 +122,11 @@ func (bs *BootstrapPackageExtractor) Run(ctx context.Context, inst *model.Instan
 // GetBootstrapExtractorResult returns results of BootstrapPackageExtractor.
 //
 // Returns:
-//   (result, nil) on success.
-//   (nil, datastore.ErrNoSuchEntity) if results are not available.
-//   (nil, transient-tagged error) on retrieval errors.
-//   (nil, non-transient-tagged error) if the extractor failed.
+//
+//	(result, nil) on success.
+//	(nil, datastore.ErrNoSuchEntity) if results are not available.
+//	(nil, transient-tagged error) on retrieval errors.
+//	(nil, non-transient-tagged error) if the extractor failed.
 func GetBootstrapExtractorResult(ctx context.Context, inst *model.Instance) (*BootstrapExtractorResult, error) {
 	r := &model.ProcessingResult{
 		ProcID:   BootstrapPackageExtractorProcID,

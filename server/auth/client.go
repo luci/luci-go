@@ -219,15 +219,15 @@ func WithIDToken() RPCOption {
 //
 // Usage example:
 //
-//    tr, err := auth.GetRPCTransport(ctx,
-//      auth.AsSelf,
-//      auth.WithIDTokenAudience("https://${host}"),
-//    )
-//    if err != nil {
-//      return err
-//    }
-//    client := &http.Client{Transport: tr}
-//    ...
+//	tr, err := auth.GetRPCTransport(ctx,
+//	  auth.AsSelf,
+//	  auth.WithIDTokenAudience("https://${host}"),
+//	)
+//	if err != nil {
+//	  return err
+//	}
+//	client := &http.Client{Transport: tr}
+//	...
 //
 // Not compatible with WithScopes.
 func WithIDTokenAudience(aud string) RPCOption {
@@ -318,12 +318,13 @@ func WithMonitoringClient(client string) RPCOption {
 // requests.
 //
 // Usage:
-//    tr, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes("..."))
-//    if err != nil {
-//      return err
-//    }
-//    client := &http.Client{Transport: tr}
-//    ...
+//
+//	tr, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes("..."))
+//	if err != nil {
+//	  return err
+//	}
+//	client := &http.Client{Transport: tr}
+//	...
 func GetRPCTransport(ctx context.Context, kind RPCAuthorityKind, opts ...RPCOption) (http.RoundTripper, error) {
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {

@@ -56,10 +56,10 @@ type Subprocess struct {
 // immediately with a *Subprocess.
 //
 // Args:
-//  * ctx will be used for deadlines/cancellation of the started luciexe.
-//  * luciexeArgs[0] must be the full absolute path to the luciexe binary.
-//  * input must be the Build message you wish to pass to the luciexe binary.
-//  * opts is optional (may be nil to take all defaults)
+//   - ctx will be used for deadlines/cancellation of the started luciexe.
+//   - luciexeArgs[0] must be the full absolute path to the luciexe binary.
+//   - input must be the Build message you wish to pass to the luciexe binary.
+//   - opts is optional (may be nil to take all defaults)
 //
 // Callers MUST call Wait and/or cancel the context or this will leak handles
 // for the process' stdout/stderr.

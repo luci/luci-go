@@ -15,9 +15,9 @@
 // Package xsrf provides Cross Site Request Forgery prevention middleware.
 //
 // Usage:
-//   1. When serving GET request put hidden "xsrf_token" input field with
-//      the token value into the form. Use TokenField(...) to generate it.
-//   2. Wrap POST-handling route with WithTokenCheck(...) middleware.
+//  1. When serving GET request put hidden "xsrf_token" input field with
+//     the token value into the form. Use TokenField(...) to generate it.
+//  2. Wrap POST-handling route with WithTokenCheck(...) middleware.
 package xsrf
 
 import (

@@ -97,12 +97,12 @@ var softDeadlineKey = "holds <-chan DeadlineEvent"
 // with a non-canceled Context.
 //
 // The soft deadline expires based on the earlier of:
-//   * LUCI_CONTEXT['deadline']['soft_deadline']
-//   * ctx.Deadline() - LUCI_CONTEXT['deadline']['grace_period']
+//   - LUCI_CONTEXT['deadline']['soft_deadline']
+//   - ctx.Deadline() - LUCI_CONTEXT['deadline']['grace_period']
 //
 // If LUCI_CONTEXT['deadline'] is missing, it is assumed to be:
 //
-//   {soft_deadline: infinity, grace_period: 30}
+//	{soft_deadline: infinity, grace_period: 30}
 //
 // This function additionally allows you to reserve a portion of the
 // grace_period with `reserveGracePeriod`. This will have the effect of
@@ -114,39 +114,39 @@ var softDeadlineKey = "holds <-chan DeadlineEvent"
 // to invoking this function.
 //
 // Panics if:
-//   * reserveGracePeriod < 0.
-//   * LUCI_CONTEXT['deadline']['grace_period'] (or its default 30s value)
+//   - reserveGracePeriod < 0.
+//   - LUCI_CONTEXT['deadline']['grace_period'] (or its default 30s value)
 //     is insufficient to cover reserveGracePeriod.
 //
 // Example:
 //
-//    func MainFunc(ctx context.Context) {
-//      // ctx.Deadline  = <unset>
-//      // soft_deadline = t0 + 5:00
-//      // grace_period  = 40
+//	func MainFunc(ctx context.Context) {
+//	  // ctx.Deadline  = <unset>
+//	  // soft_deadline = t0 + 5:00
+//	  // grace_period  = 40
 //
-//      newCtx, shutdown := lucictx.TrackSoftDeadline(ctx, 500*time.Millisecond)
-//      defer shutdown()
-//      ScopedFunction(newCtx)
-//    }
+//	  newCtx, shutdown := lucictx.TrackSoftDeadline(ctx, 500*time.Millisecond)
+//	  defer shutdown()
+//	  ScopedFunction(newCtx)
+//	}
 //
-//    func ScopedFunction(newCtx context.Context) {
-//      // hard deadline is (soft_deadline + grace_period - reserveGracePeriod)
-//      // newCtx.Deadline  = unix(t0+5:39.5)
-//      //
-//      // soft_deadline is unchanged
-//      // soft_deadline = t0 + 5:00
-//      //
-//      // grace_period is reduced by reserveGracePeriod
-//      // grace_period = 39.5
+//	func ScopedFunction(newCtx context.Context) {
+//	  // hard deadline is (soft_deadline + grace_period - reserveGracePeriod)
+//	  // newCtx.Deadline  = unix(t0+5:39.5)
+//	  //
+//	  // soft_deadline is unchanged
+//	  // soft_deadline = t0 + 5:00
+//	  //
+//	  // grace_period is reduced by reserveGracePeriod
+//	  // grace_period = 39.5
 //
-//      go func() {
-//        // unblocked at SIGTERM, soft_deadline or shutdown(), whichever is first.
-//        <-lucictx.SoftDeadlineDone()
-//        // have 39.5s to do something (say, send SIGTERM to a child, or start
-//        // tearing down work in-process) before newCtx.Done().
-//      }()
-//    }
+//	  go func() {
+//	    // unblocked at SIGTERM, soft_deadline or shutdown(), whichever is first.
+//	    <-lucictx.SoftDeadlineDone()
+//	    // have 39.5s to do something (say, send SIGTERM to a child, or start
+//	    // tearing down work in-process) before newCtx.Done().
+//	  }()
+//	}
 //
 // NOTE: In the event that `ctx` is canceled from outside, `newCtx` will also
 // immediately cancel, and SoftDeadlineDone will also move to the ClosureEvent
@@ -320,7 +320,8 @@ func GetDeadline(ctx context.Context) *Deadline {
 // SetDeadline sets the raw Deadline information in the context.
 //
 // If d is nil, sets a default deadline of:
-//   {grace_period: DefaultGracePeriod}
+//
+//	{grace_period: DefaultGracePeriod}
 //
 // If d.deadline == 0, adjusts it to ctx.Deadline() - d.grace_period.
 //

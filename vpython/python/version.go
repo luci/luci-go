@@ -110,10 +110,10 @@ func (v *Version) PythonBase() string {
 // IsSatisfiedBy returns true if "other" is a suitable match for this version. A
 // suitable match:
 //
-//	- MUST have a Major version.
-//	- If v is zero, other is automatically suitable.
-//	- If v is non-zero, other must have the same Major version as v, and a
-//	  minor/patch version that is >= v's.
+//   - MUST have a Major version.
+//   - If v is zero, other is automatically suitable.
+//   - If v is non-zero, other must have the same Major version as v, and a
+//     minor/patch version that is >= v's.
 func (v *Version) IsSatisfiedBy(other Version) bool {
 	switch {
 	case other.Major <= 0:

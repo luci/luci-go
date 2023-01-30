@@ -21,8 +21,8 @@ import (
 // PackageMatches returns true if the package's match constraints are compatible
 // with tags. A package matches if:
 //
-//	- None of the tags matches any of the "not_match_tag" entries, and
-//	- Every "match_tag" entry matches at least one tag.
+//   - None of the tags matches any of the "not_match_tag" entries, and
+//   - Every "match_tag" entry matches at least one tag.
 //
 // As a special case, if the package doesn't specify any match tags, it will
 // always match regardless of the supplied PEP425 tags. This handles the default

@@ -62,9 +62,9 @@ func init() {
 //
 // The processes of constructing and deconstructing PrefixMetadata are not
 // perfectly reversible:
-//   * Order of ACL entries in PrefixMetadata is not preserved.
-//   * Order of principals in ACLs is also not preserved.
-//   * Empty ACLs are removed from PrefixMetadata.
+//   - Order of ACL entries in PrefixMetadata is not preserved.
+//   - Order of principals in ACLs is also not preserved.
+//   - Empty ACLs are removed from PrefixMetadata.
 //
 // These differences shouldn't have semantic importance for users through.
 type legacyStorageImpl struct {

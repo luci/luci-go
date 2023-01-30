@@ -152,11 +152,11 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 //
 // Returns an error under the following conditions:
 //
-//  - ErrBufferFull - If FullBehavior.ComputeState returns okToInsert=false.
-//  - ErrItemTooLarge - If this buffer has a BatchSizeMax configured and
-//    `itemSize` is larger than this.
-//  - ErrItemTooSmall - If this buffer has a BatchSizeMax configured and
-//    `itemSize` is zero, or if `itemSize` is negative.
+//   - ErrBufferFull - If FullBehavior.ComputeState returns okToInsert=false.
+//   - ErrItemTooLarge - If this buffer has a BatchSizeMax configured and
+//     `itemSize` is larger than this.
+//   - ErrItemTooSmall - If this buffer has a BatchSizeMax configured and
+//     `itemSize` is zero, or if `itemSize` is negative.
 func (buf *Buffer) AddNoBlock(now time.Time, item interface{}, itemSize int) (dropped *Batch, err error) {
 	if err = buf.opts.checkItemSize(itemSize); err != nil {
 		return
@@ -347,8 +347,8 @@ func (buf *Buffer) removeLease(leased *Batch) (live bool) {
 // smaller than when the Batch was originally leased.
 //
 // The Batch will be re-enqueued unless:
-//   * The Batch's retry Iterator returns retry.Stop
-//   * The Batch has been dropped already due to FullBehavior policy. If this
+//   - The Batch's retry Iterator returns retry.Stop
+//   - The Batch has been dropped already due to FullBehavior policy. If this
 //     is the case, AddNoBlock would already have returned this *Batch pointer
 //     to you.
 //

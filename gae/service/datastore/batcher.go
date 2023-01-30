@@ -120,13 +120,13 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 // Batching processes the supplied query in batches, buffering the full batch
 // set locally before sending its results to the user. It will then proceed to
 // the next batch until finished or cancelled. This is useful:
-//	- For efficiency, decoupling the processing of query data from the
-//	  underlying datastore operation.
-//	- For very long-running queries, where the duration of the query would
-//	  normally exceed datastore's maximum query timeout.
-//	- The caller may count return callbacks and perform processing at each
-//	  `batchSize` interval with confidence that the underlying query will not
-//	  timeout during that processing.
+//   - For efficiency, decoupling the processing of query data from the
+//     underlying datastore operation.
+//   - For very long-running queries, where the duration of the query would
+//     normally exceed datastore's maximum query timeout.
+//   - The caller may count return callbacks and perform processing at each
+//     `batchSize` interval with confidence that the underlying query will not
+//     timeout during that processing.
 //
 // If the Context supplied to RunBatch is cancelled or reaches its deadline,
 // RunBatch will terminate with the Context's error.

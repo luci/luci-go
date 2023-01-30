@@ -32,9 +32,9 @@ import (
 // Expander is a mapping of simple string substitutions which is used to
 // expand cipd package name templates. For example:
 //
-//   ex, err := template.Expander{
-//     "platform": "mac-amd64"
-//   }.Expand("foo/${platform}")
+//	ex, err := template.Expander{
+//	  "platform": "mac-amd64"
+//	}.Expand("foo/${platform}")
 //
 // `ex` would be "foo/mac-amd64".
 //

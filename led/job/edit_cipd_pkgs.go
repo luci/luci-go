@@ -24,7 +24,7 @@ import (
 // CIPDPkgs is a mapping of the CIPD packages within a Definition in the form
 // of:
 //
-//    "subdir:name/of/package" -> "version"
+//	"subdir:name/of/package" -> "version"
 type CIPDPkgs map[string]string
 
 func (c CIPDPkgs) fromList(pkgs []*swarmingpb.CIPDPackage) {

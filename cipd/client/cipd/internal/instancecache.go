@@ -526,9 +526,9 @@ func (h *garbageHeap) Pop() interface{} {
 // gc cleans up the old instances.
 //
 // There are two cleanup polices acting at the same time:
-//   1. Instances that haven't been touched for too long are removed.
-//   2. If the number of instances in the state is greater than maximum, oldest
-//      instances are removed.
+//  1. Instances that haven't been touched for too long are removed.
+//  2. If the number of instances in the state is greater than maximum, oldest
+//     instances are removed.
 func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, now time.Time) {
 	maxAge := c.maxAge
 	if maxAge == 0 {

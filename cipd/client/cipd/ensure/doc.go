@@ -20,21 +20,20 @@
 // command. The state is essentially a list of packages, their versions and
 // their installation subdirectories ("subdirs").
 //
-// Format Description
+// # Format Description
 //
 // The file is line-oriented. All statements fit on a single line.
 //
 // A line can be blank, a comment, a setting, a package, or a directive.
 //
-//
-// Comments
+// # Comments
 //
 // A comment begins with a # and goes to the end of the line. It is ignored.
 // Example:
-//   # This is a comment. It has no effect.
 //
+//	# This is a comment. It has no effect.
 //
-// Settings
+// # Settings
 //
 // A setting looks like `$name value`. Settings are global and can only be set
 // once per file. The following settings are allowed:
@@ -69,8 +68,7 @@
 //     future this will become automatically set. See crbug.com/1329641 for
 //     additional discussion.
 //
-//
-// Package Definitions
+// # Package Definitions
 //
 // A package line looks like `<package_template> <version>`. Package templates
 // are CIPD package names, with optional expansion parameters `${os}`,
@@ -80,15 +78,15 @@
 //
 // ${os} will expand to one of the following, based on the value of this
 // client's runtime.GOOS value:
-//   * windows
-//   * mac
-//   * linux
+//   - windows
+//   - mac
+//   - linux
 //
 // ${arch} will expand to one of the following, based on the value of this
 // client's runtime.GOARCH value:
-//   * 386
-//   * amd64
-//   * armv6l
+//   - 386
+//   - amd64
+//   - armv6l
 //
 // Since these two often appear together, the convenience placeholder
 // `${platform}` expands to the equivalent of `${os}-${arch}`.
@@ -97,58 +95,57 @@
 // What this means is that the package line will be expanded if, and only if,
 // var equals one of the possible values. If that var does not match
 // a possible value, the line is ignored. This allows you to do, e.g.:
-//   path/to/package/${os=windows}  windows_release
-//   path/to/package/${os=linux}    linux_release
-//   # no version for mac
 //
-//   path/to/posix/tool/${os=mac,linux}  some_tag:value
-//   # no version for windows
+//	path/to/package/${os=windows}  windows_release
+//	path/to/package/${os=linux}    linux_release
+//	# no version for mac
 //
+//	path/to/posix/tool/${os=mac,linux}  some_tag:value
+//	# no version for windows
 //
-// Directives
+// # Directives
 //
 // A directive looks like `@name value`. Directives are 'sticky' and apply until
 // the next same-name directive. The following directive names are allowed:
 //   - `@Subdir` allows you to change the subdirectory that subsequent packages
 //     are installed to.
-//     * The subdir value is always relative to the root of the CIPD
-//       installation (the directory containing the .cipd folder).
-//     * The value of Subdir before any @Subdir directives is "", or the root
-//       of the CIPD installation.
-//     * You can reset the directory back to root by doing `@Subdir` by itself,
-//       without a value.
-//     * @Subdir directives also support expansion parameters `${os}`, `${arch}`
-//       and `${platform}`. Using a subdir expansion like `${param=val}` will
-//       cause that subdirectory, and any packages in it, to only exist if the
-//       param matches one of the values.
+//   - The subdir value is always relative to the root of the CIPD
+//     installation (the directory containing the .cipd folder).
+//   - The value of Subdir before any @Subdir directives is "", or the root
+//     of the CIPD installation.
+//   - You can reset the directory back to root by doing `@Subdir` by itself,
+//     without a value.
+//   - @Subdir directives also support expansion parameters `${os}`, `${arch}`
+//     and `${platform}`. Using a subdir expansion like `${param=val}` will
+//     cause that subdirectory, and any packages in it, to only exist if the
+//     param matches one of the values.
 //
-//
-// Example
+// # Example
 //
 // Here is an example ensure file which demonstrates all the various features.
 //
-//   # This is an ensure file!
-//   $ServiceURL https://chrome-infra-packages.appspot.com/
-//   $ParanoidMode CheckPresence
-//   $ResolvedVersions cipd_lock.versions
+//	# This is an ensure file!
+//	$ServiceURL https://chrome-infra-packages.appspot.com/
+//	$ParanoidMode CheckPresence
+//	$ResolvedVersions cipd_lock.versions
 //
-//   # This is the CIPD client itself
-//   infra/tools/cipd/${os}-${arch}  latest
+//	# This is the CIPD client itself
+//	infra/tools/cipd/${os}-${arch}  latest
 //
-//   @Subdir python
-//   python/wheels/pip                     version:8.1.2
-//   # use the convenience placeholder
-//   python/wheels/coverage/${platform}    version:4.1
+//	@Subdir python
+//	python/wheels/pip                     version:8.1.2
+//	# use the convenience placeholder
+//	python/wheels/coverage/${platform}    version:4.1
 //
-//   @Subdir infra/support
-//   infra/some/other/package deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+//	@Subdir infra/support
+//	infra/some/other/package deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
 //
-//   # only exists on windows machines
-//   @Subdir support/${os=windows}-${arch}
-//   some/support/package  latest
-//   some/other/support/package  latest
+//	# only exists on windows machines
+//	@Subdir support/${os=windows}-${arch}
+//	some/support/package  latest
+//	some/other/support/package  latest
 //
-//   # Always exists, but the directory changes based on the os
-//   @Subdir platform/${os}
-//   a/platform/package latest
+//	# Always exists, but the directory changes based on the os
+//	@Subdir platform/${os}
+//	a/platform/package latest
 package ensure

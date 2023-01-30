@@ -45,11 +45,11 @@ import (
 // string literals instead of one giant string with "\n" inside. A string field
 // can be annotated as containing JSON via field options:
 //
-//    import "go.chromium.org/luci/common/proto/options.proto";
+//	import "go.chromium.org/luci/common/proto/options.proto";
 //
-//    message MyMessage {
-//      string my_field = 1 [(luci.text_pb_format) = JSON];
-//    }
+//	message MyMessage {
+//	  string my_field = 1 [(luci.text_pb_format) = JSON];
+//	}
 func Format(blob []byte, desc protoreflect.MessageDescriptor) ([]byte, error) {
 	nodes, err := parser.ParseWithConfig(blob, parser.Config{
 		SkipAllColons: true,

@@ -43,8 +43,9 @@ func (e *ErrMissingIndex) Error() string {
 
 // reducedQuery contains only the pieces of the query necessary to iterate for
 // results.
-//   deduplication is applied externally
-//   projection / keysonly / entity retrieval is done externally
+//
+//	deduplication is applied externally
+//	projection / keysonly / entity retrieval is done externally
 type reducedQuery struct {
 	kc   ds.KeyContext
 	kind string

@@ -416,9 +416,9 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 // error.
 //
 // Returns, in order:
-//   * A Project entity to store in Datastore
-//   * The parsed Milo config (may be nil if there was no milo.cfg)
-//   * Metadata for the Milo config (may be nil if there was no milo.cfg)
+//   - A Project entity to store in Datastore
+//   - The parsed Milo config (may be nil if there was no milo.cfg)
+//   - Metadata for the Milo config (may be nil if there was no milo.cfg)
 func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *config.Project, *configInterface.Meta, error) {
 	logging.Infof(c, "fetching configs from %q", cfg.ConfigSet)
 

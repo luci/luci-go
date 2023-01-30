@@ -40,11 +40,11 @@ type ExpiringValue struct {
 // associated with a swarming dimension.
 //
 // The fields are processed in order:
-//   * if SetValues is non-nil, the dimension values are set to this set
+//   - if SetValues is non-nil, the dimension values are set to this set
 //     (including empty).
-//   * if RemoveValues is non-empty, these values will be removed from the
+//   - if RemoveValues is non-empty, these values will be removed from the
 //     dimension values.
-//   * if AddValues is non-empty, these values will ber added to the dimension
+//   - if AddValues is non-empty, these values will ber added to the dimension
 //     values.
 //
 // If the set of values at the end of this process is empty, the dimension will
@@ -116,24 +116,24 @@ func parseDimensionEditCmd(cmd string) (dim, op, val string, exp time.Duration, 
 
 // MakeDimensionEditCommands takes a slice of commands in the form of:
 //
-//   dimension=
-//   dimension=value
-//   dimension=value@1234
+//	dimension=
+//	dimension=value
+//	dimension=value@1234
 //
-//   dimension-=value
+//	dimension-=value
 //
-//   dimension+=value
-//   dimension+=value@1234
+//	dimension+=value
+//	dimension+=value@1234
 //
 // Logically:
-//   * dimension_name - The name of the dimension to modify
-//   * operator
-//     * "=" - Add value to SetValues. If empty, ensures that SetValues is
-//       non-nil (i.e. clear all values for this dimension).
-//     * "-=" - Add value to RemoveValues.
-//     * "+=" - Add value to AddValues.
-//   * value - The dimension value for the operand
-//   * expiration seconds - The time at which this value should expire.
+//   - dimension_name - The name of the dimension to modify
+//   - operator
+//   - "=" - Add value to SetValues. If empty, ensures that SetValues is
+//     non-nil (i.e. clear all values for this dimension).
+//   - "-=" - Add value to RemoveValues.
+//   - "+=" - Add value to AddValues.
+//   - value - The dimension value for the operand
+//   - expiration seconds - The time at which this value should expire.
 //
 // All equivalent operations for the same dimension will be grouped into
 // a single DimensionEditCommand in the order they appear in `commands`.

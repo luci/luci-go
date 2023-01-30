@@ -206,7 +206,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 		SetupEnv:          environ.System(),
 		UnversionedPython: []string{py.Python},
 		PackageMap: map[string]*vpython.Spec_Package{
-			"2.7": &vpython.Spec_Package{ // default python version
+			"2.7": { // default python version
 				Name:    "foo/bar/virtualenv",
 				Version: "whatever",
 			},

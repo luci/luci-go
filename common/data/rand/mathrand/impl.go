@@ -251,8 +251,7 @@ func (l *Locking) Read(p []byte) (n int, err error) {
 // To produce a different normal distribution, callers can adjust the output
 // using:
 //
-//  sample = NormFloat64(ctx) * desiredStdDev + desiredMean
-//
+//	sample = NormFloat64(ctx) * desiredStdDev + desiredMean
 func (l *Locking) NormFloat64() (v float64) {
 	l.Lock()
 	v = l.R.NormFloat64()
@@ -268,8 +267,7 @@ func (l *Locking) NormFloat64() (v float64) {
 // To produce a distribution with a different rate parameter, callers can adjust
 // the output using:
 //
-//  sample = ExpFloat64(ctx) / desiredRateParameter
-//
+//	sample = ExpFloat64(ctx) / desiredRateParameter
 func (l *Locking) ExpFloat64() (v float64) {
 	l.Lock()
 	v = l.R.ExpFloat64()

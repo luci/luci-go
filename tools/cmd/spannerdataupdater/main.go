@@ -23,9 +23,10 @@
 // of the timeout paramater specified.
 //
 // Example usage:
-// go run main.go \
-//  -sql='UPDATE TestResults SET <Something> WHERE <Something Else>' \
-//  -project=chops-weetbix-dev -instance=dev -database=chops-weetbix-dev
+//
+//	go run main.go \
+//	 -sql='UPDATE TestResults SET <Something> WHERE <Something Else>' \
+//	 -project=chops-weetbix-dev -instance=dev -database=chops-weetbix-dev
 package main
 
 import (

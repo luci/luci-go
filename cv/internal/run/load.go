@@ -107,10 +107,10 @@ func (b LoadRunsBuilder) Checker(c LoadRunChecker) LoadRunsBuilder {
 // omitting not found ones.
 //
 // If used together with Checker:
-//   * if Checker.Before returns error with NotFound code, treats such Run as
+//   - if Checker.Before returns error with NotFound code, treats such Run as
 //     not found.
-//   * if Run is not found in Datastore, Checker.After isn't called on it.
-//   * if Checker.After returns error with NotFound code, treats such Run as
+//   - if Run is not found in Datastore, Checker.After isn't called on it.
+//   - if Checker.After returns error with NotFound code, treats such Run as
 //     not found.
 //
 // Returns a singular first encountered error.
@@ -146,20 +146,20 @@ func (b LoadRunsBuilder) DoIgnoreNotFound(ctx context.Context) ([]*Run, error) {
 // another original slice from which Run's keys or IDs were derived, e.g. an API
 // request.
 //
-//     ids := make(common.RunIDs, len(batchReq))
-//     for i, req := range batchReq {
-//       ids[i] = common.RunID(req.GetRunID())
-//     }
-//     runs, errs := run.LoadRunsFromIDs(ids...).Checker(acls.NewRunReadChecker()).Do(ctx)
-//     respBatch := ...
-//     for i := range ids {
-//       switch id, r, err := ids[i], runs[i], errs[i];{
-//       case err != nil:
-//         respBatch[i] = &respOne{Error: ...}
-//       default:
-//         respBatch[i] = &respOne{Run: ...}
-//       }
-//     }
+//	ids := make(common.RunIDs, len(batchReq))
+//	for i, req := range batchReq {
+//	  ids[i] = common.RunID(req.GetRunID())
+//	}
+//	runs, errs := run.LoadRunsFromIDs(ids...).Checker(acls.NewRunReadChecker()).Do(ctx)
+//	respBatch := ...
+//	for i := range ids {
+//	  switch id, r, err := ids[i], runs[i], errs[i];{
+//	  case err != nil:
+//	    respBatch[i] = &respOne{Error: ...}
+//	  default:
+//	    respBatch[i] = &respOne{Run: ...}
+//	  }
+//	}
 func (b LoadRunsBuilder) Do(ctx context.Context) ([]*Run, errors.MultiError) {
 	loadFromDS := func(runs []*Run) errors.MultiError {
 		totalErr := datastore.Get(ctx, runs)

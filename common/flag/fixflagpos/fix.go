@@ -48,8 +48,8 @@ func Fix(args []string) []string {
 // Converts [pos1 pos2 -flag value pos3] into [pos1 -flag value pos3 pos2].
 //
 // Taking cipd as an example, compare:
-//   * Default: cipd set-ref -ref=abc -version=def package/name
-//   * Improved: cipd set-ref package/name -ref=abc -version=def
+//   - Default: cipd set-ref -ref=abc -version=def package/name
+//   - Improved: cipd set-ref package/name -ref=abc -version=def
 //
 // Much better.
 func FixSubcommands(args []string) []string {

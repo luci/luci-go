@@ -77,10 +77,11 @@ func logEntryName(le *logpb.LogEntry) string {
 }
 
 // "expected" is a notation to express a bundle entry and its keys:
-//   "a": a bundle entry keyed on "a".
-//   "+a": a terminal bundle entry keyed on "a".
-//   "a:1:2:3": a bundle entry keyed on "a" with three log entries, each keyed on
-//            "1", "2", and "3" respectively.
+//
+//	"a": a bundle entry keyed on "a".
+//	"+a": a terminal bundle entry keyed on "a".
+//	"a:1:2:3": a bundle entry keyed on "a" with three log entries, each keyed on
+//	         "1", "2", and "3" respectively.
 func shouldHaveBundleEntries(actual interface{}, expected ...interface{}) string {
 	bundle := actual.(*logpb.ButlerLogBundle)
 

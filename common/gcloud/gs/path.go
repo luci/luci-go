@@ -22,6 +22,7 @@ import (
 // bucket and a series of path components.
 //
 // An example of a Path is:
+//
 //	gs://test-bucket/path/to/thing.txt
 type Path string
 

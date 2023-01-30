@@ -36,11 +36,11 @@
 //     deployment configs.
 //
 // The difference from command line flags:
-//  * An experiment is usually short lived. If it needs to stay for long, it
-//    should be converted into a proper command line flag.
-//  * The server ignores enabled experiments it doesn't know about. It
-//    simplifies adding and removing experiments.
-//  * There's better testing support.
+//   - An experiment is usually short lived. If it needs to stay for long, it
+//     should be converted into a proper command line flag.
+//   - The server ignores enabled experiments it doesn't know about. It
+//     simplifies adding and removing experiments.
+//   - There's better testing support.
 package experiments
 
 import (

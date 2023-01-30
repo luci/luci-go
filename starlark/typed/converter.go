@@ -23,16 +23,16 @@ import (
 //
 // Must be idempotent, i.e. the following must not panic for all 'x':
 //
-//   y, err := Convert(x)
-//   if err == nil {
-//     z, err := Convert(y)
-//     if err != nil {
-//       panic("converted to an incompatible type")
-//     }
-//     if z != y {
-//       panic("doesn't pass through already converted item")
-//     }
-//   }
+//	y, err := Convert(x)
+//	if err == nil {
+//	  z, err := Convert(y)
+//	  if err != nil {
+//	    panic("converted to an incompatible type")
+//	  }
+//	  if z != y {
+//	    panic("doesn't pass through already converted item")
+//	  }
+//	}
 //
 // Must be stateless. Must not mutate the values being converted.
 type Converter interface {

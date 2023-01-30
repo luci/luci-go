@@ -379,12 +379,12 @@ func tagsEqual(newTags, oldTags []*pb.StringPair) bool {
 }
 
 // updatedTags returns a merged slices of tags.
-// * if the same key appears in both newTags and oldTags, use the value from
-//   newTags;
-// * if a key appears in only one of the slices, append the string pair as it
-//   is;
-// * if the merged slice is the same as oldTags, return nil to indicate there
-//   is no need to update tags.
+//   - if the same key appears in both newTags and oldTags, use the value from
+//     newTags;
+//   - if a key appears in only one of the slices, append the string pair as it
+//     is;
+//   - if the merged slice is the same as oldTags, return nil to indicate there
+//     is no need to update tags.
 func updatedTags(newTags, oldTags []*pb.StringPair) []*pb.StringPair {
 	switch {
 	case len(newTags) == 0:

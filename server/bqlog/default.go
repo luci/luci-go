@@ -44,13 +44,13 @@ func RegisterSink(sink Sink) {
 // This is a best effort operation (and thus returns no error).
 //
 // Messages are dropped when:
-//  * Writes to BigQuery are failing with a fatal error:
-//    - The table doesn't exist.
-//    - The table has an incompatible schema.
-//    - The server account has no permission to write to the table.
-//    - Etc.
-//  * The server crashes before it manages to flush buffered logs.
-//  * The internal flush buffer is full (per MaxLiveSizeBytes).
+//   - Writes to BigQuery are failing with a fatal error:
+//   - The table doesn't exist.
+//   - The table has an incompatible schema.
+//   - The server account has no permission to write to the table.
+//   - Etc.
+//   - The server crashes before it manages to flush buffered logs.
+//   - The internal flush buffer is full (per MaxLiveSizeBytes).
 //
 // In case of transient write errors messages may be duplicated.
 //

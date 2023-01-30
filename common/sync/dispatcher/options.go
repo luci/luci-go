@@ -43,17 +43,17 @@ import (
 // likely cause deadlocks.
 //
 // This may:
-//   * inspect/log the error
-//   * manipulate the contents of failedBatch
-//   * return a boolean of whether this Batch should be retried or not. If
+//   - inspect/log the error
+//   - manipulate the contents of failedBatch
+//   - return a boolean of whether this Batch should be retried or not. If
 //     this is false then the Batch is dropped. If it's true, then it will be
 //     re-queued as-is for transmission according to BufferFullBehavior.
-//   * pass the Batch.Data to another goroutine (in a non-blocking way!) to be
+//   - pass the Batch.Data to another goroutine (in a non-blocking way!) to be
 //     re-queued through Channel.WriteChan.
 //
 // Args:
-//   * failedBatch - The Batch for which SendFn produced a non-nil error.
-//   * err - The error SendFn produced.
+//   - failedBatch - The Batch for which SendFn produced a non-nil error.
+//   - err - The error SendFn produced.
 //
 // Returns true iff the dispatcher should re-try sending this Batch, according
 // to Buffer.Retry.

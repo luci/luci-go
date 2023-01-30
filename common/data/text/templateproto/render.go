@@ -37,16 +37,16 @@ func MustNewValue(v interface{}) *Value {
 // NewValue creates a new *Value wrapping v.
 //
 // Allowed types are:
-//   * Any of the explicit *Value_Int - style types
-//   * nil -> Null
-//   * string -> String
-//   * []byte -> Bytes
-//   * int, int8, int16, int32, int64 -> Integer
-//   * uint, uint8, uint16, uint32, uint64 -> Unsigned
-//   * float32, float64 -> Float
-//   * bool -> Boolean
-//   * map[string]interface{} -> Object
-//   * []interface{} -> Array
+//   - Any of the explicit *Value_Int - style types
+//   - nil -> Null
+//   - string -> String
+//   - []byte -> Bytes
+//   - int, int8, int16, int32, int64 -> Integer
+//   - uint, uint8, uint16, uint32, uint64 -> Unsigned
+//   - float32, float64 -> Float
+//   - bool -> Boolean
+//   - map[string]interface{} -> Object
+//   - []interface{} -> Array
 func NewValue(v interface{}) (*Value, error) {
 	switch x := v.(type) {
 	case isValue_Value:

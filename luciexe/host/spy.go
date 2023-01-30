@@ -83,9 +83,12 @@ type spy struct {
 // Butler's environment already having been exported.
 //
 // Side-effect: Opens "$LOGDOG_NAMESPACE/build.proto" datagram stream in Butler
-//   to output merged Build messages.
+//
+//	to output merged Build messages.
+//
 // Side-effect: Exports LOGDOG_NAMESPACE="$LOGDOG_NAMESPACE/u" to the
-//   environment.
+//
+//	environment.
 func spyOn(ctx context.Context, b *butler.Butler, base *bbpb.Build) (*spy, error) {
 	curNamespace := types.StreamName(os.Getenv(luciexe.LogdogNamespaceEnv))
 

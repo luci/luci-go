@@ -59,8 +59,8 @@ type Info struct {
 //
 // Add following lines to package definition yaml to to set this up:
 //
-//   data:
-//     - version_file: .versions/<exe-name>${exe_suffix}.cipd_version
+//	data:
+//	  - version_file: .versions/<exe-name>${exe_suffix}.cipd_version
 //
 // Replace <exe-name> with name of the binary file.
 //

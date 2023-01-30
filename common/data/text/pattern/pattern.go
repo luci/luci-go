@@ -33,13 +33,13 @@ type Pattern interface {
 //
 // Ordered by precedence, s can be:
 //
-//  - "": matches nothing
-//  - "*": matches anything
-//  - "<S>" where S does not have a colon: same as "exact:<S>"
-//  - "exact:<S>": matches only string S
-//  - "text:<S>": same as "exact:<S>" for backward compatibility
-//  - "regex:<E>": matches all strings matching regular expression E. If E
-//    does not start/end with ^/$, they are added automatically.
+//   - "": matches nothing
+//   - "*": matches anything
+//   - "<S>" where S does not have a colon: same as "exact:<S>"
+//   - "exact:<S>": matches only string S
+//   - "text:<S>": same as "exact:<S>" for backward compatibility
+//   - "regex:<E>": matches all strings matching regular expression E. If E
+//     does not start/end with ^/$, they are added automatically.
 //
 // Anything else will cause an error.
 func Parse(s string) (Pattern, error) {

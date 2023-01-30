@@ -118,8 +118,8 @@ func ValidateObjectRef(ref *api.ObjectRef, v HashAlgoValidation) error {
 // the datastore.
 //
 // Its exact form depends on a hash being used:
-//   * SHA1: Instance IDs are hex encoded SHA1 digests, in lowercase.
-//   * Everything else: base64(digest + []byte{ref.HashAlgo}), where base64 is
+//   - SHA1: Instance IDs are hex encoded SHA1 digests, in lowercase.
+//   - Everything else: base64(digest + []byte{ref.HashAlgo}), where base64 is
 //     without padding and using URL-safe charset.
 //
 // The ref is not checked for correctness. Use ValidateObjectRef if this is

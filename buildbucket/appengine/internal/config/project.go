@@ -211,7 +211,7 @@ func UpdateProjectCfg(ctx context.Context) error {
 			}
 			// buildersToPut[i] contains a list of builders to update which is under
 			// the maxEntityCount and maxBatchsize limit.
-			buildersToPut := [][]*model.Builder{[]*model.Builder{}}
+			buildersToPut := [][]*model.Builder{{}}
 			currentBatchSize := 0
 			for _, cfgBuilder := range cfgBucket.GetSwarming().GetBuilders() {
 				if !checkPoolDimExists(cfgBuilder) {

@@ -80,10 +80,11 @@ func (md *InstanceMetadata) Proto() *api.InstanceMetadata {
 // most recent instance state.
 //
 // Returns gRPC-tagged errors:
-//    NotFound if there's no such instance or package.
-//    FailedPrecondition if some processors are still running.
-//    Aborted if some processors have failed.
-//    Internal on fingerprint collision.
+//
+//	NotFound if there's no such instance or package.
+//	FailedPrecondition if some processors are still running.
+//	Aborted if some processors have failed.
+//	Internal on fingerprint collision.
 func AttachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetadata) error {
 	now := clock.Now(ctx).UTC()
 	who := string(auth.CurrentIdentity(ctx))

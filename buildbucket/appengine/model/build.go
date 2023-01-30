@@ -157,9 +157,9 @@ func (b *Build) Realm() string {
 }
 
 // ExperimentStatus scans the experiments attached to this Build and returns:
-//   * YES - The experiment was known at schedule time and enabled.
-//   * NO - The experiment was known at schedule time and disabled.
-//   * UNSET - The experiment was unknown at schedule time.
+//   - YES - The experiment was known at schedule time and enabled.
+//   - NO - The experiment was known at schedule time and disabled.
+//   - UNSET - The experiment was unknown at schedule time.
 //
 // Malformed Experiment filters are treated as UNSET.
 func (b *Build) ExperimentStatus(expname string) (ret pb.Trinary) {

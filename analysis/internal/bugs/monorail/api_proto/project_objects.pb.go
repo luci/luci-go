@@ -857,8 +857,10 @@ func (x *Project) GetThumbnailUrl() string {
 //
 // See monorail/doc/userguide/project-owners.md#How-to-configure-statuses
 // (-- aip.dev/not-precedent: "Status" should be reserved for HTTP/gRPC codes
-//     per aip.dev/216. Monorail's Status  preceded the AIP standards, and is
-//     used extensively throughout the system.)
+//
+//	per aip.dev/216. Monorail's Status  preceded the AIP standards, and is
+//	used extensively throughout the system.)
+//
 // Next available tag: 7
 type StatusDef struct {
 	state         protoimpl.MessageState

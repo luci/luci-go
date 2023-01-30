@@ -199,7 +199,7 @@ func (rk *rowKey) pathPrefix() (v string) {
 // This is accomplished by appending a "~" character to the path prefix,
 // creating something like this:
 //
-//     prefix~~
+//	prefix~~
 //
 // The "prefix~" is shared with all keys in "rk", but the extra "~" is larger
 // than any hex-encoded row index, so this key will always be larger.

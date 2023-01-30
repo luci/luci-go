@@ -105,8 +105,8 @@ type Loader struct {
 // Spec files can be specified in a variety of ways. This function will look for
 // them in the following order, and return the first one that was identified:
 //
-//	- Partner File
-//	- Inline
+//   - Partner File
+//   - Inline
 //
 // Partner File
 // ============

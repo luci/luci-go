@@ -242,10 +242,11 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 // Storage.
 //
 // Returns:
-//   (result, nil) on success.
-//   (nil, datastore.ErrNoSuchEntity) if results are not available.
-//   (nil, transient-tagged error) on retrieval errors.
-//   (nil, non-transient-tagged error) if the client extractor failed.
+//
+//	(result, nil) on success.
+//	(nil, datastore.ErrNoSuchEntity) if results are not available.
+//	(nil, transient-tagged error) on retrieval errors.
+//	(nil, non-transient-tagged error) if the client extractor failed.
 func GetClientExtractorResult(c context.Context, inst *api.Instance) (*ClientExtractorResult, error) {
 	r := &model.ProcessingResult{
 		ProcID:   ClientExtractorProcID,

@@ -38,7 +38,8 @@ func Enable() {
 // WithSpanContext overrides the span context string in the context.
 //
 // The following property holds:
-//   trace.SpanContext(tracetest.WithSpanContext(ctx, "abc")) == "abc".
+//
+//	trace.SpanContext(tracetest.WithSpanContext(ctx, "abc")) == "abc".
 func WithSpanContext(ctx context.Context, spanCtx string) context.Context {
 	return context.WithValue(ctx, &spanCtxKey, spanCtx)
 }

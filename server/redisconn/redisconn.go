@@ -16,22 +16,22 @@
 //
 // Usage as a server module:
 //
-//   func main() {
-//     modules := []module.Module{
-//       redisconn.NewModuleFromFlags(),
-//     }
-//     server.Main(nil, modules, func(srv *server.Server) error {
-//       srv.Routes.GET("/", ..., func(c *router.Context) {
-//         conn, err := redisconn.Get(c.Context)
-//         if err != nil {
-//           // handle error
-//         }
-//         defer conn.Close()
-//         // use Redis API via `conn`
-//       })
-//       return nil
-//     })
-//   }
+//	func main() {
+//	  modules := []module.Module{
+//	    redisconn.NewModuleFromFlags(),
+//	  }
+//	  server.Main(nil, modules, func(srv *server.Server) error {
+//	    srv.Routes.GET("/", ..., func(c *router.Context) {
+//	      conn, err := redisconn.Get(c.Context)
+//	      if err != nil {
+//	        // handle error
+//	      }
+//	      defer conn.Close()
+//	      // use Redis API via `conn`
+//	    })
+//	    return nil
+//	  })
+//	}
 //
 // When used that way, Redis is also installed as the default implementation
 // of caching.BlobCache (which basically speeds up various internal guts of

@@ -176,9 +176,9 @@ func (r *Router) adapt(mc MiddlewareChain, h Handler, path string) httprouter.Ha
 // into a single "/".
 //
 // In addition, the following rules apply:
-//  - The "/" between base and relative exists only if either base has a
-//    trailing "/" or relative is not the empty string.
-//  - A trailing "/" is added to the result if relative has a trailing "/".
+//   - The "/" between base and relative exists only if either base has a
+//     trailing "/" or relative is not the empty string.
+//   - A trailing "/" is added to the result if relative has a trailing "/".
 func makeBasePath(base, relative string) string {
 	if !strings.HasSuffix(base, "/") && relative != "" {
 		base += "/"

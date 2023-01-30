@@ -161,17 +161,17 @@ var (
 //
 // You can obtain a Client for this Fake by doing:
 //
-//   fake := streamclient.NewFake()
-//   defer fake.Unregister()
-//   client, _ := streamclient.New(fake.StreamServerPath(), "whatever")
+//	fake := streamclient.NewFake()
+//	defer fake.Unregister()
+//	client, _ := streamclient.New(fake.StreamServerPath(), "whatever")
 //
 // This is particularly useful for testing programs which use
 // bootstrap.GetFromEnv() to obtain the Client:
 //
-//    env := environ.New(nil)
-//    env.Set(bootstrap.EnvStreamServerPath, client.StreamServerPath())
+//	env := environ.New(nil)
+//	env.Set(bootstrap.EnvStreamServerPath, client.StreamServerPath())
 //
-//    bs := bootstrap.GetFromEnv(env)   # returns Bootstrap containing `client`.
+//	bs := bootstrap.GetFromEnv(env)   # returns Bootstrap containing `client`.
 //
 // If you JUST want a single client and don't need streamclient.New to work,
 // consider NewUnregisteredFake.

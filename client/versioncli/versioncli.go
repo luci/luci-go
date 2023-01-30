@@ -13,7 +13,6 @@
 // limitations under the License.
 
 // Package versioncli implements a subcommand for obtaining version with the CLI.
-//
 package versioncli
 
 import (

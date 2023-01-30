@@ -23,7 +23,7 @@ import (
 func ChromeOSTestConfig() *configpb.BuganizerProject {
 	return &configpb.BuganizerProject{
 		DefaultComponent: &configpb.BuganizerComponent{
-			Id:    1234567,
+			Id: 1234567,
 		},
 		PriorityMappings:          createPriorityMappings(),
 		PriorityHysteresisPercent: 10,

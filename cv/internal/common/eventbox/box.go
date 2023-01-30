@@ -86,12 +86,12 @@ func List(ctx context.Context, r Recipient) (Events, error) {
 // and performing arbitrary side effects.
 //
 // Returns:
-//  - a slice of non-nil post process functions which SHOULD be executed
-//    immediately after calling this function. Those are generally extra work
-//    that needs to be done as the result of state modification.
-//  - error while processing events. Tags the error with common.DSContentionTag
-//    if entity's EVersion has changed or there is contention on Datastore
-//    entities involved in a transaction.
+//   - a slice of non-nil post process functions which SHOULD be executed
+//     immediately after calling this function. Those are generally extra work
+//     that needs to be done as the result of state modification.
+//   - error while processing events. Tags the error with common.DSContentionTag
+//     if entity's EVersion has changed or there is contention on Datastore
+//     entities involved in a transaction.
 func ProcessBatch(ctx context.Context, r Recipient, p Processor, maxEvents int) ([]PostProcessFn, error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/cv/internal/eventbox/ProcessBatch")
 	var err error

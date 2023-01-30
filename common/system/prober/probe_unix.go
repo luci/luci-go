@@ -43,9 +43,9 @@ func findExecutable(file string) error {
 // https://github.com/golang/go/blob/d234f9a75413fdae7643e4be9471b4aeccf02478/src/os/exec/lp_unix.go
 //
 // Modified to:
-//	- Use a supplied "dir" instead of scanning through PATH.
-//	- Not consider cases where "file" is an absolute path
-//	- Ignore the possibility that "file" may be in the CWD; only look in "dir".
+//   - Use a supplied "dir" instead of scanning through PATH.
+//   - Not consider cases where "file" is an absolute path
+//   - Ignore the possibility that "file" may be in the CWD; only look in "dir".
 func findInDir(file, dir string, env environ.Env) (string, error) {
 	// NOTE(rsc): I wish we could use the Plan 9 behavior here
 	// (only bypass the path if file begins with / or ./ or ../)

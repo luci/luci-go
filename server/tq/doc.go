@@ -17,7 +17,7 @@
 // It exposes a high-level API that operates with proto messages and hides
 // gory details such as serialization, routing, authentication, etc.
 //
-// Transactional tasks
+// # Transactional tasks
 //
 // Tasks can be submitted as part of a database transaction. This is controlled
 // by Kind field of TaskClass. A transactional task is guaranteed to be
@@ -37,16 +37,18 @@
 // a corresponding package.
 //
 // For Datastore:
-//   import _ "go.chromium.org/luci/server/tq/txn/datastore"
+//
+//	import _ "go.chromium.org/luci/server/tq/txn/datastore"
 //
 // For Spanner:
-//   import _ "go.chromium.org/luci/server/tq/txn/spanner"
+//
+//	import _ "go.chromium.org/luci/server/tq/txn/spanner"
 //
 // The exact location of the import doesn't matter as long as the package is
 // present in the import tree of the binary. If your tests use transactional
 // tasks, they'll need to import the corresponding packages as well.
 //
-// Enabling the sweeper on Appengine
+// # Enabling the sweeper on Appengine
 //
 // In cron.yaml:
 //   - url: /internal/tasks/c/sweep
@@ -56,19 +58,20 @@
 //   - name: tq-sweep
 //     rate: 500/s
 //
-// Using the sweeper with Spanner
+// # Using the sweeper with Spanner
 //
 // You need to Create below tables in your database:
-//   CREATE TABLE TQReminders (
-//     ID STRING(MAX) NOT NULL,
-//     FreshUntil TIMESTAMP NOT NULL,
-//     Payload BYTES(102400) NOT NULL,
-//   ) PRIMARY KEY (ID ASC);
 //
-//   CREATE TABLE TQLeases (
-//     SectionID STRING(MAX) NOT NULL,
-//     LeaseID INT64 NOT NULL,
-//     SerializedParts ARRAY<STRING(MAX)>,
-//     ExpiresAt TIMESTAMP NOT NULL,
-//   ) PRIMARY KEY (SectionID ASC, LeaseID ASC);
+//	CREATE TABLE TQReminders (
+//	  ID STRING(MAX) NOT NULL,
+//	  FreshUntil TIMESTAMP NOT NULL,
+//	  Payload BYTES(102400) NOT NULL,
+//	) PRIMARY KEY (ID ASC);
+//
+//	CREATE TABLE TQLeases (
+//	  SectionID STRING(MAX) NOT NULL,
+//	  LeaseID INT64 NOT NULL,
+//	  SerializedParts ARRAY<STRING(MAX)>,
+//	  ExpiresAt TIMESTAMP NOT NULL,
+//	) PRIMARY KEY (SectionID ASC, LeaseID ASC);
 package tq

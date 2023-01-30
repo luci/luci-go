@@ -80,11 +80,11 @@ func (iso IsolatedCommand) Cleanup() {
 //
 // The supplied arguments have several Python isolation flags prepended to them
 // to remove environmental factors such as:
-//	- The user's "site.py".
-//	- The current PYTHONPATH environment variable.
-//	- The current working directory (i.e. avoids `import foo` picking up local
-//	  foo.py)
-//	- Compiled ".pyc/.pyo" files.
+//   - The user's "site.py".
+//   - The current PYTHONPATH environment variable.
+//   - The current working directory (i.e. avoids `import foo` picking up local
+//     foo.py)
+//   - Compiled ".pyc/.pyo" files.
 //
 // The caller MUST call IsolatedCommand.Cleanup when they no longer need the
 // IsolatedCommand.

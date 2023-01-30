@@ -15,36 +15,36 @@
 // Package luciexe documents the "LUCI Executable" protocol, and contains
 // constants which are part of this protocol.
 //
-// Summary
+// # Summary
 //
 // A LUCI Executable ("luciexe") is a binary which implements a protocol to:
 //
-//  * Pass the initial state of the 'build' from a parent process to the luciexe.
-//  * Understand the build's local system contracts (like the location of cached data).
-//  * Asynchronously update the state of the build as it runs.
+//   - Pass the initial state of the 'build' from a parent process to the luciexe.
+//   - Understand the build's local system contracts (like the location of cached data).
+//   - Asynchronously update the state of the build as it runs.
 //
 // This protocol is recursive; A luciexe can run another luciexe such that the
 // child's updates are reflected on the parent's output.
 //
 // The protocol has 3 parts:
 //
-//  * Host Application - This sits at the top of the luciexe process
-//    hierarchy and sets up singleton environmental requirements for the whole
-//    tree.
-//  * Invocation of a luciexe binary - This invocation process occurs both
-//    for the topmost luciexe, as well as all internal invocations of other
-//    luciexe's within the process hierarchy.
-//  * The luciexe binary - The binary has a couple of responsibilities to be
-//    compatible with this protocol. Once the binary has fulfilled it's
-//    responsibilities it's free to do what it wants (i.e. actually do its
-//    task).
+//   - Host Application - This sits at the top of the luciexe process
+//     hierarchy and sets up singleton environmental requirements for the whole
+//     tree.
+//   - Invocation of a luciexe binary - This invocation process occurs both
+//     for the topmost luciexe, as well as all internal invocations of other
+//     luciexe's within the process hierarchy.
+//   - The luciexe binary - The binary has a couple of responsibilities to be
+//     compatible with this protocol. Once the binary has fulfilled it's
+//     responsibilities it's free to do what it wants (i.e. actually do its
+//     task).
 //
 // In general, we strive where possible to minimize the complexity of the
 // luciexe binary. This is because we expect to have a small number of 'host
 // application' implementations, and a relatively large number of 'luciexe'
 // implementations.
 //
-// The Host Application
+// # The Host Application
 //
 // At the root of every tree of luciexe invocations there is a 'host'
 // application which sets up an manages all environmental singletons (like the
@@ -55,15 +55,15 @@
 // intercepted build.proto messages.
 //
 // The Host Application MUST:
-//   * Run a logdog butler service and expose all relevant LOGDOG_* environment
+//   - Run a logdog butler service and expose all relevant LOGDOG_* environment
 //     variables such that the following client libraries can stream log data:
-//       * Golang: go.chromium.org/luci/logdog/client/butlerlib/bootstrap
-//       * Python: infra_libs.logdog.bootstrap
-//   * Hook the butler to intercept and merge build.proto streams into a single
+//   - Golang: go.chromium.org/luci/logdog/client/butlerlib/bootstrap
+//   - Python: infra_libs.logdog.bootstrap
+//   - Hook the butler to intercept and merge build.proto streams into a single
 //     build.proto (zlib-compressed) stream.
-//   * Set up a local LUCI ambient authentication service which luciexe's can
+//   - Set up a local LUCI ambient authentication service which luciexe's can
 //     use to mint auth tokens.
-//   * Prepare an empty directory which will house tempdirs and workdirs for
+//   - Prepare an empty directory which will house tempdirs and workdirs for
 //     all luciexe invocations. The Host Application MAY clean this directory
 //     up, but it may be useful to leak it for debugging. It's permissible for
 //     the Host Application to defer this cleanup to an external process (e.g.
@@ -96,35 +96,41 @@
 // best-effort. It cannot be relied on to run to completion (or to run
 // completely)).
 //
-// Invocation
+// # Invocation
 //
 // When invoking a luciexe, the parent process has a couple responsibilities. It
 // must:
 //
-//   * Set $TEMPDIR, $TMPDIR, $TEMP, $TMP and $MAC_CHROMIUM_TMPDIR to all point
+//   - Set $TEMPDIR, $TMPDIR, $TEMP, $TMP and $MAC_CHROMIUM_TMPDIR to all point
 //     to the same, empty directory.
 //     This directory MUST be located on the same file system as CWD.
 //     This directory MUST NOT be the same as CWD.
 //
-//   * Set $LUCI_CONTEXT["luciexe"]["cache_dir"] to a cache dir which makes sense
+//   - Set $LUCI_CONTEXT["luciexe"]["cache_dir"] to a cache dir which makes sense
 //     for the luciexe.
 //     The cache dir MAY persist/be shared between luciexe invocations.
 //     The cache dir MAY NOT be on the same filesystem as CWD.
 //
-//   * Set the $LOGDOG_NAMESPACE to a prefix which namespaces all logdog streams
+//   - Set the $LOGDOG_NAMESPACE to a prefix which namespaces all logdog streams
 //     generated from the luciexe.
 //
-//   * Set the Status of initial buildbucket.v2.Build message to `STARTED`.
+//   - Set the Status of initial buildbucket.v2.Build message to `STARTED`.
 //
-//   * Set the CreateTime and StartTime of initial buildbucket.v2.Build message.
+//   - Set the CreateTime and StartTime of initial buildbucket.v2.Build message.
 //
-//   * Clear following fields in the initial buildbucket.v2.Build message.
-//      - EndTime
-//      - Output
-//      - StatusDetails
-//      - Steps
-//      - SummaryMarkdown
-//      - UpdateTime
+//   - Clear following fields in the initial buildbucket.v2.Build message.
+//
+//   - EndTime
+//
+//   - Output
+//
+//   - StatusDetails
+//
+//   - Steps
+//
+//   - SummaryMarkdown
+//
+//   - UpdateTime
 //
 // The CWD is up to your application. Some contexts (like Buildbucket) will
 // guarantee an empty CWD, but others (like recursive invocation) may explicitly
@@ -144,7 +150,7 @@
 // the luciexe which contains all the input parameters that the luciexe needs to
 // know to run successfully.
 //
-// The luciexe binary
+// # The luciexe binary
 //
 // Once running, the luciexe MUST read a binary-encoded buildbucket.v2.Build
 // message from stdin until EOF.
@@ -155,31 +161,31 @@
 // It MUST NOT assume other fields in the Build message are set. However, the
 // Host Application or invoker MAY fill in other fields they think are useful.
 //
-//   EndTime
-//   Output
-//   StatusDetails
-//   Steps
-//   SummaryMarkdown
-//   Tags
-//   UpdateTime
+//	EndTime
+//	Output
+//	StatusDetails
+//	Steps
+//	SummaryMarkdown
+//	Tags
+//	UpdateTime
 //
 // As per the Host Application's responsibilities, the luciexe binary MAY expect
 // the "luciexe" and "local_auth" sections of LUCI_CONTEXT to be filled. Other
 // sections of LUCI_CONTEXT MAY also be filled. See the LUCI_CONTEXT docs:
 // https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/client/LUCI_CONTEXT.md
 //
-//   !!NOTE!! The paths supplied to the luciexe MUST NOT be considered stable
-//   across invocations. Do not hard-code these, and try not to rely on their
-//   consistency (e.g. for build reproducibility).
+//	!!NOTE!! The paths supplied to the luciexe MUST NOT be considered stable
+//	across invocations. Do not hard-code these, and try not to rely on their
+//	consistency (e.g. for build reproducibility).
 //
-// The luciexe binary - Updating the Build state
+// # The luciexe binary - Updating the Build state
 //
 // A luciexe MAY update the Build state by writing to a "build.proto" Logdog
 // stream named "$LOGDOG_NAMESPACE/build.proto". A "build.proto" Logdog stream
 // is defined as:
 //
-//   Content-Type: "application/luci+proto; message=buildbucket.v2.Build"
-//   Type: Datagram
+//	Content-Type: "application/luci+proto; message=buildbucket.v2.Build"
+//	Type: Datagram
 //
 // Additionally, a build.proto stream MAY append "; encoding=zlib" to the
 // Content-Type (and compress each message accordingly). This is useful for when
@@ -200,8 +206,8 @@
 // "logdog://host/project/prefix/+/something/build.proto", then a Log with a Url
 // of "hello/world/stdout" will be transformed into:
 //
-//   Url:     logdog://host/project/prefix/+/something/hello/world/stdout
-//   ViewUrl: <implementation defined>
+//	Url:     logdog://host/project/prefix/+/something/hello/world/stdout
+//	ViewUrl: <implementation defined>
 //
 // The `ViewUrl` field in this case SHOULD be left empty, and will be filled in
 // by the host application running the luciexe (if supplied it will be
@@ -210,16 +216,16 @@
 // The following Build fields will be read from the luciexe-controlled
 // build.proto stream:
 //
-//   EndTime
-//   Output
-//   Status
-//   StatusDetails
-//   Steps
-//   SummaryMarkdown
-//   Tags
-//   UpdateTime
+//	EndTime
+//	Output
+//	Status
+//	StatusDetails
+//	Steps
+//	SummaryMarkdown
+//	Tags
+//	UpdateTime
 //
-// The luciexe binary - Reporting final status
+// # The luciexe binary - Reporting final status
 //
 // A luciexe MUST report its success/failure by sending a Build message with
 // a terminal `status` value before exiting. If the luciexe exits before sending
@@ -229,11 +235,11 @@
 // application MUST detect this case and fill in a final status of
 // INFRA_FAILURE, but MUST NOT terminate the process hierarchy in this case.
 //
-// Recursive Invocation
+// # Recursive Invocation
 //
 // To support recursive invocation, a luciexe MUST accept the flag:
 //
-//   --output=path/to/file.{pb,json,textpb}
+//	--output=path/to/file.{pb,json,textpb}
 //
 // The value of this flag MUST be an absolute path to a non-existent file in
 // an existing directory. The extension of the file dictates the data format
@@ -242,12 +248,12 @@
 // but no Build message (or an invalid/improperly formatted Build message)
 // is written, the caller MUST interpret this as an INFRA_FAILURE status.
 //
-//   NOTE: JSON outputs SHOULD be written with the original proto field names,
-//   not the lowerCamelCase names; downstream users may not be using jsonpb
-//   unmarshallers to interpret the JSON data.
+//	NOTE: JSON outputs SHOULD be written with the original proto field names,
+//	not the lowerCamelCase names; downstream users may not be using jsonpb
+//	unmarshallers to interpret the JSON data.
 //
-//   This may need to be revised in a subsequent version of this API
-//   specification.
+//	This may need to be revised in a subsequent version of this API
+//	specification.
 //
 // LUCI Executables MAY invoke other LUCI Executables as sub-steps and have the
 // Steps from the child luciexe show in the parent's Build updates. This is one
@@ -273,10 +279,10 @@
 // rest of the fields of step S if the caller explicitly marks the step
 // status as final.
 //
-//  SummaryMarkdown
-//  Status
-//  EndTime
-//  Output.Logs (appended)
+//	SummaryMarkdown
+//	Status
+//	EndTime
+//	Output.Logs (appended)
 //
 // This rule applies recursively, i.e. the child build MAY have Merge Step(s).
 //
@@ -290,7 +296,7 @@
 // their build's namespace, it's only possible to have a merge step point
 // further 'down' the tree, making it impossible to create a cycle.
 //
-// Recursive Invocation - Legacy ChromeOS style
+// # Recursive Invocation - Legacy ChromeOS style
 //
 // Note that there's an option in MergeBuild called 'legacy_global_namespace'.
 // This mode is NOT RECOMMENDED, and was only added to support legacy ChromeOS
@@ -318,25 +324,25 @@
 // contact ChOps Foundation team to discuss, rather than trying to use the
 // legacy_global_namespace option.
 //
-// Related Libraries
+// # Related Libraries
 //
 // For implementation-level details, please refer to the following:
 //
-//  * "go.chromium.org/luci/luciexe" - low-level protocol details (this module).
-//  * "go.chromium.org/luci/luciexe/host" - the Host Application library.
-//  * "go.chromium.org/luci/luciexe/invoke" - luciexe invocation.
-//  * "go.chromium.org/luci/luciexe/exe" - luciexe binary helper library.
+//   - "go.chromium.org/luci/luciexe" - low-level protocol details (this module).
+//   - "go.chromium.org/luci/luciexe/host" - the Host Application library.
+//   - "go.chromium.org/luci/luciexe/invoke" - luciexe invocation.
+//   - "go.chromium.org/luci/luciexe/exe" - luciexe binary helper library.
 //
-// Other Client Implementations
+// # Other Client Implementations
 //
 // Python Recipes (https://chromium.googlesource.com/infra/luci/recipes-py)
 // implement the LUCI Executable protocol using the "luciexe" subcommand.
 //
-//   TODO(iannucci): Implement a luciexe binary helper in `infra_libs` analogous
-//   to go.chromium.org/luci/luciexe/exe and implement Recipes' support in terms
-//   of this.
+//	TODO(iannucci): Implement a luciexe binary helper in `infra_libs` analogous
+//	to go.chromium.org/luci/luciexe/exe and implement Recipes' support in terms
+//	of this.
 //
-// LUCI Executables on Buildbucket
+// # LUCI Executables on Buildbucket
 //
 // Buildbucket accepts LUCI Executables as CIPD packages containing the
 // luciexe to run with the fixed name of "luciexe".

@@ -257,9 +257,9 @@ func (e Env) Iter(cb func(k, v string) error) error {
 // Split splits the supplied environment variable value into a key/value pair.
 //
 // If v is of the form:
-//  - KEY, returns (KEY, "")
-//  - KEY=, returns (KEY, "")
-//  - KEY=VALUE, returns (KEY, VALUE)
+//   - KEY, returns (KEY, "")
+//   - KEY=, returns (KEY, "")
+//   - KEY=VALUE, returns (KEY, VALUE)
 func Split(v string) (key, value string) {
 	parts := strings.SplitN(v, "=", 2)
 	switch len(parts) {

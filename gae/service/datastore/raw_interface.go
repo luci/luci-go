@@ -44,8 +44,8 @@ type RawRunCB func(key *Key, val PropertyMap, getCursor CursorCB) error
 //
 //   - idx is the index of the entity, ranging from 0 through len-1.
 //   - val is the data of the entity
-//     * It may be nil if some of the keys to the GetMulti were bad, since all
-//       keys are validated before the RPC occurs!
+//   - It may be nil if some of the keys to the GetMulti were bad, since all
+//     keys are validated before the RPC occurs!
 //   - err is an error associated with this entity (e.g. ErrNoSuchEntity).
 //
 // The callback is called once per element. It may be called concurrently, and
@@ -60,8 +60,8 @@ type GetMultiCB func(idx int, val PropertyMap, err error)
 //
 //   - idx is the index of the entity, ranging from 0 through len-1.
 //   - key is the new key for the entity (if the original was incomplete)
-//     * It may be nil if some of the keys/vals to the PutMulti were bad, since
-//       all keys are validated before the RPC occurs!
+//   - It may be nil if some of the keys/vals to the PutMulti were bad, since
+//     all keys are validated before the RPC occurs!
 //   - err is an error associated with putting this entity.
 //
 // The callback is called once per element. It may be called concurrently, and

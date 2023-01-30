@@ -237,10 +237,10 @@ func (d *Dispatcher) GetQueues() []string {
 
 // runBatchesPerQueue is a generic parallel task distributor. It solves the
 // problems that:
-//  - "tasks" may be assigned to different queues, and tasks assigned to the
-//    same queue should be batched together.
-//  - Any given batch may exceed queue operation limits, and thus needs to be
-//    broken into multiple operations on sub-batches.
+//   - "tasks" may be assigned to different queues, and tasks assigned to the
+//     same queue should be batched together.
+//   - Any given batch may exceed queue operation limits, and thus needs to be
+//     broken into multiple operations on sub-batches.
 //
 // fn is called for each sub-batch assigned to each queue. All resulting errors
 // are then flattened. If no fn invocation returns any errors, nil will be

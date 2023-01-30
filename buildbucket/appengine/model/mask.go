@@ -218,11 +218,15 @@ func HardcodedBuildMask(fields ...string) *BuildMask {
 
 // BuildFieldsWithVisibility returns a list of Build fields that are visible
 // with the specified level of read permission. For example, the following:
-//   BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION)
+//
+//	BuildFieldsWithVisibility(pb.BuildFieldVisibility_BUILDS_GET_LIMITED_PERMISSION)
+//
 // will return a list of Build fields (including nested fields) that have been
 // annotated with either of the following field options:
-//   [(visible_with) = BUILDS_GET_LIMITED_PERMISSION]
-//   [(visible_with) = BUILDS_LIST_PERMISSION]
+//
+//	[(visible_with) = BUILDS_GET_LIMITED_PERMISSION]
+//	[(visible_with) = BUILDS_LIST_PERMISSION]
+//
 // Note that visibility permissions are strictly ordered: if a user has the
 // GetLimited permission, that implies they also have the List permission.
 func BuildFieldsWithVisibility(visibility pb.BuildFieldVisibility) []string {

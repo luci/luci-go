@@ -23,10 +23,10 @@ import (
 // project name.
 //
 // A valid project name may only include:
-//  - Lowercase letters [a-z]
-//  - Numbers [0-9]
-//  - Hyphen (-)
-//  - Underscore (_)
+//   - Lowercase letters [a-z]
+//   - Numbers [0-9]
+//   - Hyphen (-)
+//   - Underscore (_)
 //
 // It also must begin with a letter.
 //

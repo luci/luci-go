@@ -15,14 +15,16 @@
 // Package git provides high level API for Git/Gerrit data.
 //
 // Features:
-//   It enforces read ACLs on Git/Gerrit hosts/projects configured in
-//     settings.cfg in source_acls blocks.
-//   Transparently caches results respecting ACLs above.
-//     That's why no caching of returned data should be done by callers.
+//
+//	It enforces read ACLs on Git/Gerrit hosts/projects configured in
+//	  settings.cfg in source_acls blocks.
+//	Transparently caches results respecting ACLs above.
+//	  That's why no caching of returned data should be done by callers.
 //
 // Limitations:
-//   currently, only works with *.googlesource.com hosted Git/Gerrit
-//   repositories, but could be extended to work with other providers.
+//
+//	currently, only works with *.googlesource.com hosted Git/Gerrit
+//	repositories, but could be extended to work with other providers.
 package git
 
 import (

@@ -28,10 +28,10 @@ import (
 // typed ones.
 //
 // Differences from regular dicts:
-//   * Not comparable by value to regular dicts, only to other typed dicts.
+//   - Not comparable by value to regular dicts, only to other typed dicts.
 //     go.starlark.net has no way to express that typed dicts should be
 //     comparable to regular dicts.
-//   * update() doesn't support keyword arguments. Using keyword arguments
+//   - update() doesn't support keyword arguments. Using keyword arguments
 //     implies string keys which make no sense in generic typed Dict interface,
 //     since generally strings are not valid keys. This also substantially
 //     simplifies the implementation of update().

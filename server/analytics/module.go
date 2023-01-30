@@ -89,12 +89,12 @@ func (m *analyticsModule) Initialize(ctx context.Context, host module.Host, opts
 //
 // Depending on the kind of the AnalyticsID configured (see module's Options):
 //
-//  * format UA-XXXXX,
-//    documented at https://developers.google.com/analytics/devguides/collection/analyticsjs#the_google_analytics_tag
-//    will embed loading of "analytics.js"
-//  * format G-XXXXXX-YY
-//    documented at https://developers.google.com/analytics/devguides/collection/gtagjs#install_the_global_site_tag
-//    will embed loading of "gtag.js"
+//   - format UA-XXXXX,
+//     documented at https://developers.google.com/analytics/devguides/collection/analyticsjs#the_google_analytics_tag
+//     will embed loading of "analytics.js"
+//   - format G-XXXXXX-YY
+//     documented at https://developers.google.com/analytics/devguides/collection/gtagjs#install_the_global_site_tag
+//     will embed loading of "gtag.js"
 //
 // If the AnalyticsID isn't configured, this will return an empty template
 // so that it's safe to insert its return value into a page's source regardless.
