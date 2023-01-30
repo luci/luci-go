@@ -46,6 +46,10 @@ def _cq_group(
     file and verify that it matches arbitrary given CLs as expected.
     See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#luci-cv-command-line-utils
 
+    **NOTE**: if you are configuring a luci.cq_group for a new Gerrit host,
+    follow instructions at http://go/luci/cv/gerrit-pubsub to ensure that
+    pub/sub integration is enabled for the Gerrit host.
+
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
       name: a human- and machine-readable name this CQ group. Must be unique

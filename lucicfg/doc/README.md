@@ -2265,6 +2265,10 @@ CQ is a service that monitors Gerrit CLs in a configured set of Gerrit
 projects, and launches tryjobs (which run pre-submit tests etc.) whenever a
 CL is marked as ready for CQ, and submits the CL if it passes all checks.
 
+**NOTE**: before adding a new [luci.cq(...)](#luci.cq), visit and follow instructions
+at http://go/luci/cv/gerrit-pubsub to ensure that pub/sub integration is
+enabled for all the Gerrit projects.
+
 This optional rule can be used to set global CQ parameters that apply to all
 [luci.cq_group(...)](#luci.cq-group) defined in the project.
 
@@ -2310,6 +2314,10 @@ a ref in the watched set.
 Pro-tip: a command line tool exists to validate a locally generated .cfg
 file and verify that it matches arbitrary given CLs as expected.
 See https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/main/cv/#luci-cv-command-line-utils
+
+**NOTE**: if you are configuring a luci.cq_group for a new Gerrit host,
+follow instructions at http://go/luci/cv/gerrit-pubsub to ensure that
+pub/sub integration is enabled for the Gerrit host.
 
 #### Arguments {#luci.cq-group-args}
 

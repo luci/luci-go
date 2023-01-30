@@ -32,6 +32,10 @@ def _cq(
     projects, and launches tryjobs (which run pre-submit tests etc.) whenever a
     CL is marked as ready for CQ, and submits the CL if it passes all checks.
 
+    **NOTE**: before adding a new luci.cq(...), visit and follow instructions
+    at http://go/luci/cv/gerrit-pubsub to ensure that pub/sub integration is
+    enabled for all the Gerrit projects.
+
     This optional rule can be used to set global CQ parameters that apply to all
     luci.cq_group(...) defined in the project.
 
