@@ -8,36 +8,18 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
-import "google/protobuf/timestamp.proto";
-
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
-// A notification about a build.
-// Deprecated: this is no longer in use anymore.
-message Notification {
-  // When this notification was created.
-  google.protobuf.Timestamp timestamp = 1;
-
-  // Cloud Project ID of the Buildbucket instance that sent this notification,
-  // e.g. "cr-buildbucket".
-  // Useful if a service listens to both prod and dev instances of buildbucket.
-  string app_id = 2;
-
-  // Buildbucket build ID.
-  // Use GetBuild rpc to load the contents.
-  int64 build_id = 3;
-
-  // User-defined opaque blob specified in NotificationConfig.user_data.
-  bytes user_data = 4;
-}
-
-// Configuration of notifications.
+// Configuration for per-build notification. It's usually set by the caller on
+// each ScheduleBuild request.
 message NotificationConfig {
   // Target Cloud PubSub topic.
   // Usually has format "projects/{cloud project}/topics/{topic name}".
   //
-  // The PubSub message data schema is:
+  // The PubSub message data schema is defined in `PubSubCallBack` in this file.
+  //
+  // The legacy schema is:
   //     {
   //      'build': ${BuildMessage},
   //      'user_data': ${NotificationConfig.user_data}
@@ -46,15 +28,15 @@ message NotificationConfig {
   // where the BuildMessage is
   // https://chromium.googlesource.com/infra/infra.git/+/b3204748243a9e4bf815a7024e921be46e3e1747/appengine/cr-buildbucket/legacy/api_common.py#94
   //
-  // Note: The above data schema is in a legacy format and will be changed soon.
-  // So for new users who want to use this, please contact LUCI owners first.
+  // Note: The legacy data schema is deprecated. Only a few old users are using
+  // it and will be migrated soon.
   //
   // <buildbucket-app-id>@appspot.gserviceaccount.com must have
   // "pubsub.topics.publish" permissions on the topic, where
   // <buildbucket-app-id> is usually "cr-buildbucket."
   string pubsub_topic = 1;
 
-  // Will be available in Notification.user_data.
+  // Will be available in PubSubCallBack.user_data.
   // Max length: 4096.
   bytes user_data = 2;
 }
@@ -78,4 +60,20 @@ message BuildsV2PubSub {
   // is ZLIB as this is the most common one and is the built-in lib in many
   // programming languages.
   Compression compression = 3;
+}
+
+// PubSubCallBack is the message data schema for the ad-hoc pubsub notification
+// specified per ScheduleBuild request level.
+// Attributes of this pubsub message:
+// - "project"
+// - "bucket"
+// - "builder"
+// - "is_completed" (The value is either "true" or "false" in string.)
+// - "version" (The value is "v2". To help distinguish messages from the old `builds` topic)
+message PubSubCallBack {
+  // Buildbucket build
+  BuildsV2PubSub build = 1;
+
+  // User-defined opaque blob specified in NotificationConfig.user_data.
+  bytes user_data = 2;
 }
