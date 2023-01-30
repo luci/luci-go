@@ -51,6 +51,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
@@ -5842,13 +5843,13 @@ func TestScheduleBuild(t *testing.T) {
 	Convey("validateSchedule", t, func() {
 		ctx := memory.Use(context.Background())
 		Convey("nil", func() {
-			err := validateSchedule(nil, nil, nil)
+			err := validateSchedule(ctx, nil, nil, nil)
 			So(err, ShouldErrLike, "builder or template_build_id is required")
 		})
 
 		Convey("empty", func() {
 			req := &pb.ScheduleBuildRequest{}
-			err := validateSchedule(req, nil, nil)
+			err := validateSchedule(ctx, req, nil, nil)
 			So(err, ShouldErrLike, "builder or template_build_id is required")
 		})
 
@@ -5857,7 +5858,7 @@ func TestScheduleBuild(t *testing.T) {
 				RequestId:       "request/id",
 				TemplateBuildId: 1,
 			}
-			err := validateSchedule(req, nil, nil)
+			err := validateSchedule(ctx, req, nil, nil)
 			So(err, ShouldErrLike, "request_id cannot contain")
 		})
 
@@ -5865,7 +5866,7 @@ func TestScheduleBuild(t *testing.T) {
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{},
 			}
-			err := validateSchedule(req, nil, nil)
+			err := validateSchedule(ctx, req, nil, nil)
 			So(err, ShouldErrLike, "project must match")
 		})
 
@@ -5877,7 +5878,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "dimensions")
 			})
 
@@ -5893,7 +5894,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldBeNil)
 				})
 
@@ -5910,7 +5911,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "nanos must not be specified")
 				})
 
@@ -5928,7 +5929,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							TemplateBuildId: 1,
 						}
-						err := validateSchedule(req, nil, nil)
+						err := validateSchedule(ctx, req, nil, nil)
 						So(err, ShouldErrLike, "seconds must not be negative")
 					})
 
@@ -5945,7 +5946,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 							TemplateBuildId: 1,
 						}
-						err := validateSchedule(req, nil, nil)
+						err := validateSchedule(ctx, req, nil, nil)
 						So(err, ShouldErrLike, "seconds must be a multiple of 60")
 					})
 				})
@@ -5963,7 +5964,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -5978,7 +5979,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "key must be specified")
 				})
 
@@ -5992,7 +5993,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "caches may only be specified in builder configs")
 				})
 
@@ -6006,7 +6007,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "pool may only be specified in builder configs")
 				})
 
@@ -6020,7 +6021,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -6034,7 +6035,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "value must be specified")
 			})
 
@@ -6050,7 +6051,7 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId:  1,
 						CanOutliveParent: pb.Trinary_NO,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "can_outlive_parent is specified without parent build token")
 				})
 
@@ -6065,7 +6066,7 @@ func TestScheduleBuild(t *testing.T) {
 						TemplateBuildId:  1,
 						CanOutliveParent: pb.Trinary_UNSET,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldBeNil)
 				})
 
@@ -6136,7 +6137,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -6147,7 +6148,7 @@ func TestScheduleBuild(t *testing.T) {
 					Exe:             &pb.Executable{},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldBeNil)
 			})
 
@@ -6158,7 +6159,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "cipd_package must not be specified")
 			})
 
@@ -6170,7 +6171,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "cipd_version")
 				})
 
@@ -6181,7 +6182,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldBeNil)
 				})
 			})
@@ -6193,7 +6194,7 @@ func TestScheduleBuild(t *testing.T) {
 					GerritChanges:   []*pb.GerritChange{},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldBeNil)
 			})
 
@@ -6204,7 +6205,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "gerrit_changes")
 			})
 
@@ -6219,7 +6220,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "change must be specified")
 			})
 
@@ -6235,7 +6236,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "host must be specified")
 				})
 				Convey("invalid", func() {
@@ -6250,7 +6251,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "host does not match pattern")
 				})
 				Convey("too long", func() {
@@ -6265,7 +6266,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						TemplateBuildId: 1,
 					}
-					err := validateSchedule(req, nil, nil)
+					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldErrLike, "host must not exceed 255 characters")
 				})
 			})
@@ -6281,7 +6282,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "patchset must be specified")
 			})
 
@@ -6296,7 +6297,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "project must be specified")
 			})
 
@@ -6312,7 +6313,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -6324,17 +6325,26 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				TemplateBuildId: 1,
 			}
-			err := validateSchedule(req, nil, nil)
+			err := validateSchedule(ctx, req, nil, nil)
 			So(err, ShouldErrLike, "gitiles_commit")
 		})
 
 		Convey("notify", func() {
+			ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "project")
+			So(err, ShouldBeNil)
+			defer func() {
+				psclient.Close()
+				psserver.Close()
+			}()
+			tpc, err := psclient.CreateTopic(ctx, "topic")
+			tpc.IAM()
+			So(err, ShouldBeNil)
 			Convey("empty", func() {
 				req := &pb.ScheduleBuildRequest{
 					Notify:          &pb.NotificationConfig{},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "notify")
 			})
 
@@ -6345,32 +6355,36 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "pubsub_topic")
 			})
 
 			Convey("user data", func() {
 				req := &pb.ScheduleBuildRequest{
 					Notify: &pb.NotificationConfig{
-						PubsubTopic: "topic",
+						PubsubTopic: "projects/project/topics/topic",
 						UserData:    make([]byte, 4097),
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "user_data")
 			})
 
 			Convey("ok", func() {
 				req := &pb.ScheduleBuildRequest{
 					Notify: &pb.NotificationConfig{
-						PubsubTopic: "topic",
+						PubsubTopic: "projects/project/topics/topic",
 						UserData:    []byte("user data"),
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
-				So(err, ShouldBeNil)
+				err := validateSchedule(ctx, req, nil, nil)
+				// "cloud.google.com/go/pubsub/pstest" lib doesn't expose a way to mock
+				// IAM policy check. Therefore, only check if our `validateSchedule`
+				// tries to call `topic.IAM().TestPermissions()` and get the expected
+				// `Unimplemented` err msg.
+				So(err, ShouldErrLike, "Unimplemented desc = unknown service google.iam.v1.IAMPolicy")
 			})
 		})
 
@@ -6380,7 +6394,7 @@ func TestScheduleBuild(t *testing.T) {
 					Priority:        -1,
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "priority must be in")
 			})
 
@@ -6389,7 +6403,7 @@ func TestScheduleBuild(t *testing.T) {
 					Priority:        256,
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "priority must be in")
 			})
 		})
@@ -6406,7 +6420,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldErrLike, "must not be specified")
 			})
 
@@ -6421,7 +6435,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					TemplateBuildId: 1,
 				}
-				err := validateSchedule(req, nil, nil)
+				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -6435,7 +6449,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				TemplateBuildId: 1,
 			}
-			err := validateSchedule(req, nil, nil)
+			err := validateSchedule(ctx, req, nil, nil)
 			So(err, ShouldErrLike, "tags")
 		})
 
@@ -6448,7 +6462,7 @@ func TestScheduleBuild(t *testing.T) {
 						"cool.experiment_thing": true,
 					},
 				}
-				So(validateSchedule(req, stringset.NewFromSlice(bb.ExperimentBBAgent), nil), ShouldBeNil)
+				So(validateSchedule(ctx, req, stringset.NewFromSlice(bb.ExperimentBBAgent), nil), ShouldBeNil)
 			})
 
 			Convey("bad name", func() {
@@ -6458,7 +6472,7 @@ func TestScheduleBuild(t *testing.T) {
 						"bad name": true,
 					},
 				}
-				So(validateSchedule(req, nil, nil), ShouldErrLike, "does not match")
+				So(validateSchedule(ctx, req, nil, nil), ShouldErrLike, "does not match")
 			})
 
 			Convey("bad reserved", func() {
@@ -6468,7 +6482,7 @@ func TestScheduleBuild(t *testing.T) {
 						"luci.use_ralms": true,
 					},
 				}
-				So(validateSchedule(req, nil, nil), ShouldErrLike, "unknown experiment has reserved prefix")
+				So(validateSchedule(ctx, req, nil, nil), ShouldErrLike, "unknown experiment has reserved prefix")
 			})
 		})
 	})

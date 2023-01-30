@@ -22,6 +22,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -40,6 +41,8 @@ var (
 	topicIDRE = regexp.MustCompile(`^[A-Za-z]([0-9A-Za-z\._\-~+%]){3,255}$`)
 )
 
+// NewPubsubClient creates a pubsub client with the authority of a given
+// luciProject or the current service if luciProject is empty.
 func NewPubsubClient(ctx context.Context, cloudProject, luciProject string) (*pubsub.Client, error) {
 	if mockClients, ok := ctx.Value(&mockPubsubClientKey).(map[string]*pubsub.Client); ok {
 		if mockClient, exist := mockClients[cloudProject]; exist {
@@ -48,7 +51,13 @@ func NewPubsubClient(ctx context.Context, cloudProject, luciProject string) (*pu
 		return nil, errors.Reason("couldn't find mock pubsub client for %s", cloudProject).Err()
 	}
 
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(auth.CloudOAuthScopes...))
+	var creds credentials.PerRPCCredentials
+	var err error
+	if luciProject == "" {
+		creds, err = auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	} else {
+		creds, err = auth.GetPerRPCCredentials(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(auth.CloudOAuthScopes...))
+	}
 	if err != nil {
 		return nil, err
 	}

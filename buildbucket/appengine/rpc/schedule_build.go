@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -145,15 +146,31 @@ func validateGerritChanges(changes []*pb.GerritChange) error {
 }
 
 // validateNotificationConfig validates the given notification config.
-func validateNotificationConfig(n *pb.NotificationConfig) error {
+func validateNotificationConfig(ctx context.Context, n *pb.NotificationConfig) error {
 	switch {
 	case n.GetPubsubTopic() == "":
 		return errors.Reason("pubsub_topic must be specified").Err()
 	case len(n.UserData) > 4096:
 		return errors.Reason("user_data cannot exceed 4096 bytes").Err()
-	default:
-		return nil
 	}
+
+	// Validate the topic exists and Buildbucket has the publishing permission.
+	cloudProj, topicID, err := clients.ValidatePubSubTopicName(n.PubsubTopic)
+	if err != nil {
+		return errors.Annotate(err, "invalid pubsub_topic %s", n.PubsubTopic).Err()
+	}
+	client, err := clients.NewPubsubClient(ctx, cloudProj, "")
+	if err != nil {
+		return errors.Annotate(err, "failed to create a pubsub client").Err()
+	}
+	topic := client.Topic(topicID)
+	switch perms, err := topic.IAM().TestPermissions(ctx, []string{"pubsub.topics.publish"}); {
+	case err != nil:
+		return errors.Annotate(err, "failed to check existence for topic %s", topic).Err()
+	case len(perms) < 1:
+		return errors.Reason("Buildbucket account (%s@appspot.gserviceaccount.com) doesn't have the publishing permission for %s", info.AppID(ctx), topic).Err()
+	}
+	return nil
 }
 
 // prohibitedProperties is used to prohibit properties from being set (see
@@ -208,7 +225,7 @@ func validateParent(ctx context.Context) (*model.Build, error) {
 }
 
 // validateSchedule validates the given request.
-func validateSchedule(req *pb.ScheduleBuildRequest, wellKnownExperiments stringset.Set, parent *model.Build) error {
+func validateSchedule(ctx context.Context, req *pb.ScheduleBuildRequest, wellKnownExperiments stringset.Set, parent *model.Build) error {
 	var err error
 	switch {
 	case strings.Contains(req.GetRequestId(), "/"):
@@ -225,7 +242,7 @@ func validateSchedule(req *pb.ScheduleBuildRequest, wellKnownExperiments strings
 		return errors.Annotate(err, "gerrit_changes").Err()
 	case req.GitilesCommit != nil && teeErr(validateCommitWithRef(req.GitilesCommit), &err) != nil:
 		return errors.Annotate(err, "gitiles_commit").Err()
-	case req.Notify != nil && teeErr(validateNotificationConfig(req.Notify), &err) != nil:
+	case req.Notify != nil && teeErr(validateNotificationConfig(ctx, req.Notify), &err) != nil:
 		return errors.Annotate(err, "notify").Err()
 	case req.Priority < 0 || req.Priority > 255:
 		return errors.Reason("priority must be in [0, 255]").Err()
@@ -1346,7 +1363,7 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 // a normalized version of the request and field mask.
 func validateScheduleBuild(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.ScheduleBuildRequest, parent *model.Build) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	var err error
-	if err = validateSchedule(req, wellKnownExperiments, parent); err != nil {
+	if err = validateSchedule(ctx, req, wellKnownExperiments, parent); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
 	}
 	normalizeSchedule(req)
