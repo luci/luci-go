@@ -220,7 +220,7 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 
 	// Found culprit -> Update the nthsection analysis
 	if ok {
-		err := storeNthSectionResultToDatastore(c, nsa, snapshot.BlameList.Commits[cul], req)
+		suspect, err := storeNthSectionResultToDatastore(c, nsa, snapshot.BlameList.Commits[cul], req)
 		if err != nil {
 			return nsa, errors.Annotate(err, "storeNthSectionResultToDatastore").Err()
 		}
@@ -246,6 +246,20 @@ func processNthSectionUpdate(c context.Context, req *pb.UpdateAnalysisProgressRe
 			if err != nil {
 				// Non-critical, just log the error
 				err := errors.Annotate(err, "schedule culprit verification task %d_%d", req.AnalysisId, suspectID).Err()
+				logging.Errorf(c, err.Error())
+			}
+			// Update suspect verification status
+			err = datastore.RunInTransaction(c, func(c context.Context) error {
+				e := datastore.Get(c, suspect)
+				if e != nil {
+					return e
+				}
+				suspect.VerificationStatus = model.SuspectVerificationStatus_VerificationScheduled
+				return datastore.Put(c, suspect)
+			}, nil)
+			if err != nil {
+				// Non-critical, just log the error
+				err := errors.Annotate(err, "saving suspect").Err()
 				logging.Errorf(c, err.Error())
 			}
 		}
@@ -307,7 +321,7 @@ func updateNthSectionModelNotFound(c context.Context, nsa *model.CompileNthSecti
 	return nil
 }
 
-func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSectionAnalysis, blCommit *pb.BlameListSingleCommit, req *pb.UpdateAnalysisProgressRequest) error {
+func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSectionAnalysis, blCommit *pb.BlameListSingleCommit, req *pb.UpdateAnalysisProgressRequest) (*model.Suspect, error) {
 	suspect := &model.Suspect{
 		Type: model.SuspectType_NthSection,
 		GitilesCommit: bbpb.GitilesCommit{
@@ -323,7 +337,7 @@ func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSe
 	}
 	err := datastore.Put(c, suspect)
 	if err != nil {
-		return errors.Annotate(err, "couldn't save suspect").Err()
+		return nil, errors.Annotate(err, "couldn't save suspect").Err()
 	}
 
 	err = datastore.RunInTransaction(c, func(ctx context.Context) error {
@@ -339,9 +353,9 @@ func storeNthSectionResultToDatastore(c context.Context, nsa *model.CompileNthSe
 	}, nil)
 
 	if err != nil {
-		return errors.Annotate(err, "couldn't save nthsection analysis").Err()
+		return nil, errors.Annotate(err, "couldn't save nthsection analysis").Err()
 	}
-	return nil
+	return suspect, nil
 }
 
 // findNextNthSectionCommitToRun return true (and the commit) if it can find a nthsection commit to run next

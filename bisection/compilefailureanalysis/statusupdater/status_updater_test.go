@@ -169,6 +169,18 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 			createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
 			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 		})
+
+		Convey("No heuristic, nthsection suspect found, run finished, verification schedule", func() {
+			cfa := createCompileFailureAnalysisModel(c, 1020)
+			nsa := createNthSectionAnalysis(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			suspect := &model.Suspect{
+				ParentAnalysis:     datastore.KeyForObj(c, nsa),
+				VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
+			}
+			So(datastore.Put(c, suspect), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+			checkUpdateAnalysisStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+		})
 	})
 }
 

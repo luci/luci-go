@@ -403,9 +403,10 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			}
 			So(datastore.Get(c, nsaSuspect), ShouldBeNil)
 			So(nsaSuspect.GitilesCommit.Id, ShouldEqual, "commit5")
+			So(nsaSuspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_VerificationScheduled)
 			So(datastore.Get(c, cfa), ShouldBeNil)
 			So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
-			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
+			So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_STARTED)
 
 			// Assert task
 			task := &tpb.CulpritVerificationTask{

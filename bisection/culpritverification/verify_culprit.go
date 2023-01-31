@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
@@ -109,6 +110,9 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	if err != nil {
 		return err
 	}
+
+	defer updateSuspectStatus(c, suspect, cfa)
+
 	if len(cfa.VerifiedCulprits) > 0 {
 		logging.Infof(c, "culprit found for analysis %d, no need to trigger any verification runs", analysisID)
 		return nil
@@ -306,6 +310,33 @@ func getSuspectPriority(c context.Context, suspect *model.Suspect) (int32, error
 	}
 
 	return rerun.CapPriority(pri), nil
+}
+
+func updateSuspectStatus(c context.Context, suspect *model.Suspect, cfa *model.CompileFailureAnalysis) {
+	// If after VerifySuspect, the suspect verification status is not
+	// SuspectVerificationStatus_UnderVerification, it means no reruns have been scheduled
+	// so we should set the status back to SuspectVerificationStatus_Unverified
+	if suspect.VerificationStatus != model.SuspectVerificationStatus_UnderVerification {
+		err := datastore.RunInTransaction(c, func(c context.Context) error {
+			// Update suspect status
+			e := datastore.Get(c, suspect)
+			if e != nil {
+				return e
+			}
+			suspect.VerificationStatus = model.SuspectVerificationStatus_Unverified
+			return datastore.Put(c, suspect)
+		}, nil)
+
+		if err != nil {
+			logging.Errorf(c, errors.Annotate(err, "set suspect verification status").Err().Error())
+		}
+		// Also update the analysis status this case, because
+		// the analysis may ended, given the suspect is no longer under verification
+		err = statusupdater.UpdateAnalysisStatus(c, cfa)
+		if err != nil {
+			logging.Errorf(c, errors.Annotate(err, "set analysis status").Err().Error())
+		}
+	}
 }
 
 func ShouldRunCulpritVerification(c context.Context) (bool, error) {

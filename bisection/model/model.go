@@ -36,6 +36,8 @@ type SuspectVerificationStatus string
 const (
 	// The suspect is not verified and no verification is happening
 	SuspectVerificationStatus_Unverified = "Unverified"
+	// The suspect is scheduled to be verified (via a task queue)
+	SuspectVerificationStatus_VerificationScheduled = "Verification Scheduled"
 	// The suspect is under verification
 	SuspectVerificationStatus_UnderVerification = "Under Verification"
 	// The suspect is confirmed to be culprit

@@ -33,12 +33,16 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
+	gofindit "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestVerifySuspect(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
 
 	// Setup mock for buildbucket
 	ctl := gomock.NewController(t)
@@ -200,7 +204,9 @@ func TestVerifySuspect(t *testing.T) {
 	Convey("Verify Suspect should not trigger any rerun if culprit found", t, func() {
 		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8001, "chromium", 555)
 
-		suspect := &model.Suspect{}
+		suspect := &model.Suspect{
+			VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
+		}
 		So(datastore.Put(c, suspect), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		cfa.VerifiedCulprits = []*datastore.Key{
@@ -210,6 +216,7 @@ func TestVerifySuspect(t *testing.T) {
 		datastore.GetTestable(c).CatchupIndexes()
 		err := VerifySuspect(c, suspect, 8001, 555)
 		So(err, ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
 
 		// Check that no rerun was created
 		q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
@@ -217,6 +224,65 @@ func TestVerifySuspect(t *testing.T) {
 		err = datastore.GetAll(c, q, &singleReruns)
 		So(err, ShouldBeNil)
 		So(len(singleReruns), ShouldEqual, 0)
+		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Unverified)
+	})
+
+	Convey("Verify Suspect should also update analysis status", t, func() {
+		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8001, "chromium", 666)
+		cfa.Status = gofindit.AnalysisStatus_SUSPECTFOUND
+		cfa.RunStatus = gofindit.AnalysisRunStatus_STARTED
+		So(datastore.Put(c, cfa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		nsa := testutil.CreateNthSectionAnalysis(c, cfa)
+		nsa.Status = gofindit.AnalysisStatus_SUSPECTFOUND
+		nsa.RunStatus = gofindit.AnalysisRunStatus_ENDED
+		So(datastore.Put(c, nsa), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		suspect := &model.Suspect{
+			VerificationStatus: model.SuspectVerificationStatus_VerificationScheduled,
+			ParentAnalysis:     datastore.KeyForObj(c, nsa),
+			GitilesCommit: bbpb.GitilesCommit{
+				Host:    "host",
+				Project: "proj",
+				Ref:     "ref",
+				Id:      "id",
+			},
+		}
+		// Create another suspect with same gitiles commit, so that no rerun build
+		// is triggered
+		suspect1 := &model.Suspect{
+			VerificationStatus: model.SuspectVerificationStatus_Vindicated,
+			ParentAnalysis:     datastore.KeyForObj(c, nsa),
+			GitilesCommit: bbpb.GitilesCommit{
+				Host:    "host",
+				Project: "proj",
+				Ref:     "ref",
+				Id:      "id",
+			},
+		}
+		So(datastore.Put(c, suspect), ShouldBeNil)
+		So(datastore.Put(c, suspect1), ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		err := VerifySuspect(c, suspect, 8001, 666)
+		So(err, ShouldBeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		// Check that no rerun was created
+		q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
+		singleReruns := []*model.SingleRerun{}
+		err = datastore.GetAll(c, q, &singleReruns)
+		So(err, ShouldBeNil)
+		So(len(singleReruns), ShouldEqual, 0)
+		So(datastore.Get(c, suspect), ShouldBeNil)
+		So(suspect.VerificationStatus, ShouldEqual, model.SuspectVerificationStatus_Unverified)
+
+		// Verify the status is updated
+		So(datastore.Get(c, cfa), ShouldBeNil)
+		So(cfa.Status, ShouldEqual, gofindit.AnalysisStatus_SUSPECTFOUND)
+		So(cfa.RunStatus, ShouldEqual, gofindit.AnalysisRunStatus_ENDED)
 	})
 
 }

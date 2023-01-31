@@ -48,6 +48,10 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 	if err != nil {
 		return errors.Annotate(err, "couldn't decide if analysis %d has unfinished rerun", cfa.Id).Err()
 	}
+	havePendingVerificationSuspect, err := analysisStillHasSuspectWaitingToBeVerified(c, cfa)
+	if err != nil {
+		return errors.Annotate(err, "couldn't decide if analysis %d has suspect pending verification", cfa.Id).Err()
+	}
 
 	// No nth-section run. Just consider the heuristic analysis.
 	if nsa == nil || nsa.Status == pb.AnalysisStatus_ERROR {
@@ -59,7 +63,7 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 		}
 		// Heuristic found suspect. So analysis could be in progress or ended
 		// depend on if there is any rerun in progress
-		if haveUnfinishedReruns {
+		if haveUnfinishedReruns || havePendingVerificationSuspect {
 			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		} else {
 			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
@@ -77,7 +81,7 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 		}
 		// nsa found suspect. So analysis could be in progress or ended
 		// depend on if there is any rerun in progress
-		if haveUnfinishedReruns {
+		if haveUnfinishedReruns || havePendingVerificationSuspect {
 			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		} else {
 			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
@@ -88,7 +92,7 @@ func UpdateAnalysisStatus(c context.Context, cfa *model.CompileFailureAnalysis) 
 	gotSuspect := (ha.Status == pb.AnalysisStatus_SUSPECTFOUND || nsa.Status == pb.AnalysisStatus_SUSPECTFOUND)
 	if gotSuspect {
 		inProgress := (ha.Status == pb.AnalysisStatus_RUNNING || nsa.Status == pb.AnalysisStatus_RUNNING)
-		if haveUnfinishedReruns || inProgress {
+		if haveUnfinishedReruns || havePendingVerificationSuspect || inProgress {
 			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
 		} else {
 			return UpdateStatus(c, cfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
@@ -161,6 +165,19 @@ func analysisStillHaveUnfinishedReruns(c context.Context, cfa *model.CompileFail
 	}
 	for _, rerun := range reruns {
 		if rerun.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func analysisStillHasSuspectWaitingToBeVerified(c context.Context, cfa *model.CompileFailureAnalysis) (bool, error) {
+	suspects, err := datastoreutil.FetchSuspectsForAnalysis(c, cfa)
+	if err != nil {
+		return false, errors.Annotate(err, "fetchSuspectsForAnalysis").Err()
+	}
+	for _, suspect := range suspects {
+		if suspect.VerificationStatus == model.SuspectVerificationStatus_VerificationScheduled {
 			return true, nil
 		}
 	}
