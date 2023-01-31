@@ -190,7 +190,7 @@ func (b *BQExporter) convertVerdicts(vs []string) ([]verdictInfo, error) {
 	vis := make([]verdictInfo, 0, len(vs))
 	for _, v := range vs {
 		parts := strings.Split(v, "/")
-		if len(parts) != 6 {
+		if len(parts) != 7 {
 			return nil, fmt.Errorf("verdict %s in wrong format", v)
 		}
 		verdict := &bqpb.Verdict{
@@ -222,6 +222,12 @@ func (b *BQExporter) convertVerdicts(vs []string) ([]verdictInfo, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		exonerated, err := strconv.ParseBool(parts[6])
+		if err != nil {
+			return nil, err
+		}
+		verdict.Exonerated = exonerated
 
 		vis = append(vis, verdictInfo{
 			verdict:               verdict,
@@ -575,7 +581,8 @@ var testVariantRowsTmpl = template.Must(template.New("testVariantRowsTmpl").Pars
 			-- Using struct here will trigger the "null-valued array of struct" query shape
 			-- which is not supported by Spanner.
 			-- Use a string to work around it.
-			ARRAY_AGG(FORMAT('%s/%d/%s/%s/%d/%d', InvocationId, Status, FORMAT_TIMESTAMP("%FT%H:%M:%E*S%Ez", InvocationCreationTime), FORMAT_TIMESTAMP("%FT%H:%M:%E*S%Ez", IngestionTime), UnexpectedResultCount, TotalResultCount)) Invocations
+			ARRAY_AGG(FORMAT('%s/%d/%s/%s/%d/%d/%t', InvocationId, Status, FORMAT_TIMESTAMP("%FT%H:%M:%E*S%Ez", InvocationCreationTime), FORMAT_TIMESTAMP("%FT%H:%M:%E*S%Ez", IngestionTime), UnexpectedResultCount, TotalResultCount, Exonerated)) Invocations
+
 		FROM
 			Verdicts
 		WHERE

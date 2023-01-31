@@ -139,31 +139,37 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 				"IngestionTime":         oneAndHalfHAgo,
 				"UnexpectedResultCount": 0,
 				"TotalResultCount":      1,
+				"Exonerated":            false,
 			}),
 			insert.Verdict(realm, tID1, vh, "build-1", internal.VerdictStatus_VERDICT_FLAKY, twoAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
+				"Exonerated":            false,
 			}),
 			insert.Verdict(realm, tID1, vh, "build-2", internal.VerdictStatus_EXPECTED, oneAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 0,
 				"TotalResultCount":      1,
+				"Exonerated":            false,
 			}),
 			insert.Verdict(realm, tID2, vh, "build-2", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
+				"Exonerated":            true,
 			}),
 			insert.Verdict(realm, tID5, vh, "build-1", internal.VerdictStatus_EXPECTED, twoAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         now.Add(-45 * time.Minute),
 				"UnexpectedResultCount": 0,
 				"TotalResultCount":      1,
+				"Exonerated":            true,
 			}),
 			insert.Verdict(realm, tID5, vh, "build-2", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
+				"Exonerated":            true,
 			}),
 		}
 		testutil.MustApply(ctx, ms...)
@@ -174,16 +180,19 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					Invocation: "build-0",
 					Status:     "EXPECTED",
 					CreateTime: timestamppb.New(twoAndHalfHAgo),
+					Exonerated: false,
 				},
 				"build-1": {
 					Invocation: "build-1",
 					Status:     "VERDICT_FLAKY",
 					CreateTime: timestamppb.New(twoAndHalfHAgo),
+					Exonerated: false,
 				},
 				"build-2": {
 					Invocation: "build-2",
 					Status:     "EXPECTED",
 					CreateTime: timestamppb.New(oneAndHalfHAgo),
+					Exonerated: false,
 				},
 			},
 			tID2: {
@@ -191,6 +200,7 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					Invocation: "build-2",
 					Status:     "VERDICT_FLAKY",
 					CreateTime: timestamppb.New(oneAndHalfHAgo),
+					Exonerated: true,
 				},
 			},
 			tID5: {
@@ -198,11 +208,13 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					Invocation: "build-1",
 					Status:     "EXPECTED",
 					CreateTime: timestamppb.New(twoAndHalfHAgo),
+					Exonerated: true,
 				},
 				"build-2": {
 					Invocation: "build-2",
 					Status:     "VERDICT_FLAKY",
 					CreateTime: timestamppb.New(oneAndHalfHAgo),
+					Exonerated: true,
 				},
 			},
 		}
@@ -471,11 +483,7 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 						TotalResultCount:      2,
 					},
 					Verdicts: []*bqpb.Verdict{
-						{
-							Invocation: "build-2",
-							Status:     "VERDICT_FLAKY",
-							CreateTime: timestamppb.New(oneAndHalfHAgo),
-						},
+						verdicts[tID5]["build-2"],
 					},
 				},
 				{

@@ -33,6 +33,9 @@ message Verdict {
 
   // Invocation creation time.
   google.protobuf.Timestamp create_time = 3;
+
+  // Exonerated indicates whether the test variant has been exonerated.
+  bool exonerated = 4;
   // TODO: Add information about clusters and bugs.
 }
 
