@@ -657,22 +657,37 @@ func TestExamineNotification(t *testing.T) {
 		c := memory.Use(context.Background())
 		mgr := TaskManager{}
 
-		Convey("v1", func() {
+		Convey("v1 builds", func() {
 			tok := mgr.ExamineNotification(c, &pubsub.PubsubMessage{
 				Attributes: map[string]string{"auth_token": "blah"},
 			})
 			So(tok, ShouldEqual, "blah")
 		})
 
-		Convey("v2", func() {
-			call := func(data string) string {
-				return mgr.ExamineNotification(c, &pubsub.PubsubMessage{
-					Data: data,
-				})
-			}
-			So(call(base64.StdEncoding.EncodeToString([]byte(`{"user_data": "blah"}`))), ShouldEqual, "blah")
-			So(call(base64.StdEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
-			So(call("not base64"), ShouldEqual, "")
+		Convey("v2 builds", func() {
+			Convey("old pubsub message", func() {
+				call := func(data string) string {
+					return mgr.ExamineNotification(c, &pubsub.PubsubMessage{
+						Data: data,
+					})
+				}
+				So(call(base64.StdEncoding.EncodeToString([]byte(`{"user_data": "blah"}`))), ShouldEqual, "blah")
+				So(call(base64.StdEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
+				So(call("not base64"), ShouldEqual, "")
+			})
+			Convey("new pubsub message", func() {
+				call := func(data string) string {
+					return mgr.ExamineNotification(c, &pubsub.PubsubMessage{
+						Data:       data,
+						Attributes: map[string]string{"version": "v2"},
+					})
+				}
+
+				ud := base64.StdEncoding.EncodeToString([]byte("blah"))
+				So(call(base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"userData": "%s"}`, ud)))), ShouldEqual, "blah")
+				So(call(base64.StdEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
+				So(call("not base64"), ShouldEqual, "")
+			})
 		})
 	})
 }

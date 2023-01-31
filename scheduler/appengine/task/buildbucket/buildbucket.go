@@ -369,14 +369,20 @@ func (m TaskManager) ExamineNotification(c context.Context, msg *pubsub.PubsubMe
 		logging.Warningf(c, "PubSub message data is not base64: %s", err)
 		return ""
 	}
+
 	var body struct {
-		UserData string `json:"user_data"`
+		UserDataLegacy string `json:"user_data,omitempty"`
+		UserData       []byte `json:"userData,omitempty"`
 	}
 	if err := json.Unmarshal(blob, &body); err != nil {
 		logging.Warningf(c, "PubSub message is not valid JSON: %s", err)
 		return ""
 	}
-	return body.UserData
+	if body.UserData != nil {
+		return string(body.UserData)
+	}
+	logging.Warningf(c, "crbug.com/1410912: PubSub legacy format")
+	return body.UserDataLegacy
 }
 
 // HandleNotification is part of Manager interface.
