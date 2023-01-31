@@ -23,7 +23,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20220510175640-3b4b64021035
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20220518145948-4b34b65cbf91
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230123164355-3533698631dd
 	github.com/danjacques/gofslock v0.0.0-20220131014315-6e321f4509c8
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1

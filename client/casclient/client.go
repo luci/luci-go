@@ -171,7 +171,16 @@ func Options(creds credentials.PerRPCCredentials) []client.Opt {
 		&client.PerRPCCreds{Creds: creds},
 		client.CASConcurrency(casConcurrency),
 		client.UtilizeLocality(true),
-		&client.TreeSymlinkOpts{Preserved: true, FollowsTarget: false},
+		&client.TreeSymlinkOpts{
+			// Symlinks will be uploaded as-is...
+			Preserved: true,
+			// ... and the target file included in the CAS archive...
+			FollowsTarget: true,
+			// ... unless the target file is outside the root directory, in
+			// which case the target file will be uploaded instead of preserving
+			// the symlink.
+			MaterializeOutsideExecRoot: true,
+		},
 		// Set restricted permission for written files.
 		client.DirMode(0700),
 		client.ExecutableMode(0700),
