@@ -25,6 +25,9 @@ var (
 	// impossible length.
 	ErrLength = errors.New("base128: invalid length base128 string")
 
+	// ErrCongruence is used for lengths that are congruent to 1 mod 8 and thus impossible.
+	ErrCongruence = errors.New("base128: length of string is congruent to 1 mod 8, which is impossible")
+
 	// ErrBit is returned from the Decode* methods if the input has a byte with
 	// the high-bit set (e.g. 0x80). This will never be the case for strings
 	// produced from the Encode* methods in this package.
