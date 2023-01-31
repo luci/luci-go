@@ -92,7 +92,7 @@
 // Purging PolicyConfigs results in the deletion of a PolicyConfig and should
 // only be used for PolicyConfigs that the application knows are no longer in
 // use. However, in the event that a PolicyConfig is purged while Accounts still
-// list it:
+// reference it:
 //   - Operations on those Accounts without supplying a new Policy reference
 //     will continue to use the snapshot of the policy stored in the Account.
 //     We could potentially make this produce a warning or error, however.
@@ -109,6 +109,12 @@
 //   - Default - The value to set a previously non-existant Account to when
 //     first accessing it.
 //   - Limit - The maximum value an Account can have.
+//   - Options - Bit field indicating various options. Currently the only option
+//     is `ABSOLUTE_RESOURCE` which indicates that this policy constrains
+//     a resource which is managed exclusively by the application (for example,
+//     represents the current number of in-flight builds, etc.). This will
+//     disable the `quota.accounts.write` permission for accounts managed with
+//     this Policy.
 //   - Lifetime - The number of seconds to wait before garbage collecting an
 //     Account after its last update. This is implemented with a Redis TTL which
 //     is refreshed on the Account each time it's written.
@@ -119,7 +125,8 @@
 //   - Interval - The number of seconds in between fill events. Intervals are
 //     synchronized to UTC midnight + Offset. See the "Refill Behavior" section
 //     for a discussion on how Refill is implemented. Note that there is no cron
-//     or "stampede" from synchronizing refill events in this way.
+//     or "stampede" from synchronizing refill events in this way. This must
+//     evenly divide 24 hours (86400 seconds).
 //   - Offset - The number of seconds to offset UTC midnight to the 0th daily
 //     interval.
 //
@@ -135,9 +142,6 @@
 //     LastUpdate).
 //   - LastPolicyChange - Time when the currently applied Policy was first
 //     set.
-//   - Options - Bit field indicating various options. Currently the only option
-//     is `MANUAL_WRITE_OK=1` which enables `quota.accounts.write` for this
-//     account.
 //   - PolicyConfig - Redis key for the versioned PolicyConfig last used for this
 //     Account.
 //   - PolicyKey - Hash key (namespace ~ name ~ resource_type) in the PolicyConfig
@@ -151,29 +155,46 @@
 //
 // # Operations
 //
-// Operations combine a Policy with an Account in one of a few pre-defined ways:
-//   - Delta - make a positive or negative adjustment to an Account balance
-//     constrained by a Policy.
-//   - Reset - set the Account balance to one of the constants in the Policy
-//     (i.e. Default, Zero or Limit).
-//   - Set - set the Account balance to an arbitrary value (optional Policy
-//     will cap the value)
+// Operations combine a Policy with an Account, plus a delta.
 //
-// All operations allow supplying or omitting a Policy. If omitted, will use the
-// policy details stored in the Account. If supplied, this Policy becomes
-// the stored Policy for the account.
+// Operations have:
+//   - account - The ID of the account to apply to.
+//   - policy - (optional) The PolicyConfig ID + Policy key to set on this
+//     Account.
+//   - delta - An offset from the value specified by `relative_to`.
+//   - relative_to - Enum with values CURRENT_BALANCE, ZERO, DEFAULT, and LIMIT.
+//   - options -
+//   - IGNORE_POLICY_BOUNDS - This allows `$relative_to + delta` to bring
+//     balance outside of the Policy's (0,limit) range.
 //
-// When an Operation occurs, the system first does a Refill (see the "Refill
-// Behavior" section), followed by the application of the Operation.
+// An Operation is applied by:
+//   - Creating the Account if it is missing, populating it with the provided
+//     Policy default, applying any refill to the existing Account balance
+//     under the Account's existing policy.
+//   - If the Operation includes a Policy, setting that Policy on the Account.
+//   - Calculating the new balance and checking if it is within the current/new
+//     Policy bounds.
+//   - Saving the new Account balance, policy, and resetting the Account TTL.
 //
-// It is permitted to apply multiple Operations (possibly to differing accounts
-// under different policies) in the same RPC.
+// Operations can fail in one of three ways:
+//   - FAIL_OUT_OF_BOUNDS - The Operation would have brought the Account out of
+//     (0, Policy.Limit), and options=IGNORE_POLICY_BOUNDS was unset.
+//   - FAIL_UNKNOWN_POLICY - The Operation included a policy which wasn't
+//     loaded.
+//   - FAIL_MISSING_ACCOUNT - The Operation referred to an Account, but also
+//     didn't set a policy, meaning that the Operation couldn't create the
+//     Account.
 //
-// All Operations will also return the after-adjustment-balance.
+// NOTE: For Accounts where the balance is ALREADY out bounds, Operations which
+// bring the balance closer to in-bounds ARE allowed. For example, a delta
+// CURRENT_BALANCE+1 would be allowed for an Account whose balance was -10, and
+// a delta CURRENT_BALANCE-10 would be allowed for an Account whose balance was
+// 19 with a limit of 10.
 //
-// There will also be a Get operation which ONLY reads the data, returning the
+// There is also a Get operation which ONLY reads the data, returning the
 // full Account data and also the projected value (e.g. after refills). This
-// operation does NOT change the LastRefill timestamp.
+// operation does NOT change the Account at all (i.e. last_refill, TTL, etc.
+// are all left as-is).
 //
 // # Application-specific identifiers (ASIs)
 //
@@ -263,10 +284,7 @@
 //   - quota.accounts.list - Allows listing accounts
 //     Binding context: {app_id, resource_type, namespace}
 //   - quota.accounts.write - Allows modifying accounts. Note that this only
-//     applies to accounts which have the option MANUAL_WRITE_OK. For example,
-//     some Applications use Accounts to represent a number of active
-//     resources; Allowing users to directly change this value via the Admin API
-//     doesn't actually make sense.
+//     applies to accounts which do not have the option ABSOLUTE_RESOURCE.
 //     Binding context: {app_id, resource_type, namespace}
 //   - quota.policies.read - Allows reading policy contents.
 //     Binding context: {app_id}
@@ -284,8 +302,10 @@
 //   - hasPermission(perm, operation_realm) OR
 //   - hasPermission(perm, "@internal:<service-app-id>")
 //
-// That is, internal permissions can be granted to service deployment
-// Admins.
+// That is, internal permissions can be granted to service deployment Admins.
+// Additionally, permissions granted in this realm will ignore the
+// ABSOLUTE_RESOURCE flag on accounts, becuase it's presumed that service
+// deployment Admins understand the nuances of manually adjusting such Accounts.
 //
 // NOTE: These access controls ONLY apply to requests via the Administration
 // service API. Interaction with the quotas via the Go API do not do any access
@@ -320,6 +340,13 @@
 // Oops... our 10/day quota actually allows the user to burst up to 19/day.
 // Mondays are gonna be spicy.
 //
+// Another aspect of the current implementation is that the Interval MUST
+// cleanly divide one day. This allows the Interval to have a daily cycle and
+// reduces the possible edge cases when switching policies for an Acccount where
+// the Policies have different refill periods. Otherwise, oddball intervals
+// (like 13h) would skew by an hour each day, and when we eventually switch
+// policies, the Account would lose an unpredictable amount of refill time.
+//
 // # Implementation notes - Refill Synchronization
 //
 // Quota refills are tricky; originally we started the clock at account creation
@@ -351,7 +378,7 @@
 //
 // The quota library has a simple deduplication scheme which is indended to
 // prevent accidentally applying Operations multiple times (for example,
-// applying a Delta(-10) operation twice when you only wanted to apply it once
+// applying a Op(-10) operation twice when you only wanted to apply it once
 // could be pretty bad).
 //
 // When any actor interacts with the Quota library (either via the Go interface

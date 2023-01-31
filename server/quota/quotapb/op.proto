@@ -1,0 +1,143 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "validate/validate.proto";
+
+import "go.chromium.org/luci/server/quota/quotapb/ids.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// A single operation to apply to the quota state.
+//
+// NOTE: Keep in sync with RawOp, which is the type which is actually passed to
+// the update lua script.
+message Op {
+  // The Account to adjust the value for.
+  AccountID account_id = 1 [
+    (validate.rules).message.required = true
+  ];
+
+  // The policy under which to adjust the account balance.
+  //
+  // If the policy is not specified, this will use the Policy already set on the
+  // Account.
+  //
+  // If the Account doesn't already exist, this Op will fail with an error of
+  // status MISSING_ACCOUNT, unless relative_to is ZERO.
+  PolicyID policy_id = 2;
+
+  enum RelativeTo {
+    // This will apply Delta by adding it to the Account's current balance.
+    //
+    // Note that if the Account is new, and `policy_ref` was omitted, this will
+    // fail with an error status MISSING_ACCOUNT.
+    CURRENT_BALANCE = 0;
+
+    // This will apply Delta by adding it to zero; This effectively allows you
+    // to 'set' an Account to some specific value.
+    ZERO = 1;
+
+    // This will apply Delta by adding it to the policy `default` value.
+    //
+    // This uses the `default` field of the Account's current policy, if
+    // `policy` on this Op is omitted. Otherwise this will use the `default`
+    // field of the new policy.
+    //
+    // It is an error to use this RelativeTo value with an Account containing no
+    // Policy, and this will result in an error status of POLICY_REQUIRED.
+    DEFAULT = 2;
+
+    // This will apply Delta by adding it to the policy `limit` value.
+    // Usually this is used with a negative Delta.
+    //
+    // This uses the `limit` field of the Account's current policy, if
+    // `limit` on this Op is omitted. Otherwise this will use the `limit`
+    // field of the new policy.
+    //
+    // It is an error to use this RelativeTo value with an Account containing no
+    // Policy, and this will result in an error status of POLICY_REQUIRED.
+    LIMIT = 3;
+  }
+  // The value that `delta` is relative to, when calculating the new balance.
+  RelativeTo relative_to = 3;
+
+  // Delta is the number of units to add (or subtract) from the `relative_to` to
+  // get a new `proposed` balance for the given Account.
+  //
+  // If `proposed` would bring a positive Account balance below 0, this will an
+  // error with status UNDERFLOW.
+  //   * IGNORE_POLICY_BOUNDS will allow this Op to bring the Account balance
+  //     negative.
+  //
+  // If `proposed` would set the Account balance above Policy.limit, this will
+  // instead set the Account balance to Policy.limit.
+  //   * IGNORE_POLICY_BOUNDS will allow this Op to set the Account balance above
+  //     Policy.limit.
+  //   * DO_NOT_CAP_PROPOSED will cause this to be an error with status OVERFLOW.
+  //
+  // Adding to an account with a negative balance is OK, and will increase the
+  // balance by the given amount (subject to the rules above).
+  // Subtracting from an account with an over-limit balance is OK, and will
+  // decrease the balance by the given amount (subject to the rules above).
+  //
+  // Ops with relative_to CURRENT_BALANCE or ZERO and no Policy set have no
+  // boundaries (i.e. value can drop below zero or go all the way up to the
+  // maximum balance without issue).
+  //
+  // Note that Ops with `delta == 0` are legitimate, for example:
+  //   * as a means to apply a new policy without explicitly modifying
+  //     the balance.
+  //   * as a means to recalculate and save a refill policy value (note that
+  //     this should not effect the observed value of the balance; e.g. delta:
+  //     0 followed by delta: 1 at the same time will have the same cumulative
+  //     effect as just delta: 1)
+  //   * as a means to 'touch' an active account, resetting its updated_ts
+  //     time and any potential expiration timer.
+  int64 delta = 4 [(validate.rules).int64 = {
+    gte: -9007199254740
+    lte:  9007199254740
+  }];
+
+  // NOTE: Options is a collection of bit-field values, not a standard enum.
+  enum Options {
+    // Default value; no implied behavior change.
+    NO_OPTIONS = 0;
+
+    // If set, this Op can bring the account balance out of bounds; A positive
+    // Delta will be allowed to bring the account balance above the
+    // Policy.limit, and a negative Delta will be allowed to bring the account
+    // balance below zero.
+    //
+    // NOTE: Regardless of this setting, Refill will never cause an Account to
+    // go out of [0, Policy.limit], or cause an Account already in such a state
+    // to go MORE out of bounds. This option only affects the behavior of `delta`.
+    //
+    // Mutually exclusive with DO_NOT_CAP_PROPOSED.
+    IGNORE_POLICY_BOUNDS = 1;
+
+    // If set, and this Op's positive delta would be capped by the policy limit,
+    // AND the new value would be greater than the current balance, this Op will
+    // produce an error with status OVERFLOW.
+    //
+    // For example, if the account has a value 10 with a limit of 15, normally
+    // an Op{CURRENT_BALANCE, +10} would result in a balance of 15, but if it
+    // instead had this bit set, the Op would error out.
+    //
+    // Additionally, if an account has a value 20, with a limit of 10, normally
+    // an Op{CURRENT_BALANCE, -5} would result in a balance of 10 (the limit),
+    // but if it instead had this bit set, the Op would result in a balance of
+    // 15.
+    //
+    // Mutually exclusive with IGNORE_POLICY_BOUNDS.
+    // No-op for Ops with delta <= 0.
+    DO_NOT_CAP_PROPOSED = 2;
+    // Next entry is 4.
+  }
+  // Bitwise-OR of Options values.
+  uint32 options = 5;
+}

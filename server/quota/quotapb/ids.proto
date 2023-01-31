@@ -1,0 +1,181 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "validate/validate.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// Identifies a PolicyConfig (group of Policies).
+message PolicyConfigID {
+  // The short application id.
+  //
+  // This is used to separate different applications in the same service
+  // deployment.
+  //
+  // This should be a short indicator of what logical service this PolicyConfig
+  // applies to (like `cv` or `rdb`, not `luci-cv.appspot.com`).
+  string app_id = 1 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The LUCI realm that the PolicyConfig belongs to.
+  //
+  // This is a global realm string (i.e. includes the project).
+  //
+  // NOTE: This realm and the Account realm will USUALLY NOT match. The realm here
+  // is indicating the realm in which this PolicyConfig is administered (e.g.
+  // admins/services can write, read or purge it). The Account realm indicates
+  // where the governed _resource_ lives, and the service can apply a Policy
+  // from a Config in any realm it needs to.
+  //
+  // Examples:
+  //   chromium:@project
+  //   @internal:<LUCI service-name>
+  string realm = 2 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // Version scheme indicates which algorithm was used to calculate `version`.
+  //
+  // The value `0` indicates that `version` was provided by the user.
+  //
+  // Currently the highest version_scheme supported is `1`.
+  uint32 version_scheme = 3 [
+    (validate.rules).uint32.lte = 1
+  ];
+
+  // The version of this PolicyConfig (ASI).
+  string version = 4 [
+    (validate.rules).string.not_contains = "~"
+  ];
+}
+
+// Looking up a single policy requires a PolicyConfigID and a PolicyKey.
+//
+// The PolicyConfigID identifies which policy config contains the entry required,
+// and the PolicyKey refers to a specific policy within that config.
+//
+// Also see PolicyRef.
+message PolicyID {
+  PolicyConfigID config = 1 [
+    (validate.rules).message.required = true
+  ];
+  PolicyKey key = 2 [
+    (validate.rules).message.required = true
+  ];
+}
+
+// PolicyRef holds the same data as a PolicyID, but in string-encoded form.
+//
+// This is used by the quota library internally, but also appears in e.g.
+// Account (because the Account object needs to be directly manipulated by the
+// quota library internals). All RPC and API surfaces for the quota library use
+// PolicyID instead.
+//
+// TODO(iannucci) -- add regex?
+message PolicyRef {
+  // config is a PolicyConfigID where all fields have been joined with `~`, and
+  // then `"a~p~` prepended.
+  string config = 1;
+  // key is a PolicyKey where all fields have been joined with `~`.
+  string key = 2;
+}
+
+// PolicyKey identifies a single Policy inside of a PolicyConfig.
+message PolicyKey {
+  // The namespace of the Policy (ASI).
+  //
+  // Used by the application to logically separate multiple policy groups
+  // within the same realm.
+  //
+  // Examples:
+  //   cqGroupName
+  //   RPCService.RPCName
+  string namespace = 1 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The name of the Policy (ASI)
+  //
+  // Examples:
+  //   account|user:identity
+  //   sharedQuota|sharedAccountName
+  string name = 2 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The type of resource managed by this policy (ASI)
+  //
+  // (e.g. runs, qps, data_size, etc.)
+  string resource_type = 3 [
+    (validate.rules).string.not_contains = "~"
+  ];
+}
+
+// Identifies a single Account.
+message AccountID {
+  // The short application id.
+  //
+  // This is used to separate different applications in the same service
+  // deployment.
+  //
+  // This should be a short indicator of what logical service this Account
+  // applies to (like `cv` or `rdb`, not `luci-cv.appspot.com`).
+  //
+  // Examples:
+  //   cv
+  //   rdb
+  string app_id = 1 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The LUCI realm that the Account belongs to.
+  //
+  // This is a global realm string (i.e. includes the project).
+  //
+  // NOTE: This realm and the PolicyConfig realm will USUALLY NOT match. The
+  // realm here is indicating the realm of the resource governed by this
+  // Account.
+  //
+  // Examples:
+  //   chromium:ci
+  //   @internal:<LUCI service-name>
+  string realm = 2 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The namespace of the Account (ASI).
+  //
+  // Used by the application to logically separate multiple account groups
+  // within the same realm.
+  //
+  // Examples:
+  //   cqGroupName
+  //   RPCService.RPCName
+  string namespace = 3 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The name of the Account (ASI)
+  //
+  // Examples:
+  //   account|user:identity
+  //   sharedQuota|sharedAccountName
+  string name = 4 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The type of resource managed by this account.
+  //
+  // Examples:
+  //   qps
+  //   runningBuilds
+  string resource_type = 5 [
+    (validate.rules).string.not_contains = "~"
+  ];
+}

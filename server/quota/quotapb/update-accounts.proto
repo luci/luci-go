@@ -1,0 +1,62 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+
+import "go.chromium.org/luci/server/quota/quotapb/op.proto";
+import "go.chromium.org/luci/server/quota/quotapb/ids.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// UpdateAccountsInput is the message that the Go library will use to invoke
+// update-accounts.lua.
+//
+// See ApplyOpsRequest for `request_id` and `request_id_ttl` fields.
+//
+// Validation rules are omitted from this because lua doesn't use them, and Go
+// will never read this message.
+message UpdateAccountsInput {
+  // request_key is a serialized RequestDedupKey.
+  string request_key = 1;
+  // Required if request_key is set.
+  google.protobuf.Duration request_key_ttl = 2;
+
+  // Version scheme indicates which algorithm was used to calculate `version`.
+  //
+  // The value `0` indicates that `version` was provided by the user.
+  //
+  // Currently the ONLY ops_hash_scheme supported is `1`.
+  //
+  // If, in the future, more hash schemes are added, because request
+  // deduplication entries are transient, we do the following:
+  // If a request comes in, and req.ops_hash_scheme != self.ops_hash_scheme,
+  // return the cached response as if ops_hash matches.
+  //
+  // Note that the upshot of this is that requests with the same request_id, but
+  // differing contents, will be incorrectly served with an OK response when
+  // upgrading the hash_scheme.
+  uint32 hash_scheme = 3;
+
+  // A hash calculated by the Go library of the following fields in
+  // a deterministic way, according to req_hash_scheme:
+  //   * ops
+  //
+  // This is saved for the deduplication entry and expected to match.
+  string hash = 4;
+
+  repeated RawOp ops = 5;
+}
+
+message RawOp {
+  string account_ref = 1;
+  // policy_id of {"", ""} means "remove policy"
+  PolicyRef policy_ref = 2;
+  Op.RelativeTo relative_to = 3;
+  int64 delta = 4;
+  uint32 options = 5;
+}

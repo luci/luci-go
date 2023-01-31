@@ -1,0 +1,59 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+import "go.chromium.org/luci/server/quota/quotapb/ids.proto";
+import "go.chromium.org/luci/server/quota/quotapb/policy.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// An Account represents the current state of a single account.
+//
+// Note that a given user will have an account for each resource type in each
+// domain (realm, namespace) that they interact with. Each account tracks
+// exactly one balance.
+message Account {
+  // The current numeric amount balance.
+  //
+  // NOTE: The odd-looking limits are because the current implementation uses
+  // Lua5.1 (embedded in Redis) for quota accounting, which stores numbers as
+  // doubles (making the maximum safe integer range only 53 bits). It would be
+  // possible to address this limit with some work. If you have a need of an
+  // account balance under/over these thresholds, please let us know.
+  int64 balance = 1 [(validate.rules).int64 = {
+    gte: -9007199254740991
+    lte:  9007199254740991
+  }];
+
+  // The timestamp when the `balance` was last updated.
+  //
+  // This has microsecond accuracy (but note that refresh policies are only
+  // calculated at one-second resolution).
+  google.protobuf.Timestamp updated_ts = 2 [
+    (validate.rules).timestamp.required = true
+  ];
+
+  // The timestamp when this account's policy last changed.
+  //
+  // This has microsecond accuracy.
+  google.protobuf.Timestamp policy_change_ts = 3 [
+    (validate.rules).timestamp.required = true
+  ];
+
+  // The ref for the Policy which currently applies to this Account.
+  PolicyRef policy_ref = 4 [
+    (validate.rules).message.required = true
+  ];
+
+  // Snapshot of the Policy which currently applies to this Account.
+  Policy policy = 5 [
+    (validate.rules).message.required = true
+  ];
+}

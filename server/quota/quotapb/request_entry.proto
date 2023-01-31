@@ -1,0 +1,26 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "validate/validate.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// An RequestDedupEntry represents the data used for a unique request
+// deduplication entry key.
+message RequestDedupKey {
+  // The luci auth Identity which issued this request.
+  string ident = 1 [
+    (validate.rules).string.not_contains = "~"
+  ];
+
+  // The user-supplied request id.
+  string request_id = 2 [
+    (validate.rules).string.not_contains = "~"
+  ];
+}
+

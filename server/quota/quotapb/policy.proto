@@ -1,0 +1,142 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "validate/validate.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// A Policy represents a single quota policy.
+//
+// A single Policy will typically be used to govern many Accounts.
+//
+// Policies are always loaded into the database within a PolicyConfig.
+message Policy {
+  // The number of resources to assign to an Account when first accessed under
+  // this Policy.
+  //
+  // Must be <= `limit`.
+  uint64 default = 1 [
+    (validate.rules).uint64.lte = 9007199254740991
+  ];
+
+  // The maximum balance of Accounts managed under this Policy.
+  //
+  // Operations with a positive delta will be capped to this value, unless they
+  // specify `POLICY_HARD_LIMIT`, in which case exceeding this limit will be an
+  // error.
+  //
+  // If this policy has a positive refill, accounts with this policy will
+  // gradually fill to this limit over time (but will never refill past it).
+  //
+  // NOTE: When assigning a new Policy to an existing Account it's possible for
+  // an Account balance to exceed this value.
+  //
+  // For example, say an Account had a balance of 100 under a Policy with
+  // a limit of 100, but then you set a new Policy with a limit of 50. In this
+  // case, the Account balance remains at 100. However, the Account would not
+  // gain any additional refill under the new Policy until it was brought below
+  // 50 (the new limit).
+  //
+  // This is done because applications using the quota library may not have full
+  // consistency with their Policy choice (e.g. they may choose a Policy based
+  // on group membership, which is volatile, or some application nodes may have
+  // gotten configuration to use a new Policy version while others haven't).
+  uint64 limit = 2 [
+    (validate.rules).uint64.lte = 9007199254740991
+  ];
+
+  // Refill describes how Accounts under this Policy refill (or drain) over
+  // time.
+  //
+  // The Refill process mimics a cron, starting at UTC midnight + offset, waking
+  // up every `interval` seconds to add `units` to the Account balance (up to
+  // `limit`). This refill operation only happens when an Account is actually
+  // interacted with, however.
+  message Refill {
+    // The number of units to add to the Account banance every `interval`.
+    //
+    // The refill process is discrete; From T0..T0+interval, none of
+    // these units will appear in the Account balance. At T0+interval, all
+    // the units will be added.
+    //
+    // Note that it's permitted to have a negative refill `units` to have
+    // Account balances drain back to 0 over time.
+    //
+    // It's not permitted for the units to be 0 (just omit the Refill message
+    // entirely in that case).
+    int64 units = 1 [(validate.rules).int64 = {
+      gte: -9007199254740991
+      not_in: 0
+      lte:  9007199254740991
+    }];
+
+    // The number of seconds between refill events, synchronized to UTC midnight
+    // + `offset`.
+    //
+    // If this is 0 and `units` is positive, the Account will be treated as if
+    // it always has `limit` quota.
+    //
+    // It is an error for this to be 0 with negative `units`. To achieve this,
+    // just make a Policy with a limit of 0 and no Refill.
+    //
+    // Refill events occur synchronized to "midnight" in UTC. So if you set this
+    // to 60, then each minute-after-UTC-midnight, the Account will gain
+    // `units`. This synchronization makes quota Account refill more
+    // predictable.
+    //
+    // The offset from UTC is currently configed on the Policy (i.e. to support
+    // policies which are synched with different time zones), but this
+    // presumably could instead be configured on a per-Account basis, if it were
+    // needed.
+    //
+    // This MUST evenly divide 24h (86400). For example, an interval of 71 is
+    // NOT OK because it would divide the day into 1216.9 intervals, meaning
+    // that the refresh 'cycle' could not correctly reset at midnight every day.
+    // An interval of 72 IS ok though, because it evenly divides the day into
+    // 1200 refresh periods.
+    uint32 interval = 2 [
+      (validate.rules).uint32.lte = 86400  // 24h
+    ];
+
+    // An offset from UTC midnight. This will be used to establish when the
+    // associated Accounts 'start their day', and can be used to implement
+    // a rudimentary timezone alignment for quota Accounts.
+    uint32 offset = 3 [
+      (validate.rules).uint32.lte = 86400  // 24h
+    ];
+  }
+  Refill refill = 3;
+
+  enum Options {
+    NO_OPTIONS = 0;
+
+    // Indicates that this Policy covers a resource type which represents an
+    // absolute quantity (e.g. number of builds in flight, current amount of
+    // storage used, etc.). Accounts flagged with this option cannot be manually
+    // manipulated via the Admin API, even with `quota.accounts.write`
+    // permission. Applications which need to expose 'reset' functionality for
+    // these should expose their own endpoints for this (or, ideally, don't
+    // allow these Accounts to get out of sync with reality in the first place
+    // :))
+    ABSOLUTE_RESOURCE = 1;
+  }
+  // Bitwise-OR of Options values.
+  int32 options = 4;
+
+  // The amount of time that Accounts created with this Policy should persist
+  // after being written. Each Op on the Account refreshes the timeout.
+  //
+  // This could be used to create temporary quota Accounts based on e.g. IP
+  // address which automatically garbage collect after a certain time.
+  //
+  // A value of 0 means an 'infinite' Account lifetime (the default).
+  // It's recommended to pick some very large value for this rather than 0, to
+  // allow Redis to prune old Accounts when it needs to do garbage collection.
+  google.protobuf.Duration lifetime = 5;
+}

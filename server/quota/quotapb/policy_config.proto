@@ -1,0 +1,21 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "go.chromium.org/luci/server/quota/quotapb/ids.proto";
+import "go.chromium.org/luci/server/quota/quotapb/policy.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// A PolicyConfig encapsulates a set of quota policies.
+message PolicyConfig {
+  message Entry {
+    PolicyKey key = 1;
+    Policy policy = 2;
+  }
+  repeated Entry policies = 1;
+}

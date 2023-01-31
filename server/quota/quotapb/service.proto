@@ -1,0 +1,162 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+import "validate/validate.proto";
+
+import "go.chromium.org/luci/server/quota/quotapb/account.proto";
+import "go.chromium.org/luci/server/quota/quotapb/ids.proto";
+import "go.chromium.org/luci/server/quota/quotapb/op.proto";
+import "go.chromium.org/luci/server/quota/quotapb/policy_config.proto";
+
+option go_package = "go.chromium.org/luci/server/quota/quotapb";
+
+package go.chromium.org.luci.server.quota.quotapb;
+
+// A GetAccountsRequest is a request to fetch multiple Account entries.
+//
+// You must have the `quota.accounts.read` permission in the realm of all the
+// indicated accounts.
+message GetAccountsRequest {
+  // A list of specific accounts to fetch.
+  repeated AccountID account = 1;
+}
+
+// GetAccountsResponse is the response to GetAccounts()
+message GetAccountsResponse {
+  message AccountState {
+    AccountID id = 1[
+      (validate.rules).message.required = true
+    ];
+
+    // The current account, if the account exists, unset otherwise.
+    Account account = 2;
+
+    // Contains the effective balance for the account, given its current
+    // refill policy and updated_ts.
+    int64 projected_balance = 3;
+  }
+  repeated AccountState accounts = 1;
+}
+
+// ApplyOpsRequest allows a number of quota operations to be performed atomically.
+message ApplyOpsRequest {
+  // If provided, the service will de-duplicate the request based on this ID,
+  // namespaced to the calling user.
+  //
+  // Once this ApplyOpsRequest successfully applies once, futher ApplyOpsRequests
+  // within `request_id_ttl` will immediately return as successful.
+  string request_id = 1;
+
+  // Must be set, and positive, if request_id is set.
+  //
+  // This currently only has per-second granularity.
+  google.protobuf.Duration request_id_ttl = 2 [
+    (validate.rules).duration.required = false,
+    (validate.rules).duration.gt.seconds = 0
+  ];
+
+  // The operations to apply.
+  repeated Op ops = 3;
+}
+
+message OpError {
+  enum Status {
+    // There was an otherwise-unclassified error while applying this operation.
+    UNKNOWN = 0;
+
+    // The Op failed because it would bring the Account balance above the policy
+    // limit.
+    OVERFLOW = 1;
+
+    // The Op failed because it would bring the Account balance below 0.
+    UNDERFLOW = 2;
+
+    // The Op failed because it referred to a Policy which doesn't exist.
+    UNKNOWN_POLICY = 3;
+
+    // The Op failed because it applied to a non-existant Account and no Policy
+    // was given.
+    MISSING_ACCOUNT = 4;
+
+    // The Op failed because it used relative_to=DEFAULT or LIMIT, but the Account
+    // had no Policy attached to it.
+    POLICY_REQUIRED = 5;
+  }
+  // Status for this error.
+  Status status = 1;
+
+  // For UNDERFLOW or OVERFLOW, this will be set to the observed balance of the
+  // Account.
+  //
+  // Note that for Accounts with an 'infinite' quota, this will be a reflection
+  // of the policy's `limit`.
+  int64 balance = 2;
+
+  // Extra context for `status` as english text. Usually unset, but will be most
+  // frequently set for UNKNOWN errors.
+  string info = 3;
+}
+
+message ApplyOpsResponse {
+  // Index of Op->balance for the specified account. If your request includes
+  // multiple Ops for the same account, this will include the balance after
+  // applying each Op.
+  //
+  // For example, if you had an Account with a balance of 0 and made
+  // a BALANCE+2, BALANCE+2 ApplyOpsRequest, this `balances` field would be
+  // [2, 4].
+  //
+  // Only set when `errors` is empty.
+  repeated int64 balances = 1;
+
+  // The time this ApplyOpsResponse was created, according to the quota state.
+  // Note that for deduplicated requests, this could be fairly old (assuming the
+  // original request was made a while ago).
+  google.protobuf.Timestamp originally_set = 2;
+
+  // A map of input operation index to outcome.
+  //
+  // Any missing outcomes imply an `OpError{Status: OK}`. Thus, an empty map
+  // here means that all operations were successfully applied.
+  map<uint32,OpError> errors = 3;
+}
+
+message WritePolicyConfigRequest {
+  // If id.version_kind != Manual, id.version will be ignored.
+  PolicyConfigID id = 1[
+    (validate.rules).message.required = true
+  ];
+
+  PolicyConfig policy_config = 2 [
+    (validate.rules).message.required = true
+  ];
+}
+
+message WritePolicyConfigResponse {
+  // Returns the computed hash version (or responds with the input `version` if
+  // using an application-specific version)
+  string version = 1;
+}
+
+// Admin exposes an administration API quota state.
+service Admin {
+  // GetAccounts returns the indicated Accounts.
+  rpc GetAccounts(GetAccountsRequest) returns (GetAccountsResponse);
+
+  // ApplyOps updates the available resources with the provided operations.
+  rpc ApplyOps(ApplyOpsRequest) returns (ApplyOpsResponse);
+
+  // WritePolicyConfig ingests the given PolicyConfig into the database.
+  rpc WritePolicyConfig(WritePolicyConfigRequest) returns (WritePolicyConfigResponse);
+
+  // TODO: ScanAccounts (w/ pattern)
+  // TODO: GetPolicyConfigs
+  // TODO: ScanPolicyConfigs (w/ pattern)
+  // TODO: PurgePolicyConfigs
+}
