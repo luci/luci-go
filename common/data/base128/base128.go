@@ -103,16 +103,6 @@ func DecodeString(s string) ([]byte, error) {
 	return dst, nil
 }
 
-// DecodedLen returns the number of bytes `encLen` encoded bytes decodes to.
-func DecodedLen(encLen int) int {
-	return (encLen * 7 / 8)
-}
-
-// EncodedLen returns the number of bytes that `dataLen` bytes will encode to.
-func EncodedLen(dataLen int) int {
-	return (((dataLen * 8) + 6) / 7)
-}
-
 // EncodeToString returns the base128 encoding of src.
 func EncodeToString(src []byte) string {
 	dst := make([]byte, EncodedLen(len(src)))
