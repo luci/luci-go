@@ -421,71 +421,12 @@
 //
 // This library makes use of `msgpack` to encode both Accounts and Policies in
 // Redis. Unfortunately, because we need to implement quota manipulation in
-// `lua`, protobuf wasn't an option for these.
+// `lua`, regular protobuf wasn't an option for these.
 //
-// Data in Redis is stored using a version-prefixed "array" encoding of the
-// structure. For example, an Account like:
+// See the go.chromium.org/luci/common/proto/msgpackpb for documentation on this
+// encoding form.
 //
-//	{
-//	  "balance": 1938,
-//	  "last_update": 1662142122,
-//	  "last_refill": 1662076800,
-//	  "last_policy_change": 1660439785,
-//	  "options": 1,
-//	  "policy_key": "cv~chromium:@project~$mo+]^aHaN<Jl6//WO=sVWaccSe^oYp[q.sdL,JjE",
-//	  "policy_name": "policyname",
-//	  "policy_limit": 10000,
-//	  "policy_refill": {
-//	    "units": 100,
-//	    "interval": 600,
-//	    "offset": 0
-//	  }
-//	}
-//
-// Will currently be encoded like (the prepended 0s are version identifiers for
-// the remaining encoded object. If we need to change the schema we can use this
-// to switch between decoders):
-//
-//	msgpack(0) +
-//	msgpack([
-//	  1938,
-//	  1662142122,
-//	  1662076800,
-//	  1660439785,
-//	  1,
-//	  "cv~chromium:@project~$mo+]^aHaN<Jl6//WO=sVWaccSe^oYp[q.sdL,JjE",
-//	  "policyname",
-//	  10000,
-//	  [
-//	    100,
-//	    600,
-//	    0
-//	  ]
-//	])
-//
-// Which is 105 bytes that looks like:
-//
-//	00 99 cd 07 92 ce 63 12 46 aa ce 63 11 47 80 ce 62 f8 4c e9 01 d9 3e 63 76 7e
-//	63 68 72 6f 6d 69 75 6d 3a 40 70 72 6f 6a 65 63 74 7e 24 6d 6f 2b 5d 5e 61 48
-//	61 4e 3c 4a 6c 36 2f 2f 57 4f 3d 73 56 57 61 63 63 53 65 5e 6f 59 70 5b 71 2e
-//	73 64 4c 2c 4a 6a 45 aa 70 6f 6c 69 63 79 6e 61 6d 65 cd 27 10 93 64 cd 02 58
-//	00
-//
-// (Note that a JSON object encoding (the other encoder available in Redis) of
-// the same would be roughly 247 bytes or more. Doing a JSON array encoding is
-// closer (190 or so), but still less efficient in terms of storage and
-// encoding/decoding.)
-//
-// Assuming account names of ~64 bytes, this means that a single account can be
-// estimated to take 256 bytes or less, which would allow a single 3GB Redis
-// instance to pessimistically manage a bit over 10 million active quota
-// accounts before starting evictions (leaving > 128MB for additional overhead).
-//
-// It would be possible to further shrink the Account by creating a shortened
-// form of the policy_ref, which takes 76 of the 117 bytes, roughly doubling the
-// number of manageable accounts. This could be done by ingesting new policy
-// config versions and assigning them a numeric ID, as well as assigning
-// a numeric ID foR the policy name. Then representing the policy_ref would take
-// no more than 10 bytes (assuming 32bit representations were required for both,
-// which is a stretch).
+// This encoding form intends to preserve protobuf's backwards compatibility
+// semantics, which (hopefully) will make forward schema migrations easy to
+// implement without requiring total cache eviction.
 package quota

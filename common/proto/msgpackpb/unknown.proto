@@ -1,0 +1,24 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/common/proto/msgpackpb";
+
+package go.chromium.org.luci.common.proto.msgpackpb;
+
+// UnknownFields is a formal definition of how this package embeds unknown
+// fields in Unmarshalled messages.
+message UnknownFields {
+  // This contains a valid msgpackpb of all the unknown fields to which this
+  // UnknownFields message is attached (i.e. map of number -> value).
+  //
+  // 536870911 was selected as the tag number to avoid accidentally overlapping
+  // with real fields.
+  //
+  // If you try to Marshal a message which actually populates a field with this
+  // number, it will return an error.
+  bytes msgpackpb_data = 536870911; // max valid field number
+}
+
