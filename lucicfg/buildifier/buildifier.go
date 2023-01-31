@@ -88,19 +88,25 @@ func (f *Finding) Format() string {
 	}
 }
 
-// Lint appliers linting and formatting checks to the given files.
+// Lint applies linting and formatting checks to the given files.
 //
-// If a nil Rewriter is accepted, we will use default rewriter in vars package
+// getRewriterForPath should return a Rewriter, given the path which
+// needs linting. This will be used to check the 'format' lint check.
+// If getRewriterForPath is nil, we will use vars.GetDefaultRewriter for
+// this.
+//
 // Returns all findings and a non-nil error (usually a MultiError) if some
 // findings are blocking.
-func Lint(loader interpreter.Loader, paths []string, lintChecks []string, rewriter *build.Rewriter) (findings []*Finding, err error) {
+func Lint(loader interpreter.Loader, paths []string, lintChecks []string, getRewriterForPath func(path string) (*build.Rewriter, error)) (findings []*Finding, err error) {
 	checks, err := normalizeLintChecks(lintChecks)
 	if err != nil {
 		return nil, err
 	}
 
-	if rewriter == nil {
-		rewriter = vars.GetDefaultRewriter()
+	if getRewriterForPath == nil {
+		getRewriterForPath = func(path string) (*build.Rewriter, error) {
+			return vars.GetDefaultRewriter(), nil
+		}
 	}
 
 	// Transform unrecognized linter checks into warning-level findings.
@@ -147,6 +153,12 @@ func Lint(loader interpreter.Loader, paths []string, lintChecks []string, rewrit
 				})
 			}
 		}
+
+		rewriter, err := getRewriterForPath(f.Path)
+		if err != nil {
+			return errors.MultiError{err}
+		}
+
 		if checkFmt && !bytes.Equal(build.FormatWithRewriter(rewriter, f), body) {
 			merr = append(merr, &Finding{
 				Path:       path,

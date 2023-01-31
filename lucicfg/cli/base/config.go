@@ -20,50 +20,39 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bazelbuild/buildtools/build"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/vars"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
 )
 
 // ConfigName is the file name we will be used for lucicfg formatting
 const ConfigName = ".lucicfgfmtrc"
 
-// GuessRewriterConfig walks up the filesystem from the common ancestor of `paths` to find a
-// .lucicfgfmtrc file, parses it and returns a Rewriter from it.
+// sentinel is used to prevent the walking functions in this package from walking
+// across a source control boundary. As of 2023 Q1 we are only worried about Git
+// repos, but should we ever support more VCS's and this walking code is still
+// required (i.e. this hasn't been replaced with a WORKSPACE style config file),
+// this should be extended.
+var sentinel = []string{".git"}
+
+// RewriterFactory is used to map from 'file to be formatted' to a Rewriter object,
+// via its GetRewriter method.
 //
-// If no config file exists, this returns a default Rewriter.
-//
-// This function also calls CheckBogusConfig and will return an error if one is found.
-func GuessRewriterConfig(paths []string) (*build.Rewriter, error) {
-	// Find the common ancestor
-	commonAncestorPath, err := filesystem.GetCommonAncestor(paths, []string{".git"})
-	if errors.Is(err, filesystem.ErrRootSentinel) {
-		// we hit the repo root, just return the default rewriter
-		return LoadRewriterFromConfig("")
-	}
-	if err != nil {
-		// other errors are fatal
-		return nil, err
-	}
+// This struct is obtained via the GetRewriterFactory function.
+type RewriterFactory struct {
+	rules          []pathRules
+	configFilePath string
+}
 
-	if err := CheckForBogusConfig(commonAncestorPath); err != nil {
-		return nil, err
-	}
-
-	path, err := findConfigPathUpwards(commonAncestorPath)
-	if err != nil {
-		return nil, err
-	}
-
-	// Notify users that a config file was found
-	if path != "" {
-		fmt.Printf("\nConfig file found at %s\n", path)
-	}
-	return LoadRewriterFromConfig(path)
+type pathRules struct {
+	path  string // absolute path to the folder where this rules applies.
+	rules *buildifier.LucicfgFmtConfig_Rules
 }
 
 // CheckForBogusConfig will look for any config files contained in a subdirectory of entryPath
@@ -142,33 +131,168 @@ func rewriterFromConfig(nameOrdering map[string]int) *build.Rewriter {
 	return rewriter
 }
 
-// LoadRewriterFromConfig will return a rewriter given the path of the
-// config file.
+// GetRewriterFactory will attempt to create a RewriterFactory object
 //
-// Note - if path is an empty string, we will return a default rewriter object
-func LoadRewriterFromConfig(path string) (*build.Rewriter, error) {
-	var rewriter = rewriterFromConfig(nil)
-	if path != "" {
-		contents, err := os.ReadFile(path)
-		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				fmt.Printf("Failed on reading file - %s", path)
-				return nil, err
-				// Return empty rewriter if file does not exist
-			} else {
-				return rewriter, nil
-			}
-		}
-
-		luci := &buildifier.LucicfgFmtConfig{}
-		if err := protojson.Unmarshal(contents, luci); err != nil {
+// If configPath is empty, or points to a file which doesn't exist, the returned
+// factory will just produce GetDefaultRewriter() when asked about any path.
+// We will return an error if the config file is invalid.
+func GetRewriterFactory(configPath string) (rewriterFactory *RewriterFactory, err error) {
+	rewriterFactory = &RewriterFactory{
+		rules:          []pathRules{},
+		configFilePath: "",
+	}
+	if configPath == "" {
+		return
+	}
+	contents, err := os.ReadFile(configPath)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			fmt.Printf("Failed on reading file - %s", configPath)
 			return nil, err
 		} else {
-			rewriter = rewriterFromConfig(convertOrderingToTable(
-				luci.ArgumentNameOrdering),
-			)
+			return
 		}
-		fmt.Printf("\nFound config at %s\n", path)
 	}
-	return rewriter, nil
+	luci := &buildifier.LucicfgFmtConfig{}
+
+	if err := prototext.Unmarshal(contents, luci); err != nil {
+		return nil, err
+	}
+	return getPostProcessedRewriterFactory(configPath, luci)
+}
+
+// getPostProcessedRewriterFactory will contain all logic used to make sure
+// RewriterFactory is normalized the way we want.
+//
+// Currently, we will fix paths so that they are absolute.
+// We will also perform a check so that there are no duplicate paths and
+// all paths are delimited with "/"
+func getPostProcessedRewriterFactory(configPath string, cfg *buildifier.LucicfgFmtConfig) (*RewriterFactory, error) {
+	pathSet := stringset.New(0)
+	rules := cfg.Rules
+	rulesSlice := make([]pathRules, 0)
+	for ruleIndex, rule := range rules {
+		// If a rule doesn't have any paths, err out and notify users
+		if len(rule.Path) == 0 {
+			return nil, errors.Reason(
+				"rule[%d]: Does not contain any paths",
+				ruleIndex).Err()
+		}
+		for rulePathIndex, pathInDir := range rule.Path {
+			// Fix paths. Update to use absolute path.
+			fixedPathInDir := filepath.Clean(
+				filepath.Join(filepath.Dir(configPath), pathInDir),
+			)
+			// Check for duplicate paths. If there is, return error
+			if pathSet.Contains(stringset.NewFromSlice(fixedPathInDir)) {
+				return nil, errors.Reason(
+					"rule[%d].path[%d]: Found duplicate path '%s'",
+					ruleIndex, rulePathIndex, pathInDir).Err()
+			}
+			// Check for backslash in path, if there is, return error
+			if strings.Contains(pathInDir, "\\") {
+				return nil, errors.Reason(
+					"rule[%d].path[%d]: Path should not contain backslash '%s'",
+					ruleIndex, rulePathIndex, pathInDir).Err()
+			}
+			// Add into set to check later if duplicate
+			pathSet.Add(fixedPathInDir)
+			if fixedPathInDirAbs, err := filepath.Abs(fixedPathInDir); err != nil {
+				return nil, errors.Annotate(err, "rule[%d].path[%d]: filepath.Abs error %s",
+					ruleIndex, rulePathIndex, pathInDir).Err()
+			} else {
+				fixedPathInDir = fixedPathInDirAbs
+			}
+
+			rulesSlice = append(rulesSlice, pathRules{
+				fixedPathInDir,
+				rule,
+			})
+		}
+	}
+
+	return &RewriterFactory{
+		rulesSlice,
+		filepath.Dir(configPath),
+	}, nil
+}
+
+// GetRewriter will return the Rewriter which is appropriate for formatting
+// the file at `path`, using the previously loaded formatting configuration.
+//
+// Note the method signature will pass in values that we need to evaluate
+// the correct rewriter.
+//
+// We will accept both relative and absolute paths.
+func (f *RewriterFactory) GetRewriter(path string) (*build.Rewriter, error) {
+	rules := f.rules
+	// Check if path is abs, if not, fix it
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(f.configFilePath, path)
+	}
+	longestPathMatch := ""
+	var matchingRule *buildifier.LucicfgFmtConfig_Rules
+
+	// Find the path that best matches the one we are processing.
+	for _, rule := range rules {
+		commonAncestor, err := filesystem.GetCommonAncestor(
+			[]string{rule.path, path},
+			sentinel,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		commonAncestor = filepath.Clean(commonAncestor)
+		if commonAncestor == rule.path && len(commonAncestor) > len(longestPathMatch) {
+			longestPathMatch = commonAncestor
+			matchingRule = rule.rules
+		}
+	}
+	if matchingRule != nil && matchingRule.FunctionArgsSort != nil {
+		return rewriterFromConfig(
+			convertOrderingToTable(matchingRule.FunctionArgsSort.Arg),
+		), nil
+	}
+
+	return vars.GetDefaultRewriter(), nil
+}
+
+// GuessRewriterFactoryFunc will find the common ancestor dir from all given paths
+// and return a func that returns the rewriter factory.
+//
+// Will look for a config file upwards(inclusive). If found, it will be used to determine
+// rewriter properties. It will also look downwards(exclusive) to expose any misplaced
+// config files.
+func GuessRewriterFactoryFunc(paths []string) (*RewriterFactory, error) {
+	// Find the common ancestor
+	commonAncestorPath, err := filesystem.GetCommonAncestor(paths, sentinel)
+
+	if errors.Is(err, filesystem.ErrRootSentinel) {
+		// we hit the repo root, just return function that returns default rewriter
+		rewriterFactory, err := GetRewriterFactory("")
+		if err != nil {
+			return nil, err
+		}
+		return rewriterFactory, nil
+	}
+	if err != nil {
+		// other errors are fatal
+		return nil, err
+	}
+	if err := CheckForBogusConfig(commonAncestorPath); err != nil {
+		return nil, err
+	}
+
+	luciConfigPath, err := findConfigPathUpwards(commonAncestorPath)
+	if err != nil {
+		return nil, err
+	}
+	rewriterFactory, err := GetRewriterFactory(luciConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return rewriterFactory, nil
 }

@@ -18,21 +18,62 @@ package lucicfgfmtconfig;
 option go_package = "go.chromium.org/luci/lucicfg/buildifier";
 
 message LucicfgFmtConfig {
-  // Argument names in the order they should appear in calls.
-  //
-  // The ordering of an argument can be specific to a function by
-  // specifying the argument name as <function-name>.<arg-name>, where
-  // <function-name> is the name used at the callsite. The name the
-  // function is defined with is not considered. This means that loading a
-  // function with an alias will change which entries apply to calls to the
-  // function. When the ordering for an argument is determined, if
-  // <function-name>.<arg-name> is present, it will use the relative
-  // ordering of that entry to determine the order of the argument in the
-  // call. If <function-name>.<arg-name> is not present and <arg-name> is
-  // present, it will use the relative ordering of that entry to determine
-  // the order of the argument in the call. If neither
-  // <function-name>.<arg-name> nor <arg-name> are present, then the
-  // argument will appear in lexicographic order after any arguments that
-  // are specified in the list.
-  repeated string argument_name_ordering = 1;
+  repeated Rules rules = 1;
+
+  // Rules will contain paths that are associated with
+  // a specific ordering rule
+  message Rules {
+    // Forward-slash delimited path prefixes for which this Rules message applies.
+    //
+    // When loading this config, lucicfg will organize all Rules by path. Rules with
+    // duplicate path values are not permitted (i.e. you cannot have two Rules with
+    // a path of "something", nor can you have the path "something" duplicated within
+    // a single Rules entry).
+    //
+    // When processing files, lucicfg will calculate the file's path as relative to
+    // this .lucicfgfmtrc file, and will select a single Rules set based on the longest
+    // matching path prefix. For example, if there are two Rules sets, one formatting
+    // "a" and another formatting "a/folder", then for the file "a/folder/file.star",
+    // only the second Rules set would apply.
+    //
+    // If NO Rules set matches the file path, then only default formatting will
+    // occur (i.e. lucicfg will only apply formatting which is not controlled by
+    // this Rules message. In particular, this means that formatting will not
+    // attempt to reorder function call arguments in any way).
+    repeated string path = 1;
+
+    // FunctionArgsSort allows you to reorder the arguments at function call sites,
+    // based on the name of the arguments.
+    //
+    // If this is set, then all functions will be sorted first by the order of its
+    // `arg` field, and then alphanumerically. This implies that setting this message
+    // without setting any `arg` values will sort all function call sites
+    // alphabetically.
+    //
+    // If this message is completely omitted, no call site function argument reordering
+    // will occur.
+    // 
+    // The sorting only applies to kwarg-style arguments in files we want to format.
+    FunctionArgsSort function_args_sort = 2;
+
+    message FunctionArgsSort {
+      // Argument names in the order they should appear in calls.
+      //
+      // The ordering of an argument can be specific to a function by
+      // specifying the argument name as <function-name>.<arg-name>, where
+      // <function-name> is the name used at the callsite. The name the
+      // function is defined with is not considered. This means that loading a
+      // function with an alias will change which entries apply to calls to the
+      // function. When the ordering for an argument is determined, if
+      // <function-name>.<arg-name> is present, it will use the relative
+      // ordering of that entry to determine the order of the argument in the
+      // call. If <function-name>.<arg-name> is not present and <arg-name> is
+      // present, it will use the relative ordering of that entry to determine
+      // the order of the argument in the call. If neither
+      // <function-name>.<arg-name> nor <arg-name> are present, then the
+      // argument will appear in lexicographic order after any arguments that
+      // are specified in the list.
+      repeated string arg = 1;
+    }
+  }
 }

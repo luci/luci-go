@@ -61,7 +61,7 @@ type ConfigServiceFactory func(ctx context.Context, host string) (*config.Servic
 //
 // Dumps all validation errors to the stderr. In addition to detailed validation
 // results, also returns a multi-error with all blocking errors.
-func Validate(ctx context.Context, params ValidateParams, rewriter *build.Rewriter) ([]*buildifier.Finding, []*lucicfg.ValidationResult, error) {
+func Validate(ctx context.Context, params ValidateParams, getRewriterForPath func(path string) (*build.Rewriter, error)) ([]*buildifier.Finding, []*lucicfg.ValidationResult, error) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var localRes []*buildifier.Finding
@@ -73,7 +73,7 @@ func Validate(ctx context.Context, params ValidateParams, rewriter *build.Rewrit
 			params.Loader,
 			params.Source,
 			params.Meta.LintChecks,
-			rewriter,
+			getRewriterForPath,
 		)
 	}()
 

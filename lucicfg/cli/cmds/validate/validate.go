@@ -220,8 +220,7 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		return nil, err
 	}
 
-	// Initialize and return
-	rewriter, err := base.LoadRewriterFromConfig(filepath.Join(entryPath, base.ConfigName))
+	rewriterFactory, err := base.GetRewriterFactory(filepath.Join(entryPath, base.ConfigName))
 	if err != nil {
 		return nil, err
 	}
@@ -234,6 +233,6 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		Output:        output,
 		Meta:          meta,
 		ConfigService: vr.ConfigService,
-	}, rewriter)
+	}, rewriterFactory.GetRewriter)
 	return result, err
 }

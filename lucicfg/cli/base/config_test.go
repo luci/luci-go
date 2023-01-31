@@ -15,10 +15,13 @@
 package base
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/bazelbuild/buildtools/build"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/testfs"
+	"go.chromium.org/luci/lucicfg/buildifier"
 )
 
 func TestConvertOrderingToTable(t *testing.T) {
@@ -122,5 +125,252 @@ func TestRewriterFromConfigEmptyMap(t *testing.T) {
 			},
 		}
 		So(rewriterFromConfig(nil), ShouldResemble, rewriter)
+	})
+}
+
+func TestConfigParsing(t *testing.T) {
+	root := t.TempDir()
+
+	Convey("Config Parsing", t, func() {
+		Convey("Duplicate paths in one rule in lucicfgfmtrc config should return error", func() {
+			var configContent = `
+				rules {
+					path : "/"
+					path : "/"
+				}
+				`
+
+			layout := map[string]string{
+				ConfigName: configContent,
+			}
+
+			if err := testfs.Build(root, layout); err != nil {
+				t.Errorf(err.Error())
+			}
+
+			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			So(err, ShouldBeError, "rule[0].path[1]: Found duplicate path '/'")
+		})
+
+		Convey("Multiple rules with same path in lucicfgfmtrc config should return error", func() {
+			var configContent = `
+				rules {
+					path : "/"
+				}
+				rules {
+					path : "/"
+				}
+				`
+
+			layout := map[string]string{
+				ConfigName: configContent,
+			}
+
+			if err := testfs.Build(root, layout); err != nil {
+				t.Errorf(err.Error())
+			}
+
+			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			So(err, ShouldBeError, "rule[1].path[0]: Found duplicate path '/'")
+		})
+
+		Convey("Backslash in lucicfgfmtrc config should return error", func() {
+			var configContent = `
+				rules {
+					path : "\\"
+				}
+				`
+
+			layout := map[string]string{
+				ConfigName: configContent,
+			}
+
+			if err := testfs.Build(root, layout); err != nil {
+				t.Errorf(err.Error())
+			}
+			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			So(err, ShouldBeError, "rule[0].path[0]: Path should not contain backslash '\\'")
+		})
+
+		Convey("Make sure \"\" refers to root", func() {
+			var configContent = `
+				rules {
+					path : ""
+				}
+				`
+
+			layout := map[string]string{
+				ConfigName:  configContent,
+				"test.star": "",
+			}
+
+			if err := testfs.Build(root, layout); err != nil {
+				t.Errorf(err.Error())
+			}
+
+			var sampleCallSortArgs = []string{
+				"name1",
+				"name2",
+			}
+
+			rewriterFactoryManualAlphanumeric, _ := getPostProcessedRewriterFactory(
+				filepath.Join(root, ".lucicfgfmtrc"),
+				&buildifier.LucicfgFmtConfig{
+					Rules: []*buildifier.LucicfgFmtConfig_Rules{
+						{ // Represents manual sorting and then alphanumeric sorting ruleset
+							Path: []string{
+								"",
+							},
+							FunctionArgsSort: &buildifier.LucicfgFmtConfig_Rules_FunctionArgsSort{
+								Arg: sampleCallSortArgs,
+							},
+						},
+					},
+				},
+			)
+
+			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter("test.star")
+			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
+			So(rewriterManualAlphanumeric, ShouldResemble, actualRewriterManualAlphanumeric)
+		})
+
+		Convey("Differently normalized paths that are the same should result in an error", func() {
+			var configContent = `
+				rules {
+					path : "something"
+					path : "something/"
+				}
+				`
+			layout := map[string]string{
+				ConfigName: configContent,
+			}
+
+			if err := testfs.Build(root, layout); err != nil {
+				t.Errorf(err.Error())
+			}
+			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			So(err, ShouldBeError, "rule[0].path[1]: Found duplicate path 'something/'")
+		})
+
+		Convey("Rule doesn't contain any paths should throw an error", func() {
+			var configContent = `
+				rules {
+				}
+				`
+			layout := map[string]string{
+				ConfigName: configContent,
+			}
+
+			if err := testfs.Build(root, layout); err != nil {
+				t.Errorf(err.Error())
+			}
+			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
+			So(err, ShouldBeError, "rule[0]: Does not contain any paths")
+		})
+	})
+}
+
+func TestGetRewriter(t *testing.T) {
+	root := t.TempDir()
+
+	Convey("Testing GetRewriter", t, func() {
+		// Initialize test Folders/Files
+		layout := map[string]string{
+			"test.star":               "",
+			"a/test.star":             "",
+			"a/b/test.star":           "",
+			"a/b/c/test.star":         "",
+			"no_rule_match/test.star": "",
+		}
+
+		if err := testfs.Build(root, layout); err != nil {
+			t.Errorf(err.Error())
+		}
+
+		Convey("No matching path returns a rewriter that doesn't apply the callsort rewrite", func() {
+			rewriterFactoryNoCallSort, _ := getPostProcessedRewriterFactory(
+				filepath.Join(root, ".lucicfgfmtrc"),
+				&buildifier.LucicfgFmtConfig{
+					Rules: []*buildifier.LucicfgFmtConfig_Rules{},
+				},
+			)
+			rewriterNoCallsort, _ := rewriterFactoryNoCallSort.GetRewriter("no_rule_match/test.star")
+			var actualRewriterNoCallSort = rewriterFromConfig(nil)
+			So(rewriterNoCallsort, ShouldResemble, actualRewriterNoCallSort)
+		})
+
+		Convey("Matching rule to nil FunctionArgSort, return rewriter without callsort rewrite", func() {
+			rewriterFactoryNoCallSort, _ := getPostProcessedRewriterFactory(
+				filepath.Join(root, ".lucicfgfmtrc"),
+				&buildifier.LucicfgFmtConfig{
+					Rules: []*buildifier.LucicfgFmtConfig_Rules{
+						{ // Represents no callsort
+							Path: []string{
+								"a/b/c",
+							},
+						},
+					},
+				},
+			)
+			rewriterNoCallSort, _ := rewriterFactoryNoCallSort.GetRewriter("a/b/c/test.star")
+			var actualRewriterNoCallSort = rewriterFromConfig(nil)
+			So(rewriterNoCallSort, ShouldResemble, actualRewriterNoCallSort)
+		})
+
+		Convey("Matching rule to non-nil FunctionArgSort, has callsort + ordering", func() {
+			var sampleCallSortArgs = []string{
+				"name1",
+				"name2",
+			}
+			rewriterFactoryManualAlphanumeric, _ := getPostProcessedRewriterFactory(
+				filepath.Join(root, ".lucicfgfmtrc"),
+				&buildifier.LucicfgFmtConfig{
+					Rules: []*buildifier.LucicfgFmtConfig_Rules{
+						{ // Represents manual sorting and then alphanumeric sorting ruleset
+							Path: []string{
+								"a",
+							},
+							FunctionArgsSort: &buildifier.LucicfgFmtConfig_Rules_FunctionArgsSort{
+								Arg: sampleCallSortArgs,
+							},
+						},
+					},
+				},
+			)
+			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter("a/test.star")
+			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
+			So(rewriterManualAlphanumeric, ShouldResemble, actualRewriterManualAlphanumeric)
+		})
+
+		Convey("Matching to multiple rules, accepts the longest match", func() {
+			var sampleCallSortArgs = []string{
+				"name1",
+				"name2",
+			}
+			rewriterFactoryAlphanumeric, _ := getPostProcessedRewriterFactory(
+				filepath.Join(root, ".lucicfgfmtrc"),
+				&buildifier.LucicfgFmtConfig{
+					Rules: []*buildifier.LucicfgFmtConfig_Rules{
+						{ // Represents manual sorting and then alphanumeric sorting ruleset
+							Path: []string{
+								"a",
+							},
+							FunctionArgsSort: &buildifier.LucicfgFmtConfig_Rules_FunctionArgsSort{
+								Arg: sampleCallSortArgs,
+							},
+						},
+						{ // Represents alphanumeric sorting
+							Path: []string{
+								"a/b",
+							},
+							FunctionArgsSort: &buildifier.LucicfgFmtConfig_Rules_FunctionArgsSort{},
+						},
+					},
+				},
+			)
+			rewriterAlphanumeric, _ := rewriterFactoryAlphanumeric.GetRewriter("a/b/test.star")
+			var actualRewriterAlphanumeric = rewriterFromConfig(convertOrderingToTable([]string{}))
+			So(rewriterAlphanumeric, ShouldResemble, actualRewriterAlphanumeric)
+		})
 	})
 }
