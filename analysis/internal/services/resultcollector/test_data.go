@@ -28,17 +28,20 @@ func mockedBatchGetTestVariantsResponse() *rdbpb.BatchGetTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Status: rdbpb.TestStatus_SKIP,
+							Expected: false,
+							Status:   rdbpb.TestStatus_SKIP,
 						},
 					},
 					{
 						Result: &rdbpb.TestResult{
-							Status: rdbpb.TestStatus_FAIL,
+							Expected: false,
+							Status:   rdbpb.TestStatus_FAIL,
 						},
 					},
 					{
 						Result: &rdbpb.TestResult{
-							Status: rdbpb.TestStatus_PASS,
+							Expected: false,
+							Status:   rdbpb.TestStatus_PASS,
 						},
 					},
 				},
@@ -50,7 +53,8 @@ func mockedBatchGetTestVariantsResponse() *rdbpb.BatchGetTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Status: rdbpb.TestStatus_FAIL,
+							Expected: false,
+							Status:   rdbpb.TestStatus_FAIL,
 						},
 					},
 				},
@@ -62,7 +66,21 @@ func mockedBatchGetTestVariantsResponse() *rdbpb.BatchGetTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Status: rdbpb.TestStatus_PASS,
+							Expected: false,
+							Status:   rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+			},
+			{
+				TestId:      "ninja://test_has_all_result_skipped",
+				VariantHash: "variant_hash",
+				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Expected: true,
+							Status:   rdbpb.TestStatus_SKIP,
 						},
 					},
 				},

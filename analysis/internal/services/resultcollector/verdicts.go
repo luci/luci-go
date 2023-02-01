@@ -16,7 +16,6 @@ package resultcollector
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -35,14 +34,14 @@ func createVerdicts(ctx context.Context, task *taskspb.CollectTestResults, tvs [
 	// Each batch of verdicts use the same ingestion time.
 	now := clock.Now(ctx)
 	for _, tv := range tvs {
-		if tv.Status == rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED {
+		if isIgnoreTestVariant(tv) {
 			continue
 		}
 		m := insertVerdict(task, tv, now)
-		if m == nil {
-			continue
-		}
 		ms = append(ms, m)
+	}
+	if len(ms) == 0 {
+		return nil
 	}
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		span.BufferWrite(ctx, ms...)
@@ -71,28 +70,18 @@ func insertVerdict(task *taskspb.CollectTestResults, tv *rdbpb.TestVariant, inge
 		"HasContributedToClSubmission": task.ContributedToClSubmission,
 	}
 	row["UnexpectedResultCount"], row["TotalResultCount"] = countResults(tv)
-
-	if row["TotalResultCount"] == 0 {
-		// No results in the verdict can be counted (skips?), so no need to save
-		// this verdict.
-		return nil
-	}
 	return spanner.InsertOrUpdateMap("Verdicts", spanutil.ToSpannerMap(row))
 }
 
 func deriveVerdictStatus(tv *rdbpb.TestVariant) internal.VerdictStatus {
-	switch tv.Status {
-	case rdbpb.TestVariantStatus_FLAKY:
-		return internal.VerdictStatus_VERDICT_FLAKY
-	case rdbpb.TestVariantStatus_EXPECTED:
+	unexpected, total := countResults(tv)
+	if unexpected == int64(0) {
 		return internal.VerdictStatus_EXPECTED
-	case rdbpb.TestVariantStatus_UNEXPECTED:
-		return internal.VerdictStatus_UNEXPECTED
-	case rdbpb.TestVariantStatus_EXONERATED:
-		return internal.VerdictStatus_UNEXPECTED
-	default:
-		panic(fmt.Sprintf("impossible verdict status: %d", tv.Status))
 	}
+	if unexpected == total {
+		return internal.VerdictStatus_UNEXPECTED
+	}
+	return internal.VerdictStatus_VERDICT_FLAKY
 }
 
 func countResults(tv *rdbpb.TestVariant) (unexpected, total int64) {
@@ -109,4 +98,16 @@ func countResults(tv *rdbpb.TestVariant) (unexpected, total int64) {
 		}
 	}
 	return
+}
+
+func isIgnoreTestVariant(tv *rdbpb.TestVariant) bool {
+	if tv.Status == rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED {
+		return true
+	}
+	for _, trb := range tv.Results {
+		if trb.Result.Status != rdbpb.TestStatus_SKIP {
+			return false
+		}
+	}
+	return true
 }
