@@ -132,3 +132,40 @@ func flattenRec(ret *MultiError, err error) {
 		*ret = append(*ret, et)
 	}
 }
+
+// extract removes unnecessary singletons and empty multierrors from a MultiError.
+//
+// It is not recursive.
+func extract(e error) error {
+	switch et := e.(type) {
+	case nil:
+		return nil
+	case MultiError:
+		switch len(et) {
+		case 0:
+			return nil
+		case 1:
+			return et[0]
+		}
+	}
+	return e
+}
+
+// Append takes a list of errors, whether they are nil, MultiErrors, or regular errors, and combines them into a single error.
+//
+// The resulting error is not a multierror unless it needs to be.
+//
+// Sample usage shown below:
+//
+//	err := DoSomething()
+//	err = errors.Append(err, DoSomethingElse())
+//	err = errors.Append(err, DoAThirdThing())
+//
+//	if err != nil {
+//	  // log an error or something, I don't know
+//	}
+//	// proceed as normal
+//
+func Append(errs ...error) error {
+	return extract(Flatten(MultiError(errs)))
+}
