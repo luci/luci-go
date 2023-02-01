@@ -74,3 +74,52 @@ func encode(dst []byte, src []byte) (int, error) {
 	}
 	return ret, nil
 }
+
+// secondByteDataMask is used to mask off the bits of data
+// from the second byte inside writeEncodedByte.
+//
+// The first entry, 0b_0000_0000 below, is irrelevant since an
+// index of zero is impossible.
+//
+// The remaining indices count off n ones, skipping over the
+// leading bit since that is always zero in an encoded string.
+//
+// A byte in this array will be bitwise-anded together with the
+// second byte in order to extract the data that the second byte
+// contributes.
+var secondByteDataMask = []byte{
+	0b_0000_0000,
+	0b_0100_0000,
+	0b_0110_0000,
+	0b_0111_0000,
+	0b_0111_1000,
+	0b_0111_1100,
+	0b_0111_1110,
+	0b_0111_1111,
+}
+
+// writeEncodedByte(dst, dstIndex, src, offset, bitOffset) writes the
+// byte encoded at src[offset] and possibly src[offset+1] to dst[dstIndex].
+//
+// For example, consider the sequence of bytes below:
+//
+// 0b_0123_4567 0b_0800_0000
+//
+// 0s are literal 0s, either initial zeroes or trailing zeroes don't encode data.
+// 1-8 are variables that encode data bits, either 0 or 1.
+//
+// The above maps to 0b_1234_5678 when the bitOffset is 1.
+// When the bitOffset is 2, it maps to 0b_2345_6780.
+func writeEncodedByte(dst []byte, dstIndex int, src []byte, offset int, bitOffset int) {
+	if bitOffset <= 0 {
+		panic("offset too low")
+	}
+	if bitOffset > 7 {
+		panic("offset too high")
+	}
+	dst[dstIndex] |= (src[offset] << bitOffset)
+	mask := secondByteDataMask[bitOffset]
+	content := src[offset+1] & mask
+	content = content >> (7 - bitOffset)
+	dst[dstIndex] |= content
+}

@@ -313,3 +313,66 @@ func countOnes(input []byte) int {
 	}
 	return tally
 }
+
+// TestWriteEncodedByte tests reading a byte from an encoded string and
+// writing it to a decoded string. This is the inner loop of the decode function.
+//
+// writeEncodedByte(dst, dstIndex, src, offset, bitOffset) works by reading
+// the types src[offset] and, if necessary, src[offset+1].
+// the bitOffset is the number of bits from the beginning of src[offset] to start reading
+// from.
+// We then read the next eight bits into the destination byte dst[dstIndex].
+//
+// For example,
+//
+// 0b_0123_4567 0b_0800_0000
+//
+// maps to
+//
+// 0b_1234_5678
+//
+// when bitOffset is 1. In the above example, 0 is a literal zero and 1-8 are
+// variables indicating bits of data. The first bit of every byte in an encoded string
+// is always zero, as are the trailing bits in the last byte of an encoded string that
+// don't encode anything.
+func TestWriteEncodedByte(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name      string
+		input     []byte
+		dstIndex  int
+		offset    int
+		bitOffset int
+		output    []byte
+	}{
+		{
+			name:      "FF offset 1",
+			input:     []byte{0b_0111_1111, 0b_0100_0000},
+			dstIndex:  0,
+			offset:    0,
+			bitOffset: 1,
+			output:    []byte{0b_1111_1111},
+		},
+		{
+			name:      "FF offset 7",
+			input:     []byte{0b_0000_0001, 0b_0111_1111},
+			dstIndex:  0,
+			offset:    0,
+			bitOffset: 7,
+			output:    []byte{0b_1111_1111},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual := make([]byte, len(tt.output))
+			writeEncodedByte(actual, tt.dstIndex, tt.input, tt.offset, tt.bitOffset)
+			if diff := cmp.Diff(tt.output, actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
