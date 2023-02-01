@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/auth/loginsessionspb"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
 	"go.chromium.org/luci/grpc/prpc"
 )
@@ -134,6 +135,15 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create the login session").Err()
 	}
+
+	useFancyUI, doneUI := EnableVirtualTerminal()
+	if !useFancyUI {
+		// TODO(crbug/chromium/1411203): Support mode without virtual terminal.
+		logging.Warningf(ctx, "Virtual terminal is not enabled.")
+	} else {
+		defer doneUI()
+	}
+
 	fmt.Printf(
 		"Visit this link to complete the login flow in the browser. Do not share it with anyone!\n\n%s\n\n",
 		session.LoginFlowUrl,
