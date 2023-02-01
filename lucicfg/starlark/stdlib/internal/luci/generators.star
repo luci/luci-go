@@ -604,7 +604,7 @@ def _gen_shadow_service_account_bindings(realms_cfg, shadow_bucket_constraints):
       shadow_bucket_constraints: a dict of bucket name to constraints
     """
     for bucket, constraints in shadow_bucket_constraints.items():
-        principals = ["user:" + account for account in constraints.service_accounts]
+        principals = sorted(set(["user:" + account for account in constraints.service_accounts]))
         if len(principals) == 0:
             continue
         realms.append_binding_pb(realms_cfg, keys.realm(bucket).id, realms_pb.Binding(
