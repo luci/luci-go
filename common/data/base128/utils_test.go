@@ -15,7 +15,9 @@
 package base128
 
 import (
+	"encoding/hex"
 	"fmt"
+	"math/bits"
 	"testing"
 	"testing/quick"
 
@@ -85,4 +87,229 @@ func TestDecodedLenRoundTrip(t *testing.T) {
 	if err := quick.Check(roundTrip, nil); err != nil {
 		t.Error(err)
 	}
+}
+
+// TestEncode tests encoding an input byte array using the base128 encoding
+// in a few hand-verified cases.
+//
+// These examples were constructed by manually putting the bits in the input
+// into the low seven bits of each output byte and then padding the rest with
+// zeroes to reach an integer number of bytes.
+//
+// For example,
+//
+//	0b_1234_5678
+//
+// would map to
+//
+//	0b_0123_4567 0b_0800_0000
+//
+// In the above example, 0 is a real zero and 1-8 are "variables" of sorts
+// representing data positions in an input byte. The above example illustrates
+// how the bits of data are spread over the output.
+func TestEncode(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		in  []byte
+		out []byte
+		ok  bool
+	}{
+		{
+			in:  []byte{},
+			out: []byte{},
+			ok:  true,
+		},
+		{
+			in:  []byte{0b_1111_1111},
+			out: []byte{0b_0111_1111, 0b_0100_0000},
+			ok:  true,
+		},
+		{
+			in:  []byte{0b_1111_1110},
+			out: []byte{0b_0111_1111, 0b_0000_0000},
+			ok:  true,
+		},
+		{
+			in:  []byte{0b_1011_0011},
+			out: []byte{0b_0101_1001, 0b_0100_0000},
+			ok:  true,
+		},
+		{
+			in:  []byte{0b_1110_1110, 0b_1011_0011},
+			out: []byte{0b_0111_0111, 0b_0010_1100, 0b_0110_0000},
+			ok:  true,
+		},
+		{
+			in:  []byte{0b_1110_1110, 0b_1011_0011, 0b_1010_1100},
+			out: []byte{0b_0111_0111, 0b_0010_1100, 0b_0111_0101, 0b_0100_0000},
+			ok:  true,
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(hex.EncodeToString(tt.in), func(t *testing.T) {
+			t.Parallel()
+			out := make([]byte, EncodedLen(len(tt.in)))
+			_, err := encode(out, tt.in)
+			switch {
+			case err == nil && !tt.ok:
+				t.Error("error was unexpectedly nil")
+			case err != nil && tt.ok:
+				t.Errorf("unexpected error: %s", err)
+			}
+			if diff := cmp.Diff(tt.out, out); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+// TestWriteByte tests the inner loop of encode in a few hand-verified cases.
+//
+// writeByte(input, offset, bitOffset, val) writes the data byte val to
+// input[offset] and input[offset+1] by splitting its bits between the
+// low seven bits of those two bytes.
+//
+// There are seven ways to do this, depending on the bit position where you
+// start writing.
+func TestWriteByte(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name      string
+		input     []byte
+		offset    int
+		bitOffset int
+		val       byte
+		output    []byte
+	}{
+		{
+			name:      "FF offset 1",
+			input:     []byte{0, 0},
+			offset:    0,
+			bitOffset: 1,
+			val:       0b_1111_1111,
+			output:    []byte{0b_0111_1111, 0b_0100_0000},
+		},
+		{
+			name:      "FF offset 2",
+			input:     []byte{0, 0},
+			offset:    0,
+			bitOffset: 2,
+			val:       0b_1111_1111,
+			output:    []byte{0b_0011_1111, 0b_0110_0000},
+		},
+		{
+			name:      "FF offset 3",
+			input:     []byte{0, 0},
+			offset:    0,
+			bitOffset: 3,
+			val:       0b_1111_1111,
+			output:    []byte{0b_0001_1111, 0b_0111_0000},
+		},
+		{
+			name:      "FF offset 4",
+			input:     []byte{0, 0},
+			offset:    0,
+			bitOffset: 4,
+			val:       0b_1111_1111,
+			output:    []byte{0b_0000_1111, 0b_0111_1000},
+		},
+		{
+			name:      "FF offset 5",
+			input:     []byte{0, 0},
+			offset:    0,
+			bitOffset: 5,
+			val:       0b_1111_1111,
+			output:    []byte{0b_0000_0111, 0b_0111_1100},
+		},
+		{
+			name:      "FF offset 6",
+			input:     []byte{0, 0},
+			offset:    0,
+			bitOffset: 6,
+			val:       0b_1111_1111,
+			output:    []byte{0b_0000_0011, 0b_0111_1110},
+		},
+		{
+			name:      "FF offset 7",
+			input:     []byte{0, 0},
+			offset:    0,
+			bitOffset: 7,
+			val:       0b_1111_1111,
+			output:    []byte{0b_0000_0001, 0b_0111_1111},
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual := tt.input[:]
+			writeByte(actual, tt.offset, tt.bitOffset, tt.val)
+			if diff := cmp.Diff(tt.output, actual); diff != "" {
+				t.Errorf("unexpected diff (-want +got): %s", diff)
+			}
+		})
+	}
+}
+
+// TestEncodeValidity tests that the output of encode always has the correct length
+// and never has the high bit set.
+func TestEncodeValidity(t *testing.T) {
+	t.Parallel()
+
+	checker := func(in []byte) bool {
+		out := make([]byte, EncodedLen(len(in)))
+		_, err := encode(out, in)
+		if err != nil {
+			panic(err)
+		}
+		if err := Validate(out); err != nil {
+			return false
+		}
+		if err := ValidateLength(len(out)); err != nil {
+			return false
+		}
+		return true
+	}
+
+	if err := quick.Check(checker, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+// TestEncodePreservesOnes tests that the output string always has the
+// same number of 1s in it as the input string.
+//
+// In the output string, the high bit of each byte is always zero and
+// there may be trailing zeroes. Artificial ones, however, are never
+// inserted. This means that the number of ones in the message should
+// be preserved by the encoding.
+func TestEncodePreservesOnes(t *testing.T) {
+	t.Parallel()
+
+	checker := func(in []byte) bool {
+		out := make([]byte, EncodedLen(len(in)))
+		_, err := encode(out, in)
+		if err != nil {
+			panic(err)
+		}
+		return countOnes(in) == countOnes(out)
+	}
+
+	if err := quick.Check(checker, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+// countOnes counts the number of ones set in a binary string. This is an invariant of encoding.
+func countOnes(input []byte) int {
+	tally := 0
+	for _, val := range input {
+		tally += bits.OnesCount8(val)
+	}
+	return tally
 }
