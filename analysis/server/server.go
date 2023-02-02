@@ -75,7 +75,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
-		spanmodule.NewModuleFromFlags(),
+		spanmodule.NewModuleFromFlags(nil),
 		legacydb.NewModuleFromFlags(),
 		scopedauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),

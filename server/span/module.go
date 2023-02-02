@@ -34,10 +34,16 @@ import (
 // ModuleName can be used to refer to this module when declaring dependencies.
 var ModuleName = module.RegisterName("go.chromium.org/luci/server/span")
 
+// ClientConfigProvider supplies custom Cloud Spanner client config.
+//
+// This callback is called right before constructing the spanner client.
+type ClientConfigProvider func(ctx context.Context, opts module.HostOptions) (spanner.ClientConfig, error)
+
 // ModuleOptions contain configuration of the Cloud Spanner server module.
 type ModuleOptions struct {
-	SpannerEndpoint string // the Spanner endpoint to connect to
-	SpannerDatabase string // identifier of Cloud Spanner database to connect to
+	SpannerEndpoint string               // the Spanner endpoint to connect to
+	SpannerDatabase string               // identifier of Cloud Spanner database to connect to
+	ClientConfig    ClientConfigProvider // if set, use the provided client config
 }
 
 // Register registers the command line flags.
@@ -78,13 +84,18 @@ func NewModule(opts *ModuleOptions) module.Module {
 	return &spannerModule{opts: opts}
 }
 
-// NewModuleFromFlags is a variant of NewModule that initializes options through
-// command line flags.
+// NewModuleFromFlags is a variant of NewModule that initializes applicable
+// options through command line flags.
 //
 // Calling this function registers flags in flag.CommandLine. They are usually
 // parsed in server.Main(...).
-func NewModuleFromFlags() module.Module {
-	opts := &ModuleOptions{}
+//
+// If given a non-nil ClientConfigProvider callback, it will be called when
+// creating the Cloud Spanner client to get a custom spanner.ClientConfig.
+// This can be used to set custom retry policies and timeouts, see
+// https://cloud.google.com/spanner/docs/custom-timeout-and-retry.
+func NewModuleFromFlags(cfg ClientConfigProvider) module.Module {
+	opts := &ModuleOptions{ClientConfig: cfg}
 	opts.Register(flag.CommandLine)
 	return NewModule(opts)
 }
@@ -119,6 +130,20 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 		return nil, errors.Annotate(err, "failed to get PerRPCCredentials").Err()
 	}
 
+	// Figure out what client config to use.
+	var cfg spanner.ClientConfig
+	if m.opts.ClientConfig != nil {
+		if cfg, err = m.opts.ClientConfig(ctx, opts); err != nil {
+			return nil, errors.Annotate(err, "failed to get custom ClientConfig").Err()
+		}
+	} else {
+		cfg = spanner.ClientConfig{
+			SessionPoolConfig: spanner.SessionPoolConfig{
+				TrackSessionHandles: !opts.Prod,
+			},
+		}
+	}
+
 	// Initialize the client.
 	options := []option.ClientOption{
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
@@ -127,15 +152,7 @@ func (m *spannerModule) Initialize(ctx context.Context, host module.Host, opts m
 	if m.opts.SpannerEndpoint != "" {
 		options = append(options, option.WithEndpoint(m.opts.SpannerEndpoint))
 	}
-	client, err := spanner.NewClientWithConfig(ctx,
-		m.opts.SpannerDatabase,
-		spanner.ClientConfig{
-			SessionPoolConfig: spanner.SessionPoolConfig{
-				TrackSessionHandles: !opts.Prod,
-			},
-		},
-		options...,
-	)
+	client, err := spanner.NewClientWithConfig(ctx, m.opts.SpannerDatabase, cfg, options...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to instantiate Cloud Spanner client").Err()
 	}

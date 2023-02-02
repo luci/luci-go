@@ -40,7 +40,7 @@ func MainWithModules(modules []module.Module, init func(srv *server.Server) erro
 		limiter.NewModuleFromFlags(),
 		redisconn.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
-		span.NewModuleFromFlags(),
+		span.NewModuleFromFlags(nil),
 		tq.NewModuleFromFlags(),
 	}
 	modules = append(modules, defaultModules...)

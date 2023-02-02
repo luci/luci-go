@@ -47,7 +47,7 @@ func main() {
 	opts.Register(flag.CommandLine)
 
 	modules := []module.Module{
-		span.NewModuleFromFlags(),
+		span.NewModuleFromFlags(nil),
 		tq.NewModule(opts),
 	}
 
