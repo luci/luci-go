@@ -71,6 +71,7 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 		tID4 := "ninja://test4"
 		tID5 := "ninja://test5"
 		tID6 := "ninja://test6"
+		tID7 := "ninja://test7"
 		variant := pbutil.Variant("builder", "Linux Tests")
 		vh := "varianthash"
 		tags := pbutil.StringPairs("k1", "v1")
@@ -135,6 +136,13 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 				"TestMetadata":     span.Compressed(tmdM),
 				"StatusUpdateTime": twoAndHalfHAgo,
 			}),
+			// Test variant with exonerated verdict.
+			insert.AnalyzedTestVariant(realm, tID7, vh, atvpb.Status_FLAKY, map[string]interface{}{
+				"Variant":          variant,
+				"Tags":             tags,
+				"TestMetadata":     span.Compressed(tmdM),
+				"StatusUpdateTime": start.Add(-time.Hour),
+			}),
 			insert.Verdict(realm, tID1, vh, "build-0", internal.VerdictStatus_EXPECTED, twoAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         oneAndHalfHAgo,
 				"UnexpectedResultCount": 0,
@@ -157,15 +165,21 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
-				"Exonerated":            true,
+				"Exonerated":            false,
 			}),
 			insert.Verdict(realm, tID5, vh, "build-1", internal.VerdictStatus_EXPECTED, twoAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         now.Add(-45 * time.Minute),
 				"UnexpectedResultCount": 0,
 				"TotalResultCount":      1,
-				"Exonerated":            true,
+				"Exonerated":            false,
 			}),
 			insert.Verdict(realm, tID5, vh, "build-2", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]interface{}{
+				"IngestionTime":         halfHAgo,
+				"UnexpectedResultCount": 1,
+				"TotalResultCount":      2,
+				"Exonerated":            false,
+			}),
+			insert.Verdict(realm, tID7, vh, "build-1", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]interface{}{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
@@ -200,7 +214,7 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					Invocation: "build-2",
 					Status:     "VERDICT_FLAKY",
 					CreateTime: timestamppb.New(oneAndHalfHAgo),
-					Exonerated: true,
+					Exonerated: false,
 				},
 			},
 			tID5: {
@@ -208,10 +222,18 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					Invocation: "build-1",
 					Status:     "EXPECTED",
 					CreateTime: timestamppb.New(twoAndHalfHAgo),
-					Exonerated: true,
+					Exonerated: false,
 				},
 				"build-2": {
 					Invocation: "build-2",
+					Status:     "VERDICT_FLAKY",
+					CreateTime: timestamppb.New(oneAndHalfHAgo),
+					Exonerated: false,
+				},
+			},
+			tID7: {
+				"build-1": {
+					Invocation: "build-1",
 					Status:     "VERDICT_FLAKY",
 					CreateTime: timestamppb.New(oneAndHalfHAgo),
 					Exonerated: true,
@@ -405,6 +427,26 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					Status:          "FLAKY",
 					FlakeStatistics: zeroFlakyStatistics(),
 				},
+				{
+					TestId: tID7,
+					TimeRange: &pb.TimeRange{
+						Earliest: op.TimeRange.Earliest,
+						Latest:   op.TimeRange.Latest,
+					},
+					TestMetadata: tmd,
+					Status:       "FLAKY",
+					FlakeStatistics: &atvpb.FlakeStatistics{
+						FlakyVerdictRate:      0,
+						FlakyVerdictCount:     0,
+						TotalVerdictCount:     1,
+						UnexpectedResultRate:  0.5,
+						UnexpectedResultCount: 1,
+						TotalResultCount:      2,
+					},
+					Verdicts: []*bqpb.Verdict{
+						verdicts[tID7]["build-1"],
+					},
+				},
 			}
 			test(nil, expRows)
 		})
@@ -495,6 +537,26 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					TestMetadata:    tmd,
 					Status:          "FLAKY",
 					FlakeStatistics: zeroFlakyStatistics(),
+				},
+				{
+					TestId: tID7,
+					TimeRange: &pb.TimeRange{
+						Earliest: op.TimeRange.Earliest,
+						Latest:   op.TimeRange.Latest,
+					},
+					TestMetadata: tmd,
+					Status:       "FLAKY",
+					FlakeStatistics: &atvpb.FlakeStatistics{
+						FlakyVerdictRate:      0,
+						FlakyVerdictCount:     0,
+						TotalVerdictCount:     1,
+						UnexpectedResultRate:  0.5,
+						UnexpectedResultCount: 1,
+						TotalResultCount:      2,
+					},
+					Verdicts: []*bqpb.Verdict{
+						verdicts[tID7]["build-1"],
+					},
 				},
 			}
 

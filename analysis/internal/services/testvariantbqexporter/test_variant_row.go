@@ -304,7 +304,7 @@ func (b *BQExporter) populateFlakeStatisticsByVerdicts(tv *bqpb.TestVariantRow, 
 			totalVerdicts++
 			unexpectedResults += v.unexpectedResultCount
 			totalResults += v.totalResultCount
-			if v.verdict.Status == internal.VerdictStatus_VERDICT_FLAKY.String() {
+			if v.verdict.Status == internal.VerdictStatus_VERDICT_FLAKY.String() && !v.verdict.Exonerated {
 				flakyVerdicts++
 			}
 		}
@@ -314,7 +314,6 @@ func (b *BQExporter) populateFlakeStatisticsByVerdicts(tv *bqpb.TestVariantRow, 
 		tv.FlakeStatistics = zeroFlakyStatistics()
 		return
 	}
-
 	tv.FlakeStatistics = &atvpb.FlakeStatistics{
 		FlakyVerdictCount:     int64(flakyVerdicts),
 		TotalVerdictCount:     int64(totalVerdicts),
@@ -576,7 +575,7 @@ var testVariantRowsTmpl = template.Must(template.New("testVariantRowsTmpl").Pars
 		SELECT
 			AS STRUCT SUM(UnexpectedResultCount) UnexpectedResultCount,
 			SUM(TotalResultCount) TotalResultCount,
-			COUNTIF(Status=30) FlakyVerdictCount,
+			COUNTIF(Status=@flakyVerdictStatus AND NOT Exonerated) FlakyVerdictCount,
 			COUNT(*) TotalVerdictCount,
 			-- Using struct here will trigger the "null-valued array of struct" query shape
 			-- which is not supported by Spanner.
