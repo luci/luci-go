@@ -28,7 +28,7 @@ cron:
 - description: update buckets and builders from all project configs
   target: default-go
   url: /internal/cron/update_project_config
-  schedule: every 5 minutes
+  schedule: every 1 minutes
 
 - description: report builder metrics
   target: monitor
