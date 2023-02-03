@@ -196,7 +196,7 @@ func init() {
 		Queue:     "backend-go-default",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.NotifyPubSubGo)
-			return PublishBuildsV2Notification(ctx, t.BuildId, t.Topic)
+			return PublishBuildsV2Notification(ctx, t.BuildId, t.Topic, t.Callback)
 		},
 	})
 

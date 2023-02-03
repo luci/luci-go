@@ -67,12 +67,14 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 		return nil
 	}
 
-	logging.Warningf(ctx, "Build %d is using the legacy PubSubCallback field", b.ID)
-	if err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{
-		BuildId:  b.ID,
-		Callback: true,
+	if err := tq.AddTask(ctx, &tq.Task{
+		Payload: &taskdefs.NotifyPubSubGo{
+			BuildId: b.ID,
+			Topic: &pb.BuildbucketCfg_Topic{Name: b.PubSubCallback.Topic},
+			Callback: true,
+		},
 	}); err != nil {
-		return errors.Annotate(err, "failed to enqueue callback pubsub notification task: %d", b.ID).Err()
+		return errors.Annotate(err, "failed to enqueue Go callback pubsub notification task: %d", b.ID).Err()
 	}
 	return nil
 }
@@ -113,8 +115,8 @@ func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) e
 }
 
 // PublishBuildsV2Notification is the handler of notify-pubsub-go where it
-// fetches all build fields, converts and publishes to builds_v2 topic.
-func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.BuildbucketCfg_Topic) error {
+// actually sends build notifications to the internal or external topic.
+func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.BuildbucketCfg_Topic, callback bool) error {
 	b := &model.Build{ID: buildID}
 	switch err := datastore.Get(ctx, b); {
 	case err == datastore.ErrNoSuchEntity:
@@ -166,27 +168,43 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 		return errors.Annotate(err, "failed to compress large fields for %d", buildID).Err()
 	}
 
-	msg := &pb.BuildsV2PubSub{
+	bldV2 := &pb.BuildsV2PubSub{
 		Build:            p,
 		BuildLargeFields: compressed,
 		Compression:      topic.GetCompression(),
 	}
 
-	if topic.GetName() == "" {
+	var msg proto.Message
+	msg = bldV2
+	if callback {
+		msg = &pb.PubSubCallBack{
+			BuildPubsub: bldV2,
+			UserData: b.PubSubCallback.UserData,
+		}
+	}
+
+	switch  {
+	case topic.GetName() != "":
+		return publishToExternalTopic(ctx, msg, generateBuildsV2Attributes(p), topic.Name, b.Project)
+	default:
 		//  publish to the internal `builds_v2` topic.
 		return tq.AddTask(ctx, &tq.Task{
-			Payload: msg,
+			Payload: bldV2,
 		})
 	}
-	return publishToExternalTopic(ctx, msg, topic.Name, b.Project)
 }
 
-// publishToExternalTopic publishes BuildsV2PubSub msg to the given external
-// topic with the identity of the current luci project scoped account.
-func publishToExternalTopic(ctx context.Context, msg *pb.BuildsV2PubSub, topicName, luciProject string) error {
+// publishToExternalTopic publishes the given pubsub msg to the given topic
+// with the identity of the luciProject account or current service account.
+func publishToExternalTopic(ctx context.Context, msg proto.Message, attrs map[string]string, topicName, luciProject string) error {
 	cloudProj, topicID, err := clients.ValidatePubSubTopicName(topicName)
 	if err != nil {
 		return tq.Fatal.Apply(err)
+	}
+
+	blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(msg)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal pubsub message").Tag(tq.Fatal).Err()
 	}
 
 	psClient, err := clients.NewPubsubClient(ctx, cloudProj, luciProject)
@@ -195,16 +213,11 @@ func publishToExternalTopic(ctx context.Context, msg *pb.BuildsV2PubSub, topicNa
 		return transient.Tag.Apply(err)
 	}
 
-	blob, err := (protojson.MarshalOptions{Indent: "\t"}).Marshal(msg)
-	if err != nil {
-		return transient.Tag.Apply(err)
-	}
-
 	topic := psClient.Topic(topicID)
 	defer topic.Stop()
 	result := topic.Publish(ctx, &pubsub.Message{
-		Attributes: generateBuildsV2Attributes(msg.GetBuild()),
-		Data:       blob,
+		Data: blob,
+		Attributes: attrs,
 	})
 	_, err = result.Get(ctx)
 	return transient.Tag.Apply(err)

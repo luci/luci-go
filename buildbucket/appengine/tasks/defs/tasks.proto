@@ -100,6 +100,9 @@ message NotifyPubSubGo {
   // An external topic which a build notification should be sent to.
   // If nil or empty, will send to the internal `builds_v2` topic.
   buildbucket.BuildbucketCfg.Topic topic = 2;
+
+  // Whether to use the global or build-specific callback Pub/Sub topic.
+  bool callback = 3;
 }
 
 // A task to cancel a build.

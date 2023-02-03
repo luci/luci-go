@@ -103,11 +103,12 @@ func TestNotification(t *testing.T) {
 			So(tasks, ShouldHaveLength, 3)
 
 			n1 := tasks[0].Payload.(*taskdefs.NotifyPubSub)
-			n2 := tasks[1].Payload.(*taskdefs.NotifyPubSub)
+			n2 := tasks[1].Payload.(*taskdefs.NotifyPubSubGo)
 			So(n1.GetBuildId(), ShouldEqual, 123)
+			So(n1.GetCallback(), ShouldBeFalse)
 			So(n2.GetBuildId(), ShouldEqual, 123)
-			// One w/ callback and one w/o callback.
-			So(n1.GetCallback() != n2.GetCallback(), ShouldBeTrue)
+			So(n2.GetCallback(), ShouldBeTrue)
+			So(n2.GetTopic().GetName(), ShouldEqual, "topic")
 
 			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), ShouldEqual, 123)
 			So(tasks[2].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), ShouldEqual, "project")
@@ -240,7 +241,7 @@ func TestNotification(t *testing.T) {
 		So(datastore.Put(ctx, b, bi, bs, bo, binpProp), ShouldBeNil)
 
 		Convey("build not exist", func() {
-			err := PublishBuildsV2Notification(ctx, 999, nil)
+			err := PublishBuildsV2Notification(ctx, 999, nil, false)
 			So(err, ShouldBeNil)
 			tasks := sch.Tasks()
 			So(tasks, ShouldHaveLength, 0)
@@ -249,7 +250,7 @@ func TestNotification(t *testing.T) {
 		Convey("To internal topic", func() {
 
 			Convey("success", func() {
-				err := PublishBuildsV2Notification(ctx, 123, nil)
+				err := PublishBuildsV2Notification(ctx, 123, nil, false)
 				So(err, ShouldBeNil)
 
 				tasks := sch.Tasks()
@@ -339,7 +340,7 @@ func TestNotification(t *testing.T) {
 				}
 				So(datastore.Put(ctx, b, bi), ShouldBeNil)
 
-				err := PublishBuildsV2Notification(ctx, 456, nil)
+				err := PublishBuildsV2Notification(ctx, 456, nil, false)
 				So(err, ShouldBeNil)
 
 				tasks := sch.Tasks()
@@ -371,7 +372,7 @@ func TestNotification(t *testing.T) {
 			})
 		})
 
-		Convey("To external topic", func() {
+		Convey("To external topic (non callback)", func() {
 			ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "my-cloud-project")
 			So(err, ShouldBeNil)
 			defer func() {
@@ -382,7 +383,7 @@ func TestNotification(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("success (zlib compression)", func() {
-				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"})
+				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"}, false)
 				So(err, ShouldBeNil)
 
 				tasks := sch.Tasks()
@@ -458,7 +459,7 @@ func TestNotification(t *testing.T) {
 				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{
 					Name:        "projects/my-cloud-project/topics/my-topic",
 					Compression: pb.Compression_ZSTD,
-				})
+				}, false)
 				So(err, ShouldBeNil)
 
 				tasks := sch.Tasks()
@@ -534,10 +535,72 @@ func TestNotification(t *testing.T) {
 			Convey("non-exist topic", func() {
 				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{
 					Name: "projects/my-cloud-project/topics/non-exist-topic",
-				})
+				}, false)
 				So(err, ShouldNotBeNil)
 				So(transient.Tag.In(err), ShouldBeTrue)
 			})
+		})
+
+		Convey("To external topic (callback)", func() {
+			ctx, psserver, psclient, err := clients.SetupTestPubsub(ctx, "my-cloud-project")
+			So(err, ShouldBeNil)
+			defer func() {
+				psclient.Close()
+				psserver.Close()
+			}()
+			_, err = psclient.CreateTopic(ctx, "callback-topic")
+			So(err, ShouldBeNil)
+
+			So(datastore.Put(ctx, &model.Build{
+				ID: 999,
+				Project: "project",
+				BucketID: "bucket",
+				BuilderID: "builder",
+				Proto: &pb.Build{
+					Id: 999,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket: "bucket",
+						Builder: "builder",
+					},
+				},
+				PubSubCallback: model.PubSubCallback{
+					Topic: "projects/my-cloud-project/topics/callback-topic",
+					UserData: []byte("userdata"),
+				},
+			}), ShouldBeNil)
+
+			err = PublishBuildsV2Notification(ctx, 999, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/callback-topic"},true)
+			So(err, ShouldBeNil)
+
+			tasks := sch.Tasks()
+			So(tasks, ShouldHaveLength, 0)
+			So(psserver.Messages(), ShouldHaveLength, 1)
+			publishedMsg := psserver.Messages()[0]
+
+			So(publishedMsg.Attributes["project"], ShouldEqual, "project")
+			So(publishedMsg.Attributes["bucket"], ShouldEqual, "bucket")
+			So(publishedMsg.Attributes["builder"], ShouldEqual, "builder")
+			So(publishedMsg.Attributes["is_completed"], ShouldEqual, "false")
+			psCallbackMsg := &pb.PubSubCallBack{}
+			err = protojson.Unmarshal(publishedMsg.Data, psCallbackMsg)
+			So(err, ShouldBeNil)
+
+			buildLarge, err := zlibUncompressBuild(psCallbackMsg.BuildPubsub.BuildLargeFields)
+			So(err, ShouldBeNil)
+			So(buildLarge, ShouldResembleProto, &pb.Build{Input: &pb.Build_Input{}, Output: &pb.Build_Output{}})
+			So(psCallbackMsg.BuildPubsub.Build, ShouldResembleProto, &pb.Build{
+					Id: 999,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Input: &pb.Build_Input{},
+					Output: &pb.Build_Output{},
+			})
+			So(err, ShouldBeNil)
+			So(psCallbackMsg.UserData, ShouldResemble, []byte("userdata"))
 		})
 	})
 }

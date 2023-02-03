@@ -72,7 +72,7 @@ message BuildsV2PubSub {
 // - "version" (The value is "v2". To help distinguish messages from the old `builds` topic)
 message PubSubCallBack {
   // Buildbucket build
-  BuildsV2PubSub build = 1;
+  BuildsV2PubSub build_pubsub = 1;
 
   // User-defined opaque blob specified in NotificationConfig.user_data.
   bytes user_data = 2;
