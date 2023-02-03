@@ -289,16 +289,15 @@ func ShouldEnforceRealmACL(ctx context.Context, realm string) (bool, error) {
 	return false, nil
 }
 
-// IsInWhitelist returns true if the current caller is in the given IP
-// whitelist.
+// IsAllowedIP returns true if the current caller is in the given IP allowlist.
 //
-// Unknown whitelists are considered empty (the function returns false).
+// Unknown allowlists are considered empty (the function returns false).
 //
 // May return errors if the check can not be performed (e.g. on datastore
 // issues).
-func IsInWhitelist(ctx context.Context, whitelist string) (bool, error) {
+func IsAllowedIP(ctx context.Context, allowlist string) (bool, error) {
 	if s := GetState(ctx); s != nil {
-		return s.DB().IsInWhitelist(ctx, s.PeerIP(), whitelist)
+		return s.DB().IsAllowedIP(ctx, s.PeerIP(), allowlist)
 	}
 	return false, ErrNotConfigured
 }

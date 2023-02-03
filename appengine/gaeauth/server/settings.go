@@ -44,7 +44,7 @@ func (settingsPage) Overview(ctx context.Context) (template.HTML, error) {
 URL to some existing <a href="https://github.com/luci/luci-py/blob/master/appengine/auth_service/README.md">LUCI Auth Service</a>.</p>
 
 <p>This service distributes various authorization related configuration (like
-the list of user groups, IP whitelists, OAuth client IDs, etc), which is
+the list of user groups, IP allowlists, OAuth client IDs, etc), which is
 required to handle incoming requests. There's usually one instance of this
 service per LUCI deployment.</p>
 

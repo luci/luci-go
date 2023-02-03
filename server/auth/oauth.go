@@ -84,7 +84,7 @@ var oauthValidationCache = layered.Cache{
 // production use". The closest alternative is /userinfo endpoint, but it
 // doesn't return the token expiration time (so we can't cache the result of
 // the check) nor the list of OAuth scopes the token has, nor the client ID to
-// check against a whitelist.
+// check against an allowlist.
 //
 // The general Google's recommendation is to use access tokens only for
 // accessing Google APIs and use OpenID Connect Identity tokens for

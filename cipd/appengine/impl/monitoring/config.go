@@ -54,7 +54,7 @@ func monitoringConfig(ctx context.Context) (*api.ClientMonitoringConfig, error) 
 		return nil, errors.Annotate(err, "failed to fetch client monitoring config").Tag(transient.Tag).Err()
 	}
 	for _, e := range cfg.(*api.ClientMonitoringWhitelist).ClientMonitoringConfig {
-		switch ok, err := auth.IsInWhitelist(ctx, e.IpWhitelist); {
+		switch ok, err := auth.IsAllowedIP(ctx, e.IpWhitelist); {
 		case err != nil:
 			return nil, err
 		case ok:

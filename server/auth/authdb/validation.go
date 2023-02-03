@@ -33,9 +33,9 @@ func validateAuthDB(db *protocol.AuthDB) error {
 			return err
 		}
 	}
-	for _, wl := range db.IpWhitelists {
-		if err := validateIPWhitelist(wl); err != nil {
-			return fmt.Errorf("auth: bad IP whitlist %q - %s", wl.Name, err)
+	for _, l := range db.IpWhitelists {
+		if err := validateIPAllowlist(l); err != nil {
+			return fmt.Errorf("auth: bad IP allowlist %q - %s", l.Name, err)
 		}
 	}
 	if db.Realms != nil {
@@ -124,9 +124,9 @@ func findGroupCycle(name string, groups map[string]*protocol.AuthGroup) []string
 	return visiting // will contain a cycle, if any
 }
 
-// validateIPWhitelist checks IPs in the whitelist are parsable.
-func validateIPWhitelist(wl *protocol.AuthIPWhitelist) error {
-	for _, subnet := range wl.Subnets {
+// validateIPAllowlist checks IPs in the allowlist are parsable.
+func validateIPAllowlist(l *protocol.AuthIPWhitelist) error {
+	for _, subnet := range l.Subnets {
 		if _, _, err := net.ParseCIDR(subnet); err != nil {
 			return fmt.Errorf("bad subnet %q - %s", subnet, err)
 		}

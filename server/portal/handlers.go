@@ -132,7 +132,7 @@ func (trustedPortAuth) Authenticate(context.Context, *http.Request) (*auth.User,
 	}, nil, nil
 }
 
-// adminBypassDB skips IP whitelist checks (assuming no IPs are whitelisted) and
+// adminBypassDB skips IP allowlist checks (assuming no IPs are allowlisted) and
 // errors on all other checks.
 //
 // It is needed to make admin pages accessible even when AuthDB is not
@@ -141,11 +141,11 @@ type adminBypassDB struct {
 	authdb.ErroringDB
 }
 
-func (adminBypassDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
+func (adminBypassDB) GetAllowlistForIdentity(c context.Context, ident identity.Identity) (string, error) {
 	return "", nil
 }
 
-func (adminBypassDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
+func (adminBypassDB) IsAllowedIP(c context.Context, ip net.IP, allowlist string) (bool, error) {
 	return false, nil
 }
 

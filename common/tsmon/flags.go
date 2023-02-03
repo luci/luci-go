@@ -54,7 +54,7 @@ func (fl *Flags) Register(f *flag.FlagSet) {
 		"path to a JSON config file that contains suitable values for "+
 			"\"endpoint\" and \"credentials\" for this machine. This config file is "+
 			"intended to be shared by all processes on the machine, as the values "+
-			"depend on the machine's position in the network, IP whitelisting and "+
+			"depend on the machine's position in the network, IP allowlisting and "+
 			"deployment of credentials.")
 	f.StringVar(&fl.Endpoint, "ts-mon-endpoint", fl.Endpoint,
 		"url (including file://, https://, pubsub://project/topic) to post "+

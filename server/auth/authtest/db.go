@@ -48,7 +48,7 @@ type FakeDB struct {
 	m         sync.RWMutex
 	err       error                              // if not nil, return this error
 	perID     map[identity.Identity]*mockedForID // id => groups and perms it has
-	ips       map[string]stringset.Set           // IP => whitelists it belongs to
+	ips       map[string]stringset.Set           // IP => allowlists it belongs to
 	realmData map[string]*protocol.RealmData     // realm name => data
 }
 
@@ -147,24 +147,24 @@ func MockRealmData(realm string, data *protocol.RealmData) MockedDatum {
 	}
 }
 
-// MockIPWhitelist modifies db to make IsInWhitelist(ip, whitelist) == true.
+// MockIPAllowlist modifies db to make IsAllowedIP(ip, allowlist) == true.
 //
 // Panics if `ip` is not a valid IP address.
-func MockIPWhitelist(ip, whitelist string) MockedDatum {
+func MockIPAllowlist(ip, allowlist string) MockedDatum {
 	if net.ParseIP(ip) == nil {
 		panic(fmt.Sprintf("%q is not a valid IP address", ip))
 	}
 	return MockedDatum{
 		apply: func(db *FakeDB) {
-			wl, ok := db.ips[ip]
+			l, ok := db.ips[ip]
 			if !ok {
-				wl = stringset.New(1)
+				l = stringset.New(1)
 				if db.ips == nil {
 					db.ips = make(map[string]stringset.Set, 1)
 				}
-				db.ips[ip] = wl
+				db.ips[ip] = l
 			}
-			wl.Add(whitelist)
+			l.Add(allowlist)
 		},
 	}
 }
@@ -180,7 +180,7 @@ func MockError(err error) MockedDatum {
 
 // NewFakeDB creates a FakeDB populated with the given mocks.
 //
-// Construct mocks using MockMembership, MockPermission, MockIPWhitelist and
+// Construct mocks using MockMembership, MockPermission, MockIPAllowlist and
 // MockError functions.
 func NewFakeDB(mocks ...MockedDatum) *FakeDB {
 	db := &FakeDB{}
@@ -325,19 +325,19 @@ func (db *FakeDB) GetCertificates(ctx context.Context, id identity.Identity) (*s
 	return nil, fmt.Errorf("GetCertificates is not implemented by FakeDB")
 }
 
-// GetWhitelistForIdentity is part of authdb.DB interface.
-func (db *FakeDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
+// GetAllowlistForIdentity is part of authdb.DB interface.
+func (db *FakeDB) GetAllowlistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	return "", nil
 }
 
-// IsInWhitelist is part of authdb.DB interface.
-func (db *FakeDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
+// IsAllowedIP is part of authdb.DB interface.
+func (db *FakeDB) IsAllowedIP(ctx context.Context, ip net.IP, allowlist string) (bool, error) {
 	db.m.RLock()
 	defer db.m.RUnlock()
 	if db.err != nil {
 		return false, db.err
 	}
-	return db.ips[ip.String()].Has(whitelist), nil
+	return db.ips[ip.String()].Has(allowlist), nil
 }
 
 // GetAuthServiceURL is part of authdb.DB interface.

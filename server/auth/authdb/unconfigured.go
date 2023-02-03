@@ -30,7 +30,7 @@ import (
 // What checks are logged are based on the following criteria: if a server has
 // UnconfiguredDB installed, and it totally ignores authentication and
 // authorization (for example, it is a localhost server), then no logging should
-// be emitted. In practice it means we don't log in GetWhitelistForIdentity
+// be emitted. In practice it means we don't log in GetAllowlistForIdentity
 // only (it is called for all incoming requests).
 type UnconfiguredDB struct {
 	Error error // an error to return, must be non-nil
@@ -78,13 +78,13 @@ func (db UnconfiguredDB) GetCertificates(ctx context.Context, id identity.Identi
 	return nil, db.Error
 }
 
-func (db UnconfiguredDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
-	// GetWhitelistForIdentity is called for ALL incoming requests. Let them pass.
+func (db UnconfiguredDB) GetAllowlistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
+	// GetAllowlistForIdentity is called for ALL incoming requests. Let them pass.
 	return "", nil
 }
 
-func (db UnconfiguredDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
-	db.log(ctx, "IsInWhitelist")
+func (db UnconfiguredDB) IsAllowedIP(ctx context.Context, ip net.IP, allowlist string) (bool, error) {
+	db.log(ctx, "IsAllowedIP")
 	return false, db.Error
 }
 

@@ -128,9 +128,9 @@ func TestMintParamsValidation(t *testing.T) {
 			So(params.Validate(), ShouldErrLike, "not a valid FQDN")
 		})
 
-		Convey("not whitelisted", func() {
+		Convey("not listed", func() {
 			params.Cert.Subject.CommonName = "host.blah"
-			So(params.Validate(), ShouldErrLike, "not whitelisted in the config")
+			So(params.Validate(), ShouldErrLike, "not listed in the config")
 		})
 
 		Convey("tokens are not allowed", func() {

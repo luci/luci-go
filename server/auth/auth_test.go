@@ -135,17 +135,17 @@ func TestAuthenticate(t *testing.T) {
 		So(err, ShouldBeNil) // success!
 	})
 
-	Convey("IP whitelist restriction works", t, func() {
+	Convey("IP allowlist restriction works", t, func() {
 		db, err := authdb.NewSnapshotDB(&protocol.AuthDB{
 			IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
 				{
 					Identity:    "user:abc@example.com",
-					IpWhitelist: "whitelist",
+					IpWhitelist: "allowlist",
 				},
 			},
 			IpWhitelists: []*protocol.AuthIPWhitelist{
 				{
-					Name: "whitelist",
+					Name: "allowlist",
 					Subnets: []string{
 						"1.2.3.4/32",
 					},
@@ -156,7 +156,7 @@ func TestAuthenticate(t *testing.T) {
 
 		c := injectTestDB(context.Background(), db)
 
-		Convey("User is using IP whitelist and IP is in the whitelist.", func() {
+		Convey("User is using IP allowlist and IP is in the allowlist.", func() {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "abc@example.com"}},
 			}
@@ -167,17 +167,17 @@ func TestAuthenticate(t *testing.T) {
 			So(CurrentIdentity(c), ShouldEqual, identity.Identity("user:abc@example.com"))
 		})
 
-		Convey("User is using IP whitelist and IP is NOT in the whitelist.", func() {
+		Convey("User is using IP allowlist and IP is NOT in the allowlist.", func() {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "abc@example.com"}},
 			}
 			req := makeRequest()
 			req.RemoteAddr = "1.2.3.5"
 			_, err := auth.Authenticate(c, req)
-			So(err, ShouldEqual, ErrIPNotWhitelisted)
+			So(err, ShouldEqual, ErrForbiddenIP)
 		})
 
-		Convey("User is not using IP whitelist.", func() {
+		Convey("User is not using IP allowlist.", func() {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "def@example.com"}},
 			}
@@ -392,12 +392,12 @@ func (db *fakeDB) GetCertificates(ctx context.Context, id identity.Identity) (*s
 	return nil, errors.New("fakeDB: GetCertificates is not implemented")
 }
 
-func (db *fakeDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
+func (db *fakeDB) GetAllowlistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	return "", nil
 }
 
-func (db *fakeDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
-	return whitelist == "bots" && ip.String() == "1.2.3.4", nil
+func (db *fakeDB) IsAllowedIP(ctx context.Context, ip net.IP, allowlist string) (bool, error) {
+	return allowlist == "bots" && ip.String() == "1.2.3.4", nil
 }
 
 func (db *fakeDB) GetAuthServiceURL(ctx context.Context) (string, error) {

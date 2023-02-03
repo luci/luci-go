@@ -124,7 +124,7 @@ func main() {
 		mw := router.NewMiddlewareChain(openIDCheck.GetMiddleware())
 		srv.Routes.POST("/push", mw, func(c *router.Context) {
 			logging.Infof(c.Context, "Authenticated as %s", auth.CurrentIdentity(c.Context))
-			// TODO: check auth.CurrentIdentity(...) against a whitelist of allowed
+			// TODO: check auth.CurrentIdentity(...) against an allowlist of allowed
 			// callers, etc.
 		})
 

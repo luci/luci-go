@@ -90,7 +90,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 	})
 
 	Convey("Unsuccessful RPC", t, func() {
-		// Modify testing CA to have no domains whitelisted.
+		// Modify testing CA to have no domains listed.
 		testingCA2 := certconfig.CA{
 			CN: "Fake CA: fake.ca",
 			ParsedConfig: &admin.CertificateAuthorityConfig{
@@ -118,7 +118,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 		So(resp, ShouldResembleProto, &minter.MintMachineTokenResponse{
 			ServiceVersion: "unit-tests/mocked-ver",
 			ErrorCode:      minter.ErrorCode_BAD_TOKEN_ARGUMENTS,
-			ErrorMessage:   `the domain "fake.domain" is not whitelisted in the config`,
+			ErrorMessage:   `the domain "fake.domain" is not listed in the config`,
 		})
 	})
 }

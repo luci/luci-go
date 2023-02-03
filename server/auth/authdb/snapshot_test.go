@@ -104,12 +104,12 @@ func TestSnapshotDB(t *testing.T) {
 		IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
 			{
 				Identity:    "user:abc@example.com",
-				IpWhitelist: "whitelist",
+				IpWhitelist: "allowlist",
 			},
 		},
 		IpWhitelists: []*protocol.AuthIPWhitelist{
 			{
-				Name: "whitelist",
+				Name: "allowlist",
 				Subnets: []string{
 					"1.2.3.4/32",
 					"10.0.0.0/8",
@@ -443,26 +443,26 @@ func TestSnapshotDB(t *testing.T) {
 		So(certs, ShouldBeNil)
 	})
 
-	Convey("IsInWhitelist works", t, func() {
-		wl, err := db.GetWhitelistForIdentity(c, "user:abc@example.com")
+	Convey("IsAllowedIP works", t, func() {
+		l, err := db.GetAllowlistForIdentity(c, "user:abc@example.com")
 		So(err, ShouldBeNil)
-		So(wl, ShouldEqual, "whitelist")
+		So(l, ShouldEqual, "allowlist")
 
-		wl, err = db.GetWhitelistForIdentity(c, "user:unknown@example.com")
+		l, err = db.GetAllowlistForIdentity(c, "user:unknown@example.com")
 		So(err, ShouldBeNil)
-		So(wl, ShouldEqual, "")
+		So(l, ShouldEqual, "")
 
-		call := func(ip, whitelist string) bool {
+		call := func(ip, allowlist string) bool {
 			ipaddr := net.ParseIP(ip)
 			So(ipaddr, ShouldNotBeNil)
-			res, err := db.IsInWhitelist(c, ipaddr, whitelist)
+			res, err := db.IsAllowedIP(c, ipaddr, allowlist)
 			So(err, ShouldBeNil)
 			return res
 		}
 
-		So(call("1.2.3.4", "whitelist"), ShouldBeTrue)
-		So(call("10.255.255.255", "whitelist"), ShouldBeTrue)
-		So(call("9.255.255.255", "whitelist"), ShouldBeFalse)
+		So(call("1.2.3.4", "allowlist"), ShouldBeTrue)
+		So(call("10.255.255.255", "allowlist"), ShouldBeTrue)
+		So(call("9.255.255.255", "allowlist"), ShouldBeFalse)
 		So(call("1.2.3.4", "empty"), ShouldBeFalse)
 	})
 

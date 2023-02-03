@@ -24,12 +24,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestWhitelist(t *testing.T) {
+func TestAllowlist(t *testing.T) {
 	Convey("Works", t, func() {
-		wl, _ := NewWhitelist(
+		l, _ := NewAllowlist(
 			[]*protocol.AuthIPWhitelist{
 				{
-					Name: "whitelist",
+					Name: "allowlist",
 					Subnets: []string{
 						"1.2.3.4/32",
 						"10.0.0.0/8",
@@ -42,39 +42,39 @@ func TestWhitelist(t *testing.T) {
 			[]*protocol.AuthIPWhitelistAssignment{
 				{
 					Identity:    "user:abc@example.com",
-					IpWhitelist: "whitelist",
+					IpWhitelist: "allowlist",
 				},
 			},
 		)
 
 		Convey("IP assignment", func() {
-			So(wl.GetWhitelistForIdentity("user:abc@example.com"), ShouldEqual, "whitelist")
-			So(wl.GetWhitelistForIdentity("user:unknown@example.com"), ShouldEqual, "")
+			So(l.GetAllowlistForIdentity("user:abc@example.com"), ShouldEqual, "allowlist")
+			So(l.GetAllowlistForIdentity("user:unknown@example.com"), ShouldEqual, "")
 		})
 
-		Convey("Whitelist", func() {
-			call := func(ip, whitelist string) bool {
+		Convey("Allowlist", func() {
+			call := func(ip, allowlist string) bool {
 				ipaddr := net.ParseIP(ip)
 				So(ipaddr, ShouldNotBeNil)
-				return wl.IsInWhitelist(ipaddr, whitelist)
+				return l.IsAllowedIP(ipaddr, allowlist)
 			}
 
-			So(call("1.2.3.4", "whitelist"), ShouldBeTrue)
-			So(call("10.255.255.255", "whitelist"), ShouldBeTrue)
-			So(call("9.255.255.255", "whitelist"), ShouldBeFalse)
+			So(call("1.2.3.4", "allowlist"), ShouldBeTrue)
+			So(call("10.255.255.255", "allowlist"), ShouldBeTrue)
+			So(call("9.255.255.255", "allowlist"), ShouldBeFalse)
 			So(call("1.2.3.4", "empty"), ShouldBeFalse)
 		})
 	})
 
 	Convey("Bad subnet", t, func() {
-		_, err := NewWhitelist(
+		_, err := NewAllowlist(
 			[]*protocol.AuthIPWhitelist{
 				{
-					Name:    "whitelist",
+					Name:    "allowlist",
 					Subnets: []string{"1.2.3.4/456"},
 				},
 			}, nil,
 		)
-		So(err, ShouldErrLike, `bad subnet "1.2.3.4/456" in IP list "whitelist" - invalid CIDR address: 1.2.3.4/456`)
+		So(err, ShouldErrLike, `bad subnet "1.2.3.4/456" in IP list "allowlist" - invalid CIDR address: 1.2.3.4/456`)
 	})
 }

@@ -20,23 +20,23 @@ import (
 	"strings"
 )
 
-// apiWhitelist is a flag.Value type that appends to the list on add.
-type apiWhitelist []string
+// apiAllowlist is a flag.Value type that appends to the list on add.
+type apiAllowlist []string
 
-var _ flag.Value = (*apiWhitelist)(nil)
+var _ flag.Value = (*apiAllowlist)(nil)
 
-func (w *apiWhitelist) String() string {
-	if *w == nil {
+func (l *apiAllowlist) String() string {
+	if *l == nil {
 		return ""
 	}
-	return strings.Join(*w, ",")
+	return strings.Join(*l, ",")
 }
 
-func (w *apiWhitelist) Set(s string) error {
+func (l *apiAllowlist) Set(s string) error {
 	if len(s) == 0 {
-		return errors.New("cannot whitelist empty string")
+		return errors.New("cannot allowlist empty string")
 	}
 
-	*w = append(*w, s)
+	*l = append(*l, s)
 	return nil
 }

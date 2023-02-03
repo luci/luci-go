@@ -76,22 +76,15 @@ func (db ErroringDB) GetCertificates(ctx context.Context, id identity.Identity) 
 	return nil, db.Error
 }
 
-// GetWhitelistForIdentity returns name of the IP whitelist to use to check
-// IP of requests from given `ident`.
-//
-// It's used to restrict access for certain account to certain IP subnets.
-//
-// Returns ("", nil) if `ident` is not IP restricted.
-func (db ErroringDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
+// GetAllowlistForIdentity returns name of the IP allowlist to use to check
+// IP of requests from the given `ident`.
+func (db ErroringDB) GetAllowlistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	logging.Errorf(ctx, "%s", db.Error)
 	return "", db.Error
 }
 
-// IsInWhitelist returns true if IP address belongs to given named IP whitelist.
-//
-// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
-// empty. May return errors if underlying datastore has issues.
-func (db ErroringDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
+// IsAllowedIP returns true if IP address belongs to given named IP allowlist.
+func (db ErroringDB) IsAllowedIP(ctx context.Context, ip net.IP, allowlist string) (bool, error) {
 	logging.Errorf(ctx, "%s", db.Error)
 	return false, db.Error
 }

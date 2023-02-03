@@ -71,12 +71,12 @@ func (DevServerDB) GetCertificates(ctx context.Context, id identity.Identity) (*
 	return nil, errNotImplementedInDev
 }
 
-func (DevServerDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
+func (DevServerDB) GetAllowlistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
 	return "", nil
 }
 
-func (DevServerDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
-	if whitelist == "localhost" {
+func (DevServerDB) IsAllowedIP(ctx context.Context, ip net.IP, allowlist string) (bool, error) {
+	if allowlist == "localhost" {
 		return ip.IsLoopback(), nil
 	}
 	return false, nil

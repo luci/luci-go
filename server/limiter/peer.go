@@ -26,7 +26,7 @@ import (
 //
 // Currently returns one of "unknown", "anonymous", "authenticated".
 //
-// TODO(vadimsh): Have a small group with a whitelist of identities that are OK
+// TODO(vadimsh): Have a small group with an allowlist of identities that are OK
 // to use as peer label directly.
 func PeerLabelFromAuthState(ctx context.Context) string {
 	if s := auth.GetState(ctx); s != nil {

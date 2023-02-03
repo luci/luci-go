@@ -42,9 +42,9 @@ var (
 	// context wasn't previously initialized via 'Initialize'.
 	ErrNotConfigured = errors.New("auth: the library is not properly configured", grpcutil.InternalTag)
 
-	// ErrBadClientID is returned by Authenticate if caller is using
-	// non-whitelisted OAuth2 client. More info is in the log.
-	ErrBadClientID = errors.New("auth: OAuth client_id is not whitelisted", grpcutil.PermissionDeniedTag)
+	// ErrBadClientID is returned by Authenticate if caller is using an OAuth2
+	// client ID not in the list of allowed IDs. More info is in the log.
+	ErrBadClientID = errors.New("auth: OAuth client_id is not in the allowlist", grpcutil.PermissionDeniedTag)
 
 	// ErrBadAudience is returned by Authenticate if token's audience is unknown.
 	ErrBadAudience = errors.New("auth: bad token audience", grpcutil.PermissionDeniedTag)
@@ -53,13 +53,13 @@ var (
 	// be parsed.
 	ErrBadRemoteAddr = errors.New("auth: bad remote addr", grpcutil.InternalTag)
 
-	// ErrIPNotWhitelisted is returned when an account is restricted by an IP
-	// whitelist and request's remote_addr is not in it.
-	ErrIPNotWhitelisted = errors.New("auth: IP is not whitelisted", grpcutil.PermissionDeniedTag)
+	// ErrForbiddenIP is returned when an account is restricted by an IP allowlist
+	// and request's remote_addr is not in it.
+	ErrForbiddenIP = errors.New("auth: IP is not in the allowlist", grpcutil.PermissionDeniedTag)
 
 	// ErrProjectHeaderForbidden is returned by Authenticate if an unknown caller
-	// tries to use X-Luci-Project header. Only a whitelisted set of callers
-	// are allowed to use this header, see InternalServicesGroup.
+	// tries to use X-Luci-Project header. Only a preapproved set of callers are
+	// allowed to use this header, see InternalServicesGroup.
 	ErrProjectHeaderForbidden = errors.New("auth: the caller is not allowed to use X-Luci-Project", grpcutil.PermissionDeniedTag)
 
 	// Other errors.
@@ -271,7 +271,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 			report(err, "ERROR_FORBIDDEN_AUDIENCE")
 		case err == ErrBadRemoteAddr:
 			report(err, "ERROR_BAD_REMOTE_ADDR")
-		case err == ErrIPNotWhitelisted:
+		case err == ErrForbiddenIP:
 			report(err, "ERROR_FORBIDDEN_IP")
 		case err == ErrProjectHeaderForbidden:
 			report(err, "ERROR_PROJECT_HEADER_FORBIDDEN")
@@ -283,7 +283,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 		span.End(err)
 	}()
 
-	// We will need working DB factory below to check IP whitelist.
+	// We will need working DB factory below to check IP allowlist.
 	cfg := getConfig(tracedCtx)
 	if cfg == nil || cfg.DBProvider == nil || len(a.Methods) == 0 {
 		return nil, ErrNotConfigured
@@ -329,16 +329,16 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 		return nil, err
 	}
 
-	// If using OAuth2, make sure the ClientID is whitelisted.
+	// If using OAuth2, make sure the ClientID is allowlisted.
 	if s.user.ClientID != "" {
-		stage = "OAUTH_WHITELIST"
-		if err := checkClientIDWhitelist(tracedCtx, cfg, s.db, s.user.Email, s.user.ClientID); err != nil {
+		stage = "OAUTH_CLIENT_ID_CHECK"
+		if err := checkClientID(tracedCtx, cfg, s.db, s.user.Email, s.user.ClientID); err != nil {
 			return nil, err
 		}
 	}
 
-	// Extract peer's IP address and, if necessary, check it against a whitelist.
-	stage = "IP_WHITELIST"
+	// Extract peer's IP address and, if necessary, check it against an allowlist.
+	stage = "IP_CHECK"
 	if s.peerIP, err = checkPeerIP(tracedCtx, cfg, s.db, r, s.peerIdent); err != nil {
 		return nil, err
 	}
@@ -432,13 +432,13 @@ func replyError(ctx context.Context, rw http.ResponseWriter, code int, err error
 	}
 }
 
-// checkClientIDWhitelist returns nil if the clientID is allowed, ErrBadClientID
-// if not, and a transient errors if the check itself failed.
-func checkClientIDWhitelist(ctx context.Context, cfg *Config, db authdb.DB, email, clientID string) error {
-	// Check the global whitelist in the AuthDB.
+// checkClientID returns nil if the clientID is allowed, ErrBadClientID if not,
+// and a transient errors if the check itself failed.
+func checkClientID(ctx context.Context, cfg *Config, db authdb.DB, email, clientID string) error {
+	// Check the global allowlist in the AuthDB.
 	switch valid, err := db.IsAllowedOAuthClientID(ctx, email, clientID); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check client ID whitelist").Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to check client ID allowlist").Tag(transient.Tag).Err()
 	case valid:
 		return nil
 	}
@@ -453,14 +453,14 @@ func checkClientIDWhitelist(ctx context.Context, cfg *Config, db authdb.DB, emai
 		}
 	}
 
-	logging.Errorf(ctx, "auth: %q is using client_id %q not in the whitelist", email, clientID)
+	logging.Errorf(ctx, "auth: %q is using client_id %q not in the allowlist", email, clientID)
 	return ErrBadClientID
 }
 
-// checkPeerIP parses the caller IP address and checks it against a whitelist
+// checkPeerIP parses the caller IP address and checks it against an allowlist
 // (if necessary). Returns ErrBadRemoteAddr if the IP is malformed,
-// ErrIPNotWhitelisted if the IP is not whitelisted or a transient error if the
-// check itself failed.
+// ErrForbiddenIP if the IP is not allowlisted or a transient error if the check
+// itself failed.
 func checkPeerIP(ctx context.Context, cfg *Config, db authdb.DB, r *http.Request, peerID identity.Identity) (net.IP, error) {
 	remoteAddr := r.RemoteAddr
 	if cfg.EndUserIP != nil {
@@ -472,16 +472,16 @@ func checkPeerIP(ctx context.Context, cfg *Config, db authdb.DB, r *http.Request
 		return nil, ErrBadRemoteAddr
 	}
 
-	// Some callers may be constrained by an IP whitelist.
-	switch ipWhitelist, err := db.GetWhitelistForIdentity(ctx, peerID); {
+	// Some callers may be constrained by an IP allowlist.
+	switch ipAllowlist, err := db.GetAllowlistForIdentity(ctx, peerID); {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to get IP whitelist for identity %q", peerID).Tag(transient.Tag).Err()
-	case ipWhitelist != "":
-		switch whitelisted, err := db.IsInWhitelist(ctx, peerIP, ipWhitelist); {
+		return nil, errors.Annotate(err, "failed to get IP allowlist for identity %q", peerID).Tag(transient.Tag).Err()
+	case ipAllowlist != "":
+		switch allowed, err := db.IsAllowedIP(ctx, peerIP, ipAllowlist); {
 		case err != nil:
-			return nil, errors.Annotate(err, "failed to check IP %s is in the whitelist %q", peerIP, ipWhitelist).Tag(transient.Tag).Err()
-		case !whitelisted:
-			return nil, ErrIPNotWhitelisted
+			return nil, errors.Annotate(err, "failed to check IP %s is in the allowlist %q", peerIP, ipAllowlist).Tag(transient.Tag).Err()
+		case !allowed:
+			return nil, ErrForbiddenIP
 		}
 	}
 

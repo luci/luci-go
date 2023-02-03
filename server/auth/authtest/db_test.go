@@ -64,7 +64,7 @@ func TestFakeDB(t *testing.T) {
 			MockRealmData("proj:@root", dataRoot),
 			MockRealmData("proj:some", dataSome),
 
-			MockIPWhitelist("127.0.0.42", "wl"),
+			MockIPAllowlist("127.0.0.42", "allowlist"),
 		)
 
 		Convey("Membership checks work", func() {
@@ -196,16 +196,16 @@ func TestFakeDB(t *testing.T) {
 			So(data, ShouldBeNil)
 		})
 
-		Convey("IP whitelist checks work", func() {
-			resp, err := db.IsInWhitelist(ctx, net.ParseIP("127.0.0.42"), "wl")
+		Convey("IP allowlist checks work", func() {
+			resp, err := db.IsAllowedIP(ctx, net.ParseIP("127.0.0.42"), "allowlist")
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeTrue)
 
-			resp, err = db.IsInWhitelist(ctx, net.ParseIP("127.0.0.42"), "another")
+			resp, err = db.IsAllowedIP(ctx, net.ParseIP("127.0.0.42"), "another")
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeFalse)
 
-			resp, err = db.IsInWhitelist(ctx, net.ParseIP("192.0.0.1"), "wl")
+			resp, err = db.IsAllowedIP(ctx, net.ParseIP("192.0.0.1"), "allowlist")
 			So(err, ShouldBeNil)
 			So(resp, ShouldBeFalse)
 		})
@@ -220,7 +220,7 @@ func TestFakeDB(t *testing.T) {
 			_, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:realm", nil)
 			So(err, ShouldEqual, mockedErr)
 
-			_, err = db.IsInWhitelist(ctx, net.ParseIP("127.0.0.42"), "wl")
+			_, err = db.IsAllowedIP(ctx, net.ParseIP("127.0.0.42"), "allowlist")
 			So(err, ShouldEqual, mockedErr)
 		})
 	})

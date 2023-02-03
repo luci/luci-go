@@ -20,13 +20,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestWhitelist(t *testing.T) {
+func TestAllowlist(t *testing.T) {
 	Convey("Works", t, func() {
-		wl := NewWhitelist("primary-client-id", []string{
+		l := NewAllowlist("primary-client-id", []string{
 			"additional-client-id-1",
 			"additional-client-id-2",
 		})
-		call := wl.IsAllowedOAuthClientID
+		call := l.IsAllowedOAuthClientID
 
 		So(call("abc@appspot.gserviceaccount.com", "anonymous"), ShouldBeTrue)
 		So(call("dude@example.com", ""), ShouldBeFalse)

@@ -73,7 +73,7 @@ func TestConfig(t *testing.T) {
 
 			Convey("Has matching entry", func() {
 				e, err := monitoringConfig(auth.WithState(ctx, &authtest.FakeState{
-					PeerIPWhitelists: []string{"bots"},
+					PeerIPAllowlist: []string{"bots"},
 				}))
 				So(err, ShouldBeNil)
 				So(e.Label, ShouldEqual, "bots-label")
@@ -81,7 +81,7 @@ func TestConfig(t *testing.T) {
 
 			Convey("No matching entry", func() {
 				e, err := monitoringConfig(auth.WithState(ctx, &authtest.FakeState{
-					PeerIPWhitelists: []string{"something-else"},
+					PeerIPAllowlist: []string{"something-else"},
 				}))
 				So(err, ShouldBeNil)
 				So(e, ShouldBeNil)

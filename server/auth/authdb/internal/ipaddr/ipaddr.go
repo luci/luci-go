@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ipaddr implements IP whitelist check.
+// Package ipaddr implements IP allowlist check.
 package ipaddr
 
 import (
@@ -23,20 +23,20 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
-// Whitelist holds all named IP whitelists and the whitelist assignment map.
-type Whitelist struct {
-	assignments map[identity.Identity]string // identity => IP whitelist for it
-	whitelists  map[string][]net.IPNet       // IP whitelist => subnets
+// Allowlist holds all named IP allowlist and the allowlist assignment map.
+type Allowlist struct {
+	assignments map[identity.Identity]string // identity => IP allowlist for it
+	allowlists  map[string][]net.IPNet       // IP allowlist => subnets
 }
 
-// NewWhitelist creates new populated IP whitelist.
-func NewWhitelist(wl []*protocol.AuthIPWhitelist, as []*protocol.AuthIPWhitelistAssignment) (Whitelist, error) {
+// NewAllowlist creates new populated IP allowlist set.
+func NewAllowlist(wl []*protocol.AuthIPWhitelist, as []*protocol.AuthIPWhitelistAssignment) (Allowlist, error) {
 	assignments := make(map[identity.Identity]string, len(as))
 	for _, a := range as {
 		assignments[identity.Identity(a.Identity)] = a.IpWhitelist
 	}
 
-	whitelists := make(map[string][]net.IPNet, len(wl))
+	allowlists := make(map[string][]net.IPNet, len(wl))
 	for _, w := range wl {
 		if len(w.Subnets) == 0 {
 			continue
@@ -45,27 +45,27 @@ func NewWhitelist(wl []*protocol.AuthIPWhitelist, as []*protocol.AuthIPWhitelist
 		for i, subnet := range w.Subnets {
 			_, ipnet, err := net.ParseCIDR(subnet)
 			if err != nil {
-				return Whitelist{}, fmt.Errorf("bad subnet %q in IP list %q - %s", subnet, w.Name, err)
+				return Allowlist{}, fmt.Errorf("bad subnet %q in IP list %q - %s", subnet, w.Name, err)
 			}
 			nets[i] = *ipnet
 		}
-		whitelists[w.Name] = nets
+		allowlists[w.Name] = nets
 	}
 
-	return Whitelist{assignments, whitelists}, nil
+	return Allowlist{assignments, allowlists}, nil
 }
 
-// GetWhitelistForIdentity returns name of the IP whitelist to use to check
+// GetAllowlistForIdentity returns name of the IP allowlist to use to check
 // IP of requests from given `ident`.
 //
 // Returns an empty string if the identity is not IP-restricted.
-func (wl Whitelist) GetWhitelistForIdentity(ident identity.Identity) string {
-	return wl.assignments[ident]
+func (l Allowlist) GetAllowlistForIdentity(ident identity.Identity) string {
+	return l.assignments[ident]
 }
 
-// IsInWhitelist returns true if IP address belongs to given named IP whitelist.
-func (wl Whitelist) IsInWhitelist(ip net.IP, whitelist string) bool {
-	for _, ipnet := range wl.whitelists[whitelist] {
+// IsAllowedIP returns true if IP address belongs to given named IP allowlist.
+func (l Allowlist) IsAllowedIP(ip net.IP, allowlist string) bool {
+	for _, ipnet := range l.allowlists[allowlist] {
 		if ipnet.Contains(ip) {
 			return true
 		}

@@ -50,8 +50,8 @@ type SnapshotDB struct {
 
 	groups         *graph.QueryableGraph  // queryable representation of groups
 	realms         *realmset.Realms       // queryable representation of realms
-	clientIDs      oauthid.Whitelist      // set of allowed client IDs
-	whitelistedIPs ipaddr.Whitelist       // set of named IP whitelists
+	clientIDs      oauthid.Allowlist      // set of allowed client IDs
+	allowlistedIPs ipaddr.Allowlist       // set of named IP allowlist
 	securityCfg    *seccfg.SecurityConfig // parsed SecurityConfig proto
 
 	tokenServiceURL   string       // URL of the token server as provided by Auth service
@@ -116,9 +116,9 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		}
 	}
 
-	ipWL, err := ipaddr.NewWhitelist(authDB.IpWhitelists, authDB.IpWhitelistAssignments)
+	allowlistedIPs, err := ipaddr.NewAllowlist(authDB.IpWhitelists, authDB.IpWhitelistAssignments)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad IP whitelists in AuthDB").Err()
+		return nil, errors.Annotate(err, "bad IP allowlist in AuthDB").Err()
 	}
 
 	securityCfg, err := seccfg.Parse(authDB.SecurityConfig)
@@ -131,8 +131,8 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		Rev:               rev,
 		groups:            groups,
 		realms:            realmSet,
-		clientIDs:         oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
-		whitelistedIPs:    ipWL,
+		clientIDs:         oauthid.NewAllowlist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
+		allowlistedIPs:    allowlistedIPs,
 		securityCfg:       securityCfg,
 		tokenServiceURL:   authDB.TokenServerUrl,
 		tokenServiceCerts: certs.Bundle{ServiceURL: authDB.TokenServerUrl},
@@ -331,22 +331,19 @@ func (db *SnapshotDB) GetCertificates(ctx context.Context, signerID identity.Ide
 	}
 }
 
-// GetWhitelistForIdentity returns name of the IP whitelist to use to check
-// IP of requests from given `ident`.
+// GetAllowlistForIdentity returns name of the IP allowlist to use to check
+// IP of requests from the given `ident`.
 //
 // It's used to restrict access for certain account to certain IP subnets.
 //
 // Returns ("", nil) if `ident` is not IP restricted.
-func (db *SnapshotDB) GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
-	return db.whitelistedIPs.GetWhitelistForIdentity(ident), nil
+func (db *SnapshotDB) GetAllowlistForIdentity(ctx context.Context, ident identity.Identity) (string, error) {
+	return db.allowlistedIPs.GetAllowlistForIdentity(ident), nil
 }
 
-// IsInWhitelist returns true if IP address belongs to given named IP whitelist.
-//
-// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
-// empty. May return errors if underlying datastore has issues.
-func (db *SnapshotDB) IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error) {
-	return db.whitelistedIPs.IsInWhitelist(ip, whitelist), nil
+// IsAllowedIP returns true if IP address belongs to given named IP allowlist.
+func (db *SnapshotDB) IsAllowedIP(ctx context.Context, ip net.IP, allowlist string) (bool, error) {
+	return db.allowlistedIPs.IsAllowedIP(ip, allowlist), nil
 }
 
 // GetAuthServiceURL returns root URL ("https://<host>") of the auth service

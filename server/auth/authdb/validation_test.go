@@ -39,7 +39,7 @@ func TestValidation(t *testing.T) {
 				{Name: "group"},
 			},
 			IpWhitelists: []*protocol.AuthIPWhitelist{
-				{Name: "IP whitelist"},
+				{Name: "IP allowlist"},
 			},
 		}), ShouldBeNil)
 	})
@@ -55,15 +55,15 @@ func TestValidation(t *testing.T) {
 		}), ShouldErrLike, "invalid identity")
 	})
 
-	Convey("Bad IP whitelist", t, func() {
+	Convey("Bad IP allowlist", t, func() {
 		So(validate(&protocol.AuthDB{
 			IpWhitelists: []*protocol.AuthIPWhitelist{
 				{
-					Name:    "IP whitelist",
+					Name:    "IP allowlist",
 					Subnets: []string{"not a subnet"},
 				},
 			},
-		}), ShouldErrLike, "bad IP whitlist")
+		}), ShouldErrLike, "bad IP allowlist")
 	})
 
 	Convey("Bad SecurityConfig", t, func() {

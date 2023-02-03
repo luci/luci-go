@@ -40,7 +40,7 @@ func TestState(t *testing.T) {
 		So(res, ShouldBeFalse)
 		So(err, ShouldEqual, ErrNotConfigured)
 
-		res, err = IsInWhitelist(ctx, "bots")
+		res, err = IsAllowedIP(ctx, "bots")
 		So(res, ShouldBeFalse)
 		So(err, ShouldEqual, ErrNotConfigured)
 	})
@@ -68,7 +68,7 @@ func TestState(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(res, ShouldBeTrue)
 
-		res, err = IsInWhitelist(ctx, "bots")
+		res, err = IsAllowedIP(ctx, "bots")
 		So(err, ShouldBeNil)
 		So(res, ShouldBeTrue) // fakeDB contains the list "bots" with member "1.2.3.4"
 	})

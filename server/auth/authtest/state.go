@@ -40,7 +40,7 @@ import (
 //	auth.IsMember(ctx, "admins") -> returns true.
 //	auth.HasPermission(ctx, perm1, "proj:realm1", nil) -> returns true.
 //
-// Note that IdentityGroups, IdentityPermissions, PeerIPWhitelists and Error
+// Note that IdentityGroups, IdentityPermissions, PeerIPAllowlist and Error
 // are effective only when FakeDB is nil. They are used as a shortcut to
 // construct the corresponding FakeDB on the fly. If you need to prepare a more
 // complex fake state, pass NewFakeDB(...) as FakeDB instead:
@@ -67,8 +67,8 @@ type FakeState struct {
 	// caller's permissions.
 	IdentityPermissions []RealmPermission
 
-	// PeerIPWhitelists is a list of IP whitelists the caller IP belongs to.
-	PeerIPWhitelists []string
+	// PeerIPAllowlist is a list of IP allowlists the caller IP belongs to.
+	PeerIPAllowlist []string
 
 	// Error, if not nil, is returned by auth DB checks.
 	Error error
@@ -76,7 +76,7 @@ type FakeState struct {
 	// FakeDB is an authdb.DB implementation to use.
 	//
 	// If not nil, takes precedence over IdentityGroups, IdentityPermissions,
-	// PeerIPWhitelists and Error.
+	// PeerIPAllowlist and Error.
 	FakeDB authdb.DB
 
 	// SessionOverride may be set for Session() to return custom value.
@@ -139,8 +139,8 @@ func (s *FakeState) DB() authdb.DB {
 	for _, perm := range s.IdentityPermissions {
 		mocks = append(mocks, MockPermission(ident, perm.Realm, perm.Permission))
 	}
-	for _, wl := range s.PeerIPWhitelists {
-		mocks = append(mocks, MockIPWhitelist(peerIP, wl))
+	for _, wl := range s.PeerIPAllowlist {
+		mocks = append(mocks, MockIPAllowlist(peerIP, wl))
 	}
 	if s.Error != nil {
 		mocks = append(mocks, MockError(s.Error))

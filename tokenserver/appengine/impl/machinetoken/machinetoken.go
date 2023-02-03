@@ -104,7 +104,7 @@ func (p *MintParams) Validate() error {
 	// Check DomainConfig for given domain.
 	domainCfg := domainConfig(p.Config, domain)
 	if domainCfg == nil {
-		return fmt.Errorf("the domain %q is not whitelisted in the config", domain)
+		return fmt.Errorf("the domain %q is not listed in the config", domain)
 	}
 	if domainCfg.MachineTokenLifetime <= 0 {
 		return fmt.Errorf("machine tokens for machines in domain %q are not allowed", domain)

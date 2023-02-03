@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package oauthid implements OAuth client ID whitelist check.
+// Package oauthid implements OAuth client ID allowlist check.
 package oauthid
 
 import (
@@ -24,31 +24,31 @@ import (
 // Well-known OAuth client_id of https://apis-explorer.appspot.com/.
 const GoogleAPIExplorerClientID = "292824132082.apps.googleusercontent.com"
 
-// Whitelist is OAuth client ID whitelist.
-type Whitelist struct {
+// Allowlist is OAuth client ID allowlist.
+type Allowlist struct {
 	stringset.Set
 }
 
-// NewWhitelist creates new populated client ID whitelist.
-func NewWhitelist(primaryID string, additionalIDs []string) Whitelist {
-	wl := stringset.New(2 + len(additionalIDs))
-	wl.Add(GoogleAPIExplorerClientID)
+// NewAllowlist creates new populated client ID allowlist.
+func NewAllowlist(primaryID string, additionalIDs []string) Allowlist {
+	l := stringset.New(2 + len(additionalIDs))
+	l.Add(GoogleAPIExplorerClientID)
 	if primaryID != "" {
-		wl.Add(primaryID)
+		l.Add(primaryID)
 	}
 	for _, id := range additionalIDs {
 		if id != "" {
-			wl.Add(id)
+			l.Add(id)
 		}
 	}
-	return Whitelist{wl}
+	return Allowlist{l}
 }
 
 // IsAllowedOAuthClientID returns true if the given OAuth2 client ID can be used
 // to authorize access from the given email.
-func (wl Whitelist) IsAllowedOAuthClientID(email, clientID string) bool {
+func (l Allowlist) IsAllowedOAuthClientID(email, clientID string) bool {
 	switch {
-	// No need to whitelist client IDs for service accounts, since email address
+	// No need to check client IDs for service accounts, since email address
 	// uniquely identifies credentials used. Note: this is Google specific.
 	case strings.HasSuffix(email, ".gserviceaccount.com"):
 		return true
@@ -56,6 +56,6 @@ func (wl Whitelist) IsAllowedOAuthClientID(email, clientID string) bool {
 	case clientID == "":
 		return false
 	default:
-		return wl.Has(clientID)
+		return l.Has(clientID)
 	}
 }

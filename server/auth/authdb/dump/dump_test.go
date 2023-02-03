@@ -41,7 +41,7 @@ func TestFetcher(t *testing.T) {
 	signer := signingtest.NewSigner(nil)
 
 	Convey("With mocks", t, func(c C) {
-		serverAllowAccess := true           // is caller whitelisted for authdb access?
+		serverAllowAccess := true           // is caller allowed to access authdb?
 		serverHasAccessNow := false         // does caller have access right now?
 		serverDumpPath := "bucket/prefix"   // where server dumps AuthDB
 		serverSignerID := "auth-service-id" // ID used to sign blob by the server

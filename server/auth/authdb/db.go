@@ -103,20 +103,19 @@ type DB interface {
 	// Returns errors (usually transient) if the bundle can't be fetched.
 	GetCertificates(ctx context.Context, id identity.Identity) (*signing.PublicCertificates, error)
 
-	// GetWhitelistForIdentity returns name of the IP whitelist to use to check
+	// GetAllowlistForIdentity returns name of the IP allowlist to use to check
 	// IP of requests from given `ident`.
 	//
 	// It's used to restrict access for certain account to certain IP subnets.
 	//
 	// Returns ("", nil) if `ident` is not IP restricted.
-	GetWhitelistForIdentity(ctx context.Context, ident identity.Identity) (string, error)
+	GetAllowlistForIdentity(ctx context.Context, ident identity.Identity) (string, error)
 
-	// IsInWhitelist returns true if IP address belongs to given named
-	// IP whitelist.
+	// IsAllowedIP returns true if IP address belongs to given named IP allowlist.
 	//
-	// IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
+	// An IP allowlist is a set of IP subnets. Unknown allowlists are considered
 	// empty. May return errors if underlying datastore has issues.
-	IsInWhitelist(ctx context.Context, ip net.IP, whitelist string) (bool, error)
+	IsAllowedIP(ctx context.Context, ip net.IP, allowlist string) (bool, error)
 
 	// GetAuthServiceURL returns root URL ("https://<host>") of the auth service.
 	//

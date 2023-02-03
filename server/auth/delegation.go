@@ -87,7 +87,7 @@ type DelegationTokenParams struct {
 	// Untargeted, if true, indicates that the caller is requesting a token that
 	// is not scoped to any particular service.
 	//
-	// Such token can be sent to any supported LUCI service. Only whitelisted set
+	// Such token can be sent to any supported LUCI service. Only allowlisted set
 	// of callers have such superpower.
 	//
 	// If Untargeted is true, TargetHost is ignored.

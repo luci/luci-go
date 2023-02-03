@@ -33,7 +33,7 @@ import (
 // There are two variants of tokens signed by Google:
 //   - ID tokens identifying end users. They always have an OAuth2 Client ID as
 //     an audience (`aud` field). Their `aud` is placed into User.ClientID, so
-//     it is later checked against a whitelist of client IDs by the LUCI auth
+//     it is later checked against an allowlist of client IDs by the LUCI auth
 //     stack.
 //   - ID tokens identifying service accounts. They generally can have anything
 //     at all as an audience, but usually have an URL of the service being
@@ -112,8 +112,8 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Requ
 	}
 
 	// For tokens identifying end users, populate user.ClientID to let the LUCI
-	// auth stack check it against a whitelist in the AuthDB (same way it does for
-	// OAuth2 access tokens).
+	// auth stack check it against an allowlist in the AuthDB (same way it does
+	// for OAuth2 access tokens).
 	if !strings.HasSuffix(user.Email, ".gserviceaccount.com") {
 		user.ClientID = tok.Aud
 		return user, nil, nil

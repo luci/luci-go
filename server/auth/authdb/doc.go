@@ -16,7 +16,7 @@
 //
 // Authentication Database represents all data used when authorizing incoming
 // requests and handling authentication related tasks: user groups, IP
-// whitelists, OAuth client ID whitelist, etc.
+// allowlists, OAuth client ID allowlist, etc.
 //
 // This package defines a general interface and few its implementations.
 package authdb

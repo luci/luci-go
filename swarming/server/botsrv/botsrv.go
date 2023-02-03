@@ -340,7 +340,7 @@ func checkCredentials(ctx context.Context, pollState *internalspb.PollState) err
 
 	// Verify the bot is in the required IP allowlist (if any).
 	if pollState.IpAllowlist != "" {
-		switch yes, err := auth.IsInWhitelist(ctx, pollState.IpAllowlist); {
+		switch yes, err := auth.IsAllowedIP(ctx, pollState.IpAllowlist); {
 		case err != nil:
 			return errors.Annotate(err, "IP allowlist check failed").Tag(transient.Tag).Err()
 		case !yes:

@@ -501,8 +501,8 @@ func TestCheckCredentials(t *testing.T) {
 			Identity:       identity.AnonymousIdentity,
 			PeerIPOverride: net.ParseIP("127.1.1.1"),
 			FakeDB: authtest.NewFakeDB(
-				authtest.MockIPWhitelist("127.1.1.1", "good"),
-				authtest.MockIPWhitelist("127.2.2.2", "bad"),
+				authtest.MockIPAllowlist("127.1.1.1", "good"),
+				authtest.MockIPAllowlist("127.2.2.2", "bad"),
 			),
 		})
 

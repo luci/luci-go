@@ -48,7 +48,7 @@ func TestFakeState(t *testing.T) {
 			IdentityPermissions: []RealmPermission{
 				{"proj:realm1", testPerm},
 			},
-			PeerIPWhitelists:     []string{"wl"},
+			PeerIPAllowlist:      []string{"allowlist"},
 			PeerIdentityOverride: "bot:blah",
 			PeerIPOverride:       net.ParseIP("192.192.192.192"),
 			UserExtra:            "blah",
@@ -73,7 +73,7 @@ func TestFakeState(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(yes, ShouldBeTrue)
 
-		yes, err = db.IsInWhitelist(ctx, net.ParseIP("192.192.192.192"), "wl")
+		yes, err = db.IsAllowedIP(ctx, net.ParseIP("192.192.192.192"), "allowlist")
 		So(err, ShouldBeNil)
 		So(yes, ShouldBeTrue)
 	})
