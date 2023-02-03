@@ -190,6 +190,7 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 		Compression:      topic.GetCompression(),
 	}
 
+	prj := b.Project // represent the project to make the pubsub call.
 	var msg proto.Message
 	msg = bldV2
 	if callback {
@@ -197,11 +198,12 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 			BuildPubsub: bldV2,
 			UserData: b.PubSubCallback.UserData,
 		}
+		prj = "" // represent the service to make the pubsub call.
 	}
 
 	switch  {
 	case topic.GetName() != "":
-		return publishToExternalTopic(ctx, msg, generateBuildsV2Attributes(p), topic.Name, b.Project)
+		return publishToExternalTopic(ctx, msg, generateBuildsV2Attributes(p), topic.Name, prj)
 	default:
 		//  publish to the internal `builds_v2` topic.
 		return tq.AddTask(ctx, &tq.Task{
