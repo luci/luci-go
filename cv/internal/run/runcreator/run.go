@@ -288,7 +288,21 @@ func (rb *Creator) checkProjectState(ctx context.Context) {
 		case ps.Status != prjpb.Status_STARTED:
 			return errors.Reason("project %q status is %s, expected STARTED", rb.LUCIProject, ps.Status.String()).Tag(StateChangedTag).Err()
 		case ps.ConfigHash != rb.ConfigGroupID.Hash():
-			return errors.Reason("project config is %s, expected %s", ps.ConfigHash, rb.ConfigGroupID.Hash()).Tag(StateChangedTag).Err()
+			// This mismatch may be due to one of two reasons:
+			//   - A config change and the Run creation(s) occurred close
+			//     together, i.e. in the same batch, in which case this is
+			//     expected; Or,
+			//   - The state of the world changed while this task was being
+			//     executed, which is a problem.
+			// We decide on these based on the age of the project offload. If it
+			// was modified in the last minute, we can assume that something
+			// changed that this task is not aware of so we must retry the whole
+			// task; otherwise, the config change and the run creations will be
+			// persisted in the same transaction.
+			if clock.Since(ctx, ps.UpdateTime) < time.Minute {
+				return errors.Reason("project config is %s, expected %s", ps.ConfigHash, rb.ConfigGroupID.Hash()).Tag(StateChangedTag).Err()
+			}
+			fallthrough
 		default:
 			return nil
 		}

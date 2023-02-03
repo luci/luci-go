@@ -76,6 +76,9 @@ type ProjectStateOffload struct {
 	Status prjpb.Status `gae:",noindex"`
 	// ConfigHash is the latest processed Project Config hash.
 	ConfigHash string `gae:",noindex"`
+
+	// UpdateTime is the last time the entity was modifed.
+	UpdateTime time.Time `gae:",noindex"`
 }
 
 // ProjectLog stores historic state of a project.

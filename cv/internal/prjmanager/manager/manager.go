@@ -234,6 +234,7 @@ func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev ev
 			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, proc.luciProject),
 			Status:     s.PB.GetStatus(),
 			ConfigHash: s.PB.GetConfigHash(),
+			UpdateTime: clock.Now(ctx).UTC(),
 		})
 	}
 

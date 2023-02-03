@@ -186,6 +186,7 @@ func TestRunBuilder(t *testing.T) {
 			Project:    datastore.MakeKey(ctx, prjmanager.ProjectKind, rb.LUCIProject),
 			ConfigHash: "sha256:cafe",
 			Status:     prjpb.Status_STARTED,
+			UpdateTime: ct.Clock.Now().UTC(),
 		}
 		So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
 
@@ -214,6 +215,14 @@ func TestRunBuilder(t *testing.T) {
 				So(err, ShouldErrLike, "expected sha256:cafe")
 				So(StateChangedTag.In(err), ShouldBeTrue)
 				So(transient.Tag.In(err), ShouldBeFalse)
+			})
+
+			Convey("Updated project config", func() {
+				projectStateOffload.ConfigHash = "stale-hash"
+				projectStateOffload.UpdateTime = ct.Clock.Now().UTC().Add(-1 * time.Hour)
+				So(datastore.Put(ctx, projectStateOffload), ShouldBeNil)
+				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
+				So(err, ShouldBeNil)
 			})
 
 			Convey("CL not exists", func() {
