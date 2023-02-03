@@ -119,3 +119,13 @@ go test go.chromium.org/luci/analysis/...
 
 [Template for GAE Standard app]: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/examples/appengine/helloworld_standard/README.md
 
+## Production release
+
+1. Make sure that you have an `infra_internal` checkout.
+2. Navigate to `data/gae` directory under your base checkout directory, should be `~/infra`.
+3. Pull the latest with `git rebase-update` or `git checkout main && git pull`.
+4. Create a new branch `git new-branch <NAME>` or `git -b <NAME>`.
+5. run `./scripts/promote.py luci-analysis --canary --stable --commit`.
+6. Upload the CL `git cl upload`.
+7. Request approval from space: LUCI Test War Room.
+
