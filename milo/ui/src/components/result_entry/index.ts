@@ -26,6 +26,7 @@ import '../associated_bugs_badge';
 import '../expandable_entry';
 import '../tags_entry';
 import './image_diff_artifact';
+import './link_artifact';
 import './text_artifact';
 import './text_diff_artifact';
 import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
@@ -119,9 +120,18 @@ export class ResultEntryElement extends MobxLitElement {
     ]);
   }
 
+  @computed private get stainlessLogArtifact() {
+    return this.invArtifacts.find((a) => a.artifactId === 'stainless_logs');
+  }
+
+  @computed private get testhausLogArtifact() {
+    return this.invArtifacts.find((a) => a.artifactId === 'testhaus_logs');
+  }
+
   @computed private get textDiffArtifact() {
     return this.resultArtifacts.find((a) => a.artifactId === 'text_diff');
   }
+
   @computed private get imageDiffArtifactGroup() {
     return {
       expected: this.resultArtifacts.find((a) => a.artifactId === 'expected_image'),
@@ -178,13 +188,29 @@ export class ResultEntryElement extends MobxLitElement {
     return html`
       <milo-expandable-entry .contentRuler="none" .expanded=${true}>
         <span slot="header">Summary:</span>
-        <div id="summary-html" class="info-block" slot="content">
-          <milo-artifact-provider
-            .artifacts=${this.artifactsMapping}
-            .finalized=${this.invArtifacts$.state !== PENDING && this.resultArtifacts$.state !== PENDING}
-          >
-            ${unsafeHTML(this.testResult.summaryHtml)}
-          </milo-artifact-provider>
+        <div slot="content">
+          <div id="summary-html" class="info-block">
+            <milo-artifact-provider
+              .artifacts=${this.artifactsMapping}
+              .finalized=${this.invArtifacts$.state !== PENDING && this.resultArtifacts$.state !== PENDING}
+            >
+              ${unsafeHTML(this.testResult.summaryHtml)}
+            </milo-artifact-provider>
+          </div>
+          ${this.testhausLogArtifact &&
+          html`
+            <div class="summary-log-link">
+              <milo-link-artifact .artifact=${this.testhausLogArtifact}>
+              </milo-link-artifact>
+            </div>
+          `}
+          ${this.stainlessLogArtifact &&
+          html`
+            <div class="summary-log-link">
+              <milo-link-artifact .artifact=${this.stainlessLogArtifact}>
+              </milo-link-artifact>
+            </div>
+          `}
         </div>
       </milo-expandable-entry>
     `;
@@ -201,11 +227,21 @@ export class ResultEntryElement extends MobxLitElement {
       </div>
       <ul>
         ${this.invArtifacts.map(
-          (artifact) => html`
-            <li>
-              <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
-            </li>
-          `
+          (artifact) => {
+            if (artifact.artifactId === 'testhaus_logs' ||
+                artifact.artifactId === 'stainless_logs') {
+              return html`
+                <li>
+                  <milo-link-artifact .artifact=${artifact}>
+                  </milo-link-artifact>
+                </li>`;
+            }
+            return html`
+              <li>
+                <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
+              </li>
+            `;
+          }
         )}
       </ul>
     `;
@@ -357,6 +393,10 @@ export class ResultEntryElement extends MobxLitElement {
       }
       #summary-html p:last-child {
         margin-bottom: 0;
+      }
+
+      .summary-log-link {
+        padding-top: 5px;
       }
 
       ul {
