@@ -171,7 +171,7 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 		panic(fmt.Errorf("the Executor can't handle updates to Requirement and Tryjobs at the same time"))
 	case hasTryjobsUpdated:
 		logging.Debugf(ctx, "received update for tryjobs %v", tryjobsUpdated)
-		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState)
+		return e.handleUpdatedTryjobs(ctx, tryjobsUpdated, execState, r)
 	case reqmtChanged && r.Tryjobs.GetRequirementVersion() <= execState.GetRequirementVersion():
 		logging.Errorf(ctx, "Tryjob Executor is executing a Requirement that is either later than or equal to the requested Requirement version. current: %d, got: %d ", r.Tryjobs.GetRequirementVersion(), execState.GetRequirementVersion())
 		return execState, nil, nil
@@ -196,7 +196,7 @@ func (e *Executor) prepExecutionPlan(ctx context.Context, execState *tryjob.Exec
 // Returns a ExecutionState with succeeded status and empty plan if all
 // critical Tryjobs have ended successfully.
 // Returns a non-empty plan if any Tryjob should be retried.
-func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState) (*tryjob.ExecutionState, *plan, error) {
+func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, execState *tryjob.ExecutionState, r *run.Run) (*tryjob.ExecutionState, *plan, error) {
 	tryjobByID, err := tryjob.LoadTryjobsMapByIDs(ctx, common.MakeTryjobIDs(tryjobs...))
 	if err != nil {
 		return nil, nil, err
@@ -210,45 +210,77 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 	)
 	for i, exec := range execState.GetExecutions() {
 		updated := updateLatestAttempt(exec, tryjobByID)
+		attempt := tryjob.LatestAttempt(exec)
 		definition := execState.GetRequirement().GetDefinitions()[i]
-		switch latestAttemptEnded := hasLatestAttemptEnded(exec); {
-		case !latestAttemptEnded:
-			hasNonEndedCriticalTryjob = hasNonEndedCriticalTryjob || definition.GetCritical()
-			continue
-		case !updated:
-			continue
+		hasNonEndedCriticalTryjob = hasNonEndedCriticalTryjob || (!hasAttemptEnded(attempt) && definition.GetCritical())
+		if !updated || attempt == nil {
+			continue // Only process the Tryjob when the latest attempt gets updated
 		}
-		// Only process a Tryjob that has been updated and its latest Attempt
-		// has ended.
-		switch attempt := tryjob.LatestAttempt(exec); {
-		case attempt.Status == tryjob.Status_ENDED && attempt.GetResult().GetStatus() == tryjob.Result_SUCCEEDED:
+
+		switch attempt.Status {
+		case tryjob.Status_STATUS_UNSPECIFIED:
+			panic(fmt.Errorf("attempt status not specified"))
+		case tryjob.Status_PENDING:
+			// Nothing to do but waiting for the Tryjob getting launched.
+		case tryjob.Status_TRIGGERED:
+			// An ongoing reused Tryjob may tell CV that the mode of the current Run
+			// is not allowed to reuse this Tryjob. In this case, trigger a new
+			// Tryjob for this Run instead.
+			// TODO(yiwzhang): Add a new execution log to explain why a new Tryjob
+			// gets triggered.
+			if output := attempt.GetResult().GetOutput(); attempt.GetReused() &&
+				output != nil &&
+				!isModeAllowed(r.Mode, output.GetReusability().GetModeAllowlist()) {
+				p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
+					definition: definition,
+					execution:  exec,
+				})
+			}
+		case tryjob.Status_ENDED:
 			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
-		case attempt.Status == tryjob.Status_ENDED && definition.GetCritical():
-			failedIndices = append(failedIndices, i)
-			failedTryjobs = append(failedTryjobs, tryjobByID[common.TryjobID(attempt.TryjobId)])
-			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
-		case attempt.Status == tryjob.Status_ENDED: // Non-critical failure.
-			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
-		case attempt.Status == tryjob.Status_CANCELLED:
+			switch {
+			case !definition.GetCritical():
+				// Don't waste time on the result status for non-critical Tryjob.
+			case attempt.GetResult().GetStatus() != tryjob.Result_SUCCEEDED:
+				failedIndices = append(failedIndices, i)
+				failedTryjobs = append(failedTryjobs, tryjobByID[common.TryjobID(attempt.TryjobId)])
+				// FIXME(yiwzhang): This is a bug that if a critical Tryjob fails and
+				// this Tryjob is a reuse, CV should launch a new Tryjob for this
+				// Run directly instead of going through the retry code path.
+			case attempt.GetReused() && !isModeAllowed(r.Mode, attempt.GetResult().GetOutput().GetReusability().GetModeAllowlist()):
+				// A reused Tryjob, even if it succeeds, could end with declaring
+				// itself not reusable for the mode of the current Run. In this case,
+				// Trigger a new Tryjob for this Run instead.
+				// TODO(yiwzhang): Add a new execution log to explain why a new Tryjob
+				// gets triggered.
+				p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
+					definition: definition,
+					execution:  exec,
+				})
+			}
+		case tryjob.Status_CANCELLED:
 			// This SHOULD only happen during race condition as a Tryjob is
 			// cancelled by LUCI CV iff a new patchset is uploaded. In that
 			// case, Run SHOULD be cancelled and Tryjob Executor should never
 			// be invoked. So, do nothing apart from logging here, as the Run
 			// should be cancelled very soon.
 			endedTryjobLogs = append(endedTryjobLogs, makeLogTryjobSnapshotFromAttempt(definition, attempt))
-		case attempt.Status == tryjob.Status_UNTRIGGERED && attempt.Reused:
-			// Normally happens when this Run reuses a PENDING Tryjob from
-			// another Run but the Tryjob doesn't end up getting triggered.
-			p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
-				definition: definition,
-				execution:  exec,
-			})
-		case attempt.Status == tryjob.Status_UNTRIGGERED && !definition.GetCritical():
-			// Ignore failure when launching non-critical Tryjobs.
-		case attempt.Status == tryjob.Status_UNTRIGGERED:
-			// If a critical Tryjob failed to launch, then this Run should have
-			// failed already. So, this code path should never be exercised.
-			panic(fmt.Errorf("critical tryjob %d failed to launch but tryjob executor was asked to update this Tryjob", attempt.GetTryjobId()))
+		case tryjob.Status_UNTRIGGERED:
+			switch {
+			case attempt.GetReused():
+				// Normally happens when this Run reuses a PENDING Tryjob from
+				// another Run but the Tryjob doesn't end up getting triggered.
+				p.triggerNewAttempt = append(p.triggerNewAttempt, planItem{
+					definition: definition,
+					execution:  exec,
+				})
+			case !definition.GetCritical():
+				// Ignore failure when launching non-critical Tryjobs.
+			default:
+				// If a critical Tryjob failed to launch, then this Run should have
+				// failed already. So, this code path should never be exercised.
+				panic(fmt.Errorf("critical tryjob %d failed to launch but tryjob executor was asked to update this Tryjob", attempt.GetTryjobId()))
+			}
 		default:
 			panic(fmt.Errorf("unexpected attempt status %s for Tryjob %d", attempt.Status, attempt.TryjobId))
 		}
@@ -303,9 +335,8 @@ func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map
 	return false
 }
 
-// hasLatestAttemptEnded returns whether the latest Attempt is in a final state.
-func hasLatestAttemptEnded(exec *tryjob.ExecutionState_Execution) bool {
-	attempt := tryjob.LatestAttempt(exec)
+// hasAttemptEnded whether the Attempt is in a final state.
+func hasAttemptEnded(attempt *tryjob.ExecutionState_Execution_Attempt) bool {
 	if attempt == nil {
 		return false // Hasn't launched any new Attempt.
 	}

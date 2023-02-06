@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/api/recipe/v1"
 	bbfacade "go.chromium.org/luci/cv/internal/buildbucket/facade"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -57,8 +58,11 @@ func TestPrepExecutionPlan(t *testing.T) {
 
 		Convey("Tryjobs Updated", func() {
 			const builderFoo = "foo"
+			r := &run.Run{
+				Mode: run.FullRun,
+			}
 			prepPlan := func(execState *tryjob.ExecutionState, updatedTryjobs ...int64) *plan {
-				_, p, err := executor.prepExecutionPlan(ctx, execState, nil, updatedTryjobs, false)
+				_, p, err := executor.prepExecutionPlan(ctx, execState, r, updatedTryjobs, false)
 				So(err, ShouldBeNil)
 				return p
 			}
@@ -123,21 +127,78 @@ func TestPrepExecutionPlan(t *testing.T) {
 					})
 				})
 
+				Convey("Succeeded but not reusable", func() {
+					ro := &recipe.Output{
+						Reusability: &recipe.Output_Reusability{
+							ModeAllowlist: []string{string(run.DryRun)},
+						},
+					}
+					So(isModeAllowed(r.Mode, ro.GetReusability().GetModeAllowlist()), ShouldBeFalse)
+					tj := ensureTryjob(ctx, tjID, def, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					tj.Result.Output = ro
+					So(datastore.Put(ctx, tj), ShouldBeNil)
+					tryjob.LatestAttempt(execState.GetExecutions()[0]).Reused = true
+					plan := prepPlan(execState, tjID)
+					So(plan.isEmpty(), ShouldBeFalse)
+					So(plan.triggerNewAttempt, ShouldHaveLength, 1)
+					So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, def)
+					attempt := makeAttempt(tjID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)
+					attempt.Reused = true
+					attempt.Result.Output = ro
+					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{attempt})
+					So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+					So(executor.logEntries, ShouldResembleProto, []*tryjob.ExecutionLogEntry{
+						{
+							Time: timestamppb.New(ct.Clock.Now().UTC()),
+							Kind: &tryjob.ExecutionLogEntry_TryjobsEnded_{
+								TryjobsEnded: &tryjob.ExecutionLogEntry_TryjobsEnded{
+									Tryjobs: []*tryjob.ExecutionLogEntry_TryjobSnapshot{
+										makeLogTryjobSnapshot(def, tj, true),
+									},
+								},
+							},
+						},
+					})
+				})
+
 				Convey("Still Running", func() {
-					ensureTryjob(ctx, tjID, def, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+					tj := ensureTryjob(ctx, tjID, def, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
 					Convey("Tryjob is critical", func() {
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeTrue)
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+							makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN),
+						})
+						Convey("but no longer reusable", func() {
+							ro := &recipe.Output{
+								Reusability: &recipe.Output_Reusability{
+									ModeAllowlist: []string{string(run.DryRun)},
+								},
+							}
+							So(isModeAllowed(r.Mode, ro.GetReusability().GetModeAllowlist()), ShouldBeFalse)
+							tj.Result.Output = ro
+							So(datastore.Put(ctx, tj), ShouldBeNil)
+							tryjob.LatestAttempt(execState.GetExecutions()[0]).Reused = true
+							plan := prepPlan(execState, tjID)
+							So(plan.isEmpty(), ShouldBeFalse)
+							So(plan.triggerNewAttempt, ShouldHaveLength, 1)
+							So(plan.triggerNewAttempt[0].definition, ShouldResembleProto, def)
+							attempt := makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+							attempt.Reused = true
+							attempt.Result.Output = ro
+							So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{attempt})
+							So(execState.Status, ShouldEqual, tryjob.ExecutionState_RUNNING)
+						})
 					})
 					Convey("Tryjob is not critical", func() {
 						execState.GetRequirement().GetDefinitions()[0].Critical = false
 						plan := prepPlan(execState, tjID)
 						So(plan.isEmpty(), ShouldBeTrue)
 						So(execState.Status, ShouldEqual, tryjob.ExecutionState_SUCCEEDED)
-					})
-					So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
-						makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN),
+						So(execState.Executions[0].Attempts, ShouldResembleProto, []*tryjob.ExecutionState_Execution_Attempt{
+							makeAttempt(tjID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN),
+						})
 					})
 					So(executor.logEntries, ShouldBeEmpty)
 				})
