@@ -209,11 +209,11 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 		endedTryjobLogs           []*tryjob.ExecutionLogEntry_TryjobSnapshot
 	)
 	for i, exec := range execState.GetExecutions() {
-		updated := updateLatestAttempt(exec, tryjobByID)
+		latestAttemptUpdated := updateAttempts(exec, tryjobByID)
 		attempt := tryjob.LatestAttempt(exec)
 		definition := execState.GetRequirement().GetDefinitions()[i]
 		hasNonEndedCriticalTryjob = hasNonEndedCriticalTryjob || (!hasAttemptEnded(attempt) && definition.GetCritical())
-		if !updated || attempt == nil {
+		if !latestAttemptUpdated || attempt == nil {
 			continue // Only process the Tryjob when the latest attempt gets updated
 		}
 
@@ -318,21 +318,34 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 	return execState, &p, nil
 }
 
-// updateLatestAttempt sets the Attempt Status and Result from the
-// corresponding Tryjob.
-func updateLatestAttempt(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[common.TryjobID]*tryjob.Tryjob) bool {
-	attempt := tryjob.LatestAttempt(exec)
-	if attempt == nil {
+// updateAttempts sets the attempts Status and Result from the corresponding
+// Tryjobs.
+//
+// Return true if the latest attempt gets updated.
+// Return false if the execution has no attempt.
+func updateAttempts(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[common.TryjobID]*tryjob.Tryjob) bool {
+	if len(exec.GetAttempts()) == 0 {
 		return false
 	}
-	if tj, ok := tryjobsByIDs[common.TryjobID(attempt.TryjobId)]; ok {
-		if attempt.Status != tj.Status || !proto.Equal(attempt.Result, tj.Result) {
+	var latestAttemptUpdated bool
+	latestAttemptIdx := len(exec.GetAttempts()) - 1
+	for i, attempt := range exec.GetAttempts() {
+		switch tj, ok := tryjobsByIDs[common.TryjobID(attempt.TryjobId)]; {
+		case !ok:
+			continue
+		case i == latestAttemptIdx:
+			if attempt.Status != tj.Status || !proto.Equal(attempt.Result, tj.Result) {
+				attempt.Status = tj.Status
+				attempt.Result = tj.Result
+				latestAttemptUpdated = true
+			}
+		default: // blindly updates the attempt
 			attempt.Status = tj.Status
 			attempt.Result = tj.Result
-			return true
 		}
 	}
-	return false
+	return latestAttemptUpdated
+
 }
 
 // hasAttemptEnded whether the Attempt is in a final state.

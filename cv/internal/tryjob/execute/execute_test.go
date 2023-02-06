@@ -66,28 +66,33 @@ func TestPrepExecutionPlan(t *testing.T) {
 				So(err, ShouldBeNil)
 				return p
 			}
-			Convey("Ignore update", func() {
+			Convey("Updates", func() {
 				const prevTryjobID = 101
 				const curTryjobID = 102
 				builderFooDef := makeDefinition(builderFoo, true)
 				execState := newExecStateBuilder().
 					appendDefinition(builderFooDef).
-					appendAttempt(builderFoo, makeAttempt(prevTryjobID, tryjob.Status_ENDED, tryjob.Result_SUCCEEDED)).
+					appendAttempt(builderFoo, makeAttempt(prevTryjobID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
 					appendAttempt(builderFoo, makeAttempt(curTryjobID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
 					build()
-				original := proto.Clone(execState).(*tryjob.ExecutionState)
-				Convey("For previous attempts", func() {
+				Convey("Updates previous attempts", func() {
 					ensureTryjob(ctx, prevTryjobID, builderFooDef, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
 					plan := prepPlan(execState, prevTryjobID)
 					So(plan.isEmpty(), ShouldBeTrue)
+					So(execState, ShouldResembleProto, newExecStateBuilder().
+						appendDefinition(builderFooDef).
+						appendAttempt(builderFoo, makeAttempt(prevTryjobID, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
+						appendAttempt(builderFoo, makeAttempt(curTryjobID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
+						build())
 				})
-				Convey("For not relevant Tryjob", func() {
+				Convey("Ignore For not relevant Tryjob", func() {
+					original := proto.Clone(execState).(*tryjob.ExecutionState)
 					const randomTryjob int64 = 567
 					ensureTryjob(ctx, randomTryjob, builderFooDef, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)
 					plan := prepPlan(execState, randomTryjob)
 					So(plan.isEmpty(), ShouldBeTrue)
+					So(execState, ShouldResembleProto, original)
 				})
-				So(execState, ShouldResembleProto, original)
 				So(executor.logEntries, ShouldBeEmpty)
 			})
 
