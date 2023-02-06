@@ -154,7 +154,7 @@ func TestPoke(t *testing.T) {
 					// proceed to submission right away
 					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
 					So(res.State.Submission, ShouldResembleProto, &run.Submission{
-						Deadline:          timestamppb.New(now.Add(submissionDuration)),
+						Deadline:          timestamppb.New(now.Add(defaultSubmissionDuration)),
 						Cls:               []int64{gChange},
 						TaskId:            "task-foo",
 						TreeOpen:          true,

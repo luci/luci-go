@@ -186,7 +186,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
 					So(res.State.Submission, ShouldResembleProto, &run.Submission{
-						Deadline:          timestamppb.New(now.Add(submissionDuration)),
+						Deadline:          timestamppb.New(now.Add(defaultSubmissionDuration)),
 						Cls:               []int64{2, 1}, // in submission order
 						TaskId:            "task-foo",
 						TreeOpen:          true,
