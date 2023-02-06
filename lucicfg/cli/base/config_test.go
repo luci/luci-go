@@ -267,6 +267,14 @@ func TestConfigParsing(t *testing.T) {
 			_, err := GetRewriterFactory(filepath.Join(root, ConfigName))
 			So(err, ShouldBeError, "rule[0]: Does not contain any paths")
 		})
+		Convey("Lucicfg file does not exit, should return default RewriterFactory", func() {
+			defaultRewriter, _ := GetRewriterFactory("RANDOM_PATH/A/B/C/D")
+			var rewriter = &RewriterFactory{
+				rules:          []pathRules{},
+				configFilePath: "",
+			}
+			So(defaultRewriter, ShouldResemble, rewriter)
+		})
 	})
 }
 

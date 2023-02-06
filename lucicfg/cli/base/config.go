@@ -150,7 +150,7 @@ func GetRewriterFactory(configPath string) (rewriterFactory *RewriterFactory, er
 			fmt.Printf("Failed on reading file - %s", configPath)
 			return nil, err
 		} else {
-			return
+			return rewriterFactory, nil
 		}
 	}
 	luci := &buildifier.LucicfgFmtConfig{}
