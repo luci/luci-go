@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
@@ -40,12 +41,14 @@ func (t timeLimitedFactory) MakeClient(ctx context.Context, gerritHost string, l
 		return nil, err
 	}
 	return timeLimitedClient{
-		actual: c,
+		actual:      c,
+		luciProject: luciProject,
 	}, nil
 }
 
 type timeLimitedClient struct {
-	actual Client
+	actual      Client
+	luciProject string
 }
 
 func (t timeLimitedClient) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
@@ -78,12 +81,29 @@ func (t timeLimitedClient) SetReview(ctx context.Context, in *gerritpb.SetReview
 	return t.actual.SetReview(ctx, in, opts...)
 }
 
-func (t timeLimitedClient) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error) {
-	// 2 minute is based on single-CL submission.
-	// If CV starts using SubmitRevision to submit 2+ CLs in a stack
-	// (a.k.a. "Submit including parents" in Gerrit),
-	// this may need to be revisited.
-	ctx, cancel := clock.WithTimeout(ctx, 2*time.Minute)
-	defer cancel()
+func (t timeLimitedClient) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (si *gerritpb.SubmitInfo, err error) {
+	// TODO(b/267966142): Find a less hacky way to set the timeout for CLs
+	// that are known to slow to land.
+	if t.isKernelRepo(in.GetProject()) {
+		startTime := clock.Now(ctx)
+		defer func() {
+			if err == nil {
+				logging.Infof(ctx, "b/267966142: Took %s to submit change %d at revision %s ", clock.Since(ctx, startTime).Truncate(time.Millisecond), in.GetNumber(), in.GetRevisionId())
+			}
+		}()
+	} else {
+		// 2 minute is based on single-CL submission.
+		// If CV starts using SubmitRevision to submit 2+ CLs in a stack
+		// (a.k.a. "Submit including parents" in Gerrit),
+		// this may need to be revisited.
+		var cancel context.CancelFunc
+		ctx, cancel = clock.WithTimeout(ctx, 2*time.Minute)
+		defer cancel()
+	}
+
 	return t.actual.SubmitRevision(ctx, in, opts...)
+}
+
+func (t timeLimitedClient) isKernelRepo(repo string) bool {
+	return t.luciProject == "chromeos" && repo == "chromiumos/third_party/kernel"
 }
