@@ -40,14 +40,12 @@ func (t timeLimitedFactory) MakeClient(ctx context.Context, gerritHost string, l
 		return nil, err
 	}
 	return timeLimitedClient{
-		actual:      c,
-		luciProject: luciProject,
+		actual: c,
 	}, nil
 }
 
 type timeLimitedClient struct {
-	actual      Client
-	luciProject string
+	actual Client
 }
 
 func (t timeLimitedClient) ListChanges(ctx context.Context, in *gerritpb.ListChangesRequest, opts ...grpc.CallOption) (*gerritpb.ListChangesResponse, error) {
@@ -81,18 +79,11 @@ func (t timeLimitedClient) SetReview(ctx context.Context, in *gerritpb.SetReview
 }
 
 func (t timeLimitedClient) SubmitRevision(ctx context.Context, in *gerritpb.SubmitRevisionRequest, opts ...grpc.CallOption) (*gerritpb.SubmitInfo, error) {
-
 	// 2 minute is based on single-CL submission.
 	// If CV starts using SubmitRevision to submit 2+ CLs in a stack
 	// (a.k.a. "Submit including parents" in Gerrit),
 	// this may need to be revisited.
-	timeout := 2 * time.Minute
-	if t.luciProject == "chromeos" && in.GetProject() == "chromiumos/third_party/kernel" {
-		// TODO(b/267966142): Find a less hacky way to set the timeout for CLs
-		// that are known to slow to land.
-		timeout = 10 * time.Minute
-	}
-	ctx, cancel := clock.WithTimeout(ctx, timeout)
+	ctx, cancel := clock.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	return t.actual.SubmitRevision(ctx, in, opts...)
 }

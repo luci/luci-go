@@ -459,22 +459,13 @@ func releaseSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) error {
 	return nil
 }
 
-const defaultSubmissionDuration = 20 * time.Minute
+const submissionDuration = 20 * time.Minute
 
 func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	rs.Status = run.Status_SUBMITTING
-	cls, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)
-	if err != nil {
+	var err error
+	if rs.Submission.Cls, err = orderCLIDsInSubmissionOrder(ctx, rs.CLs, rs.ID, rs.Submission); err != nil {
 		return err
-	}
-	if rs.Submission.Cls, err = orderCLsInSubmissionOrder(ctx, cls, rs.ID, rs.Submission); err != nil {
-		return err
-	}
-	// TODO(b/267966142): Find a less hacky way to set the timeout for CLs
-	// that are known to slow to land.
-	submissionDuration := defaultSubmissionDuration
-	if hasCrOSKernelChange(rs.ID.LUCIProject(), cls) {
-		submissionDuration = 40 * time.Minute
 	}
 	rs.Submission.Deadline = timestamppb.New(clock.Now(ctx).UTC().Add(submissionDuration))
 	rs.Submission.TaskId = mustTaskIDFromContext(ctx)
@@ -628,8 +619,12 @@ func mustTaskIDFromContext(ctx context.Context) string {
 	}
 }
 
-func orderCLsInSubmissionOrder(ctx context.Context, cls []*run.RunCL, runID common.RunID, sub *run.Submission) ([]int64, error) {
-	cls, err := submit.ComputeOrder(cls)
+func orderCLIDsInSubmissionOrder(ctx context.Context, clids common.CLIDs, runID common.RunID, sub *run.Submission) ([]int64, error) {
+	cls, err := run.LoadRunCLs(ctx, runID, clids)
+	if err != nil {
+		return nil, err
+	}
+	cls, err = submit.ComputeOrder(cls)
 	if err != nil {
 		return nil, err
 	}
@@ -638,18 +633,6 @@ func orderCLsInSubmissionOrder(ctx context.Context, cls []*run.RunCL, runID comm
 		ret[i] = int64(cl.ID)
 	}
 	return ret, nil
-}
-
-func hasCrOSKernelChange(luciProject string, cls []*run.RunCL) bool {
-	if luciProject != "chromeos" {
-		return false
-	}
-	for _, cl := range cls {
-		if cl.Detail.GetGerrit().GetInfo().GetProject() == "chromiumos/third_party/kernel" {
-			return true
-		}
-	}
-	return false
 }
 
 func splitRunCLs(cls []*run.RunCL, submission *run.Submission, sc *eventpb.SubmissionCompleted) (submitted, failed, pending []*run.RunCL) {
