@@ -16,12 +16,12 @@ package iap
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"google.golang.org/api/idtoken"
 
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -34,7 +34,7 @@ func TestIAPAuthenticator(t *testing.T) {
 
 		Convey("missing iap jwt assertion header", func() {
 			a := &IAPAuthMethod{}
-			r := makeGetRequest()
+			r := authtest.NewFakeRequestMetadata()
 			user, session, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
 			So(session, ShouldBeNil)
@@ -43,19 +43,8 @@ func TestIAPAuthenticator(t *testing.T) {
 
 		Convey("invalid jwt assertion header bytes", func() {
 			a := &IAPAuthMethod{}
-			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{"some invalid header bytes"}
-
-			user, session, err := a.Authenticate(c, r)
-			So(user, ShouldBeNil)
-			So(session, ShouldBeNil)
-			So(err, ShouldNotBeNil)
-		})
-
-		Convey("invalid multiple assertion header values", func() {
-			a := &IAPAuthMethod{}
-			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{"only", "expect", "one", "header", "value"}
+			r := authtest.NewFakeRequestMetadata()
+			r.FakeHeader.Set(iapJWTAssertionHeader, "some invalid header bytes")
 
 			user, session, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
@@ -74,8 +63,8 @@ func TestIAPAuthenticator(t *testing.T) {
 					}, nil
 				},
 			}
-			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{"just needs to be non-empty for testing"}
+			r := authtest.NewFakeRequestMetadata()
+			r.FakeHeader.Set(iapJWTAssertionHeader, "just needs to be non-empty for testing")
 
 			user, session, err := a.Authenticate(c, r)
 			So(user, ShouldBeNil)
@@ -98,8 +87,8 @@ func TestIAPAuthenticator(t *testing.T) {
 				},
 			}
 
-			r := makeGetRequest()
-			r.Header[iapJWTAssertionHeader] = []string{string("just needs to be non-empty for testing")}
+			r := authtest.NewFakeRequestMetadata()
+			r.FakeHeader.Set(iapJWTAssertionHeader, "just needs to be non-empty for testing")
 
 			user, session, err := a.Authenticate(c, r)
 			So(err, ShouldBeNil)
@@ -107,12 +96,5 @@ func TestIAPAuthenticator(t *testing.T) {
 			So(user.Email, ShouldEqual, "someemail@somedomain.com")
 			So(session, ShouldBeNil)
 		})
-
 	})
-
-}
-
-func makeGetRequest() *http.Request {
-	req, _ := http.NewRequest("GET", "/doesntmatter", nil)
-	return req
 }

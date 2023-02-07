@@ -256,7 +256,7 @@ func (s *Server) authenticate() router.Middleware {
 			}
 		}
 
-		ctx, err := a.Authenticate(c.Context, c.Request)
+		ctx, err := a.AuthenticateHTTP(c.Context, c.Request)
 		if err == nil {
 			c.Context = ctx
 			next(c)

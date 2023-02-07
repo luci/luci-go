@@ -58,10 +58,10 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 		discoveryURL:  provider.discoveryURL,
 	}
 	call := func(authHeader string) (*auth.User, error) {
-		u, _, err := method.Authenticate(ctx, &http.Request{
-			Host:   fakeHost,
-			Header: http.Header{"Authorization": {authHeader}},
-		})
+		req := authtest.NewFakeRequestMetadata()
+		req.FakeHost = fakeHost
+		req.FakeHeader.Set("Authorization", authHeader)
+		u, _, err := method.Authenticate(ctx, req)
 		return u, err
 	}
 

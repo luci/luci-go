@@ -19,12 +19,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -76,9 +76,8 @@ func TestAuthMethod(t *testing.T) {
 		}
 
 		call := func(tok string) (*auth.User, error) {
-			req, err := http.NewRequest("GET", "https://unimportant.example.com", nil)
-			req.Header.Add(expectedHeader, tok)
-			So(err, ShouldBeNil)
+			req := authtest.NewFakeRequestMetadata()
+			req.FakeHeader.Add(expectedHeader, tok)
 			user, _, err := method.Authenticate(ctx, req)
 			return user, err
 		}

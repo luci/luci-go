@@ -16,7 +16,6 @@ package server
 
 import (
 	"context"
-	"net/http"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/user"
@@ -31,7 +30,7 @@ import (
 type UsersAPIAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m UsersAPIAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
+func (m UsersAPIAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	u := user.Current(ctx)
 	if u == nil {
 		return nil, nil, nil

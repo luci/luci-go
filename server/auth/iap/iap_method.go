@@ -20,7 +20,6 @@ package iap
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"google.golang.org/api/idtoken"
 
@@ -62,9 +61,9 @@ type IAPAuthMethod struct {
 
 // Authenticate returns nil if no IAP assertion header is present, a User if authentication
 // is successful, or an error if unable to validate and identify a user from the assertion header.
-func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
-	iapJwt, ok := r.Header[iapJWTAssertionHeader]
-	if !ok {
+func (a *IAPAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	iapJwt := r.Header(iapJWTAssertionHeader)
+	if iapJwt == "" {
 		logging.Errorf(ctx, "iap: missing assertion header")
 		return nil, nil, nil
 	}
@@ -74,11 +73,7 @@ func (a *IAPAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*aut
 		validateFunc = idtoken.Validate
 	}
 
-	if len(iapJwt) != 1 {
-		return nil, nil, fmt.Errorf("iap: expected 1 value for assertion header, but found %d", len(iapJwt))
-	}
-
-	jwtPayload, err := validateFunc(ctx, iapJwt[0], a.Aud)
+	jwtPayload, err := validateFunc(ctx, iapJwt, a.Aud)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "couldn't validate jwt payload").Err()
 	}

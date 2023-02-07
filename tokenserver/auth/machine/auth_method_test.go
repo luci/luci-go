@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -68,9 +67,9 @@ func TestMachineTokenAuthMethod(t *testing.T) {
 		}
 
 		call := func(tok string) (*auth.User, error) {
-			r, _ := http.NewRequest("GET", "/something", nil)
+			r := authtest.NewFakeRequestMetadata()
 			if tok != "" {
-				r.Header.Set(MachineTokenHeader, tok)
+				r.FakeHeader.Set(MachineTokenHeader, tok)
 			}
 			u, _, err := method.Authenticate(ctx, r)
 			return u, err

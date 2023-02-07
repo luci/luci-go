@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"golang.org/x/oauth2"
@@ -51,7 +50,7 @@ type OAuth2Method struct {
 var _ auth.UserCredentialsGetter = (*OAuth2Method)(nil)
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
+func (m *OAuth2Method) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	if info.IsDevAppServer(ctx) {
 		// On "dev_appserver", we verify OAuth2 tokens using Google's OAuth2
 		// verification endpoint.
@@ -64,7 +63,7 @@ func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth
 		return devMethod.Authenticate(ctx, r)
 	}
 
-	header := r.Header.Get("Authorization")
+	header := r.Header("Authorization")
 	if header == "" || len(m.Scopes) == 0 {
 		return nil, nil, nil // this method is not applicable
 	}
@@ -106,8 +105,8 @@ func isFatalOAuthErr(err error) bool {
 }
 
 // GetUserCredentials implements auth.UserCredentialsGetter.
-func (m *OAuth2Method) GetUserCredentials(ctx context.Context, r *http.Request) (*oauth2.Token, error) {
-	chunks := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+func (m *OAuth2Method) GetUserCredentials(ctx context.Context, r auth.RequestMetadata) (*oauth2.Token, error) {
+	chunks := strings.SplitN(r.Header("Authorization"), " ", 2)
 	if len(chunks) != 2 || (chunks[0] != "OAuth" && chunks[0] != "Bearer") {
 		return nil, errBadAuthHeader
 	}

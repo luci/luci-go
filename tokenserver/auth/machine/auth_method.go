@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -106,8 +105,8 @@ func GetMachineTokenInfo(ctx context.Context) *MachineTokenInfo {
 //
 // It logs detailed errors in log, but returns only generic "bad credential"
 // error to the caller, to avoid leaking unnecessary information.
-func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, auth.Session, error) {
-	token := r.Header.Get(MachineTokenHeader)
+func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	token := r.Header(MachineTokenHeader)
 	if token == "" {
 		return nil, nil, nil // no token -> the auth method is not applicable
 	}
@@ -115,7 +114,7 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 	// Deserialize both envelope and the body.
 	envelope, body, err := deserialize(token)
 	if err != nil {
-		logTokenError(c, r, body, err, "Failed to deserialize the token")
+		logTokenError(c, body, err, "Failed to deserialize the token")
 		return nil, nil, ErrBadToken
 	}
 
@@ -123,7 +122,7 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 	// it belongs to "auth-token-servers" group.
 	signerServiceAccount, err := identity.MakeIdentity("user:" + body.IssuedBy)
 	if err != nil {
-		logTokenError(c, r, body, err, "Bad issued_by field - %q", body.IssuedBy)
+		logTokenError(c, body, err, "Bad issued_by field - %q", body.IssuedBy)
 		return nil, nil, ErrBadToken
 	}
 
@@ -137,13 +136,13 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 		return nil, nil, transient.Tag.Apply(err)
 	}
 	if !ok {
-		logTokenError(c, r, body, nil, "Unknown token issuer - %q", body.IssuedBy)
+		logTokenError(c, body, nil, "Unknown token issuer - %q", body.IssuedBy)
 		return nil, nil, ErrBadToken
 	}
 
 	// Check the expiration time before doing any heavier checks.
 	if err = checkExpiration(body, clock.Now(c)); err != nil {
-		logTokenError(c, r, body, err, "Token has expired or not yet valid")
+		logTokenError(c, body, err, "Token has expired or not yet valid")
 		return nil, nil, ErrBadToken
 	}
 
@@ -152,14 +151,14 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 		if transient.Tag.In(err) {
 			return nil, nil, err
 		}
-		logTokenError(c, r, body, err, "Bad signature")
+		logTokenError(c, body, err, "Bad signature")
 		return nil, nil, ErrBadToken
 	}
 
 	// The token is valid. Construct the bot identity.
 	botIdent, err := identity.MakeIdentity("bot:" + body.MachineFqdn)
 	if err != nil {
-		logTokenError(c, r, body, err, "Bad machine_fqdn - %q", body.MachineFqdn)
+		logTokenError(c, body, err, "Bad machine_fqdn - %q", body.MachineFqdn)
 		return nil, nil, ErrBadToken
 	}
 	return &auth.User{
@@ -173,8 +172,8 @@ func (m *MachineTokenAuthMethod) Authenticate(c context.Context, r *http.Request
 }
 
 // logTokenError adds a warning-level log entry with details about the request.
-func logTokenError(c context.Context, r *http.Request, tok *tokenserver.MachineTokenBody, err error, msg string, args ...string) {
-	fields := logging.Fields{"remoteAddr": r.RemoteAddr}
+func logTokenError(c context.Context, tok *tokenserver.MachineTokenBody, err error, msg string, args ...string) {
+	fields := logging.Fields{}
 	if tok != nil {
 		// Note that if token wasn't properly signed, these fields may contain
 		// garbage.

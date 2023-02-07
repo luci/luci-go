@@ -17,7 +17,6 @@ package authtest
 import (
 	"context"
 	"errors"
-	"net/http"
 	"net/url"
 
 	"go.chromium.org/luci/server/auth"
@@ -34,7 +33,7 @@ type FakeAuth struct {
 }
 
 // Authenticate returns predefined User object (if it is not nil) or error.
-func (m FakeAuth) Authenticate(context.Context, *http.Request) (*auth.User, auth.Session, error) {
+func (m FakeAuth) Authenticate(context.Context, auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	if m.User == nil {
 		return nil, nil, ErrAuthenticationError
 	}

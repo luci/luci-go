@@ -179,12 +179,12 @@ func TestMethod(t *testing.T) {
 				So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
 			})
 
-			phonyRequest := func(cookie string) *http.Request {
+			phonyRequest := func(cookie string) auth.RequestMetadata {
 				req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
 				if cookie != "" {
 					req.Header.Add("Cookie", cookie)
 				}
-				return req
+				return auth.RequestMetadataForHTTP(req)
 			}
 
 			Convey("No cookies => method is skipped", func() {

@@ -159,8 +159,8 @@ type prpcCookieAuth struct {
 }
 
 // Authenticate is a part of auth.Method interface.
-func (m *prpcCookieAuth) Authenticate(ctx context.Context, req *http.Request) (*auth.User, auth.Session, error) {
-	if req.Header.Get(xsrf.XSRFTokenMetadataKey) != "" {
+func (m *prpcCookieAuth) Authenticate(ctx context.Context, req auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	if req.Header(xsrf.XSRFTokenMetadataKey) != "" {
 		return m.cookieAuth.Authenticate(ctx, req)
 	}
 	return nil, nil, nil // skip this method

@@ -95,9 +95,8 @@ func TestGoogleOAuth2Method(t *testing.T) {
 				Scopes:            []string{testScope},
 				tokenInfoEndpoint: ts.URL,
 			}
-			req, err := http.NewRequest("GET", "http://fake", nil)
-			So(err, ShouldBeNil)
-			req.Header.Set("Authorization", header)
+			req := makeRequest()
+			req.FakeHeader.Set("Authorization", header)
 			u, _, err := m.Authenticate(ctx, req)
 			return u, err
 		}
@@ -251,9 +250,9 @@ func TestGetUserCredentials(t *testing.T) {
 	m := GoogleOAuth2Method{}
 
 	call := func(hdr string) (*oauth2.Token, error) {
-		return m.GetUserCredentials(ctx, &http.Request{Header: http.Header{
-			"Authorization": {hdr},
-		}})
+		req := makeRequest()
+		req.FakeHeader.Set("Authorization", hdr)
+		return m.GetUserCredentials(ctx, req)
 	}
 
 	Convey("Works", t, func() {

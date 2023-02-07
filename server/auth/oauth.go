@@ -112,9 +112,9 @@ type GoogleOAuth2Method struct {
 var _ UserCredentialsGetter = (*GoogleOAuth2Method)(nil)
 
 // Authenticate implements Method.
-func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*User, Session, error) {
+func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r RequestMetadata) (*User, Session, error) {
 	// Extract the access token from the Authorization header.
-	header := r.Header.Get("Authorization")
+	header := r.Header("Authorization")
 	if header == "" || len(m.Scopes) == 0 {
 		return nil, nil, nil // this method is not applicable
 	}
@@ -187,8 +187,8 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r *http.Request) 
 }
 
 // GetUserCredentials implements UserCredentialsGetter.
-func (m *GoogleOAuth2Method) GetUserCredentials(ctx context.Context, r *http.Request) (*oauth2.Token, error) {
-	accessToken, err := accessTokenFromHeader(r.Header.Get("Authorization"))
+func (m *GoogleOAuth2Method) GetUserCredentials(ctx context.Context, r RequestMetadata) (*oauth2.Token, error) {
+	accessToken, err := accessTokenFromHeader(r.Header("Authorization"))
 	if err != nil {
 		return nil, err
 	}

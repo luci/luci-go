@@ -178,7 +178,7 @@ func TestFullFlow(t *testing.T) {
 			req, err = http.NewRequest("GET", "http://fake/something", nil)
 			So(err, ShouldBeNil)
 			req.Header.Add("Cookie", expectedCookie)
-			user, session, err := method.Authenticate(ctx, req)
+			user, session, err := method.Authenticate(ctx, auth.RequestMetadataForHTTP(req))
 			So(err, ShouldBeNil)
 			So(user, ShouldResemble, &auth.User{
 				Identity: "user:user@example.com",
@@ -291,7 +291,7 @@ func TestNotConfigured(t *testing.T) {
 		_, err = method.LogoutURL(ctx, "/")
 		So(err, ShouldEqual, ErrNotConfigured)
 
-		_, _, err = method.Authenticate(ctx, &http.Request{})
+		_, _, err = method.Authenticate(ctx, authtest.NewFakeRequestMetadata())
 		So(err, ShouldEqual, ErrNotConfigured)
 	})
 }

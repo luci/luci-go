@@ -170,7 +170,7 @@ func (m *AuthMethod) Warmup(ctx context.Context) error {
 // Authenticate authenticates the request.
 //
 // Implements auth.Method.
-func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
+func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	encryptedCookie, _ := r.Cookie(internal.SessionCookieName)
 	if encryptedCookie == nil {
 		return nil, nil, nil // the method is not applicable, skip it

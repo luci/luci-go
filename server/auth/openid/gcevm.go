@@ -17,7 +17,6 @@ package openid
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"go.chromium.org/luci/auth/identity"
@@ -42,7 +41,7 @@ type GoogleComputeAuthMethod struct {
 	// Header is a HTTP header to read the token from. Required.
 	Header string
 	// AudienceCheck is a callback to use to check tokens audience. Required.
-	AudienceCheck func(ctx context.Context, r *http.Request, aud string) (valid bool, err error)
+	AudienceCheck func(ctx context.Context, r auth.RequestMetadata, aud string) (valid bool, err error)
 
 	// certs are used in tests in place of Google certificates.
 	certs *signing.PublicCertificates
@@ -84,8 +83,8 @@ func GetGoogleComputeTokenInfo(ctx context.Context) *GoogleComputeTokenInfo {
 //   - (*User, nil, nil) on success.
 //   - (nil, nil, nil) if the method is not applicable.
 //   - (nil, nil, error) if the method is applicable, but credentials are bad.
-func (m *GoogleComputeAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
-	token := strings.TrimSpace(strings.TrimPrefix(r.Header.Get(m.Header), "Bearer "))
+func (m *GoogleComputeAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	token := strings.TrimSpace(strings.TrimPrefix(r.Header(m.Header), "Bearer "))
 	if token == "" {
 		return nil, nil, nil // skip this auth method
 	}

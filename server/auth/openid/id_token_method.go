@@ -16,7 +16,6 @@ package openid
 
 import (
 	"context"
-	"net/http"
 	"strings"
 
 	"go.chromium.org/luci/auth/jwt"
@@ -48,7 +47,7 @@ type GoogleIDTokenAuthMethod struct {
 	//
 	// Works in conjunction with Audience. Also, just like Audience, this check is
 	// used only for tokens that identify service accounts.
-	AudienceCheck func(ctx context.Context, r *http.Request, aud string) (valid bool, err error)
+	AudienceCheck func(ctx context.Context, r auth.RequestMetadata, aud string) (valid bool, err error)
 
 	// SkipNonJWT indicates to ignore tokens that don't look like JWTs.
 	//
@@ -78,8 +77,9 @@ var _ interface {
 //
 // It verifies token's audience matches "Host" request header. Suitable for
 // environments where "Host" header can be trusted.
-func AudienceMatchesHost(ctx context.Context, r *http.Request, aud string) (valid bool, err error) {
-	valid = aud == "https://"+r.Host || strings.HasPrefix(aud, "https://"+r.Host+"/")
+func AudienceMatchesHost(ctx context.Context, r auth.RequestMetadata, aud string) (valid bool, err error) {
+	host := r.Host()
+	valid = aud == "https://"+host || strings.HasPrefix(aud, "https://"+host+"/")
 	return
 }
 
@@ -89,8 +89,8 @@ func AudienceMatchesHost(ctx context.Context, r *http.Request, aud string) (vali
 //   - (*User, nil, nil) on success.
 //   - (nil, nil, nil) if the method is not applicable.
 //   - (nil, nil, error) if the method is applicable, but credentials are bad.
-func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
-	header := r.Header.Get("Authorization")
+func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	header := r.Header("Authorization")
 	if !strings.HasPrefix(header, "Bearer ") {
 		return nil, nil, nil // this auth method is not applicable
 	}

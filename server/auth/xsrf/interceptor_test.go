@@ -17,7 +17,6 @@ package xsrf
 import (
 	"context"
 	"net"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -116,8 +115,8 @@ type testAuthMethod struct {
 	expect string
 }
 
-func (t *testAuthMethod) Authenticate(ctx context.Context, req *http.Request) (*auth.User, auth.Session, error) {
-	if req.Header.Get(authKey) == t.expect {
+func (t *testAuthMethod) Authenticate(ctx context.Context, req auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	if req.Header(authKey) == t.expect {
 		return &auth.User{Identity: fakeIdentity}, nil, nil
 	}
 	return nil, nil, nil // skip this method

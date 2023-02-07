@@ -238,10 +238,14 @@ import (
 const (
 	// Path of the health check endpoint.
 	healthEndpoint = "/healthz"
+
 	// Log a warning if health check is slower than this.
 	healthTimeLogThreshold    = 50 * time.Millisecond
 	defaultTsMonFlushInterval = 60 * time.Second
 	defaultTsMonFlushTimeout  = 15 * time.Second
+
+	// A header to look for end-client address, see getRemoteIP.
+	xffHeader = "X-Forwarded-For"
 )
 
 var (
@@ -1437,7 +1441,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	severityTracker := sdlogger.SeverityTracker{Out: s.stdout}
 
 	// End-user client IP is reported to logs in a bunch of places.
-	remoteAddr := getRemoteIP(c.Request)
+	remoteAddr := getRemoteIP(c.Request.RemoteAddr, c.Request.Header.Get(xffHeader))
 
 	// Log the overall request information when the request finishes. Use TraceID
 	// to correlate this log entry with entries emitted by the request handler
@@ -1703,7 +1707,7 @@ func (s *Server) initAuthStart() error {
 		ActorTokensProvider: s.actorTokens,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
 		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
-		EndUserIP:           getRemoteIP,
+		EndUserIP:           func(r auth.RequestMetadata) string { return getRemoteIP(r.RemoteAddr(), r.Header(xffHeader)) },
 		IsDevMode:           !s.Options.Prod,
 	})
 
@@ -2396,7 +2400,7 @@ func networkAddrsForLog() string {
 }
 
 // getRemoteIP extracts end-user IP address from X-Forwarded-For header.
-func getRemoteIP(r *http.Request) string {
+func getRemoteIP(remoteAddr, xff string) string {
 	// X-Forwarded-For header is set by Cloud Load Balancer and GAE frontend and
 	// has format:
 	//   [<untrusted part>,]<IP that connected to LB>,<unimportant>[,<more>].
@@ -2418,14 +2422,14 @@ func getRemoteIP(r *http.Request) string {
 	// IP). On GAE <more> is always empty.
 	//
 	// See https://cloud.google.com/load-balancing/docs/https for more info.
-	forwardedFor := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
+	forwardedFor := strings.Split(xff, ",")
 	if len(forwardedFor) >= 2 {
 		return strings.TrimSpace(forwardedFor[len(forwardedFor)-2])
 	}
 
 	// Fallback to the peer IP if X-Forwarded-For is not set. Happens when
 	// connecting to the server's port directly from within the cluster.
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	ip, _, err := net.SplitHostPort(remoteAddr)
 	if err != nil {
 		return "0.0.0.0"
 	}

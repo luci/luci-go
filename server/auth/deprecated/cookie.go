@@ -62,7 +62,9 @@ func makeSessionCookie(ctx context.Context, sid string, secure bool) (*http.Cook
 // decodeSessionCookie takes an incoming request and returns a session ID stored
 // in a session cookie, or "" if not there, invalid or expired. Returns errors
 // on transient errors only.
-func decodeSessionCookie(ctx context.Context, r *http.Request) (string, error) {
+func decodeSessionCookie(ctx context.Context, r interface {
+	Cookie(string) (*http.Cookie, error)
+}) (string, error) {
 	cookie, err := r.Cookie(sessionCookieName)
 	if err != nil {
 		return "", nil // no such cookie

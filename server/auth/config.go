@@ -108,12 +108,12 @@ type Config struct {
 
 	// EndUserIP takes a request and returns IP address of a user that sent it.
 	//
-	// If nil, a default implementation is used. It simply returns r.RemoteAddr.
+	// If nil, a default implementation is used. It simply returns r.RemoteAddr().
 	//
 	// A custom implementation may parse X-Forwarded-For header (or other headers)
 	// depending on how load balancers and proxies in front the server populate
 	// them.
-	EndUserIP func(r *http.Request) string
+	EndUserIP func(r RequestMetadata) string
 
 	// FrontendClientID returns an OAuth 2.0 client ID to use from the frontend.
 	//

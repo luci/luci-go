@@ -105,7 +105,7 @@ func (m *CookieAuthMethod) Warmup(ctx context.Context) (err error) {
 
 // Authenticate extracts peer's identity from the incoming request. It is part
 // of auth.Method interface.
-func (m *CookieAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
+func (m *CookieAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	if m.SessionStore == nil {
 		return nil, nil, ErrNotConfigured
 	}

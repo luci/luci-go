@@ -16,10 +16,11 @@ package server
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"golang.org/x/oauth2"
+
+	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -31,9 +32,9 @@ func TestGetUserCredentials(t *testing.T) {
 	m := OAuth2Method{}
 
 	call := func(hdr string) (*oauth2.Token, error) {
-		return m.GetUserCredentials(ctx, &http.Request{Header: http.Header{
-			"Authorization": {hdr},
-		}})
+		req := authtest.NewFakeRequestMetadata()
+		req.FakeHeader.Add("Authorization", hdr)
+		return m.GetUserCredentials(ctx, req)
 	}
 
 	Convey("Works", t, func() {

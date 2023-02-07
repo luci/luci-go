@@ -88,6 +88,42 @@ const (
 	InternalServicesGroup = "auth-luci-services"
 )
 
+// RequestMetadata is metadata used when authenticating a request.
+//
+// Can be constructed by:
+//   - RequestMetadataForHTTP based on http.Request.
+//   - authtest.NewFakeRequestMetadata based on fakes for unit tests.
+type RequestMetadata interface {
+	// Header returns a value of a given header or an empty string.
+	//
+	// Headers are also known as simply "metadata" in gRPC world.
+	//
+	// The key is case-insensitive. If the request has multiple headers matching
+	// the key, returns only the first one.
+	Header(key string) string
+
+	// Cookie returns a cookie or an error if there's no such cookie.
+	//
+	// Transports that do not support cookies (e.g. gRPC) can always return
+	// an error. They will just not work with authentication schemes based on
+	// cookies.
+	Cookie(key string) (*http.Cookie, error)
+
+	// RemoteAddr returns the IP address the request came from.
+	//
+	// It is used by default for IP allowlist checks if there's no EndUserIP
+	// callback set in the auth library configuration. The EndUserIP callback is
+	// usually set in environments where the server runs behind a proxy, when
+	// the real end user IP is passed via some trusted header or other form of
+	// metadata.
+	RemoteAddr() string
+
+	// Host returns the hostname the request was sent to.
+	//
+	// Also known as HTTP2 `:authority` pseudo-header.
+	Host() string
+}
+
 // Method implements a particular low-level authentication mechanism.
 //
 // It may also optionally implement a bunch of other interfaces:
@@ -110,7 +146,7 @@ type Method interface {
 	// be used to derive the response status code. Internal error messages (e.g.
 	// ones tagged with grpcutil.InternalTag or similar) are logged, but not sent
 	// to clients. All other errors are sent to clients as is.
-	Authenticate(context.Context, *http.Request) (*User, Session, error)
+	Authenticate(context.Context, RequestMetadata) (*User, Session, error)
 }
 
 // UsersAPI may be additionally implemented by Method if it supports login and
@@ -152,7 +188,7 @@ type UserCredentialsGetter interface {
 	//
 	// Guaranteed to be called only after the successful authentication, so it
 	// doesn't have to recheck the validity of the token.
-	GetUserCredentials(context.Context, *http.Request) (*oauth2.Token, error)
+	GetUserCredentials(context.Context, RequestMetadata) (*oauth2.Token, error)
 }
 
 // Session holds some extra information pertaining to the request.
@@ -220,9 +256,12 @@ type Authenticator struct {
 // authentication.
 //
 // It uses a.Authenticate internally and handles errors appropriately.
+//
+// TODO(vadimsh): Refactor to be a function instead of a method and move to
+// http.go.
 func (a *Authenticator) GetMiddleware() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		ctx, err := a.Authenticate(c.Context, c.Request)
+		ctx, err := a.AuthenticateHTTP(c.Context, c.Request)
 		if err != nil {
 			code, ok := grpcutil.Tag.In(err)
 			if !ok {
@@ -240,7 +279,17 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 	}
 }
 
-// Authenticate authenticates the requests and adds State into the context.
+// AuthenticateHTTP authenticates an HTTP request.
+//
+// See Authenticate for all details.
+//
+// This method is likely temporary until pRPC server switches to use gRPC
+// interceptors for authentication.
+func (a *Authenticator) AuthenticateHTTP(ctx context.Context, r *http.Request) (context.Context, error) {
+	return a.Authenticate(ctx, RequestMetadataForHTTP(r))
+}
+
+// Authenticate authenticates the request and adds State into the context.
 //
 // Returns an error if credentials are provided, but invalid. If no credentials
 // are provided (i.e. the request is anonymous), finishes successfully, but in
@@ -250,7 +299,7 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 // be used to derive the response status code. Internal error messages (e.g.
 // ones tagged with grpcutil.InternalTag or similar) should be logged, but not
 // sent to clients. All other errors should be sent to clients as is.
-func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ context.Context, err error) {
+func (a *Authenticator) Authenticate(ctx context.Context, r RequestMetadata) (_ context.Context, err error) {
 	tracedCtx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.Authenticate")
 	report := durationReporter(tracedCtx, authenticateDuration)
 
@@ -339,7 +388,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 
 	// Extract peer's IP address and, if necessary, check it against an allowlist.
 	stage = "IP_CHECK"
-	if s.peerIP, err = checkPeerIP(tracedCtx, cfg, s.db, r, s.peerIdent); err != nil {
+	if s.peerIP, err = checkEndUserIP(tracedCtx, cfg, s.db, r, s.peerIdent); err != nil {
 		return nil, err
 	}
 
@@ -348,12 +397,12 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 	// end-users or projects.
 	var delegationToken string
 	var projectHeader string
-	if delegationToken = r.Header.Get(delegation.HTTPHeaderName); delegationToken != "" {
+	if delegationToken = r.Header(delegation.HTTPHeaderName); delegationToken != "" {
 		stage = "DELEGATION_TOKEN_CHECK"
 		if s.user, err = checkDelegationToken(tracedCtx, cfg, s.db, delegationToken, s.peerIdent); err != nil {
 			return nil, err
 		}
-	} else if projectHeader = r.Header.Get(XLUCIProjectHeader); projectHeader != "" {
+	} else if projectHeader = r.Header(XLUCIProjectHeader); projectHeader != "" {
 		stage = "PROJECT_HEADER_CHECK"
 		if s.user, err = checkProjectHeader(tracedCtx, s.db, projectHeader, s.peerIdent); err != nil {
 			return nil, err
@@ -457,18 +506,20 @@ func checkClientID(ctx context.Context, cfg *Config, db authdb.DB, email, client
 	return ErrBadClientID
 }
 
-// checkPeerIP parses the caller IP address and checks it against an allowlist
-// (if necessary). Returns ErrBadRemoteAddr if the IP is malformed,
+// checkEndUserIP parses the caller IP address and checks it against an
+// allowlist (if necessary). Returns ErrBadRemoteAddr if the IP is malformed,
 // ErrForbiddenIP if the IP is not allowlisted or a transient error if the check
 // itself failed.
-func checkPeerIP(ctx context.Context, cfg *Config, db authdb.DB, r *http.Request, peerID identity.Identity) (net.IP, error) {
-	remoteAddr := r.RemoteAddr
+func checkEndUserIP(ctx context.Context, cfg *Config, db authdb.DB, r RequestMetadata, peerID identity.Identity) (net.IP, error) {
+	var ipAddr string
 	if cfg.EndUserIP != nil {
-		remoteAddr = cfg.EndUserIP(r)
+		ipAddr = cfg.EndUserIP(r)
+	} else {
+		ipAddr = r.RemoteAddr()
 	}
-	peerIP, err := parseRemoteIP(remoteAddr)
+	peerIP, err := parseRemoteIP(ipAddr)
 	if err != nil {
-		logging.Errorf(ctx, "auth: bad remote_addr %q in a call from %q - %s", remoteAddr, peerID, err)
+		logging.Errorf(ctx, "auth: bad remote_addr %q in a call from %q - %s", ipAddr, peerID, err)
 		return nil, ErrBadRemoteAddr
 	}
 

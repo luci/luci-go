@@ -22,17 +22,17 @@ import (
 
 // Authenticator authenticates incoming pRPC requests.
 type Authenticator interface {
-	// Authenticate returns a context populated with authentication related
+	// AuthenticateHTTP returns a context populated with authentication related
 	// values.
 	//
-	// If the request is authenticated, 'Authenticate' returns a derived context
-	// that gets passed to the RPC handler.
+	// If the request is authenticated, 'AuthenticateHTTP' returns a derived
+	// context that gets passed to the RPC handler.
 	//
-	// If the request cannot be authenticated, 'Authenticate' returns nil context
-	// and an error. A non-transient error triggers Unauthenticated grpc error,
-	// a transient error triggers Internal grpc error. In both cases the error
-	// message is set to err.Error().
-	Authenticate(context.Context, *http.Request) (context.Context, error)
+	// If the request cannot be authenticated, 'AuthenticateHTTP' returns nil
+	// context and an error. A non-transient error triggers Unauthenticated grpc
+	// error, a transient error triggers Internal grpc error. In both cases the
+	// error message is set to err.Error().
+	AuthenticateHTTP(context.Context, *http.Request) (context.Context, error)
 }
 
 // nullAuthenticator implements Authenticator by doing nothing.
@@ -40,7 +40,7 @@ type Authenticator interface {
 // See NoAuthentication variable.
 type nullAuthenticator struct{}
 
-func (nullAuthenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
+func (nullAuthenticator) AuthenticateHTTP(c context.Context, r *http.Request) (context.Context, error) {
 	return c, nil
 }
 

@@ -49,7 +49,7 @@ func TestAuthenticate(t *testing.T) {
 			Methods: []Method{fakeAuthMethod{clientID: "some_client_id"}},
 		}
 		req := makeRequest()
-		req.RemoteAddr = "1.2.3.4"
+		req.FakeRemoteAddr = "1.2.3.4"
 		c, err := auth.Authenticate(c, req)
 		So(err, ShouldBeNil)
 
@@ -77,11 +77,11 @@ func TestAuthenticate(t *testing.T) {
 
 	Convey("Custom EndUserIP implementation", t, func() {
 		req := makeRequest()
-		req.Header.Add("X-Custom-IP", "4.5.6.7")
+		req.FakeHeader.Add("X-Custom-IP", "4.5.6.7")
 
 		c := injectTestDB(context.Background(), &fakeDB{})
 		c = ModifyConfig(c, func(cfg Config) Config {
-			cfg.EndUserIP = func(r *http.Request) string { return r.Header.Get("X-Custom-IP") }
+			cfg.EndUserIP = func(r RequestMetadata) string { return r.Header("X-Custom-IP") }
 			return cfg
 		})
 
@@ -161,7 +161,7 @@ func TestAuthenticate(t *testing.T) {
 				Methods: []Method{fakeAuthMethod{email: "abc@example.com"}},
 			}
 			req := makeRequest()
-			req.RemoteAddr = "1.2.3.4"
+			req.FakeRemoteAddr = "1.2.3.4"
 			c, err := auth.Authenticate(c, req)
 			So(err, ShouldBeNil)
 			So(CurrentIdentity(c), ShouldEqual, identity.Identity("user:abc@example.com"))
@@ -172,7 +172,7 @@ func TestAuthenticate(t *testing.T) {
 				Methods: []Method{fakeAuthMethod{email: "abc@example.com"}},
 			}
 			req := makeRequest()
-			req.RemoteAddr = "1.2.3.5"
+			req.FakeRemoteAddr = "1.2.3.5"
 			_, err := auth.Authenticate(c, req)
 			So(err, ShouldEqual, ErrForbiddenIP)
 		})
@@ -182,7 +182,7 @@ func TestAuthenticate(t *testing.T) {
 				Methods: []Method{fakeAuthMethod{email: "def@example.com"}},
 			}
 			req := makeRequest()
-			req.RemoteAddr = "1.2.3.5"
+			req.FakeRemoteAddr = "1.2.3.5"
 			c, err := auth.Authenticate(c, req)
 			So(err, ShouldBeNil)
 			So(CurrentIdentity(c), ShouldEqual, identity.Identity("user:def@example.com"))
@@ -201,7 +201,7 @@ func TestAuthenticate(t *testing.T) {
 				Methods: []Method{fakeAuthMethod{email: "allowed@example.com"}},
 			}
 			req := makeRequest()
-			req.Header.Set(XLUCIProjectHeader, "test-proj")
+			req.FakeHeader.Set(XLUCIProjectHeader, "test-proj")
 			c, err := auth.Authenticate(c, req)
 			So(err, ShouldBeNil)
 			So(CurrentIdentity(c), ShouldEqual, identity.Identity("project:test-proj"))
@@ -217,7 +217,7 @@ func TestAuthenticate(t *testing.T) {
 				Methods: []Method{fakeAuthMethod{email: "unknown@example.com"}},
 			}
 			req := makeRequest()
-			req.Header.Set(XLUCIProjectHeader, "test-proj")
+			req.FakeHeader.Set(XLUCIProjectHeader, "test-proj")
 			_, err := auth.Authenticate(c, req)
 			So(err, ShouldEqual, ErrProjectHeaderForbidden)
 		})
@@ -227,7 +227,7 @@ func TestAuthenticate(t *testing.T) {
 				Methods: []Method{fakeAuthMethod{email: "allowed@example.com"}},
 			}
 			req := makeRequest()
-			req.Header.Set(XLUCIProjectHeader, "?????")
+			req.FakeHeader.Set(XLUCIProjectHeader, "?????")
 			_, err := auth.Authenticate(c, req)
 			So(err, ShouldErrLike, "bad value")
 		})
@@ -282,9 +282,23 @@ func TestMiddleware(t *testing.T) {
 
 ///
 
-func makeRequest() *http.Request {
-	req, _ := http.NewRequest("GET", "http://some-url", nil)
-	return req
+type fakeRequest struct {
+	FakeRemoteAddr string
+	FakeHost       string
+	FakeHeader     http.Header
+}
+
+func (r *fakeRequest) Header(key string) string                { return r.FakeHeader.Get(key) }
+func (r *fakeRequest) Cookie(key string) (*http.Cookie, error) { return nil, fmt.Errorf("no cookie") }
+func (r *fakeRequest) RemoteAddr() string                      { return r.FakeRemoteAddr }
+func (r *fakeRequest) Host() string                            { return r.FakeHost }
+
+func makeRequest() *fakeRequest {
+	return &fakeRequest{
+		FakeRemoteAddr: "127.0.0.1",
+		FakeHost:       "some-url",
+		FakeHeader:     map[string][]string{},
+	}
 }
 
 ///
@@ -296,7 +310,7 @@ type fakeAuthMethod struct {
 	email    string
 }
 
-func (m fakeAuthMethod) Authenticate(context.Context, *http.Request) (*User, Session, error) {
+func (m fakeAuthMethod) Authenticate(context.Context, RequestMetadata) (*User, Session, error) {
 	if m.err != nil {
 		return nil, nil, m.err
 	}
@@ -319,7 +333,7 @@ func (m fakeAuthMethod) LogoutURL(ctx context.Context, dest string) (string, err
 	return "http://fake.logout.url/" + dest, nil
 }
 
-func (m fakeAuthMethod) GetUserCredentials(context.Context, *http.Request) (*oauth2.Token, error) {
+func (m fakeAuthMethod) GetUserCredentials(context.Context, RequestMetadata) (*oauth2.Token, error) {
 	email := m.email
 	if email == "" {
 		email = "abc@example.com"

@@ -16,7 +16,6 @@ package gerritauth
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
@@ -107,12 +106,12 @@ func (m *AuthMethod) isConfigured() bool {
 // Authenticate extracts user information from the incoming request.
 //
 // It is part of auth.Method interface.
-func (m *AuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
+func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	if !m.isConfigured() {
 		return nil, nil, nil // skip, not configured
 	}
 
-	encodedJWT := r.Header.Get(m.Header)
+	encodedJWT := r.Header(m.Header)
 	if encodedJWT == "" {
 		return nil, nil, nil // skip, no auth header
 	}

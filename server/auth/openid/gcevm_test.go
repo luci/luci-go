@@ -16,13 +16,13 @@ package openid
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -51,10 +51,10 @@ func TestGoogleComputeAuthMethod(t *testing.T) {
 		certs:         certs,
 	}
 	call := func(authHeader string) (*auth.User, error) {
-		u, _, err := method.Authenticate(ctx, &http.Request{
-			Host:   fakeHost,
-			Header: http.Header{"X-Token-Header": {authHeader}},
-		})
+		req := authtest.NewFakeRequestMetadata()
+		req.FakeHost = fakeHost
+		req.FakeHeader.Set("X-Token-Header", authHeader)
+		u, _, err := method.Authenticate(ctx, req)
 		return u, err
 	}
 

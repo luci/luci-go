@@ -125,7 +125,7 @@ type trustedPortAuth struct{}
 // It returns User with Anonymous identity that has Superuser bit set: we
 // know *some* admin is accessing endpoints (thus we set Superuser bit), but
 // don't know who they are exactly (thus setting Anonymous identity).
-func (trustedPortAuth) Authenticate(context.Context, *http.Request) (*auth.User, auth.Session, error) {
+func (trustedPortAuth) Authenticate(context.Context, auth.RequestMetadata) (*auth.User, auth.Session, error) {
 	return &auth.User{
 		Identity:  identity.AnonymousIdentity,
 		Superuser: true,
