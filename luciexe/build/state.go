@@ -51,7 +51,7 @@ type State struct {
 	ctxCloser func()
 
 	// inputBuildPb represents the build when state was created.
-	// This is used to provide client access to build properties.
+	// This is used to provide client access to input build.
 	inputBuildPb *bbpb.Build
 	// buildPbMu is held in "WRITE" mode whenever buildPb may be directly written
 	// to, or in order to do `proto.Clone` on buildPb (since the Clone operation
@@ -218,9 +218,16 @@ func (s *State) LogDatagram(name string, opts ...streamclient.Option) streamclie
 	return ret
 }
 
-// Build returns a copy of current build when the state was created.
-// This can be used for read-only purposes. Any changes made to this
-// build proto will not be reflected in live build state.
+// Build returns a copy of the initial Build state.
+//
+// This is useful to access fields such as Infra, Tags, Ancestor ids etc.
+//
+// Changes to this copy will not reflect anywhere in the live Build state and
+// not affect other calls to Build().
+//
+// NOTE: It is recommended to use the PropertyModifier/PropertyReader functionality
+// of this package to interact with Build Input Properties; They are encoded as
+// Struct proto messages, which are extremely cumbersome to work with directly.
 func (s *State) Build() *bbpb.Build {
 	if s.inputBuildPb == nil {
 		return nil
