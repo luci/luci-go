@@ -12,8 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package quotapb exports proto definitions required by the quota library.
-package quotapb
+//go:build luagentest
 
-//go:generate cproto -enable-pgv
-//go:generate go run luagen.go quotapb.lua
+package main
+
+import (
+	"go.chromium.org/luci/common/proto/msgpackpb/luagen"
+	"go.chromium.org/luci/server/quota/quotapb"
+)
+
+func main() {
+	luagen.Main(
+		&quotapb.Account{},
+		&quotapb.ApplyOpsResponse{},
+		&quotapb.OpError{},
+		&quotapb.Policy{},
+		&quotapb.UpdateAccountsInput{},
+		quotapb.Op_NO_OPTIONS,
+	)
+}
