@@ -69,10 +69,10 @@ func TestState(t *testing.T) {
 			})
 		})
 
-		Convey(`Infra`, func() {
-			infra := st.Infra()
-			So(infra.Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
-			infra.Buildbucket.ServiceConfigRevision = "narf"
+		Convey(`Build.Infra()`, func() {
+			build := st.Build()
+			So(build.GetInfra().Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
+			build.GetInfra().Buildbucket.ServiceConfigRevision = "narf"
 			So(origInfra.Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
 
 			Convey(`nil build`, func() {
@@ -83,7 +83,7 @@ func TestState(t *testing.T) {
 						st.End(nil)
 					}
 				}()
-				So(st.Infra(), ShouldBeNil)
+				So(st.Build().GetInfra(), ShouldBeNil)
 			})
 		})
 	})

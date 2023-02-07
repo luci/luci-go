@@ -61,11 +61,10 @@ func Start(ctx context.Context, initial *bbpb.Build, opts ...StartOption) (*Stat
 
 	outputReservationKeys := propModifierReservations.locs.snap()
 
-	ret := &State{
-		buildPb:          initial,
-		logClosers:       map[string]func() error{},
-		outputProperties: make(map[string]*outputPropertyState, len(outputReservationKeys)),
-	}
+	logClosers := map[string]func() error{}
+	outputProps := make(map[string]*outputPropertyState, len(outputReservationKeys))
+	ret := newState(initial, logClosers, outputProps)
+
 	for ns := range outputReservationKeys {
 		ret.outputProperties[ns] = &outputPropertyState{}
 	}

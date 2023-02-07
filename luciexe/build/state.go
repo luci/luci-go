@@ -50,6 +50,9 @@ type State struct {
 	ctx       context.Context
 	ctxCloser func()
 
+	// inputBuildPb represents the build when state was created.
+	// This is used to provide client access to build properties.
+	inputBuildPb *bbpb.Build
 	// buildPbMu is held in "WRITE" mode whenever buildPb may be directly written
 	// to, or in order to do `proto.Clone` on buildPb (since the Clone operation
 	// actually can write metadata to the struct), and is not safe with concurrent
@@ -62,7 +65,8 @@ type State struct {
 	// This is done to allow e.g. multiple Steps to be mutated concurrently, but
 	// allow `proto.Clone` to proceed safely.
 	buildPbMu sync.RWMutex
-	buildPb   *bbpb.Build
+	// buildPb represents the live build.
+	buildPb *bbpb.Build
 	// buildPbVers updated/read with sync/atomic while holding buildPbMu in
 	// either WRITE/READ mode.
 	buildPbVers int64
@@ -86,6 +90,21 @@ type State struct {
 	topLevelOutput   *outputPropertyState
 
 	stepNames nameTracker
+}
+
+// newState creates a new state.
+func newState(inputBuildPb *bbpb.Build, logClosers map[string]func() error, outputProperties map[string]*outputPropertyState) *State {
+	state := &State{
+		buildPb:          inputBuildPb,
+		logClosers:       logClosers,
+		outputProperties: outputProperties,
+	}
+
+	if inputBuildPb != nil {
+		state.inputBuildPb = proto.Clone(inputBuildPb).(*bbpb.Build)
+	}
+
+	return state
 }
 
 var _ Loggable = (*State)(nil)
@@ -199,58 +218,14 @@ func (s *State) LogDatagram(name string, opts ...streamclient.Option) streamclie
 	return ret
 }
 
-// Infra returns a clone of the Build.Infra submessage.
-func (s *State) Infra() *bbpb.BuildInfra {
-	s.buildPbMu.RLock()
-	defer s.buildPbMu.RUnlock()
-	if s.buildPb.Infra == nil {
+// Build returns a copy of current build when the state was created.
+// This can be used for read-only purposes. Any changes made to this
+// build proto will not be reflected in live build state.
+func (s *State) Build() *bbpb.Build {
+	if s.inputBuildPb == nil {
 		return nil
 	}
-	return proto.Clone(s.buildPb.Infra).(*bbpb.BuildInfra)
-}
-
-// BuildID returns Build.Id.
-func (s *State) BuildID() int64 {
-	s.buildPbMu.RLock()
-	defer s.buildPbMu.RUnlock()
-	return s.buildPb.Id
-}
-
-// Builder returns a clone of the Build.Builder submessage.
-func (s *State) Builder() *bbpb.BuilderID {
-	s.buildPbMu.RLock()
-	defer s.buildPbMu.RUnlock()
-	if s.buildPb.Builder == nil {
-		return nil
-	}
-	return proto.Clone(s.buildPb.Builder).(*bbpb.BuilderID)
-}
-
-// GitilesCommit returns a clone of the Build.Input.GitilesCommit message.
-//
-// Note: The result of SetGitilesCommit will not appear here. This is the input GitilesCommit only.
-func (s *State) GitilesCommit() *bbpb.GitilesCommit {
-	s.buildPbMu.RLock()
-	defer s.buildPbMu.RUnlock()
-	if s.buildPb.Input.GitilesCommit == nil {
-		return nil
-	}
-	return proto.Clone(s.buildPb.Input.GitilesCommit).(*bbpb.GitilesCommit)
-}
-
-// GerritChanges returns a clone of Build.Input.GerritChanges.
-func (s *State) GerritChanges() []*bbpb.GerritChange {
-	s.buildPbMu.RLock()
-	defer s.buildPbMu.RUnlock()
-	n := len(s.buildPb.Input.GerritChanges)
-	if n == 0 {
-		return nil
-	}
-	chgs := make([]*bbpb.GerritChange, 0, n)
-	for _, chg := range s.buildPb.Input.GerritChanges {
-		chgs = append(chgs, proto.Clone(chg).(*bbpb.GerritChange))
-	}
-	return chgs
+	return proto.Clone(s.inputBuildPb).(*bbpb.Build)
 }
 
 // SynthesizeIOProto synthesizes a `.proto` file from the input and ouptut
