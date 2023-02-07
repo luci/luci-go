@@ -16,7 +16,6 @@ package server
 
 import (
 	"context"
-	"net/http"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
@@ -30,9 +29,11 @@ import (
 // services instead.
 type InboundAppIDAuthMethod struct{}
 
+var _ auth.Method = InboundAppIDAuthMethod{}
+
 // Authenticate extracts peer's identity from the incoming request.
-func (m InboundAppIDAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, auth.Session, error) {
-	appID := r.Header.Get("X-Appengine-Inbound-Appid")
+func (m InboundAppIDAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	appID := r.Header("X-Appengine-Inbound-Appid")
 	if appID == "" {
 		return nil, nil, nil
 	}
