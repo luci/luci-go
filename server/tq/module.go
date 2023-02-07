@@ -310,7 +310,7 @@ func (m *tqModule) Initialize(ctx context.Context, host module.Host, opts module
 func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts module.HostOptions) (Submitter, error) {
 	disp := m.opts.Dispatcher
 
-	disp.GAE = opts.GAE
+	disp.GAE = opts.Serverless == module.GAE
 	disp.DisableAuth = !opts.Prod
 	disp.DefaultTargetHost = m.opts.DefaultTargetHost
 	disp.AuthorizedPushers = m.opts.AuthorizedPushers
@@ -383,7 +383,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 func (m *tqModule) initSweeping(ctx context.Context, host module.Host, opts module.HostOptions) error {
 	// Fill in defaults.
 	if m.opts.SweepInitiationEndpoint == "" {
-		if opts.GAE || !opts.Prod {
+		if opts.Serverless == module.GAE || !opts.Prod {
 			m.opts.SweepInitiationEndpoint = "/internal/tasks/c/sweep"
 		} else {
 			m.opts.SweepInitiationEndpoint = "-"

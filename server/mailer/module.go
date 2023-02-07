@@ -121,7 +121,7 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 	service := m.opts.MailerService
 
 	if service == "" {
-		if opts.GAE {
+		if opts.Serverless == module.GAE {
 			service = "gae"
 		} else {
 			logging.Warningf(ctx, "Mailer service is not configured, emails will be dropped")
@@ -141,7 +141,7 @@ func (m *mailerModule) Initialize(ctx context.Context, host module.Host, opts mo
 	case strings.HasPrefix(service, "http://"):
 		mailer, err = m.initRPCMailer(ctx, strings.TrimPrefix(service, "http://"), true)
 	case service == "gae":
-		if !opts.GAE {
+		if opts.Serverless != module.GAE {
 			return nil, errors.Reason(`"-mailer-service gae" can only be used on GAE`).Err()
 		}
 		if m.opts.DefaultSender == "" {

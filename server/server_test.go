@@ -480,6 +480,14 @@ func TestOptions(t *testing.T) {
 	})
 }
 
+func TestUniqueServerlessHostname(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		So(uniqueServerlessHostname("a", "b", "cccc"), ShouldEqual, "a-b-b6fbd675f98e2abd")
+	})
+}
+
 var (
 	// These vars are used in TestResolveDependencies().
 	//

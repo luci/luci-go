@@ -150,7 +150,7 @@
 // server for logs and for IP-allowlist checks.
 //
 // <unimportant> is "global forwarding rule external IP" for GKE or
-// the constant "169.254.1.1" for GAE. It is unused. See
+// the constant "169.254.1.1" for GAE and Cloud Run. It is unused. See
 // https://cloud.google.com/load-balancing/docs/https for more info.
 //
 // <more> may be present if the request was proxied through more layers of
@@ -181,6 +181,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	gcemetadata "cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/errorreporting"
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
 	"cloud.google.com/go/profiler"
@@ -278,9 +279,9 @@ var cloudRegionFromGAERegion = map[string]string{
 // them. If 'opts' is nil, the default options will be used. Only flags are
 // allowed in the command line (no positional arguments).
 //
-// Additionally recognizes GAE_* env vars as an indicator that the server is
-// running on GAE. This slightly tweaks its behavior to match what GAE expects
-// from servers.
+// Additionally recognizes GAE_* and K_* env vars as an indicator that the
+// server is running in the corresponding serverless runtime. This slightly
+// tweaks its behavior to match what these runtimes expects from servers.
 //
 // On errors, logs them and aborts the process with non-zero exit code.
 func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
@@ -312,6 +313,10 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 	opts.Register(flag.CommandLine)
 	flag.Parse()
 	opts.FromGAEEnv()
+	if err := opts.FromCloudRunEnv(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to probe Cloud Run environment: %s\n", err)
+		os.Exit(3)
+	}
 
 	srv, err := New(context.Background(), *opts, mods)
 	if err != nil {
@@ -333,15 +338,15 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 // Options are used to configure the server.
 //
 // Most of them are exposed as command line flags (see Register implementation).
-// Some (mostly GAE-specific) are only settable through code or are derived from
-// the environment.
+// Some (specific to serverless runtimes) are only settable through code or are
+// derived from the environment.
 type Options struct {
-	Prod     bool   // set when running in production (not on a dev workstation)
-	GAE      bool   // set when running on GAE, implies Prod
-	Hostname string // used for logging and metric fields, default is os.Hostname
+	Prod       bool              // set when running in production (not on a dev workstation)
+	Serverless module.Serverless // set when running in a serverless environment, implies Prod
+	Hostname   string            // used for logging and metric fields, default is os.Hostname
 
 	HTTPAddr  string // address to bind the main listening socket to
-	AdminAddr string // address to bind the admin socket to, ignored on GAE
+	AdminAddr string // address to bind the admin socket to, ignored on GAE and Cloud Run
 
 	DefaultRequestTimeout  time.Duration // how long non-internal HTTP handlers are allowed to run, 1 min by default
 	InternalRequestTimeout time.Duration // how long "/internal/*" HTTP handlers are allowed to run, 10 min by default
@@ -359,7 +364,7 @@ type Options struct {
 	CloudProject string // name of the hosting Google Cloud Project
 	CloudRegion  string // name of the hosting Google Cloud region
 
-	TraceSampling string // what portion of traces to upload to Cloud Trace (ignored on GAE)
+	TraceSampling string // what portion of traces to upload to Cloud Trace (ignored on GAE and Cloud Run)
 
 	TsMonAccount       string        // service account to flush metrics as
 	TsMonServiceName   string        // service name of tsmon target
@@ -481,7 +486,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 		&o.TraceSampling,
 		"trace-sampling",
 		o.TraceSampling,
-		"What portion of traces to upload to Cloud Trace. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Ignored on GAE. Default is 0.1qps.",
+		"What portion of traces to upload to Cloud Trace. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Ignored on GAE and Cloud Run. Default is 0.1qps.",
 	)
 	f.StringVar(
 		&o.TsMonAccount,
@@ -574,9 +579,13 @@ func (o *Options) FromGAEEnv() {
 	if os.Getenv("GAE_VERSION") == "" {
 		return
 	}
-	o.GAE = true
+	o.Serverless = module.GAE
 	o.Prod = true
-	o.Hostname = uniqueGAEHostname()
+	o.Hostname = uniqueServerlessHostname(
+		os.Getenv("GAE_SERVICE"),
+		os.Getenv("GAE_DEPLOYMENT_ID"),
+		os.Getenv("GAE_INSTANCE"),
+	)
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
 	o.AdminAddr = "-"
 	o.ShutdownDelay = 0
@@ -595,16 +604,75 @@ func (o *Options) FromGAEEnv() {
 	}
 }
 
-// uniqueGAEHostname uses GAE_* env vars to derive a unique enough string that
-// is used as a hostname in monitoring metrics.
-func uniqueGAEHostname() string {
-	// GAE_INSTANCE is huge, hash it to get a small reasonably unique string.
-	id := sha256.Sum256([]byte(os.Getenv("GAE_INSTANCE")))
-	return fmt.Sprintf("%s-%s-%s",
-		os.Getenv("GAE_SERVICE"),
-		os.Getenv("GAE_DEPLOYMENT_ID"),
-		hex.EncodeToString(id[:])[:16],
-	)
+// FromCloudRunEnv recognized K_SERVICE environment variable and configures
+// some options based on what it discovers in the environment.
+//
+// Does nothing if K_SERVICE is not set.
+//
+// Equivalent to passing the following flags:
+//
+//	-prod
+//	-http-addr 0.0.0.0:${PORT}
+//	-admin-addr -
+//	-shutdown-delay 0s
+//	-cloud-project <cloud project Cloud Run container is running in>
+//	-cloud-region <cloud region Cloud Run container is running in>
+//	-service-account-json :gce
+//	-ts-mon-service-name <cloud project Cloud Run container is running in>
+//	-ts-mon-job-name ${K_SERVICE}
+//
+// Additionally the hostname (used in metric and trace fields) is derived from
+// environment to be semantically similar to what it looks like in the GKE
+// environment.
+func (o *Options) FromCloudRunEnv() error {
+	if os.Getenv("K_SERVICE") == "" {
+		return nil
+	}
+
+	// See https://cloud.google.com/run/docs/container-contract.
+	project, err := gcemetadata.Get("project/project-id")
+	if err != nil {
+		return errors.Annotate(err, "failed to get the project ID").Err()
+	}
+	region, err := gcemetadata.Get("instance/region")
+	if err != nil {
+		return errors.Annotate(err, "failed to get the cloud region").Err()
+	}
+	instance, err := gcemetadata.Get("instance/id")
+	if err != nil {
+		return errors.Annotate(err, "failed to get the instance ID").Err()
+	}
+
+	o.Serverless = module.CloudRun
+	o.Prod = true
+	o.Hostname = uniqueServerlessHostname(os.Getenv("K_REVISION"), instance)
+	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
+	o.AdminAddr = "-"
+	o.ShutdownDelay = 0
+	o.CloudProject = project
+	o.CloudRegion = region
+	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
+	o.TsMonServiceName = project
+	o.TsMonJobName = os.Getenv("K_SERVICE")
+
+	return nil
+}
+
+// uniqueServerlessHostname generates a hostname to use when running in a GCP
+// serverless environment.
+//
+// Unlike GKE or GCE environments, serverless containers do not have a proper
+// unique hostname set, but we still need to identify them uniquely in logs
+// and monitoring metrics. They do have a giant hex instance ID string, but it
+// is not informative on its own and cumbersome to use.
+//
+// This functions produces a reasonably readable and unique string that looks
+// like `parts[0]-parts[1]-...-hash(parts[last])`. It assumes the last string
+// in `parts` is the giant instance ID.
+func uniqueServerlessHostname(parts ...string) string {
+	id := sha256.Sum256([]byte(parts[len(parts)-1]))
+	parts[len(parts)-1] = hex.EncodeToString(id[:])[:16]
+	return strings.Join(parts, "-")
 }
 
 // ImageVersion extracts image tag or digest from ContainerImageID.
@@ -614,6 +682,9 @@ func uniqueGAEHostname() string {
 // On GAE it would return the service version name based on GAE_VERSION env var,
 // since ContainerImageID is artificially constructed to look like
 // "appengine/${CLOUD_PROJECT}/${GAE_SERVICE}:${GAE_VERSION}".
+//
+// On Cloud Run it is responsibility of the deployment layer to correctly
+// populate -container-image-id command line flag.
 //
 // Returns "unknown" if ContainerImageID is empty or malformed.
 func (o *Options) ImageVersion() string {
@@ -649,7 +720,7 @@ func (o *Options) shouldEnableTracing() bool {
 func (o *Options) hostOptions() module.HostOptions {
 	return module.HostOptions{
 		Prod:         o.Prod,
-		GAE:          o.GAE,
+		Serverless:   o.Serverless,
 		CloudProject: o.CloudProject,
 		CloudRegion:  o.CloudRegion,
 	}
@@ -859,10 +930,8 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		}
 	}
 
-	// On k8s log pod IPs too, this is useful when debugging k8s routing.
-	if !srv.Options.GAE {
-		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
-	} else {
+	switch srv.Options.Serverless {
+	case module.GAE:
 		logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
 		logging.Infof(srv.Context, "Instance is %q", os.Getenv("GAE_INSTANCE"))
 		if srv.Options.CloudRegion == "" {
@@ -877,6 +946,12 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		// Initialize default tickets for background activities. These tickets are
 		// overridden in per-request contexts with request-specific tickets.
 		srv.Context = gae.WithTickets(srv.Context, gae.DefaultTickets())
+	case module.CloudRun:
+		logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
+		logging.Infof(srv.Context, "Revision is %q", os.Getenv("K_REVISION"))
+	default:
+		// On k8s log pod IPs too, this is useful when debugging k8s routing.
+		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
 	}
 
 	// Log enabled experiments, warn if some of them are unknown now.
@@ -1402,7 +1477,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 
 	// If running on GAE, initialize the per-request API tickets needed to make
 	// RPCs to the GAE service bridge.
-	if s.Options.GAE {
+	if s.Options.Serverless == module.GAE {
 		ctx = gae.WithTickets(ctx, gae.RequestTickets(c.Request.Header))
 	}
 
@@ -1486,10 +1561,12 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 			},
 		}
 		if s.Options.Prod {
-			// Skip writing the root request log entry on GAE, since GAE writes it
-			// itself (in "appengine.googleapis.com/request_log" log). See also
-			// comments for initLogging(...).
-			if !s.Options.GAE {
+			// Skip writing the root request log entry on Serverless GCP, since the
+			// load balancer there writes the entry itself, particular in:
+			//  - "appengine.googleapis.com/request_log" log for GAE.
+			//  - "run.googleapis.com/requests" log for Cloud Run.
+			// See also comments for initLogging(...).
+			if s.Options.Serverless != module.GAE && s.Options.Serverless != module.CloudRun {
 				s.stderr.Write(&entry)
 			}
 		} else {
@@ -1563,8 +1640,8 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 // be initialized yet, be careful.
 //
 // When running in production uses the ugly looking JSON format that is hard to
-// read by humans but which is parsed by google-fluentd and GAE hosting
-// environment.
+// read by humans but which is parsed by google-fluentd and GCP serverless
+// hosting environment.
 //
 // To support per-request log grouping in Cloud Logging UI there must be
 // two different log streams:
@@ -1581,9 +1658,9 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 // On GKE we use 'stderr' stream for top-level HTTP request entries and 'stdout'
 // stream for logs produced by requests.
 //
-// On GAE, the stream with top-level HTTP request entries is produced by the GAE
-// runtime itself (as 'appengine.googleapis.com/request_log'). So we emit only
-// logs produced within requests (also to 'stdout', just like on GKE).
+// On GAE and Cloud Run, the stream with top-level HTTP request entries is
+// produced by the GCP runtime itself. So we emit only logs produced within
+// requests (also to 'stdout', just like on GKE).
 //
 // In all environments 'stderr' stream is used to log all global activities that
 // happens outside of any request handler (stuff like initialization, shutdown,
@@ -1651,7 +1728,7 @@ func (s *Server) initAuthStart() error {
 	// log spam.
 	opts.DisableMonitoring = true
 
-	// GAE v2 is very aggressive in caching the token internally (in the metadata
+	// GCP is very aggressive in caching the token internally (in the metadata
 	// server) and refreshing it only when it is very close to its expiration. We
 	// need to match this behavior in our in-process cache, otherwise
 	// GetAccessToken complains that the token refresh procedure doesn't actually
@@ -1972,7 +2049,7 @@ func (s *Server) initTracing() error {
 		return nil
 	}
 
-	if !s.Options.GAE {
+	if s.Options.Serverless != module.GAE && s.Options.Serverless != module.CloudRun {
 		// Parse -trace-sampling spec to get a sampler.
 		sampling := s.Options.TraceSampling
 		if sampling == "" {
@@ -1984,11 +2061,11 @@ func (s *Server) initTracing() error {
 			return errors.Annotate(err, "bad -trace-sampling").Err()
 		}
 	} else {
-		// On GAE let the GAE make decisions about sampling. If it decides to sample
-		// a trace, it will let us know through options of the parent span in
-		// X-Cloud-Trace-Context. We will collect only traces from requests that
-		// GAE wants to sample itself.
-		logging.Infof(s.Context, "Setting up Cloud Trace exports to %q using GAE sampling strategy", s.Options.CloudProject)
+		// On GCP Serverless let the GCP load balancer make decisions about
+		// sampling. If it decides to sample a trace, it will let us know through
+		// options of the parent span in X-Cloud-Trace-Context. We will collect only
+		// traces from requests that GCP wants to sample itself.
+		logging.Infof(s.Context, "Setting up Cloud Trace exports to %q using GCP Serverless sampling strategy", s.Options.CloudProject)
 		s.sampler = func(p octrace.SamplingParameters) octrace.SamplingDecision {
 			return octrace.SamplingDecision{Sample: p.ParentContext.IsSampled()}
 		}
@@ -2162,7 +2239,7 @@ func (s *Server) initMainPort() error {
 		// Allow compression when not running on GAE. On GAE compression for text
 		// responses is done by GAE itself and doing it in our code would be
 		// wasteful.
-		EnableResponseCompression: !s.Options.GAE,
+		EnableResponseCompression: s.Options.Serverless != module.GAE,
 	}
 	discovery.Enable(s.PRPC)
 	s.PRPC.InstallHandlers(s.Routes, nil)
@@ -2266,7 +2343,7 @@ func (s *Server) initWarmup() error {
 	// See https://cloud.google.com/appengine/docs/standard/go/configuring-warmup-requests.
 	// All warmups should happen *before* the serving loop and /_ah/warmup should
 	// just always return OK.
-	if s.Options.GAE {
+	if s.Options.Serverless == module.GAE {
 		s.Routes.GET("/_ah/warmup", nil, func(*router.Context) {})
 	}
 	s.RegisterWarmup(func(ctx context.Context) { warmup.Warmup(ctx) })
@@ -2401,25 +2478,24 @@ func networkAddrsForLog() string {
 
 // getRemoteIP extracts end-user IP address from X-Forwarded-For header.
 func getRemoteIP(remoteAddr, xff string) string {
-	// X-Forwarded-For header is set by Cloud Load Balancer and GAE frontend and
-	// has format:
+	// X-Forwarded-For header is set by Cloud Load Balancer and GCP Serverless
+	// load balancer and has format:
 	//   [<untrusted part>,]<IP that connected to LB>,<unimportant>[,<more>].
 	//
 	// <untrusted part> may be present if the original request from the Internet
 	// comes with X-Forwarded-For header. We can't trust IPs specified there. We
-	// assume Cloud Load Balancer and GAE sanitize the format of this field
-	// though.
+	// assume GCP load balancers sanitize the format of this field though.
 	//
 	// <IP that connected to LB> is what we are after.
 	//
 	// <unimportant> is "global forwarding rule external IP" for GKE or
-	// the constant "169.254.1.1" for GAE. We don't care about these.
+	// the constant "169.254.1.1" for GCP Serverless. We don't care about these.
 	//
 	// <more> is present only if we proxy the request through more layers of
 	// load balancers *while it is already inside GKE cluster*. We assume we don't
 	// do that (if we ever do, Options{...} should be extended with a setting that
 	// specifies how many layers of load balancers to skip to get to the original
-	// IP). On GAE <more> is always empty.
+	// IP). On GCP Serverless <more> is always empty.
 	//
 	// See https://cloud.google.com/load-balancing/docs/https for more info.
 	forwardedFor := strings.Split(xff, ",")

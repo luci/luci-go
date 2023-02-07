@@ -26,6 +26,25 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
+// Serverless is an enumeration of recognized serverless runtimes.
+//
+// It exists to allow modules to recognize they run in specific serverless
+// environments in case modules explicitly depend on features provided by these
+// environment.
+//
+// For example, on GAE (and only there!) headers `X-Appengine-*` can be trusted
+// and some modules take advantage of that.
+type Serverless string
+
+const (
+	// Unknown means the server didn't detect any serverless environment.
+	Unknown Serverless = ""
+	// GAE means the server is running on Google Cloud AppEngine.
+	GAE Serverless = "GAE"
+	// CloudRun means the server is running on Google Serverless Cloud Run.
+	CloudRun Serverless = "Cloud Run"
+)
+
 // Module represents some optional part of a server.
 //
 // It is generally a stateful object constructed from some configuration. It can
@@ -65,12 +84,12 @@ type Module interface {
 // HostOptions are options the server was started with.
 //
 // It is a subset of global server.Options that modules are allowed to use to
-// tweak their behavior.
+// tweak their behavior, if necessary.
 type HostOptions struct {
-	Prod         bool   // set when running in production (not on a dev workstation)
-	GAE          bool   // set when running on Appengine, implies Prod
-	CloudProject string // name of hosting Google Cloud Project if running in GCP
-	CloudRegion  string // name of a hosting region (e.g. 'us-central1') if known
+	Prod         bool       // set when running in production (not on a dev workstation)
+	Serverless   Serverless // set when running in a serverless environment, implies Prod
+	CloudProject string     // name of hosting Google Cloud Project if running in GCP
+	CloudRegion  string     // name of a hosting region (e.g. 'us-central1') if known
 }
 
 // Host is part of server.Server API that modules are allowed to use during

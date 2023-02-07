@@ -115,7 +115,7 @@ func (m *cronModule) Initialize(ctx context.Context, host module.Host, opts modu
 		m.opts.Dispatcher = &Default
 	}
 
-	m.opts.Dispatcher.GAE = opts.GAE
+	m.opts.Dispatcher.GAE = opts.Serverless == module.GAE
 	m.opts.Dispatcher.DisableAuth = !opts.Prod
 	m.opts.Dispatcher.AuthorizedCallers = m.opts.AuthorizedCallers
 	m.opts.Dispatcher.InstallCronRoutes(host.Routes(), m.opts.ServingPrefix)
