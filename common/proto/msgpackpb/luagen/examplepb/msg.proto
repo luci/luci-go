@@ -1,0 +1,41 @@
+// Copyright 2022 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+
+option go_package = "go.chromium.org/luci/common/proto/msgpackpb/luagen/examplepb;examplepb";
+
+package go.chromium.org.luci.common.proto.msgpackpb.luagen.examplepb;
+
+enum VALUE {
+  ZERO = 0;
+  ONE = 1;
+  TWO = 2;
+}
+
+message TestMessage {
+  reserved 1; // this will allow easily creating messages with unknown fields.
+
+  bool  boolval = 2;
+  int64 intval = 3;
+  uint64 uintval = 4;
+  int32 short_intval = 5;
+  uint32 short_uintval = 6;
+  string strval = 7;
+  double floatval = 8;
+  float short_floatval = 9;
+
+  VALUE value = 10;
+
+  map<string, TestMessage> mapfield = 11;
+
+  google.protobuf.Duration duration = 12;
+
+  repeated string strings = 13;
+  TestMessage single_recurse = 14;
+  repeated TestMessage multi_recursion = 15;
+}
+
