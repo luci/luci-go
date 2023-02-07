@@ -17,8 +17,6 @@
 package server
 
 import (
-	"context"
-
 	"go.chromium.org/luci/analysis/app"
 	"go.chromium.org/luci/analysis/internal/admin"
 	adminpb "go.chromium.org/luci/analysis/internal/admin/proto"
@@ -29,7 +27,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/analysis/internal/legacydb"
 	"go.chromium.org/luci/analysis/internal/metrics"
 	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
@@ -76,7 +73,6 @@ func Main(init func(srv *luciserver.Server) error) {
 		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
 		secrets.NewModuleFromFlags(),          // Needed by encryptedcookies.
 		spanmodule.NewModuleFromFlags(nil),
-		legacydb.NewModuleFromFlags(),
 		scopedauth.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
 		buganizer.NewModuleFromFlags(),
@@ -107,20 +103,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
 		analysispb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
 		analysispb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
-
-		// Test History service needs to connect back to an old Spanner
-		// database to service some queries.
-		legacyCl := legacydb.LegacyClient(srv.Context)
-		installOldDatabase := func(ctx context.Context) context.Context {
-			if legacyCl != nil {
-				// Route queries to the old database to the old database.
-				return spanmodule.UseClient(ctx, legacyCl)
-			}
-			// Route queries in the time range of the old database
-			// to the old database.
-			return ctx
-		}
-		analysispb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer(installOldDatabase))
+		analysispb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer())
 
 		// GAE crons.
 		updateAnalysisAndBugsHandler := updater.NewHandler(srv.Options.CloudProject, srv.Options.Prod)

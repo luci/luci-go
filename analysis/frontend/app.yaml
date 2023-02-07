@@ -48,7 +48,6 @@ luci_gae_vars:
     ROOT_SECRET: sm://root-secret
     TINK_AEAD_KEY: sm://tink-aead-primary
     SPANNER_DB: projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev
-    LEGACY_SPANNER_DB: projects/chops-weetbix-dev/instances/dev/databases/chops-weetbix-dev
     DISABLE_PROJECT_SCOPED_AUTH: TRUE
     BUGANIZER_MODE: disable
 
@@ -80,6 +79,5 @@ entrypoint: >
   -encrypted-cookies-tink-aead-key ${TINK_AEAD_KEY}
   -root-secret ${ROOT_SECRET}
   -spanner-database ${SPANNER_DB}
-  -legacy-spanner-database ${LEGACY_SPANNER_DB}
   -disable-project-scoped-auth=${DISABLE_PROJECT_SCOPED_AUTH}
   -buganizer-mode=${BUGANIZER_MODE}

@@ -41,15 +41,12 @@ var pageSizeLimiter = pagination.PageSizeLimiter{
 
 // testHistoryServer implements pb.TestHistoryServer.
 type testHistoryServer struct {
-	backend *testHistoryBackend
 }
 
 // NewTestHistoryServer returns a new pb.TestHistoryServer.
-func NewTestHistoryServer(oldDatabaseCtx func(context.Context) context.Context) pb.TestHistoryServer {
+func NewTestHistoryServer() pb.TestHistoryServer {
 	return &pb.DecoratedTestHistory{
-		Service: &testHistoryServer{
-			backend: &testHistoryBackend{oldDatabaseCtx: oldDatabaseCtx},
-		},
+		Service:  &testHistoryServer{},
 		Postlude: gRPCifyAndLogPostlude,
 	}
 }
@@ -78,7 +75,7 @@ func (s *testHistoryServer) Query(ctx context.Context, req *pb.QueryTestHistoryR
 		PageToken:        req.PageToken,
 	}
 
-	verdicts, nextPageToken, err := s.backend.ReadTestHistory(ctx, opts)
+	verdicts, nextPageToken, err := testresults.ReadTestHistory(span.Single(ctx), opts)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +129,7 @@ func (s *testHistoryServer) QueryStats(ctx context.Context, req *pb.QueryTestHis
 		PageToken:        req.PageToken,
 	}
 
-	groups, nextPageToken, err := s.backend.ReadTestHistoryStats(ctx, opts)
+	groups, nextPageToken, err := testresults.ReadTestHistoryStats(span.Single(ctx), opts)
 	if err != nil {
 		return nil, err
 	}
