@@ -111,25 +111,15 @@ func computeHostnameFromTarget(ctx context.Context, target string) (hostname str
 }
 
 // RunTaskRequest related code
-func computeRequestID(hostname string) uuid.UUID {
-	// RequestId = current timestamp + GAE Hostname (which is random)
-	timpestamp := time.Now().Unix()
-	inputStr := strconv.FormatInt(timpestamp, 10) + hostname
-	id := uuid.NewSHA1(uuid.Nil, []byte(inputStr))
-	return id
-}
-
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra) (*pb.RunTaskRequest, error) {
 	backend := infra.Proto.GetBackend()
 	if backend == nil {
 		return nil, errors.New("infra.Proto.Backend isn't set")
 	}
 
-	reqID := computeRequestID(infra.Proto.Buildbucket.Hostname)
-
 	taskReq := &pb.RunTaskRequest{
 		Target:        backend.Task.Id.Target,
-		RequestId:     reqID.String(),
+		RequestId:     uuid.New().String(),
 		BuildId:       strconv.FormatInt(build.Proto.Id, 10),
 		Realm:         build.Realm(),
 		BackendConfig: backend.Config,
