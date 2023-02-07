@@ -347,6 +347,7 @@ type Options struct {
 
 	HTTPAddr  string // address to bind the main listening socket to
 	AdminAddr string // address to bind the admin socket to, ignored on GAE and Cloud Run
+	AllowH2C  bool   // if true, allow HTTP/2 Cleartext traffic on HTTP ports
 
 	DefaultRequestTimeout  time.Duration // how long non-internal HTTP handlers are allowed to run, 1 min by default
 	InternalRequestTimeout time.Duration // how long "/internal/*" HTTP handlers are allowed to run, 10 min by default
@@ -419,6 +420,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to or '-' to disable")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to or '-' to disable")
+	f.BoolVar(&o.AllowH2C, "allow-h2c", o.AllowH2C, "If set, allow HTTP/2 Cleartext traffic on HTTP ports (in addition to HTTP/1 traffic)")
 	f.DurationVar(&o.DefaultRequestTimeout, "default-request-timeout", o.DefaultRequestTimeout, "How long incoming requests are allowed to run before being canceled (or 0 for infinity)")
 	f.DurationVar(&o.InternalRequestTimeout, "internal-request-timeout", o.InternalRequestTimeout, "How long incoming /internal/* requests are allowed to run before being canceled (or 0 for infinity)")
 	f.DurationVar(&o.ShutdownDelay, "shutdown-delay", o.ShutdownDelay, "How long to wait after SIGTERM before shutting down")
@@ -614,6 +616,7 @@ func (o *Options) FromGAEEnv() {
 //	-prod
 //	-http-addr 0.0.0.0:${PORT}
 //	-admin-addr -
+//	-allow-h2c
 //	-shutdown-delay 0s
 //	-cloud-project <cloud project Cloud Run container is running in>
 //	-cloud-region <cloud region Cloud Run container is running in>
@@ -648,6 +651,7 @@ func (o *Options) FromCloudRunEnv() error {
 	o.Hostname = uniqueServerlessHostname(os.Getenv("K_REVISION"), instance)
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
 	o.AdminAddr = "-"
+	o.AllowH2C = true // to allow using HTTP2 end-to-end with `--use-http2` deployment flag
 	o.ShutdownDelay = 0
 	o.CloudProject = project
 	o.CloudRegion = region
@@ -1048,9 +1052,10 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 // Should be called before Serve (panics otherwise).
 func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 	port := &Port{
-		Routes: s.newRouter(opts),
-		parent: s,
-		opts:   opts,
+		Routes:   s.newRouter(opts),
+		parent:   s,
+		opts:     opts,
+		allowH2C: s.Options.AllowH2C,
 	}
 
 	s.mu.Lock()

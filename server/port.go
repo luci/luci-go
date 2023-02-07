@@ -20,6 +20,9 @@ import (
 	"net/http"
 	"sync"
 
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 )
@@ -46,6 +49,7 @@ type Port struct {
 
 	parent   *Server      // the owning server
 	opts     PortOptions  // options passed to AddPort
+	allowH2C bool         // if set allow HTTP/2 Cleartext requests
 	listener net.Listener // listening socket if ListenAddr != "-"
 
 	mu      sync.Mutex
@@ -86,6 +90,9 @@ func (p *Port) nameForLog() string {
 	var pfx string
 	if p.listener != nil {
 		pfx = "http://" + p.listener.Addr().String()
+		if p.allowH2C {
+			pfx += " (h2c on)"
+		}
 	} else {
 		pfx = "-"
 	}
@@ -114,6 +121,10 @@ func (p *Port) httpServer() *http.Server {
 			Addr:     p.listener.Addr().String(),
 			Handler:  p.initHandlerLocked(),
 			ErrorLog: nil, // TODO(vadimsh): Log via 'logging' package.
+		}
+		// See https://pkg.go.dev/golang.org/x/net/http2/h2c.
+		if p.allowH2C {
+			p.srv.Handler = h2c.NewHandler(p.srv.Handler, &http2.Server{})
 		}
 	}
 	return p.srv

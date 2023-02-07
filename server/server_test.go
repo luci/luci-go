@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,6 +32,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"golang.org/x/net/http2"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -403,6 +406,55 @@ func TestServer(t *testing.T) {
 	})
 }
 
+func TestH2C(t *testing.T) {
+	t.Parallel()
+
+	Convey("With server", t, func() {
+		ctx := context.Background()
+
+		srv, err := newTestServer(ctx, &Options{AllowH2C: true})
+		So(err, ShouldBeNil)
+		defer srv.cleanup()
+
+		srv.Routes.GET("/test", nil, func(c *router.Context) {
+			if err := testContextFeatures(c.Context); err != nil {
+				http.Error(c.Writer, err.Error(), 500)
+			} else {
+				c.Writer.WriteHeader(200)
+				c.Writer.Write([]byte("Hello, world"))
+			}
+		})
+
+		srv.ServeInBackground()
+		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
+
+		Convey("HTTP/1", func() {
+			srv.client = http.DefaultClient
+			resp, err := srv.GetMain("/test", nil)
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, "Hello, world")
+		})
+
+		Convey("HTTP/2 Cleartext", func() {
+			// See https://medium.com/@thrawn01/http-2-cleartext-h2c-client-example-in-go-8167c7a4181e
+			srv.client = &http.Client{
+				Transport: &http2.Transport{
+					// So http2.Transport doesn't complain the URL scheme isn't 'https'
+					AllowHTTP: true,
+					// Pretend we are dialing a TLS endpoint.
+					// Note, we ignore the passed tls.Config
+					DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+						return net.Dial(network, addr)
+					},
+				},
+			}
+			resp, err := srv.GetMain("/test", nil)
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, "Hello, world")
+		})
+	})
+}
+
 // testContextFeatures check that the context has all subsystems enabled.
 func testContextFeatures(ctx context.Context) (err error) {
 	defer func() {
@@ -647,6 +699,8 @@ type testServer struct {
 	cleanup  func()
 	serveErr errorEvent
 	serving  int32
+
+	client *http.Client
 }
 
 func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error) {
@@ -656,6 +710,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 			Email:      testServerAccountEmail,
 			KeepRecord: true,
 		},
+		client: http.DefaultClient,
 	}
 
 	// Run the server in the fake LUCI_CONTEXT auth context, so almost all auth
@@ -785,7 +840,7 @@ func (s *testServer) get(uri string, headers map[string]string, timeout time.Dur
 		}
 		req.Host = headers["Host"] // req.Host (even when empty) overrides req.Header["Host"]
 		var res *http.Response
-		if res, err = http.DefaultClient.Do(req); err != nil {
+		if res, err = s.client.Do(req); err != nil {
 			return
 		}
 		defer res.Body.Close()
