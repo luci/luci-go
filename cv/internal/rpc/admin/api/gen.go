@@ -18,4 +18,4 @@
 // since it depends on CV implementation details.
 package adminpb
 
-//go:generate cproto -use-grpc-plugin
+//go:generate cproto -use-grpc-plugin -enable-pgv

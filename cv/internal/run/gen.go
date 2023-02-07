@@ -14,4 +14,4 @@
 
 package run
 
-//go:generate cproto
+//go:generate cproto -enable-pgv

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package prjinternal stores protos for event processing of ProjectManager.
+// Package prjpb stores protos for event processing of ProjectManager.
 package prjpb
 
-//go:generate cproto
+//go:generate cproto -enable-pgv

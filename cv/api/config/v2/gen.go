@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
-
 // Package cfgpb contains the CQ config schema.
+//
+//go:generate cproto -enable-pgv
 package cfgpb

@@ -14,4 +14,4 @@
 
 package pubsub
 
-//go:generate cproto
+//go:generate cproto -enable-pgv
