@@ -209,34 +209,19 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 	}
 
 	additionalModes := stringset.New(len(group.AdditionalModes))
-	if len(group.AdditionalModes) > 0 {
-		vd.ctx.Enter("additional_modes")
-		for _, m := range group.AdditionalModes {
-			switch name := m.Name; {
-			case name == "":
-				vd.ctx.Errorf("`name` is required")
-			case name == "DRY_RUN" || name == "FULL_RUN":
-				vd.ctx.Errorf("`name` MUST not be DRY_RUN or FULL_RUN")
-			case !modeNameRegexp.MatchString(name):
-				vd.ctx.Errorf("`name` must match %q but %q is given", modeNameRegexp, name)
-			case additionalModes.Has(name):
-				vd.ctx.Errorf("duplicate `name` %q not allowed", name)
-			default:
-				additionalModes.Add(name)
-			}
-			if val := m.CqLabelValue; val < 1 || val > 2 {
-				vd.ctx.Errorf("`cq_label_value` must be either 1 or 2, got %d", val)
-			}
-			switch m.TriggeringLabel {
-			case "":
-				vd.ctx.Errorf("`triggering_label` is required")
-			case "Commit-Queue":
-				vd.ctx.Errorf("`triggering_label` MUST not be \"Commit-Queue\"")
-			}
-			if m.TriggeringValue <= 0 {
-				vd.ctx.Errorf("`triggering_value` must be > 0")
-			}
+	for i, m := range group.AdditionalModes {
+		vd.ctx.Enter("additional_modes #%d", (i + 1))
+		if err := m.ValidateAll(); err != nil {
+			vd.ctx.Errorf("%s", err)
 		}
+		vd.ctx.Enter("name")
+		switch n := m.Name; {
+		case n != "QUICK_DRY_RUN":
+			vd.ctx.Errorf("MUST be `QUICK_DRY_RUN`")
+		case !additionalModes.Add(n):
+			vd.ctx.Errorf("%q is already in use", n)
+		}
+		vd.ctx.Exit()
 		vd.ctx.Exit()
 	}
 

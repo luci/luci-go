@@ -646,13 +646,60 @@ func (m *Mode) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Name
+	if !_Mode_Name_Pattern.MatchString(m.GetName()) {
+		err := ModeValidationError{
+			field:  "Name",
+			reason: "value does not match regex pattern \"^[a-zA-Z][a-zA-Z0-9-9_-]{0,39}$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for CqLabelValue
+	if _, ok := _Mode_CqLabelValue_InLookup[m.GetCqLabelValue()]; !ok {
+		err := ModeValidationError{
+			field:  "CqLabelValue",
+			reason: "value must be in list [1 2]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for TriggeringLabel
+	if _, ok := _Mode_TriggeringLabel_NotInLookup[m.GetTriggeringLabel()]; ok {
+		err := ModeValidationError{
+			field:  "TriggeringLabel",
+			reason: "value must not be in list [Commit-Queue]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for TriggeringValue
+	if utf8.RuneCountInString(m.GetTriggeringLabel()) < 1 {
+		err := ModeValidationError{
+			field:  "TriggeringLabel",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetTriggeringValue() <= 0 {
+		err := ModeValidationError{
+			field:  "TriggeringValue",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return ModeMultiError(errors)
@@ -730,6 +777,17 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ModeValidationError{}
+
+var _Mode_Name_Pattern = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-9_-]{0,39}$")
+
+var _Mode_CqLabelValue_InLookup = map[int32]struct{}{
+	1: {},
+	2: {},
+}
+
+var _Mode_TriggeringLabel_NotInLookup = map[string]struct{}{
+	"Commit-Queue": {},
+}
 
 // Validate checks the field values on CombineCLs with the rules defined in the
 // proto definition for this message. If any rules are violated, the first

@@ -325,63 +325,75 @@ func TestValidateProjectDetailed(t *testing.T) {
 					So(vctx.Finalize(), ShouldErrLike, "allow_submit_with_open_deps=true")
 				})
 			})
-			Convey("Additional modes", func() {
-				mode := &cfgpb.Mode{
-					Name:            "TEST_RUN",
-					CqLabelValue:    1,
-					TriggeringLabel: "TEST_RUN_LABEL",
-					TriggeringValue: 2,
-				}
+
+			mode := &cfgpb.Mode{
+				Name:            "QUICK_DRY_RUN",
+				CqLabelValue:    1,
+				TriggeringLabel: "TEST_RUN_LABEL",
+				TriggeringValue: 2,
+			}
+			Convey("Mode", func() {
 				cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
 				Convey("OK", func() {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				})
-				Convey("Requires name", func() {
-					mode.Name = ""
+				Convey("name", func() {
+					Convey("empty", func() { mode.Name = "" })
+					Convey("with invalid chars", func() { mode.Name = "~!Invalid Run Mode!~" })
+
 					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "`name` is required")
+					So(vctx.Finalize(), ShouldErrLike, "does not match regex pattern")
 				})
-				Convey("Uses reserved mode name", func() {
-					for _, m := range []string{"DRY_RUN", "FULL_RUN"} {
-						mode.Name = m
+				Convey("cq_label_value", func() {
+					Convey("with -1", func() { mode.CqLabelValue = -1 })
+					Convey("with 0", func() { mode.CqLabelValue = 0 })
+					Convey("with 3", func() { mode.CqLabelValue = 3 })
+					Convey("with 10", func() { mode.CqLabelValue = 10 })
+
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "must be in list [1 2]")
+				})
+				Convey("triggering_label", func() {
+					Convey("empty", func() {
+						mode.TriggeringLabel = ""
 						validateProjectConfig(vctx, &cfg)
-						So(vctx.Finalize(), ShouldErrLike, "`name` MUST not be DRY_RUN or FULL_RUN")
-					}
+						So(vctx.Finalize(), ShouldErrLike, "length must be at least 1 runes")
+					})
+					Convey("with Commit-Queue", func() {
+						mode.TriggeringLabel = "Commit-Queue"
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, "must not be in list [Commit-Queue]")
+					})
 				})
-				Convey("Invalid name", func() {
-					mode.Name = "~!Invalid Run Mode!~"
+				Convey("triggering_value", func() {
+					Convey("with 0", func() { mode.TriggeringValue = 0 })
+					Convey("with -1", func() { mode.TriggeringValue = -1 })
+
 					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "`name` must match")
+					So(vctx.Finalize(), ShouldErrLike, "must be greater than 0")
 				})
-				Convey("Duplicate modes", func() {
+			})
+
+			// Tests for additional mode specific verifiers.
+			Convey("additional_modes", func() {
+				cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
+				Convey("reserved names", func() {
+					Convey("DRY_RUN", func() { mode.Name = "DRY_RUN" })
+					Convey("FULL_RUN", func() { mode.Name = "FULL_RUN" })
+
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "MUST be `QUICK_DRY_RUN`")
+				})
+				Convey("not QUICK_DRY_RUN", func() {
+					mode.Name = "TEST_RUN"
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "MUST be `QUICK_DRY_RUN`")
+				})
+				Convey("duplicate names", func() {
 					cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode, mode}
 					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "duplicate `name` \"TEST_RUN\" not allowed")
-				})
-				Convey("CQ label value out of range", func() {
-					for _, val := range []int32{-1, 0, 3, 10} {
-						mode.CqLabelValue = val
-						validateProjectConfig(vctx, &cfg)
-						So(vctx.Finalize(), ShouldErrLike, "`cq_label_value` must be either 1 or 2")
-					}
-				})
-				Convey("Requires triggering_label", func() {
-					mode.TriggeringLabel = ""
-					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "`triggering_label` is required")
-				})
-				Convey("triggering_label must not be Commit-Queue", func() {
-					mode.TriggeringLabel = "Commit-Queue"
-					validateProjectConfig(vctx, &cfg)
-					So(vctx.Finalize(), ShouldErrLike, "`triggering_label` MUST not be \"Commit-Queue\"")
-				})
-				Convey("triggering_value out of range", func() {
-					for _, val := range []int32{-1, 0} {
-						mode.TriggeringValue = val
-						validateProjectConfig(vctx, &cfg)
-						So(vctx.Finalize(), ShouldErrLike, "`triggering_value` must be > 0")
-					}
+					So(vctx.Finalize(), ShouldErrLike, `"QUICK_DRY_RUN" is already in use`)
 				})
 			})
 		})

@@ -19,6 +19,7 @@ package cv.config;
 option go_package = "go.chromium.org/luci/cv/api/config/v2;cfgpb";
 
 import "google/protobuf/duration.proto";
+import "validate/validate.proto";
 
 import "go.chromium.org/luci/common/proto/options.proto";
 
@@ -167,6 +168,11 @@ message ConfigGroup {
   // If specified, the order matters. CQ will create the Run with the first
   // mode for which triggering conditions are fulfilled. If there is no such
   // mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
+  //
+  // All the mode names must be unique.
+  //
+  // **NOTE**: As of Jan 2023, this field may be given either 1 or 0 mode, and
+  // the name must be "QUICK_DRY_RUN", if provided.
   repeated Mode additional_modes = 7;
 
   // Per-user limits.
@@ -204,26 +210,32 @@ message SubmitOptions {
 
 // Mode defines a CQ Run mode and how it can be triggered.
 message Mode {
-  // Required. Name of this mode.
+  // Name of the mode.
   //
-  // The mode name will be passed verbatim to all Tryjobs that this CQ Run
-  // launches. Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$".
-  //
-  // As of March 2021, only `QUICK_DRY_RUN` is allowed.
-  string name = 1;
-  // Required. The value of Commit-Queue label that MUST be set to when
-  // triggering a CQ Run in this mode.
+  // Must match regex "^[a-zA-Z][a-zA-Z0-9_-]{0,39}$".
+  string name = 1 [
+      (validate.rules).string.pattern = "^[a-zA-Z][a-zA-Z0-9-9_-]{0,39}$"
+  ];
+
+  // Value of Commit-Queue label that triggers a CQ Run in the mode.
   //
   // Must be either 1 or 2.
-  int32 cq_label_value = 2;
-  // Required. The Gerrit label that MUST also be set in order to trigger a
-  // CQ Run in this mode.
+  int32 cq_label_value = 2 [(validate.rules).int32 = {in: [1, 2]}];
+  // Label that MUST also be voted with `triggering_value` in addition to
+  // "Commit-Queue" label to trigger a CQ Run in the mode.
   //
-  // Both this label and the Commit-Queue label MUST be set at the same time.
-  string triggering_label = 3;
-  // Required. The value of the `triggering_label` that MUST be set to when
-  // triggering a CQ Run in this mode.
-  int32 triggering_value = 4;
+  // Must not be "Commit-Queue"
+  string triggering_label = 3 [
+      (validate.rules).string = {
+        min_len: 1,
+        not_in: ['Commit-Queue'],
+     }
+  ];
+
+  // Value of the `trigerring_label` that triggers a CQ Run in the mode.
+  //
+  // Must be > 0
+  int32 triggering_value = 4 [(validate.rules).int32.gt = 0];
 }
 
 // CombineCLs defines how CQ works with >1 CL per attempt.
