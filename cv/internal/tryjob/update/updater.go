@@ -99,6 +99,17 @@ func (u *Updater) RegisterBackend(b updaterBackend) {
 	u.backends[kind] = b
 }
 
+// Update updates the Tryjob entity associated with the given `eid`.
+//
+// `data` should contain the latest information of the Tryjob from the
+// Tryjob backend system (e.g. Build proto from Buildbucket pubsub).
+//
+// No-op if the Tryjob data stored in CV appears to be newer than the provided
+// data (e.g. has newer Tryjob.Result.UpdateTime)
+func (u *Updater) Update(ctx context.Context, eid tryjob.ExternalID, data any) error {
+	panic("unimplemented")
+}
+
 // errStaleTryjobData may be returned by handle task if a concurrent task
 // updates the Tryjob entity while this task is in the middle of update.
 var errStaleTryjobData = errors.New("loaded stale Tryjob data", transient.Tag)

@@ -155,7 +155,7 @@ func main() {
 		cron.RegisterHandler("refresh-config", func(ctx context.Context) error {
 			return refreshConfig(ctx, pcr)
 		})
-		kickNewListenersFn := bblistener.Register(&tq.Default, srv.Options.CloudProject, tryjobNotifier)
+		kickNewListenersFn := bblistener.Register(&tq.Default, srv.Options.CloudProject, tryjobNotifier, tryjobUpdater)
 		cron.RegisterHandler("kick-bb-pubsub-listeners", func(ctx context.Context) error {
 			return kickNewListenersFn(ctx)
 		})

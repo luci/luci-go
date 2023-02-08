@@ -59,9 +59,20 @@ type tryjobNotifier interface {
 	ScheduleUpdate(context.Context, common.TryjobID, tryjob.ExternalID) error
 }
 
+type tryjobUpdater interface {
+	// Update updates the Tryjob entity associated with the given `eid`.
+	//
+	// `data` should contain the latest information of the Tryjob from the
+	// Tryjob backend system (e.g. Build proto from Buildbucket pubsub).
+	//
+	// No-op if the Tryjob data stored in CV appears to be newer than the provided
+	// data (e.g. has newer Tryjob.Result.UpdateTime)
+	Update(ctx context.Context, eid tryjob.ExternalID, data any) error
+}
+
 // Register registers tasks for listener and returns a function to kick off
 // `NumConcurrentListeners` listeners.
-func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) func(context.Context) error {
+func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier, tjUpdater tryjobUpdater) func(context.Context) error {
 	_ = tqd.RegisterTaskClass(tq.TaskClass{
 		ID:           "listen-bb-pubsub",
 		Prototype:    &ListenBBPubsubTask{},
@@ -82,6 +93,7 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier) f
 			l := &listener{
 				subscription: client.Subscription(SubscriptionID),
 				tjNotifier:   tjNotifier,
+				tjUpdater:    tjUpdater,
 			}
 			defer l.reportStats(ctx)
 			duration := payload.(*ListenBBPubsubTask).GetDuration().AsDuration()
@@ -135,6 +147,7 @@ func StartListenerForTest(ctx context.Context, sub *pubsub.Subscription, tjNotif
 type listener struct {
 	subscription *pubsub.Subscription
 	tjNotifier   tryjobNotifier
+	tjUpdater    tryjobUpdater
 
 	stats       listenerStats
 	processedCh chan string // for testing only
