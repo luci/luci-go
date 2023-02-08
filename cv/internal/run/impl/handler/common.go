@@ -224,12 +224,16 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	return nil
 }
 
-// scheduleTriggersCancellation enqueues a CancelTrigger long op for a given Run.
+// scheduleTriggersCancellation enqueues a CancelTrigger long op for a given
+// Run.
 //
-// `cls` is a list of CLs to cancel the trigger of.
+// No-op if trigger cancellation is already ongoing.
 func scheduleTriggersCancellation(ctx context.Context, rs *state.RunState, metas map[common.CLID]reviewInputMeta, statusIfSucceeded run.Status) {
-	if !run.IsEnded(statusIfSucceeded) {
+	switch {
+	case !run.IsEnded(statusIfSucceeded):
 		panic(fmt.Errorf("expected a terminal status; got %s", statusIfSucceeded))
+	case isTriggersCancellationOngoing(rs):
+		return
 	}
 	reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, 0, len(rs.CLs))
 	for clid, meta := range metas {
@@ -250,6 +254,15 @@ func scheduleTriggersCancellation(ctx context.Context, rs *state.RunState, metas
 			},
 		},
 	})
+}
+
+func isTriggersCancellationOngoing(rs *state.RunState) bool {
+	for _, op := range rs.OngoingLongOps.GetOps() {
+		if op.GetCancelTriggers() != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func fromGerritWhoms(whoms gerrit.Whoms) []run.OngoingLongOps_Op_TriggersCancellation_Whom {

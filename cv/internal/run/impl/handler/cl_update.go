@@ -149,12 +149,3 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 	}
 	return time.Time{}, ""
 }
-
-func isTriggersCancellationOngoing(rs *state.RunState) bool {
-	for _, op := range rs.OngoingLongOps.GetOps() {
-		if op.GetCancelTriggers() != nil {
-			return true
-		}
-	}
-	return false
-}
