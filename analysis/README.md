@@ -36,7 +36,6 @@ cd frontend
 go run main.go \
  -cloud-project luci-analysis-dev \
  -spanner-database projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev \
- -legacy-spanner-database projects/chops-weetbix-dev/instances/dev/databases/chops-weetbix-dev \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
  -default-request-timeout 10m0s \
  -config-local-dir ../configs
