@@ -122,11 +122,6 @@ export const BuildPage = types
       return cached || (self.buildNumOrIdParam?.startsWith('b') ? self.buildNumOrIdParam.slice(1) : null);
     },
     get hasInvocation() {
-      if (self.useComputedInvId) {
-        // The invocation may not exist. Wait for the invocation query to confirm
-        // its existence.
-        return Boolean(self.invocation?.invocation);
-      }
       return Boolean(self._build?.data.infra?.resultdb?.invocation);
     },
   }))

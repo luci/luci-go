@@ -25,7 +25,6 @@ import { parseTestResultSearchQuery, TestVariantFilter } from '../libs/queries/t
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import { TestLoader } from '../models/test_loader';
 import { VariantGroup } from '../pages/test_results_tab/test_variants_table';
-import { router } from '../routes';
 import { TestPresentationConfig } from '../services/buildbucket';
 import { createTVCmpFn, createTVPropGetter, RESULT_LIMIT, TestVariant, TestVariantStatus } from '../services/resultdb';
 import { ServicesStore } from './services';
@@ -195,16 +194,6 @@ export const InvocationState = types
       },
       get loadedFirstPage() {
         return this.testLoader?.firstPageLoaded || false;
-      },
-      getHistoryUrl(testId: string, variantHash: string) {
-        if (!this.invocation?.realm) {
-          return '';
-        }
-        const searchParam = new URLSearchParams({
-          q: 'VHASH:' + variantHash,
-        });
-        const project = this.invocation.realm.split(':', 2)[0];
-        return router.urlForName('test-history', { realm: project, test_id: testId }) + '?' + searchParam.toString();
       },
     };
   })

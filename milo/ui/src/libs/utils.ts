@@ -88,9 +88,11 @@ export function timeout(ms: number) {
 
 /**
  * A utility function that helps set additional search query params.
+ *
+ * If the URL is a relative URL, location.origin will be used as the base.
  */
 export function urlSetSearchQueryParam(url: string, key: string, value: { toString(): string }) {
-  const urlObj = new URL(url);
+  const urlObj = new URL(url, location.origin);
   urlObj.searchParams.set(key, value.toString());
   return urlObj.toString();
 }

@@ -51,6 +51,7 @@ import { GetBuildError } from '../../store/build_page';
 import { provideInvocationState, QueryInvocationError } from '../../store/invocation_state';
 import colorClasses from '../../styles/color_classes.css';
 import commonStyle from '../../styles/common_style.css';
+import { provideProject } from '../test_results_tab/test_variants_table/context';
 
 const STATUS_FAVICON_MAP = Object.freeze({
   [BuildStatus.Scheduled]: 'gray',
@@ -138,6 +139,12 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   @computed
   get invState() {
     return this.store.buildPage.invocation;
+  }
+
+  @provideProject({ global: true })
+  @computed
+  get project() {
+    return this.store.buildPage.build?.data.builder.project;
   }
 
   // The page is visited via a short link.
@@ -241,6 +248,17 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
         (invState) => {
           // Emulate @property() update.
           this.updated(new Map([['invState', invState]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.project,
+        (project) => {
+          // Emulate @property() update.
+          this.updated(new Map([['project', project]]));
         },
         { fireImmediately: true }
       )

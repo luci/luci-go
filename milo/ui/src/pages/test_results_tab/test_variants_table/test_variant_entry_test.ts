@@ -28,6 +28,7 @@ import { Cluster } from '../../../services/luci_analysis';
 import { ANONYMOUS_IDENTITY } from '../../../services/milo_internal';
 import { TestResultBundle, TestStatus, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { provideStore, Store, StoreInstance } from '../../../store';
+import { provideProject } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 const clusteringVersion = { algorithmsVersion: '1', rulesVersion: '1', configVersion: '1' };
@@ -85,6 +86,9 @@ class TestVariantEntryTestContextElement extends LitElement {
     unsubscribe(_ele) {},
   };
 
+  @provideProject()
+  proj = 'proj';
+
   protected render() {
     return html`<slot></slot>`;
   }
@@ -140,11 +144,9 @@ describe('test_variant_entry_test', () => {
     };
 
     await fixture<TestVariantEntryElement>(html`
-      <milo-test-variant-entry
-        .store=${store}
-        .invState=${{ project: 'proj' }}
-        .variant=${tv}
-      ></milo-test-variant-entry>
+      <milo-test-variant-entry-test-context .store=${store}>
+        <milo-test-variant-entry .store=${store} .variant=${tv}></milo-test-variant-entry>
+      </milo-test-variant-entry-test-context>
     `);
 
     expect(clusterStub.callCount).to.eq(1);
@@ -187,7 +189,7 @@ describe('test_variant_entry_test', () => {
 
     const ele = await fixture<TestVariantEntryTestContextElement>(html`
       <milo-test-variant-entry-test-context .store=${store}>
-        <milo-test-variant-entry .invState=${{ project: 'proj' }} .variant=${tv}></milo-test-variant-entry>
+        <milo-test-variant-entry .variant=${tv}></milo-test-variant-entry>
       </milo-test-variant-entry-test-context>
     `);
     const tvEntry = ele.querySelector<TestVariantEntryElement>('milo-test-variant-entry')!;

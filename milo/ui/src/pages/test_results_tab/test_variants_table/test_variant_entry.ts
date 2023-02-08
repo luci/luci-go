@@ -33,9 +33,9 @@ import { attachTags, hasTags } from '../../../libs/tag';
 import { Cluster } from '../../../services/luci_analysis';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
-import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
+import { consumeProject } from './context';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -48,7 +48,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 @lazyRendering
 export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref @consumeStore() store!: StoreInstance;
-  @observable.ref @consumeInvocationState() invState!: InvocationStateInstance;
+  @observable.ref @consumeProject() project: string | undefined;
 
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
@@ -91,7 +91,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed
   private get clustersByResultId$() {
-    if (!this.invState.project || !this.store.services.clusters) {
+    if (!this.project || !this.store.services.clusters) {
       return fromPromise(Promise.race([]));
     }
 
@@ -109,7 +109,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
       this.store.services.clusters
         .cluster(
           {
-            project: this.invState.project,
+            project: this.project,
             testResults: results.map((r) => ({
               testId: this.variant.testId,
               failureReason: r.result.failureReason,
@@ -277,7 +277,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
             .id=${i + 1}
             .testResult=${r.result}
             .clusters=${this.clustersMap.get(r.result.resultId) || []}
-            .project=${this.invState.project}
+            .project=${this.project}
             .expanded=${i === this.expandedResultIndex}
           ></milo-result-entry>
         `
@@ -305,7 +305,7 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
             <span title=${this.longName}>${this.shortName}</span>
             ${this.uniqueClusters.length && !this.expanded
               ? html`<milo-associated-bugs-badge
-                  .project=${this.invState.project}
+                  .project=${this.project}
                   .clusters=${this.uniqueClusters}
                   @click=${(e: Event) => e.stopPropagation()}
                 ></milo-associated-bugs-badge>`

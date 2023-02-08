@@ -31,6 +31,7 @@ import { NOT_FOUND_URL, router } from '../../routes';
 import { consumeStore, StoreInstance } from '../../store';
 import { provideInvocationState } from '../../store/invocation_state';
 import commonStyle from '../../styles/common_style.css';
+import { provideProject } from '../test_results_tab/test_variants_table/context';
 
 /**
  * Main test results page.
@@ -51,6 +52,12 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   @computed
   get invState() {
     return this.store.invocationPage.invocation;
+  }
+
+  @provideProject({ global: true })
+  @computed
+  get project() {
+    return this.store.invocationPage.invocation.project ?? undefined;
   }
 
   constructor() {
@@ -87,6 +94,17 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
         ([invState]) => {
           // Emulate @property() update.
           this.updated(new Map([['invState', invState]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.project,
+        (project) => {
+          // Emulate @property() update.
+          this.updated(new Map([['project', project]]));
         },
         { fireImmediately: true }
       )

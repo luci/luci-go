@@ -46,7 +46,7 @@ import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration } from '../../libs/time_utils';
-import { unwrapOrElse } from '../../libs/utils';
+import { unwrapOrElse, urlSetSearchQueryParam } from '../../libs/utils';
 import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
 import { getPropKeyLabel } from '../../services/resultdb';
@@ -380,7 +380,14 @@ export class OverviewTabElement extends MobxLitElement {
           <milo-test-variant-entry
             .variant=${testVariant}
             .columnGetters=${this.invState.columnGetters}
-            .historyUrl=${this.invState.getHistoryUrl(testVariant.testId, testVariant.variantHash)}
+            .historyUrl=${urlSetSearchQueryParam(
+              router.urlForName('test-history', {
+                realm: this.build!.data.builder.project,
+                test_id: testVariant.testId,
+              }),
+              'VHASH',
+              testVariant.variantHash
+            )}
           ></milo-test-variant-entry>
         `);
       }

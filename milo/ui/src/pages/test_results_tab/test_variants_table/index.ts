@@ -28,11 +28,14 @@ import { MiloBaseElement } from '../../../components/milo_base';
 import { VARIANT_STATUS_CLASS_MAP } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
+import { urlSetSearchQueryParam } from '../../../libs/utils';
+import { router } from '../../../routes';
 import { getPropKeyLabel, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
 import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
 import colorClasses from '../../../styles/color_classes.css';
 import commonStyle from '../../../styles/common_style.css';
+import { consumeProject } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 export interface VariantGroup {
@@ -49,6 +52,7 @@ export interface VariantGroup {
 export class TestVariantsTableElement extends MiloBaseElement {
   @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeInvocationState() invState!: InvocationStateInstance;
+  @observable.ref @consumeProject() project: string | undefined;
 
   constructor() {
     super();
@@ -162,7 +166,16 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .variant=${v}
             .columnGetters=${this.invState.columnGetters}
             .expanded=${this.invState.testVariantCount === 1}
-            .historyUrl=${this.invState.getHistoryUrl(v.testId, v.variantHash)}
+            .historyUrl=${this.project
+              ? urlSetSearchQueryParam(
+                  router.urlForName('test-history', {
+                    realm: this.project,
+                    test_id: v.testId,
+                  }),
+                  'VHASH',
+                  v.variantHash
+                )
+              : ''}
           ></milo-test-variant-entry>
         `
       )}
