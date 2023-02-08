@@ -15,7 +15,6 @@ import "google/protobuf/empty.proto";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/launcher.proto";
-import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 import "go.chromium.org/luci/buildbucket/proto/task.proto";
 
 
@@ -195,7 +194,7 @@ message RunTaskRequest {
   // Describes the list of cache ids, their paths (relative to the cache root)
   // and how long the Backend should wait for a bot with a warm cache to
   // become available.
-  repeated BuilderConfig.CacheEntry caches = 13;
+  repeated CacheEntry caches = 13;
 
   // Additional backend-specific settings. For Swarming this would include:
   //   * priority
