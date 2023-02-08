@@ -270,10 +270,13 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 	spinWG := sync.WaitGroup{}
 	spinWG.Add(1)
 
+	prevCode := ""
+
 	fmt.Printf("When asked, use this confirmation code (it refreshes with time):\n\n")
 	fmt.Printf("\n\n\n\n") // allocate lines we'll keep overriding in the loop
 
 	// ESC code sequence helpers.
+	down := func(lines int) { fmt.Printf("\033[%dB", lines) }
 	up := func(lines int) { fmt.Printf("\033[%dA", lines) }
 	line := func(msg string, args ...interface{}) { fmt.Printf("\r\033[2K"+msg+"\n", args...) }
 
@@ -291,6 +294,12 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 					break loop
 				}
 				current = code
+				if current.code != prevCode {
+					up(4)
+					line("%s", current.code)
+					down(3)
+					prevCode = current.code
+				}
 			case res := <-clock.After(ctx, 100*time.Millisecond):
 				if res.Err != nil {
 					break loop
@@ -320,9 +329,8 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 				filled = total
 			}
 
-			// Redraw everything.
-			up(4)
-			line("%s", current.code)
+			// Redraw everything but code.
+			up(3)
 			line("%s%s", strings.Repeat("─", filled), strings.Repeat(" ", total-filled))
 			line("")
 			line("Waiting for the login flow to complete in the browser %s", spinner)
