@@ -99,7 +99,10 @@ type HostOptions struct {
 //   - Allow adding a middleware to the default middleware chain.
 type Host interface {
 	// ServiceRegistrar is a registrar that can be used to register gRPC services.
-	ServiceRegistrar() grpc.ServiceRegistrar
+	//
+	// The services registered here will be exposed through both gRPC and pRPC
+	// protocols on corresponding ports.
+	grpc.ServiceRegistrar
 
 	// HTTPAddr is the address the main HTTP port is bound to.
 	//
@@ -148,13 +151,13 @@ type Host interface {
 	// It receives the global server context.
 	RegisterCleanup(cb func(context.Context))
 
-	// RegisterUnaryServerInterceptor registers an grpc.UnaryServerInterceptor
+	// RegisterUnaryServerInterceptors registers grpc.UnaryServerInterceptor's
 	// applied to all unary RPCs that hit the server.
 	//
 	// Interceptors are chained in order they are registered, which matches
 	// the order of modules in the list of modules. The first registered
 	// interceptor becomes the outermost.
-	RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor)
+	RegisterUnaryServerInterceptors(intr ...grpc.UnaryServerInterceptor)
 
 	// RegisterCookieAuth registers an implementation of a cookie-based
 	// authentication scheme.

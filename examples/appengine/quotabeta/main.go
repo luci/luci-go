@@ -23,7 +23,6 @@ package main
 import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 	quota "go.chromium.org/luci/server/quotabeta"
 	quotapb "go.chromium.org/luci/server/quotabeta/proto"
@@ -64,17 +63,8 @@ func main() {
 		// Register the quotaconfig.Interface.
 		srv.Context = quota.Use(srv.Context, m)
 
-		// Support authentication for per-user rate limit demo.
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-			},
-		}
-
-		// Register the demo pRPC service.
-		pb.RegisterDemoServer(srv.PRPC, rpc.New())
+		// Register the demo RPC service.
+		pb.RegisterDemoServer(srv, rpc.New())
 		return nil
 	})
 }

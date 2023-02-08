@@ -81,21 +81,19 @@ func main() {
 		}
 		srv.RegisterCleanup(func(context.Context) { pool.Close() })
 
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				// The primary authentication method.
-				&openid.GoogleIDTokenAuthMethod{
-					AudienceCheck: openid.AudienceMatchesHost,
-					SkipNonJWT:    true, // pass OAuth2 access tokens through
-				},
-				// Backward compatibility for RPC Explorer and old clients.
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
+		srv.SetRPCAuthMethods([]auth.Method{
+			// The primary authentication method.
+			&openid.GoogleIDTokenAuthMethod{
+				AudienceCheck: openid.AudienceMatchesHost,
+				SkipNonJWT:    true, // pass OAuth2 access tokens through
 			},
-		}
+			// Backward compatibility for RPC Explorer and old clients.
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+			},
+		})
 
-		mailer.RegisterMailerServer(srv.PRPC, &mailerServer{
+		mailer.RegisterMailerServer(srv, &mailerServer{
 			callersGroup: *callersGroup,
 			pool:         pool,
 			cache:        caching.GlobalCache(srv.Context, "mailer"),

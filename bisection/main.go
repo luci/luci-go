@@ -176,14 +176,14 @@ func main() {
 			}
 		})
 
-		// Installs PRPC service.
-		pb.RegisterGoFinditServiceServer(srv.PRPC, &pb.DecoratedGoFinditService{
+		// Installs gRPC service.
+		pb.RegisterGoFinditServiceServer(srv, &pb.DecoratedGoFinditService{
 			Service: &server.GoFinditServer{},
 			Prelude: checkAPIAccess,
 		})
 
-		// Installs PRPC service to communicate with recipes
-		pb.RegisterGoFinditBotServiceServer(srv.PRPC, &pb.DecoratedGoFinditBotService{
+		// Installs gRPC service to communicate with recipes
+		pb.RegisterGoFinditBotServiceServer(srv, &pb.DecoratedGoFinditBotService{
 			Service: &server.GoFinditBotServer{},
 			Prelude: checkBotAPIAccess,
 		})

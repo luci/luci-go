@@ -76,7 +76,7 @@ func main() {
 			if srv.Options.Prod {
 				return errors.Reason("-expose-integration-mocks should not be used with -prod").Err()
 			}
-			integrationmocks.RegisterIntegrationMocksServer(srv.PRPC, integrationmocks.New(
+			integrationmocks.RegisterIntegrationMocksServer(srv, integrationmocks.New(
 				srv.Context,
 				tokenSecret,
 			))

@@ -38,13 +38,13 @@ import (
 
 func main() {
 	impl.Main(func(srv *server.Server, services *impl.Services) error {
-		// Exposed pRPC services.
-		admin.RegisterCertificateAuthoritiesServer(srv.PRPC, services.Certs)
-		admin.RegisterAdminServer(srv.PRPC, services.Admin)
-		minter.RegisterTokenMinterServer(srv.PRPC, services.Minter)
+		// Exposed RPC services.
+		admin.RegisterCertificateAuthoritiesServer(srv, services.Certs)
+		admin.RegisterAdminServer(srv, services.Admin)
+		minter.RegisterTokenMinterServer(srv, services.Minter)
 
 		// Authorization check for admin services.
-		srv.PRPC.UnaryServerInterceptor = func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		srv.RegisterUnaryServerInterceptors(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 			if strings.HasPrefix(info.FullMethod, "/tokenserver.admin.") {
 				logging.Warningf(ctx, "%q is calling %q", auth.CurrentIdentity(ctx), info.FullMethod)
 				switch admin, err := auth.IsMember(ctx, "administrators"); {
@@ -55,7 +55,7 @@ func main() {
 				}
 			}
 			return handler(ctx, req)
-		}
+		})
 
 		// The service has no UI, so just redirect to the RPC Explorer.
 		srv.Routes.GET("/", nil, func(c *router.Context) {

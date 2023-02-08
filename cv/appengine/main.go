@@ -126,31 +126,29 @@ func main() {
 		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, env)
 
 		// Setup pRPC authentication.
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				// The default method used by majority of clients.
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-				// For authenticating calls from Gerrit plugins.
-				&gerritauth.Method,
+		srv.SetRPCAuthMethods([]auth.Method{
+			// The default method used by majority of clients.
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 			},
-		}
-
-		// Allow cross-origin calls, in particular calls using Gerrit auth headers.
-		srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
-			return prpc.AccessControlDecision{
-				AllowCrossOriginRequests: true,
-				AllowCredentials:         true,
-				AllowHeaders:             []string{gerritauth.Method.Header},
+			// For authenticating calls from Gerrit plugins.
+			&gerritauth.Method,
+		})
+		srv.ConfigurePRPC(func(p *prpc.Server) {
+			p.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+				return prpc.AccessControlDecision{
+					AllowCrossOriginRequests: true,
+					AllowCredentials:         true,
+					AllowHeaders:             []string{gerritauth.Method.Header},
+				}
 			}
-		}
+		})
 
-		adminpb.RegisterAdminServer(srv.PRPC, admin.New(
+		adminpb.RegisterAdminServer(srv, admin.New(
 			&tq.Default, &dsmapper.Default,
 			clUpdater, pmNotifier, runNotifier,
 		))
-		apiv0pb.RegisterRunsServer(srv.PRPC, &rpcv0.RunsServer{})
+		apiv0pb.RegisterRunsServer(srv, &rpcv0.RunsServer{})
 
 		// Register cron.
 		pcr := refresher.NewRefresher(&tq.Default, pmNotifier, env)

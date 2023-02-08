@@ -71,40 +71,38 @@ func main() {
 		// Cookie auth and pRPC have some rough edges, see prpcCookieAuth comment.
 		prpcAuth := &prpcCookieAuth{cookieAuth: srv.CookieAuth}
 
-		// Authentication methods for pRPC APIs.
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				// The preferred authentication method.
-				&openid.GoogleIDTokenAuthMethod{
-					AudienceCheck: openid.AudienceMatchesHost,
-					SkipNonJWT:    true, // pass OAuth2 access tokens through
-				},
-				// Backward compatibility for the RPC Explorer and old clients.
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-				// Cookie auth is used by the Web UI. When this method is used, we also
-				// check the XSRF token to be really sure it is the Web UI that called
-				// the method. See xsrf.Interceptor below.
-				prpcAuth,
+		// Authentication methods for RPC APIs.
+		srv.SetRPCAuthMethods([]auth.Method{
+			// The preferred authentication method.
+			&openid.GoogleIDTokenAuthMethod{
+				AudienceCheck: openid.AudienceMatchesHost,
+				SkipNonJWT:    true, // pass OAuth2 access tokens through
 			},
-		}
+			// Backward compatibility for the RPC Explorer and old clients.
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+			},
+			// Cookie auth is used by the Web UI. When this method is used, we also
+			// check the XSRF token to be really sure it is the Web UI that called
+			// the method. See xsrf.Interceptor below.
+			prpcAuth,
+		})
 
-		// Interceptors applying to all pRPC APIs.
-		srv.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(
+		// Interceptors applying to all RPC APIs.
+		srv.RegisterUnaryServerInterceptors(
 			xsrf.Interceptor(prpcAuth),
 			impl.AuthorizeRPCAccess,
 		)
 
 		authdbServer := &authdb.Server{}
 
-		// Register all pRPC servers.
-		internalspb.RegisterInternalsServer(srv.PRPC, &internals.Server{})
-		rpcpb.RegisterAccountsServer(srv.PRPC, &accounts.Server{})
-		rpcpb.RegisterGroupsServer(srv.PRPC, &groups.Server{})
-		rpcpb.RegisterAllowlistsServer(srv.PRPC, &allowlists.Server{})
-		rpcpb.RegisterAuthDBServer(srv.PRPC, authdbServer)
-		rpcpb.RegisterChangeLogsServer(srv.PRPC, &changelogs.Server{})
+		// Register all RPC servers.
+		internalspb.RegisterInternalsServer(srv, &internals.Server{})
+		rpcpb.RegisterAccountsServer(srv, &accounts.Server{})
+		rpcpb.RegisterGroupsServer(srv, &groups.Server{})
+		rpcpb.RegisterAllowlistsServer(srv, &allowlists.Server{})
+		rpcpb.RegisterAuthDBServer(srv, authdbServer)
+		rpcpb.RegisterChangeLogsServer(srv, &changelogs.Server{})
 
 		// The middleware chain applied to all plain HTTP routes.
 		mw := router.MiddlewareChain{

@@ -65,34 +65,32 @@ func main() {
 		actuations := rpcs.Actuations{}
 		assets := rpcs.Assets{}
 
-		// All pRPC APIs.
-		rpcpb.RegisterActuationsServer(srv.PRPC, &actuations)
-		rpcpb.RegisterAssetsServer(srv.PRPC, &assets)
+		// All RPC APIs.
+		rpcpb.RegisterActuationsServer(srv, &actuations)
+		rpcpb.RegisterAssetsServer(srv, &assets)
 
-		// Authentication methods for pRPC APIs.
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				// The preferred authentication method.
-				&openid.GoogleIDTokenAuthMethod{
-					Audience: []string{
-						// Used by `prpc` binary.
-						// New LUCI Auth CLI client ID.
-						"446450136466-mj75ourhccki9fffaq8bc1e50di315po.apps.googleusercontent.com",
-						// Old native client ID
-						"446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com",
-					},
-					AudienceCheck: openid.AudienceMatchesHost,
-					SkipNonJWT:    true, // pass OAuth2 access tokens through
+		// Authentication methods for RPC APIs.
+		srv.SetRPCAuthMethods([]auth.Method{
+			// The preferred authentication method.
+			&openid.GoogleIDTokenAuthMethod{
+				Audience: []string{
+					// Used by `prpc` binary.
+					// New LUCI Auth CLI client ID.
+					"446450136466-mj75ourhccki9fffaq8bc1e50di315po.apps.googleusercontent.com",
+					// Old native client ID
+					"446450136466-2hr92jrq8e6i4tnsa56b52vacp7t3936.apps.googleusercontent.com",
 				},
-				// Backward compatibility for the RPC Explorer and old clients.
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
+				AudienceCheck: openid.AudienceMatchesHost,
+				SkipNonJWT:    true, // pass OAuth2 access tokens through
 			},
-		}
+			// Backward compatibility for the RPC Explorer and old clients.
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+			},
+		})
 
 		// Per-RPC authorization interceptor.
-		srv.PRPC.UnaryServerInterceptor = rpcacl.Interceptor(rpcACL)
+		srv.RegisterUnaryServerInterceptors(rpcacl.Interceptor(rpcACL))
 
 		// Web UI routes.
 		ui.RegisterRoutes(srv, accessGroup, &assets)

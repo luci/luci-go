@@ -81,9 +81,9 @@ func main() {
 		}
 		srv.Context = flex.WithServices(srv.Context, gsvc)
 
-		// Expose pRPC APIs.
-		srv.PRPC.AccessControl = accessControl
-		logspb.RegisterLogsServer(srv.PRPC, logs.New())
+		// Expose RPC APIs.
+		srv.ConfigurePRPC(func(p *prpc.Server) { p.AccessControl = accessControl })
+		logspb.RegisterLogsServer(srv, logs.New())
 
 		// Setup HTTP endpoints. We support cookie auth for browsers and OAuth2 for
 		// everything else.

@@ -141,6 +141,6 @@ func (m *rpcquotaModule) Initialize(ctx context.Context, host module.Host, opts 
 	}
 	ctx = quota.Use(ctx, cfgsvc)
 
-	host.RegisterUnaryServerInterceptor(quotaCheckInterceptor())
+	host.RegisterUnaryServerInterceptors(quotaCheckInterceptor())
 	return ctx, nil
 }

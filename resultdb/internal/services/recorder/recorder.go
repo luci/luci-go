@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
@@ -65,7 +66,7 @@ func InitServer(srv *server.Server, opt Options) error {
 	if err != nil {
 		return err
 	}
-	pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
+	pb.RegisterRecorderServer(srv, &pb.DecoratedRecorder{
 		Service: &recorderServer{
 			Options:   &opt,
 			casClient: repb.NewContentAddressableStorageClient(conn),
@@ -74,9 +75,11 @@ func InitServer(srv *server.Server, opt Options) error {
 	})
 
 	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-	srv.PRPC.HackFixFieldMasksForJSON = true
+	srv.ConfigurePRPC(func(p *prpc.Server) {
+		p.HackFixFieldMasksForJSON = true
+	})
 
-	srv.RegisterUnaryServerInterceptor(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_HIGH))
+	srv.RegisterUnaryServerInterceptors(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_HIGH))
 	return installArtifactCreationHandler(srv, &opt, conn)
 }
 

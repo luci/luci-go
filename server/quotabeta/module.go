@@ -76,7 +76,7 @@ func (m *quotaModule) Initialize(ctx context.Context, host module.Host, opts mod
 	})
 
 	if m.opts.AdminServiceReaders != "" && m.opts.AdminServiceWriters != "" {
-		pb.RegisterQuotaAdminServer(host.ServiceRegistrar(), NewQuotaAdminServer(m.opts.AdminServiceReaders, m.opts.AdminServiceWriters))
+		pb.RegisterQuotaAdminServer(host, NewQuotaAdminServer(m.opts.AdminServiceReaders, m.opts.AdminServiceWriters))
 	}
 	return ctx, nil
 }

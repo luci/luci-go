@@ -145,13 +145,13 @@ func (m *loginSessionsModule) Initialize(ctx context.Context, host module.Host, 
 		}
 	}
 
-	// Install the pRPC server called by the CLI tools.
+	// Install the RPC server called by the CLI tools.
 	m.srv = &loginSessionsServer{
 		opts:     m.opts,
 		store:    store,
 		provider: provider,
 	}
-	loginsessionspb.RegisterLoginSessionsServer(host.ServiceRegistrar(), m.srv)
+	loginsessionspb.RegisterLoginSessionsServer(host, m.srv)
 
 	// Load templates for the browser flow.
 	m.tmpl = &templates.Bundle{

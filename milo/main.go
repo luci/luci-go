@@ -66,7 +66,7 @@ func main() {
 		cron.RegisterHandler("update-builders", frontend.UpdateBuilders)
 		cron.RegisterHandler("delete-builds", buildbucket.DeleteOldBuilds)
 		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
-		milopb.RegisterMiloInternalServer(srv.PRPC, &milopb.DecoratedMiloInternal{
+		milopb.RegisterMiloInternalServer(srv, &milopb.DecoratedMiloInternal{
 			Service: &rpc.MiloInternalService{
 				GetSettings: func(c context.Context) (*config.Settings, error) {
 					settings := common.GetSettings(c)

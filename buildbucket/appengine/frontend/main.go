@@ -85,30 +85,32 @@ func main() {
 			return 0, true
 		})
 
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				// The default method used by majority of clients.
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-				// For authenticating calls from Gerrit plugins.
-				&gerritauth.Method,
+		srv.SetRPCAuthMethods([]auth.Method{
+			// The default method used by majority of clients.
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 			},
-		}
+			// For authenticating calls from Gerrit plugins.
+			&gerritauth.Method,
+		})
 
-		// Allow cross-origin calls, in particular calls using Gerrit auth headers.
-		srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
-			return prpc.AccessControlDecision{
-				AllowCrossOriginRequests: true,
-				AllowCredentials:         true,
-				AllowHeaders:             []string{gerritauth.Method.Header},
+		srv.ConfigurePRPC(func(p *prpc.Server) {
+			// Allow cross-origin calls, in particular calls using Gerrit auth
+			// headers.
+			p.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+				return prpc.AccessControlDecision{
+					AllowCrossOriginRequests: true,
+					AllowCredentials:         true,
+					AllowHeaders:             []string{gerritauth.Method.Header},
+				}
 			}
-		}
+			// TODO(crbug/1082369): Remove this workaround once field masks can be
+			// decoded.
+			p.HackFixFieldMasksForJSON = true
+		})
 
-		pb.RegisterBuildsServer(srv.PRPC, rpc.NewBuilds())
-		pb.RegisterBuildersServer(srv.PRPC, rpc.NewBuilders())
-		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-		srv.PRPC.HackFixFieldMasksForJSON = true
+		pb.RegisterBuildsServer(srv, rpc.NewBuilds())
+		pb.RegisterBuildersServer(srv, rpc.NewBuilders())
 
 		cron.RegisterHandler("delete_builds", buildcron.DeleteOldBuilds)
 		cron.RegisterHandler("expire_builds", buildcron.TimeoutExpiredBuilds)

@@ -23,9 +23,8 @@
 //     profiling Google Cloud Profiler.
 //   - go.chromium.org/luci/server/tsmon: monitoring metrics via ProdX.
 //   - go.chromium.org/luci/server/auth: sending and receiving RPCs
-//     authenticated
-//     with Google OAuth2 or OpenID tokens. Support for authorization via LUCI
-//     groups and LUCI realms.
+//     authenticated with Google OAuth2 or OpenID tokens. Support for
+//     authorization via LUCI groups and LUCI realms.
 //   - go.chromium.org/luci/server/caching: in-process caching.
 //   - go.chromium.org/luci/server/warmup: allows other server components to
 //     register warmup callbacks that run before the server starts handling
@@ -37,7 +36,7 @@
 // module.Module interface). They should be passed to the server when it starts
 // (see the example below). Modules usually expose their configuration via
 // command line flags, and provide functionality by injecting state into
-// the server's global context.Context or by exposing pRPC endpoints.
+// the server's global context.Context or by exposing gRPC endpoints.
 //
 // Usage example:
 //
@@ -67,8 +66,8 @@
 //	      // ...
 //	    })
 //
-//	    // Install pRPC services.
-//	    servicepb.RegisterSomeServer(srv.PRPC, &SomeServer{})
+//	    // Install gRPC services.
+//	    servicepb.RegisterSomeServer(srv, &SomeServer{})
 //	    return nil
 //	  })
 //	}
@@ -102,7 +101,7 @@
 //   - go.chromium.org/luci/server/gerritauth: implements authentication using
 //     Gerrit JWTs. Useful if a service is used by a Gerrit frontend plugin.
 //   - go.chromium.org/luci/server/limiter: a simple load shedding mechanism
-//     that puts a limit on a number of concurrent pRPC requests the server
+//     that puts a limit on a number of concurrent gRPC requests the server
 //     is handling.
 //   - go.chromium.org/luci/server/mailer: sending simple emails.
 //   - go.chromium.org/luci/server/redisconn: a Redis client. Also enables Redis
@@ -124,13 +123,16 @@
 // An up-to-date list of all known module implementations can be found here:
 // https://source.chromium.org/search?q=%22NewModuleFromFlags()%20module.Module%22
 //
-// # pRPC services
+// # gRPC services
 //
-// The server.PRPC field is the primary grpc.ServiceRegistrar that should be
-// used to expose server's public pRPC APIs. It is pre-configured with a set of
-// gRPC interceptors that collect performance metrics, catch panics and
-// authenticate requests using OAuth2 access tokens. Modules can add more
-// interceptors to the default interceptor chain.
+// The server implements grpc.ServiceRegistrar interface which means it can be
+// used to register gRPC service implementations in. The registered services
+// will be exposed via gRPC protocol over the gRPC port (if the gRPC serving
+// port is configured in options) and via pRPC protocol over the main HTTP port
+// (if the main HTTP serving port is configured in options). The server is also
+// pre-configured with a set of gRPC interceptors that collect performance
+// metrics, catch panics and authenticate requests. More interceptors can be
+// added via RegisterUnaryServerInterceptors.
 //
 // # Security considerations
 //
@@ -347,7 +349,7 @@ type Options struct {
 
 	HTTPAddr  string // address to bind the main listening socket to
 	AdminAddr string // address to bind the admin socket to, ignored on GAE and Cloud Run
-	AllowH2C  bool   // if true, allow HTTP/2 Cleartext traffic on HTTP ports
+	AllowH2C  bool   // if true, allow HTTP/2 Cleartext traffic on non-gRPC HTTP ports
 
 	DefaultRequestTimeout  time.Duration // how long non-internal HTTP handlers are allowed to run, 1 min by default
 	InternalRequestTimeout time.Duration // how long "/internal/*" HTTP handlers are allowed to run, 10 min by default
@@ -420,7 +422,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to or '-' to disable")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to or '-' to disable")
-	f.BoolVar(&o.AllowH2C, "allow-h2c", o.AllowH2C, "If set, allow HTTP/2 Cleartext traffic on HTTP ports (in addition to HTTP/1 traffic)")
+	f.BoolVar(&o.AllowH2C, "allow-h2c", o.AllowH2C, "If set, allow HTTP/2 Cleartext traffic on non-gRPC HTTP ports (in addition to HTTP/1 traffic). The gRPC port always allows it, it is essential for gRPC")
 	f.DurationVar(&o.DefaultRequestTimeout, "default-request-timeout", o.DefaultRequestTimeout, "How long incoming requests are allowed to run before being canceled (or 0 for infinity)")
 	f.DurationVar(&o.InternalRequestTimeout, "internal-request-timeout", o.InternalRequestTimeout, "How long incoming /internal/* requests are allowed to run before being canceled (or 0 for infinity)")
 	f.DurationVar(&o.ShutdownDelay, "shutdown-delay", o.ShutdownDelay, "How long to wait after SIGTERM before shutting down")
@@ -734,10 +736,43 @@ func (o *Options) hostOptions() module.HostOptions {
 //
 // Generally assumed to be a singleton: do not launch multiple Server instances
 // within the same process, use AddPort instead if you want to expose multiple
-// ports.
+// HTTP ports with different routers.
 //
-// Doesn't do TLS. Should be sitting behind a load balancer that terminates
-// TLS.
+// Server can serve plain HTTP endpoints, routing them trough a router.Router,
+// and gRPC APIs (exposing them over gRPC and pRPC protocols). Use an instance
+// of Server as a grpc.ServiceRegistrar when registering gRPC services. Services
+// registered that way will be available via gRPC protocol over the gRPC port
+// and via pRPC protocol over the main HTTP port. Interceptors can be added via
+// RegisterUnaryServerInterceptors. RPC authentication can be configured via
+// SetRPCAuthMethods.
+//
+// pRPC protocol is served on the same port as the main HTTP router, making it
+// possible to expose just a single HTTP port for everything (which is a
+// requirement on Appengine).
+//
+// Native gRPC protocol is always served though a dedicated gRPC h2c port since
+// the gRPC library has its own HTTP/2 server implementation not compatible
+// with net/http package used everywhere else. There's an assortments of hacks
+// to workaround this, but many ultimately depend on experimental and slow
+// grpc.Server.ServeHTTP method. See https://github.com/grpc/grpc-go/issues/586
+// and https://github.com/grpc/grpc-go/issues/4620. Another often recommended
+// workaround is https://github.com/soheilhy/cmux, which decides if a new
+// connection is a gRPC one or a regular HTTP/2 one. It doesn't work when the
+// server is running behind a load balancer that understand HTTP/2, since it
+// just opens a **single** backend connection and sends both gRPC and regular
+// HTTP/2 requests over it. This happens on Cloud Run, for example. See e.g.
+// https://ahmet.im/blog/grpc-http-mux-go/.
+//
+// If you want to serve HTTP and gRPC over the same public port, configure your
+// HTTP load balancer (e.g. https://cloud.google.com/load-balancing/docs/https)
+// to route requests into appropriate containers and ports. Another alternative
+// is to put an HTTP/2 proxy (e.g. Envoy) right into the pod with the server
+// process and route traffic "locally" there. This option would also allow to
+// add local grpc-web proxy into the mix if necessary.
+//
+// The server doesn't do TLS termination (even for gRPC traffic). It should be
+// sitting behind a load balancer that terminates TLS and sends clear text
+// (HTTP/1 or HTTP/2 for gRPC) requests to corresponding ports.
 type Server struct {
 	// Context is the root context used by all requests and background activities.
 	//
@@ -757,11 +792,6 @@ type Server struct {
 	// Should be populated before Serve call.
 	Routes *router.Router
 
-	// PRPC is pRPC server with APIs exposed on HTTPAddr port via Routes router.
-	//
-	// Should be populated before Serve call.
-	PRPC *prpc.Server
-
 	// CookieAuth is an authentication method implemented via cookies.
 	//
 	// It is initialized only if the server has a module implementing such scheme
@@ -778,7 +808,8 @@ type Server struct {
 	stderr       sdlogger.LogEntryWriter // for logging to stderr, nil in dev mode
 	errRptClient *errorreporting.Client  // for reporting to the cloud Error Reporting
 
-	mainPort *Port // pre-registered main port, see initMainPort
+	mainPort *Port        // pre-registered main port, see initMainPort
+	prpc     *prpc.Server // pRPC server implementation exposed on the main port
 
 	mu      sync.Mutex    // protects fields below
 	ports   []*Port       // all non-dummy ports (each one hosts an HTTP server)
@@ -787,8 +818,9 @@ type Server struct {
 	ready   chan struct{} // closed right before starting the serving loop
 	done    chan struct{} // closed after Shutdown returns
 
-	// See RegisterUnaryServerInterceptor and Serve.
+	// gRPC/pRPC configuration.
 	unaryInterceptors []grpc.UnaryServerInterceptor
+	rpcAuthMethods    []auth.Method
 
 	rndM sync.Mutex // protects rnd
 	rnd  *rand.Rand // used to generate trace and operation IDs
@@ -830,11 +862,6 @@ func (h *moduleHostImpl) panicIfInvalid() {
 	}
 }
 
-func (h *moduleHostImpl) ServiceRegistrar() grpc.ServiceRegistrar {
-	h.panicIfInvalid()
-	return h.srv.PRPC
-}
-
 func (h *moduleHostImpl) HTTPAddr() net.Addr {
 	h.panicIfInvalid()
 	if h.srv.mainPort.listener != nil {
@@ -863,9 +890,14 @@ func (h *moduleHostImpl) RegisterCleanup(cb func(context.Context)) {
 	h.srv.RegisterCleanup(cb)
 }
 
-func (h *moduleHostImpl) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor) {
+func (h *moduleHostImpl) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 	h.panicIfInvalid()
-	h.srv.RegisterUnaryServerInterceptor(intr)
+	h.srv.RegisterService(desc, impl)
+}
+
+func (h *moduleHostImpl) RegisterUnaryServerInterceptors(intr ...grpc.UnaryServerInterceptor) {
+	h.panicIfInvalid()
+	h.srv.RegisterUnaryServerInterceptors(intr...)
 }
 
 func (h *moduleHostImpl) RegisterCookieAuth(method auth.Method) {
@@ -1049,7 +1081,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 // object, but it is not actually exposed as a listening TCP socket. This is
 // useful to disable listening ports without changing any code.
 //
-// Should be called before Serve (panics otherwise).
+// Must be called before Serve (panics otherwise).
 func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 	port := &Port{
 		Routes:   s.newRouter(opts),
@@ -1107,7 +1139,7 @@ func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 // directly into server.Routes instead, using VirtualHost only for routes that
 // critically depend on Host header.
 //
-// Should be called before Serve (panics otherwise).
+// Must be called before Serve (panics otherwise).
 func (s *Server) VirtualHost(host string) *router.Router {
 	return s.mainPort.VirtualHost(host)
 }
@@ -1191,27 +1223,113 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 	}()
 }
 
-// RegisterUnaryServerInterceptor registers an grpc.UnaryServerInterceptor
-// applied to all unary RPCs that hit the server.
+// RegisterService is part of grpc.ServiceRegistrar interface.
 //
-// Interceptors are chained in order they are registered, i.e. the first
-// registered interceptor becomes the outermost. The initial chain already
-// contains some base interceptors (e.g. for monitoring) and all interceptors
-// registered by server modules. RegisterUnaryServerInterceptor extends this
-// chain.
+// The registered service will be exposed through both gRPC and pRPC protocols
+// on corresponding ports. See Server doc.
 //
-// An interceptor set in server.PRPC.UnaryServerInterceptor (if any) is
-// automatically registered as the last (innermost) one right before the server
-// starts serving requests in Serve.
-//
-// Should be called before Serve (panics otherwise).
-func (s *Server) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor) {
+// Must be called before Serve (panics otherwise).
+func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
-	s.unaryInterceptors = append(s.unaryInterceptors, intr)
+	s.prpc.RegisterService(desc, impl)
+}
+
+// RegisterUnaryServerInterceptors registers grpc.UnaryServerInterceptor's
+// applied to all unary RPCs that hit the server.
+//
+// Interceptors are chained in order they are registered, i.e. the first
+// registered interceptor becomes the outermost. The initial chain already
+// contains some base interceptors (e.g. for monitoring) and all interceptors
+// registered by server modules. RegisterUnaryServerInterceptors extends this
+// chain. Subsequent calls to RegisterUnaryServerInterceptors adds more
+// interceptors into the chain.
+//
+// Must be called before Serve (panics otherwise).
+func (s *Server) RegisterUnaryServerInterceptors(intr ...grpc.UnaryServerInterceptor) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started {
+		s.Fatal(errors.Reason("the server has already been started").Err())
+	}
+	s.unaryInterceptors = append(s.unaryInterceptors, intr...)
+}
+
+// ConfigurePRPC allows tweaking pRPC-specific server configuration.
+//
+// Use it only for changing pRPC-specific options (usually ones that are related
+// to HTTP protocol in some way). This method **must not be used** for
+// registering interceptors or setting authentication options (changes to them
+// done here will cause a panic). Instead use RegisterUnaryServerInterceptors to
+// register interceptors or SetRPCAuthMethods to change how the server
+// authenticates RPC requests. Changes done through these methods will apply
+// to both gRPC and pRPC servers.
+//
+// Must be called before Serve (panics otherwise).
+func (s *Server) ConfigurePRPC(cb func(srv *prpc.Server)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started {
+		s.Fatal(errors.Reason("the server has already been started").Err())
+	}
+	cb(s.prpc)
+	if s.prpc.UnaryServerInterceptor != nil {
+		panic("use Server.RegisterUnaryServerInterceptors to register interceptors")
+	}
+	if s.prpc.Authenticator != nil {
+		panic("use SetRPCAuthMethods to configure RPC authentication")
+	}
+}
+
+// SetRPCAuthMethods overrides how the server authenticates incoming gRPC and
+// pRPC requests.
+//
+// It receives a list of auth.Method implementations which will be applied
+// one after another to try to authenticate the request until the first
+// successful hit. If all methods end up to be non-applicable (i.e. none of the
+// methods notice any headers they recognize), the request will be passed
+// through to the handler as anonymous (coming from an "anonymous identity").
+// Rejecting anonymous requests (if necessary) is the job of an authorization
+// layer, often implemented as a gRPC interceptor. For simple cases use
+// go.chromium.org/luci/server/auth/rpcacl interceptor.
+//
+// By default (if SetRPCAuthMethods is never called) the server will check
+// incoming requests have an `Authorization` header with a Google OAuth2 access
+// token that has `https://www.googleapis.com/auth/userinfo.email` scope (see
+// auth.GoogleOAuth2Method). Requests without `Authorization` header will be
+// considered anonymous.
+//
+// TODO(vadimsh): Recognize ID tokens by default as well. This is important for
+// e.g. Cloud Run where this is the only authentication method supported
+// natively by the platform. ID tokens are also generally faster to check than
+// access tokens.
+//
+// Note that this call completely overrides the previously configured list of
+// methods instead of appending to it, since chaining auth methods is often
+// tricky and it is safer to just always provide the whole list at once.
+//
+// Passing an empty list of methods is allowed. All requests will be considered
+// anonymous in that case.
+//
+// Note that this call **doesn't affect** how plain HTTP requests (hitting the
+// main HTTP port and routed through s.Router) are authenticated. Very often
+// RPC requests and plain HTTP requests need different authentication methods
+// and using an RPC authentication for everything is incorrect. To authenticate
+// plain HTTP requests use auth.Authenticate(...) HTTP router middleware,
+// perhaps in combination with s.CookieAuth (which is non-nil if there is a
+// server module installed that provides a cookie-based authentication scheme).
+//
+// Must be called before Serve (panics otherwise).
+func (s *Server) SetRPCAuthMethods(methods []auth.Method) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started {
+		s.Fatal(errors.Reason("the server has already been started").Err())
+	}
+	s.rpcAuthMethods = methods
 }
 
 // Serve launches the serving loop.
@@ -1234,20 +1352,19 @@ func (s *Server) Serve() error {
 
 	// Assemble the interceptor chain. Put our base interceptors in front of
 	// whatever interceptors were installed by modules and by the user of Server
-	// via public s.PRPC.UnaryServerInterceptor.
+	// via RegisterUnaryServerInterceptors.
 	interceptors := []grpc.UnaryServerInterceptor{
 		grpcmon.UnaryServerInterceptor,
 		grpcutil.UnaryServerPanicCatcherInterceptor,
 	}
 	interceptors = append(interceptors, s.unaryInterceptors...)
-	if s.PRPC.UnaryServerInterceptor != nil {
-		interceptors = append(interceptors, s.PRPC.UnaryServerInterceptor)
-	}
 
 	s.mu.Unlock()
 
-	// Install the interceptor chain.
-	s.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(interceptors...)
+	// Finish setting the pRPC server now that the configuration is "locked" via
+	// s.started==true flag.
+	s.prpc.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(interceptors...)
+	s.prpc.Authenticator = &auth.Authenticator{Methods: s.rpcAuthMethods}
 
 	// Run registered best-effort warmup callbacks right before serving.
 	s.runWarmup()
@@ -1866,6 +1983,15 @@ func (s *Server) initAuthFinish() error {
 		}
 	}
 
+	// Default RPC authentication methods. See also SetRPCAuthMethods.
+	//
+	// TODO(vadimsh): Add openid.GoogleIDTokenAuthMethod.
+	s.rpcAuthMethods = []auth.Method{
+		&auth.GoogleOAuth2Method{
+			Scopes: []string{clientauth.OAuthScopeEmail},
+		},
+	}
+
 	return nil
 }
 
@@ -2231,23 +2357,16 @@ func (s *Server) initMainPort() error {
 	// Install auth info handlers (under "/auth/api/v1/server/").
 	auth.InstallHandlers(s.Routes, nil)
 
-	// Expose public pRPC endpoints (see also Serve where we put the final
-	// interceptors).
-	s.PRPC = &prpc.Server{
-		Authenticator: &auth.Authenticator{
-			Methods: []auth.Method{
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{clientauth.OAuthScopeEmail},
-				},
-			},
-		},
+	// Prepare the pRPC server. Its configuration will be finished in Serve after
+	// all interceptors and authentication methods are registered.
+	s.prpc = &prpc.Server{
 		// Allow compression when not running on GAE. On GAE compression for text
 		// responses is done by GAE itself and doing it in our code would be
 		// wasteful.
 		EnableResponseCompression: s.Options.Serverless != module.GAE,
 	}
-	discovery.Enable(s.PRPC)
-	s.PRPC.InstallHandlers(s.Routes, nil)
+	discovery.Enable(s.prpc)
+	s.prpc.InstallHandlers(s.Routes, nil)
 
 	// Install RPCExplorer web app at "/rpcexplorer/".
 	rpcexplorer.Install(s.Routes)

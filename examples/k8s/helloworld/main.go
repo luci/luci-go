@@ -53,8 +53,8 @@ func main() {
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
-		// pRPC example.
-		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
+		// gRPC example.
+		apipb.RegisterGreeterServer(srv, &greeterServer{})
 
 		// Logging and tracing example.
 		srv.Routes.GET("/", nil, func(c *router.Context) {
@@ -88,13 +88,15 @@ func main() {
 		})
 
 		// Allow cross-origin calls, in particular calls using Gerrit auth headers.
-		srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
-			return prpc.AccessControlDecision{
-				AllowCrossOriginRequests: true,
-				AllowCredentials:         true,
-				AllowHeaders:             []string{gerritauth.Method.Header},
+		srv.ConfigurePRPC(func(p *prpc.Server) {
+			p.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+				return prpc.AccessControlDecision{
+					AllowCrossOriginRequests: true,
+					AllowCredentials:         true,
+					AllowHeaders:             []string{gerritauth.Method.Header},
+				}
 			}
-		}
+		})
 
 		// Redis example.
 		//

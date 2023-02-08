@@ -70,8 +70,8 @@ func main() {
 			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
 
-		// pRPC example.
-		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
+		// gRPC example.
+		apipb.RegisterGreeterServer(srv, &greeterServer{})
 
 		// Logging and tracing example.
 		srv.Routes.GET("/log", nil, func(c *router.Context) {

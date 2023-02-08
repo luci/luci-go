@@ -45,16 +45,14 @@ func MainWithModules(modules []module.Module, init func(srv *server.Server) erro
 	}
 	modules = append(modules, defaultModules...)
 	server.Main(nil, modules, func(srv *server.Server) error {
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				// The default method used by majority of clients.
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-				// For authenticating calls from Gerrit plugins.
-				&gerritauth.Method,
+		srv.SetRPCAuthMethods([]auth.Method{
+			// The default method used by majority of clients.
+			&auth.GoogleOAuth2Method{
+				Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
 			},
-		}
+			// For authenticating calls from Gerrit plugins.
+			&gerritauth.Method,
+		})
 		return init(srv)
 	})
 }

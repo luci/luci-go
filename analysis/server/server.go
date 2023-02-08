@@ -42,7 +42,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -79,31 +78,26 @@ func Main(init func(srv *luciserver.Server) error) {
 	}
 	luciserver.Main(nil, modules, func(srv *luciserver.Server) error {
 		// Register pPRC servers.
-		srv.PRPC.AccessControl = prpc.AllowOriginAll
-		srv.PRPC.Authenticator = &auth.Authenticator{
-			Methods: []auth.Method{
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-				},
-			},
-		}
-		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-		srv.PRPC.HackFixFieldMasksForJSON = true
-		srv.RegisterUnaryServerInterceptor(span.SpannerDefaultsInterceptor())
+		srv.ConfigurePRPC(func(s *prpc.Server) {
+			s.AccessControl = prpc.AllowOriginAll
+			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+			s.HackFixFieldMasksForJSON = true
+		})
+		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
 
 		ac, err := analysis.NewClient(srv.Context, srv.Options.CloudProject)
 		if err != nil {
 			return errors.Annotate(err, "creating analysis client").Err()
 		}
 
-		adminpb.RegisterAdminServer(srv.PRPC, admin.CreateServer())
-		analysispb.RegisterClustersServer(srv.PRPC, rpc.NewClustersServer(ac))
-		analysispb.RegisterInitDataGeneratorServer(srv.PRPC, rpc.NewInitDataGeneratorServer())
-		analysispb.RegisterMetricsServer(srv.PRPC, rpc.NewMetricsServer())
-		analysispb.RegisterProjectsServer(srv.PRPC, rpc.NewProjectsServer())
-		analysispb.RegisterRulesServer(srv.PRPC, rpc.NewRulesSever())
-		analysispb.RegisterTestVariantsServer(srv.PRPC, rpc.NewTestVariantsServer())
-		analysispb.RegisterTestHistoryServer(srv.PRPC, rpc.NewTestHistoryServer())
+		adminpb.RegisterAdminServer(srv, admin.CreateServer())
+		analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
+		analysispb.RegisterInitDataGeneratorServer(srv, rpc.NewInitDataGeneratorServer())
+		analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
+		analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
+		analysispb.RegisterRulesServer(srv, rpc.NewRulesSever())
+		analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
+		analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
 
 		// GAE crons.
 		updateAnalysisAndBugsHandler := updater.NewHandler(srv.Options.CloudProject, srv.Options.Prod)

@@ -107,8 +107,8 @@ func main() {
 				buildbucketPubSub.Add(ctx, 1, status)
 			})
 
-		// Installs PRPC service.
-		pb.RegisterTreeCloserServer(srv.PRPC, &pb.DecoratedTreeCloser{
+		// Installs RPC service.
+		pb.RegisterTreeCloserServer(srv, &pb.DecoratedTreeCloser{
 			Service: &server.TreeCloserServer{},
 			Prelude: checkAPIAccess,
 		})

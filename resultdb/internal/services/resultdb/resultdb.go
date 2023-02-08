@@ -85,7 +85,7 @@ func InitServer(srv *server.Server, opts Options) error {
 	rdbSvr := &resultDBServer{
 		generateArtifactURL: contentServer.GenerateSignedURL,
 	}
-	pb.RegisterResultDBServer(srv.PRPC, &pb.DecoratedResultDB{
+	pb.RegisterResultDBServer(srv, &pb.DecoratedResultDB{
 		Service:  rdbSvr,
 		Postlude: internal.CommonPostlude,
 	})
@@ -97,22 +97,25 @@ func InitServer(srv *server.Server, opts Options) error {
 	// TODO(nodir): replace this hack with a separate discovery Deployment that
 	// dynamically fetches discovery documents from other deployments and
 	// returns their union.
-	pb.RegisterRecorderServer(srv.PRPC, nil)
+	pb.RegisterRecorderServer(srv, nil)
 
-	// Allow cross-origin calls, in particular calls using Gerrit auth headers.
-	srv.PRPC.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
-		return prpc.AccessControlDecision{
-			AllowCrossOriginRequests: true,
-			AllowCredentials:         true,
-			AllowHeaders:             []string{gerritauth.Method.Header},
+	srv.ConfigurePRPC(func(p *prpc.Server) {
+		// Allow cross-origin calls, in particular calls using Gerrit auth headers.
+		p.AccessControl = func(context.Context, string) prpc.AccessControlDecision {
+			return prpc.AccessControlDecision{
+				AllowCrossOriginRequests: true,
+				AllowCredentials:         true,
+				AllowHeaders:             []string{gerritauth.Method.Header},
+			}
 		}
-	}
+		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+		p.HackFixFieldMasksForJSON = true
+	})
 
-	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-	srv.PRPC.HackFixFieldMasksForJSON = true
-
-	srv.RegisterUnaryServerInterceptor(spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_MEDIUM))
-	srv.RegisterUnaryServerInterceptor(rpcutil.IdentityKindCountingInterceptor())
+	srv.RegisterUnaryServerInterceptors(
+		spanutil.SpannerDefaultsInterceptor(sppb.RequestOptions_PRIORITY_MEDIUM),
+		rpcutil.IdentityKindCountingInterceptor(),
+	)
 	return nil
 }
 

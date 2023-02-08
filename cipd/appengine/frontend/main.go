@@ -59,13 +59,13 @@ func main() {
 			srv.Routes.Static("/static", nil, http.Dir("./static"))
 		}
 
-		// All pRPC services.
-		adminapi.RegisterAdminServer(srv.PRPC, svc.AdminAPI)
-		pubapi.RegisterStorageServer(srv.PRPC, svc.PublicCAS)
-		pubapi.RegisterRepositoryServer(srv.PRPC, svc.PublicRepo)
+		// All RPC services.
+		adminapi.RegisterAdminServer(srv, svc.AdminAPI)
+		pubapi.RegisterStorageServer(srv, svc.PublicCAS)
+		pubapi.RegisterRepositoryServer(srv, svc.PublicRepo)
 
 		// Log RPC requests to BigQuery.
-		srv.PRPC.UnaryServerInterceptor = accesslog.NewUnaryServerInterceptor(&srv.Options)
+		srv.RegisterUnaryServerInterceptors(accesslog.NewUnaryServerInterceptor(&srv.Options))
 
 		return nil
 	})
