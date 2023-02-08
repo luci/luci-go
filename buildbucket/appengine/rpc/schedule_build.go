@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"sort"
@@ -817,9 +818,41 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 		}
 	}
 
+	// constructing common TaskBackend/Swarming task fields
+	priority := int32(cfg.GetPriority())
+	if priority == 0 {
+		priority = 30
+	}
+	if req.GetPriority() > 0 {
+		priority = req.Priority
+	}
+	taskServiceAccount := cfg.GetServiceAccount()
+
 	// Need to configure build.Infra for a backend or swarming.
 	if cfg.GetBackend() != nil {
+
+		config := &structpb.Struct{}
+		err := json.Unmarshal([]byte(cfg.Backend.GetConfigJson()), config)
+		if err != nil {
+			logging.Warningf(ctx, err.Error())
+		}
+		if config.GetFields() == nil {
+			config.Fields = make(map[string]*structpb.Value)
+		}
+
+		if config.Fields["service_account"].GetStringValue() == "" {
+			config.Fields["service_account"] = structpb.NewStringValue(taskServiceAccount)
+		}
+
+		// If request has a priority, use that
+		// else if backend config_json did not have a priority
+		// we use the builder one (or value 30 if builder was not set)
+		if config.Fields["priority"].GetNumberValue() == 0 || req.GetPriority() > 0 {
+			config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
+		}
+
 		build.Infra.Backend = &pb.BuildInfra_Backend{
+			Config: config,
 			Task: &pb.Task{
 				Id: &pb.TaskID{
 					Target: cfg.GetBackend().GetTarget(),
@@ -830,11 +863,8 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 		build.Infra.Swarming = &pb.BuildInfra_Swarming{
 			Hostname:           cfg.GetSwarmingHost(),
 			ParentRunId:        req.GetSwarming().GetParentRunId(),
-			Priority:           int32(cfg.GetPriority()),
-			TaskServiceAccount: cfg.GetServiceAccount(),
-		}
-		if build.Infra.Swarming.Priority == 0 {
-			build.Infra.Swarming.Priority = 30
+			Priority:           priority,
+			TaskServiceAccount: taskServiceAccount,
 		}
 		globalCaches := globalCfg.GetSwarming().GetGlobalCaches()
 		taskCaches := make([]*pb.BuildInfra_Swarming_CacheEntry, len(cfg.GetCaches()), len(cfg.GetCaches())+len(globalCaches))
@@ -867,9 +897,6 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 		})
 		build.Infra.Swarming.Caches = taskCaches
 
-		if req.GetPriority() > 0 {
-			build.Infra.Swarming.Priority = req.Priority
-		}
 		setDimensions(req, cfg, build)
 	}
 }
@@ -1060,6 +1087,10 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 		// The current ScheduleBuild doesn't need this info. Swallow it to not interrupt the normal workflow.
 		logging.Warningf(ctx, "Failed to set build.Infra.Buildbucket.Agent for build %d: %s", b.Id, err)
 	}
+	// Sets the Backend.Config CIPD agent related fields only for swarming task backends
+	if b.Infra.Backend != nil && strings.Contains(b.Infra.Backend.Task.Id.Target, "swarming") {
+		setInfraBackendConfigAgent(b) // Requires setInfra, setInfraAgent
+	}
 	return
 }
 
@@ -1198,6 +1229,16 @@ func setInfraAgentSource(build *pb.Build, globalCfg *pb.SettingsCfg, experiments
 		},
 	}
 	return nil
+}
+
+// setInfraBackendConfigAgent extracts bbagent source info from the build proto.
+// Mutates the given *pb.Build.
+// The build.Infra.Buildbucket.Agent must be set
+func setInfraBackendConfigAgent(b *pb.Build) {
+	agentSource := b.Infra.Buildbucket.GetAgent().GetSource()
+	b.Infra.Backend.Config.Fields["agent_binary_cipd_pkg"] = structpb.NewStringValue(agentSource.GetCipd().Package)
+	b.Infra.Backend.Config.Fields["agent_binary_cipd_vers"] = structpb.NewStringValue(agentSource.GetCipd().Version)
+	b.Infra.Backend.Config.Fields["agent_binary_cipd_server"] = structpb.NewStringValue(agentSource.GetCipd().Server)
 }
 
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
