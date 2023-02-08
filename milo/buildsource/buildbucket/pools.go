@@ -156,7 +156,7 @@ func processBot(c context.Context, desc model.PoolDescriptor) error {
 	for {
 		botList, err := bl.Do()
 		if err != nil {
-			return err
+			return errors.Annotate(err, "failed while listing bots for: %v", desc).Err()
 		}
 		for _, botInfo := range botList.Items {
 			// Ignore deleted bots.
