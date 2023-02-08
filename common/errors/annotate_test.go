@@ -16,6 +16,7 @@ package errors
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -30,7 +31,24 @@ var (
 	fixSkip        = regexp.MustCompile(`skipped \d+ frames`)
 	fixNum         = regexp.MustCompile(`^#\d+`)
 	fixTestingLine = regexp.MustCompile(`(testing/\w+.go|\.\/_testmain\.go):\d+`)
+	fixSelfLN      = regexp.MustCompile(`(annotate_test\.go):\d+`)
+
+	excludedPkgs = []string{
+		`runtime`,
+		`github.com/jtolds/gls`,
+		`github.com/smartystreets/goconvey/convey`,
+	}
 )
+
+type emptyWrapper string
+
+func (e emptyWrapper) Error() string {
+	return string(e)
+}
+
+func (e emptyWrapper) Unwrap() error {
+	return nil
+}
 
 func FixForTest(lines []string) []string {
 	for i, l := range lines {
@@ -44,6 +62,7 @@ func FixForTest(lines []string) []string {
 		if strings.HasPrefix(l, "#? testing/") || strings.HasPrefix(l, "#? ./_testmain.go") {
 			l = fixTestingLine.ReplaceAllString(l, "$1:XXX")
 		}
+		l = fixSelfLN.ReplaceAllString(l, "$1:XX")
 		lines[i] = l
 	}
 	return lines
@@ -62,15 +81,14 @@ func TestAnnotation(t *testing.T) {
 		})
 
 		Convey("annotation can render itself for internal usage", func() {
-			lines := RenderStack(e, `runtime`, `github.com/jtolds/gls`,
-				`github.com/smartystreets/goconvey/convey`)
+			lines := RenderStack(e, excludedPkgs...)
 			FixForTest(lines)
 
 			So(lines, ShouldResemble, []string{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:56 - errors.TestAnnotation.func1()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
 				`  reason: 20 some error: "stringy"`,
 				`  internal reason: extra(8.200)`,
 				``,
@@ -78,7 +96,7 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:55 - errors.TestAnnotation()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			})
@@ -86,15 +104,14 @@ func TestAnnotation(t *testing.T) {
 
 		Convey("can render whole stack", func() {
 			e = Annotate(e, "outer frame %s", "outer").Err()
-			lines := RenderStack(e, `runtime`, `github.com/jtolds/gls`,
-				`github.com/smartystreets/goconvey/convey`)
+			lines := RenderStack(e, excludedPkgs...)
 			FixForTest(lines)
 
 			expectedLines := []string{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:56 - errors.TestAnnotation.func1()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
 				`  annotation #0:`,
 				`    reason: outer frame outer`,
 				`  annotation #1:`,
@@ -105,7 +122,7 @@ func TestAnnotation(t *testing.T) {
 				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
 				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
 				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:55 - errors.TestAnnotation()`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			}
@@ -113,7 +130,7 @@ func TestAnnotation(t *testing.T) {
 
 			Convey("via Log", func() {
 				ctx := memlogger.Use(context.Background())
-				Log(ctx, e, `runtime`, `github.com/jtolds/gls`, `github.com/smartystreets/goconvey/convey`)
+				Log(ctx, e, excludedPkgs...)
 				ml := logging.Get(ctx).(*memlogger.MemLogger)
 				msgs := ml.Messages()
 				So(msgs, ShouldHaveLength, 1)
@@ -124,7 +141,7 @@ func TestAnnotation(t *testing.T) {
 			Convey("via Log in chunks", func() {
 				maxLogEntrySize = 200
 				ctx := memlogger.Use(context.Background())
-				Log(ctx, e, `runtime`, `github.com/jtolds/gls`, `github.com/smartystreets/goconvey/convey`)
+				Log(ctx, e, excludedPkgs...)
 				ml := logging.Get(ctx).(*memlogger.MemLogger)
 				var lines []string
 				for i, m := range ml.Messages() {
@@ -139,6 +156,42 @@ func TestAnnotation(t *testing.T) {
 				FixForTest(lines)
 				So(lines, ShouldResemble, expectedLines)
 			})
+		})
+
+		Convey(`can render external errors with Unwrap and no inner error`, func() {
+			So(RenderStack(emptyWrapper("hi")), ShouldResemble, []string{"hi"})
+		})
+
+		Convey(`can render external errors with Unwrap`, func() {
+			So(RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), ShouldResemble, []string{"outer: inner"})
+		})
+
+		Convey(`can render external errors using Unwrap when Annotated`, func() {
+			e := Annotate(fmt.Errorf("outer: %w", fmt.Errorf("inner")), "annotate").Err()
+			lines := RenderStack(e, excludedPkgs...)
+			FixForTest(lines)
+
+			expectedLines := []string{
+				`original error: outer: inner`,
+				``,
+				`GOROUTINE LINE`,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1.6()`,
+				`  reason: annotate`,
+				``,
+				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
+				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				``,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
+				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
+				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				``,
+				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation()`,
+				`#? testing/testing.go:XXX - testing.tRunner()`,
+				`... skipped SOME frames in pkg "runtime"...`,
+			}
+			So(lines, ShouldResemble, expectedLines)
 		})
 	})
 }

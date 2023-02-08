@@ -423,12 +423,18 @@ func dropVersionSuffix(pkg string) string {
 // renderedError is a series of RenderedStacks, one for each goroutine that the
 // error was annotated on.
 type renderedError struct {
+	// if originalError is set and `stacks` is empty, this was just a plain-old Go
+	// error without any stack context.
 	originalError string
 	stacks        []*renderedStack
 }
 
 // toLines renders a full-information stack trace as a series of lines.
 func (r *renderedError) toLines(excludePkgs ...string) lines {
+	if r.originalError != "" && len(r.stacks) == 0 {
+		return []string{r.originalError}
+	}
+
 	buf := bytes.Buffer{}
 	r.dumpTo(&buf, excludePkgs...)
 	return strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
@@ -436,6 +442,10 @@ func (r *renderedError) toLines(excludePkgs ...string) lines {
 
 // dumpTo writes the full-information stack trace to the writer.
 func (r *renderedError) dumpTo(w io.Writer, excludePkgs ...string) (n int, err error) {
+	if r.originalError != "" && len(r.stacks) == 0 {
+		return w.Write([]byte(r.originalError))
+	}
+
 	return iotools.WriteTracker(w, func(w io.Writer) error {
 		if r.originalError != "" {
 			fmt.Fprintf(w, "original error: %s\n\n", r.originalError)
@@ -511,8 +521,20 @@ func renderStack(err error) *renderedError {
 		return curStack.frames[lastAnnotatedFrame]
 	}
 
+	// originalError will hold a pointer in the error tree of the last candidate
+	// error we encountered.
+	originalError := err
+
 	for err != nil {
+		// we attempt to walk the error; we expect to see a mix of stackContexters and
+		// non-stackContexters (i.e. regular Go errors, which may wrap other errors,
+		// possibly even stackContexter errors). When we hit a stackContexter, we need
+		// to select the error it contains as the next originalError, so we use this
+		// boolean to keep track.
+		needNewOriginalError := false
+
 		if sc, ok := err.(stackContexter); ok {
+			needNewOriginalError = true
 			ctx := sc.stackContext()
 			if stk := ctx.frameInfo.forStack; stk != nil {
 				frm := getCurFrame(&ctx.frameInfo)
@@ -525,16 +547,30 @@ func renderStack(err error) *renderedError {
 		} else {
 			wrappers = append(wrappers, lines{fmt.Sprintf("unknown wrapper %T", err)})
 		}
+
+		var inner error
 		switch x := err.(type) {
 		case MultiError:
 			// TODO(riannucci): it's kinda dumb that we have to walk the MultiError
 			// twice (once in its stackContext method, and again here).
-			err = x.First()
+			inner = x.First()
 		case Wrapped:
-			err = x.Unwrap()
-		default:
-			ret.originalError = err.Error()
-			err = nil
+			inner = x.Unwrap()
+		}
+
+		if inner != nil {
+			err = inner
+			if needNewOriginalError {
+				originalError = err
+				needNewOriginalError = false
+			}
+			continue
+		} else {
+			// At this point we hit the bottom of the stack.
+			// We need to render the error with originalError in order to account for
+			// non-LUCI wrapped errors (e.g. `fmt.Errorf("something: %w", err)`).
+			ret.originalError = originalError.Error()
+			break
 		}
 	}
 

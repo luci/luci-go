@@ -85,6 +85,8 @@ func ExampleAnnotate() {
 	//   top level: while processing [3]: could not process: super wrapper(processing 3: bad number: 1)
 	//
 	// full error:
+	// original error: bad number: 1
+	//
 	// GOROUTINE LINE
 	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:24 - errors.someProcessingFunction()
 	//   reason: bad number: 1
