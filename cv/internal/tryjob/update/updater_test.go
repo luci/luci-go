@@ -56,7 +56,7 @@ type mockBackend struct {
 	returns []*returnValues
 }
 
-func (b *mockBackend) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error) {
+func (b *mockBackend) Fetch(ctx context.Context, luciProject string, eid tryjob.ExternalID) (tryjob.Status, *tryjob.Result, error) {
 	var ret *returnValues
 	switch len(b.returns) {
 	case 0:

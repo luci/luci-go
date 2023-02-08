@@ -56,17 +56,15 @@ func init() {
 	}
 }
 
-// Update retrieves the Buildbucket build corresponding to the given Tryjob,
-// parses its output and returns its current Status and Result.
-//
-// It does not modify the given Tryjob.
-func (f *Facade) Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error) {
-	host, buildID, err := saved.ExternalID.ParseBuildbucketID()
+// Fetch retrieves the Buildbucket build for the given external ID and returns
+// its current status and result.
+func (f *Facade) Fetch(ctx context.Context, luciProject string, eid tryjob.ExternalID) (tryjob.Status, *tryjob.Result, error) {
+	host, buildID, err := eid.ParseBuildbucketID()
 	if err != nil {
 		return 0, nil, err
 	}
 
-	bbClient, err := f.ClientFactory.MakeClient(ctx, host, saved.LUCIProject())
+	bbClient, err := f.ClientFactory.MakeClient(ctx, host, luciProject)
 	if err != nil {
 		return 0, nil, err
 	}

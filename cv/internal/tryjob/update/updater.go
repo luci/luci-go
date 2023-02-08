@@ -45,10 +45,8 @@ type updaterBackend interface {
 	// It's also the first part of the Tryjob's ExternalID, e.g. "buildbucket".
 	// Must NOT contain a slash.
 	Kind() string
-	// Update should fetch the Tryjob given the current entity in Datastore.
-	//
-	// MUST NOT modify the given Tryjob object.
-	Update(ctx context.Context, saved *tryjob.Tryjob) (tryjob.Status, *tryjob.Result, error)
+	// Fetch fetches the Tryjobs status and result from the Tryjob backend.
+	Fetch(ctx context.Context, luciProject string, eid tryjob.ExternalID) (tryjob.Status, *tryjob.Result, error)
 }
 
 // rmNotifier abstracts out the Run Manager's Notifier.
@@ -150,7 +148,7 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 		return errors.Annotate(err, "resolving backend for %v", tj).Err()
 	}
 
-	status, result, err := backend.Update(ctx, tj)
+	status, result, err := backend.Fetch(ctx, tj.LUCIProject(), tj.ExternalID)
 	switch {
 	case err != nil:
 		return errors.Annotate(err, "reading status and result from %q", tj.ExternalID).Err()
