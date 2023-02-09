@@ -17,6 +17,19 @@ const defaultOAuthClientId =
   '446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com';
 
 
+// OAuthError can be raised by accessToken().
+export class OAuthError extends Error {
+  // If true, the user explicitly canceled the login flow.
+  readonly cancelled: boolean;
+
+  constructor(msg: string, cancelled: boolean) {
+    super(msg);
+    Object.setPrototypeOf(this, OAuthError.prototype);
+    this.cancelled = cancelled;
+  }
+}
+
+
 // Knows how to get and refresh OAuth access tokens.
 export class OAuthClient {
   // The configured OAuth client ID.
@@ -70,7 +83,10 @@ export class OAuthClient {
 
   private onTokenResponse(response: google.accounts.oauth2.TokenResponse) {
     if (response.error || response.error_description) {
-      this.rejectAllWaiters(`${response.error}: ${response.error_description}`);
+      this.rejectAllWaiters(
+        `${response.error}: ${response.error_description}`,
+        false,
+      );
       return;
     }
 
@@ -90,14 +106,17 @@ export class OAuthClient {
   }
 
   private onTokenError(error: google.accounts.oauth2.ClientConfigError) {
-    this.rejectAllWaiters(`${error.type}: ${error.message}`);
+    this.rejectAllWaiters(
+      `${error.type}: ${error.message}`,
+      error.type == 'popup_closed',
+    );
   }
 
-  private rejectAllWaiters(error: string) {
+  private rejectAllWaiters(error: string, cancelled: boolean) {
     const waiters = this.waiters;
     this.waiters = [];
     for (const waiter of waiters) {
-      waiter.reject(new Error(error));
+      waiter.reject(new OAuthError(error, cancelled));
     }
   }
 }

@@ -20,6 +20,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
+import LinearProgress from '@mui/material/LinearProgress';
 
 import AceEditor from 'react-ace';
 
@@ -29,8 +30,12 @@ import 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/theme-tomorrow';
 
-import { AuthMethod, AuthSelector } from '../components/auth_selector';
 import { useGlobals } from '../context/globals';
+
+import { AuthMethod, AuthSelector } from '../components/auth_selector';
+import { ErrorAlert } from '../components/error_alert';
+import { ExecuteIcon } from '../components/icons';
+import { OAuthError } from '../data/oauth';
 
 
 const Method = () => {
@@ -134,7 +139,11 @@ const Method = () => {
     };
     authAndInvoke()
       .then((response) => resEditor.setValue(response, -1))
-      .catch((error) => setError(error))
+      .catch((error) => {
+        if (!(error instanceof OAuthError && error.cancelled)) {
+          setError(error);
+        }
+      })
       .finally(() => {
         // Reactive the UI.
         reqEditor.setReadOnly(false);
@@ -174,11 +183,13 @@ const Method = () => {
         </Grid>
 
         <Grid item xs={2}>
-          <Box>
-            {running && <p>Running</p>}
-            {!running && <Button variant="outlined" onClick={invokeMethod}>Execute</Button>}
-            {error && <p>Error: {error.message}</p>}
-          </Box>
+          <Button
+            variant='outlined'
+            disabled={running}
+            onClick={invokeMethod}
+            endIcon={<ExecuteIcon />}>
+            Execute
+          </Button>
         </Grid>
 
         <Grid item xs={10}>
@@ -191,6 +202,18 @@ const Method = () => {
             />
           </Box>
         </Grid>
+
+        {error &&
+          <Grid item xs={12}>
+            <ErrorAlert error={error} />
+          </Grid>
+        }
+
+        {running &&
+          <Grid item xs={12}>
+            <LinearProgress />
+          </Grid>
+        }
 
         <Grid item xs={12}>
           <Box

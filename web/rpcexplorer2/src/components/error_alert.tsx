@@ -15,17 +15,29 @@
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 
+import { RPCError, StatusCode } from '../data/prpc';
 
 export interface Props {
-  title: string;
+  title?: string;
   error: Error;
 }
 
 export const ErrorAlert = ({ title, error }: Props) => {
+  let code = '';
+  let http = 0;
+  let text = '';
+  if (error instanceof RPCError) {
+    code = StatusCode[error.code];
+    http = error.http;
+    text = error.text || 'Unknown error';
+  } else {
+    text = error.message || 'Unknown error';
+  }
   return (
     <Alert severity='error'>
-      <AlertTitle>{title}</AlertTitle>
-      {error.message}
+      {title && <AlertTitle>{title}</AlertTitle>}
+      {code && <><b>{code}</b> (HTTP status {http}): </>}
+      {text}
     </Alert>
   );
 };

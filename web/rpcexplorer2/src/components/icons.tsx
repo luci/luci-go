@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import Launch from '@mui/icons-material/Launch';
+import Send from '@mui/icons-material/Send';
 import Settings from '@mui/icons-material/Settings';
 
 export const MethodIcon = Launch;
 export const ServiceIcon = Settings;
+export const ExecuteIcon = Send;

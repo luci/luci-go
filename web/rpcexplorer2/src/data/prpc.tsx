@@ -12,6 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+// gRPC status codes (see google/rpc/code.proto). Kept as UPPER_CASE to simplify
+// converting them to a canonical string representation via StatusCode[code].
+export enum StatusCode {
+  OK = 0,
+  CANCELLED = 1,
+  UNKNOWN = 2,
+  INVALID_ARGUMENT = 3,
+  DEADLINE_EXCEEDED = 4,
+  NOT_FOUND = 5,
+  ALREADY_EXISTS = 6,
+  PERMISSION_DENIED = 7,
+  RESOURCE_EXHAUSTED = 8,
+  FAILED_PRECONDITION = 9,
+  ABORTED = 10,
+  OUT_OF_RANGE = 11,
+  UNIMPLEMENTED = 12,
+  INTERNAL = 13,
+  UNAVAILABLE = 14,
+  DATA_LOSS = 15,
+  UNAUTHENTICATED = 16,
+}
+
+
+// An RPC error with a status code and an error message.
+export class RPCError extends Error {
+  readonly code: StatusCode;
+  readonly http: number;
+  readonly text: string;
+
+  constructor(code: StatusCode, http: number, text: string) {
+    super(`${StatusCode[code]} (HTTP ${http}): ${text}`);
+    Object.setPrototypeOf(this, RPCError.prototype);
+    this.code = code;
+    this.http = http;
+    this.text = text;
+  }
+}
+
+
 // Descriptors holds all type information about RPC APIs exposed by a server.
 export class Descriptors {
   // A list of RPC services exposed by a server.
@@ -185,9 +225,22 @@ const invokeMethod = async <T,>(
     responseBody = responseBody.slice(pfx.length);
   }
 
-  // TODO: Parse pRPC error details.
-  if (!response.ok) {
-    throw Error(`HTTP ${response.status}: ${responseBody}`);
+  // Parse gRPC status code header if available.
+  let grpcCode = StatusCode.UNKNOWN;
+  const codeStr = response.headers.get('X-Prpc-Grpc-Code');
+  if (codeStr) {
+    const num = parseInt(codeStr);
+    if (isNaN(num) || num < 0 || num > 16) {
+      grpcCode = StatusCode.UNKNOWN;
+    } else {
+      grpcCode = num;
+    }
+  } else if (response.status >= 500) {
+    grpcCode = StatusCode.INTERNAL;
+  }
+
+  if (grpcCode != StatusCode.OK) {
+    throw new RPCError(grpcCode, response.status, responseBody.trim());
   }
 
   return JSON.parse(responseBody) as T;
