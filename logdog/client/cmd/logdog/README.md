@@ -52,26 +52,20 @@ query constraints may be added in the future.
 
 #### Path
 
-Path queries identify log streams that match the supplied path constraint.
-Both the Prefix and Name components of the path can be specified either fully
-or globbed with `*` characters according to some rules:
+Paths are of the form "full/path/prefix/+/stream/name", where the "stream/name"
+portion can contain glob-style "*" and "**" operators with the following rules:
 
 * Full prefix constraints will return log streams that share a Prefix
   * For example `-path 'foo/bar'` will return all log streams that have the
     prefix, "foo/bar".
 * Single-component globbing.
-  * For example, `-path 'foo/*/baz'`.
+  * For example, `-path 'foo/+/*/baz'`.
 * Right-open globbing via `**` will match all log streams that begin with a
   specified path.
-  * For example, `-path 'foo/bar/**'`
+  * For example, `-path 'foo/+/bar/**'`
 * Left-open globbing via `**` will match all log streams that end with a
   specified path.
-  * For example, `-path '**/baz'`
-* Right-open and left-open globbing **cannot** be used in the same Prefix/Name.
-* Globbing can be applied to both Prefix and Name.
-  * For example, `-path 'foo/bar/**/+/**/stdout` will find all streams that
-    have "stdout" in their final name component and belong to a prefix
-    beginning with "foo/bar".
+  * For example, `-path 'foo/+/**/baz'`
 
 #### Timestamps
 

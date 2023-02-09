@@ -53,8 +53,13 @@ type queryCommandRun struct {
 
 func newQueryCommand() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "query",
+		UsageLine: "query -path ... [OPTIONS]",
 		ShortDesc: "Query for log streams.",
+		LongDesc: "" +
+			"Returns log stream paths that match a given path pattern\n" +
+			"\n" +
+			"An input path must be of the form 'full/path/prefix/+/stream/name'\n" +
+			"'stream/name' portion can contain glob-style '*' and '**' operators.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &queryCommandRun{}
 
