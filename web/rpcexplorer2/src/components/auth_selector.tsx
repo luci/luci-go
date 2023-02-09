@@ -25,6 +25,26 @@ export enum AuthMethod {
   OAuth = 'oauth',
 }
 
+
+export namespace AuthMethod {
+  const storeKey = 'auth_selector.AuthMethod';
+
+  // Loads an AuthMethod from the local storage.
+  export const load = (): AuthMethod => {
+    const item = localStorage.getItem(storeKey);
+    if (item && Object.values(AuthMethod).includes(item as AuthMethod)) {
+      return item as AuthMethod;
+    }
+    return AuthMethod.OAuth; // default
+  };
+
+  // Stores AuthMethod into the local storage.
+  export const store = (val: AuthMethod) => {
+    localStorage.setItem(storeKey, val as string);
+  };
+}
+
+
 export interface Props {
   selected: AuthMethod;
   onChange: (method: AuthMethod) => void;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import Alert from '@mui/material/Alert';
@@ -42,7 +42,7 @@ const Method = () => {
   const { serviceName, methodName } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { descriptors, oauthClient } = useGlobals();
-  const [authMethod, setAuthMethod] = useState(AuthMethod.OAuth);
+  const [authMethod, setAuthMethod] = useState(AuthMethod.load());
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -60,6 +60,9 @@ const Method = () => {
       return initialRequest;
     }
   }, [initialRequest]);
+
+  // Persist changes to `authMethod` in the local storage.
+  useEffect(() => AuthMethod.store(authMethod), [authMethod]);
 
   // Find the method descriptor. It will be used for auto-completion and for
   // actually invoking the method.
