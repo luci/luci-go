@@ -58,6 +58,11 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 			}
 			b.Proto.StatusDetails.Timeout = &pb.StatusDetails_Timeout{}
 			b.ClearLease()
+			// TODO(crbug.com/1414540): A temporary code to mitigate the issue. Should
+			// delete it after the cron job is executed.
+			if b.Proto.Input.GetProperties() != nil {
+				b.Proto.Input.Properties = nil
+			}
 			toUpdate = append(toUpdate, b)
 		}
 
