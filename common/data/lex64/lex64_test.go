@@ -237,6 +237,36 @@ func TestPreservationOfComparisonOrder(t *testing.T) {
 	}
 }
 
+// TestConcatenationFails is a demonstration that concatenation is not respected.
+func TestConcatenationFails(t *testing.T) {
+	t.Parallel()
+
+	encoding, _ := GetEncoding(V2Padding)
+
+	a := []byte("a")
+	b := []byte("b")
+
+	a2, err := Encode(encoding, a)
+	if err != nil {
+		t.Error(err)
+	}
+
+	b2, err := Encode(encoding, b)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = Decode(encoding, fmt.Sprintf("%s%s", a2, b2))
+	switch err {
+	case nil:
+		t.Error("error is unexpectedly nil")
+	default:
+		if !strings.Contains(err.Error(), "illegal base64") {
+			t.Errorf("wrong error: %s", err)
+		}
+	}
+}
+
 // cmpString compares two sequences of bytes and returns +1, 0, or -1.
 func cmpBytes(a []byte, b []byte) int {
 	return strings.Compare(string(a), string(b))
