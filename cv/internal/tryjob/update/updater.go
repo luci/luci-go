@@ -75,7 +75,7 @@ func NewUpdater(env *common.Env, tn *tryjob.Notifier, rm rmNotifier) *Updater {
 	tn.Bindings.Update.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		err := u.handleTask(ctx, payload.(*tryjob.UpdateTryjobTask))
 		return common.TQIfy{
-			KnownRetry: []error{errStaleTryjobData},
+			KnownRetry: []error{errTryjobEntityHasChanged},
 		}.Error(ctx, err)
 	})
 	return u
@@ -108,10 +108,6 @@ func (u *Updater) Update(ctx context.Context, eid tryjob.ExternalID, data any) e
 	panic("unimplemented")
 }
 
-// errStaleTryjobData may be returned by handle task if a concurrent task
-// updates the Tryjob entity while this task is in the middle of update.
-var errStaleTryjobData = errors.New("loaded stale Tryjob data", transient.Tag)
-
 // handleTask handles an UpdateTryjobTask.
 //
 // This task involves checking the status of a Tryjob and updating its
@@ -141,7 +137,6 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 	default:
 		return errors.Reason("expected at least one of {Id, ExternalId} in %+v", task).Err()
 	}
-	loadedEVer := tj.EVersion
 
 	backend, err := u.backendFor(tj)
 	if err != nil {
@@ -155,20 +150,32 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 	case status == tj.Status && proto.Equal(tj.Result, result):
 		return nil
 	}
+	return u.conditionallyUpdate(ctx, tj.ID, status, result, tj.EVersion)
+}
+
+// errTryjobEntityHasChanged is returned if there is a race updating Tryjob
+// entity.
+var errTryjobEntityHasChanged = errors.New("Tryjob entity has changed", transient.Tag)
+
+// conditionallyUpdate updates the Tryjob entity if the EVersion of the current
+// Tryjob entity in the datastore matches the `expectedEVersion`.
+//
+// Returns errTryjobEntityHasChanged if the Tryjob entity in the datastore has
+// been modified already (i.e. EVersion no longer matches `expectedEVersion`).
+func (u *Updater) conditionallyUpdate(ctx context.Context, id common.TryjobID, status tryjob.Status, result *tryjob.Result, expectedEVersion int64) error {
 	// Capture the error that may cause the transaction to commit, and any
 	// relevant tags.
 	var innerErr error
-	err = datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
 		defer func() {
 			innerErr = err
 		}()
-		tj := &tryjob.Tryjob{ID: common.TryjobID(tj.ID)}
+		tj := &tryjob.Tryjob{ID: common.TryjobID(id)}
 		if err := datastore.Get(ctx, tj); err != nil {
 			return errors.Annotate(err, "failed to load Tryjob %d", tj.ID).Tag(transient.Tag).Err()
 		}
-		if loadedEVer != tj.EVersion {
-			// A parallel task must have already updated this Tryjob; retry.
-			return errStaleTryjobData
+		if expectedEVersion != tj.EVersion {
+			return errTryjobEntityHasChanged
 		}
 
 		if tj.LaunchedBy != "" && status == tryjob.Status_ENDED && tj.Status != status {
@@ -222,7 +229,7 @@ func (u *Updater) handleTask(ctx context.Context, task *tryjob.UpdateTryjobTask)
 	case innerErr != nil:
 		return innerErr
 	case err != nil:
-		return errors.Annotate(err, "failed to commit transaction updating tryjob %d", tj.ID).Tag(transient.Tag).Err()
+		return errors.Annotate(err, "failed to commit transaction updating tryjob %d", id).Tag(transient.Tag).Err()
 	}
 	return nil
 }
