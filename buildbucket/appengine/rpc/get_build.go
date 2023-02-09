@@ -17,14 +17,9 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -32,38 +27,6 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
-
-var metricGetBuildCallers = metric.NewCounter(
-	"test/luci/buildbucket/get-build-callers",
-	"Counts GetBuild requests made by the specific caller",
-	nil,
-	field.String("caller"),
-)
-
-func categorizeCallerCrBug1186261(i identity.Identity) string {
-	// TODO(crbug/1186261): remove or generalize this metric.
-	switch k := i.Kind(); k {
-	case identity.Anonymous:
-		return string(i)
-	case identity.Bot:
-		return "<bot>"
-	case identity.Project:
-		return string(i)
-	case identity.Service:
-		return string(i)
-	case identity.User:
-		// Don't log individual user emails, but do log service accounts,
-		// since we don't have many of them.
-		switch e := i.Email(); {
-		case strings.HasSuffix(e, ".iam.gserviceaccount.com"):
-			return string(i)
-		default:
-			return "user:<other>"
-		}
-	default:
-		return fmt.Sprintf("<%s>", string(k))
-	}
-}
 
 // validateGet validates the given request.
 func validateGet(req *pb.GetBuildRequest) error {
@@ -84,7 +47,6 @@ func validateGet(req *pb.GetBuildRequest) error {
 
 // GetBuild handles a request to retrieve a build. Implements pb.BuildsServer.
 func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build, error) {
-	metricGetBuildCallers.Add(ctx, 1, categorizeCallerCrBug1186261(auth.CurrentIdentity(ctx)))
 	if err := validateGet(req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
