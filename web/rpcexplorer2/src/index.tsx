@@ -15,6 +15,9 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
+import CssBaseline from '@mui/material/CssBaseline';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
 import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';
 
 import App from './app';
@@ -30,13 +33,18 @@ import App from './app';
  */
 createInnerHTMLSanitizingPolicy();
 
+const theme = createTheme();
+
 const container = document.getElementById('app-root');
 // Below ESlint is disabled based on ReactJS recommendation
 // https://reactjs.org/blog/2022/03/08/react-18-upgrade-guide.html#updates-to-client-rendering-apis
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const root = createRoot(container!);
 root.render(
+  <ThemeProvider theme={theme}>
+    <CssBaseline />
     <BrowserRouter basename='/rpcexplorer'>
       <App />
-    </BrowserRouter>,
+    </BrowserRouter>
+  </ThemeProvider>
 );

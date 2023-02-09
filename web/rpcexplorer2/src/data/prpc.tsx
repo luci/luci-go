@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 // Descriptors holds all type information about RPC APIs exposed by a server.
 export class Descriptors {
   // A list of RPC services exposed by a server.
@@ -79,7 +78,7 @@ export class Method {
   // `authorization` will be used as a value of Authorization header.
   async invoke(request: string, authorization: string): Promise<string> {
     const resp: object = await invokeMethod(
-        this.service, this.name, request, authorization,
+      this.service, this.name, request, authorization,
     );
     return JSON.stringify(resp, null, 2);
   }
@@ -89,7 +88,7 @@ export class Method {
 // Loads RPC API descriptors from the server.
 export const loadDescriptors = async (): Promise<Descriptors> => {
   const resp: DescribeResponse = await invokeMethod(
-      'discovery.Discovery', 'Describe', '{}', '',
+    'discovery.Discovery', 'Describe', '{}', '',
   );
   return new Descriptors(resp.description, resp.services);
 };
@@ -130,8 +129,8 @@ class Types {
 
   // Visits all FileDescriptorProto that define a particular package.
   private visitPackage<T>(
-      pkg: string,
-      cb: (desc: FileDescriptorProto) => T | undefined,
+    pkg: string,
+    cb: (desc: FileDescriptorProto) => T | undefined,
   ): T | undefined {
     const descs = this.packageMap.get(pkg);
     if (descs !== undefined) {
@@ -153,13 +152,13 @@ const splitFullName = (fullName: string): [string, string] => {
   const start = fullName.startsWith('.') ? 1 : 0;
   return [
     fullName.substring(start, lastDot),
-    fullName.substring(lastDot+1),
+    fullName.substring(lastDot + 1),
   ];
 };
 
 
 // invokeMethod sends a pRPC request and parses the response.
-const invokeMethod = async <T, >(
+const invokeMethod = async <T,>(
   service: string,
   method: string,
   body: string,

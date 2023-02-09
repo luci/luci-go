@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+
 // How to authenticate an RPC request.
 export enum AuthMethod {
   // Do not send any credentials.
@@ -29,30 +34,24 @@ export interface Props {
 
 // Allows to select an authentication method to use for sending RPCs.
 export const AuthSelector = (props: Props) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    props.onChange((event.target as HTMLInputElement).value as AuthMethod);
+  };
+
   return (
-    <div>
-      <h4>Authentication</h4>
-      <label>
-        <input
-          type='radio'
-          name='auth'
-          checked={props.selected === AuthMethod.Anonymous}
-          disabled={props.disabled}
-          onChange={() => props.onChange(AuthMethod.Anonymous)}
+    <FormControl disabled={props.disabled}>
+      <RadioGroup row value={props.selected} onChange={handleChange}>
+        <FormControlLabel
+          value={AuthMethod.Anonymous}
+          control={<Radio />}
+          label='Call anonymously'
         />
-        Call anonymously
-      </label>
-      <br />
-      <label>
-        <input
-          type='radio'
-          name='auth'
-          checked={props.selected === AuthMethod.OAuth}
-          disabled={props.disabled}
-          onChange={() => props.onChange(AuthMethod.OAuth)}
+        <FormControlLabel
+          value={AuthMethod.OAuth}
+          control={<Radio />}
+          label='Use OAuth access tokens'
         />
-        Send OAuth access token (client ID is ${props.oauthClientId})
-      </label>
-    </div>
+      </RadioGroup>
+    </FormControl>
   );
 };

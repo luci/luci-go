@@ -14,7 +14,7 @@
 
 // Used when the server doesn't report a client ID.
 const defaultOAuthClientId =
-    '446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com';
+  '446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com';
 
 
 // Knows how to get and refresh OAuth access tokens.

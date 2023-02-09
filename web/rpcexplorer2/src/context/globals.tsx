@@ -19,8 +19,14 @@ import {
   useEffect,
 } from 'react';
 
+import Box from '@mui/material/Box';
+import LinearProgress from '@mui/material/LinearProgress';
+
+import ErrorAlert from '../components/error_alert';
+
 import { Descriptors, loadDescriptors } from '../data/prpc';
 import { OAuthClient, loadOAuthClient } from '../data/oauth';
+
 
 // Globals are fetched once and then indefinitely used by all routes.
 export interface Globals {
@@ -42,6 +48,7 @@ const loadGlobals = async (): Promise<Globals> => {
   };
 };
 
+
 // GlobalsContextData wraps Globals with loading status.
 interface GlobalsContextData {
   isLoading: boolean;
@@ -52,6 +59,7 @@ interface GlobalsContextData {
 const GlobalsContext = createContext<GlobalsContextData>({
   isLoading: true,
 });
+
 
 export interface GlobalsProviderProps {
   children: React.ReactNode;
@@ -65,14 +73,14 @@ export const GlobalsProvider = ({ children }: GlobalsProviderProps) => {
 
   useEffect(() => {
     loadGlobals()
-        .then((globals) => setGlobalsData({
-          isLoading: false,
-          globals: globals,
-        }))
-        .catch((error) => setGlobalsData({
-          isLoading: false,
-          error: error,
-        }));
+      .then((globals) => setGlobalsData({
+        isLoading: false,
+        globals: globals,
+      }))
+      .catch((error) => setGlobalsData({
+        isLoading: false,
+        error: error,
+      }));
   }, []);
 
   return (
@@ -95,18 +103,24 @@ export const GlobalsWaiter = ({ children }: GlobalsWaiterProps) => {
 
   if (globalsData.isLoading) {
     return (
-      <p>Loading...</p>
+      <Box sx={{ width: '100%' }}>
+        <LinearProgress />
+      </Box>
     );
   }
 
   if (globalsData.error) {
     return (
-      <p>Error: {globalsData.error.message}</p>
+      <ErrorAlert
+        title="Failed to initialize RPC Explorer"
+        error={globalsData.error}
+      />
     );
   }
 
   return <>{children}</>;
 };
+
 
 // useGlobals returns loaded globals or throws an error.
 //

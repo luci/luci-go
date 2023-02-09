@@ -12,16 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState, useRef, useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
+
 import AceEditor from 'react-ace';
+
+// Note: these must be imported after AceEditor for some reason, otherwise the
+// final bundle ends up broken.
+import 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/mode-json';
 import 'ace-builds/src-noconflict/theme-tomorrow';
-import 'ace-builds/src-noconflict/ext-language_tools';
 
-import { useGlobals } from '../context/globals';
 import { AuthMethod, AuthSelector } from '../components/auth_selector';
+import { useGlobals } from '../context/globals';
 
 
 const Method = () => {
@@ -30,7 +39,7 @@ const Method = () => {
   const { descriptors, oauthClient } = useGlobals();
   const [authMethod, setAuthMethod] = useState(AuthMethod.OAuth);
   const [running, setRunning] = useState(false);
-  const [error, setError] = useState<Error|null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const requestEditor = useRef<AceEditor>(null);
   const responseEditor = useRef<AceEditor>(null);
@@ -51,11 +60,21 @@ const Method = () => {
   // actually invoking the method.
   const svc = descriptors.service(serviceName ?? 'unknown');
   if (svc === undefined) {
-    return <p>No such service</p>;
+    return (
+      <Alert severity='error'>
+        Service <b>{serviceName ?? 'unknown'}</b> is not
+        registered in the server.
+      </Alert>
+    );
   }
   const method = svc.method(methodName ?? 'unknown');
   if (method === undefined) {
-    return <p>No such method</p>;
+    return (
+      <Alert severity='error'>
+        Method <b>{methodName ?? 'unknown'}</b> is not a part of
+        <b>{serviceName ?? 'unknown'}</b> service.
+      </Alert>
+    );
   }
 
   const invokeMethod = () => {
@@ -95,7 +114,7 @@ const Method = () => {
         params.delete('request');
       }
       return params;
-    }, {replace: true});
+    }, { replace: true });
 
     // Deactivate the UI while the request is running.
     reqEditor.setReadOnly(true);
@@ -114,66 +133,93 @@ const Method = () => {
       return await method.invoke(requestBody, authorization);
     };
     authAndInvoke()
-        .then((response) => resEditor.setValue(response, -1))
-        .catch((error) => setError(error))
-        .finally(() => {
-          // Reactive the UI.
-          reqEditor.setReadOnly(false);
-          setRunning(false);
-        });
+      .then((response) => resEditor.setValue(response, -1))
+      .catch((error) => setError(error))
+      .finally(() => {
+        // Reactive the UI.
+        reqEditor.setReadOnly(false);
+        setRunning(false);
+      });
   };
 
   return (
-    <>
-      <p>A method {methodName} of {serviceName}</p>
-      <p>{method.help}</p>
+    <Container sx={{ flexGrow: 1 }}>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Box>
+            <p>A method {methodName} of {serviceName}</p>
+            <p>{method.help}</p>
+          </Box>
+        </Grid>
 
-      <div>
-        <h4>Request:</h4>
-        <AceEditor
-          ref={requestEditor}
-          mode='json'
-          defaultValue={initialRequest}
-          theme='tomorrow'
-          name='request-editor'
-          width='800px'
-          height='200px'
-          setOptions={{
-            enableBasicAutocompletion: true,
-            useWorker: false,
-          }}
-        />
-      </div>
+        <Grid item xs={12}>
+          <Box
+            component='div'
+            sx={{ border: '1px solid #e0e0e0', borderRadius: '2px' }}
+          >
+            <AceEditor
+              ref={requestEditor}
+              mode='json'
+              defaultValue={initialRequest}
+              theme='tomorrow'
+              name='request-editor'
+              width='100%'
+              height='200px'
+              setOptions={{
+                enableBasicAutocompletion: true,
+                useWorker: false,
+              }}
+            />
+          </Box>
+        </Grid>
 
-      <AuthSelector
-        selected={authMethod}
-        onChange={setAuthMethod}
-        oauthClientId={oauthClient.clientId}
-        disabled={running}
-      />
+        <Grid item xs={2}>
+          <Box>
+            {running && <p>Running</p>}
+            {!running && <Button variant="outlined" onClick={invokeMethod}>Execute</Button>}
+            {error && <p>Error: {error.message}</p>}
+          </Box>
+        </Grid>
 
-      {running && <p>Running</p>}
-      {!running && <button type="button" onClick={invokeMethod}>Send</button>}
+        <Grid item xs={10}>
+          <Box>
+            <AuthSelector
+              selected={authMethod}
+              onChange={setAuthMethod}
+              oauthClientId={oauthClient.clientId}
+              disabled={running}
+            />
+          </Box>
+        </Grid>
 
-      {error && <p>Error: {error.message}</p>}
+        <Grid item xs={12}>
+          <Box
+            component='div'
+            sx={{
+              border: '1px solid #e0e0e0',
+              borderRadius: '2px',
+              mb: 2,
+            }}
+          >
+            <AceEditor
+              ref={responseEditor}
+              mode='json'
+              theme='tomorrow'
+              name='response-editor'
+              width='100%'
+              height='400px'
+              setOptions={{
+                readOnly: true,
+                useWorker: false,
+              }}
+            />
+          </Box>
+        </Grid>
 
-      <div>
-        <h4>Response:</h4>
-        <AceEditor
-          ref={responseEditor}
-          mode='json'
-          theme='tomorrow'
-          name='response-editor'
-          width='800px'
-          height='400px'
-          setOptions={{
-            readOnly: true,
-            useWorker: false,
-          }}
-        />
-      </div>
-    </>
+      </Grid>
+    </Container>
   );
 };
+
 
 export default Method;

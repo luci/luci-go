@@ -18,13 +18,15 @@ import {
   Navigate,
 } from 'react-router-dom';
 
+import Alert from '@mui/material/Alert';
+
 import { GlobalsProvider } from './context/globals';
 
 import Layout from './layout';
-import NotFound from './views/not_found';
 import ServicesList from './views/services_list';
 import MethodsList from './views/methods_list';
 import Method from './views/method';
+
 
 const App = () => {
   return (
@@ -39,11 +41,14 @@ const App = () => {
               <Route path=':methodName' element={<Method />} />
             </Route>
           </Route>
-          <Route path='*' element={<NotFound />} />
+          <Route path='*' element={
+            <Alert severity='error'>Unrecognized URL format.</Alert>
+          } />
         </Route>
       </Routes>
     </GlobalsProvider>
   );
 };
+
 
 export default App;

@@ -12,27 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+
+import { ServiceIcon } from '../components/icons';
 import { useGlobals } from '../context/globals';
+
 
 const ServicesList = () => {
   const { descriptors } = useGlobals();
 
   return (
-    <>
-      <p>List of services:</p>
-      <ul>
-        {descriptors.services.map((svc) => {
-          return (
-            <li key={svc.name}>
-              <Link to={svc.name}>{svc.name}</Link>{svc.help}
-            </li>
-          );
-        })}
-      </ul>
-    </>
+    <List dense>
+      {descriptors.services.map((svc) => {
+        return (
+          <ListItem key={svc.name} disablePadding divider>
+            <ListItemButton component={RouterLink} to={svc.name}>
+              <ListItemIcon sx={{ minWidth: '40px' }}>
+                <ServiceIcon />
+              </ListItemIcon>
+              <ListItemText primary={svc.name} secondary={svc.help} />
+            </ListItemButton>
+          </ListItem>
+        );
+      })}
+    </List>
   );
 };
+
 
 export default ServicesList;

@@ -12,9 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link, useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 
+import Alert from '@mui/material/Alert';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+
+import { MethodIcon } from '../components/icons';
 import { useGlobals } from '../context/globals';
+
 
 const MethodsList = () => {
   const { serviceName } = useParams();
@@ -22,23 +31,31 @@ const MethodsList = () => {
 
   const svc = descriptors.service(serviceName ?? 'unknown');
   if (svc === undefined) {
-    return <p>No such service</p>;
+    return (
+      <Alert severity='error'>
+        Service <b>{serviceName ?? 'unknown'}</b> is not
+        registered in the server.
+      </Alert>
+    );
   }
 
   return (
-    <>
-      <p>List of methods of {serviceName}:</p>
-      <ul>
-        {svc.methods.map((method) => {
-          return (
-            <li key={method.name}>
-              <Link to={method.name}>{method.name}</Link>{method.help}
-            </li>
-          );
-        })}
-      </ul>
-    </>
+    <List dense>
+      {svc.methods.map((method) => {
+        return (
+          <ListItem key={method.name} disablePadding divider>
+            <ListItemButton component={RouterLink} to={method.name}>
+              <ListItemIcon sx={{ minWidth: '40px' }}>
+                <MethodIcon />
+              </ListItemIcon>
+              <ListItemText primary={method.name} secondary={method.help} />
+            </ListItemButton>
+          </ListItem>
+        );
+      })}
+    </List>
   );
 };
+
 
 export default MethodsList;
