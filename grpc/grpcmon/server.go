@@ -75,6 +75,37 @@ func UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.Una
 	return
 }
 
+// StreamServerInterceptor is a grpc.StreamServerInterceptor that gathers RPC
+// handler metrics and sends them to tsmon.
+//
+// It assumes the RPC context has tsmon initialized already.
+//
+// TODO(vadimsh): Report the number of messages streamed. This will make this
+// interceptor sufficiently different from UnaryServerInterceptor. That's the
+// reason there's no UnifiedServerInterceptor exposed, even though right now
+// implementations of unary and stream interceptors are identical.
+func StreamServerInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+	ctx := ss.Context()
+	started := clock.Now(ctx)
+	panicking := true
+	defer func() {
+		// We don't want to recover anything, but we want to log Internal error
+		// in case of a panic. We pray here reportServerRPCMetrics is very
+		// lightweight and it doesn't panic itself.
+		code := codes.OK
+		switch {
+		case err != nil:
+			code = status.Code(err)
+		case panicking:
+			code = codes.Internal
+		}
+		reportServerRPCMetrics(ctx, info.FullMethod, code, clock.Now(ctx).Sub(started))
+	}()
+	err = handler(srv, ss)
+	panicking = false // normal exit, no panic happened, disarms defer
+	return
+}
+
 // reportServerRPCMetrics sends metrics after RPC handler has finished.
 func reportServerRPCMetrics(ctx context.Context, method string, code codes.Code, dur time.Duration) {
 	canon, ok := gcode.Code_name[int32(code)]

@@ -57,6 +57,38 @@ func TestUnaryServerInterceptor(t *testing.T) {
 	})
 }
 
+func TestStreamServerInterceptor(t *testing.T) {
+	Convey("Captures count and duration", t, func() {
+		c, memStore := testContext()
+
+		// Handler that runs for 500 ms.
+		handler := func(srv interface{}, ss grpc.ServerStream) error {
+			clock.Get(ss.Context()).(testclock.TestClock).Add(500 * time.Millisecond)
+			return status.Error(codes.Internal, "errored internally")
+		}
+
+		// Run the handler with the interceptor.
+		StreamServerInterceptor(nil, &serverStream{nil, c}, &grpc.StreamServerInfo{
+			FullMethod: "/service/method",
+		}, handler)
+
+		count := memStore.Get(c, grpcServerCount, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
+		So(count, ShouldEqual, 1)
+
+		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
+		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
+	})
+}
+
+type serverStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (ss *serverStream) Context() context.Context {
+	return ss.ctx
+}
+
 func testContext() (context.Context, store.Store) {
 	c := context.Background()
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
