@@ -698,6 +698,7 @@ func mainImpl() int {
 
 		var build *bbpb.Build
 		build, subprocErr = subp.Wait()
+		logging.Infof(ctx, fmt.Sprintf("Final build status from subprocess: %s", build.Status.String()))
 		statusDetails = build.StatusDetails
 	})
 	if err != nil {
