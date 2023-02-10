@@ -14,18 +14,16 @@
 
 import {
   createContext,
-  useContext,
-  useState,
-  useEffect,
+  useContext, useEffect, useState,
 } from 'react';
 
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
 
-import ErrorAlert from '../components/error_alert';
+import { ErrorAlert } from '../components/error_alert';
 
+import { loadOAuthClient, OAuthClient } from '../data/oauth';
 import { Descriptors, loadDescriptors } from '../data/prpc';
-import { OAuthClient, loadOAuthClient } from '../data/oauth';
 
 
 // Globals are fetched once and then indefinitely used by all routes.
@@ -73,14 +71,14 @@ export const GlobalsProvider = ({ children }: GlobalsProviderProps) => {
 
   useEffect(() => {
     loadGlobals()
-      .then((globals) => setGlobalsData({
-        isLoading: false,
-        globals: globals,
-      }))
-      .catch((error) => setGlobalsData({
-        isLoading: false,
-        error: error,
-      }));
+        .then((globals) => setGlobalsData({
+          isLoading: false,
+          globals: globals,
+        }))
+        .catch((error) => setGlobalsData({
+          isLoading: false,
+          error: error,
+        }));
   }, []);
 
   return (

@@ -15,12 +15,14 @@
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 
+import { Doc } from '../components/doc';
 import { MethodIcon } from '../components/icons';
 import { useGlobals } from '../context/globals';
 
@@ -40,20 +42,23 @@ const MethodsList = () => {
   }
 
   return (
-    <List dense>
-      {svc.methods.map((method) => {
-        return (
-          <ListItem key={method.name} disablePadding divider>
-            <ListItemButton component={RouterLink} to={method.name}>
-              <ListItemIcon sx={{ minWidth: '40px' }}>
-                <MethodIcon />
-              </ListItemIcon>
-              <ListItemText primary={method.name} secondary={method.help} />
-            </ListItemButton>
-          </ListItem>
-        );
-      })}
-    </List>
+    <Stack>
+      <Doc markdown={svc.doc} />
+      <List dense>
+        {svc.methods.map((method) => {
+          return (
+            <ListItem key={method.name} disablePadding divider>
+              <ListItemButton component={RouterLink} to={method.name}>
+                <ListItemIcon sx={{ minWidth: '40px' }}>
+                  <MethodIcon />
+                </ListItemIcon>
+                <ListItemText primary={method.name} secondary={method.help} />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+      </List>
+    </Stack>
   );
 };
 

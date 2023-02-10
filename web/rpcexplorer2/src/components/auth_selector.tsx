@@ -25,7 +25,7 @@ export enum AuthMethod {
   OAuth = 'oauth',
 }
 
-
+/* eslint-disable-next-line @typescript-eslint/no-namespace */
 export namespace AuthMethod {
   const storeKey = 'auth_selector.AuthMethod';
 

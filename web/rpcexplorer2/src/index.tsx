@@ -41,10 +41,10 @@ const container = document.getElementById('app-root');
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const root = createRoot(container!);
 root.render(
-  <ThemeProvider theme={theme}>
-    <CssBaseline />
-    <BrowserRouter basename='/rpcexplorer'>
-      <App />
-    </BrowserRouter>
-  </ThemeProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter basename='/rpcexplorer'>
+        <App />
+      </BrowserRouter>
+    </ThemeProvider>,
 );

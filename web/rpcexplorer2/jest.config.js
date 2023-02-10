@@ -39,7 +39,7 @@ module.exports = {
      */
   transformIgnorePatterns: [
     '/node_modules/' +
-     '(?!(node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)',
+    '(?!(node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)',
   ],
   /**
    * This allows components to import styling files without
@@ -48,10 +48,4 @@ module.exports = {
   moduleNameMapper: {
     '\\.(css|less|scss)$': 'identity-obj-proxy',
   },
-  /**
-     * This files initializes the required environment for jest and react.
-     */
-  setupFiles: [
-    './src/testing_tools/setUpEnv.ts',
-  ],
 };

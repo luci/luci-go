@@ -84,8 +84,8 @@ export class OAuthClient {
   private onTokenResponse(response: google.accounts.oauth2.TokenResponse) {
     if (response.error || response.error_description) {
       this.rejectAllWaiters(
-        `${response.error}: ${response.error_description}`,
-        false,
+          `${response.error}: ${response.error_description}`,
+          false,
       );
       return;
     }
@@ -107,8 +107,8 @@ export class OAuthClient {
 
   private onTokenError(error: google.accounts.oauth2.ClientConfigError) {
     this.rejectAllWaiters(
-      `${error.type}: ${error.message}`,
-      error.type == 'popup_closed',
+        `${error.type}: ${error.message}`,
+        error.type == 'popup_closed',
     );
   }
 

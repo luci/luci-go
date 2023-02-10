@@ -18,7 +18,6 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 
@@ -33,6 +32,7 @@ import 'ace-builds/src-noconflict/theme-tomorrow';
 import { useGlobals } from '../context/globals';
 
 import { AuthMethod, AuthSelector } from '../components/auth_selector';
+import { Doc } from '../components/doc';
 import { ErrorAlert } from '../components/error_alert';
 import { ExecuteIcon } from '../components/icons';
 import { OAuthError } from '../data/oauth';
@@ -141,109 +141,103 @@ const Method = () => {
       return await method.invoke(requestBody, authorization);
     };
     authAndInvoke()
-      .then((response) => resEditor.setValue(response, -1))
-      .catch((error) => {
-        if (!(error instanceof OAuthError && error.cancelled)) {
-          setError(error);
-        }
-      })
-      .finally(() => {
+        .then((response) => resEditor.setValue(response, -1))
+        .catch((error) => {
+          if (!(error instanceof OAuthError && error.cancelled)) {
+            setError(error);
+          }
+        })
+        .finally(() => {
         // Reactive the UI.
-        reqEditor.setReadOnly(false);
-        setRunning(false);
-      });
+          reqEditor.setReadOnly(false);
+          setRunning(false);
+        });
   };
 
   return (
-    <Container sx={{ flexGrow: 1 }}>
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Box>
-            <p>A method {methodName} of {serviceName}</p>
-            <p>{method.help}</p>
-          </Box>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Box
-            component='div'
-            sx={{ border: '1px solid #e0e0e0', borderRadius: '2px' }}
-          >
-            <AceEditor
-              ref={requestEditor}
-              mode='json'
-              defaultValue={initialRequest}
-              theme='tomorrow'
-              name='request-editor'
-              width='100%'
-              height='200px'
-              setOptions={{
-                enableBasicAutocompletion: true,
-                useWorker: false,
-              }}
-            />
-          </Box>
-        </Grid>
-
-        <Grid item xs={2}>
-          <Button
-            variant='outlined'
-            disabled={running}
-            onClick={invokeMethod}
-            endIcon={<ExecuteIcon />}>
-            Execute
-          </Button>
-        </Grid>
-
-        <Grid item xs={10}>
-          <Box>
-            <AuthSelector
-              selected={authMethod}
-              onChange={setAuthMethod}
-              oauthClientId={oauthClient.clientId}
-              disabled={running}
-            />
-          </Box>
-        </Grid>
-
-        {error &&
-          <Grid item xs={12}>
-            <ErrorAlert error={error} />
-          </Grid>
-        }
-
-        {running &&
-          <Grid item xs={12}>
-            <LinearProgress />
-          </Grid>
-        }
-
-        <Grid item xs={12}>
-          <Box
-            component='div'
-            sx={{
-              border: '1px solid #e0e0e0',
-              borderRadius: '2px',
-              mb: 2,
-            }}
-          >
-            <AceEditor
-              ref={responseEditor}
-              mode='json'
-              theme='tomorrow'
-              name='response-editor'
-              width='100%'
-              height='400px'
-              setOptions={{
-                readOnly: true,
-                useWorker: false,
-              }}
-            />
-          </Box>
-        </Grid>
-
+    <Grid container spacing={2}>
+      <Grid item xs={12}>
+        <Doc markdown={method.doc} />
       </Grid>
-    </Container>
+
+      <Grid item xs={12}>
+        <Box
+          component='div'
+          sx={{ border: '1px solid #e0e0e0', borderRadius: '2px' }}
+        >
+          <AceEditor
+            ref={requestEditor}
+            mode='json'
+            defaultValue={initialRequest}
+            theme='tomorrow'
+            name='request-editor'
+            width='100%'
+            height='200px'
+            setOptions={{
+              enableBasicAutocompletion: true,
+              useWorker: false,
+            }}
+          />
+        </Box>
+      </Grid>
+
+      <Grid item xs={2}>
+        <Button
+          variant='outlined'
+          disabled={running}
+          onClick={invokeMethod}
+          endIcon={<ExecuteIcon />}>
+          Execute
+        </Button>
+      </Grid>
+
+      <Grid item xs={10}>
+        <Box>
+          <AuthSelector
+            selected={authMethod}
+            onChange={setAuthMethod}
+            oauthClientId={oauthClient.clientId}
+            disabled={running}
+          />
+        </Box>
+      </Grid>
+
+      {error &&
+        <Grid item xs={12}>
+          <ErrorAlert error={error} />
+        </Grid>
+      }
+
+      {running &&
+        <Grid item xs={12}>
+          <LinearProgress />
+        </Grid>
+      }
+
+      <Grid item xs={12}>
+        <Box
+          component='div'
+          sx={{
+            border: '1px solid #e0e0e0',
+            borderRadius: '2px',
+            mb: 2,
+          }}
+        >
+          <AceEditor
+            ref={responseEditor}
+            mode='json'
+            theme='tomorrow'
+            name='response-editor'
+            width='100%'
+            height='400px'
+            setOptions={{
+              readOnly: true,
+              useWorker: false,
+            }}
+          />
+        </Box>
+      </Grid>
+    </Grid>
   );
 };
 

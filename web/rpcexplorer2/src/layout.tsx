@@ -16,6 +16,7 @@ import { Link as RouterLink, Outlet, useParams } from 'react-router-dom';
 
 import AppBar from '@mui/material/AppBar';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Toolbar from '@mui/material/Toolbar';
@@ -83,7 +84,9 @@ const Layout = () => {
         </Toolbar>
       </AppBar>
       <GlobalsWaiter>
-        <Outlet />
+        <Container maxWidth='md'>
+          <Outlet />
+        </Container>
       </GlobalsWaiter>
     </>
   );
