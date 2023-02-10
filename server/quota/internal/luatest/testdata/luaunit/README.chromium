@@ -1,0 +1,18 @@
+Name: luaunit
+URL: https://github.com/bluebird75/luaunit
+Version: 59325cd3fbe903aed8e1bd6e940911efe9c4ece4
+License: BSD
+License File: LICENSE.txt
+License Android Compatible: yes
+Security Critical: no
+Description:
+Used in tests to implement unit test organization and assertions.
+Local Modifications:
+Added the file README.chromium (this file)
+Kept luaunit.lua and LICENSE.txt
+Removed all other files.
+
+Modified prettystr_sub to use string.format instead of custom quoting logic to
+allow display of binary data in strings (due to lots of msgpack manipulation).
+
+https://github.com/bluebird75/luaunit/commit/59325cd3fbe903aed8e1bd6e940911efe9c4ece4
