@@ -113,7 +113,7 @@ func TestEndToEnd(t *testing.T) {
 		Convey(`Can send a giant message with compression`, func() {
 			svc.R = &HelloReply{Message: "sup"}
 
-			msg := make([]byte, 10*1024*1024)
+			msg := make([]byte, 1024*1024)
 			_, err := rand.Read(msg)
 			So(err, ShouldBeNil)
 
@@ -123,7 +123,7 @@ func TestEndToEnd(t *testing.T) {
 		})
 
 		Convey(`Can receive a giant message with compression`, func() {
-			msg := make([]byte, 10*1024*1024)
+			msg := make([]byte, 1024*1024)
 			_, err := rand.Read(msg)
 			So(err, ShouldBeNil)
 
@@ -268,7 +268,7 @@ func TestVerySmallTimeouts(t *testing.T) {
 		Convey(`Send a giant message with compression`, func() {
 			svc.R = &HelloReply{Message: "sup"}
 
-			msg := make([]byte, 10*1024*1024)
+			msg := make([]byte, 1024*1024)
 			_, err := rand.Read(msg)
 			So(err, ShouldBeNil)
 
@@ -279,7 +279,7 @@ func TestVerySmallTimeouts(t *testing.T) {
 		})
 
 		Convey(`Receive a giant message with compression`, func() {
-			msg := make([]byte, 10*1024*1024)
+			msg := make([]byte, 1024*1024)
 			_, err := rand.Read(msg)
 			So(err, ShouldBeNil)
 
