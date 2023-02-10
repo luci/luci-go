@@ -33,11 +33,13 @@ import (
 func TestAuthorizeRPCAccess(t *testing.T) {
 	t.Parallel()
 
+	interceptor := AuthorizeRPCAccess.Unary()
+
 	check := func(ctx context.Context, service, method string) codes.Code {
 		info := &grpc.UnaryServerInfo{
 			FullMethod: fmt.Sprintf("/%s/%s", service, method),
 		}
-		_, err := AuthorizeRPCAccess(ctx, nil, info, func(context.Context, interface{}) (interface{}, error) {
+		_, err := interceptor(ctx, nil, info, func(context.Context, interface{}) (interface{}, error) {
 			return nil, nil
 		})
 		return status.Code(err)

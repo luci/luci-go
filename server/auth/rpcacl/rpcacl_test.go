@@ -39,7 +39,7 @@ func TestInterceptor(t *testing.T) {
 		"/mixed/all":           All,
 		"/mixed/authenticated": Authenticated,
 		"/mixed/authorized":    "some-group",
-	})
+	}).Unary()
 
 	check := func(ctx context.Context, service, method string) codes.Code {
 		info := &grpc.UnaryServerInfo{

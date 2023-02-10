@@ -26,7 +26,7 @@ import (
 // groups is controlled by "owners" group field.
 const ServiceAccessGroup = "auth-service-access"
 
-// AuthorizeRPCAccess is a gRPC unary interceptor that checks the caller is
+// AuthorizeRPCAccess is a gRPC server interceptor that checks the caller is
 // in the group that grants access to the auth service API.
 var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 	// Discovery API is used by the RPC Explorer to show the list of APIs. It just

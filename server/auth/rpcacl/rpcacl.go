@@ -29,12 +29,12 @@ import (
 	"fmt"
 	"strings"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -64,7 +64,7 @@ const (
 	All = "!ALL"
 )
 
-// Interceptor returns an unary server interceptor that checks per-RPC ACLs.
+// Interceptor returns a server interceptor that checks per-RPC ACLs.
 //
 // The mapping maps an RPC method to a set of callers that is authorized to
 // call it. It should cover all services and methods exposed by the gRPC server.
@@ -76,7 +76,7 @@ const (
 // implement your own interceptor.
 //
 // Panics if mapping entries are malformed.
-func Interceptor(mapping Map) grpc.UnaryServerInterceptor {
+func Interceptor(mapping Map) grpcutil.UnifiedServerInterceptor {
 	type serviceMethod struct {
 		service string // full gRPC service name
 		method  string // method name or `*`
@@ -103,11 +103,11 @@ func Interceptor(mapping Map) grpc.UnaryServerInterceptor {
 		rpcACL[serviceMethod{service, method}] = val
 	}
 
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// FullMethod has form "/<service>/<method>".
-		parts := strings.Split(info.FullMethod, "/")
+	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
+		// fullMethod has form "/<service>/<method>".
+		parts := strings.Split(fullMethod, "/")
 		if len(parts) != 3 || parts[0] != "" {
-			panic(fmt.Sprintf("unexpected format of info.FullMethod: %q", info.FullMethod))
+			panic(fmt.Sprintf("unexpected format of full method name: %q", fullMethod))
 		}
 		service, method := parts[1], parts[2]
 
@@ -116,29 +116,29 @@ func Interceptor(mapping Map) grpc.UnaryServerInterceptor {
 			group = rpcACL[serviceMethod{service, "*"}]
 			if group == "" {
 				// If you see this error update rpcacl.Map to include your new API.
-				return nil, status.Errorf(codes.PermissionDenied, "rpcacl: calling unrecognized method %q", info.FullMethod)
+				return status.Errorf(codes.PermissionDenied, "rpcacl: calling unrecognized method %q", fullMethod)
 			}
 		}
 
 		if group == All {
-			return handler(ctx, req)
+			return handler(ctx)
 		}
 
 		if group == Authenticated {
 			if auth.CurrentIdentity(ctx).Kind() == identity.Anonymous {
-				return nil, status.Errorf(codes.Unauthenticated, "rpcacl: unauthenticated calls are not allowed")
+				return status.Errorf(codes.Unauthenticated, "rpcacl: unauthenticated calls are not allowed")
 			}
-			return handler(ctx, req)
+			return handler(ctx)
 		}
 
 		switch ok, err := auth.IsMember(ctx, group); {
 		case err != nil:
-			logging.Errorf(ctx, "Error when checking %q when accessing %q: %s", group, info.FullMethod, err)
-			return nil, status.Errorf(codes.Internal, "rpcacl: internal error when checking the ACL")
+			logging.Errorf(ctx, "Error when checking %q when accessing %q: %s", group, fullMethod, err)
+			return status.Errorf(codes.Internal, "rpcacl: internal error when checking the ACL")
 		case ok:
-			return handler(ctx, req)
+			return handler(ctx)
 		default:
-			return nil, status.Errorf(codes.PermissionDenied, "rpcacl: %q is not a member of %q", auth.CurrentIdentity(ctx), group)
+			return status.Errorf(codes.PermissionDenied, "rpcacl: %q is not a member of %q", auth.CurrentIdentity(ctx), group)
 		}
 	}
 }
