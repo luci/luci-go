@@ -41,6 +41,9 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 
 	toUpdate := make([]*model.Build, 0, len(bs))
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Clear the slice since it may contains value from the previous
+		// failed transaction.
+		toUpdate = toUpdate[:0]
 		if err := datastore.Get(ctx, bs); err != nil {
 			return err
 		}
