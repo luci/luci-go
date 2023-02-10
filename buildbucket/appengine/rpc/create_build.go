@@ -592,12 +592,23 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					case err != datastore.ErrNoSuchEntity:
 						return errors.Annotate(err, "failed to fetch build: %d", b.ID).Err()
 					}
+
+					// Drop the infra, input.properties when storing into Build entity, as
+					// they are stored in separate datastore entities.
+					infra := b.Proto.Infra
+					inProp := b.Proto.Input.Properties
+					b.Proto.Infra = nil
+					b.Proto.Input.Properties = nil
+					defer func() {
+						b.Proto.Infra = infra
+						b.Proto.Input.Properties = inProp
+					}()
 					if err := datastore.Put(ctx, toPut...); err != nil {
 						return errors.Annotate(err, "failed to store build: %d", b.ID).Err()
 					}
 
 					// If there is a backend set, lets use it and return to not use swarming.
-					if b.Proto.Infra.GetBackend() != nil {
+					if infra.GetBackend() != nil {
 						if err := tasks.CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
 							BuildId: b.ID,
 						}); err != nil {
@@ -606,7 +617,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 						return nil
 					}
 
-					if b.Proto.Infra.GetSwarming().GetHostname() == "" {
+					if infra.GetSwarming().GetHostname() == "" {
 						logging.Debugf(ctx, "skipped creating swarming task for build %d", b.ID)
 						return nil
 					}

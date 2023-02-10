@@ -5102,7 +5102,6 @@ func TestScheduleBuild(t *testing.T) {
 							SwarmingHost: "host",
 						},
 					}), ShouldBeNil)
-
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldBeNil)
 					So(rsp, ShouldResembleProto, &pb.Build{
@@ -5137,6 +5136,15 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					}), ShouldBeNil)
 
+					req.Properties = &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"input key": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "input value",
+								},
+							},
+						},
+					}
 					rsp, err := srv.ScheduleBuild(ctx, req)
 					So(err, ShouldBeNil)
 					So(rsp, ShouldResembleProto, &pb.Build{
@@ -5153,6 +5161,27 @@ func TestScheduleBuild(t *testing.T) {
 						Number:     1,
 						Status:     pb.Status_SCHEDULED,
 					})
+
+					// check input.properties and infra are stored in their own Datastore
+					// entities and not in Build entity.
+					buildInDB := &model.Build{ID: 9021868963221667745}
+					So(datastore.Get(ctx, buildInDB), ShouldBeNil)
+					So(buildInDB.Proto.Input.Properties, ShouldBeNil)
+					So(buildInDB.Proto.Infra, ShouldBeNil)
+					inProp := &model.BuildInputProperties{Build: datastore.KeyForObj(ctx, buildInDB)}
+					bInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, buildInDB)}
+					So(datastore.Get(ctx, inProp, bInfra), ShouldBeNil)
+					So(inProp.Proto, ShouldResembleProto, &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"input key": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "input value",
+								},
+							},
+						},
+					})
+					So(bInfra.Proto, ShouldNotBeEmpty)
+
 					So(sch.Tasks(), ShouldHaveLength, 1)
 					So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{
 						BuildId: 9021868963221667745,
