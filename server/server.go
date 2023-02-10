@@ -808,11 +808,11 @@ type Server struct {
 	errRptClient *errorreporting.Client                    // for reporting to the cloud Error Reporting
 	logRequestCB func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
 
-	mainPort *Port        // pre-registered main port, see initMainPort
+	mainPort *Port        // pre-registered main HTTP port, see initMainPort
 	prpc     *prpc.Server // pRPC server implementation exposed on the main port
 
 	mu      sync.Mutex    // protects fields below
-	ports   []*Port       // all non-dummy ports (each one hosts an HTTP server)
+	ports   []servingPort // all non-dummy ports (each one bound to a TCP socket)
 	started bool          // true inside and after Serve
 	stopped bool          // true inside and after Shutdown
 	ready   chan struct{} // closed right before starting the serving loop
@@ -844,6 +844,13 @@ type Server struct {
 	authDB      atomic.Value       // if not using AuthDBProvider, the last known good authdb.DB instance
 
 	runningAs string // email of an account the server runs as
+}
+
+// servingPort represents either an HTTP or gRPC serving port.
+type servingPort interface {
+	nameForLog() string
+	serve(baseCtx func() context.Context) error
+	shutdown(ctx context.Context)
 }
 
 // moduleHostImpl implements module.Host via server.Server.
@@ -1115,19 +1122,9 @@ func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 	}
 
 	if opts.ListenAddr != "-" {
-		// If not running tests, bind the socket as usual.
-		if s.Options.testListeners == nil {
-			var err error
-			port.listener, err = net.Listen("tcp", opts.ListenAddr)
-			if err != nil {
-				return nil, errors.Annotate(err, "failed to bind the listening port for %q at %q", opts.Name, opts.ListenAddr).Err()
-			}
-		} else {
-			// In test mode the listener MUST be prepared already.
-			port.listener = s.Options.testListeners[opts.ListenAddr]
-			if port.listener == nil {
-				return nil, errors.Reason("test listener for %q at %q is not set", opts.Name, opts.ListenAddr).Err()
-			}
+		var err error
+		if port.listener, err = s.createListener(opts.ListenAddr); err != nil {
+			return nil, errors.Annotate(err, "failed to bind the listening port for %q at %q", opts.Name, opts.ListenAddr).Err()
 		}
 		// Add to the list of ports that actually have sockets listening.
 		s.ports = append(s.ports, port)
@@ -1160,6 +1157,20 @@ func (s *Server) AddPort(opts PortOptions) (*Port, error) {
 // Must be called before Serve (panics otherwise).
 func (s *Server) VirtualHost(host string) *router.Router {
 	return s.mainPort.VirtualHost(host)
+}
+
+// createListener creates a TCP listener on the given address.
+func (s *Server) createListener(addr string) (net.Listener, error) {
+	// If not running tests, bind the socket as usual.
+	if s.Options.testListeners == nil {
+		return net.Listen("tcp", addr)
+	}
+	// In test mode the listener MUST be prepared already.
+	l := s.Options.testListeners[addr]
+	if l == nil {
+		return nil, errors.Reason("test listener is not set").Err()
+	}
+	return l, nil
 }
 
 // newRouter creates a Router with the default middleware chain and routes.
@@ -1453,9 +1464,7 @@ func (s *Server) Serve() error {
 		port := port
 		go func() {
 			defer wg.Done()
-			srv := port.httpServer()
-			srv.BaseContext = func(net.Listener) context.Context { return s.Context }
-			if err := srv.Serve(port.listener); err != http.ErrServerClosed {
+			if err := port.serve(func() context.Context { return s.Context }); err != nil {
 				logging.WithError(err).Errorf(s.Context, "Server %s failed", port.nameForLog())
 				errs[i] = err
 				s.Shutdown() // close all other servers
@@ -1502,7 +1511,7 @@ func (s *Server) Shutdown() {
 		port := port
 		go func() {
 			defer wg.Done()
-			port.httpServer().Shutdown(s.Context)
+			port.shutdown(s.Context)
 		}()
 	}
 	wg.Wait()

@@ -15,6 +15,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -37,6 +38,8 @@ type PortOptions struct {
 }
 
 // Port is returned by Server's AddPort and used to setup the request routing.
+//
+// It represents an HTTP port with a request router.
 type Port struct {
 	// Routes is a router for requests hitting this port.
 	//
@@ -86,6 +89,8 @@ func (p *Port) VirtualHost(host string) *router.Router {
 }
 
 // nameForLog returns a string to identify this port in the server logs.
+//
+// Part of the servingPort interface.
 func (p *Port) nameForLog() string {
 	var pfx string
 	if p.listener != nil {
@@ -102,9 +107,29 @@ func (p *Port) nameForLog() string {
 	return pfx
 }
 
-// httpServer lazy-initializes and returns http.Server for this port.
+// serve runs the serving loop until it is fully gracefully stopped.
 //
-// Called from Server's Serve.
+// Part of the servingPort interface.
+func (p *Port) serve(baseCtx func() context.Context) error {
+	srv := p.httpServer()
+	srv.BaseContext = func(net.Listener) context.Context { return baseCtx() }
+	err := srv.Serve(p.listener)
+	if err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
+}
+
+// shutdown gracefully stops the server, blocking until it is closed.
+//
+// Does nothing is the server is not running.
+//
+// Part of the servingPort interface.
+func (p *Port) shutdown(ctx context.Context) {
+	_ = p.httpServer().Shutdown(ctx)
+}
+
+// httpServer lazy-initializes and returns http.Server for this port.
 //
 // Once this function is called, no more virtual hosts can be added to the
 // server (an attempt to do so causes a panic).
