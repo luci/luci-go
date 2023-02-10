@@ -585,25 +585,25 @@ func TestNotification(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(datastore.Put(ctx, &model.Build{
-				ID: 999,
-				Project: "project",
-				BucketID: "bucket",
+				ID:        999,
+				Project:   "project",
+				BucketID:  "bucket",
 				BuilderID: "builder",
 				Proto: &pb.Build{
 					Id: 999,
 					Builder: &pb.BuilderID{
 						Project: "project",
-						Bucket: "bucket",
+						Bucket:  "bucket",
 						Builder: "builder",
 					},
 				},
 				PubSubCallback: model.PubSubCallback{
-					Topic: "projects/my-cloud-project/topics/callback-topic",
+					Topic:    "projects/my-cloud-project/topics/callback-topic",
 					UserData: []byte("userdata"),
 				},
 			}), ShouldBeNil)
 
-			err = PublishBuildsV2Notification(ctx, 999, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/callback-topic"},true)
+			err = PublishBuildsV2Notification(ctx, 999, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/callback-topic"}, true)
 			So(err, ShouldBeNil)
 
 			tasks := sch.Tasks()
@@ -623,14 +623,14 @@ func TestNotification(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(buildLarge, ShouldResembleProto, &pb.Build{Input: &pb.Build_Input{}, Output: &pb.Build_Output{}})
 			So(psCallbackMsg.BuildPubsub.Build, ShouldResembleProto, &pb.Build{
-					Id: 999,
-					Builder: &pb.BuilderID{
-						Project: "project",
-						Bucket:  "bucket",
-						Builder: "builder",
-					},
-					Input: &pb.Build_Input{},
-					Output: &pb.Build_Output{},
+				Id: 999,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Input:  &pb.Build_Input{},
+				Output: &pb.Build_Output{},
 			})
 			So(err, ShouldBeNil)
 			So(psCallbackMsg.UserData, ShouldResemble, []byte("userdata"))

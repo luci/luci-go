@@ -25,8 +25,8 @@ import (
 // a sequence.
 //
 // There are also two 'special' Matchers:
-//   * Ellipsis - Unconditionally matches zero or more elements in a sequence.
-//   * Edge - Matches the beginning or end of a sequence with zero-width.
+//   - Ellipsis - Unconditionally matches zero or more elements in a sequence.
+//   - Edge - Matches the beginning or end of a sequence with zero-width.
 type Matcher interface {
 	Matches(tok string) bool
 }

@@ -42,7 +42,7 @@ import (
 var pyPusbubCallbackAllowlist = stringset.NewFromSlice(
 	"projects/flutter-dashboard/topics/luci-builds",
 	"projects/flutter-dashboard/topics/luci-builds-prod",
-	)
+)
 
 // notifyPubSub enqueues tasks to Python side.
 func notifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
@@ -79,14 +79,14 @@ func NotifyPubSub(ctx context.Context, b *model.Build) error {
 	// handle the new format.
 	if pyPusbubCallbackAllowlist.Has(b.PubSubCallback.Topic) {
 		logging.Warningf(ctx, "Routing to Python side to handle pubsub callback for build %d", b.ID)
-		err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{BuildId:  b.ID, Callback: true})
+		err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{BuildId: b.ID, Callback: true})
 		return errors.Annotate(err, "failed to enqueue pubsub callback task to Python side for build: %d", b.ID).Err()
 	}
 
 	if err := tq.AddTask(ctx, &tq.Task{
 		Payload: &taskdefs.NotifyPubSubGo{
-			BuildId: b.ID,
-			Topic: &pb.BuildbucketCfg_Topic{Name: b.PubSubCallback.Topic},
+			BuildId:  b.ID,
+			Topic:    &pb.BuildbucketCfg_Topic{Name: b.PubSubCallback.Topic},
 			Callback: true,
 		},
 	}); err != nil {
@@ -196,12 +196,12 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 	if callback {
 		msg = &pb.PubSubCallBack{
 			BuildPubsub: bldV2,
-			UserData: b.PubSubCallback.UserData,
+			UserData:    b.PubSubCallback.UserData,
 		}
 		prj = "" // represent the service to make the pubsub call.
 	}
 
-	switch  {
+	switch {
 	case topic.GetName() != "":
 		return publishToExternalTopic(ctx, msg, generateBuildsV2Attributes(p), topic.Name, prj)
 	default:
@@ -234,7 +234,7 @@ func publishToExternalTopic(ctx context.Context, msg proto.Message, attrs map[st
 	topic := psClient.Topic(topicID)
 	defer topic.Stop()
 	result := topic.Publish(ctx, &pubsub.Message{
-		Data: blob,
+		Data:       blob,
 		Attributes: attrs,
 	})
 	_, err = result.Get(ctx)

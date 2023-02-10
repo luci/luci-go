@@ -165,7 +165,6 @@ func extract(e error) error {
 //	  // log an error or something, I don't know
 //	}
 //	// proceed as normal
-//
 func Append(errs ...error) error {
 	return extract(Flatten(MultiError(errs)))
 }

@@ -130,7 +130,7 @@ func TestFlatten(t *testing.T) {
 func TestAppend(t *testing.T) {
 	t.Parallel()
 	Convey("Test Append function", t, func() {
-		Convey("combine empty", func (){
+		Convey("combine empty", func() {
 			So(Append(), ShouldBeNil)
 		})
 		Convey("more intricate empty cases", func() {
@@ -138,16 +138,16 @@ func TestAppend(t *testing.T) {
 			So(Append(nil), ShouldBeNil)
 			So(Append(Append(Append()), Append(), nil, Append(nil, nil)), ShouldBeNil)
 		})
-		Convey("singleton physical equality", func (){
+		Convey("singleton physical equality", func() {
 			e := fmt.Errorf("f59031c1-3d8d-47c4-8cff-b2b5d67ce7e7")
 			So(e, ShouldEqual, Append(e))
 			So(e, ShouldEqual, Append(Append(e)))
 		})
-		Convey("doubleton physical equality", func (){
+		Convey("doubleton physical equality", func() {
 			e := fmt.Errorf("f59031c1-3d8d-47c4-8cff-b2b5d67ce7e7")
 			So(Append(e, e).(MultiError)[0], ShouldEqual, e)
 		})
-		Convey("doubleton physical equality with nils", func (){
+		Convey("doubleton physical equality with nils", func() {
 			e := fmt.Errorf("2d2a3939-e185-4210-9060-0cb0fdab42be")
 			So(Append(nil, e, e, nil).(MultiError)[0], ShouldEqual, e)
 		})
