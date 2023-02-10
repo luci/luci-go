@@ -17,7 +17,6 @@ package grpcutil
 import (
 	"context"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -25,28 +24,27 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 )
 
-// UnaryServerPanicCatcherInterceptor is a grpc.UnaryServerInterceptor that
-// catches panics in RPC handlers, recovers them and returns codes.Internal gRPC
-// errors instead.
-func UnaryServerPanicCatcherInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+// PanicCatcherInterceptor is a UnifiedServerInterceptor that catches panics
+// in RPC handlers, recovers them and returns codes.Internal gRPC errors
+// instead.
+func PanicCatcherInterceptor(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 		logging.Fields{
 			"panic.error": p.Reason,
-		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", info.FullMethod, p.Reason, p.Stack)
+		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", fullMethod, p.Reason, p.Stack)
 		err = status.Error(codes.Internal, "panic in the request handler")
 	})
-	return handler(ctx, req)
+	return handler(ctx)
 }
 
-// StreamServerPanicCatcherInterceptor is a grpc.StreamServerInterceptor that
-// catches panics in RPC handlers, recovers them and returns codes.Internal gRPC
-// errors instead.
-func StreamServerPanicCatcherInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
-	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Fields{
-			"panic.error": p.Reason,
-		}.Errorf(ss.Context(), "Caught panic during handling of %q: %s\n%s", info.FullMethod, p.Reason, p.Stack)
-		err = status.Error(codes.Internal, "panic in the request handler")
-	})
-	return handler(srv, ss)
-}
+var (
+	// UnaryServerPanicCatcherInterceptor is a grpc.UnaryServerInterceptor that
+	// catches panics in RPC handlers, recovers them and returns codes.Internal gRPC
+	// errors instead.
+	UnaryServerPanicCatcherInterceptor = UnifiedServerInterceptor(PanicCatcherInterceptor).Unary()
+
+	// StreamServerPanicCatcherInterceptor is a grpc.StreamServerInterceptor that
+	// catches panics in RPC handlers, recovers them and returns codes.Internal gRPC
+	// errors instead.
+	StreamServerPanicCatcherInterceptor = UnifiedServerInterceptor(PanicCatcherInterceptor).Stream()
+)

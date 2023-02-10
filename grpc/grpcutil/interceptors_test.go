@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -361,6 +363,123 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 				"<- abortChain",
 				"<- doNothing",
 			})
+		})
+	})
+}
+
+func TestUnifiedServerInterceptor(t *testing.T) {
+	t.Parallel()
+
+	type key string // to shut up golint
+
+	unaryInfo := &grpc.UnaryServerInfo{FullMethod: "/svc/method"}
+	streamInfo := &grpc.StreamServerInfo{FullMethod: "/svc/method"}
+
+	reqBody := "request"
+	resBody := "response"
+
+	rootCtx := context.WithValue(context.Background(), key("x"), "y")
+	server := &struct{}{}
+	stream := &wrappedSS{nil, rootCtx}
+
+	Convey("Passes requests, modifies the context", t, func() {
+		var u UnifiedServerInterceptor = func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
+			So(ctx, ShouldEqual, rootCtx)
+			So(fullMethod, ShouldEqual, "/svc/method")
+			return handler(context.WithValue(ctx, key("key"), "val"))
+		}
+
+		Convey("Unary", func() {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+				So(ctx.Value(key("key")).(string), ShouldEqual, "val")
+				So(req, ShouldEqual, &reqBody)
+				return &resBody, nil
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, &resBody)
+		})
+
+		Convey("Stream", func() {
+			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+				So(srv, ShouldEqual, server)
+				So(ss.Context().Value(key("key")).(string), ShouldEqual, "val")
+				return nil
+			})
+			So(err, ShouldBeNil)
+		})
+	})
+
+	Convey("Sees errors", t, func() {
+		retErr := status.Errorf(codes.Unknown, "boo")
+		var seenErr error
+
+		var u UnifiedServerInterceptor = func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
+			seenErr = handler(ctx)
+			return seenErr
+		}
+
+		Convey("Unary", func() {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+				return &resBody, retErr
+			})
+			So(err, ShouldEqual, retErr)
+			So(seenErr, ShouldEqual, retErr)
+			So(resp, ShouldBeNil)
+		})
+
+		Convey("Stream", func() {
+			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+				return retErr
+			})
+			So(err, ShouldEqual, retErr)
+			So(seenErr, ShouldEqual, retErr)
+		})
+	})
+
+	Convey("Can block requests", t, func() {
+		retErr := status.Errorf(codes.Unknown, "boo")
+
+		var u UnifiedServerInterceptor = func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
+			return retErr
+		}
+
+		Convey("Unary", func() {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+				panic("must not be called")
+			})
+			So(err, ShouldEqual, retErr)
+			So(resp, ShouldBeNil)
+		})
+
+		Convey("Stream", func() {
+			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+				panic("must not be called")
+			})
+			So(err, ShouldEqual, retErr)
+		})
+	})
+
+	Convey("Can override error", t, func() {
+		retErr := status.Errorf(codes.Unknown, "boo")
+
+		var u UnifiedServerInterceptor = func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
+			_ = handler(ctx)
+			return retErr
+		}
+
+		Convey("Unary", func() {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+				return &resBody, nil
+			})
+			So(err, ShouldEqual, retErr)
+			So(resp, ShouldBeNil)
+		})
+
+		Convey("Stream", func() {
+			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+				return status.Errorf(codes.Unknown, "another")
+			})
+			So(err, ShouldEqual, retErr)
 		})
 	})
 }
