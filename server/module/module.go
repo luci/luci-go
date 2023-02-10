@@ -159,6 +159,14 @@ type Host interface {
 	// interceptor becomes the outermost.
 	RegisterUnaryServerInterceptors(intr ...grpc.UnaryServerInterceptor)
 
+	// RegisterStreamServerInterceptors registers grpc.StreamServerInterceptor's
+	// applied to all streaming RPCs that hit the server.
+	//
+	// Interceptors are chained in order they are registered, which matches
+	// the order of modules in the list of modules. The first registered
+	// interceptor becomes the outermost.
+	RegisterStreamServerInterceptors(intr ...grpc.StreamServerInterceptor)
+
 	// RegisterCookieAuth registers an implementation of a cookie-based
 	// authentication scheme.
 	//

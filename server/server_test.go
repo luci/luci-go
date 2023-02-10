@@ -34,9 +34,13 @@ import (
 	"time"
 
 	"golang.org/x/net/http2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
@@ -54,6 +58,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/experiments"
+	"go.chromium.org/luci/server/internal/testpb"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 
@@ -145,7 +150,7 @@ func TestServer(t *testing.T) {
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
 					RequestInfo: &sdlogger.RequestInfo{
 						Method:       "GET",
-						URL:          srv.mainAddr + "/test",
+						URL:          "http://" + srv.mainAddr + "/test",
 						Status:       201,
 						RequestSize:  "0",
 						ResponseSize: "12", // len("Hello, world")
@@ -451,6 +456,98 @@ func TestH2C(t *testing.T) {
 			resp, err := srv.GetMain("/test", nil)
 			So(err, ShouldBeNil)
 			So(resp, ShouldEqual, "Hello, world")
+		})
+	})
+}
+
+func TestRPCServers(t *testing.T) {
+	t.Parallel()
+
+	// Helpers for testing context manipulations.
+	type ctxKey string
+	getFromCtx := func(ctx context.Context) string {
+		if s, ok := ctx.Value(ctxKey("xxx")).(string); ok {
+			return s
+		}
+		return "root"
+	}
+	addToCtx := func(ctx context.Context, val string) context.Context {
+		return context.WithValue(ctx, ctxKey("xxx"), getFromCtx(ctx)+":"+val)
+	}
+	addingIntr := func(val string) grpcutil.UnifiedServerInterceptor {
+		return func(ctx context.Context, _ string, handler func(context.Context) error) error {
+			return handler(addToCtx(ctx, val))
+		}
+	}
+
+	// TODO(vadimsh): Add tests that use gRPC server port.
+	// TODO(vadimsh): Add tests for streaming interceptors as well.
+
+	Convey("With server", t, func() {
+		ctx := context.Background()
+
+		srv, err := newTestServer(ctx, nil)
+		So(err, ShouldBeNil)
+		defer srv.cleanup()
+		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
+
+		rpcSvc := &testRPCServer{}
+		testpb.RegisterTestServer(srv, rpcSvc)
+
+		rpcClient := testpb.NewTestClient(&prpc.Client{
+			Host: srv.mainAddr,
+			Options: &prpc.Options{
+				Insecure: true,
+			},
+		})
+
+		Convey("Context features", func() {
+			rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+				if err := testContextFeatures(ctx); err != nil {
+					return nil, err
+				}
+				return &testpb.Response{}, nil
+			}
+
+			srv.ServeInBackground()
+
+			_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
+			So(err, ShouldBeNil)
+		})
+
+		Convey("Panic catcher is installed", func() {
+			rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+				panic("BOOM")
+			}
+
+			srv.ServeInBackground()
+
+			_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
+			So(err, ShouldHaveGRPCStatus, codes.Internal)
+
+			// Logged the panic.
+			So(srv.stdout.Last(2)[0].Fields["panic.error"], ShouldEqual, "BOOM")
+		})
+
+		Convey("Unary interceptors", func() {
+			srv.RegisterUnaryServerInterceptors(
+				addingIntr("1").Unary(),
+				addingIntr("2").Unary(),
+			)
+			srv.RegisterUnifiedServerInterceptors(
+				addingIntr("3"),
+				addingIntr("4"),
+			)
+
+			rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+				return &testpb.Response{Text: getFromCtx(ctx)}, nil
+			}
+
+			srv.ServeInBackground()
+
+			resp, err := rpcClient.Unary(context.Background(), &testpb.Request{})
+			So(err, ShouldBeNil)
+			So(resp.Text, ShouldEqual, "root:1:2:3:4")
 		})
 	})
 }
@@ -773,10 +870,10 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	srv.Context = logging.SetFactory(memory.Use(srv.Context), logging.GetFactory(srv.Context))
 
 	mainPort := srv.Options.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
-	srv.mainAddr = fmt.Sprintf("http://127.0.0.1:%d", mainPort)
+	srv.mainAddr = fmt.Sprintf("127.0.0.1:%d", mainPort)
 
 	adminPort := srv.Options.testListeners["admin_addr"].Addr().(*net.TCPAddr).Port
-	srv.adminAddr = fmt.Sprintf("http://127.0.0.1:%d", adminPort)
+	srv.adminAddr = fmt.Sprintf("127.0.0.1:%d", adminPort)
 
 	return srv, nil
 }
@@ -806,19 +903,19 @@ func (s *testServer) StopBackgroundServing() error {
 // GetMain makes a blocking request to the main serving port, aborting it if
 // the server dies.
 func (s *testServer) GetMain(uri string, headers map[string]string) (string, error) {
-	return s.get(s.mainAddr+uri, headers, 0)
+	return s.get("http://"+s.mainAddr+uri, headers, 0)
 }
 
 // GetMain makes a blocking request with timeout to the main serving port,
 // aborting it if the server dies.
 func (s *testServer) GetMainWithTimeout(uri string, headers map[string]string, timeout time.Duration) (string, error) {
-	return s.get(s.mainAddr+uri, headers, timeout)
+	return s.get("http://"+s.mainAddr+uri, headers, timeout)
 }
 
 // GetAdmin makes a blocking request to the admin port, aborting it if
 // the server dies.
 func (s *testServer) GetAdmin(uri string, headers map[string]string) (string, error) {
-	return s.get(s.adminAddr+uri, headers, 0)
+	return s.get("http://"+s.adminAddr+uri, headers, 0)
 }
 
 // get makes a blocking request, aborting it if the server dies.
@@ -956,4 +1053,43 @@ func (r *logsRecorder) Last(n int) []sdlogger.LogEntry {
 	copy(entries, r.logs[len(r.logs)-n:])
 	r.m.Unlock()
 	return entries
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type testRPCServer struct {
+	testpb.UnimplementedTestServer
+
+	unary              func(context.Context, *testpb.Request) (*testpb.Response, error)
+	serverStream       func(*testpb.Request, testpb.Test_ServerStreamServer) error
+	clientStream       func(testpb.Test_ClientStreamServer) error
+	clientServerStream func(testpb.Test_ClientServerStreamServer) error
+}
+
+func (t *testRPCServer) Unary(ctx context.Context, r *testpb.Request) (*testpb.Response, error) {
+	if t.unary != nil {
+		return t.unary(ctx, r)
+	}
+	return nil, status.Errorf(codes.Unimplemented, "method Unary not implemented")
+}
+
+func (t *testRPCServer) ServerStream(r *testpb.Request, s testpb.Test_ServerStreamServer) error {
+	if t.serverStream != nil {
+		return t.serverStream(r, s)
+	}
+	return status.Errorf(codes.Unimplemented, "method ServerStream not implemented")
+}
+
+func (t *testRPCServer) ClientStream(s testpb.Test_ClientStreamServer) error {
+	if t.clientStream != nil {
+		return t.clientStream(s)
+	}
+	return status.Errorf(codes.Unimplemented, "method ClientStream not implemented")
+}
+
+func (t *testRPCServer) ClientServerStream(s testpb.Test_ClientServerStreamServer) error {
+	if t.clientServerStream != nil {
+		return t.clientServerStream(s)
+	}
+	return status.Errorf(codes.Unimplemented, "method ClientServerStream not implemented")
 }

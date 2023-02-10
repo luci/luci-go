@@ -122,7 +122,9 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		}
 	})
 
-	// Actually add the limiter to the default interceptors chain.
-	host.RegisterUnaryServerInterceptors(NewServerInterceptor(m.rpcLimiter).Unary())
+	// Actually add the limiter to the default interceptors chains.
+	intr := NewServerInterceptor(m.rpcLimiter)
+	host.RegisterUnaryServerInterceptors(intr.Unary())
+	host.RegisterStreamServerInterceptors(intr.Stream())
 	return ctx, nil
 }

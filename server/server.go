@@ -819,8 +819,9 @@ type Server struct {
 	done    chan struct{} // closed after Shutdown returns
 
 	// gRPC/pRPC configuration.
-	unaryInterceptors []grpc.UnaryServerInterceptor
-	rpcAuthMethods    []auth.Method
+	unaryInterceptors  []grpc.UnaryServerInterceptor
+	streamInterceptors []grpc.StreamServerInterceptor
+	rpcAuthMethods     []auth.Method
 
 	rndM sync.Mutex // protects rnd
 	rnd  *rand.Rand // used to generate trace and operation IDs
@@ -898,6 +899,11 @@ func (h *moduleHostImpl) RegisterService(desc *grpc.ServiceDesc, impl interface{
 func (h *moduleHostImpl) RegisterUnaryServerInterceptors(intr ...grpc.UnaryServerInterceptor) {
 	h.panicIfInvalid()
 	h.srv.RegisterUnaryServerInterceptors(intr...)
+}
+
+func (h *moduleHostImpl) RegisterStreamServerInterceptors(intr ...grpc.StreamServerInterceptor) {
+	h.panicIfInvalid()
+	h.srv.RegisterStreamServerInterceptors(intr...)
 }
 
 func (h *moduleHostImpl) RegisterCookieAuth(method auth.Method) {
@@ -1032,6 +1038,18 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	if err := srv.initWarmup(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize warmup callbacks").Err()
 	}
+
+	// Put base interceptors in front of whatever interceptors are installed by
+	// modules and by the user of Server. Put grpcmon before the panic catcher
+	// to make sure panics are actually reported to the monitoring.
+	srv.RegisterUnaryServerInterceptors(
+		grpcmon.UnaryServerInterceptor,
+		grpcutil.UnaryServerPanicCatcherInterceptor,
+	)
+	srv.RegisterStreamServerInterceptors(
+		grpcmon.StreamServerInterceptor,
+		grpcutil.StreamServerPanicCatcherInterceptor,
+	)
 
 	// Sort modules by their initialization order based on declared dependencies,
 	// discover unfulfilled required dependencies.
@@ -1258,6 +1276,48 @@ func (s *Server) RegisterUnaryServerInterceptors(intr ...grpc.UnaryServerInterce
 	s.unaryInterceptors = append(s.unaryInterceptors, intr...)
 }
 
+// RegisterStreamServerInterceptors registers grpc.StreamServerInterceptor's
+// applied to all streaming RPCs that hit the server.
+//
+// Interceptors are chained in order they are registered, i.e. the first
+// registered interceptor becomes the outermost. The initial chain already
+// contains some base interceptors (e.g. for monitoring) and all interceptors
+// registered by server modules. RegisterStreamServerInterceptors extends this
+// chain. Subsequent calls to RegisterStreamServerInterceptors adds more
+// interceptors into the chain.
+//
+// Must be called before Serve (panics otherwise).
+func (s *Server) RegisterStreamServerInterceptors(intr ...grpc.StreamServerInterceptor) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started {
+		s.Fatal(errors.Reason("the server has already been started").Err())
+	}
+	s.streamInterceptors = append(s.streamInterceptors, intr...)
+}
+
+// RegisterUnifiedServerInterceptors registers given interceptors into both
+// unary and stream interceptor chains.
+//
+// It is just a convenience helper for UnifiedServerInterceptor's that usually
+// need to be registered in both unary and stream interceptor chains. This
+// method is equivalent to calling RegisterUnaryServerInterceptors and
+// RegisterStreamServerInterceptors, passing corresponding flavors of
+// interceptors to them.
+//
+// Must be called before Serve (panics otherwise).
+func (s *Server) RegisterUnifiedServerInterceptors(intr ...grpcutil.UnifiedServerInterceptor) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started {
+		s.Fatal(errors.Reason("the server has already been started").Err())
+	}
+	for _, cb := range intr {
+		s.unaryInterceptors = append(s.unaryInterceptors, cb.Unary())
+		s.streamInterceptors = append(s.streamInterceptors, cb.Stream())
+	}
+}
+
 // ConfigurePRPC allows tweaking pRPC-specific server configuration.
 //
 // Use it only for changing pRPC-specific options (usually ones that are related
@@ -1341,30 +1401,22 @@ func (s *Server) SetRPCAuthMethods(methods []auth.Method) {
 //
 // Should be called only once. Panics otherwise.
 func (s *Server) Serve() error {
+	// Set s.started flag to "lock" the configuration. This would allow to read
+	// fields like `s.ports` without the fear of a race conditions.
 	s.mu.Lock()
 	if s.started {
 		s.mu.Unlock()
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 	s.started = true
-
-	ports := append(make([]*Port, 0, len(s.ports)), s.ports...)
-
-	// Assemble the interceptor chain. Put our base interceptors in front of
-	// whatever interceptors were installed by modules and by the user of Server
-	// via RegisterUnaryServerInterceptors.
-	interceptors := []grpc.UnaryServerInterceptor{
-		grpcmon.UnaryServerInterceptor,
-		grpcutil.UnaryServerPanicCatcherInterceptor,
-	}
-	interceptors = append(interceptors, s.unaryInterceptors...)
-
 	s.mu.Unlock()
 
-	// Finish setting the pRPC server now that the configuration is "locked" via
-	// s.started==true flag.
-	s.prpc.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(interceptors...)
+	// Finish setting the pRPC server now that the configuration is "locked".
+	s.prpc.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(s.unaryInterceptors...)
 	s.prpc.Authenticator = &auth.Authenticator{Methods: s.rpcAuthMethods}
+
+	// TODO(vadimsh): Install s.unaryInterceptors and s.streamInterceptors
+	// into the gRPC server.
 
 	// Run registered best-effort warmup callbacks right before serving.
 	s.runWarmup()
@@ -1392,10 +1444,10 @@ func (s *Server) Serve() error {
 	close(s.ready)
 
 	// Run serving loops in parallel.
-	errs := make(errors.MultiError, len(ports))
+	errs := make(errors.MultiError, len(s.ports))
 	wg := sync.WaitGroup{}
-	wg.Add(len(ports))
-	for i, port := range ports {
+	wg.Add(len(s.ports))
+	for i, port := range s.ports {
 		logging.Infof(s.Context, "Serving %s", port.nameForLog())
 		i := i
 		port := port

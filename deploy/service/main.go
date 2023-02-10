@@ -90,7 +90,7 @@ func main() {
 		})
 
 		// Per-RPC authorization interceptor.
-		srv.RegisterUnaryServerInterceptors(rpcacl.Interceptor(rpcACL).Unary())
+		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcACL))
 
 		// Web UI routes.
 		ui.RegisterRoutes(srv, accessGroup, &assets)
