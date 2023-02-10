@@ -80,6 +80,11 @@ type Tickets struct {
 	apiURL      *url.URL // URL of the service bridge (overridden in tests)
 }
 
+// Headers knows how to return request headers.
+type Headers interface {
+	Header(string) string
+}
+
 // DefaultTickets generates default background tickets.
 //
 // They are used for calls outside of request handlers. Uses GAE environment
@@ -96,11 +101,11 @@ func DefaultTickets() *Tickets {
 }
 
 // RequestTickets extracts tickets from incoming request headers.
-func RequestTickets(headers http.Header) *Tickets {
+func RequestTickets(headers Headers) *Tickets {
 	return &Tickets{
-		api:         headers.Get("X-Appengine-Api-Ticket"),
-		dapperTrace: headers.Get("X-Google-Dappertraceinfo"),
-		cloudTrace:  headers.Get("X-Cloud-Trace-Context"),
+		api:         headers.Header("X-Appengine-Api-Ticket"),
+		dapperTrace: headers.Header("X-Google-Dappertraceinfo"),
+		cloudTrace:  headers.Header("X-Cloud-Trace-Context"),
 	}
 }
 

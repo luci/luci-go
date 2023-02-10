@@ -116,3 +116,26 @@ func (s ocSpan) Attribute(key string, val interface{}) {
 	}
 	s.span.AddAttributes(a)
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+const cloudTraceHeader = "X-Cloud-Trace-Context"
+
+// Headers knows how to return request headers.
+type Headers interface {
+	Header(string) string
+}
+
+// SpanContextFromMetadata extracts a Stackdriver Trace span context from
+// incoming request metadata.
+func SpanContextFromMetadata(h Headers) (octrace.SpanContext, bool) {
+	// Unfortunately OpenCensus Stackdriver package hardcodes *http.Request as
+	// the request type even though it only really just needs one header.
+	header := h.Header(cloudTraceHeader)
+	if header == "" {
+		return octrace.SpanContext{}, false
+	}
+	return cloudTraceFormat.SpanContextFromRequest(&http.Request{
+		Header: http.Header{cloudTraceHeader: []string{header}},
+	})
+}

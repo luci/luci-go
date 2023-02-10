@@ -138,30 +138,31 @@
 //
 // The expected deployment environments are Kubernetes, Google App Engine and
 // Google Cloud Run. In all cases the server is expected to be behind a load
-// balancer (or a series of load balancers) that terminates TLS and sets
-// X-Forwarded-For header as:
+// balancer or proxy (or a series of load balancers and proxies) that terminate
+// TLS and set `X-Forwarded-For` and `X-Forwarded-Proto` headers. In particular
+// `X-Forwarded-For` header should look like:
 //
 //	[<untrusted part>,]<IP that connected to the LB>,<unimportant>[,<more>].
 //
-// Where <untrusted part> may be present if the original request from the
-// Internet comes with X-Forwarded-For header. The IP specified there is not
+// Where `<untrusted part>` may be present if the original request from the
+// Internet comes with `X-Forwarded-For` header. The IP specified there is not
 // trusted, but the server assumes the load balancer at least sanitizes the
 // format of this field.
 //
-// <IP that connected to the LB> is the end-client IP that can be used by the
+// `<IP that connected to the LB>` is the end-client IP that can be used by the
 // server for logs and for IP-allowlist checks.
 //
-// <unimportant> is "global forwarding rule external IP" for GKE or
+// `<unimportant>` is a "global forwarding rule external IP" for GKE or
 // the constant "169.254.1.1" for GAE and Cloud Run. It is unused. See
 // https://cloud.google.com/load-balancing/docs/https for more info.
 //
-// <more> may be present if the request was proxied through more layers of
+// `<more>` may be present if the request was proxied through more layers of
 // load balancers while already inside the cluster. The server currently assumes
-// this is not happening (i.e. <more> is absent, or, in other words, the client
-// IP is second to last in the X-Forwarded-For list). If you need to recognize
-// more layers of load balancing, please file a feature request to add a CLI
-// flag specifying how many layers of load balancers to skip to get to the
-// original IP.
+// this is not happening (i.e. `<more>` is absent, or, in other words, the
+// client IP is the second to last in the `X-Forwarded-For` list). If you need
+// to recognize more layers of load balancing, please file a feature request to
+// add a CLI flag specifying how many layers of load balancers to skip to get to
+// the original IP.
 package server
 
 import (
@@ -193,7 +194,6 @@ import (
 	"google.golang.org/grpc"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
-	"go.opencensus.io/exporter/stackdriver/propagation"
 	octrace "go.opencensus.io/trace"
 
 	"go.chromium.org/luci/common/clock"
@@ -246,9 +246,6 @@ const (
 	healthTimeLogThreshold    = 50 * time.Millisecond
 	defaultTsMonFlushInterval = 60 * time.Second
 	defaultTsMonFlushTimeout  = 15 * time.Second
-
-	// A header to look for end-client address, see getRemoteIP.
-	xffHeader = "X-Forwarded-For"
 )
 
 var (
@@ -770,9 +767,11 @@ func (o *Options) hostOptions() module.HostOptions {
 // process and route traffic "locally" there. This option would also allow to
 // add local grpc-web proxy into the mix if necessary.
 //
-// The server doesn't do TLS termination (even for gRPC traffic). It should be
-// sitting behind a load balancer that terminates TLS and sends clear text
-// (HTTP/1 or HTTP/2 for gRPC) requests to corresponding ports.
+// The server doesn't do TLS termination (even for gRPC traffic). It must be
+// sitting behind a load balancer or a proxy that terminates TLS and sends clear
+// text (HTTP/1 or HTTP/2 for gRPC) requests to corresponding ports, injecting
+// `X-Forwarded-*` headers. See "Security considerations" section above for more
+// details.
 type Server struct {
 	// Context is the root context used by all requests and background activities.
 	//
@@ -804,9 +803,10 @@ type Server struct {
 	startTime   time.Time    // for calculating uptime for /healthz
 	lastReqTime atomic.Value // time.Time when the last request started
 
-	stdout       sdlogger.LogEntryWriter // for logging to stdout, nil in dev mode
-	stderr       sdlogger.LogEntryWriter // for logging to stderr, nil in dev mode
-	errRptClient *errorreporting.Client  // for reporting to the cloud Error Reporting
+	stdout       sdlogger.LogEntryWriter                   // for logging to stdout, nil in dev mode
+	stderr       sdlogger.LogEntryWriter                   // for logging to stderr, nil in dev mode
+	errRptClient *errorreporting.Client                    // for reporting to the cloud Error Reporting
+	logRequestCB func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
 
 	mainPort *Port        // pre-registered main port, see initMainPort
 	prpc     *prpc.Server // pRPC server implementation exposed on the main port
@@ -1640,29 +1640,46 @@ func (s *Server) genUniqueID(l int) string {
 	return hex.EncodeToString(b)
 }
 
-var cloudTraceFormat = propagation.HTTPFormat{}
+// incomingRequest is a request received by the server.
+//
+// It is either an HTTP or a gRPC request.
+type incomingRequest struct {
+	protocol string               // for logs, e.g. "http", "https", "grpc"
+	uri      string               // the relative URI for logs, e.g. "/some/path?a=b"
+	method   string               // HTTP method verb for logs, e.g. "POST"
+	metadata auth.RequestMetadata // headers etc.
+	timeout  time.Duration        // the context timeout to set or 0 for unlimited
+}
 
-// rootMiddleware prepares the per-request context.
-func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
-	// The request context is derived from s.Context (see Serve) and has various
-	// server systems injected into it already. Its only difference from s.Context
-	// is that http.Server cancels it when the client disconnects, which we want.
-	ctx := c.Request.Context()
+// requestResult is logged after completion of a request.
+type requestResult struct {
+	statusCode   int   // the HTTP status code to log
+	requestSize  int64 // the request size in bytes if known
+	responseSize int64 // the response size in bytes if known
+}
 
+// startRequest prepares the per-request context.
+//
+// It returns a callback that must be called after finishing processing this
+// request.
+//
+// The incoming context is assumed to be derived from the server root context.
+func (s *Server) startRequest(ctx context.Context, req *incomingRequest) (context.Context, func(*requestResult)) {
 	// If running on GAE, initialize the per-request API tickets needed to make
 	// RPCs to the GAE service bridge.
 	if s.Options.Serverless == module.GAE {
-		ctx = gae.WithTickets(ctx, gae.RequestTickets(c.Request.Header))
+		ctx = gae.WithTickets(ctx, gae.RequestTickets(req.metadata))
 	}
 
-	// Wrap the request in a tracing span. The span is closed in the defer below
-	// (where we know the response status code). If this is a health check, open
-	// the span nonetheless, but do not record it (health checks are spammy and
-	// not interesting). This way the code is simpler ('span' is always non-nil
-	// and has TraceID). Additionally if some of health check code opens a span
-	// of its own, it will be ignored (as a child of not-recorded span).
-	healthCheck := isHealthCheckRequest(c.Request)
-	ctx, span := s.startRequestSpan(ctx, c.Request, healthCheck)
+	// Wrap the request in a tracing span. The span is closed in the request
+	// completion callback below (where we know the response status code). If
+	// this is a health check, open the span nonetheless, but do not record it
+	// (health checks are spammy and not interesting). This way the code is
+	// simpler ('span' is always non-nil and has TraceID). Additionally if some of
+	// health check code opens a span of its own, it will be ignored (as a child
+	// of not-recorded span).
+	healthCheck := isHealthCheckRequest(req)
+	ctx, span := s.startRequestSpan(ctx, req, healthCheck)
 
 	// This is used in waitUntilNotServing.
 	started := clock.Now(ctx)
@@ -1681,24 +1698,66 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		traceID = fmt.Sprintf("projects/%s/traces/%s", s.Options.CloudProject, traceID)
 	}
 
-	// Track how many response bytes are sent and what status is set.
-	rw := iotools.NewResponseWriter(c.Writer)
-	c.Writer = rw
+	// When running in prod, make the logger emit log entries in JSON format that
+	// Cloud Logger collectors understand natively.
+	var severityTracker *sdlogger.SeverityTracker
+	if s.Options.Prod {
+		// Start assembling logging sink layers starting with the innermost one.
+		logSink := s.stdout
 
-	// Observe maximum emitted severity to use it as an overall severity for the
-	// request log entry.
-	severityTracker := sdlogger.SeverityTracker{Out: s.stdout}
+		// If we are going to log the overall request status, install the tracker
+		// that observes the maximum emitted severity to use it as an overall
+		// severity for the request log entry.
+		if s.logRequestCB != nil {
+			severityTracker = &sdlogger.SeverityTracker{Out: logSink}
+			logSink = severityTracker
+		}
 
-	// End-user client IP is reported to logs in a bunch of places.
-	remoteAddr := getRemoteIP(c.Request.RemoteAddr, c.Request.Header.Get(xffHeader))
+		// If have Cloud Error Reporting enabled, intercept errors to upload them.
+		// TODO(vadimsh): Fill in `CloudErrorsSink.Request` with something.
+		if s.errRptClient != nil {
+			logSink = &sdlogger.CloudErrorsSink{
+				Client: s.errRptClient,
+				Out:    logSink,
+			}
+		}
 
-	// Log the overall request information when the request finishes. Use TraceID
-	// to correlate this log entry with entries emitted by the request handler
-	// below.
-	defer func() {
-		now := clock.Now(s.Context)
+		// Associate log entries with the tracing span where they were emitted.
+		annotateWithSpan := func(ctx context.Context, e *sdlogger.LogEntry) {
+			if span := octrace.FromContext(ctx); span != nil {
+				e.SpanID = span.SpanContext().SpanID.String()
+			}
+		}
+
+		// Finally install all this into the request context.
+		ctx = logging.SetFactory(ctx, sdlogger.Factory(logSink, sdlogger.LogEntry{
+			TraceID:   traceID,
+			Operation: &sdlogger.Operation{ID: s.genUniqueID(32)},
+		}, annotateWithSpan))
+	}
+
+	// Do final context touches.
+	var cancelCtx context.CancelFunc
+	if req.timeout != 0 {
+		ctx, cancelCtx = context.WithTimeout(ctx, req.timeout)
+	}
+	ctx = caching.WithRequestCache(ctx)
+
+	// This will be called once the request is fully processed.
+	return ctx, func(res *requestResult) {
+		defer span.End()
+		if cancelCtx != nil {
+			defer cancelCtx()
+		}
+
+		span.AddAttributes(
+			octrace.Int64Attribute("/http/status_code", int64(res.statusCode)),
+			octrace.Int64Attribute("/http/request/size", res.requestSize),
+			octrace.Int64Attribute("/http/response/size", res.responseSize),
+		)
+
+		now := clock.Now(ctx)
 		latency := now.Sub(started)
-		statusCode := rw.Status()
 
 		if healthCheck {
 			// Do not log fast health check calls AT ALL, they just spam logs.
@@ -1710,99 +1769,88 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 			logging.Warningf(ctx, "Health check is slow: %s > %s", latency, healthTimeLogThreshold)
 		}
 
+		// If there's no need to emit the overall request log entry, we are done.
+		// See initLogging(...) for where this is decided.
+		if s.logRequestCB == nil {
+			return
+		}
+
 		// When running behind Envoy, log its request IDs to simplify debugging.
 		var extraFields logging.Fields
-		if xrid := c.Request.Header.Get("X-Request-Id"); xrid != "" {
+		if xrid := req.metadata.Header("X-Request-Id"); xrid != "" {
 			extraFields = logging.Fields{"requestId": xrid}
 		}
 
-		entry := sdlogger.LogEntry{
-			Severity:     severityTracker.MaxSeverity(),
+		// If we were tracking the overall severity, collect the outcome.
+		severity := sdlogger.InfoSeverity
+		if severityTracker != nil {
+			severity = severityTracker.MaxSeverity()
+		}
+
+		// Log the final outcome of the processed request.
+		s.logRequestCB(ctx, &sdlogger.LogEntry{
+			Severity:     severity,
 			Timestamp:    sdlogger.ToTimestamp(now),
 			TraceID:      traceID,
 			TraceSampled: span.IsRecordingEvents(),
 			SpanID:       spanCtx.SpanID.String(), // the top-level span ID
 			Fields:       extraFields,
 			RequestInfo: &sdlogger.RequestInfo{
-				Method:       c.Request.Method,
-				URL:          getRequestURL(c.Request),
-				Status:       statusCode,
-				RequestSize:  fmt.Sprintf("%d", c.Request.ContentLength),
-				ResponseSize: fmt.Sprintf("%d", rw.ResponseSize()),
-				UserAgent:    c.Request.UserAgent(),
-				RemoteIP:     remoteAddr,
+				Method:       req.method,
+				URL:          fmt.Sprintf("%s://%s%s", req.protocol, req.metadata.Host(), req.uri),
+				Status:       res.statusCode,
+				RequestSize:  fmt.Sprintf("%d", res.requestSize),
+				ResponseSize: fmt.Sprintf("%d", res.responseSize),
+				UserAgent:    req.metadata.Header("User-Agent"),
+				RemoteIP:     endUserIP(req.metadata),
 				Latency:      fmt.Sprintf("%fs", latency.Seconds()),
 			},
-		}
-		if s.Options.Prod {
-			// Skip writing the root request log entry on Serverless GCP, since the
-			// load balancer there writes the entry itself, particular in:
-			//  - "appengine.googleapis.com/request_log" log for GAE.
-			//  - "run.googleapis.com/requests" log for Cloud Run.
-			// See also comments for initLogging(...).
-			if s.Options.Serverless != module.GAE && s.Options.Serverless != module.CloudRun {
-				s.stderr.Write(&entry)
-			}
-		} else {
-			logging.Infof(s.Context, "%d %s %q (%s)",
-				entry.RequestInfo.Status,
-				entry.RequestInfo.Method,
-				entry.RequestInfo.URL,
-				entry.RequestInfo.Latency,
-			)
-		}
-		span.AddAttributes(
-			octrace.Int64Attribute("/http/status_code", int64(statusCode)),
-			octrace.Int64Attribute("/http/request/size", c.Request.ContentLength),
-			octrace.Int64Attribute("/http/response/size", rw.ResponseSize()),
-		)
-		span.End()
-	}()
+		})
+	}
+}
 
+// rootMiddleware is an HTTP middleware that prepares the per-request context.
+func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
+	// Log the protocol the end user is using. It is forwarded by proxies.
+	protocol := c.Request.Header.Get("X-Forwarded-Proto")
+	if protocol != "https" {
+		protocol = "http"
+	}
+
+	// Track how many response bytes are sent and what status is set.
+	rw := iotools.NewResponseWriter(c.Writer)
+	c.Writer = rw
+
+	// Apply per-request timeout.
 	timeout := s.Options.DefaultRequestTimeout
 	if strings.HasPrefix(c.Request.URL.Path, "/internal/") {
 		timeout = s.Options.InternalRequestTimeout
 	}
 
-	if timeout != 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
-	}
+	// Initialize per-request context, open the tracing span, etc.
+	//
+	// Note c.Request.Context() is derived from s.Context (see Serve) and has
+	// various server systems injected into it already. Its only difference from
+	// s.Context is that http.Server cancels it when the client disconnects, which
+	// we want.
+	ctx, done := s.startRequest(c.Request.Context(), &incomingRequest{
+		protocol: protocol,
+		uri:      c.Request.RequestURI,
+		method:   c.Request.Method,
+		metadata: auth.RequestMetadataForHTTP(c.Request),
+		timeout:  timeout,
+	})
 
-	// Make the request logger emit log entries associated with the tracing span.
-	if s.Options.Prod {
-		annotateWithSpan := func(ctx context.Context, e *sdlogger.LogEntry) {
-			// Note: here 'span' is some inner span from where logging.Log(...) was
-			// called. We annotate log lines with spans that emitted them.
-			if span := octrace.FromContext(ctx); span != nil {
-				e.SpanID = span.SpanContext().SpanID.String()
-			}
-		}
+	// Report the result when done.
+	defer func() {
+		done(&requestResult{
+			statusCode:   rw.Status(),
+			requestSize:  c.Request.ContentLength,
+			responseSize: rw.ResponseSize(),
+		})
+	}()
 
-		var logSink sdlogger.LogEntryWriter
-		if s.errRptClient != nil {
-			// Substitute the correct RemoteAddr into the request logged by Cloud
-			// Error Reporting. This is important when running on GKE or behind a
-			// layer of HTTP proxies.
-			logReq := *c.Request
-			logReq.RemoteAddr = remoteAddr
-			logSink = &sdlogger.CloudErrorsSink{
-				Client:  s.errRptClient,
-				Request: &logReq,
-				Out:     &severityTracker,
-			}
-		} else {
-			logSink = &severityTracker
-		}
-		ctx = logging.SetFactory(ctx, sdlogger.Factory(logSink, sdlogger.LogEntry{
-			TraceID:   traceID,
-			Operation: &sdlogger.Operation{ID: s.genUniqueID(32)},
-		}, annotateWithSpan))
-	}
-
-	ctx = caching.WithRequestCache(ctx)
-
+	// Finish processing the request.
 	c.Context = ctx
 	c.Request = c.Request.WithContext(ctx)
 	next(c)
@@ -1846,6 +1894,14 @@ func (s *Server) initLogging() {
 	if !s.Options.Prod {
 		s.Context = gologger.StdConfig.Use(s.Context)
 		s.Context = logging.SetLevel(s.Context, logging.Debug)
+		s.logRequestCB = func(ctx context.Context, entry *sdlogger.LogEntry) {
+			logging.Infof(ctx, "%d %s %q (%s)",
+				entry.RequestInfo.Status,
+				entry.RequestInfo.Method,
+				entry.RequestInfo.URL,
+				entry.RequestInfo.Latency,
+			)
+		}
 		return
 	}
 
@@ -1869,6 +1925,18 @@ func (s *Server) initLogging() {
 		}, nil),
 	)
 	s.Context = logging.SetLevel(s.Context, logging.Debug)
+
+	// Skip writing the root request log entry on Serverless GCP since the load
+	// balancer there writes the entry itself.
+	switch s.Options.Serverless {
+	case module.GAE:
+		// Skip. GAE writes it to "appengine.googleapis.com/request_log" itself.
+	case module.CloudRun:
+		// Skip. Cloud Run writes it to "run.googleapis.com/requests" itself.
+	default:
+		// Emit to stderr where Cloud Logging collectors pick it up.
+		s.logRequestCB = func(_ context.Context, entry *sdlogger.LogEntry) { s.stderr.Write(entry) }
+	}
 }
 
 // initAuthStart initializes the core auth system by preparing the context
@@ -1958,7 +2026,7 @@ func (s *Server) initAuthStart() error {
 		ActorTokensProvider: s.actorTokens,
 		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
 		FrontendClientID:    func(context.Context) (string, error) { return s.Options.FrontendClientID, nil },
-		EndUserIP:           func(r auth.RequestMetadata) string { return getRemoteIP(r.RemoteAddr(), r.Header(xffHeader)) },
+		EndUserIP:           endUserIP,
 		IsDevMode:           !s.Options.Prod,
 	})
 
@@ -2530,7 +2598,7 @@ func (s *Server) initWarmup() error {
 //
 // Reuses the existing trace (if specified in the request headers) or starts
 // a new one.
-func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSampling bool) (context.Context, *octrace.Span) {
+func (s *Server) startRequestSpan(ctx context.Context, req *incomingRequest, skipSampling bool) (context.Context, *octrace.Span) {
 	var sampler octrace.Sampler
 	if skipSampling {
 		sampler = octrace.NeverSample()
@@ -2538,26 +2606,35 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 		sampler = s.sampler
 	}
 
+	// Span name would be e.g. "HTTP:/some/path" or "GRPC:/Service/Method".
+	path, _, _ := strings.Cut(req.uri, "?")
+	protocol := req.protocol
+	if protocol == "https" {
+		protocol = "http" // don't care about the difference in this case
+	}
+	name := strings.ToUpper(protocol) + ":" + path
+
 	// Add this span as a child to a span propagated through X-Cloud-Trace-Context
 	// header (if any). Start a new root span otherwise.
 	var span *octrace.Span
-	if parent, hasParent := cloudTraceFormat.SpanContextFromRequest(r); hasParent {
-		ctx, span = octrace.StartSpanWithRemoteParent(ctx, "HTTP:"+r.URL.Path, parent,
+	if parent, hasParent := internal.SpanContextFromMetadata(req.metadata); hasParent {
+		ctx, span = octrace.StartSpanWithRemoteParent(ctx, name, parent,
 			octrace.WithSpanKind(octrace.SpanKindServer),
 			octrace.WithSampler(sampler),
 		)
 	} else {
-		ctx, span = octrace.StartSpan(ctx, "HTTP:"+r.URL.Path,
+		ctx, span = octrace.StartSpan(ctx, name,
 			octrace.WithSpanKind(octrace.SpanKindServer),
 			octrace.WithSampler(sampler),
 		)
 	}
 
-	// Request info (these are recognized by Cloud Trace natively).
+	// Request info (some of these are recognized by Cloud Trace natively).
 	span.AddAttributes(
-		octrace.StringAttribute("/http/host", r.Host),
-		octrace.StringAttribute("/http/method", r.Method),
-		octrace.StringAttribute("/http/path", r.URL.Path),
+		octrace.StringAttribute("/http/host", req.metadata.Host()),
+		octrace.StringAttribute("/http/method", req.method),
+		octrace.StringAttribute("/http/path", path),
+		octrace.StringAttribute("/http/protocol", req.protocol),
 	)
 
 	return ctx, span
@@ -2652,8 +2729,8 @@ func networkAddrsForLog() string {
 	return strings.Join(ips, ", ")
 }
 
-// getRemoteIP extracts end-user IP address from X-Forwarded-For header.
-func getRemoteIP(remoteAddr, xff string) string {
+// endUserIP extracts end-user IP address from X-Forwarded-For header.
+func endUserIP(r auth.RequestMetadata) string {
 	// X-Forwarded-For header is set by Cloud Load Balancer and GCP Serverless
 	// load balancer and has format:
 	//   [<untrusted part>,]<IP that connected to LB>,<unimportant>[,<more>].
@@ -2674,38 +2751,27 @@ func getRemoteIP(remoteAddr, xff string) string {
 	// IP). On GCP Serverless <more> is always empty.
 	//
 	// See https://cloud.google.com/load-balancing/docs/https for more info.
-	forwardedFor := strings.Split(xff, ",")
+	forwardedFor := strings.Split(r.Header("X-Forwarded-For"), ",")
 	if len(forwardedFor) >= 2 {
 		return strings.TrimSpace(forwardedFor[len(forwardedFor)-2])
 	}
 
 	// Fallback to the peer IP if X-Forwarded-For is not set. Happens when
 	// connecting to the server's port directly from within the cluster.
-	ip, _, err := net.SplitHostPort(remoteAddr)
+	ip, _, err := net.SplitHostPort(r.RemoteAddr())
 	if err != nil {
 		return "0.0.0.0"
 	}
 	return ip
 }
 
-// getRequestURL reconstructs original request URL to log it (best effort).
-func getRequestURL(r *http.Request) string {
-	proto := r.Header.Get("X-Forwarded-Proto")
-	if proto != "https" {
-		proto = "http"
-	}
-	host := r.Host
-	if r.Host == "" {
-		host = "127.0.0.1"
-	}
-	return fmt.Sprintf("%s://%s%s", proto, host, r.RequestURI)
-}
-
 // isHealthCheckRequest is true if the request appears to be coming from
 // a known health check probe.
-func isHealthCheckRequest(r *http.Request) bool {
-	if r.URL.Path == healthEndpoint {
-		switch ua := r.UserAgent(); {
+func isHealthCheckRequest(r *incomingRequest) bool {
+	grpcCheck := r.protocol == "gprc" && strings.HasPrefix(r.uri, "/grpc.health.")
+	httpCheck := r.uri == healthEndpoint
+	if grpcCheck || httpCheck {
+		switch ua := r.metadata.Header("User-Agent"); {
 		case strings.HasPrefix(ua, "kube-probe/"): // Kubernetes
 			return true
 		case strings.HasPrefix(ua, "GoogleHC"): // Cloud Load Balancer
