@@ -204,7 +204,7 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 			CLMutator:         op.CLMutator,
 		}
 		op.results[i] = cancelResult{
-			err: notAttemptedYetErr,
+			err: errNotAttemptedYet,
 		}
 	}
 	return nil
@@ -238,8 +238,8 @@ type cancelResult struct {
 	err         error
 }
 
-// notAttemptedYetErr is the initial error set in cancelResult.
-var notAttemptedYetErr = errors.New("not attempted cancellation yet")
+// errNotAttemptedYet is the initial error set in cancelResult.
+var errNotAttemptedYet = errors.New("not attempted cancellation yet")
 
 // executeInParallel cancels the triggers of the provided CLs in parallel
 // and keeps retrying on transient or alreadyInLease failure until the context
