@@ -17,23 +17,24 @@ package limiter
 import (
 	"context"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
-// NewUnaryServerInterceptor returns a grpc.UnaryServerInterceptor that uses
-// the given limiter to accept or drop gRPC requests.
-func NewUnaryServerInterceptor(l *Limiter) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+// NewServerInterceptor returns a UnifiedServerInterceptor that uses the given
+// limiter to accept or drop gRPC requests.
+func NewServerInterceptor(l *Limiter) grpcutil.UnifiedServerInterceptor {
+	return func(ctx context.Context, fullMethod string, handler func(context.Context) error) error {
 		done, err := l.CheckRequest(ctx, &RequestInfo{
-			CallLabel: info.FullMethod,
+			CallLabel: fullMethod,
 			PeerLabel: PeerLabelFromAuthState(ctx),
 		})
 		if err != nil {
-			return nil, status.Error(codes.Unavailable, err.Error())
+			return status.Error(codes.Unavailable, err.Error())
 		}
 		defer done()
-		return handler(ctx, req)
+		return handler(ctx)
 	}
 }

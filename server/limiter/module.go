@@ -123,6 +123,6 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	})
 
 	// Actually add the limiter to the default interceptors chain.
-	host.RegisterUnaryServerInterceptors(NewUnaryServerInterceptor(m.rpcLimiter))
+	host.RegisterUnaryServerInterceptors(NewServerInterceptor(m.rpcLimiter).Unary())
 	return ctx, nil
 }
