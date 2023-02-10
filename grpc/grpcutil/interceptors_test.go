@@ -192,3 +192,175 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 		})
 	})
 }
+
+func TestChainStreamServerInterceptors(t *testing.T) {
+	t.Parallel()
+
+	// Note: this is 80% copy-pasta of TestChainUnaryServerInterceptors just using
+	// different types to match StreamServerInterceptor API.
+
+	Convey("With interceptors", t, func() {
+		testCtxKey := "testing"
+		testInfo := &grpc.StreamServerInfo{} // constant address for assertions
+		testError := errors.New("boom")      // constant address for assertions
+
+		calls := []string{}
+		record := func(fn string) func() {
+			calls = append(calls, "-> "+fn)
+			return func() { calls = append(calls, "<- "+fn) }
+		}
+
+		callChain := func(intr grpc.StreamServerInterceptor, h grpc.StreamHandler) error {
+			// Note: this will panic horribly when most "real" methods are called, but
+			// tests call only Context() and it will be fine.
+			phonyStream := &wrappedSS{nil, context.Background()}
+			return intr("phony srv", phonyStream, testInfo, h)
+		}
+
+		// A "library" of interceptors used below.
+
+		doNothing := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			defer record("doNothing")()
+			return handler(srv, ss)
+		}
+
+		populateContext := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			defer record("populateContext")()
+			return handler(srv, ModifyServerStreamContext(ss, func(ctx context.Context) context.Context {
+				return context.WithValue(ctx, &testCtxKey, "value")
+			}))
+		}
+
+		checkContext := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			defer record("checkContext")()
+			So(ss.Context().Value(&testCtxKey), ShouldEqual, "value")
+			return handler(srv, ss)
+		}
+
+		modifySrv := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			defer record("modifySrv")()
+			return handler("modified srv", ss)
+		}
+
+		checkSrv := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			defer record("checkSrv")()
+			So(srv.(string), ShouldEqual, "modified srv")
+			return handler(srv, ss)
+		}
+
+		checkErr := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			defer record("checkErr")()
+			err := handler(srv, ss)
+			So(err, ShouldEqual, testError)
+			return err
+		}
+
+		abortChain := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			defer record("abortChain")()
+			return testError
+		}
+
+		successHandler := func(srv interface{}, ss grpc.ServerStream) error {
+			defer record("successHandler")()
+			return nil
+		}
+
+		errorHandler := func(srv interface{}, ss grpc.ServerStream) error {
+			defer record("errorHandler")()
+			return testError
+		}
+
+		Convey("Noop chain", func() {
+			err := callChain(ChainStreamServerInterceptors(nil, nil), successHandler)
+			So(err, ShouldBeNil)
+			So(calls, ShouldResemble, []string{
+				"-> successHandler",
+				"<- successHandler",
+			})
+		})
+
+		Convey("One link chain", func() {
+			err := callChain(ChainStreamServerInterceptors(doNothing), successHandler)
+			So(err, ShouldBeNil)
+			So(calls, ShouldResemble, []string{
+				"-> doNothing",
+				"-> successHandler",
+				"<- successHandler",
+				"<- doNothing",
+			})
+		})
+
+		Convey("Nils are OK", func() {
+			err := callChain(ChainStreamServerInterceptors(nil, doNothing, nil, nil), successHandler)
+			So(err, ShouldBeNil)
+			So(calls, ShouldResemble, []string{
+				"-> doNothing",
+				"-> successHandler",
+				"<- successHandler",
+				"<- doNothing",
+			})
+		})
+
+		Convey("Changes propagate", func() {
+			chain := ChainStreamServerInterceptors(
+				populateContext,
+				modifySrv,
+				doNothing,
+				checkContext,
+				checkSrv,
+			)
+			err := callChain(chain, successHandler)
+			So(err, ShouldBeNil)
+			So(calls, ShouldResemble, []string{
+				"-> populateContext",
+				"-> modifySrv",
+				"-> doNothing",
+				"-> checkContext",
+				"-> checkSrv",
+				"-> successHandler",
+				"<- successHandler",
+				"<- checkSrv",
+				"<- checkContext",
+				"<- doNothing",
+				"<- modifySrv",
+				"<- populateContext",
+			})
+		})
+
+		Convey("Request error propagates", func() {
+			chain := ChainStreamServerInterceptors(
+				doNothing,
+				checkErr,
+			)
+			err := callChain(chain, errorHandler)
+			So(err, ShouldEqual, testError)
+			So(calls, ShouldResemble, []string{
+				"-> doNothing",
+				"-> checkErr",
+				"-> errorHandler",
+				"<- errorHandler",
+				"<- checkErr",
+				"<- doNothing",
+			})
+		})
+
+		Convey("Interceptor can abort the chain", func() {
+			chain := ChainStreamServerInterceptors(
+				doNothing,
+				abortChain,
+				doNothing,
+				doNothing,
+				doNothing,
+				doNothing,
+			)
+			err := callChain(chain, successHandler)
+			So(err, ShouldEqual, testError)
+			So(calls, ShouldResemble, []string{
+				"-> doNothing",
+				"-> abortChain",
+				"<- abortChain",
+				"<- doNothing",
+			})
+		})
+	})
+}
