@@ -17,21 +17,21 @@ package xsrf
 import (
 	"context"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 )
 
 // XSRFTokenMetadataKey is the gRPC metadata key with the XSRF token.
 const XSRFTokenMetadataKey = "x-xsrf-token"
 
-// Interceptor returns a gRPC unary server interceptor that check the XSRF token
-// if the call was authenticated through the given method (usually some sort of
+// Interceptor returns a server interceptor that check the XSRF token if the
+// call was authenticated through the given method (usually some sort of
 // cookie-based authentication).
 //
 // The token should be in the incoming metadata at "x-xsrf-token" key.
@@ -40,8 +40,8 @@ const XSRFTokenMetadataKey = "x-xsrf-token"
 // requests when using pRPC APIs with cookie-based authentication. Theoretically
 // CORS policies and SameSite cookies can also solve this problem, but their
 // semantics is pretty complicated and it is easy to mess up.
-func Interceptor(method auth.Method) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func Interceptor(method auth.Method) grpcutil.UnifiedServerInterceptor {
+	return func(ctx context.Context, _ string, handler func(ctx context.Context) error) (err error) {
 		if auth.GetState(ctx).Method() == method {
 			found := false
 			md, _ := metadata.FromIncomingContext(ctx)
@@ -53,13 +53,13 @@ func Interceptor(method auth.Method) grpc.UnaryServerInterceptor {
 				}
 				if transient.Tag.In(err) {
 					logging.Errorf(ctx, "Transient error when checking XSRF token: %s", err)
-					return nil, status.Errorf(codes.Internal, "internal error when checking XSRF token")
+					return status.Errorf(codes.Internal, "internal error when checking XSRF token")
 				}
 			}
 			if !found {
-				return nil, status.Errorf(codes.Unauthenticated, "missing or invalid XSRF token in %q metadata", XSRFTokenMetadataKey)
+				return status.Errorf(codes.Unauthenticated, "missing or invalid XSRF token in %q metadata", XSRFTokenMetadataKey)
 			}
 		}
-		return handler(ctx, req)
+		return handler(ctx)
 	}
 }

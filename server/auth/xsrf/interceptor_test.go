@@ -58,7 +58,7 @@ func TestInterceptor(t *testing.T) {
 
 		// Install the interceptor that checks the token **only** when authMethod1
 		// is used.
-		rpcSrv.UnaryServerInterceptor = Interceptor(authMethod1)
+		rpcSrv.UnaryServerInterceptor = Interceptor(authMethod1).Unary()
 
 		// We need some API to call in the test. Reuse Discovery API for that since
 		// it is simple enough and have no side effects.

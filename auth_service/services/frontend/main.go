@@ -90,7 +90,7 @@ func main() {
 
 		// Interceptors applying to all RPC APIs.
 		srv.RegisterUnaryServerInterceptors(
-			xsrf.Interceptor(prpcAuth),
+			xsrf.Interceptor(prpcAuth).Unary(),
 			impl.AuthorizeRPCAccess,
 		)
 
