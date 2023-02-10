@@ -74,6 +74,13 @@ func (c *client) ReportGit(ctx context.Context, in *snooperpb.ReportGitRequest, 
 	return c.client.ReportGit(ctx, in, opts...)
 }
 
+// ReportGit reports gcs download via provenance local server.
+func (c *client) ReportGcs(ctx context.Context, in *snooperpb.ReportGcsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return c.client.ReportGcs(ctx, in, opts...)
+}
+
 // ReportTaskStage reports task stage via provenance local server.
 func (c *client) ReportTaskStage(ctx context.Context, in *snooperpb.ReportTaskStageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)

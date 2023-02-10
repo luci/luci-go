@@ -23,13 +23,14 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto";
 
 service SelfReport {
-    // Interface to report cipd packages admitted on the local machine. This
-    // should be used by Admission plugin only.
+    // Interface to report cipd packages admitted on the local machine.
     rpc ReportCipd(ReportCipdRequest) returns (google.protobuf.Empty);
 
-    // Interface to report git repos checked out  on the local machine. This
-    // should be used by git plugin only.
+    // Interface to report git repos checked out on the local machine.
     rpc ReportGit(ReportGitRequest) returns (google.protobuf.Empty);
+
+    // Interface to report gcs artifacts downloaded on a local machine.
+    rpc ReportGcs(ReportGcsRequest) returns (google.protobuf.Empty);
 
     // Reports running task's stage. A task is typically a collection of
     // workflows/statements. Some of these statements can be grouped together
@@ -138,6 +139,22 @@ message CipdReport {
     google.protobuf.Timestamp event_ts = 6;
 }
 
+message GcsReport {
+    // An identifier to map multiple reports to a machine/task. This is
+    // going to be a build identifier.
+    string requestor_id = 1;
+
+    // GCS URI for the artifact downloaded on the machine.
+    string gcs_uri = 2;
+
+    // Digest of the downloaded artifact.
+    string digest = 3;
+
+    // Event timestamp. This is local to the service, not necessarily same as
+    // the reflected recorded timestamp on the logs.
+    google.protobuf.Timestamp event_ts = 4;
+}
+
 message GitReport {
     // An identifier to map multiple reports to a machine/task. Reporter do not
     // need to set this. It is used by the server to group reports together and
@@ -215,6 +232,11 @@ message ReportCipdRequest {
 message ReportGitRequest {
     // git_report will consist of repo name, git hash of checked out repo.
     GitReport git_report = 1;
+}
+
+message ReportGcsRequest {
+    // gcs_report will consist of gcs uri, hash of downloaded artifact.
+    GcsReport gcs_report = 1;
 }
 
 message ReportPIDRequest {

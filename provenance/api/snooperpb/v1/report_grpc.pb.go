@@ -23,12 +23,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SelfReportClient interface {
-	// Interface to report cipd packages admitted on the local machine. This
-	// should be used by Admission plugin only.
+	// Interface to report cipd packages admitted on the local machine.
 	ReportCipd(ctx context.Context, in *ReportCipdRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Interface to report git repos checked out  on the local machine. This
-	// should be used by git plugin only.
+	// Interface to report git repos checked out on the local machine.
 	ReportGit(ctx context.Context, in *ReportGitRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Interface to report gcs artifacts downloaded on a local machine.
+	ReportGcs(ctx context.Context, in *ReportGcsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Reports running task's stage. A task is typically a collection of
 	// workflows/statements. Some of these statements can be grouped together
 	// to define a stage, e.g. when a task is downloading sources/deps, it is
@@ -69,6 +69,15 @@ func (c *selfReportClient) ReportGit(ctx context.Context, in *ReportGitRequest, 
 	return out, nil
 }
 
+func (c *selfReportClient) ReportGcs(ctx context.Context, in *ReportGcsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/provenance.snooperpb.SelfReport/ReportGcs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *selfReportClient) ReportTaskStage(ctx context.Context, in *ReportTaskStageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/provenance.snooperpb.SelfReport/ReportTaskStage", in, out, opts...)
@@ -100,12 +109,12 @@ func (c *selfReportClient) ReportArtifactDigest(ctx context.Context, in *ReportA
 // All implementations must embed UnimplementedSelfReportServer
 // for forward compatibility
 type SelfReportServer interface {
-	// Interface to report cipd packages admitted on the local machine. This
-	// should be used by Admission plugin only.
+	// Interface to report cipd packages admitted on the local machine.
 	ReportCipd(context.Context, *ReportCipdRequest) (*emptypb.Empty, error)
-	// Interface to report git repos checked out  on the local machine. This
-	// should be used by git plugin only.
+	// Interface to report git repos checked out on the local machine.
 	ReportGit(context.Context, *ReportGitRequest) (*emptypb.Empty, error)
+	// Interface to report gcs artifacts downloaded on a local machine.
+	ReportGcs(context.Context, *ReportGcsRequest) (*emptypb.Empty, error)
 	// Reports running task's stage. A task is typically a collection of
 	// workflows/statements. Some of these statements can be grouped together
 	// to define a stage, e.g. when a task is downloading sources/deps, it is
@@ -130,6 +139,9 @@ func (UnimplementedSelfReportServer) ReportCipd(context.Context, *ReportCipdRequ
 }
 func (UnimplementedSelfReportServer) ReportGit(context.Context, *ReportGitRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportGit not implemented")
+}
+func (UnimplementedSelfReportServer) ReportGcs(context.Context, *ReportGcsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportGcs not implemented")
 }
 func (UnimplementedSelfReportServer) ReportTaskStage(context.Context, *ReportTaskStageRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskStage not implemented")
@@ -185,6 +197,24 @@ func _SelfReport_ReportGit_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SelfReportServer).ReportGit(ctx, req.(*ReportGitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SelfReport_ReportGcs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportGcsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SelfReportServer).ReportGcs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/provenance.snooperpb.SelfReport/ReportGcs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SelfReportServer).ReportGcs(ctx, req.(*ReportGcsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -257,6 +287,10 @@ var SelfReport_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportGit",
 			Handler:    _SelfReport_ReportGit_Handler,
+		},
+		{
+			MethodName: "ReportGcs",
+			Handler:    _SelfReport_ReportGcs_Handler,
 		},
 		{
 			MethodName: "ReportTaskStage",

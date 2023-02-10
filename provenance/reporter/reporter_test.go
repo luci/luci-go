@@ -45,6 +45,11 @@ func TestSelfReportClient(t *testing.T) {
 			So(ok, ShouldEqual, true)
 			So(err, ShouldBeNil)
 		})
+		Convey("gcs download works", func() {
+			ok, err := reporter.ReportGcsDownload(ctx, "gs://unique/path/to/artifact", "deadbeef")
+			So(ok, ShouldEqual, true)
+			So(err, ShouldBeNil)
+		})
 		Convey("report stage works", func() {
 			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_FETCH, "", 0)
 			So(ok, ShouldEqual, true)
@@ -85,6 +90,10 @@ func (c *fakeClient) ReportCipd(ctx context.Context, in *snooperpb.ReportCipdReq
 }
 
 func (c *fakeClient) ReportGit(ctx context.Context, in *snooperpb.ReportGitRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
+func (c *fakeClient) ReportGcs(ctx context.Context, in *snooperpb.ReportGcsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
 

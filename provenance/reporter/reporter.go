@@ -106,6 +106,37 @@ func (r *Report) ReportGitCheckout(ctx context.Context, repo, commit, ref string
 	}
 }
 
+// ReportGcsDownload reports a local gcs download to provenance.
+//
+// It returns a success status and annotated error. Status is to indicate user
+// whether to block further execution.
+// If local provenance service is unavailable, it will return an ok status and
+// annotated error. This is to indicate, the user should continue normal
+// execution.
+// All other errors are annotated to indicate permanent failures.
+func (r *Report) ReportGcsDownload(ctx context.Context, uri, digest string) (bool, error) {
+	req := &snooperpb.ReportGcsRequest{
+		GcsReport: &snooperpb.GcsReport{
+			GcsUri:  uri,
+			Digest:  digest,
+			EventTs: timestamppb.New(clock.Now(ctx)),
+		},
+	}
+
+	_, err := r.RClient.ReportGcs(ctx, req)
+	switch errS, _ := status.FromError(err); errS.Code() {
+	case codes.OK:
+		logging.Infof(ctx, "success to report gcs download")
+		return true, nil
+	case codes.Unavailable:
+		logging.Errorf(ctx, "failed to report gcs download: %v", ErrServiceUnavailable)
+		return true, ErrServiceUnavailable
+	default:
+		logging.Errorf(ctx, "failed to report gcs download: %v", err)
+		return false, err
+	}
+}
+
 // ReportStage reports task stage via provenance local server.
 //
 // It returns a success status and annotated error. Status is to indicate user
