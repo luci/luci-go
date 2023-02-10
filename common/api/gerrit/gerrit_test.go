@@ -473,7 +473,9 @@ func TestRebase(t *testing.T) {
 
 		Convey("Basic with overridden base revision", func() {
 			ri := RebaseInput{
-				Base: "abc123",
+				Base:               "abc123",
+				OnBehalfOfUploader: true,
+				AllowConflicts:     false,
 			}
 			change, err := client.RebaseChange(ctx, "627036", &ri)
 			So(err, ShouldBeNil)

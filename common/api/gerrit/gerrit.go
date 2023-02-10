@@ -886,6 +886,18 @@ func (c *Client) Submit(ctx context.Context, changeID string, si *SubmitInput) (
 type RebaseInput struct {
 	// Base is the revision to rebase on top of.
 	Base string `json:"base,omitempty"`
+
+	// AllowConflicts allows the rebase to succeed even if there are conflicts.
+	AllowConflicts bool `json:"allow_conflicts,omitempty"`
+
+	// OnBehalfOfUploader causes the rebase to be done on behalf of the
+	// uploader. This means the uploader of the current patch set will also be
+	// the uploader of the rebased patch set.
+	//
+	// Rebasing on behalf of the uploader is only supported for trivial rebases.
+	// This means this option cannot be combined with the `allow_conflicts`
+	// option.
+	OnBehalfOfUploader bool `json:"on_behalf_of_uploader,omitempty"`
 }
 
 // RebaseChange rebases an open change on top of a specified revision (or its
