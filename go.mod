@@ -53,6 +53,7 @@ require (
 	github.com/smartystreets/goconvey v1.7.2
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	github.com/yosuke-furukawa/json5 v0.1.1
+	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64
 	go.opencensus.io v0.24.0
 	go.starlark.net v0.0.0-20230122040757-066229b0515d
 	golang.org/x/crypto v0.5.0
@@ -112,7 +113,6 @@ require (
 	github.com/spf13/afero v1.9.2 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
