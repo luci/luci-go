@@ -42,7 +42,9 @@ import {
   getInvIdFromBuildNum,
   PERM_INVOCATIONS_GET,
   PERM_TEST_EXONERATIONS_LIST,
+  PERM_TEST_EXONERATIONS_LIST_LIMITED,
   PERM_TEST_RESULTS_LIST,
+  PERM_TEST_RESULTS_LIST_LIMITED,
 } from '../services/resultdb';
 import { BuildState, BuildStateInstance } from './build_state';
 import { InvocationState } from './invocation_state';
@@ -266,6 +268,8 @@ export const BuildPage = types
             PERM_INVOCATIONS_GET,
             PERM_TEST_EXONERATIONS_LIST,
             PERM_TEST_RESULTS_LIST,
+            PERM_TEST_EXONERATIONS_LIST_LIMITED,
+            PERM_TEST_RESULTS_LIST_LIMITED,
           ],
         })
       );
@@ -311,9 +315,8 @@ export const BuildPage = types
       },
       get canReadTestVerdicts() {
         return (
-          this._permittedActions[PERM_INVOCATIONS_GET] &&
-          this._permittedActions[PERM_TEST_EXONERATIONS_LIST] &&
-          this._permittedActions[PERM_TEST_RESULTS_LIST]
+          this._permittedActions[PERM_TEST_EXONERATIONS_LIST_LIMITED] &&
+          this._permittedActions[PERM_TEST_RESULTS_LIST_LIMITED]
         );
       },
       get projectCfg() {

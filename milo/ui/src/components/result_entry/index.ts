@@ -14,6 +14,7 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
@@ -34,6 +35,7 @@ import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { displayCompactDuration, displayDuration, parseProtoDuration } from '../../libs/time_utils';
+import { unwrapOrElse } from '../../libs/utils';
 import { getRawArtifactUrl, router } from '../../routes';
 import { Cluster, makeClusterLink } from '../../services/luci_analysis';
 import { Artifact, ListArtifactsResponse, parseTestResultName, TestResult } from '../../services/resultdb';
@@ -96,7 +98,16 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get resultArtifacts() {
-    return unwrapObservable(this.resultArtifacts$, {}).artifacts || [];
+    return unwrapOrElse(
+      () => unwrapObservable(this.resultArtifacts$, {}).artifacts || [],
+      // Optional resource, users may not have access to the artifacts.
+      (e) => {
+        if (!(e instanceof GrpcError && e.code === RpcCode.PERMISSION_DENIED)) {
+          console.error(e);
+        }
+        return [];
+      }
+    );
   }
 
   @computed private get invArtifacts$() {
@@ -110,7 +121,16 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get invArtifacts() {
-    return unwrapObservable(this.invArtifacts$, {}).artifacts || [];
+    return unwrapOrElse(
+      () => unwrapObservable(this.invArtifacts$, {}).artifacts || [],
+      // Optional resource, users may not have access to the artifacts.
+      (e) => {
+        if (!(e instanceof GrpcError && e.code === RpcCode.PERMISSION_DENIED)) {
+          console.error(e);
+        }
+        return [];
+      }
+    );
   }
 
   @computed private get artifactsMapping() {
@@ -200,15 +220,13 @@ export class ResultEntryElement extends MobxLitElement {
           ${this.testhausLogArtifact &&
           html`
             <div class="summary-log-link">
-              <milo-link-artifact .artifact=${this.testhausLogArtifact}>
-              </milo-link-artifact>
+              <milo-link-artifact .artifact=${this.testhausLogArtifact}></milo-link-artifact>
             </div>
           `}
           ${this.stainlessLogArtifact &&
           html`
             <div class="summary-log-link">
-              <milo-link-artifact .artifact=${this.stainlessLogArtifact}>
-              </milo-link-artifact>
+              <milo-link-artifact .artifact=${this.stainlessLogArtifact}></milo-link-artifact>
             </div>
           `}
         </div>
@@ -226,23 +244,18 @@ export class ResultEntryElement extends MobxLitElement {
         From the parent inv <a href=${router.urlForName('invocation', { invocation_id: this.parentInvId })}></a>:
       </div>
       <ul>
-        ${this.invArtifacts.map(
-          (artifact) => {
-            if (artifact.artifactId === 'testhaus_logs' ||
-                artifact.artifactId === 'stainless_logs') {
-              return html`
-                <li>
-                  <milo-link-artifact .artifact=${artifact}>
-                  </milo-link-artifact>
-                </li>`;
-            }
-            return html`
-              <li>
-                <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
-              </li>
-            `;
+        ${this.invArtifacts.map((artifact) => {
+          if (artifact.artifactId === 'testhaus_logs' || artifact.artifactId === 'stainless_logs') {
+            return html` <li>
+              <milo-link-artifact .artifact=${artifact}> </milo-link-artifact>
+            </li>`;
           }
-        )}
+          return html`
+            <li>
+              <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
+            </li>
+          `;
+        })}
       </ul>
     `;
   }
