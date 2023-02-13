@@ -20,8 +20,8 @@ import (
 	"context"
 	"time"
 
+	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 	"google.golang.org/genproto/googleapis/bytestream"
-	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"

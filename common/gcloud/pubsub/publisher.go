@@ -19,9 +19,9 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	vkit "cloud.google.com/go/pubsub/apiv1"
+	pb "cloud.google.com/go/pubsub/apiv1/pubsubpb"
 	gax "github.com/googleapis/gax-go/v2"
 	"go.chromium.org/luci/common/logging"
-	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 )
 
 // Publisher is a generic interface to something that can publish Pub/Sub

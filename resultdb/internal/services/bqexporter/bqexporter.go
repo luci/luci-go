@@ -24,13 +24,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/bytestream"
-	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
 

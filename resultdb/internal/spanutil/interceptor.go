@@ -17,7 +17,7 @@ package spanutil
 import (
 	"context"
 
-	sppb "google.golang.org/genproto/googleapis/spanner/v1"
+	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/server/span"

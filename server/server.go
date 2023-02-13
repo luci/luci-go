@@ -187,10 +187,10 @@ import (
 	gcemetadata "cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/errorreporting"
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
+	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
 	"cloud.google.com/go/profiler"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
-	credentialspb "google.golang.org/genproto/googleapis/iam/credentials/v1"
 	"google.golang.org/grpc"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"

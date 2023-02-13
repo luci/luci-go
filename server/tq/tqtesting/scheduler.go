@@ -28,8 +28,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
+	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"

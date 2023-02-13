@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	storagepb "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1beta2"
+	"cloud.google.com/go/bigquery/storage/apiv1beta2/storagepb"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/gae/impl/memory"

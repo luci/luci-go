@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	storagepb "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1beta2"
+	"cloud.google.com/go/bigquery/storage/apiv1beta2/storagepb"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

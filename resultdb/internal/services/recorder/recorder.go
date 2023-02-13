@@ -18,9 +18,9 @@ import (
 	"context"
 	"time"
 
+	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
 	"google.golang.org/genproto/googleapis/bytestream"
-	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/errors"

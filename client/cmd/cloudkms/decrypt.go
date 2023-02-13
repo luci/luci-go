@@ -20,7 +20,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	cloudkms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging"

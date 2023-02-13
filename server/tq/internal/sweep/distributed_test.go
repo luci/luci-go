@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

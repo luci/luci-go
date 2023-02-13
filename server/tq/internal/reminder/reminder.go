@@ -21,8 +21,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
+	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 
 	"go.chromium.org/luci/common/errors"
 

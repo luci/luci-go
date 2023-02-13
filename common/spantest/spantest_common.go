@@ -34,11 +34,11 @@ import (
 
 	"cloud.google.com/go/spanner"
 	spandb "cloud.google.com/go/spanner/admin/database/apiv1"
+	dbpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
 	spanins "cloud.google.com/go/spanner/admin/instance/apiv1"
+	inspb "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
-	dbpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
-	inspb "google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 

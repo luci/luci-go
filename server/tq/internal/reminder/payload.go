@@ -19,8 +19,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
-	pubsubpb "google.golang.org/genproto/googleapis/pubsub/v1"
+	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
 )
 
 // Payload incapsulates the Reminder's payload.
