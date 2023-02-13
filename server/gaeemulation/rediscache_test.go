@@ -46,14 +46,26 @@ func TestRedisCacheSmoke(t *testing.T) {
 
 		s, err := miniredis.Run()
 		So(err, ShouldBeNil)
-		defer s.Close()
+		defer func() {
+			t.Logf("Total connections: %d", s.TotalConnectionCount())
+			t.Logf("Current connections: %d", s.CurrentConnectionCount())
+			s.Close()
+		}()
 
 		pool := &redis.Pool{
+			MaxIdle:   64,
+			MaxActive: 512,
+			Wait:      true, // if all connections are busy, wait for an available one
 			Dial: func() (redis.Conn, error) {
-				return redis.Dial("tcp", s.Addr())
+				return redis.Dial("tcp", s.Addr(),
+					redis.DialConnectTimeout(time.Minute),
+					redis.DialReadTimeout(time.Minute),
+					redis.DialWriteTimeout(time.Minute),
+				)
 			},
 		}
-		_ = pool
+		defer pool.Close()
+
 		ctx = dscache.FilterRDS(ctx, &redisCache{pool: pool})
 
 		wg := sync.WaitGroup{}
