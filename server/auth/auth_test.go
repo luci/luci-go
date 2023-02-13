@@ -308,9 +308,13 @@ type fakeAuthMethod struct {
 	err      error
 	clientID string
 	email    string
+	observe  func(RequestMetadata)
 }
 
-func (m fakeAuthMethod) Authenticate(context.Context, RequestMetadata) (*User, Session, error) {
+func (m fakeAuthMethod) Authenticate(_ context.Context, r RequestMetadata) (*User, Session, error) {
+	if m.observe != nil {
+		m.observe(r)
+	}
 	if m.err != nil {
 		return nil, nil, m.err
 	}
