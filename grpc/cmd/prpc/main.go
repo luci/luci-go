@@ -82,6 +82,9 @@ func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Cl
 	if err != nil {
 		return nil, err
 	}
+	if authOpts.UseIDTokens && authOpts.Audience == "" {
+		authOpts.Audience = "https://" + host
+	}
 	a := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts)
 	httpClient, err := a.Client()
 	if err != nil {
