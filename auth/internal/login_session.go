@@ -206,23 +206,7 @@ func (p *loginSessionTokenProvider) MintToken(ctx context.Context, base *Token) 
 	if err != nil {
 		return nil, err
 	}
-
-	// Convert the token to the format we want, parse ID token into claims.
-	// The `nonce` claim must match the login session ID per how Login Sessions
-	// protocol works. And `aud` claim must match the OAuth client ID per how
-	// OAuth protocol works.
-	switch processed, claims, err := processProviderReply(ctx, tok, ""); {
-	case err != nil:
-		return nil, err
-	case claims == nil:
-		return nil, errors.Reason("the authorization provider didn't return ID token").Err()
-	case claims.Nonce != sessionID:
-		return nil, errors.Reason("invalid `nonce` in the ID token %q, expecting %q", claims.Nonce, sessionID).Err()
-	case claims.Aud != p.clientID:
-		return nil, errors.Reason("invalid `aud` in the ID token %q, expecting %q", claims.Aud, p.clientID).Err()
-	default:
-		return processed, nil
-	}
+	return processProviderReply(ctx, tok, "")
 }
 
 func (p *loginSessionTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {

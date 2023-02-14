@@ -91,8 +91,7 @@ func (p *userAuthTokenProvider) MintToken(ctx context.Context, base *Token) (*To
 	if err != nil {
 		return nil, err
 	}
-	processed, _, err := processProviderReply(ctx, tok, "")
-	return processed, err
+	return processProviderReply(ctx, tok, "")
 }
 
 func (p *userAuthTokenProvider) RefreshToken(ctx context.Context, prev, base *Token) (*Token, error) {
@@ -106,8 +105,7 @@ func refreshToken(ctx context.Context, prev, base *Token, cfg *oauth2.Config) (*
 	t.Expiry = time.Unix(1, 0)
 	switch newTok, err := grabToken(cfg.TokenSource(ctx, &t)); {
 	case err == nil:
-		tok, _, err := processProviderReply(ctx, newTok, prev.Email)
-		return tok, err
+		return processProviderReply(ctx, newTok, prev.Email)
 	case transient.Tag.In(err):
 		logging.Warningf(ctx, "Transient error when refreshing the token - %s", err)
 		return nil, err
@@ -121,7 +119,7 @@ func refreshToken(ctx context.Context, prev, base *Token, cfg *oauth2.Config) (*
 // useful information from it.
 //
 // May make an RPC to the token info endpoint.
-func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) (*Token, *IDTokenClaims, error) {
+func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) (*Token, error) {
 	// If have the ID token, parse its payload to see the expiry and the email.
 	// Note that we don't verify the signature. We just got the token from the
 	// provider we trust.
@@ -130,7 +128,7 @@ func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) 
 	var err error
 	if idToken, _ = tok.Extra("id_token").(string); idToken != "" {
 		if claims, err = ParseIDTokenClaims(idToken); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	} else {
 		idToken = NoIDToken
@@ -143,7 +141,7 @@ func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) 
 		// If we still don't know the email associated with the credentials, make
 		// an RPC to the token info endpoint to get it.
 		if email, err = grabEmail(ctx, tok); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -167,7 +165,7 @@ func processProviderReply(ctx context.Context, tok *oauth2.Token, email string) 
 		Token:   *tok,
 		IDToken: idToken,
 		Email:   email,
-	}, claims, nil
+	}, nil
 }
 
 // grabEmail fetches an email associated with the given token.

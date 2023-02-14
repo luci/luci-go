@@ -758,7 +758,7 @@ func checkToken(ctx context.Context, opts *auth.Options, a *auth.Authenticator) 
 		}
 		if info.Email != "" {
 			fmt.Printf("Logged in as %s.\n\n", info.Email)
-		} else {
+		} else if info.Sub != "" {
 			fmt.Printf("Logged in as uid %q.\n\n", info.Sub)
 		}
 		fmt.Printf("OAuth token details:\n")
