@@ -744,6 +744,13 @@ func (*Builds) CreateBuild(ctx context.Context, req *pb.CreateBuildRequest) (*pb
 	bld := &model.Build{
 		Proto: req.Build,
 	}
+	setExperimentsFromProto(bld)
+	// Tags are stored in the outer struct (see model/build.go).
+	tags := protoutil.StringPairMap(bld.Proto.Tags).Format()
+	tags = stringset.NewFromSlice(tags...).ToSlice() // Deduplicate tags.
+	sort.Strings(tags)
+	bld.Tags = tags
+
 	bc := &buildCreator{
 		blds:           []*model.Build{bld},
 		idxMapBldToReq: []int{0},
