@@ -45,8 +45,13 @@ def header(input_api):
   current_year = int(input_api.time.strftime('%Y'))
   allowed_years = (str(s) for s in reversed(xrange(2011, current_year + 1)))
   years_re = '(' + '|'.join(allowed_years) + ')'
+  # The regex below should accept the following comment styles at the beginning of the line:
+  # 1) #  -- Python, Bash
+  # 2) // -- Go, Javascript
+  # 3) /* -- CSS
+  # See comments on https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/4202089 for details.
   lines = [
-    (r'[#/]?[#/]?[ \t]*' + re.escape(line)) if line else '.*?'
+    (r'[#/*]?[#/*]?[ \t]*' + re.escape(line)) if line else '.*?'
     for line in COPYRIGHT_TEMPLATE.splitlines()
   ]
   lines[0] = lines[0].replace('YEARPATTERN', years_re)
