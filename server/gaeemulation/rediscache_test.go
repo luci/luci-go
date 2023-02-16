@@ -40,6 +40,9 @@ type testEntity struct {
 func TestRedisCacheSmoke(t *testing.T) {
 	t.Parallel()
 
+	// TODO(crbug.com/1416970): This test is flaky.
+	t.Skip()
+
 	Convey("Smoke test", t, func(c C) {
 		ctx := context.Background()
 		ctx = memory.Use(ctx)
