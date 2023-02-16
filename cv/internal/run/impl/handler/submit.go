@@ -75,79 +75,78 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		// treat this Run as WAITING_FOR_SUBMISSION status.
 		rs = rs.ShallowCopy()
 		rs.Status = run.Status_WAITING_FOR_SUBMISSION
-		fallthrough
-	case status == run.Status_WAITING_FOR_SUBMISSION:
-		if len(rs.Submission.GetSubmittedCls()) > 0 {
-			panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.ID))
-		}
-		rs = rs.ShallowCopy()
-		switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
-		case err != nil:
-			return nil, err
-		case waitlisted:
-			// This Run will be notified by Submit Queue once its turn comes.
-			return &Result{State: rs}, nil
-		}
-		rs.CloneSubmission()
-		switch treeOpen, treeErr := rs.CheckTree(ctx, impl.TreeClient); {
-		case treeErr != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
-			// Failed to fetch status for a long time. Fail the Run.
-			rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
-			cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-			if err != nil {
-				return nil, err
-			}
-			if rs.Mode != run.FullRun {
-				panic(fmt.Errorf("impossible, %s runs cannot submit CLs", rs.Mode))
-			}
-			whoms := rs.Mode.GerritNotifyTargets()
-			for _, id := range rs.CLs {
-				rims[id] = reviewInputMeta{
-					notify: whoms,
-					// Add the same set of group/people to the attention set.
-					addToAttention: whoms,
-					reason:         treeStatusCheckFailedReason,
-					message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
-				}
-			}
-			scheduleTriggersCancellation(ctx, rs, rims, run.Status_FAILED)
-			if err := releaseSubmitQueue(ctx, rs, impl.RM); err != nil {
-				return nil, err
-			}
-			return &Result{
-				State: rs,
-			}, nil
-		case treeErr != nil:
-			logging.Warningf(ctx, "tree-status check failed with: %s, retrying in %s", treeErr, treeCheckInterval)
-			fallthrough
-		case !treeOpen:
-			err := parallel.WorkPool(2, func(work chan<- func() error) {
-				work <- func() error {
-					// Tree is closed or status unknown, revisit after 1 minute.
-					return impl.RM.PokeAfter(ctx, rs.ID, treeCheckInterval)
-				}
-				work <- func() error {
-					// Give up the Submit Queue while waiting for tree to open.
-					return releaseSubmitQueue(ctx, rs, impl.RM)
-				}
-			})
-			if err != nil {
-				return nil, common.MostSevereError(err)
-			}
-			return &Result{State: rs}, nil
-		default:
-			if err := markSubmitting(ctx, rs); err != nil {
-				return nil, err
-			}
-			s := submit.NewSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
-			rs.SubmissionScheduled = true
-			return &Result{
-				State:         rs,
-				PostProcessFn: s.Submit,
-			}, nil
-		}
-	default:
+	case status != run.Status_WAITING_FOR_SUBMISSION:
 		panic(fmt.Errorf("impossible status %s", status))
+	}
+
+	if len(rs.Submission.GetSubmittedCls()) > 0 {
+		panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.ID))
+	}
+	rs = rs.ShallowCopy()
+	switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
+	case err != nil:
+		return nil, err
+	case waitlisted:
+		// This Run will be notified by Submit Queue once its turn comes.
+		return &Result{State: rs}, nil
+	}
+	rs.CloneSubmission()
+	switch treeOpen, treeErr := rs.CheckTree(ctx, impl.TreeClient); {
+	case treeErr != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
+		// Failed to fetch status for a long time. Fail the Run.
+		rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
+		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+		if err != nil {
+			return nil, err
+		}
+		if rs.Mode != run.FullRun {
+			panic(fmt.Errorf("impossible, %s runs cannot submit CLs", rs.Mode))
+		}
+		whoms := rs.Mode.GerritNotifyTargets()
+		for _, id := range rs.CLs {
+			rims[id] = reviewInputMeta{
+				notify: whoms,
+				// Add the same set of group/people to the attention set.
+				addToAttention: whoms,
+				reason:         treeStatusCheckFailedReason,
+				message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+			}
+		}
+		scheduleTriggersCancellation(ctx, rs, rims, run.Status_FAILED)
+		if err := releaseSubmitQueue(ctx, rs, impl.RM); err != nil {
+			return nil, err
+		}
+		return &Result{
+			State: rs,
+		}, nil
+	case treeErr != nil:
+		logging.Warningf(ctx, "tree-status check failed with: %s, retrying in %s", treeErr, treeCheckInterval)
+		fallthrough
+	case !treeOpen:
+		err := parallel.WorkPool(2, func(work chan<- func() error) {
+			work <- func() error {
+				// Tree is closed or status unknown, revisit after 1 minute.
+				return impl.RM.PokeAfter(ctx, rs.ID, treeCheckInterval)
+			}
+			work <- func() error {
+				// Give up the Submit Queue while waiting for tree to open.
+				return releaseSubmitQueue(ctx, rs, impl.RM)
+			}
+		})
+		if err != nil {
+			return nil, common.MostSevereError(err)
+		}
+		return &Result{State: rs}, nil
+	default:
+		if err := markSubmitting(ctx, rs); err != nil {
+			return nil, err
+		}
+		s := submit.NewSubmitter(ctx, rs.ID, rs.Submission, impl.RM, impl.GFactory)
+		rs.SubmissionScheduled = true
+		return &Result{
+			State:         rs,
+			PostProcessFn: s.Submit,
+		}, nil
 	}
 }
 
