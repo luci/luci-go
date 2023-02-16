@@ -135,6 +135,15 @@ service Clusters {
     // method with filter and order_by support.
     rpc QueryExoneratedTestVariants(QueryClusterExoneratedTestVariantsRequest)
         returns (QueryClusterExoneratedTestVariantsResponse) {};
+
+    // Queries the history of metrics for clustered failures satisying given criteria.
+    // For example the number of test runs failed on each day for the last 7 days.
+    //
+    // Please consult LUCI Analysis owners before adding additional calls to
+    // this RPC, as the implementation currently calls back to BigQuery and as
+    // such, is not cost-optimised if many queries are to be made.
+    rpc QueryHistory(QueryClusterHistoryRequest)
+        returns (QueryClusterHistoryResponse) {};
 }
 
 message ClusterRequest {
@@ -351,6 +360,9 @@ message QueryClusterSummariesRequest {
     // - cluster_id
     // - variant_hash
     // - test_run_id
+    //
+    // Note that cost is greatly reduced (more than 90%) if exact matches for the
+    // cluster_algorithm and cluster_id field are both provided in the filter string.
     string failure_filter = 2;
 
     // A comma-seperated list of fields to order the response by.
@@ -558,4 +570,49 @@ message ClusterExoneratedTestVariant {
     // The partition time of the most recent exoneration of a
     // critical failure.
     google.protobuf.Timestamp last_exoneration = 4;
+}
+
+
+message QueryClusterHistoryRequest {
+    // The LUCI Project.
+    string project = 1;
+
+    // An AIP-160 style filter to select test failures in the project
+    // to calculate metrics for.
+    //
+    // See the description of the QueryClusterSummariesRequest.failure_filter
+    // above for the format of this field.
+    //
+    // Note that cost is greatly reduced (more than 90%) if exact matches for the
+    // cluster_algorithm and cluster_id field are both provided in the filter string.
+    string failure_filter = 2;
+
+    // The number of days of history to return.  Maximum of 90 as only 90 days of
+    // history is kept by LUCI Analysis.  Note that the cost of the query scales
+    // linearly with the number of days.
+    int32 days = 3;
+
+    // The resource name(s) of the metrics to include in the cluster histories.
+    // Format: metrics/{metric_id}.
+    // See the metrics field on the luci.analysis.v1.Cluster message for details
+    // about valid metric identifiers.
+    repeated string metrics = 4;
+}
+
+message QueryClusterHistoryResponse {
+    // The metrics for each day.  There will be the same number of days as
+    // requested in the request.  The entries will be returned in sorted date
+    // order, earliest day first.
+    repeated ClusterHistoryDay days = 1;
+}
+
+// Represents metrics about a cluster on a specific day.
+message ClusterHistoryDay {
+    // A map from requested metric name to the value of that metric on this day.
+    // The key of the map is the metric ID.
+    map<string, int32> metrics = 1;
+
+    // The date that these metrics are for.
+    // This is a UTC date in ISO 8601 format, e.g. 2022-11-29
+    string date = 2;
 }

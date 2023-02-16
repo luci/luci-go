@@ -1547,3 +1547,7 @@ func (f *fakeAnalysisClient) ReadClusterExoneratedTestVariants(ctx context.Conte
 
 	return exoneratedTVsByCluster[options.ClusterID], nil
 }
+
+func (f *fakeAnalysisClient) ReadClusterHistory(ctx context.Context, options analysis.ReadClusterHistoryOptions) (ret []*analysis.ReadClusterHistoryDay, err error) {
+	return nil, nil
+}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import {
   Link as RouterLink,
 } from 'react-router-dom';
@@ -22,33 +22,124 @@ import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import TabPanel from '@mui/lab/TabPanel';
 import Typography from '@mui/material/Typography';
-import PanelHeading from '@/components/headings/panel_heading/panel_heading';
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Select,
+  SelectChangeEvent,
+} from '@mui/material';
+import {
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+} from 'recharts';
 
+import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import ImpactTable from '@/components/cluster/cluster_analysis_section/overview_tab/impact_table/impact_table';
-import useFetchClusterAndMetrics from '@/hooks/use_fetch_cluster_and_metrics';
 import { ClusterContext } from '../../cluster_context';
+import useQueryClusterHistory from '@/hooks/use_query_cluster_history';
+
+import './style.css';
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
 
 interface Props {
   // The name of the tab.
   value: string;
 }
 
+const metricColors = {
+  'human-cls-failed-presubmit': "#6c40bf",
+  'critical-failures-exonerated': "#0084ff",
+  'test-runs-failed': "#d23a2d",
+}
+const metrics = ['human-cls-failed-presubmit', 'critical-failures-exonerated', 'test-runs-failed'];
 const OverviewTab = ({
   value,
 }: Props) => {
   const clusterId = useContext(ClusterContext);
+  // TODO: move days and selectedMetrics into the URL.
+  const [days, setDays] = useState(7);
+  const [selectedMetrics, setSelectedMetrics] = useState([...metrics]);
 
+  // FIXME: normally we fix this up on the server where we have access to the
+  // latest version number.  Is there a way to do the same in the client?
+  const algorithm = clusterId.algorithm == 'rules' ? 'rules-v2' : clusterId.algorithm;
+
+  // Note that querying the history of a single cluster is faster and cheaper.
   const {
     isLoading,
-    clusterError,
-    metricsError,
-    cluster,
-    metrics,
-  } = useFetchClusterAndMetrics(clusterId.project, clusterId.algorithm, clusterId.id);
+    isSuccess,
+    data,
+    error,
+  } = useQueryClusterHistory(clusterId.project, `cluster_algorithm="${algorithm}" cluster_id="${clusterId.id}"`, days, metrics);
+
+  const handleMetricChange = (event: SelectChangeEvent<typeof selectedMetrics>) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedMetrics(
+      // On autofill we get a stringified value.
+      typeof value === 'string' ? value.split(',') : value,
+    );
+  };
+
   return (
     <TabPanel value={value}>
-      <PanelHeading>Impact</PanelHeading>
+      <div className="overview-tab-toolbar">
+        <PanelHeading>History</PanelHeading>
+        <Typography color="GrayText">All dates and times are in UTC.</Typography>
+        <div style={{ flexGrow: 1 }}></div>
+        <FormControl sx={{ m: 1, width: 300 }}>
+          <InputLabel id="date-range-label">Date Range</InputLabel>
+          <Select
+            labelId="date-range-label"
+            value={days}
+            label="Date Range"
+            onChange={e => setDays(e.target.value as number)}
+          >
+            <MenuItem value={7}>7 days</MenuItem>
+            <MenuItem value={30}>30 days</MenuItem>
+            <MenuItem value={90}>90 days</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl sx={{ m: 1, width: 300 }}>
+          <InputLabel id="metric-label">Metrics</InputLabel>
+          <Select
+            labelId="metric-label"
+            multiple
+            value={selectedMetrics}
+            onChange={handleMetricChange}
+            input={<OutlinedInput label="Name" />}
+            MenuProps={MenuProps}
+          >
+            {metrics.map(m => {
+              return <MenuItem
+                key={m}
+                value={m}
+                sx={{ fontWeight: selectedMetrics.indexOf(m) == -1 ? 'normal' : 'bold' }}
+              >
+                {m}
+              </MenuItem>
+            })}
+          </Select>
+        </FormControl>
+      </div>
       {
         isLoading && (
           <Grid container item alignItems="center" justifyContent="center">
@@ -57,27 +148,33 @@ const OverviewTab = ({
         )
       }
       {
-        !isLoading && metricsError && (
+        !isLoading && error && (
           <LoadErrorAlert
             entityName="metrics"
-            error={metricsError}
+            error={error}
           />
         )
       }
       {
-        !isLoading && !metricsError && clusterError && (
-          <LoadErrorAlert
-            entityName="cluster impact"
-            error={clusterError}
-          />
+        isSuccess && data && (
+          <div data-testid="history-chart">
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={data.days} margin={{ top: 20, bottom: 20 }}>
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Legend />
+                <Tooltip />
+                {selectedMetrics.map(m => {
+                  const mk = m as keyof (typeof metricColors);
+                  return <Bar key={m} dataKey={`metrics.${m}`} fill={metricColors[mk]} />;
+                })}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )
       }
-      {
-        cluster && metrics && (
-          <ImpactTable cluster={cluster} metrics={metrics}></ImpactTable>
-        )
-      }
-      <Typography paddingTop='2rem'>To see examples of failures in this cluster, view <Link component={RouterLink} to='#recent-failures'>Recent Failures</Link>.</Typography>
+      <Typography paddingTop='2rem'>This chart shows the history of metrics for this cluster for each day in the selected time period.</Typography>
+      <Typography>To see examples of failures in this cluster, view <Link component={RouterLink} to='#recent-failures'>Recent Failures</Link>.</Typography>
     </TabPanel>
   );
 };

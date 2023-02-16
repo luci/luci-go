@@ -55,6 +55,7 @@ type AnalysisClient interface {
 	ReadCluster(ctx context.Context, luciProject string, clusterID clustering.ClusterID) (*analysis.Cluster, error)
 	ReadClusterFailures(ctx context.Context, options analysis.ReadClusterFailuresOptions) (cfs []*analysis.ClusterFailure, err error)
 	ReadClusterExoneratedTestVariants(ctx context.Context, options analysis.ReadClusterExoneratedTestVariantsOptions) (tvs []*analysis.ExoneratedTestVariant, err error)
+	ReadClusterHistory(ctx context.Context, options analysis.ReadClusterHistoryOptions) (ret []*analysis.ReadClusterHistoryDay, err error)
 	QueryClusterSummaries(ctx context.Context, luciProject string, options *analysis.QueryClusterSummariesOptions) ([]*analysis.ClusterSummary, error)
 }
 
@@ -687,4 +688,68 @@ func createClusterExoneratedTestVariant(tv *analysis.ExoneratedTestVariant) *pb.
 		CriticalFailuresExonerated: tv.CriticalFailuresExonerated,
 		LastExoneration:            timestamppb.New(tv.LastExoneration.Timestamp),
 	}
+}
+
+// QueryHistory clusters a list of test failures. See proto definition for more.
+func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterHistoryRequest) (*pb.QueryClusterHistoryResponse, error) {
+	if !config.ProjectRe.MatchString(req.Project) {
+		return nil, invalidArgumentError(errors.Reason("project").Err())
+	}
+
+	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermExpensiveClusterQueries); err != nil {
+		return nil, err
+	}
+
+	opts := analysis.ReadClusterHistoryOptions{
+		Project: req.Project,
+		Days:    req.Days,
+	}
+
+	var err error
+	opts.FailureFilter, err = aip.ParseFilter(req.FailureFilter)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
+	}
+
+	opts.Metrics, err = metricsByName(req.Metrics)
+	if err != nil {
+		return nil, invalidArgumentError(err)
+	}
+
+	realms, err := perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
+	if err != nil {
+		// If the user has permission in no realms, QueryRealmsNonEmpty
+		// will return an appstatus error PERMISSION_DENIED.
+		// Otherwise, e.g. in case AuthDB was unavailable, the error will
+		// not be an appstatus error and the client will get an internal
+		// server error.
+		return nil, err
+	}
+	opts.Realms = realms
+
+	days, err := c.analysisClient.ReadClusterHistory(ctx, opts)
+	if err != nil {
+		if err == analysis.ProjectNotExistsErr {
+			return nil, appstatus.Error(codes.NotFound,
+				"LUCI Analysis BigQuery dataset not provisioned for project or clustered failures not yet available")
+		}
+		return nil, errors.Annotate(err, "cluster history").Err()
+	}
+
+	response := &pb.QueryClusterHistoryResponse{}
+	if len(days) == 0 {
+		return response, nil
+	}
+
+	for _, day := range days {
+		metrics := make(map[string]int32)
+		for id, value := range day.MetricValues {
+			metrics[id.String()] = value
+		}
+		response.Days = append(response.Days, &pb.ClusterHistoryDay{
+			Metrics: metrics,
+			Date:    day.Date.Format("2006-01-02"),
+		})
+	}
+	return response, nil
 }

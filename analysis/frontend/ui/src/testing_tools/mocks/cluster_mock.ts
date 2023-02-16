@@ -26,6 +26,7 @@ import {
   QueryClusterSummariesResponse,
   QueryClusterExoneratedTestVariantsRequest,
   QueryClusterExoneratedTestVariantsResponse,
+  QueryClusterHistoryResponse,
 } from '@/services/cluster';
 
 export const getMockCluster = (id: string,
@@ -180,4 +181,28 @@ export const mockQueryExoneratedTestVariants = (parent: string, testVariants: Cl
     },
     body: ')]}\'' + JSON.stringify(response),
   }, { overwriteRoutes: true });
+};
+
+export const mockQueryHistory = (
+  // project: string,
+  // days: number,
+  // failureFilter: string,
+  // metrics: string[],
+  response: QueryClusterHistoryResponse) => {
+// const request: QueryHistoryRequest = {
+//   project,
+//   days,
+//   failureFilter,
+//   metrics,
+// };
+
+fetchMock.post({
+  url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryHistory',
+  // body: request,
+}, {
+  headers: {
+    'X-Prpc-Grpc-Code': '0',
+  },
+  body: ')]}\'' + JSON.stringify(response),
+}, { overwriteRoutes: true });
 };

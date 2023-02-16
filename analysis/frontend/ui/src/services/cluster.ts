@@ -56,6 +56,9 @@ export class ClustersService {
   async queryExoneratedTestVariants(request: QueryClusterExoneratedTestVariantsRequest): Promise<QueryClusterExoneratedTestVariantsResponse> {
     return this.client.call(ClustersService.SERVICE, 'QueryExoneratedTestVariants', request);
   }
+  async queryHistory(request: QueryClusterHistoryRequest): Promise<QueryClusterHistoryResponse> {
+    return this.client.call(ClustersService.SERVICE, 'QueryHistory', request);
+  }
 }
 
 export interface GetClusterRequest {
@@ -336,4 +339,20 @@ export interface ClusterExoneratedTestVariant {
   // critical failure.
   // RFC 3339 encoded date/time.
   lastExoneration: string;
+}
+
+export interface QueryClusterHistoryRequest {
+  project: string;
+  failureFilter: string;
+  days: number;
+  metrics: string[];
+}
+
+export interface QueryClusterHistoryResponse {
+  days: ClusterHistoryDay[];
+}
+
+export interface ClusterHistoryDay {
+  date: string;
+  metrics: {[metricId: string]: number};
 }

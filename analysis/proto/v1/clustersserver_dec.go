@@ -124,3 +124,20 @@ func (s *DecoratedClusters) QueryExoneratedTestVariants(ctx context.Context, req
 	}
 	return
 }
+
+func (s *DecoratedClusters) QueryHistory(ctx context.Context, req *QueryClusterHistoryRequest) (rsp *QueryClusterHistoryResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryHistory", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryHistory(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryHistory", rsp, err)
+	}
+	return
+}

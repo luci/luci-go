@@ -19,14 +19,21 @@ import { screen } from '@testing-library/react';
 
 import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
-import {
-  getMockCluster,
-  mockGetCluster,
-} from '@/testing_tools/mocks/cluster_mock';
+import { mockQueryHistory } from '@/testing_tools/mocks/cluster_mock';
 import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 
 import { ClusterContextProvider } from '../../cluster_context';
-import ImpactTab from './overview_tab';
+import { QueryClusterHistoryResponse } from '@/services/cluster';
+import OverviewTab from './overview_tab';
+
+// Mock the window.ResizeObserver that is needed by recharts.
+class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.ResizeObserver = ResizeObserver;
+
 describe('test ImpactSection component', () => {
   beforeEach(() => {
     mockFetchAuthState();
@@ -39,18 +46,17 @@ describe('test ImpactSection component', () => {
   });
 
   it('given an algorithm, should fetch cluster for that algorithm', async () => {
-    const cluster = getMockCluster('123456');
-
-    mockGetCluster('chrome', 'rules', '123456', cluster);
+    const history: QueryClusterHistoryResponse = { days: [{date: '2023-02-16', metrics: {'human-cls-failed-presubmit':10, 'critical-failures-exonerated':20, 'test-runs-failed':100}}] }
+    mockQueryHistory(history);
 
     renderTabWithRouterAndClient(
-        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
-          <ImpactTab value='test' />
-        </ClusterContextProvider>,
+      <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
+        <OverviewTab value='test' />
+      </ClusterContextProvider>,
     );
 
-    await screen.findByText('Impact');
+    await screen.findAllByTestId('history-chart');
 
-    expect(screen.getByTestId('impact-table')).toBeInTheDocument();
+    expect(screen.getByTestId('history-chart')).toBeInTheDocument();
   });
 });
