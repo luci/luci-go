@@ -22,6 +22,7 @@ import "google/protobuf/duration.proto";
 import "validate/validate.proto";
 
 import "go.chromium.org/luci/common/proto/options.proto";
+import "go.chromium.org/luci/cv/api/v1/run.proto";
 
 option (luci.file_metadata) = {
   doc_url: "https://luci-config.appspot.com/schemas/projects:commit-queue.cfg";
@@ -187,6 +188,63 @@ message ConfigGroup {
   // If CV couldn't find an applicable limit from `user_limits`, this limit
   // will be applied.
   UserLimit user_limit_default = 9;
+
+  // Action to be performed on a Run completion.
+  message PostAction {
+    // Name of the post action.
+    string name = 1 [(validate.rules).string.min_len = 1];
+
+    // Condition to be met for the action to be triggered.
+    message TriggeringCondition {
+      // Name of the mode to be matched.
+      //
+      // Must be FULL_RUN, DRY_RUN, QUICK_DRY_RUN, NEW_PATCHSET_RUN, or one of
+      // the additional modes configured.
+      string mode = 1 [(validate.rules).string.min_len = 1];
+      // Statuses to trigger the action on.
+      //
+      // Must be terminal statuses.
+      repeated cv.v1.Run.Status statuses = 2 [
+          (validate.rules).repeated = {
+            min_items: 1,
+            items: {enum: {defined_only: true}}
+          }
+      ];
+    }
+    // If at least one of the conditions is met,
+    // the action will be triggered on a Run completion.
+    repeated TriggeringCondition conditions = 2 [
+        (validate.rules).repeated = {
+          min_items: 1,
+          items: {message: {required: true}}
+        }
+    ];
+
+    // Set the value of a given Gerrit label.
+    message VoteGerritLabel {
+      // Name of a Gerrit label to set.
+      string name = 1 [(validate.rules).string.min_len = 1];
+
+      // Value to set the label with.
+      int32 value = 2;
+    }
+    oneof action {
+      option (validate.required) = true;
+      VoteGerritLabel vote_gerrit_label = 3;
+    }
+  }
+
+  // PostAction to be performed on a Run completion.
+  //
+  // On a Run completion, all the post actions with matching conditions will
+  // be executed.
+  //
+  // All actions must have a unique name in the list.
+  repeated PostAction post_actions = 10 [
+      (validate.rules).repeated = {
+        items: {message: {required: true}}
+      }
+  ];
 }
 
 // SubmitOptions control how CQ submits CLs.

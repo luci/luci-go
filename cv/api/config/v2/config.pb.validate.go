@@ -17,6 +17,8 @@ import (
 	"unicode/utf8"
 
 	"google.golang.org/protobuf/types/known/anypb"
+
+	cvpb "go.chromium.org/luci/cv/api/v1"
 )
 
 // ensure the imports are used
@@ -33,6 +35,8 @@ var (
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
 	_ = sort.Sort
+
+	_ = cvpb.Run_Status(0)
 )
 
 // Validate checks the field values on Config with the rules defined in the
@@ -415,6 +419,51 @@ func (m *ConfigGroup) validate(all bool) error {
 				cause:  err,
 			}
 		}
+	}
+
+	for idx, item := range m.GetPostActions() {
+		_, _ = idx, item
+
+		if item == nil {
+			err := ConfigGroupValidationError{
+				field:  fmt.Sprintf("PostActions[%v]", idx),
+				reason: "value is required",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigGroupValidationError{
+						field:  fmt.Sprintf("PostActions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigGroupValidationError{
+						field:  fmt.Sprintf("PostActions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigGroupValidationError{
+					field:  fmt.Sprintf("PostActions[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -1458,6 +1507,233 @@ var _ interface {
 	ErrorName() string
 } = ConfigGroup_GerritValidationError{}
 
+// Validate checks the field values on ConfigGroup_PostAction with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ConfigGroup_PostAction) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ConfigGroup_PostAction with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ConfigGroup_PostActionMultiError, or nil if none found.
+func (m *ConfigGroup_PostAction) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ConfigGroup_PostAction) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := ConfigGroup_PostActionValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(m.GetConditions()) < 1 {
+		err := ConfigGroup_PostActionValidationError{
+			field:  "Conditions",
+			reason: "value must contain at least 1 item(s)",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	for idx, item := range m.GetConditions() {
+		_, _ = idx, item
+
+		if item == nil {
+			err := ConfigGroup_PostActionValidationError{
+				field:  fmt.Sprintf("Conditions[%v]", idx),
+				reason: "value is required",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigGroup_PostActionValidationError{
+						field:  fmt.Sprintf("Conditions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigGroup_PostActionValidationError{
+						field:  fmt.Sprintf("Conditions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigGroup_PostActionValidationError{
+					field:  fmt.Sprintf("Conditions[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	oneofActionPresent := false
+	switch v := m.Action.(type) {
+	case *ConfigGroup_PostAction_VoteGerritLabel_:
+		if v == nil {
+			err := ConfigGroup_PostActionValidationError{
+				field:  "Action",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		oneofActionPresent = true
+
+		if all {
+			switch v := interface{}(m.GetVoteGerritLabel()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigGroup_PostActionValidationError{
+						field:  "VoteGerritLabel",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigGroup_PostActionValidationError{
+						field:  "VoteGerritLabel",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVoteGerritLabel()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigGroup_PostActionValidationError{
+					field:  "VoteGerritLabel",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+	if !oneofActionPresent {
+		err := ConfigGroup_PostActionValidationError{
+			field:  "Action",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return ConfigGroup_PostActionMultiError(errors)
+	}
+
+	return nil
+}
+
+// ConfigGroup_PostActionMultiError is an error wrapping multiple validation
+// errors returned by ConfigGroup_PostAction.ValidateAll() if the designated
+// constraints aren't met.
+type ConfigGroup_PostActionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ConfigGroup_PostActionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ConfigGroup_PostActionMultiError) AllErrors() []error { return m }
+
+// ConfigGroup_PostActionValidationError is the validation error returned by
+// ConfigGroup_PostAction.Validate if the designated constraints aren't met.
+type ConfigGroup_PostActionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ConfigGroup_PostActionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ConfigGroup_PostActionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ConfigGroup_PostActionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ConfigGroup_PostActionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ConfigGroup_PostActionValidationError) ErrorName() string {
+	return "ConfigGroup_PostActionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ConfigGroup_PostActionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sConfigGroup_PostAction.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ConfigGroup_PostActionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ConfigGroup_PostActionValidationError{}
+
 // Validate checks the field values on ConfigGroup_Gerrit_Project with the
 // rules defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -1561,6 +1837,269 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ConfigGroup_Gerrit_ProjectValidationError{}
+
+// Validate checks the field values on
+// ConfigGroup_PostAction_TriggeringCondition with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ConfigGroup_PostAction_TriggeringCondition) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// ConfigGroup_PostAction_TriggeringCondition with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in
+// ConfigGroup_PostAction_TriggeringConditionMultiError, or nil if none found.
+func (m *ConfigGroup_PostAction_TriggeringCondition) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ConfigGroup_PostAction_TriggeringCondition) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetMode()) < 1 {
+		err := ConfigGroup_PostAction_TriggeringConditionValidationError{
+			field:  "Mode",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(m.GetStatuses()) < 1 {
+		err := ConfigGroup_PostAction_TriggeringConditionValidationError{
+			field:  "Statuses",
+			reason: "value must contain at least 1 item(s)",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	for idx, item := range m.GetStatuses() {
+		_, _ = idx, item
+
+		if _, ok := cvpb.Run_Status_name[int32(item)]; !ok {
+			err := ConfigGroup_PostAction_TriggeringConditionValidationError{
+				field:  fmt.Sprintf("Statuses[%v]", idx),
+				reason: "value must be one of the defined enum values",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ConfigGroup_PostAction_TriggeringConditionMultiError(errors)
+	}
+
+	return nil
+}
+
+// ConfigGroup_PostAction_TriggeringConditionMultiError is an error wrapping
+// multiple validation errors returned by
+// ConfigGroup_PostAction_TriggeringCondition.ValidateAll() if the designated
+// constraints aren't met.
+type ConfigGroup_PostAction_TriggeringConditionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ConfigGroup_PostAction_TriggeringConditionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ConfigGroup_PostAction_TriggeringConditionMultiError) AllErrors() []error { return m }
+
+// ConfigGroup_PostAction_TriggeringConditionValidationError is the validation
+// error returned by ConfigGroup_PostAction_TriggeringCondition.Validate if
+// the designated constraints aren't met.
+type ConfigGroup_PostAction_TriggeringConditionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ConfigGroup_PostAction_TriggeringConditionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ConfigGroup_PostAction_TriggeringConditionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ConfigGroup_PostAction_TriggeringConditionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ConfigGroup_PostAction_TriggeringConditionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ConfigGroup_PostAction_TriggeringConditionValidationError) ErrorName() string {
+	return "ConfigGroup_PostAction_TriggeringConditionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ConfigGroup_PostAction_TriggeringConditionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sConfigGroup_PostAction_TriggeringCondition.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ConfigGroup_PostAction_TriggeringConditionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ConfigGroup_PostAction_TriggeringConditionValidationError{}
+
+// Validate checks the field values on ConfigGroup_PostAction_VoteGerritLabel
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *ConfigGroup_PostAction_VoteGerritLabel) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// ConfigGroup_PostAction_VoteGerritLabel with the rules defined in the proto
+// definition for this message. If any rules are violated, the result is a
+// list of violation errors wrapped in
+// ConfigGroup_PostAction_VoteGerritLabelMultiError, or nil if none found.
+func (m *ConfigGroup_PostAction_VoteGerritLabel) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ConfigGroup_PostAction_VoteGerritLabel) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := ConfigGroup_PostAction_VoteGerritLabelValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Value
+
+	if len(errors) > 0 {
+		return ConfigGroup_PostAction_VoteGerritLabelMultiError(errors)
+	}
+
+	return nil
+}
+
+// ConfigGroup_PostAction_VoteGerritLabelMultiError is an error wrapping
+// multiple validation errors returned by
+// ConfigGroup_PostAction_VoteGerritLabel.ValidateAll() if the designated
+// constraints aren't met.
+type ConfigGroup_PostAction_VoteGerritLabelMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ConfigGroup_PostAction_VoteGerritLabelMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ConfigGroup_PostAction_VoteGerritLabelMultiError) AllErrors() []error { return m }
+
+// ConfigGroup_PostAction_VoteGerritLabelValidationError is the validation
+// error returned by ConfigGroup_PostAction_VoteGerritLabel.Validate if the
+// designated constraints aren't met.
+type ConfigGroup_PostAction_VoteGerritLabelValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ConfigGroup_PostAction_VoteGerritLabelValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ConfigGroup_PostAction_VoteGerritLabelValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ConfigGroup_PostAction_VoteGerritLabelValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ConfigGroup_PostAction_VoteGerritLabelValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ConfigGroup_PostAction_VoteGerritLabelValidationError) ErrorName() string {
+	return "ConfigGroup_PostAction_VoteGerritLabelValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ConfigGroup_PostAction_VoteGerritLabelValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sConfigGroup_PostAction_VoteGerritLabel.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ConfigGroup_PostAction_VoteGerritLabelValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ConfigGroup_PostAction_VoteGerritLabelValidationError{}
 
 // Validate checks the field values on Verifiers_GerritCQAbility with the rules
 // defined in the proto definition for this message. If any rules are

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	apipb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
@@ -394,6 +395,97 @@ func TestValidateProjectDetailed(t *testing.T) {
 					cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode, mode}
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldErrLike, `"QUICK_DRY_RUN" is already in use`)
+				})
+			})
+
+			Convey("post_actions", func() {
+				pa := &cfgpb.ConfigGroup_PostAction{
+					Name: "CQ verified",
+					Action: &cfgpb.ConfigGroup_PostAction_VoteGerritLabel_{
+						VoteGerritLabel: &cfgpb.ConfigGroup_PostAction_VoteGerritLabel{
+							Name:  "CQ-verified",
+							Value: 1,
+						},
+					},
+					Conditions: []*cfgpb.ConfigGroup_PostAction_TriggeringCondition{
+						{
+							Mode:     "DRY_RUN",
+							Statuses: []apipb.Run_Status{apipb.Run_SUCCEEDED},
+						},
+					},
+				}
+				cfg.ConfigGroups[0].PostActions = []*cfgpb.ConfigGroup_PostAction{pa}
+
+				Convey("works", func() {
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldBeNil)
+				})
+
+				Convey("name", func() {
+					Convey("missing", func() {
+						pa.Name = ""
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, "Name: value length must be at least 1")
+					})
+
+					Convey("duplicate", func() {
+						cfg.ConfigGroups[0].PostActions = append(cfg.ConfigGroups[0].PostActions,
+							cfg.ConfigGroups[0].PostActions[0])
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, `"CQ verified"' is already in use`)
+					})
+				})
+
+				Convey("action", func() {
+					Convey("missing", func() {
+						pa.Action = nil
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, `Action: value is required`)
+					})
+				})
+
+				Convey("triggering_conditions", func() {
+					tc := pa.Conditions[0]
+					Convey("missing", func() {
+						pa.Conditions = nil
+						validateProjectConfig(vctx, &cfg)
+						So(vctx.Finalize(), ShouldErrLike, `Conditions: value must contain at least 1`)
+					})
+					Convey("mode", func() {
+						Convey("missing", func() {
+							tc.Mode = ""
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, `Mode: value length must be at least 1`)
+						})
+
+						cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
+						Convey("with an existing additional mode", func() {
+							tc.Mode = "QUICK_DRY_RUN"
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldBeNil)
+						})
+
+						Convey("with an non-existing additional mode", func() {
+							tc.Mode = "SLOW_DRY_RUN"
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, `invalid mode "SLOW_DRY_RUN"`)
+						})
+					})
+					Convey("statuses", func() {
+						Convey("missing", func() {
+							tc.Statuses = nil
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, `Statuses: value must contain at least 1`)
+						})
+						Convey("non-terminal status", func() {
+							tc.Statuses = []apipb.Run_Status{
+								apipb.Run_SUCCEEDED,
+								apipb.Run_PENDING,
+							}
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, `"PENDING" is not a terminal status`)
+						})
+					})
 				})
 			})
 		})

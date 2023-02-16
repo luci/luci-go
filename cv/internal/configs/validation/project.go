@@ -31,6 +31,7 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	apipb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 )
 
@@ -222,6 +223,51 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 			vd.ctx.Errorf("%q is already in use", n)
 		}
 		vd.ctx.Exit()
+		vd.ctx.Exit()
+	}
+
+	paNames := stringset.New(len(group.PostActions))
+	for i, act := range group.PostActions {
+		vd.ctx.Enter("post_actions #%d", (i + 1))
+		if err := act.ValidateAll(); err != nil {
+			vd.ctx.Errorf("%s", err)
+		}
+
+		vd.ctx.Enter("name")
+		if !paNames.Add(act.GetName()) {
+			vd.ctx.Errorf("name '%q' is already in use", act.GetName())
+		}
+		vd.ctx.Exit()
+		for i, tc := range act.GetConditions() {
+			vd.ctx.Enter("conditions #%d", (i + 1))
+			switch m := tc.GetMode(); {
+			case m == "DRY_RUN":
+			case m == "FULL_RUN":
+			case m == "QUICK_DRY_RUN":
+			case m == "NEW_PATCHSET_RUN":
+			case additionalModes.Has(m):
+			default:
+				vd.ctx.Enter("mode")
+				vd.ctx.Errorf("invalid mode %q", m)
+				vd.ctx.Exit()
+			}
+
+			// pgv's enum.in accepts the numeric representation of enum values,
+			// which produces non-so-readable error messages.
+			// check the statuses here to produce better error messages.
+			for i, st := range tc.GetStatuses() {
+				switch st {
+				case apipb.Run_SUCCEEDED:
+				case apipb.Run_FAILED:
+				case apipb.Run_CANCELLED:
+				default:
+					vd.ctx.Enter("statuses #%d", (i + 1))
+					vd.ctx.Errorf("%q is not a terminal status", st)
+					vd.ctx.Exit()
+				}
+			}
+			vd.ctx.Exit()
+		}
 		vd.ctx.Exit()
 	}
 
