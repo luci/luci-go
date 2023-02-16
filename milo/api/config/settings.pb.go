@@ -262,15 +262,16 @@ type Settings_SourceAcls struct {
 	// Read access is granted on both git data and Gerrit CLs of this project.
 	//
 	// For *.googlesource.com Git repositories:
-	//   URL Path should not start with '/a/' (forced authentication).
-	//   URL Path should not end with '.git' (redundant).
+	//
+	//	URL Path should not start with '/a/' (forced authentication).
+	//	URL Path should not end with '.git' (redundant).
 	Projects []string `protobuf:"bytes,2,rep,name=projects,proto3" json:"projects,omitempty"`
 	// readers are allowed to read git/gerrit data from targets.
 	//
 	// Three types of identity strings are supported:
-	//  * Emails.                   For example: "someuser@example.com"
-	//  * Chrome-infra-auth Groups. For example: "group:committers"
-	//  * Auth service identities.  For example: "kind:name"
+	//   - Emails.                   For example: "someuser@example.com"
+	//   - Chrome-infra-auth Groups. For example: "group:committers"
+	//   - Auth service identities.  For example: "kind:name"
 	//
 	// Required.
 	Readers []string `protobuf:"bytes,3,rep,name=readers,proto3" json:"readers,omitempty"`

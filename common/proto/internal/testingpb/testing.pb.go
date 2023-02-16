@@ -379,6 +379,7 @@ type WithInner_Inner struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Msg:
+	//
 	//	*WithInner_Inner_Simple
 	//	*WithInner_Inner_Props
 	Msg isWithInner_Inner_Msg `protobuf_oneof:"msg"`

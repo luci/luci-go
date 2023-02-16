@@ -203,7 +203,6 @@ type ButlerLogBundle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
 	// (DEPRECATED) Stream source information. Now supplied during prefix
 	// registration.
 	DeprecatedSource string `protobuf:"bytes,1,opt,name=deprecated_source,json=deprecatedSource,proto3" json:"deprecated_source,omitempty"`
@@ -211,17 +210,16 @@ type ButlerLogBundle struct {
 	//
 	// This field will be used for debugging and internal accounting.
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	//*
+	// *
 	// Each Entry is an individual set of log records for a given log stream.
 	Entries []*ButlerLogBundle_Entry `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
-	//* Project specifies which luci-config project this stream belongs to.
+	// * Project specifies which luci-config project this stream belongs to.
 	Project string `protobuf:"bytes,4,opt,name=project,proto3" json:"project,omitempty"`
-	//*
+	// *
 	// The log stream prefix that is shared by all bundled streams.
 	//
 	// This prefix is valid within the supplied project scope.
 	Prefix string `protobuf:"bytes,5,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	//
 	// The log prefix's secret value (required).
 	//
 	// The secret is bound to all log streams that share the supplied Prefix, and
@@ -319,14 +317,12 @@ type ButlerLogBundle_Entry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
 	// The descriptor for this entry's log stream.
 	//
 	// Each LogEntry in the "logs" field is shares this common descriptor.
 	Desc *LogStreamDescriptor `protobuf:"bytes,1,opt,name=desc,proto3" json:"desc,omitempty"`
 	// (DEPRECATED) Per-entry secret replaced with Butler-wide secret.
 	DeprecatedEntrySecret []byte `protobuf:"bytes,2,opt,name=deprecated_entry_secret,json=deprecatedEntrySecret,proto3" json:"deprecated_entry_secret,omitempty"`
-	//
 	// Whether this log entry terminates its stream.
 	//
 	// If present and "true", this field declares that this Entry is the last
@@ -338,11 +334,9 @@ type ButlerLogBundle_Entry struct {
 	// Further log entries belonging to this stream with stream indices
 	// exceeding the terminal log's index will be discarded.
 	Terminal bool `protobuf:"varint,3,opt,name=terminal,proto3" json:"terminal,omitempty"`
-	//
 	// If terminal is true, this is the terminal stream index; that is, the last
 	// message index in the stream.
 	TerminalIndex uint64 `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex,proto3" json:"terminal_index,omitempty"`
-	//
 	// Log entries attached to this record. These MUST be sequential.
 	//
 	// This is the main log entry content.

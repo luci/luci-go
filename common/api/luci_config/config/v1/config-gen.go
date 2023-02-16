@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
@@ -841,17 +841,17 @@ func (c *GetConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigRe
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetConfigResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1000,17 +1000,17 @@ func (c *GetConfigByHashCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetCo
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetConfigByHashResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1156,17 +1156,17 @@ func (c *GetConfigSetsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetConfigSetsResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1303,17 +1303,17 @@ func (c *GetMappingCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetMapping
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetMappingResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1449,17 +1449,17 @@ func (c *GetProjectConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGet
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetConfigMultiResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1591,17 +1591,17 @@ func (c *GetProjectsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetProjec
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetProjectsResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1731,17 +1731,17 @@ func (c *GetRefConfigsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConf
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetConfigMultiResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1878,17 +1878,17 @@ func (c *GetRefsCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetRefsRespon
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigGetRefsResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1998,7 +1998,7 @@ func (c *ReimportCall) Do(opts ...googleapi.CallOption) error {
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -2105,17 +2105,17 @@ func (c *ValidateConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigValida
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LuciConfigValidateConfigResponseMessage{
 		ServerResponse: googleapi.ServerResponse{

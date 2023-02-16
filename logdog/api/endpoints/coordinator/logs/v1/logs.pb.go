@@ -451,10 +451,10 @@ type QueryRequest struct {
 	// Tags is the set of tags to constrain the query with.
 	//
 	// A Tag entry may either be:
-	// - A key/value query, in which case the results are constrained by logs
-	//   whose tag includes that key/value pair.
-	// - A key with an missing (nil) value, in which case the results are
-	//   constraints by logs that have that tag key, regardless of its value.
+	//   - A key/value query, in which case the results are constrained by logs
+	//     whose tag includes that key/value pair.
+	//   - A key with an missing (nil) value, in which case the results are
+	//     constraints by logs that have that tag key, regardless of its value.
 	Tags map[string]string `protobuf:"bytes,15,rep,name=tags,proto3" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Purged restricts the query to streams that have or haven't been purged.
 	Purged QueryRequest_Trinary `protobuf:"varint,16,opt,name=purged,proto3,enum=logdog.QueryRequest_Trinary" json:"purged,omitempty"`

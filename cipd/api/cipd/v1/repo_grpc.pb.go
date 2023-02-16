@@ -85,8 +85,8 @@ type RepositoryClient interface {
 	//
 	// For example, for packages ["a", "a/b", "a/c/d", "a/c/e/f"], listing of "a"
 	// will be:
-	//   * {packages: ["a/b"], prefixes: ["a/c"]} if listing non-recursively.
-	//   * {packages: ["a/b", "a/c/d", "a/c/e/f"], prefixes: ["a/c", "a/c/e"]} if
+	//   - {packages: ["a/b"], prefixes: ["a/c"]} if listing non-recursively.
+	//   - {packages: ["a/b", "a/c/d", "a/c/e/f"], prefixes: ["a/c", "a/c/e"]} if
 	//     listing recursively.
 	//
 	// Returns only packages and prefixes visible to the caller. This applies even
@@ -125,21 +125,22 @@ type RepositoryClient interface {
 	// the repository root can delete packages.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a root owner.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a root owner.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package doesn't exist.
 	DeletePackage(ctx context.Context, in *PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Registers a package instance in the repository (if it was uploaded to the
 	// storage already and wasn't registered yet) or initiates a new upload
 	// operation.
 	//
 	// Callers are expected to execute the following protocol:
-	//   1. Attempt to register a package instance by calling RegisterInstance.
-	//   2. On NOT_UPLOADED status, upload the package data and finalize the
-	//      upload operation using Storage RPC service and upload_op from the
-	//      response.
-	//   3. Once the upload operation is finalized, call RegisterInstance again,
-	//      it should succeed with status REGISTERED now.
+	//  1. Attempt to register a package instance by calling RegisterInstance.
+	//  2. On NOT_UPLOADED status, upload the package data and finalize the
+	//     upload operation using Storage RPC service and upload_op from the
+	//     response.
+	//  3. Once the upload operation is finalized, call RegisterInstance again,
+	//     it should succeed with status REGISTERED now.
 	//
 	// If such instance is already registered by someone else, returns
 	// ALREADY_REGISTERED status. This is not an error.
@@ -178,28 +179,31 @@ type RepositoryClient interface {
 	// passed all post-registration processing.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance the ref points to doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance the ref points to doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	CreateRef(ctx context.Context, in *Ref, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Removes a ref.
 	//
 	// Not a failure if there's no such ref.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package doesn't exist.
 	DeleteRef(ctx context.Context, in *DeleteRefRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Lists refs defined in a package, most recently modified first.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package doesn't exist.
 	ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (*ListRefsResponse, error)
 	// Attaches one or more tags to an instance.
 	//
@@ -226,12 +230,13 @@ type RepositoryClient interface {
 	// passed all post-registration processing.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	AttachTags(ctx context.Context, in *AttachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Detaches one or more tags if they were attached.
 	//
@@ -243,9 +248,10 @@ type RepositoryClient interface {
 	// AttachTags).
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachTags(ctx context.Context, in *DetachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Attaches one or more metadata entries to an instance.
 	//
@@ -262,12 +268,13 @@ type RepositoryClient interface {
 	// for example, to point to an entry to detach in DetachMetadata.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	AttachMetadata(ctx context.Context, in *AttachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Detaches one or more metadata entries if they were attached.
 	//
@@ -281,9 +288,10 @@ type RepositoryClient interface {
 	// Detaching metadata that doesn't exist is a noop.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachMetadata(ctx context.Context, in *DetachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Lists metadata entries attached to an instance.
 	//
@@ -292,29 +300,32 @@ type RepositoryClient interface {
 	// first).
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
 	ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error)
 	// Takes a version string and resolves it into a concrete package instance.
 	//
 	// A version string can be any of:
-	//   * A string-encoded instance ID, e.g. "abcdef....".
-	//   * A ref name, e.g. "latest".
-	//   * A tag, e.g. "version:1.10.3".
+	//   - A string-encoded instance ID, e.g. "abcdef....".
+	//   - A ref name, e.g. "latest".
+	//   - A tag, e.g. "version:1.10.3".
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if there's no such package or version.
-	//   FAILED_PRECONDITION if the tag resolves to multiple instances.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if there's no such package or version.
+	//	FAILED_PRECONDITION if the tag resolves to multiple instances.
 	ResolveVersion(ctx context.Context, in *ResolveVersionRequest, opts ...grpc.CallOption) (*Instance, error)
 	// Produces a signed URL that can be used to fetch the package instance file.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if there's no such instance.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if there's no such instance.
 	GetInstanceURL(ctx context.Context, in *GetInstanceURLRequest, opts ...grpc.CallOption) (*ObjectURL, error)
 	// Returns information about a package instance.
 	//
@@ -327,19 +338,21 @@ type RepositoryClient interface {
 	// instance exists.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the instance doesn't exist.
 	DescribeInstance(ctx context.Context, in *DescribeInstanceRequest, opts ...grpc.CallOption) (*DescribeInstanceResponse, error)
 	// Returns information about a CIPD client package.
 	//
 	// Used by the client self-update procedure.
 	//
 	// Returns:
-	//   NOT_FOUND if the package or the instance doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	NOT_FOUND if the package or the instance doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	DescribeClient(ctx context.Context, in *DescribeClientRequest, opts ...grpc.CallOption) (*DescribeClientResponse, error)
 	// Returns information about binaries extracted from bootstrap packages under
 	// some prefix.
@@ -351,24 +364,26 @@ type RepositoryClient interface {
 	// request as a whole) are returned as google.rpc.Status inside the
 	// corresponding BootstrapFile entry in DescribeBootstrapBundleResponse.
 	// Possible statuses communicated that way:
-	//   NOT_FOUND if the requested version of the package doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed or it is not
-	//       a bootstrap package at all.
-	//   ABORTED if the instance has failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	NOT_FOUND if the requested version of the package doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed or it is not
+	//	    a bootstrap package at all.
+	//	ABORTED if the instance has failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	//
 	// NOTE: The CIPD package server implements a REST endpoint which can be used
 	// to retrieve the contents of bootstrap packages:
 	//
-	//   GET /bootstrap/<package>/+/<version>
+	//	GET /bootstrap/<package>/+/<version>
 	//
 	// which will serve a 302 redirect to a signed url for the `file` contents.
 	//
 	// Returns:
-	//   OK if the request was accepted and (perhaps partially) processed.
-	//   NOT_FOUND if none of the requested instances exist.
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
+	//
+	//	OK if the request was accepted and (perhaps partially) processed.
+	//	NOT_FOUND if none of the requested instances exist.
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
 	DescribeBootstrapBundle(ctx context.Context, in *DescribeBootstrapBundleRequest, opts ...grpc.CallOption) (*DescribeBootstrapBundleResponse, error)
 }
 
@@ -662,8 +677,8 @@ type RepositoryServer interface {
 	//
 	// For example, for packages ["a", "a/b", "a/c/d", "a/c/e/f"], listing of "a"
 	// will be:
-	//   * {packages: ["a/b"], prefixes: ["a/c"]} if listing non-recursively.
-	//   * {packages: ["a/b", "a/c/d", "a/c/e/f"], prefixes: ["a/c", "a/c/e"]} if
+	//   - {packages: ["a/b"], prefixes: ["a/c"]} if listing non-recursively.
+	//   - {packages: ["a/b", "a/c/d", "a/c/e/f"], prefixes: ["a/c", "a/c/e"]} if
 	//     listing recursively.
 	//
 	// Returns only packages and prefixes visible to the caller. This applies even
@@ -702,21 +717,22 @@ type RepositoryServer interface {
 	// the repository root can delete packages.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a root owner.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a root owner.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package doesn't exist.
 	DeletePackage(context.Context, *PackageRequest) (*emptypb.Empty, error)
 	// Registers a package instance in the repository (if it was uploaded to the
 	// storage already and wasn't registered yet) or initiates a new upload
 	// operation.
 	//
 	// Callers are expected to execute the following protocol:
-	//   1. Attempt to register a package instance by calling RegisterInstance.
-	//   2. On NOT_UPLOADED status, upload the package data and finalize the
-	//      upload operation using Storage RPC service and upload_op from the
-	//      response.
-	//   3. Once the upload operation is finalized, call RegisterInstance again,
-	//      it should succeed with status REGISTERED now.
+	//  1. Attempt to register a package instance by calling RegisterInstance.
+	//  2. On NOT_UPLOADED status, upload the package data and finalize the
+	//     upload operation using Storage RPC service and upload_op from the
+	//     response.
+	//  3. Once the upload operation is finalized, call RegisterInstance again,
+	//     it should succeed with status REGISTERED now.
 	//
 	// If such instance is already registered by someone else, returns
 	// ALREADY_REGISTERED status. This is not an error.
@@ -755,28 +771,31 @@ type RepositoryServer interface {
 	// passed all post-registration processing.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance the ref points to doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance the ref points to doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	CreateRef(context.Context, *Ref) (*emptypb.Empty, error)
 	// Removes a ref.
 	//
 	// Not a failure if there's no such ref.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package doesn't exist.
 	DeleteRef(context.Context, *DeleteRefRequest) (*emptypb.Empty, error)
 	// Lists refs defined in a package, most recently modified first.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package doesn't exist.
 	ListRefs(context.Context, *ListRefsRequest) (*ListRefsResponse, error)
 	// Attaches one or more tags to an instance.
 	//
@@ -803,12 +822,13 @@ type RepositoryServer interface {
 	// passed all post-registration processing.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	AttachTags(context.Context, *AttachTagsRequest) (*emptypb.Empty, error)
 	// Detaches one or more tags if they were attached.
 	//
@@ -820,9 +840,10 @@ type RepositoryServer interface {
 	// AttachTags).
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachTags(context.Context, *DetachTagsRequest) (*emptypb.Empty, error)
 	// Attaches one or more metadata entries to an instance.
 	//
@@ -839,12 +860,13 @@ type RepositoryServer interface {
 	// for example, to point to an entry to detach in DetachMetadata.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	AttachMetadata(context.Context, *AttachMetadataRequest) (*emptypb.Empty, error)
 	// Detaches one or more metadata entries if they were attached.
 	//
@@ -858,9 +880,10 @@ type RepositoryServer interface {
 	// Detaching metadata that doesn't exist is a noop.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachMetadata(context.Context, *DetachMetadataRequest) (*emptypb.Empty, error)
 	// Lists metadata entries attached to an instance.
 	//
@@ -869,29 +892,32 @@ type RepositoryServer interface {
 	// first).
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the package or the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the package or the instance doesn't exist.
 	ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error)
 	// Takes a version string and resolves it into a concrete package instance.
 	//
 	// A version string can be any of:
-	//   * A string-encoded instance ID, e.g. "abcdef....".
-	//   * A ref name, e.g. "latest".
-	//   * A tag, e.g. "version:1.10.3".
+	//   - A string-encoded instance ID, e.g. "abcdef....".
+	//   - A ref name, e.g. "latest".
+	//   - A tag, e.g. "version:1.10.3".
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if there's no such package or version.
-	//   FAILED_PRECONDITION if the tag resolves to multiple instances.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if there's no such package or version.
+	//	FAILED_PRECONDITION if the tag resolves to multiple instances.
 	ResolveVersion(context.Context, *ResolveVersionRequest) (*Instance, error)
 	// Produces a signed URL that can be used to fetch the package instance file.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if there's no such instance.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if there's no such instance.
 	GetInstanceURL(context.Context, *GetInstanceURLRequest) (*ObjectURL, error)
 	// Returns information about a package instance.
 	//
@@ -904,19 +930,21 @@ type RepositoryServer interface {
 	// instance exists.
 	//
 	// Returns:
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
-	//   NOT_FOUND if the instance doesn't exist.
+	//
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
+	//	NOT_FOUND if the instance doesn't exist.
 	DescribeInstance(context.Context, *DescribeInstanceRequest) (*DescribeInstanceResponse, error)
 	// Returns information about a CIPD client package.
 	//
 	// Used by the client self-update procedure.
 	//
 	// Returns:
-	//   NOT_FOUND if the package or the instance doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed.
-	//   ABORTED if the instance has some failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	NOT_FOUND if the package or the instance doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed.
+	//	ABORTED if the instance has some failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	DescribeClient(context.Context, *DescribeClientRequest) (*DescribeClientResponse, error)
 	// Returns information about binaries extracted from bootstrap packages under
 	// some prefix.
@@ -928,24 +956,26 @@ type RepositoryServer interface {
 	// request as a whole) are returned as google.rpc.Status inside the
 	// corresponding BootstrapFile entry in DescribeBootstrapBundleResponse.
 	// Possible statuses communicated that way:
-	//   NOT_FOUND if the requested version of the package doesn't exist.
-	//   FAILED_PRECONDITION if the instance is still being processed or it is not
-	//       a bootstrap package at all.
-	//   ABORTED if the instance has failed processors associated with it,
-	//       such instance is effectively broken and should not be used.
+	//
+	//	NOT_FOUND if the requested version of the package doesn't exist.
+	//	FAILED_PRECONDITION if the instance is still being processed or it is not
+	//	    a bootstrap package at all.
+	//	ABORTED if the instance has failed processors associated with it,
+	//	    such instance is effectively broken and should not be used.
 	//
 	// NOTE: The CIPD package server implements a REST endpoint which can be used
 	// to retrieve the contents of bootstrap packages:
 	//
-	//   GET /bootstrap/<package>/+/<version>
+	//	GET /bootstrap/<package>/+/<version>
 	//
 	// which will serve a 302 redirect to a signed url for the `file` contents.
 	//
 	// Returns:
-	//   OK if the request was accepted and (perhaps partially) processed.
-	//   NOT_FOUND if none of the requested instances exist.
-	//   PERMISSION_DENIED if the caller is not a READER for the prefix.
-	//   INVALID_ARGUMENT if the request is malformed.
+	//
+	//	OK if the request was accepted and (perhaps partially) processed.
+	//	NOT_FOUND if none of the requested instances exist.
+	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	INVALID_ARGUMENT if the request is malformed.
 	DescribeBootstrapBundle(context.Context, *DescribeBootstrapBundleRequest) (*DescribeBootstrapBundleResponse, error)
 	mustEmbedUnimplementedRepositoryServer()
 }

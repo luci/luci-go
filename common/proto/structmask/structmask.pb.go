@@ -46,22 +46,22 @@ type StructMask struct {
 	// A field path inside the struct to select.
 	//
 	// Each item can be:
-	//   * `some_value` - a concrete dict key to follow (unless it is a number or
+	//   - `some_value` - a concrete dict key to follow (unless it is a number or
 	//     includes `*`, use quotes in this case).
-	//   * `"some_value"` - same, but quoted. Useful for selecting `*` or numbers
+	//   - `"some_value"` - same, but quoted. Useful for selecting `*` or numbers
 	//     literally. See https://pkg.go.dev/strconv#Unquote for syntax.
-	//   * `<number>` (e.g. `0`) - a zero-based list index to follow.
+	//   - `<number>` (e.g. `0`) - a zero-based list index to follow.
 	//     **Not implemented**.
-	//   *  `*` - follow all dict keys and all list elements. Applies **only** to
+	//   - `*` - follow all dict keys and all list elements. Applies **only** to
 	//     dicts and lists. Trying to recurse into a number or a string results
 	//     in an empty match.
 	//
 	// When examining a value the following exceptional conditions result in
 	// an empty match, which is represented by `null` for list elements or
 	// omissions of the field for dicts:
-	//   * Trying to follow a dict key while examining a list.
-	//   * Trying to follow a key which is not present in the dict.
-	//   * Trying to use `*` mask with values that aren't dicts or lists.
+	//   - Trying to follow a dict key while examining a list.
+	//   - Trying to follow a key which is not present in the dict.
+	//   - Trying to use `*` mask with values that aren't dicts or lists.
 	//
 	// When using `*`, the result is always a subset of the input. In particular
 	// this is important when filtering lists: if a list of size N is selected by

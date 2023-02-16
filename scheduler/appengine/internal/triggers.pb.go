@@ -105,6 +105,7 @@ type Trigger struct {
 	// Actual trigger data that depends on type of the trigger.
 	//
 	// Types that are assignable to Payload:
+	//
 	//	*Trigger_Cron
 	//	*Trigger_Webui
 	//	*Trigger_Noop

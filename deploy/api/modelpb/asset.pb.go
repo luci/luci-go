@@ -563,6 +563,7 @@ type AssetState struct {
 	// The intended or captured state of the asset if `status` is OK.
 	//
 	// Types that are assignable to State:
+	//
 	//	*AssetState_Appengine
 	State isAssetState_State `protobuf_oneof:"state"`
 }

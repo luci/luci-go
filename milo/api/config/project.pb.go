@@ -220,13 +220,14 @@ type Oncall struct {
 	// Name is the name of the oncall rotation being displayed.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Url is an URL to a json endpoint with the following format:
-	// {
-	//   "updated_unix_timestamp": <int>,
-	//   "emails": [
-	//     "email@somewhere.com",
-	//     "email@nowhere.com
-	//   ]
-	// }
+	//
+	//	{
+	//	  "updated_unix_timestamp": <int>,
+	//	  "emails": [
+	//	    "email@somewhere.com",
+	//	    "email@nowhere.com
+	//	  ]
+	//	}
 	Url string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
 	// ShowPrimarySecondaryLabels specifies whether the oncaller names
 	// should have "(primary)" and "(secondary)" appended to them if there
@@ -422,13 +423,14 @@ type Header struct {
 
 	// Oncalls are a reference to oncall rotations, which is a URL to a json
 	// endpoint with the following format:
-	// {
-	//   "updated_unix_timestamp": <int>,
-	//   "emails": [
-	//     "email@somewhere.com",
-	//     "email@nowhere.com
-	//   ]
-	// }
+	//
+	//	{
+	//	  "updated_unix_timestamp": <int>,
+	//	  "emails": [
+	//	    "email@somewhere.com",
+	//	    "email@nowhere.com
+	//	  ]
+	//	}
 	Oncalls []*Oncall `protobuf:"bytes,1,rep,name=oncalls,proto3" json:"oncalls,omitempty"`
 	// Links is a list of named groups of web links.
 	Links []*LinkGroup `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
@@ -527,10 +529,10 @@ type Console struct {
 	//
 	// Users can specify a regular expression to match several refs using
 	// "regexp:" prefix, but the regular expression must have:
-	//   * a literal prefix with at least two slashes present, e.g.
+	//   - a literal prefix with at least two slashes present, e.g.
 	//     "refs/release-\d+/foobar" is not allowed, because the literal prefix
 	//     "refs/release-" only contains one slash, and
-	//   * must not start with ^ or end with $ as they are added automatically.
+	//   - must not start with ^ or end with $ as they are added automatically.
 	//
 	// For best results, ensure each ref's has commit's **committer** timestamp
 	// monotonically non-decreasing. Gerrit will take care of this if you require
@@ -549,8 +551,9 @@ type Console struct {
 	// E.g. the config below allows to track commits from all release branches,
 	// but ignore the commits from the main branch, from which these release
 	// branches are branched off:
-	//   ref: "regexp:refs/branch-heads/\d+\.\d+"
-	//   exlude_ref: "refs/heads/main"
+	//
+	//	ref: "regexp:refs/branch-heads/\d+\.\d+"
+	//	exlude_ref: "refs/heads/main"
 	ExcludeRef string `protobuf:"bytes,13,opt,name=exclude_ref,json=excludeRef,proto3" json:"exclude_ref,omitempty"`
 	// ManifestName the name of the manifest the waterfall looks at.
 	// This should always be "REVISION".
@@ -756,7 +759,7 @@ type Builder struct {
 
 	// Name is the BuilderID of the builders you wish to display for this column
 	// in the console. e.g.
-	//   * "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
+	//   - "buildbucket/luci.chromium.try/linux_chromium_rel_ng"
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Category describes the hierarchy of the builder on the header of the
 	// console as a "|" delimited list.  Neighboring builders with common ancestors

@@ -945,19 +945,19 @@ type SignedAuthDB struct {
 	// It is RS256(SHA512(auth_db_blob)).
 	//
 	// Where:
-	//   * RS256 is RSASSA-PKCS1-v1_5 using SHA-256, see RS256 algo in RFC7518.
-	//   * SHA512 is a byte string (64 bytes) with SHA-512 digest of its input.
+	//   - RS256 is RSASSA-PKCS1-v1_5 using SHA-256, see RS256 algo in RFC7518.
+	//   - SHA512 is a byte string (64 bytes) with SHA-512 digest of its input.
 	//
 	// Such peculiar structure is due to limitations of GAE signing infrastructure
 	// (RS256 function can accept at most 8KB of input).
 	//
 	// Consumers of SignedAuthDB are expected to do the following:
-	//   1. Check 'signer_id' is what they expect.
-	//   2. Use https://www.googleapis.com/service_accounts/v1/metadata/x509/...
-	//      endpoint to get the signer's public key with ID 'signing_key_id'.
-	//   3. Construct to-be-signed string as SHA512(auth_db_blob).
-	//   4. Verify 'signature' matches to-be-signed string using the public key
-	//      from step 2.
+	//  1. Check 'signer_id' is what they expect.
+	//  2. Use https://www.googleapis.com/service_accounts/v1/metadata/x509/...
+	//     endpoint to get the signer's public key with ID 'signing_key_id'.
+	//  3. Construct to-be-signed string as SHA512(auth_db_blob).
+	//  4. Verify 'signature' matches to-be-signed string using the public key
+	//     from step 2.
 	Signature []byte `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
 }
 

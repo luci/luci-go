@@ -329,6 +329,7 @@ type Condition struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Op:
+	//
 	//	*Condition_Restrict
 	Op isCondition_Op `protobuf_oneof:"op"`
 }
@@ -422,9 +423,9 @@ type CustomRole struct {
 	// LUCI service ("<service>").
 	//
 	// Examples of permissions:
-	//   * buildbucket.build.create
-	//   * swarming.pool.listBots
-	//   * swarming.task.cancel
+	//   - buildbucket.build.create
+	//   - swarming.pool.listBots
+	//   - swarming.task.cancel
 	//
 	// See TODO for a list of all possible permissions.
 	Permissions []string `protobuf:"bytes,3,rep,name=permissions,proto3" json:"permissions,omitempty"`

@@ -177,14 +177,16 @@ type ManifestDiff_GitCheckout struct {
 	// Indicates the status for the `revision` field.
 	//
 	// If this is DIFF, it is sensible to compute
-	//   `git log repo_url old.revision new.revision`
+	//
+	//	`git log repo_url old.revision new.revision`
 	Revision ManifestDiff_Stat `protobuf:"varint,2,opt,name=revision,proto3,enum=srcman.ManifestDiff_Stat" json:"revision,omitempty"`
 	// Indicates the status for the `patch_revision` field. It evaluates
 	// the patch_fetch_ref values to ensure that old and new are different
 	// patches from the same CL.
 	//
 	// If this is DIFF, it is sensible to compute
-	//   `git log repo_url old.patch_revision new.patch_revision`
+	//
+	//	`git log repo_url old.patch_revision new.patch_revision`
 	PatchRevision ManifestDiff_Stat `protobuf:"varint,3,opt,name=patch_revision,json=patchRevision,proto3,enum=srcman.ManifestDiff_Stat" json:"patch_revision,omitempty"`
 	// The URL that should be used for RPCs. It may differ from the url in old
 	// or new if the service computing this ManifestDiff knows of e.g. a repo

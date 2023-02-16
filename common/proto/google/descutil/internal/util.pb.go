@@ -329,12 +329,14 @@ type M3 struct {
 	// O1
 	//
 	// Types that are assignable to O1:
+	//
 	//	*M3_F1
 	//	*M3_F2
 	O1 isM3_O1 `protobuf_oneof:"O1"`
 	// O2
 	//
 	// Types that are assignable to O2:
+	//
 	//	*M3_F3
 	//	*M3_F4
 	O2 isM3_O2 `protobuf_oneof:"O2"`

@@ -61,6 +61,7 @@ type Trigger struct {
 	// by the Scheduler, see corresponding protos.
 	//
 	// Types that are assignable to Payload:
+	//
 	//	*Trigger_Cron
 	//	*Trigger_Webui
 	//	*Trigger_Noop

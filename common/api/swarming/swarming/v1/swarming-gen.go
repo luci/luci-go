@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
@@ -2148,17 +2148,17 @@ func (c *BotDeleteCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsDeletedRe
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsDeletedResponse{
 		ServerResponse: googleapi.ServerResponse{
@@ -2315,17 +2315,17 @@ func (c *BotEventsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotEvents
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsBotEvents{
 		ServerResponse: googleapi.ServerResponse{
@@ -2479,17 +2479,17 @@ func (c *BotGetCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotInfo, err
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsBotInfo{
 		ServerResponse: googleapi.ServerResponse{
@@ -2583,7 +2583,6 @@ func (c *BotTasksCall) Limit(limit int64) *BotTasksCall {
 //	"ABANDONED_TS"
 //	"COMPLETED_TS"
 //	"CREATED_TS" (default)
-//	"MODIFIED_TS"
 //	"STARTED_TS"
 func (c *BotTasksCall) Sort(sort string) *BotTasksCall {
 	c.urlParams_.Set("sort", sort)
@@ -2695,17 +2694,17 @@ func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, 
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsBotTasks{
 		ServerResponse: googleapi.ServerResponse{
@@ -2756,11 +2755,9 @@ func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, 
 	//         "ABANDONED_TS",
 	//         "COMPLETED_TS",
 	//         "CREATED_TS",
-	//         "MODIFIED_TS",
 	//         "STARTED_TS"
 	//       ],
 	//       "enumDescriptions": [
-	//         "",
 	//         "",
 	//         "",
 	//         "",
@@ -2913,17 +2910,17 @@ func (c *BotTerminateCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTermin
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTerminateResponse{
 		ServerResponse: googleapi.ServerResponse{
@@ -3055,17 +3052,17 @@ func (c *BotsCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotsCount
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsBotsCount{
 		ServerResponse: googleapi.ServerResponse{
@@ -3195,17 +3192,17 @@ func (c *BotsDimensionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBots
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsBotsDimensions{
 		ServerResponse: googleapi.ServerResponse{
@@ -3393,17 +3390,17 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsBotList{
 		ServerResponse: googleapi.ServerResponse{
@@ -3608,17 +3605,17 @@ func (c *QueuesListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskQueu
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskQueueList{
 		ServerResponse: googleapi.ServerResponse{
@@ -3745,17 +3742,17 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsServe
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsServerDetails{
 		ServerResponse: googleapi.ServerResponse{
@@ -3871,17 +3868,17 @@ func (c *ServerGetBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsFileContent{
 		ServerResponse: googleapi.ServerResponse{
@@ -3997,17 +3994,17 @@ func (c *ServerGetBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsFileContent{
 		ServerResponse: googleapi.ServerResponse{
@@ -4141,17 +4138,17 @@ func (c *ServerPermissionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsC
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsClientPermissions{
 		ServerResponse: googleapi.ServerResponse{
@@ -4271,17 +4268,17 @@ func (c *ServerTokenCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBootstr
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsBootstrapToken{
 		ServerResponse: googleapi.ServerResponse{
@@ -4398,17 +4395,17 @@ func (c *TaskCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsCancelRe
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsCancelResponse{
 		ServerResponse: googleapi.ServerResponse{
@@ -4545,17 +4542,17 @@ func (c *TaskRequestCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskReq
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskRequest{
 		ServerResponse: googleapi.ServerResponse{
@@ -4699,17 +4696,17 @@ func (c *TaskResultCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskResu
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskResult{
 		ServerResponse: googleapi.ServerResponse{
@@ -4858,17 +4855,17 @@ func (c *TaskStdoutCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskOutp
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskOutput{
 		ServerResponse: googleapi.ServerResponse{
@@ -4999,17 +4996,17 @@ func (c *TasksCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCa
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTasksCancelResponse{
 		ServerResponse: googleapi.ServerResponse{
@@ -5171,17 +5168,17 @@ func (c *TasksCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCou
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTasksCount{
 		ServerResponse: googleapi.ServerResponse{
@@ -5359,17 +5356,17 @@ func (c *TasksGetStatesCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTask
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskStates{
 		ServerResponse: googleapi.ServerResponse{
@@ -5454,7 +5451,6 @@ func (c *TasksListCall) Limit(limit int64) *TasksListCall {
 //	"ABANDONED_TS"
 //	"COMPLETED_TS"
 //	"CREATED_TS" (default)
-//	"MODIFIED_TS"
 //	"STARTED_TS"
 func (c *TasksListCall) Sort(sort string) *TasksListCall {
 	c.urlParams_.Set("sort", sort)
@@ -5569,17 +5565,17 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskList{
 		ServerResponse: googleapi.ServerResponse{
@@ -5622,11 +5618,9 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 	//         "ABANDONED_TS",
 	//         "COMPLETED_TS",
 	//         "CREATED_TS",
-	//         "MODIFIED_TS",
 	//         "STARTED_TS"
 	//       ],
 	//       "enumDescriptions": [
-	//         "",
 	//         "",
 	//         "",
 	//         "",
@@ -5779,17 +5773,17 @@ func (c *TasksNewCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskReques
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskRequestMetadata{
 		ServerResponse: googleapi.ServerResponse{
@@ -5870,7 +5864,6 @@ func (c *TasksRequestsCall) Limit(limit int64) *TasksRequestsCall {
 //	"ABANDONED_TS"
 //	"COMPLETED_TS"
 //	"CREATED_TS" (default)
-//	"MODIFIED_TS"
 //	"STARTED_TS"
 func (c *TasksRequestsCall) Sort(sort string) *TasksRequestsCall {
 	c.urlParams_.Set("sort", sort)
@@ -5985,17 +5978,17 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &SwarmingRpcsTaskRequests{
 		ServerResponse: googleapi.ServerResponse{
@@ -6038,11 +6031,9 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 	//         "ABANDONED_TS",
 	//         "COMPLETED_TS",
 	//         "CREATED_TS",
-	//         "MODIFIED_TS",
 	//         "STARTED_TS"
 	//       ],
 	//       "enumDescriptions": [
-	//         "",
 	//         "",
 	//         "",
 	//         "",

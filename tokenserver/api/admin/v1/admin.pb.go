@@ -193,6 +193,7 @@ type InspectMachineTokenResponse struct {
 	// token was malformed and couldn't be deserialized.
 	//
 	// Types that are assignable to TokenType:
+	//
 	//	*InspectMachineTokenResponse_LuciMachineToken
 	TokenType isInspectMachineTokenResponse_TokenType `protobuf_oneof:"token_type"`
 }

@@ -413,6 +413,7 @@ type AnnotationLink struct {
 	// should be rendered in relation to that link.
 	AliasLabel string `protobuf:"bytes,2,opt,name=alias_label,json=aliasLabel,proto3" json:"alias_label,omitempty"`
 	// Types that are assignable to Value:
+	//
 	//	*AnnotationLink_Url
 	//	*AnnotationLink_LogdogStream
 	//	*AnnotationLink_IsolateObject
@@ -814,6 +815,7 @@ type Step_Substep struct {
 	// The substep.
 	//
 	// Types that are assignable to Substep:
+	//
 	//	*Step_Substep_Step
 	//	*Step_Substep_AnnotationStream
 	Substep isStep_Substep_Substep `protobuf_oneof:"substep"`

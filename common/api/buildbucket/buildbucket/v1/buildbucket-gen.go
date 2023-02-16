@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
@@ -201,8 +201,6 @@ func (s *LegacyApiCancelRequestBodyMessage) MarshalJSON() ([]byte, error) {
 // LegacyApiCommonBuildMessage: Describes model.Build, see its
 // docstring.
 type LegacyApiCommonBuildMessage struct {
-	AncestorIds googleapi.Int64s `json:"ancestor_ids,omitempty"`
-
 	Bucket string `json:"bucket,omitempty"`
 
 	Canary bool `json:"canary,omitempty"`
@@ -277,7 +275,7 @@ type LegacyApiCommonBuildMessage struct {
 
 	UtcnowTs int64 `json:"utcnow_ts,omitempty,string"`
 
-	// ForceSendFields is a list of field names (e.g. "AncestorIds") to
+	// ForceSendFields is a list of field names (e.g. "Bucket") to
 	// unconditionally include in API requests. By default, fields with
 	// empty or default values are omitted from API requests. However, any
 	// non-pointer, non-interface field appearing in ForceSendFields will be
@@ -285,10 +283,10 @@ type LegacyApiCommonBuildMessage struct {
 	// This may be used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "AncestorIds") to include
-	// in API requests with the JSON null value. By default, fields with
-	// empty values are omitted from API requests. However, any field with
-	// an empty value appearing in NullFields will be sent to the server as
+	// NullFields is a list of field names (e.g. "Bucket") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
 	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
@@ -807,17 +805,17 @@ func (c *CancelCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMe
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -948,17 +946,17 @@ func (c *FailCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMess
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1096,17 +1094,17 @@ func (c *GetCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessa
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1233,17 +1231,17 @@ func (c *HeartbeatCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildRespons
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1368,17 +1366,17 @@ func (c *HeartbeatBatchCall) Do(opts ...googleapi.CallOption) (*LegacyApiHeartbe
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiHeartbeatBatchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1498,17 +1496,17 @@ func (c *LeaseCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMes
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1657,17 +1655,17 @@ func (c *PeekCall) Do(opts ...googleapi.CallOption) (*LegacyApiSearchResponseMes
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiSearchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -1792,17 +1790,17 @@ func (c *PutCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMessa
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -2035,17 +2033,17 @@ func (c *SearchCall) Do(opts ...googleapi.CallOption) (*LegacyApiSearchResponseM
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiSearchResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -2273,17 +2271,17 @@ func (c *StartCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseMes
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{
@@ -2414,17 +2412,17 @@ func (c *SucceedCall) Do(opts ...googleapi.CallOption) (*LegacyApiBuildResponseM
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacyApiBuildResponseMessage{
 		ServerResponse: googleapi.ServerResponse{

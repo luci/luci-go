@@ -68,8 +68,9 @@ type Manifest struct {
 	// Infrastructure team to see if there's a better alternative.
 	//
 	// Ex.
-	//   "": {...}  // root directory
-	//   "src/third_party/something": {...}
+	//
+	//	"": {...}  // root directory
+	//	"src/third_party/something": {...}
 	Directories map[string]*Manifest_Directory `protobuf:"bytes,2,rep,name=directories,proto3" json:"directories,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -131,7 +132,8 @@ type ManifestLink struct {
 	// other uri schemes here later.
 	//
 	// Ex.
-	//   logdog://logs.chromium.org/infra/build/12345/+/some/path
+	//
+	//	logdog://logs.chromium.org/infra/build/12345/+/some/path
 	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	// The hash of the Manifest's raw binary form (i.e. the bytes at the end of
 	// `url`, without any interpretation or decoding). Milo will use this as an
@@ -199,8 +201,9 @@ type Manifest_GitCheckout struct {
 	// of truth” for the source code.
 	//
 	// Ex.
-	//   https://chromium.googlesource.com/chromium/tools/build
-	//   https://chromium.googlesource.com/infra/luci/recipes-py
+	//
+	//	https://chromium.googlesource.com/chromium/tools/build
+	//	https://chromium.googlesource.com/infra/luci/recipes-py
 	RepoUrl string `protobuf:"bytes,1,opt,name=repo_url,json=repoUrl,proto3" json:"repo_url,omitempty"`
 	// If different from repo_url, this can be the URL of the repo that the source
 	// was actually fetched from (i.e. a mirror).
@@ -208,7 +211,8 @@ type Manifest_GitCheckout struct {
 	// If this is empty, it's presumed to be equal to repo_url.
 	//
 	// Ex.
-	//   https://github.com/luci/recipes-py
+	//
+	//	https://github.com/luci/recipes-py
 	FetchUrl string `protobuf:"bytes,2,opt,name=fetch_url,json=fetchUrl,proto3" json:"fetch_url,omitempty"`
 	// The fully resolved revision (commit hash) of the source.
 	//
@@ -216,7 +220,8 @@ type Manifest_GitCheckout struct {
 	// generated commit).
 	//
 	// Ex.
-	//   3617b0eea7ec74b8e731a23fed2f4070cbc284c4
+	//
+	//	3617b0eea7ec74b8e731a23fed2f4070cbc284c4
 	Revision string `protobuf:"bytes,3,opt,name=revision,proto3" json:"revision,omitempty"`
 	// The ref that the task used to resolve/fetch the revision of the source
 	// (if any).
@@ -228,7 +233,8 @@ type Manifest_GitCheckout struct {
 	// example of a non-absolute ref would be 'master'.
 	//
 	// Ex.
-	//   refs/heads/master
+	//
+	//	refs/heads/master
 	FetchRef string `protobuf:"bytes,4,opt,name=fetch_ref,json=fetchRef,proto3" json:"fetch_ref,omitempty"`
 	// If the checkout had a CL associated with it (i.e. a gerrit commit), this
 	// is the fully resolved revision (commit hash) of the CL. If there was no
@@ -239,7 +245,8 @@ type Manifest_GitCheckout struct {
 	// locally generated commit).
 	//
 	// Ex.
-	//   6b0b5c12443cfb93305f8d9e21f8d762c8dad9f0
+	//
+	//	6b0b5c12443cfb93305f8d9e21f8d762c8dad9f0
 	PatchRevision string `protobuf:"bytes,5,opt,name=patch_revision,json=patchRevision,proto3" json:"patch_revision,omitempty"`
 	// If the checkout had a CL associated with it, this is the ref that the
 	// task used to fetch patch_revision. If `patch_revision` is supplied, this
@@ -251,7 +258,8 @@ type Manifest_GitCheckout struct {
 	// This must always be an absolute ref (i.e. starts with 'refs/').
 	//
 	// Ex.
-	//   refs/changes/04/511804/4
+	//
+	//	refs/changes/04/511804/4
 	PatchFetchRef string `protobuf:"bytes,6,opt,name=patch_fetch_ref,json=patchFetchRef,proto3" json:"patch_fetch_ref,omitempty"`
 }
 
@@ -337,18 +345,21 @@ type Manifest_CIPDPackage struct {
 	// The package pattern that was given to the CIPD client (if known).
 	//
 	// Ex.
-	//   infra/tools/luci/led/${platform}
+	//
+	//	infra/tools/luci/led/${platform}
 	PackagePattern string `protobuf:"bytes,1,opt,name=package_pattern,json=packagePattern,proto3" json:"package_pattern,omitempty"`
 	// The fully resolved instance ID of the deployed package.
 	//
 	// Ex.
-	//   0cfafb3a705bd8f05f86c6444ff500397fbb711c
+	//
+	//	0cfafb3a705bd8f05f86c6444ff500397fbb711c
 	InstanceId string `protobuf:"bytes,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
 	// The unresolved version ID of the deployed package (if known).
 	//
 	// Ex.
-	//   git_revision:aaf3a2cfccc227b5141caa1b6b3502c9907d7420
-	//   latest
+	//
+	//	git_revision:aaf3a2cfccc227b5141caa1b6b3502c9907d7420
+	//	latest
 	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 
@@ -419,13 +430,15 @@ type Manifest_Directory struct {
 	// be blank.
 	//
 	// Ex.
-	//   chrome-infra-packages.appspot.com
+	//
+	//	chrome-infra-packages.appspot.com
 	CipdServerHost string `protobuf:"bytes,2,opt,name=cipd_server_host,json=cipdServerHost,proto3" json:"cipd_server_host,omitempty"`
 	// Maps CIPD package name to CIPDPackage.
 	//
 	// Ex.
-	//   "some/package/name": {...}
-	//   "other/package": {...}
+	//
+	//	"some/package/name": {...}
+	//	"other/package": {...}
 	CipdPackage map[string]*Manifest_CIPDPackage `protobuf:"bytes,4,rep,name=cipd_package,json=cipdPackage,proto3" json:"cipd_package,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 

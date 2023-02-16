@@ -179,11 +179,11 @@ var (
 	//
 	// Usage:
 	//
-	//    import "go.chromium.org/luci/common/proto/options.proto";
+	//	import "go.chromium.org/luci/common/proto/options.proto";
 	//
-	//    option (luci.file_metadata) = {
-	//      doc_url: "https://example.com/schema.md";
-	//    };
+	//	option (luci.file_metadata) = {
+	//	  doc_url: "https://example.com/schema.md";
+	//	};
 	//
 	// optional luci.Metadata file_metadata = 73700;
 	E_FileMetadata = &file_go_chromium_org_luci_common_proto_options_proto_extTypes[0]
@@ -195,11 +195,11 @@ var (
 	//
 	// Usage:
 	//
-	//    import "go.chromium.org/luci/common/proto/options.proto";
+	//	import "go.chromium.org/luci/common/proto/options.proto";
 	//
-	//    message MyMessage {
-	//      string my_field = 1 [(luci.text_pb_format) = JSON];
-	//    }
+	//	message MyMessage {
+	//	  string my_field = 1 [(luci.text_pb_format) = JSON];
+	//	}
 	//
 	// optional luci.TextPBFieldFormat text_pb_format = 73701;
 	E_TextPbFormat = &file_go_chromium_org_luci_common_proto_options_proto_extTypes[1]
@@ -207,11 +207,11 @@ var (
 	//
 	// Usage:
 	//
-	//    import "go.chromium.org/luci/common/proto/options.proto";
+	//	import "go.chromium.org/luci/common/proto/options.proto";
 	//
-	//    message MyMessage {
-	//      string my_field = 1 [(luci.lucicfg_ignore) = true];
-	//    }
+	//	message MyMessage {
+	//	  string my_field = 1 [(luci.lucicfg_ignore) = true];
+	//	}
 	//
 	// optional bool lucicfg_ignore = 73702;
 	E_LucicfgIgnore = &file_go_chromium_org_luci_common_proto_options_proto_extTypes[2]

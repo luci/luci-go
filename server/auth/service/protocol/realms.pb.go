@@ -259,6 +259,7 @@ type Condition struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Op:
+	//
 	//	*Condition_Restrict
 	Op isCondition_Op `protobuf_oneof:"op"`
 }
@@ -395,8 +396,9 @@ type Realm struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Name of the realm as "<project>:<realm>" string, where:
-	//   "<project>" matches `^([a-z0-9\-_]{1,100}|@internal)$`.
-	//   "<realm>" matches `^([a-z0-9_\.\-/]{1,400}|@root|@legacy|@project)$`.
+	//
+	//	"<project>" matches `^([a-z0-9\-_]{1,100}|@internal)$`.
+	//	"<realm>" matches `^([a-z0-9_\.\-/]{1,400}|@root|@legacy|@project)$`.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A list of bindings in lexicographical order of their `permissions` fields.
 	Bindings []*Binding `protobuf:"bytes,2,rep,name=bindings,proto3" json:"bindings,omitempty"`

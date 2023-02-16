@@ -331,8 +331,8 @@ type DelegationRule struct {
 	// Matched against verified credentials of a caller of MintDelegationToken.
 	//
 	// Each element is either:
-	//  * An identity string ("user:<email>").
-	//  * A group reference ("group:<name>").
+	//   - An identity string ("user:<email>").
+	//   - A group reference ("group:<name>").
 	//
 	// The groups specified here are expanded when MintDelegationTokenRequest is
 	// evaluated.
@@ -342,10 +342,10 @@ type DelegationRule struct {
 	// Matched against 'delegated_identity' field of MintDelegationTokenRequest.
 	//
 	// Each element is either:
-	//  * An identity string ("user:<email>").
-	//  * A group reference ("group:<name>").
-	//  * A special identifier "REQUESTOR" that is substituted by the requestor
-	//    identity when evaluating the rule.
+	//   - An identity string ("user:<email>").
+	//   - A group reference ("group:<name>").
+	//   - A special identifier "REQUESTOR" that is substituted by the requestor
+	//     identity when evaluating the rule.
 	//
 	// "REQUESTOR" allows one to generate tokens that delegate their own identity
 	// to some target audience.
@@ -358,12 +358,12 @@ type DelegationRule struct {
 	// Matched against 'audience' field of MintDelegationTokenRequest.
 	//
 	// Each element is either:
-	//  * An identity string ("user:<email>").
-	//  * A group reference ("group:<name>").
-	//  * A special identifier "REQUESTOR" that is substituted by the requestor
-	//    identity when evaluating the rule.
-	//  * A special token "*" that means "any bearer can use the new token,
-	//    including anonymous".
+	//   - An identity string ("user:<email>").
+	//   - A group reference ("group:<name>").
+	//   - A special identifier "REQUESTOR" that is substituted by the requestor
+	//     identity when evaluating the rule.
+	//   - A special token "*" that means "any bearer can use the new token,
+	//     including anonymous".
 	//
 	// "REQUESTOR" is typically used here for rules that allow requestors to
 	// impersonate someone else. The corresponding tokens have the requestor as
@@ -378,9 +378,9 @@ type DelegationRule struct {
 	// Matched against 'services' field of MintDelegationTokenRequest.
 	//
 	// Each element is either:
-	//  * A service identity string ("service:<id>").
-	//  * A special token "*" that mean "any LUCI service should accept the
-	//    token".
+	//   - A service identity string ("service:<id>").
+	//   - A special token "*" that mean "any LUCI service should accept the
+	//     token".
 	TargetService []string `protobuf:"bytes,6,rep,name=target_service,json=targetService,proto3" json:"target_service,omitempty"`
 	// Maximum allowed validity duration (sec) of minted delegation tokens.
 	//

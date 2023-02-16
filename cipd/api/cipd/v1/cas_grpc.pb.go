@@ -73,9 +73,10 @@ type StorageClient interface {
 	// Does nothing if the operation is already canceled or failed.
 	//
 	// Returns:
-	//   NOT_FOUND if the provided upload operation doesn't exist.
-	//   FAILED_PRECONDITION if the upload operation is in PUBLISHED or VERIFYING
-	//      state (i.e. finished or being finalized now).
+	//
+	//	NOT_FOUND if the provided upload operation doesn't exist.
+	//	FAILED_PRECONDITION if the upload operation is in PUBLISHED or VERIFYING
+	//	   state (i.e. finished or being finalized now).
 	CancelUpload(ctx context.Context, in *CancelUploadRequest, opts ...grpc.CallOption) (*UploadOperation, error)
 }
 
@@ -178,9 +179,10 @@ type StorageServer interface {
 	// Does nothing if the operation is already canceled or failed.
 	//
 	// Returns:
-	//   NOT_FOUND if the provided upload operation doesn't exist.
-	//   FAILED_PRECONDITION if the upload operation is in PUBLISHED or VERIFYING
-	//      state (i.e. finished or being finalized now).
+	//
+	//	NOT_FOUND if the provided upload operation doesn't exist.
+	//	FAILED_PRECONDITION if the upload operation is in PUBLISHED or VERIFYING
+	//	   state (i.e. finished or being finalized now).
 	CancelUpload(context.Context, *CancelUploadRequest) (*UploadOperation, error)
 	mustEmbedUnimplementedStorageServer()
 }

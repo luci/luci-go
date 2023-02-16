@@ -103,39 +103,42 @@ type GitilesLocation struct {
 	// Must not have "/a/" prefix of a path component.
 	//
 	// Example:
-	//   OK:
-	//     https://chromium.googlesource.com/infra/infra
-	//   Not OK:
-	//     https://chromium.googlesource.com/a/infra/infra
-	//     https://chromium.googlesource.com/infra/infra/
-	//     https://chromium.googlesource.com/infra/infra.git
+	//
+	//	OK:
+	//	  https://chromium.googlesource.com/infra/infra
+	//	Not OK:
+	//	  https://chromium.googlesource.com/a/infra/infra
+	//	  https://chromium.googlesource.com/infra/infra/
+	//	  https://chromium.googlesource.com/infra/infra.git
 	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
 	// Ref of the Git repository.
 	// Must be a fully qualifed ref starting with "refs/".
 	//
 	// Example:
-	//   OK:
-	//     refs/heads/branch
-	//     refs/heads/infra/config
-	//     refs/branch-heads/beta
-	//   Not OK:
-	//     main
-	//     HEAD
-	//     origin/main
-	//     tags/123
+	//
+	//	OK:
+	//	  refs/heads/branch
+	//	  refs/heads/infra/config
+	//	  refs/branch-heads/beta
+	//	Not OK:
+	//	  main
+	//	  HEAD
+	//	  origin/main
+	//	  tags/123
 	Ref string `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
 	// Path to the directory inside Git repository where configurations are stored.
 	// Optional. If not specified, defaults to top-level folder of the git repo.
 	// Must not start or end with "/".
 	//
 	// Example:
-	//   OK:
-	//     infra/config/generated
-	//       (empty string)
-	//   NOT OK:
-	//     /
-	//     /config
-	//     infra/config/
+	//
+	//	OK:
+	//	  infra/config/generated
+	//	    (empty string)
+	//	NOT OK:
+	//	  /
+	//	  /config
+	//	  infra/config/
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 }
 
@@ -262,6 +265,7 @@ type Project struct {
 	// Where to import "projects/<id>" config set from.
 	//
 	// Types that are assignable to Location:
+	//
 	//	*Project_GitilesLocation
 	Location isProject_Location `protobuf_oneof:"location"`
 	// IdentityConfig determines what identities are used when LUCI acts on
@@ -397,11 +401,12 @@ type Team struct {
 	// The name of this team; Used for the Project.team field, but also may
 	// be used in e.g. email as the addressee for maintenance messages, like:
 	//
-	//   Hello ${Team.name} LUCI maintainers,
+	//	Hello ${Team.name} LUCI maintainers,
 	//
 	// Examples:
-	//   GOOD: "ChOps Foundation"
-	//   BAD:  "cft"
+	//
+	//	GOOD: "ChOps Foundation"
+	//	BAD:  "cft"
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// One or more contact emails for this team.
 	//

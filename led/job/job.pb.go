@@ -263,6 +263,7 @@ type Definition struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to JobType:
+	//
 	//	*Definition_Buildbucket
 	//	*Definition_Swarming
 	JobType isDefinition_JobType `protobuf_oneof:"job_type"`

@@ -43,9 +43,10 @@ type AdminClient interface {
 	// Administrators can use this call to debug issues with tokens.
 	//
 	// Returns:
-	//   InspectMachineTokenResponse for tokens of supported kind.
-	//   grpc.InvalidArgument error for unsupported token kind.
-	//   grpc.Internal error for transient errors.
+	//
+	//	InspectMachineTokenResponse for tokens of supported kind.
+	//	grpc.InvalidArgument error for unsupported token kind.
+	//	grpc.Internal error for transient errors.
 	InspectMachineToken(ctx context.Context, in *InspectMachineTokenRequest, opts ...grpc.CallOption) (*InspectMachineTokenResponse, error)
 	// InspectDelegationToken decodes a delegation token and verifies it is valid.
 	//
@@ -59,9 +60,10 @@ type AdminClient interface {
 	// Administrators can use this call to debug issues with tokens.
 	//
 	// Returns:
-	//   InspectDelegationTokenResponse for tokens of supported kind.
-	//   grpc.InvalidArgument error for unsupported token kind.
-	//   grpc.Internal error for transient errors.
+	//
+	//	InspectDelegationTokenResponse for tokens of supported kind.
+	//	grpc.InvalidArgument error for unsupported token kind.
+	//	grpc.Internal error for transient errors.
 	InspectDelegationToken(ctx context.Context, in *InspectDelegationTokenRequest, opts ...grpc.CallOption) (*InspectDelegationTokenResponse, error)
 }
 
@@ -151,9 +153,10 @@ type AdminServer interface {
 	// Administrators can use this call to debug issues with tokens.
 	//
 	// Returns:
-	//   InspectMachineTokenResponse for tokens of supported kind.
-	//   grpc.InvalidArgument error for unsupported token kind.
-	//   grpc.Internal error for transient errors.
+	//
+	//	InspectMachineTokenResponse for tokens of supported kind.
+	//	grpc.InvalidArgument error for unsupported token kind.
+	//	grpc.Internal error for transient errors.
 	InspectMachineToken(context.Context, *InspectMachineTokenRequest) (*InspectMachineTokenResponse, error)
 	// InspectDelegationToken decodes a delegation token and verifies it is valid.
 	//
@@ -167,9 +170,10 @@ type AdminServer interface {
 	// Administrators can use this call to debug issues with tokens.
 	//
 	// Returns:
-	//   InspectDelegationTokenResponse for tokens of supported kind.
-	//   grpc.InvalidArgument error for unsupported token kind.
-	//   grpc.Internal error for transient errors.
+	//
+	//	InspectDelegationTokenResponse for tokens of supported kind.
+	//	grpc.InvalidArgument error for unsupported token kind.
+	//	grpc.Internal error for transient errors.
 	InspectDelegationToken(context.Context, *InspectDelegationTokenRequest) (*InspectDelegationTokenResponse, error)
 	mustEmbedUnimplementedAdminServer()
 }

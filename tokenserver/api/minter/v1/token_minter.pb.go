@@ -444,6 +444,7 @@ type MachineTokenResponse struct {
 	// MachineTokenRequest.token_type.
 	//
 	// Types that are assignable to TokenType:
+	//
 	//	*MachineTokenResponse_LuciMachineToken
 	TokenType isMachineTokenResponse_TokenType `protobuf_oneof:"token_type"`
 }

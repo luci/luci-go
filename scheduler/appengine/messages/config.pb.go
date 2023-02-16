@@ -470,11 +470,11 @@ type Job struct {
 	//     invocation is still running, an overrun will be recorded (and next
 	//     attempt to start a job happens based on the schedule, not when the
 	//     previous invocation finishes). Some examples:
-	//       "0 */3 * * * *" - each 3 hours: at 12:00 AM UTC, 3:00 AM UTC, ...
-	//       "0 */3 * * *" - exact same thing (last field is optional)
-	//       "0 1/3 * * *" - each 3 hours but starting 1:00 AM UTC
-	//       "0 2,10,18 * * *" - at 2 AM UTC, 10 AM UTC, 6 PM UTC
-	//       "0 7 * * *" - at 7 AM UTC, once a day.
+	//     "0 */3 * * * *" - each 3 hours: at 12:00 AM UTC, 3:00 AM UTC, ...
+	//     "0 */3 * * *" - exact same thing (last field is optional)
+	//     "0 1/3 * * *" - each 3 hours but starting 1:00 AM UTC
+	//     "0 2,10,18 * * *" - at 2 AM UTC, 10 AM UTC, 6 PM UTC
+	//     "0 7 * * *" - at 7 AM UTC, once a day.
 	//   - "with 10s interval": runs invocations in a loop, waiting 10s after
 	//     finishing invocation before starting a new one. Overruns are not
 	//     possible.
@@ -867,8 +867,8 @@ type GitilesTask struct {
 	// Refs is a list of Git references to track.
 	//
 	// Each ref can be either:
-	//   * a fully qualified ref like "refs/heads/master" or "refs/tags/v1.2.3"
-	//   * a regular expression with "regexp:" prefix to match multiple refs, e.g.
+	//   - a fully qualified ref like "refs/heads/master" or "refs/tags/v1.2.3"
+	//   - a regular expression with "regexp:" prefix to match multiple refs, e.g.
 	//     "regexp:refs/heads/[^/]+" or "regexp:refs/branch-heads/\d+\.\d+", but
 	//     the regular expression should have a literal prefix with at least two
 	//     slashes present, e.g. "refs/release-\d+/foobar" is not allowed, because
@@ -897,6 +897,7 @@ type GitilesTask struct {
 	// Triggers are emitted for a commit if only if at least 1 touched filepath
 	//  1. is not matched by any path_regexps_exclude,
 	//  2. AND is matched at least 1 path_regexps
+	//
 	// **subject to caveats below** for exceptional cases.
 	//
 	// Each path_regexps and path_regexps_exclude is a regular expression
@@ -1058,9 +1059,9 @@ type BuildbucketTask struct {
 	// Bucket defines what bucket to add the task to.
 	//
 	// Supported formats are:
-	//    * "<bucket>" - for a bucket in the current project.
-	//    * "<project>:<bucket>" - for a bucket in another project.
-	//    * "luci.<project>.<bucket>" - legacy v1 bucket name.
+	//   - "<bucket>" - for a bucket in the current project.
+	//   - "<project>:<bucket>" - for a bucket in another project.
+	//   - "luci.<project>.<bucket>" - legacy v1 bucket name.
 	//
 	// If empty, defaults to `realm` field in the parent Job message.
 	Bucket string `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`

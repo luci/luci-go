@@ -33,6 +33,7 @@ type Value struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Value:
+	//
 	//	*Value_Int
 	//	*Value_Uint
 	//	*Value_Float
@@ -211,6 +212,7 @@ type Schema struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Schema:
+	//
 	//	*Schema_Int
 	//	*Schema_Uint
 	//	*Schema_Float

@@ -56,7 +56,8 @@ type RegisterPrefixRequest struct {
 	//
 	// The nonce should be 32 bytes of random data.
 	// The nonce must not be reused between different requests (only for retries
-	//   of the same request).
+	//
+	//	of the same request).
 	//
 	// NOTE: This is currently optional, but once all clients have upgraded to
 	// this scheme, it will become mandatory. During the transition if this is

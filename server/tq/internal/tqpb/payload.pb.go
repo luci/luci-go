@@ -50,6 +50,7 @@ type Payload struct {
 	// raw *.proto files which are not quite trivial to link to without Bazel.
 	//
 	// Types that are assignable to Payload:
+	//
 	//	*Payload_CreateTaskRequest
 	//	*Payload_PublishRequest
 	Payload isPayload_Payload `protobuf_oneof:"payload"`

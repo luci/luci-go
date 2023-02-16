@@ -425,6 +425,7 @@ type Metadata struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Metadata:
+	//
 	//	*Metadata_FromText
 	//	*Metadata_FromFile
 	Metadata isMetadata_Metadata `protobuf_oneof:"metadata"`
@@ -769,6 +770,7 @@ type TimePeriod struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Time:
+	//
 	//	*TimePeriod_Duration
 	//	*TimePeriod_Seconds
 	Time isTimePeriod_Time `protobuf_oneof:"time"`

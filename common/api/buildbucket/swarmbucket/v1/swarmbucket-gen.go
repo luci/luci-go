@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ import (
 	"strconv"
 	"strings"
 
-	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	googleapi "google.golang.org/api/googleapi"
+	gensupport "go.chromium.org/luci/common/api/internal/gensupport"
 	option "google.golang.org/api/option"
 	internaloption "google.golang.org/api/option/internaloption"
 	htransport "google.golang.org/api/transport/http"
@@ -353,17 +353,17 @@ func (c *GetTaskDefCall) Do(opts ...googleapi.CallOption) (*LegacySwarmbucketApi
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &LegacySwarmbucketApiGetTaskDefinitionResponseMessage{
 		ServerResponse: googleapi.ServerResponse{

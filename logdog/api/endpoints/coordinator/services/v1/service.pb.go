@@ -860,6 +860,7 @@ type BatchRequest_Entry struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Value:
+	//
 	//	*BatchRequest_Entry_RegisterStream
 	//	*BatchRequest_Entry_LoadStream
 	//	*BatchRequest_Entry_TerminateStream
@@ -977,6 +978,7 @@ type BatchResponse_Entry struct {
 	// The index in the BatchRequest for this entry.
 	Index int32 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	// Types that are assignable to Value:
+	//
 	//	*BatchResponse_Entry_Err
 	//	*BatchResponse_Entry_RegisterStream
 	//	*BatchResponse_Entry_LoadStream

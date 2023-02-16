@@ -193,11 +193,9 @@
                 "ABANDONED_TS",
                 "COMPLETED_TS",
                 "CREATED_TS",
-                "MODIFIED_TS",
                 "STARTED_TS"
               ],
               "enumDescriptions": [
-                "",
                 "",
                 "",
                 "",
@@ -764,11 +762,9 @@
                 "ABANDONED_TS",
                 "COMPLETED_TS",
                 "CREATED_TS",
-                "MODIFIED_TS",
                 "STARTED_TS"
               ],
               "enumDescriptions": [
-                "",
                 "",
                 "",
                 "",
@@ -881,11 +877,9 @@
                 "ABANDONED_TS",
                 "COMPLETED_TS",
                 "CREATED_TS",
-                "MODIFIED_TS",
                 "STARTED_TS"
               ],
               "enumDescriptions": [
-                "",
                 "",
                 "",
                 "",

@@ -33,6 +33,7 @@ type Transport struct {
 	// Type is the transport configuration that is being used.
 	//
 	// Types that are assignable to Type:
+	//
 	//	*Transport_Pubsub
 	Type isTransport_Type `protobuf_oneof:"Type"`
 }

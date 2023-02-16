@@ -34,12 +34,12 @@ type Spec struct {
 	// "Major[.Minor[.Patch]]"
 	//
 	// If specified,
-	// - The Major version will be enforced absolutely. Python 3 will not be
-	//   preferred over Python 2 because '3' is greater than '2'.
-	// - The remaining versions, if specified, will be regarded as *minimum*
-	//   versions. In other words, if "2.7.4" is specified and the system has
-	//   "2.7.12", that will suffice. Similarly, "2.6" would accept a "2.7"
-	//   interpreter.
+	//   - The Major version will be enforced absolutely. Python 3 will not be
+	//     preferred over Python 2 because '3' is greater than '2'.
+	//   - The remaining versions, if specified, will be regarded as *minimum*
+	//     versions. In other words, if "2.7.4" is specified and the system has
+	//     "2.7.12", that will suffice. Similarly, "2.6" would accept a "2.7"
+	//     interpreter.
 	//
 	// If empty, the default Python interpreter ("python") will be used.
 	PythonVersion string          `protobuf:"bytes,1,opt,name=python_version,json=pythonVersion,proto3" json:"python_version,omitempty"`
@@ -132,8 +132,8 @@ type Spec_Package struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The package version.
 	//
-	// - For CIPD, this will be any recognized CIPD version (i.e., ID, tag, or
-	//   ref).
+	//   - For CIPD, this will be any recognized CIPD version (i.e., ID, tag, or
+	//     ref).
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	// Optional PEP425 tags to determine whether this package is included on the
 	// target system. If no match tags are specified, this package will always

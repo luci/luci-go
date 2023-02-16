@@ -84,7 +84,6 @@ type LogStreamDescriptor struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
 	// The stream's prefix (required).
 	//
 	// Logs originating from the same Butler instance will share a Prefix.
@@ -92,7 +91,6 @@ type LogStreamDescriptor struct {
 	// A valid prefix value is a StreamName described in:
 	// https://go.chromium.org/luci/logdog/common/types#StreamName
 	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	//
 	// The log stream's name (required).
 	//
 	// This is used to uniquely identify a log stream within the scope of its
@@ -103,7 +101,6 @@ type LogStreamDescriptor struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The log stream's content type (required).
 	StreamType StreamType `protobuf:"varint,3,opt,name=stream_type,json=streamType,proto3,enum=logpb.StreamType" json:"stream_type,omitempty"`
-	//
 	// The stream's content type (required).
 	//
 	// This must be an HTTP Content-Type value. Begins with MIME media type; may
@@ -111,18 +108,15 @@ type LogStreamDescriptor struct {
 	// querying stream metadata. It will also be applied to archived binary log
 	// data.
 	ContentType string `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
-	//
 	// The log stream's base timestamp (required).
 	//
 	// This notes the start time of the log stream. All LogEntries express their
 	// timestamp as microsecond offsets from this field.
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	//
 	// Tag is an arbitrary key/value tag associated with this log stream.
 	//
 	// LogDog clients can query for log streams based on tag values.
 	Tags map[string]string `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	//
 	// If set, the stream will be joined together during archival to recreate the
 	// original stream and made available at <prefix>/+/<name>.ext.
 	BinaryFileExt string `protobuf:"bytes,7,opt,name=binary_file_ext,json=binaryFileExt,proto3" json:"binary_file_ext,omitempty"`
@@ -373,39 +367,38 @@ type LogEntry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
 	// The stream time offset for this content.
 	//
 	// This offset is added to the log stream's base "timestamp" to resolve the
 	// timestamp for this specific Content.
 	TimeOffset *durationpb.Duration `protobuf:"bytes,1,opt,name=time_offset,json=timeOffset,proto3" json:"time_offset,omitempty"`
-	//
 	// The message index within the Prefix (required).
 	//
 	// This is value is unique to this LogEntry across the entire set of entries
 	// sharing the stream's Prefix. It is used to designate unambiguous log
 	// ordering.
 	PrefixIndex uint64 `protobuf:"varint,2,opt,name=prefix_index,json=prefixIndex,proto3" json:"prefix_index,omitempty"`
-	//
 	// The message index within its Stream (required).
 	//
 	// This value is unique across all entries sharing the same Prefix and Stream
 	// Name. It is used to designate unambiguous log ordering within the stream.
 	StreamIndex uint64 `protobuf:"varint,3,opt,name=stream_index,json=streamIndex,proto3" json:"stream_index,omitempty"`
-	//
 	// The sequence number of the first content entry in this LogEntry.
 	//
 	// Text: This is the line index of the first included line. Line indices begin
-	//     at zero.
+	//
+	//	at zero.
+	//
 	// Binary: This is the byte offset of the first byte in the included data.
 	// Datagram: This is the index of the datagram. The first datagram has index
-	//     zero.
-	Sequence uint64 `protobuf:"varint,4,opt,name=sequence,proto3" json:"sequence,omitempty"`
 	//
+	//	zero.
+	Sequence uint64 `protobuf:"varint,4,opt,name=sequence,proto3" json:"sequence,omitempty"`
 	// The content of the message. The field that is populated here must
 	// match the log's `stream_type`.
 	//
 	// Types that are assignable to Content:
+	//
 	//	*LogEntry_Text
 	//	*LogEntry_Binary
 	//	*LogEntry_Datagram
@@ -538,13 +531,11 @@ type LogIndex struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
 	// The LogStreamDescriptor for this log stream (required).
 	//
 	// The index stores the stream's LogStreamDescriptor so that a client can
 	// know the full set of log metadata by downloading its index.
 	Desc *LogStreamDescriptor `protobuf:"bytes,1,opt,name=desc,proto3" json:"desc,omitempty"`
-	//
 	// A series of ascending-ordered Entry messages representing snapshots of an
 	// archived log stream.
 	//
@@ -554,19 +545,19 @@ type LogIndex struct {
 	// The frequency of Entry messages is not defined; it is up to the Archivist
 	// process to choose a frequency.
 	Entries []*LogIndex_Entry `protobuf:"bytes,2,rep,name=entries,proto3" json:"entries,omitempty"`
-	//*
+	// *
 	// The last prefix index in the log stream.
 	//
 	// This is optional. If zero, there is either no information about the last
 	// prefix index, or there are zero entries in the prefix.
 	LastPrefixIndex uint64 `protobuf:"varint,3,opt,name=last_prefix_index,json=lastPrefixIndex,proto3" json:"last_prefix_index,omitempty"`
-	//*
+	// *
 	// The last stream index in the log stream.
 	//
 	// This is optional. If zero, there is either no information about the last
 	// stream index, or there are zero entries in the stream.
 	LastStreamIndex uint64 `protobuf:"varint,4,opt,name=last_stream_index,json=lastStreamIndex,proto3" json:"last_stream_index,omitempty"`
-	//*
+	// *
 	// The number of log entries in the stream.
 	//
 	// This is optional. If zero, there is either no information about the number
@@ -655,7 +646,6 @@ type Text_Line struct {
 
 	// The line's text content, not including its delimiter.
 	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	//
 	// The line's delimiter string.
 	//
 	// If this is an empty string, this line is continued in the next sequential
@@ -716,7 +706,6 @@ type Datagram_Partial struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
 	// The index, starting with zero, of this datagram fragment in the full
 	// datagram.
 	Index uint32 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
@@ -788,32 +777,30 @@ type LogIndex_Entry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	//
 	// The byte offset in the emitted log stream of the RecordIO entry for the
 	// LogEntry corresponding to this Entry.
 	Offset uint64 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
-	//
 	// The sequence number of the first content entry.
 	//
 	// Text: This is the line index of the first included line. Line indices
-	//     begin at zero.
+	//
+	//	begin at zero.
+	//
 	// Binary: This is the byte offset of the first byte in the included data.
 	// Datagram: This is the index of the datagram. The first datagram has index
-	//     zero.
-	Sequence uint64 `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`
 	//
+	//	zero.
+	Sequence uint64 `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`
 	// The log index that this entry describes (required).
 	//
 	// This is used by clients to identify a specific LogEntry within a set of
 	// streams sharing a Prefix.
 	PrefixIndex uint64 `protobuf:"varint,3,opt,name=prefix_index,json=prefixIndex,proto3" json:"prefix_index,omitempty"`
-	//
 	// The time offset of this log entry (required).
 	//
 	// This is used by clients to identify a specific LogEntry within a log
 	// stream.
 	StreamIndex uint64 `protobuf:"varint,4,opt,name=stream_index,json=streamIndex,proto3" json:"stream_index,omitempty"`
-	//
 	// The time offset of this log entry, in microseconds.
 	//
 	// This is added to the descriptor's "timestamp" field to identify the

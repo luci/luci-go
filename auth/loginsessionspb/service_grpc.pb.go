@@ -30,9 +30,10 @@ type LoginSessionsClient interface {
 	// in GetLoginSession.
 	//
 	// Returns:
-	//   INVALID_ARGUMENT: when missing required fields.
-	//   PERMISSION_DENIED: when `oauth_client_id` is not recognized or some
-	//       requested scopes are forbidden from use.
+	//
+	//	INVALID_ARGUMENT: when missing required fields.
+	//	PERMISSION_DENIED: when `oauth_client_id` is not recognized or some
+	//	    requested scopes are forbidden from use.
 	CreateLoginSession(ctx context.Context, in *CreateLoginSessionRequest, opts ...grpc.CallOption) (*LoginSession, error)
 	// GetLoginSession returns the current up-to-date state of a login session.
 	//
@@ -40,9 +41,10 @@ type LoginSessionsClient interface {
 	// a flow launched by visiting `login_flow_url`) and with passage of time.
 	//
 	// Returns:
-	//   INVALID_ARGUMENT: when missing required fields.
-	//   NOT_FOUND: if the session is not found, expired long time ago or the
-	//       password doesn't match.
+	//
+	//	INVALID_ARGUMENT: when missing required fields.
+	//	NOT_FOUND: if the session is not found, expired long time ago or the
+	//	    password doesn't match.
 	GetLoginSession(ctx context.Context, in *GetLoginSessionRequest, opts ...grpc.CallOption) (*LoginSession, error)
 }
 
@@ -84,9 +86,10 @@ type LoginSessionsServer interface {
 	// in GetLoginSession.
 	//
 	// Returns:
-	//   INVALID_ARGUMENT: when missing required fields.
-	//   PERMISSION_DENIED: when `oauth_client_id` is not recognized or some
-	//       requested scopes are forbidden from use.
+	//
+	//	INVALID_ARGUMENT: when missing required fields.
+	//	PERMISSION_DENIED: when `oauth_client_id` is not recognized or some
+	//	    requested scopes are forbidden from use.
 	CreateLoginSession(context.Context, *CreateLoginSessionRequest) (*LoginSession, error)
 	// GetLoginSession returns the current up-to-date state of a login session.
 	//
@@ -94,9 +97,10 @@ type LoginSessionsServer interface {
 	// a flow launched by visiting `login_flow_url`) and with passage of time.
 	//
 	// Returns:
-	//   INVALID_ARGUMENT: when missing required fields.
-	//   NOT_FOUND: if the session is not found, expired long time ago or the
-	//       password doesn't match.
+	//
+	//	INVALID_ARGUMENT: when missing required fields.
+	//	NOT_FOUND: if the session is not found, expired long time ago or the
+	//	    password doesn't match.
 	GetLoginSession(context.Context, *GetLoginSessionRequest) (*LoginSession, error)
 	mustEmbedUnimplementedLoginSessionsServer()
 }
