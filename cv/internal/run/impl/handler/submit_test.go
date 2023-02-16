@@ -61,6 +61,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		runCLs := common.CLIDs{1, 2}
 		r := run.Run{
 			ID:         rid,
+			Mode:       run.FullRun,
 			Status:     run.Status_RUNNING,
 			CreateTime: ct.Clock.Now().UTC().Add(-2 * time.Minute),
 			StartTime:  ct.Clock.Now().UTC().Add(-1 * time.Minute),

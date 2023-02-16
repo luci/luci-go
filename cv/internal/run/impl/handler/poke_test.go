@@ -139,6 +139,10 @@ func TestPoke(t *testing.T) {
 
 		Convey("Tree checks", func() {
 			Convey("Check Tree if condition matches", func() {
+				// WAITING_FOR_SUBMISSION makes sense only for FullRun.
+				// It's an error condition,
+				// if run == DryRun, but status == WAITING_FOR_SUBMISSION.
+				rs.Mode = run.FullRun
 				rs.Status = run.Status_WAITING_FOR_SUBMISSION
 				rs.Submission = &run.Submission{
 					TreeOpen:          false,

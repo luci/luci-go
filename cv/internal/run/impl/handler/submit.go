@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -79,11 +80,18 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		panic(fmt.Errorf("impossible status %s", status))
 	}
 
+	if rs.Mode != run.FullRun {
+		panic(fmt.Errorf("impossible, %s runs cannot submit CLs", rs.Mode))
+	}
 	if len(rs.Submission.GetSubmittedCls()) > 0 {
 		panic(fmt.Errorf("impossible; Run %q is in Status_WAITING_FOR_SUBMISSION status but has submitted CLs ", rs.ID))
 	}
 	rs = rs.ShallowCopy()
-	switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM); {
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+	if err != nil {
+		return nil, err
+	}
+	switch waitlisted, err := acquireSubmitQueue(ctx, rs, impl.RM, cg.SubmitOptions); {
 	case err != nil:
 		return nil, err
 	case waitlisted:
@@ -94,14 +102,10 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 	switch treeOpen, treeErr := rs.CheckTree(ctx, impl.TreeClient); {
 	case treeErr != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
 		// Failed to fetch status for a long time. Fail the Run.
-		rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
-		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-		if err != nil {
+		if err := releaseSubmitQueue(ctx, rs, impl.RM); err != nil {
 			return nil, err
 		}
-		if rs.Mode != run.FullRun {
-			panic(fmt.Errorf("impossible, %s runs cannot submit CLs", rs.Mode))
-		}
+		rims := make(map[common.CLID]reviewInputMeta, len(rs.CLs))
 		whoms := rs.Mode.GerritNotifyTargets()
 		for _, id := range rs.CLs {
 			rims[id] = reviewInputMeta{
@@ -113,9 +117,6 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			}
 		}
 		scheduleTriggersCancellation(ctx, rs, rims, run.Status_FAILED)
-		if err := releaseSubmitQueue(ctx, rs, impl.RM); err != nil {
-			return nil, err
-		}
 		return &Result{
 			State: rs,
 		}, nil
@@ -370,15 +371,11 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 	}
 }
 
-func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM) (waitlisted bool, err error) {
-	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-	if err != nil {
-		return false, err
-	}
+func acquireSubmitQueue(ctx context.Context, rs *state.RunState, rm RM, opts *cfgpb.SubmitOptions) (waitlisted bool, err error) {
 	now := clock.Now(ctx).UTC()
 	var innerErr error
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		waitlisted, innerErr = submit.TryAcquire(ctx, rm.NotifyReadyForSubmission, rs.ID, cg.SubmitOptions)
+		waitlisted, innerErr = submit.TryAcquire(ctx, rm.NotifyReadyForSubmission, rs.ID, opts)
 		switch {
 		case innerErr != nil:
 			return innerErr
