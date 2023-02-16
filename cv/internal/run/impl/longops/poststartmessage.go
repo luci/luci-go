@@ -57,9 +57,8 @@ type PostStartMessageOp struct {
 
 	// These private fields are set internally as implementation details.
 
-	rcls       []*run.RunCL
-	cfg        *prjcfg.ConfigGroup
-	botdataCLs []botdata.ChangeID
+	rcls []*run.RunCL
+	cfg  *prjcfg.ConfigGroup
 
 	lock           sync.Mutex
 	latestPostedAt time.Time
@@ -157,11 +156,6 @@ func (op *PostStartMessageOp) prepare(ctx context.Context) error {
 		return err
 	}
 
-	op.botdataCLs = make([]botdata.ChangeID, len(op.rcls))
-	for i, rcl := range op.rcls {
-		op.botdataCLs[i].Host = rcl.Detail.GetGerrit().GetHost()
-		op.botdataCLs[i].Number = rcl.Detail.GetGerrit().GetInfo().GetNumber()
-	}
 	return nil
 }
 
@@ -217,7 +211,6 @@ func (op *PostStartMessageOp) hasStartMessagePosted(rcl *run.RunCL, ci *gerritpb
 		case data.Action != botdata.Start:
 		case data.TriggeredAt != clTriggeredAt:
 		case data.Revision != rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision():
-		case len(data.CLs) != len(op.Run.CLs):
 		default:
 			return t
 		}
@@ -229,7 +222,6 @@ func (op *PostStartMessageOp) makeSetReviewReq(rcl *run.RunCL) (*gerritpb.SetRev
 	humanMsg := usertext.OnRunStartedGerritMessage(op.Run, op.cfg, op.Env)
 	bd := botdata.BotData{
 		Action:      botdata.Start,
-		CLs:         op.botdataCLs,
 		Revision:    rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision(),
 		TriggeredAt: rcl.Trigger.Time.AsTime(),
 	}

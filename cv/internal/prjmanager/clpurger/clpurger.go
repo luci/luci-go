@@ -148,7 +148,6 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		Requester:         "prjmanager/clpurger",
 		Triggers:          purgeTriggers,
 		Message:           msg,
-		RunCLExternalIDs:  nil, // there is no Run.
 		ConfigGroups:      configGroups,
 		GFactory:          p.gFactory,
 		CLMutator:         p.clMutator,

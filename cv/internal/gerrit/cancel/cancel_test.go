@@ -122,12 +122,8 @@ func TestCancel(t *testing.T) {
 			AddToAttentionSet: gerrit.Whoms{gerrit.Reviewers},
 			AttentionReason:   usertext.StoppedRun,
 			LeaseDuration:     30 * time.Second,
-			RunCLExternalIDs: []changelist.ExternalID{
-				changelist.MustGobID(gHost, int64(10002)),
-				changelist.MustGobID(gHost, int64(10003)),
-			},
-			CLMutator: changelist.NewMutator(ct.TQDispatcher, nil, nil, nil),
-			GFactory:  ct.GFactory(),
+			CLMutator:         changelist.NewMutator(ct.TQDispatcher, nil, nil, nil),
+			GFactory:          ct.GFactory(),
 		}
 		findTriggers := func(resultCI *gerritpb.ChangeInfo) *run.Triggers {
 			for _, cg := range input.ConfigGroups {
@@ -511,7 +507,7 @@ func TestCancel(t *testing.T) {
 
 CV failed to unset the Commit-Queue label on your behalf. Please unvote and revote on the Commit-Queue label to retry.
 
-Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"rev-010001-002","cls":["x-review.example.com:10002","x-review.example.com:10003"]}`
+Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"rev-010001-002"}`
 			So(resultCI.GetMessages()[0].GetMessage(), ShouldEqual, expectedMsg)
 		})
 

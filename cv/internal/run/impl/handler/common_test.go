@@ -200,7 +200,7 @@ func TestCancelTriggers(t *testing.T) {
 		meta := reviewInputMeta{
 			message: "Dry Run OK",
 		}
-		err = impl.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, []changelist.ExternalID{cl.ExternalID}, cg, meta)
+		err = impl.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, cg, meta)
 		// The cancellation errors out, but the CL refresh is scheduled.
 		// TODO(crbug/1227369): fail transiently or better yet schedule another
 		// retry in the future and fail with tq.Ignore.

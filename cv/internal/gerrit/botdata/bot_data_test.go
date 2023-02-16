@@ -46,10 +46,6 @@ func TestParse(t *testing.T) {
 				Action:      Start,
 				TriggeredAt: time.Date(2013, 03, 23, 21, 36, 52, 332000000, time.UTC),
 				Revision:    "abcd",
-				CLs: []ChangeID{
-					{Host: "chromium-review.googlesource.com", Number: 1111},
-					{Host: "chromium-review.googlesource.com", Number: 2222},
-				},
 			})
 		})
 
@@ -90,14 +86,10 @@ func TestAppend(t *testing.T) {
 				Action:      Cancel,
 				TriggeredAt: time.Date(2013, 03, 23, 21, 36, 52, 332000000, time.UTC),
 				Revision:    "abcd",
-				CLs: []ChangeID{
-					{Host: "chromium-review.googlesource.com", Number: 1111},
-					{Host: "chromium-review.googlesource.com", Number: 2222},
-				},
 			}
 			ret, err := append("", bd, 1000)
 			So(err, ShouldBeNil)
-			So(ret, ShouldEqual, `Bot data: {"action":"cancel","triggered_at":"2013-03-23T21:36:52.332Z","revision":"abcd","cls":["chromium-review.googlesource.com:1111","chromium-review.googlesource.com:2222"]}`)
+			So(ret, ShouldEqual, `Bot data: {"action":"cancel","triggered_at":"2013-03-23T21:36:52.332Z","revision":"abcd"}`)
 		})
 
 		Convey("Full human message", func() {

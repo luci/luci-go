@@ -99,9 +99,6 @@ type BotData struct {
 	// Revision is the revision (patch set) of the change at the time this
 	// action is triggered.
 	Revision string `json:"revision"`
-	// CLs are IDs for all Gerrit Changes that are included in the Run
-	// associated with this action.
-	CLs []ChangeID `json:"cls,omitempty"`
 }
 
 // Parse tries to extract BotData from the given Gerrit Change message.

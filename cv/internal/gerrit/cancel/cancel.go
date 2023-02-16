@@ -102,14 +102,6 @@ type Input struct {
 	// They are used to remove votes for additional modes. Normally, there is
 	// just 1 ConfigGroup.
 	ConfigGroups []*prjcfg.ConfigGroup
-	// RunCLExternalIDs are IDs of all CLs involved in the Run.
-	//
-	// It will be included in `botdata.BotData` and posted to Gerrit as part of
-	// the message in "unhappy path". See doc for `Cancel()`
-	//
-	// TODO(yiwzhang): consider dropping after M1 is launched if it is not adding
-	// any value to include those IDs in the bot data.
-	RunCLExternalIDs []changelist.ExternalID
 	// GFactory is used to create the gerrit client needed to perform the
 	// cancellation.
 	GFactory gerrit.Factory
@@ -294,7 +286,7 @@ func cancelLeased(ctx context.Context, client gerrit.Client, in *Input, cl *chan
 		msgBuilder.WriteString("\n\n")
 	}
 	msgBuilder.WriteString(failMessage)
-	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Triggers.GetCqVoteTrigger(), in.RunCLExternalIDs, in.Notify, in.AddToAttentionSet, in.AttentionReason); err != nil {
+	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Triggers.GetCqVoteTrigger(), in.Notify, in.AddToAttentionSet, in.AttentionReason); err != nil {
 		// Return the original error, but add details from just posting a message.
 		return errors.Annotate(removeErr, "even just posting message also failed: %s", err).Err()
 	}
@@ -472,19 +464,13 @@ func (c *change) removeVote(ctx context.Context, accountID int64, mode run.Mode)
 	}
 }
 
-func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, runCLExternalIDs []changelist.ExternalID, notify, addAttn gerrit.Whoms, reason string) (err error) {
+func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAttn gerrit.Whoms, reason string) (err error) {
 	bd := botdata.BotData{
 		Action:      botdata.Cancel,
 		TriggeredAt: t.GetTime().AsTime(),
 		Revision:    c.Revision,
-		CLs:         make([]botdata.ChangeID, len(runCLExternalIDs)),
 	}
-	for i, eid := range runCLExternalIDs {
-		bd.CLs[i].Host, bd.CLs[i].Number, err = eid.ParseGobID()
-		if err != nil {
-			return
-		}
-	}
+	// TODO(crbug.com/1414898) - deprecate botdata
 	if msg, err = botdata.Append(msg, bd); err != nil {
 		return err
 	}

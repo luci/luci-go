@@ -147,10 +147,9 @@ func (op *CancelTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, e
 
 func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 	var (
-		clsToCancel         []*changelist.CL
-		triggers            map[common.CLID]*run.Triggers
-		cfg                 *prjcfg.ConfigGroup
-		allRunCLExternalIDs []changelist.ExternalID
+		clsToCancel []*changelist.CL
+		triggers    map[common.CLID]*run.Triggers
+		cfg         *prjcfg.ConfigGroup
 	)
 	eg, ctx := errgroup.WithContext(ctx)
 	requests := op.Op.GetCancelTriggers().GetRequests()
@@ -168,10 +167,8 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 			return err
 		}
 		triggers = make(map[common.CLID]*run.Triggers, len(runCLs))
-		allRunCLExternalIDs = make([]changelist.ExternalID, len(runCLs))
-		for i, runCL := range runCLs {
+		for _, runCL := range runCLs {
 			triggers[runCL.ID] = triggers[runCL.ID].WithTrigger(runCL.Trigger)
-			allRunCLExternalIDs[i] = runCL.ExternalID
 		}
 		return nil
 	})
@@ -197,7 +194,6 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 			Notify:            convertToGerritWhoms(req.Notify),
 			LeaseDuration:     time.Minute,
 			ConfigGroups:      []*prjcfg.ConfigGroup{cfg},
-			RunCLExternalIDs:  allRunCLExternalIDs,
 			AddToAttentionSet: convertToGerritWhoms(req.AddToAttention),
 			AttentionReason:   req.AddToAttentionReason,
 			GFactory:          op.GFactory,

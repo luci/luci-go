@@ -206,9 +206,6 @@ func TestPostStartMessage(t *testing.T) {
 				bd, ok := botdata.Parse(ci.GetMessages()[0])
 				So(ok, ShouldBeTrue)
 				So(bd.Action, ShouldEqual, botdata.Start)
-				So(bd.CLs, ShouldHaveLength, 2)
-				So(bd.CLs[0].Number, ShouldEqual, gChange1)
-				So(bd.CLs[1].Number, ShouldEqual, gChange2)
 
 				// Recorded timestamp must be approximately correct since both CLs are
 				// posted at around the same time.

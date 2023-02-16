@@ -161,7 +161,7 @@ type reviewInputMeta struct {
 	reason string
 }
 
-func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, runCLExternalIDs []changelist.ExternalID, cg *prjcfg.ConfigGroup, meta reviewInputMeta) error {
+func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, cg *prjcfg.ConfigGroup, meta reviewInputMeta) error {
 	clids := make(common.CLIDs, len(toCancel))
 	for i, runCL := range toCancel {
 		clids[i] = runCL.ID
@@ -188,7 +188,6 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 					Notify:            meta.notify,
 					LeaseDuration:     time.Minute,
 					ConfigGroups:      []*prjcfg.ConfigGroup{cg},
-					RunCLExternalIDs:  runCLExternalIDs,
 					AddToAttentionSet: meta.addToAttention,
 					AttentionReason:   meta.reason,
 					GFactory:          impl.GFactory,
