@@ -18,10 +18,12 @@ import (
 	"context"
 	"math/rand"
 	"testing"
+	"time"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/cv/api/recipe/v1"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
@@ -67,6 +69,11 @@ func (b *mockBackend) Fetch(ctx context.Context, luciProject string, eid tryjob.
 		ret = b.returns[0]
 		b.returns = b.returns[1:]
 	}
+	return ret.s, ret.r, ret.err
+}
+
+func (b *mockBackend) Parse(ctx context.Context, data any) (tryjob.Status, *tryjob.Result, error) {
+	ret := data.(*returnValues)
 	return ret.s, ret.r, ret.err
 }
 
@@ -296,6 +303,203 @@ func TestHandleTask(t *testing.T) {
 				}), ShouldErrLike, "the given internal and external IDs for the Tryjob do not match")
 				So(rn.notifiedRuns, ShouldHaveLength, 0)
 			})
+		})
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	Convey("Update", t, func() {
+		ct := cvtesting.Test{}
+		ctx, clean := ct.SetUp()
+		defer clean()
+
+		rn := &mockRMNotifier{}
+		mb := &mockBackend{}
+		updater := NewUpdater(ct.Env, tryjob.NewNotifier(ct.TQDispatcher), rn)
+		updater.RegisterBackend(mb)
+
+		Convey("noop", func() {
+			tj, err := makeTryjob(ctx)
+			So(err, ShouldBeNil)
+			tj.Result = &tryjob.Result{
+				UpdateTime: timestamppb.New(clock.Now(ctx)),
+			}
+			So(datastore.Put(ctx, tj), ShouldBeNil)
+			eid := tj.ExternalID
+			originalEVersion := tj.EVersion
+			var data any
+			Convey("if status and result is not changed", func() {
+				data = &returnValues{
+					s: tryjob.Status_TRIGGERED,
+					r: &tryjob.Result{
+						UpdateTime: timestamppb.New(clock.Now(ctx)),
+					},
+				}
+			})
+			Convey("if CV has newer data", func() {
+				data = &returnValues{
+					s: tryjob.Status_TRIGGERED,
+					r: &tryjob.Result{
+						UpdateTime: timestamppb.New(clock.Now(ctx).Add(-2 * time.Minute)),
+						Output: &recipe.Output{
+							Reusability: &recipe.Output_Reusability{
+								ModeAllowlist: []string{string(run.DryRun)},
+							},
+						},
+					},
+				}
+			})
+
+			So(updater.Update(ctx, eid, data), ShouldBeNil)
+			So(rn.notifiedRuns, ShouldHaveLength, 0)
+
+			// Reload to ensure no changes took place.
+			tj = eid.MustLoad(ctx)
+			So(tj.EVersion, ShouldEqual, originalEVersion)
+		})
+		Convey("succeeds updating", func() {
+			Convey("status and result", func() {
+				tj, err := makeTryjob(ctx)
+				So(err, ShouldBeNil)
+				r := &run.Run{
+					ID:            tj.LaunchedBy,
+					ConfigGroupID: prjcfg.MakeConfigGroupID("deedbeef", "test_config_group"),
+					Tryjobs: &run.Tryjobs{
+						State: &tryjob.ExecutionState{
+							Requirement: &tryjob.Requirement{
+								Definitions: []*tryjob.Definition{tryjobDef},
+							},
+							Executions: []*tryjob.ExecutionState_Execution{
+								{
+									Attempts: []*tryjob.ExecutionState_Execution_Attempt{
+										{
+											TryjobId:   int64(tj.ID),
+											ExternalId: string(tj.ExternalID),
+											Status:     tj.Status,
+											Result:     tj.Result,
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				So(datastore.Put(ctx, r), ShouldBeNil)
+				originalEVersion := tj.EVersion
+				So(updater.Update(ctx, tj.ExternalID, &returnValues{
+					s: tryjob.Status_ENDED,
+					r: &tryjob.Result{
+						Status:     tryjob.Result_SUCCEEDED,
+						UpdateTime: timestamppb.New(clock.Now(ctx)),
+					},
+				}), ShouldBeNil)
+				So(rn.notifiedRuns, ShouldHaveLength, 1)
+				So(rn.notifiedRuns[0], ShouldEqual, tj.LaunchedBy)
+
+				// Ensure status updated.
+				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
+				So(tj.EVersion, ShouldEqual, originalEVersion+1)
+				So(tj.Status, ShouldEqual, tryjob.Status_ENDED)
+				So(tj.Result.Status, ShouldEqual, tryjob.Result_SUCCEEDED)
+				tryjob.RunWithBuilderMetricsTarget(ctx, ct.Env, tryjobDef, func(ctx context.Context) {
+					So(ct.TSMonSentValue(ctx, metrics.Public.TryjobEnded, "test", "test_config_group", true, false, apiv0pb.Tryjob_Result_SUCCEEDED.String()), ShouldEqual, 1)
+				})
+			})
+
+			Convey("result only", func() {
+				tj, err := makeTryjob(ctx)
+				So(err, ShouldBeNil)
+
+				originalEVersion := tj.EVersion
+				So(updater.Update(ctx, tj.ExternalID, &returnValues{
+					s: tryjob.Status_TRIGGERED,
+					r: &tryjob.Result{
+						Status: tryjob.Result_UNKNOWN,
+					},
+				}), ShouldBeNil)
+				So(rn.notifiedRuns, ShouldHaveLength, 1)
+				So(rn.notifiedRuns[0], ShouldEqual, tj.LaunchedBy)
+
+				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
+				So(tj.EVersion, ShouldEqual, originalEVersion+1)
+				So(tj.Status, ShouldEqual, tryjob.Status_TRIGGERED)
+				So(tj.Result.Status, ShouldEqual, tryjob.Result_UNKNOWN)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			})
+
+			Convey("status only", func() {
+				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_PENDING)
+				So(err, ShouldBeNil)
+
+				originalEVersion := tj.EVersion
+				So(updater.Update(ctx, tj.ExternalID, &returnValues{
+					s: tryjob.Status_TRIGGERED,
+				}), ShouldBeNil)
+				So(rn.notifiedRuns, ShouldHaveLength, 1)
+				So(rn.notifiedRuns[0], ShouldEqual, tj.LaunchedBy)
+
+				tj = tj.ExternalID.MustCreateIfNotExists(ctx)
+				So(tj.EVersion, ShouldEqual, originalEVersion+1)
+				So(tj.Status, ShouldEqual, tryjob.Status_TRIGGERED)
+				So(tj.Result, ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			})
+
+			Convey("don't emit metrics if tryjob is already in end status", func() {
+				tj, err := makeTryjobWithStatus(ctx, tryjob.Status_ENDED)
+				So(err, ShouldBeNil)
+
+				So(updater.Update(ctx, tj.ExternalID, &returnValues{
+					s: tryjob.Status_ENDED,
+					r: &tryjob.Result{
+						Status: tryjob.Result_SUCCEEDED,
+						Output: &recipe.Output{
+							Retry: recipe.Output_OUTPUT_RETRY_DENIED,
+						},
+					},
+				}), ShouldBeNil)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			})
+
+			Convey("and notifying triggerer and reuser Runs", func() {
+				buildID := int64(rand.Int31())
+				triggerer := makeTestRunID(ctx, buildID)
+				reusers := common.RunIDs{makeTestRunID(ctx, buildID+100), makeTestRunID(ctx, buildID+200)}
+				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_PENDING, triggerer, reusers)
+				So(err, ShouldBeNil)
+
+				So(updater.Update(ctx, tj.ExternalID, &returnValues{
+					s: tryjob.Status_TRIGGERED,
+					r: &tryjob.Result{
+						Status: tryjob.Result_UNKNOWN,
+					},
+				}), ShouldBeNil)
+				// Should have called notifier thrice.
+				So(rn.notifiedRuns, ShouldHaveLength, 3)
+				So(rn.notifiedRuns.Equal(common.RunIDs{triggerer, reusers[0], reusers[1]}), ShouldBeTrue)
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			})
+			Convey("and notifying reuser Run with no triggerer Run", func() {
+				buildID := int64(rand.Int31())
+				reusers := common.RunIDs{makeTestRunID(ctx, buildID+100)}
+				tj, err := makeTryjobWithDetails(ctx, buildID, tryjob.Status_TRIGGERED, "", reusers)
+				So(err, ShouldBeNil)
+
+				So(updater.Update(ctx, tj.ExternalID, &returnValues{
+					s: tryjob.Status_ENDED,
+					r: &tryjob.Result{
+						Status: tryjob.Result_SUCCEEDED,
+					},
+				}), ShouldBeNil)
+				So(rn.notifiedRuns, ShouldHaveLength, 1)
+				So(rn.notifiedRuns[0], ShouldEqual, reusers[0])
+				So(ct.TSMonStore.GetAll(ctx), ShouldBeEmpty)
+			})
+		})
+
+		Convey("fails to update a tryjob with an external ID that doesn't exist", func() {
+			So(updater.Update(ctx, tryjob.MustBuildbucketID("does-not-exist.example.com", 1), nil), ShouldErrLike, "unknown Tryjob with ExternalID")
+			So(rn.notifiedRuns, ShouldHaveLength, 0)
 		})
 	})
 }

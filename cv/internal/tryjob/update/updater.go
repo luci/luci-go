@@ -47,6 +47,9 @@ type updaterBackend interface {
 	Kind() string
 	// Fetch fetches the Tryjobs status and result from the Tryjob backend.
 	Fetch(ctx context.Context, luciProject string, eid tryjob.ExternalID) (tryjob.Status, *tryjob.Result, error)
+	// Parse parses the Tryjobs status and result from the data provided by
+	// the Tryjob backend.
+	Parse(ctx context.Context, data any) (tryjob.Status, *tryjob.Result, error)
 }
 
 // rmNotifier abstracts out the Run Manager's Notifier.
@@ -105,7 +108,29 @@ func (u *Updater) RegisterBackend(b updaterBackend) {
 // No-op if the Tryjob data stored in CV appears to be newer than the provided
 // data (e.g. has newer Tryjob.Result.UpdateTime)
 func (u *Updater) Update(ctx context.Context, eid tryjob.ExternalID, data any) error {
-	panic("unimplemented")
+	tj, err := eid.Load(ctx)
+	switch {
+	case err != nil:
+		return err
+	case tj == nil:
+		return errors.Reason("unknown Tryjob with ExternalID %s", eid).Err()
+	}
+	backend, err := u.backendFor(tj)
+	if err != nil {
+		return errors.Annotate(err, "resolving backend for %v", tj).Err()
+	}
+
+	switch status, result, err := backend.Parse(ctx, data); {
+	case err != nil:
+		return errors.Reason("failed to parse status and result for tryjob %s", eid).Err()
+	case tj.Result.GetUpdateTime() != nil && result.GetUpdateTime() != nil && tj.Result.GetUpdateTime().AsTime().After(result.GetUpdateTime().AsTime()):
+		// Tryjob data in CV is newer
+		return nil
+	case status == tj.Status && proto.Equal(tj.Result, result):
+		return nil
+	default:
+		return u.conditionallyUpdate(ctx, tj.ID, status, result, tj.EVersion)
+	}
 }
 
 // handleTask handles an UpdateTryjobTask.

@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/structmask"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -78,6 +79,17 @@ func (f *Facade) Fetch(ctx context.Context, luciProject string, eid tryjob.Exter
 	default:
 		return 0, nil, err
 	}
+}
+
+// Parse parses tryjob status and result from the buildbucket build.
+//
+// Returns error if the given data is not a buildbucket build.
+func (f *Facade) Parse(ctx context.Context, data any) (tryjob.Status, *tryjob.Result, error) {
+	build, ok := data.(*bbpb.Build)
+	if !ok {
+		return tryjob.Status_STATUS_UNSPECIFIED, nil, errors.Reason("expected data to be *bbpb.Build, got %T", data).Err()
+	}
+	return parseStatusAndResult(ctx, build)
 }
 
 // CancelTryjob asks buildbucket to cancel a running tryjob.
