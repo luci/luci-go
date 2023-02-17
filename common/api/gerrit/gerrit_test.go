@@ -103,7 +103,6 @@ func TestQuery(t *testing.T) {
 			So(cls[0].Owner.AccountID, ShouldEqual, 1118104)
 			So(more, ShouldBeFalse)
 		})
-
 	})
 
 	Convey("ChangeQuery with more changes", t, func() {
@@ -126,6 +125,24 @@ func TestQuery(t *testing.T) {
 		})
 	})
 
+	Convey("ChangeQuery returns no changes", t, func() {
+		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, ")]}'\n[]\n", fakeCL2Str)
+		})
+		defer srv.Close()
+
+		Convey("Basic", func() {
+			cls, more, err := c.ChangeQuery(ctx,
+				ChangeQueryParams{
+					Query: "4efbec9a685b238fced35b81b7f3444dc60150b1",
+				})
+			So(err, ShouldBeNil)
+			So(cls, ShouldResemble, []*Change{})
+			So(more, ShouldBeFalse)
+		})
+	})
 }
 
 func TestChangeDetails(t *testing.T) {

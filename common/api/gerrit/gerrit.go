@@ -358,11 +358,11 @@ func (c *Client) ChangeQuery(ctx context.Context, qr ChangeQueryParams) ([]*Chan
 		return nil, false, err
 	}
 	result := resp.Collection
-	if len(result) == 0 {
-		return nil, false, nil
+	moreChanges := false
+	if len(result) > 0 {
+		moreChanges = result[len(result)-1].MoreChanges
+		result[len(result)-1].MoreChanges = false
 	}
-	moreChanges := result[len(result)-1].MoreChanges
-	result[len(result)-1].MoreChanges = false
 	return result, moreChanges, nil
 }
 
@@ -1022,11 +1022,11 @@ func (c *Client) AccountQuery(ctx context.Context, qr AccountQueryParams) ([]*Ac
 		return nil, false, err
 	}
 	result := resp.Collection
-	if len(result) == 0 {
-		return nil, false, nil
+	moreAccounts := false
+	if len(result) > 0 {
+		moreAccounts = result[len(result)-1].MoreAccounts
+		result[len(result)-1].MoreAccounts = false
 	}
-	moreAccounts := result[len(result)-1].MoreAccounts
-	result[len(result)-1].MoreAccounts = false
 	return result, moreAccounts, nil
 }
 
