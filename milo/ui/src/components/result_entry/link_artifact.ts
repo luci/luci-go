@@ -27,6 +27,14 @@ import { urlSetSearchQueryParam } from '../../libs/utils';
 import { Artifact } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
+// Allowlist of hosts, used to validate URLs specified in the contents of link
+// artifacts. If the URL specified in a link artifact is not in this allowlist,
+// the original fetch URL for the artifact will be returned instead.
+const LINK_ARTIFACT_HOST_ALLOWLIST = [
+  'cros-test-analytics.appspot.com', // Testhaus logs
+  'stainless.corp.google.com', // Stainless logs
+];
+
 /**
  * Renders a link artifact.
  */
@@ -56,7 +64,20 @@ export class LinkArtifactElement extends MobxLitElement {
 
   @computed
   private get content() {
-    return unwrapObservable(this.content$, null);
+    const content = unwrapObservable(this.content$, null);
+    if (content) {
+      const url = new URL(content);
+      const allowedProtocol = ['http:', 'https:'].includes(url.protocol);
+      const allowedHost = LINK_ARTIFACT_HOST_ALLOWLIST.includes(url.host);
+      if (!allowedProtocol || !allowedHost) {
+        console.warn(
+          `Invalid target URL for link artifact ${this.artifact.name} - ` +
+            'returning the original fetch URL for the artifact instead'
+        );
+        return this.artifact.fetchUrl;
+      }
+    }
+    return content;
   }
 
   constructor() {

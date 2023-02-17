@@ -245,7 +245,7 @@ export class ResultEntryElement extends MobxLitElement {
       </div>
       <ul>
         ${this.invArtifacts.map((artifact) => {
-          if (artifact.artifactId === 'testhaus_logs' || artifact.artifactId === 'stainless_logs') {
+          if (artifact.contentType === 'text/x-uri') {
             return html` <li>
               <milo-link-artifact .artifact=${artifact}> </milo-link-artifact>
             </li>`;
