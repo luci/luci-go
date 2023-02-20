@@ -38,7 +38,9 @@ go run main.go \
  -spanner-database projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
  -default-request-timeout 10m0s \
- -config-local-dir ../configs
+ -config-local-dir ../configs \
+ -buganizer-mode provided \
+ -buganizer-endpoint-base bifrost-issuetracker-c2p
 ```
 
 `-default-request-timeout` is needed if exercising cron jobs through the admin

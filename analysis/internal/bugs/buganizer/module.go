@@ -42,6 +42,11 @@ type ModuleOptions struct {
 	// `provided` - Indicates that Buganizer integration should use provided client.
 	// `fake` - Indicates that Buganizer integration should use the fake Buganizer implementation.
 	BuganizerClientMode string
+
+	// Option that indicates the base subdomain for the Buganizer endpoint.
+	// For example: placeholder-issuetracker-c2p, that value will
+	// be used by the clients to initiate connections with Buganizer.
+	BuganizerEndpointBase string
 }
 
 // Register registers the command line flags.
@@ -51,6 +56,12 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"buganizer-mode",
 		o.BuganizerClientMode,
 		"The Buganizer integration client mode to use.",
+	)
+	f.StringVar(
+		&o.BuganizerEndpointBase,
+		"buganizer-endpoint-base",
+		o.BuganizerEndpointBase,
+		"The base subdomain for Buganizer endpoint.",
 	)
 }
 
@@ -95,8 +106,13 @@ func (*buganizerModule) Dependencies() []module.Dependency {
 // mode from the Context.
 var BuganizerClientModeKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerMode"
 
+// BuganizerEndpointBaseKey the key to get the value for Buganizer's endpoint
+// base subdomain from the Context.
+var BuganizerEndpointBaseKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerEndpointBase"
+
 // Initialize is part of module.Module interface.
 func (m *buganizerModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	ctx = context.WithValue(ctx, &BuganizerClientModeKey, m.opts.BuganizerClientMode)
+	ctx = context.WithValue(ctx, &BuganizerEndpointBaseKey, m.opts.BuganizerEndpointBase)
 	return ctx, nil
 }

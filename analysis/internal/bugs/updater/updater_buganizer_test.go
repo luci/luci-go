@@ -137,6 +137,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			})
 			Convey("`provided` creates a real client with provided configuration", func() {
 				ctx = context.WithValue(ctx, &buganizer.BuganizerClientModeKey, buganizer.ModeProvided)
+				ctx = context.WithValue(ctx, &buganizer.BuganizerEndpointBaseKey, "placeholder-issuetracker-c2p")
 				client, err := createBuganizerClient(ctx)
 				So(err, ShouldBeNil)
 				So(client, ShouldNotBeNil)

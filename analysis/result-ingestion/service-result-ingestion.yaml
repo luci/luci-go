@@ -15,6 +15,7 @@
 runtime: go119
 instance_class: F4
 service: result-ingestion
+service_account: ${SERVICE_ACCOUNT}
 
 automatic_scaling:
   target_throughput_utilization: 0.90
@@ -49,6 +50,8 @@ luci_gae_vars:
     SPANNER_DB: projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev
     DISABLE_PROJECT_SCOPED_AUTH: TRUE
     BUGANIZER_MODE: disable
+    BUGANIZER_ENDPOINT_BASE: placeholder-issuetracker-c2p
+    SERVICE_ACCOUNT: luci-analysis-dev@appspot.gserviceaccount.com
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml and service-result-ingestion.yaml.
 handlers:
@@ -76,3 +79,4 @@ entrypoint: >
   -spanner-database ${SPANNER_DB}
   -disable-project-scoped-auth=${DISABLE_PROJECT_SCOPED_AUTH}
   -buganizer-mode=${BUGANIZER_MODE}
+  -buganizer-endpoint-base=${BUGANIZER_ENDPOINT_BASE}

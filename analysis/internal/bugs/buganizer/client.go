@@ -16,10 +16,14 @@ package buganizer
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 	issuetrackerclient "go.chromium.org/luci/third_party/google.golang.org/google/devtools/issuetracker/v1"
+	"google.golang.org/api/option"
+	"google.golang.org/api/option/internaloption"
+	"google.golang.org/grpc"
 )
 
 // An implementation of the client wrapper that uses the Client provided
@@ -31,7 +35,20 @@ type RPCClient struct {
 
 // NewRPCClient returns a new ClientWrapper.
 func NewRPCClient(ctx context.Context) (*RPCClient, error) {
-	client, err := issuetrackerclient.NewClient(ctx)
+	buganizerEndpointBase := ctx.Value(&BuganizerEndpointBaseKey)
+	if buganizerEndpointBase == nil {
+		return nil, errors.New("Buganizer endpoint base is required for RPC client")
+	}
+	client, err := issuetrackerclient.NewClient(
+		ctx,
+		internaloption.WithDefaultEndpoint(fmt.Sprintf("%v.googleapis.com:443", buganizerEndpointBase)),
+		internaloption.WithDefaultMTLSEndpoint(fmt.Sprintf("%v.mtls.googleapis.com:443", buganizerEndpointBase)),
+		internaloption.WithDefaultAudience(fmt.Sprintf("https://%v.googleapis.com/", buganizerEndpointBase)),
+		option.WithGRPCDialOption(
+			grpc.WithReturnConnectionError(),
+		),
+	)
+
 	if err != nil {
 		return nil, errors.Annotate(err, "create new wrapper client").Err()
 	}

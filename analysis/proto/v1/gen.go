@@ -22,3 +22,4 @@ package analysispb
 //go:generate svcdec -type RulesServer
 //go:generate svcdec -type TestHistoryServer
 //go:generate svcdec -type TestVariantsServer
+//go:generate svcdec -type BuganizerTesterServer

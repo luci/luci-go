@@ -100,6 +100,7 @@ func Main(init func(srv *luciserver.Server) error) {
 		analysispb.RegisterRulesServer(srv, rpc.NewRulesSever())
 		analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
 		analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
+		analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
 
 		// GAE crons.
 		updateAnalysisAndBugsHandler := updater.NewHandler(srv.Options.CloudProject, srv.Options.Prod)

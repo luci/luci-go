@@ -24,11 +24,20 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const allowGroup = "luci-analysis-access"
+const luciAnalysisAccessGroup = "luci-analysis-access"
+
+const luciAnalysisAdminGroup = "luci-analysis-admin"
 
 // Checks if this call is allowed, returns an error if it is.
 func checkAllowedPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
-	if err := checkAllowed(ctx); err != nil {
+	if err := checkAllowed(ctx, luciAnalysisAccessGroup); err != nil {
+		return ctx, err
+	}
+	return ctx, nil
+}
+
+func checkAllowedAdminPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+	if err := checkAllowed(ctx, luciAnalysisAdminGroup); err != nil {
 		return ctx, err
 	}
 	return ctx, nil
@@ -39,12 +48,12 @@ func gRPCifyAndLogPostlude(ctx context.Context, methodName string, rsp proto.Mes
 	return appstatus.GRPCifyAndLog(ctx, err)
 }
 
-func checkAllowed(ctx context.Context) error {
-	switch yes, err := auth.IsMember(ctx, allowGroup); {
+func checkAllowed(ctx context.Context, allowedGroup string) error {
+	switch yes, err := auth.IsMember(ctx, allowedGroup); {
 	case err != nil:
 		return errors.Annotate(err, "failed to check ACL").Err()
 	case !yes:
-		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowGroup)
+		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", luciAnalysisAccessGroup)
 	default:
 		return nil
 	}
