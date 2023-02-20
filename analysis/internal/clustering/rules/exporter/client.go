@@ -100,7 +100,7 @@ func (s *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 		return bigquery.NullTimestamp{}, errors.Annotate(err, "ensure schema").Err()
 	}
 	q := s.bqClient.Query(`
-		SELECT MAX(last_updated) as bqLastUpdated
+		SELECT MAX(last_updated) as LastUpdated
 		FROM failure_association_rules_history
 	`)
 	q.DefaultDatasetID = datasetID
@@ -113,12 +113,15 @@ func (s *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 	if err != nil {
 		return bigquery.NullTimestamp{}, err
 	}
-	var lastUpdate bigquery.NullTimestamp
-	err = it.Next(&lastUpdate)
+	type result struct {
+		LastUpdated bigquery.NullTimestamp
+	}
+	var lastUpdatedResult result
+	err = it.Next(&lastUpdatedResult)
 	if err != nil {
 		return bigquery.NullTimestamp{}, errors.Annotate(err, "obtain next row").Err()
 	}
-	return lastUpdate, nil
+	return lastUpdatedResult.LastUpdated, nil
 }
 
 func (s *Client) ensureSchema(ctx context.Context) error {
