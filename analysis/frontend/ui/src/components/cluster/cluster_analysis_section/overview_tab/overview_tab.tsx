@@ -23,8 +23,10 @@ import Link from '@mui/material/Link';
 import TabPanel from '@mui/lab/TabPanel';
 import Typography from '@mui/material/Typography';
 import {
+  Checkbox,
   FormControl,
   InputLabel,
+  ListItemText,
   MenuItem,
   OutlinedInput,
   Select,
@@ -44,6 +46,8 @@ import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { ClusterContext } from '../../cluster_context';
 import useQueryClusterHistory from '@/hooks/use_query_cluster_history';
+import useFetchMetrics from '@/hooks/use_fetch_metrics';
+import { Metric } from '@/services/metrics';
 
 import './style.css';
 
@@ -68,14 +72,14 @@ const metricColors = {
   'critical-failures-exonerated': "#0084ff",
   'test-runs-failed': "#d23a2d",
 }
-const metrics = ['human-cls-failed-presubmit', 'critical-failures-exonerated', 'test-runs-failed'];
+const metricIds = ['human-cls-failed-presubmit', 'critical-failures-exonerated', 'test-runs-failed'];
 const OverviewTab = ({
   value,
 }: Props) => {
   const clusterId = useContext(ClusterContext);
   // TODO: move days and selectedMetrics into the URL.
   const [days, setDays] = useState(7);
-  const [selectedMetrics, setSelectedMetrics] = useState([...metrics]);
+  const [selectedMetrics, setSelectedMetrics] = useState([...metricIds]);
 
   // FIXME: normally we fix this up on the server where we have access to the
   // latest version number.  Is there a way to do the same in the client?
@@ -87,7 +91,11 @@ const OverviewTab = ({
     isSuccess,
     data,
     error,
-  } = useQueryClusterHistory(clusterId.project, `cluster_algorithm="${algorithm}" cluster_id="${clusterId.id}"`, days, metrics);
+  } = useQueryClusterHistory(clusterId.project, `cluster_algorithm="${algorithm}" cluster_id="${clusterId.id}"`, days, metricIds);
+
+  const fetchedMetrics = useFetchMetrics();
+  const metric = (metricId: string): Metric | undefined =>
+    fetchedMetrics?.data?.filter(m => m.metricId == metricId)?.[0];
 
   const handleMetricChange = (event: SelectChangeEvent<typeof selectedMetrics>) => {
     const {
@@ -126,15 +134,16 @@ const OverviewTab = ({
             value={selectedMetrics}
             onChange={handleMetricChange}
             input={<OutlinedInput label="Name" />}
+            renderValue={(selected) => selected.map(m => metric(m)?.humanReadableName || m).join(', ')}
             MenuProps={MenuProps}
           >
-            {metrics.map(m => {
+            {metricIds.map(m => {
               return <MenuItem
                 key={m}
                 value={m}
-                sx={{ fontWeight: selectedMetrics.indexOf(m) == -1 ? 'normal' : 'bold' }}
               >
-                {m}
+                <Checkbox checked={selectedMetrics.indexOf(m) > -1} />
+                <ListItemText primary={metric(m)?.humanReadableName || m} />
               </MenuItem>
             })}
           </Select>
@@ -166,7 +175,7 @@ const OverviewTab = ({
                 <Tooltip />
                 {selectedMetrics.map(m => {
                   const mk = m as keyof (typeof metricColors);
-                  return <Bar key={m} dataKey={`metrics.${m}`} fill={metricColors[mk]} />;
+                  return <Bar key={m} name={metric(m)?.humanReadableName || m} dataKey={`metrics.${m}`} fill={metricColors[mk]} />;
                 })}
               </BarChart>
             </ResponsiveContainer>
