@@ -116,7 +116,7 @@ type Failure struct {
 	// A key can be repeated.
 	Tags []*v1.StringPair `protobuf:"bytes,25,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Hash of the variant.
-	// hex(sha256(''.join(sorted('%s:%s\n' for k, v in variant.items())))).
+	// hex(sha256(”.join(sorted('%s:%s\n' for k, v in variant.items())))).
 	VariantHash string `protobuf:"bytes,7,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
 	// A failure reason describing why the test failed.
 	FailureReason *v1.FailureReason `protobuf:"bytes,8,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`

@@ -92,14 +92,15 @@ type ClusteredFailureRow struct {
 	//
 	// The following is the definition of a view that correctly uses
 	// the last updated time column to query the table:
-	//   SELECT
-	//     ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as row
-	//   FROM ${LUCI_PROJECT}.clustered_failures cf
-	//   -- Recommended: Apply restriction on partitions (e.g. last 14 days) as
-	//   -- desired.
-	//   -- WHERE partition_time >= TIMESTAMP_SUB(@as_at_time, INTERVAL 14 DAY)
-	//   GROUP BY cluster_algorithm, cluster_id, test_result_system, test_result_id
-	//   HAVING row.is_included
+	//
+	//	SELECT
+	//	  ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as row
+	//	FROM ${LUCI_PROJECT}.clustered_failures cf
+	//	-- Recommended: Apply restriction on partitions (e.g. last 14 days) as
+	//	-- desired.
+	//	-- WHERE partition_time >= TIMESTAMP_SUB(@as_at_time, INTERVAL 14 DAY)
+	//	GROUP BY cluster_algorithm, cluster_id, test_result_system, test_result_id
+	//	HAVING row.is_included
 	//
 	// This is based on the query design in [1].
 	// [1]: https://cloud.google.com/blog/products/bigquery/performing-large-scale-mutations-in-bigquery
@@ -121,10 +122,11 @@ type ClusteredFailureRow struct {
 	IsIncluded bool `protobuf:"varint,7,opt,name=is_included,json=isIncluded,proto3" json:"is_included,omitempty"`
 	// Whether the test result is included in the cluster with high priority.
 	// True if either:
-	// 1. this cluster is a bug cluster (i.e. cluster defined by failure
-	//    association rule), OR
-	// 2. this cluster is a suggested cluster, and the test result is NOT
-	//    also in a bug cluster.
+	//  1. this cluster is a bug cluster (i.e. cluster defined by failure
+	//     association rule), OR
+	//  2. this cluster is a suggested cluster, and the test result is NOT
+	//     also in a bug cluster.
+	//
 	// False values appear in BigQuery as NULL.
 	IsIncludedWithHighPriority bool `protobuf:"varint,8,opt,name=is_included_with_high_priority,json=isIncludedWithHighPriority,proto3" json:"is_included_with_high_priority,omitempty"`
 	// The chunk this failure was processed and stored in. Assigned by
@@ -149,7 +151,7 @@ type ClusteredFailureRow struct {
 	// A key can be repeated.
 	Tags []*v1.StringPair `protobuf:"bytes,32,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Hash of the variant.
-	// hex(sha256(''.join(sorted('%s:%s\n' for k, v in variant.items())))).
+	// hex(sha256(”.join(sorted('%s:%s\n' for k, v in variant.items())))).
 	VariantHash string `protobuf:"bytes,14,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
 	// A failure reason describing why the test failed.
 	FailureReason *v1.FailureReason `protobuf:"bytes,15,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`

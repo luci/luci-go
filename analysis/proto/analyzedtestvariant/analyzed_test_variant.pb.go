@@ -46,14 +46,14 @@ const (
 	// The test variant has unexpected results, but LUCI Analysis cannot determine
 	// If it is FLAKY or CONSISTENTLY_UNEXPECTED.
 	// This status can be used when
-	// * in in-build flakiness cases, a test variant with flaky results in a build
-	//   is newly detected but the service has not been notified if the build
-	//   contributes to a CL's submission or not.
-	//   *  Note that this does not apply to flaky analysis currently because
-	//      for now we only ingest test results from builds contributing to
-	//      CL submissions.
-	// * in cross-build flakiness cases, a test variant is newly detected in a build
-	//   where all of its results are unexpected.
+	//   - in in-build flakiness cases, a test variant with flaky results in a build
+	//     is newly detected but the service has not been notified if the build
+	//     contributes to a CL's submission or not.
+	//   - Note that this does not apply to flaky analysis currently because
+	//     for now we only ingest test results from builds contributing to
+	//     CL submissions.
+	//   - in cross-build flakiness cases, a test variant is newly detected in a build
+	//     where all of its results are unexpected.
 	Status_HAS_UNEXPECTED_RESULTS Status = 5
 	// The test variant is currently flaky.
 	Status_FLAKY Status = 10
