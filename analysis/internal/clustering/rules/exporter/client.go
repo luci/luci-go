@@ -95,9 +95,9 @@ func (s *Client) Insert(ctx context.Context, rows []*bqpb.FailureAssociationRule
 // The last_updated field is synced from the spanner table which is a spanner commit timestamp.
 // This the newest last_updated field indicate newest update of the failureAssociationRules spanner table
 // which has been synced to BigQuery.
-func (s *Client) NewestLastUpdated(ctx context.Context) (*bigquery.NullTimestamp, error) {
+func (s *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp, error) {
 	if err := s.ensureSchema(ctx); err != nil {
-		return nil, errors.Annotate(err, "ensure schema").Err()
+		return bigquery.NullTimestamp{}, errors.Annotate(err, "ensure schema").Err()
 	}
 	q := s.bqClient.Query(`
 		SELECT MAX(last_updated) as bqLastUpdated
@@ -106,17 +106,17 @@ func (s *Client) NewestLastUpdated(ctx context.Context) (*bigquery.NullTimestamp
 	q.DefaultDatasetID = datasetID
 	job, err := q.Run(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "querying max last update").Err()
+		return bigquery.NullTimestamp{}, errors.Annotate(err, "querying max last update").Err()
 	}
 	it, err := job.Read(ctx)
 
 	if err != nil {
-		return nil, err
+		return bigquery.NullTimestamp{}, err
 	}
-	var lastUpdate *bigquery.NullTimestamp
-	err = it.Next(lastUpdate)
+	var lastUpdate bigquery.NullTimestamp
+	err = it.Next(&lastUpdate)
 	if err != nil {
-		return nil, errors.Annotate(err, "obtain next row").Err()
+		return bigquery.NullTimestamp{}, errors.Annotate(err, "obtain next row").Err()
 	}
 	return lastUpdate, nil
 }

@@ -27,7 +27,7 @@ import (
 type FakeClient struct {
 	Insertions []*bqpb.FailureAssociationRulesHistoryRow
 
-	lastUpdate *bigquery.NullTimestamp
+	lastUpdate bigquery.NullTimestamp
 	errs       []error
 }
 
@@ -35,14 +35,14 @@ type FakeClient struct {
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
 		Insertions: make([]*bqpb.FailureAssociationRulesHistoryRow, 0),
-		lastUpdate: &bigquery.NullTimestamp{},
+		lastUpdate: bigquery.NullTimestamp{},
 		errs:       []error{},
 	}
 }
 
 // LastUpdate set the output of NewestLastUpdated in future calls.
 func (fc *FakeClient) LastUpdate(t time.Time) *FakeClient {
-	fc.lastUpdate = &bigquery.NullTimestamp{
+	fc.lastUpdate = bigquery.NullTimestamp{
 		Timestamp: t,
 		Valid:     true,
 	}
@@ -67,7 +67,7 @@ func (fc *FakeClient) Insert(ctx context.Context, rows []*bqpb.FailureAssociatio
 }
 
 // NewestLastUpdated get the largest value in the lastUpdated field from the BigQuery table.
-func (fc *FakeClient) NewestLastUpdated(ctx context.Context) (*bigquery.NullTimestamp, error) {
+func (fc *FakeClient) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp, error) {
 	var e error
 	if len(fc.errs) > 0 {
 		e = fc.errs[0]

@@ -31,7 +31,7 @@ type exporterClient interface {
 	// Insert inserts the given rows into BigQuery.
 	Insert(ctx context.Context, rows []*bqpb.FailureAssociationRulesHistoryRow) error
 	// NewestLastUpdated get the largest value in the lastUpdated field from the BigQuery table.
-	NewestLastUpdated(ctx context.Context) (*bigquery.NullTimestamp, error)
+	NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp, error)
 }
 
 // ExportRulesCron is the entry-point to the export failure association rules. It is triggered by a cron job configured in
