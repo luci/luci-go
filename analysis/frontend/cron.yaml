@@ -45,3 +45,6 @@ cron:
 - description: "Clear user columns in FailureAssociationRules table."
   url: /internal/cron/clear-rules-users
   schedule: every 1 hours synchronized
+- description: "Export failure association rules from spanner to bigquery."
+  url: /internal/cron/export-rules
+  schedule: every 10 minutes synchronized

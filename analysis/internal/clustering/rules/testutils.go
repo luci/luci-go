@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -211,4 +212,8 @@ func SetRulesForTesting(ctx context.Context, rs []*FailureAssociationRule) error
 		return nil
 	})
 	return err
+}
+
+func sortByID(rules []*FailureAssociationRule) {
+	sort.Slice(rules, func(i, j int) bool { return rules[i].RuleID < rules[j].RuleID })
 }

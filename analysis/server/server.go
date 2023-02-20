@@ -17,6 +17,8 @@
 package server
 
 import (
+	"context"
+
 	"go.chromium.org/luci/analysis/app"
 	"go.chromium.org/luci/analysis/internal/admin"
 	adminpb "go.chromium.org/luci/analysis/internal/admin/proto"
@@ -108,6 +110,9 @@ func Main(init func(srv *luciserver.Server) error) {
 		cron.RegisterHandler("reclustering", orchestrator.CronHandler)
 		cron.RegisterHandler("global-metrics", metrics.GlobalMetrics)
 		cron.RegisterHandler("clear-rules-users", rules.ClearRulesUsers)
+		cron.RegisterHandler("export-rules", func(ctx context.Context) error {
+			return rules.ExportRulesCron(ctx, srv.Options.CloudProject)
+		})
 
 		// Pub/Sub subscription endpoints.
 		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil, app.BuildbucketPubSubHandler)

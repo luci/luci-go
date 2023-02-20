@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package bqutil provides utility functions to interact with BigQuery.
 package bqutil
 
 import (

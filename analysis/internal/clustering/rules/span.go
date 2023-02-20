@@ -213,6 +213,22 @@ func ReadDelta(ctx context.Context, project string, sinceTime time.Time) ([]*Fai
 	return rs, nil
 }
 
+// ReadDeltaAllProjects reads the changed failure association rules since the given
+// timestamp for all LUCI projects.
+func ReadDeltaAllProjects(ctx context.Context, sinceTime time.Time) ([]*FailureAssociationRule, error) {
+	if sinceTime.Before(StartingEpoch) {
+		return nil, errors.New("cannot query rule deltas from before project inception")
+	}
+	whereClause := `LastUpdated > @sinceTime`
+	params := map[string]interface{}{"sinceTime": sinceTime}
+
+	rs, err := readWhere(ctx, whereClause, params)
+	if err != nil {
+		return nil, errors.Annotate(err, "query rules since").Err()
+	}
+	return rs, nil
+}
+
 // ReadMany reads the failure association rules with the given rule IDs.
 // The returned slice of rules will correspond one-to-one the IDs requested
 // (so returned[i].RuleId == ids[i], assuming the rule exists, else

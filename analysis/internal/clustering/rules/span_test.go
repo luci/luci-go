@@ -165,6 +165,60 @@ func TestSpan(t *testing.T) {
 				So(rules, ShouldResemble, []*FailureAssociationRule{})
 			})
 		})
+
+		Convey(`ReadDeltaAllProjects`, func() {
+			Convey(`Invalid since time`, func() {
+				_, err := ReadDeltaAllProjects(span.Single(ctx), time.Time{})
+				So(err, ShouldErrLike, "cannot query rule deltas from before project inception")
+			})
+			Convey(`Empty`, func() {
+				err := SetRulesForTesting(ctx, nil)
+				So(err, ShouldBeNil)
+
+				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
+				So(err, ShouldBeNil)
+				So(rules, ShouldResemble, []*FailureAssociationRule{})
+			})
+			Convey(`Multiple`, func() {
+				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
+				rulesToCreate := []*FailureAssociationRule{
+					NewRule(0).WithLastUpdated(reference).Build(),
+					NewRule(1).WithProject("otherproject").WithLastUpdated(reference.Add(time.Minute)).Build(),
+					NewRule(2).WithActive(false).WithLastUpdated(reference.Add(time.Minute)).Build(),
+					NewRule(3).WithLastUpdated(reference.Add(time.Microsecond)).Build(),
+				}
+				err := SetRulesForTesting(ctx, rulesToCreate)
+				So(err, ShouldBeNil)
+
+				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
+				So(err, ShouldBeNil)
+				expected := []*FailureAssociationRule{
+					rulesToCreate[3],
+					rulesToCreate[0],
+					rulesToCreate[2],
+					rulesToCreate[1],
+				}
+				sortByID(expected)
+				sortByID(rules)
+				So(rules, ShouldResemble, expected)
+
+				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference)
+				So(err, ShouldBeNil)
+				expected = []*FailureAssociationRule{
+					rulesToCreate[3],
+					rulesToCreate[2],
+					rulesToCreate[1],
+				}
+				sortByID(expected)
+				sortByID(rules)
+				So(rules, ShouldResemble, expected)
+
+				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference.Add(time.Minute))
+				So(err, ShouldBeNil)
+				So(rules, ShouldResemble, []*FailureAssociationRule{})
+			})
+		})
+
 		Convey(`ReadMany`, func() {
 			rulesToCreate := []*FailureAssociationRule{
 				NewRule(0).Build(),

@@ -1,0 +1,85 @@
+// Copyright 2022 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+
+message FailureAssociationRulesHistoryRow {
+    // The LUCI Project this bug belongs to.
+    string project = 1;
+
+    // The unique identifier for the rule. This rule_id corresponds to the cluster_id
+    // in the clustered_failures table.
+    string rule_id = 2;
+
+    // The rule predicate, defining which failures are being associated.
+    string rule_definition = 3;
+
+    // The time the rule was created.
+    google.protobuf.Timestamp creation_time = 4;
+
+    // The last time the rule was updated.
+    google.protobuf.Timestamp last_updated = 5;
+
+    // The last time either rule_definition or is_active is changed.
+    google.protobuf.Timestamp predicate_last_updated = 6;
+
+    message Bug {
+        // system is the bug tracking system containing the bug the failures are
+        // associated with. The only supported values are 'monorail' and 'buganizer'.
+        string system = 1;
+
+        // id is the identifier of the bug the failures are associated with, as
+        // identified by the bug tracking system itself. For monorail, the scheme is
+        // {project}/{numeric_id}, for buganizer, the scheme is {numeric_id}.
+        string id = 2;
+    }
+
+    // The system and the id of where the bug is tracked.
+    Bug bug = 7;
+
+    // Whether the bug must still be updated by LUCI Analysis, and whether
+    // failures should still be matched against this rule.
+    bool is_active = 8;
+
+    // Whether this rule should manage the priority and verified status
+    // of the associated bug based on the impact of the cluster defined
+    // by this rule.
+    bool is_managing_bug = 9;
+
+    // Indicates whether we should update the priority of the bug
+    // that is associated with this rule based on the cluster's impact.
+    // This toggle has must have no effect if the is_managing_bug toggle is off.
+    bool is_managing_bug_priority = 10;
+
+    // Tracks when the field is_managing_bug_priority was last updated.
+    google.protobuf.Timestamp is_managing_bug_priority_last_updated = 11;
+
+    // This suggested cluster this rule was created from.
+    // Until re-clustering is complete (and the residual impact of the source
+    // cluster has reduced to zero), source_cluster.algorithm and source_cluster.id
+    // tell bug filing to ignore the source suggested cluster when
+    // determining whether new bugs need to be filed.
+    luci.analysis.v1.ClusterId source_cluster = 12;
+
+    // The time the entry was ingested to this bigquery table.
+    google.protobuf.Timestamp exported_time = 13;
+}
