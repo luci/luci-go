@@ -75,6 +75,22 @@ func NewWriter(
 	}
 }
 
+// AppendRowsWithDefaultStream write to the default stream. This does not provide exactly-once
+// semantics (it provides at leas once). The at least once semantic is similar to the
+// legacy streaming API.
+func (s *Writer) AppendRowsWithDefaultStream(ctx context.Context, rows []proto.Message) error {
+	ms, err := s.client.NewManagedStream(ctx,
+		managedwriter.WithType(managedwriter.DefaultStream),
+		managedwriter.WithSchemaDescriptor(s.tableSchemaDescriptor),
+		managedwriter.WithDestinationTable(s.tableName))
+	if err != nil {
+		return err
+	}
+	defer ms.Close()
+
+	return s.batchAppendRows(ctx, ms, rows)
+}
+
 // AppendRowsWithPendingStream append rows to BigQuery table via the pending stream.
 // This provides all-or-nothing semantics for insertion.
 func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.Message) error {
@@ -105,7 +121,7 @@ func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.M
 		return err
 	}
 	if len(resp.StreamErrors) > 0 {
-		return errors.New(fmt.Sprintf("BatchCommitWriteStreams error %s", resp.StreamErrors))
+		return errors.New(fmt.Sprintf("batchCommitWriteStreams error %s", resp.StreamErrors))
 	}
 	return nil
 }

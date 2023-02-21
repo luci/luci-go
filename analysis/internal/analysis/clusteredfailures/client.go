@@ -17,25 +17,16 @@ package clusteredfailures
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/server/auth"
 )
-
-// batchSize is the number of rows to write to BigQuery in one go.
-const batchSize = 1000
 
 // NewClient creates a new client for exporting clustered failures
 // via the BigQuery Write API.
@@ -54,24 +45,10 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 		}
 	}()
 
-	// Create shared client for all writes.
-	// This will ensure a shared connection pool is used for all writes,
-	// as recommended by:
-	// https://cloud.google.com/bigquery/docs/write-api-best-practices#limit_the_number_of_concurrent_connections
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to initialize credentials").Err()
-	}
-	mwClient, err := managedwriter.NewClient(ctx, projectID,
-		option.WithGRPCDialOption(grpcmon.WithClientRPCStatsMonitor()),
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
-		option.WithGRPCDialOption(grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time: time.Minute,
-		})))
+	mwClient, err := bqutil.NewWriterClient(ctx, projectID)
 	if err != nil {
 		return nil, errors.Annotate(err, "create managed writer client").Err()
 	}
-
 	return &Client{
 		projectID: projectID,
 		bqClient:  bqClient,
@@ -121,64 +98,10 @@ func (s *Client) Insert(ctx context.Context, luciProject string, rows []*bqpb.Cl
 	}
 
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, dataset, tableName)
-
-	// Write to the default stream. This does not provide exactly-once
-	// semantics (it provides at leas once), but this should be generally
-	// fine for our needs. The at least once semantic is similar to the
-	// legacy streaming API.
-	ms, err := s.mwClient.NewManagedStream(ctx,
-		managedwriter.WithSchemaDescriptor(tableSchemaDescriptor),
-		managedwriter.WithDestinationTable(tableName))
-	defer ms.Close()
-
-	batches := batch(rows)
-	results := make([]*managedwriter.AppendResult, 0, len(batches))
-
-	for _, batch := range batches {
-		encoded := make([][]byte, 0, len(batch))
-		for _, r := range batch {
-			b, err := proto.Marshal(r)
-			if err != nil {
-				return errors.Annotate(err, "marshal proto").Err()
-			}
-			encoded = append(encoded, b)
-		}
-
-		result, err := ms.AppendRows(ctx, encoded)
-		if err != nil {
-			return errors.Annotate(err, "start appending rows").Err()
-		}
-
-		// Defer waiting on AppendRows until after all batches sent out.
-		// https://cloud.google.com/bigquery/docs/write-api-best-practices#do_not_block_on_appendrows_calls
-		results = append(results, result)
+	writer := bqutil.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
+	payload := make([]proto.Message, len(rows))
+	for i, r := range rows {
+		payload[i] = r
 	}
-	for _, result := range results {
-		// TODO: In future, we might need to apply some sort of retry
-		// logic around batches as we did for legacy streaming writes
-		// for quota issues.
-		// That said, the client library here should deal with standard
-		// BigQuery retries and backoffs.
-		_, err = result.GetResult(ctx)
-		if err != nil {
-			return errors.Annotate(err, "appending rows").Err()
-		}
-	}
-	return nil
-}
-
-// batch divides the rows to be inserted into batches of at most batchSize.
-func batch(rows []*bqpb.ClusteredFailureRow) [][]*bqpb.ClusteredFailureRow {
-	var result [][]*bqpb.ClusteredFailureRow
-	pages := (len(rows) + (batchSize - 1)) / batchSize
-	for p := 0; p < pages; p++ {
-		start := p * batchSize
-		end := start + batchSize
-		if end > len(rows) {
-			end = len(rows)
-		}
-		page := rows[start:end]
-		result = append(result, page)
-	}
-	return result
+	return writer.AppendRowsWithDefaultStream(ctx, payload)
 }
