@@ -59,16 +59,22 @@ func main() {
 			return err
 		}
 
-		rbeSessions, err := rbe.NewSessionServer(srv.Context, tokenSecret)
+		rbeConn, err := rbe.Dial(srv.Context)
 		if err != nil {
 			return err
 		}
 
 		botSrv := botsrv.New(srv.Context, srv.Routes, tokenSecret)
 
+		// Endpoints hit by bots.
+		rbeSessions := rbe.NewSessionServer(srv.Context, rbeConn, tokenSecret)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
+
+		// Handlers for TQ tasks submitted by Python Swarming.
+		rbeReservations := rbe.NewReservationServer(srv.Context, rbeConn, srv.Options.ImageVersion())
+		rbeReservations.RegisterTQTasks(&tq.Default)
 
 		// Helpers for running local integration tests. They fake some of Swarming
 		// Python server behavior.

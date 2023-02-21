@@ -9,7 +9,7 @@ package swarming.internals.rbe;
 option go_package = "go.chromium.org/luci/swarming/proto/internals;internalspb";
 
 import "google/protobuf/timestamp.proto";
-
+import "go.chromium.org/luci/swarming/proto/config/pools.proto";
 
 // TaggedMessage is an envelope for an HMAC-tagged protobuf message.
 //
@@ -171,24 +171,78 @@ message BotSession {
 }
 
 
+// EnqueueRBETask describes payload of `rbe-enqueue` TQ tasks.
+//
+// It is submitted into `rbe-enqueue` Cloud Tasks queue by the Python side and
+// processed by the Go side (resulting in a new RBE reservation on success).
+message EnqueueRBETask {
+  // Payload of the new RBE reservation. It will eventually be routed to a bot.
+  TaskPayload payload = 1;
+
+  // Fields below are used to decide how to schedule the reservation. Data in
+  // them duplicates immutable data already stored in Datastore, but this data
+  // is potentially hard to get from Go due to use of LocalStructuredProperty so
+  // it is duplicated here.
+
+  // Full RBE instance ID to submit this task to, extracted from TaskRequest.
+  string rbe_instance = 2;
+  // When this particular slice expires, extracted from TaskToRunShard.
+  google.protobuf.Timestamp expiry = 3;
+  // A bot that should execute this slice (if any), extracted from TaskSlice.
+  string requested_bot_id = 4;
+  // Constraints on dimensions reported by a matching bot (ANDed together).
+  message Constraint {
+    // The dimension key e.g. "python_version".
+    string key = 1;
+    // Allowed dimension values to satisfy the constraint, e.g. ["3.8", "3.9"].
+    repeated string allowed_values = 2;
+  }
+  repeated Constraint constraints = 5;
+  // Swarming task priority, as submitted by the client.
+  int32 priority = 6;
+  // Swarming scheduling algorithm, as specified in pools.cfg.
+  swarming.config.Pool.SchedulingAlgorithm scheduling_algorithm = 7;
+}
+
+
 // TaskPayload is used as an RBE task payload.
 //
 // It is serialized as anypb.Any when passed to RBE, and its full proto name
 // is thus sensitive.
+//
+// It points to an existing TaskToRunShardXXX entity representing the pending
+// request to execute a single task slice plus some extra information useful
+// for debugging.
+//
+// It also contains the name of the RBE reservation that will be created to
+// represent this task.
 message TaskPayload {
-  // Swarming task attempt ID (i.e. packed TaskRunResult entity key).
-  //
-  // The bot will use it in an RPC to Python Swarming server to mark the task as
-  // being worked on and to get all other task properties.
-  string task_id = 1;
+  // Unique (within the RBE instance) ID of the reservation, for idempotency.
+  string reservation_id = 1;
+  // Swarming task ID (aka TaskResultSummary packed id), identifies TaskRequest.
+  string task_id = 2;
+  // Task slice index (mostly FYI).
+  int32 slice_index = 3;
+  // Shard index of TaskToRunShardXXX entity class.
+  int32 task_to_run_shard = 4;
+  // Datastore ID of TaskToRunShardXXX entity (a child of the TaskRequest).
+  int64 task_to_run_id = 5;
+
+  // Optional information used for debugging and tracing purposes.
+  message DebugInfo {
+    google.protobuf.Timestamp created = 1;  // when this message was created
+    string py_swarming_version = 2;         // version of the Python Swarming
+    string go_swarming_version = 3;         // version of the Go Swarming
+    string task_name = 4;                   // the user-supplied task name FYI
+  }
+  DebugInfo debug_info = 6;
 
   // If true, the bot should not contact Python Swarming, don't execute
   // anything, just immediately move the reservation into COMPLETED state.
-  // `task_id` is ignored.
   //
   // This is useful during initial development to test RBE task distribution
   // mechanism in isolation from other Swarming guts.
-  bool noop = 2;
+  bool noop = 7;
 }
 
 

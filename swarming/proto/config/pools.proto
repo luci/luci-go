@@ -144,7 +144,11 @@ message Pool {
     string rbe_instance = 1;
     // Approximate percent of tasks targeting this pool to send to RBE.
     //
-    // A task will be sent to RBE if `hash(props) % 100 <= rbe_mode_percent`.
+    // The decision is done randomly when the task is scheduled.
+    //
+    // Additionally tasks that have `rbe:require` tag will always use RBE and
+    // tasks that have `rbe:prevent` tag will never use RBE. If both tags are
+    // set, `rbe:prevent` takes precedence.
     int32 rbe_mode_percent = 2;
   }
   RBEMigration rbe_migration = 13;

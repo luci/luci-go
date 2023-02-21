@@ -7,3 +7,6 @@ dispatch:
   # Serve Swarming RBE endpoints using Go.
   - url: "*/swarming/api/v1/bot/rbe/*"
     service: default-go
+  # Serve TQ tasks using Go.
+  - url: "*/internal/tasks/t/*"
+    service: default-go

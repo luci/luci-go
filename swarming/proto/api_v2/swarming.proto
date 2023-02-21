@@ -172,7 +172,8 @@ enum StateQuery {
 // Flag to sort returned tasks. The natural sort is CREATED_TS.
 enum SortQuery {
   QUERY_CREATED_TS = 0;
-  QUERY_MODIFIED_TS = 1;
+  // Used to be QUERY_MODIFIED_TS which cannot be used to sort task results.
+  reserved 1;
   QUERY_COMPLETED_TS = 2;
   QUERY_ABANDONED_TS = 3;
   QUERY_STARTED_TS = 4;
@@ -441,6 +442,66 @@ message TaskSlice {
   bool wait_for_capacity = 3;
 }
 
+message SwarmingTaskBackendConfig {
+  // Task priority, the lower the more important.
+  //
+  // Valid values are between 1 and 255.
+  int32 priority = 1;
+
+  // Maximum delay (in seconds) between bot pings before the bot is considered
+  // dead while running a task.
+  //
+  // When a task is running, the bot sends update to the server every
+  // few seconds. In some cases, like when the system is overloaded,
+  // the bot may be preempted and delayed in sending its updates.
+  // After the delay specified here, the server will claim the bot to
+  // be dead and will forcibly abort the task as BOT_DIED. This is to
+  // catch system wide issues like a BSOD.
+  int64 bot_ping_tolerance = 2;
+
+  // Parent Swarming task run ID of the process requesting this task.
+  //
+  // This field is set on the children tasks when a Swarming task creates
+  // children Swarming tasks.
+  //
+  // This points to the TaskResult.run_id (ending with '1', '2' or more).
+  string parent_run_id = 3;
+
+  // Defines what OAuth2 credentials the task uses when calling other services.
+  //
+  // Possible values are:
+  //   - 'none': do not use a task service account at all, this is the default.
+  //   - 'bot': use bot's own account, works only if bots authenticate with
+  //       OAuth2.
+  //  - <some email>: use this specific service account if it is allowed in the
+  //       pool (via 'allowed_service_account' pools.cfg setting) and configured
+  //       in the token server's service_accounts.cfg.
+  //
+  // Note that the service account name is specified outside of task properties,
+  // and thus it is possible to have two tasks with different service accounts,
+  // but identical properties hash (so one can be deduped). If this is
+  // unsuitable use 'idempotent=False' or include a service account name in
+  // properties separately.
+  string service_account = 4;
+
+  // When a task is scheduled and there are currently no bots available to run
+  // the task, the TaskSlice can either be PENDING, or be denied immediately.
+  // When denied, the next TaskSlice is enqueued, and if there's no following
+  // TaskSlice, the task state is set to NO_RESOURCE. This should normally be
+  // set to False to avoid unnecessary waiting.
+  bool wait_for_capacity = 5;
+
+  // CIPD package of the agent binary that should be called to run the task
+  // command. Note that it will end with "${platform}"
+  string agent_binary_cipd_pkg = 6;
+
+  // CIPD package tag or ref of the agent binary.
+  string agent_binary_cipd_vers = 7;
+
+  // Name of the file within the CIPD package and should be used to construct
+  // the task command line.
+  string agent_binary_cipd_filename = 8;
+}
 
 // Swarming:ResultDB integration configuration for a task.
 // See NewTaskRequest.resultdb for more details.

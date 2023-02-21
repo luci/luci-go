@@ -24,7 +24,6 @@ import (
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -32,8 +31,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
@@ -47,31 +44,12 @@ type SessionServer struct {
 	hmacSecret *hmactoken.Secret // to generate session tokens
 }
 
-// NewSessionServer creates a new session server by dialing the RBE backend.
-func NewSessionServer(ctx context.Context, hmacSecret *hmactoken.Secret) (*SessionServer, error) {
-	creds, err := auth.GetPerRPCCredentials(ctx,
-		auth.AsSelf,
-		auth.WithScopes(auth.CloudOAuthScopes...),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get credentials").Err()
-	}
-
-	logging.Infof(ctx, "Dialing the RBE backend...")
-	conn, err := grpc.DialContext(ctx, "remotebuildexecution.googleapis.com:443",
-		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
-		grpc.WithPerRPCCredentials(creds),
-		grpc.WithBlock(),
-		grpcmon.WithClientRPCStatsMonitor(),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to dial RBE backend").Err()
-	}
-
+// NewSessionServer creates a new session server given an RBE client connection.
+func NewSessionServer(ctx context.Context, cc grpc.ClientConnInterface, hmacSecret *hmactoken.Secret) *SessionServer {
 	return &SessionServer{
-		rbe:        remoteworkers.NewBotsClient(conn),
+		rbe:        remoteworkers.NewBotsClient(cc),
 		hmacSecret: hmacSecret,
-	}, nil
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

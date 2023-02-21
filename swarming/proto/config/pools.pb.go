@@ -1081,7 +1081,11 @@ type Pool_RBEMigration struct {
 	RbeInstance string `protobuf:"bytes,1,opt,name=rbe_instance,json=rbeInstance,proto3" json:"rbe_instance,omitempty"`
 	// Approximate percent of tasks targeting this pool to send to RBE.
 	//
-	// A task will be sent to RBE if `hash(props) % 100 <= rbe_mode_percent`.
+	// The decision is done randomly when the task is scheduled.
+	//
+	// Additionally tasks that have `rbe:require` tag will always use RBE and
+	// tasks that have `rbe:prevent` tag will never use RBE. If both tags are
+	// set, `rbe:prevent` takes precedence.
 	RbeModePercent int32 `protobuf:"varint,2,opt,name=rbe_mode_percent,json=rbeModePercent,proto3" json:"rbe_mode_percent,omitempty"`
 }
 
