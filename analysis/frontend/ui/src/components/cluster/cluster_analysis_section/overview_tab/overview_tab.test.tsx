@@ -17,19 +17,22 @@ import fetchMock from 'fetch-mock-jest';
 
 import { screen } from '@testing-library/react';
 
+import { QueryClusterHistoryResponse } from '@/services/cluster';
 import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import { mockQueryHistory } from '@/testing_tools/mocks/cluster_mock';
 import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 
 import { ClusterContextProvider } from '../../cluster_context';
-import { QueryClusterHistoryResponse } from '@/services/cluster';
 import OverviewTab from './overview_tab';
 
 // Mock the window.ResizeObserver that is needed by recharts.
 class ResizeObserver {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   observe() {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   unobserve() {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   disconnect() {}
 }
 window.ResizeObserver = ResizeObserver;
@@ -46,13 +49,13 @@ describe('test ImpactSection component', () => {
   });
 
   it('given an algorithm, should fetch cluster for that algorithm', async () => {
-    const history: QueryClusterHistoryResponse = { days: [{date: '2023-02-16', metrics: {'human-cls-failed-presubmit':10, 'critical-failures-exonerated':20, 'test-runs-failed':100}}] }
+    const history: QueryClusterHistoryResponse = { days: [{ date: '2023-02-16', metrics: { 'human-cls-failed-presubmit': 10, 'critical-failures-exonerated': 20, 'test-runs-failed': 100 } }] };
     mockQueryHistory(history);
 
     renderTabWithRouterAndClient(
-      <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
-        <OverviewTab value='test' />
-      </ClusterContextProvider>,
+        <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
+          <OverviewTab value='test' />
+        </ClusterContextProvider>,
     );
 
     await screen.findAllByTestId('history-chart');

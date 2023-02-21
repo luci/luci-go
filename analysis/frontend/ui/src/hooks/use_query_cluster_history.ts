@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getClustersService, QueryClusterHistoryRequest } from "@/services/cluster";
-import { prpcRetrier } from "@/services/shared_models";
-import { useQuery } from "react-query";
+import { useQuery } from 'react-query';
+import { getClustersService, QueryClusterHistoryRequest } from '@/services/cluster';
+import { prpcRetrier } from '@/services/shared_models';
 
 const useQueryClusterHistory = (
     project: string,
@@ -22,22 +22,22 @@ const useQueryClusterHistory = (
     days: number,
     metricIds: string[],
 ) => {
-    const clustersService = getClustersService();
-    return useQuery(['cluster', project, 'history', days, failureFilter], async () => {
-        const request: QueryClusterHistoryRequest = {
-            project,
-            failureFilter,
-            days,
-            metrics: metricIds.map(id => `metrics/${id}`),
-        };
+  const clustersService = getClustersService();
+  return useQuery(['cluster', project, 'history', days, failureFilter], async () => {
+    const request: QueryClusterHistoryRequest = {
+      project,
+      failureFilter,
+      days,
+      metrics: metricIds.map((id) => `metrics/${id}`),
+    };
 
-        const response = await clustersService.queryHistory(request);
+    const response = await clustersService.queryHistory(request);
 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return response;
-    }, {
-        retry: prpcRetrier,
-    });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return response;
+  }, {
+    retry: prpcRetrier,
+  });
 };
 
 export default useQueryClusterHistory;

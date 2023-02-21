@@ -12,16 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useContext, useState } from 'react';
-import {
-  Link as RouterLink,
-} from 'react-router-dom';
+import './style.css';
 
-import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
-import Link from '@mui/material/Link';
+import {
+  useContext,
+  useState,
+} from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import {
+  Bar,
+  BarChart,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
 import TabPanel from '@mui/lab/TabPanel';
-import Typography from '@mui/material/Typography';
 import {
   Checkbox,
   FormControl,
@@ -32,24 +40,18 @@ import {
   Select,
   SelectChangeEvent,
 } from '@mui/material';
-import {
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  BarChart,
-  Bar,
-  ResponsiveContainer,
-} from 'recharts';
+import CircularProgress from '@mui/material/CircularProgress';
+import Grid from '@mui/material/Grid';
+import Link from '@mui/material/Link';
+import Typography from '@mui/material/Typography';
 
 import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import { ClusterContext } from '../../cluster_context';
-import useQueryClusterHistory from '@/hooks/use_query_cluster_history';
 import useFetchMetrics from '@/hooks/use_fetch_metrics';
+import useQueryClusterHistory from '@/hooks/use_query_cluster_history';
 import { Metric } from '@/services/metrics';
 
-import './style.css';
+import { ClusterContext } from '../../cluster_context';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -68,10 +70,10 @@ interface Props {
 }
 
 const metricColors = {
-  'human-cls-failed-presubmit': "#6c40bf",
-  'critical-failures-exonerated': "#0084ff",
-  'test-runs-failed': "#d23a2d",
-}
+  'human-cls-failed-presubmit': '#6c40bf',
+  'critical-failures-exonerated': '#0084ff',
+  'test-runs-failed': '#d23a2d',
+};
 const metricIds = ['human-cls-failed-presubmit', 'critical-failures-exonerated', 'test-runs-failed'];
 const OverviewTab = ({
   value,
@@ -95,7 +97,7 @@ const OverviewTab = ({
 
   const fetchedMetrics = useFetchMetrics();
   const metric = (metricId: string): Metric | undefined =>
-    fetchedMetrics?.data?.filter(m => m.metricId == metricId)?.[0];
+    fetchedMetrics?.data?.filter((m) => m.metricId == metricId)?.[0];
 
   const handleMetricChange = (event: SelectChangeEvent<typeof selectedMetrics>) => {
     const {
@@ -119,7 +121,7 @@ const OverviewTab = ({
             labelId="date-range-label"
             value={days}
             label="Date Range"
-            onChange={e => setDays(e.target.value as number)}
+            onChange={(e) => setDays(e.target.value as number)}
           >
             <MenuItem value={7}>7 days</MenuItem>
             <MenuItem value={30}>30 days</MenuItem>
@@ -134,17 +136,17 @@ const OverviewTab = ({
             value={selectedMetrics}
             onChange={handleMetricChange}
             input={<OutlinedInput label="Name" />}
-            renderValue={(selected) => selected.map(m => metric(m)?.humanReadableName || m).join(', ')}
+            renderValue={(selected) => selected.map((m) => metric(m)?.humanReadableName || m).join(', ')}
             MenuProps={MenuProps}
           >
-            {metricIds.map(m => {
+            {metricIds.map((m) => {
               return <MenuItem
                 key={m}
                 value={m}
               >
                 <Checkbox checked={selectedMetrics.indexOf(m) > -1} />
                 <ListItemText primary={metric(m)?.humanReadableName || m} />
-              </MenuItem>
+              </MenuItem>;
             })}
           </Select>
         </FormControl>
@@ -173,7 +175,7 @@ const OverviewTab = ({
                 <YAxis />
                 <Legend />
                 <Tooltip />
-                {selectedMetrics.map(m => {
+                {selectedMetrics.map((m) => {
                   const mk = m as keyof (typeof metricColors);
                   return <Bar key={m} name={metric(m)?.humanReadableName || m} dataKey={`metrics.${m}`} fill={metricColors[mk]} />;
                 })}

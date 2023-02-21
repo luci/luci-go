@@ -30,9 +30,9 @@ import {
 } from '@/services/cluster';
 
 export const getMockCluster = (id: string,
-  project = 'testproject',
-  algorithm = 'reason-v2',
-  title = ''): Cluster => {
+    project = 'testproject',
+    algorithm = 'reason-v2',
+    title = ''): Cluster => {
   return {
     name: `projects/${project}/clusters/${algorithm}/${id}`,
     hasExample: true,
@@ -128,10 +128,10 @@ export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest,
 };
 
 export const mockGetCluster = (
-  project: string,
-  algorithm: string,
-  id: string,
-  response: Cluster) => {
+    project: string,
+    algorithm: string,
+    id: string,
+    response: Cluster) => {
   const request: GetClusterRequest = {
     name: `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
   };
@@ -184,8 +184,7 @@ export const mockQueryExoneratedTestVariants = (parent: string, testVariants: Cl
 };
 
 export const mockQueryHistory = (
-  response: QueryClusterHistoryResponse) => {
-
+    response: QueryClusterHistoryResponse) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryHistory',
   }, {
