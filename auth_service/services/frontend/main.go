@@ -19,6 +19,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/grpc/codes"
@@ -112,6 +115,22 @@ func main() {
 			authorizeUIAccess,
 		}
 
+		// The middleware chain for API like routes.
+		apiMw := router.MiddlewareChain{
+			auth.Authenticate(
+				// The preferred authentication method.
+				&openid.GoogleIDTokenAuthMethod{
+					AudienceCheck: openid.AudienceMatchesHost,
+					SkipNonJWT:    true, // pass OAuth2 access tokens through
+				},
+				// Backward compatibility for the RPC Explorer and old clients.
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
+				},
+			),
+			authorizeAPIAccess,
+		}
+
 		srv.Routes.GET("/", mw, func(ctx *router.Context) {
 			http.Redirect(ctx.Writer, ctx.Request, "/groups", http.StatusFound)
 		})
@@ -133,8 +152,8 @@ func main() {
 
 		// Legacy authdbrevision serving.
 		// TODO(cjacomet): Add smoke test for this endpoint
-		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", mw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
-		srv.Routes.GET("/auth/api/v1/server/oauth_config", mw, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
+		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
+		srv.Routes.GET("/auth/api/v1/server/oauth_config", nil, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
 		return nil
 	})
 }
@@ -211,6 +230,26 @@ func authorizeUIAccess(ctx *router.Context, next router.Handler) {
 		replyError(ctx, err, "Failed to check group membership", http.StatusInternalServerError)
 	case !yes:
 		templates.MustRender(ctx.Context, ctx.Writer, "pages/access_denied.html", nil)
+	default:
+		next(ctx)
+	}
+}
+
+// authorizeAPIAccess checks whether the caller is allowed to access the API.
+func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
+	jsonErr := func(err error, code int) {
+		w := ctx.Writer
+		if res, err := json.Marshal(map[string]interface{}{"text": err.Error()}); err == nil {
+			http.Error(w, string(res), code)
+		}
+	}
+
+	switch yes, err := auth.IsMember(ctx.Context, impl.TrustedServicesGroup, impl.AdminGroup); {
+	case err != nil:
+		jsonErr(errors.New("failed to check group membership"), http.StatusInternalServerError)
+	case !yes:
+		jsonErr(fmt.Errorf("%s is not a member of %s", auth.CurrentIdentity(ctx.Context), impl.TrustedServicesGroup),
+			http.StatusForbidden)
 	default:
 		next(ctx)
 	}

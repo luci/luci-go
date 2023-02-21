@@ -26,6 +26,14 @@ import (
 // groups is controlled by "owners" group field.
 const ServiceAccessGroup = "auth-service-access"
 
+// TrustedServicesGroup defines a group whose members are allowed to subscribe
+// to group change notifications and fetch all groups at once.
+const TrustedServicesGroup = "auth-trusted-services"
+
+// AdminGroup defines a group of administrators who are allowed to manage all
+// groups.
+const AdminGroup = "administrators"
+
 // AuthorizeRPCAccess is a gRPC server interceptor that checks the caller is
 // in the group that grants access to the auth service API.
 var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
