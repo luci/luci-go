@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/hex"
 	"math/rand"
+	"net/http"
 	"strings"
 	"sync"
 	"testing"
@@ -27,9 +28,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/testing/prpctest"
@@ -46,14 +49,16 @@ type service struct {
 
 	sleep func() time.Duration
 
-	m          sync.Mutex
-	incomingMD metadata.MD
+	m            sync.Mutex
+	incomingMD   metadata.MD
+	incomingPeer *peer.Peer
 }
 
 func (s *service) Greet(ctx context.Context, req *HelloRequest) (*HelloReply, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
 	s.m.Lock()
 	s.incomingMD = md.Copy()
+	s.incomingPeer, _ = peer.FromContext(ctx)
 	var sleep time.Duration
 	if s.sleep != nil {
 		sleep = s.sleep()
@@ -77,6 +82,12 @@ func (s *service) getIncomingMD() metadata.MD {
 	return s.incomingMD
 }
 
+func (s *service) getIncomingPeer() *peer.Peer {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.incomingPeer
+}
+
 func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, HelloClient) {
 	ts := prpctest.Server{}
 	RegisterHelloServer(&ts, svc)
@@ -85,6 +96,20 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 	prpcClient, err := ts.NewClientWithOptions(opts)
 	if err != nil {
 		panic(err)
+	}
+
+	prpcClient.C = &http.Client{
+		Transport: auth.NewModifyingTransport(http.DefaultTransport, func(r *http.Request) error {
+			r.AddCookie(&http.Cookie{
+				Name:  "cookie_1",
+				Value: "value_1",
+			})
+			r.AddCookie(&http.Cookie{
+				Name:  "cookie_2",
+				Value: "value_2",
+			})
+			return nil
+		}),
 	}
 
 	ts.EnableResponseCompression = true
@@ -163,7 +188,9 @@ func TestEndToEnd(t *testing.T) {
 			So(resp, ShouldResembleProto, svc.R)
 
 			So(svc.getIncomingMD(), ShouldResemble, metadata.MD{
+				":authority":   {ts.Host},
 				"binary-bin":   {string([]byte{0, 1, 2, 3})},
+				"cookie":       {"cookie_1=value_1; cookie_2=value_2"},
 				"host":         {strings.TrimPrefix(ts.HTTP.URL, "http://")},
 				"multival-key": {"val 1", "val 2"},
 				"user-agent":   {prpc.DefaultUserAgent},
@@ -173,6 +200,16 @@ func TestEndToEnd(t *testing.T) {
 				"binary-bin":   {string([]byte{0, 1, 2, 3})},
 				"multival-key": {"val 1", "val 2"},
 			})
+		})
+
+		Convey(`Populates peer`, func() {
+			svc.R = &HelloReply{Message: "sup"}
+			_, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			So(err, ShouldBeRPCOK)
+
+			peer := svc.getIncomingPeer()
+			So(peer, ShouldNotBeNil)
+			So(peer.Addr.String(), ShouldStartWith, "127.0.0.1:")
 		})
 	})
 }

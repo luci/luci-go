@@ -17,7 +17,9 @@ package prpc
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
+	"net/netip"
 	"sort"
 	"strings"
 	"sync"
@@ -27,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
@@ -410,6 +413,14 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 	}
 
 	methodCtx = context.WithValue(methodCtx, &requestContextKey, &requestContext{header: c.Writer.Header()})
+
+	// Populate peer.Peer if we can manage to parse the address. This may fail
+	// if the server is exposed via a Unix socket, for example.
+	if addr, err := netip.ParseAddrPort(c.Request.RemoteAddr); err == nil {
+		methodCtx = peer.NewContext(methodCtx, &peer.Peer{
+			Addr: net.TCPAddrFromAddrPort(addr),
+		})
+	}
 
 	out, err := method.Handler(service.impl, methodCtx, func(in any) error {
 		if in == nil {

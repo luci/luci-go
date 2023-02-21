@@ -40,6 +40,11 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 		requestCtx := metadata.NewIncomingContext(ctx, metadata.MD{
 			":authority": {"some.example.com"},
 			"x-boom":     {"val1", "val2"},
+			// Can happen when using pRPC transport.
+			"cookie": {
+				"cookie_1=value_1; cookie_2=value_2",
+				"cookie_3=value_3",
+			},
 		})
 		requestCtx = peer.NewContext(requestCtx, &peer.Peer{
 			Addr: &net.IPAddr{
@@ -54,8 +59,22 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 					email:    "someone@example.com",
 					observe: func(r RequestMetadata) {
 						So(r.Header("X-Boom"), ShouldEqual, "val1")
-						_, err := r.Cookie("cookie")
+
+						cookie, err := r.Cookie("cookie_1")
+						So(err, ShouldBeNil)
+						So(cookie.Value, ShouldEqual, "value_1")
+
+						cookie, err = r.Cookie("cookie_2")
+						So(err, ShouldBeNil)
+						So(cookie.Value, ShouldEqual, "value_2")
+
+						cookie, err = r.Cookie("cookie_3")
+						So(err, ShouldBeNil)
+						So(cookie.Value, ShouldEqual, "value_3")
+
+						_, err = r.Cookie("cookie_4")
 						So(err, ShouldEqual, http.ErrNoCookie)
+
 						So(r.RemoteAddr(), ShouldEqual, "1.2.3.4")
 						So(r.Host(), ShouldEqual, "some.example.com")
 					},

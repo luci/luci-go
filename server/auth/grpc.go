@@ -17,6 +17,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -28,29 +29,43 @@ import (
 )
 
 type grpcRequestMetadata struct {
-	md         metadata.MD
-	remoteAddr string
+	ctx context.Context
 }
 
-func (m *grpcRequestMetadata) Header(key string) string {
-	if v := m.md.Get(key); len(v) != 0 {
+func (m grpcRequestMetadata) Header(key string) string {
+	if v := metadata.ValueFromIncomingContext(m.ctx, strings.ToLower(key)); len(v) != 0 {
 		return v[0]
 	}
 	return ""
 }
 
-func (m *grpcRequestMetadata) Cookie(key string) (*http.Cookie, error) { return nil, http.ErrNoCookie }
-func (m *grpcRequestMetadata) RemoteAddr() string                      { return m.remoteAddr }
-func (m *grpcRequestMetadata) Host() string                            { return m.Header(":authority") }
+func (m grpcRequestMetadata) Cookie(key string) (*http.Cookie, error) {
+	// Note: this is really used only when the transport is pRPC and requests come
+	// from a browser.
+	cookies := metadata.ValueFromIncomingContext(m.ctx, "cookie")
+	if len(cookies) == 0 {
+		return nil, http.ErrNoCookie
+	}
+	return (&http.Request{Header: http.Header{"Cookie": cookies}}).Cookie(key)
+}
+
+func (m grpcRequestMetadata) RemoteAddr() string {
+	if peer, ok := peer.FromContext(m.ctx); ok {
+		return peer.Addr.String()
+	}
+	return ""
+}
+
+func (m grpcRequestMetadata) Host() string {
+	if v := metadata.ValueFromIncomingContext(m.ctx, ":authority"); len(v) != 0 {
+		return v[0]
+	}
+	return ""
+}
 
 // RequestMetadataForGRPC returns a RequestMetadata of the current grpc request.
 func RequestMetadataForGRPC(ctx context.Context) RequestMetadata {
-	remoteAddr := ""
-	if peer, ok := peer.FromContext(ctx); ok {
-		remoteAddr = peer.Addr.String()
-	}
-	md, _ := metadata.FromIncomingContext(ctx)
-	return &grpcRequestMetadata{md, remoteAddr}
+	return grpcRequestMetadata{ctx}
 }
 
 // AuthenticatingInterceptor authenticates incoming requests.

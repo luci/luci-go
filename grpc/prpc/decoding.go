@@ -129,7 +129,7 @@ func requestReadErr(err error, msg string) *protocolError {
 // a metadata.MD and a new context is derived. If ctx already has metadata,
 // the latter is copied.
 //
-// If host is not empty, sets "host" metadata.
+// If host is not empty, sets "host" and ":authority" metadata.
 func parseHeader(ctx context.Context, header http.Header, host string) (context.Context, context.CancelFunc, error) {
 	// Parse headers into a metadata map. This skips all reserved headers to avoid
 	// leaking pRPC protocol implementation details to gRPC servers.
@@ -144,6 +144,7 @@ func parseHeader(ctx context.Context, header http.Header, host string) (context.
 		merged := metadata.Join(existing, parsed)
 		if host != "" {
 			merged["host"] = []string{host}
+			merged[":authority"] = []string{host}
 		}
 		ctx = metadata.NewIncomingContext(ctx, merged)
 	}

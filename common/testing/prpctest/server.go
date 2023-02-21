@@ -19,7 +19,6 @@ package prpctest
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http/httptest"
 	"net/url"
 
@@ -38,6 +37,9 @@ type Server struct {
 	// HTTP is the active HTTP test server. It will be valid when the Server is
 	// running.
 	HTTP *httptest.Server
+
+	// Host is the server address ("addr:port") if it is running.
+	Host string
 }
 
 func setContext(c context.Context) router.MiddlewareChain {
@@ -64,6 +66,12 @@ func (s *Server) Start(c context.Context) {
 	r := router.New()
 	s.InstallHandlers(r, base(c))
 	s.HTTP = httptest.NewServer(r)
+
+	u, err := url.Parse(s.HTTP.URL)
+	if err != nil {
+		panic(err)
+	}
+	s.Host = u.Host
 }
 
 // NewClient returns a prpc.Client configured to use the Server.
@@ -77,11 +85,6 @@ func (s *Server) NewClientWithOptions(opts *prpc.Options) (*prpc.Client, error) 
 		return nil, errors.New("not running")
 	}
 
-	u, err := url.Parse(s.HTTP.URL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse server URL: %s", err)
-	}
-
 	if opts == nil {
 		opts = &prpc.Options{Insecure: true}
 	} else {
@@ -91,7 +94,7 @@ func (s *Server) NewClientWithOptions(opts *prpc.Options) (*prpc.Client, error) 
 	}
 
 	return &prpc.Client{
-		Host:    u.Host,
+		Host:    s.Host,
 		Options: opts,
 	}, nil
 }
