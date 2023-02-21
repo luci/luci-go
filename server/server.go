@@ -191,7 +191,9 @@ import (
 	"cloud.google.com/go/profiler"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
+	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	octrace "go.opencensus.io/trace"
@@ -345,6 +347,7 @@ type Options struct {
 	Hostname   string            // used for logging and metric fields, default is os.Hostname
 
 	HTTPAddr  string // address to bind the main listening socket to
+	GRPCAddr  string // address to bind the gRPC listening socket to
 	AdminAddr string // address to bind the admin socket to, ignored on GAE and Cloud Run
 	AllowH2C  bool   // if true, allow HTTP/2 Cleartext traffic on non-gRPC HTTP ports
 
@@ -393,6 +396,9 @@ func (o *Options) Register(f *flag.FlagSet) {
 	if o.HTTPAddr == "" {
 		o.HTTPAddr = "localhost:8800"
 	}
+	if o.GRPCAddr == "" {
+		o.GRPCAddr = "-" // disabled by default
+	}
 	if o.AdminAddr == "" {
 		o.AdminAddr = "localhost:8900"
 	}
@@ -418,10 +424,11 @@ func (o *Options) Register(f *flag.FlagSet) {
 	}
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to or '-' to disable")
+	f.StringVar(&o.GRPCAddr, "grpc-addr", o.GRPCAddr, "Address to bind the gRPC listening socket to or '-' to disable")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to or '-' to disable")
 	f.BoolVar(&o.AllowH2C, "allow-h2c", o.AllowH2C, "If set, allow HTTP/2 Cleartext traffic on non-gRPC HTTP ports (in addition to HTTP/1 traffic). The gRPC port always allows it, it is essential for gRPC")
-	f.DurationVar(&o.DefaultRequestTimeout, "default-request-timeout", o.DefaultRequestTimeout, "How long incoming requests are allowed to run before being canceled (or 0 for infinity)")
-	f.DurationVar(&o.InternalRequestTimeout, "internal-request-timeout", o.InternalRequestTimeout, "How long incoming /internal/* requests are allowed to run before being canceled (or 0 for infinity)")
+	f.DurationVar(&o.DefaultRequestTimeout, "default-request-timeout", o.DefaultRequestTimeout, "How long incoming HTTP requests are allowed to run before being canceled (or 0 for infinity)")
+	f.DurationVar(&o.InternalRequestTimeout, "internal-request-timeout", o.InternalRequestTimeout, "How long incoming /internal/* HTTP requests are allowed to run before being canceled (or 0 for infinity)")
 	f.DurationVar(&o.ShutdownDelay, "shutdown-delay", o.ShutdownDelay, "How long to wait after SIGTERM before shutting down")
 	f.StringVar(
 		&o.ClientAuth.ServiceAccountJSONPath,
@@ -588,6 +595,7 @@ func (o *Options) FromGAEEnv() {
 		os.Getenv("GAE_INSTANCE"),
 	)
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
+	o.GRPCAddr = "-"
 	o.AdminAddr = "-"
 	o.ShutdownDelay = 0
 	o.CloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
@@ -649,6 +657,7 @@ func (o *Options) FromCloudRunEnv() error {
 	o.Prod = true
 	o.Hostname = uniqueServerlessHostname(os.Getenv("K_REVISION"), instance)
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
+	o.GRPCAddr = "-" // TODO(vadimsh): Expose a way to designate gRPC as the main port
 	o.AdminAddr = "-"
 	o.AllowH2C = true // to allow using HTTP2 end-to-end with `--use-http2` deployment flag
 	o.ShutdownDelay = 0
@@ -809,6 +818,7 @@ type Server struct {
 	logRequestCB func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
 
 	mainPort *Port        // pre-registered main HTTP port, see initMainPort
+	grpcPort *grpcPort    // non-nil when exposing a gRPC port
 	prpc     *prpc.Server // pRPC server implementation exposed on the main port
 
 	mu      sync.Mutex    // protects fields below
@@ -874,6 +884,14 @@ func (h *moduleHostImpl) HTTPAddr() net.Addr {
 	h.panicIfInvalid()
 	if h.srv.mainPort.listener != nil {
 		return h.srv.mainPort.listener.Addr()
+	}
+	return nil
+}
+
+func (h *moduleHostImpl) GRPCAddr() net.Addr {
+	h.panicIfInvalid()
+	if h.srv.grpcPort != nil {
+		return h.srv.grpcPort.listener.Addr()
 	}
 	return nil
 }
@@ -1038,6 +1056,9 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 	if err := srv.initMainPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
+	}
+	if err := srv.initGrpcPort(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the gRPC port").Err()
 	}
 	if err := srv.initAdminPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
@@ -1265,6 +1286,9 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl any) {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 	s.prpc.RegisterService(desc, impl)
+	if s.grpcPort != nil {
+		s.grpcPort.registerService(desc, impl)
+	}
 }
 
 // RegisterUnaryServerInterceptors registers grpc.UnaryServerInterceptor's
@@ -1426,8 +1450,17 @@ func (s *Server) Serve() error {
 	s.prpc.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(s.unaryInterceptors...)
 	s.prpc.Authenticator = &auth.Authenticator{Methods: s.rpcAuthMethods}
 
-	// TODO(vadimsh): Install s.unaryInterceptors and s.streamInterceptors
-	// into the gRPC server.
+	// Finish setting the gRPC server, if enabled.
+	if s.grpcPort != nil {
+		rootInterceptor := s.rootInterceptor()
+		authInterceptor := auth.AuthenticatingInterceptor(s.rpcAuthMethods)
+		s.grpcPort.addServerOptions(
+			grpc.ChainUnaryInterceptor(rootInterceptor.Unary(), authInterceptor.Unary()),
+			grpc.ChainUnaryInterceptor(s.unaryInterceptors...),
+			grpc.ChainStreamInterceptor(rootInterceptor.Stream(), authInterceptor.Stream()),
+			grpc.ChainStreamInterceptor(s.streamInterceptors...),
+		)
+	}
 
 	// Run registered best-effort warmup callbacks right before serving.
 	s.runWarmup()
@@ -1662,9 +1695,10 @@ type incomingRequest struct {
 
 // requestResult is logged after completion of a request.
 type requestResult struct {
-	statusCode   int   // the HTTP status code to log
-	requestSize  int64 // the request size in bytes if known
-	responseSize int64 // the response size in bytes if known
+	statusCode   int            // the HTTP status code to log
+	requestSize  int64          // the request size in bytes if known
+	responseSize int64          // the response size in bytes if known
+	extraFields  logging.Fields // extra fields to log (will be mutated!)
 }
 
 // startRequest prepares the per-request context.
@@ -1785,9 +1819,12 @@ func (s *Server) startRequest(ctx context.Context, req *incomingRequest) (contex
 		}
 
 		// When running behind Envoy, log its request IDs to simplify debugging.
-		var extraFields logging.Fields
+		extraFields := res.extraFields
 		if xrid := req.metadata.Header("X-Request-Id"); xrid != "" {
-			extraFields = logging.Fields{"requestId": xrid}
+			if extraFields == nil {
+				extraFields = make(logging.Fields, 1)
+			}
+			extraFields["requestId"] = xrid
 		}
 
 		// If we were tracking the overall severity, collect the outcome.
@@ -1863,6 +1900,49 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	c.Context = ctx
 	c.Request = c.Request.WithContext(ctx)
 	next(c)
+}
+
+// rootInterceptor is a gRPC interceptor that prepares the per-request context.
+func (s *Server) rootInterceptor() grpcutil.UnifiedServerInterceptor {
+	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
+		// Initialize per-request context, open the tracing span, etc.
+		//
+		// Here `ctx` is already derived from s.Context (except it is canceled if
+		// the client disconnects). See grpcPort{} implementation.
+		ctx, done := s.startRequest(ctx, &incomingRequest{
+			protocol: "grpc",
+			uri:      fullMethod,
+			method:   "POST",
+			metadata: auth.RequestMetadataForGRPC(ctx),
+		})
+
+		// Report the status code to logging when done.
+		defer func() {
+			code := status.Code(err)
+			statusCode := grpcutil.CodeStatus(code)
+
+			// Log errors (for parity with pRPC server behavior).
+			switch {
+			case statusCode >= 400 && statusCode < 500:
+				logging.Warningf(ctx, "%s", err)
+			case statusCode >= 500:
+				logging.Errorf(ctx, "%s", err)
+			}
+
+			// Report canonical GRPC code as a log entry field for filtering by it.
+			canonical, ok := codepb.Code_name[int32(code)]
+			if !ok {
+				canonical = fmt.Sprintf("%d", int64(code))
+			}
+
+			done(&requestResult{
+				statusCode:  statusCode, // this is an approximation
+				extraFields: logging.Fields{"code": canonical},
+			})
+		}()
+
+		return handler(ctx)
+	}
 }
 
 // initLogging initializes the server logging.
@@ -2499,6 +2579,20 @@ func (s *Server) initMainPort() error {
 
 	// Install RPCExplorer web app at "/rpcexplorer/".
 	rpcexplorer.Install(s.Routes)
+	return nil
+}
+
+// initGrpcPort initializes the listening gRPC port.
+func (s *Server) initGrpcPort() error {
+	if s.Options.GRPCAddr == "" || s.Options.GRPCAddr == "-" {
+		return nil // the gRPC port is disabled
+	}
+	listener, err := s.createListener(s.Options.GRPCAddr)
+	if err != nil {
+		return errors.Annotate(err, `failed to bind the listening port for "grpc" at %q`, s.Options.GRPCAddr).Err()
+	}
+	s.grpcPort = &grpcPort{listener: listener}
+	s.ports = append(s.ports, s.grpcPort)
 	return nil
 }
 

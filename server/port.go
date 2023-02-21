@@ -107,7 +107,7 @@ func (p *Port) nameForLog() string {
 	return pfx
 }
 
-// serve runs the serving loop until it is fully gracefully stopped.
+// serve runs the serving loop until it is gracefully stopped.
 //
 // Part of the servingPort interface.
 func (p *Port) serve(baseCtx func() context.Context) error {
@@ -122,7 +122,7 @@ func (p *Port) serve(baseCtx func() context.Context) error {
 
 // shutdown gracefully stops the server, blocking until it is closed.
 //
-// Does nothing is the server is not running.
+// Does nothing if the server is not running.
 //
 // Part of the servingPort interface.
 func (p *Port) shutdown(ctx context.Context) {

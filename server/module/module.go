@@ -109,6 +109,11 @@ type Host interface {
 	// May be nil if the server doesn't expose the main port.
 	HTTPAddr() net.Addr
 
+	// GRPCAddr is the address the gRPC port is bound to.
+	//
+	// May be nil if the server doesn't expose the gRPC port.
+	GRPCAddr() net.Addr
+
 	// Routes returns a router that servers HTTP requests hitting the main port.
 	//
 	// The module can use it to register additional request handlers.

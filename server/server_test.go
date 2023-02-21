@@ -34,7 +34,10 @@ import (
 	"time"
 
 	"golang.org/x/net/http2"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/gae/impl/memory"
@@ -94,8 +97,6 @@ func TestServer(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer srv.cleanup()
 
-		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
-
 		Convey("VirtualHost", func() {
 			srv.Routes.GET("/test", nil, func(c *router.Context) {
 				c.Writer.Write([]byte("default-router"))
@@ -105,6 +106,7 @@ func TestServer(t *testing.T) {
 			})
 
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
 
 			// Requests with unknown Host header go to the default router.
 			resp, err := srv.GetMain("/test", map[string]string{
@@ -136,6 +138,8 @@ func TestServer(t *testing.T) {
 			})
 
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
+
 			resp, err := srv.GetMain("/test", map[string]string{
 				"User-Agent":      "Test-user-agent",
 				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
@@ -167,7 +171,7 @@ func TestServer(t *testing.T) {
 					Message:   "Info log",
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472306, Nanos: 7},
 					Operation: &sdlogger.Operation{
-						ID: "6694d2c422acd208a0072939487f6999",
+						ID: "eb9d18a44784045d87f3c67cf22746e9",
 					},
 				},
 				{
@@ -175,7 +179,7 @@ func TestServer(t *testing.T) {
 					Message:   "Warn log",
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
 					Operation: &sdlogger.Operation{
-						ID: "6694d2c422acd208a0072939487f6999",
+						ID: "eb9d18a44784045d87f3c67cf22746e9",
 					},
 				},
 			})
@@ -188,7 +192,10 @@ func TestServer(t *testing.T) {
 					http.Error(c.Writer, err.Error(), 500)
 				}
 			})
+
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
+
 			_, err := srv.GetMain("/request", nil)
 			So(err, ShouldBeNil)
 		})
@@ -203,7 +210,9 @@ func TestServer(t *testing.T) {
 				}
 				http.Error(c.Writer, "This should basically be ignored", 500)
 			})
+
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
 
 			_, err := srv.GetMainWithTimeout("/request", nil, time.Second)
 			So(err, ShouldNotBeNil)
@@ -265,6 +274,7 @@ func TestServer(t *testing.T) {
 			})
 
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
 
 			// Run one more activity after starting the serving loop.
 			srv.RunInBackground("background 2", func(ctx context.Context) {
@@ -317,6 +327,7 @@ func TestServer(t *testing.T) {
 			}
 
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
 
 			So(call("A B"), ShouldEqual, "fake_token_1")
 			So(call("B C"), ShouldEqual, "fake_token_2")
@@ -347,7 +358,10 @@ func TestServer(t *testing.T) {
 				c.So(err, ShouldBeNil)
 				c.So(yes, ShouldBeTrue)
 			})
+
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
+
 			_, err := srv.GetMain("/auth-state", map[string]string{
 				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
 			})
@@ -376,6 +390,8 @@ func TestServer(t *testing.T) {
 			})
 
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
+
 			_, err := srv.GetMain("/test-egress", nil)
 			So(err, ShouldBeNil)
 
@@ -391,6 +407,7 @@ func TestServer(t *testing.T) {
 
 		Convey("/auth/api/v1/server/* handlers", func(c C) {
 			srv.ServeInBackground()
+			defer srv.StopBackgroundServing()
 
 			resp, err := srv.GetMain("/auth/api/v1/server/info", nil)
 			So(err, ShouldBeNil)
@@ -431,7 +448,7 @@ func TestH2C(t *testing.T) {
 		})
 
 		srv.ServeInBackground()
-		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
+		defer srv.StopBackgroundServing()
 
 		Convey("HTTP/1", func() {
 			srv.client = http.DefaultClient
@@ -480,75 +497,202 @@ func TestRPCServers(t *testing.T) {
 		}
 	}
 
-	// TODO(vadimsh): Add tests that use gRPC server port.
-	// TODO(vadimsh): Add tests for streaming interceptors as well.
-
 	Convey("With server", t, func() {
 		ctx := context.Background()
 
 		srv, err := newTestServer(ctx, nil)
 		So(err, ShouldBeNil)
 		defer srv.cleanup()
-		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
 
 		rpcSvc := &testRPCServer{}
 		testpb.RegisterTestServer(srv, rpcSvc)
 
-		rpcClient := testpb.NewTestClient(&prpc.Client{
-			Host: srv.mainAddr,
-			Options: &prpc.Options{
-				Insecure: true,
+		conn := srv.GrpcClientConn()
+		defer func() { _ = conn.Close() }()
+
+		clients := []struct {
+			protocol string
+			impl     testpb.TestClient
+		}{
+			{
+				"prpc", testpb.NewTestClient(&prpc.Client{
+					Host:    srv.mainAddr,
+					Options: &prpc.Options{Insecure: true},
+				}),
 			},
-		})
+			{
+				"grpc", testpb.NewTestClient(conn),
+			},
+		}
 
-		Convey("Context features", func() {
-			rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
-				if err := testContextFeatures(ctx); err != nil {
-					return nil, err
+		for _, cl := range clients {
+			protocol := cl.protocol
+			rpcClient := cl.impl
+
+			Convey(protocol+" client", func() {
+				Convey("Context features", func() {
+					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+						if err := testContextFeatures(ctx); err != nil {
+							return nil, err
+						}
+						return &testpb.Response{}, nil
+					}
+
+					srv.ServeInBackground()
+					defer srv.StopBackgroundServing()
+
+					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
+					So(err, ShouldBeNil)
+				})
+
+				Convey("Panic catcher is installed", func() {
+					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+						panic("BOOM")
+					}
+
+					srv.ServeInBackground()
+					defer srv.StopBackgroundServing()
+
+					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
+					So(err, ShouldHaveGRPCStatus, codes.Internal)
+
+					// Logged the panic.
+					So(srv.stdout.Last(2)[0].Fields["panic.error"], ShouldEqual, "BOOM")
+				})
+
+				Convey("Unary interceptors", func() {
+					srv.RegisterStreamServerInterceptors(
+						addingIntr("ignore").Stream(),
+					)
+					srv.RegisterUnaryServerInterceptors(
+						addingIntr("1").Unary(),
+						addingIntr("2").Unary(),
+					)
+					srv.RegisterUnifiedServerInterceptors(
+						addingIntr("3"),
+						addingIntr("4"),
+					)
+
+					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+						return &testpb.Response{Text: getFromCtx(ctx)}, nil
+					}
+
+					srv.ServeInBackground()
+					defer srv.StopBackgroundServing()
+
+					resp, err := rpcClient.Unary(context.Background(), &testpb.Request{})
+					So(err, ShouldBeNil)
+					So(resp.Text, ShouldEqual, "root:1:2:3:4")
+				})
+
+				if protocol == "prpc" {
+					return // streaming is not support by prpc
 				}
-				return &testpb.Response{}, nil
-			}
 
-			srv.ServeInBackground()
+				Convey("Context features in stream RPCs", func() {
+					rpcSvc.clientServerStream = func(ss testpb.Test_ClientServerStreamServer) error {
+						if err := testContextFeatures(ss.Context()); err != nil {
+							return err
+						}
+						for {
+							req, err := ss.Recv()
+							if err == io.EOF {
+								return nil
+							}
+							if err != nil {
+								return err
+							}
+							if err := ss.Send(&testpb.Response{Text: req.Text + ":pong"}); err != nil {
+								return err
+							}
+						}
+					}
 
-			_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-			So(err, ShouldBeNil)
-		})
+					srv.ServeInBackground()
+					defer srv.StopBackgroundServing()
 
-		Convey("Panic catcher is installed", func() {
-			rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
-				panic("BOOM")
-			}
+					cs, err := rpcClient.ClientServerStream(context.Background())
+					So(err, ShouldBeNil)
 
-			srv.ServeInBackground()
+					for i := 0; i < 5; i++ {
+						ping := fmt.Sprintf("ping-%d", i)
+						So(cs.Send(&testpb.Request{Text: ping}), ShouldBeNil)
+						res, err := cs.Recv()
+						So(err, ShouldBeNil)
+						So(res.Text, ShouldEqual, ping+":pong")
+					}
+					So(cs.CloseSend(), ShouldBeNil)
 
-			_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
+					_, err = cs.Recv()
+					So(err, ShouldEqual, io.EOF)
+				})
 
-			// Logged the panic.
-			So(srv.stdout.Last(2)[0].Fields["panic.error"], ShouldEqual, "BOOM")
-		})
+				Convey("Panic catcher in stream RPCs", func() {
+					rpcSvc.serverStream = func(req *testpb.Request, ss testpb.Test_ServerStreamServer) error {
+						_ = ss.Send(&testpb.Response{Text: req.Text + ":pong"})
+						panic("BOOM")
+					}
 
-		Convey("Unary interceptors", func() {
-			srv.RegisterUnaryServerInterceptors(
-				addingIntr("1").Unary(),
-				addingIntr("2").Unary(),
-			)
-			srv.RegisterUnifiedServerInterceptors(
-				addingIntr("3"),
-				addingIntr("4"),
-			)
+					srv.ServeInBackground()
+					defer srv.StopBackgroundServing()
 
-			rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
-				return &testpb.Response{Text: getFromCtx(ctx)}, nil
-			}
+					ss, err := rpcClient.ServerStream(context.Background(), &testpb.Request{Text: "ping"})
+					So(err, ShouldBeNil)
 
-			srv.ServeInBackground()
+					resp, err := ss.Recv()
+					So(err, ShouldBeNil)
+					So(resp.Text, ShouldEqual, "ping:pong")
 
-			resp, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-			So(err, ShouldBeNil)
-			So(resp.Text, ShouldEqual, "root:1:2:3:4")
-		})
+					_, err = ss.Recv()
+					So(err, ShouldHaveGRPCStatus, codes.Internal)
+
+					// Logged the panic.
+					So(srv.stdout.Last(2)[0].Fields["panic.error"], ShouldEqual, "BOOM")
+				})
+
+				Convey("Stream interceptors", func() {
+					srv.RegisterUnaryServerInterceptors(
+						addingIntr("ignore").Unary(),
+					)
+					srv.RegisterStreamServerInterceptors(
+						addingIntr("1").Stream(),
+						addingIntr("2").Stream(),
+					)
+					srv.RegisterUnifiedServerInterceptors(
+						addingIntr("3"),
+						addingIntr("4"),
+					)
+
+					rpcSvc.clientStream = func(ss testpb.Test_ClientStreamServer) error {
+						var all []string
+						for {
+							switch req, err := ss.Recv(); {
+							case err == io.EOF:
+								all = append(all, getFromCtx(ss.Context()))
+								return ss.SendAndClose(&testpb.Response{Text: strings.Join(all, ":")})
+							case err != nil:
+								return nil
+							default:
+								all = append(all, req.Text)
+							}
+						}
+					}
+
+					srv.ServeInBackground()
+					defer srv.StopBackgroundServing()
+
+					cs, err := rpcClient.ClientStream(context.Background())
+					So(err, ShouldBeNil)
+
+					So(cs.Send(&testpb.Request{Text: "a"}), ShouldBeNil)
+					So(cs.Send(&testpb.Request{Text: "b"}), ShouldBeNil)
+
+					resp, err := cs.CloseAndRecv()
+					So(err, ShouldBeNil)
+					So(resp.Text, ShouldEqual, "a:b:root:1:2:3:4")
+				})
+			})
+		}
 	})
 }
 
@@ -791,6 +935,7 @@ type testServer struct {
 	tokens clientauthtest.FakeTokenGenerator
 
 	mainAddr  string
+	grpcAddr  string
 	adminAddr string
 
 	cleanup  func()
@@ -832,6 +977,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 
 	opts.Prod = true
 	opts.HTTPAddr = "main_addr"
+	opts.GRPCAddr = "grpc_addr"
 	opts.AdminAddr = "admin_addr"
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
 	opts.CloudProject = testCloudProjectID
@@ -855,6 +1001,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	// Bind to auto-assigned ports.
 	opts.testListeners = map[string]net.Listener{
 		"main_addr":  setupListener(),
+		"grpc_addr":  setupListener(),
 		"admin_addr": setupListener(),
 	}
 
@@ -872,6 +1019,9 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	mainPort := srv.Options.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
 	srv.mainAddr = fmt.Sprintf("127.0.0.1:%d", mainPort)
 
+	grpcPort := srv.Options.testListeners["grpc_addr"].Addr().(*net.TCPAddr).Port
+	srv.grpcAddr = fmt.Sprintf("127.0.0.1:%d", grpcPort)
+
 	adminPort := srv.Options.testListeners["admin_addr"].Addr().(*net.TCPAddr).Port
 	srv.adminAddr = fmt.Sprintf("127.0.0.1:%d", adminPort)
 
@@ -879,9 +1029,16 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 }
 
 func (s *testServer) ServeInBackground() {
+	if atomic.LoadInt32(&s.serving) == 1 {
+		panic("already serving")
+	}
+
 	go func() { s.serveErr.Set(s.Serve()) }()
 
-	// Wait until both HTTP endpoints are serving before returning.
+	// Wait until both HTTP endpoints are serving before returning. Note that
+	// these calls actually block until the server is up (not just fail) because
+	// the listening sockets are open already, and connections just queue there
+	// waiting for servers to start processing them.
 	if _, err := s.GetMain(healthEndpoint, nil); err != nil {
 		panic(err)
 	}
@@ -889,15 +1046,24 @@ func (s *testServer) ServeInBackground() {
 		panic(err)
 	}
 
+	// Wait until the gRPC server is healthy.
+	conn := s.GrpcClientConn()
+	defer func() { _ = conn.Close() }()
+	health := grpc_health_v1.NewHealthClient(conn)
+	if _, err := health.Check(context.Background(), &grpc_health_v1.HealthCheckRequest{}); err != nil {
+		panic(err)
+	}
+
 	atomic.StoreInt32(&s.serving, 1)
 }
 
-func (s *testServer) StopBackgroundServing() error {
+func (s *testServer) StopBackgroundServing() {
 	if atomic.LoadInt32(&s.serving) == 1 {
 		s.Shutdown()
-		return s.serveErr.Get()
+		if err := s.serveErr.Get(); err != nil {
+			panic(err)
+		}
 	}
-	return nil
 }
 
 // GetMain makes a blocking request to the main serving port, aborting it if
@@ -916,6 +1082,15 @@ func (s *testServer) GetMainWithTimeout(uri string, headers map[string]string, t
 // the server dies.
 func (s *testServer) GetAdmin(uri string, headers map[string]string) (string, error) {
 	return s.get("http://"+s.adminAddr+uri, headers, 0)
+}
+
+// GrpcClientConn returns the gRPC client connection.
+func (s *testServer) GrpcClientConn() *grpc.ClientConn {
+	conn, err := grpc.Dial(s.grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		panic(err)
+	}
+	return conn
 }
 
 // get makes a blocking request, aborting it if the server dies.
