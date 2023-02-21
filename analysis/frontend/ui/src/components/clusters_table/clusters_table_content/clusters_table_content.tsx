@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useContext } from 'react';
+
 import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
 import Table from '@mui/material/Table';
@@ -20,47 +22,60 @@ import TableBody from '@mui/material/TableBody';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchClusters from '@/hooks/use_fetch_clusters';
 
-import {
-  Metric,
-} from '@/services/metrics';
-
-import ClustersTableHead, {
-  OrderBy,
-} from '../clusters_table_head/clusters_table_head';
+import { ClusterTableContextData } from '../clusters_table_context';
+import ClustersTableHead from '../clusters_table_head/clusters_table_head';
 import ClustersTableRow from '../clusters_table_row/clusters_table_row';
+import { useFilterParam as useFailureFilterParam, useOrderByParam, useSelectedMetricsParam } from '../hooks';
 
 interface Props {
   project: string,
-  failureFilter: string,
-  orderBy?: OrderBy,
-  metrics: Metric[],
-  handleOrderByChanged: (orderBy: OrderBy) => void,
 }
 
 const ClustersTableContent = ({
   project,
-  failureFilter,
-  orderBy,
-  metrics,
-  handleOrderByChanged,
 }: Props) => {
+  const metrics = useContext(ClusterTableContextData).metrics;
+
+  const [failureFilter] = useFailureFilterParam();
+  const [orderBy] = useOrderByParam(metrics);
+  const [selectedMetrics] = useSelectedMetricsParam(metrics);
+
+  const fetchMetrics = metrics.filter((m) => selectedMetrics.indexOf(m) > -1);
+
   const {
     isLoading,
     isSuccess,
     data: clusters,
     error,
-  } = useFetchClusters(project, failureFilter, orderBy, metrics);
+  } = useFetchClusters(project,
+      failureFilter,
+      orderBy,
+      fetchMetrics);
 
   const rows = clusters?.clusterSummaries || [];
+
+  if (isLoading && !isSuccess) {
+    return (
+      <Grid container item alignItems="center" justifyContent="center">
+        <CircularProgress />
+      </Grid>
+    );
+  }
+
+  if (error) {
+    return (
+      <LoadErrorAlert
+        entityName="clusters"
+        error={error}
+      />
+    );
+  }
 
   return (
     <>
       <Grid item xs={12}>
         <Table size="small" sx={{ overflowWrap: 'anywhere' }}>
-          <ClustersTableHead
-            handleOrderByChanged={handleOrderByChanged}
-            orderBy={orderBy}
-            metrics={metrics}/>
+          <ClustersTableHead />
           {
             isSuccess && (
               <TableBody data-testid='clusters_table_body'>
@@ -70,36 +85,19 @@ const ClustersTableContent = ({
                       key={`${row.clusterId.algorithm}:${row.clusterId.id}`}
                       project={project}
                       cluster={row}
-                      metrics={metrics}/>
+                    />
                   ))
                 }
               </TableBody>
             )
           }
         </Table>
+        {isSuccess && rows.length === 0 && (
+          <Grid container item alignItems="center" justifyContent="center">
+              Hooray! There are no failures matching the specified criteria.
+          </Grid>
+        )}
       </Grid>
-      {
-        isSuccess && rows.length === 0 && (
-          <Grid container item alignItems="center" justifyContent="center">
-            Hooray! There are no failures matching the specified criteria.
-          </Grid>
-        )
-      }
-      {
-        error && (
-          <LoadErrorAlert
-            entityName="clusters"
-            error={error}
-          />
-        )
-      }
-      {
-        isLoading && (
-          <Grid container item alignItems="center" justifyContent="center">
-            <CircularProgress />
-          </Grid>
-        )
-      }
     </>
   );
 };

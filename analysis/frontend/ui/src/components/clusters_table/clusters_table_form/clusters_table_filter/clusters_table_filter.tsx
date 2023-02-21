@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import Search from '@mui/icons-material/Search';
 import FormControl from '@mui/material/FormControl';
-import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Popover from '@mui/material/Popover';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-interface Props {
-    failureFilter: string,
-    handleFailureFilterChanged: (filter: string) => void
-}
+import { useFilterParam } from '@/components/clusters_table/hooks';
 
 const FilterHelp = () => {
   // TODO: more styling on this.
@@ -54,76 +54,81 @@ const FilterHelp = () => {
   </Typography>;
 };
 
-const ClustersTableFilter = ({
-  failureFilter,
-  handleFailureFilterChanged,
-}: Props) => {
+const ClustersTableFilter = () => {
   const [isDirty, setDirty] = useState<boolean>(false);
   const [filterHelpAnchorEl, setFilterHelpAnchorEl] = useState<HTMLButtonElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [failureFilter, updateFailureFilterParam] = useFilterParam();
+
   useEffect(() => {
     if (!isDirty && inputRef.current) {
       inputRef.current.value = failureFilter;
     }
   }, [isDirty, failureFilter]);
 
+  const handleFailureFilterChanged = (newFilter: string) => {
+    if (newFilter == failureFilter) {
+      return;
+    }
+    updateFailureFilterParam(newFilter);
+  };
+
   return (
-    <Grid container item xs={12} columnGap={2} data-testid="clusters_table_filter">
-      <Grid item xs={12}>
-        <FormControl fullWidth data-testid="failure_filter">
-          <TextField
-            id="failure_filter"
-            inputRef={inputRef}
-            variant='outlined'
-            label='Filter failures'
-            placeholder='Filter test failures used in clusters'
-            onChange={() => {
-              setDirty(true);
-            }}
-            onKeyUp={(e) => {
-              if (e.key == 'Enter' && inputRef.current) {
-                handleFailureFilterChanged(inputRef.current.value);
-                setDirty(false);
-              }
-            }}
-            onBlur={()=> {
-              if (inputRef.current) {
-                handleFailureFilterChanged(inputRef.current.value);
-                setDirty(false);
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle search help"
-                    edge="end"
-                    onClick={(e) => setFilterHelpAnchorEl(e.currentTarget)}
-                  >
-                    {<HelpOutline />}
-                  </IconButton>
-                </InputAdornment>),
-            }}
-            inputProps={{
-              'data-testid': 'failure_filter_input',
-            }}>
-          </TextField>
-        </FormControl>
-        <Popover open={Boolean(filterHelpAnchorEl)} anchorEl={filterHelpAnchorEl} onClose={() => setFilterHelpAnchorEl(null)} anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }} transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}>
-          <FilterHelp />
-        </Popover>
-      </Grid>
-    </Grid>
+    <>
+      <FormControl fullWidth data-testid="failure_filter">
+        <TextField
+          id="failure_filter"
+          inputRef={inputRef}
+          variant='outlined'
+          label='Filter failures'
+          placeholder='Filter test failures used in clusters'
+          onChange={() => {
+            setDirty(true);
+          }}
+          onKeyUp={(e) => {
+            if (e.key == 'Enter' && inputRef.current) {
+              handleFailureFilterChanged(inputRef.current.value);
+              setDirty(false);
+            }
+          }}
+          onBlur={()=> {
+            if (inputRef.current) {
+              handleFailureFilterChanged(inputRef.current.value);
+              setDirty(false);
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle search help"
+                  edge="end"
+                  onClick={(e) => setFilterHelpAnchorEl(e.currentTarget)}
+                >
+                  {<HelpOutline />}
+                </IconButton>
+              </InputAdornment>),
+          }}
+          inputProps={{
+            'data-testid': 'failure_filter_input',
+          }}>
+        </TextField>
+      </FormControl>
+      <Popover open={Boolean(filterHelpAnchorEl)} anchorEl={filterHelpAnchorEl} onClose={() => setFilterHelpAnchorEl(null)} anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'right',
+      }} transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}>
+        <FilterHelp />
+      </Popover>
+    </>
   );
 };
 

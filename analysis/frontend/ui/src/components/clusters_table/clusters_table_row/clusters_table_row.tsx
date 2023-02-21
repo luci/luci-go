@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link as RouterLink } from 'react-router-dom';
+import { useContext } from 'react';
+import {
+  Link as RouterLink,
+  useSearchParams,
+} from 'react-router-dom';
 
 import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
@@ -21,21 +25,23 @@ import TableRow from '@mui/material/TableRow';
 import { ClusterSummary } from '@/services/cluster';
 import { linkToCluster } from '@/tools/urlHandling/links';
 
-import {
-  Metric,
-} from '@/services/metrics';
+import { ClusterTableContextData } from '../clusters_table_context';
 
 interface Props {
   project: string,
   cluster: ClusterSummary,
-  metrics: Metric[],
 }
 
 const ClustersTableRow = ({
   project,
   cluster,
-  metrics,
 }: Props) => {
+  const [searchParams] = useSearchParams();
+  const metrics = useContext(ClusterTableContextData).metrics || [];
+  const selectedMetricsParam = searchParams.get('selectedMetrics') || '';
+
+  const selectedMetrics = selectedMetricsParam?.split(',') || [];
+  const filteredMetrics = metrics.filter((m) => selectedMetrics.indexOf(m.metricId) > -1);
   return (
     <TableRow>
       <TableCell data-testid="clusters_table_title">
@@ -48,7 +54,7 @@ const ClustersTableRow = ({
         }
       </TableCell>
       {
-        metrics.map((metric) => {
+        filteredMetrics.map((metric) => {
           const metrics = cluster.metrics || {};
           const metricValue = metrics[metric.metricId] || { value: '' };
           return (

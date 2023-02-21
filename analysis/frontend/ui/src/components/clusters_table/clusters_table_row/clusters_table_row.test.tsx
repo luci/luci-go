@@ -16,6 +16,7 @@ import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
 
+import { ClusterTableContextWrapper } from '@/components/clusters_table/clusters_table_context';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import {
   getMockRuleClusterSummary,
@@ -30,15 +31,18 @@ describe('Test ClustersTableRow component', () => {
     const metrics = getMockMetricsList();
     const mockCluster = getMockRuleClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-        <table>
-          <tbody>
-            <ClustersTableRow
-              project='testproject'
-              cluster={mockCluster}
-              metrics={metrics}
-            />
-          </tbody>
-        </table>,
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <tbody>
+              <ClustersTableRow
+                project='testproject'
+                cluster={mockCluster}
+              />
+            </tbody>
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+        '/',
     );
 
     await screen.findByText(mockCluster.title);
@@ -55,15 +59,18 @@ describe('Test ClustersTableRow component', () => {
     const metrics = getMockMetricsList();
     const mockCluster = getMockSuggestedClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-        <table>
-          <tbody>
-            <ClustersTableRow
-              project='testproject'
-              cluster={mockCluster}
-              metrics={metrics}
-            />
-          </tbody>
-        </table>,
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <tbody>
+              <ClustersTableRow
+                project='testproject'
+                cluster={mockCluster}
+              />
+            </tbody>
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+        '/',
     );
 
     await screen.findByText(mockCluster.title);

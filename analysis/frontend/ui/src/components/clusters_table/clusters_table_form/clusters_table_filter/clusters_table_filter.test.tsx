@@ -14,37 +14,32 @@
 
 import '@testing-library/jest-dom';
 
-import {
-  render,
-  screen,
-} from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
-import { identityFunction } from '@/testing_tools/functions';
+import { renderWithRouter } from '@/testing_tools/libs/mock_router';
 
 import ClustersTableFilter from './clusters_table_filter';
 
 describe('Test ClustersTableFilter component', () => {
   it('should display the failures filter', async () => {
-    render(
-        <ClustersTableFilter
-          failureFilter=""
-          handleFailureFilterChanged={identityFunction}/>,
+    renderWithRouter(
+        <ClustersTableFilter />,
+        '/?q=',
     );
 
-    await screen.findByTestId('clusters_table_filter');
+    await screen.findByTestId('failure_filter');
 
     expect(screen.getByTestId('failure_filter')).toBeInTheDocument();
   });
 
   it('given an existing filter, the filter should be pre-populated', async () => {
-    render(
-        <ClustersTableFilter
-          failureFilter="some restriction"
-          handleFailureFilterChanged={identityFunction}/>,
+    renderWithRouter(
+        <ClustersTableFilter />,
+        '/?q=restriction',
     );
 
-    await screen.findByTestId('clusters_table_filter');
+    await screen.findByTestId('failure_filter_input');
 
-    expect(screen.getByTestId('failure_filter_input')).toHaveValue('some restriction');
+    expect(screen.getByTestId('failure_filter_input')).toHaveValue('restriction');
   });
 });

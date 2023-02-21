@@ -13,38 +13,38 @@
 // limitations under the License.
 
 export function setupTestRule() {
-    cy.request({
-        url: '/api/authState',
-        headers: {
-            'Sec-Fetch-Site': 'same-origin',
-        }
-    }).then((response) => {
-        assert.strictEqual(response.status, 200);
-        const body = response.body;
-        const accessToken = body.accessToken;
-        assert.isString(accessToken);
-        assert.notEqual(accessToken, '');
+  cy.request({
+    url: '/api/authState',
+    headers: {
+      'Sec-Fetch-Site': 'same-origin',
+    },
+  }).then((response) => {
+    assert.strictEqual(response.status, 200);
+    const body = response.body;
+    const accessToken = body.accessToken;
+    assert.isString(accessToken);
+    assert.notEqual(accessToken, '');
 
-        // Set initial rule state.
-        cy.request({
-            method: 'POST',
-            url:  '/prpc/luci.analysis.v1.Rules/Update',
-            body: {
-                rule: {
-                    name: 'projects/chromium/rules/ea5305bc5069b449ee43ee64d26d667f',
-                    ruleDefinition: 'test = "cypress test 1"',
-                    bug: {
-                        system: 'monorail',
-                        id: 'chromium/920867',
-                    },
-                    isActive: true,
-                    isManagingBug: true,
-                },
-                updateMask: 'ruleDefinition,bug,isActive,isManagingBug',
-            },
-            headers: {
-                Authorization: 'Bearer ' + accessToken,
-            },
-        });
+    // Set initial rule state.
+    cy.request({
+      method: 'POST',
+      url: '/prpc/luci.analysis.v1.Rules/Update',
+      body: {
+        rule: {
+          name: 'projects/chromium/rules/ea5305bc5069b449ee43ee64d26d667f',
+          ruleDefinition: 'test = "cypress test 1"',
+          bug: {
+            system: 'monorail',
+            id: 'chromium/920867',
+          },
+          isActive: true,
+          isManagingBug: true,
+        },
+        updateMask: 'ruleDefinition,bug,isActive,isManagingBug',
+      },
+      headers: {
+        Authorization: 'Bearer ' + accessToken,
+      },
     });
+  });
 }

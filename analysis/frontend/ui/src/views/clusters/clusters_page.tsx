@@ -38,7 +38,7 @@ const ClustersPage = () => {
         </Grid>
       </Grid>
       {(project) && (
-        <ClustersTable project={project}></ClustersTable>
+        <ClustersTable project={project} />
       )}
     </Container>
   );

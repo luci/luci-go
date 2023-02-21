@@ -12,35 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useContext } from 'react';
+
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
+import { ClusterTableContextData } from '@/components/clusters_table/clusters_table_context';
 import {
-  MetricId,
-} from '@/services/shared_models';
+  OrderBy,
+  useOrderByParam,
+  useSelectedMetricsParam,
+} from '@/components/clusters_table/hooks';
+import { Metric } from '@/services/metrics';
+import { MetricId } from '@/services/shared_models';
 
-import {
-  Metric,
-} from '@/services/metrics';
+const ClustersTableHead = () => {
+  const { metrics } = useContext(ClusterTableContextData);
 
-interface Props {
-    orderBy?: OrderBy,
-    metrics: Metric[],
-    handleOrderByChanged: (orderBy: OrderBy) => void,
-}
+  const [orderBy, updateOrderByParams] = useOrderByParam(metrics);
 
-export interface OrderBy {
-  metric: MetricId,
-  isAscending: boolean,
-}
+  const [selectedMetrics] = useSelectedMetricsParam(metrics);
+  const filteredMetrics = metrics.filter((m) => selectedMetrics.indexOf(m) > -1);
 
-const ClustersTableHead = ({
-  orderBy,
-  metrics,
-  handleOrderByChanged,
-}: Props) => {
+  const handleOrderByChanged = (newOrderBy: OrderBy) => {
+    updateOrderByParams(newOrderBy);
+  };
+
   const toggleSort = (metric: MetricId) => {
     if (orderBy && orderBy.metric === metric) {
       handleOrderByChanged({
@@ -61,7 +60,7 @@ const ClustersTableHead = ({
         <TableCell>Cluster</TableCell>
         <TableCell sx={{ width: '150px' }}>Bug</TableCell>
         {
-          metrics.map((metric: Metric) => (
+          filteredMetrics.map((metric: Metric) => (
             <TableCell
               key={metric.metricId}
               sortDirection={(orderBy && (orderBy.metric === metric.metricId)) ? (orderBy.isAscending ? 'asc' : 'desc') : false}

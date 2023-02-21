@@ -75,6 +75,7 @@ const useFetchClusters = (
         return await clustersService.queryClusterSummaries(request);
       }, {
         retry: prpcRetrier,
+        enabled: orderBy !== undefined && orderBy.metric !== '' && metrics.length > 0,
       },
   );
 };

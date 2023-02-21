@@ -14,31 +14,33 @@
 
 import '@testing-library/jest-dom';
 
-import {
-  render,
-  screen,
-} from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 
-import { identityFunction } from '@/testing_tools/functions';
 import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 
+import { renderWithRouter } from '@/testing_tools/libs/mock_router';
+
+import { ClusterTableContextWrapper } from '@/components/clusters_table/clusters_table_context';
 import ClustersTableHead from './clusters_table_head';
 
 describe('Test ClustersTableHead', () => {
   it('should display sortable table head', async () => {
     const metrics = getMockMetricsList();
-    render(
-        <table>
-          <ClustersTableHead
-            metrics={metrics}
-            handleOrderByChanged={identityFunction}/>
-        </table>,
+    renderWithRouter(
+        <ClusterTableContextWrapper metrics={metrics}>
+          <table>
+            <ClustersTableHead />
+          </table>
+        </ClusterTableContextWrapper>,
+        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,failures',
     );
 
     await (screen.findByTestId('clusters_table_head'));
 
-    expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument();
-    expect(screen.getByText('Presubmit-blocking Failures Exonerated')).toBeInTheDocument();
-    expect(screen.getByText('Total Failures')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument();
+      expect(screen.getByText('Presubmit-blocking Failures Exonerated')).toBeInTheDocument();
+      expect(screen.getByText('Total Failures')).toBeInTheDocument();
+    });
   });
 });

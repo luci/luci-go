@@ -19,6 +19,8 @@ import fetchMock from 'fetch-mock-jest';
 import {
   fireEvent,
   screen,
+  waitFor,
+  within,
 } from '@testing-library/react';
 
 import {
@@ -82,15 +84,11 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable
-          project="testproject"/>,
+        <ClustersTable project="testproject"/>,
     );
-
     await screen.findByTestId('clusters_table_body');
-
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
     expect(screen.getByText('Metric Beta')).toBeInTheDocument();
-    expect(screen.queryByText('Metric Charlie')).not.toBeInTheDocument();
   });
 
   it('given clusters, it should display them', async () => {
@@ -104,20 +102,19 @@ describe('Test ClustersTable component', () => {
       project: 'testproject',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit', 'metrics/critical-failures-exonerated', 'metrics/failures'],
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable
-          project="testproject"/>,
+        <ClustersTable project="testproject" />,
     );
 
-    await screen.findByTestId('clusters_table_body');
-
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(screen.getByText(mockClusters[1].bug!.linkText)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(mockClusters[1].bug!.linkText)).toBeInTheDocument());
   });
 
   it('given no clusters, it should display an appropriate message', async () => {
@@ -127,14 +124,15 @@ describe('Test ClustersTable component', () => {
       project: 'testproject',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit', 'metrics/critical-failures-exonerated', 'metrics/failures'],
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable
-          project="testproject"/>,
+        <ClustersTable project="testproject"/>,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -151,7 +149,9 @@ describe('Test ClustersTable component', () => {
       project: 'testproject',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit', 'metrics/critical-failures-exonerated', 'metrics/failures'],
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
     };
     const response: QueryClusterSummariesResponse = {
       clusterSummaries: [suggestedCluster, ruleCluster],
@@ -159,8 +159,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable
-          project="testproject"/>,
+        <ClustersTable project="testproject"/>,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -170,7 +169,9 @@ describe('Test ClustersTable component', () => {
       project: 'testproject',
       orderBy: 'metrics.`failures`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit', 'metrics/critical-failures-exonerated', 'metrics/failures'],
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
     };
     const ruleCluster2 = getMockRuleClusterSummary('20000000000000002000000000000000');
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -197,7 +198,9 @@ describe('Test ClustersTable component', () => {
       project: 'testproject',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
-      metrics: ['metrics/human-cls-failed-presubmit', 'metrics/critical-failures-exonerated', 'metrics/failures'],
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
     };
     const response: QueryClusterSummariesResponse = {
       clusterSummaries: [suggestedCluster, ruleCluster],
@@ -205,8 +208,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable
-          project="testproject"/>,
+        <ClustersTable project="testproject"/>,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -216,7 +218,9 @@ describe('Test ClustersTable component', () => {
       project: 'testproject',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: 'new_criteria',
-      metrics: ['metrics/human-cls-failed-presubmit', 'metrics/critical-failures-exonerated', 'metrics/failures'],
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
     };
     const ruleCluster2 = getMockRuleClusterSummary('20000000000000002000000000000000');
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -229,8 +233,130 @@ describe('Test ClustersTable component', () => {
     fireEvent.change(screen.getByTestId('failure_filter_input'), { target: { value: 'new_criteria' } });
     fireEvent.blur(screen.getByTestId('failure_filter_input'));
 
-    await screen.findByText('crbug.com/3333333');
+    await waitFor(() => expect(screen.getByText('crbug.com/3333333')).toBeInTheDocument());
+  });
 
-    expect(screen.getByText('crbug.com/3333333')).toBeInTheDocument();
+  it('when changing metrics should hide columns', async () => {
+    mockFetchMetrics();
+
+    const mockClusters = [
+      getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf'),
+      getMockRuleClusterSummary('10000000000000001000000000000000'),
+    ];
+    const request: QueryClusterSummariesRequest = {
+      project: 'testproject',
+      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
+      failureFilter: '',
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
+    };
+    const response: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
+    mockQueryClusterSummaries(request, response);
+
+    renderWithRouterAndClient(
+        <ClustersTable project="testproject" />,
+    );
+
+    await screen.findByTestId('clusters_table_head');
+
+    expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument();
+
+    fireEvent.mouseDown(within(screen.getByTestId('metrics-selection')).getByRole('button'));
+
+    const request2 = {
+      project: 'testproject',
+      failureFilter: '',
+      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
+      metrics: ['metrics/critical-failures-exonerated', 'metrics/failures'],
+    };
+    const response2 = { clusterSummaries: mockClusters };
+
+    mockQueryClusterSummaries(request2, response2);
+
+    const listOfItems = within(screen.getByRole('listbox'));
+    fireEvent.click(listOfItems.getByText('User Cls Failed Presubmit'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('clusters_table_head')).toBeInTheDocument();
+      expect(within(screen.getByTestId('clusters_table_head')).queryByText('User Cls Failed Presubmit'))
+          .not.toBeInTheDocument();
+    });
+  });
+
+  it('when removing order by column, should select highest sort order in selected metrics', async () => {
+    const metrics : Metric[] = [{
+      name: 'metrics/metric-a',
+      metricId: 'metric-a',
+      humanReadableName: 'Metric Alpha',
+      description: 'Metric alpha is the first metric',
+      isDefault: true,
+      sortPriority: 20,
+    }, {
+      name: 'metrics/metric-b',
+      metricId: 'metric-b',
+      humanReadableName: 'Metric Beta',
+      description: 'Metric beta is the second metric',
+      isDefault: true,
+      sortPriority: 10,
+    }, {
+      name: 'metrics/metric-c',
+      metricId: 'metric-c',
+      humanReadableName: 'Metric Charlie',
+      description: 'Metric charlie is the third metric',
+      isDefault: false,
+      sortPriority: 30,
+    }];
+    mockFetchMetrics(metrics);
+
+    // Only default metrics (i.e. metric A and B) should be queried and shown.
+    const request: QueryClusterSummariesRequest = {
+      project: 'testproject',
+      orderBy: 'metrics.`metric-a`.value desc',
+      failureFilter: '',
+      metrics: ['metrics/metric-a', 'metrics/metric-b'],
+    };
+    const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
+    mockQueryClusterSummaries(request, response);
+
+    renderWithRouterAndClient(
+        <ClustersTable project="testproject"/>,
+    );
+    await screen.findByTestId('clusters_table_body');
+    expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Metric Beta')).toBeInTheDocument();
+
+    fireEvent.mouseDown(within(screen.getByTestId('metrics-selection')).getByRole('button'));
+
+    const request2: QueryClusterSummariesRequest = { 'project': 'testproject',
+      'failureFilter': '',
+      'orderBy': 'metrics.`metric-a`.value desc',
+      'metrics': ['metrics/metric-a', 'metrics/metric-b', 'metrics/metric-c'],
+    };
+    const response2 = { clusterSummaries: [] };
+
+    mockQueryClusterSummaries(request2, response2);
+
+    const listOfItems = within(screen.getByRole('listbox'));
+    await fireEvent.click(listOfItems.getByText('Metric Charlie'));
+    await screen.findByTestId('clusters_table_head');
+
+    const request3 = {
+      project: 'testproject',
+      failureFilter: '',
+      orderBy: 'metrics.`metric-c`.value desc',
+      metrics: ['metrics/metric-b', 'metrics/metric-c'],
+    };
+    const response3 = { clusterSummaries: [] };
+
+    mockQueryClusterSummaries(request3, response3);
+    await fireEvent.click(listOfItems.getByText('Metric Alpha'));
+    await screen.findByTestId('clusters_table_head');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('clusters_table_head')).toBeInTheDocument();
+      expect(within(screen.getByTestId('clusters_table_head')).getByText('Metric Charlie')).toBeInTheDocument();
+      expect(within(screen.getByTestId('clusters_table_head')).queryByText('Metric Alpha')).not.toBeInTheDocument();
+    });
   });
 });

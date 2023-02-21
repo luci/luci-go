@@ -14,7 +14,6 @@
 /* eslint-disable valid-jsdoc */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { FC } from 'react';
 import {
   QueryClient,
   QueryClientProvider,
@@ -38,14 +37,18 @@ import {
  * @return The render result.
  */
 export const renderWithRouter = (
-
-    ui: React.ReactElement<any, string | React.JSXElementConstructor<any>>,
+    ui: React.ReactElement,
     route = '/',
 ): RenderResult => {
   window.history.pushState({}, 'Test page', route);
 
   return render(ui, { wrapper: Router });
 };
+
+
+interface Props {
+  children: React.ReactNode
+}
 
 /**
  * Renders a component with a mock router and a mock query client.
@@ -61,7 +64,7 @@ export const renderWithRouterAndClient = (
     route = '/',
     routeDefinition = '',
 ) => {
-  const wrapper: FC = ({ children }) => {
+  const wrapper = ({ children }: Props) => {
     return (
       <Router >
         <Routes>

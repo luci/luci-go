@@ -80,6 +80,6 @@
     "react-query": "^3.34.16",
     "react-router-dom": "^6.2.2",
     "react-use": "^17.3.2",
-    "recharts": "^2.1.16"
+    "recharts": "^2.4.1"
   }
 }
