@@ -15,15 +15,14 @@
 package model
 
 import (
-	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"strings"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth_service/testsupport"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -118,7 +117,7 @@ func TestExtractTarArchive(t *testing.T) {
 			"ldap/deeper/group-a": []byte("a\nb"),
 			"not-ldap/group-a":    []byte("a\nb"),
 		}
-		bundle := buildTargz(expected)
+		bundle := testsupport.BuildTargz(expected)
 		entries, err := extractTarArchive(bytes.NewReader(bundle))
 		So(err, ShouldBeNil)
 		So(entries, ShouldResemble, expected)
@@ -131,7 +130,7 @@ func TestLoadTarball(t *testing.T) {
 
 	Convey("testing loadTarball", t, func() {
 		Convey("invalid tarball bad identity", func() {
-			bundle := buildTargz(map[string][]byte{
+			bundle := testsupport.BuildTargz(map[string][]byte{
 				"at_root":      []byte("a\nb"),
 				"ldap/group-a": []byte("a\n!!!!!!"),
 			})
@@ -139,7 +138,7 @@ func TestLoadTarball(t *testing.T) {
 			So(err, ShouldErrLike, `auth: bad value "!!!!!!@example.com" for identity kind "user"`)
 		})
 		Convey("valid tarball with skippable files", func() {
-			bundle := buildTargz(map[string][]byte{
+			bundle := testsupport.BuildTargz(map[string][]byte{
 				"at_root":             []byte("a\nb"),
 				"ldap/ bad name":      []byte("a\nb"),
 				"ldap/group-a":        []byte("a\nb"),
@@ -176,7 +175,7 @@ func TestIngestTarball(t *testing.T) {
 
 	cfg := testGroupImporterConfig()
 
-	bundle := buildTargz(map[string][]byte{
+	bundle := testsupport.BuildTargz(map[string][]byte{
 		"at_root":            []byte("a\nb"),
 		"tst/ bad name":      []byte("a\nb"),
 		"tst/group-a":        []byte("a@example.com\nb@example.test.com"),
@@ -227,36 +226,4 @@ func TestIngestTarball(t *testing.T) {
 			})
 		})
 	})
-}
-
-func buildTargz(files map[string][]byte) []byte {
-	var buf bytes.Buffer
-	gzw := gzip.NewWriter(&buf)
-	tw := tar.NewWriter(gzw)
-	for name, body := range files {
-		hdr := &tar.Header{
-			Name: name,
-			Mode: 0600,
-			Size: int64(len(body)),
-		}
-		if err := tw.WriteHeader(hdr); err != nil {
-			return nil
-		}
-		if _, err := tw.Write(body); err != nil {
-			return nil
-		}
-	}
-	if err := tw.Flush(); err != nil {
-		return nil
-	}
-	if err := tw.Close(); err != nil {
-		return nil
-	}
-	if err := gzw.Flush(); err != nil {
-		return nil
-	}
-	if err := gzw.Close(); err != nil {
-		return nil
-	}
-	return buf.Bytes()
 }
