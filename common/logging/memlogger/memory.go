@@ -30,7 +30,7 @@ import (
 type LogEntry struct {
 	Level     logging.Level
 	Msg       string
-	Data      map[string]interface{}
+	Data      map[string]any
 	CallDepth int
 }
 
@@ -39,33 +39,33 @@ type LogEntry struct {
 type MemLogger struct {
 	lock   *sync.Mutex
 	data   *[]LogEntry
-	fields map[string]interface{}
+	fields map[string]any
 }
 
 var _ logging.Logger = (*MemLogger)(nil)
 
 // Debugf implements the logging.Logger interface.
-func (m *MemLogger) Debugf(format string, args ...interface{}) {
+func (m *MemLogger) Debugf(format string, args ...any) {
 	m.LogCall(logging.Debug, 1, format, args)
 }
 
 // Infof implements the logging.Logger interface.
-func (m *MemLogger) Infof(format string, args ...interface{}) {
+func (m *MemLogger) Infof(format string, args ...any) {
 	m.LogCall(logging.Info, 1, format, args)
 }
 
 // Warningf implements the logging.Logger interface.
-func (m *MemLogger) Warningf(format string, args ...interface{}) {
+func (m *MemLogger) Warningf(format string, args ...any) {
 	m.LogCall(logging.Warning, 1, format, args)
 }
 
 // Errorf implements the logging.Logger interface.
-func (m *MemLogger) Errorf(format string, args ...interface{}) {
+func (m *MemLogger) Errorf(format string, args ...any) {
 	m.LogCall(logging.Error, 1, format, args)
 }
 
 // LogCall implements the logging.Logger interface.
-func (m *MemLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
+func (m *MemLogger) LogCall(lvl logging.Level, calldepth int, format string, args []any) {
 	if m.lock != nil {
 		m.lock.Lock()
 		defer m.lock.Unlock()
@@ -122,7 +122,7 @@ func (m *MemLogger) GetFunc(f func(*LogEntry) bool) *LogEntry {
 
 // Get returns the first matching log entry.
 // Note that lvl, msg and data have to match the entry precisely.
-func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]interface{}) *LogEntry {
+func (m *MemLogger) Get(lvl logging.Level, msg string, data map[string]any) *LogEntry {
 	return m.GetFunc(func(ent *LogEntry) bool {
 		return ent.Level == lvl && ent.Msg == msg && reflect.DeepEqual(data, ent.Data)
 	})
@@ -135,7 +135,7 @@ func (m *MemLogger) HasFunc(f func(*LogEntry) bool) bool {
 
 // Has returns true iff the MemLogger contains the specified log message.
 // Note that lvl, msg and data have to match the entry precisely.
-func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]interface{}) bool {
+func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]any) bool {
 	return m.Get(lvl, msg, data) != nil
 }
 

@@ -77,7 +77,7 @@ func clientIDHandler(c *router.Context) {
 
 ////
 
-func httpReply(c *router.Context, code int, out interface{}) {
+func httpReply(c *router.Context, code int, out any) {
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(code)
 	if err := json.NewEncoder(c.Writer).Encode(out); err != nil {

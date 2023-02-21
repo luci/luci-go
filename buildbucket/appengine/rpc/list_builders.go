@@ -125,7 +125,7 @@ func (*Builders) ListBuilders(ctx context.Context, req *pb.ListBuildersRequest) 
 func fetchBuilders(ctx context.Context, q *datastore.Query, allowedBuckets []string, pageSize int32) (builders []*model.Builder, nextCursor datastore.Cursor, err error) {
 	// Note: this function is fairly generic, but the only reason it is currently
 	// Builder-specific is because datastore.Run does not accept callback
-	// signature func(interface{}, CursorCB).
+	// signature func(any, CursorCB).
 
 	if pageSize <= 0 {
 		pageSize = 100

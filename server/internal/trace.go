@@ -100,7 +100,7 @@ func (s ocSpan) End(err error) {
 }
 
 // Attribute annotates the span with an attribute.
-func (s ocSpan) Attribute(key string, val interface{}) {
+func (s ocSpan) Attribute(key string, val any) {
 	var a octrace.Attribute
 	switch val := val.(type) {
 	case string:

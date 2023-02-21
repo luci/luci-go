@@ -37,7 +37,7 @@ func TestMetrics(t *testing.T) {
 	ctx = caching.WithEmptyProcessCache(ctx)
 
 	s := tsmon.Store(ctx)
-	fields := []interface{}{"bots", "anonymous:anonymous", "GCS"}
+	fields := []any{"bots", "anonymous:anonymous", "GCS"}
 
 	Convey("FileSize", t, func() {
 		So(cachedCfg.Set(ctx, &api.ClientMonitoringWhitelist{

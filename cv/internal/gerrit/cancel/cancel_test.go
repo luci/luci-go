@@ -401,10 +401,10 @@ func TestCancel(t *testing.T) {
 				},
 			}
 
-			ultraQuick := func(value int, timeAndUser ...interface{}) gf.CIModifier {
+			ultraQuick := func(value int, timeAndUser ...any) gf.CIModifier {
 				return gf.Vote(uLabel, value, timeAndUser...)
 			}
-			quick := func(value int, timeAndUser ...interface{}) gf.CIModifier {
+			quick := func(value int, timeAndUser ...any) gf.CIModifier {
 				return gf.Vote(qLabel, value, timeAndUser...)
 			}
 			// Exact timestamps don't matter in this test, but in practice they affect

@@ -59,6 +59,6 @@ func (f stringPairsFlag) Set(s string) error {
 }
 
 // Get retrieves the flag value.
-func (f stringPairsFlag) Get() interface{} {
+func (f stringPairsFlag) Get() any {
 	return strpair.Map(f)
 }

@@ -23,7 +23,7 @@ import (
 )
 
 // Item is one item that when processed may result in more items.
-type Item interface{}
+type Item any
 
 // WorkSet represents an unordered collection of some work items.
 //

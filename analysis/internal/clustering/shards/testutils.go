@@ -89,7 +89,7 @@ func SetShardsForTesting(ctx context.Context, rs []ReclusteringShard) error {
 	// Insert some ReclusteringShards.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, r := range rs {
-			ms := spanutil.InsertMap("ReclusteringShards", map[string]interface{}{
+			ms := spanutil.InsertMap("ReclusteringShards", map[string]any{
 				"ShardNumber":      r.ShardNumber,
 				"Project":          r.Project,
 				"AttemptTimestamp": r.AttemptTimestamp,

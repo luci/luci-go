@@ -23,8 +23,8 @@ import (
 // Slice abstracts out copy-on-write slices of pointers to objects.
 type Slice interface {
 	Len() int
-	At(index int) interface{}
-	Append(v interface{}) Slice
+	At(index int) any
+	Append(v any) Slice
 	// CloneShallow returns new slice of the given capacity with elements copied
 	// from [:length] of this slice.
 	CloneShallow(length, capacity int) Slice
@@ -46,7 +46,7 @@ type SortedSlice interface {
 	// can smartly re-use resulting slice for this. However, either way it's
 	// slower and more complicated than requiring boilerplate in each SortedSlice
 	// type, which can be re-used in Less() implementation.
-	LessElements(a, b interface{}) bool
+	LessElements(a, b any) bool
 }
 
 // Deletion is special return value for Modifier to imply deletion.
@@ -59,7 +59,7 @@ type deletion struct{}
 //   - the same object, if there are no modifications;
 //   - new object, if there were modifications. If working with SortedSlice,
 //     the new object must have the same sorting key.
-type Modifier func(interface{}) interface{}
+type Modifier func(any) any
 
 // Update modifies existing elements and adds new ones to Slice.
 //
@@ -133,7 +133,7 @@ func Update(in Slice, modifier Modifier, toAdd Slice) (Slice, bool) {
 	}
 }
 
-func noopModifier(v interface{}) interface{} { return v }
+func noopModifier(v any) any { return v }
 
 func modifyRemaining(in Slice, i int, modifier Modifier, out Slice) (Slice, bool) {
 	l := in.Len()

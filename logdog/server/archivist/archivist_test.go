@@ -699,11 +699,11 @@ func TestHandleArchive(t *testing.T) {
 		})
 
 		Convey(`Will update metric`, func() {
-			fv := func(vs ...interface{}) []interface{} {
-				ret := []interface{}{project}
+			fv := func(vs ...any) []any {
+				ret := []any{project}
 				return append(ret, vs...)
 			}
-			dSum := func(val interface{}) interface{} {
+			dSum := func(val any) any {
 				return val.(*distribution.Distribution).Sum()
 			}
 

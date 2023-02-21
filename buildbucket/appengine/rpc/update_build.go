@@ -47,7 +47,7 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-var emptyStruct, _ = structpb.NewStruct(map[string]interface{}{})
+var emptyStruct, _ = structpb.NewStruct(map[string]any{})
 
 func nilifyReqBuildDetails(b *pb.Build) func() {
 	origTags, origSteps, origOutProp := b.Tags, b.Steps, emptyStruct
@@ -402,7 +402,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		if err = checkBuildForUpdate(updateMask, req, b); err != nil {
 			return err
 		}
-		toSave := []interface{}{b}
+		toSave := []any{b}
 		var toSaveOutputProperties *model.BuildOutputProperties
 		bk := datastore.KeyForObj(ctx, b)
 

@@ -118,7 +118,7 @@ func (t *DummyProject) toMetricsProto(d *pb.MetricsCollection) {
 		}
 		props.Parse(tag)
 
-		var v interface{}
+		var v any
 		switch fv := sv.Field(i); fv.Kind() {
 		case reflect.Int64:
 			v = fv.Int()

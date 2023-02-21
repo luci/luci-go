@@ -354,7 +354,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		// Setup a full HTTP server in order to retrieve response headers.
 		server := &prpctest.Server{}
-		server.UnaryServerInterceptor = func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		server.UnaryServerInterceptor = func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 			res, err := handler(ctx, req)
 			err = appstatus.GRPCifyAndLog(ctx, err)
 			return res, err
@@ -544,7 +544,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time
-			err = invocations.ReadColumns(ctx, "u-inv", map[string]interface{}{
+			err = invocations.ReadColumns(ctx, "u-inv", map[string]any{
 				"InvocationExpirationTime":          &invExpirationTime,
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})

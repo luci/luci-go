@@ -251,7 +251,7 @@ func (r *indexRange) String() string { return fmt.Sprintf("[%d..%d]", r.start, r
 
 // shouldHaveRegisteredStream asserts that a testCoordinator has
 // registered a stream (string) and its terminal index (int).
-func shouldHaveRegisteredStream(actual interface{}, expected ...interface{}) string {
+func shouldHaveRegisteredStream(actual any, expected ...any) string {
 	tcc := actual.(*testCoordinator)
 
 	if len(expected) != 3 {
@@ -276,7 +276,7 @@ func shouldHaveRegisteredStream(actual interface{}, expected ...interface{}) str
 
 // shoudNotHaveRegisteredStream asserts that a testCoordinator has not
 // registered a stream (string).
-func shouldNotHaveRegisteredStream(actual interface{}, expected ...interface{}) string {
+func shouldNotHaveRegisteredStream(actual any, expected ...any) string {
 	tcc := actual.(*testCoordinator)
 	if len(expected) != 2 {
 		return "invalid number of expected arguments (should be 2)."
@@ -296,7 +296,7 @@ func shouldNotHaveRegisteredStream(actual interface{}, expected ...interface{}) 
 // actual is the storage.Storage instance. expected is a stream name (string)
 // followed by a a series of records to assert. This can either be a specific
 // integer index or an intexRange marking a closed range of indices.
-func shouldHaveStoredStream(actual interface{}, expected ...interface{}) string {
+func shouldHaveStoredStream(actual any, expected ...any) string {
 	st := actual.(storage.Storage)
 	project := expected[0].(string)
 	name := expected[1].(string)

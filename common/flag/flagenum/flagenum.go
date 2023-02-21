@@ -30,13 +30,13 @@ import (
 //
 // Strings can be mapped to any value type that is comparable via
 // reflect.DeepEqual.
-type Enum map[string]interface{}
+type Enum map[string]any
 
 // GetKey performs reverse lookup of the enumeration value, returning the
 // key that corresponds to the value.
 //
 // If multiple keys correspond to the same value, the result is undefined.
-func (e Enum) GetKey(value interface{}) string {
+func (e Enum) GetKey(value any) string {
 	for k, v := range e {
 		if reflect.DeepEqual(v, value) {
 			return k
@@ -46,7 +46,7 @@ func (e Enum) GetKey(value interface{}) string {
 }
 
 // GetValue returns the mapped enumeration value associated with a key.
-func (e Enum) GetValue(key string) (interface{}, error) {
+func (e Enum) GetValue(key string) (any, error) {
 	for k, v := range e {
 		if k == key {
 			return v, nil
@@ -69,7 +69,7 @@ func (e Enum) Choices() string {
 }
 
 // Sets the value v to the enumeration value mapped to the supplied key.
-func (e Enum) setValue(v interface{}, key string) error {
+func (e Enum) setValue(v any, key string) error {
 	i, err := e.GetValue(key)
 	if err != nil {
 		return err
@@ -94,12 +94,12 @@ func (e Enum) setValue(v interface{}, key string) error {
 // associated with the supplied key and stores it in the supplied interface.
 //
 // The interface, v, must be a valid pointer to the mapped enumeration type.
-func (e Enum) FlagSet(v interface{}, key string) error {
+func (e Enum) FlagSet(v any, key string) error {
 	return e.setValue(v, key)
 }
 
 // FlagString implements flag.Value's String semantics.
-func (e Enum) FlagString(v interface{}) string {
+func (e Enum) FlagString(v any) string {
 	return e.GetKey(v)
 }
 
@@ -109,7 +109,7 @@ func (e Enum) FlagString(v interface{}) string {
 //
 // The interface, v, must be a valid pointer to the mapped enumeration type.
 // a string corresponding to one of the enum's keys.
-func (e Enum) JSONUnmarshal(v interface{}, data []byte) error {
+func (e Enum) JSONUnmarshal(v any, data []byte) error {
 	s := ""
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
@@ -122,7 +122,7 @@ func (e Enum) JSONUnmarshal(v interface{}, data []byte) error {
 // string containing that key.
 //
 // The interface, v, must be a valid pointer to the mapped enumeration type.
-func (e Enum) JSONMarshal(v interface{}) ([]byte, error) {
+func (e Enum) JSONMarshal(v any) ([]byte, error) {
 	key := e.GetKey(v)
 	data, err := json.Marshal(&key)
 	if err != nil {

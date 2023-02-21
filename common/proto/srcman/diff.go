@@ -35,7 +35,7 @@ import (
 //   - Whatever the callback method returns
 //
 // The callback method is required for non-string types.
-func zeroCmpTwo(a, b interface{}, modCb func() ManifestDiff_Stat) ManifestDiff_Stat {
+func zeroCmpTwo(a, b any, modCb func() ManifestDiff_Stat) ManifestDiff_Stat {
 	av, bv := reflect.ValueOf(a), reflect.ValueOf(b)
 	t := av.Type()
 	if t != bv.Type() {

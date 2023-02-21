@@ -39,7 +39,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		c, memStore := testContext()
 
 		// Handler that runs for 500 ms.
-		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		handler := func(ctx context.Context, req any) (any, error) {
 			clock.Get(ctx).(testclock.TestClock).Add(500 * time.Millisecond)
 			return struct{}{}, status.Error(codes.Internal, "errored internally")
 		}
@@ -49,10 +49,10 @@ func TestUnaryServerInterceptor(t *testing.T) {
 			FullMethod: "/service/method",
 		}, handler)
 
-		count := memStore.Get(c, grpcServerCount, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
+		count := memStore.Get(c, grpcServerCount, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
 		So(count, ShouldEqual, 1)
 
-		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
+		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
 		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
 	})
 }
@@ -62,7 +62,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 		c, memStore := testContext()
 
 		// Handler that runs for 500 ms.
-		handler := func(srv interface{}, ss grpc.ServerStream) error {
+		handler := func(srv any, ss grpc.ServerStream) error {
 			clock.Get(ss.Context()).(testclock.TestClock).Add(500 * time.Millisecond)
 			return status.Error(codes.Internal, "errored internally")
 		}
@@ -72,10 +72,10 @@ func TestStreamServerInterceptor(t *testing.T) {
 			FullMethod: "/service/method",
 		}, handler)
 
-		count := memStore.Get(c, grpcServerCount, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
+		count := memStore.Get(c, grpcServerCount, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
 		So(count, ShouldEqual, 1)
 
-		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
+		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
 		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
 	})
 }

@@ -157,7 +157,7 @@ func (buf *Buffer) dropOldest() (dropped *Batch) {
 //     `itemSize` is larger than this.
 //   - ErrItemTooSmall - If this buffer has a BatchSizeMax configured and
 //     `itemSize` is zero, or if `itemSize` is negative.
-func (buf *Buffer) AddNoBlock(now time.Time, item interface{}, itemSize int) (dropped *Batch, err error) {
+func (buf *Buffer) AddNoBlock(now time.Time, item any, itemSize int) (dropped *Batch, err error) {
 	if err = buf.opts.checkItemSize(itemSize); err != nil {
 		return
 	}

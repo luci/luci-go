@@ -33,7 +33,7 @@ func encodeToB(s string) string {
 	return base64.StdEncoding.EncodeToString([]byte(s))
 }
 
-func testTools(code int, resp interface{}) (*httptest.Server, config.Interface) {
+func testTools(code int, resp any) (*httptest.Server, config.Interface) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(code)
 		w.Header().Set("Content-Type", "application/json")
@@ -79,14 +79,14 @@ func TestRemoteCalls(t *testing.T) {
 		})
 		Convey("ListFiles", func() {
 			server, remoteImpl := testTools(200,
-				map[string]interface{}{
-					"config_sets": []interface{}{
-						map[string]interface{}{
-							"files": []interface{}{
-								map[string]interface{}{
+				map[string]any{
+					"config_sets": []any{
+						map[string]any{
+							"files": []any{
+								map[string]any{
 									"path": "first.template",
 								},
-								map[string]interface{}{
+								map[string]any{
 									"path": "second.template",
 								},
 							},
@@ -104,8 +104,8 @@ func TestRemoteCalls(t *testing.T) {
 			So(res, ShouldResemble, []string{"first.template", "second.template"})
 		})
 		Convey("GetProjectConfigs", func() {
-			server, remoteImpl := testTools(200, map[string]interface{}{
-				"configs": [...]interface{}{map[string]string{
+			server, remoteImpl := testTools(200, map[string]any{
+				"configs": [...]any{map[string]string{
 					"config_set":   "a",
 					"content":      encodeToB("hi"),
 					"content_hash": "bar",
@@ -130,8 +130,8 @@ func TestRemoteCalls(t *testing.T) {
 			})
 		})
 		Convey("GetProjectConfigs metaOnly", func() {
-			server, remoteImpl := testTools(200, map[string]interface{}{
-				"configs": [...]interface{}{map[string]string{
+			server, remoteImpl := testTools(200, map[string]any{
+				"configs": [...]any{map[string]string{
 					"config_set":   "a",
 					"content_hash": "bar",
 					"revision":     "3",
@@ -161,8 +161,8 @@ func TestRemoteCalls(t *testing.T) {
 				panic(err)
 			}
 
-			server, remoteImpl := testTools(200, map[string]interface{}{
-				"projects": [...]interface{}{map[string]string{
+			server, remoteImpl := testTools(200, map[string]any{
+				"projects": [...]any{map[string]string{
 					"id":        id,
 					"name":      name,
 					"repo_type": "GITILES",

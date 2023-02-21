@@ -279,7 +279,7 @@ func configsJSHandler(c *router.Context) error {
 	// We don't need a long cache duration because the configs file is fetched and
 	// re-served by the service worker.
 	header.Set("cache-control", "max-age=600,stale-while-revalidate=3600")
-	err = template.Execute(c.Writer, map[string]interface{}{
+	err = template.Execute(c.Writer, map[string]any{
 		"ResultDB": map[string]string{
 			"Host": settings.GetResultdb().GetHost(),
 		},

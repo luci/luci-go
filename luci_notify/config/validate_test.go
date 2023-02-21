@@ -33,7 +33,7 @@ func TestValidation(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Test Environment for validateProjectConfig`, t, func() {
-		testValidation := func(env, config, expectFormat string, expectArgs ...interface{}) {
+		testValidation := func(env, config, expectFormat string, expectArgs ...any) {
 			Convey(env, func() {
 				cfg, err := testutil.ParseProjectConfig(config)
 				So(err, ShouldBeNil)
@@ -225,7 +225,7 @@ func TestValidation(t *testing.T) {
 	})
 
 	Convey(`Test Environment for validateSettings`, t, func() {
-		testValidation := func(env, config, expectFormat string, expectArgs ...interface{}) {
+		testValidation := func(env, config, expectFormat string, expectArgs ...any) {
 			Convey(env, func() {
 				cfg, err := testutil.ParseSettings(config)
 				So(err, ShouldBeNil)

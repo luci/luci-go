@@ -80,8 +80,8 @@ func TestGetTestResult(t *testing.T) {
 		invID := invocations.ID("inv_0")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
-			insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
-			spanutil.InsertMap("TestResults", map[string]interface{}{
+			insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":        "result_id_within_inv_0",
@@ -109,7 +109,7 @@ func TestGetTestResult(t *testing.T) {
 
 		Convey(`permission denied`, func() {
 			testutil.MustApply(ctx,
-				insert.Invocation("inv_s", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}))
+				insert.Invocation("inv_s", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}))
 			req := &pb.GetTestResultRequest{Name: "invocations/inv_s/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_s"}
 			tr, err := srv.GetTestResult(ctx, req)
 			So(tr, ShouldBeNil)
@@ -117,7 +117,7 @@ func TestGetTestResult(t *testing.T) {
 		})
 
 		Convey(`works with expected result`, func() {
-			testutil.MustApply(ctx, spanutil.InsertMap("TestResults", map[string]interface{}{
+			testutil.MustApply(ctx, spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":        "result_id_within_inv_1",

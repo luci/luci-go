@@ -117,7 +117,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 		eg.Go(func() (err error) {
 			var invCommonTestIdPrefix spanner.NullString
 			var invVars []string
-			if err = invocations.ReadColumns(ctx, invID, map[string]interface{}{
+			if err = invocations.ReadColumns(ctx, invID, map[string]any{
 				"Realm":                  &realm,
 				"CommonTestIDPrefix":     &invCommonTestIdPrefix,
 				"TestResultVariantUnion": &invVars,
@@ -132,7 +132,7 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 			varUnion.AddAll(invVars)
 
 			if invCommonTestIdPrefix.String() != newPrefix || varUnion.Len() > len(invVars) {
-				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+				span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]any{
 					"InvocationId":           invID,
 					"CommonTestIDPrefix":     newPrefix,
 					"TestResultVariantUnion": varUnion.ToSortedSlice(),
@@ -168,7 +168,7 @@ func insertTestResult(ctx context.Context, invID invocations.ID, requestID strin
 		runDuration.Valid = true
 	}
 
-	row := map[string]interface{}{
+	row := map[string]any{
 		"InvocationId":    invID,
 		"TestId":          ret.TestId,
 		"ResultId":        ret.ResultId,

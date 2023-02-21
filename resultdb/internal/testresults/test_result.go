@@ -77,7 +77,7 @@ func Read(ctx context.Context, name string) (*pb.TestResult, error) {
 	var tmd spanutil.Compressed
 	var fr spanutil.Compressed
 	var properties spanutil.Compressed
-	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
+	err := spanutil.ReadRow(ctx, "TestResults", invID.Key(testID, resultID), map[string]any{
 		"Variant":         &tr.Variant,
 		"VariantHash":     &tr.VariantHash,
 		"IsUnexpected":    &maybeUnexpected,

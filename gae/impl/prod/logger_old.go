@@ -40,26 +40,26 @@ type loggerImpl struct {
 	ic    context.Context
 }
 
-func (gl *loggerImpl) Debugf(format string, args ...interface{}) {
+func (gl *loggerImpl) Debugf(format string, args ...any) {
 	gl.LogCall(logging.Debug, 1, format, args)
 }
-func (gl *loggerImpl) Infof(format string, args ...interface{}) {
+func (gl *loggerImpl) Infof(format string, args ...any) {
 	gl.LogCall(logging.Info, 1, format, args)
 }
-func (gl *loggerImpl) Warningf(format string, args ...interface{}) {
+func (gl *loggerImpl) Warningf(format string, args ...any) {
 	gl.LogCall(logging.Warning, 1, format, args)
 }
-func (gl *loggerImpl) Errorf(format string, args ...interface{}) {
+func (gl *loggerImpl) Errorf(format string, args ...any) {
 	gl.LogCall(logging.Error, 1, format, args)
 }
 
 // TODO(riannucci): prefix with caller's code location.
-func (gl *loggerImpl) LogCall(l logging.Level, calldepth int, format string, args []interface{}) {
+func (gl *loggerImpl) LogCall(l logging.Level, calldepth int, format string, args []any) {
 	if gl.aeCtx == nil || !logging.IsLogging(gl.ic, l) {
 		return
 	}
 
-	var logf func(context.Context, string, ...interface{})
+	var logf func(context.Context, string, ...any)
 	switch l {
 	case logging.Debug:
 		logf = log.Debugf

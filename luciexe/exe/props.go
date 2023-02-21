@@ -42,12 +42,12 @@ import (
 //
 //	myProto := &myprotos.Message{}
 //	myStruct := &MyStruct{}
-//	err := ParseProperties(build.Input.Properties, map[string]interface{}{
+//	err := ParseProperties(build.Input.Properties, map[string]any{
 //	  "proto": myProto, "$namespaced/struct": myStruct})
 //	// handle err :)
 //	fmt.Println("Got:", myProto.Field)
 //	fmt.Println("Got:", myStruct.Field)
-func ParseProperties(props *structpb.Struct, outputs map[string]interface{}) error {
+func ParseProperties(props *structpb.Struct, outputs map[string]any) error {
 	ret := errors.NewLazyMultiError(len(outputs))
 
 	idx := -1
@@ -105,10 +105,10 @@ var Null = nullType{}
 //
 //	myProto := &myprotos.Message{Field: "something"}
 //	myStruct := &MyStruct{Field: 100}
-//	err := WriteProperties(build.Output.Properties, map[string]interface{}{
+//	err := WriteProperties(build.Output.Properties, map[string]any{
 //	  "proto": myProto, "$namespaced/struct": myStruct})
 //	// handle err :)
-func WriteProperties(props *structpb.Struct, inputs map[string]interface{}) error {
+func WriteProperties(props *structpb.Struct, inputs map[string]any) error {
 	if props.Fields == nil {
 		props.Fields = make(map[string]*structpb.Value, len(inputs))
 	}

@@ -318,11 +318,11 @@ func (d taskIndexData) Less(i, j int) bool {
 	return d[i].ETA.Before(d[j].ETA)
 }
 
-func (d *taskIndexData) Push(x interface{}) {
+func (d *taskIndexData) Push(x any) {
 	*d = append(*d, x.(*tq.Task))
 }
 
-func (d *taskIndexData) Pop() interface{} {
+func (d *taskIndexData) Pop() any {
 	old := *d
 	n := len(old)
 	x := old[n-1]

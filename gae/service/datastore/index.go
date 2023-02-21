@@ -63,7 +63,7 @@ func (i IndexColumn) cmp(o IndexColumn) int {
 }
 
 // UnmarshalYAML deserializes a index.yml `property` into an IndexColumn.
-func (i *IndexColumn) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (i *IndexColumn) UnmarshalYAML(unmarshal func(any) error) error {
 	var m map[string]string
 	if err := unmarshal(&m); err != nil {
 		return err
@@ -84,7 +84,7 @@ func (i *IndexColumn) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 // MarshalYAML serializes an IndexColumn into a index.yml `property`.
-func (i *IndexColumn) MarshalYAML() (interface{}, error) {
+func (i *IndexColumn) MarshalYAML() (any, error) {
 	direction := "asc"
 
 	if i.Descending {
@@ -128,12 +128,12 @@ type IndexDefinition struct {
 }
 
 // MarshalYAML serializes an IndexDefinition into a index.yml `index`.
-func (id *IndexDefinition) MarshalYAML() (interface{}, error) {
+func (id *IndexDefinition) MarshalYAML() (any, error) {
 	if id.Builtin() || !id.Compound() {
 		return nil, fmt.Errorf("cannot generate YAML for %s", id)
 	}
 
-	return yaml.Marshal(map[string]interface{}{
+	return yaml.Marshal(map[string]any{
 		"kind":       id.Kind,
 		"ancestor":   id.Ancestor,
 		"properties": id.SortBy,

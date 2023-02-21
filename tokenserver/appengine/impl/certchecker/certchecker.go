@@ -143,7 +143,7 @@ func CheckCertificate(c context.Context, cert *x509.Certificate) (*certconfig.CA
 // It caches CertChecker objects in local memory and reuses them between
 // requests.
 func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
-	checker, err := certCheckerCache.LRU(c).GetOrCreate(c, cn, func() (interface{}, time.Duration, error) {
+	checker, err := certCheckerCache.LRU(c).GetOrCreate(c, cn, func() (any, time.Duration, error) {
 		// To avoid storing CertChecker for non-existent CAs in local memory forever,
 		// we do a datastore check when creating the checker. It happens once during
 		// the process lifetime.
@@ -169,7 +169,7 @@ func GetCertChecker(c context.Context, cn string) (*CertChecker, error) {
 
 // GetCA returns CA entity with ParsedConfig and ParsedCert fields set.
 func (ch *CertChecker) GetCA(c context.Context) (*certconfig.CA, error) {
-	value, err := ch.ca.Get(c, func(interface{}) (ca interface{}, exp time.Duration, err error) {
+	value, err := ch.ca.Get(c, func(any) (ca any, exp time.Duration, err error) {
 		ca, err = ch.refetchCA(c)
 		if err == nil {
 			exp = RefetchCAPeriod

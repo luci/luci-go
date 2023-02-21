@@ -246,7 +246,7 @@ func (p *gceTokenProvider) mintAccessToken(ctx context.Context) (*Token, error) 
 
 	return &Token{
 		// Replicate the hidden magic state added by computeSource.Token().
-		Token: *tok.WithExtra(map[string]interface{}{
+		Token: *tok.WithExtra(map[string]any{
 			"oauth2.google.tokenSource":    "compute-metadata",
 			"oauth2.google.serviceAccount": p.account,
 		}),

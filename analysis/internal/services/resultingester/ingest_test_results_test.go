@@ -811,14 +811,14 @@ func TestIngestTestResults(t *testing.T) {
 			tmdBytes, _ := proto.Marshal(originalTmd)
 			ms := []*spanner.Mutation{
 				// Known flake's status should remain unchanged.
-				insert.AnalyzedTestVariant(realm, "ninja://test_known_flake", "hash_2", atvpb.Status_FLAKY, map[string]interface{}{
+				insert.AnalyzedTestVariant(realm, "ninja://test_known_flake", "hash_2", atvpb.Status_FLAKY, map[string]any{
 					"Tags":         pbutil.StringPairs("test_name", "test_known_flake", "monorail_component", "Monorail>OldComponent"),
 					"TestMetadata": spanutil.Compressed(tmdBytes),
 				}),
 				// Non-flake test variant's status will change when see a flaky occurrence.
 				insert.AnalyzedTestVariant(realm, "ninja://test_has_unexpected", "hash", atvpb.Status_HAS_UNEXPECTED_RESULTS, nil),
 				// Consistently failed test variant.
-				insert.AnalyzedTestVariant(realm, "ninja://test_consistent_failure", "hash", atvpb.Status_CONSISTENTLY_UNEXPECTED, map[string]interface{}{
+				insert.AnalyzedTestVariant(realm, "ninja://test_consistent_failure", "hash", atvpb.Status_CONSISTENTLY_UNEXPECTED, map[string]any{
 					"TestMetadata": spanutil.Compressed(tmdBytes),
 				}),
 				// Stale test variant has new failure.

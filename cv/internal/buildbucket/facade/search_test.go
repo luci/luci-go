@@ -137,8 +137,8 @@ func TestSearch(t *testing.T) {
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 				})
 				Convey("With permitted additional properties", func() {
-					prop, err := structpb.NewStruct(map[string]interface{}{
-						"$recipe_engine/cq": map[string]interface{}{
+					prop, err := structpb.NewStruct(map[string]any{
+						"$recipe_engine/cq": map[string]any{
 							"active":   true,
 							"run_mode": "FULL_RUN",
 						},
@@ -220,8 +220,8 @@ func TestSearch(t *testing.T) {
 				})
 
 				Convey("Not permitted additional properties", func() {
-					prop, err := structpb.NewStruct(map[string]interface{}{
-						"$recipe_engine/cq": map[string]interface{}{
+					prop, err := structpb.NewStruct(map[string]any{
+						"$recipe_engine/cq": map[string]any{
 							"active":   true,
 							"run_mode": "FULL_RUN",
 						}, // permitted

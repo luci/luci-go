@@ -35,7 +35,7 @@ import (
 //
 // This should work in place of GoConvey's ShouldResemble on most of CV's
 // structs which may contain protos.
-func SafeShouldResemble(actual interface{}, expected ...interface{}) string {
+func SafeShouldResemble(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("expected 1 value, got %d", len(expected))
 	}
@@ -194,7 +194,7 @@ func addWithIndent(buf *strings.Builder, section, text string) {
 //
 // If so, we want just the value of the "Message" part.
 func poorifyIfConveyJSON(msg string) string {
-	out := map[string]interface{}{}
+	out := map[string]any{}
 	if err := json.Unmarshal([]byte(msg), &out); err == nil {
 		return out["Message"].(string)
 	}

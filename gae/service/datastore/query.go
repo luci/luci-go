@@ -292,7 +292,7 @@ func (q *Query) End(c Cursor) *Query {
 //
 // `Eq("thing", 1).Eq("thing", 2)` and `.Eq("thing", 1, 2)` have identical
 // meaning.
-func (q *Query) Eq(field string, values ...interface{}) *Query {
+func (q *Query) Eq(field string, values ...any) *Query {
 	if len(values) == 0 {
 		return q
 	}
@@ -371,7 +371,7 @@ func (q *Query) ineqOK(field string, value Property) bool {
 //
 // So a query with `.Gt("thing", 5).Lt("thing", 10)` will only return entities
 // where the field "thing" has a single value where `5 < val < 10`.
-func (q *Query) Lt(field string, value interface{}) *Query {
+func (q *Query) Lt(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
 
@@ -404,7 +404,7 @@ func (q *Query) Lt(field string, value interface{}) *Query {
 //
 // So a query with `.Gt("thing", 5).Lt("thing", 10)` will only return entities
 // where the field "thing" has a single value where `5 < val < 10`.
-func (q *Query) Lte(field string, value interface{}) *Query {
+func (q *Query) Lte(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
 
@@ -437,7 +437,7 @@ func (q *Query) Lte(field string, value interface{}) *Query {
 //
 // So a query with `.Gt("thing", 5).Lt("thing", 10)` will only return entities
 // where the field "thing" has a single value where `5 < val < 10`.
-func (q *Query) Gt(field string, value interface{}) *Query {
+func (q *Query) Gt(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
 
@@ -470,7 +470,7 @@ func (q *Query) Gt(field string, value interface{}) *Query {
 //
 // So a query with `.Gt("thing", 5).Lt("thing", 10)` will only return entities
 // where the field "thing" has a single value where `5 < val < 10`.
-func (q *Query) Gte(field string, value interface{}) *Query {
+func (q *Query) Gte(field string, value any) *Query {
 	p := Property{}
 	err := p.SetValue(value, ShouldIndex)
 
@@ -702,7 +702,7 @@ func (q *Query) finalizeImpl() (*FinalizedQuery, error) {
 func (q *Query) String() string {
 	ret := &bytes.Buffer{}
 	needComma := false
-	p := func(fmtStr string, stuff ...interface{}) {
+	p := func(fmtStr string, stuff ...any) {
 		if needComma {
 			if _, err := ret.WriteString(", "); err != nil {
 				panic(err)

@@ -41,57 +41,57 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			return func() { calls = append(calls, "<- "+fn) }
 		}
 
-		callChain := func(intr grpc.UnaryServerInterceptor, h grpc.UnaryHandler) (interface{}, error) {
+		callChain := func(intr grpc.UnaryServerInterceptor, h grpc.UnaryHandler) (any, error) {
 			return intr(context.Background(), "request", testInfo, h)
 		}
 
 		// A "library" of interceptors used below.
 
-		doNothing := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		doNothing := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("doNothing")()
 			return handler(ctx, req)
 		}
 
-		populateContext := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		populateContext := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("populateContext")()
 			return handler(context.WithValue(ctx, &testCtxKey, "value"), req)
 		}
 
-		checkContext := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		checkContext := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("checkContext")()
 			So(ctx.Value(&testCtxKey), ShouldEqual, "value")
 			return handler(ctx, req)
 		}
 
-		modifyReq := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		modifyReq := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("modifyReq")()
 			return handler(ctx, "modified request")
 		}
 
-		checkReq := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		checkReq := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("checkReq")()
 			So(req.(string), ShouldEqual, "modified request")
 			return handler(ctx, req)
 		}
 
-		checkErr := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		checkErr := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("checkErr")()
 			resp, err := handler(ctx, req)
 			So(err, ShouldEqual, testError)
 			return resp, err
 		}
 
-		abortChain := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		abortChain := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("abortChain")()
 			return nil, testError
 		}
 
-		successHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		successHandler := func(ctx context.Context, req any) (any, error) {
 			defer record("successHandler")()
 			return testResponse, nil
 		}
 
-		errorHandler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		errorHandler := func(ctx context.Context, req any) (any, error) {
 			defer record("errorHandler")()
 			return nil, testError
 		}
@@ -221,53 +221,53 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 
 		// A "library" of interceptors used below.
 
-		doNothing := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		doNothing := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("doNothing")()
 			return handler(srv, ss)
 		}
 
-		populateContext := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		populateContext := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("populateContext")()
 			return handler(srv, ModifyServerStreamContext(ss, func(ctx context.Context) context.Context {
 				return context.WithValue(ctx, &testCtxKey, "value")
 			}))
 		}
 
-		checkContext := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		checkContext := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("checkContext")()
 			So(ss.Context().Value(&testCtxKey), ShouldEqual, "value")
 			return handler(srv, ss)
 		}
 
-		modifySrv := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		modifySrv := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("modifySrv")()
 			return handler("modified srv", ss)
 		}
 
-		checkSrv := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		checkSrv := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("checkSrv")()
 			So(srv.(string), ShouldEqual, "modified srv")
 			return handler(srv, ss)
 		}
 
-		checkErr := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		checkErr := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("checkErr")()
 			err := handler(srv, ss)
 			So(err, ShouldEqual, testError)
 			return err
 		}
 
-		abortChain := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		abortChain := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("abortChain")()
 			return testError
 		}
 
-		successHandler := func(srv interface{}, ss grpc.ServerStream) error {
+		successHandler := func(srv any, ss grpc.ServerStream) error {
 			defer record("successHandler")()
 			return nil
 		}
 
-		errorHandler := func(srv interface{}, ss grpc.ServerStream) error {
+		errorHandler := func(srv any, ss grpc.ServerStream) error {
 			defer record("errorHandler")()
 			return testError
 		}
@@ -390,7 +390,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		}
 
 		Convey("Unary", func() {
-			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
 				So(ctx.Value(key("key")).(string), ShouldEqual, "val")
 				So(req, ShouldEqual, &reqBody)
 				return &resBody, nil
@@ -400,7 +400,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		})
 
 		Convey("Stream", func() {
-			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
 				So(srv, ShouldEqual, server)
 				So(ss.Context().Value(key("key")).(string), ShouldEqual, "val")
 				return nil
@@ -419,7 +419,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		}
 
 		Convey("Unary", func() {
-			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
 				return &resBody, retErr
 			})
 			So(err, ShouldEqual, retErr)
@@ -428,7 +428,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		})
 
 		Convey("Stream", func() {
-			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
 				return retErr
 			})
 			So(err, ShouldEqual, retErr)
@@ -444,7 +444,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		}
 
 		Convey("Unary", func() {
-			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
 				panic("must not be called")
 			})
 			So(err, ShouldEqual, retErr)
@@ -452,7 +452,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		})
 
 		Convey("Stream", func() {
-			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
 				panic("must not be called")
 			})
 			So(err, ShouldEqual, retErr)
@@ -468,7 +468,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		}
 
 		Convey("Unary", func() {
-			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req interface{}) (interface{}, error) {
+			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
 				return &resBody, nil
 			})
 			So(err, ShouldEqual, retErr)
@@ -476,7 +476,7 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 		})
 
 		Convey("Stream", func() {
-			err := u.Stream()(server, stream, streamInfo, func(srv interface{}, ss grpc.ServerStream) error {
+			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
 				return status.Errorf(codes.Unknown, "another")
 			})
 			So(err, ShouldEqual, retErr)

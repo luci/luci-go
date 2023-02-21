@@ -33,7 +33,7 @@ import (
 // Printer prints a proto3 definition from a description.
 type Printer struct {
 	file           *descriptorpb.FileDescriptorProto
-	sourceCodeInfo map[interface{}]*descriptorpb.SourceCodeInfo_Location
+	sourceCodeInfo map[any]*descriptorpb.SourceCodeInfo_Location
 
 	Out indented.Writer
 
@@ -57,7 +57,7 @@ func (p *Printer) SetFile(f *descriptorpb.FileDescriptorProto) error {
 }
 
 // Printf prints to p.Out unless there was an error.
-func (p *Printer) Printf(format string, a ...interface{}) {
+func (p *Printer) Printf(format string, a ...any) {
 	if p.Err == nil {
 		_, p.Err = fmt.Fprintf(&p.Out, format, a...)
 	}
@@ -72,7 +72,7 @@ func (p *Printer) Package(name string) {
 // Returns a function that decreases indentation level and closes the brace
 // followed by a newline.
 // Usage: defer open("package x")()
-func (p *Printer) open(format string, a ...interface{}) func() {
+func (p *Printer) open(format string, a ...any) func() {
 	p.Printf(format, a...)
 	p.Printf(" {\n")
 	p.Out.Level++
@@ -84,7 +84,7 @@ func (p *Printer) open(format string, a ...interface{}) func() {
 
 // MaybeLeadingComments prints leading comments of the descriptorpb proto
 // if found.
-func (p *Printer) MaybeLeadingComments(ptr interface{}) {
+func (p *Printer) MaybeLeadingComments(ptr any) {
 	comments := p.sourceCodeInfo[ptr].GetLeadingComments()
 	// print comments, but insert "//" before each newline.
 	for len(comments) > 0 {
@@ -114,7 +114,7 @@ func (p *Printer) MaybeLeadingComments(ptr interface{}) {
 //	  "This is a line.",
 //	  "This is the next line.",
 //	})
-func (p *Printer) AppendLeadingComments(ptr interface{}, lines []string) {
+func (p *Printer) AppendLeadingComments(ptr any, lines []string) {
 	loc, ok := p.sourceCodeInfo[ptr]
 	if !ok {
 		loc = &descriptorpb.SourceCodeInfo_Location{}

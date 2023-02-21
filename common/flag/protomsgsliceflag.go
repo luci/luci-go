@@ -38,7 +38,7 @@ type messageSliceFlag struct {
 // message struct which implements the proto.Message interface. Expect input to
 // be of type *[]*B where B is concrete struct of proto message like pb.Build.
 // A flag value must be a JSON string of the provided concrete proto message.
-func MessageSliceFlag(msgSlicePtr interface{}) flag.Getter {
+func MessageSliceFlag(msgSlicePtr any) flag.Getter {
 	slicePtrVal := reflect.ValueOf(msgSlicePtr)
 	assertKind(slicePtrVal.Type(), reflect.Ptr)
 
@@ -97,7 +97,7 @@ func (m *messageSliceFlag) Set(val string) error {
 }
 
 // Get retrieves the raw flag value.
-func (m *messageSliceFlag) Get() interface{} {
+func (m *messageSliceFlag) Get() any {
 	return m.msgSliceVal.Interface()
 }
 

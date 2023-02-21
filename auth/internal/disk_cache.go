@@ -102,7 +102,7 @@ type cacheFileEntry struct {
 
 type keyPtr struct {
 	key string
-	ptr interface{}
+	ptr any
 }
 
 func (e *cacheFileEntry) structure() []keyPtr {

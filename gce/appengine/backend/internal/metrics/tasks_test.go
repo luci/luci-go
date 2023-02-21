@@ -51,7 +51,7 @@ func TestTasks(t *testing.T) {
 		})
 
 		Convey("updateTasks", func() {
-			fields := []interface{}{"queue"}
+			fields := []any{"queue"}
 
 			tc := &TaskCount{
 				ID:        "queue",

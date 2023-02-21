@@ -550,14 +550,14 @@ func (th tasksHeap) Swap(i, j int) {
 	th[j].index = j
 }
 
-func (th *tasksHeap) Push(x interface{}) {
+func (th *tasksHeap) Push(x any) {
 	n := len(*th)
 	item := x.(*Task)
 	item.index = n
 	*th = append(*th, item)
 }
 
-func (th *tasksHeap) Pop() interface{} {
+func (th *tasksHeap) Pop() any {
 	old := *th
 	n := len(old)
 	item := old[n-1]

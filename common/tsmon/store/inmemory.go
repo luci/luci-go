@@ -105,7 +105,7 @@ func (s *inMemoryStore) findTarget(ctx context.Context, m *metricData) types.Tar
 	))
 }
 
-func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time.Time) *types.CellData {
+func (m *metricData) get(fieldVals []any, t types.Target, resetTime time.Time) *types.CellData {
 	fieldVals, err := field.Canonicalize(m.Fields, fieldVals)
 	if err != nil {
 		panic(err) // bad field types, can only happen if the code is wrong
@@ -131,7 +131,7 @@ func (m *metricData) get(fieldVals []interface{}, t types.Target, resetTime time
 	return cell
 }
 
-func (m *metricData) del(fieldVals []interface{}, t types.Target) {
+func (m *metricData) del(fieldVals []any, t types.Target) {
 	fieldVals, err := field.Canonicalize(m.Fields, fieldVals)
 	if err != nil {
 		panic(err) // bad field types, can only happen if the code is wrong
@@ -207,7 +207,7 @@ func (s *inMemoryStore) SetDefaultTarget(t types.Target) {
 }
 
 // Get returns the value for a given metric cell.
-func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}) interface{} {
+func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any) any {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
@@ -219,7 +219,7 @@ func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.
 	return m.get(fieldVals, t, resetTime).Value
 }
 
-func isLessThan(a, b interface{}) bool {
+func isLessThan(a, b any) bool {
 	if a == nil || b == nil {
 		return false
 	}
@@ -233,7 +233,7 @@ func isLessThan(a, b interface{}) bool {
 }
 
 // Set writes the value into the given metric cell.
-func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) {
+func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any, value any) {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}
@@ -255,7 +255,7 @@ func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.
 }
 
 // Del deletes the metric cell.
-func (s *inMemoryStore) Del(ctx context.Context, h types.Metric, fieldVals []interface{}) {
+func (s *inMemoryStore) Del(ctx context.Context, h types.Metric, fieldVals []any) {
 	m := s.getOrCreateData(h)
 	t := s.findTarget(ctx, m)
 	m.lock.Lock()
@@ -265,7 +265,7 @@ func (s *inMemoryStore) Del(ctx context.Context, h types.Metric, fieldVals []int
 }
 
 // Incr increments the value in a given metric cell by the given delta.
-func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) {
+func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any, delta any) {
 	if resetTime.IsZero() {
 		resetTime = clock.Now(ctx)
 	}

@@ -47,7 +47,7 @@ func TestGoLogger(t *testing.T) {
 
 		for _, entry := range []struct {
 			L logging.Level
-			F func(string, ...interface{})
+			F func(string, ...any)
 			T string
 		}{
 			{logging.Debug, l.Debugf, "D"},
@@ -78,7 +78,7 @@ func TestGoLogger(t *testing.T) {
 		Convey(`Should log through top-level Context methods.`, func() {
 			for _, entry := range []struct {
 				L logging.Level
-				F func(context.Context, string, ...interface{})
+				F func(context.Context, string, ...any)
 				T string
 			}{
 				{logging.Info, logging.Infof, "I"},

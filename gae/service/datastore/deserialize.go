@@ -161,7 +161,7 @@ func (d Deserializer) Time(buf cmpbin.ReadableBytesBuffer) (time.Time, error) {
 // same way they do for Key, but only have an effect if the decoded property
 // has a Key value.
 func (d Deserializer) Property(buf cmpbin.ReadableBytesBuffer) (p Property, err error) {
-	val := interface{}(nil)
+	val := any(nil)
 	b, err := buf.ReadByte()
 	if err != nil {
 		return

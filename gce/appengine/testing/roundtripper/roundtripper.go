@@ -57,8 +57,8 @@ var _ http.RoundTripper = &JSONRoundTripper{}
 // JSON body.
 type JSONRoundTripper struct {
 	// Handler is called by RoundTrip with the unmarshalled JSON from an *http.Request.
-	// Returns an HTTP status code and an interface{} to marshal as JSON in an *http.Response.
-	Handler func(interface{}) (int, interface{})
+	// Returns an HTTP status code and an any to marshal as JSON in an *http.Response.
+	Handler func(any) (int, any)
 	// Type is the reflect.Type to unmarshal *http.Request.Body into.
 	// Defaults to map[string]string{}.
 	Type reflect.Type

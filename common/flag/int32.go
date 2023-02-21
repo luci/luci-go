@@ -40,7 +40,7 @@ func (f *int32Flag) Set(s string) error {
 }
 
 // Get retrieves the flag value.
-func (f int32Flag) Get() interface{} {
+func (f int32Flag) Get() any {
 	return int32(f)
 }
 

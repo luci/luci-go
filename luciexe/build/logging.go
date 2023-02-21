@@ -82,7 +82,7 @@ func makeLoggingWriter(ctx context.Context, name string) io.WriteCloser {
 	return &loggingWriter{
 		buf: &bytes.Buffer{},
 		logf: func(line string) {
-			rawLogFn(targetLevel, 0, "%s", []interface{}{line})
+			rawLogFn(targetLevel, 0, "%s", []any{line})
 		},
 	}
 }

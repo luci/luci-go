@@ -94,7 +94,7 @@ func newPubsub(ctx context.Context, c pubsubConfig) output.Output {
 	o := pubSubOutput{
 		pubsubConfig: &c,
 	}
-	o.bufferPool.New = func() interface{} { return &buffer{} }
+	o.bufferPool.New = func() any { return &buffer{} }
 
 	o.Context = log.SetField(ctx, "pubsub", &o)
 	return &o

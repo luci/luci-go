@@ -26,7 +26,7 @@ import (
 
 type resolvedRunCallback func(reflect.Value, CursorCB) error
 
-func parseRunCallback(cbIface interface{}) (rcb resolvedRunCallback, isKey bool, mat *multiArgType, hasCursorCB bool) {
+func parseRunCallback(cbIface any) (rcb resolvedRunCallback, isKey bool, mat *multiArgType, hasCursorCB bool) {
 	badSig := func() {
 		panic(fmt.Errorf(
 			"cb does not match the required callback signature: `%T` != `func(TYPE, [CursorCB]) [error]`",
@@ -149,7 +149,7 @@ func parseRunCallback(cbIface interface{}) (rcb resolvedRunCallback, isKey bool,
 // If an ent argument is a slice, its error type will be a MultiError. Note
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func AllocateIDs(c context.Context, ent ...interface{}) error {
+func AllocateIDs(c context.Context, ent ...any) error {
 	if len(ent) == 0 {
 		return nil
 	}
@@ -201,7 +201,7 @@ func AllocateIDs(c context.Context, ent ...interface{}) error {
 // It is the same as KeyForObjErr, except that if KeyForObjErr would have
 // returned an error, this method panics. It's safe to use if you know that
 // src statically meets the metadata constraints described by KeyForObjErr.
-func KeyForObj(c context.Context, src interface{}) *Key {
+func KeyForObj(c context.Context, src any) *Key {
 	ret, err := KeyForObjErr(c, src)
 	if err != nil {
 		panic(err)
@@ -233,7 +233,7 @@ func KeyForObj(c context.Context, src interface{}) *Key {
 //
 // If a required metadata item is missing or of the wrong type, then this will
 // return an error.
-func KeyForObjErr(c context.Context, src interface{}) (*Key, error) {
+func KeyForObjErr(c context.Context, src any) (*Key, error) {
 	return newKeyObjErr(GetKeyContext(c), getMGS(src))
 }
 
@@ -251,7 +251,7 @@ func KeyForObjErr(c context.Context, src interface{}) (*Key, error) {
 //
 // If elems is not parsable (e.g. wrong length, wrong types, etc.) this method
 // will panic.
-func MakeKey(c context.Context, elems ...interface{}) *Key {
+func MakeKey(c context.Context, elems ...any) *Key {
 	kc := GetKeyContext(c)
 	return kc.MakeKey(elems...)
 }
@@ -293,7 +293,7 @@ func NewKeyToks(c context.Context, toks []KeyTok) *Key {
 //
 // This method will panic if obj is an invalid datastore model. If the key could
 // not be applied to the object, nothing will happen.
-func PopulateKey(obj interface{}, key *Key) bool {
+func PopulateKey(obj any, key *Key) bool {
 	return populateKeyMGS(getMGS(obj), key)
 }
 
@@ -357,7 +357,7 @@ func RunInTransaction(c context.Context, f func(c context.Context) error, opts *
 // Run may also stop on the first datastore error encountered, which can occur
 // due to flakiness, timeout, etc. If it encounters such an error, it will
 // be returned.
-func Run(c context.Context, q *Query, cb interface{}) error {
+func Run(c context.Context, q *Query, cb any) error {
 	rcb, isKey, mat, _ := parseRunCallback(cb)
 
 	if isKey {
@@ -396,7 +396,7 @@ func Run(c context.Context, q *Query, cb interface{}) error {
 //
 // Note: projection queries and cursors in callback function are not supported,
 // as they are non-trivial in complexity and haven't been needed yet.
-func RunMulti(c context.Context, queries []*Query, cb interface{}) error {
+func RunMulti(c context.Context, queries []*Query, cb any) error {
 	c, cancel := context.WithCancel(c)
 	defer cancel()
 
@@ -485,11 +485,11 @@ func DecodeCursor(c context.Context, s string) (Cursor, error) {
 //   - *[]P or *[]*P, where *P is a concrete type implementing
 //     PropertyLoadSaver
 //   - *[]*Key implies a keys-only query.
-func GetAll(c context.Context, q *Query, dst interface{}) error {
+func GetAll(c context.Context, q *Query, dst any) error {
 	return getAllRaw(Raw(c), q, dst)
 }
 
-func getAllRaw(raw RawInterface, q *Query, dst interface{}) error {
+func getAllRaw(raw RawInterface, q *Query, dst any) error {
 	v := reflect.ValueOf(dst)
 	if v.Kind() != reflect.Ptr {
 		panic(fmt.Errorf("invalid GetAll dst: must have a ptr-to-slice: %T", dst))
@@ -569,7 +569,7 @@ func getAllRaw(raw RawInterface, q *Query, dst interface{}) error {
 // If an ent argument is a slice, its error type will be a MultiError. Note
 // that in the scenario, where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
+func Exists(c context.Context, ent ...any) (*ExistsResult, error) {
 	if len(ent) == 0 {
 		return nil, nil
 	}
@@ -627,7 +627,7 @@ func Exists(c context.Context, ent ...interface{}) (*ExistsResult, error) {
 // not be affected. This means that you can populate an object for dst with some
 // values, do a Get, and on an ErrNoSuchEntity, do a Put (inside a transaction,
 // of course :)).
-func Get(c context.Context, dst ...interface{}) error {
+func Get(c context.Context, dst ...any) error {
 	if len(dst) == 0 {
 		return nil
 	}
@@ -700,11 +700,11 @@ func Get(c context.Context, dst ...interface{}) error {
 // If a src argument is a slice, its error type will be a MultiError. Note
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func Put(c context.Context, src ...interface{}) error {
+func Put(c context.Context, src ...any) error {
 	return putRaw(Raw(c), GetKeyContext(c), src)
 }
 
-func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
+func putRaw(raw RawInterface, kctx KeyContext, src []any) error {
 	if len(src) == 0 {
 		return nil
 	}
@@ -767,7 +767,7 @@ func putRaw(raw RawInterface, kctx KeyContext, src []interface{}) error {
 // If an ent argument is a slice, its error type will be a MultiError. Note
 // that in the scenario where multiple slices are provided, this will return a
 // MultiError containing a nested MultiError for each slice argument.
-func Delete(c context.Context, ent ...interface{}) error {
+func Delete(c context.Context, ent ...any) error {
 	if len(ent) == 0 {
 		return nil
 	}
@@ -814,7 +814,7 @@ func GetTestable(c context.Context) Testable {
 // multi-element API calls will return a MultiError, one for each element. This
 // accepts the slice of elements that is being operated on and determines what
 // sort of error to return.
-func maybeSingleError(err error, elems []interface{}) error {
+func maybeSingleError(err error, elems []any) error {
 	if err == nil {
 		return nil
 	}
@@ -842,11 +842,11 @@ func (h iteratorHeap) Less(i, j int) bool { return h[i].CurrentItemOrder() < h[j
 
 func (h iteratorHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
-func (h *iteratorHeap) Push(x interface{}) {
+func (h *iteratorHeap) Push(x any) {
 	*h = append(*h, x.(*queryIterator))
 }
 
-func (h *iteratorHeap) Pop() interface{} {
+func (h *iteratorHeap) Pop() any {
 	old := *h
 	n := len(old)
 	item := old[n-1]

@@ -40,7 +40,7 @@ var hexFinder = regexp.MustCompile(`\\x[a-f0-9]{2}`)
 // that it correctly implements %q on strings containing binary characters.
 func hackedFormat(L *gLua.LState) int {
 	str := L.CheckString(1)
-	args := make([]interface{}, L.GetTop()-1)
+	args := make([]any, L.GetTop()-1)
 	top := L.GetTop()
 	for i := 2; i <= top; i++ {
 		args[i-2] = L.Get(i)

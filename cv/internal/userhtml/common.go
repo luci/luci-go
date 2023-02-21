@@ -80,7 +80,7 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 			},
 			// Shortens a cl id for display purposes.
 			// Accepts string or changelist.ExternalID.
-			"DisplayExternalID": func(arg interface{}) string {
+			"DisplayExternalID": func(arg any) string {
 				var eid string
 				switch v := arg.(type) {
 				case string:
@@ -144,7 +144,7 @@ func errPage(c *router.Context, err error) {
 	err = errors.Unwrap(err)
 	code := grpcutil.CodeStatus(status.Code(err))
 	c.Writer.WriteHeader(code)
-	templates.MustRender(c.Context, c.Writer, "pages/error.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/error.html", map[string]any{
 		"Error": err,
 		"Code":  code,
 	})

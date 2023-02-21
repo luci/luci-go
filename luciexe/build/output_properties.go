@@ -78,7 +78,7 @@ var propModifierReservations = outputPropertyReservations{}
 //	  Merge(context.Context, value T) // does proto.Merge(current, value)
 //	}
 //	func MakePropertyModifier[T proto.Message](ns string) PropertyModifier[T]
-func MakePropertyModifier(ns string, writeFnptr, mergeFnptr interface{}) {
+func MakePropertyModifier(ns string, writeFnptr, mergeFnptr any) {
 	propModifierReservations.reserve(ns, 1)
 	writer, merger, _ := getWriteMergerFnValues(true, writeFnptr, mergeFnptr)
 
@@ -126,7 +126,7 @@ func MakePropertyModifier(ns string, writeFnptr, mergeFnptr interface{}) {
 	}
 }
 
-func getWriteMergerFnValues(withContext bool, writeFnptr, mergeFnptr interface{}) (writer, merger reflect.Value, msgT protoreflect.Message) {
+func getWriteMergerFnValues(withContext bool, writeFnptr, mergeFnptr any) (writer, merger reflect.Value, msgT protoreflect.Message) {
 	if writeFnptr == nil && mergeFnptr == nil {
 		panic("at least one of {writeFnptr, mergeFnptr} must be non-nil")
 	}

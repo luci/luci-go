@@ -182,7 +182,7 @@ func SetEntriesForTesting(ctx context.Context, es ...*Entry) (time.Time, error) 
 	// Insert some Ingestion records.
 	commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, r := range es {
-			ms := spanutil.InsertMap("Ingestions", map[string]interface{}{
+			ms := spanutil.InsertMap("Ingestions", map[string]any{
 				"BuildId":              r.BuildID,
 				"BuildProject":         r.BuildProject,
 				"BuildResult":          r.BuildResult,

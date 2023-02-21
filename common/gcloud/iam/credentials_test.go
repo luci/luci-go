@@ -118,7 +118,7 @@ func TestCredentialsClient(t *testing.T) {
 	Convey("GenerateAccessToken works", t, func(c C) {
 		expireTime := testclock.TestRecentTimeUTC.Round(time.Second)
 
-		var body map[string]interface{}
+		var body map[string]any
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {
@@ -156,15 +156,15 @@ func TestCredentialsClient(t *testing.T) {
 		So(token.AccessToken, ShouldEqual, "token1")
 		So(token.Expiry, ShouldResemble, expireTime)
 
-		So(body, ShouldResemble, map[string]interface{}{
-			"delegates": []interface{}{"deleg"},
-			"scope":     []interface{}{"a", "b"},
+		So(body, ShouldResemble, map[string]any{
+			"delegates": []any{"deleg"},
+			"scope":     []any{"a", "b"},
 			"lifetime":  "30m0s",
 		})
 	})
 
 	Convey("GenerateIDToken works", t, func(c C) {
-		var body map[string]interface{}
+		var body map[string]any
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {
@@ -200,8 +200,8 @@ func TestCredentialsClient(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(token, ShouldEqual, "fake_id_token")
 
-		So(body, ShouldResemble, map[string]interface{}{
-			"delegates":    []interface{}{"deleg"},
+		So(body, ShouldResemble, map[string]any{
+			"delegates":    []any{"deleg"},
 			"audience":     "aud",
 			"includeEmail": true,
 		})

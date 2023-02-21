@@ -41,7 +41,7 @@ func wrapTracingMemStore(store memStore) memStore {
 	collName := fmt.Sprintf("coll%d", logNum)
 
 	if *logMemCollectionFolder == "-" {
-		writer = func(format string, a ...interface{}) {
+		writer = func(format string, a ...any) {
 			stdoutLock.Lock()
 			defer stdoutLock.Unlock()
 			fmt.Printf(format+"\n", a...)
@@ -69,7 +69,7 @@ func wrapTracingMemStore(store memStore) memStore {
 		if err != nil {
 			panic(err)
 		}
-		writer = func(format string, a ...interface{}) {
+		writer = func(format string, a ...any) {
 			lck.Lock()
 			defer lck.Unlock()
 			fmt.Fprintf(fil, format+"\n", a...)
@@ -80,7 +80,7 @@ func wrapTracingMemStore(store memStore) memStore {
 	return &tracingMemStoreImpl{store, writer, collName, 0, false}
 }
 
-type traceWriter func(format string, a ...interface{})
+type traceWriter func(format string, a ...any)
 
 type tracingMemStoreImpl struct {
 	i memStore
@@ -100,7 +100,7 @@ func (t *tracingMemStoreImpl) ImATestingSnapshot() {}
 func (t *tracingMemStoreImpl) colWriter(action, name string) traceWriter {
 	ident := t.ident()
 	hexname := hex.EncodeToString([]byte(name))
-	writer := func(format string, a ...interface{}) {
+	writer := func(format string, a ...any) {
 		if strings.HasPrefix(format, "//") { // comment
 			t.w(format, a...)
 		} else {

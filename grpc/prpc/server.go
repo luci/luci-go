@@ -191,7 +191,7 @@ type Server struct {
 
 type service struct {
 	methods map[string]grpc.MethodDesc
-	impl    interface{}
+	impl    any
 }
 
 // RegisterService registers a service implementation.
@@ -201,7 +201,7 @@ type service struct {
 // and all transitive dependencies.
 //
 // Panics if a service of the same name is already registered.
-func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
+func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl any) {
 	serv := &service{
 		impl:    impl,
 		methods: make(map[string]grpc.MethodDesc, len(desc.Methods)),
@@ -411,7 +411,7 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 
 	methodCtx = context.WithValue(methodCtx, &requestContextKey, &requestContext{header: c.Writer.Header()})
 
-	out, err := method.Handler(service.impl, methodCtx, func(in interface{}) error {
+	out, err := method.Handler(service.impl, methodCtx, func(in any) error {
 		if in == nil {
 			return status.Errorf(codes.Internal, "input message is nil")
 		}

@@ -46,7 +46,7 @@ func dstr(ts time.Time, s string) *testData {
 	return data(ts, []byte(s)...)
 }
 
-func shouldMatchLogEntry(actual interface{}, expected ...interface{}) string {
+func shouldMatchLogEntry(actual any, expected ...any) string {
 	if actual == (*logpb.LogEntry)(nil) {
 		return fmt.Sprintf("actual should not be nil")
 	}
@@ -73,7 +73,7 @@ func (s *parserTestStream) base() baseParser {
 	}
 }
 
-func (s *parserTestStream) next(d interface{}) *logpb.LogEntry {
+func (s *parserTestStream) next(d any) *logpb.LogEntry {
 	le := &logpb.LogEntry{
 		TimeOffset:  durationpb.New(s.offset),
 		PrefixIndex: uint64(s.prefixIndex),
@@ -104,7 +104,7 @@ func (s *parserTestStream) add(d time.Duration) *parserTestStream {
 	return s
 }
 
-func (s *parserTestStream) le(seq int64, d interface{}) *logpb.LogEntry {
+func (s *parserTestStream) le(seq int64, d any) *logpb.LogEntry {
 	le := s.next(d)
 	le.Sequence = uint64(seq)
 	return le

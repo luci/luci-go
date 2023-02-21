@@ -187,7 +187,7 @@ func (cl *CredentialsClient) GenerateIDToken(ctx context.Context, serviceAccount
 }
 
 // request performs HTTP POST to the IAM credentials API endpoint.
-func (cl *CredentialsClient) request(ctx context.Context, serviceAccount, action string, body, resp interface{}) error {
+func (cl *CredentialsClient) request(ctx context.Context, serviceAccount, action string, body, resp any) error {
 	// Construct the target POST URL.
 	backendURL := cl.backendURL
 	if backendURL == "" {

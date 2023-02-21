@@ -64,7 +64,7 @@ func TestLogger(t *testing.T) {
 
 	Convey("Simple fields", t, func() {
 		c = use(c, buf, LogEntry{})
-		logging.NewFields(map[string]interface{}{"foo": "bar"}).Infof(c, "test field")
+		logging.NewFields(map[string]any{"foo": "bar"}).Infof(c, "test field")
 		e := read(buf)
 		So(e.Fields["foo"], ShouldEqual, "bar")
 		So(e.Message, ShouldEqual, `test field :: {"foo":"bar"}`)

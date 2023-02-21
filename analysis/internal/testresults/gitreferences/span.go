@@ -70,7 +70,7 @@ func EnsureExists(ctx context.Context, r *GitReference) error {
 			return errors.Annotate(err, "reading GitReference").Err()
 		}
 		// Row not found. Create it.
-		row := map[string]interface{}{
+		row := map[string]any{
 			"Project":           r.Project,
 			"GitReferenceHash":  r.GitReferenceHash,
 			"Hostname":          r.Hostname,
@@ -102,7 +102,7 @@ func EnsureExists(ctx context.Context, r *GitReference) error {
 		// This should not cause contention as we did not read
 		// the LastIngestionTime cell in the same transaction.
 		// See https://cloud.google.com/spanner/docs/transactions#locking.
-		row := map[string]interface{}{
+		row := map[string]any{
 			"Project":           r.Project,
 			"GitReferenceHash":  r.GitReferenceHash,
 			"LastIngestionTime": spanner.CommitTimestamp,

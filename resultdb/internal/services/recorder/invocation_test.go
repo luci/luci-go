@@ -96,7 +96,7 @@ func TestReadInvocation(t *testing.T) {
 		}
 
 		Convey(`Finalized`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
+			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
 				"CreateTime":   ct,
 				"Deadline":     ct.Add(time.Hour),
 				"FinalizeTime": ct.Add(time.Hour),

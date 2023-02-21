@@ -24,6 +24,6 @@ import (
 // GetIgnoreMissing fetches the given entities from the datastore,
 // ignoring datastore.ErrNoSuchEntity errors. All other errors are returned.
 // For valid values of dst, see datastore.Get.
-func GetIgnoreMissing(ctx context.Context, dst ...interface{}) error {
+func GetIgnoreMissing(ctx context.Context, dst ...any) error {
 	return errors.Filter(datastore.Get(ctx, dst...), datastore.ErrNoSuchEntity)
 }

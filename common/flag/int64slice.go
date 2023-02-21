@@ -45,7 +45,7 @@ func (f *int64SliceFlag) Set(val string) error {
 }
 
 // Get retrieves the flag value.
-func (f int64SliceFlag) Get() interface{} {
+func (f int64SliceFlag) Get() any {
 	return []int64(f)
 }
 

@@ -43,9 +43,9 @@ import (
 // validCreateTestResultRequest returns a valid CreateTestResultRequest message.
 func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.CreateTestResultRequest {
 	trName := fmt.Sprintf("invocations/%s/tests/%s/results/result-id-0", invName, testID)
-	properties, err := structpb.NewStruct(map[string]interface{}{
+	properties, err := structpb.NewStruct(map[string]any{
 		"key_1": "value_1",
-		"key_2": map[string]interface{}{
+		"key_2": map[string]any{
 			"child_key": 1,
 		},
 	})
@@ -155,7 +155,7 @@ func TestCreateTestResult(t *testing.T) {
 			So(row, ShouldResembleProto, expected)
 
 			var invCommonTestIdPrefix string
-			err = invocations.ReadColumns(span.Single(ctx), invocations.ID("u-build-1"), map[string]interface{}{"CommonTestIDPrefix": &invCommonTestIdPrefix})
+			err = invocations.ReadColumns(span.Single(ctx), invocations.ID("u-build-1"), map[string]any{"CommonTestIDPrefix": &invCommonTestIdPrefix})
 			So(err, ShouldBeNil)
 			So(invCommonTestIdPrefix, ShouldEqual, expectedCommonPrefix)
 		}

@@ -168,7 +168,7 @@ func replyError(ctx context.Context, rw http.ResponseWriter, err error) {
 }
 
 // replyOK sends HTTP 200.
-func replyOK(ctx context.Context, rw http.ResponseWriter, msg string, args ...interface{}) {
+func replyOK(ctx context.Context, rw http.ResponseWriter, msg string, args ...any) {
 	logging.Infof(ctx, msg, args...)
 	rw.Write([]byte(fmt.Sprintf(msg, args...)))
 }

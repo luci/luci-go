@@ -33,7 +33,7 @@ func TestTimes(t *testing.T) {
 		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
-		fields := []interface{}{"prefix", "project", "zone"}
+		fields := []any{"prefix", "project", "zone"}
 
 		ReportCreationTime(c, 60.0, "prefix", "project", "zone")
 		d := s.Get(c, creationTime, time.Time{}, fields).(*distribution.Distribution)
@@ -55,7 +55,7 @@ func TestTimes(t *testing.T) {
 		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
-		fields := []interface{}{"prefix", "project", "server", "zone"}
+		fields := []any{"prefix", "project", "server", "zone"}
 
 		ReportConnectionTime(c, 120.0, "prefix", "project", "server", "zone")
 		d := s.Get(c, connectionTime, time.Time{}, fields).(*distribution.Distribution)

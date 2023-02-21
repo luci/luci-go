@@ -54,7 +54,7 @@ var (
 // handler metrics and sends them to tsmon.
 //
 // It assumes the RPC context has tsmon initialized already.
-func UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	started := clock.Now(ctx)
 	panicking := true
 	defer func() {
@@ -84,7 +84,7 @@ func UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.Una
 // interceptor sufficiently different from UnaryServerInterceptor. That's the
 // reason there's no UnifiedServerInterceptor exposed, even though right now
 // implementations of unary and stream interceptors are identical.
-func StreamServerInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+func StreamServerInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 	ctx := ss.Context()
 	started := clock.Now(ctx)
 	panicking := true

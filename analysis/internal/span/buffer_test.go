@@ -35,13 +35,13 @@ func TestTypeConversion(t *testing.T) {
 
 	var b Buffer
 
-	test := func(goValue, spValue interface{}) {
+	test := func(goValue, spValue any) {
 		// ToSpanner
 		actualSPValue := ToSpanner(goValue)
 		So(actualSPValue, ShouldResemble, spValue)
 
 		// FromSpanner
-		row, err := spanner.NewRow([]string{"a"}, []interface{}{actualSPValue})
+		row, err := spanner.NewRow([]string{"a"}, []any{actualSPValue})
 		So(err, ShouldBeNil)
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
@@ -125,7 +125,7 @@ func TestTypeConversion(t *testing.T) {
 		var varIntA, varIntB int64
 		var varState atvpb.Status
 
-		row, err := spanner.NewRow([]string{"a", "b", "c"}, []interface{}{int64(42), int64(56), int64(0)})
+		row, err := spanner.NewRow([]string{"a", "b", "c"}, []any{int64(42), int64(56), int64(0)})
 		So(err, ShouldBeNil)
 		err = b.FromSpanner(row, &varIntA, &varIntB, &varState)
 		So(err, ShouldBeNil)
@@ -134,12 +134,12 @@ func TestTypeConversion(t *testing.T) {
 		So(varState, ShouldEqual, atvpb.Status_STATUS_UNSPECIFIED)
 
 		// ToSpanner
-		spValues := ToSpannerMap(map[string]interface{}{
+		spValues := ToSpannerMap(map[string]any{
 			"a": varIntA,
 			"b": varIntB,
 			"c": varState,
 		})
-		So(spValues, ShouldResemble, map[string]interface{}{"a": int64(42), "b": int64(56), "c": int64(0)})
+		So(spValues, ShouldResemble, map[string]any{"a": int64(42), "b": int64(56), "c": int64(0)})
 	})
 
 	Convey(`proto.Message`, t, func() {
@@ -150,7 +150,7 @@ func TestTypeConversion(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(ToSpanner(msg), ShouldResemble, expected)
 
-		row, err := spanner.NewRow([]string{"a"}, []interface{}{expected})
+		row, err := spanner.NewRow([]string{"a"}, []any{expected})
 		So(err, ShouldBeNil)
 
 		Convey(`success`, func() {

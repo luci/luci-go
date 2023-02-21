@@ -257,7 +257,7 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 	}
 
 	// reportTransientError logs the error and sleep few seconds.
-	reportTransientError := func(msg string, args ...interface{}) {
+	reportTransientError := func(msg string, args ...any) {
 		if err := ctx.Err(); err != nil {
 			return
 		}

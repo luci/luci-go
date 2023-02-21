@@ -90,7 +90,7 @@ func newStdioPrinters(disableColor bool) (stdout, stderr *printer) {
 }
 
 // f prints a formatted message.
-func (p *printer) f(format string, args ...interface{}) {
+func (p *printer) f(format string, args ...any) {
 	if p.Err != nil {
 		return
 	}
@@ -102,7 +102,7 @@ func (p *printer) f(format string, args ...interface{}) {
 // fw is like f, but appends whitespace such that the printed string takes at
 // least minWidth.
 // Appends at least one space.
-func (p *printer) fw(minWidth int, format string, args ...interface{}) {
+func (p *printer) fw(minWidth int, format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
 	pad := minWidth - utf8.RuneCountInString(s)
 	if pad < 1 {
@@ -435,7 +435,7 @@ func (p *printer) keyword(s string) {
 	p.f("%s%s%s", ansiWhiteBold, s, ansi.Reset)
 }
 
-func (p *printer) linkf(format string, args ...interface{}) {
+func (p *printer) linkf(format string, args ...any) {
 	p.f("%s", ansiWhiteUnderline)
 	p.f(format, args...)
 	p.f("%s", ansi.Reset)

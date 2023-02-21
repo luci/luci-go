@@ -243,7 +243,7 @@ func validateAndStoreCRL(c context.Context, crlDer []byte, etag string, ca *CA, 
 		entity.RevokedCertsCount = len(crl.TBSCertList.RevokedCertificates)
 
 		updated = &entity // used outside of this function
-		toPut := []interface{}{updated}
+		toPut := []any{updated}
 
 		// Mark CA entity as ready for usage.
 		curCA := CA{CN: ca.CN}

@@ -31,7 +31,7 @@ type sillyCursor string
 
 func (s sillyCursor) String() string { return string(s) }
 
-func curs(pairs ...interface{}) queryCursor {
+func curs(pairs ...any) queryCursor {
 	if len(pairs)%2 != 0 {
 		panic("curs() takes only even pairs")
 	}
@@ -67,7 +67,7 @@ type queryTest struct {
 	q *dstore.Query
 
 	// err is the error to expect after prepping the query (error, string or nil)
-	err interface{}
+	err any
 
 	// equivalentQuery is another query which ShouldResemble q. This is useful to
 	// see the effects of redundancy pruning on e.g. filters.

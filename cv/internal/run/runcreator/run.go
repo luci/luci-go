@@ -500,7 +500,7 @@ func (rb *Creator) computeRunID() {
 // dsGetBatcher facilitates processing of many different kind of entities in a
 // single Get operation while handling errors in entity-specific code.
 type dsGetBatcher struct {
-	entities  []interface{}
+	entities  []any
 	callbacks []func(error) error
 }
 
@@ -514,7 +514,7 @@ func (d *dsGetBatcher) reset() {
 // entity must be a pointer to an entity object.
 // callback is called with entity specific error, possibly nil.
 // callback must not be nil.
-func (d *dsGetBatcher) register(entity interface{}, callback func(error) error) {
+func (d *dsGetBatcher) register(entity any, callback func(error) error) {
 	d.entities = append(d.entities, entity)
 	d.callbacks = append(d.callbacks, callback)
 }

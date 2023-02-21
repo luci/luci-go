@@ -176,7 +176,7 @@ func TestQueryTestVariants(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		testutil.MustApply(ctx,
-			spanutil.InsertMap("TestResults", map[string]interface{}{
+			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invocations.ID("inv1"),
 				"TestId":          "T4",
 				"ResultId":        "0",
@@ -197,7 +197,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 		// Tx has an expected skip so it should be FLAKY instead of UNEXPECTEDLY_SKIPPED.
 		testutil.MustApply(ctx,
-			spanutil.InsertMap("TestResults", map[string]interface{}{
+			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invocations.ID("inv1"),
 				"TestId":          "Tx",
 				"ResultId":        "1",

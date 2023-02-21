@@ -56,7 +56,7 @@ var quotaResultCounter = metric.NewCounter(
 // quotaCheckInterceptor returns a gPRC interceptor to check LUCI quota for
 // ResultDB and Recorder RPCs.
 func quotaCheckInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		parts := strings.Split(info.FullMethod, "/")
 		if len(parts) != 3 || parts[0] != "" {
 			panic(fmt.Sprintf("unexpected format of info.FullMethod: %q", info.FullMethod))

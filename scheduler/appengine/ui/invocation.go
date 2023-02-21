@@ -49,7 +49,7 @@ func invocationPage(c *router.Context) {
 	}
 
 	jobUI := makeJob(c.Context, job, nil)
-	templates.MustRender(c.Context, c.Writer, "pages/invocation.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/invocation.html", map[string]any{
 		"Job": jobUI,
 		"Inv": makeInvocation(jobUI, inv),
 	})

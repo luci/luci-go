@@ -141,7 +141,7 @@ func init() {
 type msgpackPrettyCodec struct{}
 
 func prettyPrintMsgpack(w io.Writer, indent string, obj any) {
-	ws := func(fmtStr string, args ...interface{}) {
+	ws := func(fmtStr string, args ...any) {
 		fmt.Fprintf(w, fmtStr, args...)
 	}
 
@@ -206,7 +206,7 @@ func (m msgpackPrettyCodec) encode(msg proto.Message, w io.Writer) error {
 }
 func (msgpackPrettyCodec) encodeFromMsgpack(raw msgpack.RawMessage, w io.Writer) error {
 	dec := msgpack.NewDecoder(bytes.NewReader([]byte(raw)))
-	dec.SetMapDecoder(func(d *msgpack.Decoder) (interface{}, error) {
+	dec.SetMapDecoder(func(d *msgpack.Decoder) (any, error) {
 		return d.DecodeUntypedMap()
 	})
 

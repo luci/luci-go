@@ -32,7 +32,7 @@ import (
 )
 
 // shouldWaitForNotDone tests if the context's .Done() channel is still blocked.
-func shouldWaitForNotDone(actual interface{}, expected ...interface{}) string {
+func shouldWaitForNotDone(actual any, expected ...any) string {
 	if len(expected) > 0 {
 		return fmt.Sprintf("shouldWaitForNotDone requires 0 values, got %d", len(expected))
 	}

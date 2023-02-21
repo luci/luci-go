@@ -80,7 +80,7 @@ func TestIAPAuthenticator(t *testing.T) {
 						Issuer:   "",
 						IssuedAt: 0,
 						Subject:  "",
-						Claims: map[string]interface{}{
+						Claims: map[string]any{
 							"email": "someemail@somedomain.com",
 						},
 					}, nil

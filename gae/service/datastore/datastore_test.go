@@ -289,7 +289,7 @@ func (f *FakePLS) Save(withMeta bool) (PropertyMap, error) {
 	return ret, nil
 }
 
-func (f *FakePLS) GetMeta(key string) (interface{}, bool) {
+func (f *FakePLS) GetMeta(key string) (any, bool) {
 	if f.failGetMeta {
 		return nil, false
 	}
@@ -319,7 +319,7 @@ func (f *FakePLS) GetAllMeta() PropertyMap {
 	return ret
 }
 
-func (f *FakePLS) SetMeta(key string, val interface{}) bool {
+func (f *FakePLS) SetMeta(key string, val any) bool {
 	if f.failSetMeta {
 		return false
 	}
@@ -353,10 +353,10 @@ var _ PropertyLoadSaver = plsChan(nil)
 
 func (c plsChan) Load(pm PropertyMap) error                { return nil }
 func (c plsChan) Save(withMeta bool) (PropertyMap, error)  { return nil, nil }
-func (c plsChan) SetMeta(key string, val interface{}) bool { return false }
+func (c plsChan) SetMeta(key string, val any) bool { return false }
 func (c plsChan) Problem() error                           { return nil }
 
-func (c plsChan) GetMeta(key string) (interface{}, bool) {
+func (c plsChan) GetMeta(key string) (any, bool) {
 	switch key {
 	case "kind":
 		return "plsChan", true
@@ -377,7 +377,7 @@ type MGSWithNoKind struct {
 	S string
 }
 
-func (s *MGSWithNoKind) GetMeta(key string) (interface{}, bool) {
+func (s *MGSWithNoKind) GetMeta(key string) (any, bool) {
 	return nil, false
 }
 
@@ -385,7 +385,7 @@ func (s *MGSWithNoKind) GetAllMeta() PropertyMap {
 	return PropertyMap{"$kind": MkProperty("ohai")}
 }
 
-func (s *MGSWithNoKind) SetMeta(key string, val interface{}) bool {
+func (s *MGSWithNoKind) SetMeta(key string, val any) bool {
 	return false
 }
 
@@ -809,7 +809,7 @@ func TestPut(t *testing.T) {
 				})
 
 				Convey("[]I", func() {
-					ifs := []interface{}{
+					ifs := []any{
 						&CommonStruct{Value: 0},
 						&FakePLS{Value: 1},
 						PropertyMap{"Value": MkProperty(2), "$kind": MkPropertyNI("Pmap")},
@@ -1037,12 +1037,12 @@ func TestGet(t *testing.T) {
 				})
 
 				Convey("get with nil inside a slice is an error", func() {
-					So(func() { Get(c, []interface{}{&CommonStruct{}, nil}) }, ShouldPanicLike,
+					So(func() { Get(c, []any{&CommonStruct{}, nil}) }, ShouldPanicLike,
 						"invalid input slice: has nil at index 1")
 				})
 
 				Convey("get with typed nil inside a slice is an error", func() {
-					So(func() { Get(c, []interface{}{&CommonStruct{}, (*CommonStruct)(nil)}) }, ShouldPanicLike,
+					So(func() { Get(c, []any{&CommonStruct{}, (*CommonStruct)(nil)}) }, ShouldPanicLike,
 						"invalid input slice: has nil at index 1")
 				})
 
@@ -1087,7 +1087,7 @@ func TestGet(t *testing.T) {
 						Kind  string `gae:"$kind"`
 						Value string
 					}
-					badPMSlice := []interface{}{
+					badPMSlice := []any{
 						&badKind{ID: 1},
 						&FakePLS{IntID: 1, failLoad: true},
 					}
@@ -1095,7 +1095,7 @@ func TestGet(t *testing.T) {
 						ID    string `gae:"$id"`
 						Value string
 					}
-					badKeySlice := []interface{}{&idStruct{Value: "hi"}, &CommonStruct{}}
+					badKeySlice := []any{&idStruct{Value: "hi"}, &CommonStruct{}}
 
 					err := Get(c, successSlice, badPMSlice, badKeySlice)
 					So(err, ShouldHaveSameTypeAs, errors.MultiError{})
@@ -1303,7 +1303,7 @@ func TestRun(t *testing.T) {
 		q := NewQuery("kind")
 
 		Convey("bad", func() {
-			assertBadTypePanics := func(cb interface{}) {
+			assertBadTypePanics := func(cb any) {
 				So(func() { Run(c, q, cb) }, ShouldPanicLike,
 					"cb does not match the required callback signature")
 			}

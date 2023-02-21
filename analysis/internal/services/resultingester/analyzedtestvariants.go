@@ -172,7 +172,7 @@ func createOrUpdateAnalyzedTestVariantsPage(ctx context.Context, realm, builder 
 					continue
 				}
 
-				vals := map[string]interface{}{
+				vals := map[string]any{
 					"Realm":       atv.Realm,
 					"TestId":      atv.TestId,
 					"VariantHash": atv.VariantHash,
@@ -243,7 +243,7 @@ func insertRow(ctx context.Context, realm, builder string, tv *rdbpb.TestVariant
 	}
 
 	now := clock.Now(ctx)
-	row := map[string]interface{}{
+	row := map[string]any{
 		"Realm":                     realm,
 		"TestId":                    tv.TestId,
 		"VariantHash":               tv.VariantHash,

@@ -35,7 +35,7 @@ type adminServer struct {
 	pool *redis.Pool
 }
 
-func (srv *adminServer) do(ctx context.Context, cmd string, args ...interface{}) (interface{}, error) {
+func (srv *adminServer) do(ctx context.Context, cmd string, args ...any) (any, error) {
 	switch admin, err := auth.IsMember(ctx, adminGroup); {
 	case err != nil:
 		logging.Errorf(ctx, "Failed to check ACL: %s", err)

@@ -55,11 +55,11 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 		testutil.MustApply(
 			ctx,
-			insert.InvocationWithInclusions("i0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}, "i0")...,
+			insert.InvocationWithInclusions("i0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}, "i0")...,
 		)
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("i0", "test1", pbutil.Variant("a", "b"), pb.TestStatus_PASS),

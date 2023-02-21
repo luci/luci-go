@@ -244,7 +244,7 @@ func (e *Entry) Set(ctx context.Context, cfg proto.Message, meta *config.Meta) e
 //
 // If `meta` is non-nil, it will receive the config metadata.
 func (e *Entry) Get(ctx context.Context, meta *config.Meta) (proto.Message, error) {
-	val, err := e.cacheSlot.Fetch(ctx, func(interface{}) (val interface{}, exp time.Duration, err error) {
+	val, err := e.cacheSlot.Fetch(ctx, func(any) (val any, exp time.Duration, err error) {
 		pc := procCache{}
 		if pc.Config, err = e.Fetch(ctx, &pc.Meta); err != nil {
 			return nil, 0, err

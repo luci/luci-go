@@ -87,7 +87,7 @@ func runModifier(f func(*PRun) *PRun) copyonwrite.Modifier {
 	if f == nil {
 		return nil
 	}
-	return func(v interface{}) interface{} {
+	return func(v any) any {
 		if v := f(v.(*PRun)); v != nil {
 			return v
 		}
@@ -104,11 +104,11 @@ type cowPRuns []*PRun
 // It's important that PRuns are always sorted.
 var _ copyonwrite.SortedSlice = cowPRuns(nil)
 
-func (c cowPRuns) At(index int) interface{} {
+func (c cowPRuns) At(index int) any {
 	return c[index]
 }
 
-func (c cowPRuns) Append(v interface{}) copyonwrite.Slice {
+func (c cowPRuns) Append(v any) copyonwrite.Slice {
 	return append(c, v.(*PRun))
 }
 
@@ -118,7 +118,7 @@ func (c cowPRuns) CloneShallow(length int, capacity int) copyonwrite.Slice {
 	return r
 }
 
-func (c cowPRuns) LessElements(a interface{}, b interface{}) bool {
+func (c cowPRuns) LessElements(a any, b any) bool {
 	return a.(*PRun).GetId() < b.(*PRun).GetId()
 }
 

@@ -618,7 +618,7 @@ func TestRestCreateChange(t *testing.T) {
 			w.WriteHeader(201)
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `)]}'`)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			json.NewEncoder(w).Encode(map[string]any{
 				"_number":   1,
 				"project":   "example/repo",
 				"branch":    "master",
@@ -673,7 +673,7 @@ func TestSubmitRevision(t *testing.T) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `)]}'`)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			json.NewEncoder(w).Encode(map[string]any{
 				"status": "MERGED",
 			})
 		})
@@ -886,7 +886,7 @@ func TestSetReview(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/review")
 
-		var actualBody, expectedBody map[string]interface{}
+		var actualBody, expectedBody map[string]any
 		So(json.Unmarshal(actualRawBody, &actualBody), ShouldBeNil)
 		So(json.Unmarshal([]byte(`{
 			"message": "This is a message",
@@ -980,7 +980,7 @@ func TestSetReview(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/review")
 
-		var actualBody, expectedBody map[string]interface{}
+		var actualBody, expectedBody map[string]any
 		So(json.Unmarshal(actualRawBody, &actualBody), ShouldBeNil)
 		So(json.Unmarshal([]byte(`{
 			"message": "This is a message",

@@ -24,7 +24,7 @@ import (
 )
 
 // GenerateStatement generates a spanner statement from a text template.
-func GenerateStatement(tmpl *template.Template, name string, input interface{}) (spanner.Statement, error) {
+func GenerateStatement(tmpl *template.Template, name string, input any) (spanner.Statement, error) {
 	sql := &bytes.Buffer{}
 	err := tmpl.ExecuteTemplate(sql, name, input)
 	if err != nil {

@@ -610,7 +610,7 @@ type (
 )
 
 type mockedBotsClient struct {
-	expected []interface{} // either expectedCreate or expectedUpdate
+	expected []any // either expectedCreate or expectedUpdate
 }
 
 func (m *mockedBotsClient) expectCreateBotSession(cb expectedCreate) {
@@ -621,7 +621,7 @@ func (m *mockedBotsClient) expectUpdateBotSession(cb expectedUpdate) {
 	m.expected = append(m.expected, cb)
 }
 
-func (m *mockedBotsClient) popExpected() (cb interface{}) {
+func (m *mockedBotsClient) popExpected() (cb any) {
 	So(m.expected, ShouldNotBeEmpty)
 	cb, m.expected = m.expected[0], m.expected[1:]
 	return cb

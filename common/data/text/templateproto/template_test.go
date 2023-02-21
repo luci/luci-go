@@ -107,7 +107,7 @@ func TestTemplateNormalize(t *testing.T) {
 					>
 					`)
 					So(t.Normalize(), ShouldBeNil)
-					_, err := t.RenderL(LiteralMap{"${foof}": map[string]interface{}{"hi": 1}})
+					_, err := t.RenderL(LiteralMap{"${foof}": map[string]any{"hi": 1}})
 					So(err, ShouldErrLike, "param \"${foof}\": value is too large")
 				})
 
@@ -321,7 +321,7 @@ func TestTemplateNormalize(t *testing.T) {
 				>
 				`)
 				So(t.Normalize(), ShouldBeNil)
-				doc, err := t.RenderL(LiteralMap{"${value}": []interface{}{"hi", 20}})
+				doc, err := t.RenderL(LiteralMap{"${value}": []any{"hi", 20}})
 				So(err, ShouldBeNil)
 				So(doc, ShouldEqual, `{"key": ["hi",20]}`)
 			})

@@ -42,7 +42,7 @@ func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{
+		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{
 			"CommonTestIDPrefix":     "",
 			"TestResultVariantUnion": []string{"a:b", "k:1", "k:2", "k2:1"},
 		}))
@@ -100,7 +100,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 				"CommonTestIDPrefix":     "",
 				"TestResultVariantUnion": pbutil.Variant("a", "b"),
 			}))
@@ -184,10 +184,10 @@ func TestQueryTestResults(t *testing.T) {
 
 		Convey(`Test id filter`, func() {
 			testutil.MustApply(ctx,
-				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 					"CommonTestIDPrefix": "1-",
 				}),
-				insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]interface{}{
+				insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]any{
 					"CreateTime": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 				}),
 			)
@@ -216,10 +216,10 @@ func TestQueryTestResults(t *testing.T) {
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
 			testutil.MustApply(ctx,
-				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 					"TestResultVariantUnion": []string{"k:1", "k:2"},
 				}),
-				insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]interface{}{
+				insert.Invocation("inv2", pb.Invocation_ACTIVE, map[string]any{
 					"CreateTime": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 				}),
 			)
@@ -245,7 +245,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Variant contains`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 				"TestResultVariantUnion": []string{"k:1", "k:2", "k2:1"},
 			}))
 
@@ -417,7 +417,7 @@ func TestQueryTestResults(t *testing.T) {
 
 		Convey(`Filter invocations`, func() {
 			testutil.MustApply(ctx,
-				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]interface{}{
+				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 					"CommonTestIDPrefix": "ninja://browser_tests/",
 				}),
 				insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
@@ -445,8 +445,8 @@ func TestQueryTestResults(t *testing.T) {
 
 		Convey(`Query statements`, func() {
 			Convey(`only unexpected exclude exonerated`, func() {
-				st := q.genStatement("testResults", map[string]interface{}{
-					"params": map[string]interface{}{
+				st := q.genStatement("testResults", map[string]any{
+					"params": map[string]any{
 						"invIDs":            q.InvocationIDs,
 						"afterInvocationId": "build-123",
 						"afterTestId":       "test",
@@ -511,8 +511,8 @@ func TestQueryTestResults(t *testing.T) {
 			})
 
 			Convey(`with unexpected filter by testID`, func() {
-				st := q.genStatement("testResults", map[string]interface{}{
-					"params": map[string]interface{}{
+				st := q.genStatement("testResults", map[string]any{
+					"params": map[string]any{
 						"invIDs":            q.InvocationIDs,
 						"testIdRegexp":      "^T4$",
 						"afterInvocationId": "build-123",

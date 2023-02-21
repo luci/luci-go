@@ -72,7 +72,7 @@ var (
 
 func compileChromiumLicense(c context.Context) (string, error) {
 	buf := bytes.Buffer{}
-	err := chromiumLicenseTemplate.Execute(&buf, map[string]interface{}{
+	err := chromiumLicenseTemplate.Execute(&buf, map[string]any{
 		"Year": clock.Now(c).Year(),
 	})
 	if err != nil {

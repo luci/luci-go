@@ -73,7 +73,7 @@ func Create(ctx context.Context, e *Entry) error {
 	if err != nil {
 		return err
 	}
-	ms := spanutil.InsertMap("ClusteringState", map[string]interface{}{
+	ms := spanutil.InsertMap("ClusteringState", map[string]any{
 		"Project":           e.Project,
 		"ChunkID":           e.ChunkID,
 		"PartitionTime":     e.PartitionTime,
@@ -152,7 +152,7 @@ func UpdateClustering(ctx context.Context, previous *Entry, update *clustering.C
 		return err
 	}
 
-	upd := make(map[string]interface{})
+	upd := make(map[string]any)
 	upd["Project"] = previous.Project
 	upd["ChunkID"] = previous.ChunkID
 	upd["LastUpdated"] = spanner.CommitTimestamp
@@ -179,7 +179,7 @@ func UpdateClustering(ctx context.Context, previous *Entry, update *clustering.C
 // state exists, the method returns the error NotFound.
 func Read(ctx context.Context, project, chunkID string) (*Entry, error) {
 	whereClause := "ChunkID = @chunkID"
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	params["chunkID"] = chunkID
 
 	limit := 1
@@ -219,7 +219,7 @@ type ReadNextOptions struct {
 // ReadNextN reads the n consecutively next clustering state entries
 // matching ReadNextOptions.
 func ReadNextN(ctx context.Context, project string, opts ReadNextOptions, n int) ([]*Entry, error) {
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	whereClause := `
 		ChunkId > @startChunkID AND ChunkId <= @endChunkID
 		AND (AlgorithmsVersion < @algorithmsVersion
@@ -235,7 +235,7 @@ func ReadNextN(ctx context.Context, project string, opts ReadNextOptions, n int)
 	return readWhere(ctx, project, whereClause, params, n)
 }
 
-func readWhere(ctx context.Context, project, whereClause string, params map[string]interface{}, limit int) ([]*Entry, error) {
+func readWhere(ctx context.Context, project, whereClause string, params map[string]any, limit int) ([]*Entry, error) {
 	stmt := spanner.NewStatement(`
 		SELECT
 		  ChunkId, PartitionTime, ObjectId,

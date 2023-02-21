@@ -278,7 +278,7 @@ func TestReclustering(t *testing.T) {
 				delete(chunkIDByObjectID, objectID)
 
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-					span.BufferWrite(ctx, spanutil.UpdateMap("ClusteringState", map[string]interface{}{
+					span.BufferWrite(ctx, spanutil.UpdateMap("ClusteringState", map[string]any{
 						"Project": testProject,
 						"ChunkID": chunkID,
 						// Simulate a race with another update, that

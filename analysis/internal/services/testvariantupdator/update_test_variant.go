@@ -155,7 +155,7 @@ func updateTestVariantStatus(ctx context.Context, task *taskspb.UpdateTestVarian
 		}
 
 		// Update the Spanner row.
-		vals := map[string]interface{}{
+		vals := map[string]any{
 			"Realm":       tvKey.Realm,
 			"TestId":      tvKey.TestId,
 			"VariantHash": tvKey.VariantHash,

@@ -121,7 +121,7 @@ func insertTestExoneration(ctx context.Context, invID invocations.ID, requestID 
 		Reason:          body.Reason,
 	}
 
-	mutation = mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]interface{}{
+	mutation = mutFn("TestExonerations", spanutil.ToSpannerMap(map[string]any{
 		"InvocationId":    invID,
 		"TestId":          ret.TestId,
 		"ExonerationId":   exonerationID,

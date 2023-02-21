@@ -107,32 +107,32 @@ func TestSave(t *testing.T) {
 			"name":      "testname",
 			"timestamp": recentTime,
 			"nested":    map[string]bigquery.Value{"name": "nestedname"},
-			"repeated_nested": []interface{}{
+			"repeated_nested": []any{
 				map[string]bigquery.Value{"name": "repeated_one"},
 				map[string]bigquery.Value{"name": "repeated_two"},
 			},
 			"foo":          "Y",
-			"foo_repeated": []interface{}{"Y", "X"},
+			"foo_repeated": []any{"Y", "X"},
 			"struct":       `{"num":1,"str":"a"}`,
 			"duration":     2.003,
 			"first":        map[string]bigquery.Value{"name": "first"},
-			"string_map": []interface{}{
+			"string_map": []any{
 				map[string]bigquery.Value{"key": "map_key_1", "value": "map_value_1"},
 				map[string]bigquery.Value{"key": "map_key_2", "value": "map_value_2"},
 			},
 			"bq_type_override": int64(1234),
-			"string_enum_map": []interface{}{
+			"string_enum_map": []any{
 				map[string]bigquery.Value{"key": "e_map_key_1", "value": "Y"},
 				map[string]bigquery.Value{"key": "e_map_key_2", "value": "X"},
 			},
-			"string_duration_map": []interface{}{
+			"string_duration_map": []any{
 				map[string]bigquery.Value{"key": "d_map_key_1", "value": 1.001},
 				map[string]bigquery.Value{"key": "d_map_key_2", "value": 2.002},
 			},
-			"string_timestamp_map": []interface{}{
+			"string_timestamp_map": []any{
 				map[string]bigquery.Value{"key": "t_map_key", "value": recentTime},
 			},
-			"string_proto_map": []interface{}{
+			"string_proto_map": []any{
 				map[string]bigquery.Value{"key": "p_map_key", "value": map[string]bigquery.Value{"name": "nestedname"}},
 			},
 		})

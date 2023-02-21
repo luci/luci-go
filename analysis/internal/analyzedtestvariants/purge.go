@@ -31,7 +31,7 @@ func purge(ctx context.Context) (int64, error) {
 		WHERE Status in UNNEST(@statuses)
 		AND StatusUpdateTime < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 31 DAY)
 	`)
-	st.Params = map[string]interface{}{
+	st.Params = map[string]any{
 		"statuses": []int{int(atvpb.Status_NO_NEW_RESULTS), int(atvpb.Status_CONSISTENTLY_EXPECTED)},
 	}
 	return span.PartitionedUpdate(ctx, st)

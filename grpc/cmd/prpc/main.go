@@ -101,7 +101,7 @@ func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Cl
 }
 
 // argErr prints an err and usage to stderr and returns an exit code.
-func (r *cmdRun) argErr(shortDesc, usageLine, format string, a ...interface{}) int {
+func (r *cmdRun) argErr(shortDesc, usageLine, format string, a ...any) int {
 	if format != "" {
 		fmt.Fprintf(os.Stderr, format+"\n", a...)
 	}

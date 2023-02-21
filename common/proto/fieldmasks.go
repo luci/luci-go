@@ -48,7 +48,7 @@ var (
 //
 // WARNING: AVOID. LIKELY BUGGY, see https://crbug.com/1028915.
 func FixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
-	var msg map[string]interface{}
+	var msg map[string]any
 	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func FixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) 
 	return json.Marshal(msg)
 }
 
-func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]interface{}, messageType reflect.Type) error {
+func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]any, messageType reflect.Type) error {
 	fieldTypes := getFieldTypes(messageType)
 	for name, val := range msg {
 		localPath := append(fieldPath, name)
@@ -75,18 +75,18 @@ func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]interface{}
 				msg[name] = convertFieldMask(val)
 			}
 
-		case map[string]interface{}:
+		case map[string]any:
 			if typ != structType && typ.Implements(protoMessageType) {
 				if err := fixFieldMasksBeforeUnmarshal(localPath, val, typ.Elem()); err != nil {
 					return err
 				}
 			}
 
-		case []interface{}:
+		case []any:
 			if typ.Kind() == reflect.Slice && typ.Elem().Implements(protoMessageType) {
 				subMsgType := typ.Elem().Elem()
 				for i, el := range val {
-					if subMsg, ok := el.(map[string]interface{}); ok {
+					if subMsg, ok := el.(map[string]any); ok {
 						elPath := append(localPath, strconv.Itoa(i))
 						if err := fixFieldMasksBeforeUnmarshal(elPath, subMsg, subMsgType); err != nil {
 							return err
@@ -102,12 +102,12 @@ func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]interface{}
 // convertFieldMask converts a FieldMask from a string according to
 // https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
 // and converts them to a JSON object that Golang Protobuf library understands.
-func convertFieldMask(s string) map[string]interface{} {
+func convertFieldMask(s string) map[string]any {
 	paths := parseFieldMaskString(s)
 	for i := range paths {
 		paths[i] = toSnakeCase(paths[i])
 	}
-	return map[string]interface{}{
+	return map[string]any{
 		"paths": paths,
 	}
 }

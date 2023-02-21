@@ -128,7 +128,7 @@ func advanceClockAndErr(tc testclock.TestClock, d time.Duration) http.HandlerFun
 	}
 }
 
-func shouldHaveMessagesLike(actual interface{}, expected ...interface{}) string {
+func shouldHaveMessagesLike(actual any, expected ...any) string {
 	log := actual.(*memlogger.MemLogger)
 	msgs := log.Messages()
 

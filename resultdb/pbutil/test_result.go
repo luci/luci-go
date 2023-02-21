@@ -56,7 +56,7 @@ type checker struct {
 //
 // It also stores err into lastCheckedErr. If err was not nil, it wraps err with
 // errors.Annotate before storing it in lastErr.
-func (c *checker) isErr(err error, format string, args ...interface{}) bool {
+func (c *checker) isErr(err error, format string, args ...any) bool {
 	if err == nil {
 		return false
 	}

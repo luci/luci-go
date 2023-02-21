@@ -48,7 +48,7 @@ func TestCache(t *testing.T) {
 			}
 		}
 
-		get := func(key interface{}) (val interface{}) {
+		get := func(key any) (val any) {
 			val, _ = cache.Get(ctx, key)
 			return
 		}
@@ -293,7 +293,7 @@ func TestGetOrCreate(t *testing.T) {
 		cache := New(0)
 
 		Convey(`Can create a new value, and will synchronize around that creation`, func() {
-			v, err := cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+			v, err := cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
 				return "bar", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -306,7 +306,7 @@ func TestGetOrCreate(t *testing.T) {
 
 		Convey(`Will not retain a value if an error is returned.`, func() {
 			errWat := errors.New("wat")
-			v, err := cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+			v, err := cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
 				return nil, 0, errWat
 			})
 			So(err, ShouldEqual, errWat)
@@ -328,7 +328,7 @@ func TestGetOrCreate(t *testing.T) {
 					wg.Add(1)
 					go func(cctx C) {
 						defer wg.Done()
-						v, err := cache.GetOrCreate(ctx, i, func() (interface{}, time.Duration, error) {
+						v, err := cache.GetOrCreate(ctx, i, func() (any, time.Duration, error) {
 							val := vals[i]
 							vals[i]++
 							return val, 0, nil
@@ -352,7 +352,7 @@ func TestGetOrCreate(t *testing.T) {
 			cache.Put(ctx, "foo", "bar", 0)
 
 			// Value already exists, so retrieves current value.
-			v, err := cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+			v, err := cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
 				return "baz", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -363,10 +363,10 @@ func TestGetOrCreate(t *testing.T) {
 			waitC := make(chan struct{})
 			doneC := make(chan struct{})
 
-			var setV interface{}
+			var setV any
 			var setErr error
 			go func() {
-				setV, setErr = cache.Create(ctx, "foo", func() (interface{}, time.Duration, error) {
+				setV, setErr = cache.Create(ctx, "foo", func() (any, time.Duration, error) {
 					close(changingC)
 					<-waitC
 					return "qux", 0, nil
@@ -378,7 +378,7 @@ func TestGetOrCreate(t *testing.T) {
 			// The goroutine's Create is in-progress, but the value is still present,
 			// so we should be able to get the old value.
 			<-changingC
-			v, err = cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+			v, err = cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
 				return "never", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -393,7 +393,7 @@ func TestGetOrCreate(t *testing.T) {
 
 			// Run GetOrCreate. The value should be present, and should hold the new
 			// value added by the goroutine.
-			v, err = cache.GetOrCreate(ctx, "foo", func() (interface{}, time.Duration, error) {
+			v, err = cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
 				return "never", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -402,7 +402,7 @@ func TestGetOrCreate(t *testing.T) {
 	})
 }
 
-func shouldHaveValues(actual interface{}, expected ...interface{}) string {
+func shouldHaveValues(actual any, expected ...any) string {
 	cache := actual.(*Cache)
 
 	actualSnapshot := cache.snapshot()

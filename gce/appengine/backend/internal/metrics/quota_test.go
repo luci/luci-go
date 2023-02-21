@@ -31,7 +31,7 @@ func TestQuota(t *testing.T) {
 		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
-		fields := []interface{}{"metric", "region", "project"}
+		fields := []any{"metric", "region", "project"}
 
 		UpdateQuota(c, 100.0, 25.0, "metric", "region", "project")
 		So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 100.0)

@@ -120,7 +120,7 @@ func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 
 	unixMicro := snap.CreatedTs.AsTime().UnixNano() / 1000
 
-	blob, err := json.Marshal(map[string]interface{}{
+	blob, err := json.Marshal(map[string]any{
 		"snapshot": SnapshotJSON{
 			AuthDBRev:      snap.AuthDbRev,
 			AuthDBDeflated: snap.AuthDbDeflated,

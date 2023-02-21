@@ -40,7 +40,7 @@ type SignatureVerifier interface {
 //
 // It must always be followed by VerifyAndDecode. Useful to "peek" inside the
 // token to see who it was supposedly signed by.
-func UnsafeDecode(jwt string, dest interface{}) error {
+func UnsafeDecode(jwt string, dest any) error {
 	chunks := strings.Split(jwt, ".")
 	if len(chunks) != 3 {
 		return errors.Reason("bad JWT: expected 3 components separated by '.'").Tag(NotJWT).Err()
@@ -60,7 +60,7 @@ func UnsafeDecode(jwt string, dest interface{}) error {
 //
 // Doesn't interpret any JWT claims in the body, just deserializes them into
 // `dest`. The caller is responsible for checking them.
-func VerifyAndDecode(jwt string, dest interface{}, verifier SignatureVerifier) error {
+func VerifyAndDecode(jwt string, dest any, verifier SignatureVerifier) error {
 	chunks := strings.Split(jwt, ".")
 	if len(chunks) != 3 {
 		return errors.Reason("bad JWT: expected 3 components separated by '.'").Tag(NotJWT).Err()
@@ -101,7 +101,7 @@ func VerifyAndDecode(jwt string, dest interface{}, verifier SignatureVerifier) e
 	return nil
 }
 
-func unmarshalB64JSON(blob string, out interface{}) error {
+func unmarshalB64JSON(blob string, out any) error {
 	raw, err := base64.RawURLEncoding.DecodeString(blob)
 	if err != nil {
 		return errors.Annotate(err, "not base64").Err()

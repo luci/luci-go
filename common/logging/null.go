@@ -20,8 +20,8 @@ var Null Logger = nullLogger{}
 // nullLogger silently ignores all messages.
 type nullLogger struct{}
 
-func (nullLogger) Debugf(string, ...interface{})             {}
-func (nullLogger) Infof(string, ...interface{})              {}
-func (nullLogger) Warningf(string, ...interface{})           {}
-func (nullLogger) Errorf(string, ...interface{})             {}
-func (nullLogger) LogCall(Level, int, string, []interface{}) {}
+func (nullLogger) Debugf(string, ...any)             {}
+func (nullLogger) Infof(string, ...any)              {}
+func (nullLogger) Warningf(string, ...any)           {}
+func (nullLogger) Errorf(string, ...any)             {}
+func (nullLogger) LogCall(Level, int, string, []any) {}

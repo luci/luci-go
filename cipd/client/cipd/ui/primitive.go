@@ -109,11 +109,11 @@ func (a *primitiveActivity) Progress(ctx context.Context, title string, units Un
 	// Use LogCall to pass non-default calldepth. Otherwise all logs appear as
 	// coming from Progress function, which is not very useful.
 	logging.Get(ctx).LogCall(logging.Info, 1, "%s: %s/%s MB%s",
-		[]interface{}{title, curStr, totalStr, detailsStr},
+		[]any{title, curStr, totalStr, detailsStr},
 	)
 }
 
-func (a *primitiveActivity) Log(ctx context.Context, level logging.Level, calldepth int, f string, args []interface{}) {
+func (a *primitiveActivity) Log(ctx context.Context, level logging.Level, calldepth int, f string, args []any) {
 	if a.logger != nil {
 		prefix := ""
 		if a.group != nil && a.kind != "" {

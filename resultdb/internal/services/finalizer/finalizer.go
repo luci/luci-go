@@ -175,7 +175,7 @@ func readyToFinalize(ctx context.Context, invID invocations.ID) (ready bool, err
 				JOIN Invocations included on incl.IncludedInvocationId = included.InvocationId
 				WHERE incl.InvocationId = @invID AND included.State != @finalized
 			`)
-			st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+			st.Params = spanutil.ToSpannerMap(map[string]any{
 				"finalized": pb.Invocation_FINALIZED,
 				"invID":     id,
 			})
@@ -286,7 +286,7 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 		}
 
 		// Update the invocation.
-		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]any{
 			"InvocationId": invID,
 			"State":        pb.Invocation_FINALIZED,
 			"FinalizeTime": spanner.CommitTimestamp,
@@ -312,7 +312,7 @@ func parentsInFinalizingState(ctx context.Context, invID invocations.ID) (ids []
 		JOIN Invocations including ON incl.InvocationId = including.InvocationId
 		WHERE IncludedInvocationId = @invID AND including.State = @finalizing
 	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]any{
 		"invID":      invID.RowID(),
 		"finalizing": pb.Invocation_FINALIZING,
 	})

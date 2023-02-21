@@ -262,7 +262,7 @@ func startAnimation(ctx context.Context) (ctrl func(string, time.Duration)) {
 	// ESC code sequence helpers.
 	down := func(lines int) { fmt.Printf("\033[%dB", lines) }
 	up := func(lines int) { fmt.Printf("\033[%dA", lines) }
-	line := func(msg string, args ...interface{}) { fmt.Printf("\r\033[2K"+msg+"\n", args...) }
+	line := func(msg string, args ...any) { fmt.Printf("\r\033[2K"+msg+"\n", args...) }
 
 	go func() {
 		defer spinWG.Done()

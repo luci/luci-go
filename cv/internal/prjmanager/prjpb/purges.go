@@ -29,7 +29,7 @@ func purgingCLModifier(f func(*PurgingCL) *PurgingCL) copyonwrite.Modifier {
 	if f == nil {
 		return nil
 	}
-	return func(v interface{}) interface{} {
+	return func(v any) any {
 		if v := f(v.(*PurgingCL)); v != nil {
 			return v
 		}
@@ -42,11 +42,11 @@ type cowPurgingCLs []*PurgingCL
 // It's important that PurgingCLs are always sorted.
 var _ copyonwrite.SortedSlice = cowPurgingCLs(nil)
 
-func (c cowPurgingCLs) At(index int) interface{} {
+func (c cowPurgingCLs) At(index int) any {
 	return c[index]
 }
 
-func (c cowPurgingCLs) Append(v interface{}) copyonwrite.Slice {
+func (c cowPurgingCLs) Append(v any) copyonwrite.Slice {
 	return append(c, v.(*PurgingCL))
 }
 
@@ -56,7 +56,7 @@ func (c cowPurgingCLs) CloneShallow(length int, capacity int) copyonwrite.Slice 
 	return r
 }
 
-func (c cowPurgingCLs) LessElements(a interface{}, b interface{}) bool {
+func (c cowPurgingCLs) LessElements(a any, b any) bool {
 	return a.(*PurgingCL).GetClid() < b.(*PurgingCL).GetClid()
 }
 

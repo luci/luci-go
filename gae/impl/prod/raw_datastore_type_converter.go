@@ -34,7 +34,7 @@ type typeFilter struct {
 
 var _ datastore.PropertyLoadSaver = &typeFilter{}
 
-func maybeIndexValue(val interface{}) interface{} {
+func maybeIndexValue(val any) any {
 	// It may be the SDK's datastore.indexValue structure (in datastore/load.go).
 	//
 	// Since this is a private type with no methods, we need to use reflection

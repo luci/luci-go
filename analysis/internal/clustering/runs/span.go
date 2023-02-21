@@ -68,7 +68,7 @@ var StartingEpoch = shards.StartingEpoch
 // project. If the row does not exist, the error NotFound is returned.
 func Read(ctx context.Context, projectID string, attemptTimestamp time.Time) (*ReclusteringRun, error) {
 	whereClause := `AttemptTimestamp = @attemptTimestamp`
-	params := map[string]interface{}{
+	params := map[string]any{
 		"attemptTimestamp": attemptTimestamp,
 	}
 	r, err := readLastWhere(ctx, projectID, whereClause, params)
@@ -145,7 +145,7 @@ func fakeLastRow(projectID string) *ReclusteringRun {
 
 // readLastWhere reads the last run matching the given where clause,
 // substituting params for any SQL parameters used in that clause.
-func readLastWhere(ctx context.Context, projectID string, whereClause string, params map[string]interface{}) (*ReclusteringRun, error) {
+func readLastWhere(ctx context.Context, projectID string, whereClause string, params map[string]any) (*ReclusteringRun, error) {
 	stmt := spanner.NewStatement(`
 		SELECT
 		  AttemptTimestamp, ConfigVersion, RulesVersion,
@@ -197,7 +197,7 @@ func Create(ctx context.Context, r *ReclusteringRun) error {
 	if err := validateRun(r); err != nil {
 		return err
 	}
-	ms := spanutil.InsertMap("ReclusteringRuns", map[string]interface{}{
+	ms := spanutil.InsertMap("ReclusteringRuns", map[string]any{
 		"Project":           r.Project,
 		"AttemptTimestamp":  r.AttemptTimestamp,
 		"AlgorithmsVersion": r.AlgorithmsVersion,
@@ -235,7 +235,7 @@ func validateRun(r *ReclusteringRun) error {
 
 // UpdateProgress sets the progress of a particular run.
 func UpdateProgress(ctx context.Context, projectID string, attemptTimestamp time.Time, shardsReported, progress int64) error {
-	ms := spanutil.UpdateMap("ReclusteringRuns", map[string]interface{}{
+	ms := spanutil.UpdateMap("ReclusteringRuns", map[string]any{
 		"Project":          projectID,
 		"AttemptTimestamp": attemptTimestamp,
 		"ShardsReported":   shardsReported,

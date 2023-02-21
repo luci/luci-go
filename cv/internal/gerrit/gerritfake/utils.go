@@ -66,7 +66,7 @@ func LastMessage(ci *gerritpb.ChangeInfo) *gerritpb.ChangeMessageInfo {
 
 // ShouldLastMessageContain asserts the last posted message on a ChangeInfo
 // contains the expected substring.
-func ShouldLastMessageContain(actual interface{}, oneSubstring ...interface{}) string {
+func ShouldLastMessageContain(actual any, oneSubstring ...any) string {
 	if len(oneSubstring) != 1 {
 		panic("exactly 1 substring required")
 	}

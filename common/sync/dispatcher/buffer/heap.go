@@ -46,10 +46,10 @@ func (h batchHeap) Less(i, j int) bool {
 }
 
 // Implements heap.Interface.
-func (h *batchHeap) Push(itm interface{}) {
+func (h *batchHeap) Push(itm any) {
 	h.data = append(h.data, itm.(*Batch))
 }
-func (h *batchHeap) Pop() interface{} {
+func (h *batchHeap) Pop() any {
 	old := h.data
 	n := len(old)
 	x := old[n-1]

@@ -59,7 +59,7 @@ var returnedStop = reflect.ValueOf(func() error { return datastore.Stop }).Call(
 // nil halts the query, and if the error is not datastore.Stop, causes this
 // function to return an error as well. See datastore.Run for more information.
 // No maximum page size is imposed, use datastore.Stop to enforce one.
-func Query(c context.Context, lim int32, tok string, rsp Response, q *datastore.Query, cb interface{}) error {
+func Query(c context.Context, lim int32, tok string, rsp Response, q *datastore.Query, cb any) error {
 	// Validate as much about the callback as this function relies on.
 	// The rest is validated by datastore.Run.
 	v := reflect.ValueOf(cb)

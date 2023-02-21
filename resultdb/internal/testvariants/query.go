@@ -127,7 +127,7 @@ type Query struct {
 	AccessLevel AccessLevel
 
 	decompressBuf []byte                 // buffer for decompressing blobs
-	params        map[string]interface{} // query parameters
+	params        map[string]any // query parameters
 }
 
 // trim is equivalent to q.Mask.Trim with the exception that "test_id",
@@ -388,7 +388,7 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 		panic("PageSize < 0")
 	}
 
-	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]interface{}{
+	st, err := spanutil.GenerateStatement(testVariantsWithUnexpectedResultsSQLTmpl, map[string]any{
 		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
 		"HasTestIds":    len(q.TestIDs) > 0,
 		"StatusFilter":  q.Predicate.GetStatus() != 0 && q.Predicate.GetStatus() != pb.TestVariantStatus_UNEXPECTED_MASK,
@@ -536,7 +536,7 @@ func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, 
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
 	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations))
 	defer func() { ts.End(err) }()
-	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]interface{}{
+	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]any{
 		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),
 		"HasTestIds":    len(q.TestIDs) > 0,
 	})
@@ -757,7 +757,7 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 		status = 0
 	}
 
-	q.params = map[string]interface{}{
+	q.params = map[string]any{
 		"testResultInvIDs":      q.ReachableInvocations.WithTestResultsIDSet(),
 		"testExonerationInvIDs": q.ReachableInvocations.WithExonerationsIDSet(),
 		"testIDs":               q.TestIDs,

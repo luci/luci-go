@@ -49,7 +49,7 @@ func TestBundler(t *testing.T) {
 		ctx, _, _ = tsmon.WithFakes(ctx)
 		tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
 
-		counter := func(m types.Metric, fieldVals ...interface{}) int64 {
+		counter := func(m types.Metric, fieldVals ...any) int64 {
 			val, _ := tsmon.GetState(ctx).Store().Get(ctx, m, time.Time{}, fieldVals).(int64)
 			return val
 		}

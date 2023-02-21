@@ -32,7 +32,7 @@ import (
 // argument 1 (expected[0]) is the log level.
 // argument 2 (expected[1]) is a substring the message. If omitted or the empty string, this value is not checked.
 // argument 3 (expected[2]) is the fields data. If omitted or nil, this value is not checked.
-func ShouldHaveLog(actual interface{}, expected ...interface{}) string {
+func ShouldHaveLog(actual any, expected ...any) string {
 	var ok bool
 	var m *MemLogger
 
@@ -49,17 +49,17 @@ func ShouldHaveLog(actual interface{}, expected ...interface{}) string {
 
 	level := logging.Level(0)
 	msg := ""
-	data := map[string]interface{}(nil)
+	data := map[string]any(nil)
 
 	switch len(expected) {
 	case 3:
 
-		data, ok = expected[2].(map[string]interface{})
+		data, ok = expected[2].(map[string]any)
 		if !ok {
 			fields, ok := expected[2].(logging.Fields)
 			if !ok {
 				return fmt.Sprintf(
-					"Third argument to this assertion must be an map[string]interface{} (was %T)", expected[2])
+					"Third argument to this assertion must be an map[string]any (was %T)", expected[2])
 			}
 			data = fields
 		}
@@ -116,7 +116,7 @@ func ShouldHaveLog(actual interface{}, expected ...interface{}) string {
 
 // ShouldNotHaveLog is the inverse of ShouldHaveLog. It asserts that the logger
 // has not seen such a log.
-func ShouldNotHaveLog(actual interface{}, expected ...interface{}) string {
+func ShouldNotHaveLog(actual any, expected ...any) string {
 	res := ShouldHaveLog(actual, expected...)
 
 	if res != "" {

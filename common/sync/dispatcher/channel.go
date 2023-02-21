@@ -27,7 +27,7 @@ type Channel struct {
 	// C is an unbuffered channel which you can push single work items into.
 	//
 	// Close this to shut down the Channel.
-	C chan<- interface{}
+	C chan<- any
 
 	// DrainC will unblock when this Channel is closed/canceled and fully drained.
 	DrainC <-chan struct{}
@@ -123,7 +123,7 @@ func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error
 		return Channel{}, errors.Annotate(err, "normalizing dispatcher.Options").Err()
 	}
 
-	itemCh := make(chan interface{})
+	itemCh := make(chan any)
 	drainCh := make(chan struct{})
 
 	cstate := coordinatorState{

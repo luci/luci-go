@@ -91,11 +91,11 @@ func TestQueryTestResults(t *testing.T) {
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertTRs := insert.TestResults
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insertInv("x", map[string]interface{}{"Realm": "secretproject:testrealm"}, "a"),
-			insertInv("a", map[string]interface{}{"Realm": "testproject:testrealm"}, "b"),
-			insertInv("b", map[string]interface{}{"Realm": "otherproject:testrealm"}, "c"),
+			insertInv("x", map[string]any{"Realm": "secretproject:testrealm"}, "a"),
+			insertInv("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
+			insertInv("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
-			insertInv("c", map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insertInv("c", map[string]any{"Realm": "testproject:testrealm"}),
 			insertTRs("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insertTRs("b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insertTRs("c", "C", nil, pb.TestStatus_PASS),

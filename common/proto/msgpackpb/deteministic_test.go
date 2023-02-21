@@ -27,10 +27,10 @@ func TestMsgpackPBDeterministicEncod(t *testing.T) {
 
 	Convey(`msgpackpbDeterministicEncode`, t, func() {
 		Convey(`list`, func() {
-			val := reflect.ValueOf([]interface{}{
+			val := reflect.ValueOf([]any{
 				10,
 				"Hello",
-				map[string]interface{}{
+				map[string]any{
 					"c": "lol",
 					"b": []string{"one", "seven"},
 					"a": "yo",

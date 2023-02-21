@@ -29,23 +29,23 @@ type teeImpl struct {
 	l []leveledLogger
 }
 
-func (t *teeImpl) Debugf(fmt string, args ...interface{}) {
+func (t *teeImpl) Debugf(fmt string, args ...any) {
 	t.LogCall(logging.Debug, 1, fmt, args)
 }
 
-func (t *teeImpl) Infof(fmt string, args ...interface{}) {
+func (t *teeImpl) Infof(fmt string, args ...any) {
 	t.LogCall(logging.Info, 1, fmt, args)
 }
 
-func (t *teeImpl) Warningf(fmt string, args ...interface{}) {
+func (t *teeImpl) Warningf(fmt string, args ...any) {
 	t.LogCall(logging.Warning, 1, fmt, args)
 }
 
-func (t *teeImpl) Errorf(fmt string, args ...interface{}) {
+func (t *teeImpl) Errorf(fmt string, args ...any) {
 	t.LogCall(logging.Error, 1, fmt, args)
 }
 
-func (t *teeImpl) LogCall(level logging.Level, calldepth int, f string, args []interface{}) {
+func (t *teeImpl) LogCall(level logging.Level, calldepth int, f string, args []any) {
 	for _, l := range t.l {
 		if level >= l.minLevel {
 			l.logger.LogCall(level, calldepth+1, f, args)

@@ -318,11 +318,11 @@ func (pq trackedSecretsPQ) Len() int           { return len(pq) }
 func (pq trackedSecretsPQ) Less(i, j int) bool { return pq[i].nextReload.Before(pq[j].nextReload) }
 func (pq trackedSecretsPQ) Swap(i, j int)      { pq[i], pq[j] = pq[j], pq[i] }
 
-func (pq *trackedSecretsPQ) Push(x interface{}) {
+func (pq *trackedSecretsPQ) Push(x any) {
 	*pq = append(*pq, x.(*trackedSecret))
 }
 
-func (pq *trackedSecretsPQ) Pop() interface{} {
+func (pq *trackedSecretsPQ) Pop() any {
 	panic("Pop is not actually used, but defined to comply with heap.Interface")
 }
 
@@ -571,7 +571,7 @@ func (sm *SecretManagerStore) tryReloadSecretLocked(ctx context.Context, secret 
 }
 
 // emitTestingEvent is used in tests to expose what MaintenanceLoop is doing.
-func (sm *SecretManagerStore) emitTestingEvent(ctx context.Context, msg string, args ...interface{}) {
+func (sm *SecretManagerStore) emitTestingEvent(ctx context.Context, msg string, args ...any) {
 	if sm.testingEvents != nil {
 		select {
 		case sm.testingEvents <- fmt.Sprintf(msg, args...):

@@ -62,7 +62,7 @@ func (t *templateValue) Attr(name string) (starlark.Value, error) {
 }
 
 // render implements template rendering using given value as input.
-func (t *templateValue) render(data interface{}) (string, error) {
+func (t *templateValue) render(data any) (string, error) {
 	buf := bytes.Buffer{}
 	if err := t.tmpl.Execute(&buf, data); err != nil {
 		return "", err

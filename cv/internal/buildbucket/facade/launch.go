@@ -207,11 +207,11 @@ func makeCVProperties(in *recipe.Input) (*structpb.Struct, error) {
 	if err != nil {
 		return nil, err
 	}
-	var raw map[string]interface{}
+	var raw map[string]any
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return nil, err
 	}
-	return structpb.NewStruct(map[string]interface{}{propertyKey: raw})
+	return structpb.NewStruct(map[string]any{propertyKey: raw})
 }
 
 func makeGerritChanges(cls []*run.RunCL) []*bbpb.GerritChange {

@@ -26,7 +26,7 @@ func TestAccept(t *testing.T) {
 	t.Parallel()
 
 	Convey("parseAccept", t, func() {
-		test := func(value string, expectedErr interface{}, expectedTypes ...acceptItem) {
+		test := func(value string, expectedErr any, expectedTypes ...acceptItem) {
 			Convey("mediaType="+value, func() {
 				actual, err := parseAccept(value)
 				So(err, ShouldErrLike, expectedErr)

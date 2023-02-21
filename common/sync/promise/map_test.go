@@ -28,10 +28,10 @@ func TestMap(t *testing.T) {
 		c := context.Background()
 		m := Map{}
 
-		p1 := m.Get(c, 1, func(context.Context) (interface{}, error) {
+		p1 := m.Get(c, 1, func(context.Context) (any, error) {
 			return "hello", nil
 		})
-		p2 := m.Get(c, 1, func(context.Context) (interface{}, error) {
+		p2 := m.Get(c, 1, func(context.Context) (any, error) {
 			panic("must not be called")
 		})
 		So(p1, ShouldEqual, p2)

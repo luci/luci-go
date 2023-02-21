@@ -39,17 +39,17 @@ type nilStore struct{}
 func (nilStore) DefaultTarget() types.Target     { return nil }
 func (nilStore) SetDefaultTarget(t types.Target) {}
 
-func (nilStore) Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}) interface{} {
+func (nilStore) Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any) any {
 	return nil
 }
 
-func (nilStore) Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, value interface{}) {
+func (nilStore) Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, value any) {
 }
 
-func (nilStore) Del(ctx context.Context, m types.Metric, fieldVals []interface{}) {
+func (nilStore) Del(ctx context.Context, m types.Metric, fieldVals []any) {
 }
 
-func (nilStore) Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []interface{}, delta interface{}) {
+func (nilStore) Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, delta any) {
 }
 
 func (nilStore) GetAll(ctx context.Context) []types.Cell {

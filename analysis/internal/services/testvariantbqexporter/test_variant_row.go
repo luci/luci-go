@@ -49,13 +49,13 @@ func testVariantName(realm, testID, variantHash string) string {
 	return fmt.Sprintf("realms/%s/tests/%s/variants/%s", realm, url.PathEscape(testID), variantHash)
 }
 
-func (b *BQExporter) populateQueryParameters() (inputs, params map[string]interface{}, err error) {
-	inputs = map[string]interface{}{
+func (b *BQExporter) populateQueryParameters() (inputs, params map[string]any, err error) {
+	inputs = map[string]any{
 		"TestIdFilter": b.options.Predicate.GetTestIdRegexp() != "",
 		"StatusFilter": b.options.Predicate.GetStatus() != atvpb.Status_STATUS_UNSPECIFIED,
 	}
 
-	params = map[string]interface{}{
+	params = map[string]any{
 		"realm":              b.options.Realm,
 		"flakyVerdictStatus": int(internal.VerdictStatus_VERDICT_FLAKY),
 	}

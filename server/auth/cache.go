@@ -41,7 +41,7 @@ type tokenCacheConfig struct {
 	// Version defines format of the data. Will be used as part of the global
 	// cache key.
 	//
-	// If you change a type behind interface{} in Token field, you MUST bump the
+	// If you change a type behind any in Token field, you MUST bump the
 	// version. It will also "invalidate" all existing cached entries (they will
 	// just become inaccessible and eventually will be evicted from the cache).
 	Version int
@@ -72,7 +72,7 @@ func newTokenCache(cfg tokenCacheConfig) *tokenCache {
 			ProcessLRUCache: cfg.ProcessLRUCache,
 			GlobalNamespace: globalCacheNamespace,
 			Marshal:         json.Marshal, // marshals *cachedToken
-			Unmarshal: func(blob []byte) (interface{}, error) {
+			Unmarshal: func(blob []byte) (any, error) {
 				out := &cachedToken{}
 				err := json.Unmarshal(blob, out)
 				return out, err
@@ -138,7 +138,7 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 		layered.WithMinTTL(op.MinTTL),
 		layered.WithRandomizedExpiration(tc.cfg.ExpiryRandomizationThreshold),
 	}
-	fetched, err := tc.lc.GetOrCreate(ctx, cacheKey, func() (val interface{}, ttl time.Duration, err error) {
+	fetched, err := tc.lc.GetOrCreate(ctx, cacheKey, func() (val any, ttl time.Duration, err error) {
 		logging.Debugf(ctx, "Minting the new token")
 
 		// Minting a new token involves RPCs to remote services that should be fast.

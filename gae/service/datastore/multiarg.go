@@ -317,14 +317,14 @@ func (mgs *keyMGS) GetAllMeta() PropertyMap {
 	return PropertyMap{"$key": MkPropertyNI(mgs.slot.Interface())}
 }
 
-func (mgs *keyMGS) GetMeta(key string) (interface{}, bool) {
+func (mgs *keyMGS) GetMeta(key string) (any, bool) {
 	if key != "key" {
 		return nil, false
 	}
 	return mgs.slot.Interface(), true
 }
 
-func (mgs *keyMGS) SetMeta(key string, value interface{}) bool {
+func (mgs *keyMGS) SetMeta(key string, value any) bool {
 	if !(key == "key" && mgs.slot.CanAddr()) {
 		return false
 	}
@@ -384,7 +384,7 @@ type metaMultiArg struct {
 // If keysOnly is true, the caller is instructing metaMultiArg to only extract
 // the datastore *Key from args. *Key entries will be permitted, but the caller
 // may not write to them (since keys are read-only structs).
-func makeMetaMultiArg(args []interface{}, c metaMultiArgConstraints) (*metaMultiArg, error) {
+func makeMetaMultiArg(args []any, c metaMultiArgConstraints) (*metaMultiArg, error) {
 	mma := metaMultiArg{
 		elems:    make([]metaMultiArgElement, len(args)),
 		keysOnly: c.keyOperationsOnly(),

@@ -25,7 +25,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func stringCompare(a, b interface{}) int {
+func stringCompare(a, b any) int {
 	return strings.Compare(a.(string), b.(string))
 }
 
@@ -55,7 +55,7 @@ func iterAll(it *gtreap.Iterator) []string {
 	}
 }
 
-func shouldHaveKeys(actual interface{}, expected ...interface{}) string {
+func shouldHaveKeys(actual any, expected ...any) string {
 	c := actual.(*Collection)
 
 	// expected can either be a single []string or a series of strings.

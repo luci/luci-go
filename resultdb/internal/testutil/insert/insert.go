@@ -34,16 +34,16 @@ import (
 // TestRealm is the default realm used for invocation mutations returned by Invocation().
 const TestRealm = "testproject:testrealm"
 
-func updateDict(dest, source map[string]interface{}) {
+func updateDict(dest, source map[string]any) {
 	for k, v := range source {
 		dest[k] = v
 	}
 }
 
 // Invocation returns a spanner mutation that inserts an invocation.
-func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[string]interface{}) *spanner.Mutation {
+func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[string]any) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
-	values := map[string]interface{}{
+	values := map[string]any{
 		"InvocationId":                      id,
 		"ShardId":                           0,
 		"State":                             state,
@@ -62,12 +62,12 @@ func Invocation(id invocations.ID, state pb.Invocation_State, extraValues map[st
 }
 
 // FinalizedInvocationWithInclusions returns mutations to insert a finalized invocation with inclusions.
-func FinalizedInvocationWithInclusions(id invocations.ID, extraValues map[string]interface{}, included ...invocations.ID) []*spanner.Mutation {
+func FinalizedInvocationWithInclusions(id invocations.ID, extraValues map[string]any, included ...invocations.ID) []*spanner.Mutation {
 	return InvocationWithInclusions(id, pb.Invocation_FINALIZED, extraValues, included...)
 }
 
 // InvocationWithInclusions returns mutations to insert an invocation with inclusions.
-func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, extraValues map[string]interface{}, included ...invocations.ID) []*spanner.Mutation {
+func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, extraValues map[string]any, included ...invocations.ID) []*spanner.Mutation {
 	ms := []*spanner.Mutation{Invocation(id, state, extraValues)}
 	for _, incl := range included {
 		ms = append(ms, Inclusion(id, incl))
@@ -77,7 +77,7 @@ func InvocationWithInclusions(id invocations.ID, state pb.Invocation_State, extr
 
 // Inclusion returns a spanner mutation that inserts an inclusion.
 func Inclusion(including, included invocations.ID) *spanner.Mutation {
-	return spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
+	return spanutil.InsertMap("IncludedInvocations", map[string]any{
 		"InvocationId":         including,
 		"IncludedInvocationId": included,
 	})
@@ -94,7 +94,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 	for i, tr := range trs {
 		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
 		So(err, ShouldBeNil)
-		mutMap := map[string]interface{}{
+		mutMap := map[string]any{
 			"InvocationId":    invocations.ID(invID),
 			"TestId":          testID,
 			"ResultId":        resultID,
@@ -133,7 +133,7 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, reasons ...pb.ExonerationReason) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, len(reasons))
 	for i := 0; i < len(reasons); i++ {
-		ms[i] = spanutil.InsertMap("TestExonerations", map[string]interface{}{
+		ms[i] = spanutil.InsertMap("TestExonerations", map[string]any{
 			"InvocationId":    invID,
 			"TestId":          testID,
 			"ExonerationId":   strconv.Itoa(i),
@@ -147,8 +147,8 @@ func TestExonerations(invID invocations.ID, testID string, variant *pb.Variant, 
 }
 
 // Artifact returns a Spanner mutation to insert an artifact.
-func Artifact(invID invocations.ID, parentID, artID string, extraValues map[string]interface{}) *spanner.Mutation {
-	values := map[string]interface{}{
+func Artifact(invID invocations.ID, parentID, artID string, extraValues map[string]any) *spanner.Mutation {
+	values := map[string]any{
 		"InvocationId": invID,
 		"ParentID":     parentID,
 		"ArtifactId":   artID,

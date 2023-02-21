@@ -98,7 +98,7 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 		},
 		func(ctx context.Context) error {
 			txndefer.Defer(ctx, func(ctx context.Context) {
-				commonFields := []interface{}{
+				commonFields := []any{
 					rs.ID.LUCIProject(),
 					rs.ConfigGroupID.Name(),
 					string(rs.Mode),

@@ -33,12 +33,12 @@ type entry struct {
 
 func (e *entry) MarshalJSON() ([]byte, error) {
 	// encode as a tuple.
-	return json.Marshal([]interface{}{e.key, []interface{}{e.value, e.lastAccess}})
+	return json.Marshal([]any{e.key, []any{e.value, e.lastAccess}})
 }
 
 func (e *entry) UnmarshalJSON(data []byte) error {
 	// decode from tuple.
-	var elems []interface{}
+	var elems []any
 	if err := json.Unmarshal(data, &elems); err != nil {
 		return fmt.Errorf("invalid entry: %s: %s", err, string(data))
 	}
@@ -47,7 +47,7 @@ func (e *entry) UnmarshalJSON(data []byte) error {
 	}
 	if key, ok := elems[0].(string); ok {
 		e.key = HexDigest(key)
-		values, ok := elems[1].([]interface{})
+		values, ok := elems[1].([]any)
 		if !ok {
 			return fmt.Errorf("invalid entry: expected array for second element: %s", string(data))
 		}

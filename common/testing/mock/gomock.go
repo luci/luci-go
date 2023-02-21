@@ -26,7 +26,7 @@ type protoEqMatcher struct {
 	textDef string
 }
 
-func (m *protoEqMatcher) Matches(x interface{}) bool {
+func (m *protoEqMatcher) Matches(x any) bool {
 	return proto.CompactTextString(x.(proto.Message)) == m.textDef
 }
 

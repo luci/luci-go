@@ -40,7 +40,7 @@ var (
 // MakeErrInvalidKey returns an errors.Annotator instance that wraps an invalid
 // key error. Calling IsErrInvalidKey on this Annotator or its derivatives will
 // return true.
-func MakeErrInvalidKey(reason string, args ...interface{}) *errors.Annotator {
+func MakeErrInvalidKey(reason string, args ...any) *errors.Annotator {
 	return errors.Annotate(datastore.ErrInvalidKey, reason, args...)
 }
 

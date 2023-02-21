@@ -32,7 +32,7 @@ type cacheContext struct {
 	context.Context
 
 	mu    sync.RWMutex
-	cache map[interface{}]interface{}
+	cache map[any]any
 }
 
 // Wrap wraps the supplied Context in a caching Context. All Value lookups will
@@ -45,7 +45,7 @@ func Wrap(c context.Context) context.Context {
 	return &cacheContext{Context: c}
 }
 
-func (c *cacheContext) Value(key interface{}) interface{} {
+func (c *cacheContext) Value(key any) any {
 	// Optimistic: the value is cached.
 	c.mu.RLock()
 	if v, ok := c.cache[key]; ok {
@@ -62,7 +62,7 @@ func (c *cacheContext) Value(key interface{}) interface{} {
 	}
 	v := c.Context.Value(key)
 	if c.cache == nil {
-		c.cache = make(map[interface{}]interface{}, 1)
+		c.cache = make(map[any]any, 1)
 	}
 	c.cache[key] = v
 	return v

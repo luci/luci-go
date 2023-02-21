@@ -67,7 +67,7 @@ func TestSafeShouldResemble(t *testing.T) {
 
 	cases := []struct {
 		name            string
-		a, e            interface{}
+		a, e            any
 		diffsContains   []string
 		shouldPanicLike string
 	}{

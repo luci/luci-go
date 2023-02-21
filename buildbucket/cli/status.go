@@ -70,7 +70,7 @@ func (f *statusFlag) String() string {
 	return statusFlagNames[*f.status]
 }
 
-func (f *statusFlag) Get() interface{} {
+func (f *statusFlag) Get() any {
 	return *f.status
 }
 

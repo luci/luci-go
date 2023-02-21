@@ -241,7 +241,7 @@ import (
 //	type Person struct {
 //	  ID Name `gae:"$id"`
 //	}
-func GetPLS(obj interface{}) interface {
+func GetPLS(obj any) interface {
 	PropertyLoadSaver
 	MetaGetterSetter
 } {
@@ -271,7 +271,7 @@ func GetPLS(obj interface{}) interface {
 	panic(fmt.Errorf("cannot GetPLS(%T): not a pointer-to-struct", obj))
 }
 
-func getMGS(obj interface{}) MetaGetterSetter {
+func getMGS(obj any) MetaGetterSetter {
 	if mgs, ok := obj.(MetaGetterSetter); ok {
 		return mgs
 	}

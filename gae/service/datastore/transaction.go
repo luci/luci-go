@@ -26,7 +26,7 @@ import (
 //   - Active() bool: is the transaction currently active?
 //   - AffectedGroups() []*ds.Key: list the groups that have been referenced in
 //     this Transaction so far.
-type Transaction interface{}
+type Transaction any
 
 // WithoutTransaction returns a Context that isn't bound to a transaction.
 // This may be called even when outside of a transaction, in which case the

@@ -77,7 +77,7 @@ type InstanceRequest struct {
 	Done    context.CancelFunc // called right before the result is enqueued
 	Pin     common.Pin         // identifies the instance to fetch
 	Open    bool               // true to return it as a pkg.Instance as opposed to pkg.Source
-	State   interface{}        // passed to the InstanceResult as is
+	State   any        // passed to the InstanceResult as is
 }
 
 // InstanceResult is a result of a completed InstanceRequest.
@@ -86,7 +86,7 @@ type InstanceResult struct {
 	Err      error           // non-nil if failed to obtain the instance
 	Source   pkg.Source      // set only if Open was false, must be closed by the caller
 	Instance pkg.Instance    // set only if Open was true, must be closed by the caller
-	State    interface{}     // copied from the InstanceRequest
+	State    any     // copied from the InstanceRequest
 }
 
 // InstanceCache is a file-system-based, thread-safe, LRU cache of instances.
@@ -511,10 +511,10 @@ type garbageHeap []*garbageCandidate
 func (h garbageHeap) Len() int           { return len(h) }
 func (h garbageHeap) Less(i, j int) bool { return h[i].lastAccessTime.Before(h[j].lastAccessTime) }
 func (h garbageHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h *garbageHeap) Push(x interface{}) {
+func (h *garbageHeap) Push(x any) {
 	*h = append(*h, x.(*garbageCandidate))
 }
-func (h *garbageHeap) Pop() interface{} {
+func (h *garbageHeap) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]

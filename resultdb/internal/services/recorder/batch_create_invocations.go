@@ -175,7 +175,7 @@ func (s *recorderServer) createInvocationsRequestsToMutations(ctx context.Contex
 
 		// Add any inclusions.
 		for _, incName := range req.Invocation.IncludedInvocations {
-			ms = append(ms, spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
+			ms = append(ms, spanutil.InsertMap("IncludedInvocations", map[string]any{
 				"InvocationId":         invocations.ID(req.InvocationId),
 				"IncludedInvocationId": invocations.MustParseName(incName),
 			}))

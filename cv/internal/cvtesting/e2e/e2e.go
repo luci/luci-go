@@ -436,7 +436,7 @@ func (t *Test) AddNewPatchsetRunner(email string) {
 // ===========================
 // PHASE: ....
 // ===========================
-func (t *Test) LogPhase(ctx context.Context, format string, args ...interface{}) {
+func (t *Test) LogPhase(ctx context.Context, format string, args ...any) {
 	line := strings.Repeat("=", 80)
 	format = fmt.Sprintf("\n%s\nPHASE: %s\n%s", line, format, line)
 	logging.Debugf(ctx, format, args...)

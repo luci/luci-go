@@ -460,7 +460,7 @@ func TestBuildMask(t *testing.T) {
 	})
 }
 
-func asStructPb(v interface{}) *structpb.Struct {
+func asStructPb(v any) *structpb.Struct {
 	blob, err := json.Marshal(v)
 	if err != nil {
 		panic(err)

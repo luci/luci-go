@@ -23,7 +23,7 @@ import (
 )
 
 type item struct {
-	value    interface{}
+	value    any
 	expireAt time.Time
 }
 
@@ -38,7 +38,7 @@ type timedMap struct {
 // set adds an item to the map with ttl.
 //
 // zero or negative `expiration` means never expire
-func (rc *timedMap) set(ctx context.Context, key string, value interface{}, expiration time.Duration) {
+func (rc *timedMap) set(ctx context.Context, key string, value any, expiration time.Duration) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 	i := &item{value: value}
@@ -52,7 +52,7 @@ func (rc *timedMap) set(ctx context.Context, key string, value interface{}, expi
 	rc.cleanupLocked(ctx)
 }
 
-func (rc *timedMap) get(ctx context.Context, key string) (interface{}, bool) {
+func (rc *timedMap) get(ctx context.Context, key string) (any, bool) {
 	defer func() {
 		// TODO(yiwzhang): Once move to go 1.18, use Trylock for best effort clean
 		// up.

@@ -60,6 +60,6 @@ func (f grpcMetadataFlag) Set(s string) error {
 }
 
 // Get retrieves the flag value.
-func (f grpcMetadataFlag) Get() interface{} {
+func (f grpcMetadataFlag) Get() any {
 	return metadata.MD(f)
 }

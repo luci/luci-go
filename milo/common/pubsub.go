@@ -19,7 +19,7 @@ import (
 )
 
 type PubSubMessage struct {
-	Attributes map[string]interface{} `json:"attributes"`
+	Attributes map[string]any `json:"attributes"`
 	Data       string                 `json:"data"`
 	MessageID  string                 `json:"message_id"`
 }

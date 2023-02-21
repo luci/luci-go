@@ -62,9 +62,9 @@ func TestGetCompileLogs(t *testing.T) {
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
 	Convey("GetCompileLog", t, func() {
-		ninjaLogJson := map[string]interface{}{
-			"failures": []interface{}{
-				map[string]interface{}{
+		ninjaLogJson := map[string]any{
+			"failures": []any{
+				map[string]any{
 					"dependencies": []string{"d1", "d2"},
 					"output":       "/opt/s/w/ir/cache/goma/client/gomacc blah blah...",
 					"output_nodes": []string{"n1", "n2"},

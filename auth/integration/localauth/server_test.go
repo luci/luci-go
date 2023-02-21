@@ -67,11 +67,11 @@ func TestProtocol(t *testing.T) {
 	Convey("With server", t, func(c C) {
 		// Use channels to pass mocked requests/responses back and forth.
 		requests := make(chan []string, 10000)
-		responses := make(chan interface{}, 1)
+		responses := make(chan any, 1)
 
 		testGen := func(ctx context.Context, scopes []string, lifetime time.Duration) (*oauth2.Token, error) {
 			requests <- scopes
-			var resp interface{}
+			var resp any
 			select {
 			case resp = <-responses:
 			default:
@@ -108,7 +108,7 @@ func TestProtocol(t *testing.T) {
 		So(p.DefaultAccountId, ShouldEqual, "acc_id")
 
 		goodOAuthRequest := func() *http.Request {
-			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+			return prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes":     []string{"B", "A"},
 				"secret":     p.Secret,
 				"account_id": "acc_id",
@@ -116,7 +116,7 @@ func TestProtocol(t *testing.T) {
 		}
 
 		goodIDTokRequest := func() *http.Request {
-			return prepReq(p, "/rpc/LuciLocalAuthService.GetIDToken", map[string]interface{}{
+			return prepReq(p, "/rpc/LuciLocalAuthService.GetIDToken", map[string]any{
 				"audience":   "A",
 				"secret":     p.Secret,
 				"account_id": "acc_id",
@@ -205,12 +205,12 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("Unknown RPC method", func() {
-			req := prepReq(p, "/rpc/LuciLocalAuthService.UnknownMethod", map[string]interface{}{})
+			req := prepReq(p, "/rpc/LuciLocalAuthService.UnknownMethod", map[string]any{})
 			So(call(req), ShouldEqual, `HTTP 404: Unknown RPC method "UnknownMethod"`)
 		})
 
 		Convey("No scopes", func() {
-			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"secret":     p.Secret,
 				"account_id": "acc_id",
 			})
@@ -218,7 +218,7 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("No audience", func() {
-			req := prepReq(p, "/rpc/LuciLocalAuthService.GetIDToken", map[string]interface{}{
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetIDToken", map[string]any{
 				"secret":     p.Secret,
 				"account_id": "acc_id",
 			})
@@ -226,7 +226,7 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("No secret", func() {
-			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes":     []string{"B", "A"},
 				"account_id": "acc_id",
 			})
@@ -234,7 +234,7 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("Bad secret", func() {
-			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes":     []string{"B", "A"},
 				"secret":     []byte{0, 1, 2, 3},
 				"account_id": "acc_id",
@@ -243,7 +243,7 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("No account ID", func() {
-			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes": []string{"B", "A"},
 				"secret": p.Secret,
 			})
@@ -251,7 +251,7 @@ func TestProtocol(t *testing.T) {
 		})
 
 		Convey("Unknown account ID", func() {
-			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]interface{}{
+			req := prepReq(p, "/rpc/LuciLocalAuthService.GetOAuthToken", map[string]any{
 				"scopes":     []string{"B", "A"},
 				"secret":     p.Secret,
 				"account_id": "unknown_acc_id",
@@ -288,7 +288,7 @@ func (e errWithCode) Code() int {
 	return e.code
 }
 
-func prepReq(p *lucictx.LocalAuth, uri string, body interface{}) *http.Request {
+func prepReq(p *lucictx.LocalAuth, uri string, body any) *http.Request {
 	var reader io.Reader
 	isJSON := false
 	if body != nil {
@@ -313,7 +313,7 @@ func prepReq(p *lucictx.LocalAuth, uri string, body interface{}) *http.Request {
 	return req
 }
 
-func call(req *http.Request) interface{} {
+func call(req *http.Request) any {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		panic(err)

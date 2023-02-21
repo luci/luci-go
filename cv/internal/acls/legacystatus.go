@@ -36,10 +36,10 @@ const (
 var legacyCQStatusHostCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(100),
 	GlobalNamespace: "acls_legacy_cqstatus_v1",
-	Marshal: func(host interface{}) ([]byte, error) {
+	Marshal: func(host any) ([]byte, error) {
 		return []byte(host.(string)), nil
 	},
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		return string(blob), nil
 	},
 }
@@ -76,7 +76,7 @@ func checkLegacyCQStatusAccess(ctx context.Context, luciProject string) (bool, e
 
 // loadCQStatusHost returns CQ status host configured for a LUCI projects.
 func loadCQStatusHost(ctx context.Context, luciProject string) (string, error) {
-	host, err := legacyCQStatusHostCache.GetOrCreate(ctx, luciProject, func() (interface{}, time.Duration, error) {
+	host, err := legacyCQStatusHostCache.GetOrCreate(ctx, luciProject, func() (any, time.Duration, error) {
 		m, err := prjcfg.GetLatestMeta(ctx, luciProject)
 		switch {
 		case err != nil:

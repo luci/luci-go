@@ -67,7 +67,7 @@ func TestTokenEndpoint(t *testing.T) {
 		defer ts.Close()
 		doc := openid.DiscoveryDoc{TokenEndpoint: ts.URL}
 
-		mockResponse := func(status int, body interface{}) {
+		mockResponse := func(status int, body any) {
 			var blob []byte
 			if str, ok := body.(string); ok {
 				blob = []byte(str)
@@ -85,7 +85,7 @@ func TestTokenEndpoint(t *testing.T) {
 		}
 
 		Convey("Happy path", func() {
-			mockResponse(200, map[string]interface{}{
+			mockResponse(200, map[string]any{
 				"access_token":  "access_token",
 				"refresh_token": "refresh_token",
 				"id_token":      "id_token",

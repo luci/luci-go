@@ -24,7 +24,7 @@ import (
 )
 
 // goList calls "go list -json <args>" and parses the result.
-func goList(args []string, out interface{}) error {
+func goList(args []string, out any) error {
 	cmd := exec.Command("go", append([]string{"list", "-json"}, args...)...)
 	buf, err := cmd.Output()
 	if err != nil {

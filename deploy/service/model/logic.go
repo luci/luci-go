@@ -30,7 +30,7 @@ import (
 // Checks all `intended_state` fields are populated. Purely erronous states
 // (with no state and non-zero status code) are considered valid.
 func ValidateIntendedState(assetID string, state *modelpb.AssetState) error {
-	return validateState(assetID, state, func(s interface{}) error {
+	return validateState(assetID, state, func(s any) error {
 		switch state := s.(type) {
 		case *modelpb.AppengineState:
 			return validateAppengineIntendedState(state)
@@ -45,7 +45,7 @@ func ValidateIntendedState(assetID string, state *modelpb.AssetState) error {
 // Checks all `captured_state` fields are populated. Purely erronous states
 // (with no state and non-zero status code) are considered valid.
 func ValidateReportedState(assetID string, state *modelpb.AssetState) error {
-	return validateState(assetID, state, func(s interface{}) error {
+	return validateState(assetID, state, func(s any) error {
 		switch state := s.(type) {
 		case *modelpb.AppengineState:
 			return validateAppengineReportedState(state)
@@ -57,7 +57,7 @@ func ValidateReportedState(assetID string, state *modelpb.AssetState) error {
 
 // validateState verifies assetID kind matches the populated oneof field in
 // `state` and calls the callback, passing this oneof's payload to it.
-func validateState(assetID string, state *modelpb.AssetState, cb func(state interface{}) error) error {
+func validateState(assetID string, state *modelpb.AssetState, cb func(state any) error) error {
 	switch {
 	case state == nil:
 		// AssetState itself should be populated.

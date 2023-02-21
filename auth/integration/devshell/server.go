@@ -121,7 +121,7 @@ func (c *client) handle() error {
 	defer c.conn.Close()
 
 	if _, err := c.readRequest(); err != nil {
-		if err := c.sendResponse([]interface{}{err.Error()}); err != nil {
+		if err := c.sendResponse([]any{err.Error()}); err != nil {
 			return fmt.Errorf("failed to send error: %v", err)
 		}
 		return nil
@@ -130,7 +130,7 @@ func (c *client) handle() error {
 	// Get the token.
 	t, err := c.source.Token()
 	if err != nil {
-		if err := c.sendResponse([]interface{}{"cannot get access token"}); err != nil {
+		if err := c.sendResponse([]any{"cannot get access token"}); err != nil {
 			return fmt.Errorf("failed to send error: %v", err)
 		}
 		return err
@@ -139,10 +139,10 @@ func (c *client) handle() error {
 	// Expiration is in seconds from now so compute the correct format.
 	expiry := int(t.Expiry.Sub(clock.Now(c.ctx)).Seconds())
 
-	return c.sendResponse([]interface{}{c.email, nil, t.AccessToken, expiry})
+	return c.sendResponse([]any{c.email, nil, t.AccessToken, expiry})
 }
 
-func (c *client) readRequest() ([]interface{}, error) {
+func (c *client) readRequest() ([]any, error) {
 	header := make([]byte, 6)
 	if _, err := c.conn.Read(header); err != nil {
 		return nil, fmt.Errorf("failed to read the header: %v", err)
@@ -170,7 +170,7 @@ func (c *client) readRequest() ([]interface{}, error) {
 	}
 
 	// Parse the message to ensure it's a correct JSON.
-	request := []interface{}{}
+	request := []any{}
 	if err := json.Unmarshal(data, &request); err != nil {
 		return nil, fmt.Errorf("failed to deserialize from JSON: %v", err)
 	}
@@ -178,7 +178,7 @@ func (c *client) readRequest() ([]interface{}, error) {
 	return request, nil
 }
 
-func (c *client) sendResponse(response []interface{}) error {
+func (c *client) sendResponse(response []any) error {
 	// Encode the response as JSON array (aka JsPbLite format).
 	payload, err := json.Marshal(response)
 	if err != nil {

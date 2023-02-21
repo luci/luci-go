@@ -163,7 +163,7 @@ func (ac *artifactCreator) handle(c *router.Context) error {
 			return nil
 		}
 
-		span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]interface{}{
+		span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]any{
 			"InvocationId": ac.invID,
 			"ParentId":     ac.localParentID,
 			"ArtifactId":   ac.artifactID,
@@ -353,14 +353,14 @@ func (ac *artifactCreator) verifyState(ctx context.Context) (realm string, sameA
 	// Read the state concurrently.
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
-			return invocations.ReadColumns(ctx, ac.invID, map[string]interface{}{
+			return invocations.ReadColumns(ctx, ac.invID, map[string]any{
 				"State": &invState, "Realm": &realm,
 			})
 		}
 
 		work <- func() error {
 			key := ac.invID.Key(ac.localParentID, ac.artifactID)
-			err := spanutil.ReadRow(ctx, "Artifacts", key, map[string]interface{}{
+			err := spanutil.ReadRow(ctx, "Artifacts", key, map[string]any{
 				"RBECASHash": &hash,
 				"Size":       &size,
 			})

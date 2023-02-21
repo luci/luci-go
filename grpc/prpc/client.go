@@ -149,7 +149,7 @@ var _ grpc.ClientConnInterface = (*Client)(nil)
 // into reply.
 //
 // It is a part of grpc.ClientConnInterface.
-func (c *Client) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+func (c *Client) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	// 'method' looks like "/service.Name/MethodName".
 	parts := strings.Split(method, "/")
 	if len(parts) != 3 || parts[0] != "" {

@@ -81,7 +81,7 @@ func TestGetArtifact(t *testing.T) {
 		Convey(`Permission denied`, func() {
 			// Insert a Artifact.
 			testutil.MustApply(ctx,
-				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
@@ -92,7 +92,7 @@ func TestGetArtifact(t *testing.T) {
 		Convey(`Exists`, func() {
 			// Insert a Artifact.
 			testutil.MustApply(ctx,
-				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			const name = "invocations/inv/artifacts/a"
@@ -113,8 +113,8 @@ func TestGetArtifact(t *testing.T) {
 
 			// Insert an Artifact.
 			testutil.MustApply(ctx,
-				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": globalRealm}),
-				insert.Artifact("inv", "", "a", map[string]interface{}{"GcsURI": fmt.Sprintf("gs://%s/%s", bucket, object)}),
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": globalRealm}),
+				insert.Artifact("inv", "", "a", map[string]any{"GcsURI": fmt.Sprintf("gs://%s/%s", bucket, object)}),
 			)
 			const name = "invocations/inv/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}
@@ -189,7 +189,7 @@ func TestGetArtifact(t *testing.T) {
 
 		Convey(`Does not exist`, func() {
 			testutil.MustApply(ctx,
-				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}))
+				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}))
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv/artifacts/a not found")

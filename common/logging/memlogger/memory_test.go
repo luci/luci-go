@@ -66,7 +66,7 @@ func TestLogger(t *testing.T) {
 
 	cv.Convey("field data", t, func() {
 		c := Use(context.Background())
-		data := map[string]interface{}{
+		data := map[string]any{
 			"trombone": 50,
 			"cat":      "amazing",
 		}
@@ -96,7 +96,7 @@ func TestLogger(t *testing.T) {
 
 	cv.Convey("dump", t, func() {
 		var l MemLogger
-		l.fields = map[string]interface{}{"key": 100}
+		l.fields = map[string]any{"key": 100}
 		l.Debugf("test %s", logging.Debug)
 		l.Infof("test %s", logging.Info)
 
@@ -122,16 +122,16 @@ func TestLoggerAssertion(t *testing.T) {
 					{
 						Level:     logging.Error,
 						Msg:       "HI THAR",
-						Data:      map[string]interface{}{"hi": 3},
+						Data:      map[string]any{"hi": 3},
 						CallDepth: 47,
 					},
 				},
 			}
 
-			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]interface{}{"hi": 3}), cv.ShouldEqual, "")
-			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]interface{}{"hi": 4}), cv.ShouldNotEqual, "")
-			cv.So(ShouldHaveLog(m, logging.Error, "Hi THAR", map[string]interface{}{"hi": 4}), cv.ShouldNotEqual, "")
-			cv.So(ShouldHaveLog(m, logging.Error, "THAR", map[string]interface{}{"hi": 4}), cv.ShouldNotEqual, "")
+			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]any{"hi": 3}), cv.ShouldEqual, "")
+			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]any{"hi": 4}), cv.ShouldNotEqual, "")
+			cv.So(ShouldHaveLog(m, logging.Error, "Hi THAR", map[string]any{"hi": 4}), cv.ShouldNotEqual, "")
+			cv.So(ShouldHaveLog(m, logging.Error, "THAR", map[string]any{"hi": 4}), cv.ShouldNotEqual, "")
 		})
 
 		cv.Convey("level and message", func() {
@@ -141,7 +141,7 @@ func TestLoggerAssertion(t *testing.T) {
 					{
 						Level: logging.Error,
 						Msg:   "HI THAR",
-						Data:  map[string]interface{}{"hi": 3},
+						Data:  map[string]any{"hi": 3},
 					},
 				},
 			}

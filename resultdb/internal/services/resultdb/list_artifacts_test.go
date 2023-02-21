@@ -81,8 +81,8 @@ func TestListArtifacts(t *testing.T) {
 		})
 
 		testutil.MustApply(ctx,
-			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
+			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 		)
 		req := &pb.ListArtifactsRequest{
 			Parent:   "invocations/inv1",
@@ -119,7 +119,7 @@ func TestListArtifacts(t *testing.T) {
 		Convey(`With both invocation and test result artifacts`, func() {
 			testutil.MustApply(ctx,
 				insert.Artifact("inv1", "", "a", nil),
-				spanutil.InsertMap("Artifacts", map[string]interface{}{
+				spanutil.InsertMap("Artifacts", map[string]any{
 					"InvocationId": invocations.ID("inv1"),
 					"ParentID":     "tr/t t/r",
 					"ArtifactId":   "a",
@@ -156,7 +156,7 @@ func TestListArtifacts(t *testing.T) {
 			ctx = testutil.TestProjectConfigContext(ctx)
 
 			testutil.MustApply(ctx,
-				insert.Artifact("inv1", "", "a", map[string]interface{}{"GcsURI": "gs://bucket1/file1.txt"}),
+				insert.Artifact("inv1", "", "a", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
 			)
 
 			Convey(`Realm GCS path allowed`, func() {

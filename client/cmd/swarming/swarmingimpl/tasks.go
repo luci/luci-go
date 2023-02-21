@@ -101,7 +101,7 @@ func (t *tasksRun) main(_ subcommands.Application) error {
 	if err != nil {
 		return err
 	}
-	var data interface{}
+	var data any
 	if t.count {
 		if data, err = service.CountTasks(ctx, t.start, t.state, t.tags...); err != nil {
 			return err

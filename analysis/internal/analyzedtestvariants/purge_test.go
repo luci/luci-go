@@ -42,24 +42,24 @@ func TestPurge(t *testing.T) {
 		now := clock.Now(ctx)
 		ms := []*spanner.Mutation{
 			// Active flaky test variants are not deleted.
-			insert.AnalyzedTestVariant(realm, tID1, vh, atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID1, vh, atvpb.Status_FLAKY, map[string]any{
 				"StatusUpdateTime": now.Add(-time.Hour),
 			}),
 			// Active flaky test variants are not deleted, even if it has been in the
 			// status for a long time.
-			insert.AnalyzedTestVariant(realm, tID2, vh, atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID2, vh, atvpb.Status_FLAKY, map[string]any{
 				"StatusUpdateTime": now.Add(-2 * 31 * 24 * time.Hour),
 			}),
 			// No new results, but was newly updated.
-			insert.AnalyzedTestVariant(realm, tID3, vh, atvpb.Status_NO_NEW_RESULTS, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID3, vh, atvpb.Status_NO_NEW_RESULTS, map[string]any{
 				"StatusUpdateTime": now.Add(-time.Hour),
 			}),
 			// No new results for over a month, should delete.
-			insert.AnalyzedTestVariant(realm, tID4, vh, atvpb.Status_NO_NEW_RESULTS, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID4, vh, atvpb.Status_NO_NEW_RESULTS, map[string]any{
 				"StatusUpdateTime": now.Add(-2 * 31 * 24 * time.Hour),
 			}),
 			// consistently expected for over a month, should delete.
-			insert.AnalyzedTestVariant(realm, tID5, vh, atvpb.Status_CONSISTENTLY_EXPECTED, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID5, vh, atvpb.Status_CONSISTENTLY_EXPECTED, map[string]any{
 				"StatusUpdateTime": now.Add(-2 * 31 * 24 * time.Hour),
 			}),
 			insert.Verdict(realm, tID1, vh, "build-0", internal.VerdictStatus_EXPECTED, now.Add(-time.Hour), nil),

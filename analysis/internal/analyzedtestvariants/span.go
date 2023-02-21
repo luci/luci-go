@@ -105,7 +105,7 @@ func QueryTestVariantsByBuilder(ctx context.Context, realm, builder string, f fu
 		AND Status in UNNEST(@statuses)
 		ORDER BY TestId, VariantHash
 	`)
-	st.Params = map[string]interface{}{
+	st.Params = map[string]any{
 		"realm":    realm,
 		"builder":  builder,
 		"statuses": []int{int(atvpb.Status_FLAKY), int(atvpb.Status_CONSISTENTLY_UNEXPECTED), int(atvpb.Status_HAS_UNEXPECTED_RESULTS)},

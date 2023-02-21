@@ -57,7 +57,7 @@ var signedURLsCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(4096),
 	GlobalNamespace: "signed_gs_urls_v2",
 	Marshal:         json.Marshal,
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		out := &gsObjInfo{}
 		err := json.Unmarshal(blob, out)
 		return out, err
@@ -80,7 +80,7 @@ var signedURLsCache = layered.Cache{
 // On failures returns grpc-annotated errors. In particular, if the requested
 // file is missing, returns NotFound grpc-annotated error.
 func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error) {
-	cached, err := signedURLsCache.GetOrCreate(ctx, gsPath, func() (interface{}, time.Duration, error) {
+	cached, err := signedURLsCache.GetOrCreate(ctx, gsPath, func() (any, time.Duration, error) {
 		info := &gsObjInfo{}
 		switch size, yes, err := gs.Size(ctx, gsPath); {
 		case err != nil:

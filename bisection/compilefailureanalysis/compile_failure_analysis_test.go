@@ -82,8 +82,8 @@ func TestAnalyzeFailure(t *testing.T) {
 	mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
 
 	// Mock logdog
-	ninjaLogJson := map[string]interface{}{
-		"failures": []map[string]interface{}{
+	ninjaLogJson := map[string]any{
+		"failures": []map[string]any{
 			{
 				"output_nodes": []string{
 					"obj/net/net_unittests__library/ssl_server_socket_unittest.o",

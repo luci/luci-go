@@ -37,7 +37,7 @@ func TestProperties(t *testing.T) {
 		expectedStruct := &testStruct{Field: "hi"}
 		expectedProto := &bbpb.Build{SummaryMarkdown: "there"}
 		expectedStrings := []string{"not", "a", "struct"}
-		So(WriteProperties(props, map[string]interface{}{
+		So(WriteProperties(props, map[string]any{
 			"struct":  expectedStruct,
 			"proto":   expectedProto,
 			"strings": expectedStrings,
@@ -74,8 +74,8 @@ func TestProperties(t *testing.T) {
 		extraStruct := &testStruct{}
 		readProto := &bbpb.Build{}
 		var readStrings []string
-		readNil := interface{}(100) // not currently nil
-		So(ParseProperties(props, map[string]interface{}{
+		readNil := any(100) // not currently nil
+		So(ParseProperties(props, map[string]any{
 			"struct":       readStruct,
 			"extra_struct": extraStruct,
 			"proto":        readProto,
@@ -89,7 +89,7 @@ func TestProperties(t *testing.T) {
 		So(readProto, ShouldResembleProto, expectedProto)
 
 		// now, delete some keys
-		So(WriteProperties(props, map[string]interface{}{
+		So(WriteProperties(props, map[string]any{
 			"struct":         nil,
 			"proto":          nil,
 			"does_not_exist": nil,

@@ -188,7 +188,7 @@ func SetRulesForTesting(ctx context.Context, rs []*FailureAssociationRule) error
 	// Insert some FailureAssociationRules.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		for _, r := range rs {
-			ms := spanutil.InsertMap("FailureAssociationRules", map[string]interface{}{
+			ms := spanutil.InsertMap("FailureAssociationRules", map[string]any{
 				"Project":              r.Project,
 				"RuleId":               r.RuleID,
 				"RuleDefinition":       r.RuleDefinition,

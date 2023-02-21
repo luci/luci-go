@@ -37,7 +37,7 @@ func TestJSONRoundTripper(t *testing.T) {
 		call := srv.Insert("project", "zone", &compute.Instance{Name: "name"})
 
 		Convey("ok", func() {
-			rt.Handler = func(req interface{}) (int, interface{}) {
+			rt.Handler = func(req any) (int, any) {
 				inst, ok := req.(*compute.Instance)
 				So(ok, ShouldBeTrue)
 				So(inst.Name, ShouldEqual, "name")
@@ -53,7 +53,7 @@ func TestJSONRoundTripper(t *testing.T) {
 		})
 
 		Convey("error", func() {
-			rt.Handler = func(_ interface{}) (int, interface{}) {
+			rt.Handler = func(_ any) (int, any) {
 				return http.StatusNotFound, nil
 			}
 			rt.Type = reflect.TypeOf(compute.Instance{})

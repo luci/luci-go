@@ -47,7 +47,7 @@ func p(pkg, ver string) common.Pin {
 var goodEnsureFiles = []struct {
 	name   string
 	file   string
-	expect interface{} // either *File or *ResolvedFile depending on what is tested
+	expect any // either *File or *ResolvedFile depending on what is tested
 }{
 	{
 		"old_style",

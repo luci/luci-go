@@ -45,7 +45,7 @@ type mockPassInserter struct {
 	mu               sync.Mutex
 }
 
-func (i *mockPassInserter) Put(ctx context.Context, src interface{}) error {
+func (i *mockPassInserter) Put(ctx context.Context, src any) error {
 	messages := src.([]*bq.Row)
 	i.mu.Lock()
 	i.insertedMessages = append(i.insertedMessages, messages...)
@@ -56,7 +56,7 @@ func (i *mockPassInserter) Put(ctx context.Context, src interface{}) error {
 type mockFailInserter struct {
 }
 
-func (i *mockFailInserter) Put(ctx context.Context, src interface{}) error {
+func (i *mockFailInserter) Put(ctx context.Context, src any) error {
 	return fmt.Errorf("some error")
 }
 
@@ -64,8 +64,8 @@ func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		testutil.MustApply(ctx,
-			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insert.Invocation("b", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm", "Properties": spanutil.Compressed(pbutil.MustMarshal(&structpb.Struct{
+			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+			insert.Invocation("b", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm", "Properties": spanutil.Compressed(pbutil.MustMarshal(&structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue("value"),
 				},
@@ -182,15 +182,15 @@ func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTextArtifactToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		testutil.MustApply(ctx,
-			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+			insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Inclusion("a", "inv1"),
-			insert.Artifact("inv1", "", "a0", map[string]interface{}{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
-			insert.Artifact("inv1", "tr/t/r", "a0", map[string]interface{}{"ContentType": "text/plain", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "tr/t/r", "a0", map[string]any{"ContentType": "text/plain", "Size": "100", "RBECASHash": "deadbeef"}),
 			insert.Artifact("inv1", "tr/t/r", "a1", nil),
-			insert.Artifact("inv1", "tr/t/r", "a2", map[string]interface{}{"ContentType": "text/plain;encoding=ascii", "Size": "100", "RBECASHash": "deadbeef"}),
-			insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg", "Size": "100"}),
-			insert.Artifact("inv1", "tr/t/r", "a4", map[string]interface{}{"ContentType": "text/plain;encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "tr/t/r", "a2", map[string]any{"ContentType": "text/plain;encoding=ascii", "Size": "100", "RBECASHash": "deadbeef"}),
+			insert.Artifact("inv1", "tr/t/r", "a3", map[string]any{"ContentType": "image/jpg", "Size": "100"}),
+			insert.Artifact("inv1", "tr/t/r", "a4", map[string]any{"ContentType": "text/plain;encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
 		)
 
 		bqExport := &pb.BigQueryExport{
@@ -237,8 +237,8 @@ func TestSchedule(t *testing.T) {
 		bqExport2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2", ResultType: &pb.BigQueryExport_TextArtifacts_{}}
 		bqExports := []*pb.BigQueryExport{bqExport1, bqExport2}
 		testutil.MustApply(ctx,
-			insert.Invocation("two-bqx", pb.Invocation_FINALIZED, map[string]interface{}{"BigqueryExports": bqExports}),
-			insert.Invocation("one-bqx", pb.Invocation_FINALIZED, map[string]interface{}{"BigqueryExports": bqExports[:1]}),
+			insert.Invocation("two-bqx", pb.Invocation_FINALIZED, map[string]any{"BigqueryExports": bqExports}),
+			insert.Invocation("one-bqx", pb.Invocation_FINALIZED, map[string]any{"BigqueryExports": bqExports[:1]}),
 			insert.Invocation("zero-bqx", pb.Invocation_FINALIZED, nil))
 
 		ctx, sched := tq.TestingContext(ctx, nil)

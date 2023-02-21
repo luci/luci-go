@@ -26,7 +26,7 @@ const maxStackBufferSize = (64 << 10)
 // system stack.
 type Panic struct {
 	// Reason is the value supplied to the recover function.
-	Reason interface{}
+	Reason any
 	// Stack is a stack dump at the time of the panic.
 	Stack string
 }

@@ -86,7 +86,7 @@ func TestSpan(t *testing.T) {
 					// Insert a fake colliding entry. The hash of this entry
 					// does not actually match its contents, but we pretend
 					// it does.
-					row := map[string]interface{}{
+					row := map[string]any{
 						"Project":           "testproject",
 						"GitReferenceHash":  entry.GitReferenceHash,
 						"Hostname":          "othersource.googlesource.com",

@@ -39,7 +39,7 @@ import (
 )
 
 // substitute performs substitutions in a template string.
-func substitute(c context.Context, s string, subs interface{}) (string, error) {
+func substitute(c context.Context, s string, subs any) (string, error) {
 	t, err := template.New("tmpl").Parse(s)
 	if err != nil {
 		return "", err

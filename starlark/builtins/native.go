@@ -22,9 +22,9 @@ import (
 
 // ToGoNative takes a Starlark value and returns native Go value for it.
 //
-// E.g. it takes *starlark.Dict and returns map[string]interface{}. Works
+// E.g. it takes *starlark.Dict and returns map[string]any. Works
 // recursively. Supports only built-in Starlark types.
-func ToGoNative(v starlark.Value) (interface{}, error) {
+func ToGoNative(v starlark.Value) (any, error) {
 	return toGoNative(v, visitingSet{})
 }
 
@@ -33,9 +33,9 @@ func ToGoNative(v starlark.Value) (interface{}, error) {
 // Used to detect cycles. Note that it is not a stack because we prefer O(1)
 // lookup and we know there can't be duplicates in it (so 'remove' is not
 // ambiguous).
-type visitingSet map[interface{}]struct{}
+type visitingSet map[any]struct{}
 
-func (v visitingSet) add(container interface{}) error {
+func (v visitingSet) add(container any) error {
 	if _, haveIt := v[container]; haveIt {
 		return fmt.Errorf("detected recursion in the data structure")
 	}
@@ -43,7 +43,7 @@ func (v visitingSet) add(container interface{}) error {
 	return nil
 }
 
-func (v visitingSet) remove(container interface{}) {
+func (v visitingSet) remove(container any) {
 	delete(v, container)
 }
 
@@ -51,10 +51,10 @@ func (v visitingSet) remove(container interface{}) {
 //
 // Uses given 'visiting' set to detect cycles in the value being converted, to
 // avoid stack overflows due to unbounded recursion.
-func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
+func toGoNative(v starlark.Value, visiting visitingSet) (any, error) {
 	// Add containers to 'visiting' set right away. Note that Tuples are special,
 	// since they are not hashable (being a slice). We add a pointer instead.
-	var container interface{}
+	var container any
 	switch val := v.(type) {
 	case starlark.Tuple:
 		container = &val
@@ -85,7 +85,7 @@ func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
 		return i, nil
 	case *starlark.Dict:
 		pairs := val.Items()
-		out := make(map[string]interface{}, len(pairs))
+		out := make(map[string]any, len(pairs))
 		for _, pair := range pairs {
 			if len(pair) != 2 {
 				panic("impossible")
@@ -107,7 +107,7 @@ func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
 	if iterable, ok := v.(starlark.Iterable); ok {
 		iter := iterable.Iterate()
 		defer iter.Done()
-		out := []interface{}{}
+		out := []any{}
 		var val starlark.Value
 		for iter.Next(&val) {
 			native, err := toGoNative(val, visiting)

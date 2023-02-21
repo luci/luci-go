@@ -42,7 +42,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func shouldHaveLogPaths(actual interface{}, expected ...interface{}) string {
+func shouldHaveLogPaths(actual any, expected ...any) string {
 	resp := actual.(*logdog.QueryResponse)
 	var paths []string
 	if len(resp.Streams) > 0 {

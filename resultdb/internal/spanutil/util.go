@@ -33,9 +33,9 @@ var ErrNoResults = iterator.Done
 // This file implements utility functions that make spanner API slightly easier
 // to use.
 
-func slices(m map[string]interface{}) (keys []string, values []interface{}) {
+func slices(m map[string]any) (keys []string, values []any) {
 	keys = make([]string, 0, len(m))
-	values = make([]interface{}, 0, len(m))
+	values = make([]any, 0, len(m))
 	for k, v := range m {
 		keys = append(keys, k)
 		values = append(values, v)
@@ -46,7 +46,7 @@ func slices(m map[string]interface{}) (keys []string, values []interface{}) {
 // ReadRow reads a single row from the database and reads its values.
 // ptrMap must map from column names to pointers where the values will be
 // written.
-func ReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) error {
+func ReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]any) error {
 	columns, ptrs := slices(ptrMap)
 	row, err := span.ReadRow(ctx, table, key, columns)
 	if err != nil {
@@ -58,7 +58,7 @@ func ReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[stri
 
 // QueryFirstRow executes a query, reads the first row into ptrs and stops the
 // iterator. Returns ErrNoResults if the query does not return at least one row.
-func QueryFirstRow(ctx context.Context, st spanner.Statement, ptrs ...interface{}) error {
+func QueryFirstRow(ctx context.Context, st spanner.Statement, ptrs ...any) error {
 	st.Params = ToSpannerMap(st.Params)
 	it := span.Query(ctx, st)
 	defer it.Stop()
@@ -81,7 +81,7 @@ func isMessageNil(m proto.Message) bool {
 }
 
 // GenerateStatement generates a spanner statement from a text template.
-func GenerateStatement(tmpl *template.Template, input interface{}) (spanner.Statement, error) {
+func GenerateStatement(tmpl *template.Template, input any) (spanner.Statement, error) {
 	sql := &bytes.Buffer{}
 	err := tmpl.Execute(sql, input)
 	if err != nil {

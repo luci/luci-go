@@ -21,20 +21,20 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func makeInterfaceSlice(v ...interface{}) []interface{} {
+func makeInterfaceSlice(v ...any) []any {
 	return v
 }
 
 func TestCanonicalize(t *testing.T) {
 	data := []struct {
 		fields []Field
-		values []interface{}
-		want   []interface{}
+		values []any
+		want   []any
 	}{
 		{
 			fields: []Field{},
-			values: []interface{}{},
-			want:   []interface{}{},
+			values: []any{},
+			want:   []any{},
 		},
 		{
 			fields: []Field{},
@@ -130,12 +130,12 @@ func TestCanonicalize(t *testing.T) {
 
 func TestHash(t *testing.T) {
 	Convey("Empty slice hashes to 0", t, func() {
-		So(Hash([]interface{}{}), ShouldEqual, 0)
+		So(Hash([]any{}), ShouldEqual, 0)
 	})
 
 	Convey("Different things have different hashes", t, func() {
 		hashes := map[uint64]struct{}{}
-		values := [][]interface{}{
+		values := [][]any{
 			makeInterfaceSlice(int64(123)),
 			makeInterfaceSlice(int64(456)),
 			makeInterfaceSlice(int64(0x01000000000000)),

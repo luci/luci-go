@@ -99,7 +99,7 @@ type Constraints struct {
 
 type nullMetaGetterType struct{}
 
-func (nullMetaGetterType) GetMeta(string) (interface{}, bool) { return nil, false }
+func (nullMetaGetterType) GetMeta(string) (any, bool) { return nil, false }
 
 var nullMetaGetter MetaGetter = nullMetaGetterType{}
 
@@ -124,7 +124,7 @@ func NewMultiMetaGetter(data []PropertyMap) MultiMetaGetter {
 // GetMeta is like PropertyLoadSaver.GetMeta, but it also takes an index
 // indicating which slot you want metadata for. If idx isn't there, this
 // returns (nil, ErrMetaFieldUnset).
-func (m MultiMetaGetter) GetMeta(idx int, key string) (interface{}, bool) {
+func (m MultiMetaGetter) GetMeta(idx int, key string) (any, bool) {
 	return m.GetSingle(idx).GetMeta(key)
 }
 

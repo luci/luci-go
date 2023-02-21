@@ -335,7 +335,7 @@ func (r *queryRun) printProto(resultC <-chan resultItem, printJSON bool) {
 		}
 
 		if printJSON {
-			obj := map[string]interface{}{
+			obj := map[string]any{
 				key: json.RawMessage(msgToJSON(res.result)),
 			}
 			if !r.merge {

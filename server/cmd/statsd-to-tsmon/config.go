@@ -56,7 +56,7 @@ type Rule struct {
 	//
 	// Each item either a string for a preset field value or a NameComponentIndex
 	// to grab field's value from parsed statsd metric name.
-	Fields []interface{}
+	Fields []any
 
 	// Statsd metric name pattern, as taken from the config.
 	pattern *pattern
@@ -239,7 +239,7 @@ func loadRule(metric types.Metric, spec *config.Rule) (*Rule, error) {
 
 	// Make sure the rule specifies all required fields and only them.
 	tsmonFields := metric.Info().Fields
-	fields := make([]interface{}, len(tsmonFields))
+	fields := make([]any, len(tsmonFields))
 	for idx, f := range tsmonFields {
 		val, ok := spec.Fields[f.Name]
 		if !ok {

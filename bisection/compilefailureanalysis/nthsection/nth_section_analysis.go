@@ -153,7 +153,7 @@ func getRerunPriority(c context.Context, nsa *model.CompileNthSectionAnalysis, c
 	return rerun.CapPriority(pri), nil
 }
 
-func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (map[string]interface{}, error) {
+func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (map[string]any, error) {
 	analysisID := nthSectionAnalysis.ParentAnalysis.IntID()
 	compileFailure, err := datastoreutil.GetCompileFailureForAnalysisID(c, analysisID)
 	if err != nil {
@@ -164,7 +164,7 @@ func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectio
 	// In such cases, we should detect from the recipe side
 	failedTargets := compileFailure.OutputTargets
 
-	props := map[string]interface{}{
+	props := map[string]any{
 		"analysis_id":    analysisID,
 		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(c)),
 	}

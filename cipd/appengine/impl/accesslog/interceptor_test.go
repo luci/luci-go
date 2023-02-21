@@ -50,7 +50,7 @@ func TestFields(t *testing.T) {
 	mdStr := []string{"mk1", "mk2"}
 
 	cases := []struct {
-		req interface{}
+		req any
 		exp *cipdpb.AccessLogEntry
 	}{
 		{

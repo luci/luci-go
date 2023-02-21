@@ -32,13 +32,13 @@ import (
 )
 
 // lfv generate field values for legacy metrics
-func lfv(vs ...interface{}) []interface{} {
-	ret := []interface{}{"luci.project.bucket", "builder"}
+func lfv(vs ...any) []any {
+	ret := []any{"luci.project.bucket", "builder"}
 	return append(ret, vs...)
 }
 
 // fv generate field values for v2 metrics.
-func fv(vs ...interface{}) []interface{} {
+func fv(vs ...any) []any {
 	return vs
 }
 

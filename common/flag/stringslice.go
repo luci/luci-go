@@ -34,7 +34,7 @@ func (f *stringSliceFlag) Set(val string) error {
 }
 
 // Get retrieves the flag value.
-func (f stringSliceFlag) Get() interface{} {
+func (f stringSliceFlag) Get() any {
 	return []string(f)
 }
 

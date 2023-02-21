@@ -48,7 +48,7 @@ func CurrentMaxShard(ctx context.Context) (int, error) {
 // Convenient to initialize Spanner statement parameters.
 // Expects the token to be either empty or have len(keys) components.
 // If the token is empty, sets map values to "".
-func TokenToMap(token string, dest map[string]interface{}, keys ...string) error {
+func TokenToMap(token string, dest map[string]any, keys ...string) error {
 	if len(keys) == 0 {
 		panic("keys is empty")
 	}

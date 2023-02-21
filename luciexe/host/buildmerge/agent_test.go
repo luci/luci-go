@@ -52,7 +52,7 @@ func TestAgent(t *testing.T) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 		ctx, cancel := context.WithCancel(ctx)
 
-		baseProps, err := structpb.NewStruct(map[string]interface{}{
+		baseProps, err := structpb.NewStruct(map[string]any{
 			"test": "value",
 		})
 		So(err, ShouldBeNil)
@@ -475,7 +475,7 @@ func TestAgent(t *testing.T) {
 			rootTrack, ok := merger.states["url://u/build.proto"]
 			So(ok, ShouldBeTrue)
 
-			baseProps, err := structpb.NewStruct(map[string]interface{}{
+			baseProps, err := structpb.NewStruct(map[string]any{
 				"something": "value",
 			})
 			So(err, ShouldBeNil)
@@ -504,7 +504,7 @@ func TestAgent(t *testing.T) {
 			expect.UpdateTime = now
 			expect.SummaryMarkdown = "some words"
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			expect.Output.Properties, _ = structpb.NewStruct(map[string]interface{}{
+			expect.Output.Properties, _ = structpb.NewStruct(map[string]any{
 				"something": "value",
 			})
 			expect.Steps = []*bbpb.Step{
@@ -524,7 +524,7 @@ func TestAgent(t *testing.T) {
 			So(ok, ShouldBeTrue)
 
 			Convey(`Overwrites properties`, func() {
-				subProps, err := structpb.NewStruct(map[string]interface{}{
+				subProps, err := structpb.NewStruct(map[string]any{
 					"new":       "prop",
 					"something": "overwrite",
 				})

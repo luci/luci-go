@@ -31,27 +31,27 @@ func IsLogging(c context.Context, l Level) bool {
 }
 
 // Debugf is a shorthand method to call the current logger's Errorf method.
-func Debugf(c context.Context, fmt string, args ...interface{}) {
+func Debugf(c context.Context, fmt string, args ...any) {
 	Get(c).LogCall(Debug, 1, fmt, args)
 }
 
 // Infof is a shorthand method to call the current logger's Errorf method.
-func Infof(c context.Context, fmt string, args ...interface{}) {
+func Infof(c context.Context, fmt string, args ...any) {
 	Get(c).LogCall(Info, 1, fmt, args)
 }
 
 // Warningf is a shorthand method to call the current logger's Errorf method.
-func Warningf(c context.Context, fmt string, args ...interface{}) {
+func Warningf(c context.Context, fmt string, args ...any) {
 	Get(c).LogCall(Warning, 1, fmt, args)
 }
 
 // Errorf is a shorthand method to call the current logger's Errorf method.
-func Errorf(c context.Context, fmt string, args ...interface{}) {
+func Errorf(c context.Context, fmt string, args ...any) {
 	Get(c).LogCall(Error, 1, fmt, args)
 }
 
 // Logf is a shorthand method to call the current logger's logging method which
 // corresponds to the supplied log level.
-func Logf(c context.Context, l Level, fmt string, args ...interface{}) {
+func Logf(c context.Context, l Level, fmt string, args ...any) {
 	Get(c).LogCall(l, 1, fmt, args)
 }

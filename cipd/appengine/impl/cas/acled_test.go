@@ -47,26 +47,26 @@ func TestACLDecorator(t *testing.T) {
 	}
 	ctx := auth.WithState(context.Background(), state)
 
-	getObjectURL := func() (interface{}, error) {
+	getObjectURL := func() (any, error) {
 		return acledSrv.GetObjectURL(ctx, nil)
 	}
-	beginUpload := func() (interface{}, error) {
+	beginUpload := func() (any, error) {
 		return acledSrv.BeginUpload(ctx, nil)
 	}
-	noForceHash := func() (interface{}, error) {
+	noForceHash := func() (any, error) {
 		return acledSrv.FinishUpload(ctx, &api.FinishUploadRequest{})
 	}
-	withForceHash := func() (interface{}, error) {
+	withForceHash := func() (any, error) {
 		return acledSrv.FinishUpload(ctx, &api.FinishUploadRequest{ForceHash: &api.ObjectRef{}})
 	}
-	cancelReq := func() (interface{}, error) {
+	cancelReq := func() (any, error) {
 		return acledSrv.CancelUpload(ctx, &api.CancelUploadRequest{})
 	}
 
 	var cases = []struct {
 		method  string
 		caller  identity.Identity
-		request func() (interface{}, error)
+		request func() (any, error)
 		allowed bool
 	}{
 		{"GetObjectURL", anon, getObjectURL, false},

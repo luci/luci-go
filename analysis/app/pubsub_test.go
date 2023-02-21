@@ -28,7 +28,7 @@ func makeReq(blob []byte) io.ReadCloser {
 		Message struct {
 			Data []byte
 		}
-		Attributes map[string]interface{}
+		Attributes map[string]any
 	}{struct{ Data []byte }{Data: blob}, nil}
 	jmsg, _ := json.Marshal(msg)
 	return io.NopCloser(bytes.NewReader(jmsg))

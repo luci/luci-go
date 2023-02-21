@@ -76,7 +76,7 @@ func TestRead(t *testing.T) {
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-			spanutil.InsertMap("TestResults", map[string]interface{}{
+			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
 				"TestId":          "t t",
 				"ResultId":        "r",

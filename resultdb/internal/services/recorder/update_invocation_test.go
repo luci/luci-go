@@ -274,7 +274,7 @@ func TestUpdateInvocation(t *testing.T) {
 			}
 			invID := invocations.ID("inv")
 			var compressedProperties spanutil.Compressed
-			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
+			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]any{
 				"Deadline":        &actual.Deadline,
 				"BigQueryExports": &actual.BigqueryExports,
 				"Properties":      &compressedProperties,

@@ -63,11 +63,11 @@ func TestQueryTestExonerations(t *testing.T) {
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertEx := insert.TestExonerations
 		testutil.MustApply(ctx, testutil.CombineMutations(
-			insertInv("x", map[string]interface{}{"Realm": "secretproject:testrealm"}, "a"),
-			insertInv("a", map[string]interface{}{"Realm": "testproject:testrealm"}, "b"),
-			insertInv("b", map[string]interface{}{"Realm": "otherproject:testrealm"}, "c"),
+			insertInv("x", map[string]any{"Realm": "secretproject:testrealm"}, "a"),
+			insertInv("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
+			insertInv("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
-			insertInv("c", map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insertInv("c", map[string]any{"Realm": "testproject:testrealm"}),
 			insertEx("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL),
 			insertEx("c", "C", pbutil.Variant("v", "c"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			insertEx("c", "D", pbutil.Variant("v", "d"), pb.ExonerationReason_UNEXPECTED_PASS),

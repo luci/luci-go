@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/server/router"
 )
 
-func respondWithJSON(ctx *router.Context, data interface{}) {
+func respondWithJSON(ctx *router.Context, data any) {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		logging.Errorf(ctx.Context, "Error when marshalling JSON for response: %s", err)

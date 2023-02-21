@@ -57,7 +57,7 @@ func prefixListingPage(c *router.Context, pfx string) error {
 		return err
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]any{
 		"Breadcrumbs": breadcrumbs(pfx, ""),
 		"Prefixes":    prefixesListing(pfx, listing.Prefixes),
 		"Packages":    packagesListing(pfx, listing.Packages, ""),

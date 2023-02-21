@@ -506,7 +506,7 @@ func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 	}
 }
 
-func httpReply(c *router.Context, ok bool, code int, msg string, args ...interface{}) {
+func httpReply(c *router.Context, ok bool, code int, msg string, args ...any) {
 	body := fmt.Sprintf(msg, args...)
 	if !ok {
 		logging.Errorf(c.Context, "%s", body)

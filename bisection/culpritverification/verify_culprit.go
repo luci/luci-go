@@ -152,7 +152,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	}
 
 	// Get rerun build property
-	props := map[string]interface{}{
+	props := map[string]any{
 		"analysis_id":    analysisID,
 		"bisection_host": fmt.Sprintf("%s.appspot.com", info.AppID(c)),
 		// For culprit verification, we should remove builder cache
@@ -235,7 +235,7 @@ func hasNewTarget(c context.Context, failedFiles []string, changelog *model.Chan
 // Returns 2 builds:
 // - The 1st build is the rerun build for the commit
 // - The 2nd build is the rerun build for the parent commit
-func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildID int64, props map[string]interface{}, priority int32) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
+func VerifySuspectCommit(c context.Context, suspect *model.Suspect, failedBuildID int64, props map[string]any, priority int32) (*buildbucketpb.Build, *buildbucketpb.Build, error) {
 	commit := &suspect.GitilesCommit
 
 	// Query Gitiles to get parent commit

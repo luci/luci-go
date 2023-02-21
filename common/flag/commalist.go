@@ -45,7 +45,7 @@ func (f *commaListFlag) Set(s string) error {
 }
 
 // Get retrieves the flag value.
-func (f commaListFlag) Get() interface{} {
+func (f commaListFlag) Get() any {
 	return []string(f)
 }
 

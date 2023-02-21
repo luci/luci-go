@@ -91,7 +91,7 @@ func (b *botTasksRun) main(_ subcommands.Application) error {
 		return err
 	}
 
-	var data interface{}
+	var data any
 	data, err = service.ListBotTasks(ctx, b.botID, b.limit, b.start, b.state, b.fields)
 	if err != nil {
 		return err

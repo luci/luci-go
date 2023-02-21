@@ -73,11 +73,11 @@ func (h commitHeap) Less(i, j int) bool {
 	return iTime.After(jTime)
 }
 
-func (h *commitHeap) Push(x interface{}) {
+func (h *commitHeap) Push(x any) {
 	*h = append(*h, x.(refCommits))
 }
 
-func (h *commitHeap) Pop() interface{} {
+func (h *commitHeap) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]

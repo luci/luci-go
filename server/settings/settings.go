@@ -53,11 +53,11 @@ type Bundle struct {
 	Values map[string]*json.RawMessage // immutable
 
 	lock     sync.RWMutex           // protects 'unpacked'
-	unpacked map[string]interface{} // deserialized RawMessages
+	unpacked map[string]any // deserialized RawMessages
 }
 
 // get deserializes value for given key.
-func (b *Bundle) get(key string, value interface{}) error {
+func (b *Bundle) get(key string, value any) error {
 	raw, ok := b.Values[key]
 	if !ok || raw == nil || len(*raw) == 0 {
 		return ErrNoSettings
@@ -87,7 +87,7 @@ func (b *Bundle) get(key string, value interface{}) error {
 				return err
 			}
 			if b.unpacked == nil {
-				b.unpacked = make(map[string]interface{}, 1)
+				b.unpacked = make(map[string]any, 1)
 			}
 			b.unpacked[key] = cached
 		}
@@ -171,8 +171,8 @@ func (s *Settings) IsMutable() bool {
 // It will be deserialized into the supplied value. Caller is responsible
 // to pass correct type and pass same type to all calls. If the setting is not
 // set returns ErrNoSettings.
-func (s *Settings) Get(c context.Context, key string, value interface{}) error {
-	bundle, err := s.values.Get(c, func(interface{}) (interface{}, time.Duration, error) {
+func (s *Settings) Get(c context.Context, key string, value any) error {
+	bundle, err := s.values.Get(c, func(any) (any, time.Duration, error) {
 		c, cancel := clock.WithTimeout(c, 15*time.Second) // retry for 15 sec total
 		defer cancel()
 		var bundle *Bundle
@@ -203,7 +203,7 @@ func (s *Settings) Get(c context.Context, key string, value interface{}) error {
 //
 // Do not use GetUncached in performance critical parts, it is much heavier than
 // Get.
-func (s *Settings) GetUncached(c context.Context, key string, value interface{}) error {
+func (s *Settings) GetUncached(c context.Context, key string, value any) error {
 	bundle, _, err := s.storage.FetchAllSettings(c)
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func (s *Settings) GetUncached(c context.Context, key string, value interface{})
 //
 // New settings will apply only when existing in-memory cache expires.
 // In particular, Get() right after Set() may still return old value.
-func (s *Settings) Set(c context.Context, key string, value interface{}, who, why string) error {
+func (s *Settings) Set(c context.Context, key string, value any, who, why string) error {
 	if !s.IsMutable() {
 		return ErrReadOnly
 	}
@@ -231,7 +231,7 @@ func (s *Settings) Set(c context.Context, key string, value interface{}, who, wh
 //
 // Avoids generating new revisions of settings if no changes are actually
 // made. Also logs who is making the change.
-func (s *Settings) SetIfChanged(c context.Context, key string, value interface{}, who, why string) error {
+func (s *Settings) SetIfChanged(c context.Context, key string, value any, who, why string) error {
 	if !s.IsMutable() {
 		return ErrReadOnly
 	}

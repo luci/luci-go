@@ -622,7 +622,7 @@ func parseIsolate(content []byte) (*isolate, error) {
 
 	// TODO: remove single quotation usage from isolate user.
 	// if err := json5.NewDecoder(json5src).Decode(isolate); err != nil {
-	var data interface{}
+	var data any
 	if err := json5.NewDecoder(convertIsolateToJSON5(content)).Decode(&data); err != nil {
 		return nil, errors.Annotate(err, "failed to decode json %s", string(content)).Err()
 	}

@@ -215,7 +215,7 @@ func (op *ActuationBeginOp) actuationExpiry() time.Time {
 // Must be called only after all per-asset MakeDecision calls. Returns the
 // mapping with recorded decisions.
 func (op *ActuationBeginOp) Apply(ctx context.Context) (map[string]*modelpb.ActuationDecision, error) {
-	var toPut []interface{}
+	var toPut []any
 
 	// Set the overall actuation state based on decisions made.
 	op.actuation.Created = timestamppb.New(op.now)

@@ -22,9 +22,9 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func insertInvocation(id ID, extraValues map[string]interface{}) *spanner.Mutation {
+func insertInvocation(id ID, extraValues map[string]any) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
-	values := map[string]interface{}{
+	values := map[string]any{
 		"InvocationId":                      id,
 		"ShardId":                           0,
 		"State":                             pb.Invocation_FINALIZED,
@@ -45,7 +45,7 @@ func insertInvocation(id ID, extraValues map[string]interface{}) *spanner.Mutati
 }
 
 func insertInclusion(including, included ID) *spanner.Mutation {
-	return spanutil.InsertMap("IncludedInvocations", map[string]interface{}{
+	return spanutil.InsertMap("IncludedInvocations", map[string]any{
 		"InvocationId":         including,
 		"IncludedInvocationId": included,
 	})
@@ -59,7 +59,7 @@ func insertInvocationIncluding(id ID, included ...ID) []*spanner.Mutation {
 	return ms
 }
 
-func updateDict(dest, source map[string]interface{}) {
+func updateDict(dest, source map[string]any) {
 	for k, v := range source {
 		dest[k] = v
 	}

@@ -62,8 +62,8 @@ func ParseFile(r io.Reader) (*File, error) {
 	settingsAllowed := true
 
 	lineNo := 0
-	makeError := func(fmtStr string, args ...interface{}) error {
-		args = append([]interface{}{lineNo}, args...)
+	makeError := func(fmtStr string, args ...any) error {
+		args = append([]any{lineNo}, args...)
 		return errors.Reason("failed to parse desired state (line %d): "+fmtStr, args...).Tag(cipderr.BadArgument).Err()
 	}
 

@@ -33,7 +33,7 @@ func TestSpannerConversion(t *testing.T) {
 			id := ID("a")
 			So(id.ToSpanner(), ShouldEqual, "ca978112:a")
 
-			row, err := spanner.NewRow([]string{"a"}, []interface{}{id.ToSpanner()})
+			row, err := spanner.NewRow([]string{"a"}, []any{id.ToSpanner()})
 			So(err, ShouldBeNil)
 			var actual ID
 			err = b.FromSpanner(row, &actual)
@@ -45,7 +45,7 @@ func TestSpannerConversion(t *testing.T) {
 			ids := NewIDSet("a", "b")
 			So(ids.ToSpanner(), ShouldResemble, []string{"3e23e816:b", "ca978112:a"})
 
-			row, err := spanner.NewRow([]string{"a"}, []interface{}{ids.ToSpanner()})
+			row, err := spanner.NewRow([]string{"a"}, []any{ids.ToSpanner()})
 			So(err, ShouldBeNil)
 			var actual IDSet
 			err = b.FromSpanner(row, &actual)

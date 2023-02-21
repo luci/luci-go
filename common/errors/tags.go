@@ -35,7 +35,7 @@ type (
 	// control the type safety around these.
 	TagValue struct {
 		Key   TagKey
-		Value interface{}
+		Value any
 	}
 
 	// TagValueGenerator generates (TagKey, value) pairs, for use with Annoatator.Tag
@@ -53,7 +53,7 @@ func (s tagKeySlice) Less(i, j int) bool { return s[i].description < s[j].descri
 
 // TagValueIn will retrieve the tagged value from the error that's associated
 // with this key, and a boolean indicating if the tag was present or not.
-func TagValueIn(t TagKey, err error) (value interface{}, ok bool) {
+func TagValueIn(t TagKey, err error) (value any, ok bool) {
 	Walk(err, func(err error) bool {
 		if sc, isSC := err.(stackContexter); isSC {
 			if value, ok = sc.stackContext().tags[t]; ok {
@@ -157,8 +157,8 @@ func NewTagKey(description string) TagKey {
 //
 // This is done in a depth-first traversal of the error stack, with the
 // most-recently-set value of the tag taking precedence.
-func GetTags(err error) map[TagKey]interface{} {
-	ret := map[TagKey]interface{}{}
+func GetTags(err error) map[TagKey]any {
+	ret := map[TagKey]any{}
 	Walk(err, func(err error) bool {
 		if sc, ok := err.(stackContexter); ok {
 			ctx := sc.stackContext()

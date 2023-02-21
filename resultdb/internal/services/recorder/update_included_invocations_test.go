@@ -103,13 +103,13 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 		assertIncluded := func(includedInvID invocations.ID) {
 			var throwAway invocations.ID
-			testutil.MustReadRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]interface{}{
+			testutil.MustReadRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]any{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
 		assertNotIncluded := func(includedInvID invocations.ID) {
 			var throwAway invocations.ID
-			testutil.MustNotFindRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]interface{}{
+			testutil.MustNotFindRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]any{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
@@ -134,8 +134,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 			Convey(`No including invocation`, func() {
 				testutil.MustApply(ctx,
-					insert.Invocation("included", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
-					insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+					insert.Invocation("included", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, req)
 				So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/including not found`)
@@ -144,7 +144,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 			Convey(`With existing inclusion`, func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("including", pb.Invocation_ACTIVE, nil),
-					insert.Invocation("toberemoved", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+					insert.Invocation("toberemoved", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
 					IncludingInvocation: "invocations/including",
@@ -160,8 +160,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 				Convey(`Leaking disallowed`, func() {
 					testutil.MustApply(ctx,
-						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
-						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:secretrealm"}),
+						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:secretrealm"}),
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
@@ -171,8 +171,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 				Convey(`Success - idempotent`, func() {
 					testutil.MustApply(ctx,
-						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
-						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]interface{}{"Realm": "testproject:testrealm"}),
+						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)

@@ -49,7 +49,7 @@ func init() {
 	sizeOfTerminalIndexTag = mustCalculateTagSize(be, "TerminalIndex")
 }
 
-func mustCalculateTagSize(i interface{}, field string) int {
+func mustCalculateTagSize(i any, field string) int {
 	value, err := calculateTagSize(i, field)
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ func protoSize(m proto.Message) int {
 	return proto.Size(m)
 }
 
-func calculateTagSize(i interface{}, field string) (int, error) {
+func calculateTagSize(i any, field string) (int, error) {
 	v := reflect.TypeOf(i)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()

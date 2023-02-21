@@ -111,8 +111,8 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 			},
 			// Pair combines two args into one map with keys "First" and "Second", to
 			// pass pairs to templates (that in golang can accept only one argument).
-			"Pair": func(a1, a2 interface{}) map[string]interface{} {
-				return map[string]interface{}{
+			"Pair": func(a1, a2 any) map[string]any {
+				return map[string]any{
 					"First":  a1,
 					"Second": a2,
 				}

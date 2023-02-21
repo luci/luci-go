@@ -42,7 +42,7 @@ const fieldDescriptionMaxlength = 1024 - len(truncMsg)
 // SourceCodeInfoMap maps descriptor proto messages to source code info,
 // if available.
 // See also descutil.IndexSourceCodeInfo.
-type SourceCodeInfoMap map[interface{}]*descriptorpb.SourceCodeInfo_Location
+type SourceCodeInfoMap map[any]*descriptorpb.SourceCodeInfo_Location
 
 type SchemaConverter struct {
 	Desc           *descriptorpb.FileDescriptorSet
@@ -156,7 +156,7 @@ func (c *SchemaConverter) field(file *descriptorpb.FileDescriptorProto, field *d
 // ptr points to.
 // If ptr is a field of an enum type, appends
 // "\nValid values: <comma-separated enum member names>".
-func (c *SchemaConverter) description(file *descriptorpb.FileDescriptorProto, ptr interface{}) string {
+func (c *SchemaConverter) description(file *descriptorpb.FileDescriptorProto, ptr any) string {
 	description := c.SourceCodeInfo[file][ptr].GetLeadingComments()
 
 	// Trim leading whitespace.

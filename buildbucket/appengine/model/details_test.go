@@ -299,7 +299,7 @@ func TestDetails(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 
 		Convey("normal", func() {
-			prop, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+			prop, err := structpb.NewStruct(map[string]any{"key": "value"})
 			So(err, ShouldBeNil)
 			outProp := &BuildOutputProperties{
 				Build: datastore.KeyForObj(ctx, &Build{ID: 123}),
@@ -338,7 +338,7 @@ func TestDetails(t *testing.T) {
 			})
 
 			Convey("normal -> extreme large", func() {
-				larger, err := structpb.NewStruct(map[string]interface{}{})
+				larger, err := structpb.NewStruct(map[string]any{})
 				So(err, ShouldBeNil)
 				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
@@ -363,7 +363,7 @@ func TestDetails(t *testing.T) {
 		})
 
 		Convey("large", func() {
-			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			largeProps, err := structpb.NewStruct(map[string]any{})
 			So(err, ShouldBeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
@@ -397,7 +397,7 @@ func TestDetails(t *testing.T) {
 			So(outPropInDB.ChunkCount, ShouldEqual, 0)
 
 			Convey("large -> small", func() {
-				prop, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+				prop, err := structpb.NewStruct(map[string]any{"key": "value"})
 				So(err, ShouldBeNil)
 				// Proto got updated to a smaller one.
 				outProp.Proto = prop
@@ -447,7 +447,7 @@ func TestDetails(t *testing.T) {
 			// to avoid take up too much memory in testing.
 			maxPropertySize = 100
 
-			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			largeProps, err := structpb.NewStruct(map[string]any{})
 			So(err, ShouldBeNil)
 			k := "largeeeeeee_key"
 			v := "largeeeeeee_value"
@@ -582,7 +582,7 @@ func TestDetails(t *testing.T) {
 		})
 
 		Convey("GetMultiOutputProperties", func() {
-			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			largeProps, err := structpb.NewStruct(map[string]any{})
 			So(err, ShouldBeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"

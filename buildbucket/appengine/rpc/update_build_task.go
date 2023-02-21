@@ -109,7 +109,7 @@ func updateTaskEntity(ctx context.Context, req *pb.UpdateBuildTaskRequest, build
 			Build: bk,
 			Proto: build.Infra,
 		}
-		toSave := []interface{}{infra}
+		toSave := []any{infra}
 		return datastore.Put(ctx, toSave)
 	}, nil)
 

@@ -403,7 +403,7 @@ func TestBuild(t *testing.T) {
 			})
 
 			Convey("output properties(large)", func() {
-				largeProps, err := structpb.NewStruct(map[string]interface{}{})
+				largeProps, err := structpb.NewStruct(map[string]any{})
 				So(err, ShouldBeNil)
 				k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 				v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"

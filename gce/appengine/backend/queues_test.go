@@ -540,7 +540,7 @@ func TestQueues(t *testing.T) {
 			})
 
 			Convey("valid", func() {
-				rt.Handler = func(req interface{}) (int, interface{}) {
+				rt.Handler = func(req any) (int, any) {
 					return http.StatusOK, &compute.RegionList{
 						Items: []*compute.Region{
 							{

@@ -197,7 +197,7 @@ func (p *Policy) ImportConfigs(c context.Context) (rev string, err error) {
 //
 // Returns ErrNoPolicy if the policy config wasn't imported yet.
 func (p *Policy) Queryable(c context.Context) (Queryable, error) {
-	val, err := p.cache.Get(c, func(prev interface{}) (newQ interface{}, exp time.Duration, err error) {
+	val, err := p.cache.Get(c, func(prev any) (newQ any, exp time.Duration, err error) {
 		prevQ, _ := prev.(Queryable)
 		newQ, err = p.grabQueryable(c, prevQ)
 		if err == nil {

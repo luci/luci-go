@@ -38,7 +38,7 @@ func TestRead(t *testing.T) {
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			insertInvocation("including", map[string]interface{}{
+			insertInvocation("including", map[string]any{
 				"State":      pb.Invocation_ACTIVE,
 				"CreateTime": start,
 				"Deadline":   start.Add(time.Hour),
@@ -110,9 +110,9 @@ func TestQueryRealms(t *testing.T) {
 
 		Convey(`Works`, func() {
 			testutil.MustApply(ctx,
-				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
-				insertInvocation("inv1", map[string]interface{}{"Realm": "1"}),
-				insertInvocation("inv2", map[string]interface{}{"Realm": "2"}),
+				insertInvocation("inv0", map[string]any{"Realm": "0"}),
+				insertInvocation("inv1", map[string]any{"Realm": "1"}),
+				insertInvocation("inv2", map[string]any{"Realm": "2"}),
 			)
 
 			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
@@ -125,7 +125,7 @@ func TestQueryRealms(t *testing.T) {
 		})
 		Convey(`Valid with missing invocation `, func() {
 			testutil.MustApply(ctx,
-				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
+				insertInvocation("inv0", map[string]any{"Realm": "0"}),
 			)
 
 			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))
@@ -143,9 +143,9 @@ func TestReadRealms(t *testing.T) {
 
 		Convey(`Works`, func() {
 			testutil.MustApply(ctx,
-				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
-				insertInvocation("inv1", map[string]interface{}{"Realm": "1"}),
-				insertInvocation("inv2", map[string]interface{}{"Realm": "2"}),
+				insertInvocation("inv0", map[string]any{"Realm": "0"}),
+				insertInvocation("inv1", map[string]any{"Realm": "1"}),
+				insertInvocation("inv2", map[string]any{"Realm": "2"}),
 			)
 
 			realms, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
@@ -158,7 +158,7 @@ func TestReadRealms(t *testing.T) {
 		})
 		Convey(`NotFound`, func() {
 			testutil.MustApply(ctx,
-				insertInvocation("inv0", map[string]interface{}{"Realm": "0"}),
+				insertInvocation("inv0", map[string]any{"Realm": "0"}),
 			)
 
 			_, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))

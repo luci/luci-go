@@ -157,7 +157,7 @@ func (s Serializer) propertyImpl(buf cmpbin.WriteableBytesBuffer, p *Property, i
 //
 // v may be one of the return types from Property's GetIndexTypeAndValue
 // method.
-func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v interface{}) (err error) {
+func (s Serializer) indexValue(buf cmpbin.WriteableBytesBuffer, v any) (err error) {
 	switch t := v.(type) {
 	case nil:
 	case bool:
@@ -334,7 +334,7 @@ func (s Serializer) PropertyMapPartially(k *Key, pm PropertyMap) (ret Serialized
 //
 // Key types will be serialized using the 'WithoutContext' option (e.g. their
 // encoded forms will not contain AppID or Namespace).
-func (s Serializer) ToBytesErr(i interface{}) (ret []byte, err error) {
+func (s Serializer) ToBytesErr(i any) (ret []byte, err error) {
 	buf := bytes.Buffer{}
 
 	switch t := i.(type) {
@@ -370,7 +370,7 @@ func (s Serializer) ToBytesErr(i interface{}) (ret []byte, err error) {
 //
 // Key types will be serialized using the 'WithoutContext' option (e.g. their
 // encoded forms will not contain AppID or Namespace).
-func (s Serializer) ToBytes(i interface{}) []byte {
+func (s Serializer) ToBytes(i any) []byte {
 	ret, err := s.ToBytesErr(i)
 	if err != nil {
 		panic(err)

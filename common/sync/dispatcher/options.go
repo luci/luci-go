@@ -142,12 +142,12 @@ type Options struct {
 	// Must return a positive value less than Buffer.BatchSizeMax. Failure to do
 	// so will cause `itm` to be immediately rejected from the dispatcher.Channel
 	// and routed to ErrorFn with no further processing.
-	ItemSizeFunc func(itm interface{}) int
+	ItemSizeFunc func(itm any) int
 
 	Buffer buffer.Options
 
 	// Debug output for tests.
-	testingDbg func(string, ...interface{})
+	testingDbg func(string, ...any)
 }
 
 func defaultDropFnFactory(ctx context.Context, fullBehavior buffer.FullBehavior) func(*buffer.Batch, bool) {

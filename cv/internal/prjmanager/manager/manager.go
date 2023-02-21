@@ -225,7 +225,7 @@ func (proc *pmProcessor) SaveState(ctx context.Context, st eventbox.State, ev ev
 		UpdateTime: datastore.RoundTime(clock.Now(ctx).UTC()),
 		State:      s.PB,
 	}
-	entities := make([]interface{}, 1, 3)
+	entities := make([]any, 1, 3)
 	entities[0] = new
 
 	old := proc.loadedPState

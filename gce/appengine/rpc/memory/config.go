@@ -62,7 +62,7 @@ func (srv *Config) List(c context.Context, req *config.ListRequest) (*config.Lis
 	if req.GetPageToken() != "" {
 		return rsp, nil
 	}
-	srv.cfg.Range(func(_, val interface{}) bool {
+	srv.cfg.Range(func(_, val any) bool {
 		rsp.Configs = append(rsp.Configs, val.(*config.Config))
 		return true
 	})

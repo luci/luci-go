@@ -40,7 +40,7 @@ func (f *fieldSliceFlag) Set(val string) error {
 }
 
 // Get retrieves the flag value.
-func (f fieldSliceFlag) Get() interface{} {
+func (f fieldSliceFlag) Get() any {
 	return []googleapi.Field(f)
 }
 

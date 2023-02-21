@@ -95,7 +95,7 @@ func TestInsert(t *testing.T) {
 					// Note that outer bigquery.Value deserializes into bqapi.JsonValue,
 					// but the inner one don't. This is fine, since at the end bqapi just
 					// encodes the whole thing to JSON and it doesn't matter what alias
-					// of interface{} is used for that.
+					// of any is used for that.
 					Data: map[string]bqapi.JsonValue{
 						"a": json.RawMessage(`{"b":"c"}`),
 					},

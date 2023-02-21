@@ -30,7 +30,7 @@ import (
 type Loader func(context.Context, template.FuncMap) (map[string]*template.Template, error)
 
 // Args contains data passed to the template.
-type Args map[string]interface{}
+type Args map[string]any
 
 // MergeArgs combines multiple Args instances into one. Returns nil if all
 // passed args are empty.

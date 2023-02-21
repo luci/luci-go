@@ -60,11 +60,11 @@ const (
 var bucketCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(65536),
 	GlobalNamespace: "bucket_cache_v1",
-	Marshal: func(item interface{}) ([]byte, error) {
+	Marshal: func(item any) ([]byte, error) {
 		pb := item.(*pb.Bucket)
 		return proto.Marshal(pb)
 	},
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		pb := &pb.Bucket{}
 		if err := proto.Unmarshal(blob, pb); err != nil {
 			return nil, err
@@ -92,7 +92,7 @@ func getBucket(ctx context.Context, project, bucket string) (*pb.Bucket, error) 
 		return nil, errors.Reason("bucket name is empty").Err()
 	}
 
-	item, err := bucketCache.GetOrCreate(ctx, project+"/"+bucket, func() (interface{}, time.Duration, error) {
+	item, err := bucketCache.GetOrCreate(ctx, project+"/"+bucket, func() (any, time.Duration, error) {
 		entity := &model.Bucket{ID: bucket, Parent: model.ProjectKey(ctx, project)}
 		switch err := datastore.Get(ctx, entity); {
 		case err == nil:

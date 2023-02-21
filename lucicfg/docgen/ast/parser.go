@@ -132,7 +132,7 @@ func (b *base) populateFromAST(name string, ast syntax.Node) {
 type Var struct {
 	base
 
-	Value interface{} // string | int64 | *big.Int | Ellipsis
+	Value any // string | int64 | *big.Int | Ellipsis
 }
 
 // Function is a node that represents a function definition.
@@ -334,7 +334,7 @@ func matchSingleIdent(expr syntax.Expr) string {
 // matchSingleLiteral matches an <Expr> to <Literal>, returning literal's value.
 //
 // The returned value is string | int64 | *big.Int.
-func matchSingleLiteral(expr syntax.Expr) interface{} {
+func matchSingleLiteral(expr syntax.Expr) any {
 	if literal, ok := expr.(*syntax.Literal); ok {
 		return literal.Value
 	}

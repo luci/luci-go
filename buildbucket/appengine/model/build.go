@@ -362,7 +362,7 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 	inp := make([]*BuildInputProperties, 0, l)
 	out := make([]*BuildOutputProperties, 0, l)
 	stp := make([]*BuildSteps, 0, l)
-	var dets []interface{}
+	var dets []any
 
 	included := map[string]bool{
 		"infra":             m.Includes("infra"),
@@ -380,7 +380,7 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 		inp = append(inp, &BuildInputProperties{Build: key})
 		out = append(out, &BuildOutputProperties{Build: key})
 		stp = append(stp, &BuildSteps{Build: key})
-		appendIfIncluded := func(path string, det interface{}) {
+		appendIfIncluded := func(path string, det any) {
 			if included[path] {
 				dets = append(dets, det)
 			}

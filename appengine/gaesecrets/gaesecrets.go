@@ -104,7 +104,7 @@ func (s *storeImpl) AddRotationHandler(ctx context.Context, name string, cb secr
 }
 
 func (s *storeImpl) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
-	secret, err := secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (interface{}, time.Duration, error) {
+	secret, err := secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (any, time.Duration, error) {
 		secret, err := s.getSecretFromDatastore(ctx, k, autogen)
 		if err != nil {
 			return nil, 0, err

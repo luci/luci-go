@@ -47,7 +47,7 @@ func SerializeDescriptor(fields []Field) []*pb.MetricsDataSet_MetricFieldDescrip
 
 // Serialize returns a slice of ts_mon_proto.MetricsData.MetricsField messages
 // representing the field names and values.
-func Serialize(fields []Field, values []interface{}) []*pb.MetricsData_MetricField {
+func Serialize(fields []Field, values []any) []*pb.MetricsData_MetricField {
 	ret := make([]*pb.MetricsData_MetricField, len(fields))
 
 	for i, f := range fields {

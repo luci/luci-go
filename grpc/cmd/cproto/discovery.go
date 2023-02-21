@@ -100,7 +100,7 @@ func genDiscoveryFile(output, goPkg string, desc []*descriptorpb.FileDescriptorP
 	}
 
 	var buf bytes.Buffer
-	err = discoveryTmpl.Execute(&buf, map[string]interface{}{
+	err = discoveryTmpl.Execute(&buf, map[string]any{
 		"GoPkg":           pkg.Name,
 		"ImportDiscovery": goPkg != discoveryPackagePath,
 		"ServiceNames":    serviceNames,

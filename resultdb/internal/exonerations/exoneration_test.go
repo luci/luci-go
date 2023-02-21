@@ -39,7 +39,7 @@ func TestRead(t *testing.T) {
 			// Insert a TestExoneration.
 			testutil.MustApply(ctx,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-				spanutil.InsertMap("TestExonerations", map[string]interface{}{
+				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":    invID,
 					"TestId":          "t t",
 					"ExonerationId":   "id",
@@ -67,7 +67,7 @@ func TestRead(t *testing.T) {
 			// prior to May 2022. This test case can be deleted from November 2023.
 			testutil.MustApply(ctx,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-				spanutil.InsertMap("TestExonerations", map[string]interface{}{
+				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":  invID,
 					"TestId":        "t t",
 					"ExonerationId": "id",

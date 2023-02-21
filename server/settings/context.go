@@ -36,7 +36,7 @@ func GetSettings(c context.Context) *Settings {
 // It will be deserialized into the supplied value. Caller is responsible to
 // pass correct type here. If the setting is not set or the context doesn't have
 // settings implementation in it, returns ErrNoSettings.
-func Get(c context.Context, key string, value interface{}) error {
+func Get(c context.Context, key string, value any) error {
 	if s := GetSettings(c); s != nil {
 		return s.Get(c, key, value)
 	}
@@ -47,7 +47,7 @@ func Get(c context.Context, key string, value interface{}) error {
 //
 // Do not use GetUncached in performance critical parts, it is much heavier than
 // Get.
-func GetUncached(c context.Context, key string, value interface{}) error {
+func GetUncached(c context.Context, key string, value any) error {
 	if s := GetSettings(c); s != nil {
 		return s.GetUncached(c, key, value)
 	}
@@ -60,7 +60,7 @@ func GetUncached(c context.Context, key string, value interface{}) error {
 // In particular, Get() right after Set() may still return old value.
 //
 // Returns ErrNoSettings if context doesn't have Settings implementation.
-func Set(c context.Context, key string, value interface{}, who, why string) error {
+func Set(c context.Context, key string, value any, who, why string) error {
 	if s := GetSettings(c); s != nil {
 		return s.Set(c, key, value, who, why)
 	}
@@ -74,7 +74,7 @@ func Set(c context.Context, key string, value interface{}, who, why string) erro
 // made. Also logs who is making the change.
 //
 // Returns ErrNoSettings if context doesn't have Settings implementation.
-func SetIfChanged(c context.Context, key string, value interface{}, who, why string) error {
+func SetIfChanged(c context.Context, key string, value any, who, why string) error {
 	if s := GetSettings(c); s != nil {
 		return s.SetIfChanged(c, key, value, who, why)
 	}

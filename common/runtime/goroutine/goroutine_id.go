@@ -58,7 +58,7 @@ func CurID() ID {
 }
 
 var littleBuf = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		buf := make([]byte, 64)
 		return &buf
 	},

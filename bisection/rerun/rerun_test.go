@@ -95,7 +95,7 @@ func TestRerun(t *testing.T) {
 			},
 		}
 		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(res, nil).AnyTimes()
-		extraProps := map[string]interface{}{
+		extraProps := map[string]any{
 			"analysis_id":     4646418413256704,
 			"compile_targets": []string{"target"},
 			"bisection_host":  "luci-bisection.appspot.com",

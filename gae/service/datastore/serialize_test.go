@@ -36,7 +36,7 @@ type dspmapTC struct {
 	props PropertyMap
 }
 
-func mkKeyCtx(appID, namespace string, elems ...interface{}) *Key {
+func mkKeyCtx(appID, namespace string, elems ...any) *Key {
 	return MkKeyContext(appID, namespace).MakeKey(elems...)
 }
 

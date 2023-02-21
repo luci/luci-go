@@ -72,7 +72,7 @@ func TestGetInvocation(t *testing.T) {
 
 			// Insert some Invocations.
 			testutil.MustApply(ctx,
-				insert.Invocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
+				insert.Invocation("including", pb.Invocation_ACTIVE, map[string]any{
 					"CreateTime": ct,
 					"Deadline":   deadline,
 					"Realm":      "testproject:testrealm",
@@ -99,7 +99,7 @@ func TestGetInvocation(t *testing.T) {
 
 		Convey(`Permission denied`, func() {
 			testutil.MustApply(ctx,
-				insert.Invocation("secret", pb.Invocation_ACTIVE, map[string]interface{}{
+				insert.Invocation("secret", pb.Invocation_ACTIVE, map[string]any{
 					"Realm": "secretproject:testrealm",
 				}),
 			)

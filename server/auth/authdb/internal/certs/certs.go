@@ -40,7 +40,7 @@ type fetchedBundle struct {
 //
 // Returns the service identity as well.
 func (b *Bundle) GetCerts(ctx context.Context) (identity.Identity, *signing.PublicCertificates, error) {
-	fetched, err := b.certs.Get(ctx, func(interface{}) (interface{}, time.Duration, error) {
+	fetched, err := b.certs.Get(ctx, func(any) (any, time.Duration, error) {
 		fetched, err := b.fetch(ctx)
 		return fetched, time.Hour, err
 	})

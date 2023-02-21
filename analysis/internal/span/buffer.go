@@ -33,7 +33,7 @@ import (
 // Typically if type T implements Value, then *T implements Ptr.
 type Value interface {
 	// ToSpanner returns a value of a type supported by Spanner client.
-	ToSpanner() interface{}
+	ToSpanner() any
 }
 
 // Ptr can be used a destination of reading a Spanner cell.
@@ -41,7 +41,7 @@ type Value interface {
 type Ptr interface {
 	// SpannerPtr returns to a pointer of a type supported by Spanner client.
 	// SpannerPtr must use one of typed buffers in b.
-	SpannerPtr(b *Buffer) interface{}
+	SpannerPtr(b *Buffer) any
 	// FromSpanner replaces Ptr value with the value in the typed buffer returned
 	// by SpannerPtr.
 	FromSpanner(b *Buffer) error
@@ -69,13 +69,13 @@ type Buffer struct {
 // FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
 // Appropriate when FromSpanner is called only once, whereas Buffer is reusable
 // throughout function.
-func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
+func FromSpanner(row *spanner.Row, ptrs ...any) error {
 	return (&Buffer{}).FromSpanner(row, ptrs...)
 }
 
 // FromSpanner reads values from row to ptrs, converting types from Spanner
 // to Go along the way.
-func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
+func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...any) error {
 	if len(ptrs) != row.Size() {
 		panic("len(ptrs) != row.Size()")
 	}
@@ -88,12 +88,12 @@ func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 	return nil
 }
 
-func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error {
+func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr any) error {
 	b.StringSlice = b.StringSlice[:0]
 	b.ByteSlice = b.ByteSlice[:0]
 	b.Int64Slice = b.Int64Slice[:0]
 
-	var spanPtr interface{}
+	var spanPtr any
 	switch goPtr := goPtr.(type) {
 	case Ptr:
 		spanPtr = goPtr.SpannerPtr(b)
@@ -209,9 +209,9 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 }
 
 // ToSpanner converts values from Go types to Spanner types. In addition to
-// supported types in FromSpanner, also supports []interface{} and
-// map[string]interface{}.
-func ToSpanner(v interface{}) interface{} {
+// supported types in FromSpanner, also supports []any and
+// map[string]any.
+func ToSpanner(v any) any {
 	switch v := v.(type) {
 	case Value:
 		return v.ToSpanner()
@@ -272,15 +272,15 @@ func ToSpanner(v interface{}) interface{} {
 		}
 		return ret
 
-	case []interface{}:
-		ret := make([]interface{}, len(v))
+	case []any:
+		ret := make([]any, len(v))
 		for i, el := range v {
 			ret[i] = ToSpanner(el)
 		}
 		return ret
 
-	case map[string]interface{}:
-		ret := make(map[string]interface{}, len(v))
+	case map[string]any:
+		ret := make(map[string]any, len(v))
 		for key, el := range v {
 			ret[key] = ToSpanner(el)
 		}
@@ -303,24 +303,24 @@ func ToSpanner(v interface{}) interface{} {
 
 // ToSpannerMap converts a map of Go values to a map of Spanner values.
 // See also ToSpanner.
-func ToSpannerMap(values map[string]interface{}) map[string]interface{} {
-	return ToSpanner(values).(map[string]interface{})
+func ToSpannerMap(values map[string]any) map[string]any {
+	return ToSpanner(values).(map[string]any)
 }
 
 // UpdateMap is a shortcut for spanner.UpdateMap with ToSpannerMap applied to
 // in.
-func UpdateMap(table string, in map[string]interface{}) *spanner.Mutation {
+func UpdateMap(table string, in map[string]any) *spanner.Mutation {
 	return spanner.UpdateMap(table, ToSpannerMap(in))
 }
 
 // InsertMap is a shortcut for spanner.InsertMap with ToSpannerMap applied to
 // in.
-func InsertMap(table string, in map[string]interface{}) *spanner.Mutation {
+func InsertMap(table string, in map[string]any) *spanner.Mutation {
 	return spanner.InsertMap(table, ToSpannerMap(in))
 }
 
 // InsertOrUpdateMap is a shortcut for spanner.InsertOrUpdateMap with ToSpannerMap applied to
 // in.
-func InsertOrUpdateMap(table string, in map[string]interface{}) *spanner.Mutation {
+func InsertOrUpdateMap(table string, in map[string]any) *spanner.Mutation {
 	return spanner.InsertOrUpdateMap(table, ToSpannerMap(in))
 }

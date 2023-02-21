@@ -172,7 +172,7 @@ func TestBatchCreateTestResults(t *testing.T) {
 				var invVars []string
 				err = invocations.ReadColumns(
 					span.Single(ctx), invocations.ID("u-build-1"),
-					map[string]interface{}{
+					map[string]any{
 						"CommonTestIDPrefix":     &invCommonTestIDPrefix,
 						"TestResultVariantUnion": &invVars,
 					})

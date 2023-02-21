@@ -184,7 +184,7 @@ func OptStrictInputProperties() StartOption {
 //	... = Start(, ..., OptOutputProperties(&writer, &merger))
 //
 // in go2 this can be improved (possibly by making State a generic type):
-func OptOutputProperties(writeFnptr, mergeFnptr interface{}) StartOption {
+func OptOutputProperties(writeFnptr, mergeFnptr any) StartOption {
 	writer, merger, msgT := getWriteMergerFnValues(false, writeFnptr, mergeFnptr)
 
 	return func(s *State) {

@@ -106,7 +106,7 @@ func (c *TestController) AddTimer(ctx context.Context, delay time.Duration, name
 }
 
 // DebugLog is part of Controller interface.
-func (c *TestController) DebugLog(format string, args ...interface{}) {
+func (c *TestController) DebugLog(format string, args ...any) {
 	c.Log = append(c.Log, fmt.Sprintf(format, args...))
 }
 

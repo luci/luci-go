@@ -199,7 +199,7 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		logging.Debugf(ctx, fmt.Sprintf("Build %d status has now been set as canceled.", bld.ID))
 		canceled = true
 
-		toPut := []interface{}{bld}
+		toPut := []any{bld}
 
 		if cancelSteps {
 			switch changed, err := stp.CancelIncomplete(ctx, timestamppb.New(now)); {

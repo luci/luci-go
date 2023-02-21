@@ -292,17 +292,17 @@ func BenchmarkChainFetch(b *testing.B) {
 
 type redisConn struct {
 	redis.Conn
-	reply    interface{}
+	reply    any
 	replyErr error
-	received [][]interface{}
+	received [][]any
 }
 
-func (c *redisConn) Send(cmd string, args ...interface{}) error {
-	c.received = append(c.received, append([]interface{}{cmd}, args...))
+func (c *redisConn) Send(cmd string, args ...any) error {
+	c.received = append(c.received, append([]any{cmd}, args...))
 	return nil
 }
 
-func (c *redisConn) Do(cmd string, args ...interface{}) (reply interface{}, err error) {
+func (c *redisConn) Do(cmd string, args ...any) (reply any, err error) {
 	if cmd != "" {
 		So(c.Send(cmd, args...), ShouldBeNil)
 	}
@@ -351,7 +351,7 @@ func TestReachCache(t *testing.T) {
 			actual, err := cache.Read(ctx)
 			So(err, ShouldBeNil)
 			So(actual, ShouldResemble, invs)
-			So(conn.received, ShouldResemble, [][]interface{}{
+			So(conn.received, ShouldResemble, [][]any{
 				{"GET", "reach3:inv"},
 			})
 		})
@@ -366,7 +366,7 @@ func TestReachCache(t *testing.T) {
 			err := cache.Write(ctx, invs)
 			So(err, ShouldBeNil)
 
-			So(conn.received, ShouldResemble, [][]interface{}{
+			So(conn.received, ShouldResemble, [][]any{
 				{"SET", "reach3:inv", conn.received[0][2]},
 				{"EXPIRE", "reach3:inv", 2592000},
 			})

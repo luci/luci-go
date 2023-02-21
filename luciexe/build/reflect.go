@@ -43,7 +43,7 @@ func cmpArgsProtoT(perr error, expected []reflect.Type, actual func(int) reflect
 	return
 }
 
-func derefFnPtr(perr error, fnptr interface{}, in, out []reflect.Type) (fn reflect.Value, msgT protoreflect.Message) {
+func derefFnPtr(perr error, fnptr any, in, out []reflect.Type) (fn reflect.Value, msgT protoreflect.Message) {
 	val := reflect.ValueOf(fnptr)
 	if val.Kind() != reflect.Ptr {
 		panic(perr)

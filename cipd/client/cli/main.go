@@ -243,7 +243,7 @@ func (c *cipdSubcommand) printError(err error) {
 
 // writeJSONOutput writes result to JSON output file. It returns original error
 // if it is non-nil.
-func (c *cipdSubcommand) writeJSONOutput(result interface{}, err error) error {
+func (c *cipdSubcommand) writeJSONOutput(result any, err error) error {
 	// -json-output flag wasn't specified.
 	if c.jsonOutput == "" {
 		return err
@@ -254,7 +254,7 @@ func (c *cipdSubcommand) writeJSONOutput(result interface{}, err error) error {
 		Error        string           `json:"error,omitempty"`         // human-readable message
 		ErrorCode    cipderr.Code     `json:"error_code,omitempty"`    // error code enum, omitted on success
 		ErrorDetails *cipderr.Details `json:"error_details,omitempty"` // structured error details
-		Result       interface{}      `json:"result,omitempty"`
+		Result       any      `json:"result,omitempty"`
 	}
 	if err != nil {
 		body.Error = err.Error()
@@ -288,7 +288,7 @@ func (c *cipdSubcommand) writeJSONOutput(result interface{}, err error) error {
 // done is called as a last step of processing a subcommand. It dumps command
 // result (or error) to JSON output file, prints error message and generates
 // process exit code.
-func (c *cipdSubcommand) done(result interface{}, err error) int {
+func (c *cipdSubcommand) done(result any, err error) int {
 	err = c.writeJSONOutput(result, err)
 	if err != nil {
 		c.printError(err)
@@ -343,7 +343,7 @@ func (c *cipdSubcommand) doneWithPinMap(pins map[string][]pinInfo, err error) in
 var cliErrorTag = errors.BoolTag{Key: errors.NewTagKey("CIPD CLI error")}
 
 // makeCLIError returns a new error tagged with cliErrorTag and BadArgument.
-func makeCLIError(msg string, args ...interface{}) error {
+func makeCLIError(msg string, args ...any) error {
 	return errors.Reason(msg, args...).Tag(cliErrorTag, cipderr.BadArgument).Err()
 }
 

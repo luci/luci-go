@@ -34,7 +34,7 @@ func NewHandlers(cloudProject string, prod bool) *Handlers {
 	return &Handlers{cloudProject: cloudProject, prod: prod}
 }
 
-func respondWithJSON(ctx *router.Context, data interface{}) {
+func respondWithJSON(ctx *router.Context, data any) {
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		logging.Errorf(ctx.Context, "Marshalling JSON for response: %s", err)

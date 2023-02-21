@@ -40,7 +40,7 @@ func addRules(r *validation.RuleSet) {
 //
 // Most config files use the same regexp many times.
 func regexpCompileCached(pattern string) (*regexp.Regexp, error) {
-	cached, err := regexpCache.GetOrCreate(context.Background(), pattern, func() (interface{}, time.Duration, error) {
+	cached, err := regexpCache.GetOrCreate(context.Background(), pattern, func() (any, time.Duration, error) {
 		r, err := regexp.Compile(pattern)
 		return regexpCacheValue{r, err}, 0, nil
 	})

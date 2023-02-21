@@ -95,7 +95,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 	}
 
 	now := clock.Now(c.Context)
-	templates.MustRender(c.Context, c.Writer, "pages/instance.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/instance.html", map[string]any{
 		"Package":     pkg,
 		"Version":     ver,
 		"InstanceID":  common.ObjectRefToInstanceID(inst.Instance),

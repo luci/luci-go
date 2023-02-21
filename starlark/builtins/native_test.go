@@ -36,7 +36,7 @@ func TestToGoNative(t *testing.T) {
 		return starlark.ExecFile(&starlark.Thread{}, "main", code, nil)
 	}
 
-	run := func(code string, expected interface{}) {
+	run := func(code string, expected any) {
 		out, err := runScript(code)
 		So(err, ShouldBeNil)
 		result, err := ToGoNative(out["val"])
@@ -60,23 +60,23 @@ func TestToGoNative(t *testing.T) {
 		})
 
 		Convey("Dict", func() {
-			run(`val = {}`, map[string]interface{}{})
-			run(`val = {"a": 1, "b": 2}`, map[string]interface{}{"a": int64(1), "b": int64(2)})
+			run(`val = {}`, map[string]any{})
+			run(`val = {"a": 1, "b": 2}`, map[string]any{"a": int64(1), "b": int64(2)})
 		})
 
 		Convey("Iterables", func() {
-			run(`val = []`, []interface{}{})
-			run(`val = ()`, []interface{}{})
-			run(`val = set()`, []interface{}{})
-			run(`val = [1, 2, 3]`, []interface{}{int64(1), int64(2), int64(3)})
-			run(`val = (1, 2, 3)`, []interface{}{int64(1), int64(2), int64(3)})
-			run(`val = set([1, 2, 3])`, []interface{}{int64(1), int64(2), int64(3)})
+			run(`val = []`, []any{})
+			run(`val = ()`, []any{})
+			run(`val = set()`, []any{})
+			run(`val = [1, 2, 3]`, []any{int64(1), int64(2), int64(3)})
+			run(`val = (1, 2, 3)`, []any{int64(1), int64(2), int64(3)})
+			run(`val = set([1, 2, 3])`, []any{int64(1), int64(2), int64(3)})
 		})
 
 		Convey("Everything at once", func() {
-			run(`val = {"a": None, "b": ["c", "d", ["e"]]}`, map[string]interface{}{
+			run(`val = {"a": None, "b": ["c", "d", ["e"]]}`, map[string]any{
 				"a": nil,
-				"b": []interface{}{"c", "d", []interface{}{"e"}},
+				"b": []any{"c", "d", []any{"e"}},
 			})
 		})
 	})

@@ -115,7 +115,7 @@ func TestLoadFromConfig(t *testing.T) {
 						"${extra}": {
 							Nullable: true,
 							Schema:   &Schema{Schema: &Schema_Object{&Schema_JSON{}}},
-							Default:  MustNewValue(map[string]interface{}{"yes": "please"}),
+							Default:  MustNewValue(map[string]any{"yes": "please"}),
 						},
 					},
 				},

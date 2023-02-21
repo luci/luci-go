@@ -107,8 +107,8 @@ func TestConfigureTopic(t *testing.T) {
 			if call.Request != "" {
 				blob, err := io.ReadAll(r.Body)
 				ctx.So(err, ShouldBeNil)
-				expected := make(map[string]interface{})
-				received := make(map[string]interface{})
+				expected := make(map[string]any)
+				received := make(map[string]any)
 				ctx.So(json.Unmarshal([]byte(call.Request), &expected), ShouldBeNil)
 				ctx.So(json.Unmarshal([]byte(blob), &received), ShouldBeNil)
 				ctx.So(received, ShouldResemble, expected)

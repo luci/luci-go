@@ -62,7 +62,7 @@ func (srv *Projects) List(c context.Context, req *projects.ListRequest) (*projec
 	if req.GetPageToken() != "" {
 		return rsp, nil
 	}
-	srv.cfg.Range(func(_, val interface{}) bool {
+	srv.cfg.Range(func(_, val any) bool {
 		rsp.Projects = append(rsp.Projects, val.(*projects.Config))
 		return true
 	})

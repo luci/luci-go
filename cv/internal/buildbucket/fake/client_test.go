@@ -482,7 +482,7 @@ func TestScheduleBuild(t *testing.T) {
 		}
 		fake.AddBuilder(bbHost, builderNoProp, nil)
 		fake.AddBuilder(bbHost, builderWithProp,
-			map[string]interface{}{"foo": "bar"},
+			map[string]any{"foo": "bar"},
 		)
 
 		client := fake.MustNewClient(ctx, bbHost, lProject)
@@ -507,7 +507,7 @@ func TestScheduleBuild(t *testing.T) {
 				}))
 			})
 			Convey("With additional args", func() {
-				props, err := structpb.NewStruct(map[string]interface{}{
+				props, err := structpb.NewStruct(map[string]any{
 					"coolKey": "coolVal",
 				})
 				So(err, ShouldBeNil)
@@ -548,7 +548,7 @@ func TestScheduleBuild(t *testing.T) {
 				}))
 			})
 			Convey("Override builder properties", func() {
-				props, err := structpb.NewStruct(map[string]interface{}{
+				props, err := structpb.NewStruct(map[string]any{
 					"foo":  "not_bar",
 					"cool": "awesome",
 				})

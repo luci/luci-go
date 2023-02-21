@@ -859,7 +859,7 @@ func makeBuildsV2PubsubMsg(b *buildbucketpb.Build) (io.ReadCloser, error) {
 		BuildLargeFields: compressedLarge,
 	})
 	isCompleted := copyB.Status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK
-	attrs := map[string]interface{}{
+	attrs := map[string]any{
 		"project":      copyB.Builder.GetProject(),
 		"bucket":       copyB.Builder.GetBucket(),
 		"builder":      copyB.Builder.GetBuilder(),
@@ -869,11 +869,11 @@ func makeBuildsV2PubsubMsg(b *buildbucketpb.Build) (io.ReadCloser, error) {
 	msg := struct {
 		Message struct {
 			Data       string
-			Attributes map[string]interface{}
+			Attributes map[string]any
 		}
 	}{struct {
 		Data       string
-		Attributes map[string]interface{}
+		Attributes map[string]any
 	}{Data: base64.StdEncoding.EncodeToString(data), Attributes: attrs}}
 	jmsg, _ := json.Marshal(msg)
 	return io.NopCloser(bytes.NewReader(jmsg)), nil

@@ -104,7 +104,7 @@ func state(ctx context.Context) []byte {
 }
 
 // replyError sends error response and logs it.
-func replyError(ctx context.Context, rw http.ResponseWriter, code int, msg string, args ...interface{}) {
+func replyError(ctx context.Context, rw http.ResponseWriter, code int, msg string, args ...any) {
 	text := fmt.Sprintf(msg, args...)
 	logging.Errorf(ctx, "xsrf: %s", text)
 	http.Error(rw, text, code)

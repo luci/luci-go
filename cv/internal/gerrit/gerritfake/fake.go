@@ -262,7 +262,7 @@ func Rev(ch, ps int) string {
 //   - gerritpb.CommitInfo
 //   - "<change>_<patchset>", e.g. "123_4"
 //   - "<revision>" (without underscores).
-func RelatedChange(change, ps, curPs int, parents ...interface{}) *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {
+func RelatedChange(change, ps, curPs int, parents ...any) *gerritpb.GetRelatedChangesResponse_ChangeAndCommit {
 	prs := make([]*gerritpb.CommitInfo_Parent, len(parents))
 	for i, pi := range parents {
 		switch v := pi.(type) {
@@ -484,7 +484,7 @@ func Project(p string) CIModifier {
 
 // Status sets .Status to the given status.
 // Either a string or value of gerritpb.ChangeStatus.
-func Status(s interface{}) CIModifier {
+func Status(s any) CIModifier {
 	return func(ci *gerritpb.ChangeInfo) {
 		switch v := s.(type) {
 		case gerritpb.ChangeStatus:
@@ -509,7 +509,7 @@ func Messages(msgs ...*gerritpb.ChangeMessageInfo) CIModifier {
 
 // Vote sets a label to the given value by the given user(s) on the latest
 // patchset.
-func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
+func Vote(label string, value int, timeAndUser ...any) CIModifier {
 	var who *gerritpb.AccountInfo
 	var when time.Time
 	switch {
@@ -562,7 +562,7 @@ func Vote(label string, value int, timeAndUser ...interface{}) CIModifier {
 }
 
 // CQ is a shorthand for Vote("Commit-Queue", ...).
-func CQ(value int, timeAndUser ...interface{}) CIModifier {
+func CQ(value int, timeAndUser ...any) CIModifier {
 	return Vote("Commit-Queue", value, timeAndUser...)
 }
 
@@ -708,7 +708,7 @@ func (f *Fake) DeleteChange(host string, change int) {
 // Child and each parent can be specified as either:
 //   - Change or ChangeInfo, in which case their current patchset is used,
 //   - <change>_<patchset>, e.g. "10_3".
-func (f *Fake) SetDependsOn(host string, child interface{}, parents ...interface{}) {
+func (f *Fake) SetDependsOn(host string, child any, parents ...any) {
 	f.m.Lock()
 	defer f.m.Unlock()
 	if f.parentsOf == nil {
@@ -792,7 +792,7 @@ func atoi(s string) int {
 	return int(atoi64(s))
 }
 
-func parseChangePatchset(s interface{}) (int, int) {
+func parseChangePatchset(s any) (int, int) {
 	switch v := s.(type) {
 	case *gerritpb.ChangeInfo:
 		return int(v.GetNumber()), int(v.GetRevisions()[v.GetCurrentRevision()].GetNumber())

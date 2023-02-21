@@ -193,7 +193,7 @@ const luaMinInt = -9007199254740991
 //
 // NOTE: See `examplepb` subfolder, including its luagen.go and generated .lua
 // output.
-func Main(objects ...interface{}) {
+func Main(objects ...any) {
 	if len(objects) == 0 {
 		log.Fatal("luagen.Main: No proto messages or enums provided.")
 	}
@@ -240,11 +240,11 @@ type printer struct {
 	indent string
 }
 
-func (p *printer) p(fmtS string, args ...interface{}) {
+func (p *printer) p(fmtS string, args ...any) {
 	fmt.Fprintf(p.w, p.indent+fmtS, args...)
 }
 
-func (p *printer) pl(fmtS string, args ...interface{}) {
+func (p *printer) pl(fmtS string, args ...any) {
 	p.p(fmtS+"\n", args...)
 }
 
@@ -261,7 +261,7 @@ func (p *printer) suite(cb func(), end string) {
 	p.pl(end)
 }
 
-func (p *printer) curly(fmtS string, args ...interface{}) func(cb func(), end ...string) {
+func (p *printer) curly(fmtS string, args ...any) func(cb func(), end ...string) {
 	return func(f func(), end ...string) {
 		if !strings.Contains(fmtS, "{") {
 			fmtS = fmtS + " {"
@@ -271,7 +271,7 @@ func (p *printer) curly(fmtS string, args ...interface{}) func(cb func(), end ..
 	}
 }
 
-func (p *printer) cond(fmtS string, args ...interface{}) func(func()) {
+func (p *printer) cond(fmtS string, args ...any) func(func()) {
 	return func(f func()) {
 		p.pl("if "+fmtS+" then", args...)
 		p.suite(f, "end")

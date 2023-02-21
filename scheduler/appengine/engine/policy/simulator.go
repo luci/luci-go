@@ -48,7 +48,7 @@ type Simulator struct {
 	// OnDebugLog is called whenever the triggering policy logs something.
 	//
 	// May be set by the caller to collect the policy logs.
-	OnDebugLog func(format string, args ...interface{})
+	OnDebugLog func(format string, args ...any)
 
 	// Epoch is the timestamp of when the simulation started.
 	//
@@ -102,11 +102,11 @@ type SimulatedInvocation struct {
 
 // SimulatedEnvironment implements Environment interface for use by Simulator.
 type SimulatedEnvironment struct {
-	OnDebugLog func(format string, args ...interface{})
+	OnDebugLog func(format string, args ...any)
 }
 
 // DebugLog is part of Environment interface.
-func (s *SimulatedEnvironment) DebugLog(format string, args ...interface{}) {
+func (s *SimulatedEnvironment) DebugLog(format string, args ...any) {
 	if s.OnDebugLog != nil {
 		s.OnDebugLog(format, args...)
 	}
@@ -243,8 +243,8 @@ type events []event
 func (e events) Len() int            { return len(e) }
 func (e events) Less(i, j int) bool  { return e[i].eta.Before(e[j].eta) }
 func (e events) Swap(i, j int)       { e[i], e[j] = e[j], e[i] }
-func (e *events) Push(x interface{}) { *e = append(*e, x.(event)) }
-func (e *events) Pop() interface{} {
+func (e *events) Push(x any) { *e = append(*e, x.(event)) }
+func (e *events) Pop() any {
 	old := *e
 	n := len(old)
 	x := old[n-1]

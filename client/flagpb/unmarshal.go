@@ -60,13 +60,13 @@ func UnmarshalMessage(flags []string, resolver Resolver, msg proto.Message) erro
 
 // UnmarshalUntyped unmarshals a key-value map from flags
 // using a protobuf message descriptor.
-func UnmarshalUntyped(flags []string, desc *descriptorpb.DescriptorProto, resolver Resolver) (map[string]interface{}, error) {
+func UnmarshalUntyped(flags []string, desc *descriptorpb.DescriptorProto, resolver Resolver) (map[string]any, error) {
 	p := parser{resolver}
 	return p.parse(flags, desc)
 }
 
 type message struct {
-	data map[string]interface{}
+	data map[string]any
 	desc *descriptorpb.DescriptorProto
 }
 
@@ -74,11 +74,11 @@ type parser struct {
 	Resolver Resolver
 }
 
-func (p *parser) parse(flags []string, desc *descriptorpb.DescriptorProto) (map[string]interface{}, error) {
+func (p *parser) parse(flags []string, desc *descriptorpb.DescriptorProto) (map[string]any, error) {
 	if desc == nil {
 		panic("desc is nil")
 	}
-	root := message{map[string]interface{}{}, desc}
+	root := message{map[string]any{}, desc}
 
 	for len(flags) > 0 {
 		var err error
@@ -153,7 +153,7 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 	}
 	field := target.desc.Field[fieldIndex]
 
-	var value interface{}
+	var value any
 	hasValue := false
 
 	if !hasValueStr {
@@ -164,7 +164,7 @@ func (p *parser) parseOneFlag(flags []string, root message) (flagsRest []string,
 			value = true
 			hasValue = true
 		case field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && descutil.Repeated(field):
-			value = map[string]interface{}{}
+			value = map[string]any{}
 			hasValue = true
 
 		default:
@@ -259,9 +259,9 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 			path:     curPath,
 		}
 		if value, ok := parent.data[name]; !ok {
-			sub.data = map[string]interface{}{}
+			sub.data = map[string]any{}
 			if sub.repeated {
-				parent.data[name] = []interface{}{sub.data}
+				parent.data[name] = []any{sub.data}
 			} else {
 				parent.data[name] = sub.data
 			}
@@ -270,7 +270,7 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 				slice := asSlice(value)
 				value = slice[len(slice)-1]
 			}
-			sub.data = value.(map[string]interface{})
+			sub.data = value.(map[string]any)
 		}
 
 		result = append(result, sub)
@@ -281,7 +281,7 @@ func (p *parser) subMessages(root message, path []string) ([]subMsg, error) {
 
 // parseFieldValue parses a field value according to the field type.
 // Types: https://developers.google.com/protocol-buffers/docs/proto?hl=en#scalar
-func (p *parser) parseFieldValue(s string, msgName string, field *descriptorpb.FieldDescriptorProto) (interface{}, error) {
+func (p *parser) parseFieldValue(s string, msgName string, field *descriptorpb.FieldDescriptorProto) (any, error) {
 	switch field.GetType() {
 
 	case descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:
@@ -346,7 +346,7 @@ func (p *parser) parseFieldValue(s string, msgName string, field *descriptorpb.F
 	}
 }
 
-func (p *parser) resolve(name string) (interface{}, error) {
+func (p *parser) resolve(name string) (any, error) {
 	if p.Resolver == nil {
 		panic(fmt.Errorf("cannot resolve type %q. Resolver is not set", name))
 	}
@@ -387,9 +387,9 @@ func parseEnum(enum *descriptorpb.EnumDescriptorProto, member string) (int32, er
 	return enum.Value[i].GetNumber(), nil
 }
 
-func asSlice(x interface{}) []interface{} {
+func asSlice(x any) []any {
 	if x == nil {
 		return nil
 	}
-	return x.([]interface{})
+	return x.([]any)
 }

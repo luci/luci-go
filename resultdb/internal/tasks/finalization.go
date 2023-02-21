@@ -50,7 +50,7 @@ var FinalizationTasks = tq.RegisterTaskClass(tq.TaskClass{
 // new package as the code base grows.
 func StartInvocationFinalization(ctx context.Context, id invocations.ID, updateInv bool) {
 	if updateInv {
-		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]interface{}{
+		span.BufferWrite(ctx, spanutil.UpdateMap("Invocations", map[string]any{
 			"InvocationId": id,
 			"State":        pb.Invocation_FINALIZING,
 		}))

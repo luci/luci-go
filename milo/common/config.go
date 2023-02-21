@@ -321,7 +321,7 @@ var serviceCfgCache = caching.RegisterCacheSlot()
 func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	// This maker function is used to do the actual fetch of the ServiceConfig
 	// from datastore.  It is called if the ServiceConfig is not in proc cache.
-	item, err := serviceCfgCache.Fetch(c, func(interface{}) (interface{}, time.Duration, error) {
+	item, err := serviceCfgCache.Fetch(c, func(any) (any, time.Duration, error) {
 		msg := ServiceConfig{ID: ServiceConfigID}
 		err := datastore.Get(c, &msg)
 		if err != nil {
@@ -485,10 +485,10 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *co
 //
 // Returns a list of entities to store to apply the update.
 func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[string]*config.Console,
-	project *Project, cfg *config.Project, meta *configInterface.Meta) ([]interface{}, error) {
+	project *Project, cfg *config.Project, meta *configInterface.Meta) ([]any, error) {
 	// If no Milo config was loaded, there are no consoles to update.
 	if cfg == nil {
-		return []interface{}{}, nil
+		return []any{}, nil
 	}
 
 	// Extract the headers into a map for convenience.
@@ -499,7 +499,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 
 	// Iterate through all the proto consoles, adding and replacing the
 	// known ones if needed.
-	toPut := make([]interface{}, 0, len(cfg.Consoles))
+	toPut := make([]any, 0, len(cfg.Consoles))
 	for i, pc := range cfg.Consoles {
 		// Resolve the console if it refers to one from a different project.
 		if pc.ExternalProject != "" {
@@ -766,7 +766,7 @@ type consolesCacheKey string
 //
 // TODO-perf(iannucci): Maybe memcache this too.
 func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
-	itm, err := caching.RequestCache(c).GetOrCreate(c, consolesCacheKey(builderID), func() (interface{}, time.Duration, error) {
+	itm, err := caching.RequestCache(c).GetOrCreate(c, consolesCacheKey(builderID), func() (any, time.Duration, error) {
 		q := datastore.NewQuery("Console")
 		if builderID != "" {
 			q = q.Eq("Builders", builderID)

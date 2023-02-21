@@ -38,7 +38,7 @@ func TestEncoding(t *testing.T) {
 	t.Parallel()
 
 	Convey("responseFormat", t, func() {
-		test := func(acceptHeader string, expectedFormat Format, expectedErr interface{}) {
+		test := func(acceptHeader string, expectedFormat Format, expectedErr any) {
 			acceptHeader = strings.Replace(acceptHeader, "{json}", mtPRPCJSONPB, -1)
 			acceptHeader = strings.Replace(acceptHeader, "{binary}", mtPRPCBinary, -1)
 			acceptHeader = strings.Replace(acceptHeader, "{text}", mtPRPCText, -1)

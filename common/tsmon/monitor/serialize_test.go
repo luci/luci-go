@@ -123,7 +123,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.MetricMetadata{Units: types.Seconds},
 			types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     int64(42),
@@ -161,7 +161,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.MetricMetadata{Units: types.Bytes},
 			types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     int64(42),
@@ -199,7 +199,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.MetricMetadata{},
 			types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     float64(42),
@@ -233,7 +233,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.MetricMetadata{},
 			types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     float64(42),
@@ -267,7 +267,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.MetricMetadata{},
 			types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     "hello",
@@ -301,7 +301,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.MetricMetadata{},
 			types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     true,
@@ -340,7 +340,7 @@ func TestSerializeCell(t *testing.T) {
 			},
 			types.MetricMetadata{},
 			types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &taskTarget,
 				ResetTime: reset,
 				Value:     int64(42),
@@ -388,7 +388,7 @@ func TestSerializeCell(t *testing.T) {
 				Units: types.Seconds,
 			},
 			CellData: types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     d,
@@ -449,7 +449,7 @@ func TestSerializeCell(t *testing.T) {
 				Units: types.Seconds,
 			},
 			CellData: types.CellData{
-				FieldVals: []interface{}{},
+				FieldVals: []any{},
 				Target:    &target.Task{},
 				ResetTime: reset,
 				Value:     d,

@@ -21,5 +21,5 @@ import "google.golang.org/grpc"
 type Registrar interface {
 	// RegisterService registers a service and its implementation.
 	// Called from the generated code.
-	RegisterService(desc *grpc.ServiceDesc, impl interface{})
+	RegisterService(desc *grpc.ServiceDesc, impl any)
 }

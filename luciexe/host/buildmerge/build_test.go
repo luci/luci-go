@@ -254,7 +254,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 			})
 
 			Convey(`properties`, func() {
-				s, err := structpb.NewStruct(map[string]interface{}{
+				s, err := structpb.NewStruct(map[string]any{
 					"hello": "world",
 					"this":  100,
 				})
@@ -262,7 +262,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 				sub.Output = &bbpb.Build_Output{Properties: s}
 				updateBuildFromGlobalSubBuild(base, sub)
 				m := base.Output.Properties.AsMap()
-				So(m, ShouldResemble, map[string]interface{}{
+				So(m, ShouldResemble, map[string]any{
 					"hello": "world",
 					"this":  100.0, // because JSON semantics
 				})
@@ -270,7 +270,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 		})
 
 		Convey(`populated parent`, func() {
-			s, err := structpb.NewStruct(map[string]interface{}{
+			s, err := structpb.NewStruct(map[string]any{
 				"hello": "world",
 				"this":  100,
 			})
@@ -289,7 +289,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 			})
 
 			Convey(`properties`, func() {
-				sSub, err := structpb.NewStruct(map[string]interface{}{
+				sSub, err := structpb.NewStruct(map[string]any{
 					"newkey": "yes",
 					"hello":  "replacement",
 				})
@@ -297,7 +297,7 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 				sub.Output = &bbpb.Build_Output{Properties: sSub}
 				updateBuildFromGlobalSubBuild(base, sub)
 
-				sNew, err := structpb.NewStruct(map[string]interface{}{
+				sNew, err := structpb.NewStruct(map[string]any{
 					"hello":  "replacement",
 					"this":   100,
 					"newkey": "yes",

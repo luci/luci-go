@@ -274,7 +274,7 @@ func (e *Invocation) GetProjectID() string {
 }
 
 // debugLog appends a line to DebugLog field.
-func (e *Invocation) debugLog(c context.Context, format string, args ...interface{}) {
+func (e *Invocation) debugLog(c context.Context, format string, args ...any) {
 	debugLog(c, &e.DebugLog, format, args...)
 }
 

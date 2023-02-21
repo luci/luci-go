@@ -106,7 +106,7 @@ func (c *cmdGetBuild) validateFlags(ctx context.Context, positionals []string, e
 	return nil
 }
 
-func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdGetBuild) execute(ctx context.Context, authClient *http.Client, _ auth.Options, inJob *job.Definition) (out any, err error) {
 	return ledcmd.GetBuild(ctx, authClient, ledcmd.GetBuildOpts{
 		BuildbucketHost: c.bbHost,
 		BuildID:         c.buildID,

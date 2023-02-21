@@ -166,7 +166,7 @@ func InitServer(srv *server.Server, opts Options) error {
 // inserter is implemented by bigquery.Inserter.
 type inserter interface {
 	// Put uploads one or more rows to the BigQuery service.
-	Put(ctx context.Context, src interface{}) error
+	Put(ctx context.Context, src any) error
 }
 
 func getLUCIProject(ctx context.Context, invID invocations.ID) (string, error) {
@@ -329,7 +329,7 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 // Schedule schedules tasks for all the given invocation's BigQuery Exports.
 func Schedule(ctx context.Context, invID invocations.ID) error {
 	var bqExports [][]byte
-	if err := invocations.ReadColumns(ctx, invID, map[string]interface{}{"BigqueryExports": &bqExports}); err != nil {
+	if err := invocations.ReadColumns(ctx, invID, map[string]any{"BigqueryExports": &bqExports}); err != nil {
 		return err
 	}
 	for i, buf := range bqExports {

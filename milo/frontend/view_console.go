@@ -280,7 +280,7 @@ var treeStatusCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(256),
 	GlobalNamespace: "tree-status",
 	Marshal:         json.Marshal,
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		treeStatus := &ui.TreeStatus{}
 		err := json.Unmarshal(blob, treeStatus)
 		return treeStatus, err
@@ -298,7 +298,7 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 		Path:     "current",
 		RawQuery: q.Encode(),
 	}).String()
-	status, err := treeStatusCache.GetOrCreate(c, url, func() (v interface{}, exp time.Duration, err error) {
+	status, err := treeStatusCache.GetOrCreate(c, url, func() (v any, exp time.Duration, err error) {
 		out := &ui.TreeStatus{}
 		if err := common.GetJSONData(http.DefaultClient, url, out); err != nil {
 			return nil, 0, err
@@ -322,7 +322,7 @@ var oncallDataCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(256),
 	GlobalNamespace: "oncall-data",
 	Marshal:         json.Marshal,
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		oncall := &ui.Oncall{}
 		err := json.Unmarshal(blob, oncall)
 		return oncall, err
@@ -331,7 +331,7 @@ var oncallDataCache = layered.Cache{
 
 // getOncallData fetches oncall data and caches it for 10 minutes.
 func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
-	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v interface{}, exp time.Duration, err error) {
+	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v any, exp time.Duration, err error) {
 		out := &ui.Oncall{}
 		if err := common.GetJSONData(http.DefaultClient, config.Url, out); err != nil {
 			return nil, 0, err

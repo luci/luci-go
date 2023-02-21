@@ -42,10 +42,10 @@ func TestPredefinedTypes(t *testing.T) {
 
 			c = SetLocalAuth(c, localAuth)
 			data := getCurrent(c).sections["local_auth"]
-			var v interface{}
+			var v any
 			So(json.Unmarshal(*data, &v), ShouldBeNil)
-			So(v, ShouldResemble, map[string]interface{}{
-				"accounts": []interface{}{map[string]interface{}{
+			So(v, ShouldResemble, map[string]any{
+				"accounts": []any{map[string]any{
 					"email": "some@example.com",
 					"id":    "test",
 				}},
@@ -72,14 +72,14 @@ func TestPredefinedTypes(t *testing.T) {
 			}
 			c = SetSwarming(c, s)
 			data := getCurrent(c).sections["swarming"]
-			var v interface{}
+			var v any
 			So(json.Unmarshal(*data, &v), ShouldBeNil)
-			So(v, ShouldResemble, map[string]interface{}{
+			So(v, ShouldResemble, map[string]any{
 				"secret_bytes": "Zm9v",
-				"task": map[string]interface{}{
+				"task": map[string]any{
 					"server":         "https://backend.appspot.com",
 					"task_id":        "task_id",
-					"bot_dimensions": []interface{}{"k1:v1"},
+					"bot_dimensions": []any{"k1:v1"},
 				},
 			})
 			So(GetSwarming(c), ShouldResembleProto, s)
@@ -96,10 +96,10 @@ func TestPredefinedTypes(t *testing.T) {
 				}}
 			c = SetResultDB(c, resultdb)
 			data := getCurrent(c).sections["resultdb"]
-			var v interface{}
+			var v any
 			So(json.Unmarshal(*data, &v), ShouldBeNil)
-			So(v, ShouldResemble, map[string]interface{}{
-				"current_invocation": map[string]interface{}{
+			So(v, ShouldResemble, map[string]any{
+				"current_invocation": map[string]any{
 					"name":         "invocations/build:1",
 					"update_token": "foobarbazsecretoken",
 				},
@@ -133,9 +133,9 @@ func TestPredefinedTypes(t *testing.T) {
 			}
 			c = SetBuildbucket(c, b)
 			data := getCurrent(c).sections["buildbucket"]
-			var v interface{}
+			var v any
 			So(json.Unmarshal(*data, &v), ShouldBeNil)
-			So(v, ShouldResemble, map[string]interface{}{
+			So(v, ShouldResemble, map[string]any{
 				"hostname":             "hostname",
 				"schedule_build_token": "a token",
 			})

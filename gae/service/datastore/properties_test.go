@@ -309,14 +309,14 @@ func TestByteSequences(t *testing.T) {
 
 	conversions := []struct {
 		desc string
-		conv func(v string) (byteSequence, interface{})
+		conv func(v string) (byteSequence, any)
 	}{
-		{"string", func(v string) (byteSequence, interface{}) { return stringByteSequence(v), v }},
-		{"[]byte", func(v string) (byteSequence, interface{}) { return bytesByteSequence(v), []byte(v) }},
+		{"string", func(v string) (byteSequence, any) { return stringByteSequence(v), v }},
+		{"[]byte", func(v string) (byteSequence, any) { return bytesByteSequence(v), []byte(v) }},
 	}
 
 	testCases := map[string][]struct {
-		assertion func(interface{}, ...interface{}) string
+		assertion func(any, ...any) string
 		cmpS      string
 	}{
 		"": {

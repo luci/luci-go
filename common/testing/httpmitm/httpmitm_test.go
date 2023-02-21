@@ -36,7 +36,7 @@ type record struct {
 // 0) Origin
 // 1) bool (are we expecting an error?)
 // 2) string (optional). If present, the regexp pattern that must match the data.
-func shouldRecord(actual interface{}, expected ...interface{}) string {
+func shouldRecord(actual any, expected ...any) string {
 	r := actual.(*record)
 	o := expected[0].(Origin)
 	e := expected[1].(bool)

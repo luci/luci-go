@@ -25,15 +25,15 @@ import (
 	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 )
 
-func updateDict(dest, source map[string]interface{}) {
+func updateDict(dest, source map[string]any) {
 	for k, v := range source {
 		dest[k] = v
 	}
 }
 
 // AnalyzedTestVariant returns a spanner mutation that inserts an analyzed test variant.
-func AnalyzedTestVariant(realm, tId, vHash string, status atvpb.Status, extraValues map[string]interface{}) *spanner.Mutation {
-	values := map[string]interface{}{
+func AnalyzedTestVariant(realm, tId, vHash string, status atvpb.Status, extraValues map[string]any) *spanner.Mutation {
+	values := map[string]any{
 		"Realm":            realm,
 		"TestId":           tId,
 		"VariantHash":      vHash,
@@ -46,8 +46,8 @@ func AnalyzedTestVariant(realm, tId, vHash string, status atvpb.Status, extraVal
 }
 
 // Verdict returns a spanner mutation that inserts a Verdicts row.
-func Verdict(realm, tId, vHash, invID string, status internal.VerdictStatus, invTime time.Time, extraValues map[string]interface{}) *spanner.Mutation {
-	values := map[string]interface{}{
+func Verdict(realm, tId, vHash, invID string, status internal.VerdictStatus, invTime time.Time, extraValues map[string]any) *spanner.Mutation {
+	values := map[string]any{
 		"Realm":                  realm,
 		"TestId":                 tId,
 		"VariantHash":            vHash,

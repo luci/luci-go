@@ -61,27 +61,27 @@ func TestAnalyzedTestVariantSpan(t *testing.T) {
 		So(err, ShouldBeNil)
 		ms := []*spanner.Mutation{
 			insert.AnalyzedTestVariant(realm, "ninja://test1", "variantHash1", status,
-				map[string]interface{}{
+				map[string]any{
 					"Builder":                   builder,
 					"StatusUpdateTime":          now.Add(-time.Hour),
 					"PreviousStatuses":          ps,
 					"PreviousStatusUpdateTimes": puts,
 					"TestMetadata":              spanutil.Compressed(tmdBytes),
 				}),
-			insert.AnalyzedTestVariant(realm, "ninja://test1", "variantHash2", atvpb.Status_HAS_UNEXPECTED_RESULTS, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, "ninja://test1", "variantHash2", atvpb.Status_HAS_UNEXPECTED_RESULTS, map[string]any{
 				"Builder": builder,
 			}),
 			insert.AnalyzedTestVariant(realm, "ninja://test2", "variantHash1", status,
-				map[string]interface{}{
+				map[string]any{
 					"Builder": "anotherbuilder",
 				}),
 			insert.AnalyzedTestVariant(realm, "ninja://test3", "variantHash", status, nil),
 			insert.AnalyzedTestVariant(realm, "ninja://test4", "variantHash", atvpb.Status_CONSISTENTLY_EXPECTED,
-				map[string]interface{}{
+				map[string]any{
 					"Builder": builder,
 				}),
 			insert.AnalyzedTestVariant("anotherrealm", "ninja://test1", "variantHash1", status,
-				map[string]interface{}{
+				map[string]any{
 					"Builder": builder,
 				}),
 		}

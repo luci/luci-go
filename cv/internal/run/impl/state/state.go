@@ -262,7 +262,7 @@ func (rs *RunState) LogInfo(ctx context.Context, label, message string) {
 
 // LogInfof is like LogInfo but formats the message according to format
 // specifier.
-func (rs *RunState) LogInfof(ctx context.Context, label, format string, args ...interface{}) {
+func (rs *RunState) LogInfof(ctx context.Context, label, format string, args ...any) {
 	rs.LogInfo(ctx, label, fmt.Sprintf(format, args...))
 }
 
@@ -281,6 +281,6 @@ func (rs *RunState) LogInfoAt(at time.Time, label, message string) {
 
 // LogInfofAt is like LogInfoAt but formats the message according to format
 // specifier.
-func (rs *RunState) LogInfofAt(at time.Time, label, format string, args ...interface{}) {
+func (rs *RunState) LogInfofAt(at time.Time, label, format string, args ...any) {
 	rs.LogInfoAt(at, label, fmt.Sprintf(format, args...))
 }

@@ -74,7 +74,7 @@ func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassin
 	now := clock.Now(ctx).UTC()
 
 	// Insert an invocation,
-	testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_FINALIZED, map[string]interface{}{
+	testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_FINALIZED, map[string]any{
 		"ExpectedTestResultsExpirationTime": now.Add(-time.Minute),
 		"CreateTime":                        now.Add(-time.Hour),
 		"FinalizeTime":                      now.Add(-time.Hour),
@@ -87,7 +87,7 @@ func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassin
 		inserts = append(inserts, insert.TestResultMessages(results)...)
 		for _, res := range results {
 			for j := 0; j < nArtifactsPerResult; j++ {
-				inserts = append(inserts, spanutil.InsertMap("Artifacts", map[string]interface{}{
+				inserts = append(inserts, spanutil.InsertMap("Artifacts", map[string]any{
 					"InvocationId": invID,
 					"ParentId":     artifacts.ParentID(res.TestId, res.ResultId),
 					"ArtifactId":   strconv.Itoa(j),

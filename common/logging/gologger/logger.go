@@ -44,20 +44,20 @@ type loggerImpl struct {
 	fields string
 }
 
-func (li *loggerImpl) Debugf(format string, args ...interface{}) {
+func (li *loggerImpl) Debugf(format string, args ...any) {
 	li.LogCall(logging.Debug, 1, format, args)
 }
-func (li *loggerImpl) Infof(format string, args ...interface{}) {
+func (li *loggerImpl) Infof(format string, args ...any) {
 	li.LogCall(logging.Info, 1, format, args)
 }
-func (li *loggerImpl) Warningf(format string, args ...interface{}) {
+func (li *loggerImpl) Warningf(format string, args ...any) {
 	li.LogCall(logging.Warning, 1, format, args)
 }
-func (li *loggerImpl) Errorf(format string, args ...interface{}) {
+func (li *loggerImpl) Errorf(format string, args ...any) {
 	li.LogCall(logging.Error, 1, format, args)
 }
 
-func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, args []interface{}) {
+func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, args []any) {
 	// Append the fields to the format string.
 	if l < li.level {
 		return
@@ -86,7 +86,7 @@ func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, arg
 }
 
 // formatWithFields renders the supplied format string, adding fields.
-func formatWithFields(format string, fieldString string, args []interface{}) string {
+func formatWithFields(format string, fieldString string, args []any) string {
 	buf := bytes.Buffer{}
 	buf.Grow(len(format) + logMessageFieldPadding + len(fieldString))
 	fmt.Fprintf(&buf, format, args...)

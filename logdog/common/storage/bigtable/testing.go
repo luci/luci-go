@@ -74,7 +74,7 @@ func NewMemoryInstance(cache storage.Cache) Testing {
 		Storage:    &s,
 		maxRowSize: bigTableRowMaxBytes,
 		s:          ts,
-		c: ts.CreateCollection("", func(a, b interface{}) int {
+		c: ts.CreateCollection("", func(a, b any) int {
 			return bytes.Compare(a.(*storageItem).key, b.(*storageItem).key)
 		}),
 	}

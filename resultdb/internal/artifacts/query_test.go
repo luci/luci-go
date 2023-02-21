@@ -62,7 +62,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`Populates fields correctly`, func() {
 			testutil.MustApply(ctx,
-				insert.Artifact("inv1", "", "a", map[string]interface{}{
+				insert.Artifact("inv1", "", "a", map[string]any{
 					"ContentType": "text/plain",
 					"Size":        64,
 				}),
@@ -370,10 +370,10 @@ func TestQuery(t *testing.T) {
 		Convey(`ContentTypes`, func() {
 			Convey(`Works`, func() {
 				testutil.MustApply(ctx,
-					insert.Artifact("inv1", "", "a0", map[string]interface{}{"ContentType": "text/plain; encoding=utf-8"}),
-					insert.Artifact("inv1", "tr/t/r", "a0", map[string]interface{}{"ContentType": "text/plain"}),
+					insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8"}),
+					insert.Artifact("inv1", "tr/t/r", "a0", map[string]any{"ContentType": "text/plain"}),
 					insert.Artifact("inv1", "tr/t/r", "a1", nil),
-					insert.Artifact("inv1", "tr/t/r", "a3", map[string]interface{}{"ContentType": "image/jpg"}),
+					insert.Artifact("inv1", "tr/t/r", "a3", map[string]any{"ContentType": "image/jpg"}),
 				)
 				q.ContentTypeRegexp = "text/.+"
 
@@ -419,7 +419,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`WithRBECASHash`, func() {
 			testutil.MustApply(ctx,
-				insert.Artifact("inv1", "tr/t/r", "a", map[string]interface{}{
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]any{
 					"ContentType": "text/plain",
 					"Size":        64,
 					"RBECASHash":  "deadbeef",
@@ -442,7 +442,7 @@ func TestQuery(t *testing.T) {
 
 		Convey(`WithGcsURI`, func() {
 			testutil.MustApply(ctx,
-				insert.Artifact("inv1", "tr/t/r", "a", map[string]interface{}{
+				insert.Artifact("inv1", "tr/t/r", "a", map[string]any{
 					"ContentType": "text/plain",
 					"Size":        64,
 					"GcsURI":      "gs://bucket/beyondbeef",

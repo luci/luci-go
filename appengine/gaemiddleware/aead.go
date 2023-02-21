@@ -63,7 +63,7 @@ func AEADProvider(ctx context.Context) tink.AEAD {
 		}
 		return nil
 	}
-	state, err := cachedAEAD.Fetch(ctx, func(prev interface{}) (updated interface{}, exp time.Duration, err error) {
+	state, err := cachedAEAD.Fetch(ctx, func(prev any) (updated any, exp time.Duration, err error) {
 		state, _ := prev.(*aeadCachedState)
 		if state == nil || state.keyPath != s.EncryptionKey {
 			state = &aeadCachedState{keyPath: s.EncryptionKey}

@@ -93,7 +93,7 @@ type stackContext struct {
 	internalReason string
 
 	// tags are any data associated with this frame.
-	tags map[TagKey]interface{}
+	tags map[TagKey]any
 }
 
 // renderPublic renders the public error.Error()-style string for this frame,
@@ -150,7 +150,7 @@ func (s *stackContext) render() lines {
 type terminalStackError struct {
 	error
 	finfo stackFrameInfo
-	tags  map[TagKey]interface{}
+	tags  map[TagKey]any
 }
 
 var _ interface {
@@ -195,7 +195,7 @@ type Annotator struct {
 //
 // The `reason` string is formatted with `args` and may contain Sprintf-style
 // formatting directives.
-func (a *Annotator) InternalReason(reason string, args ...interface{}) *Annotator {
+func (a *Annotator) InternalReason(reason string, args ...any) *Annotator {
 	if a == nil {
 		return a
 	}
@@ -211,7 +211,7 @@ func (a *Annotator) Tag(tags ...TagValueGenerator) *Annotator {
 	if a == nil {
 		return a
 	}
-	tagMap := make(map[TagKey]interface{}, len(tags))
+	tagMap := make(map[TagKey]any, len(tags))
 	for _, t := range tags {
 		v := t.GenerateErrorTagValue()
 		tagMap[v.Key] = v.Value
@@ -601,7 +601,7 @@ func renderStack(err error) *renderedError {
 //
 // The `reason` string is formatted with `args` and may contain Sprintf-style
 // formatting directives.
-func Annotate(err error, reason string, args ...interface{}) *Annotator {
+func Annotate(err error, reason string, args ...any) *Annotator {
 	if err == nil {
 		return nil
 	}
@@ -618,7 +618,7 @@ func Annotate(err error, reason string, args ...interface{}) *Annotator {
 //	errors.Reason("something bad: %d", value).Tag(transient.Tag).Err()
 //
 // Prefer this form to errors.New(fmt.Sprintf("..."))
-func Reason(reason string, args ...interface{}) *Annotator {
+func Reason(reason string, args ...any) *Annotator {
 	currentStack := captureStack(1)
 	frameInfo := stackFrameInfo{0, currentStack}
 	return (&Annotator{nil, stackContext{
@@ -634,7 +634,7 @@ func New(msg string, tags ...TagValueGenerator) error {
 	tse := &terminalStackError{
 		errors.New(msg), stackFrameInfo{forStack: captureStack(1)}, nil}
 	if len(tags) > 0 {
-		tse.tags = make(map[TagKey]interface{}, len(tags))
+		tse.tags = make(map[TagKey]any, len(tags))
 		for _, t := range tags {
 			v := t.GenerateErrorTagValue()
 			tse.tags[v.Key] = v.Value

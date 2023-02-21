@@ -133,7 +133,7 @@ func save(ctx context.Context, sectionID string, expiresAt time.Time, parts part
 	}
 
 	l.LeaseID = leaseID
-	m := spanner.InsertMap("TQLeases", map[string]interface{}{
+	m := spanner.InsertMap("TQLeases", map[string]any{
 		"SectionID":       l.SectionID,
 		"LeaseID":         leaseID,
 		"SerializedParts": l.SerializedParts,
@@ -166,7 +166,7 @@ func query(ctx context.Context, sectionID string) ([]*lease, error) {
 		FROM TQLeases
 		WHERE SectionID = @sectionID
 	`)
-	st.Params = map[string]interface{}{
+	st.Params = map[string]any{
 		"sectionID": sectionID,
 	}
 

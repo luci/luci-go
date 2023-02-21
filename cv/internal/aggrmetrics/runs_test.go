@@ -46,16 +46,16 @@ func TestRunAggregator(t *testing.T) {
 		// Truncate current time to seconds to deal with integer delays.
 		ct.Clock.Set(ct.Clock.Now().UTC().Add(time.Second).Truncate(time.Second))
 
-		pendingRunCountSent := func(project, configGroup string, mode run.Mode) interface{} {
+		pendingRunCountSent := func(project, configGroup string, mode run.Mode) any {
 			return ct.TSMonSentValue(ctx, metrics.Public.PendingRunCount, project, configGroup, string(mode))
 		}
 		pendingRunDurationSent := func(project, configGroup string, mode run.Mode) *distribution.Distribution {
 			return ct.TSMonSentDistr(ctx, metrics.Public.PendingRunDuration, project, configGroup, string(mode))
 		}
-		maxPendingRunAgeSent := func(project, configGroup string, mode run.Mode) interface{} {
+		maxPendingRunAgeSent := func(project, configGroup string, mode run.Mode) any {
 			return ct.TSMonSentValue(ctx, metrics.Public.MaxPendingRunAge, project, configGroup, string(mode))
 		}
-		activeRunCountSent := func(project, configGroup string, mode run.Mode) interface{} {
+		activeRunCountSent := func(project, configGroup string, mode run.Mode) any {
 			return ct.TSMonSentValue(ctx, metrics.Public.ActiveRunCount, project, configGroup, string(mode))
 		}
 		activeRunDurationSent := func(project, configGroup string, mode run.Mode) *distribution.Distribution {

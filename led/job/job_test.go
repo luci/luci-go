@@ -94,7 +94,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
 
 			props := ledProperties{}
-			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]interface{}{
+			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]any{
 				"$recipe_engine/led": &props,
 			})
 			So(err, ShouldBeNil)
@@ -200,7 +200,7 @@ func TestFlattenToSwarming(t *testing.T) {
 			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
 
 			props := ledProperties{}
-			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]interface{}{
+			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]any{
 				"$recipe_engine/led": &props,
 			})
 			So(err, ShouldBeNil)

@@ -38,7 +38,7 @@ func TestUnixTime(t *testing.T) {
 		So(z.IsZero(), ShouldBeTrue)
 		So(z.String(), ShouldEqual, "0001-01-01 00:00:00 +0000 UTC")
 
-		buf, err := json.Marshal(map[string]interface{}{
+		buf, err := json.Marshal(map[string]any{
 			"key": z,
 		})
 		So(err, ShouldBeNil)
@@ -51,7 +51,7 @@ func TestUnixTime(t *testing.T) {
 		So(t1.IsZero(), ShouldBeFalse)
 		So(t1.String(), ShouldEqual, "2018-07-07 03:38:43 +0000 UTC")
 
-		buf, err := json.Marshal(map[string]interface{}{
+		buf, err := json.Marshal(map[string]any{
 			"key": t1,
 		})
 		So(err, ShouldBeNil)
@@ -65,7 +65,7 @@ func TestJSONError(t *testing.T) {
 	t.Parallel()
 
 	Convey("Nil works", t, func() {
-		buf, err := json.Marshal(map[string]interface{}{
+		buf, err := json.Marshal(map[string]any{
 			"key": JSONError{},
 		})
 		So(err, ShouldBeNil)
@@ -73,7 +73,7 @@ func TestJSONError(t *testing.T) {
 	})
 
 	Convey("Non-nil works", t, func() {
-		buf, err := json.Marshal(map[string]interface{}{
+		buf, err := json.Marshal(map[string]any{
 			"key": JSONError{fmt.Errorf("some error message")},
 		})
 		So(err, ShouldBeNil)

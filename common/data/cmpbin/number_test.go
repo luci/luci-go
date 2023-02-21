@@ -138,7 +138,7 @@ func TestSort(t *testing.T) {
 
 	sort.Sort(randomCases)
 
-	shouldBeLessThanOrEqual := func(actual interface{}, expected ...interface{}) string {
+	shouldBeLessThanOrEqual := func(actual any, expected ...any) string {
 		a, b := actual.([]byte), expected[0].([]byte)
 		if bytes.Compare(a, b) <= 0 {
 			return fmt.Sprintf("Expected A <= B (but it wasn't)!\nA: [% x]\nB: [% x]", a, b)

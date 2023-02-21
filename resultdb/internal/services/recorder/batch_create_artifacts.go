@@ -219,7 +219,7 @@ func checkArtStates(ctx context.Context, invID invocations.ID, arts []*artifactC
 
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		return invocations.ReadColumns(ctx, invID, map[string]interface{}{
+		return invocations.ReadColumns(ctx, invID, map[string]any{
 			"State": &invState, "Realm": &realm,
 		})
 	})
@@ -251,7 +251,7 @@ func createArtifactStates(ctx context.Context, realm string, invID invocations.I
 			logging.Warningf(ctx, "The states of all the artifacts already exist.")
 		}
 		for _, a := range noStateArts {
-			span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]interface{}{
+			span.BufferWrite(ctx, spanutil.InsertMap("Artifacts", map[string]any{
 				"InvocationId": invID,
 				"ParentId":     a.parentID(),
 				"ArtifactId":   a.artifactID,

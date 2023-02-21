@@ -37,7 +37,7 @@ func TestIdentityKindCountingInterceptor(t *testing.T) {
 	store := tsmon.Store(ctx)
 	interceptor := IdentityKindCountingInterceptor()
 	fakeServerInfo := grpc.UnaryServerInfo{FullMethod: "/service/method"}
-	fakeHandler := func(_ context.Context, _ interface{}) (interface{}, error) {
+	fakeHandler := func(_ context.Context, _ any) (any, error) {
 		return struct{}{}, status.Error(codes.Internal, "dummy error")
 	}
 
@@ -51,13 +51,13 @@ func TestIdentityKindCountingInterceptor(t *testing.T) {
 				Identity: "user:user@example.com",
 			})
 			_, _ = interceptor(ctx, nil, &fakeServerInfo, fakeHandler)
-			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []interface{}{"service", "method", "user"}), ShouldEqual, 1)
+			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), ShouldEqual, 1)
 		})
 
 		Convey(`anonymous`, func() {
 			_, _ = interceptor(ctx, nil, &fakeServerInfo, fakeHandler)
-			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []interface{}{"service", "method", "user"}), ShouldBeNil)
-			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []interface{}{"service", "method", "anonymous"}), ShouldEqual, 1)
+			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), ShouldBeNil)
+			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "anonymous"}), ShouldEqual, 1)
 		})
 	})
 }

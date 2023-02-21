@@ -580,7 +580,7 @@ func (bp *BuildPage) Timeline() string {
 		}
 	}
 
-	timeline, err := json.Marshal(map[string]interface{}{
+	timeline, err := json.Marshal(map[string]any{
 		"groups": groups,
 		"items":  items,
 	})

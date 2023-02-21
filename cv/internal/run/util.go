@@ -44,11 +44,11 @@ func (r runHeap) Swap(i int, j int) {
 	r[i], r[j] = r[j], r[i]
 }
 
-func (r *runHeap) Push(x interface{}) {
+func (r *runHeap) Push(x any) {
 	*r = append(*r, x.(runHeapKey))
 }
 
-func (r *runHeap) Pop() interface{} {
+func (r *runHeap) Pop() any {
 	idx := len(*r) - 1
 	v := (*r)[idx]
 	(*r)[idx].dsKey = nil // free memory as a good habit.

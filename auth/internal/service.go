@@ -68,7 +68,7 @@ func (p *serviceAccountTokenProvider) jwtConfig(ctx context.Context) (*jwt.Confi
 	}
 	if p.audience != "" {
 		cfg.UseIDToken = true
-		cfg.PrivateClaims = map[string]interface{}{"target_audience": p.audience}
+		cfg.PrivateClaims = map[string]any{"target_audience": p.audience}
 	}
 	return cfg, nil
 }

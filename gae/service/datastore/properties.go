@@ -201,7 +201,7 @@ type Property struct {
 	// Specifically:
 	//	- []byte- and string-based values are stored in a bytesByteSequence and
 	//	  stringByteSequence respectively.
-	value interface{}
+	value any
 
 	indexSetting IndexSetting
 	propType     PropertyType
@@ -212,7 +212,7 @@ type Property struct {
 // normally, use SetValue(..., ShouldIndex) instead.
 //
 // *indexed if val is not an unindexable type like []byte.
-func MkProperty(val interface{}) Property {
+func MkProperty(val any) Property {
 	ret := Property{}
 	if err := ret.SetValue(val, ShouldIndex); err != nil {
 		panic(err)
@@ -223,7 +223,7 @@ func MkProperty(val interface{}) Property {
 // MkPropertyNI makes a new Property (with noindex set to true), and returns
 // it. If val is an invalid value, this panics (so don't do it). If you want to
 // handle the error normally, use SetValue(..., NoIndex) instead.
-func MkPropertyNI(val interface{}) Property {
+func MkPropertyNI(val any) Property {
 	ret := Property{}
 	if err := ret.SetValue(val, NoIndex); err != nil {
 		panic(err)
@@ -234,7 +234,7 @@ func MkPropertyNI(val interface{}) Property {
 // PropertyTypeOf returns the PT* type of the given Property-compatible
 // value v. If checkValid is true, this method will also ensure that time.Time
 // and GeoPoint have valid values.
-func PropertyTypeOf(v interface{}, checkValid bool) (PropertyType, error) {
+func PropertyTypeOf(v any, checkValid bool) (PropertyType, error) {
 	switch x := v.(type) {
 	case nil:
 		return PTNull, nil
@@ -315,7 +315,7 @@ func timeLocationIsUTC(l *time.Location) bool {
 // UpconvertUnderlyingType takes an object o, and attempts to convert it to
 // its native datastore-compatible type. e.g. int16 will convert to int64, and
 // `type Foo string` will convert to `string`.
-func UpconvertUnderlyingType(o interface{}) interface{} {
+func UpconvertUnderlyingType(o any) any {
 	if o == nil {
 		return o
 	}
@@ -386,7 +386,7 @@ func (p Property) String() string {
 // Value returns the current value held by this property. It's guaranteed to
 // be a valid value type (i.e. `p.SetValue(p.Value(), true)` will never return
 // an error).
-func (p *Property) Value() interface{} {
+func (p *Property) Value() any {
 	switch p.propType {
 	case PTBytes:
 		return p.value.(byteSequence).bytes()
@@ -439,7 +439,7 @@ func (p *Property) Type() PropertyType { return p.propType }
 // Python's None but not directly representable by a Go struct. Loading
 // a nil-valued property into a struct will set that field to the zero
 // value.
-func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
+func (p *Property) SetValue(value any, is IndexSetting) (err error) {
 	pt := PTNull
 	if value != nil {
 		value = UpconvertUnderlyingType(value)
@@ -484,7 +484,7 @@ func (p *Property) SetValue(value interface{}, is IndexSetting) (err error) {
 //   - GeoPoint
 //   - PropertyMap
 //   - *Key
-func (p Property) IndexTypeAndValue() (PropertyType, interface{}) {
+func (p Property) IndexTypeAndValue() (PropertyType, any) {
 	switch t := p.propType; t {
 	case PTNull, PTInt, PTBool, PTFloat, PTGeoPoint, PTPropertyMap, PTKey:
 		return t, p.Value()
@@ -510,7 +510,7 @@ func (p Property) IndexTypeAndValue() (PropertyType, interface{}) {
 //	PTXXX <-> PTXXX (i.e. identity)
 //	PTInt <-> PTTime
 //	PTNull <-> Anything
-func (p *Property) Project(to PropertyType) (interface{}, error) {
+func (p *Property) Project(to PropertyType) (any, error) {
 	if to == PTNull {
 		return nil, nil
 	}
@@ -826,7 +826,7 @@ type MetaGetter interface {
 	//     FFlag Toggle `gae:"$flag2,false"` // defaults to false
 	//     // BadFlag  Toggle `gae:"$flag3"` // ILLEGAL
 	//   }
-	GetMeta(key string) (interface{}, bool)
+	GetMeta(key string) (any, bool)
 }
 
 // PropertyLoadSaver may be implemented by a user type, and Interface will
@@ -868,7 +868,7 @@ type MetaGetterSetter interface {
 
 	// SetMeta allows you to set the current value of the meta-keyed field.
 	// It returns true iff the field was set.
-	SetMeta(key string, val interface{}) bool
+	SetMeta(key string, val any) bool
 }
 
 // PropertyData is an interface implemented by Property and PropertySlice to
@@ -956,7 +956,7 @@ func (pm PropertyMap) Clone() PropertyMap {
 
 // GetMeta implements PropertyLoadSaver.GetMeta, and returns the current value
 // associated with the metadata key.
-func (pm PropertyMap) GetMeta(key string) (interface{}, bool) {
+func (pm PropertyMap) GetMeta(key string) (any, bool) {
 	pslice := pm.Slice("$" + key)
 	if len(pslice) > 0 {
 		return pslice[0].Value(), true
@@ -977,7 +977,7 @@ func (pm PropertyMap) GetAllMeta() PropertyMap {
 
 // SetMeta implements PropertyLoadSaver.SetMeta. It will only return an error
 // if `val` has an invalid type (e.g. not one supported by Property).
-func (pm PropertyMap) SetMeta(key string, val interface{}) bool {
+func (pm PropertyMap) SetMeta(key string, val any) bool {
 	prop := Property{}
 	if err := prop.SetValue(val, NoIndex); err != nil {
 		return false
@@ -1056,7 +1056,7 @@ func isMetaKey(k string) bool {
 // Example:
 //
 //	pls.GetMetaDefault("foo", 100).(int64)
-func GetMetaDefault(getter MetaGetter, key string, dflt interface{}) interface{} {
+func GetMetaDefault(getter MetaGetter, key string, dflt any) any {
 	dflt = UpconvertUnderlyingType(dflt)
 	cur, ok := getter.GetMeta(key)
 	if !ok || (dflt != nil && reflect.TypeOf(cur) != reflect.TypeOf(dflt)) {
@@ -1074,7 +1074,7 @@ type byteSequence interface {
 	// get returns the byte at the specified index.
 	get(int) byte
 	// value returns the sequence's primitive type.
-	value() interface{}
+	value() any
 	// string returns the sequence as a string (may cause a copy if not native).
 	string() string
 	// bytes returns the sequence as a []byte (may cause a copy if not native).
@@ -1115,7 +1115,7 @@ type bytesByteSequence []byte
 
 func (s bytesByteSequence) len() int           { return len(s) }
 func (s bytesByteSequence) get(i int) byte     { return s[i] }
-func (s bytesByteSequence) value() interface{} { return []byte(s) }
+func (s bytesByteSequence) value() any { return []byte(s) }
 func (s bytesByteSequence) string() string     { return string(s) }
 func (s bytesByteSequence) bytes() []byte      { return []byte(s) }
 func (s bytesByteSequence) fastCmp(o byteSequence) (int, bool) {
@@ -1130,7 +1130,7 @@ type stringByteSequence string
 
 func (s stringByteSequence) len() int           { return len(s) }
 func (s stringByteSequence) get(i int) byte     { return s[i] }
-func (s stringByteSequence) value() interface{} { return string(s) }
+func (s stringByteSequence) value() any { return string(s) }
 func (s stringByteSequence) string() string     { return string(s) }
 func (s stringByteSequence) bytes() []byte      { return []byte(s) }
 func (s stringByteSequence) fastCmp(o byteSequence) (int, bool) {

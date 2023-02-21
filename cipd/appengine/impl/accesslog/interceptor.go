@@ -46,7 +46,7 @@ func init() {
 
 // NewUnaryServerInterceptor returns an interceptor that logs requests.
 func NewUnaryServerInterceptor(opts *server.Options) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		if !strings.HasPrefix(info.FullMethod, "/cipd.") {
 			return handler(ctx, req)
 		}
@@ -94,7 +94,7 @@ func NewUnaryServerInterceptor(opts *server.Options) grpc.UnaryServerInterceptor
 	}
 }
 
-func extractFieldsFromRequest(entry *cipdpb.AccessLogEntry, req interface{}) {
+func extractFieldsFromRequest(entry *cipdpb.AccessLogEntry, req any) {
 	if x, ok := req.(interface{ GetPackage() string }); ok {
 		entry.Package = x.GetPackage()
 	} else if x, ok := req.(interface{ GetPrefix() string }); ok {

@@ -142,7 +142,7 @@ func (op *ActuationEndOp) Expire(ctx context.Context) {
 
 // Apply stores all updated or created datastore entities.
 func (op *ActuationEndOp) Apply(ctx context.Context) error {
-	var toPut []interface{}
+	var toPut []any
 
 	// Embed the up-to-date Actuation snapshot into Asset entities.
 	for _, ent := range op.assets {

@@ -23,7 +23,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func ShouldEqualKey(actual interface{}, expected ...interface{}) string {
+func ShouldEqualKey(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("Assertion requires 1 expected value, got %d", len(expected))
 	}
@@ -210,7 +210,7 @@ func TestMiscKey(t *testing.T) {
 	})
 }
 
-func shouldBeLess(actual interface{}, expected ...interface{}) string {
+func shouldBeLess(actual any, expected ...any) string {
 	a, b := actual.(*Key), expected[0].(*Key)
 	if a.Less(b) {
 		return ""
@@ -218,7 +218,7 @@ func shouldBeLess(actual interface{}, expected ...interface{}) string {
 	return fmt.Sprintf("Expected %q < %q", a.String(), b.String())
 }
 
-func shouldNotBeEqual(actual interface{}, expected ...interface{}) string {
+func shouldNotBeEqual(actual any, expected ...any) string {
 	a, b := actual.(*Key), expected[0].(*Key)
 	if !a.Equal(b) {
 		return ""
@@ -226,7 +226,7 @@ func shouldNotBeEqual(actual interface{}, expected ...interface{}) string {
 	return fmt.Sprintf("Expected %q != %q", a.String(), b.String())
 }
 
-func shouldNotBeLess(actual interface{}, expected ...interface{}) string {
+func shouldNotBeLess(actual any, expected ...any) string {
 	a, b := actual.(*Key), expected[0].(*Key)
 	if !a.Less(b) {
 		return ""

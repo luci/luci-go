@@ -31,7 +31,7 @@ var ErrGerritDeadlineExceeded = errors.New("Gerrit took too long to respond", tr
 var ErrOutOfQuota = errors.New("out of Gerrit Quota", transient.Tag)
 
 // UnhandledError is used to process and annotate Gerrit errors.
-func UnhandledError(ctx context.Context, err error, format string, args ...interface{}) error {
+func UnhandledError(ctx context.Context, err error, format string, args ...any) error {
 	msg := fmt.Sprintf(format, args...)
 	ann := errors.Annotate(err, msg)
 	switch code := grpcutil.Code(err); code {

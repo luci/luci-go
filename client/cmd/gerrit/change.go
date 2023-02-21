@@ -32,11 +32,11 @@ type apiCallInput struct {
 	ChangeID   string      `json:"change_id,omitempty"`
 	ProjectID  string      `json:"project_id,omitempty"`
 	RevisionID string      `json:"revision_id,omitempty"`
-	JSONInput  interface{} `json:"input,omitempty"`
-	QueryInput interface{} `json:"params,omitempty"`
+	JSONInput  any `json:"input,omitempty"`
+	QueryInput any `json:"params,omitempty"`
 }
 
-type apiCall func(context.Context, *gerrit.Client, *apiCallInput) (interface{}, error)
+type apiCall func(context.Context, *gerrit.Client, *apiCallInput) (any, error)
 
 type changeRunOptions struct {
 	// These booleans indicate whether a value is required in a subcommand's JSON
@@ -44,8 +44,8 @@ type changeRunOptions struct {
 	changeID   bool
 	projectID  bool
 	revisionID bool
-	jsonInput  interface{}
-	queryInput interface{}
+	jsonInput  any
+	queryInput any
 }
 
 type changeRun struct {
@@ -120,7 +120,7 @@ func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
-func (c *changeRun) writeOutput(v interface{}) error {
+func (c *changeRun) writeOutput(v any) error {
 	out := os.Stdout
 	var err error
 	if c.jsonOutput != "-" {
@@ -175,7 +175,7 @@ func (c *changeRun) Run(a subcommands.Application, args []string, _ subcommands.
 }
 
 func cmdCreateBranch(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		bi := input.JSONInput.(*gerrit.BranchInput)
 		return client.CreateBranch(ctx, input.ProjectID, bi)
 	}
@@ -202,7 +202,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#crea
 }
 
 func cmdChangeAbandon(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		ai := input.JSONInput.(*gerrit.AbandonInput)
 		return client.AbandonChange(ctx, input.ChangeID, ai)
 	}
@@ -232,7 +232,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#aband
 }
 
 func cmdChangeCreate(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		ci := input.JSONInput.(*gerrit.ChangeInput)
 		return client.CreateChange(ctx, ci)
 	}
@@ -253,7 +253,7 @@ For more information, see https://gerrit-review.googlesource.com/Documentation/r
 }
 
 func cmdChangeQuery(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		req := input.QueryInput.(*gerrit.ChangeQueryParams)
 		changes, _, err := client.ChangeQuery(ctx, *req)
 		return changes, err
@@ -276,7 +276,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#query
 }
 
 func cmdChangeDetail(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		opts := input.QueryInput.(*gerrit.ChangeDetailsParams)
 		return client.ChangeDetails(ctx, input.ChangeID, *opts)
 	}
@@ -306,7 +306,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-
 }
 
 func cmdListChangeComments(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		result, err := client.ListChangeComments(ctx, input.ChangeID)
 		if err != nil {
 			return nil, err
@@ -334,7 +334,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#chang
 }
 
 func cmdChangesSubmittedTogether(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		opts := input.QueryInput.(*gerrit.ChangeDetailsParams)
 		return client.ChangesSubmittedTogether(ctx, input.ChangeID, *opts)
 	}
@@ -364,7 +364,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-
 }
 
 func cmdSetReview(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		ri := input.JSONInput.(*gerrit.ReviewInput)
 		return client.SetReview(ctx, input.ChangeID, input.RevisionID, ri)
 	}
@@ -399,7 +399,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-r
 }
 
 func cmdGetMergeable(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		return client.GetMergeable(ctx, input.ChangeID, input.RevisionID)
 	}
 	return &subcommands.Command{
@@ -431,7 +431,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-m
 }
 
 func cmdSubmit(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		si := input.JSONInput.(*gerrit.SubmitInput)
 		return client.Submit(ctx, input.ChangeID, si)
 	}
@@ -457,7 +457,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#chang
 }
 
 func cmdRebase(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		ri := input.JSONInput.(*gerrit.RebaseInput)
 		return client.RebaseChange(ctx, input.ChangeID, ri)
 	}
@@ -487,7 +487,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#rebas
 }
 
 func cmdRestore(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		ri := input.JSONInput.(*gerrit.RestoreInput)
 		return client.RestoreChange(ctx, input.ChangeID, ri)
 	}
@@ -517,7 +517,7 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#resto
 }
 
 func cmdAccountQuery(authOpts auth.Options) *subcommands.Command {
-	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
 		req := input.QueryInput.(*gerrit.AccountQueryParams)
 		changes, _, err := client.AccountQuery(ctx, *req)
 		return changes, err

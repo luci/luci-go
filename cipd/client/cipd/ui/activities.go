@@ -44,7 +44,7 @@ type Activity interface {
 	// Progress updates the activity progress.
 	Progress(ctx context.Context, title string, units Units, cur, total int64)
 	// Log is called by the logging system when the activity is installed into the context.
-	Log(ctx context.Context, level logging.Level, calldepth int, f string, args []interface{})
+	Log(ctx context.Context, level logging.Level, calldepth int, f string, args []any)
 	// Done is called when the activity finishes.
 	Done(ctx context.Context)
 }
@@ -159,23 +159,23 @@ type activityLogger struct {
 	callCtx  context.Context // a context of a particular logging call
 }
 
-func (l *activityLogger) Debugf(fmt string, args ...interface{}) {
+func (l *activityLogger) Debugf(fmt string, args ...any) {
 	l.LogCall(logging.Debug, 1, fmt, args)
 }
 
-func (l *activityLogger) Infof(fmt string, args ...interface{}) {
+func (l *activityLogger) Infof(fmt string, args ...any) {
 	l.LogCall(logging.Info, 1, fmt, args)
 }
 
-func (l *activityLogger) Warningf(fmt string, args ...interface{}) {
+func (l *activityLogger) Warningf(fmt string, args ...any) {
 	l.LogCall(logging.Warning, 1, fmt, args)
 }
 
-func (l *activityLogger) Errorf(fmt string, args ...interface{}) {
+func (l *activityLogger) Errorf(fmt string, args ...any) {
 	l.LogCall(logging.Error, 1, fmt, args)
 }
 
-func (l *activityLogger) LogCall(level logging.Level, calldepth int, f string, args []interface{}) {
+func (l *activityLogger) LogCall(level logging.Level, calldepth int, f string, args []any) {
 	l.activity.Log(l.callCtx, level, calldepth+1, f, args)
 }
 

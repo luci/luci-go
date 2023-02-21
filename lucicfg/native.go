@@ -38,7 +38,7 @@ type nativeCall struct {
 // unpack unpacks the positional arguments into corresponding variables.
 //
 // See starlark.UnpackPositionalArgs for more info.
-func (c *nativeCall) unpack(min int, vars ...interface{}) error {
+func (c *nativeCall) unpack(min int, vars ...any) error {
 	return starlark.UnpackPositionalArgs(c.Fn.Name(), c.Args, c.Kwargs, min, vars...)
 }
 

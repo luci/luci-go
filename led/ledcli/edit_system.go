@@ -77,7 +77,7 @@ func (c *cmdEditSystem) validateFlags(ctx context.Context, _ []string, _ subcomm
 	return
 }
 
-func (c *cmdEditSystem) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdEditSystem) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out any, err error) {
 	return inJob, inJob.Edit(func(je job.Editor) {
 		je.Env(c.environment)
 		je.CIPDPkgs(job.CIPDPkgs(c.cipdPackages))

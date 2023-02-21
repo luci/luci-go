@@ -36,7 +36,7 @@ type DBCacheUpdater func(ctx context.Context, prev DB) (DB, error)
 func NewDBCache(updater DBCacheUpdater) func(ctx context.Context) (DB, error) {
 	cacheSlot := lazyslot.Slot{}
 	return func(ctx context.Context) (DB, error) {
-		val, err := cacheSlot.Get(ctx, func(prev interface{}) (db interface{}, exp time.Duration, err error) {
+		val, err := cacheSlot.Get(ctx, func(prev any) (db any, exp time.Duration, err error) {
 			prevDB, _ := prev.(DB)
 			if db, err = updater(ctx, prevDB); err == nil {
 				exp = 5*time.Second + time.Duration(mathrand.Get(ctx).Intn(5000))*time.Millisecond

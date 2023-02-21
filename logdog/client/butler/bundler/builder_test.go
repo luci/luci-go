@@ -82,11 +82,11 @@ func logEntryName(le *logpb.LogEntry) string {
 //	"+a": a terminal bundle entry keyed on "a".
 //	"a:1:2:3": a bundle entry keyed on "a" with three log entries, each keyed on
 //	         "1", "2", and "3" respectively.
-func shouldHaveBundleEntries(actual interface{}, expected ...interface{}) string {
+func shouldHaveBundleEntries(actual any, expected ...any) string {
 	bundle := actual.(*logpb.ButlerLogBundle)
 
 	var errors []string
-	fail := func(f string, args ...interface{}) {
+	fail := func(f string, args ...any) {
 		errors = append(errors, fmt.Sprintf(f, args...))
 	}
 
@@ -242,7 +242,7 @@ func TestBuilder(t *testing.T) {
 				}
 
 				Convey(`Constructed bundle matches expected.`, func() {
-					islice := make([]interface{}, len(test.expected))
+					islice := make([]any, len(test.expected))
 					for i, exp := range test.expected {
 						islice[i] = exp
 					}

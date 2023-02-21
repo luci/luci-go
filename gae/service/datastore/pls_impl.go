@@ -49,7 +49,7 @@ type structTag struct {
 	substructCodec *structCodec
 	convertMethod  convertMethod
 
-	metaVal interface{}
+	metaVal any
 	isExtra bool
 	canSet  bool
 
@@ -76,7 +76,7 @@ var _ PropertyLoadSaver = (*structPLS)(nil)
 
 // typeMismatchReason returns a string explaining why the property p could not
 // be stored in an entity field of type v.Type().
-func typeMismatchReason(val interface{}, v reflect.Value) string {
+func typeMismatchReason(val any, v reflect.Value) string {
 	entityType := reflect.TypeOf(val)
 	return fmt.Sprintf("type mismatch: %s versus %v", entityType, v.Type())
 }
@@ -221,34 +221,34 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 		knd := v.Kind()
 
 		project := PTNull
-		overflow := (func(interface{}) bool)(nil)
-		set := (func(interface{}))(nil)
+		overflow := (func(any) bool)(nil)
+		set := (func(any))(nil)
 
 		switch knd {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			project = PTInt
-			overflow = func(x interface{}) bool { return v.OverflowInt(x.(int64)) }
-			set = func(x interface{}) { v.SetInt(x.(int64)) }
+			overflow = func(x any) bool { return v.OverflowInt(x.(int64)) }
+			set = func(x any) { v.SetInt(x.(int64)) }
 		case reflect.Uint8, reflect.Uint16, reflect.Uint32:
 			project = PTInt
-			overflow = func(x interface{}) bool {
+			overflow = func(x any) bool {
 				xi := x.(int64)
 				return xi < 0 || v.OverflowUint(uint64(xi))
 			}
-			set = func(x interface{}) { v.SetUint(uint64(x.(int64))) }
+			set = func(x any) { v.SetUint(uint64(x.(int64))) }
 		case reflect.Bool:
 			project = PTBool
-			set = func(x interface{}) { v.SetBool(x.(bool)) }
+			set = func(x any) { v.SetBool(x.(bool)) }
 		case reflect.String:
 			project = PTString
-			set = func(x interface{}) { v.SetString(x.(string)) }
+			set = func(x any) { v.SetString(x.(string)) }
 		case reflect.Float32, reflect.Float64:
 			project = PTFloat
-			overflow = func(x interface{}) bool { return v.OverflowFloat(x.(float64)) }
-			set = func(x interface{}) { v.SetFloat(x.(float64)) }
+			overflow = func(x any) bool { return v.OverflowFloat(x.(float64)) }
+			set = func(x any) { v.SetFloat(x.(float64)) }
 		case reflect.Ptr:
 			project = PTKey
-			set = func(x interface{}) {
+			set = func(x any) {
 				if k, ok := x.(*Key); ok {
 					v.Set(reflect.ValueOf(k))
 				}
@@ -257,16 +257,16 @@ func loadInner(codec *structCodec, structValue reflect.Value, index int, name st
 			switch v.Type() {
 			case typeOfTime:
 				project = PTTime
-				set = func(x interface{}) { v.Set(reflect.ValueOf(x)) }
+				set = func(x any) { v.Set(reflect.ValueOf(x)) }
 			case typeOfGeoPoint:
 				project = PTGeoPoint
-				set = func(x interface{}) { v.Set(reflect.ValueOf(x)) }
+				set = func(x any) { v.Set(reflect.ValueOf(x)) }
 			default:
 				panic(fmt.Errorf("helper: impossible: %s", typeMismatchReason(p.Value(), v)))
 			}
 		case reflect.Slice:
 			project = PTBytes
-			set = func(x interface{}) {
+			set = func(x any) {
 				v.SetBytes(reflect.ValueOf(x).Bytes())
 			}
 		default:
@@ -414,7 +414,7 @@ func (p *structPLS) save(propMap PropertyMap, prefix string, parentST *structTag
 	return
 }
 
-func (p *structPLS) GetMeta(key string) (interface{}, bool) {
+func (p *structPLS) GetMeta(key string) (any, bool) {
 	if idx, ok := p.c.byMeta[key]; ok {
 		if val, ok := p.getMetaFor(idx); ok {
 			return val, true
@@ -425,7 +425,7 @@ func (p *structPLS) GetMeta(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (p *structPLS) getMetaFor(idx int) (interface{}, bool) {
+func (p *structPLS) getMetaFor(idx int) (any, bool) {
 	st := p.c.byIndex[idx]
 	val := st.metaVal
 	if st.canSet {
@@ -480,7 +480,7 @@ func (p *structPLS) GetAllMeta() PropertyMap {
 	return ret
 }
 
-func (p *structPLS) SetMeta(key string, val interface{}) bool {
+func (p *structPLS) SetMeta(key string, val any) bool {
 	idx, ok := p.c.byMeta[key]
 	if !ok {
 		return false
@@ -583,7 +583,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 		return c
 	}
 
-	me := func(fmtStr string, args ...interface{}) error {
+	me := func(fmtStr string, args ...any) error {
 		return fmt.Errorf(fmtStr, args...)
 	}
 
@@ -784,7 +784,7 @@ func getStructCodecLocked(t reflect.Type) (c *structCodec) {
 	return
 }
 
-func convertMeta(val string, t reflect.Type) (interface{}, error) {
+func convertMeta(val string, t reflect.Type) (any, error) {
 	switch t.Kind() {
 	case reflect.String:
 		return val, nil

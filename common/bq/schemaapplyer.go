@@ -93,7 +93,7 @@ func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
 func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.
-	cachedErr, err := s.cache.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (interface{}, time.Duration, error) {
+	cachedErr, err := s.cache.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (any, time.Duration, error) {
 		if err := EnsureTable(ctx, t, spec); err != nil {
 			if !transient.Tag.In(err) {
 				// Cache the fatal error for one minute.

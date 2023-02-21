@@ -235,7 +235,7 @@ func (t *Test) GFactory() gerrit.Factory {
 // TSMonSentValue returns the latest value of the given metric.
 //
 // If not set, returns nil.
-func (t *Test) TSMonSentValue(ctx context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
+func (t *Test) TSMonSentValue(ctx context.Context, m types.Metric, fieldVals ...any) any {
 	resetTime := time.Time{}
 	return t.TSMonStore.Get(ctx, m, resetTime, fieldVals)
 }
@@ -244,7 +244,7 @@ func (t *Test) TSMonSentValue(ctx context.Context, m types.Metric, fieldVals ...
 //
 // If not set, returns nil.
 // Panics if metric's value is not a distribution.
-func (t *Test) TSMonSentDistr(ctx context.Context, m types.Metric, fieldVals ...interface{}) *distribution.Distribution {
+func (t *Test) TSMonSentDistr(ctx context.Context, m types.Metric, fieldVals ...any) *distribution.Distribution {
 	v := t.TSMonSentValue(ctx, m, fieldVals...)
 	if v == nil {
 		return nil

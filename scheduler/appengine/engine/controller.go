@@ -182,7 +182,7 @@ func (ctl *taskController) State() *task.State {
 }
 
 // DebugLog is part of task.Controller interface.
-func (ctl *taskController) DebugLog(format string, args ...interface{}) {
+func (ctl *taskController) DebugLog(format string, args ...any) {
 	logging.Infof(ctl.ctx, format, args...)
 	debugLog(ctl.ctx, &ctl.debugLog, format, args...)
 }

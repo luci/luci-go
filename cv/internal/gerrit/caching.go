@@ -34,7 +34,7 @@ type cachingFactory struct {
 // MakeClient implements Factory.
 func (c cachingFactory) MakeClient(ctx context.Context, gerritHost string, luciProject string) (Client, error) {
 	key := luciProject + "/" + gerritHost
-	client, err := c.cache.GetOrCreate(ctx, key, func() (value interface{}, ttl time.Duration, err error) {
+	client, err := c.cache.GetOrCreate(ctx, key, func() (value any, ttl time.Duration, err error) {
 		// Default ttl of 0 means never expire. Note that specific authorization
 		// token is still loaded per each request (see transport() function).
 		value, err = c.Factory.MakeClient(ctx, gerritHost, luciProject)

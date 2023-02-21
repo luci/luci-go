@@ -42,20 +42,20 @@ import "context"
 type Logger interface {
 	// Debugf formats its arguments according to the format, analogous to
 	// fmt.Printf and records the text as a log message at Debug level.
-	Debugf(format string, args ...interface{})
+	Debugf(format string, args ...any)
 
 	// Infof is like Debugf, but logs at Info level.
-	Infof(format string, args ...interface{})
+	Infof(format string, args ...any)
 
 	// Warningf is like Debugf, but logs at Warning level.
-	Warningf(format string, args ...interface{})
+	Warningf(format string, args ...any)
 
 	// Errorf is like Debugf, but logs at Error level.
-	Errorf(format string, args ...interface{})
+	Errorf(format string, args ...any)
 
 	// LogCall is a generic logging function. This is oriented more towards
 	// utility functions than direct end-user usage.
-	LogCall(l Level, calldepth int, format string, args []interface{})
+	LogCall(l Level, calldepth int, format string, args []any)
 }
 
 // Factory is a function that returns a Logger instance bound to the specified

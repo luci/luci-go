@@ -27,7 +27,7 @@ type el struct {
 
 // evenCubedOddDeleted deletes `el`s with odd IDs and sets val to id^3 for even
 // ones.
-func evenCubedOddDeleted(v interface{}) interface{} {
+func evenCubedOddDeleted(v any) any {
 	in := v.(*el)
 	if in.id&1 == 1 {
 		return Deletion
@@ -136,11 +136,11 @@ func (e elSlice) Len() int {
 	return len(e)
 }
 
-func (e elSlice) At(index int) interface{} {
+func (e elSlice) At(index int) any {
 	return e[index]
 }
 
-func (e elSlice) Append(v interface{}) Slice {
+func (e elSlice) Append(v any) Slice {
 	return append(e, v.(*el))
 }
 
@@ -158,11 +158,11 @@ func (e elSortedSlice) Len() int {
 	return len(e)
 }
 
-func (e elSortedSlice) At(index int) interface{} {
+func (e elSortedSlice) At(index int) any {
 	return e[index]
 }
 
-func (e elSortedSlice) Append(v interface{}) Slice {
+func (e elSortedSlice) Append(v any) Slice {
 	return append(e, v.(*el))
 }
 
@@ -180,6 +180,6 @@ func (e elSortedSlice) Swap(i int, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
-func (_ elSortedSlice) LessElements(a interface{}, b interface{}) bool {
+func (_ elSortedSlice) LessElements(a any, b any) bool {
 	return a.(*el).id < b.(*el).id
 }

@@ -127,14 +127,14 @@ func TestPubSub(t *testing.T) {
 			started := timestamppb.New(RefTime.Add(3 * time.Hour))
 			updated := timestamppb.New(RefTime.Add(5 * time.Hour))
 
-			propertiesMap := map[string]interface{}{
-				"$recipe_engine/milo/blamelist_pins": []interface{}{
-					map[string]interface{}{
+			propertiesMap := map[string]any{
+				"$recipe_engine/milo/blamelist_pins": []any{
+					map[string]any{
 						"host":    "chromium.googlesource.com",
 						"id":      "8930f18245df678abc944376372c77ba5e2a658b",
 						"project": "angle/angle",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"host":    "chromium.googlesource.com",
 						"id":      "07033c702f81a75dfc2d83888ba3f8b354d0e920",
 						"project": "chromium/src",

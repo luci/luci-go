@@ -88,7 +88,7 @@ func TestSaveVerdicts(t *testing.T) {
 		realm := "chromium:ci"
 		builder := "builder"
 		vh := "variant_hash"
-		builderField := map[string]interface{}{
+		builderField := map[string]any{
 			"Builder": builder,
 		}
 		// Prepare some analyzed test variants to query.
@@ -99,7 +99,7 @@ func TestSaveVerdicts(t *testing.T) {
 			// Stale test variant has new failure.
 			insert.AnalyzedTestVariant(realm, "ninja://test_no_new_results", vh, atvpb.Status_NO_NEW_RESULTS, builderField),
 			// Flaky test variant on another builder.
-			insert.AnalyzedTestVariant(realm, "ninja://test_known_flake", "another_hash", atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, "ninja://test_known_flake", "another_hash", atvpb.Status_FLAKY, map[string]any{
 				"Builder": "another_builder",
 			}),
 		}

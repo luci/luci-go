@@ -68,14 +68,14 @@ func TestIterator(t *testing.T) {
 		}
 	}
 
-	get := func(c C, t *iterator) interface{} {
+	get := func(c C, t *iterator) any {
 		if ent := t.next(); ent != nil {
 			return readNum(ent.key)
 		}
 		return nil
 	}
 
-	skipGet := func(c C, t *iterator, skipTo int64) interface{} {
+	skipGet := func(c C, t *iterator, skipTo int64) any {
 		t.skip(mkNum(skipTo))
 		return get(c, t)
 	}

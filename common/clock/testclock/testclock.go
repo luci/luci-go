@@ -175,8 +175,8 @@ func (h pendingTimerHeap) Less(i, j int) bool { return h[i].deadline.Before(h[j]
 func (h pendingTimerHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 func (h pendingTimerHeap) Len() int           { return len(h) }
 
-func (h *pendingTimerHeap) Push(x interface{}) { *h = append(*h, x.(*pendingTimer)) }
-func (h *pendingTimerHeap) Pop() (v interface{}) {
+func (h *pendingTimerHeap) Push(x any) { *h = append(*h, x.(*pendingTimer)) }
+func (h *pendingTimerHeap) Pop() (v any) {
 	idx := len(*h) - 1
 	v, *h = (*h)[idx], (*h)[:idx]
 	return

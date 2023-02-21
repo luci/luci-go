@@ -28,7 +28,7 @@ type MergedContext struct {
 
 var _ context.Context = (*MergedContext)(nil)
 
-func (mc *MergedContext) Value(key interface{}) interface{} {
+func (mc *MergedContext) Value(key any) any {
 	val := mc.Root.Value(key)
 	if val == nil {
 		val = mc.Fallback.Value(key)

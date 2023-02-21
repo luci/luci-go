@@ -93,7 +93,7 @@ func Read(ctx context.Context, name string) (*pb.Artifact, error) {
 	var contentType spanner.NullString
 	var size spanner.NullInt64
 	var gcsURI spanner.NullString
-	err = spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artifactID), map[string]interface{}{
+	err = spanutil.ReadRow(ctx, "Artifacts", invID.Key(parentID, artifactID), map[string]any{
 		"ContentType": &contentType,
 		"Size":        &size,
 		"GcsURI":      &gcsURI,

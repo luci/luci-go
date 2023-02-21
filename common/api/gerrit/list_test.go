@@ -292,12 +292,12 @@ func TestPagingListChanges(t *testing.T) {
 }
 
 type fakeListChanges struct {
-	results        []interface{}
+	results        []any
 	calls          []*gerritpb.ListChangesRequest
 	expectGrpcOpts []grpc.CallOption
 }
 
-func (f *fakeListChanges) reset(results ...interface{}) {
+func (f *fakeListChanges) reset(results ...any) {
 	f.calls = nil
 	f.results = results
 }

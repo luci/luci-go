@@ -84,7 +84,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			return err
 		}
 
-		values := map[string]interface{}{
+		values := map[string]any{
 			"InvocationId": invID,
 		}
 

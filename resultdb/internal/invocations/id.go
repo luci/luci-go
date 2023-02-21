@@ -30,12 +30,12 @@ import (
 type ID string
 
 // ToSpanner implements span.Value.
-func (id ID) ToSpanner() interface{} {
+func (id ID) ToSpanner() any {
 	return id.RowID()
 }
 
 // SpannerPtr implements span.Ptr.
-func (id *ID) SpannerPtr(b *spanutil.Buffer) interface{} {
+func (id *ID) SpannerPtr(b *spanutil.Buffer) any {
 	return &b.NullString
 }
 
@@ -79,7 +79,7 @@ func (id ID) RowID() string {
 }
 
 // Key returns a invocation spanner key.
-func (id ID) Key(suffix ...interface{}) spanner.Key {
+func (id ID) Key(suffix ...any) spanner.Key {
 	ret := make(spanner.Key, 1+len(suffix))
 	ret[0] = id.RowID()
 	copy(ret[1:], suffix)
@@ -141,7 +141,7 @@ func (s IDSet) String() string {
 }
 
 // Keys returns a spanner.KeySet.
-func (s IDSet) Keys(suffix ...interface{}) spanner.KeySet {
+func (s IDSet) Keys(suffix ...any) spanner.KeySet {
 	ret := spanner.KeySets()
 	for id := range s {
 		ret = spanner.KeySets(id.Key(suffix...), ret)
@@ -150,7 +150,7 @@ func (s IDSet) Keys(suffix ...interface{}) spanner.KeySet {
 }
 
 // ToSpanner implements span.Value.
-func (s IDSet) ToSpanner() interface{} {
+func (s IDSet) ToSpanner() any {
 	ret := make([]string, 0, len(s))
 	for id := range s {
 		ret = append(ret, id.RowID())
@@ -160,7 +160,7 @@ func (s IDSet) ToSpanner() interface{} {
 }
 
 // SpannerPtr implements span.Ptr.
-func (s *IDSet) SpannerPtr(b *spanutil.Buffer) interface{} {
+func (s *IDSet) SpannerPtr(b *spanutil.Buffer) any {
 	return &b.StringSlice
 }
 

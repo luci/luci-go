@@ -33,7 +33,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func shouldHaveLogPaths(actual interface{}, expected ...interface{}) string {
+func shouldHaveLogPaths(actual any, expected ...any) string {
 	var names []string
 	switch t := actual.(type) {
 	case error:
@@ -214,9 +214,9 @@ func TestLogStream(t *testing.T) {
 
 				Convey(`A timestamp inequality query for all records returns them in reverse order.`, func() {
 					// Reverse "streamPaths".
-					si := make([]interface{}, len(streamPaths))
+					si := make([]any, len(streamPaths))
 					for i := 0; i < len(streamPaths); i++ {
-						si[i] = interface{}(streamPaths[len(streamPaths)-i-1])
+						si[i] = any(streamPaths[len(streamPaths)-i-1])
 					}
 
 					q, err := NewLogStreamQuery("testing")

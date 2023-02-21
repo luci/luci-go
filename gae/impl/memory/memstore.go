@@ -29,7 +29,7 @@ type storeEntry struct {
 }
 
 // storeEntryCompare is a gtreap.Compare function for *storeEntry.
-func storeEntryCompare(a, b interface{}) int {
+func storeEntryCompare(a, b any) int {
 	// TODO(dnj): Investigate optimizing this by removing the type assertions,
 	// either by explicitly tailoring gtreap / treapstore to use []byte or by
 	// optimizing via special-case interface.

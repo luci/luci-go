@@ -47,7 +47,7 @@ func TestFlush(t *testing.T) {
 					},
 					types.MetricMetadata{},
 					types.CellData{
-						FieldVals: []interface{}{},
+						FieldVals: []any{},
 						ResetTime: time.Unix(1234, 1000),
 						Value:     "bar",
 					},
@@ -68,7 +68,7 @@ func TestFlush(t *testing.T) {
 				},
 				types.MetricMetadata{},
 				types.CellData{
-					FieldVals: []interface{}{},
+					FieldVals: []any{},
 					ResetTime: time.Unix(1234, 1000),
 					Value:     "bar",
 				},
@@ -90,7 +90,7 @@ func TestFlush(t *testing.T) {
 					},
 					types.MetricMetadata{},
 					types.CellData{
-						FieldVals: []interface{}{},
+						FieldVals: []any{},
 						ResetTime: time.Unix(1234, 1000),
 						Value:     "bar",
 					},
@@ -119,7 +119,7 @@ func TestFlush(t *testing.T) {
 					},
 					types.MetricMetadata{},
 					types.CellData{
-						FieldVals: []interface{}{},
+						FieldVals: []any{},
 						ResetTime: time.Unix(1234, 1000),
 						Value:     "bar",
 					},

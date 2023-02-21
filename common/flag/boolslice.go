@@ -45,7 +45,7 @@ func (f *boolSliceFlag) Set(val string) error {
 }
 
 // Get retrieves the flag value.
-func (f boolSliceFlag) Get() interface{} {
+func (f boolSliceFlag) Get() any {
 	return []bool(f)
 }
 

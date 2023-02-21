@@ -36,7 +36,7 @@ var infoCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(256),
 	GlobalNamespace: infoCacheNamespace,
 	Marshal:         json.Marshal, // marshals *ServiceInfo
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		out := &ServiceInfo{}
 		err := json.Unmarshal(blob, out)
 		return out, err
@@ -61,7 +61,7 @@ type ServiceInfo struct {
 //
 // LUCI services serve the service info at /auth/api/v1/server/info.
 func FetchServiceInfo(ctx context.Context, url string) (*ServiceInfo, error) {
-	info, err := infoCache.GetOrCreate(ctx, url, func() (interface{}, time.Duration, error) {
+	info, err := infoCache.GetOrCreate(ctx, url, func() (any, time.Duration, error) {
 		info := &ServiceInfo{}
 		req := internal.Request{
 			Method: "GET",

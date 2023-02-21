@@ -38,7 +38,7 @@ func (e *protocolError) Error() string {
 // protocolErr creates a new protocol error for given gRPC status code.
 //
 // The error will be returned with the given HTTP status.
-func protocolErr(code codes.Code, status int, format string, a ...interface{}) *protocolError {
+func protocolErr(code codes.Code, status int, format string, a ...any) *protocolError {
 	if code == codes.OK {
 		panic("need a real error code, not OK")
 	}

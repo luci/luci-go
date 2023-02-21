@@ -45,12 +45,12 @@ func noDrop(dropped *buffer.Batch, flush bool) {
 	panic(fmt.Sprintf("dropping %+v", dropped))
 }
 
-func dbgIfVerbose(ctx context.Context) (context.Context, func(string, ...interface{})) {
+func dbgIfVerbose(ctx context.Context) (context.Context, func(string, ...any)) {
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 		return ctx, logging.Get(logging.SetField(ctx, "dispatcher.coordinator", true)).Infof
 	}
-	return ctx, func(string, ...interface{}) {}
+	return ctx, func(string, ...any) {}
 }
 
 func TestChannelConstruction(t *testing.T) {
@@ -596,7 +596,7 @@ func TestSizeBasedChannel(t *testing.T) {
 
 		opts := &Options{
 			testingDbg: dbg,
-			ItemSizeFunc: func(itm interface{}) int {
+			ItemSizeFunc: func(itm any) int {
 				return len(itm.(string))
 			},
 			ErrorFn: func(failedBatch *buffer.Batch, err error) (retry bool) {

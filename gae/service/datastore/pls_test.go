@@ -536,12 +536,12 @@ type ImpossibleInner2 struct {
 	Thingy Convertable2 `gae:"nerb"`
 }
 
-type JSONKVProp map[string]interface{}
+type JSONKVProp map[string]any
 
 var _ PropertyConverter = (*JSONKVProp)(nil)
 
 func (j *JSONKVProp) ToProperty() (ret Property, err error) {
-	data, err := json.Marshal(map[string]interface{}(*j))
+	data, err := json.Marshal(map[string]any(*j))
 	if err != nil {
 		return
 	}
@@ -553,7 +553,7 @@ func (j *JSONKVProp) FromProperty(pv Property) error {
 	if bval, ok := pv.Value().([]byte); ok {
 		dec := json.NewDecoder(bytes.NewBuffer(bval))
 		dec.UseNumber()
-		return dec.Decode((*map[string]interface{})(j))
+		return dec.Decode((*map[string]any)(j))
 	}
 	return fmt.Errorf("nope")
 }
@@ -615,14 +615,14 @@ func (i *IDParser) GetAllMeta() PropertyMap {
 	return pm
 }
 
-func (i *IDParser) GetMeta(key string) (interface{}, bool) {
+func (i *IDParser) GetMeta(key string) (any, bool) {
 	if key == "id" {
 		return i.getFullID(), true
 	}
 	return GetPLS(i).GetMeta(key)
 }
 
-func (i *IDParser) SetMeta(key string, value interface{}) bool {
+func (i *IDParser) SetMeta(key string, value any) bool {
 	if key == "id" {
 		// let the panics flooowwww
 		vS := strings.SplitN(value.(string), "|", 2)
@@ -653,14 +653,14 @@ func (i *KindOverride) GetAllMeta() PropertyMap {
 	return pm
 }
 
-func (i *KindOverride) GetMeta(key string) (interface{}, bool) {
+func (i *KindOverride) GetMeta(key string) (any, bool) {
 	if key == "kind" && i.customKind != "" {
 		return i.customKind, true
 	}
 	return GetPLS(i).GetMeta(key)
 }
 
-func (i *KindOverride) SetMeta(key string, value interface{}) bool {
+func (i *KindOverride) SetMeta(key string, value any) bool {
 	if key == "kind" {
 		kind := value.(string)
 		if kind != "KindOverride" {
@@ -776,9 +776,9 @@ func (*WithProtoIndirectSlice) embedsProtos() {}
 
 type testCase struct {
 	desc       string
-	src        interface{}
-	loadInto   interface{} // if set, used for loading instead a newly created object.
-	want       interface{}
+	src        any
+	loadInto   any // if set, used for loading instead a newly created object.
+	want       any
 	plsErr     string
 	saveErr    string
 	plsLoadErr string
@@ -1046,15 +1046,15 @@ var testCases = []testCase{
 		src: &Impossible3{
 			JSONKVProp{
 				"epic":    "success",
-				"no_way!": []interface{}{true, "story"},
-				"what":    []interface{}{"is", "really", 100},
+				"no_way!": []any{true, "story"},
+				"what":    []any{"is", "really", 100},
 			},
 		},
 		want: &Impossible3{
 			JSONKVProp{
 				"epic":    "success",
-				"no_way!": []interface{}{true, "story"},
-				"what":    []interface{}{"is", "really", json.Number("100")},
+				"no_way!": []any{true, "story"},
+				"what":    []any{"is", "really", json.Number("100")},
 			},
 		},
 	},
@@ -1063,8 +1063,8 @@ var testCases = []testCase{
 		src: &Impossible3{
 			JSONKVProp{
 				"epic":    "success",
-				"no_way!": []interface{}{true, "story"},
-				"what":    []interface{}{"is", "really", 100},
+				"no_way!": []any{true, "story"},
+				"what":    []any{"is", "really", 100},
 			},
 		},
 		want: PropertyMap{
@@ -2075,7 +2075,7 @@ var testCases = []testCase{
 func TestRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	getPLSErr := func(obj interface{}) (pls PropertyLoadSaver, err error) {
+	getPLSErr := func(obj any) (pls PropertyLoadSaver, err error) {
 		defer func() {
 			if v := recover(); v != nil {
 				err = v.(error)
@@ -2109,7 +2109,7 @@ func TestRoundTrip(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(savedProps, ShouldNotBeNil)
 
-				var got interface{}
+				var got any
 				if _, ok := tc.want.(PropertyMap); ok {
 					pls = PropertyMap{}
 					got = pls

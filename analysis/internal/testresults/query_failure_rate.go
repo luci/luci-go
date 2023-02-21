@@ -152,7 +152,7 @@ func queryFailureRateShard(ctx context.Context, opts QueryFailureRateOptions, in
 	if err != nil {
 		return nil, err
 	}
-	stmt.Params = map[string]interface{}{
+	stmt.Params = map[string]any{
 		"project":             opts.Project,
 		"testVariants":        tvs,
 		"subRealms":           opts.SubRealms,

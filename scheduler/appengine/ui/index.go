@@ -57,7 +57,7 @@ func indexPage(c *router.Context) {
 		}
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]any{
 		"Projects": byProj,
 	})
 }

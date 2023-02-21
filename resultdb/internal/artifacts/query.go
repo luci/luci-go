@@ -136,7 +136,7 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 	}
 
 	// Prepare query params.
-	params := map[string]interface{}{}
+	params := map[string]any{}
 	params["invIDs"] = q.InvocationIDs
 	params["limit"] = q.PageSize
 	addREParamMaybe(params, "contentTypeRegexp", q.ContentTypeRegexp)
@@ -155,7 +155,7 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 		InterestingTestResults    bool
 		OnlyUnexpectedTestResults bool
 		Q                         *Query
-		Params                    map[string]interface{}
+		Params                    map[string]any
 	}
 	input.Params = params
 	// If we need to filter artifacts by attributes of test results, then
@@ -195,7 +195,7 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 		var rbecasHash spanner.NullString
 		var gcsURI spanner.NullString
 
-		ptrs := []interface{}{
+		ptrs := []any{
 			&invID, &parentID, &a.ArtifactId, &contentType, &size,
 		}
 		if q.WithRBECASHash {
@@ -318,7 +318,7 @@ func (q *Query) parentIDRegexp() string {
 
 // addREParamMaybe adds a regexp parameter surrounded with ^ and $,
 // unless re matches everything.
-func addREParamMaybe(params map[string]interface{}, name, re string) {
+func addREParamMaybe(params map[string]any, name, re string) {
 	if re != "" && re != ".*" {
 		params[name] = fmt.Sprintf("^%s$", re)
 	}

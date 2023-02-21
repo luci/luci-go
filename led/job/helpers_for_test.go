@@ -95,7 +95,7 @@ func testSWJob(sliceExps ...time.Duration) *Definition {
 	return ret
 }
 
-func must(value interface{}, err error) interface{} {
+func must(value any, err error) any {
 	So(err, ShouldBeNil)
 	return value
 }
@@ -140,7 +140,7 @@ func runCases(t *testing.T, opName string, tests []testCase) {
 	})
 }
 
-func ConveyIf(cond bool, items ...interface{}) {
+func ConveyIf(cond bool, items ...any) {
 	if cond {
 		Convey(items...)
 	} else {

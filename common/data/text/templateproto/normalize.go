@@ -78,7 +78,7 @@ func (t *File_Template) Normalize() error {
 		return fmt.Errorf("rendering: %s", err)
 	}
 
-	err = json.Unmarshal([]byte(maybeJSON), &map[string]interface{}{})
+	err = json.Unmarshal([]byte(maybeJSON), &map[string]any{})
 	if err != nil {
 		return fmt.Errorf("parsing rendered body: %s", err)
 	}
@@ -312,11 +312,11 @@ func NormalizeJSON(data string, obj bool) (string, error) {
 	buf := bytes.NewBufferString(data)
 	dec := json.NewDecoder(buf)
 	dec.UseNumber()
-	var decoded interface{}
+	var decoded any
 	if obj {
-		decoded = &map[string]interface{}{}
+		decoded = &map[string]any{}
 	} else {
-		decoded = &[]interface{}{}
+		decoded = &[]any{}
 	}
 	err := dec.Decode(decoded)
 	if err != nil {

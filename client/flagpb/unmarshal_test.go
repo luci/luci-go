@@ -46,7 +46,7 @@ func TestUnmarshal(t *testing.T) {
 			return obj.(*descriptorpb.DescriptorProto)
 		}
 
-		unmarshalOK := func(typeName string, args ...string) map[string]interface{} {
+		unmarshalOK := func(typeName string, args ...string) map[string]any {
 			msg, err := UnmarshalUntyped(args, resolveMsg(typeName), resolver)
 			So(err, ShouldBeNil)
 			return msg

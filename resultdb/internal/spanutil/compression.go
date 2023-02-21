@@ -49,7 +49,7 @@ func init() {
 type Compressed []byte
 
 // ToSpanner implements Value.
-func (c Compressed) ToSpanner() interface{} {
+func (c Compressed) ToSpanner() any {
 	if len(c) == 0 {
 		// Do not store empty bytes.
 		return []byte(nil)
@@ -58,7 +58,7 @@ func (c Compressed) ToSpanner() interface{} {
 }
 
 // SpannerPtr implements Ptr.
-func (c *Compressed) SpannerPtr(b *Buffer) interface{} {
+func (c *Compressed) SpannerPtr(b *Buffer) any {
 	return &b.ByteSlice
 }
 

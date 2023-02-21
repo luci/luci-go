@@ -709,11 +709,11 @@ func sortRunsToCreateByFirstCL(res *itriager.Result) {
 
 // makePruns is readability sugar to create 0+ pruns slice.
 // Example use: makePruns("first", 31, 32, "second", 44, "third", 11).
-func makePruns(runIDthenCLIDs ...interface{}) []*prjpb.PRun {
+func makePruns(runIDthenCLIDs ...any) []*prjpb.PRun {
 	return makePrunsWithMode(run.DryRun, runIDthenCLIDs...)
 }
 
-func makePrunsWithMode(m run.Mode, runIDthenCLIDs ...interface{}) []*prjpb.PRun {
+func makePrunsWithMode(m run.Mode, runIDthenCLIDs ...any) []*prjpb.PRun {
 	var out []*prjpb.PRun
 	var cur *prjpb.PRun
 	const sentinel = "<$sentinel>"

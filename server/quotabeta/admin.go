@@ -86,7 +86,7 @@ func (*quotaAdmin) Get(ctx context.Context, req *pb.GetRequest) (*pb.QuotaEntry,
 	defer conn.Close()
 
 	s := bytes.NewBufferString("local entry = {}\n")
-	if err := updateEntry.Execute(s, map[string]interface{}{
+	if err := updateEntry.Execute(s, map[string]any{
 		"Var":           "entry",
 		"Name":          rsp.DbName,
 		"Default":       def.Resources,
@@ -96,7 +96,7 @@ func (*quotaAdmin) Get(ctx context.Context, req *pb.GetRequest) (*pb.QuotaEntry,
 	}); err != nil {
 		return nil, errors.Annotate(err, "rendering template %q", updateEntry.Name()).Err()
 	}
-	if err := getEntry.Execute(s, map[string]interface{}{
+	if err := getEntry.Execute(s, map[string]any{
 		"Var": "entry",
 	}); err != nil {
 		return nil, errors.Annotate(err, "rendering template %q", setEntry.Name()).Err()
@@ -165,7 +165,7 @@ func (*quotaAdmin) Set(ctx context.Context, req *pb.SetRequest) (*pb.QuotaEntry,
 	defer conn.Close()
 
 	s := bytes.NewBufferString("")
-	if err := overwriteEntry.Execute(s, map[string]interface{}{
+	if err := overwriteEntry.Execute(s, map[string]any{
 		"Name":      rsp.DbName,
 		"Resources": rsp.Resources,
 		"Now":       now,

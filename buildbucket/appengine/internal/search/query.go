@@ -542,11 +542,11 @@ func (m minHeap) Less(i, j int) bool { return m[i].BuildID < m[j].BuildID }
 
 func (m minHeap) Swap(i, j int) { m[i], m[j] = m[j], m[i] }
 
-func (m *minHeap) Push(x interface{}) {
+func (m *minHeap) Push(x any) {
 	*m = append(*m, x.(*model.TagIndexEntry))
 }
 
-func (m *minHeap) Pop() interface{} {
+func (m *minHeap) Pop() any {
 	old := *m
 	n := len(old)
 	item := old[n-1]

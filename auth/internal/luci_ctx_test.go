@@ -54,8 +54,8 @@ func TestLUCIContextProvider(t *testing.T) {
 	})
 
 	Convey("With mock server", t, func(c C) {
-		requests := make(chan interface{}, 10000)
-		responses := make(chan interface{}, 1)
+		requests := make(chan any, 10000)
+		responses := make(chan any, 1)
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c.So(r.Method, ShouldEqual, "POST")
 			c.So(r.Header.Get("Content-Type"), ShouldEqual, "application/json")
@@ -73,7 +73,7 @@ func TestLUCIContextProvider(t *testing.T) {
 				http.Error(w, "Unknown method", 404)
 			}
 
-			var resp interface{}
+			var resp any
 			select {
 			case resp = <-responses:
 			default:

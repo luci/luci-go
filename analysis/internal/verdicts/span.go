@@ -47,7 +47,7 @@ func ComputeTestVariantStatusFromVerdicts(ctx context.Context, tvKey *taskspb.Te
 		AND VariantHash = @variantHash
 		AND IngestionTime >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @numHours HOUR)
 	`)
-	st.Params = map[string]interface{}{
+	st.Params = map[string]any{
 		"realm":       tvKey.Realm,
 		"testID":      tvKey.TestId,
 		"variantHash": tvKey.VariantHash,

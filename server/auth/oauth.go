@@ -66,10 +66,10 @@ type tokenValidationOutcome struct {
 var oauthValidationCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(65536),
 	GlobalNamespace: "oauth_validation_v1",
-	Marshal: func(item interface{}) ([]byte, error) {
+	Marshal: func(item any) ([]byte, error) {
 		return json.Marshal(item.(*tokenValidationOutcome))
 	},
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		tok := &tokenValidationOutcome{}
 		if err := json.Unmarshal(blob, tok); err != nil {
 			return nil, err
@@ -138,7 +138,7 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r RequestMetadata
 	// TODO(vadimsh): Strictly speaking we need to store bad tokens in a separate
 	// cache, so a flood of bad tokens (which are very easy to produce, compared
 	// to good tokens) doesn't evict good tokens from the process cache.
-	cached, err := oauthValidationCache.GetOrCreate(ctx, cacheKey, func() (interface{}, time.Duration, error) {
+	cached, err := oauthValidationCache.GetOrCreate(ctx, cacheKey, func() (any, time.Duration, error) {
 		logging.Infof(ctx, "oauth: validating access token SHA256=%q", cacheKey)
 		outcome, expiresIn, err := validateAccessToken(ctx, accessToken, m.tokenInfoEndpoint)
 		if err != nil {

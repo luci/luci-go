@@ -59,7 +59,7 @@ func gen(name string, state *logdog.LogStreamState) *logdog.QueryResponse_Stream
 	}
 }
 
-func shouldHaveLogStreams(actual interface{}, expected ...interface{}) string {
+func shouldHaveLogStreams(actual any, expected ...any) string {
 	a := actual.([]*LogStream)
 
 	aList := make([]string, len(a))

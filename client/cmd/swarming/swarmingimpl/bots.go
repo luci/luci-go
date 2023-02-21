@@ -91,7 +91,7 @@ func (b *botsRun) main(_ subcommands.Application) error {
 		dims = append(dims, k+":"+v)
 	}
 
-	var data interface{}
+	var data any
 	if b.count {
 		data, err = service.CountBots(ctx, dims...)
 		if err != nil {

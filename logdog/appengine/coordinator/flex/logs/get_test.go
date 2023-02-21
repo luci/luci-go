@@ -52,7 +52,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func shouldHaveLogs(actual interface{}, expected ...interface{}) string {
+func shouldHaveLogs(actual any, expected ...any) string {
 	resp := actual.(*logdog.GetResponse)
 
 	respLogs := make([]int, len(resp.Logs))

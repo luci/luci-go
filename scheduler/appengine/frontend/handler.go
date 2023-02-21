@@ -85,7 +85,7 @@ var (
 type requestContext router.Context
 
 // fail writes error message to the log and the response and sets status code.
-func (c *requestContext) fail(code int, msg string, args ...interface{}) {
+func (c *requestContext) fail(code int, msg string, args ...any) {
 	body := fmt.Sprintf(msg, args...)
 	logging.Errorf(c.Context, "HTTP %d: %s", code, body)
 	http.Error(c.Writer, body, code)
@@ -94,7 +94,7 @@ func (c *requestContext) fail(code int, msg string, args ...interface{}) {
 // err sets status to 409 on tq.Retry errors, 500 on transient errors and 202 on
 // fatal ones. Returning status code in range [200–299] is the only way to tell
 // PubSub to stop redelivering the task.
-func (c *requestContext) err(e error, msg string, args ...interface{}) {
+func (c *requestContext) err(e error, msg string, args ...any) {
 	code := 0
 	switch {
 	case e == nil:

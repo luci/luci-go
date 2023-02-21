@@ -22,7 +22,7 @@ import (
 func (p *PState) COWPCLs(m func(*PCL) *PCL, toAdd []*PCL) ([]*PCL, bool) {
 	var mf copyonwrite.Modifier
 	if m != nil {
-		mf = func(v interface{}) interface{} {
+		mf = func(v any) any {
 			if v := m(v.(*PCL)); v != nil {
 				return v
 			}
@@ -42,7 +42,7 @@ func (c cowPCLs) CloneShallow(length int, capacity int) copyonwrite.Slice {
 	return r
 }
 
-func (c cowPCLs) Append(v interface{}) copyonwrite.Slice {
+func (c cowPCLs) Append(v any) copyonwrite.Slice {
 	return append(c, v.(*PCL))
 }
 
@@ -50,6 +50,6 @@ func (c cowPCLs) Len() int {
 	return len(c)
 }
 
-func (c cowPCLs) At(index int) interface{} {
+func (c cowPCLs) At(index int) any {
 	return c[index]
 }

@@ -143,7 +143,7 @@ var mappingCache = caching.RegisterCacheSlot()
 // It uses cached CAUniqueIDToCNMap for lookups. Returns empty string if there's
 // no such CA.
 func GetCAByUniqueID(c context.Context, id int64) (string, error) {
-	cached, err := mappingCache.Fetch(c, func(interface{}) (interface{}, time.Duration, error) {
+	cached, err := mappingCache.Fetch(c, func(any) (any, time.Duration, error) {
 		val, err := LoadCAUniqueIDToCNMap(c)
 		return val, time.Minute, err
 	})

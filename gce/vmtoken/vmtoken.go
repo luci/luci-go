@@ -164,7 +164,7 @@ func verifyImpl(c context.Context, jwt string, certs signatureChecker) (*Payload
 	}, nil
 }
 
-func unmarshalB64JSON(blob string, out interface{}) error {
+func unmarshalB64JSON(blob string, out any) error {
 	raw, err := base64.RawURLEncoding.DecodeString(blob)
 	if err != nil {
 		return errors.Annotate(err, "not base64").Err()

@@ -59,7 +59,7 @@ func projectPage(c *router.Context) {
 		}
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/project.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/project.html", map[string]any{
 		"ProjectID":    projectID,
 		"ProjectEmpty": len(sorted) == 0,
 		"Filter":       filter,

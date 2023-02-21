@@ -305,13 +305,13 @@ func (bbe *buildbucketEditor) Properties(props map[string]string, auto bool) {
 		return
 	}
 	bbe.tweak(func() error {
-		toWrite := map[string]interface{}{}
+		toWrite := map[string]any{}
 
 		for k, v := range props {
 			if v == "" {
 				toWrite[k] = nil
 			} else {
-				var obj interface{}
+				var obj any
 				if err := json.Unmarshal([]byte(v), &obj); err != nil {
 					if !auto {
 						return err

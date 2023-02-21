@@ -132,7 +132,7 @@ func (kc KeyContext) NewKey(kind, stringID string, intID int64, parent *Key) *Ke
 //
 // See MakeKey for a version of this function which automatically
 // provides aid and ns.
-func (kc KeyContext) MakeKey(elems ...interface{}) *Key {
+func (kc KeyContext) MakeKey(elems ...any) *Key {
 	if len(elems) == 0 {
 		return nil
 	}

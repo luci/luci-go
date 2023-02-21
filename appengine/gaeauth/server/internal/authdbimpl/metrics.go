@@ -47,9 +47,9 @@ var (
 		field.String("result"))
 )
 
-func durationReporter(ctx context.Context, m metric.CumulativeDistribution) func(...interface{}) {
+func durationReporter(ctx context.Context, m metric.CumulativeDistribution) func(...any) {
 	startTs := clock.Now(ctx)
-	return func(fields ...interface{}) {
+	return func(fields ...any) {
 		m.Add(ctx, float64(clock.Since(ctx, startTs).Nanoseconds()/1000), fields...)
 	}
 }

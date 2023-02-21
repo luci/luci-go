@@ -93,7 +93,7 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 			return appstatus.Errorf(codes.NotFound, "at least one of the included invocations does not exist")
 		}
 		for aInv := range add {
-			ms = append(ms, spanutil.InsertOrUpdateMap("IncludedInvocations", map[string]interface{}{
+			ms = append(ms, spanutil.InsertOrUpdateMap("IncludedInvocations", map[string]any{
 				"InvocationId":         including,
 				"IncludedInvocationId": aInv,
 			}))

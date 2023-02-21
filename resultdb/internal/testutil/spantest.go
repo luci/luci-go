@@ -262,14 +262,14 @@ func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
 
 // MustReadRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert success.
-func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
+func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]any) {
 	err := spanutil.ReadRow(span.Single(span.WithoutTxn(ctx)), table, key, ptrMap)
 	So(err, ShouldBeNil)
 }
 
 // MustNotFindRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert the row was not found.
-func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
+func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]any) {
 	err := spanutil.ReadRow(span.Single(span.WithoutTxn(ctx)), table, key, ptrMap)
 	So(spanner.ErrCode(err), ShouldEqual, codes.NotFound)
 }

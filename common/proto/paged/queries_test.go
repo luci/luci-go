@@ -57,20 +57,20 @@ func TestQueries(t *testing.T) {
 				})
 
 				Convey("many inputs", func() {
-					f := func(interface{}, datastore.CursorCB) error {
+					f := func(any, datastore.CursorCB) error {
 						return nil
 					}
 					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
 				})
 
 				Convey("no outputs", func() {
-					f := func(interface{}) {
+					f := func(any) {
 					}
 					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
 				})
 
 				Convey("many outputs", func() {
-					f := func(interface{}) (interface{}, error) {
+					f := func(any) (any, error) {
 						return nil, nil
 					}
 					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
@@ -78,7 +78,7 @@ func TestQueries(t *testing.T) {
 			})
 
 			Convey("token", func() {
-				f := func(interface{}) error {
+				f := func(any) error {
 					return nil
 				}
 				So(Query(c, 0, "tok", rsp, q, f), ShouldErrLike, "invalid page token")

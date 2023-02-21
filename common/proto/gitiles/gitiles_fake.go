@@ -36,7 +36,7 @@ type fakeRepository struct {
 type Fake struct {
 	// key: repository name, value fakeRepository
 	m        map[string]fakeRepository
-	callLogs []interface{}
+	callLogs []any
 }
 
 // Log retrieves commit log. Merge commits are supported, but it implements
@@ -190,10 +190,10 @@ func (f *Fake) SetRepository(repository string, refs map[string]string, commits 
 }
 
 // GetCallLogs returns callLogs.
-func (f *Fake) GetCallLogs() []interface{} {
+func (f *Fake) GetCallLogs() []any {
 	return f.callLogs
 }
 
-func (f *Fake) addCallLog(in interface{}) {
+func (f *Fake) addCallLog(in any) {
 	f.callLogs = append(f.callLogs, in)
 }

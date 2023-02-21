@@ -21,6 +21,6 @@ import (
 // ShouldResembleRun compares 2 Runs.
 //
 // Deprecated. Use cvtesting.SafeShouldResemble directly.
-func ShouldResembleRun(actual interface{}, expected ...interface{}) string {
+func ShouldResembleRun(actual any, expected ...any) string {
 	return cvtesting.SafeShouldResemble(actual, expected...)
 }

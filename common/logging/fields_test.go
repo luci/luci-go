@@ -124,7 +124,7 @@ func TestFields(t *testing.T) {
 	})
 
 	Convey(`A populated Fields`, t, func() {
-		fm := NewFields(map[string]interface{}{
+		fm := NewFields(map[string]any{
 			"foo": "bar",
 			"baz": "qux",
 		})

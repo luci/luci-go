@@ -68,7 +68,7 @@ func TestLaunch(t *testing.T) {
 			Bucket:  "testBucket",
 			Builder: "testBuilder",
 		}
-		ct.BuildbucketFake.AddBuilder(bbHost, builderID, map[string]interface{}{
+		ct.BuildbucketFake.AddBuilder(bbHost, builderID, map[string]any{
 			"foo": "bar",
 		})
 		bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)

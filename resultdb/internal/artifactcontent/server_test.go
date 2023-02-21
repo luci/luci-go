@@ -129,7 +129,7 @@ func TestServeContent(t *testing.T) {
 				sum += len(d)
 			}
 			testutil.MustApply(ctx,
-				insert.Artifact("inv", parentID, artID, map[string]interface{}{
+				insert.Artifact("inv", parentID, artID, map[string]any{
 					"ContentType": "text/plain",
 					"Size":        sum,
 					"RBECASHash":  hash,

@@ -188,7 +188,7 @@ func (c redisCache) CompareAndSwap(ctx context.Context, items []dscache.CacheIte
 				return err
 			}
 
-			replies := batchReply.([]interface{})
+			replies := batchReply.([]any)
 			if len(replies) != len(toSwap) {
 				panic(fmt.Sprintf("Redis protocol violation: %d != %d", len(replies), len(toSwap)))
 			}

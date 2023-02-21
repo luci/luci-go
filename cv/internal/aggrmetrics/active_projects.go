@@ -32,7 +32,7 @@ const (
 
 // activeProjects returns LUCI projects currently active in CV.
 func activeProjects(ctx context.Context) ([]string, error) {
-	out, err := activeProjectsCache.GetOrCreate(ctx, activeProjectsKey, func() (interface{}, time.Duration, error) {
+	out, err := activeProjectsCache.GetOrCreate(ctx, activeProjectsKey, func() (any, time.Duration, error) {
 		out, err := prjcfg.GetAllProjectIDs(ctx, true /* enabled only*/)
 		return out, activeProjectsTTL, err
 	})
@@ -48,7 +48,7 @@ var activeProjectsCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(1),
 	GlobalNamespace: "aggrmetrics_active_projects",
 	Marshal:         json.Marshal,
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		// There are ~100 active LUCI projects.
 		out := make([]string, 0, 100)
 		err := json.Unmarshal(blob, &out)

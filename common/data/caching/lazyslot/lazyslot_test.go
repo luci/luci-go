@@ -33,7 +33,7 @@ func TestLazySlot(t *testing.T) {
 		lock := sync.Mutex{}
 		counter := 0
 
-		fetcher := func(prev interface{}) (interface{}, time.Duration, error) {
+		fetcher := func(prev any) (any, time.Duration, error) {
 			lock.Lock()
 			defer lock.Unlock()
 			counter++
@@ -67,13 +67,13 @@ func TestLazySlot(t *testing.T) {
 
 		// Initial failed fetch.
 		failErr := errors.New("fail")
-		_, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		_, err := s.Get(c, func(prev any) (any, time.Duration, error) {
 			return nil, 0, failErr
 		})
 		So(err, ShouldEqual, failErr)
 
 		// Subsequence successful fetch.
-		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		val, err := s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 1, 0, nil
 		})
 		So(err, ShouldBeNil)
@@ -85,7 +85,7 @@ func TestLazySlot(t *testing.T) {
 
 		// Put initial value.
 		s := Slot{}
-		v, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		v, err := s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 1, time.Second, nil
 		})
 		So(err, ShouldBeNil)
@@ -93,7 +93,7 @@ func TestLazySlot(t *testing.T) {
 
 		fetching := make(chan bool)
 		resume := make(chan bool)
-		fetcher := func(prev interface{}) (interface{}, time.Duration, error) {
+		fetcher := func(prev any) (any, time.Duration, error) {
 			fetching <- true
 			<-resume
 			return 2, time.Second, nil
@@ -133,7 +133,7 @@ func TestLazySlot(t *testing.T) {
 
 		// Initial value.
 		s := Slot{}
-		v, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		v, err := s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 1, time.Second, nil
 		})
 		So(err, ShouldBeNil)
@@ -142,13 +142,13 @@ func TestLazySlot(t *testing.T) {
 		// Make it expire. Start panicking fetch.
 		clk.Add(5 * time.Second)
 		So(func() {
-			s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+			s.Get(c, func(prev any) (any, time.Duration, error) {
 				panic("omg")
 			})
 		}, ShouldPanicWith, "omg")
 
 		// Doesn't deadlock.
-		v, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		v, err = s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 2, time.Second, nil
 		})
 		So(err, ShouldBeNil)
@@ -160,7 +160,7 @@ func TestLazySlot(t *testing.T) {
 		s := Slot{}
 
 		// Initial nil fetch.
-		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		val, err := s.Get(c, func(prev any) (any, time.Duration, error) {
 			return nil, time.Second, nil
 		})
 		So(err, ShouldBeNil)
@@ -168,7 +168,7 @@ func TestLazySlot(t *testing.T) {
 
 		// Some time later this nil expires and we fetch something else.
 		clk.Add(2 * time.Second)
-		val, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		val, err = s.Get(c, func(prev any) (any, time.Duration, error) {
 			So(prev, ShouldBeNil)
 			return 1, time.Second, nil
 		})
@@ -181,7 +181,7 @@ func TestLazySlot(t *testing.T) {
 		s := Slot{}
 
 		// Initial fetch.
-		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		val, err := s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 1, 0, nil
 		})
 		So(err, ShouldBeNil)
@@ -189,7 +189,7 @@ func TestLazySlot(t *testing.T) {
 
 		// Many years later still cached.
 		clk.Add(200000 * time.Hour)
-		val, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		val, err = s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 2, time.Second, nil
 		})
 		So(err, ShouldBeNil)
@@ -201,14 +201,14 @@ func TestLazySlot(t *testing.T) {
 		s := Slot{}
 
 		// Initial fetch.
-		val, err := s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		val, err := s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 1, ExpiresImmediately, nil
 		})
 		So(err, ShouldBeNil)
 		So(val, ShouldResemble, 1)
 
 		// No time moved, but refetch still happened.
-		val, err = s.Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+		val, err = s.Get(c, func(prev any) (any, time.Duration, error) {
 			return 2, time.Second, nil
 		})
 		So(err, ShouldBeNil)
@@ -222,7 +222,7 @@ func TestLazySlot(t *testing.T) {
 		var valueToReturn int
 
 		fetchCalls := 0
-		fetcher := func(prev interface{}) (interface{}, time.Duration, error) {
+		fetcher := func(prev any) (any, time.Duration, error) {
 			fetchCalls++
 			return valueToReturn, time.Minute, errorToReturn
 		}

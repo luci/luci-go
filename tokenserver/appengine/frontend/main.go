@@ -44,7 +44,7 @@ func main() {
 		minter.RegisterTokenMinterServer(srv, services.Minter)
 
 		// Authorization check for admin services.
-		srv.RegisterUnaryServerInterceptors(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		srv.RegisterUnaryServerInterceptors(func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 			if strings.HasPrefix(info.FullMethod, "/tokenserver.admin.") {
 				logging.Warningf(ctx, "%q is calling %q", auth.CurrentIdentity(ctx), info.FullMethod)
 				switch admin, err := auth.IsMember(ctx, "administrators"); {

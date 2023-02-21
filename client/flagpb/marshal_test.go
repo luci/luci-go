@@ -21,15 +21,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func msg(keysValues ...interface{}) map[string]interface{} {
-	m := make(map[string]interface{}, len(keysValues)/2)
+func msg(keysValues ...any) map[string]any {
+	m := make(map[string]any, len(keysValues)/2)
 	for i := 0; i < len(keysValues); i += 2 {
 		m[keysValues[i].(string)] = keysValues[i+1]
 	}
 	return m
 }
 
-func repeated(a ...interface{}) []interface{} {
+func repeated(a ...any) []any {
 	return a
 }
 
@@ -37,7 +37,7 @@ func TestMarshal(t *testing.T) {
 	t.Parallel()
 
 	Convey("Marshal", t, func() {
-		test := func(m map[string]interface{}, flags ...string) {
+		test := func(m map[string]any, flags ...string) {
 			Convey(strings.Join(flags, " "), func() {
 				actualFlags, err := MarshalUntyped(m)
 				So(err, ShouldBeNil)

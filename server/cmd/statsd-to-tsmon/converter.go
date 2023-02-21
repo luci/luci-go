@@ -48,7 +48,7 @@ func ConvertMetric(ctx context.Context, cfg *Config, m *StatsdMetric) error {
 
 	// Assemble values of metric fields. Some of them come directly from the
 	// config rule, and some are picked from the parsed statsd metric name.
-	fields := make([]interface{}, len(rule.Fields))
+	fields := make([]any, len(rule.Fields))
 	for i, spec := range rule.Fields {
 		switch val := spec.(type) {
 		case string:

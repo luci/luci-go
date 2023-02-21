@@ -196,7 +196,7 @@ func ParseLegacyBuildbucketBuildID(bid string) (builderID *buildbucketpb.Builder
 
 // GetJSONData fetches data from the given URL, parses the response body to `out`.
 // It follows redirection and returns an error if the status code is 4xx or 5xx.
-func GetJSONData(client *http.Client, url string, out interface{}) (err error) {
+func GetJSONData(client *http.Client, url string, out any) (err error) {
 	response, err := client.Get(url)
 	if err != nil {
 		return err

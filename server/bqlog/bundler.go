@@ -299,7 +299,7 @@ func (b *logBuffer) start(ctx context.Context, tableID string, sender *logSender
 	b.sender = sender
 
 	opts := dispatcher.Options{
-		ItemSizeFunc: func(itm interface{}) int { return len(itm.([]byte)) },
+		ItemSizeFunc: func(itm any) int { return len(itm.([]byte)) },
 		DropFn: func(data *buffer.Batch, flush bool) {
 			if data != nil {
 				recordDrop(ctx, b.tableID, len(data.Data), nil, "DISPATCHER")

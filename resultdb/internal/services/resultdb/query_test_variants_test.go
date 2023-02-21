@@ -53,11 +53,11 @@ func TestQueryTestVariants(t *testing.T) {
 
 		testutil.MustApply(
 			ctx,
-			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}, "inv1")...,
+			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}, "inv1")...,
 		)
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
+			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("inv0", "T1", nil, pb.TestStatus_FAIL),
@@ -68,13 +68,13 @@ func TestQueryTestVariants(t *testing.T) {
 		)...)
 		testutil.MustApply(
 			ctx,
-			insert.InvocationWithInclusions("inv2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testlimitedrealm"}, "inv3", "inv4", "inv5")...,
+			insert.InvocationWithInclusions("inv2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testlimitedrealm"}, "inv3", "inv4", "inv5")...,
 		)
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("inv3", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testresultrealm"}),
-			insert.Invocation("inv4", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testexonerationrealm"}),
-			insert.Invocation("inv5", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testlimitedrealm"}),
+			insert.Invocation("inv3", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testresultrealm"}),
+			insert.Invocation("inv4", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testexonerationrealm"}),
+			insert.Invocation("inv5", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testlimitedrealm"}),
 		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("inv2", "T1002", pbutil.Variant("k0", "v0"), pb.TestStatus_FAIL),
@@ -323,12 +323,12 @@ func TestDetermineListAccessLevel(t *testing.T) {
 		})
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r0"}),
-			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r1"}),
-			insert.Invocation("i2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r2"}),
-			insert.Invocation("i2b", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r2"}),
-			insert.Invocation("i3", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r3"}),
-			insert.Invocation("i3b", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r3"}),
+			insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r0"}),
+			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r1"}),
+			insert.Invocation("i2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r2"}),
+			insert.Invocation("i2b", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r2"}),
+			insert.Invocation("i3", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r3"}),
+			insert.Invocation("i3b", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r3"}),
 		)
 
 		Convey("Access denied", func() {

@@ -26,7 +26,7 @@ import (
 	api "go.chromium.org/luci/swarming/proto/api"
 )
 
-func keysOf(mapish interface{}) []string {
+func keysOf(mapish any) []string {
 	mapV := reflect.ValueOf(mapish)
 	if mapV.Kind() != reflect.Map {
 		panic("keysOf expected a map")

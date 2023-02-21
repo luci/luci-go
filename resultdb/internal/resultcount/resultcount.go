@@ -38,14 +38,14 @@ func IncrementTestResultCount(ctx context.Context, id invocations.ID, delta int6
 
 	shardId := mathrand.Int63n(ctx, nShards)
 	var count spanner.NullInt64
-	err := spanutil.ReadRow(ctx, "TestResultCounts", id.Key(shardId), map[string]interface{}{
+	err := spanutil.ReadRow(ctx, "TestResultCounts", id.Key(shardId), map[string]any{
 		"TestResultCount": &count,
 	})
 	if err != nil && spanner.ErrCode(err) != codes.NotFound {
 		return err
 	}
 
-	span.BufferWrite(ctx, spanutil.InsertOrUpdateMap("TestResultCounts", map[string]interface{}{
+	span.BufferWrite(ctx, spanutil.InsertOrUpdateMap("TestResultCounts", map[string]any{
 		"InvocationId":    id,
 		"ShardId":         shardId,
 		"TestResultCount": count.Int64 + delta,
@@ -65,7 +65,7 @@ func ReadTestResultCount(ctx context.Context, ids invocations.IDSet) (int64, err
 		FROM TestResultCounts
 		WHERE InvocationId IN UNNEST(@invIDs)
 	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]any{
 		"invIDs": ids,
 	})
 	var count spanner.NullInt64

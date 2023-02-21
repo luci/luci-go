@@ -314,7 +314,7 @@ func deleteSemanticGarbage(ctx context.Context, r Recipient, d *dsset.Set, event
 // State is an arbitrary object.
 //
 // Use a pointer to an actual state.
-type State interface{}
+type State any
 
 // EVersion is recipient entity version.
 type EVersion int64

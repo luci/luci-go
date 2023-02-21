@@ -45,11 +45,11 @@ func TestVerifyInvocations(t *testing.T) {
 		})
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r0"}),
-			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r1"}),
-			insert.Invocation("i2", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r2"}),
-			insert.Invocation("i3", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r3"}),
-			insert.Invocation("i3b", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:r3"}),
+			insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r0"}),
+			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r1"}),
+			insert.Invocation("i2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r2"}),
+			insert.Invocation("i3", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r3"}),
+			insert.Invocation("i3b", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r3"}),
 		)
 
 		Convey("Access allowed", func() {

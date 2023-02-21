@@ -389,7 +389,7 @@ func removeCookie(rw http.ResponseWriter, r *http.Request, cookie string) {
 
 // replyError logs the error and replies with HTTP 500 (on transient errors) or
 // HTTP 400 on fatal errors (that can happen only on bad requests).
-func replyError(ctx context.Context, rw http.ResponseWriter, err error, msg string, args ...interface{}) {
+func replyError(ctx context.Context, rw http.ResponseWriter, err error, msg string, args ...any) {
 	code := http.StatusBadRequest
 	if transient.Tag.In(err) {
 		code = http.StatusInternalServerError

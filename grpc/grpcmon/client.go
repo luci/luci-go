@@ -101,7 +101,7 @@ var (
 //
 // It assumes the RPC context has tsmon initialized already.
 func NewUnaryClientInterceptor(next grpc.UnaryClientInterceptor) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		started := clock.Now(ctx)
 		defer func() {
 			reportClientRPCMetrics(ctx, method, err, clock.Now(ctx).Sub(started))

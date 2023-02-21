@@ -54,7 +54,7 @@ func TestGetTestExoneration(t *testing.T) {
 			// Insert a TestExoneration.
 			testutil.MustApply(ctx,
 				insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),
-				spanutil.InsertMap("TestExonerations", map[string]interface{}{
+				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":    invID,
 					"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 					"ExonerationId":   "id",
@@ -82,7 +82,7 @@ func TestGetTestExoneration(t *testing.T) {
 			// prior to May 2022. This test case can be deleted from November 2023.
 			testutil.MustApply(ctx,
 				insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),
-				spanutil.InsertMap("TestExonerations", map[string]interface{}{
+				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":  invID,
 					"TestId":        "ninja://chrome/test:foo_tests/BarTest.DoFoo",
 					"ExonerationId": "id",

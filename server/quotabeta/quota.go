@@ -201,7 +201,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 
 	s := bytes.NewBufferString("local entries = {}\n")
 	if opts != nil && opts.RequestID != "" {
-		if err := dedupePrefix.Execute(s, map[string]interface{}{
+		if err := dedupePrefix.Execute(s, map[string]any{
 			"Key": opts.RequestID,
 			"Now": now,
 		}); err != nil {
@@ -211,7 +211,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 
 	i = 0
 	for name, adj := range adjs {
-		if err := updateEntry.Execute(s, map[string]interface{}{
+		if err := updateEntry.Execute(s, map[string]any{
 			"Var":           fmt.Sprintf("entries[%d]", i),
 			"Name":          name,
 			"Default":       defs[name].Resources,
@@ -224,7 +224,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 		i++
 	}
 	for i--; i >= 0; i-- {
-		if err := setEntry.Execute(s, map[string]interface{}{
+		if err := setEntry.Execute(s, map[string]any{
 			"Var": fmt.Sprintf("entries[%d]", i),
 		}); err != nil {
 			return errors.Annotate(err, "rendering template %q", setEntry.Name()).Err()
@@ -232,7 +232,7 @@ func UpdateQuota(ctx context.Context, updates map[string]int64, opts *Options) e
 	}
 
 	if opts != nil && opts.RequestID != "" {
-		if err := dedupeSuffix.Execute(s, map[string]interface{}{
+		if err := dedupeSuffix.Execute(s, map[string]any{
 			"Key":      opts.RequestID,
 			"Deadline": now + 3600,
 		}); err != nil {

@@ -898,7 +898,7 @@ func (h *moduleHostImpl) RegisterCleanup(cb func(context.Context)) {
 	h.srv.RegisterCleanup(cb)
 }
 
-func (h *moduleHostImpl) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
+func (h *moduleHostImpl) RegisterService(desc *grpc.ServiceDesc, impl any) {
 	h.panicIfInvalid()
 	h.srv.RegisterService(desc, impl)
 }
@@ -1258,7 +1258,7 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 // on corresponding ports. See Server doc.
 //
 // Must be called before Serve (panics otherwise).
-func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl interface{}) {
+func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.started {
@@ -2355,7 +2355,7 @@ func (s *Server) initTracing() error {
 		TraceClientOptions:      opts,
 		BundleDelayThreshold:    time.Minute,
 		BundleCountThreshold:    3000,
-		DefaultTraceAttributes: map[string]interface{}{
+		DefaultTraceAttributes: map[string]any{
 			"cr.dev/image":   s.Options.ContainerImageID,
 			"cr.dev/service": s.Options.TsMonServiceName,
 			"cr.dev/job":     s.Options.TsMonJobName,

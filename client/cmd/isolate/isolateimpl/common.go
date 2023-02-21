@@ -240,17 +240,17 @@ func (al *archiveLogger) LogSummary(ctx context.Context, hits, misses int, bytes
 }
 
 // Print acts like fmt.Printf, but may prepend a prefix to format, depending on the value of al.quiet.
-func (al *archiveLogger) Printf(format string, a ...interface{}) (n int, err error) {
+func (al *archiveLogger) Printf(format string, a ...any) (n int, err error) {
 	return al.Fprintf(os.Stdout, format, a...)
 }
 
 // Print acts like fmt.fprintf, but may prepend a prefix to format, depending on the value of al.quiet.
-func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
+func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...any) (n int, err error) {
 	prefix := "\n"
 	if al.quiet {
 		prefix = ""
 	}
-	args := make([]interface{}, 1+len(a))
+	args := make([]any, 1+len(a))
 	args[0] = prefix
 	copy(args[1:], a)
 	return fmt.Printf("%s"+format, args...)

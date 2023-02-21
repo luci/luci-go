@@ -60,8 +60,8 @@ type Request struct {
 	URL     string            // URL to access
 	Scopes  []string          // OAuth2 scopes to authenticate with or anonymous call if empty
 	Headers map[string]string // optional map with request headers
-	Body    interface{}       // object to convert to JSON and send as body or []byte with the body
-	Out     interface{}       // where to deserialize the response to
+	Body    any       // object to convert to JSON and send as body or []byte with the body
+	Out     any       // where to deserialize the response to
 }
 
 // Do performs an HTTP request with retries on transient errors.
@@ -118,7 +118,7 @@ func (r *Request) Do(ctx context.Context) error {
 // TODO(vadimsh): Add retries on HTTP 500.
 
 // fetchJSON fetches JSON document by making a request using given client.
-func fetchJSON(ctx context.Context, client *http.Client, val interface{}, f func() (*http.Request, error)) error {
+func fetchJSON(ctx context.Context, client *http.Client, val any, f func() (*http.Request, error)) error {
 	r, err := f()
 	if err != nil {
 		logging.Errorf(ctx, "auth: URL fetch failed - %s", err)

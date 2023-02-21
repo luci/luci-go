@@ -78,7 +78,7 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
+				rt.Handler = func(_ any) (int, any) {
 					return http.StatusInternalServerError, nil
 				}
 				datastore.Put(c, &model.VM{
@@ -103,7 +103,7 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("deleted", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
+				rt.Handler = func(_ any) (int, any) {
 					return http.StatusNotFound, nil
 				}
 				datastore.Put(c, &model.VM{
@@ -125,7 +125,7 @@ func TestDeleteBot(t *testing.T) {
 			})
 
 			Convey("deletes", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
+				rt.Handler = func(_ any) (int, any) {
 					return http.StatusOK, &swarming.SwarmingRpcsDeletedResponse{}
 				}
 				datastore.Put(c, &model.VM{
@@ -238,7 +238,7 @@ func TestManageBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
+				rt.Handler = func(_ any) (int, any) {
 					return http.StatusConflict, nil
 				}
 				datastore.Put(c, &model.VM{
@@ -254,7 +254,7 @@ func TestManageBot(t *testing.T) {
 
 			Convey("missing", func() {
 				Convey("deadline", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
@@ -278,7 +278,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("drained", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
@@ -298,7 +298,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("timeout", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
@@ -318,7 +318,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("wait", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusNotFound, nil
 					}
 					datastore.Put(c, &model.VM{
@@ -336,7 +336,7 @@ func TestManageBot(t *testing.T) {
 
 			Convey("found", func() {
 				Convey("deleted", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
 							BotId:   "id",
 							Deleted: true,
@@ -363,7 +363,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("deleted but newly created", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
 							BotId:   "id",
 							Deleted: true,
@@ -385,7 +385,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("dead", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
 							BotId:       "id",
 							FirstSeenTs: "2019-03-13T00:12:29.882948",
@@ -413,7 +413,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("dead but newly created", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
 							BotId:       "id",
 							FirstSeenTs: "2019-03-13T00:12:29.882948",
@@ -436,8 +436,8 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("terminated", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
-						return http.StatusOK, map[string]interface{}{
+					rt.Handler = func(_ any) (int, any) {
+						return http.StatusOK, map[string]any{
 							"bot_id":        "id",
 							"first_seen_ts": "2019-03-13T00:12:29.882948",
 							"items": []*swarming.SwarmingRpcsBotEvent{
@@ -467,7 +467,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("deadline", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
 							BotId:       "id",
 							FirstSeenTs: "2019-03-13T00:12:29.882948",
@@ -495,7 +495,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("drained", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
 							BotId:       "id",
 							FirstSeenTs: "2019-03-13T00:12:29.882948",
@@ -522,7 +522,7 @@ func TestManageBot(t *testing.T) {
 				})
 
 				Convey("alive", func() {
-					rt.Handler = func(_ interface{}) (int, interface{}) {
+					rt.Handler = func(_ any) (int, any) {
 						return http.StatusOK, &swarming.SwarmingRpcsBotInfo{
 							BotId:       "id",
 							FirstSeenTs: "2019-03-13T00:12:29.882948",
@@ -609,7 +609,7 @@ func TestTerminateBot(t *testing.T) {
 			})
 
 			Convey("error", func() {
-				rt.Handler = func(_ interface{}) (int, interface{}) {
+				rt.Handler = func(_ any) (int, any) {
 					return http.StatusInternalServerError, nil
 				}
 				datastore.Put(c, &model.VM{
@@ -631,7 +631,7 @@ func TestTerminateBot(t *testing.T) {
 			Convey("terminates", func() {
 				c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 				rpcsToSwarming := 0
-				rt.Handler = func(_ interface{}) (int, interface{}) {
+				rt.Handler = func(_ any) (int, any) {
 					rpcsToSwarming++
 					return http.StatusOK, &swarming.SwarmingRpcsTerminateResponse{}
 				}

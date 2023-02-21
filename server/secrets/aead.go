@@ -177,7 +177,7 @@ func LoadTinkAEAD(ctx context.Context, secretName string) (*AEADHandle, error) {
 		// more subscription handlers, essentially leaking memory.
 		return loadTinkAEADLocked(ctx, secretName, false)
 	}
-	handle, err := cache.GetOrCreate(ctx, secretName, func() (interface{}, time.Duration, error) {
+	handle, err := cache.GetOrCreate(ctx, secretName, func() (any, time.Duration, error) {
 		handle, err := loadTinkAEADLocked(ctx, secretName, true)
 		return handle, 0, err
 	})

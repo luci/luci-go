@@ -361,7 +361,7 @@ func TestVirtualEnv(t *testing.T) {
 	}
 }
 
-func loadJSON(path string, dst interface{}) error {
+func loadJSON(path string, dst any) error {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return errors.Annotate(err, "failed to open file").Err()
@@ -372,7 +372,7 @@ func loadJSON(path string, dst interface{}) error {
 	return nil
 }
 
-func shouldNotExist(actual interface{}, expected ...interface{}) string {
+func shouldNotExist(actual any, expected ...any) string {
 	path := actual.(string)
 	switch _, err := os.Stat(path); {
 	case err == nil:

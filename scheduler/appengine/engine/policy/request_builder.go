@@ -41,7 +41,7 @@ type RequestBuilder struct {
 }
 
 // DebugLog adds a line to the request log and the triage log.
-func (r *RequestBuilder) DebugLog(format string, args ...interface{}) {
+func (r *RequestBuilder) DebugLog(format string, args ...any) {
 	r.Request.DebugLog += fmt.Sprintf(format+"\n", args...)
 	if r.env != nil {
 		r.env.DebugLog(format, args...)

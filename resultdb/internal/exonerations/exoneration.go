@@ -58,7 +58,7 @@ func Read(ctx context.Context, name string) (*pb.TestExoneration, error) {
 
 	// Populate fields from TestExonerations table.
 	var explanationHTML spanutil.Compressed
-	err = spanutil.ReadRow(ctx, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
+	err = spanutil.ReadRow(ctx, "TestExonerations", invID.Key(testID, exonerationID), map[string]any{
 		"Variant":         &ret.Variant,
 		"VariantHash":     &ret.VariantHash,
 		"ExplanationHTML": &explanationHTML,

@@ -83,7 +83,7 @@ func TestRead(t *testing.T) {
 		})
 
 		Convey(`Exists`, func() {
-			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "a", map[string]interface{}{
+			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "a", map[string]any{
 				"ContentType": "text/plain",
 				"Size":        "54",
 			}))
@@ -99,7 +99,7 @@ func TestRead(t *testing.T) {
 		})
 
 		Convey(`Exists with GcsURI`, func() {
-			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "b", map[string]interface{}{
+			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "b", map[string]any{
 				"ContentType": "text/plain",
 				"Size":        "54",
 				"GcsURI":      "gs://test",

@@ -29,7 +29,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func mkKey(appID, namespace string, elems ...interface{}) *ds.Key {
+func mkKey(appID, namespace string, elems ...any) *ds.Key {
 	return ds.MkKeyContext(appID, namespace).MakeKey(elems...)
 }
 
@@ -681,7 +681,7 @@ func TestQueryExecution(t *testing.T) {
 	})
 }
 
-func shouldBeSuccessful(actual interface{}, expected ...interface{}) string {
+func shouldBeSuccessful(actual any, expected ...any) string {
 	if len(expected) != 0 {
 		return "no expected values permitted"
 	}

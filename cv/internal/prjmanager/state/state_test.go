@@ -1163,7 +1163,7 @@ func defaultPCL(cl *changelist.CL) *prjpb.PCL {
 	return p
 }
 
-func i64s(vs ...interface{}) []int64 {
+func i64s(vs ...any) []int64 {
 	res := make([]int64, len(vs))
 	for i, v := range vs {
 		switch x := v.(type) {
@@ -1180,7 +1180,7 @@ func i64s(vs ...interface{}) []int64 {
 	return res
 }
 
-func i64sorted(vs ...interface{}) []int64 {
+func i64sorted(vs ...any) []int64 {
 	res := i64s(vs...)
 	sort.Slice(res, func(i, j int) bool { return res[i] < res[j] })
 	return res

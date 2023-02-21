@@ -24,7 +24,7 @@ import (
 type Resolver interface {
 	// Resolve resolves a type name to
 	// *descriptor.DescriptorProto or *descriptor.EnumDescriptorProto.
-	Resolve(name string) interface{}
+	Resolve(name string) any
 }
 
 // NewResolver creates a resolver for all types in a file descriptor set.
@@ -37,7 +37,7 @@ type descriptorSetResolver struct {
 	set *descriptorpb.FileDescriptorSet
 }
 
-func (r *descriptorSetResolver) Resolve(name string) interface{} {
+func (r *descriptorSetResolver) Resolve(name string) any {
 	_, o, _ := descutil.Resolve(r.set, name)
 	switch o := o.(type) {
 	case *descriptorpb.DescriptorProto, *descriptorpb.EnumDescriptorProto:

@@ -26,7 +26,7 @@ import (
 )
 
 // MustNewValue creates a new *Value wrapping v, and panics if v is a bad type
-func MustNewValue(v interface{}) *Value {
+func MustNewValue(v any) *Value {
 	ret, err := NewValue(v)
 	if err != nil {
 		panic(err)
@@ -45,9 +45,9 @@ func MustNewValue(v interface{}) *Value {
 //   - uint, uint8, uint16, uint32, uint64 -> Unsigned
 //   - float32, float64 -> Float
 //   - bool -> Boolean
-//   - map[string]interface{} -> Object
-//   - []interface{} -> Array
-func NewValue(v interface{}) (*Value, error) {
+//   - map[string]any -> Object
+//   - []any -> Array
+func NewValue(v any) (*Value, error) {
 	switch x := v.(type) {
 	case isValue_Value:
 		return &Value{Value: x}, nil
@@ -65,13 +65,13 @@ func NewValue(v interface{}) (*Value, error) {
 		return &Value{Value: &Value_Bytes{x}}, nil
 	case bool:
 		return &Value{Value: &Value_Bool{x}}, nil
-	case map[string]interface{}:
+	case map[string]any:
 		ret, err := json.Marshal(x)
 		if err != nil {
 			return nil, err
 		}
 		return &Value{Value: &Value_Object{string(ret)}}, nil
-	case []interface{}:
+	case []any:
 		ret, err := json.Marshal(x)
 		if err != nil {
 			return nil, err
@@ -83,7 +83,7 @@ func NewValue(v interface{}) (*Value, error) {
 
 // LiteralMap is a type for literal in-line param substitutions, or when you
 // know statically that the params correspond to correct Value types.
-type LiteralMap map[string]interface{}
+type LiteralMap map[string]any
 
 // Convert converts this to a parameter map that can be used with
 // Template.Render.

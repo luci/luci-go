@@ -37,17 +37,17 @@ func TestUnaryClientInterceptor(t *testing.T) {
 		c, memStore := testContext()
 		run := func(err error, dur time.Duration) {
 			method := "/service/method"
-			invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+			invoker := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 				clock.Get(ctx).(testclock.TestClock).Add(dur)
 				return err
 			}
 			_ = NewUnaryClientInterceptor(nil)(c, method, nil, nil, nil, invoker)
 		}
 		count := func(code string) int64 {
-			return memStore.Get(c, grpcClientCount, time.Time{}, []interface{}{"/service/method", code}).(int64)
+			return memStore.Get(c, grpcClientCount, time.Time{}, []any{"/service/method", code}).(int64)
 		}
 		duration := func(code string) float64 {
-			val := memStore.Get(c, grpcClientDuration, time.Time{}, []interface{}{"/service/method", code})
+			val := memStore.Get(c, grpcClientDuration, time.Time{}, []any{"/service/method", code})
 			return val.(*distribution.Distribution).Sum()
 		}
 
@@ -75,8 +75,8 @@ func (s *echoService) Say(c context.Context, req *SayRequest) (*SayResponse, err
 
 func TestClientRPCStatsMonitor(t *testing.T) {
 	method := "/grpcmon.Echo/Say"
-	fields := func(fs ...interface{}) (ret []interface{}) {
-		return append([]interface{}{method}, fs...)
+	fields := func(fs ...any) (ret []any) {
+		return append([]any{method}, fs...)
 	}
 
 	Convey("ClientRPCStatsMonitor", t, func() {
@@ -116,7 +116,7 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 				So(val, ShouldNotBeNil)
 				return val.(int64)
 			}
-			duration := func(code string) interface{} {
+			duration := func(code string) any {
 				return memStore.Get(ctx, grpcClientDuration, time.Time{}, fields(code))
 			}
 

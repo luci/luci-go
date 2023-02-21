@@ -133,9 +133,9 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 				Convey("v1", func() {
 					// the ages should be the same.
-					fields := []interface{}{bkt, "b1", true}
+					fields := []any{bkt, "b1", true}
 					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, age)
-					fields = []interface{}{bkt, "b1", false}
+					fields = []any{bkt, "b1", false}
 					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, age)
 				})
 
@@ -154,9 +154,9 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 				Convey("v1", func() {
 					// the ages should be different.
-					fields := []interface{}{bkt, "b1", true}
+					fields := []any{bkt, "b1", true}
 					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, age)
-					fields = []interface{}{bkt, "b1", false}
+					fields = []any{bkt, "b1", false}
 					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldEqual, 2*age)
 				})
 
@@ -175,9 +175,9 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 				Convey("v1", func() {
 					// Data should have been reported with "luci.$project.$bucket"
-					fields := []interface{}{bkt, "b1", true}
+					fields := []any{bkt, "b1", true}
 					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldBeNil)
-					fields = []interface{}{"luci." + prj + "." + bkt, "b1", true}
+					fields = []any{"luci." + prj + "." + bkt, "b1", true}
 					So(store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), ShouldNotBeNil)
 				})
 
@@ -203,8 +203,8 @@ func TestReportBuilderMetrics(t *testing.T) {
 					Tags: []string{"builder:b1"},
 				}
 			}
-			count := func(s string) interface{} {
-				return store.Get(target("b1"), V2.ConsecutiveFailureCount, time.Time{}, []interface{}{s})
+			count := func(s string) any {
+				return store.Get(target("b1"), V2.ConsecutiveFailureCount, time.Time{}, []any{s})
 			}
 			t := clock.Now()
 

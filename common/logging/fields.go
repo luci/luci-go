@@ -35,10 +35,10 @@ const (
 // Fields can also be added directly to a log message by calling its
 // logging passthrough methods. This immediate usage avoids the overhead of
 // duplicating the fields for retention.
-type Fields map[string]interface{}
+type Fields map[string]any
 
 // NewFields instantiates a new Fields instance by duplicating the supplied map.
-func NewFields(v map[string]interface{}) Fields {
+func NewFields(v map[string]any) Fields {
 	fields := make(Fields)
 	for k, v := range v {
 		fields[k] = v
@@ -100,22 +100,22 @@ func (f Fields) String() string {
 }
 
 // Debugf is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Debugf(c context.Context, fmt string, args ...interface{}) {
+func (f Fields) Debugf(c context.Context, fmt string, args ...any) {
 	Get(SetFields(c, f)).LogCall(Debug, 1, fmt, args)
 }
 
 // Infof is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Infof(c context.Context, fmt string, args ...interface{}) {
+func (f Fields) Infof(c context.Context, fmt string, args ...any) {
 	Get(SetFields(c, f)).LogCall(Info, 1, fmt, args)
 }
 
 // Warningf is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Warningf(c context.Context, fmt string, args ...interface{}) {
+func (f Fields) Warningf(c context.Context, fmt string, args ...any) {
 	Get(SetFields(c, f)).LogCall(Warning, 1, fmt, args)
 }
 
 // Errorf is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Errorf(c context.Context, fmt string, args ...interface{}) {
+func (f Fields) Errorf(c context.Context, fmt string, args ...any) {
 	Get(SetFields(c, f)).LogCall(Error, 1, fmt, args)
 }
 
@@ -123,7 +123,7 @@ func (f Fields) Errorf(c context.Context, fmt string, args ...interface{}) {
 // Fields.
 type FieldEntry struct {
 	Key   string      // The field's key.
-	Value interface{} // The field's value.
+	Value any // The field's value.
 }
 
 // String returns the string representation of the field entry:
@@ -182,7 +182,7 @@ func SetFields(c context.Context, fields Fields) context.Context {
 
 // SetField is a convenience method for SetFields for a single key/value
 // pair.
-func SetField(c context.Context, key string, value interface{}) context.Context {
+func SetField(c context.Context, key string, value any) context.Context {
 	return SetFields(c, Fields{key: value})
 }
 

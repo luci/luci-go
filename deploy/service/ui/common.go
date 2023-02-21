@@ -168,7 +168,7 @@ func replyErr(ctx *router.Context, err error) {
 
 	ctx.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	ctx.Writer.WriteHeader(grpcutil.CodeStatus(s.Code()))
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/error.html", map[string]interface{}{
+	templates.MustRender(ctx.Context, ctx.Writer, "pages/error.html", map[string]any{
 		"Message": message,
 	})
 }

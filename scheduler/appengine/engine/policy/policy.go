@@ -34,7 +34,7 @@ import (
 // on as-needed basis.
 type Environment interface {
 	// DebugLog appends a line to the triage text log.
-	DebugLog(format string, args ...interface{})
+	DebugLog(format string, args ...any)
 }
 
 // In contains parameters for a triggering policy function.

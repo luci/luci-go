@@ -23,7 +23,7 @@ import (
 )
 
 // pathElement represents a single parsed StructMask path element.
-type pathElement interface{}
+type pathElement any
 
 type starElement struct{}
 type fieldElement struct{ field string }

@@ -132,7 +132,7 @@ func CopyComments(comments []*mpb.Comment) []*mpb.Comment {
 
 // ShouldResembleProto asserts that given two FakeIssuesStores contain equivalent
 // issues (including comments) and NextID.
-func ShouldResembleIssuesStore(actual interface{}, expected ...interface{}) string {
+func ShouldResembleIssuesStore(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("ShouldResembleIssuesStore expects 1 value, got %d", len(expected))
 	}

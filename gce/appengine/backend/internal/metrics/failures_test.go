@@ -38,7 +38,7 @@ func TestFailures(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		s := tsmon.Store(c)
 
-		fields := []interface{}{400, "prefix", "project", "zone"}
+		fields := []any{400, "prefix", "project", "zone"}
 
 		UpdateFailures(c, 400, &model.VM{
 			Attributes: config.VM{

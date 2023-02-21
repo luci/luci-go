@@ -36,7 +36,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func shouldResembleTriagedCL(actual interface{}, expected ...interface{}) string {
+func shouldResembleTriagedCL(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("expected 1 value, got %d", len(expected))
 	}

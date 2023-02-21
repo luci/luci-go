@@ -109,10 +109,10 @@ func TestInstances(t *testing.T) {
 		})
 
 		Convey("updateInstances", func() {
-			confFields := []interface{}{"prefix", "project"}
-			creaFields1 := []interface{}{"prefix", "project", "zone-1"}
-			creaFields2 := []interface{}{"prefix", "project", "zone-2"}
-			connFields := []interface{}{"prefix", "project", "server", "zone"}
+			confFields := []any{"prefix", "project"}
+			creaFields1 := []any{"prefix", "project", "zone-1"}
+			creaFields2 := []any{"prefix", "project", "zone-2"}
+			connFields := []any{"prefix", "project", "server", "zone"}
 
 			ic := &InstanceCount{
 				ID: "prefix",

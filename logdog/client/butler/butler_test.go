@@ -109,7 +109,7 @@ func (to *testOutput) isTerminal(name string) bool {
 	return isTerminal
 }
 
-func shouldHaveTextLogs(actual interface{}, expected ...interface{}) string {
+func shouldHaveTextLogs(actual any, expected ...any) string {
 	exp := make([]string, len(expected))
 	for i, e := range expected {
 		exp[i] = e.(string)

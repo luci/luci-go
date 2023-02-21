@@ -529,7 +529,7 @@ func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
 		}
 
 		// All is good! Generate tokens.
-		json.NewEncoder(ctx.Writer).Encode(map[string]interface{}{
+		json.NewEncoder(ctx.Writer).Encode(map[string]any{
 			"expires_in":    3600,
 			"refresh_token": f.RefreshToken,
 			"access_token":  f.genAccessToken(),
@@ -542,7 +542,7 @@ func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
 			http.Error(ctx.Writer, "bad refresh token", 400)
 			return
 		}
-		json.NewEncoder(ctx.Writer).Encode(map[string]interface{}{
+		json.NewEncoder(ctx.Writer).Encode(map[string]any{
 			"expires_in":   3600,
 			"access_token": f.genAccessToken(),
 			"id_token":     f.genIDToken(ctx.Context, ""),

@@ -221,44 +221,44 @@ func TestDecode(t *testing.T) {
 	testCases := []struct {
 		name          string
 		tweakEnc      func(*msgpack.Encoder)
-		input         interface{} // will be encoded verbatim with
+		input         any // will be encoded verbatim with
 		expect        *TestMessage
 		expectUnknown protoreflect.RawFields
 		expectRaw     msgpack.RawMessage
-		expectDecoded interface{}
+		expectDecoded any
 		err           string
 	}{
 		{
 			name: "int32->int64",
-			input: map[int32]interface{}{
+			input: map[int32]any{
 				3: int32(10),
 			},
 			expect: &TestMessage{Intval: 10},
 		},
 		{
 			name: "int8->int64",
-			input: map[int32]interface{}{
+			input: map[int32]any{
 				3: int8(10),
 			},
 			expect: &TestMessage{Intval: 10},
 		},
 		{
 			name: "int64->int32",
-			input: map[int32]interface{}{
+			input: map[int32]any{
 				5: int64(10),
 			},
 			expect: &TestMessage{ShortIntval: 10},
 		},
 		{
 			name: "int64->int32 (overflow)",
-			input: map[int32]interface{}{
+			input: map[int32]any{
 				5: int64(math.MaxInt32 * 2),
 			},
 			expect: &TestMessage{ShortIntval: -2},
 		},
 		{
 			name: "float64->int32",
-			input: map[int32]interface{}{
+			input: map[int32]any{
 				5: float64(217),
 			},
 			err: "bad type: expected int32, got float64",
@@ -266,7 +266,7 @@ func TestDecode(t *testing.T) {
 
 		{
 			name: "unknown field",
-			input: map[int32]interface{}{
+			input: map[int32]any{
 				777: "nerds",
 				3:   100,
 			},
@@ -285,7 +285,7 @@ func TestDecode(t *testing.T) {
 				3, 100, // tag 3, 100
 				205, 3, 9, 165, 110, 101, 114, 100, 115, // tag 777, 5 char string "nerds"
 			},
-			expectDecoded: map[int32]interface{}{
+			expectDecoded: map[int32]any{
 				3:   int64(100),
 				777: "nerds",
 			},
@@ -293,7 +293,7 @@ func TestDecode(t *testing.T) {
 
 		{
 			name: "sparse array",
-			input: map[int32]interface{}{
+			input: map[int32]any{
 				13: map[int32]string{
 					3:  "hello",
 					12: "there",
@@ -348,7 +348,7 @@ func TestDecode(t *testing.T) {
 							defer msgpack.PutDecoder(dec)
 							dec.Reset(bytes.NewBuffer(raw))
 							dec.UseLooseInterfaceDecoding(true)
-							dec.SetMapDecoder(func(d *msgpack.Decoder) (interface{}, error) {
+							dec.SetMapDecoder(func(d *msgpack.Decoder) (any, error) {
 								return d.DecodeUntypedMap()
 							})
 

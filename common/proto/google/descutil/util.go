@@ -57,7 +57,7 @@ func FindFile(s *pb.FileDescriptorSet, name string) int {
 // nil
 //
 // For path, see comment in SourceCodeInfo message.
-func Resolve(s *pb.FileDescriptorSet, fullName string) (file *pb.FileDescriptorProto, obj interface{}, path []int) {
+func Resolve(s *pb.FileDescriptorSet, fullName string) (file *pb.FileDescriptorProto, obj any, path []int) {
 	if fullName == "" {
 		return nil, nil, nil
 	}
@@ -79,7 +79,7 @@ func Resolve(s *pb.FileDescriptorSet, fullName string) (file *pb.FileDescriptorP
 	}
 
 	// Recurse.
-	var parent interface{}
+	var parent any
 	file, parent, path = Resolve(s, pkg)
 	switch parent := parent.(type) {
 
@@ -261,7 +261,7 @@ func FindValueByNumber(e *pb.EnumDescriptorProto, number int32) int {
 // because 4 is FileDescriptorProto.MessageType field tag.
 //
 // Does not supported uninterpreted options, returns (nil, nil).
-func At(descProto proto.Message, path []int32) (interface{}, error) {
+func At(descProto proto.Message, path []int32) (any, error) {
 	cur := reflect.ValueOf(descProto)
 
 	pathStr := func() string {
@@ -316,11 +316,11 @@ func At(descProto proto.Message, path []int32) (interface{}, error) {
 // IndexSourceCodeInfo can be used to retrieve comments.
 //
 // Does not support whole-slice locations.
-func IndexSourceCodeInfo(f *pb.FileDescriptorProto) (map[interface{}]*pb.SourceCodeInfo_Location, error) {
+func IndexSourceCodeInfo(f *pb.FileDescriptorProto) (map[any]*pb.SourceCodeInfo_Location, error) {
 	if f.SourceCodeInfo == nil {
 		return nil, nil
 	}
-	ret := make(map[interface{}]*pb.SourceCodeInfo_Location, len(f.SourceCodeInfo.Location))
+	ret := make(map[any]*pb.SourceCodeInfo_Location, len(f.SourceCodeInfo.Location))
 	for _, loc := range f.SourceCodeInfo.Location {
 		ptr, err := At(f, loc.Path)
 		switch v := reflect.ValueOf(ptr); {

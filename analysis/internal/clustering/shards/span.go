@@ -70,7 +70,7 @@ const MaxProgress = 1000
 // LUCI Project, for the given attempt timestamp.
 func ReadProgress(ctx context.Context, project string, attemptTimestamp time.Time) (ReclusteringProgress, error) {
 	whereClause := "Project = @project AND AttemptTimestamp = @attemptTimestamp"
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project":          project,
 		"attemptTimestamp": attemptTimestamp,
 	}
@@ -92,7 +92,7 @@ func ReadProgress(ctx context.Context, project string, attemptTimestamp time.Tim
 // projects with shards, for the given attempt timestamp.
 func ReadAllProgresses(ctx context.Context, attemptTimestamp time.Time) ([]ReclusteringProgress, error) {
 	whereClause := "AttemptTimestamp = @attemptTimestamp"
-	params := map[string]interface{}{
+	params := map[string]any{
 		"attemptTimestamp": attemptTimestamp,
 	}
 	return readProgressWhere(ctx, whereClause, params)
@@ -100,7 +100,7 @@ func ReadAllProgresses(ctx context.Context, attemptTimestamp time.Time) ([]Reclu
 
 // readProgressWhere reads reclustering progress satisfying the given
 // where clause.
-func readProgressWhere(ctx context.Context, whereClause string, params map[string]interface{}) ([]ReclusteringProgress, error) {
+func readProgressWhere(ctx context.Context, whereClause string, params map[string]any) ([]ReclusteringProgress, error) {
 	stmt := spanner.NewStatement(`
 		SELECT
 		  AttemptTimestamp,
@@ -191,7 +191,7 @@ func Create(ctx context.Context, r ReclusteringShard) error {
 	if err := validateShard(r); err != nil {
 		return err
 	}
-	ms := spanutil.InsertMap("ReclusteringShards", map[string]interface{}{
+	ms := spanutil.InsertMap("ReclusteringShards", map[string]any{
 		"ShardNumber":      r.ShardNumber,
 		"Project":          r.Project,
 		"AttemptTimestamp": r.AttemptTimestamp,
@@ -219,7 +219,7 @@ func UpdateProgress(ctx context.Context, shardNumber int64, attemptTimestamp tim
 	if progress < 0 || progress > MaxProgress {
 		return errors.Reason("progress, if set, must be a value between 0 and %v", MaxProgress).Err()
 	}
-	ms := spanutil.UpdateMap("ReclusteringShards", map[string]interface{}{
+	ms := spanutil.UpdateMap("ReclusteringShards", map[string]any{
 		"ShardNumber":      shardNumber,
 		"AttemptTimestamp": attemptTimestamp,
 		"Progress":         progress,

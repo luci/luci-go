@@ -59,13 +59,13 @@ func TestMain(t *testing.T) {
 		args := []string{"myprogram", "--output", finalBuildPath}
 		stdin := &bytes.Buffer{}
 
-		mkStruct := func(dictlike map[string]interface{}) *structpb.Struct {
+		mkStruct := func(dictlike map[string]any) *structpb.Struct {
 			s, err := structpb.NewStruct(dictlike)
 			So(err, ShouldBeNil)
 			return s
 		}
 
-		writeStdinProps := func(dictlike map[string]interface{}) {
+		writeStdinProps := func(dictlike map[string]any) {
 			b := &bbpb.Build{
 				Input: &bbpb.Build_Input{
 					Properties: mkStruct(dictlike),
@@ -126,7 +126,7 @@ func TestMain(t *testing.T) {
 			})
 
 			Convey(`inputProps`, func() {
-				writeStdinProps(map[string]interface{}{
+				writeStdinProps(map[string]any{
 					"field": "something",
 					"$cool": "blah",
 				})
@@ -188,7 +188,7 @@ func TestMain(t *testing.T) {
 			})
 
 			Convey(`inputProps`, func() {
-				writeStdinProps(map[string]interface{}{
+				writeStdinProps(map[string]any{
 					"bogus": "something",
 				})
 				args = append(args, "--strict-input")
@@ -204,7 +204,7 @@ func TestMain(t *testing.T) {
 					Output:          &bbpb.Build_Output{},
 					SummaryMarkdown: "fatal error starting build: parsing top-level properties: proto: (line 1:2): unknown field \"bogus\"",
 					Input: &bbpb.Build_Input{
-						Properties: mkStruct(map[string]interface{}{
+						Properties: mkStruct(map[string]any{
 							"bogus": "something",
 						}),
 					},

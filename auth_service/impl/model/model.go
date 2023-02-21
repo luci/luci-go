@@ -429,7 +429,7 @@ func runAuthDBChange(ctx context.Context, f func(context.Context, commitAuthEnti
 			return err
 		}
 		nextAuthDBRev := state.AuthDBRev + 1
-		toCommit := []interface{}{state}
+		toCommit := []any{state}
 
 		// Set up a function that callers can use to commit a change to an entity.
 		// If this doesn't get called, the AuthDB revision won't get incremented.

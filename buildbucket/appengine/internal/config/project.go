@@ -703,7 +703,7 @@ func validateBuilderRecipe(ctx *validation.Context, recipe *pb.BuilderConfig_Rec
 			case k == "buildbucket":
 				ctx.Errorf("reserved property")
 			case k == "$recipe_engine/runtime":
-				jsonMap := make(map[string]interface{})
+				jsonMap := make(map[string]any)
 				if err := json.Unmarshal([]byte(v), &jsonMap); err != nil {
 					ctx.Errorf("not a JSON object: %s", err)
 				}

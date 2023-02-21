@@ -46,8 +46,8 @@ type MetricMetadata struct {
 
 // CellData contains the value of a single cell.
 type CellData struct {
-	FieldVals []interface{}
+	FieldVals []any
 	Target    Target
 	ResetTime time.Time
-	Value     interface{}
+	Value     any
 }

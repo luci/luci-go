@@ -43,7 +43,7 @@ type CommandLineError struct {
 }
 
 // NewCLIError returns new CommandLineError.
-func NewCLIError(msg string, args ...interface{}) error {
+func NewCLIError(msg string, args ...any) error {
 	return CommandLineError{fmt.Errorf(msg, args...)}
 }
 
@@ -197,7 +197,7 @@ func (c *Subcommand) ConfigService(ctx context.Context, host string) (*config.Se
 //
 // It dumps the command result (or an error) to the JSON output file, prints
 // the error message and generates the process exit code.
-func (c *Subcommand) Done(result interface{}, err error) int {
+func (c *Subcommand) Done(result any, err error) int {
 	err = c.writeJSONOutput(result, err)
 	if err != nil {
 		c.printError(err)
@@ -224,7 +224,7 @@ func (c *Subcommand) printError(err error) {
 // If writing to the output file fails and the original error is nil, returns
 // the write error. If the original error is not nil, just logs the write error
 // and returns the original error.
-func (c *Subcommand) writeJSONOutput(result interface{}, err error) error {
+func (c *Subcommand) writeJSONOutput(result any, err error) error {
 	if c.jsonOutput == "" {
 		return err
 	}
@@ -238,7 +238,7 @@ func (c *Subcommand) writeJSONOutput(result interface{}, err error) error {
 		Generator string          `json:"generator"`        // lucicfg version
 		Error     string          `json:"error,omitempty"`  // overall error
 		Errors    []detailedError `json:"errors,omitempty"` // detailed errors
-		Result    interface{}     `json:"result,omitempty"` // command-specific result
+		Result    any     `json:"result,omitempty"` // command-specific result
 	}
 	output.Generator = lucicfg.UserAgent
 	output.Result = result

@@ -27,7 +27,7 @@ type coordinatorState struct {
 	opts Options
 	buf  *buffer.Buffer
 
-	itemCh  <-chan interface{}
+	itemCh  <-chan any
 	drainCh chan<- struct{}
 
 	resultCh chan workerResult
@@ -48,7 +48,7 @@ type workerResult struct {
 	err   error
 }
 
-func (state *coordinatorState) dbg(msg string, args ...interface{}) {
+func (state *coordinatorState) dbg(msg string, args ...any) {
 	if state.opts.testingDbg != nil {
 		state.opts.testingDbg(msg, args...)
 	}
@@ -188,7 +188,7 @@ func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken ti
 // our client) if our buffer is willing to accept additional work items.
 //
 // Otherwise returns nil.
-func (state *coordinatorState) getWorkChannel() <-chan interface{} {
+func (state *coordinatorState) getWorkChannel() <-chan any {
 	if !state.closed && state.buf.CanAddItem() {
 		state.dbg("  |waiting on new data")
 		return state.itemCh

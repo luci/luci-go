@@ -249,7 +249,7 @@ func (ch *CRLChecker) IsRevokedSN(c context.Context, sn *big.Int) (bool, error) 
 
 // shard returns a shard given its index.
 func (ch *CRLChecker) shard(c context.Context, idx int) (shards.Shard, error) {
-	val, err := ch.shards[idx].Get(c, func(prev interface{}) (interface{}, time.Duration, error) {
+	val, err := ch.shards[idx].Get(c, func(prev any) (any, time.Duration, error) {
 		prevState, _ := prev.(shardCache)
 		newState, err := ch.refetchShard(c, idx, prevState)
 		return newState, ch.cacheDuration, err

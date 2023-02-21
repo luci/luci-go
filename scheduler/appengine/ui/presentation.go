@@ -405,7 +405,7 @@ func makeJSONFromProtoStruct(blob []byte) string {
 	// JSON => internal representation 2, sigh. Because there's no existing
 	// structpb.Struct => map converter and writing one just for the sake of
 	// JSON pretty printing is kind of annoying.
-	var obj2 map[string]interface{}
+	var obj2 map[string]any
 	if err := json.Unmarshal([]byte(ugly), &obj2); err != nil {
 		return fmt.Sprintf("<internal error when unmarshaling JSON - %s>", err)
 	}

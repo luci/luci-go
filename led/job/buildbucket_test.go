@@ -45,7 +45,7 @@ func TestWriteProperties(t *testing.T) {
 		jd := testBBJob(false)
 		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), ShouldBeNil)
 
-		jd.GetBuildbucket().WriteProperties(map[string]interface{}{
+		jd.GetBuildbucket().WriteProperties(map[string]any{
 			"hello": "world",
 		})
 		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), ShouldResembleProto, &structpb.Struct{

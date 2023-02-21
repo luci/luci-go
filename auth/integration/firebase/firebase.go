@@ -125,7 +125,7 @@ func (s *Server) handleTokenRequest(rw http.ResponseWriter, r *http.Request) err
 		return err
 	}
 	rw.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(rw).Encode(map[string]interface{}{
+	return json.NewEncoder(rw).Encode(map[string]any{
 		"access_token": tok.AccessToken,
 		"expires_in":   clock.Until(ctx, tok.Expiry) / time.Second,
 		"token_type":   "Bearer",

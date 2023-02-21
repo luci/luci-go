@@ -49,7 +49,7 @@ func assertNotInTransaction(c context.Context) {
 }
 
 // debugLog mutates a string by appending a line to it.
-func debugLog(c context.Context, str *string, format string, args ...interface{}) {
+func debugLog(c context.Context, str *string, format string, args ...any) {
 	prefix := clock.Now(c).UTC().Format("[15:04:05.000] ")
 	*str += prefix + fmt.Sprintf(format+"\n", args...)
 }

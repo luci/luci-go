@@ -28,7 +28,7 @@ type pubsubMessage struct {
 	Message struct {
 		Data []byte
 	}
-	Attributes map[string]interface{}
+	Attributes map[string]any
 }
 
 func processErr(ctx *router.Context, err error) string {

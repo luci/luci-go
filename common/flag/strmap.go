@@ -65,6 +65,6 @@ func (f strMapFlag) Set(s string) error {
 	return nil
 }
 
-func (f strMapFlag) Get() interface{} {
+func (f strMapFlag) Get() any {
 	return map[string]string(f)
 }

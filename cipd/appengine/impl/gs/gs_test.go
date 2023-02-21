@@ -45,7 +45,7 @@ func TestImpl(t *testing.T) {
 			Query    url.Values
 			Range    string // value of Range request header
 			Code     int
-			Response interface{}
+			Response any
 			Location string // value of Location response header
 			NonJSON  bool   // if true, do not put alt=json in the expected URL
 		}

@@ -492,7 +492,7 @@ func (c *client) call(
 	ctx context.Context,
 	method, urlPath string,
 	params url.Values,
-	data, dest interface{},
+	data, dest any,
 	opts []grpc.CallOption,
 	expectedHTTPCodes ...int,
 ) (int, error) {

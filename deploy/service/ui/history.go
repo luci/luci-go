@@ -234,7 +234,7 @@ func (ui *UI) historyListingPage(ctx *router.Context, assetID string) error {
 		}
 	}
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-listing.html", map[string]interface{}{
+	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-listing.html", map[string]any{
 		"Breadcrumbs": historyListingBreadcrumbs(ref),
 		"Ref":         ref,
 		"Overview":    deriveAssetOverview(assetHistory.Asset),
@@ -290,7 +290,7 @@ func (ui *UI) historyEntryPage(ctx *router.Context, assetID, historyID string) e
 
 	// TODO: Add GAE-specific details.
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-entry.html", map[string]interface{}{
+	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-entry.html", map[string]any{
 		"Breadcrumbs": historyEntryBreadcrumbs(ref, entryID),
 		"Ref":         ref,
 		"Overview":    overview,

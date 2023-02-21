@@ -93,7 +93,7 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 	}
 
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
+		toSave := make([]any, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
 		toSave = append(toSave, project)
 
 		for _, et := range cs.EmailTemplates {
@@ -176,7 +176,7 @@ func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notif
 		// found that's OK since there could be new entities being initialized.
 		datastore.Get(ctx, builders, treeClosers)
 
-		toSave := make([]interface{}, 0, 1+len(notifiers))
+		toSave := make([]any, 0, 1+len(notifiers))
 		builderIndex := 0
 		treeCloserIndex := 0
 		for _, cfgNotifier := range notifiers {

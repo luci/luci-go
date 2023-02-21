@@ -195,14 +195,14 @@ func (h streamHeap) Swap(i, j int) {
 }
 
 // Swap implements heap.Interface.
-func (h *streamHeap) Push(x interface{}) {
+func (h *streamHeap) Push(x any) {
 	// Push and Pop use pointer receivers because they modify the slice's length,
 	// not just its contents.
 	*h = append(*h, x.(searchStream))
 }
 
 // Pop implements heap.Interface.
-func (h *streamHeap) Pop() interface{} {
+func (h *streamHeap) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]

@@ -99,7 +99,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 
 			var processingError error
 			var deliveriesExpected, processedMessagesExpected int
-			var processErrorAssertion, sentVSReceivedAssertion func(actual interface{}, expected ...interface{}) string
+			var processErrorAssertion, sentVSReceivedAssertion func(actual any, expected ...any) string
 			Convey("permanent", func() {
 				processingError = fmt.Errorf("non-transient error")
 				// Each of the messages should be delivered at least once.

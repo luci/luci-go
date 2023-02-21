@@ -301,23 +301,23 @@ type jsonLogger struct {
 	fieldsStr string         // in a string form for LogEntry.Message
 }
 
-func (l *jsonLogger) Debugf(format string, args ...interface{}) {
+func (l *jsonLogger) Debugf(format string, args ...any) {
 	l.LogCall(logging.Debug, 1, format, args)
 }
 
-func (l *jsonLogger) Infof(format string, args ...interface{}) {
+func (l *jsonLogger) Infof(format string, args ...any) {
 	l.LogCall(logging.Info, 1, format, args)
 }
 
-func (l *jsonLogger) Warningf(format string, args ...interface{}) {
+func (l *jsonLogger) Warningf(format string, args ...any) {
 	l.LogCall(logging.Warning, 1, format, args)
 }
 
-func (l *jsonLogger) Errorf(format string, args ...interface{}) {
+func (l *jsonLogger) Errorf(format string, args ...any) {
 	l.LogCall(logging.Error, 1, format, args)
 }
 
-func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
+func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, args []any) {
 	if !logging.IsLogging(l.ctx, lvl) {
 		return
 	}

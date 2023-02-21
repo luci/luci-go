@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/luciexe/build/internal/testpb"
 )
 
-func mustNewStruct(data map[string]interface{}) *structpb.Struct {
+func mustNewStruct(data map[string]any) *structpb.Struct {
 	ret, err := structpb.NewStruct(data)
 	So(err, ShouldBeNil)
 	return ret
@@ -71,8 +71,8 @@ func TestOutputProperties(t *testing.T) {
 				Field: "stuff",
 			})
 
-			So(lastBuildVers.waitFor(1).Output.Properties, ShouldResembleProto, mustNewStruct(map[string]interface{}{
-				"ns": map[string]interface{}{
+			So(lastBuildVers.waitFor(1).Output.Properties, ShouldResembleProto, mustNewStruct(map[string]any{
+				"ns": map[string]any{
 					"field": "stuff",
 				},
 			}))
@@ -82,8 +82,8 @@ func TestOutputProperties(t *testing.T) {
 					JsonNameField: "things",
 				})
 
-				So(lastBuildVers.waitFor(2).Output.Properties, ShouldResembleProto, mustNewStruct(map[string]interface{}{
-					"ns": map[string]interface{}{
+				So(lastBuildVers.waitFor(2).Output.Properties, ShouldResembleProto, mustNewStruct(map[string]any{
+					"ns": map[string]any{
 						"field": "stuff",
 						"$cool": "things",
 					},
@@ -110,9 +110,9 @@ func TestOutputProperties(t *testing.T) {
 				Field: "woot",
 			})
 
-			So(lastBuildVers.waitFor(3).Output.Properties, ShouldResembleProto, mustNewStruct(map[string]interface{}{
+			So(lastBuildVers.waitFor(3).Output.Properties, ShouldResembleProto, mustNewStruct(map[string]any{
 				"field": "woot",
-				"ns": map[string]interface{}{
+				"ns": map[string]any{
 					"field": "stuff",
 				},
 			}))

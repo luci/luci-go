@@ -44,7 +44,7 @@ type Meta struct {
 	// FlagSet passed to AddFlags and AddOutputFlags.
 	fs *flag.FlagSet
 	// Pointers to fields that were touched. Used when merging two Metas together.
-	touched map[interface{}]struct{}
+	touched map[any]struct{}
 	// True if detectTouchedFlags() was already called.
 	detectedTouchedFlags bool
 }
@@ -164,9 +164,9 @@ func (m *Meta) WasTouched(field string) bool {
 ////////////////////////////////////////////////////////////////////////////////
 
 // touch takes a pointer to some Meta field and marks it as explicitly set.
-func (m *Meta) touch(ptr interface{}) {
+func (m *Meta) touch(ptr any) {
 	if m.touched == nil {
-		m.touched = make(map[interface{}]struct{}, 1)
+		m.touched = make(map[any]struct{}, 1)
 	}
 	m.touched[ptr] = struct{}{}
 }
@@ -175,8 +175,8 @@ func (m *Meta) touch(ptr interface{}) {
 // this field inside 'm'.
 //
 // This is used by both Starlark accessors and for processing CLI flags.
-func (m *Meta) fieldsMap() map[string]interface{} {
-	return map[string]interface{}{
+func (m *Meta) fieldsMap() map[string]any {
+	return map[string]any{
 		"config_service_host": &m.ConfigServiceHost,
 		"config_dir":          &m.ConfigDir,
 		"tracked_files":       &m.TrackedFiles,

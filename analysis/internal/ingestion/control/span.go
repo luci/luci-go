@@ -239,7 +239,7 @@ func InsertOrUpdate(ctx context.Context, e *Entry) error {
 	if err := validateEntry(e); err != nil {
 		return err
 	}
-	update := map[string]interface{}{
+	update := map[string]any{
 		"BuildId":              e.BuildID,
 		"BuildProject":         spanner.NullString{Valid: e.BuildProject != "", StringVal: e.BuildProject},
 		"BuildResult":          e.BuildResult,

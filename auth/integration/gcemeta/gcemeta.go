@@ -193,7 +193,7 @@ func (s *Server) accountInfoHandler(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Expected /?recursive=true call", http.StatusBadRequest)
 		return
 	}
-	replyJSON(rw, map[string]interface{}{
+	replyJSON(rw, map[string]any{
 		"aliases": []string{"default"},
 		"email":   s.Email,
 		"scopes":  s.Scopes,
@@ -214,7 +214,7 @@ func (s *Server) accountTokenHandler(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, fmt.Sprintf("Failed to mint the token - %s", err), http.StatusInternalServerError)
 		return
 	}
-	replyJSON(rw, map[string]interface{}{
+	replyJSON(rw, map[string]any{
 		"access_token": tok.AccessToken,
 		"expires_in":   time.Until(tok.Expiry) / time.Second,
 		"token_type":   "Bearer",
@@ -271,7 +271,7 @@ func replyList(rw http.ResponseWriter, list []string) {
 	replyText(rw, strings.Join(list, "\n")+"\n")
 }
 
-func replyJSON(rw http.ResponseWriter, obj interface{}) {
+func replyJSON(rw http.ResponseWriter, obj any) {
 	rw.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(rw).Encode(obj)
 	if err != nil {

@@ -115,7 +115,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			var state pb.Invocation_State
 			var finalizeTime time.Time
-			testutil.MustReadRow(ctx, "Invocations", invocations.ID("x").Key(), map[string]interface{}{
+			testutil.MustReadRow(ctx, "Invocations", invocations.ID("x").Key(), map[string]any{
 				"State":        &state,
 				"FinalizeTime": &finalizeTime,
 			})
@@ -149,7 +149,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Enqueues a finalization notification`, func() {
 			testutil.MustApply(ctx,
-				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
+				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]any{
 					"Realm": "myproject:myrealm",
 				}),
 			)
@@ -181,7 +181,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				ResultType: &pb.BigQueryExport_TextArtifacts_{},
 			})
 			testutil.MustApply(ctx,
-				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]interface{}{
+				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]any{
 					"BigQueryExports": [][]byte{bq1, bq2},
 				}),
 			)

@@ -49,7 +49,7 @@ type DiscoveryDoc struct {
 //
 // May return both fatal and transient errors.
 func (d *DiscoveryDoc) SigningKeys(ctx context.Context) (*JSONWebKeySet, error) {
-	fetcher := func() (interface{}, time.Duration, error) {
+	fetcher := func() (any, time.Duration, error) {
 		raw := &JSONWebKeySetStruct{}
 		req := internal.Request{
 			Method: "GET",
@@ -77,7 +77,7 @@ func (d *DiscoveryDoc) SigningKeys(ctx context.Context) (*JSONWebKeySet, error) 
 //
 // It is cached in the process cache for 24 hours.
 func FetchDiscoveryDoc(ctx context.Context, url string) (*DiscoveryDoc, error) {
-	fetcher := func() (interface{}, time.Duration, error) {
+	fetcher := func() (any, time.Duration, error) {
 		doc := &DiscoveryDoc{}
 		req := internal.Request{
 			Method: "GET",

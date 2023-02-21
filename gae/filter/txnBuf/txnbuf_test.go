@@ -42,7 +42,7 @@ type Foo struct {
 	Sort    []string
 }
 
-func toIntSlice(stuff []interface{}) []int64 {
+func toIntSlice(stuff []any) []int64 {
 	vals, ok := stuff[0].([]int64)
 	if !ok {
 		vals = make([]int64, len(stuff))
@@ -53,7 +53,7 @@ func toIntSlice(stuff []interface{}) []int64 {
 	return vals
 }
 
-func toInt64(thing interface{}) int64 {
+func toInt64(thing any) int64 {
 	switch x := thing.(type) {
 	case int:
 		return int64(x)
@@ -64,8 +64,8 @@ func toInt64(thing interface{}) int64 {
 	}
 }
 
-func fooShouldHave(c context.Context) func(interface{}, ...interface{}) string {
-	return func(id interface{}, values ...interface{}) string {
+func fooShouldHave(c context.Context) func(any, ...any) string {
+	return func(id any, values ...any) string {
 		f := &Foo{ID: toInt64(id)}
 		err := ds.Get(c, f)
 		if len(values) == 0 {
@@ -84,8 +84,8 @@ func fooShouldHave(c context.Context) func(interface{}, ...interface{}) string {
 	}
 }
 
-func fooSetTo(c context.Context) func(interface{}, ...interface{}) string {
-	return func(id interface{}, values ...interface{}) string {
+func fooSetTo(c context.Context) func(any, ...any) string {
+	return func(id any, values ...any) string {
 		f := &Foo{ID: toInt64(id)}
 		if len(values) == 0 {
 			return ShouldBeNil(ds.Delete(c, ds.KeyForObj(c, f)))

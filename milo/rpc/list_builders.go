@@ -59,7 +59,7 @@ var buildbucketBuildersCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(64),
 	GlobalNamespace: "buildbucket-builders-v4",
 	Marshal:         json.Marshal,
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		res := make([]*buildbucketpb.BuilderID, 0)
 		err := json.Unmarshal(blob, &res)
 		return res, err
@@ -323,7 +323,7 @@ func (s *MiloInternalService) GetAllVisibleBuilders(c context.Context, project s
 		return nil, errors.New("buildbucket host is missing in config")
 	}
 
-	builders, err := buildbucketBuildersCache.GetOrCreate(c, host, func() (v interface{}, exp time.Duration, err error) {
+	builders, err := buildbucketBuildersCache.GetOrCreate(c, host, func() (v any, exp time.Duration, err error) {
 		start := time.Now()
 
 		buildersClient, err := s.GetBuildersClient(c, host, auth.AsSelf)

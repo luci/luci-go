@@ -28,7 +28,7 @@ import (
 //
 // See also ModifyRequestOptions in luci/server/span.
 func SpannerDefaultsInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		ctx = span.ModifyRequestOptions(ctx, func(opts *span.RequestOptions) {
 			opts.Tag = info.FullMethod
 		})

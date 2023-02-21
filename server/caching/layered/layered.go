@@ -50,10 +50,10 @@ type Cache struct {
 	GlobalNamespace string
 
 	// Marshal converts an item being cached to a byte blob.
-	Marshal func(item interface{}) ([]byte, error)
+	Marshal func(item any) ([]byte, error)
 
 	// Unmarshal takes output of Marshal and converts it to an item to return.
-	Unmarshal func(blob []byte) (interface{}, error)
+	Unmarshal func(blob []byte) (any, error)
 
 	// AllowNoProcessCacheFallback is true to allow bypassing all the caching if
 	// the process cache is not configured (which often happens in tests).
@@ -111,7 +111,7 @@ func WithRandomizedExpiration(threshold time.Duration) Option {
 //
 // Expiration time is used with seconds precision. Zero expiration time means
 // the item doesn't expire on its own.
-func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts ...Option) (interface{}, error) {
+func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts ...Option) (any, error) {
 	if c.GlobalNamespace == "" {
 		panic("empty namespace is forbidden, please specify GlobalNamespace")
 	}
@@ -148,7 +148,7 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 	// to fetch from the global cache or create a new one. Disable expiration
 	// randomization at this point, it has served its purpose already, since only
 	// unlucky callers will reach this code path.
-	v, err := lru.Create(ctx, key, func() (interface{}, time.Duration, error) {
+	v, err := lru.Create(ctx, key, func() (any, time.Duration, error) {
 		// Now that we have the lock, recheck that the item still needs a refresh.
 		// Purposely ignore an item we decided we want to prematurely expire.
 		if v, ok := lru.Get(ctx, key); ok {
@@ -222,7 +222,7 @@ func (o expRandThresholdOpt) apply(opts *options) { opts.expRandThreshold = time
 // It is a user-generated value plus its expiration time (or zero time if it
 // doesn't expire).
 type itemWithExp struct {
-	val interface{}
+	val any
 	exp time.Time
 }
 

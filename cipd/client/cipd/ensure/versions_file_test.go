@@ -148,7 +148,7 @@ pkg2
 	})
 
 	Convey("Parsing errors", t, func() {
-		p := func(text string, args ...interface{}) error {
+		p := func(text string, args ...any) error {
 			v, err := ParseVersionsFile(strings.NewReader(fmt.Sprintf(text, args...)))
 			So(err, ShouldNotBeNil)
 			So(v, ShouldBeNil)

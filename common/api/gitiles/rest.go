@@ -281,7 +281,7 @@ func (c *client) ListFiles(ctx context.Context, req *gitiles.ListFilesRequest, o
 	return resp, nil
 }
 
-func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest interface{}) error {
+func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest any) error {
 	if query == nil {
 		query = make(url.Values, 1)
 	}

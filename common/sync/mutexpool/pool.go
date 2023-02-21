@@ -34,10 +34,10 @@ import (
 // removed from P.
 type P struct {
 	mutexesLock sync.Mutex
-	mutexes     map[interface{}]*mutexEntry
+	mutexes     map[any]*mutexEntry
 }
 
-func (pc *P) getConfigLock(key interface{}) *mutexEntry {
+func (pc *P) getConfigLock(key any) *mutexEntry {
 	// Does the lock already exist?
 	pc.mutexesLock.Lock()
 	defer pc.mutexesLock.Unlock()
@@ -51,7 +51,7 @@ func (pc *P) getConfigLock(key interface{}) *mutexEntry {
 	}
 
 	if pc.mutexes == nil {
-		pc.mutexes = make(map[interface{}]*mutexEntry)
+		pc.mutexes = make(map[any]*mutexEntry)
 	}
 	me := &mutexEntry{
 		count: 1, // Start with one ref.
@@ -60,7 +60,7 @@ func (pc *P) getConfigLock(key interface{}) *mutexEntry {
 	return me
 }
 
-func (pc *P) decRef(me *mutexEntry, key interface{}) {
+func (pc *P) decRef(me *mutexEntry, key any) {
 	pc.mutexesLock.Lock()
 	defer pc.mutexesLock.Unlock()
 
@@ -75,7 +75,7 @@ func (pc *P) decRef(me *mutexEntry, key interface{}) {
 //
 // If a mutex for key doesn't exist, one will be created, and will be
 // automatically cleaned up when no longer referenced.
-func (pc *P) WithMutex(key interface{}, fn func()) {
+func (pc *P) WithMutex(key any, fn func()) {
 	// Get a lock for this config key, and increment its reference.
 	me := pc.getConfigLock(key)
 	defer pc.decRef(me, key)

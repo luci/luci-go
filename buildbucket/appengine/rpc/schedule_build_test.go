@@ -65,8 +65,8 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func fv(vs ...interface{}) []interface{} {
-	ret := []interface{}{"luci.project.bucket", "builder"}
+func fv(vs ...any) []any {
+	ret := []any{"luci.project.bucket", "builder"}
 	return append(ret, vs...)
 }
 
@@ -814,9 +814,9 @@ func TestScheduleBuild(t *testing.T) {
 			blds, err := scheduleBuilds(ctx, globalCfg, reqs...)
 			So(err, ShouldBeNil)
 
-			fvs := []interface{}{"luci.project.static bucket", "static builder", ""}
+			fvs := []any{"luci.project.static bucket", "static builder", ""}
 			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), ShouldEqual, 2)
-			fvs = []interface{}{"luci.project.dynamic bucket", "dynamic builder", ""}
+			fvs = []any{"luci.project.dynamic bucket", "dynamic builder", ""}
 			So(store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), ShouldEqual, 1)
 
 			So(stripProtos(blds), ShouldResembleProto, []*pb.Build{

@@ -88,9 +88,9 @@ func (h *historyRecorder) notifyOnly(e *modelpb.AssetHistory) {
 //
 // Must be called inside a transaction. Returns a list of entities to
 // transactionally store.
-func (h *historyRecorder) commit(ctx context.Context) ([]interface{}, error) {
+func (h *historyRecorder) commit(ctx context.Context) ([]any, error) {
 	// TODO: Emit TQ tasks.
-	toPut := make([]interface{}, len(h.entries))
+	toPut := make([]any, len(h.entries))
 	for idx, entry := range h.entries {
 		toPut[idx] = &AssetHistory{
 			ID:      entry.HistoryId,

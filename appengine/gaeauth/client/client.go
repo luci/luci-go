@@ -60,7 +60,7 @@ func GetAccessToken(ctx context.Context, scopes []string) (*oauth2.Token, error)
 		}
 	}
 
-	tokIface, err := lru.Create(ctx, cacheKey, func() (interface{}, time.Duration, error) {
+	tokIface, err := lru.Create(ctx, cacheKey, func() (any, time.Duration, error) {
 		// The token needs to be refreshed.
 		logging.Debugf(ctx, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
 		accessToken, exp, err := info.AccessToken(ctx, scopes...)

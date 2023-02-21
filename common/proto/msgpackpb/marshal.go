@@ -127,7 +127,7 @@ func (o *options) appendRawMsgpackMsg(raw []byte, to *[]fieldVal, tf takenFields
 
 		var rawVal msgpack.RawMessage
 		if o.deterministic {
-			var valI interface{}
+			var valI any
 			valI, err = dec.DecodeInterfaceLoose()
 			if err == nil {
 				rawVal, err = msgpackpbDeterministicEncode(reflect.ValueOf(valI))

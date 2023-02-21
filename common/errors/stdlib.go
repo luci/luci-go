@@ -24,6 +24,6 @@ func Is(e error, target error) bool {
 }
 
 // As re-exports errors.As from the standard library.
-func As(e error, target interface{}) bool {
+func As(e error, target any) bool {
 	return errors.As(e, target)
 }

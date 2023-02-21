@@ -130,7 +130,7 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 	var row map[string]bigquery.Value // keep it nil unless there are values
 	for _, fi := range infos {
 		var bqField string
-		var bqValue interface{}
+		var bqValue any
 		path[len(path)-1] = fi.Name
 
 		switch {
@@ -159,7 +159,7 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 				continue
 			}
 
-			elems := make([]interface{}, n)
+			elems := make([]any, n)
 			vPath := append(path, "")
 			switch f.Kind() {
 			case reflect.Slice:
@@ -299,7 +299,7 @@ func getFieldInfosLocked(t reflect.Type) ([]fieldInfo, error) {
 	return fields, nil
 }
 
-func getValue(value interface{}, path []string, prop *proto.Properties) (interface{}, error) {
+func getValue(value any, path []string, prop *proto.Properties) (any, error) {
 	if prop.Enum != "" {
 		stringer, ok := value.(fmt.Stringer)
 		if !ok {
@@ -342,7 +342,7 @@ func getValue(value interface{}, path []string, prop *proto.Properties) (interfa
 		}
 		m, err := mapFromMessage(nested, path)
 		if m == nil {
-			// a nil map is not nil when converted to interface{},
+			// a nil map is not nil when converted to any,
 			// so return nil explicitly.
 			return nil, err
 		}

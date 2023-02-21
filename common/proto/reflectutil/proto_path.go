@@ -108,7 +108,7 @@ func (k PathMapKey) String() string {
 //   - int                          (PathListIdx)
 //   - protoreflect.FieldDescriptor (PathField)
 //   - protoreflect.MapKey          (PathMapKey)
-func MustMakePathItem(item interface{}) PathItem {
+func MustMakePathItem(item any) PathItem {
 	switch x := item.(type) {
 	case int:
 		return PathListIdx(x)

@@ -22,13 +22,13 @@ import (
 // Canonicalize returns a copy of fieldVals converted to the canonical types for
 // the metric's fields (string, int64, or bool).  Canonicalize returns an error
 // if fieldVals is the wrong length or contains value of the wrong type.
-func Canonicalize(fields []Field, fieldVals []interface{}) ([]interface{}, error) {
+func Canonicalize(fields []Field, fieldVals []any) ([]any, error) {
 	if len(fieldVals) != len(fields) {
 		return nil, fmt.Errorf("metric: got %d field values, want %d: %v",
 			len(fieldVals), len(fields), fieldVals)
 	}
 
-	out := make([]interface{}, 0, len(fields))
+	out := make([]any, 0, len(fields))
 	for i, f := range fields {
 		fv, ok := fieldVals[i], false
 
@@ -57,7 +57,7 @@ func Canonicalize(fields []Field, fieldVals []interface{}) ([]interface{}, error
 }
 
 // Hash returns a uint64 hash of fieldVals.
-func Hash(fieldVals []interface{}) uint64 {
+func Hash(fieldVals []any) uint64 {
 	if len(fieldVals) == 0 {
 		// Avoid allocating the hasher if there are no fieldVals
 		return 0

@@ -199,7 +199,7 @@ func getAllDatastoreEntities(ctx context.Context, entityKind string, parent *dat
 	return entities, err
 }
 
-func getProp(pm datastore.PropertyMap, key string) interface{} {
+func getProp(pm datastore.PropertyMap, key string) any {
 	pd := pm[key]
 	if pd == nil {
 		return nil

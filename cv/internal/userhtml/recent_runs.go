@@ -65,7 +65,7 @@ func recentsPage(c *router.Context) {
 		return
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/recent_runs.html", map[string]interface{}{
+	templates.MustRender(c.Context, c.Writer, "pages/recent_runs.html", map[string]any{
 		"Runs":         runsWithCLs,
 		"Project":      project,
 		"PrevPage":     prev,
@@ -209,10 +209,10 @@ type runWithExternalCLs struct {
 var tokenCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(1024),
 	GlobalNamespace: "recent_cv_runs_page_token_cache",
-	Marshal: func(item interface{}) ([]byte, error) {
+	Marshal: func(item any) ([]byte, error) {
 		return []byte(item.(string)), nil
 	},
-	Unmarshal: func(blob []byte) (interface{}, error) {
+	Unmarshal: func(blob []byte) (any, error) {
 		return string(blob), nil
 	},
 }
@@ -232,12 +232,12 @@ func pageTokens(ctx context.Context, pageToken, nextPageToken string) (prev stri
 	// query when the given page token is valid, but we can't retrieve its
 	// previous page.
 	blankToken := " "
-	var cachedV interface{}
+	var cachedV any
 
 	if pageToken == "" {
 		pageToken = blankToken
 	} else {
-		cachedV, err = tokenCache.GetOrCreate(ctx, pageToken, func() (v interface{}, exp time.Duration, err error) {
+		cachedV, err = tokenCache.GetOrCreate(ctx, pageToken, func() (v any, exp time.Duration, err error) {
 			// We haven't seen this token yet, we don't know what its previous page is.
 			return "", 0, nil
 		})
@@ -246,7 +246,7 @@ func pageTokens(ctx context.Context, pageToken, nextPageToken string) (prev stri
 		}
 		prev = cachedV.(string)
 	}
-	_, err = tokenCache.GetOrCreate(ctx, nextPageToken, func() (v interface{}, exp time.Duration, err error) {
+	_, err = tokenCache.GetOrCreate(ctx, nextPageToken, func() (v any, exp time.Duration, err error) {
 		return pageToken, tokenExp, nil
 	})
 	return

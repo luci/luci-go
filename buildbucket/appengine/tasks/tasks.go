@@ -51,7 +51,7 @@ func init() {
 		ID: "cancel-swarming-task",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.CancelSwarmingTask)
-			body, err := json.Marshal(map[string]interface{}{
+			body, err := json.Marshal(map[string]any{
 				"hostname": task.Hostname,
 				"task_id":  task.TaskId,
 				"realm":    task.Realm,
@@ -87,7 +87,7 @@ func init() {
 		ID: "create-swarming-task",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.CreateSwarmingTask)
-			body, err := json.Marshal(map[string]interface{}{
+			body, err := json.Marshal(map[string]any{
 				"generation": 0,
 				"id":         task.BuildId,
 			})
@@ -111,7 +111,7 @@ func init() {
 		ID: "export-bigquery",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.ExportBigQuery)
-			body, err := json.Marshal(map[string]interface{}{
+			body, err := json.Marshal(map[string]any{
 				"id": task.BuildId,
 			})
 			if err != nil {
@@ -133,7 +133,7 @@ func init() {
 		ID: "finalize-resultdb",
 		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 			task := m.(*taskdefs.FinalizeResultDB)
-			body, err := json.Marshal(map[string]interface{}{
+			body, err := json.Marshal(map[string]any{
 				"id": task.BuildId,
 			})
 			if err != nil {
@@ -170,7 +170,7 @@ func init() {
 			if task.Callback {
 				mode = "callback"
 			}
-			body, err := json.Marshal(map[string]interface{}{
+			body, err := json.Marshal(map[string]any{
 				"id":   task.BuildId,
 				"mode": mode,
 			})

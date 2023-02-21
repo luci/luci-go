@@ -144,7 +144,7 @@ func (a *app) writeTo(w io.Writer) error {
 	typeNames := a.typeNames.Data.ToSlice()
 	sort.Strings(typeNames)
 
-	return tmpl.Execute(w, map[string]interface{}{
+	return tmpl.Execute(w, map[string]any{
 		"package": a.packageName,
 		"types":   typeNames,
 		"header":  a.header,

@@ -69,7 +69,7 @@ func (t *NetworkDevice) PopulateProto(d *pb.MetricsCollection) {
 }
 
 // RootLabel returns a root label with a given value.
-func RootLabel(key string, value interface{}) *pb.MetricsCollection_RootLabels {
+func RootLabel(key string, value any) *pb.MetricsCollection_RootLabels {
 	label := &pb.MetricsCollection_RootLabels{Key: proto.String(key)}
 
 	switch v := reflect.ValueOf(value); v.Kind() {

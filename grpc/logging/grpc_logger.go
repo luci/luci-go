@@ -56,71 +56,71 @@ func Install(base logging.Logger, level logging.Level) {
 	})
 }
 
-func (gl *grpcLogger) Info(args ...interface{}) {
+func (gl *grpcLogger) Info(args ...any) {
 	if gl.V(2) {
 		gl.base.LogCall(logging.Debug, 2, makeArgFormatString(args), args)
 	}
 }
 
-func (gl *grpcLogger) Infof(format string, args ...interface{}) {
+func (gl *grpcLogger) Infof(format string, args ...any) {
 	if gl.V(2) {
 		gl.base.LogCall(logging.Debug, 2, format, args)
 	}
 }
 
-func (gl *grpcLogger) Infoln(args ...interface{}) {
+func (gl *grpcLogger) Infoln(args ...any) {
 	if gl.V(2) {
 		gl.base.LogCall(logging.Debug, 2, makeArgFormatString(args), args)
 	}
 }
 
-func (gl *grpcLogger) Warning(args ...interface{}) {
+func (gl *grpcLogger) Warning(args ...any) {
 	if gl.V(1) {
 		gl.base.LogCall(logging.Warning, 2, makeArgFormatString(args), args)
 	}
 }
 
-func (gl *grpcLogger) Warningf(format string, args ...interface{}) {
+func (gl *grpcLogger) Warningf(format string, args ...any) {
 	if gl.V(1) {
 		gl.base.LogCall(logging.Warning, 2, format, args)
 	}
 }
 
-func (gl *grpcLogger) Warningln(args ...interface{}) {
+func (gl *grpcLogger) Warningln(args ...any) {
 	if gl.V(1) {
 		gl.base.LogCall(logging.Warning, 2, makeArgFormatString(args), args)
 	}
 }
 
-func (gl *grpcLogger) Error(args ...interface{}) {
+func (gl *grpcLogger) Error(args ...any) {
 	if gl.V(0) {
 		gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
 	}
 }
 
-func (gl *grpcLogger) Errorf(format string, args ...interface{}) {
+func (gl *grpcLogger) Errorf(format string, args ...any) {
 	if gl.V(0) {
 		gl.base.LogCall(logging.Error, 2, format, args)
 	}
 }
 
-func (gl *grpcLogger) Errorln(args ...interface{}) {
+func (gl *grpcLogger) Errorln(args ...any) {
 	if gl.V(0) {
 		gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
 	}
 }
 
-func (gl *grpcLogger) Fatal(args ...interface{}) {
+func (gl *grpcLogger) Fatal(args ...any) {
 	gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
 	gl.logStackTraceAndDie()
 }
 
-func (gl *grpcLogger) Fatalf(format string, args ...interface{}) {
+func (gl *grpcLogger) Fatalf(format string, args ...any) {
 	gl.base.LogCall(logging.Error, 2, format, args)
 	gl.logStackTraceAndDie()
 }
 
-func (gl *grpcLogger) Fatalln(args ...interface{}) {
+func (gl *grpcLogger) Fatalln(args ...any) {
 	gl.base.LogCall(logging.Error, 2, makeArgFormatString(args), args)
 	gl.logStackTraceAndDie()
 }
@@ -130,7 +130,7 @@ func (gl *grpcLogger) V(l int) bool {
 }
 
 func (gl *grpcLogger) logStackTraceAndDie() {
-	gl.base.LogCall(logging.Error, 3, "Stack Trace:\n%s", []interface{}{stacks(true)})
+	gl.base.LogCall(logging.Error, 3, "Stack Trace:\n%s", []any{stacks(true)})
 	fatalExit()
 }
 
@@ -165,7 +165,7 @@ func stacks(all bool) []byte {
 	return trace
 }
 
-func makeArgFormatString(args []interface{}) string {
+func makeArgFormatString(args []any) string {
 	if len(args) == 0 {
 		return ""
 	}

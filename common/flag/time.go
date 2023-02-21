@@ -39,7 +39,7 @@ func (f *timeFlag) String() string {
 	return time.Time(*f).String()
 }
 
-func (f *timeFlag) Get() interface{} {
+func (f *timeFlag) Get() any {
 	return time.Time(*f)
 }
 

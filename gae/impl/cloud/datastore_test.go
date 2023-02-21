@@ -33,7 +33,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func mkProperties(index bool, forceMulti bool, vals ...interface{}) ds.PropertyData {
+func mkProperties(index bool, forceMulti bool, vals ...any) ds.PropertyData {
 	indexSetting := ds.ShouldIndex
 	if !index {
 		indexSetting = ds.NoIndex
@@ -52,12 +52,12 @@ func mkProperties(index bool, forceMulti bool, vals ...interface{}) ds.PropertyD
 	return result
 }
 
-func mkp(vals ...interface{}) ds.PropertyData   { return mkProperties(true, false, vals...) }
-func mkpNI(vals ...interface{}) ds.PropertyData { return mkProperties(false, false, vals...) }
+func mkp(vals ...any) ds.PropertyData   { return mkProperties(true, false, vals...) }
+func mkpNI(vals ...any) ds.PropertyData { return mkProperties(false, false, vals...) }
 
 // shouldBeUntypedNil asserts that actual is nil, with a nil type pointer
 // For example: https://play.golang.org/p/qN25iAYQw5Z
-func shouldBeUntypedNil(actual interface{}, _ ...interface{}) string {
+func shouldBeUntypedNil(actual any, _ ...any) string {
 	if actual == nil {
 		return ""
 	}
@@ -94,7 +94,7 @@ func TestBoundDatastore(t *testing.T) {
 								{
 									Name:    "[]interface",
 									NoIndex: true,
-									Value:   []interface{}{"interface"},
+									Value:   []any{"interface"},
 								},
 								{
 									Name:    "geopoint",

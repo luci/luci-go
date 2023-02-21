@@ -34,13 +34,13 @@ func TestTypeConversion(t *testing.T) {
 
 	var b Buffer
 
-	test := func(goValue, spValue interface{}) {
+	test := func(goValue, spValue any) {
 		// ToSpanner
 		actualSPValue := ToSpanner(goValue)
 		So(actualSPValue, ShouldResemble, spValue)
 
 		// FromSpanner
-		row, err := spanner.NewRow([]string{"a"}, []interface{}{actualSPValue})
+		row, err := spanner.NewRow([]string{"a"}, []any{actualSPValue})
 		So(err, ShouldBeNil)
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
@@ -108,7 +108,7 @@ func TestTypeConversion(t *testing.T) {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
 
-		row, err := spanner.NewRow([]string{"a", "b", "c"}, []interface{}{int64(42), int64(56), int64(3)})
+		row, err := spanner.NewRow([]string{"a", "b", "c"}, []any{int64(42), int64(56), int64(3)})
 		So(err, ShouldBeNil)
 		err = b.FromSpanner(row, &varIntA, &varIntB, &varState)
 		So(err, ShouldBeNil)
@@ -118,7 +118,7 @@ func TestTypeConversion(t *testing.T) {
 
 		// ToSpanner
 		spValues := ToSpannerSlice(varIntA, varIntB, varState)
-		So(spValues, ShouldResemble, []interface{}{int64(42), int64(56), int64(3)})
+		So(spValues, ShouldResemble, []any{int64(42), int64(56), int64(3)})
 	})
 
 	Convey(`[]*pb.BigQueryExport`, t, func() {
@@ -149,7 +149,7 @@ func TestTypeConversion(t *testing.T) {
 		}
 		So(ToSpanner(bqExports), ShouldResemble, expectedBqExportsBytes)
 
-		row, err := spanner.NewRow([]string{"a"}, []interface{}{expectedBqExportsBytes})
+		row, err := spanner.NewRow([]string{"a"}, []any{expectedBqExportsBytes})
 		So(err, ShouldBeNil)
 
 		Convey(`success`, func() {
@@ -168,7 +168,7 @@ func TestTypeConversion(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(ToSpanner(msg), ShouldResemble, expected)
 
-		row, err := spanner.NewRow([]string{"a"}, []interface{}{expected})
+		row, err := spanner.NewRow([]string{"a"}, []any{expected})
 		So(err, ShouldBeNil)
 
 		Convey(`success`, func() {

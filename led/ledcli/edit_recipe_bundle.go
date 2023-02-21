@@ -129,7 +129,7 @@ func (c *cmdEditRecipeBundle) validateFlags(ctx context.Context, _ []string, _ s
 	return
 }
 
-func (c *cmdEditRecipeBundle) execute(ctx context.Context, _ *http.Client, authOpts auth.Options, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdEditRecipeBundle) execute(ctx context.Context, _ *http.Client, authOpts auth.Options, inJob *job.Definition) (out any, err error) {
 	return inJob, ledcmd.EditRecipeBundle(ctx, authOpts, inJob, &ledcmd.EditRecipeBundleOpts{
 		Overrides:    c.overrides,
 		DebugSleep:   c.debugSleep,

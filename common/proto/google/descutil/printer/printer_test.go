@@ -60,7 +60,7 @@ func TestPrinter(t *testing.T) {
 		sourceCodeInfo, err := descutil.IndexSourceCodeInfo(file)
 		So(err, ShouldBeNil)
 
-		getExpectedDef := func(ptr interface{}, unindent int) string {
+		getExpectedDef := func(ptr any, unindent int) string {
 			loc := sourceCodeInfo[ptr]
 			So(loc, ShouldNotBeNil)
 			startLine := loc.Span[0]
@@ -85,7 +85,7 @@ func TestPrinter(t *testing.T) {
 		printer := NewPrinter(&buf)
 		So(printer.SetFile(file), ShouldBeNil)
 
-		checkOutput := func(ptr interface{}, unindent int) {
+		checkOutput := func(ptr any, unindent int) {
 			So(buf.String(), ShouldEqual, getExpectedDef(ptr, unindent))
 		}
 

@@ -45,7 +45,7 @@ const (
 )
 
 // Funcs is functions available to email subject and body templates.
-var Funcs = map[string]interface{}{
+var Funcs = map[string]any{
 	"time": func(ts *timestamppb.Timestamp) time.Time {
 		t := ts.AsTime()
 		return t
@@ -222,7 +222,7 @@ func (b *Bundle) executeUserTemplate(templateName string, input *config.Template
 func (b *Bundle) generateErrorEmail(templateName string, input *config.TemplateInput, err error) (subject, body string) {
 	subject = fmt.Sprintf(`[Build Status] Builder %q`, protoutil.FormatBuilderID(input.Build.Builder))
 
-	errorTemplateInput := map[string]interface{}{
+	errorTemplateInput := map[string]any{
 		"Build":               input.Build,
 		"BuildbucketHostname": input.BuildbucketHostname,
 		"TemplateName":        templateName,

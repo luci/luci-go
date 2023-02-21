@@ -782,7 +782,7 @@ func (impl *repoImpl) updateProcessors(c context.Context, inst *api.Instance, re
 			return errors.Annotate(err, "failed to fetch the entity").Tag(transient.Tag).Err()
 		}
 
-		var toPut []interface{}
+		var toPut []any
 
 		// Go over what's is still pending, and move it to either Success or Failure
 		// group if it is done.
@@ -1699,7 +1699,7 @@ func parseDownloadPath(path string) (pkg, ver string, err error) {
 }
 
 // replyWithJSON sends StatusOK with JSON body.
-func replyWithJSON(w http.ResponseWriter, obj interface{}) error {
+func replyWithJSON(w http.ResponseWriter, obj any) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(w)
@@ -1712,7 +1712,7 @@ func replyWithJSON(w http.ResponseWriter, obj interface{}) error {
 //
 // Due to Cloud Endpoints limitations, legacy API used StatusOK for some not-OK
 // responses and communicated the actual error through 'status' response field.
-func replyWithError(w http.ResponseWriter, status, message string, args ...interface{}) error {
+func replyWithError(w http.ResponseWriter, status, message string, args ...any) error {
 	return replyWithJSON(w, map[string]string{
 		"status":        status,
 		"error_message": fmt.Sprintf(message, args...),
@@ -1985,7 +1985,7 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 
 	switch status.Code(err) {
 	case codes.OK:
-		return replyWithJSON(w, map[string]interface{}{
+		return replyWithJSON(w, map[string]any{
 			"status":   "SUCCESS",
 			"instance": (&legacyInstance{}).FromInstance(desc.Instance),
 			"client_binary": map[string]string{
@@ -2058,7 +2058,7 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 
 	switch status.Code(err) {
 	case codes.OK:
-		return replyWithJSON(w, map[string]interface{}{
+		return replyWithJSON(w, map[string]any{
 			"status":    "SUCCESS",
 			"fetch_url": signedURL.SignedUrl,
 			"instance":  (&legacyInstance{}).FromInstance(inst.Instance),

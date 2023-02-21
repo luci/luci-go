@@ -406,7 +406,7 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 // summarizeResultsPython generates summary JSON file compatible with python's
 // swarming client.
 func summarizeResultsPython(results []taskResult) ([]byte, error) {
-	shards := make([]map[string]interface{}, len(results))
+	shards := make([]map[string]any, len(results))
 
 	for i, result := range results {
 		buf, err := json.Marshal(result.result)
@@ -414,7 +414,7 @@ func summarizeResultsPython(results []taskResult) ([]byte, error) {
 			return nil, err
 		}
 
-		var jsonResult map[string]interface{}
+		var jsonResult map[string]any
 		if err := json.Unmarshal(buf, &jsonResult); err != nil {
 			return nil, err
 		}
@@ -425,7 +425,7 @@ func summarizeResultsPython(results []taskResult) ([]byte, error) {
 		shards[i] = jsonResult
 	}
 
-	return json.MarshalIndent(map[string]interface{}{
+	return json.MarshalIndent(map[string]any{
 		"shards": shards,
 	}, "", "  ")
 }
@@ -436,9 +436,9 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 		return summarizeResultsPython(results)
 	}
 
-	jsonResults := map[string]interface{}{}
+	jsonResults := map[string]any{}
 	for _, result := range results {
-		jsonResult := map[string]interface{}{}
+		jsonResult := map[string]any{}
 		if result.err != nil {
 			jsonResult["error"] = result.err.Error()
 		}

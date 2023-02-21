@@ -188,7 +188,7 @@ func (bc *BuildConstructor) WithExperimental(exp bool) *BuildConstructor {
 // WithRequestedProperties specifies the requested properties. Optional.
 //
 // The data will be transformed to proto struct format.
-func (bc *BuildConstructor) WithRequestedProperties(data map[string]interface{}) *BuildConstructor {
+func (bc *BuildConstructor) WithRequestedProperties(data map[string]any) *BuildConstructor {
 	var err error
 	bc.requestedProperties, err = structpb.NewStruct(data)
 	if err != nil {

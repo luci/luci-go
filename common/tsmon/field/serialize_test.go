@@ -70,7 +70,7 @@ func TestSerializeDescriptor(t *testing.T) {
 func TestSerialize(t *testing.T) {
 	data := []struct {
 		fields []Field
-		values []interface{}
+		values []any
 		want   []*pb.MetricsData_MetricField
 	}{
 		{

@@ -65,8 +65,8 @@ func TestListTestResults(t *testing.T) {
 
 		// Insert some TestResults.
 		testutil.MustApply(ctx,
-			insert.Invocation("req", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insert.Invocation("reqx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
+			insert.Invocation("req", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+			insert.Invocation("reqx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 		)
 		trs := insertTestResults(ctx, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
@@ -130,7 +130,7 @@ func insertTestResults(ctx context.Context, invID invocations.ID, testName strin
 			Duration:    &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
 		}
 
-		mutMap := map[string]interface{}{
+		mutMap := map[string]any{
 			"InvocationId":    invID,
 			"TestId":          testID,
 			"ResultId":        resultID,

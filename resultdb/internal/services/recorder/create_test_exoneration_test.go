@@ -170,7 +170,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			// Check variant hash.
 			key := invocations.ID("inv").Key(res.TestId, res.ExonerationId)
 			var variantHash string
-			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
+			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]any{
 				"VariantHash": &variantHash,
 			})
 			So(variantHash, ShouldEqual, expectedVariantHash)

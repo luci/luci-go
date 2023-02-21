@@ -94,7 +94,7 @@ func purgeOneInvocation(ctx context.Context, invID invocations.ID) error {
 	// Check that invocation hasn't been purged already.
 	var expirationTime spanner.NullTime
 	var realm spanner.NullString
-	err := invocations.ReadColumns(ctx, invID, map[string]interface{}{
+	err := invocations.ReadColumns(ctx, invID, map[string]any{
 		"ExpectedTestResultsExpirationTime": &expirationTime,
 		"Realm":                             &realm,
 	})
@@ -206,7 +206,7 @@ func rowsToPurge(ctx context.Context, inv invocations.ID, f func(table string, k
 
 func unsetInvocationResultsExpiration(ctx context.Context, id invocations.ID) error {
 	_, err := span.Apply(ctx, []*spanner.Mutation{
-		spanutil.UpdateMap("Invocations", map[string]interface{}{
+		spanutil.UpdateMap("Invocations", map[string]any{
 			"InvocationID":                      id,
 			"ExpectedTestResultsExpirationTime": nil,
 		}),

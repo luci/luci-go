@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/gae/service/user"
 )
 
-func shouldHaveSuccessesAndErrors(actual interface{}, expected ...interface{}) string {
+func shouldHaveSuccessesAndErrors(actual any, expected ...any) string {
 	a := actual.(Entry)
 	if len(expected) != 2 {
 		panic("Invalid number of expected, should be 2 (successes, errors).")

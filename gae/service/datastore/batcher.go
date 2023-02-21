@@ -136,7 +136,7 @@ func (bf *batchFilter) batchParallel(count, batch int, cb func(offset, count int
 // deadline on the supplied Context.
 //
 // If the specified `batchSize` is <= 0, no batching will be performed.
-func RunBatch(c context.Context, batchSize int32, q *Query, cb interface{}) error {
+func RunBatch(c context.Context, batchSize int32, q *Query, cb any) error {
 	return Run(withQueryBatching(c, batchSize), q, cb)
 }
 

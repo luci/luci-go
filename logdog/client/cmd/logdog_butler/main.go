@@ -185,12 +185,12 @@ func (a *application) runWithButler(out output.Output, runFunc func(*butler.Butl
 
 // logAnnotatedErr logs the full stack trace from an annotated error to the
 // installed logger at error level.
-func logAnnotatedErr(ctx context.Context, err error, f string, args ...interface{}) {
+func logAnnotatedErr(ctx context.Context, err error, f string, args ...any) {
 	if err == nil {
 		return
 	}
 
-	nargs := make([]interface{}, len(args)+1)
+	nargs := make([]any, len(args)+1)
 	nargs[copy(nargs, args)] = strings.Join(errors.RenderStack(err), "\n")
 
 	if f == "" {

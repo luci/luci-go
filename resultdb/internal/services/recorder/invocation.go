@@ -118,9 +118,9 @@ func extractUpdateToken(ctx context.Context) (string, error) {
 // rowOfInvocation returns Invocation row values to be inserted to create the
 // invocation.
 // inv.CreateTime is ignored in favor of spanner.CommitTime.
-func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]interface{} {
+func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]any {
 	now := clock.Now(ctx).UTC()
-	row := map[string]interface{}{
+	row := map[string]any{
 		"InvocationId": invocations.MustParseName(inv.Name),
 		"ShardId":      mathrand.Intn(ctx, invocations.Shards),
 		"State":        inv.State,

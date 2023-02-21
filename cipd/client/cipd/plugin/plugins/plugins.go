@@ -159,23 +159,23 @@ type hostLogger struct {
 	host protocol.HostClient
 }
 
-func (l *hostLogger) Debugf(format string, args ...interface{}) {
+func (l *hostLogger) Debugf(format string, args ...any) {
 	l.LogCall(logging.Debug, 1, format, args)
 }
 
-func (l *hostLogger) Infof(format string, args ...interface{}) {
+func (l *hostLogger) Infof(format string, args ...any) {
 	l.LogCall(logging.Info, 1, format, args)
 }
 
-func (l *hostLogger) Warningf(format string, args ...interface{}) {
+func (l *hostLogger) Warningf(format string, args ...any) {
 	l.LogCall(logging.Warning, 1, format, args)
 }
 
-func (l *hostLogger) Errorf(format string, args ...interface{}) {
+func (l *hostLogger) Errorf(format string, args ...any) {
 	l.LogCall(logging.Error, 1, format, args)
 }
 
-func (l *hostLogger) LogCall(lvl logging.Level, calldepth int, format string, args []interface{}) {
+func (l *hostLogger) LogCall(lvl logging.Level, calldepth int, format string, args []any) {
 	if logging.IsLogging(l.lctx, lvl) {
 		msg := fmt.Sprintf(format, args...)
 		if fields := logging.GetFields(l.lctx); len(fields) != 0 {

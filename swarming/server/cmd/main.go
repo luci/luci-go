@@ -93,7 +93,7 @@ type pingRequest struct {
 	// Dimensions is dimensions reported by the bot.
 	Dimensions map[string][]string `json:"dimensions"`
 	// State is the state reported by the bot.
-	State map[string]interface{} `json:"state"`
+	State map[string]any `json:"state"`
 	// Version is the bot version.
 	Version string `json:"version"`
 	// RBEState is RBE-related state reported by the bot.

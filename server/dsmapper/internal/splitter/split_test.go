@@ -257,7 +257,7 @@ func TestSplitIntoRanges(t *testing.T) {
 		})
 
 		Convey("Handles arbitrary keys", func() {
-			entities := make([]interface{}, 1000)
+			entities := make([]any, 1000)
 			for i := 0; i < len(entities); i++ {
 				blob := make([]byte, 10)
 				_, err := rnd.Read(blob)

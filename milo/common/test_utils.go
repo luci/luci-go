@@ -26,19 +26,19 @@ import (
 // shouldResembleMatcher is a gomock.Matcher that performs
 // convey.ShouldResemble(actual, expected).
 type shouldResembleMatcher struct {
-	expected interface{}
+	expected any
 }
 
 // NewShouldResemberMatcher constrcuts a gomock.Matcher that performs
 // convey.ShouldResemble(actual, expected).
-func NewShouldResemberMatcher(expected interface{}) shouldResembleMatcher {
+func NewShouldResemberMatcher(expected any) shouldResembleMatcher {
 	return shouldResembleMatcher{
 		expected: expected,
 	}
 }
 
 // Matches implements gomock.Matcher
-func (e shouldResembleMatcher) Matches(actual interface{}) bool {
+func (e shouldResembleMatcher) Matches(actual any) bool {
 	convey.ShouldResemble(actual, e.expected)
 	return true
 }

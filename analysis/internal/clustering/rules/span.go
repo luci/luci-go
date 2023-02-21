@@ -138,7 +138,7 @@ type UpdateOptions struct {
 // If no rule exists, NotExistsErr will be returned.
 func Read(ctx context.Context, project string, id string) (*FailureAssociationRule, error) {
 	whereClause := `Project = @project AND RuleId = @ruleId`
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project": project,
 		"ruleId":  id,
 	}
@@ -156,7 +156,7 @@ func Read(ctx context.Context, project string, id string) (*FailureAssociationRu
 // project. This method is not expected to scale -- for testing use only.
 func ReadAll(ctx context.Context, project string) ([]*FailureAssociationRule, error) {
 	whereClause := `Project = @project`
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project": project,
 	}
 	rs, err := readWhere(ctx, whereClause, params)
@@ -170,7 +170,7 @@ func ReadAll(ctx context.Context, project string) ([]*FailureAssociationRule, er
 // the given LUCI project.
 func ReadActive(ctx context.Context, project string) ([]*FailureAssociationRule, error) {
 	whereClause := `Project = @project AND IsActive`
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project": project,
 	}
 	rs, err := readWhere(ctx, whereClause, params)
@@ -184,7 +184,7 @@ func ReadActive(ctx context.Context, project string) ([]*FailureAssociationRule,
 // At most one rule will be returned per project.
 func ReadByBug(ctx context.Context, bugID bugs.BugID) ([]*FailureAssociationRule, error) {
 	whereClause := `BugSystem = @bugSystem and BugId = @bugId`
-	params := map[string]interface{}{
+	params := map[string]any{
 		"bugSystem": bugID.System,
 		"bugId":     bugID.ID,
 	}
@@ -202,7 +202,7 @@ func ReadDelta(ctx context.Context, project string, sinceTime time.Time) ([]*Fai
 		return nil, errors.New("cannot query rule deltas from before project inception")
 	}
 	whereClause := `Project = @project AND LastUpdated > @sinceTime`
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project":   project,
 		"sinceTime": sinceTime,
 	}
@@ -236,7 +236,7 @@ func ReadDeltaAllProjects(ctx context.Context, sinceTime time.Time) ([]*FailureA
 // returned for that ID. The same rule can be requested multiple times.
 func ReadMany(ctx context.Context, project string, ids []string) ([]*FailureAssociationRule, error) {
 	whereClause := `Project = @project AND RuleId IN UNNEST(@ruleIds)`
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project": project,
 		"ruleIds": ids,
 	}
@@ -266,7 +266,7 @@ func ReadMany(ctx context.Context, project string, ids []string) ([]*FailureAsso
 
 // readWhere failure association rules matching the given where clause,
 // substituting params for any SQL parameters used in that clause.
-func readWhere(ctx context.Context, whereClause string, params map[string]interface{}) ([]*FailureAssociationRule, error) {
+func readWhere(ctx context.Context, whereClause string, params map[string]any) ([]*FailureAssociationRule, error) {
 	stmt := spanner.NewStatement(`
 		SELECT Project, RuleId, RuleDefinition, BugSystem, BugId,
 		  CreationTime, LastUpdated, PredicateLastUpdated,
@@ -358,7 +358,7 @@ func ReadVersion(ctx context.Context, projectID string) (Version, error) {
 		FROM FailureAssociationRules
 		WHERE Project = @projectID
 	`)
-	stmt.Params = map[string]interface{}{
+	stmt.Params = map[string]any{
 		"projectID": projectID,
 	}
 	var predicateLastUpdated, lastUpdated spanner.NullTime
@@ -426,7 +426,7 @@ func Create(ctx context.Context, rule *FailureAssociationRule, user string) erro
 	if err := validateUser(user); err != nil {
 		return err
 	}
-	ms := spanutil.InsertMap("FailureAssociationRules", map[string]interface{}{
+	ms := spanutil.InsertMap("FailureAssociationRules", map[string]any{
 		"Project":              rule.Project,
 		"RuleId":               rule.RuleID,
 		"RuleDefinition":       rule.RuleDefinition,
@@ -459,7 +459,7 @@ func Update(ctx context.Context, rule *FailureAssociationRule, options UpdateOpt
 	if err := validateUser(user); err != nil {
 		return err
 	}
-	update := map[string]interface{}{
+	update := map[string]any{
 		"Project":                rule.Project,
 		"RuleId":                 rule.RuleID,
 		"LastUpdated":            spanner.CommitTimestamp,

@@ -143,19 +143,19 @@ func TestValidateUpdate(t *testing.T) {
 		req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
 
 		Convey("succeeds", func() {
-			props, _ := structpb.NewStruct(map[string]interface{}{"key": "value"})
+			props, _ := structpb.NewStruct(map[string]any{"key": "value"})
 			req.Build.Output = &pb.Build_Output{Properties: props}
 			So(validateUpdate(ctx, req, nil), ShouldBeNil)
 		})
 
 		Convey("fails", func() {
-			props, _ := structpb.NewStruct(map[string]interface{}{"key": nil})
+			props, _ := structpb.NewStruct(map[string]any{"key": nil})
 			req.Build.Output = &pb.Build_Output{Properties: props}
 			So(validateUpdate(ctx, req, nil), ShouldErrLike, "value is not set")
 		})
 
 		Convey("too large", func() {
-			largeProps, _ := structpb.NewStruct(map[string]interface{}{})
+			largeProps, _ := structpb.NewStruct(map[string]any{})
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"
 			for i := 0; i < 10000; i++ {
@@ -702,7 +702,7 @@ func TestUpdateBuild(t *testing.T) {
 		})
 
 		Convey("build.output.properties", func() {
-			props, err := structpb.NewStruct(map[string]interface{}{"key": "value"})
+			props, err := structpb.NewStruct(map[string]any{"key": "value"})
 			So(err, ShouldBeNil)
 			req.Build.Output = &pb.Build_Output{Properties: props}
 
@@ -722,7 +722,7 @@ func TestUpdateBuild(t *testing.T) {
 		})
 
 		Convey("build.output.properties large", func() {
-			largeProps, err := structpb.NewStruct(map[string]interface{}{})
+			largeProps, err := structpb.NewStruct(map[string]any{})
 			So(err, ShouldBeNil)
 			k := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_key"
 			v := "laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaarge_value"

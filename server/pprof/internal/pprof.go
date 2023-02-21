@@ -206,7 +206,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// [BEGIN modification]
-	err := indexTmpl.Execute(w, map[string]interface{}{
+	err := indexTmpl.Execute(w, map[string]any{
 		"Tok":      r.FormValue("tok"),
 		"Profiles": pprof.Profiles(),
 	})

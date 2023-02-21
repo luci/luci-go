@@ -43,10 +43,10 @@ var Multi = &multiMarker
 //	  "other", "val", 0, 100, Next,
 //	  "name", Multi, "value", Next,
 //	)
-func pmap(stuff ...interface{}) ds.PropertyMap {
+func pmap(stuff ...any) ds.PropertyMap {
 	ret := ds.PropertyMap{}
 
-	nom := func() (name string, toks []interface{}, multi bool) {
+	nom := func() (name string, toks []any, multi bool) {
 		var i int
 
 		for i = 0; i < len(stuff); i++ {
@@ -71,7 +71,7 @@ func pmap(stuff ...interface{}) ds.PropertyMap {
 	for len(stuff) > 0 {
 		pname, toks, multi := nom()
 
-		var mp func(interface{}) ds.Property
+		var mp func(any) ds.Property
 		if pname[0] == '$' || (strings.HasPrefix(pname, "__") && strings.HasSuffix(pname, "__")) {
 			mp = propNI
 		} else {
@@ -122,7 +122,7 @@ var (
 	propNI = ds.MkPropertyNI
 )
 
-func key(elems ...interface{}) *ds.Key {
+func key(elems ...any) *ds.Key {
 	return ds.MkKeyContext("dev~app", "ns").MakeKey(elems...)
 }
 
@@ -134,7 +134,7 @@ func die(err error) {
 
 // cat is a convenience method for concatenating anything with an underlying
 // byte representation into a single []byte.
-func cat(bytethings ...interface{}) []byte {
+func cat(bytethings ...any) []byte {
 	err := error(nil)
 	buf := &bytes.Buffer{}
 	for _, thing := range bytethings {
@@ -177,7 +177,7 @@ func cat(bytethings ...interface{}) []byte {
 	return ret
 }
 
-func icat(bytethings ...interface{}) []byte {
+func icat(bytethings ...any) []byte {
 	ret := cat(bytethings...)
 	for i := range ret {
 		ret[i] ^= 0xFF
@@ -185,6 +185,6 @@ func icat(bytethings ...interface{}) []byte {
 	return ret
 }
 
-func sat(bytethings ...interface{}) string {
+func sat(bytethings ...any) string {
 	return string(cat(bytethings...))
 }

@@ -175,7 +175,7 @@ func (b *htmlBuilder) metric(tag, name string, typ types.ValueType) {
 	fmt.Fprintf(b, "</%s>", tag)
 }
 
-func (b *htmlBuilder) value(v interface{}) {
+func (b *htmlBuilder) value(v any) {
 	if dis, ok := v.(*distribution.Distribution); ok {
 		count := dis.Count()
 		if count == 0 {

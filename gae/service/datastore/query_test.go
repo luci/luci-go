@@ -89,7 +89,7 @@ func nq(kinds ...string) *Query {
 	return NewQuery(kind)
 }
 
-func mkKey(elems ...interface{}) *Key {
+func mkKey(elems ...any) *Key {
 	return MkKeyContext("s~aid", "ns").MakeKey(elems...)
 }
 

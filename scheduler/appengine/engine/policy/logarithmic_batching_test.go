@@ -37,7 +37,7 @@ func TestLogarithmicBatching(t *testing.T) {
 			OnRequest: func(s *Simulator, r task.Request) time.Duration {
 				return invocationDuration
 			},
-			OnDebugLog: func(format string, args ...interface{}) {
+			OnDebugLog: func(format string, args ...any) {
 				c.Printf(format+"\n", args...)
 			},
 		}

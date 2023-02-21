@@ -229,7 +229,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable 
 func queryInvocations(ctx context.Context, query string, invocationsParam invocations.IDSet) (invocations.IDSet, error) {
 	invs := invocations.NewIDSet()
 	st := spanner.NewStatement(query)
-	st.Params = spanutil.ToSpannerMap(spanutil.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(spanutil.ToSpannerMap(map[string]any{
 		"invocations": invocationsParam,
 	}))
 	b := &spanutil.Buffer{}

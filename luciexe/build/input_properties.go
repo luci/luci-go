@@ -73,7 +73,7 @@ var propReaderReservations = inputPropertyReservations{}
 // In Go2 this will be less weird:
 //
 //	MakePropertyReader[T proto.Message](ns string) func(context.Context) T
-func MakePropertyReader(ns string, fnptr interface{}) {
+func MakePropertyReader(ns string, fnptr any) {
 	fn, msgT := getReaderFnValue(fnptr)
 	mkMsg := func() proto.Message {
 		return msgT.New().Interface()
@@ -97,7 +97,7 @@ func MakePropertyReader(ns string, fnptr interface{}) {
 // getReaderFnValue returns the reflect.Value of the underlying function in the
 // pointer-to-function `fntptr`, as well as a function to construct `fnptr`'s
 // concrete proto.Message return type.
-func getReaderFnValue(fnptr interface{}) (reflect.Value, protoreflect.Message) {
+func getReaderFnValue(fnptr any) (reflect.Value, protoreflect.Message) {
 	return derefFnPtr(
 		errors.New("fnptr is not `func[T proto.Message](context.Context) T`"),
 		fnptr,

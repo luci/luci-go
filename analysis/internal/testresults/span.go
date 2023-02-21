@@ -213,7 +213,7 @@ func (inv *IngestedInvocation) SaveUnverified() *spanner.Mutation {
 		changelistOwnerKinds = append(changelistOwnerKinds, ownerKindToDB(cl.OwnerKind))
 	}
 
-	row := map[string]interface{}{
+	row := map[string]any{
 		"Project":              inv.Project,
 		"IngestedInvocationId": inv.IngestedInvocationID,
 		"SubRealm":             inv.SubRealm,
@@ -406,7 +406,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	// map and converting it back to the slice
 	// needed for a *spanner.Mutation using InsertOrUpdateMap.
 	// Ingestion appears to be CPU bound at times.
-	vals := []interface{}{
+	vals := []any{
 		tr.Project, tr.TestID, tr.PartitionTime, tr.VariantHash,
 		tr.IngestedInvocationID, tr.RunIndex, tr.ResultIndex,
 		isUnexpected, runDurationUsec, int64(tr.Status),
@@ -432,7 +432,7 @@ type ReadTestHistoryOptions struct {
 
 // statement generates a spanner statement for the specified query template.
 func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, paginationParams []string) (spanner.Statement, error) {
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project":   opts.Project,
 		"testId":    opts.TestID,
 		"subRealms": opts.SubRealms,
@@ -453,7 +453,7 @@ func (opts ReadTestHistoryOptions) statement(ctx context.Context, tmpl string, p
 		"skip": int(pb.TestResultStatus_SKIP),
 		"pass": int(pb.TestResultStatus_PASS),
 	}
-	input := map[string]interface{}{
+	input := map[string]any{
 		"hasLimit":           opts.PageSize > 0,
 		"hasSubmittedFilter": opts.SubmittedFilter != pb.SubmittedFilter_SUBMITTED_FILTER_UNSPECIFIED,
 		"pagination":         opts.PageToken != "",
@@ -695,7 +695,7 @@ var TestVariantRealmSaveCols = []string{
 // the TestVariantRealms table. The test variant realm is not verified.
 // Must be called in spanner RW transactional context.
 func (tvr *TestVariantRealm) SaveUnverified() *spanner.Mutation {
-	vals := []interface{}{
+	vals := []any{
 		tvr.Project, tvr.TestID, tvr.VariantHash, tvr.SubRealm,
 		pbutil.VariantToStrings(tvr.Variant), tvr.LastIngestionTime,
 	}
@@ -740,7 +740,7 @@ var TestRealmSaveCols = []string{"Project", "TestId", "SubRealm", "LastIngestion
 // table. The test realm is not verified.
 // Must be called in spanner RW transactional context.
 func (tvr *TestRealm) SaveUnverified() *spanner.Mutation {
-	vals := []interface{}{tvr.Project, tvr.TestID, tvr.SubRealm, tvr.LastIngestionTime}
+	vals := []any{tvr.Project, tvr.TestID, tvr.SubRealm, tvr.LastIngestionTime}
 	return spanner.InsertOrUpdate("TestRealms", TestRealmSaveCols, vals)
 }
 
@@ -778,7 +778,7 @@ func ReadVariants(ctx context.Context, project, testID string, opts ReadVariants
 		}
 	}
 
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project":   project,
 		"testId":    testID,
 		"subRealms": opts.SubRealms,
@@ -787,7 +787,7 @@ func ReadVariants(ctx context.Context, project, testID string, opts ReadVariants
 		"limit":                 opts.PageSize,
 		"paginationVariantHash": paginationVariantHash,
 	}
-	input := map[string]interface{}{
+	input := map[string]any{
 		"hasLimit": opts.PageSize > 0,
 		"params":   params,
 	}
@@ -874,7 +874,7 @@ func QueryTests(ctx context.Context, project, testIDSubstring string, opts Query
 			return nil, "", err
 		}
 	}
-	params := map[string]interface{}{
+	params := map[string]any{
 		"project":       project,
 		"testIdPattern": "%" + spanutil.QuoteLike(testIDSubstring) + "%",
 		"subRealms":     opts.SubRealms,
@@ -883,7 +883,7 @@ func QueryTests(ctx context.Context, project, testIDSubstring string, opts Query
 		"limit":            opts.PageSize,
 		"paginationTestId": paginationTestID,
 	}
-	input := map[string]interface{}{
+	input := map[string]any{
 		"hasLimit": opts.PageSize > 0,
 		"params":   params,
 	}

@@ -50,7 +50,7 @@ func TestDriver(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		mSent := func(fields ...interface{}) interface{} {
+		mSent := func(fields ...any) any {
 			return ct.TSMonSentValue(ctx, testMetric, fields...)
 		}
 

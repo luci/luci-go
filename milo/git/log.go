@@ -345,7 +345,7 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 	updatedCacheCount := 0
 	if len(res.Log) > 1 {
 		// Also potentially cache with ancestors as cache keys.
-		ancestorCacheKeys := make([]interface{}, 0, len(res.Log)-1)
+		ancestorCacheKeys := make([]any, 0, len(res.Log)-1)
 		for i := 1; i < len(res.Log) && len(res.Log[i-1].Parents) == 1; i++ {
 			ancestorCacheKeys = append(ancestorCacheKeys, l.mkCacheKey(c, res.Log[i].Id))
 		}

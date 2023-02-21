@@ -38,7 +38,7 @@ func TestRenderOncallers(t *testing.T) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			res := map[string]interface{}{
+			res := map[string]any{
 				"emails": []string{"foo"},
 			}
 			bytes, _ := json.Marshal(res)

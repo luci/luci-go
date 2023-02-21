@@ -32,7 +32,7 @@ import (
 // application-specific status and it matches the expectations.
 // See ShouldBeLikeStatus for the format of `expected`.
 // See appstatus package for application-specific statuses.
-func ShouldHaveAppStatus(actual interface{}, expected ...interface{}) string {
+func ShouldHaveAppStatus(actual any, expected ...any) string {
 	if ret := assertions.ShouldImplement(actual, (*error)(nil)); ret != "" {
 		return ret
 	}
@@ -56,7 +56,7 @@ func ShouldHaveAppStatus(actual interface{}, expected ...interface{}) string {
 // A second "expected" string may be optionally included. If included, the
 // gRPC error message is asserted to contain the expected string using
 // convey.ShouldContainSubstring.
-func ShouldHaveRPCCode(actual interface{}, expected ...interface{}) string {
+func ShouldHaveRPCCode(actual any, expected ...any) string {
 	aerr, ok := actual.(error)
 	if !(ok || actual == nil) {
 		return "actual argument must be an error."
@@ -105,7 +105,7 @@ func ShouldHaveRPCCode(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCOK(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCOK(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.OK, expected)...)
 }
 
@@ -114,7 +114,7 @@ func ShouldBeRPCOK(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCInvalidArgument(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCInvalidArgument(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.InvalidArgument, expected)...)
 }
 
@@ -123,7 +123,7 @@ func ShouldBeRPCInvalidArgument(actual interface{}, expected ...interface{}) str
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCInternal(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCInternal(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.Internal, expected)...)
 }
 
@@ -132,7 +132,7 @@ func ShouldBeRPCInternal(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCUnknown(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCUnknown(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.Unknown, expected)...)
 }
 
@@ -141,7 +141,7 @@ func ShouldBeRPCUnknown(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCNotFound(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCNotFound(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.NotFound, expected)...)
 }
 
@@ -150,7 +150,7 @@ func ShouldBeRPCNotFound(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCPermissionDenied(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCPermissionDenied(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.PermissionDenied, expected)...)
 }
 
@@ -159,7 +159,7 @@ func ShouldBeRPCPermissionDenied(actual interface{}, expected ...interface{}) st
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCAlreadyExists(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCAlreadyExists(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.AlreadyExists, expected)...)
 }
 
@@ -168,7 +168,7 @@ func ShouldBeRPCAlreadyExists(actual interface{}, expected ...interface{}) strin
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCUnauthenticated(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCUnauthenticated(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.Unauthenticated, expected)...)
 }
 
@@ -177,7 +177,7 @@ func ShouldBeRPCUnauthenticated(actual interface{}, expected ...interface{}) str
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCFailedPrecondition(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCFailedPrecondition(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.FailedPrecondition, expected)...)
 }
 
@@ -186,7 +186,7 @@ func ShouldBeRPCFailedPrecondition(actual interface{}, expected ...interface{}) 
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCAborted(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCAborted(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.Aborted, expected)...)
 }
 
@@ -195,12 +195,12 @@ func ShouldBeRPCAborted(actual interface{}, expected ...interface{}) string {
 //
 // One additional "expected" string may be optionally included. If included, the
 // gRPC error's message is asserted to contain the expected string.
-func ShouldBeRPCDeadlineExceeded(actual interface{}, expected ...interface{}) string {
+func ShouldBeRPCDeadlineExceeded(actual any, expected ...any) string {
 	return ShouldHaveRPCCode(actual, prepend(codes.DeadlineExceeded, expected)...)
 }
 
-func prepend(c codes.Code, exp []interface{}) []interface{} {
-	args := make([]interface{}, len(exp)+1)
+func prepend(c codes.Code, exp []any) []any {
+	args := make([]any, len(exp)+1)
 	args[0] = c
 	copy(args[1:], exp)
 	return args
@@ -222,7 +222,7 @@ func prepend(c codes.Code, exp []interface{}) []interface{} {
 //
 //	// and it must have a DebugInfo detail.
 //	So(s, ShouldBeLikeStatus, codes.NotFound, "item not found", &errdetails.DebugInfo{Details: "x"})
-func ShouldBeLikeStatus(actual interface{}, expected ...interface{}) string {
+func ShouldBeLikeStatus(actual any, expected ...any) string {
 	if ret := assertions.ShouldHaveSameTypeAs(actual, (*status.Status)(nil)); ret != "" {
 		return ret
 	}
@@ -274,7 +274,7 @@ func ShouldBeLikeStatus(actual interface{}, expected ...interface{}) string {
 // matches the expectations.
 // See ShouldBeStatusLike for the format of `expected`.
 // The status is extracted using status.FromError.
-func ShouldHaveGRPCStatus(actual interface{}, expected ...interface{}) string {
+func ShouldHaveGRPCStatus(actual any, expected ...any) string {
 	if ret := assertions.ShouldImplement(actual, (*error)(nil)); ret != "" {
 		return ret
 	}

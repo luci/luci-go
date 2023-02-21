@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/gae/service/blobstore"
 )
 
-func mps(vals ...interface{}) PropertySlice {
+func mps(vals ...any) PropertySlice {
 	ret := make(PropertySlice, len(vals))
 	for i, val := range vals {
 		ret[i] = mp(val)

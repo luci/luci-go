@@ -171,7 +171,7 @@ func (c *Client) addEntry(be *batchEntry) error {
 //
 // Note that "iface" is owned by this handler; the Bundler allocates a new
 // slice after each bundle dispatch. Therefore, retention and mutation are safe.
-func (c *Client) bundlerHandler(iface interface{}) {
+func (c *Client) bundlerHandler(iface any) {
 	entries := iface.([]*batchEntry)
 	if len(entries) == 0 {
 		return

@@ -144,8 +144,8 @@ func makeRunFields(r *run.Run) runFields {
 	}
 }
 
-func (f runFields) toMetricFields() []interface{} {
-	return []interface{}{f.project, f.configGroup, f.mode}
+func (f runFields) toMetricFields() []any {
+	return []any{f.project, f.configGroup, f.mode}
 }
 
 func initRunStats(ctx context.Context, projects []string) (*runStats, error) {

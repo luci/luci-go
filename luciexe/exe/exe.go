@@ -190,7 +190,7 @@ func Run(main MainFn, options ...Option) {
 	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), os.Args, options, main))
 }
 
-func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
+func appendError(build *bbpb.Build, flavor string, errlike any) {
 	if build.SummaryMarkdown != "" {
 		build.SummaryMarkdown += "\n\n"
 	}

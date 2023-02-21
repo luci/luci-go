@@ -46,7 +46,7 @@ func stringCounts(values []string) map[string]int {
 
 // shouldContainSameStrings checks if the left and right side are slices that
 // contain the same strings, regardless of the ordering.
-func shouldContainSameStrings(actual interface{}, expected ...interface{}) string {
+func shouldContainSameStrings(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return "Too many arguments for shouldContainSameStrings"
 	}
@@ -55,7 +55,7 @@ func shouldContainSameStrings(actual interface{}, expected ...interface{}) strin
 
 func normalizeJSON(s string) (string, error) {
 	// Round trip through default json marshaller to normalize indentation.
-	var x map[string]interface{}
+	var x map[string]any
 	if err := json.Unmarshal([]byte(s), &x); err != nil {
 		return "", err
 	}
@@ -66,7 +66,7 @@ func normalizeJSON(s string) (string, error) {
 	return string(blob), nil
 }
 
-func shouldBeSameJSONDict(actual interface{}, expected ...interface{}) string {
+func shouldBeSameJSONDict(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return "Too many arguments for shouldBeSameJSONDict"
 	}

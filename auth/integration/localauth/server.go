@@ -383,7 +383,7 @@ func (h *protocolHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 }
 
 // routeToImpl calls appropriate RPC method implementation.
-func (h *protocolHandler) routeToImpl(method string, request []byte) (interface{}, error) {
+func (h *protocolHandler) routeToImpl(method string, request []byte) (any, error) {
 	switch method {
 	case "GetOAuthToken":
 		req := &rpcs.GetOAuthTokenRequest{}
@@ -406,7 +406,7 @@ func (h *protocolHandler) routeToImpl(method string, request []byte) (interface{
 }
 
 // unmarshalRequest unmarshals JSON body of the request, handling errors.
-func unmarshalRequest(blob []byte, req interface{}) error {
+func unmarshalRequest(blob []byte, req any) error {
 	if err := json.Unmarshal(blob, req); err != nil {
 		return &protocolError{
 			Status:  http.StatusBadRequest,

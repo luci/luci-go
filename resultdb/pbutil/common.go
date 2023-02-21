@@ -32,7 +32,7 @@ const MaxSizeProperties = 4 * 1024
 
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
 
-func regexpf(patternFormat string, subpatterns ...interface{}) *regexp.Regexp {
+func regexpf(patternFormat string, subpatterns ...any) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(patternFormat, subpatterns...))
 }
 

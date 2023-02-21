@@ -39,7 +39,7 @@ func TestAuthorizeRPCAccess(t *testing.T) {
 		info := &grpc.UnaryServerInfo{
 			FullMethod: fmt.Sprintf("/%s/%s", service, method),
 		}
-		_, err := interceptor(ctx, nil, info, func(context.Context, interface{}) (interface{}, error) {
+		_, err := interceptor(ctx, nil, info, func(context.Context, any) (any, error) {
 			return nil, nil
 		})
 		return status.Code(err)

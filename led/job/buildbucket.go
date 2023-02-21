@@ -27,7 +27,7 @@ import (
 )
 
 // WriteProperties writes an input property on this Buildbucket message.
-func (b *Buildbucket) WriteProperties(inputs map[string]interface{}) {
+func (b *Buildbucket) WriteProperties(inputs map[string]any) {
 	b.EnsureBasics()
 
 	if err := exe.WriteProperties(b.BbagentArgs.Build.Input.Properties, inputs); err != nil {

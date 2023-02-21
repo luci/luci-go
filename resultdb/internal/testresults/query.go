@@ -120,7 +120,7 @@ func (q *Query) run(ctx context.Context, f func(*pb.TestResult) error) (err erro
 	}
 
 	// Execute the query.
-	st := q.genStatement("testResults", map[string]interface{}{
+	st := q.genStatement("testResults", map[string]any{
 		"params":                  params,
 		"columns":                 strings.Join(columns, ", "),
 		"onlyUnexpected":          q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS,
@@ -187,7 +187,7 @@ func (q *Query) selectClause() (columns []string, parser func(*spanner.Row) (*pb
 		var micros spanner.NullInt64
 		tr := &pb.TestResult{}
 
-		ptrs := []interface{}{
+		ptrs := []any{
 			&invID,
 			&tr.TestId,
 			&tr.ResultId,
@@ -285,8 +285,8 @@ func (q *Query) Run(ctx context.Context, f func(*pb.TestResult) error) error {
 	return q.run(ctx, f)
 }
 
-func (q *Query) baseParams() (map[string]interface{}, error) {
-	params := map[string]interface{}{
+func (q *Query) baseParams() (map[string]any, error) {
+	params := map[string]any{
 		"invIDs": q.InvocationIDs,
 		"limit":  q.PageSize,
 	}
@@ -313,7 +313,7 @@ func (q *Query) baseParams() (map[string]interface{}, error) {
 
 // PopulateVariantParams populates variantHashEquals and variantContains
 // parameters based on the predicate.
-func PopulateVariantParams(params map[string]interface{}, variantPredicate *pb.VariantPredicate) {
+func PopulateVariantParams(params map[string]any, variantPredicate *pb.VariantPredicate) {
 	switch p := variantPredicate.GetPredicate().(type) {
 	case *pb.VariantPredicate_Equals:
 		params["variantHashEquals"] = pbutil.VariantHash(p.Equals)
@@ -477,13 +477,13 @@ var queryTmpl = template.Must(template.New("").Parse(`
 	{{end}}
 `))
 
-func (*Query) genStatement(templateName string, input map[string]interface{}) spanner.Statement {
+func (*Query) genStatement(templateName string, input map[string]any) spanner.Statement {
 	var sql bytes.Buffer
 	err := queryTmpl.ExecuteTemplate(&sql, templateName, input)
 	if err != nil {
 		panic(fmt.Sprintf("failed to generate a SQL statement: %s", err))
 	}
-	return spanner.Statement{SQL: sql.String(), Params: input["params"].(map[string]interface{})}
+	return spanner.Statement{SQL: sql.String(), Params: input["params"].(map[string]any)}
 }
 
 // ToLimitedData limits the given TestResult to the fields allowed when

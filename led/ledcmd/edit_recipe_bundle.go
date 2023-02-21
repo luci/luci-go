@@ -202,7 +202,7 @@ func cmdErr(cmd *exec.Cmd, err error, reason string) error {
 	return errors.Annotate(err, "running %q: %s: %s", strings.Join(cmd.Args, " "), reason, outErr).Err()
 }
 
-func appendText(path, fmtStr string, items ...interface{}) error {
+func appendText(path, fmtStr string, items ...any) error {
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		return err

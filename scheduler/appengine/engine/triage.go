@@ -262,13 +262,13 @@ func (op *triageOp) finalize(c context.Context, success bool) {
 ////////////////////////////////////////////////////////////////////////////////
 
 // debugInfoLog adds a line to the triage debug log and Infof log.
-func (op *triageOp) debugInfoLog(c context.Context, format string, args ...interface{}) {
+func (op *triageOp) debugInfoLog(c context.Context, format string, args ...any) {
 	logging.Infof(c, format, args...)
 	op.appendToLog(c, fmt.Sprintf(format, args...))
 }
 
 // debugErrLog adds a line to the triage debug log and Errorf log.
-func (op *triageOp) debugErrLog(c context.Context, err error, format string, args ...interface{}) {
+func (op *triageOp) debugErrLog(c context.Context, err error, format string, args ...any) {
 	if err == nil {
 		logging.Errorf(c, format, args...)
 		op.appendToLog(c, fmt.Sprintf("Error: "+format, args...))
@@ -457,6 +457,6 @@ type policyFuncEnv struct {
 	op  *triageOp
 }
 
-func (e policyFuncEnv) DebugLog(format string, args ...interface{}) {
+func (e policyFuncEnv) DebugLog(format string, args ...any) {
 	e.op.debugInfoLog(e.ctx, format, args...)
 }

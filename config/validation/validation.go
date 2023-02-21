@@ -130,7 +130,7 @@ var elementTag = elementTagType{errors.NewTagKey("holds the elements for tests")
 var SeverityTag = severityTagType{errors.NewTagKey("holds the severity")}
 
 // Errorf records the given format string and args as a blocking validation error.
-func (v *Context) Errorf(format string, args ...interface{}) {
+func (v *Context) Errorf(format string, args ...any) {
 	v.record(Blocking, errors.Reason(format, args...).Err())
 }
 
@@ -140,7 +140,7 @@ func (v *Context) Error(err error) {
 }
 
 // Warningf records the given format string and args as a validation warning.
-func (v *Context) Warningf(format string, args ...interface{}) {
+func (v *Context) Warningf(format string, args ...any) {
 	v.record(Warning, errors.Reason(format, args...).Err())
 }
 
@@ -180,7 +180,7 @@ func (v *Context) SetFile(path string) {
 // validation messages.
 //
 // The reverse is Exit.
-func (v *Context) Enter(title string, args ...interface{}) {
+func (v *Context) Enter(title string, args ...any) {
 	e := fmt.Sprintf(title, args...)
 	v.element = append(v.element, e)
 }

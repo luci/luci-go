@@ -43,7 +43,7 @@ const ExpiresImmediately time.Duration = -1
 // expires. If the returned expiration duration is equal to ExpiresImmediately,
 // then the very next Get(...) will trigger another refresh (this is sometimes
 // useful in tests with "frozen" time to disable caching).
-type Fetcher func(prev interface{}) (updated interface{}, exp time.Duration, err error)
+type Fetcher func(prev any) (updated any, exp time.Duration, err error)
 
 // Slot holds a cached value and refreshes it when it expires.
 //
@@ -54,7 +54,7 @@ type Slot struct {
 
 	lock        sync.RWMutex // protects the guts below
 	initialized bool         // true if fetched the initial value already
-	current     interface{}  // currently known value (may be nil)
+	current     any  // currently known value (may be nil)
 	exp         time.Time    // when the currently known value expires or time.Time{} if never
 	fetching    bool         // true if some goroutine is fetching the value now
 }
@@ -76,7 +76,7 @@ type Slot struct {
 // RetryDelay is 5 sec by default.
 //
 // The passed context is used for logging and for getting time.
-func (s *Slot) Get(c context.Context, fetcher Fetcher) (value interface{}, err error) {
+func (s *Slot) Get(c context.Context, fetcher Fetcher) (value any, err error) {
 	now := clock.Now(c)
 
 	// Fast path. Checks a cached value exists and it is still fresh or some
@@ -133,7 +133,7 @@ func (s *Slot) Get(c context.Context, fetcher Fetcher) (value interface{}, err e
 //   - (true, known value, nil) if the current goroutine should refetch.
 //   - (false, known value, nil) if the fetch is no longer necessary.
 //   - (false, nil, err) if the initial fetch failed.
-func (s *Slot) initiateFetch(c context.Context, fetcher Fetcher, now time.Time) (bool, interface{}, error) {
+func (s *Slot) initiateFetch(c context.Context, fetcher Fetcher, now time.Time) (bool, any, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -174,7 +174,7 @@ func (s *Slot) initiateFetch(c context.Context, fetcher Fetcher, now time.Time) 
 // fetched value.
 //
 // 'completed' is false if the fetch panicked.
-func (s *Slot) finishFetch(completed bool, result interface{}, exp time.Time) {
+func (s *Slot) finishFetch(completed bool, result any, exp time.Time) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.fetching = false

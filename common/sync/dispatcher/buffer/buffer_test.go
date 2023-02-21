@@ -34,7 +34,7 @@ func TestBuffer(t *testing.T) {
 		So(err, ShouldBeNil)
 		return b
 	}
-	addNoBlockZero := func(b *Buffer, now time.Time, item interface{}) (*Batch, error) {
+	addNoBlockZero := func(b *Buffer, now time.Time, item any) (*Batch, error) {
 		return b.AddNoBlock(now, item, 0)
 	}
 	addNoBlockStr := func(b *Buffer, now time.Time, item string) (*Batch, error) {

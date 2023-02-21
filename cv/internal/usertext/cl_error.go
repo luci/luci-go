@@ -74,7 +74,7 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		if len(cgs) < 2 {
 			return errors.New("at least 2 config_groups required")
 		}
-		return tmplWatchedByManyConfigGroups.Execute(sb, map[string]interface{}{
+		return tmplWatchedByManyConfigGroups.Execute(sb, map[string]any{
 			"ConfigGroups": cgs,
 			"TargetRef":    cl.Snapshot.GetGerrit().GetInfo().GetRef(),
 		})
@@ -84,7 +84,7 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		if len(projects) < 2 {
 			return errors.New("at least 2 projects required")
 		}
-		return tmplWatchedByManyProjects.Execute(sb, map[string]interface{}{
+		return tmplWatchedByManyProjects.Execute(sb, map[string]any{
 			"Projects": projects,
 		})
 
@@ -92,7 +92,7 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		// Although it's possible for a CL to have several kinds of wrong deps,
 		// it's rare in practice, so simply error out on the most important kind.
 		var bad []*changelist.Dep
-		args := make(map[string]interface{}, 2)
+		args := make(map[string]any, 2)
 		var t *template.Template
 		switch d := v.InvalidDeps; {
 		case len(d.GetUnwatched()) > 0:

@@ -89,7 +89,7 @@ func (f *Fake) RegisterPubsubTopic(host string, topic *pubsub.Topic) {
 //
 // Overwrites the existing builder if the same builder already exists.
 // `properties` should be marshallable by `encoding/json`.
-func (f *Fake) AddBuilder(host string, builder *bbpb.BuilderID, properties interface{}) *Fake {
+func (f *Fake) AddBuilder(host string, builder *bbpb.BuilderID, properties any) *Fake {
 	fa := f.ensureApp(host)
 	fa.configStoreMu.Lock()
 	defer fa.configStoreMu.Unlock()

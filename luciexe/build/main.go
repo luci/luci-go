@@ -94,7 +94,7 @@ var errNonSuccess = errors.New("build state != SUCCESS")
 //
 // NOTE: These types are pretty bad; There's significant opportunity to improve
 // them with Go2 generics.
-func Main(inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(context.Context, []string, *State) error) {
+func Main(inputMsg proto.Message, writeFnptr, mergeFnptr any, cb func(context.Context, []string, *State) error) {
 	ctx := gologger.StdConfig.Use(context.Background())
 
 	switch err := main(ctx, os.Args, os.Stdin, inputMsg, writeFnptr, mergeFnptr, cb); err {
@@ -109,7 +109,7 @@ func Main(inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(co
 	}
 }
 
-func main(ctx context.Context, args []string, stdin io.Reader, inputMsg proto.Message, writeFnptr, mergeFnptr interface{}, cb func(context.Context, []string, *State) error) (err error) {
+func main(ctx context.Context, args []string, stdin io.Reader, inputMsg proto.Message, writeFnptr, mergeFnptr any, cb func(context.Context, []string, *State) error) (err error) {
 	args = append([]string(nil), args...)
 	var userArgs []string
 	for i, a := range args {

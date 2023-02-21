@@ -188,7 +188,7 @@ func (p *luciContextTokenProvider) RefreshToken(ctx context.Context, prev, base 
 // Note: deadlines and retries are implemented by Authenticator. doRPC should
 // just make a single attempt, and mark an error as transient to trigger a
 // retry, if necessary.
-func (p *luciContextTokenProvider) doRPC(ctx context.Context, method string, req, resp interface{}) error {
+func (p *luciContextTokenProvider) doRPC(ctx context.Context, method string, req, resp any) error {
 	body, err := json.Marshal(req)
 	if err != nil {
 		return err

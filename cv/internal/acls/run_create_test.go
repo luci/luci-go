@@ -138,7 +138,7 @@ func TestCheckRunCLs(t *testing.T) {
 			So(res.FailuresSummary(), ShouldBeEmpty)
 			So(res.OK(), ShouldBeTrue)
 		}
-		mustFailWith := func(cl *changelist.CL, format string, args ...interface{}) CheckResult {
+		mustFailWith := func(cl *changelist.CL, format string, args ...any) CheckResult {
 			res, err := CheckRunCreate(ctx, &cg, trs, cls)
 			So(err, ShouldBeNil)
 			So(res.OK(), ShouldBeFalse)

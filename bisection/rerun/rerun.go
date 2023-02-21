@@ -37,7 +37,7 @@ import (
 // TriggerRerun triggers a rerun build for a particular build bucket build and Gitiles commit.
 // props is the extra properties to set to the rerun build
 // dims is the extra dimension to set to the rerun build
-func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]interface{}, dims map[string]string, priority int32) (*buildbucketpb.Build, error) {
+func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failedBuildID int64, props map[string]any, dims map[string]string, priority int32) (*buildbucketpb.Build, error) {
 	logging.Infof(c, "triggerRerun with commit %s", commit.Id)
 	properties, dimensions, err := getRerunPropertiesAndDimensions(c, failedBuildID, props, dims)
 	if err != nil {
@@ -77,7 +77,7 @@ func getRerunTags(c context.Context, bbid int64) []*buildbucketpb.StringPair {
 }
 
 // getRerunProperty returns the properties and dimensions for a rerun of a buildID
-func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[string]interface{}, dims map[string]string) (*structpb.Struct, []*buildbucketpb.RequestedDimension, error) {
+func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[string]any, dims map[string]string) (*structpb.Struct, []*buildbucketpb.RequestedDimension, error) {
 	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
 		Fields: &fieldmaskpb.FieldMask{
 			Paths: []string{"input.properties", "builder", "infra.swarming.task_dimensions"},
@@ -94,8 +94,8 @@ func getRerunPropertiesAndDimensions(c context.Context, bbid int64, props map[st
 	return properties, dimens, nil
 }
 
-func getRerunProperties(c context.Context, build *buildbucketpb.Build, props map[string]interface{}) (*structpb.Struct, error) {
-	fields := map[string]interface{}{}
+func getRerunProperties(c context.Context, build *buildbucketpb.Build, props map[string]any) (*structpb.Struct, error) {
+	fields := map[string]any{}
 	properties := build.GetInput().GetProperties()
 	if properties != nil {
 		m := properties.GetFields()
@@ -287,17 +287,17 @@ func UpdateRerunStartTime(c context.Context, bbid int64) error {
 
 // TODO (nqmtuan): Move this into a helper class if it turns out we need to use
 // it for more than one place
-// toStructPB convert an interface{} s to structpb.Struct, as long as s is marshallable.
+// toStructPB convert an any s to structpb.Struct, as long as s is marshallable.
 // s can be a general Go type, structpb.Struct type, or mixed.
 // For example, s can be a map of mixed type, like
 // {"key1": "val1", "key2": structpb.NewStringValue("val2")}
-func toStructPB(s interface{}) (*structpb.Struct, error) {
+func toStructPB(s any) (*structpb.Struct, error) {
 	// We used json as an intermediate format to convert
 	j, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
 	}
-	var m map[string]interface{}
+	var m map[string]any
 	if err := json.Unmarshal(j, &m); err != nil {
 		return nil, err
 	}

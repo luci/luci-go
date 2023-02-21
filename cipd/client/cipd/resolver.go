@@ -171,7 +171,7 @@ func (r *Resolver) ResolveAllPlatforms(ctx context.Context, file *ensure.File) (
 func (r *Resolver) resolveVersion(ctx context.Context, pkg, ver string) (common.Pin, error) {
 	unresolved := unresolvedPkg{pkg, ver}
 
-	promise := r.resolving.Get(ctx, unresolved, func(ctx context.Context) (interface{}, error) {
+	promise := r.resolving.Get(ctx, unresolved, func(ctx context.Context) (any, error) {
 		logging.Debugf(ctx, "Resolving package %s ...", unresolved)
 		pin, err := r.Client.ResolveVersion(ctx, unresolved.pkg, unresolved.ver)
 		if err == nil {
@@ -191,7 +191,7 @@ func (r *Resolver) resolveVersion(ctx context.Context, pkg, ver string) (common.
 
 // verifyPin returns nil if the given pin exists on the backend.
 func (r *Resolver) verifyPin(ctx context.Context, pin common.Pin) error {
-	promise := r.verifying.Get(ctx, pin, func(ctx context.Context) (interface{}, error) {
+	promise := r.verifying.Get(ctx, pin, func(ctx context.Context) (any, error) {
 		logging.Debugf(ctx, "Validating pin %s...", pin)
 		_, err := r.Client.DescribeInstance(ctx, pin, nil)
 		if err == nil {

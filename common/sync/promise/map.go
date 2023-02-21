@@ -26,12 +26,12 @@ import (
 // same promise (even if it has finished).
 type Map struct {
 	mu sync.RWMutex
-	m  map[interface{}]*Promise
+	m  map[any]*Promise
 }
 
 // Get either returns an existing promise for the given key or creates and
 // immediately launches a new promise.
-func (pm *Map) Get(c context.Context, key interface{}, gen Generator) *Promise {
+func (pm *Map) Get(c context.Context, key any, gen Generator) *Promise {
 	pm.mu.RLock()
 	p := pm.m[key]
 	pm.mu.RUnlock()
@@ -46,7 +46,7 @@ func (pm *Map) Get(c context.Context, key interface{}, gen Generator) *Promise {
 	if p = pm.m[key]; p == nil {
 		p = New(c, gen)
 		if pm.m == nil {
-			pm.m = make(map[interface{}]*Promise, 1)
+			pm.m = make(map[any]*Promise, 1)
 		}
 		pm.m[key] = p
 	}

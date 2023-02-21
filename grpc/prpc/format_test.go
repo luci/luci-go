@@ -23,7 +23,7 @@ import (
 
 func TestFormat(t *testing.T) {
 	Convey("requestFormat", t, func() {
-		test := func(contentType string, expectedFormat Format, expectedErr interface{}) {
+		test := func(contentType string, expectedFormat Format, expectedErr any) {
 			Convey("Content-Type: "+contentType, func() {
 				actualFormat, err := FormatFromContentType(contentType)
 				So(err, ShouldErrLike, expectedErr)

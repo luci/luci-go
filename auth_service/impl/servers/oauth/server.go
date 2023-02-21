@@ -53,7 +53,7 @@ func HandleLegacyOAuthEndpoint(ctx *router.Context) error {
 		return status.Errorf(codes.Internal, "something went wrong... see logs")
 	}
 
-	blob, err := json.Marshal(map[string]interface{}{
+	blob, err := json.Marshal(map[string]any{
 		"token_server_url":      globalCfgEntity.TokenServerURL,
 		"client_not_so_secret":  globalCfgEntity.OAuthClientSecret,
 		"additional_client_ids": globalCfgEntity.OAuthAdditionalClientIDs,

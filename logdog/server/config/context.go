@@ -106,7 +106,7 @@ func Config(ctx context.Context) (*svcconfig.Config, error) {
 	if store.NoCache {
 		return fetchServiceConfig(ctx)
 	}
-	cached, err := store.service.Get(ctx, func(prev interface{}) (val interface{}, exp time.Duration, err error) {
+	cached, err := store.service.Get(ctx, func(prev any) (val any, exp time.Duration, err error) {
 		logging.Infof(ctx, "Cache miss for services.cfg, fetching it from datastore...")
 		cfg, err := fetchServiceConfig(ctx)
 		return cfg, time.Minute, err
@@ -160,7 +160,7 @@ func ProjectConfig(ctx context.Context, projectID string) (*svcconfig.ProjectCon
 	if store.NoCache {
 		return fetchProjectConfig(ctx, projectID)
 	}
-	cached, err := store.projectCacheSlot(projectID).Get(ctx, func(prev interface{}) (val interface{}, exp time.Duration, err error) {
+	cached, err := store.projectCacheSlot(projectID).Get(ctx, func(prev any) (val any, exp time.Duration, err error) {
 		logging.Infof(ctx, "Cache miss for %q project config, fetching it...", projectID)
 		cfg, err := fetchProjectConfig(ctx, projectID)
 		if err == config.ErrNoConfig {

@@ -26,10 +26,10 @@ import (
 )
 
 // snapshot is a snapshot of the contents of the Cache.
-type snapshot map[interface{}]interface{}
+type snapshot map[any]any
 
 type cacheEntry struct {
-	k, v interface{}
+	k, v any
 
 	// expiry is the time when this entry expires. It will be 0 if the entry
 	// never expires.
@@ -39,7 +39,7 @@ type cacheEntry struct {
 // Item is a Cache item. It's used when interfacing with Mutate.
 type Item struct {
 	// Value is the item's value. It may be nil.
-	Value interface{}
+	Value any
 
 	// Exp is the item's expiration.
 	Exp time.Duration
@@ -67,7 +67,7 @@ type Generator func(it *Item) *Item
 //
 // If the Maker returns an error, the returned value will not be cached, and
 // the error will be returned by GetOrCreate.
-type Maker func() (v interface{}, exp time.Duration, err error)
+type Maker func() (v any, exp time.Duration, err error)
 
 // Cache is a least-recently-used (LRU) cache implementation. The cache stores
 // key-value mapping entries up to a size limit. If more items are added past
@@ -92,7 +92,7 @@ type Cache struct {
 	//
 	// Cache reads may be made while holding the read or write lock. Modifications
 	// to cache require the write lock to be held.
-	cache map[interface{}]*list.Element
+	cache map[any]*list.Element
 	// lru is a List of least-recently-used elements. Each time an element is
 	// used, it is moved to the beginning of the List. Consequently, items at the
 	// end of the list will be the least-recently-used items.
@@ -120,7 +120,7 @@ func New(size int) *Cache {
 // the element's recently-used standing.
 //
 // Peek uses the cache read lock.
-func (c *Cache) Peek(ctx context.Context, key interface{}) (interface{}, bool) {
+func (c *Cache) Peek(ctx context.Context, key any) (any, bool) {
 	now := clock.Now(ctx)
 
 	c.lock.RLock()
@@ -139,7 +139,7 @@ func (c *Cache) Peek(ctx context.Context, key interface{}) (interface{}, bool) {
 // recently-used standing.
 //
 // Get uses the cache read/write lock.
-func (c *Cache) Get(ctx context.Context, key interface{}) (interface{}, bool) {
+func (c *Cache) Get(ctx context.Context, key any) (any, bool) {
 	now := clock.Now(ctx)
 
 	// We need a Read/Write lock here because if the entry is present, we are
@@ -171,7 +171,7 @@ func (c *Cache) Get(ctx context.Context, key interface{}) (interface{}, bool) {
 // Returns whether not a value already existed for the key.
 //
 // The new item will be considered most recently used.
-func (c *Cache) Put(ctx context.Context, key, value interface{}, exp time.Duration) (prev interface{}, had bool) {
+func (c *Cache) Put(ctx context.Context, key, value any, exp time.Duration) (prev any, had bool) {
 	c.Mutate(ctx, key, func(cur *Item) *Item {
 		if cur != nil {
 			prev, had = cur.Value, true
@@ -197,7 +197,7 @@ func (c *Cache) Put(ctx context.Context, key, value interface{}, exp time.Durati
 //
 // The key will be considered most recently used regardless of whether it was
 // put.
-func (c *Cache) Mutate(ctx context.Context, key interface{}, gen Generator) (value interface{}, ok bool) {
+func (c *Cache) Mutate(ctx context.Context, key any, gen Generator) (value any, ok bool) {
 	now := clock.Now(ctx)
 
 	c.lock.Lock()
@@ -267,7 +267,7 @@ func (c *Cache) Mutate(ctx context.Context, key interface{}, gen Generator) (val
 // value will be returned; otherwise, nil will be returned.
 //
 // Remove uses the cache read/write lock.
-func (c *Cache) Remove(key interface{}) (val interface{}, has bool) {
+func (c *Cache) Remove(key any) (val any, has bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -296,7 +296,7 @@ func (c *Cache) Remove(key interface{}) (val interface{}, has bool) {
 // Note that the Cache's lock will not be held while the Maker is running.
 // Operations on to the Cache using other methods will not lock around
 // key. This will not interfere with GetOrCreate.
-func (c *Cache) GetOrCreate(ctx context.Context, key interface{}, fn Maker) (v interface{}, err error) {
+func (c *Cache) GetOrCreate(ctx context.Context, key any, fn Maker) (v any, err error) {
 	// First, check if the value is the cache. We don't need to hold the item's
 	// Mutex for this.
 	var ok bool
@@ -341,7 +341,7 @@ func (c *Cache) GetOrCreate(ctx context.Context, key interface{}, fn Maker) (v i
 // Note that the Cache's lock will not be held while the Maker is running.
 // Operations on to the Cache using other methods will not lock around
 // key. This will not interfere with Create.
-func (c *Cache) Create(ctx context.Context, key interface{}, fn Maker) (v interface{}, err error) {
+func (c *Cache) Create(ctx context.Context, key any, fn Maker) (v any, err error) {
 	c.mp.WithMutex(key, func() {
 		// Generate a new value.
 		var exp time.Duration
@@ -374,7 +374,7 @@ func (c *Cache) Reset() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.cache = make(map[interface{}]*list.Element)
+	c.cache = make(map[any]*list.Element)
 	c.lru.Init()
 }
 

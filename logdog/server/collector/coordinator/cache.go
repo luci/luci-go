@@ -176,7 +176,7 @@ func (ce *cacheEntry) registerStream(ctx context.Context, coord Coordinator, st 
 	)
 	ce.withLock(func() {
 		if ce.registerP == nil {
-			ce.registerP = promise.NewDeferred(func(ctx context.Context) (interface{}, error) {
+			ce.registerP = promise.NewDeferred(func(ctx context.Context) (any, error) {
 				st, err := coord.RegisterStream(ctx, &st, desc)
 				if err == nil {
 					// If the remote state has a terminal index, retain it locally.
@@ -230,7 +230,7 @@ func (ce *cacheEntry) terminateStream(ctx context.Context, coord Coordinator, tr
 	ce.withLock(func() {
 		if ce.terminateP == nil {
 			// We're creating a new promise, so our tr's TerminalIndex will be set.
-			ce.terminateP = promise.NewDeferred(func(ctx context.Context) (interface{}, error) {
+			ce.terminateP = promise.NewDeferred(func(ctx context.Context) (any, error) {
 				// Execute our TerminateStream RPC. If successful, retain the successful
 				// terminal index locally.
 				err := coord.TerminateStream(ctx, &tr)

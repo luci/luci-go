@@ -230,7 +230,7 @@ func TestAuthDBServing(t *testing.T) {
 			if sb {
 				testDeflated = []byte{}
 			}
-			return json.Marshal(map[string]interface{}{
+			return json.Marshal(map[string]any{
 				"snapshot": TestSnapshotJSON{
 					AuthDBRev:      rid,
 					AuthDBDeflated: testDeflated,

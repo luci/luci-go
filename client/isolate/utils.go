@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func assert(condition bool, info ...interface{}) {
+func assert(condition bool, info ...any) {
 	if condition {
 		return
 	}

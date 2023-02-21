@@ -346,7 +346,7 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 		}
 
 		statusChanged = oldStatus != bld.Proto.Status
-		toPut := []interface{}{bld, infra}
+		toPut := []any{bld, infra}
 		switch {
 		case statusChanged && bld.Proto.Status == pb.Status_STARTED:
 			if err := NotifyPubSub(ctx, bld); err != nil {
@@ -912,7 +912,7 @@ func max(a, b int) int {
 }
 
 // deepCopy deep copies src to dst using json marshaling for non-proto messages.
-func deepCopy(src, dst interface{}) error {
+func deepCopy(src, dst any) error {
 	srcBytes, err := json.Marshal(src)
 	if err != nil {
 		return err

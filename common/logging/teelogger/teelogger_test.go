@@ -43,7 +43,7 @@ func TestTeeLogger(t *testing.T) {
 			teeLog := logging.Get(ctx)
 			for _, entry := range []struct {
 				L logging.Level
-				F func(string, ...interface{})
+				F func(string, ...any)
 				T string
 			}{
 				{logging.Debug, teeLog.Debugf, "DEBU"},
@@ -55,7 +55,7 @@ func TestTeeLogger(t *testing.T) {
 					entry.F("%s", entry.T)
 					for _, logger := range []*memlogger.MemLogger{l1, l2, l3} {
 						So(len(logger.Messages()), ShouldEqual, 1)
-						msg := logger.Get(entry.L, entry.T, map[string]interface{}(nil))
+						msg := logger.Get(entry.L, entry.T, map[string]any(nil))
 						So(msg, ShouldNotBeNil)
 						So(msg.CallDepth, ShouldEqual, 3)
 					}
@@ -68,7 +68,7 @@ func TestTeeLogger(t *testing.T) {
 			teeLog := logging.Get(ctx)
 			for _, entry := range []struct {
 				L logging.Level
-				F func(string, ...interface{})
+				F func(string, ...any)
 				T string
 				E bool
 			}{
@@ -82,7 +82,7 @@ func TestTeeLogger(t *testing.T) {
 					for _, logger := range []*memlogger.MemLogger{l1, l2, l3} {
 						if entry.E {
 							So(len(logger.Messages()), ShouldEqual, 1)
-							msg := logger.Get(entry.L, entry.T, map[string]interface{}(nil))
+							msg := logger.Get(entry.L, entry.T, map[string]any(nil))
 							So(msg, ShouldNotBeNil)
 							So(msg.CallDepth, ShouldEqual, 3)
 						} else {
@@ -131,7 +131,7 @@ func TestTeeFilteredLogger(t *testing.T) {
 
 		for _, entry := range []struct {
 			L logging.Level
-			F func(string, ...interface{})
+			F func(string, ...any)
 			T string
 			// Loggers which have messages.
 			GoodLogger []*memlogger.MemLogger
@@ -155,7 +155,7 @@ func TestTeeFilteredLogger(t *testing.T) {
 				entry.F("%s", entry.T)
 				for _, l := range entry.GoodLogger {
 					So(len(l.Messages()), ShouldEqual, 1)
-					msg := l.Get(entry.L, entry.T, map[string]interface{}(nil))
+					msg := l.Get(entry.L, entry.T, map[string]any(nil))
 					So(msg, ShouldNotBeNil)
 					So(msg.CallDepth, ShouldEqual, 3)
 				}

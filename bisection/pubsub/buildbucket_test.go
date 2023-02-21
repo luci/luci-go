@@ -55,7 +55,7 @@ func makeBBReq(build bbv1.LegacyApiCommonBuildMessage, hostname string) io.ReadC
 		Message struct {
 			Data []byte
 		}
-		Attributes map[string]interface{}
+		Attributes map[string]any
 	}{struct{ Data []byte }{Data: bm}, nil}
 	jmsg, _ := json.Marshal(msg)
 	return io.NopCloser(bytes.NewReader(jmsg))

@@ -294,7 +294,7 @@ func init() {
 		if err := call.unpack(1, &json); err != nil {
 			return nil, err
 		}
-		var buf interface{}
+		var buf any
 		if err := yaml.Unmarshal([]byte(json.GoString()), &buf); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal JSON as YAML: %s", err)
 		}

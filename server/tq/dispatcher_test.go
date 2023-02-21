@@ -306,11 +306,11 @@ func TestPushHandler(t *testing.T) {
 		ctx, _, _ = tsmon.WithFakes(ctx)
 		tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
 
-		metric := func(m types.Metric, fieldVals ...interface{}) interface{} {
+		metric := func(m types.Metric, fieldVals ...any) any {
 			return tsmon.GetState(ctx).Store().Get(ctx, m, time.Time{}, fieldVals)
 		}
 
-		metricDist := func(m types.Metric, fieldVals ...interface{}) (count int64, sum float64) {
+		metricDist := func(m types.Metric, fieldVals ...any) (count int64, sum float64) {
 			val := metric(m, fieldVals...)
 			if val != nil {
 				So(val, ShouldHaveSameTypeAs, &distribution.Distribution{})

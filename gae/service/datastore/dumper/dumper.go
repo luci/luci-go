@@ -87,7 +87,7 @@ func (cfg Config) Query(c context.Context, q *ds.Query) (n int, err error) {
 		return prop.String()
 	}
 
-	prnt := func(format string, args ...interface{}) (err error) {
+	prnt := func(format string, args ...any) (err error) {
 		var amt int
 		amt, err = fmt.Fprintf(out, format, args...)
 		n += amt

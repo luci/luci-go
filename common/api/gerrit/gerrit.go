@@ -1030,7 +1030,7 @@ func (c *Client) AccountQuery(ctx context.Context, qr AccountQueryParams) ([]*Ac
 	return result, moreAccounts, nil
 }
 
-func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) (int, error) {
+func (c *Client) get(ctx context.Context, path string, query url.Values, result any) (int, error) {
 	u := c.gerritURL
 	u.Opaque = "//" + u.Host + "/" + path
 	u.RawQuery = query.Encode()
@@ -1044,7 +1044,7 @@ func (c *Client) get(ctx context.Context, path string, query url.Values, result 
 	return statusCode, err
 }
 
-func (c *Client) getOnce(ctx context.Context, u url.URL, result interface{}) (int, error) {
+func (c *Client) getOnce(ctx context.Context, u url.URL, result any) (int, error) {
 	r, err := ctxhttp.Get(ctx, c.httpClient, u.String())
 	if err != nil {
 		return 0, transient.Tag.Apply(err)
@@ -1060,7 +1060,7 @@ func (c *Client) getOnce(ctx context.Context, u url.URL, result interface{}) (in
 	return r.StatusCode, parseResponse(r.Body, result)
 }
 
-func (c *Client) post(ctx context.Context, path string, data interface{}, result interface{}) (int, error) {
+func (c *Client) post(ctx context.Context, path string, data any, result any) (int, error) {
 	var buffer bytes.Buffer
 	if err := json.NewEncoder(&buffer).Encode(data); err != nil {
 		return 200, err
@@ -1082,7 +1082,7 @@ func (c *Client) post(ctx context.Context, path string, data interface{}, result
 	return r.StatusCode, parseResponse(r.Body, result)
 }
 
-func parseResponse(resp io.Reader, result interface{}) error {
+func parseResponse(resp io.Reader, result any) error {
 	// Strip out the jsonp header, which is ")]}'"
 	const gerritPrefix = ")]}'"
 	trash := make([]byte, len(gerritPrefix))

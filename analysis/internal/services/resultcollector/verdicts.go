@@ -57,7 +57,7 @@ func insertVerdict(task *taskspb.CollectTestResults, tv *rdbpb.TestVariant, inge
 		// This should never happen:inv was originally from ResultDB.
 		panic(err)
 	}
-	row := map[string]interface{}{
+	row := map[string]any{
 		"Realm":                        inv.Realm,
 		"InvocationId":                 invId,
 		"InvocationCreationTime":       inv.CreateTime,

@@ -56,24 +56,24 @@ func TestQueryTestResultStatistics(t *testing.T) {
 
 		testutil.MustApply(ctx,
 			insert.Invocation(
-				"x", pb.Invocation_FINALIZED, map[string]interface{}{
+				"x", pb.Invocation_FINALIZED, map[string]any{
 					"Realm": "secretproject:testrealm",
 				}),
 			insert.Invocation(
-				"a", pb.Invocation_FINALIZED, map[string]interface{}{
+				"a", pb.Invocation_FINALIZED, map[string]any{
 					"Realm": "testproject:testrealm",
 				}),
 			insert.Invocation(
-				"b", pb.Invocation_FINALIZED, map[string]interface{}{
+				"b", pb.Invocation_FINALIZED, map[string]any{
 					"Realm": "otherproject:testrealm",
 				}),
 			insert.Invocation(
-				"c", pb.Invocation_FINALIZED, map[string]interface{}{
+				"c", pb.Invocation_FINALIZED, map[string]any{
 					"Realm": "otherproject:testrealm",
 				}),
 			// The invocation d doesn't have any included invocation.
 			insert.Invocation(
-				"d", pb.Invocation_FINALIZED, map[string]interface{}{
+				"d", pb.Invocation_FINALIZED, map[string]any{
 					"Realm": "testproject:testrealm",
 				}),
 			insert.Inclusion("a", "b"),

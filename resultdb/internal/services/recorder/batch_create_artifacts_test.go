@@ -135,7 +135,7 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 
 func TestBatchCreateArtifacts(t *testing.T) {
 	// metric field values for Artifact table
-	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
+	artMFVs := []any{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
 
 	Convey("TestBatchCreateArtifacts", t, func() {
 		ctx := testutil.SpannerTestContext(t)
@@ -170,7 +170,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		fetchState := func(aID string) (size int64, hash string, contentType string, gcsURI string) {
 			testutil.MustReadRow(
 				ctx, "Artifacts", invocations.ID("inv").Key("", aID),
-				map[string]interface{}{
+				map[string]any{
 					"Size":        &size,
 					"RBECASHash":  &hash,
 					"ContentType": &contentType,
@@ -321,7 +321,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
-			art := map[string]interface{}{
+			art := map[string]any{
 				"InvocationId": invocations.ID("inv"),
 				"ParentId":     "",
 				"ArtifactId":   "art1",

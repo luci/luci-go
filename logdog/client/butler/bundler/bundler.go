@@ -528,11 +528,11 @@ func (s *streamState) Swap(i, j int) {
 	s.streams[i], s.streams[j] = s.streams[j], s.streams[i]
 }
 
-func (s *streamState) Push(x interface{}) {
+func (s *streamState) Push(x any) {
 	s.streams = append(s.streams, x.(bundlerStream))
 }
 
-func (s *streamState) Pop() interface{} {
+func (s *streamState) Pop() any {
 	last := s.streams[len(s.streams)-1]
 	s.streams = s.streams[:len(s.streams)-1]
 	return last

@@ -171,7 +171,7 @@ func jobPage(ctx *router.Context) {
 		invsLogUI[i] = makeInvocation(jobUI, inv)
 	}
 
-	templates.MustRender(c, w, "pages/job.html", map[string]interface{}{
+	templates.MustRender(c, w, "pages/job.html", map[string]any{
 		"Job":               jobUI,
 		"ShowJobHeader":     cursor == "",
 		"InvocationsActive": invsActiveUI,

@@ -110,7 +110,7 @@ func TestInstrumentedFactory(t *testing.T) {
 	})
 }
 
-func tsmonSentCounter(ctx context.Context, m types.Metric, fieldVals ...interface{}) int64 {
+func tsmonSentCounter(ctx context.Context, m types.Metric, fieldVals ...any) int64 {
 	resetTime := time.Time{}
 	v, ok := tsmon.GetState(ctx).Store().Get(ctx, m, resetTime, fieldVals).(int64)
 	if !ok {
@@ -119,7 +119,7 @@ func tsmonSentCounter(ctx context.Context, m types.Metric, fieldVals ...interfac
 	return v
 }
 
-func tsmonSentDistr(ctx context.Context, m types.Metric, fieldVals ...interface{}) *distribution.Distribution {
+func tsmonSentDistr(ctx context.Context, m types.Metric, fieldVals ...any) *distribution.Distribution {
 	resetTime := time.Time{}
 	d, ok := tsmon.GetState(ctx).Store().Get(ctx, m, resetTime, fieldVals).(*distribution.Distribution)
 	if !ok {

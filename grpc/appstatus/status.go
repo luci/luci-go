@@ -36,7 +36,7 @@ func Error(code codes.Code, msg string) error {
 
 // Errorf returns an error with an application-specific status.
 // The message will be shared with the RPC client as is.
-func Errorf(code codes.Code, format string, args ...interface{}) error {
+func Errorf(code codes.Code, format string, args ...any) error {
 	return ToError(status.Newf(code, format, args...))
 }
 
@@ -60,7 +60,7 @@ func Attach(err error, status *status.Status) error {
 }
 
 // Attachf is a shortcut for Attach(err, status.Newf(...))
-func Attachf(err error, code codes.Code, format string, args ...interface{}) error {
+func Attachf(err error, code codes.Code, format string, args ...any) error {
 	return Attach(err, status.Newf(code, format, args...))
 }
 

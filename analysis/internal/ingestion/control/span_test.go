@@ -475,7 +475,7 @@ func TestSpan(t *testing.T) {
 	})
 }
 
-func ShouldResembleEntry(actual interface{}, expected ...interface{}) string {
+func ShouldResembleEntry(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("ShouldResembleEntry expects 1 value, got %d", len(expected))
 	}

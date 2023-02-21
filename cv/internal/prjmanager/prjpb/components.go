@@ -32,7 +32,7 @@ func (c *Component) CloneShallow() *Component {
 func (p *PState) COWComponents(m func(*Component) *Component, toAdd []*Component) ([]*Component, bool) {
 	var mf copyonwrite.Modifier
 	if m != nil {
-		mf = func(v interface{}) interface{} {
+		mf = func(v any) any {
 			if v := m(v.(*Component)); v != nil {
 				return v
 			}
@@ -52,7 +52,7 @@ func (c cowComponents) CloneShallow(length int, capacity int) copyonwrite.Slice 
 	return r
 }
 
-func (c cowComponents) Append(v interface{}) copyonwrite.Slice {
+func (c cowComponents) Append(v any) copyonwrite.Slice {
 	return append(c, v.(*Component))
 }
 
@@ -60,6 +60,6 @@ func (c cowComponents) Len() int {
 	return len(c)
 }
 
-func (c cowComponents) At(index int) interface{} {
+func (c cowComponents) At(index int) any {
 	return c[index]
 }

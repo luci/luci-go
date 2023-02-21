@@ -37,7 +37,7 @@ import (
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
 // For ptrMap see ReadRow comment in span/util.go.
-func ReadColumns(ctx context.Context, id ID, ptrMap map[string]interface{}) error {
+func ReadColumns(ctx context.Context, id ID, ptrMap map[string]any) error {
 	if id == "" {
 		return errors.Reason("id is unspecified").Err()
 	}
@@ -77,7 +77,7 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]any{
 		"invIDs": ids,
 	})
 	var b spanutil.Buffer
@@ -176,7 +176,7 @@ func ReadBatch(ctx context.Context, ids IDSet) (map[ID]*pb.Invocation, error) {
 // ReadState returns the invocation's state.
 func ReadState(ctx context.Context, id ID) (pb.Invocation_State, error) {
 	var state pb.Invocation_State
-	err := ReadColumns(ctx, id, map[string]interface{}{"State": &state})
+	err := ReadColumns(ctx, id, map[string]any{"State": &state})
 	return state, err
 }
 
@@ -201,7 +201,7 @@ func ReadStateBatch(ctx context.Context, ids IDSet) (map[ID]pb.Invocation_State,
 // ReadRealm returns the invocation's realm.
 func ReadRealm(ctx context.Context, id ID) (string, error) {
 	var realm string
-	err := ReadColumns(ctx, id, map[string]interface{}{"Realm": &realm})
+	err := ReadColumns(ctx, id, map[string]any{"Realm": &realm})
 	return realm, err
 }
 
@@ -221,7 +221,7 @@ func QueryRealms(ctx context.Context, ids IDSet) (realms map[ID]string, err erro
 		FROM UNNEST(@invIDs) inv
 		JOIN Invocations i
 		ON i.InvocationId = inv`)
-	st.Params = spanutil.ToSpannerMap(map[string]interface{}{
+	st.Params = spanutil.ToSpannerMap(map[string]any{
 		"invIDs": ids,
 	})
 	b := &spanutil.Buffer{}

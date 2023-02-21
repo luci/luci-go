@@ -63,7 +63,7 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 			})
 
 			var innerCtx context.Context
-			_, err := intr.Unary()(requestCtx, "request", &grpc.UnaryServerInfo{}, func(ctx context.Context, req interface{}) (interface{}, error) {
+			_, err := intr.Unary()(requestCtx, "request", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
 				innerCtx = ctx
 				return "response", nil
 			})
@@ -80,7 +80,7 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 					clientID: "another_client_id",
 				},
 			})
-			_, err := intr.Unary()(requestCtx, "request", &grpc.UnaryServerInfo{}, func(ctx context.Context, req interface{}) (interface{}, error) {
+			_, err := intr.Unary()(requestCtx, "request", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
 				panic("must not be called")
 			})
 			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)

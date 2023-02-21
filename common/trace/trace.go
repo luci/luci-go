@@ -33,7 +33,7 @@ type Span interface {
 	End(err error)
 
 	// Attribute annotates the span with an attribute.
-	Attribute(key string, val interface{})
+	Attribute(key string, val any)
 }
 
 // StartSpan adds a span with the given name to the current trace.
@@ -116,4 +116,4 @@ type NullSpan struct{}
 func (NullSpan) End(err error) {}
 
 // Attribute does nothing.
-func (NullSpan) Attribute(key string, val interface{}) {}
+func (NullSpan) Attribute(key string, val any) {}

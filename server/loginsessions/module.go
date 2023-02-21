@@ -494,7 +494,7 @@ func (m *loginSessionsModule) renderTemplate(ctx *router.Context, status int, na
 }
 
 // renderInternalError logs the error and renders generic "Internal error" page.
-func (m *loginSessionsModule) renderInternalError(ctx *router.Context, msg string, args ...interface{}) {
+func (m *loginSessionsModule) renderInternalError(ctx *router.Context, msg string, args ...any) {
 	logging.Errorf(ctx.Context, "Internal error: "+msg, args...)
 	m.renderTemplate(ctx, http.StatusInternalServerError, "pages/error.html", templates.Args{
 		"Error": "Internal server error.",
@@ -502,7 +502,7 @@ func (m *loginSessionsModule) renderInternalError(ctx *router.Context, msg strin
 }
 
 // renderExpiredError logs the error and renders generic "Session expired" page.
-func (m *loginSessionsModule) renderExpiredError(ctx *router.Context, msg string, args ...interface{}) {
+func (m *loginSessionsModule) renderExpiredError(ctx *router.Context, msg string, args ...any) {
 	logging.Warningf(ctx.Context, "Expiry error: "+msg, args...)
 	m.renderTemplate(ctx, http.StatusNotFound, "pages/error.html", templates.Args{
 		"Error": "No such login session or it has finished or expired. Please restart the login flow from scratch.",
@@ -510,7 +510,7 @@ func (m *loginSessionsModule) renderExpiredError(ctx *router.Context, msg string
 }
 
 // renderBadRequestError logs and renders "bad argument" error page.
-func (m *loginSessionsModule) renderBadRequestError(ctx *router.Context, msg string, args ...interface{}) {
+func (m *loginSessionsModule) renderBadRequestError(ctx *router.Context, msg string, args ...any) {
 	logging.Warningf(ctx.Context, "Bad request: "+msg, args...)
 
 	// Make it title case, add final '.'.

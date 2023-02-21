@@ -21,7 +21,7 @@ import (
 )
 
 // MarshalUntyped marshals a key-value map to flags.
-func MarshalUntyped(msg map[string]interface{}) ([]string, error) {
+func MarshalUntyped(msg map[string]any) ([]string, error) {
 	return appendFlags(nil, nil, reflect.ValueOf(msg))
 }
 

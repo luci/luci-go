@@ -32,7 +32,7 @@ import (
 var statusAssign = &analysis.Analyzer{
 	Name: "statusAssignment",
 	Doc:  "reports direct assignments to Build.Status",
-	Run: func(pass *analysis.Pass) (interface{}, error) {
+	Run: func(pass *analysis.Pass) (any, error) {
 		for _, file := range pass.Files {
 			if strings.HasSuffix(pass.Fset.File(file.Pos()).Name(), "_test.go") {
 				continue

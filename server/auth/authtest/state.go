@@ -101,7 +101,7 @@ type FakeState struct {
 	UserCredentialsOverride *oauth2.Token
 
 	// UserExtra is returned as Extra field of User() return value.
-	UserExtra interface{}
+	UserExtra any
 }
 
 // RealmPermission is used to populate IdentityPermissions in FakeState.

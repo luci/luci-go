@@ -223,7 +223,7 @@ func TestExe(t *testing.T) {
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
-					err := WriteProperties(build.Output.Properties, map[string]interface{}{
+					err := WriteProperties(build.Output.Properties, map[string]any{
 						"some": "thing",
 					})
 					if err != nil {

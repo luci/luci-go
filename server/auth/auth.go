@@ -234,7 +234,7 @@ type User struct {
 	// Its exact type depends on the authentication method used. Usually the
 	// authentication method will have an accompanying getter function that knows
 	// how to interpret this field.
-	Extra interface{} `json:"-"`
+	Extra any `json:"-"`
 }
 
 // Authenticator performs authentication of incoming requests.

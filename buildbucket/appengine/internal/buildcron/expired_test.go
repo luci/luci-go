@@ -129,7 +129,7 @@ func TestResetExpiredLeases(t *testing.T) {
 			So(b.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 
 			Convey("reports metrics", func() {
-				fv := []interface{}{
+				fv := []any{
 					"luci.project.bucket",    /* metric:bucket */
 					"builder",                /* metric:builder */
 					model.Completed.String(), /* metric:status */
@@ -152,7 +152,7 @@ func TestResetExpiredLeases(t *testing.T) {
 			So(b.Status, ShouldEqual, pb.Status_SCHEDULED)
 
 			Convey("reports metrics", func() {
-				fv := []interface{}{
+				fv := []any{
 					"luci.project.bucket",    /* metric:bucket */
 					"builder",                /* metric:builder */
 					model.Scheduled.String(), /* metric:status */
@@ -246,7 +246,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			So(b.Proto.StatusDetails.GetTimeout(), ShouldNotBeNil)
 
 			Convey("reports metrics", func() {
-				fv := []interface{}{
+				fv := []any{
 					"INFRA_FAILURE", /* metric:status */
 					"None",          /* metric:experiments */
 				}

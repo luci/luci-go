@@ -48,8 +48,8 @@ func TestExpiredInvocations(t *testing.T) {
 		future := clock.Now(ctx).Add(10 * time.Minute)
 
 		testutil.MustApply(ctx,
-			insert.Invocation("expired", resultpb.Invocation_ACTIVE, map[string]interface{}{"Deadline": past}),
-			insert.Invocation("unexpired", resultpb.Invocation_ACTIVE, map[string]interface{}{"Deadline": future}),
+			insert.Invocation("expired", resultpb.Invocation_ACTIVE, map[string]any{"Deadline": past}),
+			insert.Invocation("unexpired", resultpb.Invocation_ACTIVE, map[string]any{"Deadline": future}),
 		)
 
 		s, err := invocations.CurrentMaxShard(ctx)
@@ -60,17 +60,17 @@ func TestExpiredInvocations(t *testing.T) {
 
 		So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.TryFinalizeInvocation{InvocationId: "expired"})
 		var state resultpb.Invocation_State
-		testutil.MustReadRow(ctx, "Invocations", invocations.ID("expired").Key(), map[string]interface{}{
+		testutil.MustReadRow(ctx, "Invocations", invocations.ID("expired").Key(), map[string]any{
 			"State": &state,
 		})
 		So(state, ShouldEqual, resultpb.Invocation_FINALIZING)
-		testutil.MustReadRow(ctx, "Invocations", invocations.ID("unexpired").Key(), map[string]interface{}{
+		testutil.MustReadRow(ctx, "Invocations", invocations.ID("unexpired").Key(), map[string]any{
 			"State": &state,
 		})
 		So(state, ShouldEqual, resultpb.Invocation_ACTIVE)
 
-		So(store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []interface{}{insert.TestRealm}), ShouldEqual, 1)
-		d := store.Get(ctx, timeOverdue, time.Time{}, []interface{}{insert.TestRealm}).(*distribution.Distribution)
+		So(store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []any{insert.TestRealm}), ShouldEqual, 1)
+		d := store.Get(ctx, timeOverdue, time.Time{}, []any{insert.TestRealm}).(*distribution.Distribution)
 		// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
 		// allow +/- 1 bucket for clock shenanigans.
 		So(d.Buckets()[28] == 1 || d.Buckets()[29] == 1 || d.Buckets()[30] == 1, ShouldBeTrue)

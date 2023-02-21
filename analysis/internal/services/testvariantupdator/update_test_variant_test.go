@@ -78,7 +78,7 @@ func TestCheckTask(t *testing.T) {
 		now := clock.Now(ctx)
 		ms := []*spanner.Mutation{
 			insert.AnalyzedTestVariant(realm, tID, vh, atvpb.Status_CONSISTENTLY_EXPECTED,
-				map[string]interface{}{
+				map[string]any{
 					"NextUpdateTaskEnqueueTime": now,
 				}),
 			insert.AnalyzedTestVariant(realm, "anothertest", vh, atvpb.Status_CONSISTENTLY_EXPECTED, nil),
@@ -150,11 +150,11 @@ func TestUpdateTestVariantStatus(t *testing.T) {
 			now.Add(-240 * time.Hour),
 		}
 		ms := []*spanner.Mutation{
-			insert.AnalyzedTestVariant(realm, tID1, vh, atvpb.Status_CONSISTENTLY_EXPECTED, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID1, vh, atvpb.Status_CONSISTENTLY_EXPECTED, map[string]any{
 				"NextUpdateTaskEnqueueTime": now,
 				"StatusUpdateTime":          now,
 			}),
-			insert.AnalyzedTestVariant(realm, tID2, vh, atvpb.Status_CONSISTENTLY_EXPECTED, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID2, vh, atvpb.Status_CONSISTENTLY_EXPECTED, map[string]any{
 				"NextUpdateTaskEnqueueTime": now,
 				"StatusUpdateTime":          now,
 				"PreviousStatuses":          statuses,

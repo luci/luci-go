@@ -144,7 +144,7 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		statusByProject.Store(project, "failure")
 	}
 	defer func() {
-		statusByProject.Range(func(key, value interface{}) bool {
+		statusByProject.Range(func(key, value any) bool {
 			project := key.(string)
 			status := value.(string)
 			statusGauge.Set(ctx, status, project)

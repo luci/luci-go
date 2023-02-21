@@ -213,7 +213,7 @@ func (t *transformer) generateClient(protoPackage, serviceName string, iface *as
 	if t.inPRPCPackage {
 		prpcSymbolPrefix = ""
 	}
-	err := clientCodeTemplate.Execute(&buf, map[string]interface{}{
+	err := clientCodeTemplate.Execute(&buf, map[string]any{
 		"Service":          serviceName,
 		"ProtoPkg":         protoPackage,
 		"StructName":       firstLower(serviceName) + "PRPCClient",

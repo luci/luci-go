@@ -64,9 +64,9 @@ func TestListTestExonerations(t *testing.T) {
 		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
-			insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "testproject:testrealm"}),
-			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]interface{}{"Realm": "secretproject:testrealm"}),
-			spanutil.InsertMap("TestExonerations", map[string]interface{}{
+			insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
+			spanutil.InsertMap("TestExonerations", map[string]any{
 				"InvocationId":    invID,
 				"TestId":          testID,
 				"ExonerationId":   "0",
@@ -75,7 +75,7 @@ func TestListTestExonerations(t *testing.T) {
 				"ExplanationHTML": spanutil.Compressed("broken"),
 				"Reason":          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 			}),
-			spanutil.InsertMap("TestExonerations", map[string]interface{}{
+			spanutil.InsertMap("TestExonerations", map[string]any{
 				"InvocationId":  invID,
 				"TestId":        testID,
 				"ExonerationId": "1",
@@ -83,7 +83,7 @@ func TestListTestExonerations(t *testing.T) {
 				"VariantHash":   "deadbeef",
 				"Reason":        pb.ExonerationReason_UNEXPECTED_PASS,
 			}),
-			spanutil.InsertMap("TestExonerations", map[string]interface{}{
+			spanutil.InsertMap("TestExonerations", map[string]any{
 				"InvocationId":  invID,
 				"TestId":        testID,
 				"ExonerationId": "2",

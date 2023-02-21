@@ -94,7 +94,7 @@ func extractFromEnv(out io.Writer) *lctx {
 
 	dec := json.NewDecoder(f)
 	dec.UseNumber()
-	tmp := map[string]interface{}{}
+	tmp := map[string]any{}
 	if err := dec.Decode(&tmp); err != nil {
 		fmt.Fprintf(out, "Could not decode LUCI_CONTEXT file %q: %s\n", path, err)
 		return &lctx{}

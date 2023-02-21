@@ -56,11 +56,11 @@ func (f *MetadataFetcher) FetchWithACLCheck(ctx context.Context) error {
 
 	logging.Fields{"id": f.Stream.ID}.Debugf(ctx, "Loading stream.")
 
-	var ents []interface{}
+	var ents []any
 	if f.WithState {
-		ents = []interface{}{f.Prefix, f.Stream, f.State}
+		ents = []any{f.Prefix, f.Stream, f.State}
 	} else {
-		ents = []interface{}{f.Prefix, f.Stream}
+		ents = []any{f.Prefix, f.Stream}
 	}
 
 	var prefixErr, streamErr, stateErr error

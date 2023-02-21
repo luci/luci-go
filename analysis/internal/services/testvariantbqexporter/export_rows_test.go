@@ -89,35 +89,35 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 		halfHAgo := now.Add(-30 * time.Minute)
 		m46Ago := now.Add(-46 * time.Minute)
 		ms := []*spanner.Mutation{
-			insert.AnalyzedTestVariant(realm, tID1, vh, atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID1, vh, atvpb.Status_FLAKY, map[string]any{
 				"Variant":          variant,
 				"Tags":             tags,
 				"TestMetadata":     span.Compressed(tmdM),
 				"StatusUpdateTime": start.Add(-time.Hour),
 			}),
 			// New flaky test variant.
-			insert.AnalyzedTestVariant(realm, tID2, vh, atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID2, vh, atvpb.Status_FLAKY, map[string]any{
 				"Variant":          variant,
 				"Tags":             tags,
 				"TestMetadata":     span.Compressed(tmdM),
 				"StatusUpdateTime": halfHAgo,
 			}),
 			// Flaky test with no verdicts in time range.
-			insert.AnalyzedTestVariant(realm, tID3, vh, atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID3, vh, atvpb.Status_FLAKY, map[string]any{
 				"Variant":          variant,
 				"Tags":             tags,
 				"TestMetadata":     span.Compressed(tmdM),
 				"StatusUpdateTime": start.Add(-time.Hour),
 			}),
 			// Test variant with another status is not exported.
-			insert.AnalyzedTestVariant(realm, tID4, vh, atvpb.Status_CONSISTENTLY_UNEXPECTED, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID4, vh, atvpb.Status_CONSISTENTLY_UNEXPECTED, map[string]any{
 				"Variant":          variant,
 				"Tags":             tags,
 				"TestMetadata":     span.Compressed(tmdM),
 				"StatusUpdateTime": start.Add(-time.Hour),
 			}),
 			// Test variant has multiple status updates.
-			insert.AnalyzedTestVariant(realm, tID5, vh, atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID5, vh, atvpb.Status_FLAKY, map[string]any{
 				"Variant":          variant,
 				"Tags":             tags,
 				"TestMetadata":     span.Compressed(tmdM),
@@ -130,56 +130,56 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 					now.Add(-24 * time.Hour)},
 			}),
 			// Test variant with different variant.
-			insert.AnalyzedTestVariant(realm, tID6, "c467ccce5a16dc72", atvpb.Status_CONSISTENTLY_EXPECTED, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID6, "c467ccce5a16dc72", atvpb.Status_CONSISTENTLY_EXPECTED, map[string]any{
 				"Variant":          pbutil.Variant("a", "b"),
 				"Tags":             tags,
 				"TestMetadata":     span.Compressed(tmdM),
 				"StatusUpdateTime": twoAndHalfHAgo,
 			}),
 			// Test variant with exonerated verdict.
-			insert.AnalyzedTestVariant(realm, tID7, vh, atvpb.Status_FLAKY, map[string]interface{}{
+			insert.AnalyzedTestVariant(realm, tID7, vh, atvpb.Status_FLAKY, map[string]any{
 				"Variant":          variant,
 				"Tags":             tags,
 				"TestMetadata":     span.Compressed(tmdM),
 				"StatusUpdateTime": start.Add(-time.Hour),
 			}),
-			insert.Verdict(realm, tID1, vh, "build-0", internal.VerdictStatus_EXPECTED, twoAndHalfHAgo, map[string]interface{}{
+			insert.Verdict(realm, tID1, vh, "build-0", internal.VerdictStatus_EXPECTED, twoAndHalfHAgo, map[string]any{
 				"IngestionTime":         oneAndHalfHAgo,
 				"UnexpectedResultCount": 0,
 				"TotalResultCount":      1,
 				"Exonerated":            false,
 			}),
-			insert.Verdict(realm, tID1, vh, "build-1", internal.VerdictStatus_VERDICT_FLAKY, twoAndHalfHAgo, map[string]interface{}{
+			insert.Verdict(realm, tID1, vh, "build-1", internal.VerdictStatus_VERDICT_FLAKY, twoAndHalfHAgo, map[string]any{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
 				"Exonerated":            false,
 			}),
-			insert.Verdict(realm, tID1, vh, "build-2", internal.VerdictStatus_EXPECTED, oneAndHalfHAgo, map[string]interface{}{
+			insert.Verdict(realm, tID1, vh, "build-2", internal.VerdictStatus_EXPECTED, oneAndHalfHAgo, map[string]any{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 0,
 				"TotalResultCount":      1,
 				"Exonerated":            false,
 			}),
-			insert.Verdict(realm, tID2, vh, "build-2", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]interface{}{
+			insert.Verdict(realm, tID2, vh, "build-2", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]any{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
 				"Exonerated":            false,
 			}),
-			insert.Verdict(realm, tID5, vh, "build-1", internal.VerdictStatus_EXPECTED, twoAndHalfHAgo, map[string]interface{}{
+			insert.Verdict(realm, tID5, vh, "build-1", internal.VerdictStatus_EXPECTED, twoAndHalfHAgo, map[string]any{
 				"IngestionTime":         now.Add(-45 * time.Minute),
 				"UnexpectedResultCount": 0,
 				"TotalResultCount":      1,
 				"Exonerated":            false,
 			}),
-			insert.Verdict(realm, tID5, vh, "build-2", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]interface{}{
+			insert.Verdict(realm, tID5, vh, "build-2", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]any{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,
 				"Exonerated":            false,
 			}),
-			insert.Verdict(realm, tID7, vh, "build-1", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]interface{}{
+			insert.Verdict(realm, tID7, vh, "build-1", internal.VerdictStatus_VERDICT_FLAKY, oneAndHalfHAgo, map[string]any{
 				"IngestionTime":         halfHAgo,
 				"UnexpectedResultCount": 1,
 				"TotalResultCount":      2,

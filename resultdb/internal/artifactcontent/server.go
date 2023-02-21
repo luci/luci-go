@@ -138,7 +138,7 @@ func (r *contentRequest) handle(c *router.Context) {
 	// Read the state from database.
 	var rbeCASHash spanner.NullString
 	key := r.invID.Key(r.parentID, r.artifactID)
-	err := spanutil.ReadRow(span.Single(c.Context), "Artifacts", key, map[string]interface{}{
+	err := spanutil.ReadRow(span.Single(c.Context), "Artifacts", key, map[string]any{
 		"ContentType": &r.contentType,
 		"Size":        &r.size,
 		"RBECASHash":  &rbeCASHash,

@@ -81,7 +81,7 @@ func TestCreate(t *testing.T) {
 			})
 
 			Convey("drained", func() {
-				rt.Handler = func(req interface{}) (int, interface{}) {
+				rt.Handler = func(req any) (int, any) {
 					inst, ok := req.(*compute.Instance)
 					So(ok, ShouldBeTrue)
 					So(inst.Name, ShouldEqual, "name")
@@ -102,7 +102,7 @@ func TestCreate(t *testing.T) {
 			Convey("error", func() {
 				Convey("http", func() {
 					Convey("transient", func() {
-						rt.Handler = func(req interface{}) (int, interface{}) {
+						rt.Handler = func(req any) (int, any) {
 							return http.StatusInternalServerError, nil
 						}
 						rt.Type = reflect.TypeOf(compute.Instance{})
@@ -122,7 +122,7 @@ func TestCreate(t *testing.T) {
 					})
 
 					Convey("permanent", func() {
-						rt.Handler = func(req interface{}) (int, interface{}) {
+						rt.Handler = func(req any) (int, any) {
 							return http.StatusConflict, nil
 						}
 						rt.Type = reflect.TypeOf(compute.Instance{})
@@ -142,7 +142,7 @@ func TestCreate(t *testing.T) {
 				})
 
 				Convey("operation", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
+					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{
 							Error: &compute.OperationError{
 								Errors: []*compute.OperationErrorErrors{
@@ -169,7 +169,7 @@ func TestCreate(t *testing.T) {
 
 			Convey("created", func() {
 				Convey("pending", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
+					rt.Handler = func(req any) (int, any) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldEqual, "name")
@@ -193,7 +193,7 @@ func TestCreate(t *testing.T) {
 				})
 
 				Convey("done", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
+					rt.Handler = func(req any) (int, any) {
 						switch rt.Type {
 						case reflect.TypeOf(compute.Instance{}):
 							// First call, to create the instance.
@@ -338,7 +338,7 @@ func TestDestroyInstance(t *testing.T) {
 
 			Convey("error", func() {
 				Convey("http", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
+					rt.Handler = func(req any) (int, any) {
 						return http.StatusInternalServerError, nil
 					}
 					datastore.Put(c, &model.VM{
@@ -359,7 +359,7 @@ func TestDestroyInstance(t *testing.T) {
 				})
 
 				Convey("operation", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
+					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{
 							Error: &compute.OperationError{
 								Errors: []*compute.OperationErrorErrors{
@@ -388,7 +388,7 @@ func TestDestroyInstance(t *testing.T) {
 
 			Convey("destroys", func() {
 				Convey("pending", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
+					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{}
 					}
 					datastore.Put(c, &model.VM{
@@ -413,7 +413,7 @@ func TestDestroyInstance(t *testing.T) {
 				})
 
 				Convey("done", func() {
-					rt.Handler = func(req interface{}) (int, interface{}) {
+					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{
 							Status:     "DONE",
 							TargetLink: "url",

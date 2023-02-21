@@ -554,7 +554,7 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 
 			reqID := bc.reqIDs[origI]
 			work <- func() error {
-				toPut := []interface{}{
+				toPut := []any{
 					b,
 					&model.BuildInfra{
 						Build: datastore.KeyForObj(ctx, b),

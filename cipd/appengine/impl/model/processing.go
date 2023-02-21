@@ -54,7 +54,7 @@ type ProcessingResult struct {
 // WriteResult overwrites ResultRaw field with compressed JSON-serialized 'r'.
 //
 // 'r' should serialize into a JSON object, e.g '{...}'.
-func (p *ProcessingResult) WriteResult(r interface{}) error {
+func (p *ProcessingResult) WriteResult(r any) error {
 	blob, err := json.Marshal(r)
 	switch {
 	case err != nil:
@@ -78,7 +78,7 @@ func (p *ProcessingResult) WriteResult(r interface{}) error {
 // ReadResult deserializes the result into the given variable.
 //
 // Does nothing if there's no results stored.
-func (p *ProcessingResult) ReadResult(r interface{}) error {
+func (p *ProcessingResult) ReadResult(r any) error {
 	if len(p.ResultRaw) == 0 {
 		return nil
 	}

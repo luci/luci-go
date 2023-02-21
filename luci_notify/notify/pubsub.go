@@ -116,7 +116,7 @@ func randInRange(upper, lower float64) float64 {
 	return lower + rand.Float64()*(upper-lower)
 }
 
-func putWithRetry(c context.Context, entity interface{}) error {
+func putWithRetry(c context.Context, entity any) error {
 	// Retry with exponential backoff. The limit we care about here is the limit
 	// on writes to entities within an entity group, which is once per second.
 	//
@@ -418,7 +418,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	var msg struct {
 		Message struct {
 			Data       []byte
-			Attributes map[string]interface{}
+			Attributes map[string]any
 		}
 	}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {

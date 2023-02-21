@@ -30,7 +30,7 @@ func ChainUnaryServerInterceptors(interceptors ...grpc.UnaryServerInterceptor) g
 	switch {
 	case len(interceptors) == 0:
 		// Noop interceptor.
-		return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			return handler(ctx, req)
 		}
 	case interceptors[0] == nil:
@@ -46,8 +46,8 @@ func ChainUnaryServerInterceptors(interceptors ...grpc.UnaryServerInterceptor) g
 
 // unaryCombinator is an interceptor that chains just two interceptors together.
 func unaryCombinator(first, second grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		return first(ctx, req, info, func(ctx context.Context, req interface{}) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		return first(ctx, req, info, func(ctx context.Context, req any) (any, error) {
 			return second(ctx, req, info, handler)
 		})
 	}
@@ -63,7 +63,7 @@ func ChainStreamServerInterceptors(interceptors ...grpc.StreamServerInterceptor)
 	switch {
 	case len(interceptors) == 0:
 		// Noop interceptor.
-		return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			return handler(srv, ss)
 		}
 	case interceptors[0] == nil:
@@ -79,8 +79,8 @@ func ChainStreamServerInterceptors(interceptors ...grpc.StreamServerInterceptor)
 
 // unaryCombinator is an interceptor that chains just two interceptors together.
 func streamCombinator(first, second grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		return first(srv, ss, info, func(srv interface{}, ss grpc.ServerStream) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		return first(srv, ss, info, func(srv any, ss grpc.ServerStream) error {
 			return second(srv, ss, info, handler)
 		})
 	}
@@ -131,8 +131,8 @@ type UnifiedServerInterceptor func(ctx context.Context, fullMethod string, handl
 
 // Unary returns an unary form of the interceptor.
 func (u UnifiedServerInterceptor) Unary() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		var resp interface{}
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		var resp any
 		err := u(ctx, info.FullMethod, func(ctx context.Context) (err error) {
 			resp, err = handler(ctx, req)
 			return err
@@ -146,7 +146,7 @@ func (u UnifiedServerInterceptor) Unary() grpc.UnaryServerInterceptor {
 
 // Stream returns a stream form of the interceptor.
 func (u UnifiedServerInterceptor) Stream() grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		original := ss.Context()
 		return u(original, info.FullMethod, func(ctx context.Context) error {
 			var wrapped grpc.ServerStream

@@ -98,7 +98,7 @@ func (c *cmdEditPayload) validateFlags(ctx context.Context, _ []string, _ subcom
 	return
 }
 
-func (c *cmdEditPayload) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out interface{}, err error) {
+func (c *cmdEditPayload) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out any, err error) {
 	return inJob, ledcmd.EditPayload(ctx, inJob, &ledcmd.EditPayloadOpts{
 		PropertyOnly: c.propertyOnly,
 		CasDigest:    c.casDigest,

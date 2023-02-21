@@ -44,7 +44,7 @@ func (f *timeLayoutFlag) String() string {
 	return f.ptr.Format(f.layout)
 }
 
-func (f *timeLayoutFlag) Get() interface{} {
+func (f *timeLayoutFlag) Get() any {
 	return *f.ptr
 }
 

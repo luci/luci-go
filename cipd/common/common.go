@@ -427,7 +427,7 @@ func InstanceMetadataFingerprint(key string, value []byte) string {
 }
 
 // validationErr returns a tagged validation error.
-func validationErr(format string, args ...interface{}) error {
+func validationErr(format string, args ...any) error {
 	return errors.Reason(format, args...).
 		Tag(grpcutil.InvalidArgumentTag, cipderr.BadArgument).
 		Err()

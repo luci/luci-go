@@ -79,7 +79,7 @@ func (w *fakeWriter) Send(req *bytestream.WriteRequest) error {
 
 func TestCreateArtifact(t *testing.T) {
 	// metric field values for Artifact table
-	artMFVs := []interface{}{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
+	artMFVs := []any{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
 
 	Convey(`CreateArtifact`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
@@ -206,7 +206,7 @@ func TestCreateArtifact(t *testing.T) {
 			Convey(`Same artifact exists`, func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					spanutil.InsertMap("Artifacts", map[string]interface{}{
+					spanutil.InsertMap("Artifacts", map[string]any{
 						"InvocationId": invocations.ID("inv"),
 						"ParentId":     "",
 						"ArtifactId":   "a",
@@ -221,7 +221,7 @@ func TestCreateArtifact(t *testing.T) {
 			Convey(`Different artifact exists`, func() {
 				testutil.MustApply(ctx,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
-					spanutil.InsertMap("Artifacts", map[string]interface{}{
+					spanutil.InsertMap("Artifacts", map[string]any{
 						"InvocationId": invocations.ID("inv"),
 						"ParentId":     "",
 						"ArtifactId":   "a",
@@ -324,7 +324,7 @@ func TestCreateArtifact(t *testing.T) {
 			var actualSize int64
 			var actualHash string
 			var actualContentType string
-			testutil.MustReadRow(ctx, "Artifacts", invocations.ID("inv").Key("", "a"), map[string]interface{}{
+			testutil.MustReadRow(ctx, "Artifacts", invocations.ID("inv").Key("", "a"), map[string]any{
 				"Size":        &actualSize,
 				"RBECASHash":  &actualHash,
 				"ContentType": &actualContentType,

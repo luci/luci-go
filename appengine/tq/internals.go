@@ -30,7 +30,7 @@ import (
 // We do this to avoid linking testing implementation into production binaries.
 // We make testing live in a different package and use this secret back door API
 // to talk to Dispatcher.
-func (d *Dispatcher) Internals() interface{} {
+func (d *Dispatcher) Internals() any {
 	return internalsImpl{d}
 }
 

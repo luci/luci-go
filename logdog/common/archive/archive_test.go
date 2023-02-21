@@ -140,7 +140,7 @@ func (ic *indexChecker) size(pb proto.Message) int {
 // If additional expected elements are supplied, they are the specific integers
 // that should appear in the index. Otherwise, it is assumed that the log is a
 // complete index.
-func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...interface{}) string {
+func (ic *indexChecker) shouldContainIndexFor(actual any, expected ...any) string {
 	indexB := actual.(*bytes.Buffer)
 
 	if len(expected) < 2 {

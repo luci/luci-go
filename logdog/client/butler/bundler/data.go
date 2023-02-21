@@ -61,7 +61,7 @@ func newPool(size int) *dataPool {
 	return &p
 }
 
-func (p *dataPool) newData() interface{} {
+func (p *dataPool) newData() any {
 	return &streamData{
 		buffer:      make([]byte, p.size),
 		releaseFunc: p.release,

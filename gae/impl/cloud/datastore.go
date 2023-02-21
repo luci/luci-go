@@ -293,7 +293,7 @@ func (bds *boundDatastore) prepareNativeQuery(fq *ds.FinalizedQuery) *datastore.
 	// nativeFilter translates a filter field. If the translation fails, we'll
 	// pass the result through to the underlying datastore and allow it to
 	// reject it.
-	nativeFilter := func(prop ds.Property) interface{} {
+	nativeFilter := func(prop ds.Property) any {
 		if np, err := bds.gaePropertyToNative("", prop); err == nil {
 			return np.Value
 		}
@@ -373,7 +373,7 @@ func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyDat
 
 	nativeProp.Name = name
 
-	convert := func(prop *ds.Property) (interface{}, error) {
+	convert := func(prop *ds.Property) (any, error) {
 		switch pt := prop.Type(); pt {
 		case ds.PTNull, ds.PTInt, ds.PTTime, ds.PTBool, ds.PTBytes, ds.PTString, ds.PTFloat:
 			return prop.Value(), nil
@@ -405,8 +405,8 @@ func (bds *boundDatastore) gaePropertyToNative(name string, pdata ds.PropertyDat
 		// then we will index.
 		nativeProp.NoIndex = true
 
-		// Pack this into an interface{} so it is marked as a multi-value.
-		multiProp := make([]interface{}, len(t))
+		// Pack this into an any so it is marked as a multi-value.
+		multiProp := make([]any, len(t))
 		for i := range t {
 			prop := &t[i]
 			if multiProp[i], err = convert(prop); err != nil {
@@ -431,7 +431,7 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
 
 	name = nativeProp.Name
 
-	convert := func(nv interface{}, prop *ds.Property) error {
+	convert := func(nv any, prop *ds.Property) error {
 		switch nvt := nv.(type) {
 		case nil:
 			nv = nil
@@ -474,11 +474,11 @@ func (bds *boundDatastore) nativePropertyToGAE(nativeProp datastore.Property) (
 	// Slice of supported native type. Break this into a slice of datastore
 	// properties.
 	//
-	// It must be an []interface{}.
+	// It must be an []any.
 	if rv := reflect.ValueOf(nativeProp.Value); rv.Kind() == reflect.Slice && rv.Type().Elem().Kind() == reflect.Interface {
-		// []interface{}, which is a multi-valued property with a single name.
+		// []any, which is a multi-valued property with a single name.
 		// Convert to a PropertySlice.
-		nativeValues := rv.Interface().([]interface{})
+		nativeValues := rv.Interface().([]any)
 		pslice := make(ds.PropertySlice, len(nativeValues))
 		for i, nv := range nativeValues {
 			if err = convert(nv, &pslice[i]); err != nil {
@@ -658,14 +658,14 @@ type transactionWrapper struct {
 	tx *datastore.Transaction
 }
 
-func (tw *transactionWrapper) GetMulti(keys []*datastore.Key, dst interface{}) (err error) {
+func (tw *transactionWrapper) GetMulti(keys []*datastore.Key, dst any) (err error) {
 	// We don't acquire a lock here because as of 2021 Q1 Transaction.GetMulti
 	// only reads the Transaction.id field, and doesn't make any mutations to the
 	// *Transaction state at all.
 	return tw.tx.GetMulti(keys, dst)
 }
 
-func (tw *transactionWrapper) PutMulti(keys []*datastore.Key, src interface{}) (ret []*datastore.PendingKey, err error) {
+func (tw *transactionWrapper) PutMulti(keys []*datastore.Key, src any) (ret []*datastore.PendingKey, err error) {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
 	return tw.tx.PutMulti(keys, src)

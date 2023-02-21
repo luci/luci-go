@@ -37,7 +37,7 @@ func MatcherEqual(m proto.Message) gomock.Matcher {
 
 // Matches returns true if x is proto message and if it matches expected
 // message.
-func (m *matcherEq) Matches(x interface{}) bool {
+func (m *matcherEq) Matches(x any) bool {
 	message, ok := x.(proto.Message)
 	if !ok {
 		return false

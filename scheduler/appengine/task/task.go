@@ -291,7 +291,7 @@ type ControllerReadOnly interface {
 	Task() proto.Message
 
 	// DebugLog appends a line to the free form text log of the task.
-	DebugLog(format string, args ...interface{})
+	DebugLog(format string, args ...any)
 
 	// GetClient returns http.Client that is configured to use job's service
 	// account credentials to talk to other services.

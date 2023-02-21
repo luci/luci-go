@@ -436,7 +436,7 @@ func (ui *UI) assetPage(ctx *router.Context, assetID string) error {
 
 	ref := assetRefFromID(assetHistory.Asset.Id)
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/asset.html", map[string]interface{}{
+	templates.MustRender(ctx.Context, ctx.Writer, "pages/asset.html", map[string]any{
 		"Breadcrumbs":       assetBreadcrumbs(ref),
 		"Ref":               ref,
 		"Overview":          deriveAssetOverview(assetHistory.Asset),

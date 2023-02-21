@@ -62,11 +62,11 @@ func TestProtocol(t *testing.T) {
 			resp, err := call(token)
 			So(err, ShouldBeNil)
 			defer resp.Body.Close()
-			tok := map[string]interface{}{}
+			tok := map[string]any{}
 			So(resp.StatusCode, ShouldEqual, 200)
 			So(resp.Header.Get("Content-Type"), ShouldEqual, "application/json")
 			So(json.NewDecoder(resp.Body).Decode(&tok), ShouldBeNil)
-			So(tok, ShouldResemble, map[string]interface{}{
+			So(tok, ShouldResemble, map[string]any{
 				"access_token": "tok1",
 				"expires_in":   1800.0,
 				"token_type":   "Bearer",

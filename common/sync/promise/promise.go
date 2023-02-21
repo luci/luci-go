@@ -26,7 +26,7 @@ var (
 )
 
 // Generator is the Promise's generator type.
-type Generator func(context.Context) (interface{}, error)
+type Generator func(context.Context) (any, error)
 
 // Promise is a promise structure with goroutine-safe methods that is
 // responsible for owning a single piece of data. Promises have multiple readers
@@ -42,7 +42,7 @@ type Promise struct {
 	// onGet, if not nil, is invoked when Get is called.
 	onGet func(context.Context)
 
-	data interface{} // The Promise's data.
+	data any // The Promise's data.
 	err  error       // The error status.
 }
 
@@ -90,7 +90,7 @@ func (p *Promise) runGen(c context.Context, gen Generator) {
 // If the value is available, it will be returned with its error status. If the
 // context times out or is cancelled, the appropriate context error will be
 // returned.
-func (p *Promise) Get(c context.Context) (interface{}, error) {
+func (p *Promise) Get(c context.Context) (any, error) {
 	// If we have an onGet function, run it (deferred case).
 	if p.onGet != nil {
 		p.onGet(c)
@@ -116,7 +116,7 @@ func (p *Promise) Get(c context.Context) (interface{}, error) {
 
 // Peek returns the promise's current value. If the value isn't set, Peek will
 // return immediately with ErrNoData.
-func (p *Promise) Peek() (interface{}, error) {
+func (p *Promise) Peek() (any, error) {
 	select {
 	case <-p.signalC:
 		return p.data, p.err

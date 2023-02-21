@@ -239,7 +239,7 @@ func (s *State) Build() *bbpb.Build {
 // property messages declared at Start() time.
 func (s *State) SynthesizeIOProto(o io.Writer) error {
 	_, err := iotools.WriteTracker(o, func(o io.Writer) error {
-		_ = func(format string, a ...interface{}) { fmt.Fprintf(o, format, a...) }
+		_ = func(format string, a ...any) { fmt.Fprintf(o, format, a...) }
 		// TODO(iannucci): implement
 		return nil
 	})

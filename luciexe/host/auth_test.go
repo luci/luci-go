@@ -45,7 +45,7 @@ import (
 // that the real ambient Swarming auth could leak through to the test. Using
 // ShouldStartWith would, on an assertion failure, print the 'actual' value
 // which would be a real authentication token, should the context leak.
-func tokenShouldStartWith(actual interface{}, expected ...interface{}) string {
+func tokenShouldStartWith(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		panic(errors.Reason("tokenShouldStartWith takes one expected value, got %d", len(expected)).Err())
 	}

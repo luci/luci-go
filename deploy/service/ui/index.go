@@ -33,7 +33,7 @@ func (ui *UI) indexPage(ctx *router.Context) error {
 		assets[i] = deriveAssetOverview(asset)
 	}
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", map[string]interface{}{
+	templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", map[string]any{
 		"Breadcrumbs": rootBreadcrumbs(),
 		"Assets":      assets,
 	})

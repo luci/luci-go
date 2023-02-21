@@ -41,7 +41,7 @@ func TestLogging(t *testing.T) {
 	})
 }
 
-func checkEntries(entries []*logging.FieldEntry, k string, v interface{}) bool {
+func checkEntries(entries []*logging.FieldEntry, k string, v any) bool {
 	for _, entry := range entries {
 		if entry.Key == k && entry.Value == v {
 			return true

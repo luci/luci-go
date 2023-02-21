@@ -81,7 +81,7 @@ func (f *propertiesFlag) String() string {
 	return ret
 }
 
-func (f *propertiesFlag) Get() interface{} {
+func (f *propertiesFlag) Get() any {
 	return f.props
 }
 

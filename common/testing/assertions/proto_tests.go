@@ -34,7 +34,7 @@ import (
 //
 // Values can either each be a proto.Message or a slice of values that each
 // implement proto.Message interface.
-func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
+func ShouldResembleProto(actual any, expected ...any) string {
 	if len(expected) != 1 {
 		return fmt.Sprintf("ShouldResembleProto expects 1 value, got %d", len(expected))
 	}
@@ -91,7 +91,7 @@ func ShouldResembleProto(actual interface{}, expected ...interface{}) string {
 // ShouldResembleProtoText is like ShouldResembleProto, but expected
 // is protobuf text.
 // actual must be a message. A slice of messages is not supported.
-func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string {
+func ShouldResembleProtoText(actual any, expected ...any) string {
 	return shouldResembleProtoUnmarshal(
 		func(s string, m proto.Message) error {
 			return prototext.Unmarshal([]byte(s), m)
@@ -103,7 +103,7 @@ func ShouldResembleProtoText(actual interface{}, expected ...interface{}) string
 // ShouldResembleProtoJSON is like ShouldResembleProto, but expected
 // is protobuf text.
 // actual must be a message. A slice of messages is not supported.
-func ShouldResembleProtoJSON(actual interface{}, expected ...interface{}) string {
+func ShouldResembleProtoJSON(actual any, expected ...any) string {
 	return shouldResembleProtoUnmarshal(
 		func(s string, m proto.Message) error {
 			return protojson.Unmarshal([]byte(s), m)
@@ -112,7 +112,7 @@ func ShouldResembleProtoJSON(actual interface{}, expected ...interface{}) string
 		expected...)
 }
 
-func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, actual interface{}, expected ...interface{}) string {
+func shouldResembleProtoUnmarshal(unmarshal func(string, proto.Message) error, actual any, expected ...any) string {
 	if _, ok := protoMessage(actual); !ok {
 		return fmt.Sprintf("ShouldResembleProtoText expects a proto message, got %T", actual)
 	}
@@ -138,7 +138,7 @@ var textPBMultiline = prototext.MarshalOptions{
 }
 
 // protoMessage returns V2 proto message, converting v1 on the fly.
-func protoMessage(a interface{}) (proto.Message, bool) {
+func protoMessage(a any) (proto.Message, bool) {
 	if m, ok := a.(proto.Message); ok {
 		return m, true
 	}

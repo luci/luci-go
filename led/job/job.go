@@ -124,10 +124,10 @@ func (jd *Definition) addLedProperties(ctx context.Context, uid string) (err err
 	}
 
 	// in case both isolate and rbe-cas properties are set in "$recipe_engine/led".
-	bb.WriteProperties(map[string]interface{}{
+	bb.WriteProperties(map[string]any{
 		"$recipe_engine/led": nil,
 	})
-	bb.WriteProperties(map[string]interface{}{
+	bb.WriteProperties(map[string]any{
 		"$recipe_engine/led": props,
 	})
 

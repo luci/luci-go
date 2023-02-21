@@ -42,7 +42,7 @@ var IdentityKindCounter = metric.NewCounter(
 // IdentityKindCountingInterceptor returns a gRPC interceptor that updates a
 // tsmon counter with the type of authenticated principal.
 func IdentityKindCountingInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		// FullMethod has form "/<service>/<method>".
 		parts := strings.Split(info.FullMethod, "/")
 		if len(parts) != 3 || parts[0] != "" {

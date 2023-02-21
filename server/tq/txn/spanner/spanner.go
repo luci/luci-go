@@ -54,7 +54,7 @@ func (spanDB) SaveReminder(ctx context.Context, r *reminder.Reminder) error {
 	span.BufferWrite(ctx, spanner.Insert(
 		tableName,
 		[]string{"ID", "FreshUntil", "Payload"},
-		[]interface{}{r.ID, r.FreshUntil, r.RawPayload}))
+		[]any{r.ID, r.FreshUntil, r.RawPayload}))
 	return nil
 }
 

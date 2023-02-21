@@ -33,7 +33,7 @@ import (
 //
 // To avoid confusion, explicitly rejects the special case where the right side is
 // an `errors.MultiError`.
-func ShouldContainErr(actual interface{}, expected ...interface{}) string {
+func ShouldContainErr(actual any, expected ...any) string {
 	if len(expected) > 1 {
 		return fmt.Sprintf("ShouldContainErr requires 0 or 1 expected value, got %d", len(expected))
 	}
@@ -89,7 +89,7 @@ func ShouldContainErr(actual interface{}, expected ...interface{}) string {
 //	   "thing", "other", "etc.")        // `err.Error()` contains all of these substrings.
 //	So(nilErr, ShouldErrLike, nil)      // nilErr ShouldBeNil
 //	So(nonNilErr, ShouldErrLike, "")    // nonNilErr ShouldNotBeNil
-func ShouldErrLike(actual interface{}, expected ...interface{}) string {
+func ShouldErrLike(actual any, expected ...any) string {
 	if len(expected) == 0 {
 		return "ShouldErrLike requires 1 or more expected values, got 0"
 	}
@@ -134,7 +134,7 @@ func ShouldErrLike(actual interface{}, expected ...interface{}) string {
 
 // ShouldPanicLike is the same as ShouldErrLike, but with the exception that it
 // takes a panic'ing func() as its first argument, instead of the error itself.
-func ShouldPanicLike(function interface{}, expected ...interface{}) (ret string) {
+func ShouldPanicLike(function any, expected ...any) (ret string) {
 	f, ok := function.(func())
 	if !ok {
 		return fmt.Sprintf("unexpected argument type %T, expected `func()`", function)
@@ -150,7 +150,7 @@ func ShouldPanicLike(function interface{}, expected ...interface{}) (ret string)
 //
 // The actual field will be unwrapped using errors.Unwrap and then compared to
 // the error in expected.
-func ShouldUnwrapTo(actual interface{}, expected ...interface{}) string {
+func ShouldUnwrapTo(actual any, expected ...any) string {
 	act, ok := actual.(error)
 	if !ok {
 		return fmt.Sprintf("ShouldUnwrapTo requires an error actual type, got %T", act)

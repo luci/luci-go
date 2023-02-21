@@ -233,7 +233,7 @@ func (r *MintMachineTokenRPC) mintLuciMachineToken(c context.Context, args mintT
 	}
 }
 
-func (r *MintMachineTokenRPC) mintingErrorResponse(c context.Context, code minter.ErrorCode, msg string, args ...interface{}) (*minter.MintMachineTokenResponse, error) {
+func (r *MintMachineTokenRPC) mintingErrorResponse(c context.Context, code minter.ErrorCode, msg string, args ...any) (*minter.MintMachineTokenResponse, error) {
 	serviceVer, err := utils.ServiceVersion(c, r.Signer)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "can't grab service version - %s", err)
