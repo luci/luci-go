@@ -62,8 +62,6 @@ var (
 
 	// NoAuthentication can be used in place of an Authenticator to explicitly
 	// specify that your Server will skip authentication.
-	//
-	// Use it with Server.Authenticator or RegisterDefaultAuth.
 	NoAuthentication Authenticator = nullAuthenticator{}
 )
 
@@ -136,13 +134,11 @@ type Override func(*router.Context) bool
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
 type Server struct {
-	// Authenticator, if not nil, specifies how to authenticate requests.
+	// Authenticator specifies how to authenticate requests.
 	//
-	// If nil, the default authenticator set by RegisterDefaultAuth will be used.
-	// If the default authenticator is also nil, all request handlers will panic.
-	//
-	// If you want to disable the authentication (e.g for tests), explicitly set
-	// Authenticator to NoAuthentication.
+	// Must never be nil (calls will panic if this is nil). If you want to disable
+	// the authentication (e.g for tests), explicitly set Authenticator to
+	// NoAuthentication.
 	Authenticator Authenticator
 
 	// AccessControl, if not nil, is a callback that is invoked per request to
@@ -245,21 +241,15 @@ func (s *Server) RegisterOverride(serviceName, methodName string, fn Override) {
 	s.overrides[serviceName][methodName] = fn
 }
 
-// authenticate forces authentication set by RegisterDefaultAuth.
+// authenticate authenticates the request.
 func (s *Server) authenticate() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		// Allow Authenticator to be replaced at any time before the serving by
-		// delaying reading it as much as possible.
-		a := s.Authenticator
-		if a == nil {
-			a = GetDefaultAuth()
-			if a == nil {
-				panic("prpc: no custom Authenticator was provided and default authenticator was not registered.\n" +
-					"Either explicitly set `Server.Authenticator = NoAuthentication`, or use RegisterDefaultAuth()")
-			}
+		if s.Authenticator == nil {
+			panic("prpc: no Authenticator was provided.\n" +
+				"To disable authentication explicitly set `Server.Authenticator = NoAuthentication`")
 		}
 
-		ctx, err := a.AuthenticateHTTP(c.Context, c.Request)
+		ctx, err := s.Authenticator.AuthenticateHTTP(c.Context, c.Request)
 		if err == nil {
 			c.Context = ctx
 			next(c)

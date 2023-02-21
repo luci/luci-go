@@ -19,6 +19,7 @@ import (
 
 	"google.golang.org/appengine"
 
+	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/grpcmon"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	"go.chromium.org/luci/logdog/server/config"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -42,6 +44,11 @@ func main() {
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{
 		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
+			},
+		},
 	}
 	servicesPb.RegisterServicesServer(&svr, services.New(services.ServerSettings{
 		NumQueues: 10,

@@ -32,9 +32,11 @@ import (
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
+	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
@@ -192,6 +194,11 @@ func main() {
 	// Install RPC servers.
 	api := prpc.Server{
 		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
+			},
+		},
 	}
 	scheduler.RegisterSchedulerServer(&api, &apiservers.SchedulerServer{
 		Engine:  globalEngine.PublicAPI(),

@@ -29,10 +29,12 @@ import (
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/server/config"
 
+	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 )
@@ -53,6 +55,11 @@ func main() {
 	// "dispatch.yaml".
 	svr := &prpc.Server{
 		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
+			},
+		},
 	}
 	logsPb.RegisterLogsServer(svr, dummyLogsService)
 	registrationPb.RegisterRegistrationServer(svr, dummyRegistrationService)

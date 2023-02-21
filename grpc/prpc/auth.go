@@ -17,7 +17,6 @@ package prpc
 import (
 	"context"
 	"net/http"
-	"sync"
 )
 
 // Authenticator authenticates incoming pRPC requests.
@@ -42,39 +41,4 @@ type nullAuthenticator struct{}
 
 func (nullAuthenticator) AuthenticateHTTP(c context.Context, r *http.Request) (context.Context, error) {
 	return c, nil
-}
-
-var defaultAuth = struct {
-	sync.RWMutex
-	Authenticator Authenticator
-}{}
-
-// RegisterDefaultAuth sets a default authenticator that is used unless
-// Server.Authenticator is provided.
-//
-// It is supposed to be used during init() time, to configure the default
-// authentication method used by the program.
-//
-// For example, see luci-go/appengine/gaeauth/server/prpc.go, that gets imported
-// by LUCI GAE apps. It sets up authentication based on LUCI auth framework.
-//
-// Panics if 'a' is nil or a default authenticator is already set.
-func RegisterDefaultAuth(a Authenticator) {
-	if a == nil {
-		panic("a is nil")
-	}
-	defaultAuth.Lock()
-	defer defaultAuth.Unlock()
-	if defaultAuth.Authenticator != nil {
-		panic("default prpc authenticator is already set")
-	}
-	defaultAuth.Authenticator = a
-}
-
-// GetDefaultAuth returns the default authenticator set by RegisterDefaultAuth
-// or nil if not registered.
-func GetDefaultAuth() Authenticator {
-	defaultAuth.RLock()
-	defer defaultAuth.RUnlock()
-	return defaultAuth.Authenticator
 }

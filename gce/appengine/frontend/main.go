@@ -20,11 +20,13 @@ import (
 
 	"google.golang.org/appengine"
 
+	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/web/gowrappers/rpcexplorer"
 
@@ -39,7 +41,14 @@ import (
 
 func main() {
 	mathrand.SeedRandomly()
-	api := prpc.Server{UnaryServerInterceptor: grpcmon.UnaryServerInterceptor}
+	api := prpc.Server{
+		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
+			},
+		},
+	}
 	server.RegisterConfigurationServer(&api, rpc.NewConfigurationServer())
 	instances.RegisterInstancesServer(&api, rpc.NewInstancesServer())
 	projects.RegisterProjectsServer(&api, rpc.NewProjectsServer())
