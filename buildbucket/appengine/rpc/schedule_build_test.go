@@ -2533,7 +2533,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setDimensions(nil, cfg, b)
+				setDimensions(nil, cfg, b, false)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
 			})
 
@@ -2549,7 +2549,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setDimensions(nil, cfg, b)
+				setDimensions(nil, cfg, b, false)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
@@ -2572,7 +2572,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setDimensions(nil, cfg, b)
+				setDimensions(nil, cfg, b, false)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
@@ -2609,7 +2609,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setDimensions(nil, cfg, b)
+				setDimensions(nil, cfg, b, false)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Swarming: &pb.BuildInfra_Swarming{
 						TaskDimensions: []*pb.RequestedDimension{
@@ -2674,7 +2674,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setDimensions(nil, cfg, b)
+				setDimensions(nil, cfg, b, false)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
@@ -2699,7 +2699,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setDimensions(nil, cfg, b)
+				setDimensions(nil, cfg, b, false)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 					TaskDimensions: []*pb.RequestedDimension{
 						{
@@ -2727,7 +2727,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}
 
-				setDimensions(nil, cfg, b)
+				setDimensions(nil, cfg, b, false)
 				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{})
 			})
 		})
@@ -2750,7 +2750,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setDimensions(req, nil, b)
+			setDimensions(req, nil, b, false)
 			So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
@@ -2800,7 +2800,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
-			setDimensions(req, cfg, b)
+			setDimensions(req, cfg, b, false)
 			So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
 				TaskDimensions: []*pb.RequestedDimension{
 					{
@@ -3375,6 +3375,9 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 			bldrCfg := &pb.BuilderConfig{
+				Dimensions: []string{
+					"key:value",
+				},
 				ServiceAccount: "account",
 				Backend: &pb.BuilderConfig_Backend{
 					Target: "swarming://chromium-swarm",
@@ -3400,10 +3403,23 @@ func TestScheduleBuild(t *testing.T) {
 			expectedBackendConfig.Fields["agent_binary_cipd_server"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_server"}}
 
 			So(buildResult.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+				Caches: []*pb.CacheEntry{
+					{
+						Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+						Path:             "builder",
+						WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+					},
+				},
 				Config: expectedBackendConfig,
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Target: "swarming://chromium-swarm",
+					},
+				},
+				TaskDimensions: []*pb.RequestedDimension{
+					{
+						Key:   "key",
+						Value: "value",
 					},
 				},
 			})
@@ -3529,6 +3545,13 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
 					Config: expectedBackendConfig,
 					Task: &pb.Task{
 						Id: &pb.TaskID{
@@ -3548,6 +3571,13 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "service_account"}}
 
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
 					Config: expectedBackendConfig,
 					Task: &pb.Task{
 						Id: &pb.TaskID{
@@ -3567,6 +3597,13 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
 				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
 					Config: expectedBackendConfig,
 					Task: &pb.Task{
 						Id: &pb.TaskID{
