@@ -61,6 +61,26 @@ type Step struct {
 
 var _ Loggable = (*Step)(nil)
 
+// wasWritten is a very basic Writer wrapper which tracks if Write was ever
+// called.
+//
+// Used to elide the `log` log from steps where it was never used.
+type wasWritten struct {
+	w       io.Writer
+	written bool
+}
+
+var _ io.Writer = (*wasWritten)(nil)
+
+func (w *wasWritten) Write(b []byte) (int, error) {
+	w.written = true
+	return w.w.Write(b)
+}
+
+func (w *wasWritten) wasWritten() bool {
+	return w.written
+}
+
 // StartStep adds a new step to the build.
 //
 // The step will have a "STARTED" status with a StartTime.
@@ -136,7 +156,7 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 		ctx = logging.SetField(ctx, "build.step", ret.stepPb.Name)
 		logging.Infof(ctx, "set status: %s", ret.stepPb.Status)
 	} else {
-		ret.addLog("log", func(name string, relLdName ldTypes.StreamName) io.Closer {
+		ret.addLog("log", func(name string, relLdName ldTypes.StreamName) func() error {
 			var err error
 			var stream io.WriteCloser
 			stream, err = ls.NewStream(ret.ctx, relLdName)
@@ -144,12 +164,27 @@ func ScheduleStep(ctx context.Context, name string) (*Step, context.Context) {
 				panic(err)
 			}
 
+			// wasWritten allows us to remove the log link if the log wasn't used at
+			// all.
+			ww := &wasWritten{w: stream}
+
 			// TODO(iannucci): figure out how to preserve log format from context?
-			ctx = (&gologger.LoggerConfig{Out: stream}).Use(ctx)
+			ctx = (&gologger.LoggerConfig{Out: ww}).Use(ctx)
 			// we track this in ret.loggingStream so don't have addLog track it.
 			ret.loggingStream = stream
 
-			return nil
+			return func() error {
+				if !ww.wasWritten() {
+					if ret.stepPb.Logs[0].Name != "log" {
+						// NOTE: We know that the first log is always "log" because it was
+						// added above in this function before the user had the opportunity
+						// to add any additional logs.
+						panic("impossible: first log in step is not called `log`")
+					}
+					ret.stepPb.Logs = ret.stepPb.Logs[1:]
+				}
+				return nil
+			}
 		})
 
 		// Each step gets its own logdog namespace "step/X/u". Any subprocesses
@@ -205,7 +240,12 @@ func (s *Step) End(err error) {
 	// stepPb is immutable after mutate ends, so we should be fine to access it
 	// outside the locks.
 
-	logStatus(s.ctx, s.stepPb.Status, message, s.stepPb.SummaryMarkdown)
+	if s.logsink() == nil || s.stepPb.Status != bbpb.Status_SUCCESS {
+		// If we're panicking, we need to log. In a situation where we have a log
+		// sink (i.e. a real build), all other information is already reflected via
+		// the Build message itself.
+		logStatus(s.ctx, s.stepPb.Status, message, s.stepPb.SummaryMarkdown)
+	}
 
 	if s.loggingStream != nil {
 		s.loggingStream.Close()
@@ -222,7 +262,7 @@ func (s *Step) End(err error) {
 //   - `dedupedName` - the deduplicated version of `name`
 //   - `relLdName` - The logdog stream name, relative to this process'
 //     LOGDOG_NAMESPACE, suitable for use with s.state.logsink.
-func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) io.Closer) {
+func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName ldTypes.StreamName) func() error) {
 	relLdName := ""
 	s.mutate(func() bool {
 		name = s.logNames.resolveName(name)
@@ -232,7 +272,7 @@ func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName
 			Url:  relLdName,
 		})
 		if closer := openStream(name, ldTypes.StreamName(relLdName)); closer != nil {
-			s.logClosers[relLdName] = closer.Close
+			s.logClosers[relLdName] = closer
 		}
 		return true
 	})
@@ -244,10 +284,10 @@ func (s *Step) addLog(name string, openStream func(dedupedName string, relLdName
 func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
 	ls := s.logsink()
 	var ret io.WriteCloser
-	var openStream func(string, ldTypes.StreamName) io.Closer
+	var openStream func(string, ldTypes.StreamName) func() error
 
 	if ls == nil {
-		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) func() error {
 			if desc, _ := streamclient.RenderOptions(opts...); desc.Type != streamproto.StreamType(logpb.StreamType_TEXT) {
 				// logpb.StreamType cast is necessary or .String() doesn't work.
 				typ := logpb.StreamType(desc.Type)
@@ -256,16 +296,16 @@ func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
 			} else {
 				ret = makeLoggingWriter(s.ctx, name)
 			}
-			return ret
+			return ret.Close
 		}
 	} else {
-		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) func() error {
 			var err error
 			ret, err = ls.NewStream(s.ctx, relLdName, opts...)
 			if err != nil {
 				panic(err)
 			}
-			return ret
+			return ret.Close
 		}
 	}
 
@@ -281,21 +321,21 @@ func (s *Step) Log(name string, opts ...streamclient.Option) io.Writer {
 func (s *Step) LogDatagram(name string, opts ...streamclient.Option) streamclient.DatagramWriter {
 	ls := s.logsink()
 	var ret streamclient.DatagramStream
-	var openStream func(string, ldTypes.StreamName) io.Closer
+	var openStream func(string, ldTypes.StreamName) func() error
 	if ls == nil {
-		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) func() error {
 			logging.Warningf(s.ctx, "dropping DATAGRAM log %q", name)
 			ret = nopDatagramStream{}
-			return ret
+			return ret.Close
 		}
 	} else {
-		openStream = func(name string, relLdName ldTypes.StreamName) io.Closer {
+		openStream = func(name string, relLdName ldTypes.StreamName) func() error {
 			var err error
 			ret, err = ls.NewDatagramStream(s.ctx, relLdName, opts...)
 			if err != nil {
 				panic(err)
 			}
-			return ret
+			return ret.Close
 		}
 	}
 

@@ -230,7 +230,6 @@ func TestStepLog(t *testing.T) {
 				},
 			})
 
-			So(scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "set status: SUCCESS")
 			So(scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "hi there!")
 		})
 
@@ -246,7 +245,8 @@ func TestStepLog(t *testing.T) {
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_SUCCESS,
 				Logs: []*bbpb.Log{
-					{Name: "log", Url: "step/0/log/0"},
+					// log link is removed because logging is not used for this step.
+					// {Name: "log", Url: "step/0/log/0"},
 					{Name: "some log", Url: "step/0/log/1"},
 				},
 			})
@@ -266,7 +266,8 @@ func TestStepLog(t *testing.T) {
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_SUCCESS,
 				Logs: []*bbpb.Log{
-					{Name: "log", Url: "step/0/log/0"},
+					// log link is removed because logging is not used for this step.
+					// {Name: "log", Url: "step/0/log/0"},
 					{Name: "some log", Url: "step/0/log/1"},
 				},
 			})

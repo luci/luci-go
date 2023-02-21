@@ -147,7 +147,12 @@ func (s *State) End(err error) {
 		s.sendCh.CloseAndDrain(s.ctx)
 	}
 
-	logStatus(s.ctx, s.buildPb.Status, message, s.buildPb.SummaryMarkdown)
+	if s.logsink == nil || s.buildPb.Status != bbpb.Status_SUCCESS {
+		// If we're panicking, we need to log. In a situation where we have a log
+		// sink (i.e. a real build), all other information is already reflected via
+		// the Build message itself.
+		logStatus(s.ctx, s.buildPb.Status, message, s.buildPb.SummaryMarkdown)
+	}
 
 	s.ctxCloser()
 }
