@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/grpc/discovery"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -51,14 +52,13 @@ func TestInterceptor(t *testing.T) {
 		authMethod2 := &testAuthMethod{expect: "2"}
 
 		rpcSrv := &prpc.Server{
-			Authenticator: &auth.Authenticator{
-				Methods: []auth.Method{authMethod1, authMethod2},
-			},
+			// Install the interceptor that checks the token **only** when authMethod1
+			// is used.
+			UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
+				auth.AuthenticatingInterceptor([]auth.Method{authMethod1, authMethod2}).Unary(),
+				Interceptor(authMethod1).Unary(),
+			),
 		}
-
-		// Install the interceptor that checks the token **only** when authMethod1
-		// is used.
-		rpcSrv.UnaryServerInterceptor = Interceptor(authMethod1).Unary()
 
 		// We need some API to call in the test. Reuse Discovery API for that since
 		// it is simple enough and have no side effects.

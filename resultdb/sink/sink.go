@@ -314,7 +314,7 @@ func (s *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	prpc := &prpc.Server{Authenticator: prpc.NoAuthentication}
+	prpc := &prpc.Server{}
 	prpc.InstallHandlers(routes, nil)
 	sinkpb.RegisterSinkServer(prpc, ss)
 

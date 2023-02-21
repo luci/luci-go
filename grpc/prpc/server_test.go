@@ -72,7 +72,7 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("Greeter service", t, func() {
-		server := Server{Authenticator: NoAuthentication}
+		server := Server{}
 
 		greeterSvc := &greeterService{}
 		RegisterGreeterServer(&server, greeterSvc)

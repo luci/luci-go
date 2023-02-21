@@ -1067,18 +1067,6 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		return srv, errors.Annotate(err, "failed to initialize warmup callbacks").Err()
 	}
 
-	// Put base interceptors in front of whatever interceptors are installed by
-	// modules and by the user of Server. Put grpcmon before the panic catcher
-	// to make sure panics are actually reported to the monitoring.
-	srv.RegisterUnaryServerInterceptors(
-		grpcmon.UnaryServerInterceptor,
-		grpcutil.UnaryServerPanicCatcherInterceptor,
-	)
-	srv.RegisterStreamServerInterceptors(
-		grpcmon.StreamServerInterceptor,
-		grpcutil.StreamServerPanicCatcherInterceptor,
-	)
-
 	// Sort modules by their initialization order based on declared dependencies,
 	// discover unfulfilled required dependencies.
 	sorted, err := resolveDependencies(mods)
@@ -1374,9 +1362,6 @@ func (s *Server) ConfigurePRPC(cb func(srv *prpc.Server)) {
 	if s.prpc.UnaryServerInterceptor != nil {
 		panic("use Server.RegisterUnaryServerInterceptors to register interceptors")
 	}
-	if s.prpc.Authenticator != nil {
-		panic("use SetRPCAuthMethods to configure RPC authentication")
-	}
 }
 
 // SetRPCAuthMethods overrides how the server authenticates incoming gRPC and
@@ -1446,19 +1431,38 @@ func (s *Server) Serve() error {
 	s.started = true
 	s.mu.Unlock()
 
-	// Finish setting the pRPC server now that the configuration is "locked".
-	s.prpc.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(s.unaryInterceptors...)
-	s.prpc.Authenticator = &auth.Authenticator{Methods: s.rpcAuthMethods}
+	// The configuration is "locked" now and we can finish the setup.
+	authInterceptor := auth.AuthenticatingInterceptor(s.rpcAuthMethods)
 
-	// Finish setting the gRPC server, if enabled.
+	// Assemble the final interceptor chains: base interceptors => auth =>
+	// whatever was installed by users of server.Server. Note we put grpcmon
+	// before the panic catcher to make sure panics are actually reported to
+	// the monitoring. grpcmon is also before the authentication to make sure
+	// auth errors are reported as well.
+	unaryInterceptors := append([]grpc.UnaryServerInterceptor{
+		grpcmon.UnaryServerInterceptor,
+		grpcutil.UnaryServerPanicCatcherInterceptor,
+		authInterceptor.Unary(),
+	}, s.unaryInterceptors...)
+	streamInterceptors := append([]grpc.StreamServerInterceptor{
+		grpcmon.StreamServerInterceptor,
+		grpcutil.StreamServerPanicCatcherInterceptor,
+		authInterceptor.Stream(),
+	}, s.streamInterceptors...)
+
+	// Finish setting the pRPC server. It supports only unary RPCs. The root
+	// request context is created in the HTTP land inside rootMiddleware().
+	s.prpc.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(unaryInterceptors...)
+
+	// Finish setting the gRPC server, if enabled. The root request context is
+	// created inside rootInterceptor().
 	if s.grpcPort != nil {
 		rootInterceptor := s.rootInterceptor()
-		authInterceptor := auth.AuthenticatingInterceptor(s.rpcAuthMethods)
 		s.grpcPort.addServerOptions(
-			grpc.ChainUnaryInterceptor(rootInterceptor.Unary(), authInterceptor.Unary()),
-			grpc.ChainUnaryInterceptor(s.unaryInterceptors...),
-			grpc.ChainStreamInterceptor(rootInterceptor.Stream(), authInterceptor.Stream()),
-			grpc.ChainStreamInterceptor(s.streamInterceptors...),
+			grpc.ChainUnaryInterceptor(rootInterceptor.Unary()),
+			grpc.ChainUnaryInterceptor(unaryInterceptors...),
+			grpc.ChainStreamInterceptor(rootInterceptor.Stream()),
+			grpc.ChainStreamInterceptor(streamInterceptors...),
 		)
 	}
 

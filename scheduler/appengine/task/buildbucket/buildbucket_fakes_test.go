@@ -52,7 +52,7 @@ func (f *fakeBuildsServer) CancelBuild(ctx context.Context, req *bbpb.CancelBuil
 func (bb *BuildbucketFake) Start() {
 	r := router.New()
 
-	rpcs := &prpc.Server{Authenticator: prpc.NoAuthentication}
+	rpcs := &prpc.Server{}
 	rpcs.InstallHandlers(r, nil)
 	bbpb.RegisterBuildsServer(rpcs, &fakeBuildsServer{fake: bb})
 

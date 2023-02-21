@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -54,12 +55,12 @@ func main() {
 	// RPCs sent to this module will automatically be routed to them via
 	// "dispatch.yaml".
 	svr := &prpc.Server{
-		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
-		Authenticator: &auth.Authenticator{
-			Methods: []auth.Method{
+		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
+			grpcmon.UnaryServerInterceptor,
+			auth.AuthenticatingInterceptor([]auth.Method{
 				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
-			},
-		},
+			}).Unary(),
+		),
 	}
 	logsPb.RegisterLogsServer(svr, dummyLogsService)
 	registrationPb.RegisterRegistrationServer(svr, dummyRegistrationService)

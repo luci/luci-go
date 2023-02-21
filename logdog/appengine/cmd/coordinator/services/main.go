@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
@@ -43,12 +44,12 @@ func main() {
 
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{
-		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
-		Authenticator: &auth.Authenticator{
-			Methods: []auth.Method{
+		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
+			grpcmon.UnaryServerInterceptor,
+			auth.AuthenticatingInterceptor([]auth.Method{
 				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
-			},
-		},
+			}).Unary(),
+		),
 	}
 	servicesPb.RegisterServicesServer(&svr, services.New(services.ServerSettings{
 		NumQueues: 10,

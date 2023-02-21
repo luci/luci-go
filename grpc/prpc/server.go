@@ -33,8 +33,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -59,10 +57,6 @@ var (
 	// exposeHeaders lists the non-standard response headers that are exposed to
 	// client that make cross-origin calls.
 	exposeHeaders = strings.Join([]string{HeaderGRPCCode}, ", ")
-
-	// NoAuthentication can be used in place of an Authenticator to explicitly
-	// specify that your Server will skip authentication.
-	NoAuthentication Authenticator = nullAuthenticator{}
 )
 
 // AccessControlDecision describes how to handle a cross-origin request.
@@ -104,7 +98,8 @@ type AccessControlDecision struct {
 	// Extends the default list of allowed headers, which is: "Accept",
 	// "Authorization", "Content-Type", Origin".
 	//
-	// Use this option if the server's authenticator checks some custom headers.
+	// Use this option if the authentication interceptor checks some custom
+	// headers.
 	AllowHeaders []string
 }
 
@@ -134,13 +129,6 @@ type Override func(*router.Context) bool
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
 type Server struct {
-	// Authenticator specifies how to authenticate requests.
-	//
-	// Must never be nil (calls will panic if this is nil). If you want to disable
-	// the authentication (e.g for tests), explicitly set Authenticator to
-	// NoAuthentication.
-	Authenticator Authenticator
-
 	// AccessControl, if not nil, is a callback that is invoked per request to
 	// determine what CORS access control headers, if any, should be added to
 	// the response.
@@ -241,56 +229,16 @@ func (s *Server) RegisterOverride(serviceName, methodName string, fn Override) {
 	s.overrides[serviceName][methodName] = fn
 }
 
-// authenticate authenticates the request.
-func (s *Server) authenticate() router.Middleware {
-	return func(c *router.Context, next router.Handler) {
-		if s.Authenticator == nil {
-			panic("prpc: no Authenticator was provided.\n" +
-				"To disable authentication explicitly set `Server.Authenticator = NoAuthentication`")
-		}
-
-		ctx, err := s.Authenticator.AuthenticateHTTP(c.Context, c.Request)
-		if err == nil {
-			c.Context = ctx
-			next(c)
-			return
-		}
-
-		format, perr := responseFormat(c.Request.Header.Get(headerAccept))
-		if perr != nil {
-			writeError(c.Context, c.Writer, perr, FormatBinary)
-			return
-		}
-
-		// Authenticate is allowed to return gRPC-tagger errors, recognize them.
-		code, ok := grpcutil.Tag.In(err)
-		if !ok {
-			if transient.Tag.In(err) {
-				code = codes.Internal
-			} else {
-				code = codes.Unauthenticated
-			}
-		}
-		writeError(c.Context, c.Writer, status.Error(code, err.Error()), format)
-	}
-}
-
 // InstallHandlers installs HTTP handlers at /prpc/:service/:method.
 //
 // See https://godoc.org/go.chromium.org/luci/grpc/prpc#hdr-Protocol
 // for pRPC protocol.
 //
-// The authenticator in 'base' is always replaced by pRPC specific one. For more
-// details about the authentication see Server.Authenticator doc.
+// Assumes incoming requests are not authenticated yet. Authentication should be
+// performed by an interceptor (just like when using a gRPC server).
 func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	rr := r.Subrouter("/prpc/:service/:method")
-	rr.Use(base.Extend(s.authenticate()))
-
-	rr.POST("", nil, s.handlePOST)
-	rr.OPTIONS("", nil, s.handleOPTIONS)
+	r.POST("/prpc/:service/:method", base, s.handlePOST)
+	r.OPTIONS("/prpc/:service/:method", base, s.handleOPTIONS)
 }
 
 // handle handles RPCs.

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -42,12 +43,12 @@ import (
 func main() {
 	mathrand.SeedRandomly()
 	api := prpc.Server{
-		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
-		Authenticator: &auth.Authenticator{
-			Methods: []auth.Method{
+		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
+			grpcmon.UnaryServerInterceptor,
+			auth.AuthenticatingInterceptor([]auth.Method{
 				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
-			},
-		},
+			}).Unary(),
+		),
 	}
 	server.RegisterConfigurationServer(&api, rpc.NewConfigurationServer())
 	instances.RegisterInstancesServer(&api, rpc.NewInstancesServer())

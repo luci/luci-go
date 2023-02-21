@@ -57,7 +57,6 @@ func (s *Server) Start(c context.Context) {
 	// Clean up any active server.
 	s.Close()
 
-	s.Authenticator = prpc.NoAuthentication
 	base := s.Base
 	if base == nil {
 		base = setContext
