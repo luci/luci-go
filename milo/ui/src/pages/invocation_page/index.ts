@@ -27,7 +27,7 @@ import { TabDef } from '../../components/tab_bar';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
-import { NOT_FOUND_URL, router } from '../../routes';
+import { getBuildURLPathFromBuildId, getInvURLPath } from '../../libs/url_utils';
 import { consumeStore, StoreInstance } from '../../store';
 import { provideInvocationState } from '../../store/invocation_state';
 import commonStyle from '../../styles/common_style.css';
@@ -69,7 +69,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     const invocationId = location.params['invocation_id'];
     if (typeof invocationId !== 'string') {
-      return cmd.redirect(NOT_FOUND_URL);
+      return cmd.redirect('/ui/not-found');
     }
     this.invocationId = invocationId;
     return;
@@ -136,13 +136,13 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       {
         id: 'test-results',
         label: 'Test Results',
-        href: router.urlForName('invocation-test-results', { invocation_id: this.invState.invocationId! }),
+        href: `${getInvURLPath(this.invState.invocationId!)}/test-results`,
         slotName: 'test-count-indicator',
       },
       {
         id: 'invocation-details',
         label: 'Invocation Details',
-        href: router.urlForName('invocation-details', { invocation_id: this.invState.invocationId! }),
+        href: `${getInvURLPath(this.invState.invocationId!)}/invocation-details`,
       },
     ];
   }
@@ -181,8 +181,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
       return '';
     }
 
-    const buildPageUrl = router.urlForName('build-short-link', { build_id: match.groups!['id'] });
-    return html`(<a href=${buildPageUrl} target="_blank">build page</a>)`;
+    return html`(<a href=${getBuildURLPathFromBuildId(match.groups!['id'])} target="_blank">build page</a>)`;
   }
 
   // Should be checked upstream, but allowlist URLs here just to be safe.

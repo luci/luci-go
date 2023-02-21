@@ -35,7 +35,7 @@ import './status_graph';
 import './variant_def_table';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumer, provider } from '../../libs/context';
-import { NOT_FOUND_URL } from '../../routes';
+import { NOT_FOUND_URL } from '../../libs/url_utils';
 import { consumeStore, StoreInstance } from '../../store';
 import { GraphType } from '../../store/test_history_page';
 import commonStyle from '../../styles/common_style.css';

@@ -35,8 +35,8 @@ import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { displayCompactDuration, displayDuration, parseProtoDuration } from '../../libs/time_utils';
+import { getInvURLPath, getRawArtifactURLPath } from '../../libs/url_utils';
 import { unwrapOrElse } from '../../libs/utils';
-import { getRawArtifactUrl, router } from '../../routes';
 import { Cluster, makeClusterLink } from '../../services/luci_analysis';
 import { Artifact, ListArtifactsResponse, parseTestResultName, TestResult } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
@@ -240,9 +240,7 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <div id="inv-artifacts-header">
-        From the parent inv <a href=${router.urlForName('invocation', { invocation_id: this.parentInvId })}></a>:
-      </div>
+      <div id="inv-artifacts-header">From the parent inv <a href=${getInvURLPath(this.parentInvId)}></a>:</div>
       <ul>
         ${this.invArtifacts.map((artifact) => {
           if (artifact.contentType === 'text/x-uri') {
@@ -252,7 +250,7 @@ export class ResultEntryElement extends MobxLitElement {
           }
           return html`
             <li>
-              <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
+              <a href=${getRawArtifactURLPath(artifact.name)} target="_blank">${artifact.artifactId}</a>
             </li>
           `;
         })}
@@ -274,7 +272,7 @@ export class ResultEntryElement extends MobxLitElement {
             ${this.resultArtifacts.map(
               (artifact) => html`
                 <li>
-                  <a href=${getRawArtifactUrl(artifact.name)} target="_blank">${artifact.artifactId}</a>
+                  <a href=${getRawArtifactURLPath(artifact.name)} target="_blank">${artifact.artifactId}</a>
                 </li>
               `
             )}

@@ -15,48 +15,8 @@
 import Mustache from 'mustache';
 
 import { Link } from '../models/link';
-import { router } from '../routes';
-import { Build, BuilderID, BuildInfraSwarming, GerritChange, GitilesCommit } from '../services/buildbucket';
-
-export function getURLPathForBuild(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
-  return router.urlForName('build', {
-    project: build.builder.project,
-    bucket: build.builder.bucket,
-    builder: build.builder.builder,
-    build_num_or_id: build.number ? build.number.toString() : `b${build.id}`,
-  });
-}
-
-export function getURLPathForBuilder(builder: BuilderID): string {
-  return (
-    `${getURLPathForProject(builder.project)}/builders/${encodeURIComponent(builder.bucket)}` +
-    `/${encodeURIComponent(builder.builder)}`
-  );
-}
-
-export function getURLPathForProject(proj: string): string {
-  return `/p/${encodeURIComponent(proj)}`;
-}
-
-export function getLegacyURLPathForBuild(builder: BuilderID, buildNumOrId: string) {
-  return `/old${getURLPathForBuilder(builder)}/${buildNumOrId}`;
-}
-
-export function getGitilesRepoURL(commit: Pick<GitilesCommit, 'host' | 'project'>) {
-  return `https://${commit.host}/${commit.project}`;
-}
-
-export function getURLForGitilesCommit(commit: GitilesCommit): string {
-  return `${getGitilesRepoURL(commit)}/+/${commit.id}`;
-}
-
-export function getURLForGerritChange(change: GerritChange): string {
-  return `https://${change.host}/c/${change.change}/${change.patchset}`;
-}
-
-export function getURLForSwarmingTask(hostname: string, taskId: string): string {
-  return `https://${hostname}/task?id=${taskId}&o=true&w=true`;
-}
+import { Build, BuildInfraSwarming } from '../services/buildbucket';
+import { getBuilderURLPath, getInvURLPath, getSwarmingTaskURL } from './url_utils';
 
 // getBotLink generates a link to a swarming bot.
 export function getBotLink(swarming: BuildInfraSwarming): Link | null {
@@ -74,10 +34,10 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
 
 // getBotLink generates a link to a swarming bot.
 export function getInvocationLink(invocationName: string): Link | null {
-  const stripped = invocationName.slice('invocations/'.length);
+  const invId = invocationName.slice('invocations/'.length);
   return {
     label: invocationName,
-    url: router.urlForName('invocation-details', { invocation_id: stripped }),
+    url: getInvURLPath(invId),
     ariaLabel: `result db invocation ${invocationName}`,
   };
 }
@@ -124,22 +84,17 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
     }
   }
   {
-    const match = tagValue.match(/^build\/milo\/([\w\-\_\ ]+)\/([\w\-\_\ ]+)\/([\w\-\_\ ]+)\/(\d+)$/);
+    const match = tagValue.match(/^build\/milo\/([\w\-_ ]+)\/([\w\-_ ]+)\/([\w\-_ ]+)\/(\d+)$/);
     if (match) {
-      const [, project, bucket, builder_name, build_number] = match as string[];
-      return router.urlForName('build', {
-        project: project,
-        bucket: bucket,
-        builder: builder_name,
-        build_num_or_id: build_number,
-      });
+      const [, project, bucket, builder, buildIdOrNum] = match as string[];
+      return `${getBuilderURLPath({ project, bucket, builder })}/${buildIdOrNum}`;
     }
   }
   {
     const match = tagValue.match(/^task\/swarming\/(chrome-swarming|chromium-swarm)\/(.+)$/);
     if (match) {
       const [, instance, taskId] = match as string[];
-      return getURLForSwarmingTask(`${instance}.appspot.com`, taskId);
+      return getSwarmingTaskURL(`${instance}.appspot.com`, taskId);
     }
   }
   return null;
@@ -167,8 +122,8 @@ export function renderBugUrlTemplate(
           builder: encodeURIComponent(build.builder.builder),
         },
       },
-      milo_build_url: encodeURIComponent(miloOrigin + router.urlForName('build-short-link', { build_id: build.id })),
-      milo_builder_url: encodeURIComponent(miloOrigin + getURLPathForBuilder(build.builder)),
+      milo_build_url: encodeURIComponent(miloOrigin + `/b/${build.id}`),
+      milo_builder_url: encodeURIComponent(miloOrigin + getBuilderURLPath(build.builder)),
     });
   } catch (_e) {
     console.warn(

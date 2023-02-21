@@ -26,8 +26,8 @@ import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
+import { getRawArtifactURLPath } from '../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../libs/utils';
-import { getRawArtifactUrl } from '../../routes';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
@@ -84,7 +84,7 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
 
     return html`
       <div id="details">
-        <a href=${getRawArtifactUrl(this.artifact.name)}>View Raw Content</a>
+        <a href=${getRawArtifactURLPath(this.artifact.name)}>View Raw Content</a>
       </div>
       <div id="content">
         <link

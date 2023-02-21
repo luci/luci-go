@@ -20,7 +20,7 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 import './hotkey';
 import './pixel_viewer';
 import { provider } from '../libs/context';
-import { getRawArtifactUrl } from '../routes';
+import { getRawArtifactURLPath } from '../libs/url_utils';
 import { Artifact } from '../services/resultdb';
 import commonStyle from '../styles/common_style.css';
 import { MiloBaseElement } from './milo_base';
@@ -58,13 +58,13 @@ export class ImageDiffViewerElement extends MiloBaseElement {
   @observable.ref @provideCoord() coord: Coordinate = { x: 0, y: 0 };
 
   @computed private get expectedImgUrl() {
-    return getRawArtifactUrl(this.expected.name);
+    return getRawArtifactURLPath(this.expected.name);
   }
   @computed private get actualImgUrl() {
-    return getRawArtifactUrl(this.actual.name);
+    return getRawArtifactURLPath(this.actual.name);
   }
   @computed private get diffImgUrl() {
-    return getRawArtifactUrl(this.diff.name);
+    return getRawArtifactURLPath(this.diff.name);
   }
   @observable.ref private viewOption = ViewOption.Animated;
 

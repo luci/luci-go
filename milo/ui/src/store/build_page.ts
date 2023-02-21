@@ -18,11 +18,12 @@ import { reaction } from 'mobx';
 import { addDisposer, cast, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
 
-import { getGitilesRepoURL, renderBugUrlTemplate } from '../libs/build_utils';
+import { renderBugUrlTemplate } from '../libs/build_utils';
 import { NEVER_OBSERVABLE, POTENTIALLY_EXPIRED } from '../libs/constants';
 import * as iter from '../libs/iter_utils';
 import { aliveFlow, keepAliveComputed, unwrapObservable } from '../libs/milo_mobx_utils';
 import { attachTags, InnerTag, TAG_SOURCE } from '../libs/tag';
+import { getGitilesRepoURL } from '../libs/url_utils';
 import {
   Build,
   BUILD_FIELD_MASK,

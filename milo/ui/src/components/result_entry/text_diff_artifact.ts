@@ -25,8 +25,8 @@ import '../expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
+import { getRawArtifactURLPath, getTextDiffArtifactURLPath } from '../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../libs/utils';
-import { getRawArtifactUrl, router } from '../../routes';
 import { Artifact } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
@@ -65,10 +65,8 @@ export class TextDiffArtifactElement extends MobxLitElement {
       <milo-expandable-entry .expanded=${true} .contentRuler="invisible">
         <span id="header" slot="header">
           Unexpected text output from
-          <a href="${router.urlForName('artifact')}/text-diff/${this.artifact.name}" target="_blank">
-            ${this.artifact.artifactId}
-          </a>
-          (<a href=${getRawArtifactUrl(this.artifact.name)} target="_blank">view raw</a>)
+          <a href=${getTextDiffArtifactURLPath(this.artifact.name)} target="_blank"> ${this.artifact.artifactId} </a>
+          (<a href=${getRawArtifactURLPath(this.artifact.name)} target="_blank">view raw</a>)
         </span>
         <div id="content" slot="content">
           ${unsafeHTML(Diff2Html.html(this.content || '', { drawFileList: false }))}

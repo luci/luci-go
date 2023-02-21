@@ -25,7 +25,6 @@ import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TabDef } from '../../components/tab_bar';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { getLegacyURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_COLOR_MAP,
@@ -42,9 +41,15 @@ import {
 } from '../../libs/error_handler';
 import { attachTags, hasTags } from '../../libs/tag';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
+import {
+  getBuilderURLPath,
+  getBuildURLPath,
+  getLegacyBuildURLPath,
+  getProjectURLPath,
+  NOT_FOUND_URL,
+} from '../../libs/url_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
-import { NOT_FOUND_URL, router } from '../../routes';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../store';
 import { GetBuildError } from '../../store/build_page';
@@ -161,7 +166,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   @computed private get legacyUrl() {
-    return getLegacyURLPathForBuild(this.builderIdParam!, this.buildNumOrId);
+    return getLegacyBuildURLPath(this.builderIdParam!, this.buildNumOrId);
   }
 
   @computed private get customBugLink() {
@@ -274,12 +279,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
             if (build.number !== undefined) {
               this.store.buildPage.setBuildId(build.builder, build.number, build.id);
             }
-            const buildUrl = router.urlForName('build', {
-              project: build.builder.project,
-              bucket: build.builder.bucket,
-              builder: build.builder.builder,
-              build_num_or_id: this.build!.buildNumOrId,
-            });
+            const buildUrl = getBuildURLPath(build.builder, this.build!.buildNumOrId);
 
             const newUrl = buildUrl + this.urlSuffix;
             // Prevent the router from pushing the history state.
@@ -316,17 +316,12 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   @computed get tabDefs(): TabDef[] {
-    const params = {
-      project: this.builderIdParam!.project,
-      bucket: this.builderIdParam!.bucket,
-      builder: this.builderIdParam!.builder,
-      build_num_or_id: this.buildNumOrIdParam,
-    };
+    const buildURLPath = getBuildURLPath(this.builderIdParam!, this.buildNumOrIdParam);
     return [
       {
         id: 'overview',
         label: 'Overview',
-        href: router.urlForName('build-overview', params),
+        href: buildURLPath + '/overview',
       },
       // TODO(crbug/1128097): display test-results tab unconditionally once
       // Foundation team is ready for ResultDB integration with other LUCI
@@ -337,7 +332,7 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
             {
               id: 'test-results',
               label: 'Test Results',
-              href: router.urlForName('build-test-results', params),
+              href: buildURLPath + '/test-results',
               slotName: 'test-count-indicator',
             },
           ]),
@@ -347,22 +342,22 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
             {
               id: 'steps',
               label: 'Steps & Logs',
-              href: router.urlForName('build-steps', params),
+              href: buildURLPath + '/steps',
             },
             {
               id: 'related-builds',
               label: 'Related Builds',
-              href: router.urlForName('build-related-builds', params),
+              href: buildURLPath + '/related-builds',
             },
             {
               id: 'timeline',
               label: 'Timeline',
-              href: router.urlForName('build-timeline', params),
+              href: buildURLPath + '/timeline',
             },
             {
               id: 'blamelist',
               label: 'Blamelist',
-              href: router.urlForName('build-blamelist', params),
+              href: buildURLPath + '/blamelist',
             },
           ]),
     ];
@@ -416,11 +411,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
-          <a href=${getURLPathForProject(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
+          <a href=${getProjectURLPath(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
           <span>&nbsp;/&nbsp;</span>
           <span>${this.builderIdParam!.bucket}</span>
           <span>&nbsp;/&nbsp;</span>
-          <a href=${getURLPathForBuilder(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
+          <a href=${getBuilderURLPath(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
           <span>&nbsp;/&nbsp;</span>
           <span>${this.buildNumOrId}</span>
         </div>

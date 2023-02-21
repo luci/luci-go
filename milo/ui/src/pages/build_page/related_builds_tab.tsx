@@ -37,11 +37,11 @@ import { createRoot, Root } from 'react-dom/client';
 import '../../components/dot_spinner';
 import { DotSpinner } from '../../components/dot_spinner';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { getURLPathForBuild, getURLPathForBuilder, getURLPathForProject } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
+import { getBuilderURLPath, getBuildURLPathFromBuildData, getProjectURLPath } from '../../libs/url_utils';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
 import { BuildStateInstance } from '../../store/build_state';
 import { ExpandableEntriesState, ExpandableEntriesStateInstance } from '../../store/expandable_entries_state';
@@ -83,10 +83,9 @@ const RelatedBuildsTableRow = observer(({ index, build }: RelatedBuildsTableRowP
           </Icon>
         </TableCell>
         <TableCell>
-          <a href={getURLPathForProject(build.data.builder.project)}>{build.data.builder.project}</a>/
-          {build.data.builder.bucket}/
-          <a href={getURLPathForBuilder(build.data.builder)}>{build.data.builder.builder}</a>/
-          <a href={getURLPathForBuild(build.data)}>{build.data.number ?? 'b' + build.data.id}</a>
+          <a href={getProjectURLPath(build.data.builder.project)}>{build.data.builder.project}</a>/
+          {build.data.builder.bucket}/<a href={getBuilderURLPath(build.data.builder)}>{build.data.builder.builder}</a>/
+          <a href={getBuildURLPathFromBuildData(build.data)}>{build.data.number ?? 'b' + build.data.id}</a>
         </TableCell>
         <TableCell>{build.createTime.toFormat(NUMERIC_TIME_FORMAT)}</TableCell>
         <TableCell>{displayDuration(build.pendingDuration) || 'N/A'}</TableCell>

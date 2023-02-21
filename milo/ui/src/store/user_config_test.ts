@@ -106,7 +106,7 @@ describe('UserConfig', () => {
     store1.enableCaching();
     after(() => destroy(store1));
 
-    expect(store1.build.defaultTabName).to.eq('build-test-results');
+    expect(store1.build.defaultTab).to.eq('build-test-results');
     expect(store1.build.inputProperties.isFolded('inputKey1')).to.be.true;
     expect(store1.build.inputProperties.isFolded('inputKey2')).to.be.false;
     expect(store1.build.outputProperties.isFolded('outputKey1')).to.be.true;
@@ -127,7 +127,7 @@ describe('UserConfig', () => {
     const store2 = UserConfig.create({}, { storage, transientKeysTTL });
     store2.enableCaching();
     after(() => destroy(store2));
-    expect(store2.build.defaultTabName).to.eq('build-test-results');
+    expect(store2.build.defaultTab).to.eq('build-test-results');
     expect(store2.build.inputProperties.isFolded('inputKey1')).to.be.true;
     expect(store2.build.inputProperties.isFolded('inputKey2')).to.be.false;
     expect(store2.build.outputProperties.isFolded('outputKey1')).to.be.true;
@@ -194,8 +194,8 @@ describe('UserConfig', () => {
         userConfig: types.optional(UserConfig, {}),
       })
       .actions((self) => ({
-        modifyDefaultBuildTabNameFromParent(tabName: string) {
-          self.userConfig.build.setDefaultTab(tabName);
+        modifyDefaultBuildTabNameFromParent(tab: string) {
+          self.userConfig.build.setDefaultTab(tab);
         },
         afterCreate() {
           self.userConfig.enableCaching();
@@ -207,7 +207,7 @@ describe('UserConfig', () => {
     after(() => destroy(store1));
 
     store1.modifyDefaultBuildTabNameFromParent('new tab name');
-    expect(store1.userConfig.build.defaultTabName).to.eq('new tab name');
+    expect(store1.userConfig.build.defaultTab).to.eq('new tab name');
 
     timer.runAll();
     timer.tick(Duration.fromObject({ hour: 1 }).toMillis());
@@ -215,6 +215,6 @@ describe('UserConfig', () => {
     const store2 = UserConfig.create({}, { storage });
     store2.enableCaching();
     after(() => destroy(store2));
-    expect(store2.build.defaultTabName).to.eq('new tab name');
+    expect(store2.build.defaultTab).to.eq('new tab name');
   });
 });

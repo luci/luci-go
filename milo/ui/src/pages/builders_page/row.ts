@@ -19,11 +19,11 @@ import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
-import { getURLPathForBuild, getURLPathForBuilder } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { lazyRendering } from '../../libs/observer_element';
+import { getBuilderURLPath, getBuildURLPathFromBuildData } from '../../libs/url_utils';
 import { Build, BuilderID } from '../../services/buildbucket';
 import { BuilderStats } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
@@ -40,7 +40,7 @@ export class BuildersPageRowElement extends MiloBaseElement {
   @observable.ref numOfBuilds = 25;
 
   @computed private get builderLink() {
-    return getURLPathForBuilder(this.builder);
+    return getBuilderURLPath(this.builder);
   }
 
   @computed private get recentBuilds$(): IPromiseBasedObservable<readonly Build[]> {
@@ -137,7 +137,7 @@ export class BuildersPageRowElement extends MiloBaseElement {
             return html`
               <a
                 class="cell build ${BUILD_STATUS_CLASS_MAP[build.status]}-cell"
-                href=${getURLPathForBuild(build)}
+                href=${getBuildURLPathFromBuildData(build)}
                 target="_blank"
               ></a>
             `;

@@ -20,7 +20,7 @@ import { computed, makeObservable, observable } from 'mobx';
 
 import '../expandable_entry';
 import '../image_diff_viewer';
-import { router } from '../../routes';
+import { getImageDiffArtifactURLPath } from '../../libs/url_utils';
 import { Artifact } from '../../services/resultdb';
 
 /**
@@ -33,10 +33,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
   @observable.ref diff!: Artifact;
 
   @computed private get artifactPageUrl() {
-    const search = new URLSearchParams();
-    search.set('actual_artifact_id', this.actual.artifactId);
-    search.set('expected_artifact_id', this.expected.artifactId);
-    return `${router.urlForName('artifact')}/image-diff/${this.diff.name}?${search}`;
+    return getImageDiffArtifactURLPath(this.diff.name, this.actual.artifactId, this.expected.artifactId);
   }
 
   constructor() {

@@ -29,7 +29,7 @@ import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP, VERDICT_VARIANT_STAT
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
-import { router } from '../../../routes';
+import { getBuildURLPathFromBuildId, getInvURLPath } from '../../../libs/url_utils';
 import { TestVerdictBundle } from '../../../services/luci_analysis';
 import { RESULT_LIMIT } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
@@ -153,9 +153,9 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
     const invId = this.verdictBundle.verdict.invocationId;
     const match = invId.match(/^build-(?<id>\d+)/);
     if (!match) {
-      return router.urlForName('invocation-test-results', { invocation_id: invId });
+      return `${getInvURLPath(invId)}/test-results`;
     }
-    return router.urlForName('build-short-link', { build_id: match.groups!['id'], path: ['test-results'] });
+    return `${getBuildURLPathFromBuildId(match.groups!['id'])}/test-results`;
   }
 
   constructor() {

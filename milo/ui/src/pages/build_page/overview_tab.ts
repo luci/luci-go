@@ -33,21 +33,20 @@ import './retry_build_dialog';
 import './steps_tab/step_display_config';
 import './steps_tab/step_list';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import {
-  getBotLink,
-  getBuildbucketLink,
-  getInvocationLink,
-  getURLForGerritChange,
-  getURLForGitilesCommit,
-  getURLForSwarmingTask,
-} from '../../libs/build_utils';
+import { getBotLink, getBuildbucketLink, getInvocationLink } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration } from '../../libs/time_utils';
+import {
+  getBuildURLPath,
+  getGerritChangeURL,
+  getGitilesCommitURL,
+  getSwarmingTaskURL,
+  getTestHisotryURLPath,
+} from '../../libs/url_utils';
 import { unwrapOrElse, urlSetSearchQueryParam } from '../../libs/utils';
-import { router } from '../../routes';
 import { BuildStatus, GitilesCommit } from '../../services/buildbucket';
 import { getPropKeyLabel } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
@@ -211,7 +210,7 @@ export class OverviewTabElement extends MobxLitElement {
       <tr>
         <td>Revision:</td>
         <td>
-          <a href=${getURLForGitilesCommit(gitilesCommit)} target="_blank">${gitilesCommit.id}</a>
+          <a href=${getGitilesCommitURL(gitilesCommit)} target="_blank">${gitilesCommit.id}</a>
           ${gitilesCommit.position ? `CP #${gitilesCommit.position}` : ''}
         </td>
       </tr>
@@ -232,7 +231,7 @@ export class OverviewTabElement extends MobxLitElement {
             <tr>
               <td>Patch:</td>
               <td>
-                <a href=${getURLForGerritChange(gc)}> ${gc.change} (ps #${gc.patchset}) </a>
+                <a href=${getGerritChangeURL(gc)}> ${gc.change} (ps #${gc.patchset}) </a>
               </td>
             </tr>
           `
@@ -276,7 +275,7 @@ export class OverviewTabElement extends MobxLitElement {
                     ${!build.infra.swarming.taskId
                       ? 'N/A'
                       : html`
-                          <a href=${getURLForSwarmingTask(build.infra.swarming.hostname, build.infra.swarming.taskId)}>
+                          <a href=${getSwarmingTaskURL(build.infra.swarming.hostname, build.infra.swarming.taskId)}>
                             ${build.infra.swarming.taskId}
                           </a>
                         `}
@@ -327,10 +326,8 @@ export class OverviewTabElement extends MobxLitElement {
     }
 
     const testLoader = this.invState.testLoader;
-    const testsTabUrl = router.urlForName('build-test-results', {
-      ...this.store.buildPage.builderIdParam!,
-      build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
-    });
+    const testsTabUrl =
+      getBuildURLPath(this.store.buildPage.builderIdParam!, this.store.buildPage.buildNumOrIdParam!) + '/test-results';
 
     // Overview tab is more crowded than the test results tab.
     // Hide all additional columns.
@@ -381,10 +378,7 @@ export class OverviewTabElement extends MobxLitElement {
             .variant=${testVariant}
             .columnGetters=${this.invState.columnGetters}
             .historyUrl=${urlSetSearchQueryParam(
-              router.urlForName('test-history', {
-                realm: this.build!.data.builder.project,
-                test_id: testVariant.testId,
-              }),
+              getTestHisotryURLPath(this.build!.data.builder.project, testVariant.testId),
               'VHASH',
               testVariant.variantHash
             )}
@@ -400,11 +394,8 @@ export class OverviewTabElement extends MobxLitElement {
     if (!this.store.buildPage.canReadFullBuild) {
       return;
     }
-
-    const stepsUrl = router.urlForName('build-steps', {
-      ...this.store.buildPage.builderIdParam,
-      build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
-    });
+    const stepsUrl =
+      getBuildURLPath(this.store.buildPage.builderIdParam!, this.store.buildPage.buildNumOrIdParam!) + '/steps';
     return html`
       <div>
         <h3>Steps & Logs (<a href=${stepsUrl}>View in Steps Tab</a>)</h3>

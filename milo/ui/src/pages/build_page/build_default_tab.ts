@@ -20,7 +20,7 @@ import { customElement } from 'lit/decorators.js';
 import '../../components/commit_entry';
 import '../../components/hotkey';
 import { consumer } from '../../libs/context';
-import { router } from '../../routes';
+import { getBuildURLPath } from '../../libs/url_utils';
 import { consumeStore, StoreInstance } from '../../store';
 
 @customElement('milo-build-default-tab')
@@ -30,10 +30,9 @@ export class BuildDefaultTabElement extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    const newUrl = router.urlForName(this.store.userConfig.build.defaultTabName, {
-      ...this.store.buildPage.builderIdParam!,
-      build_num_or_id: this.store.buildPage.buildNumOrIdParam!,
-    });
+    const newUrl =
+      getBuildURLPath(this.store.buildPage.builderIdParam!, this.store.buildPage.buildNumOrIdParam!) +
+      `/${this.store.userConfig.build.defaultTab}`;
 
     // Prevent the router from pushing the history state.
     window.history.replaceState(null, '', newUrl);

@@ -23,11 +23,10 @@ import '../../components/status_bar';
 import '../../components/dot_spinner';
 import './row';
 import { MiloBaseElement } from '../../components/milo_base';
-import { getURLPathForProject } from '../../libs/build_utils';
 import { consumer, provider } from '../../libs/context';
 import { reportError, reportErrorAsync } from '../../libs/error_handler';
 import { IntersectionNotifier, provideNotifier } from '../../libs/observer_element';
-import { NOT_FOUND_URL } from '../../routes';
+import { getProjectURLPath, NOT_FOUND_URL } from '../../libs/url_utils';
 import { BuilderID } from '../../services/buildbucket';
 import { ListBuildersRequest, ListBuildersResponse } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
@@ -121,7 +120,7 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
   protected render = reportError(this, () => {
     return html`
       <div id="builders-group-id">
-        <a href=${getURLPathForProject(this.project)}>${this.project}</a>
+        <a href=${getProjectURLPath(this.project)}>${this.project}</a>
         ${
           this.group
             ? html`

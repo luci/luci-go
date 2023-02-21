@@ -38,7 +38,7 @@ describe('ChangeConfigDialog', () => {
   });
 
   it('should sync local state when opening the dialog', async () => {
-    store.userConfig.build.setDefaultTab('build-test-results');
+    store.userConfig.build.setDefaultTab('test-results');
     const { rerender } = render(
       <StoreProvider value={store}>
         <ChangeConfigDialog open />
@@ -48,7 +48,7 @@ describe('ChangeConfigDialog', () => {
     expect(screen.queryByRole('button', { name: 'Test Results' })).to.not.be.null;
     expect(screen.queryByRole('button', { name: 'Timeline' })).to.be.null;
 
-    store.userConfig.build.setDefaultTab('build-timeline');
+    store.userConfig.build.setDefaultTab('timeline');
     await timer.runToLastAsync();
 
     // Updating the config while the dialog is still open has no effect.
@@ -71,7 +71,7 @@ describe('ChangeConfigDialog', () => {
   });
 
   it('should update global config when confirmed', async () => {
-    store.userConfig.build.setDefaultTab('build-test-results');
+    store.userConfig.build.setDefaultTab('test-results');
     const onCloseSpy = sinon.spy();
 
     render(
@@ -99,11 +99,11 @@ describe('ChangeConfigDialog', () => {
 
     expect(onCloseSpy.callCount).to.eq(1);
     expect(setDefaultTabSpy.callCount).to.eq(2);
-    expect(store.userConfig.build.defaultTabName).to.eq('build-timeline');
+    expect(store.userConfig.build.defaultTab).to.eq('timeline');
   });
 
   it('should not update global config when dismissed', async () => {
-    store.userConfig.build.setDefaultTab('build-test-results');
+    store.userConfig.build.setDefaultTab('test-results');
     const onCloseSpy = sinon.spy();
 
     render(
@@ -131,6 +131,6 @@ describe('ChangeConfigDialog', () => {
 
     expect(onCloseSpy.callCount).to.eq(1);
     expect(setDefaultTabSpy.callCount).to.eq(1);
-    expect(store.userConfig.build.defaultTabName).to.eq('build-test-results');
+    expect(store.userConfig.build.defaultTab).to.eq('test-results');
   });
 });

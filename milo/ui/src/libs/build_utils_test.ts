@@ -19,8 +19,6 @@ import {
   getCipdLink,
   getLogdogRawUrl,
   getSafeUrlFromTagValue,
-  getURLPathForBuilder,
-  getURLPathForProject,
   renderBugUrlTemplate,
 } from './build_utils';
 
@@ -81,26 +79,11 @@ describe('Build Utils Tests', () => {
 
     it('should get the correct milo url', async () => {
       const url = getSafeUrlFromTagValue('build/milo/project_name/bucket/Builder name/42');
-      assert.strictEqual(url, '/ui/p/project_name/builders/bucket/Builder%20name/42');
+      assert.strictEqual(url, '/p/project_name/builders/bucket/Builder%20name/42');
     });
     it('should get the correct swarming url', async () => {
       const url = getSafeUrlFromTagValue('task/swarming/chrome-swarming/deadbeef');
       assert.strictEqual(url, 'https://chrome-swarming.appspot.com/task?id=deadbeef&o=true&w=true');
-    });
-  });
-
-  describe('getURLPathForBuilder', () => {
-    it('should encode the path components', () => {
-      assert.strictEqual(
-        getURLPathForBuilder({ project: 'test project', bucket: 'test bucket', builder: 'test builder' }),
-        '/p/test%20project/builders/test%20bucket/test%20builder'
-      );
-    });
-  });
-
-  describe('getURLPathForProject', () => {
-    it('should encode the project', () => {
-      assert.strictEqual(getURLPathForProject('test project'), '/p/test%20project');
     });
   });
 
@@ -112,8 +95,8 @@ describe('Build Utils Tests', () => {
         {
           id: '123',
           builder: {
-            project: 'test project',
-            bucket: 'test bucket',
+            project: 'testproject',
+            bucket: 'testbucket',
             builder: 'test builder',
           },
         },
@@ -122,7 +105,7 @@ describe('Build Utils Tests', () => {
       assert.strictEqual(
         url,
         // eslint-disable-next-line max-len
-        'https://bugs.chromium.org/p/chromium/issues/entry?summary=summary&description=project%3A+test%20project%0Abucket%3A+test%20bucket%0Abuilder%3A+test%20builder%0Abuilder+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fp%2Ftest%2520project%2Fbuilders%2Ftest%2520bucket%2Ftest%2520builder%0Abuild+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fui%2Fb%2F123'
+        'https://bugs.chromium.org/p/chromium/issues/entry?summary=summary&description=project%3A+testproject%0Abucket%3A+testbucket%0Abuilder%3A+test%20builder%0Abuilder+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fp%2Ftestproject%2Fbuilders%2Ftestbucket%2Ftest%2520builder%0Abuild+url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fb%2F123'
       );
     });
 
@@ -133,8 +116,8 @@ describe('Build Utils Tests', () => {
         {
           id: '123',
           builder: {
-            project: 'test project',
-            bucket: 'test bucket',
+            project: 'testproject',
+            bucket: 'testbucket',
             builder: 'test builder',
           },
         },
@@ -143,7 +126,7 @@ describe('Build Utils Tests', () => {
       assert.strictEqual(
         url,
         // eslint-disable-next-line max-len
-        'https://b.corp.google.com/createIssue?title=title&description=project%3A+test%20project%0Abucket%3A+test%20bucket%0Abuilder%3A+test%20builder%0Abuilder_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fp%2Ftest%2520project%2Fbuilders%2Ftest%2520bucket%2Ftest%2520builder%0Abuild_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fui%2Fb%2F123'
+        'https://b.corp.google.com/createIssue?title=title&description=project%3A+testproject%0Abucket%3A+testbucket%0Abuilder%3A+test%20builder%0Abuilder_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fp%2Ftestproject%2Fbuilders%2Ftestbucket%2Ftest%2520builder%0Abuild_url%3A+https%3A%2F%2Fluci-milo-dev.appspot.com%2Fb%2F123'
       );
     });
 

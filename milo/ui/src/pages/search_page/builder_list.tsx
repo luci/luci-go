@@ -18,7 +18,7 @@ import { useEffect } from 'react';
 
 import '../../components/dot_spinner';
 import { DotSpinner } from '../../components/dot_spinner';
-import { getURLPathForBuilder } from '../../libs/build_utils';
+import { getBuilderURLPath } from '../../libs/url_utils';
 import { useStore } from '../../store';
 
 export const BuilderList = observer(() => {
@@ -38,7 +38,7 @@ export const BuilderList = observer(() => {
           <ul>
             {builders?.map((builder) => (
               <li key={builder.builder}>
-                <a href={getURLPathForBuilder(builder)}>{builder.builder}</a>
+                <a href={getBuilderURLPath(builder)}>{builder.builder}</a>
               </li>
             ))}
           </ul>

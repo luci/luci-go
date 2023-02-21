@@ -45,17 +45,17 @@ export interface ChangeConfigDialogProps {
 // An array of [buildTabName, buildTabLabel] tuples.
 // Use an array of tuples instead of an Object to ensure order.
 const TAB_NAME_LABEL_TUPLES = Object.freeze([
-  ['build-overview', 'Overview'],
-  ['build-test-results', 'Test Results'],
-  ['build-steps', 'Steps & Logs'],
-  ['build-related-builds', 'Related Builds'],
-  ['build-timeline', 'Timeline'],
-  ['build-blamelist', 'Blamelist'],
+  ['overview', 'Overview'],
+  ['test-results', 'Test Results'],
+  ['steps', 'Steps & Logs'],
+  ['related-builds', 'Related Builds'],
+  ['timeline', 'Timeline'],
+  ['blamelist', 'Blamelist'],
 ] as const);
 
 export const ChangeConfigDialog = observer(({ open, onClose, container }: ChangeConfigDialogProps) => {
   const buildConfig = useStore().userConfig.build;
-  const [tabName, setTabName] = useState(() => buildConfig.defaultTabName);
+  const [tab, setTabName] = useState(() => buildConfig.defaultTab);
 
   // Sync the local state with the global config whenever the dialog is
   // (re-)opened. Without this
@@ -67,7 +67,7 @@ export const ChangeConfigDialog = observer(({ open, onClose, container }: Change
     if (!open) {
       return;
     }
-    setTabName(buildConfig.defaultTabName);
+    setTabName(buildConfig.defaultTab);
   }, [open, buildConfig]);
 
   return (
@@ -78,14 +78,14 @@ export const ChangeConfigDialog = observer(({ open, onClose, container }: Change
           Default tab:
         </Typography>
         <Select
-          value={tabName}
+          value={tab}
           onChange={(e) => setTabName(e.target.value)}
           input={<OutlinedInput size="small" />}
           MenuProps={{ disablePortal: true }}
           sx={{ width: '180px' }}
         >
-          {TAB_NAME_LABEL_TUPLES.map(([tabName, label]) => (
-            <MenuItem key={tabName} value={tabName}>
+          {TAB_NAME_LABEL_TUPLES.map(([tab, label]) => (
+            <MenuItem key={tab} value={tab}>
               {label}
             </MenuItem>
           ))}
@@ -97,7 +97,7 @@ export const ChangeConfigDialog = observer(({ open, onClose, container }: Change
         </Button>
         <Button
           onClick={() => {
-            buildConfig.setDefaultTab(tabName);
+            buildConfig.setDefaultTab(tab);
             onClose?.();
           }}
           variant="contained"

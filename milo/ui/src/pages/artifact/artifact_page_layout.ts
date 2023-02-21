@@ -21,7 +21,7 @@ import '../../components/image_diff_viewer';
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
 import { createContextLink, provider } from '../../libs/context';
-import { NOT_FOUND_URL, router } from '../../routes';
+import { getInvURLPath, NOT_FOUND_URL } from '../../libs/url_utils';
 import { ArtifactIdentifier } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
@@ -93,13 +93,7 @@ export class ArtifactPageLayoutElement extends MiloBaseElement implements Before
           <tr>
             <td class="id-component-label">Invocation</td>
             <td>
-              <a
-                href=${router.urlForName('invocation', {
-                  invocation_id: this.invocationId,
-                })}
-              >
-                ${this.invocationId}
-              </a>
+              <a href=${getInvURLPath(this.invocationId)}>${this.invocationId}</a>
             </td>
           </tr>
           ${this.testId &&

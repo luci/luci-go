@@ -26,7 +26,6 @@ import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
 import { hasTags } from '../libs/tag';
 import { createStaticTrustedURL } from '../libs/utils';
-import { router } from '../routes';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { provideStore, Store } from '../store';
 import commonStyle from '../styles/common_style.css';
@@ -38,7 +37,7 @@ function redirectToLogin(err: ErrorEvent, ele: PageLayoutElement) {
     hasTags(err.error, MAY_REQUIRE_SIGNIN) &&
     !hasTags(err.error, OPTIONAL_RESOURCE)
   ) {
-    Router.go(`${router.urlForName('login')}?${new URLSearchParams([['redirect', window.location.href]])}`);
+    Router.go(`/ui/login?${new URLSearchParams([['redirect', window.location.href]])}`);
     return false;
   }
   return handleLocally(err, ele);

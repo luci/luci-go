@@ -17,10 +17,8 @@ import { BroadcastChannel } from 'broadcast-channel';
 
 import { REFRESH_AUTH_CHANNEL } from './libs/constants';
 
-export const NOT_FOUND_URL = '/not-found';
-
 const appRoot = document.getElementById('app-root');
-export const router = new Router(appRoot, { baseUrl: '/ui/' });
+const router = new Router(appRoot, { baseUrl: '/ui/' });
 router.setRoutes({
   path: '/',
   action: async (_ctx, cmd) => {
@@ -304,10 +302,3 @@ router.setRoutes({
     },
   ],
 });
-
-/**
- * Generates the URL to a raw artifact page.
- */
-export function getRawArtifactUrl(artifactName: string) {
-  return router.urlForName('artifact') + '/raw/' + artifactName;
-}

@@ -111,7 +111,7 @@ function configV1ToV2(v1: UserConfigsV1): UserConfigSnapshotIn {
           _values: v1.outputPropLineFoldTime,
         },
       },
-      defaultTabName: v1.defaultBuildPageTabName,
+      defaultTab: v1.defaultBuildPageTabName,
     },
     tests: {
       _columnWidths: v1.testResults?.columnWidths,
@@ -213,11 +213,11 @@ export const BuildConfig = types
     steps: types.optional(BuildStepsConfig, {}),
     inputProperties: types.optional(PropertyViewerConfig, {}),
     outputProperties: types.optional(PropertyViewerConfig, {}),
-    defaultTabName: 'build-overview',
+    defaultTab: 'overview',
   })
   .actions((self) => ({
-    setDefaultTab(tabName: string) {
-      self.defaultTabName = tabName;
+    setDefaultTab(tab: string) {
+      self.defaultTab = tab;
     },
     deleteStaleKeys(before: Date) {
       self.steps.deleteStaleKeys(before);

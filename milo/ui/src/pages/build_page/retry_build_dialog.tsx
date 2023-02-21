@@ -24,8 +24,8 @@ import { useCallback } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import '../../components/dot_spinner';
-import { getURLPathForBuild } from '../../libs/build_utils';
 import { consumer } from '../../libs/context';
+import { getBuildURLPathFromBuildData } from '../../libs/url_utils';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
 import commonStyle from '../../styles/common_style.css';
 
@@ -42,7 +42,7 @@ export const RetryBuildDialog = observer(({ open, onClose, container }: RetryBui
     const build = await pageState.retryBuild();
     onClose?.();
     if (build) {
-      Router.go(getURLPathForBuild(build));
+      Router.go(getBuildURLPathFromBuildData(build));
     }
   }, [pageState]);
 
