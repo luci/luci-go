@@ -523,7 +523,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	}
 
 	// Insert secret bytes.
-	token, err := buildtoken.GenerateToken(build.ID, pb.TokenBody_BUILD)
+	token, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_BUILD)
 	if err != nil {
 		return tq.Fatal.Apply(err)
 	}

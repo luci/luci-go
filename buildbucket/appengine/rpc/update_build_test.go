@@ -560,7 +560,7 @@ func TestCheckBuildForUpdate(t *testing.T) {
 func TestUpdateBuild(t *testing.T) {
 
 	updateContextForNewBuildToken := func(ctx context.Context, buildID int64) (string, context.Context) {
-		newToken, _ := buildtoken.GenerateToken(buildID, pb.TokenBody_BUILD)
+		newToken, _ := buildtoken.GenerateToken(ctx, buildID, pb.TokenBody_BUILD)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, newToken))
 		return newToken, ctx
 	}
@@ -571,9 +571,6 @@ func TestUpdateBuild(t *testing.T) {
 	}
 
 	t.Parallel()
-
-	// Generating a token with a BuildID of 1
-	tk, _ := buildtoken.GenerateToken(1, pb.TokenBody_BUILD)
 
 	getBuildWithDetails := func(ctx context.Context, bid int64) *model.Build {
 		b, err := getBuild(ctx, bid)
@@ -599,7 +596,7 @@ func TestUpdateBuild(t *testing.T) {
 		}
 		ctx := auth.WithState(memory.Use(context.Background()), s)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		tk, ctx = updateContextForNewBuildToken(ctx, 1)
+		tk, ctx := updateContextForNewBuildToken(ctx, 1)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)

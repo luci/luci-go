@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/bqlog"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -277,8 +279,10 @@ func TestValidateBuildToken(t *testing.T) {
 	Convey("validateBuildToken", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
-		tk1, _ := buildtoken.GenerateToken(1, pb.TokenBody_BUILD)
-		tk2, _ := buildtoken.GenerateToken(1, pb.TokenBody_BUILD)
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
+
+		tk1, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
+		tk2, _ := buildtoken.GenerateToken(ctx, 2, pb.TokenBody_BUILD)
 		build := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{
@@ -296,24 +300,24 @@ func TestValidateBuildToken(t *testing.T) {
 
 		Convey("Works", func() {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
-			_, _, err := validateBuildToken(ctx, 1, true)
+			_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("BuildTokenHeader", func() {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, tk1))
-			_, _, err := validateBuildToken(ctx, 1, true)
+			_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Fails", func() {
 			Convey("if unmatched", func() {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk2))
-				_, _, err := validateBuildToken(ctx, 1, true)
+				_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 				So(err, ShouldNotBeNil)
 			})
 			Convey("if missing", func() {
-				_, _, err := validateBuildToken(ctx, 1, true)
+				_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 				So(err, ShouldNotBeNil)
 			})
 		})
@@ -326,8 +330,11 @@ func TestValidateBuildTaskToken(t *testing.T) {
 	Convey("validateBuildTaskToken", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
-		tk1, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
-		tk2, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
+		tk1, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
+		So(err, ShouldBeNil)
+		tk2, err := buildtoken.GenerateToken(ctx, 2, pb.TokenBody_TASK)
+		So(err, ShouldBeNil)
+
 		build := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{
@@ -339,57 +346,29 @@ func TestValidateBuildTaskToken(t *testing.T) {
 				},
 				Status: pb.Status_STARTED,
 			},
-			UpdateToken: tk1,
 		}
 		So(datastore.Put(ctx, build), ShouldBeNil)
 
 		Convey("Works", func() {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketBackendTokenHeader, tk1))
-			_, _, err := validateBuildTaskToken(ctx, "1")
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
+			_, _, err := validateToken(ctx, 1, pb.TokenBody_TASK)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Fails", func() {
 			Convey("if unmatched", func() {
-				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketBackendTokenHeader, tk2))
-				_, _, err := validateBuildTaskToken(ctx, "1")
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk2))
+				_, _, err := validateToken(ctx, 1, pb.TokenBody_TASK)
 				So(err, ShouldNotBeNil)
 			})
 			Convey("if missing", func() {
-				_, _, err := validateBuildTaskToken(ctx, "1")
+				_, _, err := validateToken(ctx, 1, pb.TokenBody_TASK)
 				So(err, ShouldNotBeNil)
 			})
-			Convey("if not int", func() {
-				_, _, err := validateBuildTaskToken(ctx, "one")
+			Convey("if wrong purpose", func() {
+				_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 				So(err, ShouldNotBeNil)
 			})
-		})
-	})
-}
-
-func TestValdiateTokenPurposeMatchesHeader(t *testing.T) {
-	t.Parallel()
-
-	Convey("build", t, func() {
-		Convey("match", func() {
-			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_BUILD, buildbucket.BuildbucketTokenHeader)
-			So(err, ShouldBeNil)
-		})
-		Convey("no match", func() {
-			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_TASK, buildbucket.BuildbucketTokenHeader)
-			So(err, ShouldBeNil)
-		})
-		Convey("purpose is nil", func() {
-			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_PURPOSE_UNSPECIFIED, buildbucket.BuildbucketTokenHeader)
-			So(err, ShouldBeError)
-		})
-		Convey("header is nil", func() {
-			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_BUILD, "")
-			So(err, ShouldBeError)
-		})
-		Convey("header and purpose are nil", func() {
-			_, err := valdiateTokenPurposeMatchesHeader(pb.TokenBody_PURPOSE_UNSPECIFIED, "")
-			So(err, ShouldBeError)
 		})
 	})
 }

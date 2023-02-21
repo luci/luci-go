@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -122,7 +123,12 @@ func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskReque
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
-	_, bld, err := validateBuildTaskToken(ctx, req.GetBuildId())
+	buildID, err := strconv.ParseInt(req.GetBuildId(), 10, 64)
+	if err != nil {
+		return nil, appstatus.BadRequest(errors.Annotate(err, "bad build id").Err())
+	}
+
+	_, bld, err := validateToken(ctx, buildID, pb.TokenBody_TASK)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid build").Err())
 	}

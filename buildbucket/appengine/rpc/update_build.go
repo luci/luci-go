@@ -600,8 +600,9 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
 	}
 
-	// TODO(crbug.com/1152628) - Use Cloud Secret Manager to validate build update tokens.
-	_, build, err := validateBuildToken(ctx, req.Build.Id, true)
+	// TODO(crbug.com/1286550) - Move this up to the top, and remove
+	// CanUpdateBuild once all update tokens are encrypted.
+	_, build, err := validateToken(ctx, req.Build.Id, pb.TokenBody_BUILD)
 	if err != nil {
 		return nil, err
 	}
@@ -615,9 +616,8 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	if err != nil {
 		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
 			return nil, err
-		} else {
-			return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 		}
+		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
 	experiments := stringset.NewFromSlice(build.Proto.GetInput().GetExperiments()...)
 	if experiments.Has("luci.debug.dump_buildsecret_for_manual_debugging") {

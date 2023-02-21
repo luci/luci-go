@@ -31,18 +31,15 @@ import (
 // Defined in
 // https://chromium.googlesource.com/infra/infra/+/c189064/appengine/cr-buildbucket/v2/api.py#35
 //
-// BuildbucketTokenHeader is the new name of gRPC metadata header indicating the
-// build token.
+// BuildbucketTokenHeader is the new name of gRPC metadata header indicating a
+// buildbucket token. Since tokens include an authenticatable purpose field, we
+// only need one header for all incoming RPCs.
+//
 // Currently it's used by ScheduleBuild (and batch request for ScheduleBuild) RPC.
 // TODO(crbug.com/1031205) Replace BuildTokenHeader with this.
-//
-// BuildbucketBackendTokenHeader is the gRPC metadata header that indicating
-// the backend build task token.
-// Currently it's used by UpdateBuildTask RPC
 const (
-	BuildTokenHeader              = "x-build-token"
-	BuildbucketTokenHeader        = "x-buildbucket-token"
-	BuildbucketBackendTokenHeader = "x-buildbucket-backend-token"
+	BuildTokenHeader       = "x-build-token"
+	BuildbucketTokenHeader = "x-buildbucket-token"
 )
 
 // DummyBuildbucketToken is the dummy token for led builds.

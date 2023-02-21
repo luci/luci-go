@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -43,9 +45,12 @@ func TestValidateBuildTask(t *testing.T) {
 	t.Parallel()
 
 	Convey("ValidateBuildTask", t, func() {
-		tk, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
-		t0 := testclock.TestRecentTimeUTC
 		ctx := memory.Use(context.Background())
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
+
+		tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
+		So(err, ShouldBeNil)
+		t0 := testclock.TestRecentTimeUTC
 		build := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{
@@ -349,20 +354,19 @@ func TestValidateTaskUpdate(t *testing.T) {
 func TestUpdateBuildTask(t *testing.T) {
 	t.Parallel()
 
-	var tk string
-
 	updateContextForNewBuildToken := func(ctx context.Context, buildID int64) (string, context.Context) {
-		newToken, _ := buildtoken.GenerateToken(buildID, pb.TokenBody_TASK)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketBackendTokenHeader, newToken))
+		newToken, _ := buildtoken.GenerateToken(ctx, buildID, pb.TokenBody_TASK)
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, newToken))
 		return newToken, ctx
 	}
 
 	Convey("UpdateBuildTask", t, func() {
-
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		tk, ctx = updateContextForNewBuildToken(ctx, 1)
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
+
+		tk, ctx := updateContextForNewBuildToken(ctx, 1)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -442,7 +446,9 @@ func TestUpdateTaskEntity(t *testing.T) {
 	t.Parallel()
 	Convey("UpdateTaskEntity", t, func() {
 		ctx := memory.Use(context.Background())
-		tk, _ := buildtoken.GenerateToken(1, pb.TokenBody_TASK)
+		ctx = secrets.Use(ctx, &testsecrets.Store{})
+
+		tk, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
 		t0 := testclock.TestRecentTimeUTC
 
 		taskProto := &pb.Task{

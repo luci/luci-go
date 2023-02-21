@@ -212,12 +212,12 @@ func validateProperties(p *structpb.Struct) error {
 
 // validateParent validates the given parent build.
 func validateParent(ctx context.Context) (*model.Build, error) {
-	_, pBld, err := validateBuildToken(ctx, 0, false)
+	_, pBld, err := validateToken(ctx, 0, pb.TokenBody_BUILD)
 	switch {
+	case err == errMissingToken:
+		return nil, nil
 	case err != nil:
 		return nil, err
-	case pBld == nil:
-		return nil, nil
 	case protoutil.IsEnded(pBld.Proto.Status):
 		return nil, errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err()
 	default:
@@ -1292,8 +1292,8 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	validReq, idxMapBlds := getValidReqs(reqs, merr)
 	blds := make([]*model.Build, len(validReq))
 
-	_, pBld, err := validateBuildToken(ctx, 0, false)
-	if err != nil {
+	_, pBld, err := validateToken(ctx, 0, pb.TokenBody_BUILD)
+	if err != nil && err != errMissingToken {
 		return nil, err
 	}
 

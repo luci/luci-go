@@ -51,6 +51,9 @@ message TokenEnvelope {
 
     // The token is saved in model.Build like a password.
     UNENCRYPTED_PASSWORD_LIKE = 1;
+
+    // The token is encrypted using go.chromium.org/luci/server/secrets.
+    ENCRYPTED = 2;
   }
   // Version of the token.
   Version version = 1;

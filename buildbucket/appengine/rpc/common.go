@@ -18,12 +18,10 @@ import (
 	"context"
 	"crypto/subtle"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth/identity"
@@ -34,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/bqlog"
 
@@ -280,81 +279,74 @@ func validateCommit(cm *pb.GitilesCommit) error {
 	return nil
 }
 
-func valdiateTokenPurposeMatchesHeader(purpose pb.TokenBody_Purpose, header string) (bool, error) {
-	switch {
-	case purpose == pb.TokenBody_PURPOSE_UNSPECIFIED:
-		return false, errors.Reason("token purpose is not specified").Err()
-	case header == "":
-		return false, errors.Reason("token header is not specified").Err()
-	case purpose == pb.TokenBody_BUILD && header == buildbucket.BuildbucketTokenHeader:
-		return true, nil
-	case purpose == pb.TokenBody_TASK && header == buildbucket.BuildbucketBackendTokenHeader:
-		return true, nil
-	default:
-		return false, nil
-	}
+// Returned from validateToken if no token is found; Some uses of validateToken
+// allow a missing token (such as establishing parent->child relationship during
+// ScheduleBuild).
+var errMissingToken = errors.New("token is missing", grpcutil.UnauthenticatedTag)
+
+// Maps token purpose to the series of headers to check.
+var tokenHeaders = map[pb.TokenBody_Purpose][]string{
+	pb.TokenBody_TASK: {buildbucket.BuildbucketTokenHeader},
+	pb.TokenBody_BUILD: {
+		buildbucket.BuildbucketTokenHeader,
+		// TODO(crbug.com/1031205): remove buildbucket.BuildTokenHeader.
+		buildbucket.BuildTokenHeader,
+	},
 }
 
 // validateToken validates the update token from the header.
 //
-// `bID` is mainly used to retrieve the build with the old build token
-// for validation, if known (i.e. in UpdateBuild, `bID` can be retrieved from
-// the request).
+// `bID` is used to retrieve the build with the old build token for validation,
+// if known (i.e. in UpdateBuild, `bID` can be retrieved from the request). If
+// it is 0, we are only rely on the build token contents to be self-validating
+// (i.e. when scheduling a child build).
 //
-// It can also be 0, witch means we only rely on the build token itself to be
-// self-validating (i.e. when scheduling a child build).
+// If no token is found, this returns `errMissingToken`, which is tagged as
+// Unauthenticated.
 //
-// requireToken is a flag to indicate if the build token is required. For example
-// build token is required in UpdateBuild, but in ScheduleBuild, build token is
-// only attached in the context when scheduling a child build.
-// So missing the build token in ScheduleBuild doesn't necessarily mean there's an
-// error.
+// If the token is encrypted, this will early exit if the token encryption is
+// wrong, a non-zero bID doesn't match the token body, or if the token's purpose
+// doesn't match the expected `purpose`. Once all tokens are ecnrypted,
+// validateToken should move to the top of handler functions whcih require
+// a token.
 //
-// tokenHeader should be one of a token constant defined in
-// infra/go/src/go.chromium.org/luci/buildbucket/proto.go
-func validateToken(ctx context.Context, bID int64, requireToken bool, tokenHeader string) (*pb.TokenBody, *model.Build, error) {
+// Finally, this compares the raw token in the header against the token recorded
+// in the Build entity, to ensure that Buildbucket didn't hand out two (or more)
+// tokens for this Build.
+// BUG(crbug.com/1401174) This raw token comparison only applies to
+// BUILD-purposed tokens.
+func validateToken(ctx context.Context, bID int64, purpose pb.TokenBody_Purpose) (*pb.TokenBody, *model.Build, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
-	buildToks := md.Get(tokenHeader)
 
-	// We only want to perform this validation when token is BuildbucketTokenHeader.
-	if len(buildToks) == 0 && tokenHeader == buildbucket.BuildbucketTokenHeader {
-		// TODO(crbug.com/1031205): remove buildbucket.BuildTokenHeader.
-		buildToks = md.Get(buildbucket.BuildTokenHeader)
-		if len(buildToks) > 0 {
-			logging.Infof(ctx, "got build-token for %d", bID)
+	var buildTok string
+	for _, header := range tokenHeaders[purpose] {
+		buildToks := md.Get(header)
+		if len(buildToks) == 1 {
+			buildTok = buildToks[0]
+			if header == buildbucket.BuildTokenHeader {
+				logging.Infof(ctx, "BUG(crbug.com/1031205): got build-token for %d", bID)
+			}
+			break
+		} else if len(buildToks) > 1 {
+			return nil, nil, errors.Reason("multiple build tokens are provided").Err()
 		}
 	}
-	if len(buildToks) == 0 {
-		if !requireToken {
-			return nil, nil, nil
-		}
-		return nil, nil, appstatus.Errorf(codes.Unauthenticated, "missing header %q", tokenHeader)
+	if buildTok == "" {
+		return nil, nil, errMissingToken
 	}
 
-	if len(buildToks) > 1 {
-		return nil, nil, errors.Reason("multiple build tokens are provided").Err()
-	}
-
-	bldTok := buildToks[0]
-	tokBody, err := buildtoken.ParseToTokenBody(bldTok)
-	// There's something wrong with the build token itself.
+	tokBody, err := buildtoken.ParseToTokenBody(ctx, buildTok, bID, purpose)
 	if err != nil {
+		// There's something wrong with the build token itself.
+		//
+		// Note that if the token was encrypted, we bail out here.
+		// ParseToTokenBody has also checked the build id and purpose of the token, if
+		// it did successfully decrypt.
 		return nil, nil, err
 	}
 
-	if tokBody != nil {
-		match, err := valdiateTokenPurposeMatchesHeader(tokBody.Purpose, tokenHeader)
-		if err != nil {
-			return nil, nil, errors.Annotate(err, "failed to compare token's purpose with token header").Err()
-		} else if !match {
-			return nil, nil, errors.Reason("token purpose does not match token header").Err()
-		}
-
-		if bID == 0 {
-			bID = tokBody.BuildId
-		} else if tokBody.BuildId != bID {
-			return nil, nil, errors.Reason("unmatched requested build id and build token").Err()
-		}
+	if tokBody != nil && bID == 0 {
+		bID = tokBody.BuildId
 	}
 
 	if bID == 0 {
@@ -367,22 +359,18 @@ func validateToken(ctx context.Context, bID int64, requireToken bool, tokenHeade
 	}
 
 	// Validate it against the token stored in the build entity.
-	if subtle.ConstantTimeCompare([]byte(bldTok), []byte(bld.UpdateToken)) == 1 {
-		return tokBody, bld, nil
+	//
+	// This can catch cases where buildbucket issued two tasks, both with valid
+	// tokens for this build, but only one of them will be saved in datastore.
+	//
+	// BUG(crbug.com/1401174) - We only do this check for UpdateBuild calls
+	// currently. Really this whole protocol needs to be reworked.
+	if purpose == pb.TokenBody_BUILD {
+		if subtle.ConstantTimeCompare([]byte(buildTok), []byte(bld.UpdateToken)) == 1 {
+			return tokBody, bld, nil
+		}
+		return nil, nil, perm.NotFoundErr(ctx)
 	}
-	return nil, nil, perm.NotFoundErr(ctx)
-}
 
-// validateBuildToken validates the update token for the UpdateBuild RPC.
-func validateBuildToken(ctx context.Context, bID int64, requireToken bool) (*pb.TokenBody, *model.Build, error) {
-	return validateToken(ctx, bID, requireToken, buildbucket.BuildbucketTokenHeader)
-}
-
-// validateBuildTaskToken validates the update token for the UpdateBuildTask RPC.
-func validateBuildTaskToken(ctx context.Context, bID string) (*pb.TokenBody, *model.Build, error) {
-	intBuildID, err := strconv.ParseInt(bID, 0, 64)
-	if err != nil {
-		return nil, nil, errors.Reason("the build ID provided could not be converted from string to int64").Err()
-	}
-	return validateToken(ctx, intBuildID, true, buildbucket.BuildbucketBackendTokenHeader)
+	return tokBody, bld, nil
 }
