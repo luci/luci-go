@@ -86,10 +86,10 @@ type GroupImporterConfig struct {
 	ModifiedTS time.Time `gae:"modified_ts"`
 }
 
-const GroupNameRE = `^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`
+var GroupNameRe = regexp.MustCompile(`^([a-z\-]+/)?[0-9a-z_\-\.@]{1,100}$`)
 
-// k: groupName, v: list of identities belonging to group k.
-type groupBundle = map[string][]identity.Identity
+// GroupBundle is a map where k: groupName, v: list of identities belonging to group k.
+type GroupBundle = map[string][]identity.Identity
 
 // GetGroupImporterConfig fetches the GroupImporterConfig entity from the datastore.
 //
@@ -112,9 +112,9 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 	}
 }
 
-// ingestTarball handles upload of tarball's specified in 'tarball_upload' config entries.
+// IngestTarball handles upload of tarball's specified in 'tarball_upload' config entries.
 // expected to be called in an auth context of the upload PUT request.
-func ingestTarball(ctx context.Context, name string, content io.Reader) (map[string]groupBundle, error) {
+func IngestTarball(ctx context.Context, name string, content io.Reader) (map[string]GroupBundle, error) {
 	g, err := GetGroupImporterConfig(ctx)
 	if err != nil {
 		return nil, err
@@ -124,21 +124,17 @@ func ingestTarball(ctx context.Context, name string, content io.Reader) (map[str
 		return nil, errors.Annotate(err, "issue getting proto from config entity").Err()
 	}
 	caller := auth.CurrentIdentity(ctx)
-	entry := &configspb.GroupImporterConfig_TarballUploadEntry{}
+	var entry *configspb.GroupImporterConfig_TarballUploadEntry
 
 	// make sure that tarball_upload entry we're looking for is specified in config
 	for _, tbu := range gConfigProto.GetTarballUpload() {
 		if tbu.Name == name {
-			entry.Name = tbu.GetName()
-			entry.AuthorizedUploader = tbu.GetAuthorizedUploader()
-			entry.Domain = tbu.GetDomain()
-			entry.Systems = tbu.GetSystems()
-			entry.Groups = tbu.GetGroups()
+			entry = tbu
 			break
 		}
 	}
 
-	if entry.Name == "" {
+	if entry == nil {
 		return nil, errors.New("entry not found in tarball upload names")
 	}
 	if !contains(caller.Email(), entry.AuthorizedUploader) {
@@ -153,14 +149,10 @@ func ingestTarball(ctx context.Context, name string, content io.Reader) (map[str
 }
 
 // loadTarball unzips tarball with groups and deserializes them.
-func loadTarball(ctx context.Context, content io.Reader, domain string, systems, groups []string) (map[string]groupBundle, error) {
+func loadTarball(ctx context.Context, content io.Reader, domain string, systems, groups []string) (map[string]GroupBundle, error) {
 	// map looks like: K: system, V: { K: groupName, V: []identities }
-	bundles := make(map[string]groupBundle)
+	bundles := make(map[string]GroupBundle)
 	entries, err := extractTarArchive(content)
-	if err != nil {
-		return nil, err
-	}
-	re, err := regexp.Compile(GroupNameRE)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +160,7 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 	// verify system/groupname and then parse blob if valid
 	for filename, fileobj := range entries {
 		chunks := strings.Split(filename, "/")
-		if len(chunks) != 2 || !re.MatchString(chunks[1]) {
+		if len(chunks) != 2 || !GroupNameRe.MatchString(chunks[1]) {
 			logging.Warningf(ctx, "Skipping file %s, not a valid name", filename)
 			continue
 		}
@@ -185,7 +177,7 @@ func loadTarball(ctx context.Context, content io.Reader, domain string, systems,
 			return nil, err
 		}
 		if _, ok := bundles[system]; !ok {
-			bundles[system] = make(groupBundle)
+			bundles[system] = make(GroupBundle)
 		}
 		bundles[system][filename] = identities
 	}
@@ -256,7 +248,7 @@ func extractTarArchive(r io.Reader) (map[string][]byte, error) {
 }
 
 // TODO(cjacomet): replace with slices.Contains when
-// gae runtime is confirmed 1.18+.
+// slices package isn't experimental.
 func contains(key string, search []string) bool {
 	for _, val := range search {
 		if val == key {

@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,6 +38,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/servers/authdb"
 	"go.chromium.org/luci/auth_service/impl/servers/changelogs"
 	"go.chromium.org/luci/auth_service/impl/servers/groups"
+	"go.chromium.org/luci/auth_service/impl/servers/imports"
 	"go.chromium.org/luci/auth_service/impl/servers/internals"
 	"go.chromium.org/luci/auth_service/impl/servers/oauth"
 	"go.chromium.org/luci/common/logging"
@@ -154,6 +156,7 @@ func main() {
 		// TODO(cjacomet): Add smoke test for this endpoint
 		srv.Routes.GET("/auth_service/api/v1/authdb/revisions/:revID", apiMw, adaptGrpcErr(authdbServer.HandleLegacyAuthDBServing))
 		srv.Routes.GET("/auth/api/v1/server/oauth_config", nil, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
+		srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName", apiMw, adaptGrpcErr(imports.HandleTarballIngestHandler))
 		return nil
 	})
 }
@@ -244,13 +247,24 @@ func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
 		}
 	}
 
-	switch yes, err := auth.IsMember(ctx.Context, impl.TrustedServicesGroup, impl.AdminGroup); {
-	case err != nil:
-		jsonErr(errors.New("failed to check group membership"), http.StatusInternalServerError)
-	case !yes:
-		jsonErr(fmt.Errorf("%s is not a member of %s", auth.CurrentIdentity(ctx.Context), impl.TrustedServicesGroup),
-			http.StatusForbidden)
-	default:
+	ingest := strings.Contains(ctx.Request.URL.RequestURI(), "/auth_service/api/v1/importer/ingest_tarball/")
+
+	if auth.CurrentIdentity(ctx.Context) == identity.AnonymousIdentity {
+		jsonErr(errors.New("anonymous identity"), http.StatusForbidden)
+		return
+	}
+
+	if !ingest {
+		switch yes, err := auth.IsMember(ctx.Context, impl.TrustedServicesGroup, impl.AdminGroup); {
+		case err != nil:
+			jsonErr(errors.New("failed to check group membership"), http.StatusInternalServerError)
+		case !yes:
+			jsonErr(fmt.Errorf("%s is not a member of %s", auth.CurrentIdentity(ctx.Context), impl.TrustedServicesGroup),
+				http.StatusForbidden)
+		default:
+			next(ctx)
+		}
+	} else {
 		next(ctx)
 	}
 }

@@ -151,7 +151,7 @@ func TestLoadTarball(t *testing.T) {
 			So(err, ShouldBeNil)
 			aIdent, _ := identity.MakeIdentity("user:a@example.com")
 			bIdent, _ := identity.MakeIdentity("user:b@example.com")
-			So(m, ShouldResemble, map[string]groupBundle{
+			So(m, ShouldResemble, map[string]GroupBundle{
 				"ldap": {
 					"ldap/group-a": {
 						aIdent,
@@ -185,31 +185,31 @@ func TestIngestTarball(t *testing.T) {
 		"not-tst/group-a":    []byte("a\nb"),
 	})
 
-	Convey("testing ingestTarball", t, func() {
+	Convey("testing IngestTarball", t, func() {
 		Convey("unknown", func() {
 			datastore.Put(ctx, cfg)
-			_, err := ingestTarball(ctx, "zzz", nil)
+			_, err := IngestTarball(ctx, "zzz", nil)
 			So(err, ShouldErrLike, "entry not found in tarball upload names")
 		})
 		Convey("unauthorized", func() {
 			badAuthCtx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 			})
-			_, err := ingestTarball(badAuthCtx, "test_groups.tar.gz", bytes.NewReader(bundle))
+			_, err := IngestTarball(badAuthCtx, "test_groups.tar.gz", bytes.NewReader(bundle))
 			So(err, ShouldErrLike, `"someone@example.com" is not an authorized uploader`)
 		})
 		Convey("not configured", func() {
 			badCtx := memory.Use(context.Background())
-			_, err := ingestTarball(badCtx, "", nil)
+			_, err := IngestTarball(badCtx, "", nil)
 			So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 		})
 		Convey("happy", func() {
-			groups, err := ingestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
+			groups, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
 			So(err, ShouldBeNil)
 			aIdent, _ := identity.MakeIdentity("user:a@example.com")
 			bIdent, _ := identity.MakeIdentity("user:b@example.test.com")
 			cIdent, _ := identity.MakeIdentity("user:c@test-example.com")
-			So(groups, ShouldResemble, map[string]groupBundle{
+			So(groups, ShouldResemble, map[string]GroupBundle{
 				"tst": {
 					"tst/group-a": {
 						aIdent,
