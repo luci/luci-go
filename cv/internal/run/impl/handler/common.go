@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
@@ -161,9 +161,9 @@ type reviewInputMeta struct {
 	reason string
 }
 
-func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCancel []*run.RunCL, cg *prjcfg.ConfigGroup, meta reviewInputMeta) error {
-	clids := make(common.CLIDs, len(toCancel))
-	for i, runCL := range toCancel {
+func (impl *Impl) resetCLTriggers(ctx context.Context, runID common.RunID, toReset []*run.RunCL, cg *prjcfg.ConfigGroup, meta reviewInputMeta) error {
+	clids := make(common.CLIDs, len(toReset))
+	for i, runCL := range toReset {
 		clids[i] = runCL.ID
 	}
 
@@ -175,13 +175,13 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	luciProject := runID.LUCIProject()
 	var forceRefresh []*changelist.CL
 	var lock sync.Mutex
-	err = parallel.WorkPool(min(len(toCancel), 10), func(work chan<- func() error) {
+	err = parallel.WorkPool(min(len(toReset), 10), func(work chan<- func() error) {
 		for i := range cls {
 			i := i
 			work <- func() error {
-				err := cancel.Cancel(ctx, cancel.Input{
+				err := trigger.Reset(ctx, trigger.ResetInput{
 					CL:                cls[i],
-					Triggers:          (&run.Triggers{}).WithTrigger(toCancel[i].Trigger),
+					Triggers:          (&run.Triggers{}).WithTrigger(toReset[i].Trigger),
 					LUCIProject:       luciProject,
 					Message:           meta.message,
 					Requester:         "Run Manager",
@@ -196,19 +196,19 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 				switch {
 				case err == nil:
 					return nil
-				case cancel.ErrPreconditionFailedTag.In(err) || cancel.ErrPermanentTag.In(err):
+				case trigger.ErrResetPreconditionFailedTag.In(err) || trigger.ErrResetPermanentTag.In(err):
 					lock.Lock()
 					forceRefresh = append(forceRefresh, cls[i])
 					lock.Unlock()
 					fallthrough
 				default:
-					return errors.Annotate(err, "failed to cancel triggers for cl %d", cls[i].ID).Err()
+					return errors.Annotate(err, "failed to reset triggers for cl %d", cls[i].ID).Err()
 				}
 			}
 		}
 	})
 	if len(forceRefresh) != 0 {
-		if ferr := impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), forceRefresh, changelist.UpdateCLTask_CANCEL_CL_TRIGGER); ferr != nil {
+		if ferr := impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), forceRefresh, changelist.UpdateCLTask_RESET_CL_TRIGGER); ferr != nil {
 			logging.Warningf(ctx, "Failed to schedule best-effort force refresh of %d CLs: %s", len(forceRefresh), ferr)
 		}
 	}
@@ -223,15 +223,14 @@ func (impl *Impl) cancelCLTriggers(ctx context.Context, runID common.RunID, toCa
 	return nil
 }
 
-// scheduleTriggersCancellation enqueues a CancelTrigger long op for a given
-// Run.
+// scheduleTriggersReset enqueues a ResetTriggers long op for a given Run.
 //
-// No-op if trigger cancellation is already ongoing.
-func scheduleTriggersCancellation(ctx context.Context, rs *state.RunState, metas map[common.CLID]reviewInputMeta, statusIfSucceeded run.Status) {
+// No-op if trigger reset is already ongoing.
+func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[common.CLID]reviewInputMeta, statusIfSucceeded run.Status) {
 	switch {
 	case !run.IsEnded(statusIfSucceeded):
 		panic(fmt.Errorf("expected a terminal status; got %s", statusIfSucceeded))
-	case isTriggersCancellationOngoing(rs):
+	case isCurrentlyResettingTriggers(rs):
 		return
 	}
 	reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, 0, len(rs.CLs))
@@ -255,7 +254,7 @@ func scheduleTriggersCancellation(ctx context.Context, rs *state.RunState, metas
 	})
 }
 
-func isTriggersCancellationOngoing(rs *state.RunState) bool {
+func isCurrentlyResettingTriggers(rs *state.RunState) bool {
 	for _, op := range rs.OngoingLongOps.GetOps() {
 		if op.GetCancelTriggers() != nil {
 			return true
@@ -369,7 +368,7 @@ func checkRunCreate(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGr
 				panic(errors.Reason("unknown run mode %s", rs.Mode).Err())
 			}
 		}
-		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
+		scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 		return false, nil
 	}
 	return true, nil

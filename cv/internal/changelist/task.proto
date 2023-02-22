@@ -44,7 +44,8 @@ message UpdateCLTask {
     RPC_ADMIN = 6;
     RUN_POKE = 7;
     RUN_REMOVAL = 8;
-    CANCEL_CL_TRIGGER = 9;
+    CANCEL_CL_TRIGGER = 9 [deprecated = true];
+    RESET_CL_TRIGGER = 11;
     UPDATE_CONFIG = 10;
   }
   // Requester identifies various scenarios that enqueue UpdateCLTask(s).

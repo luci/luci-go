@@ -143,7 +143,7 @@ func (impl *Impl) onCompletedExecuteTryjobs(ctx context.Context, rs *state.RunSt
 		for _, cl := range rs.CLs {
 			metas[cl] = meta
 		}
-		scheduleTriggersCancellation(ctx, rs, metas, runStatus)
+		scheduleTriggersReset(ctx, rs, metas, runStatus)
 	}
 
 	return &Result{

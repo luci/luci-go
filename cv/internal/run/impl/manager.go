@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/run"
 	runbq "go.chromium.org/luci/cv/internal/run/bq"
@@ -120,7 +120,7 @@ func New(
 					submit.ErrTransientSubmissionFailure,
 				},
 				KnownIgnoreTags: []errors.BoolTag{
-					cancel.ErrPreconditionFailedTag,
+					trigger.ErrResetPreconditionFailedTag,
 					common.DSContentionTag,
 					ignoreErrTag,
 				},

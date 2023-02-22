@@ -64,7 +64,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 					message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
 				}
 			}
-			scheduleTriggersCancellation(ctx, rs, rims, run.Status_FAILED)
+			scheduleTriggersReset(ctx, rs, rims, run.Status_FAILED)
 			return &Result{
 				State: rs,
 			}, nil
@@ -83,7 +83,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 	// If it's scheduled to be cancelled, skip the refresh.
 	// The long op might have been expired, but it should be removed at the end
 	// of this call first, and then the next Poke() will run this check again.
-	if !isTriggersCancellationOngoing(rs) && shouldRefreshCLs(ctx, rs) {
+	if !isCurrentlyResettingTriggers(rs) && shouldRefreshCLs(ctx, rs) {
 		cg, runCLs, cls, err := loadCLsAndConfig(ctx, rs, rs.CLs)
 		if err != nil {
 			return nil, err

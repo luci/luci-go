@@ -39,10 +39,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestCancelTriggers(t *testing.T) {
+func TestResetTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey("CancelTriggers works", t, func() {
+	Convey("ResetTriggers works", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -105,12 +105,12 @@ func TestCancelTriggers(t *testing.T) {
 			return r, clids
 		}
 
-		makeOp := func(r *run.Run) *CancelTriggersOp {
+		makeOp := func(r *run.Run) *ResetTriggersOp {
 			reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, len(r.CLs))
 			for i, clid := range r.CLs {
 				reqs[i] = &run.OngoingLongOps_Op_TriggersCancellation_Request{
 					Clid:    int64(clid),
-					Message: fmt.Sprintf("cancel message for CL %d", clid),
+					Message: fmt.Sprintf("reset message for CL %d", clid),
 					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
 						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
 						run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS,
@@ -123,7 +123,7 @@ func TestCancelTriggers(t *testing.T) {
 				}
 			}
 
-			return &CancelTriggersOp{
+			return &ResetTriggersOp{
 				Base: &Base{
 					Op: &run.OngoingLongOps_Op{
 						Deadline:        timestamppb.New(clock.Now(ctx).Add(10000 * time.Hour)), // infinite
@@ -159,7 +159,7 @@ func TestCancelTriggers(t *testing.T) {
 				r, _ := initRunAndCLs(cis)
 				startTime := clock.Now(ctx)
 				op := makeOp(r)
-				op.CancelConcurrency = concurrency
+				op.Concurrency = concurrency
 				res, err := op.Do(ctx)
 				So(err, ShouldBeNil)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
@@ -195,8 +195,8 @@ func TestCancelTriggers(t *testing.T) {
 			}
 			startTime := clock.Now(ctx)
 			op := makeOp(r)
-			op.CancelConcurrency = clCount
-			op.testAfterTryCancelFn = func() {
+			op.Concurrency = clCount
+			op.testAfterTryResetFn = func() {
 				// Advance the clock by 1 minute + 1 second so that the lease will
 				// be guaranteed to expire in the next attempt.
 				ct.Clock.Add(1*time.Minute + 1*time.Second)

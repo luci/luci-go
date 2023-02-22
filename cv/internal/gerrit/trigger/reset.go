@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cancel implements cancelling triggers of Run by removing CQ Votes
-// on a CL.
-package cancel
+package trigger
 
 import (
 	"context"
@@ -41,25 +39,24 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
-	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/usertext"
 )
 
-// ErrPreconditionFailedTag is an error tag indicating that Cancel precondition
-// failed.
-var ErrPreconditionFailedTag = errors.BoolTag{
-	Key: errors.NewTagKey("cancel precondition not met"),
+// ErrResetPreconditionFailedTag is an error tag indicating that the
+// precondition of resetting a trigger has not been met,
+var ErrResetPreconditionFailedTag = errors.BoolTag{
+	Key: errors.NewTagKey("reset precondition not met"),
 }
 
-// ErrPermanentTag is an error tag indicating that error occurs during the
-// cancellation is permanent (e.g. lack of vote permission).
-var ErrPermanentTag = errors.BoolTag{
-	Key: errors.NewTagKey("permanent error while cancelling triggers"),
+// ErrResetPermanentTag is an error tag indicating that error occurs during the
+// reset is permanent (e.g. lack of vote permission).
+var ErrResetPermanentTag = errors.BoolTag{
+	Key: errors.NewTagKey("permanent error while resetting triggers"),
 }
 
-// Input contains info to cancel triggers of Run on a CL.
-type Input struct {
+// ResetInput contains info to reset triggers of Run on a CL.
+type ResetInput struct {
 	// CL is a Gerrit CL entity.
 	//
 	// Must have CL.Snapshot set.
@@ -68,7 +65,7 @@ type Input struct {
 	//
 	// Removed only after all other votes on CQ label are removed.
 	Triggers *run.Triggers
-	// LUCIProject is the project that initiates this cancellation.
+	// LUCIProject is the project that initiates this reset.
 	//
 	// The project scoped account of this LUCI project SHOULD have the permission
 	// to set the CQ label on behalf of other users in Gerrit.
@@ -77,7 +74,7 @@ type Input struct {
 	Message string
 	// Requester describes the caller (e.g. Project Manager, Run Manager).
 	Requester string
-	// Notify describes whom to notify regarding the cancellation.
+	// Notify describes whom to notify regarding the reset.
 	//
 	// If empty, notifies no one.
 	Notify gerrit.Whoms
@@ -92,7 +89,7 @@ type Input struct {
 	//
 	// This is noop, if AddAttentionSet is empty.
 	AttentionReason string
-	// LeaseDuration is how long a lease will be held for this cancellation.
+	// LeaseDuration is how long a lease will be held for this reset.
 	//
 	// If the passed context has a closer deadline, uses that deadline as lease
 	// `ExpireTime`.
@@ -102,15 +99,14 @@ type Input struct {
 	// They are used to remove votes for additional modes. Normally, there is
 	// just 1 ConfigGroup.
 	ConfigGroups []*prjcfg.ConfigGroup
-	// GFactory is used to create the gerrit client needed to perform the
-	// cancellation.
+	// GFactory is used to create the gerrit client needed to perform the reset.
 	GFactory gerrit.Factory
 	// CLMutator performs mutations to the CL entity and notifies relevant parts
 	// of CV when appropriate.
 	CLMutator *changelist.Mutator
 }
 
-func (in *Input) panicIfInvalid() {
+func (in *ResetInput) panicIfInvalid() {
 	// These are the conditions that shouldn't be met, and likely require code
 	// changes for fixes.
 	var err error
@@ -135,12 +131,12 @@ func (in *Input) panicIfInvalid() {
 	}
 }
 
-// Cancel removes or "deactivates" the trigger that made CV start processing the
+// Reset removes or "deactivates" the trigger that made CV start processing the
 // current run, whether by removing votes on a CL and posting the given message,
 // or by updating the datastore entity associated with the CL; this, depending
 // on the RunMode of the Run.
 //
-// For vote-removal-based cancellations:
+// For vote-removal-based reset:
 //
 // Returns error tagged with `ErrPreconditionFailedTag` if one of the
 // following conditions is matched.
@@ -166,13 +162,13 @@ func (in *Input) panicIfInvalid() {
 // with the current patchset or lower. This prevents trigger.Find() from
 // continuing to return a trigger for this patchset, analog to the effect of
 // removing a cq vote on gerrit.
-func Cancel(ctx context.Context, in Input) error {
+func Reset(ctx context.Context, in ResetInput) error {
 	in.panicIfInvalid()
 	if in.CL.AccessKindFromCodeReviewSite(ctx, in.LUCIProject) != changelist.AccessGranted {
-		return errors.New("failed to cancel trigger because CV lost access to this CL", ErrPreconditionFailedTag)
+		return errors.New("failed to reset trigger because CV lost access to this CL", ErrResetPreconditionFailedTag)
 	}
 	if len(in.AddToAttentionSet) > 0 && in.AttentionReason == "" {
-		logging.Warningf(ctx, "FIXME Cancel was given empty in AttentionReason.")
+		logging.Warningf(ctx, "FIXME reset was given empty in AttentionReason.")
 		in.AttentionReason = usertext.StoppedRun
 	}
 
@@ -182,7 +178,7 @@ func Cancel(ctx context.Context, in Input) error {
 	}
 	cl := in.CL
 	if in.Triggers.GetNewPatchsetRunTrigger() != nil {
-		cl, err = cancelByUpdatingCLEntity(ctx, &in)
+		cl, err = resetByUpdatingCLEntity(ctx, &in)
 		if err != nil {
 			return err
 		}
@@ -202,11 +198,11 @@ func Cancel(ctx context.Context, in Input) error {
 		if err := ensurePSLatestInCV(ctx, cl); err != nil {
 			return err
 		}
-		return cancelLeased(leaseCtx, client, &in, cl)
+		return resetLeased(leaseCtx, client, &in, cl)
 	case in.Message != "":
-		// If there is a CQ Vote trigger to purge, cancelLeased() will have
+		// If there is a CQ Vote trigger to purge, resetLeased() will have
 		// taken care of posting any appropriate message.
-		// If the Cancel() call _only_ applies to an NPR trigger, _and_
+		// If the Reset() call _only_ applies to an NPR trigger, _and_
 		// a message has been specified, then this function needs to post a
 		// message.
 		return makeChange(client, &in, cl).postGerritMsg(
@@ -216,7 +212,7 @@ func Cancel(ctx context.Context, in Input) error {
 	}
 }
 
-func makeChange(client gerrit.Client, in *Input, cl *changelist.CL) *change {
+func makeChange(client gerrit.Client, in *ResetInput, cl *changelist.CL) *change {
 	return &change{
 		Host:        cl.Snapshot.GetGerrit().GetHost(),
 		LUCIProject: in.LUCIProject,
@@ -228,7 +224,7 @@ func makeChange(client gerrit.Client, in *Input, cl *changelist.CL) *change {
 	}
 }
 
-func cancelByUpdatingCLEntity(ctx context.Context, in *Input) (*changelist.CL, error) {
+func resetByUpdatingCLEntity(ctx context.Context, in *ResetInput) (*changelist.CL, error) {
 	return in.CLMutator.Update(ctx, in.LUCIProject, in.CL.ID, func(cl *changelist.CL) error {
 		switch {
 		case cl.TriggerNewPatchsetRunAfterPS < in.CL.Snapshot.GetPatchset():
@@ -242,22 +238,22 @@ func cancelByUpdatingCLEntity(ctx context.Context, in *Input) (*changelist.CL, e
 }
 
 // TODO(tandrii): merge with prjmanager/purger's error messages.
-var failMessage = "CV failed to unset the " + trigger.CQLabelName +
+var failMessage = "CV failed to unset the " + CQLabelName +
 	" label on your behalf. Please unvote and revote on the " +
-	trigger.CQLabelName + " label to retry."
+	CQLabelName + " label to retry."
 
-func cancelLeased(ctx context.Context, client gerrit.Client, in *Input, cl *changelist.CL) error {
+func resetLeased(ctx context.Context, client gerrit.Client, in *ResetInput, cl *changelist.CL) error {
 	c := makeChange(client, in, cl)
-	logging.Infof(ctx, "Canceling triggers on %s/%d", c.Host, c.Number)
+	logging.Infof(ctx, "Resetting triggers on %s/%d", c.Host, c.Number)
 	ci, err := c.getLatest(ctx, cl.Snapshot.GetGerrit().GetInfo().GetUpdated().AsTime())
 	switch {
 	case err != nil:
 		return err
 	case ci.GetCurrentRevision() != c.Revision:
-		return errors.Reason("failed to cancel because ps %d is not current for %s/%d", cl.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrPreconditionFailedTag).Err()
+		return errors.Reason("failed to reset because ps %d is not current for %s/%d", cl.Snapshot.GetPatchset(), c.Host, c.Number).Tag(ErrResetPreconditionFailedTag).Err()
 	}
 
-	labelsToRemove := stringset.NewFromSlice(trigger.CQLabelName)
+	labelsToRemove := stringset.NewFromSlice(CQLabelName)
 	if l := in.Triggers.GetCqVoteTrigger().GetAdditionalLabel(); l != "" {
 		labelsToRemove.Add(l)
 	}
@@ -274,19 +270,19 @@ func cancelLeased(ctx context.Context, client gerrit.Client, in *Input, cl *chan
 	})
 
 	removeErr := c.removeVotesAndPostMsg(ctx, ci, in.Triggers.GetCqVoteTrigger(), in.Message, in.Notify, in.AddToAttentionSet, in.AttentionReason)
-	if removeErr == nil || !ErrPermanentTag.In(removeErr) {
+	if removeErr == nil || !ErrResetPermanentTag.In(removeErr) {
 		return removeErr
 	}
 
 	// Received permanent error, try posting message.
-	logging.Warningf(ctx, "Falling back to canceling via botdata message %s/%d", c.Host, c.Number)
+	logging.Warningf(ctx, "Falling back to resetting via botdata message %s/%d", c.Host, c.Number)
 	var msgBuilder strings.Builder
 	if in.Message != "" {
 		msgBuilder.WriteString(in.Message)
 		msgBuilder.WriteString("\n\n")
 	}
 	msgBuilder.WriteString(failMessage)
-	if err := c.postCancelMessage(ctx, ci, msgBuilder.String(), in.Triggers.GetCqVoteTrigger(), in.Notify, in.AddToAttentionSet, in.AttentionReason); err != nil {
+	if err := c.postResetMessage(ctx, ci, msgBuilder.String(), in.Triggers.GetCqVoteTrigger(), in.Notify, in.AddToAttentionSet, in.AttentionReason); err != nil {
 		// Return the original error, but add details from just posting a message.
 		return errors.Annotate(removeErr, "even just posting message also failed: %s", err).Err()
 	}
@@ -301,7 +297,7 @@ func ensurePSLatestInCV(ctx context.Context, cl *changelist.CL) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to load cl: %d", cl.ID).Tag(transient.Tag).Err()
 	case curCLInCV.Snapshot.GetPatchset() > cl.Snapshot.GetPatchset():
-		return errors.Reason("failed to cancel because ps %d is not current for cl(%d)", cl.Snapshot.GetPatchset(), cl.ID).Tag(ErrPreconditionFailedTag).Err()
+		return errors.Reason("failed to reset because ps %d is not current for cl(%d)", cl.Snapshot.GetPatchset(), cl.ID).Tag(ErrResetPreconditionFailedTag).Err()
 	}
 	return nil
 }
@@ -341,10 +337,10 @@ func (c *change) getLatest(ctx context.Context, knownUpdatedTime time.Time) (*ge
 			// CV receives NotFound when fetching this CL due to eventual consistency
 			// of Gerrit. Therefore, consider this error as stale data. It is also
 			// possible that user actually deleted this CL. In that case, it is also
-			// okay to retry here because theorectically, Gerrit should consistently
+			// okay to retry here because theoretically, Gerrit should consistently
 			// return 404 and fail the task. When the task retries, CV should figure
 			// that it has lost its access to this CL at the beginning and give up
-			// the trigger cancellation. But, even if Gerrit accidentally return
+			// resetting the trigger. But, even if Gerrit accidentally return
 			// the deleted CL, the subsequent SetReview call will also fail the task.
 			return gerrit.ErrStaleData
 		case gerritErr != nil:
@@ -464,7 +460,7 @@ func (c *change) removeVote(ctx context.Context, accountID int64, mode run.Mode)
 	}
 }
 
-func (c *change) postCancelMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAttn gerrit.Whoms, reason string) (err error) {
+func (c *change) postResetMessage(ctx context.Context, ci *gerritpb.ChangeInfo, msg string, t *run.Trigger, notify, addAttn gerrit.Whoms, reason string) (err error) {
 	bd := botdata.BotData{
 		Action:      botdata.Cancel,
 		TriggeredAt: t.GetTime().AsTime(),
@@ -496,7 +492,7 @@ func (c *change) postGerritMsg(ctx context.Context, ci *gerritpb.ChangeInfo, msg
 	// these messages. The uniqueness is achieved by appending the Run triggering
 	// time. Otherwise, users may falsely believe LUCI CV is not doing anything
 	// to handle their CLs because Gerrit will hide old messages with the same
-	// tag (See: crbug.com/1359521). The message in trigger cancellation normally
+	// tag (See: crbug.com/1359521). The message in trigger reset normally
 	// contains the result for the Run (e.g. passing or why the Run fails) so it
 	// is a good indication of LUCI CV is working fine without introducing too
 	// much noise.
@@ -578,11 +574,11 @@ func (c *change) annotateGerritErr(ctx context.Context, err error, action string
 	case codes.OK:
 		return nil
 	case codes.PermissionDenied:
-		return errors.Reason("no permission to %s %s/%d", action, c.Host, c.Number).Tag(ErrPermanentTag).Err()
+		return errors.Reason("no permission to %s %s/%d", action, c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
 	case codes.NotFound:
-		return errors.Reason("change %s/%d not found", c.Host, c.Number).Tag(ErrPermanentTag).Err()
+		return errors.Reason("change %s/%d not found", c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
 	case codes.FailedPrecondition:
-		return errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, err).Tag(ErrPermanentTag).Err()
+		return errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, err).Tag(ErrResetPermanentTag).Err()
 	case codes.DeadlineExceeded:
 		return errors.Reason("timeout when calling Gerrit to %s %s/%d", action, c.Host, c.Number).Tag(transient.Tag).Err()
 	default:

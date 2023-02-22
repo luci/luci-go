@@ -86,7 +86,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		for _, cl := range rs.CLs {
 			metas[cl] = meta
 		}
-		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
+		scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 		return &Result{State: rs}, nil
 	}
 
@@ -132,7 +132,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		for _, cl := range rs.CLs {
 			metas[cl] = meta
 		}
-		scheduleTriggersCancellation(ctx, rs, metas, run.Status_FAILED)
+		scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 		rs.LogInfof(ctx, "Tryjob Requirement Computation", "Failed to compute tryjob requirement. Reason: %s", result.ComputationFailure.Reason())
 		return &Result{State: rs}, nil
 	}

@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -138,8 +137,7 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 
 	whoms.Dedupe()
 	logging.Debugf(ctx, "proceeding to purge CL due to\n%s", msg)
-	err = cancel.Cancel(ctx, cancel.Input{
-		LUCIProject:       task.GetLuciProject(),
+	err = trigger.Reset(ctx, trigger.ResetInput{LUCIProject: task.GetLuciProject(),
 		CL:                cl,
 		LeaseDuration:     time.Minute,
 		Notify:            whoms,
@@ -150,15 +148,14 @@ func (p *Purger) purgeWithDeadline(ctx context.Context, task *prjpb.PurgeCLTask)
 		Message:           msg,
 		ConfigGroups:      configGroups,
 		GFactory:          p.gFactory,
-		CLMutator:         p.clMutator,
-	})
+		CLMutator:         p.clMutator})
 
 	switch {
 	case err == nil:
 		logging.Debugf(ctx, "purging done")
-	case cancel.ErrPreconditionFailedTag.In(err):
+	case trigger.ErrResetPreconditionFailedTag.In(err):
 		logging.Debugf(ctx, "cancel is not necessary: %s", err)
-	case cancel.ErrPermanentTag.In(err):
+	case trigger.ErrResetPermanentTag.In(err):
 		logging.Errorf(ctx, "permanently failed to purge CL: %s", err)
 	default:
 		return errors.Annotate(err, "failed to purge CL %d of project %q", cl.ID, task.GetLuciProject()).Err()

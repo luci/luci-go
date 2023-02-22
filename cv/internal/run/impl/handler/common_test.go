@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
-	gcancel "go.chromium.org/luci/cv/internal/gerrit/cancel"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/metrics"
@@ -200,11 +199,11 @@ func TestCancelTriggers(t *testing.T) {
 		meta := reviewInputMeta{
 			message: "Dry Run OK",
 		}
-		err = impl.cancelCLTriggers(ctx, rid, []*run.RunCL{&rcl}, cg, meta)
+		err = impl.resetCLTriggers(ctx, rid, []*run.RunCL{&rcl}, cg, meta)
 		// The cancellation errors out, but the CL refresh is scheduled.
 		// TODO(crbug/1227369): fail transiently or better yet schedule another
 		// retry in the future and fail with tq.Ignore.
-		So(gcancel.ErrPermanentTag.In(err), ShouldBeTrue)
+		So(trigger.ErrResetPermanentTag.In(err), ShouldBeTrue)
 		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
 	})
 }

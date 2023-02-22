@@ -35,47 +35,47 @@ import (
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/cancel"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
 
-// CancelTriggersOp cancels the triggers for the provided CLs.
+// ResetTriggersOp resets the triggers for the provided CLs.
 //
-// CancelTriggersOp keeps retrying on lease error and transient failure for each
-// CL till the long op deadline is exceeded or cancellation either succeeds
+// ResetTriggersOp keeps retrying on lease error and transient failure for each
+// CL till the long op deadline is exceeded or reset either succeeds
 // or fails non-transiently.
 //
-// CancelTriggersOp doesn't obey longop's cancellation request because if
+// ResetTriggersOp doesn't obey longop's cancellation request because if
 // this long op is left half-done, for example, triggers on half of the CLs are
 // untouched, a new Run may be created for those CLs.
 //
-// CancelTriggersOp is a single-use object.
-type CancelTriggersOp struct {
+// ResetTriggersOp is a single-use object.
+type ResetTriggersOp struct {
 	*Base
 	GFactory  gerrit.Factory
 	CLMutator *changelist.Mutator
-	// CancelConcurrency is the number of CLs that will be cancelled concurrently.
+	// Concurrency is the number of CLs that will be reset concurrently.
 	//
 	// Default is 8.
-	CancelConcurrency int
+	Concurrency int
 
 	// Private fields that will be populated internally during long op execution.
 
-	inputs  []cancel.Input
-	results []cancelResult
+	inputs  []trigger.ResetInput
+	results []resetResult
 
-	// testAfterTryCancelFn is always called after each try to cancel the trigger
+	// testAfterTryResetFn is always called after each try to reset the trigger
 	// of a CL.
 	//
 	// This is only set for testing purpose.
-	testAfterTryCancelFn func()
+	testAfterTryResetFn func()
 }
 
-const defaultCancelConcurrency = 8
+const defaultConcurrency = 8
 
-// Do actually cancels the triggers.
-func (op *CancelTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, error) {
+// Do actually resets the triggers.
+func (op *ResetTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, error) {
 	op.assertCalledOnce()
 
 	if err := op.loadInputs(ctx); err != nil {
@@ -99,7 +99,7 @@ func (op *CancelTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, e
 		case err == nil:
 			ct.Results[i].Detail = &eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo{
 				SuccessInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Success{
-					CancelledAt: timestamppb.New(result.cancelledAt),
+					CancelledAt: timestamppb.New(result.resetAt),
 				},
 			}
 		default:
@@ -109,7 +109,7 @@ func (op *CancelTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, e
 					FailureMessage: err.Error(),
 				},
 			}
-			logging.Errorf(ctx, "failed to cancel the trigger of CL %d %q: %s", cl.ID, cl.ExternalID, err)
+			logging.Errorf(ctx, "failed to reset the trigger of CL %d %q: %s", cl.ID, cl.ExternalID, err)
 			if transient.Tag.In(err) {
 				lastTransErr = err
 			} else {
@@ -127,10 +127,10 @@ func (op *CancelTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, e
 	// Returns the event in error case as well because the event will be
 	// reported back to Run Manager.
 	case ctxErr == context.DeadlineExceeded:
-		logging.Errorf(ctx, "running out of time to cancel triggers")
+		logging.Errorf(ctx, "running out of time to reset triggers")
 		return ret, ctxErr
 	case ctxErr == context.Canceled:
-		logging.Errorf(ctx, "context is cancelled while cancelling triggers")
+		logging.Errorf(ctx, "context is cancelled while resetting triggers")
 		return ret, ctxErr
 	case ctxErr != nil:
 		panic(fmt.Errorf("unexpected context error: %s", ctxErr))
@@ -145,11 +145,11 @@ func (op *CancelTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, e
 	}
 }
 
-func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
+func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 	var (
-		clsToCancel []*changelist.CL
-		triggers    map[common.CLID]*run.Triggers
-		cfg         *prjcfg.ConfigGroup
+		clsToReset []*changelist.CL
+		triggers   map[common.CLID]*run.Triggers
+		cfg        *prjcfg.ConfigGroup
 	)
 	eg, ctx := errgroup.WithContext(ctx)
 	requests := op.Op.GetCancelTriggers().GetRequests()
@@ -158,7 +158,7 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 		for i, req := range requests {
 			clids[i] = common.CLID(req.Clid)
 		}
-		clsToCancel, err = changelist.LoadCLsByIDs(ctx, clids)
+		clsToReset, err = changelist.LoadCLsByIDs(ctx, clids)
 		return err
 	})
 	eg.Go(func() error {
@@ -180,17 +180,17 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 		return err
 	}
 
-	op.inputs = make([]cancel.Input, len(requests))
-	op.results = make([]cancelResult, len(requests))
+	op.inputs = make([]trigger.ResetInput, len(requests))
+	op.results = make([]resetResult, len(requests))
 	luciProject := op.Run.ID.LUCIProject()
 	for i := range requests {
-		cl, req := clsToCancel[i], requests[i]
-		op.inputs[i] = cancel.Input{
+		cl, req := clsToReset[i], requests[i]
+		op.inputs[i] = trigger.ResetInput{
 			CL:                cl,
 			Triggers:          triggers[cl.ID],
 			LUCIProject:       luciProject,
 			Message:           req.Message,
-			Requester:         "Trigger Cancellation",
+			Requester:         "Trigger Reset",
 			Notify:            convertToGerritWhoms(req.Notify),
 			LeaseDuration:     time.Minute,
 			ConfigGroups:      []*prjcfg.ConfigGroup{cfg},
@@ -199,7 +199,7 @@ func (op *CancelTriggersOp) loadInputs(ctx context.Context) error {
 			GFactory:          op.GFactory,
 			CLMutator:         op.CLMutator,
 		}
-		op.results[i] = cancelResult{
+		op.results[i] = resetResult{
 			err: errNotAttemptedYet,
 		}
 	}
@@ -219,40 +219,40 @@ func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Who
 		case run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER:
 			ret[i] = gerrit.PSUploader
 		default:
-			panic(fmt.Errorf("unrecognized whom [%s] in trigger cancellation", whom))
+			panic(fmt.Errorf("unrecognized whom [%s] in trigger reset", whom))
 		}
 	}
 	return ret
 }
 
-type cancelItem struct {
+type resetItem struct {
 	index int
-	input cancel.Input
+	input trigger.ResetInput
 }
-type cancelResult struct {
-	cancelledAt time.Time
-	err         error
+type resetResult struct {
+	resetAt time.Time
+	err     error
 }
 
-// errNotAttemptedYet is the initial error set in cancelResult.
-var errNotAttemptedYet = errors.New("not attempted cancellation yet")
+// errNotAttemptedYet is the initial error set in resetResult.
+var errNotAttemptedYet = errors.New("not attempted reset yet")
 
-// executeInParallel cancels the triggers of the provided CLs in parallel
+// executeInParallel resets the triggers of the provided CLs in parallel
 // and keeps retrying on transient or alreadyInLease failure until the context
 // is done.
-func (op *CancelTriggersOp) executeInParallel(ctx context.Context) {
+func (op *ResetTriggersOp) executeInParallel(ctx context.Context) {
 	dc := op.makeDispatcherChannel(ctx)
 	for i, input := range op.inputs {
-		dc.C <- cancelItem{index: i, input: input}
+		dc.C <- resetItem{index: i, input: input}
 	}
 	dc.Close()
 	<-dc.DrainC
 }
 
-func (op *CancelTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher.Channel {
-	concurrency := op.CancelConcurrency
+func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher.Channel {
+	concurrency := op.Concurrency
 	if concurrency == 0 {
-		concurrency = defaultCancelConcurrency
+		concurrency = defaultConcurrency
 	}
 	concurrency = min(concurrency, len(op.inputs))
 	dc, err := dispatcher.NewChannel(ctx, &dispatcher.Options{
@@ -270,17 +270,17 @@ func (op *CancelTriggersOp) makeDispatcherChannel(ctx context.Context) dispatche
 			Retry: op.makeRetryFactory(),
 		},
 	}, func(data *buffer.Batch) error {
-		ci, ok := data.Data[0].Item.(cancelItem)
+		ci, ok := data.Data[0].Item.(resetItem)
 		if !ok {
 			panic(fmt.Errorf("unexpected batch data item %s", data.Data[0].Item))
 		}
 		result := &op.results[ci.index]
-		result.err = cancel.Cancel(ctx, ci.input)
+		result.err = trigger.Reset(ctx, ci.input)
 		if result.err == nil {
-			result.cancelledAt = clock.Now(ctx)
+			result.resetAt = clock.Now(ctx)
 		}
-		if op.testAfterTryCancelFn != nil {
-			op.testAfterTryCancelFn()
+		if op.testAfterTryResetFn != nil {
+			op.testAfterTryResetFn()
 		}
 		return result.err
 	})
@@ -290,9 +290,9 @@ func (op *CancelTriggersOp) makeDispatcherChannel(ctx context.Context) dispatche
 	return dc
 }
 
-func (op *CancelTriggersOp) makeRetryFactory() retry.Factory {
+func (op *ResetTriggersOp) makeRetryFactory() retry.Factory {
 	return func() retry.Iterator {
-		return &cancellationRetryIterator{
+		return &resetRetryIterator{
 			inner: &retry.ExponentialBackoff{
 				Limited: retry.Limited{
 					Delay:   100 * time.Millisecond,
@@ -305,15 +305,15 @@ func (op *CancelTriggersOp) makeRetryFactory() retry.Factory {
 	}
 }
 
-// cancellationRetryIterator retries on transient failure in an exponential
+// resetRetryIterator retries on transient failure in an exponential
 // fashion. If the error is alreadyInLease, this iterator returns the earliest
 // time of the lease expiry and the inner's iterator next retry.
-type cancellationRetryIterator struct {
+type resetRetryIterator struct {
 	inner retry.Iterator
 }
 
 // Next implements retry.Iterator
-func (c cancellationRetryIterator) Next(ctx context.Context, err error) time.Duration {
+func (c resetRetryIterator) Next(ctx context.Context, err error) time.Duration {
 	switch leaseErr, isLeaseErr := lease.IsAlreadyInLeaseErr(err); {
 	case isLeaseErr:
 		innerNext := c.inner.Next(ctx, err)

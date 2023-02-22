@@ -40,8 +40,8 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		panic(err)
 	case status == run.Status_SUBMITTING:
 		return &Result{State: rs, PreserveEvents: true}, nil
-	case isTriggersCancellationOngoing(rs):
-		// It's likely CL is updated due to trigger cancellation, defer the process
+	case isCurrentlyResettingTriggers(rs):
+		// It's likely CL is updated when resetting the triggers, defer the process
 		// of CLsUpdated event till triggers cancellation is done.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):

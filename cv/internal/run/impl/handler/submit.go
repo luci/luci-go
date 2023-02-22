@@ -116,7 +116,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 				message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
 			}
 		}
-		scheduleTriggersCancellation(ctx, rs, rims, run.Status_FAILED)
+		scheduleTriggersReset(ctx, rs, rims, run.Status_FAILED)
 		return &Result{
 			State: rs,
 		}, nil
@@ -505,7 +505,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, rs *state.Ru
 		default:
 			meta.message = defaultMsg
 		}
-		return impl.cancelCLTriggers(ctx, rs.ID, allRunCLs, cg, meta)
+		return impl.resetCLTriggers(ctx, rs.ID, allRunCLs, cg, meta)
 	}
 
 	// Multi-CL Run
@@ -527,7 +527,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, rs *state.Ru
 			go func() {
 				defer wg.Done()
 				meta.message = fmt.Sprintf("%s\n\n%s", messages[failedCL.ID], msgSuffix)
-				errs[i] = impl.cancelCLTriggers(ctx, rs.ID, []*run.RunCL{failedCL}, cg, meta)
+				errs[i] = impl.resetCLTriggers(ctx, rs.ID, []*run.RunCL{failedCL}, cg, meta)
 			}()
 		}
 		// Cancel triggers of CLs that CV won't try to submit.
@@ -555,7 +555,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, rs *state.Ru
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				errs[len(failed)+i] = impl.cancelCLTriggers(ctx, rs.ID, []*run.RunCL{pendingCL}, cg, meta)
+				errs[len(failed)+i] = impl.resetCLTriggers(ctx, rs.ID, []*run.RunCL{pendingCL}, cg, meta)
 			}()
 		}
 
@@ -573,10 +573,10 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, rs *state.Ru
 		return common.MostSevereError(errs)
 	case sc.GetTimeout():
 		meta.message = fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
-		return impl.cancelCLTriggers(ctx, rs.ID, pending, cg, meta)
+		return impl.resetCLTriggers(ctx, rs.ID, pending, cg, meta)
 	default:
 		meta.message = fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
-		return impl.cancelCLTriggers(ctx, rs.ID, pending, cg, meta)
+		return impl.resetCLTriggers(ctx, rs.ID, pending, cg, meta)
 	}
 }
 
