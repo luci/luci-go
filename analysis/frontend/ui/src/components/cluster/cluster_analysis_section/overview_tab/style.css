@@ -19,3 +19,12 @@
     align-items: baseline;
     gap: 1rem;
 }
+
+.overview-tab-charts-container {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.overview-tab-charts-item {
+  flex: 1 1 30%;
+}
