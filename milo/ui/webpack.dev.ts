@@ -29,9 +29,6 @@ const DEBUG_SW = process.env.DEBUG_SW === 'true';
 export default merge(common, {
   mode: 'development',
   devtool: 'eval-source-map',
-  output: {
-    crossOriginLoading: 'anonymous',
-  },
   // Service workers makes live/hot reload harder, so it should be disabled by
   // default in dev mode.
   plugins: [

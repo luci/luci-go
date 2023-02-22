@@ -107,16 +107,3 @@ export class RawArtifactPageElement extends MiloBaseElement {
     `,
   ];
 }
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      'milo-raw-artifact-page': {};
-    }
-  }
-}
-
-export function RawArtifactPage() {
-  return <milo-raw-artifact-page></milo-raw-artifact-page>;
-}

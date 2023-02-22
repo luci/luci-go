@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
-import { useSearchParams } from 'react-router-dom';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
@@ -25,6 +25,7 @@ import '../../components/dot_spinner';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
+import { NOT_FOUND_URL } from '../../libs/url_utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import commonStyle from '../../styles/common_style.css';
@@ -37,18 +38,7 @@ import { consumeArtifactIdent } from './artifact_page_layout';
 // TODO(weiweilin): improve error handling.
 @customElement('milo-image-diff-artifact-page')
 @consumer
-export class ImageDiffArtifactPageElement extends MobxLitElement {
-  static get properties() {
-    return {
-      expectedArtifactId: {
-        type: String,
-      },
-      actualArtifactId: {
-        type: String,
-      },
-    };
-  }
-
+export class ImageDiffArtifactPage extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
@@ -56,9 +46,6 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
   @observable.ref
   @consumeArtifactIdent()
   artifactIdent!: ArtifactIdentifier;
-
-  @observable.ref expectedArtifactId!: string;
-  @observable.ref actualArtifactId!: string;
 
   @computed private get diffArtifactName() {
     return constructArtifactName({ ...this.artifactIdent });
@@ -69,6 +56,9 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
   @computed private get actualArtifactName() {
     return constructArtifactName({ ...this.artifactIdent, artifactId: this.actualArtifactId });
   }
+
+  @observable.ref private expectedArtifactId!: string;
+  @observable.ref private actualArtifactId!: string;
 
   @computed
   private get diffArtifact$() {
@@ -112,6 +102,20 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
     makeObservable(this);
   }
 
+  onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
+    const search = new URLSearchParams(location.search);
+    const expectedArtifactId = search.get('expected_artifact_id');
+    const actualArtifactId = search.get('actual_artifact_id');
+
+    if (!expectedArtifactId || !actualArtifactId) {
+      return cmd.redirect(NOT_FOUND_URL);
+    }
+
+    this.expectedArtifactId = expectedArtifactId;
+    this.actualArtifactId = actualArtifactId;
+    return;
+  }
+
   protected render = reportRenderError(this, () => {
     if (this.isLoading) {
       return html`<div id="loading-spinner" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
@@ -139,28 +143,4 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
       }
     `,
   ];
-}
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      'milo-image-diff-artifact-page': {
-        expectedArtifactId: string;
-        actualArtifactId: string;
-      };
-    }
-  }
-}
-
-export function ImageDiffArtifactPage() {
-  const [search] = useSearchParams();
-  const expectedArtifactId = search.get('expectedArtifactId')!;
-  const actualArtifactId = search.get('actualArtifactId')!;
-  return (
-    <milo-image-diff-artifact-page
-      expectedArtifactId={expectedArtifactId}
-      actualArtifactId={actualArtifactId}
-    ></milo-image-diff-artifact-page>
-  );
 }

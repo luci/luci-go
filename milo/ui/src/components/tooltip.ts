@@ -202,12 +202,3 @@ export class TooltipElement extends MobxLitElement {
     }
   `;
 }
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      'milo-tooltip': {};
-    }
-  }
-}

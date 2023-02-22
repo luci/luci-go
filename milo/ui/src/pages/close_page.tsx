@@ -12,18 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import createCache, { EmotionCache } from '@emotion/cache';
+import { CacheProvider } from '@emotion/react';
+import { customElement } from 'lit/decorators.js';
+import { createRoot, Root } from 'react-dom/client';
 
-import { REFRESH_AUTH_CHANNEL } from '../libs/constants';
+import commonStyle from '../styles/common_style.css';
 
-export function AuthChannelClosePage() {
-  const { channelId } = useParams();
-
-  useEffect(() => {
-    new BroadcastChannel(channelId!).postMessage('close');
-    REFRESH_AUTH_CHANNEL.postMessage('refresh');
-  });
-
+export function ClosePage() {
   return <div css={{ margin: '20px' }}>You can close this page if it's not automatically closed</div>;
+}
+
+@customElement('milo-close-page')
+export class ClosePageElement extends MobxLitElement {
+  private readonly cache: EmotionCache;
+  private readonly parent: HTMLDivElement;
+  private readonly root: Root;
+
+  constructor() {
+    super();
+    this.parent = document.createElement('div');
+    const child = document.createElement('div');
+    this.root = createRoot(child);
+    this.parent.appendChild(child);
+    this.cache = createCache({
+      key: 'milo-close-page',
+      container: this.parent,
+    });
+  }
+
+  protected render() {
+    this.root.render(
+      <CacheProvider value={this.cache}>
+        <ClosePage />
+      </CacheProvider>
+    );
+    return this.parent;
+  }
+
+  static styles = [commonStyle];
 }

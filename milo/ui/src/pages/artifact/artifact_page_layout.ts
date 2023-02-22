@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, html, render } from 'lit';
+import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
+import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
-import { useEffect, useRef } from 'react';
-import { Outlet, useParams } from 'react-router-dom';
 
 import '../../components/image_diff_viewer';
 import '../../components/status_bar';
 import { MiloBaseElement } from '../../components/milo_base';
 import { createContextLink, provider } from '../../libs/context';
-import { getInvURLPath } from '../../libs/url_utils';
+import { getInvURLPath, NOT_FOUND_URL } from '../../libs/url_utils';
 import { ArtifactIdentifier } from '../../services/resultdb';
 import commonStyle from '../../styles/common_style.css';
 
@@ -33,8 +32,8 @@ export const [provideArtifactIdent, consumeArtifactIdent] = createContextLink<Ar
  */
 @customElement('milo-artifact-page-layout')
 @provider
-export class ArtifactPageLayoutElement extends MiloBaseElement {
-  @observable.ref private invId!: string;
+export class ArtifactPageLayoutElement extends MiloBaseElement implements BeforeEnterObserver {
+  @observable.ref private invocationId!: string;
   @observable.ref private testId?: string;
   @observable.ref private resultId?: string;
   @observable.ref private artifactId!: string;
@@ -43,7 +42,7 @@ export class ArtifactPageLayoutElement extends MiloBaseElement {
   @provideArtifactIdent()
   get artifactIdent() {
     return {
-      invocationId: this.invId,
+      invocationId: this.invocationId,
       testId: this.testId,
       resultId: this.resultId,
       artifactId: this.artifactId,
@@ -53,6 +52,23 @@ export class ArtifactPageLayoutElement extends MiloBaseElement {
   constructor() {
     super();
     makeObservable(this);
+  }
+
+  onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
+    const invocationId = location.params['inv_id'];
+    const testId = location.params['test_id'];
+    const resultId = location.params['result_id'];
+    const artifactId = location.params['artifact_id'];
+
+    if ([invocationId, testId || '', resultId || '', artifactId].some((param) => typeof param !== 'string')) {
+      return cmd.redirect(NOT_FOUND_URL);
+    }
+
+    this.invocationId = invocationId as string;
+    this.testId = testId as string | undefined;
+    this.resultId = resultId as string | undefined;
+    this.artifactId = artifactId as string;
+    return;
   }
 
   connectedCallback() {
@@ -77,7 +93,7 @@ export class ArtifactPageLayoutElement extends MiloBaseElement {
           <tr>
             <td class="id-component-label">Invocation</td>
             <td>
-              <a href=${getInvURLPath(this.invId)}> ${this.invId} </a>
+              <a href=${getInvURLPath(this.invocationId)}>${this.invocationId}</a>
             </td>
           </tr>
           ${this.testId &&
@@ -125,30 +141,4 @@ export class ArtifactPageLayoutElement extends MiloBaseElement {
       }
     `,
   ];
-}
-
-export function ArtifactPageLayout() {
-  const { invId, testId, resultId, artifactId } = useParams();
-
-  const container = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!container.current) {
-      return;
-    }
-    render(
-      html`<milo-artifact-page-layout .invId=${invId} .testId=${testId} .resultId=${resultId} .artifactId=${artifactId}>
-        ${container.current.children}
-      </milo-artifact-page-layout>`,
-      container.current
-    );
-  }, [container.current]);
-
-  return (
-    <div ref={container}>
-      <div>
-        <Outlet />
-      </div>
-    </div>
-  );
 }
