@@ -220,17 +220,20 @@ message ConfigGroup {
         }
     ];
 
-    // Set the value of a given Gerrit label.
-    message VoteGerritLabel {
-      // Name of a Gerrit label to set.
-      string name = 1 [(validate.rules).string.min_len = 1];
-
-      // Value to set the label with.
-      int32 value = 2;
+    // Vote Gerrit labels with given values.
+    message VoteGerritLabels {
+      message Vote {
+        // Gerrit label name
+        string name = 1 [(validate.rules).string.min_len = 1];
+        // Value to set on the label
+        int32 value = 2;
+      }
+      // All label names must be unique.
+      repeated Vote votes = 1 [(validate.rules).repeated.min_items = 1];
     }
     oneof action {
       option (validate.required) = true;
-      VoteGerritLabel vote_gerrit_label = 3;
+      VoteGerritLabels vote_gerrit_labels = 3;
     }
   }
 

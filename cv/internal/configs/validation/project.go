@@ -227,18 +227,18 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 	}
 
 	paNames := stringset.New(len(group.PostActions))
-	for i, act := range group.PostActions {
+	for i, pa := range group.PostActions {
 		vd.ctx.Enter("post_actions #%d", (i + 1))
-		if err := act.ValidateAll(); err != nil {
+		if err := pa.ValidateAll(); err != nil {
 			vd.ctx.Errorf("%s", err)
 		}
 
 		vd.ctx.Enter("name")
-		if !paNames.Add(act.GetName()) {
-			vd.ctx.Errorf("name '%q' is already in use", act.GetName())
+		if !paNames.Add(pa.GetName()) {
+			vd.ctx.Errorf("name '%q' is already in use", pa.GetName())
 		}
-		vd.ctx.Exit()
-		for i, tc := range act.GetConditions() {
+		vd.ctx.Exit() // name
+		for i, tc := range pa.GetConditions() {
 			vd.ctx.Enter("conditions #%d", (i + 1))
 			switch m := tc.GetMode(); {
 			case m == "DRY_RUN":
@@ -266,9 +266,19 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 					vd.ctx.Exit()
 				}
 			}
-			vd.ctx.Exit()
+			vd.ctx.Exit() // conditions #i
 		}
-		vd.ctx.Exit()
+		vd.ctx.Enter("action")
+		switch act := pa.GetAction().(type) {
+		case nil:
+		case *cfgpb.ConfigGroup_PostAction_VoteGerritLabels_:
+			vd.validateVoteGerritLabels(act.VoteGerritLabels)
+		default:
+			// This must be a bug in this code.
+			panic(errors.Reason("unknown action; please fix"))
+		}
+		vd.ctx.Exit() // action
+		vd.ctx.Exit() // post_actions #i
 	}
 
 	if group.Verifiers == nil {
@@ -279,6 +289,18 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 		vd.ctx.Exit()
 	}
 	vd.validateUserLimits(group.GetUserLimits(), group.GetUserLimitDefault())
+}
+
+func (vd *projectConfigValidator) validateVoteGerritLabels(work *cfgpb.ConfigGroup_PostAction_VoteGerritLabels) {
+	// perform extra validations that are not checked by PGV.
+	labels := stringset.New(len(work.Votes))
+	for i, vote := range work.Votes {
+		if !labels.Add(vote.Name) {
+			vd.ctx.Enter("votes #%d", (i + 1))
+			vd.ctx.Errorf("label %q already specified", vote.Name)
+			vd.ctx.Exit()
+		}
+	}
 }
 
 func (vd *projectConfigValidator) validateGerrit(g *cfgpb.ConfigGroup_Gerrit) {

@@ -401,10 +401,14 @@ func TestValidateProjectDetailed(t *testing.T) {
 			Convey("post_actions", func() {
 				pa := &cfgpb.ConfigGroup_PostAction{
 					Name: "CQ verified",
-					Action: &cfgpb.ConfigGroup_PostAction_VoteGerritLabel_{
-						VoteGerritLabel: &cfgpb.ConfigGroup_PostAction_VoteGerritLabel{
-							Name:  "CQ-verified",
-							Value: 1,
+					Action: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels_{
+						VoteGerritLabels: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels{
+							Votes: []*cfgpb.ConfigGroup_PostAction_VoteGerritLabels_Vote{
+								{
+									Name:  "CQ-verified",
+									Value: 1,
+								},
+							},
 						},
 					},
 					Conditions: []*cfgpb.ConfigGroup_PostAction_TriggeringCondition{
@@ -441,6 +445,25 @@ func TestValidateProjectDetailed(t *testing.T) {
 						pa.Action = nil
 						validateProjectConfig(vctx, &cfg)
 						So(vctx.Finalize(), ShouldErrLike, `Action: value is required`)
+					})
+					Convey("vote_gerrit_labels", func() {
+						w := pa.GetAction().(*cfgpb.ConfigGroup_PostAction_VoteGerritLabels_).VoteGerritLabels
+						Convey("empty pairs", func() {
+							w.Votes = nil
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, "Votes: value must contain")
+						})
+						Convey("a pair with an empty name", func() {
+							w.Votes[0].Name = ""
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, "Name: value length must be")
+						})
+						Convey("pairs with duplicate names", func() {
+							w.Votes = append(w.Votes, w.Votes[0])
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, `"CQ-verified" already specified`)
+
+						})
 					})
 				})
 
