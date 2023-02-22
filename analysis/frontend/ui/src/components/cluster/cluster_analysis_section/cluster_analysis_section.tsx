@@ -57,14 +57,22 @@ const ClusterAnalysisSection = () => {
   }
 
   return (
-    <Paper data-cy="analysis-section" elevation={3} sx={{ pt: 2, pb: 2, mt: 1 }} >
+    <Paper
+      data-cy="analysis-section"
+      elevation={3}
+      sx={{ pt: 2, pb: 2, mt: 1 }}
+    >
       <Container maxWidth={false}>
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <TabList value={value} onChange={handleTabChange}>
               <Tab label='Overview' value='overview' />
               <Tab label='Recent Failures' value='recent-failures' />
-              <Tab label='Exonerations' value='exonerations' />
+              {
+                exonerationsAvailable && (
+                  <Tab label='Exonerations' value='exonerations' />
+                )
+              }
             </TabList>
           </Box>
           <OverviewTab value='overview'/>
