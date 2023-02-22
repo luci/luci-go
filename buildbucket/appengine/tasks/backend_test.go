@@ -27,8 +27,9 @@ import (
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
-
+	"google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -42,7 +43,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -271,6 +272,144 @@ func TestCipdClient(t *testing.T) {
 				SizeBytes: 100,
 				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
 			})
+		})
+	})
+}
+
+func TestCreateBackendTask(t *testing.T) {
+	Convey("computeBackendNewTaskReq", t, func(c C) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := NewMockedClient(context.Background(), ctl)
+		now := testclock.TestRecentTimeUTC
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
+		ctx = caching.WithEmptyProcessCache(ctx)
+		ctx = memory.UseWithAppID(ctx, "dev~app-id")
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = tq.TestingContext(ctx, nil)
+		backendSetting := []*pb.BackendSetting{}
+		backendSetting = append(backendSetting, &pb.BackendSetting{
+			Target:   "swarming://mytarget",
+			Hostname: "hostname",
+		})
+		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
+		err := config.SetTestSettingsCfg(ctx, settingsCfg)
+		So(err, ShouldBeNil)
+		server := httptest.NewServer(describeBootstrapBundle(c))
+		client := &prpc.Client{
+			Host: strings.TrimPrefix(server.URL, "http://"),
+			Options: &prpc.Options{
+				Retry: func() retry.Iterator {
+					return &retry.Limited{
+						Retries: 3,
+						Delay:   0,
+					}
+				},
+				Insecure:  true,
+				UserAgent: "prpc-test",
+			},
+		}
+		ctx = context.WithValue(ctx, MockCipdClientKey{}, client)
+
+		Convey("ok", func() {
+			build := &model.Build{
+				ID: 1,
+				Proto: &pb.Build{
+					Id: 1,
+					Builder: &pb.BuilderID{
+						Builder: "builder",
+						Bucket:  "bucket",
+						Project: "project",
+					},
+					ExecutionTimeout: &durationpb.Duration{Seconds: 500},
+					GracePeriod:      &durationpb.Duration{Seconds: 50},
+				},
+			}
+			key := datastore.KeyForObj(ctx, build)
+			infra := &model.BuildInfra{
+				Build: key,
+				Proto: &pb.BuildInfra{
+					Backend: &pb.BuildInfra_Backend{
+						Caches: []*pb.CacheEntry{
+							{
+								Name: "cache_name",
+								Path: "cache_value",
+							},
+						},
+						Config: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"priority": {
+									Kind: &structpb.Value_NumberValue{NumberValue: 32},
+								},
+								"bot_ping_tolerance": {
+									Kind: &structpb.Value_NumberValue{NumberValue: 2},
+								},
+							},
+						},
+						Task: &pb.Task{
+							Id: &pb.TaskID{
+								Id:     "",
+								Target: "swarming:/chromium-swarm-dev",
+							},
+						},
+					},
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir: "cache",
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "some unique host name",
+						Agent: &pb.BuildInfra_Buildbucket_Agent{
+							Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+								DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+									Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+										Package: "infra/tools/luci/bbagent/${platform}",
+										Version: "latest",
+										Server:  "https://chrome-infra-packages.appspot.com",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			req, err := computeBackendNewTaskReq(ctx, build, infra)
+			So(err, ShouldBeNil)
+			So(req.BackendConfig, ShouldResembleProto, &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"priority": {
+						Kind: &structpb.Value_NumberValue{NumberValue: 32},
+					},
+					"bot_ping_tolerance": {
+						Kind: &structpb.Value_NumberValue{NumberValue: 2},
+					},
+				},
+			})
+			So(req.BuildbucketHost, ShouldEqual, "some unique host name")
+			So(req.BuildId, ShouldEqual, "1")
+			So(req.Caches, ShouldResembleProto, []*pb.CacheEntry{
+				{
+					Name: "cache_name",
+					Path: "cache_value",
+				},
+			})
+			So(req.ExecutionTimeout, ShouldResembleProto, &durationpb.Duration{Seconds: 500})
+			So(req.GracePeriod, ShouldResembleProto, &durationpb.Duration{Seconds: 230})
+			So(req.Agent.Source["infra/tools/luci/bbagent/linux-amd64"], ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+				Sha256:    "this_is_a_sha_256_I_swear",
+				SizeBytes: 100,
+				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
+			})
+			So(req.Agent.Source["infra/tools/luci/bbagent/mac-amd64"], ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+				Sha256:    "this_is_a_sha_256_I_swear",
+				SizeBytes: 100,
+				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
+			})
+			So(req.AgentArgs, ShouldResemble, []string{
+				"-cache-base", "cache"})
 		})
 	})
 }

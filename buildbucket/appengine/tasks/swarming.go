@@ -53,12 +53,6 @@ import (
 )
 
 const (
-	// bbagentReservedGracePeriod is the time reserved by bbagent in order to have
-	// time to have a couple retry rounds for UpdateBuild RPCs
-	// TODO(crbug.com/1328646): may need to adjust the grace_period based on
-	// UpdateBuild's new performance in Buildbucket Go.
-	bbagentReservedGracePeriod = 180
-
 	// cacheDir is the path, relative to the swarming run dir, to the directory that
 	// contains the mounted swarming named caches. It will be prepended to paths of
 	// caches defined in global or builder configs.

@@ -28,6 +28,7 @@ import (
 
 	grpc "google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -42,12 +43,19 @@ import (
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 const (
+	// bbagentReservedGracePeriod is the time reserved by bbagent in order to have
+	// time to have a couple retry rounds for UpdateBuild RPCs
+	// TODO(crbug.com/1328646): may need to adjust the grace_period based on
+	// UpdateBuild's new performance in Buildbucket Go.
+	bbagentReservedGracePeriod = 180
+
 	// runTaskGiveUpTimeout indicates how long to retry
 	// the CreateBackendTask before giving up with INFRA_FAILURE.
 	runTaskGiveUpTimeout = 10 * 60 * time.Second
@@ -151,22 +159,70 @@ func computeHostnameFromTarget(ctx context.Context, target string) (hostname str
 	return "", errors.Reason("could not find target in global config settings").Err()
 }
 
-// RunTaskRequest related code
+// computeTaskCaches computes the task caches.
+func computeTaskCaches(infra *model.BuildInfra) []*pb.CacheEntry {
+	caches := make([]*pb.CacheEntry, len(infra.Proto.Backend.GetCaches()))
+	for i, c := range infra.Proto.Backend.GetCaches() {
+		caches[i] = &pb.CacheEntry{
+			EnvVar:           c.GetEnvVar(),
+			Name:             c.GetName(),
+			Path:             c.GetPath(),
+			WaitForWarmCache: c.GetWaitForWarmCache(),
+		}
+	}
+	return caches
+}
+
+func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
+	args = []string{}
+	// cache-base arg
+	args = append(args, "-cache-base")
+	args = append(args, infra.Bbagent.GetCacheDir())
+	return
+}
+
 func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra) (*pb.RunTaskRequest, error) {
+	// Create task token and secrets.
+	taskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_TASK)
+	if err != nil {
+		return nil, err
+	}
+	buildToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_BUILD)
+	if err != nil {
+		return nil, err
+	}
+
+	secrets := &pb.BuildSecrets{
+		BuildToken:                    buildToken,
+		ResultdbInvocationUpdateToken: build.ResultDBUpdateToken,
+	}
 	backend := infra.Proto.GetBackend()
 	if backend == nil {
 		return nil, errors.New("infra.Proto.Backend isn't set")
 	}
-
-	taskReq := &pb.RunTaskRequest{
-		Target:        backend.Task.Id.Target,
-		RequestId:     uuid.New().String(),
-		BuildId:       strconv.FormatInt(build.Proto.Id, 10),
-		Realm:         build.Realm(),
-		BackendConfig: backend.Config,
+	caches := computeTaskCaches(infra)
+	if err != nil {
+		return nil, errors.Annotate(err, "RunTaskRequest.Caches could not be created").Err()
+	}
+	gracePeriod := &durationpb.Duration{
+		Seconds: build.Proto.GetGracePeriod().GetSeconds() + bbagentReservedGracePeriod,
 	}
 
-	var err error
+	taskReq := &pb.RunTaskRequest{
+		BuildbucketHost:  infra.Proto.Buildbucket.Hostname,
+		BackendToken:     taskToken,
+		Secrets:          secrets,
+		Target:           backend.Task.Id.Target,
+		RequestId:        uuid.New().String(),
+		BuildId:          strconv.FormatInt(build.Proto.Id, 10),
+		Realm:            build.Realm(),
+		BackendConfig:    backend.Config,
+		ExecutionTimeout: build.Proto.GetExecutionTimeout(),
+		GracePeriod:      gracePeriod,
+		Caches:           caches,
+		AgentArgs:        computeAgentArgs(build.Proto, infra.Proto),
+	}
+
 	project := build.Proto.Builder.Project
 	taskReq.Agent = &pb.RunTaskRequest_AgentExecutable{}
 	taskReq.Agent.Source, err = extractCipdDetails(ctx, project, infra.Proto)
