@@ -26,7 +26,7 @@ import (
 
 const luciAnalysisAccessGroup = "luci-analysis-access"
 
-const luciAnalysisAdminGroup = "luci-analysis-admin"
+const luciAnalysisAdminGroup = "service-luci-analysis-admins"
 
 // Checks if this call is allowed, returns an error if it is.
 func checkAllowedPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
@@ -53,7 +53,7 @@ func checkAllowed(ctx context.Context, allowedGroup string) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to check ACL").Err()
 	case !yes:
-		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", luciAnalysisAccessGroup)
+		return appstatus.Errorf(codes.PermissionDenied, "not a member of %s", allowedGroup)
 	default:
 		return nil
 	}
