@@ -16,20 +16,33 @@ package tasks
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
+	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
+
 	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,13 +86,53 @@ func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest,
 	return new(emptypb.Empty), nil
 }
 
-// useBuildsClientForTesting specifies that the given test double shall be used
+// useTaskBackendClientForTesting specifies that the given test double shall be used
 // instead of making calls to TaskBackend.
 func useTaskBackendClientForTesting(ctx context.Context, client *MockTaskBackendClient) context.Context {
 	return context.WithValue(ctx, MockTaskBackendClientKey{}, client)
 }
 
-func TestBackendTask(t *testing.T) {
+func describeBootstrapBundle(c C) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c.So(r.URL.Path, ShouldEqual, "/prpc/Repository/DescribeBootstrapBundle")
+		reqBody, err := io.ReadAll(r.Body)
+		c.So(err, ShouldBeNil)
+		req := &cipdpb.DescribeBootstrapBundleRequest{}
+		err = proto.Unmarshal(reqBody, req)
+		c.So(err, ShouldBeNil)
+		variants := []string{
+			"linux-amd64",
+			"mac-amd64",
+		}
+		bootstrapFiles := []*cipdpb.DescribeBootstrapBundleResponse_BootstrapFile{}
+		for _, variant := range variants {
+			pkdName := req.Prefix + "/" + variant
+			bootstrapFile := &cipdpb.DescribeBootstrapBundleResponse_BootstrapFile{
+				Package: pkdName,
+				Size:    100,
+				Instance: &cipdpb.ObjectRef{
+					HashAlgo:  cipdpb.HashAlgo_SHA256,
+					HexDigest: "this_is_a_sha_256_I_swear",
+				},
+			}
+			bootstrapFiles = append(bootstrapFiles, bootstrapFile)
+		}
+		res := &cipdpb.DescribeBootstrapBundleResponse{
+			Files: bootstrapFiles,
+		}
+		var buf []byte
+		buf, _ = proto.Marshal(res)
+		code := codes.OK
+		status := http.StatusOK
+		w.Header().Set("Content-Type", r.Header.Get("Accept"))
+		w.Header().Set(prpc.HeaderGRPCCode, strconv.Itoa(int(code)))
+		w.WriteHeader(status)
+		_, err = w.Write(buf)
+		c.So(err, ShouldBeNil)
+	}
+}
+
+func TestBackendTaskClient(t *testing.T) {
 	t.Parallel()
 
 	Convey("assert NewBackendClient", t, func() {
@@ -103,23 +156,24 @@ func TestBackendTask(t *testing.T) {
 				Project: "project",
 			},
 			Id: 1,
-			Infra: &pb.BuildInfra{
-				Backend: &pb.BuildInfra_Backend{
-					Task: &pb.Task{
-						Id: &pb.TaskID{
-							Id:     "1",
-							Target: "swarming://mytarget",
-						},
+		}
+
+		infra := &pb.BuildInfra{
+			Backend: &pb.BuildInfra_Backend{
+				Task: &pb.Task{
+					Id: &pb.TaskID{
+						Id:     "1",
+						Target: "swarming://mytarget",
 					},
 				},
-				Buildbucket: &pb.BuildInfra_Buildbucket{
-					Hostname: "some unique host name",
-				},
+			},
+			Buildbucket: &pb.BuildInfra_Buildbucket{
+				Hostname: "some unique host name",
 			},
 		}
 
 		Convey("global settings not defined", func() {
-			_, err := NewBackendClient(ctx, build)
+			_, err := NewBackendClient(ctx, build, infra)
 			So(err, ShouldErrLike, "could not get global settings config")
 		})
 
@@ -128,7 +182,7 @@ func TestBackendTask(t *testing.T) {
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			err := config.SetTestSettingsCfg(ctx, settingsCfg)
 			So(err, ShouldBeNil)
-			_, err = NewBackendClient(ctx, build)
+			_, err = NewBackendClient(ctx, build, infra)
 			So(err, ShouldErrLike, "could not find target in global config settings")
 		})
 
@@ -141,9 +195,82 @@ func TestBackendTask(t *testing.T) {
 			settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 			err := config.SetTestSettingsCfg(ctx, settingsCfg)
 			So(err, ShouldBeNil)
-			_, err = NewBackendClient(ctx, build)
+			_, err = NewBackendClient(ctx, build, infra)
 			So(err, ShouldBeNil)
 		})
+	})
+}
 
+func TestCipdClient(t *testing.T) {
+	t.Parallel()
+
+	Convey("extractCipdDetails", t, func(c C) {
+		now := testclock.TestRecentTimeUTC
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = caching.WithEmptyProcessCache(ctx)
+		ctx = memory.UseWithAppID(ctx, "dev~app-id")
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = tq.TestingContext(ctx, nil)
+		mockCipdServer := httptest.NewServer(describeBootstrapBundle(c))
+		mockCipdClient := &prpc.Client{
+			Host: strings.TrimPrefix(mockCipdServer.URL, "http://"),
+			Options: &prpc.Options{
+				Retry: func() retry.Iterator {
+					return &retry.Limited{
+						Retries: 3,
+						Delay:   0,
+					}
+				},
+				Insecure:  true,
+				UserAgent: "prpc-test",
+			},
+		}
+		ctx = context.WithValue(ctx, MockCipdClientKey{}, mockCipdClient)
+
+		Convey("ok", func() {
+			infra := &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "1",
+							Target: "swarming://mytarget",
+						},
+					},
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+							DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+								Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+									Package: "infra/tools/luci/bbagent/${platform}",
+									Version: "latest",
+									Server:  "https://chrome-infra-packages.appspot.com",
+								},
+							},
+						},
+					},
+					Hostname: "some unique host name",
+				},
+			}
+			m, err := extractCipdDetails(ctx, "project", infra)
+			So(err, ShouldBeNil)
+			detail, ok := m["infra/tools/luci/bbagent/linux-amd64"]
+			So(ok, ShouldBeTrue)
+			So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+				Sha256:    "this_is_a_sha_256_I_swear",
+				SizeBytes: 100,
+				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
+			})
+			detail, ok = m["infra/tools/luci/bbagent/mac-amd64"]
+			So(ok, ShouldBeTrue)
+			So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+				Sha256:    "this_is_a_sha_256_I_swear",
+				SizeBytes: 100,
+				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
+			})
+		})
 	})
 }

@@ -2556,9 +2556,6 @@ type BuildInfra_Buildbucket_Agent_Source_CIPD struct {
 	// The CIPD package to use for the agent.
 	//
 	// Must end in "/${platform}" with no other CIPD variables.
-	// Will be expanded with CIPD's DescribeBootstrapBundle API
-	// into a full platform -> {hash, size, URL} mapping for TaskBackend
-	// RunTask.
 	//
 	// If using an experimental agent binary, please make sure the package
 	// prefix has been configured here -

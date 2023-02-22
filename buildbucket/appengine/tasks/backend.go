@@ -16,16 +16,21 @@ package tasks
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/api/googleapi"
 
 	grpc "google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
+	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -33,6 +38,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -44,49 +51,75 @@ const (
 	// runTaskGiveUpTimeout indicates how long to retry
 	// the CreateBackendTask before giving up with INFRA_FAILURE.
 	runTaskGiveUpTimeout = 10 * 60 * time.Second
+
+	cipdCacheTTL = 10 * time.Minute
 )
 
+type cipdPackageDetails struct {
+	Size int64  `json:"size,omitempty"`
+	Hash string `json:"hash,omitempty"`
+}
+
+var cipdDescribeBootstrapBundleCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(1000),
+	GlobalNamespace: "cipd-describeBootstrapBundle-v1",
+	Marshal:         json.Marshal,
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		res := &cipdPackageDetails{}
+		err := json.Unmarshal(blob, &res)
+		return res, err
+	},
+}
+
 type MockTaskBackendClientKey struct{}
+
+type MockCipdClientKey struct{}
+
+// BackendClient is the client to communicate with TaskBackend.
+// It wraps a pb.TaskBackendClient.
+
+type BackendClient struct {
+	client TaskBackendClient
+}
 
 type TaskBackendClient interface {
 	RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-func newTaskBackendClient(ctx context.Context, host string, project string) (TaskBackendClient, error) {
-	if mockClient, ok := ctx.Value(MockTaskBackendClientKey{}).(TaskBackendClient); ok {
-		return mockClient, nil
-	}
-
+func createRawPrpcClient(ctx context.Context, host, project string) (client *prpc.Client, err error) {
 	t, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(project))
 	if err != nil {
 		return nil, err
 	}
-
-	return pb.NewTaskBackendPRPCClient(&prpc.Client{
+	client = &prpc.Client{
 		C:       &http.Client{Transport: t},
 		Host:    host,
 		Options: prpc.DefaultOptions(),
-	}), nil
+	}
+	return
 }
 
-// BackendClient is the client to communicate with TaskBackend.
-// It wraps a pb.TaskBackendClient.
-type BackendClient struct {
-	client TaskBackendClient
+func newRawTaskBackendClient(ctx context.Context, host string, project string) (TaskBackendClient, error) {
+	if mockClient, ok := ctx.Value(MockTaskBackendClientKey{}).(TaskBackendClient); ok {
+		return mockClient, nil
+	}
+	prpcClient, err := createRawPrpcClient(ctx, host, project)
+	if err != nil {
+		return nil, err
+	}
+	return pb.NewTaskBackendPRPCClient(prpcClient), nil
 }
 
 // NewBackendClient creates a client to communicate with Buildbucket.
-func NewBackendClient(ctx context.Context, bld *pb.Build) (*BackendClient, error) {
-	hostnname, err := computeHostnameFromTarget(ctx, bld.Infra.Backend.Task.Id.Target)
+func NewBackendClient(ctx context.Context, bld *pb.Build, infra *pb.BuildInfra) (*BackendClient, error) {
+	hostnname, err := computeHostnameFromTarget(ctx, infra.Backend.Task.Id.Target)
 	if err != nil {
 		return nil, err
 	}
-
-	client, err := newTaskBackendClient(ctx, hostnname, bld.Builder.Project)
+	client, err := newRawTaskBackendClient(ctx, hostnname, bld.Builder.Project)
 	if err != nil {
 		return nil, err
 	}
-
 	return &BackendClient{
 		client: client,
 	}, nil
@@ -95,6 +128,14 @@ func NewBackendClient(ctx context.Context, bld *pb.Build) (*BackendClient, error
 // RunTask returns for the requested task.
 func (c *BackendClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return c.client.RunTask(ctx, taskReq)
+}
+
+func NewCipdClient(ctx context.Context, host string, project string) (client *prpc.Client, err error) {
+	if mockClient, ok := ctx.Value(MockCipdClientKey{}).(*prpc.Client); ok {
+		return mockClient, nil
+	}
+	client, err = createRawPrpcClient(ctx, host, project)
+	return
 }
 
 func computeHostnameFromTarget(ctx context.Context, target string) (hostname string, err error) {
@@ -124,7 +165,77 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Realm:         build.Realm(),
 		BackendConfig: backend.Config,
 	}
+
+	var err error
+	project := build.Proto.Builder.Project
+	taskReq.Agent = &pb.RunTaskRequest_AgentExecutable{}
+	taskReq.Agent.Source, err = extractCipdDetails(ctx, project, infra.Proto)
+	if err != nil {
+		return nil, err
+	}
 	return taskReq, nil
+}
+
+func createCipdDescribeBootstrapBundleRequest(infra *pb.BuildInfra) *cipdpb.DescribeBootstrapBundleRequest {
+	prefix := infra.Buildbucket.Agent.Source.GetCipd().GetPackage()
+	prefix = strings.TrimSuffix(prefix, "/${platform}")
+	return &cipdpb.DescribeBootstrapBundleRequest{
+		Prefix:  prefix,
+		Version: infra.Buildbucket.Agent.Source.GetCipd().GetVersion(),
+	}
+}
+
+func computeCipdURL(source *pb.BuildInfra_Buildbucket_Agent_Source, pkg string, details *cipdPackageDetails) (url string) {
+	server := source.GetCipd().GetServer()
+	version := source.GetCipd().GetVersion()
+	return server + "/bootstrap/" + pkg + "/+/" + version
+}
+
+// extractCipdDetails returns a map that maps package (Prefix + variant for each variant)
+// to a cipdPackageDetails object, which is just the hash and size.
+//
+// A Cipd client is created and calls DescribeBootstrapBundle to retrieve the data.
+func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfra) (details map[string]*pb.RunTaskRequest_AgentExecutable_AgentSource, err error) {
+	cipdServer := infra.Buildbucket.Agent.Source.GetCipd().GetServer()
+	cipdClient, err := NewCipdClient(ctx, cipdServer, project)
+	if err != nil {
+		return nil, err
+	}
+	req := createCipdDescribeBootstrapBundleRequest(infra)
+	bytes, err := proto.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	cachePrefix := base64.StdEncoding.EncodeToString(bytes)
+	cached, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (interface{}, time.Duration, error) {
+		out := &cipdpb.DescribeBootstrapBundleResponse{}
+		err := cipdClient.Call(ctx, "Repository", "DescribeBootstrapBundle", req, out)
+		if err != nil {
+			return "", 0, err
+		}
+		resp := make(map[string]*cipdPackageDetails, len(out.Files))
+		for _, file := range out.Files {
+			resp[file.Package] = &cipdPackageDetails{
+				Hash: file.Instance.HexDigest,
+				Size: file.Size,
+			}
+		}
+		return resp, cipdCacheTTL, nil
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "cache error for cipd request").Err()
+	}
+	details = map[string]*pb.RunTaskRequest_AgentExecutable_AgentSource{}
+	cipdDetails := cached.(map[string]*cipdPackageDetails)
+	for k, v := range cipdDetails {
+		val := &pb.RunTaskRequest_AgentExecutable_AgentSource{
+			Sha256:    v.Hash,
+			SizeBytes: v.Size,
+			Url:       computeCipdURL(infra.Buildbucket.Agent.Source, k, v),
+		}
+		details[k] = val
+	}
+	return
 }
 
 // CreateBackendTask creates a backend task for the build.
@@ -139,7 +250,7 @@ func CreateBackendTask(ctx context.Context, buildID int64) error {
 	}
 
 	// Create a backend task client
-	backend, err := NewBackendClient(ctx, bld.Proto)
+	backend, err := NewBackendClient(ctx, bld.Proto, infra.Proto)
 	if err != nil {
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}
@@ -163,6 +274,5 @@ func CreateBackendTask(ctx context.Context, buildID int64) error {
 		logging.Errorf(ctx, "Backend task creation failure:%s. RunTask request: %+v", err, taskReq)
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a backend task").Err())
 	}
-
 	return nil
 }
