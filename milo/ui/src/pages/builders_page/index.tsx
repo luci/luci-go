@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BeforeEnterObserver, PreventAndRedirectCommands, RouterLocation } from '@vaadin/router';
-import { css, html } from 'lit';
+import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
+import { useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 
 import '../../components/status_bar';
 import '../../components/dot_spinner';
@@ -26,7 +27,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { consumer, provider } from '../../libs/context';
 import { reportError, reportErrorAsync } from '../../libs/error_handler';
 import { IntersectionNotifier, provideNotifier } from '../../libs/observer_element';
-import { getProjectURLPath, NOT_FOUND_URL } from '../../libs/url_utils';
+import { getProjectURLPath } from '../../libs/url_utils';
 import { BuilderID } from '../../services/buildbucket';
 import { ListBuildersRequest, ListBuildersResponse } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
@@ -35,7 +36,7 @@ import commonStyle from '../../styles/common_style.css';
 @customElement('milo-builders-page')
 @provider
 @consumer
-export class BuildersPageElement extends MiloBaseElement implements BeforeEnterObserver {
+export class BuildersPageElement extends MiloBaseElement {
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
@@ -43,8 +44,8 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
   @provideNotifier()
   notifier = new IntersectionNotifier({ rootMargin: '1000px' });
 
-  private project!: string;
-  private group!: string;
+  @observable.ref project!: string;
+  @observable.ref group!: string;
 
   @observable.ref private numOfBuilds = 25;
   @observable.ref private builders: readonly BuilderID[] = [];
@@ -80,32 +81,18 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
     makeObservable(this);
   }
 
-  onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    const project = location.params['project'];
-    const group = location.params['group'] || '';
-
-    if ([project, group].some((param) => typeof param !== 'string')) {
-      return cmd.redirect(NOT_FOUND_URL);
-    }
-
-    this.project = project as string;
-    this.group = group as string;
-
-    document.title = (this.group || this.project) + ' | Builders';
-
-    return;
-  }
-
   connectedCallback(): void {
     super.connectedCallback();
 
-    reaction(
-      () => this.listBuildersResIter,
-      () => {
-        this.builders = [];
-        this.loadAllPages();
-      },
-      { fireImmediately: true }
+    this.addDisposer(
+      reaction(
+        () => this.listBuildersResIter,
+        () => {
+          this.builders = [];
+          this.loadAllPages();
+        },
+        { fireImmediately: true }
+      )
     );
   }
 
@@ -210,4 +197,24 @@ export class BuildersPageElement extends MiloBaseElement implements BeforeEnterO
       }
     `,
   ];
+}
+
+export function BuildersPage() {
+  const { project, group } = useParams();
+
+  document.title = (group || project) + ' | Builders';
+
+  const container = useRef(null);
+
+  useEffect(() => {
+    if (!container.current) {
+      return;
+    }
+    render(
+      html`<milo-builders-page .project=${project} .group=${group || ''}></milo-builders-page>`,
+      container.current
+    );
+  }, [container.current]);
+
+  return <div ref={container}></div>;
 }

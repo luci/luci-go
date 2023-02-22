@@ -21,9 +21,9 @@ import { Configuration, DefinePlugin } from 'webpack';
 
 const config: Configuration = {
   entry: {
-    index: './src/index.ts',
-    'service-worker-ext': './src/service_workers/service_worker_ext.ts',
-    'root-sw': './src/service_workers/root_sw.ts',
+    index: './src/index',
+    'service-worker-ext': './src/service_workers/service_worker_ext',
+    'root-sw': './src/service_workers/root_sw',
   },
   output: {
     path: path.resolve(__dirname, './out/'),
