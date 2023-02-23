@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/testvariantbqexporter"
 	"go.chromium.org/luci/analysis/internal/services/testvariantupdator"
 	"go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/internal/views"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
 	"go.chromium.org/luci/common/errors"
@@ -113,6 +114,9 @@ func Main(init func(srv *luciserver.Server) error) {
 		cron.RegisterHandler("clear-rules-users", rules.ClearRulesUsers)
 		cron.RegisterHandler("export-rules", func(ctx context.Context) error {
 			return rules.ExportRulesCron(ctx, srv.Options.CloudProject)
+		})
+		cron.RegisterHandler("ensure-views", func(ctx context.Context) error {
+			return views.CronHandler(ctx, srv.Options.CloudProject)
 		})
 
 		// Pub/Sub subscription endpoints.

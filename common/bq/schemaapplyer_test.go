@@ -133,6 +133,32 @@ func TestBqTableCache(t *testing.T) {
 			So(t.updateMD, ShouldBeNil) // we did not try to update it
 		})
 
+		Convey(`View is up to date`, func() {
+			mockTable := &tableMock{
+				fullyQualifiedName: "project.dataset.table",
+				md: &bigquery.TableMetadata{
+					Type:      bigquery.ViewTable,
+					ViewQuery: "SELECT * FROM a",
+				},
+			}
+			err := sa.EnsureTable(ctx, mockTable, &bigquery.TableMetadata{ViewQuery: "SELECT * FROM a"})
+			So(err, ShouldBeNil)
+			So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+		})
+
+		Convey(`View require update`, func() {
+			mockTable := &tableMock{
+				fullyQualifiedName: "project.dataset.table",
+				md: &bigquery.TableMetadata{
+					Type:      bigquery.ViewTable,
+					ViewQuery: "SELECT * FROM a",
+				},
+			}
+			err := sa.EnsureTable(ctx, mockTable, &bigquery.TableMetadata{ViewQuery: "SELECT * FROM b"})
+			So(err, ShouldBeNil)
+			So(mockTable.updateMD, ShouldNotBeNil)
+		})
+
 		Convey(`Cache is working`, func() {
 			err := sa.EnsureTable(ctx, t, table)
 			So(err, ShouldBeNil)

@@ -53,9 +53,9 @@ func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
 }
 
 // EnsureTable creates a BigQuery table if it doesn't exist and updates its
-// schema if it is stale. Non-schema options, like Partitioning and Clustering
-// settings, will be applied if the table is being created but will not be
-// synchronized after creation.
+// schema (or a view query for view tables) if it is stale. Non-schema options,
+// like Partitioning and Clustering settings, will be applied if the table is
+// being created but will not be synchronized after creation.
 //
 // Existing fields will not be deleted.
 //
@@ -114,13 +114,13 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 }
 
 // EnsureTable creates a BigQuery table if it doesn't exist and updates its
-// schema if it is stale. Non-schema options, like Partitioning and Clustering
-// settings, will be applied if the table is being created but will not be
-// synchronised after creation.
+// schema (or a view query for view tables) if it is stale. Non-schema options,
+// like Partitioning and Clustering settings, will be applied if the table is
+// being created but will not be synchronised after creation.
 //
 // Existing fields will not be deleted.
 func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
-	_, err := t.Metadata(ctx)
+	md, err := t.Metadata(ctx)
 	apiErr, ok := err.(*googleapi.Error)
 	switch {
 	case ok && apiErr.Code == http.StatusNotFound:
@@ -138,8 +138,14 @@ func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) err
 
 	// Table exists and is accessible.
 	// Ensure its schema is up to date.
-	if err = ensureBQTableFields(ctx, t, spec.Schema); err != nil {
-		return errors.Annotate(err, "ensure bq table fields").Err()
+	if md.Type == bigquery.ViewTable {
+		if err = ensureBQTableViewQuery(ctx, t, spec.ViewQuery); err != nil {
+			return errors.Annotate(err, "ensure bq table view query").Err()
+		}
+	} else {
+		if err = ensureBQTableFields(ctx, t, spec.Schema); err != nil {
+			return errors.Annotate(err, "ensure bq table fields").Err()
+		}
 	}
 	return nil
 }
@@ -160,6 +166,41 @@ func createBQTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) e
 		logging.Infof(ctx, "Created BigQuery table %s", t.FullyQualifiedName())
 		return nil
 	}
+}
+
+func ensureBQTableViewQuery(ctx context.Context, t Table, viewQuery string) error {
+	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		// We should retrieve Metadata in a retry loop because of the ETag check
+		// below.
+		md, err := t.Metadata(ctx)
+		if err != nil {
+			return err
+		}
+		if viewQuery == md.ViewQuery {
+			return nil
+		}
+		_, err = t.Update(ctx, bigquery.TableMetadataToUpdate{ViewQuery: viewQuery}, md.ETag)
+		apiErr, ok := err.(*googleapi.Error)
+		switch {
+		case ok && apiErr.Code == http.StatusConflict:
+			// ETag became stale since we requested it. Try again.
+			return transient.Tag.Apply(err)
+		case err != nil:
+			return err
+		default:
+			logging.Infof(ctx, "Updated BigQuery table view %s", t.FullyQualifiedName())
+			return nil
+		}
+	}, nil)
+	apiErr, ok := err.(*googleapi.Error)
+	switch {
+	case ok && apiErr.Code == http.StatusForbidden:
+		// No read or modify table permission.
+		return err
+	case err != nil:
+		return transient.Tag.Apply(err)
+	}
+	return nil
 }
 
 // ensureBQTableFields adds missing fields to t.

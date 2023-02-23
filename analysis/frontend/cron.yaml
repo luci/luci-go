@@ -48,3 +48,6 @@ cron:
 - description: "Export failure association rules from spanner to bigquery."
   url: /internal/cron/export-rules
   schedule: every 10 minutes synchronized
+- description: "Update or create views in datasets."
+  url: /internal/cron/ensure-views
+  schedule: every 10 minutes synchronized
