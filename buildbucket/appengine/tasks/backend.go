@@ -265,7 +265,7 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 	cachePrefix := base64.StdEncoding.EncodeToString(bytes)
 	cached, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (interface{}, time.Duration, error) {
 		out := &cipdpb.DescribeBootstrapBundleResponse{}
-		err := cipdClient.Call(ctx, "Repository", "DescribeBootstrapBundle", req, out)
+		err := cipdClient.Call(ctx, "cipd.Repository", "DescribeBootstrapBundle", req, out)
 		if err != nil {
 			return "", 0, err
 		}

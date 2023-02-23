@@ -95,7 +95,7 @@ func useTaskBackendClientForTesting(ctx context.Context, client *MockTaskBackend
 
 func describeBootstrapBundle(c C) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.So(r.URL.Path, ShouldEqual, "/prpc/Repository/DescribeBootstrapBundle")
+		c.So(r.URL.Path, ShouldEqual, "/prpc/cipd.Repository/DescribeBootstrapBundle")
 		reqBody, err := io.ReadAll(r.Body)
 		c.So(err, ShouldBeNil)
 		req := &cipdpb.DescribeBootstrapBundleRequest{}
