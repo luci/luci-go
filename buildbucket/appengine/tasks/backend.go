@@ -72,8 +72,8 @@ var cipdDescribeBootstrapBundleCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(1000),
 	GlobalNamespace: "cipd-describeBootstrapBundle-v1",
 	Marshal:         json.Marshal,
-	Unmarshal: func(blob []byte) (interface{}, error) {
-		res := &cipdPackageDetails{}
+	Unmarshal: func(blob []byte) (any, error) {
+		res := map[string]*cipdPackageDetails{}
 		err := json.Unmarshal(blob, &res)
 		return res, err
 	},
@@ -263,11 +263,11 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 		return nil, err
 	}
 	cachePrefix := base64.StdEncoding.EncodeToString(bytes)
-	cached, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (interface{}, time.Duration, error) {
+	cached, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (any, time.Duration, error) {
 		out := &cipdpb.DescribeBootstrapBundleResponse{}
 		err := cipdClient.Call(ctx, "cipd.Repository", "DescribeBootstrapBundle", req, out)
 		if err != nil {
-			return "", 0, err
+			return nil, 0, err
 		}
 		resp := make(map[string]*cipdPackageDetails, len(out.Files))
 		for _, file := range out.Files {
