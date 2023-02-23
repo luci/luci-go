@@ -3530,6 +3530,47 @@ func (m *OngoingLongOps_Op) validate(all bool) error {
 			}
 		}
 
+	case *OngoingLongOps_Op_ResetTriggers_:
+		if v == nil {
+			err := OngoingLongOps_OpValidationError{
+				field:  "Work",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetResetTriggers()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OngoingLongOps_OpValidationError{
+						field:  "ResetTriggers",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OngoingLongOps_OpValidationError{
+						field:  "ResetTriggers",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetResetTriggers()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OngoingLongOps_OpValidationError{
+					field:  "ResetTriggers",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *OngoingLongOps_Op_ExecuteTryjobs:
 		if v == nil {
 			err := OngoingLongOps_OpValidationError{
@@ -3797,6 +3838,145 @@ var _ interface {
 	ErrorName() string
 } = OngoingLongOps_Op_TriggersCancellationValidationError{}
 
+// Validate checks the field values on OngoingLongOps_Op_ResetTriggers with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *OngoingLongOps_Op_ResetTriggers) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on OngoingLongOps_Op_ResetTriggers with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// OngoingLongOps_Op_ResetTriggersMultiError, or nil if none found.
+func (m *OngoingLongOps_Op_ResetTriggers) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OngoingLongOps_Op_ResetTriggers) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetRequests() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OngoingLongOps_Op_ResetTriggersValidationError{
+						field:  fmt.Sprintf("Requests[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OngoingLongOps_Op_ResetTriggersValidationError{
+						field:  fmt.Sprintf("Requests[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OngoingLongOps_Op_ResetTriggersValidationError{
+					field:  fmt.Sprintf("Requests[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for RunStatusIfSucceeded
+
+	if len(errors) > 0 {
+		return OngoingLongOps_Op_ResetTriggersMultiError(errors)
+	}
+
+	return nil
+}
+
+// OngoingLongOps_Op_ResetTriggersMultiError is an error wrapping multiple
+// validation errors returned by OngoingLongOps_Op_ResetTriggers.ValidateAll()
+// if the designated constraints aren't met.
+type OngoingLongOps_Op_ResetTriggersMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OngoingLongOps_Op_ResetTriggersMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OngoingLongOps_Op_ResetTriggersMultiError) AllErrors() []error { return m }
+
+// OngoingLongOps_Op_ResetTriggersValidationError is the validation error
+// returned by OngoingLongOps_Op_ResetTriggers.Validate if the designated
+// constraints aren't met.
+type OngoingLongOps_Op_ResetTriggersValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OngoingLongOps_Op_ResetTriggersValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OngoingLongOps_Op_ResetTriggersValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OngoingLongOps_Op_ResetTriggersValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OngoingLongOps_Op_ResetTriggersValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OngoingLongOps_Op_ResetTriggersValidationError) ErrorName() string {
+	return "OngoingLongOps_Op_ResetTriggersValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e OngoingLongOps_Op_ResetTriggersValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOngoingLongOps_Op_ResetTriggers.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OngoingLongOps_Op_ResetTriggersValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OngoingLongOps_Op_ResetTriggersValidationError{}
+
 // Validate checks the field values on
 // OngoingLongOps_Op_TriggersCancellation_Request with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
@@ -3911,3 +4091,115 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = OngoingLongOps_Op_TriggersCancellation_RequestValidationError{}
+
+// Validate checks the field values on OngoingLongOps_Op_ResetTriggers_Request
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *OngoingLongOps_Op_ResetTriggers_Request) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// OngoingLongOps_Op_ResetTriggers_Request with the rules defined in the proto
+// definition for this message. If any rules are violated, the result is a
+// list of violation errors wrapped in
+// OngoingLongOps_Op_ResetTriggers_RequestMultiError, or nil if none found.
+func (m *OngoingLongOps_Op_ResetTriggers_Request) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OngoingLongOps_Op_ResetTriggers_Request) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Clid
+
+	// no validation rules for Message
+
+	// no validation rules for AddToAttentionReason
+
+	if len(errors) > 0 {
+		return OngoingLongOps_Op_ResetTriggers_RequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// OngoingLongOps_Op_ResetTriggers_RequestMultiError is an error wrapping
+// multiple validation errors returned by
+// OngoingLongOps_Op_ResetTriggers_Request.ValidateAll() if the designated
+// constraints aren't met.
+type OngoingLongOps_Op_ResetTriggers_RequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OngoingLongOps_Op_ResetTriggers_RequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OngoingLongOps_Op_ResetTriggers_RequestMultiError) AllErrors() []error { return m }
+
+// OngoingLongOps_Op_ResetTriggers_RequestValidationError is the validation
+// error returned by OngoingLongOps_Op_ResetTriggers_Request.Validate if the
+// designated constraints aren't met.
+type OngoingLongOps_Op_ResetTriggers_RequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OngoingLongOps_Op_ResetTriggers_RequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OngoingLongOps_Op_ResetTriggers_RequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OngoingLongOps_Op_ResetTriggers_RequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OngoingLongOps_Op_ResetTriggers_RequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OngoingLongOps_Op_ResetTriggers_RequestValidationError) ErrorName() string {
+	return "OngoingLongOps_Op_ResetTriggers_RequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e OngoingLongOps_Op_ResetTriggers_RequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOngoingLongOps_Op_ResetTriggers_Request.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OngoingLongOps_Op_ResetTriggers_RequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OngoingLongOps_Op_ResetTriggers_RequestValidationError{}

@@ -422,10 +422,43 @@ message OngoingLongOps {
       Status run_status_if_succeeded = 2;
     }
 
+    message ResetTriggers {
+      // Whom is a proto copy of
+      // https://pkg.go.dev/go.chromium.org/luci/cv/internal/gerrit#Whom
+      enum Whom {
+        NONE = 0;
+        OWNER = 1;
+        REVIEWERS = 2;
+        CQ_VOTERS = 3;
+        PS_UPLOADER = 4;
+      }
+
+      // Request is to request resetting the trigger of a CL.
+      message Request {
+        // internal CLID.
+        int64 clid = 1;
+        // Message explains why trigger is reset. Will be posted to the CL.
+        string message = 2;
+        // Whom to notify.
+        repeated Whom notify = 3;
+        // Whom to add to the attention set.
+        repeated Whom add_to_attention = 4;
+        // Reason explains the reason of attention set change.
+        string add_to_attention_reason = 5;
+      }
+      repeated Request requests = 1;
+      // The status Run will transition to if all triggers are successfully
+      // cancelled.
+      //
+      // Must be one of the terminal statues.
+      Status run_status_if_succeeded = 2;
+    }
+
     oneof work {
       // If true, posts a start message.
       bool post_start_message = 3;
-      TriggersCancellation cancel_triggers = 4;
+      TriggersCancellation cancel_triggers = 4 [deprecated = true];
+      ResetTriggers reset_triggers = 6;
       cv.internal.tryjob.ExecuteTryjobsPayload execute_tryjobs = 5;
     }
   }

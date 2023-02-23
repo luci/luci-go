@@ -48,7 +48,8 @@ message LongOpCompleted {
 
   oneof result {
     PostStartMessage post_start_message = 3;
-    CancelTriggers cancel_triggers = 4;
+    CancelTriggers cancel_triggers = 4 [deprecated = true];
+    ResetTriggers reset_triggers = 6;
     cv.internal.tryjob.ExecuteTryjobsResult execute_tryjobs = 5;
   }
 
@@ -90,6 +91,36 @@ message LongOpCompleted {
     // The top-level long ops status will be SUCCEEDED iff all triggers are
     // cancelled successfully, in other word, all results have `cancelled_at`
     // set.
+    repeated Result results = 1;
+  }
+
+  message ResetTriggers {
+    message Result {
+      // ID of the CL that this long op is trying to reset its trigger.
+      int64 id = 1;
+      // The external id of the CL.
+      string external_id = 2;
+
+      message Success {
+        // The timestamp when trigger is successfully reset from LUCI CV
+        // PoV.
+        //
+        // It is possible by the time LUCI CV is trying to reset the trigger,
+        // it has already been removed by the user. Therefore, this timestamp
+        // is the time when LUCI CV observes that trigger is removed.
+        google.protobuf.Timestamp reset_at = 1;
+      }
+      message Failure {
+        // The message when CV failed to reset the trigger.
+        string failure_message = 1;
+      }
+      oneof detail {
+        Success success_info = 3;
+        Failure failure_info = 4;
+      }
+    }
+    // The top-level long ops status will be SUCCEEDED iff all triggers are
+    // reset successfully, in other word, all results have `reset_at` set.
     repeated Result results = 1;
   }
 }
