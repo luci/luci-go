@@ -135,3 +135,35 @@ message OAuthConfig {
   // URL of a token server to use to generate delegation tokens.
   string token_server_url = 4;
 }
+
+// Provided via 'permissions.cfg' config file.
+// Defines the list of roles and their respective permissions.
+message PermissionsConfig {
+  // Defines a role that includes given permissions and other roles.
+  // The role should not have been defined before. To include this role into another
+  // role, you can specify this role by name.
+  message Role {
+    // Identifier for a role, will have the form <prefix><project>.<noun>
+    //  examples:
+    //    "role/exampleproject.reader"
+    //    "role/exampleproject.owner"
+    //
+    // Prefixes:
+    //  "role/" -- role names defined in Auth service code.
+    //  "customRole/" -- role names that can be defined in user-supplied realms.cfg.
+    //  "role/luci.internal." -- interally used roles that are forbidden in realms.cfg.
+    string name = 1;
+
+    // List of permissions associated with this role, same permission may not be
+    // declared more than once per role.
+    // Permissions should be of the form: <service>.<subject>.<verb>
+    repeated string permissions = 2;
+
+    // List of other roles to include in this role, includes all the permissions
+    // that the included role contains. The referenced role should be defined already.
+    repeated string includes = 3;
+  }
+
+  // Representation of all defined roles.
+  repeated Role role = 1;
+}

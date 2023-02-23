@@ -257,6 +257,56 @@ func (x *OAuthConfig) GetTokenServerUrl() string {
 	return ""
 }
 
+// Provided via 'permissions.cfg' config file.
+// Defines the list of roles and their respective permissions.
+type PermissionsConfig struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Representation of all defined roles.
+	Role []*PermissionsConfig_Role `protobuf:"bytes,1,rep,name=role,proto3" json:"role,omitempty"`
+}
+
+func (x *PermissionsConfig) Reset() {
+	*x = PermissionsConfig{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PermissionsConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PermissionsConfig) ProtoMessage() {}
+
+func (x *PermissionsConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PermissionsConfig.ProtoReflect.Descriptor instead.
+func (*PermissionsConfig) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_auth_service_api_configspb_config_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *PermissionsConfig) GetRole() []*PermissionsConfig_Role {
+	if x != nil {
+		return x.Role
+	}
+	return nil
+}
+
 // Periodically fetch a tarball with groups stored as individual files.
 type GroupImporterConfig_TarballEntry struct {
 	state         protoimpl.MessageState
@@ -287,7 +337,7 @@ type GroupImporterConfig_TarballEntry struct {
 func (x *GroupImporterConfig_TarballEntry) Reset() {
 	*x = GroupImporterConfig_TarballEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[3]
+		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -300,7 +350,7 @@ func (x *GroupImporterConfig_TarballEntry) String() string {
 func (*GroupImporterConfig_TarballEntry) ProtoMessage() {}
 
 func (x *GroupImporterConfig_TarballEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -376,7 +426,7 @@ type GroupImporterConfig_TarballUploadEntry struct {
 func (x *GroupImporterConfig_TarballUploadEntry) Reset() {
 	*x = GroupImporterConfig_TarballUploadEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[4]
+		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -389,7 +439,7 @@ func (x *GroupImporterConfig_TarballUploadEntry) String() string {
 func (*GroupImporterConfig_TarballUploadEntry) ProtoMessage() {}
 
 func (x *GroupImporterConfig_TarballUploadEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -459,7 +509,7 @@ type GroupImporterConfig_PlainlistEntry struct {
 func (x *GroupImporterConfig_PlainlistEntry) Reset() {
 	*x = GroupImporterConfig_PlainlistEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[5]
+		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -472,7 +522,7 @@ func (x *GroupImporterConfig_PlainlistEntry) String() string {
 func (*GroupImporterConfig_PlainlistEntry) ProtoMessage() {}
 
 func (x *GroupImporterConfig_PlainlistEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -532,7 +582,7 @@ type IPAllowlistConfig_IPAllowlist struct {
 func (x *IPAllowlistConfig_IPAllowlist) Reset() {
 	*x = IPAllowlistConfig_IPAllowlist{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[6]
+		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -545,7 +595,7 @@ func (x *IPAllowlistConfig_IPAllowlist) String() string {
 func (*IPAllowlistConfig_IPAllowlist) ProtoMessage() {}
 
 func (x *IPAllowlistConfig_IPAllowlist) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -596,7 +646,7 @@ type IPAllowlistConfig_Assignment struct {
 func (x *IPAllowlistConfig_Assignment) Reset() {
 	*x = IPAllowlistConfig_Assignment{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[7]
+		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -609,7 +659,7 @@ func (x *IPAllowlistConfig_Assignment) String() string {
 func (*IPAllowlistConfig_Assignment) ProtoMessage() {}
 
 func (x *IPAllowlistConfig_Assignment) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -637,6 +687,88 @@ func (x *IPAllowlistConfig_Assignment) GetIpAllowlistName() string {
 		return x.IpAllowlistName
 	}
 	return ""
+}
+
+// Defines a role that includes given permissions and other roles.
+// The role should not have been defined before. To include this role into another
+// role, you can specify this role by name.
+type PermissionsConfig_Role struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Identifier for a role, will have the form <prefix><project>.<noun>
+	//
+	//	examples:
+	//	  "role/exampleproject.reader"
+	//	  "role/exampleproject.owner"
+	//
+	// Prefixes:
+	//
+	//	"role/" -- role names defined in Auth service code.
+	//	"customRole/" -- role names that can be defined in user-supplied realms.cfg.
+	//	"role/luci.internal." -- interally used roles that are forbidden in realms.cfg.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// List of permissions associated with this role, same permission may not be
+	// declared more than once per role.
+	// Permissions should be of the form: <service>.<subject>.<verb>
+	Permissions []string `protobuf:"bytes,2,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	// List of other roles to include in this role, includes all the permissions
+	// that the included role contains. The referenced role should be defined already.
+	Includes []string `protobuf:"bytes,3,rep,name=includes,proto3" json:"includes,omitempty"`
+}
+
+func (x *PermissionsConfig_Role) Reset() {
+	*x = PermissionsConfig_Role{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PermissionsConfig_Role) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PermissionsConfig_Role) ProtoMessage() {}
+
+func (x *PermissionsConfig_Role) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PermissionsConfig_Role.ProtoReflect.Descriptor instead.
+func (*PermissionsConfig_Role) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_auth_service_api_configspb_config_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *PermissionsConfig_Role) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PermissionsConfig_Role) GetPermissions() []string {
+	if x != nil {
+		return x.Permissions
+	}
+	return nil
+}
+
+func (x *PermissionsConfig_Role) GetIncludes() []string {
+	if x != nil {
+		return x.Includes
+	}
+	return nil
 }
 
 var File_go_chromium_org_luci_auth_service_api_configspb_config_proto protoreflect.FileDescriptor
@@ -724,10 +856,21 @@ var file_go_chromium_org_luci_auth_service_api_configspb_config_proto_rawDesc = 
 	0x09, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x49, 0x64, 0x73, 0x12, 0x28, 0x0a, 0x10, 0x74, 0x6f,
 	0x6b, 0x65, 0x6e, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x04,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x53, 0x65, 0x72, 0x76, 0x65,
-	0x72, 0x55, 0x72, 0x6c, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
-	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x75, 0x74,
-	0x68, 0x5f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x63, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x55, 0x72, 0x6c, 0x22, 0xa7, 0x01, 0x0a, 0x11, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x38, 0x0a, 0x04, 0x72, 0x6f,
+	0x6c, 0x65, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x61, 0x75, 0x74, 0x68, 0x2e,
+	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x2e, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x04,
+	0x72, 0x6f, 0x6c, 0x65, 0x1a, 0x58, 0x0a, 0x04, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x12, 0x0a, 0x04,
+	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65,
+	0x12, 0x20, 0x0a, 0x0b, 0x70, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18,
+	0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0b, 0x70, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x73, 0x18, 0x03,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x08, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x73, 0x42, 0x31,
+	0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72,
+	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x61, 0x75, 0x74, 0x68, 0x5f, 0x73, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x70,
+	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -742,28 +885,31 @@ func file_go_chromium_org_luci_auth_service_api_configspb_config_proto_rawDescGZ
 	return file_go_chromium_org_luci_auth_service_api_configspb_config_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_go_chromium_org_luci_auth_service_api_configspb_config_proto_goTypes = []interface{}{
 	(*GroupImporterConfig)(nil),                    // 0: auth.configs.GroupImporterConfig
 	(*IPAllowlistConfig)(nil),                      // 1: auth.configs.IPAllowlistConfig
 	(*OAuthConfig)(nil),                            // 2: auth.configs.OAuthConfig
-	(*GroupImporterConfig_TarballEntry)(nil),       // 3: auth.configs.GroupImporterConfig.TarballEntry
-	(*GroupImporterConfig_TarballUploadEntry)(nil), // 4: auth.configs.GroupImporterConfig.TarballUploadEntry
-	(*GroupImporterConfig_PlainlistEntry)(nil),     // 5: auth.configs.GroupImporterConfig.PlainlistEntry
-	(*IPAllowlistConfig_IPAllowlist)(nil),          // 6: auth.configs.IPAllowlistConfig.IPAllowlist
-	(*IPAllowlistConfig_Assignment)(nil),           // 7: auth.configs.IPAllowlistConfig.Assignment
+	(*PermissionsConfig)(nil),                      // 3: auth.configs.PermissionsConfig
+	(*GroupImporterConfig_TarballEntry)(nil),       // 4: auth.configs.GroupImporterConfig.TarballEntry
+	(*GroupImporterConfig_TarballUploadEntry)(nil), // 5: auth.configs.GroupImporterConfig.TarballUploadEntry
+	(*GroupImporterConfig_PlainlistEntry)(nil),     // 6: auth.configs.GroupImporterConfig.PlainlistEntry
+	(*IPAllowlistConfig_IPAllowlist)(nil),          // 7: auth.configs.IPAllowlistConfig.IPAllowlist
+	(*IPAllowlistConfig_Assignment)(nil),           // 8: auth.configs.IPAllowlistConfig.Assignment
+	(*PermissionsConfig_Role)(nil),                 // 9: auth.configs.PermissionsConfig.Role
 }
 var file_go_chromium_org_luci_auth_service_api_configspb_config_proto_depIdxs = []int32{
-	3, // 0: auth.configs.GroupImporterConfig.tarball:type_name -> auth.configs.GroupImporterConfig.TarballEntry
-	5, // 1: auth.configs.GroupImporterConfig.plainlist:type_name -> auth.configs.GroupImporterConfig.PlainlistEntry
-	4, // 2: auth.configs.GroupImporterConfig.tarball_upload:type_name -> auth.configs.GroupImporterConfig.TarballUploadEntry
-	6, // 3: auth.configs.IPAllowlistConfig.ip_allowlists:type_name -> auth.configs.IPAllowlistConfig.IPAllowlist
-	7, // 4: auth.configs.IPAllowlistConfig.assignments:type_name -> auth.configs.IPAllowlistConfig.Assignment
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4, // 0: auth.configs.GroupImporterConfig.tarball:type_name -> auth.configs.GroupImporterConfig.TarballEntry
+	6, // 1: auth.configs.GroupImporterConfig.plainlist:type_name -> auth.configs.GroupImporterConfig.PlainlistEntry
+	5, // 2: auth.configs.GroupImporterConfig.tarball_upload:type_name -> auth.configs.GroupImporterConfig.TarballUploadEntry
+	7, // 3: auth.configs.IPAllowlistConfig.ip_allowlists:type_name -> auth.configs.IPAllowlistConfig.IPAllowlist
+	8, // 4: auth.configs.IPAllowlistConfig.assignments:type_name -> auth.configs.IPAllowlistConfig.Assignment
+	9, // 5: auth.configs.PermissionsConfig.role:type_name -> auth.configs.PermissionsConfig.Role
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_auth_service_api_configspb_config_proto_init() }
@@ -809,7 +955,7 @@ func file_go_chromium_org_luci_auth_service_api_configspb_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GroupImporterConfig_TarballEntry); i {
+			switch v := v.(*PermissionsConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -821,7 +967,7 @@ func file_go_chromium_org_luci_auth_service_api_configspb_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GroupImporterConfig_TarballUploadEntry); i {
+			switch v := v.(*GroupImporterConfig_TarballEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -833,7 +979,7 @@ func file_go_chromium_org_luci_auth_service_api_configspb_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GroupImporterConfig_PlainlistEntry); i {
+			switch v := v.(*GroupImporterConfig_TarballUploadEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -845,7 +991,7 @@ func file_go_chromium_org_luci_auth_service_api_configspb_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IPAllowlistConfig_IPAllowlist); i {
+			switch v := v.(*GroupImporterConfig_PlainlistEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -857,7 +1003,31 @@ func file_go_chromium_org_luci_auth_service_api_configspb_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*IPAllowlistConfig_IPAllowlist); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*IPAllowlistConfig_Assignment); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_auth_service_api_configspb_config_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PermissionsConfig_Role); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -875,7 +1045,7 @@ func file_go_chromium_org_luci_auth_service_api_configspb_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_auth_service_api_configspb_config_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
