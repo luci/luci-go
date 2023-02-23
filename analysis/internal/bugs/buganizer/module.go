@@ -47,6 +47,11 @@ type ModuleOptions struct {
 	// For example: placeholder-issuetracker-c2p, that value will
 	// be used by the clients to initiate connections with Buganizer.
 	BuganizerEndpointBase string
+
+	// Option for which OAuth scope to use for PerRPC credentials
+	// for the Buganizer client to use for authenticating requests.
+	// Example: "https://www.googleapis.com/auth/placeholder".
+	BuganizerEndpointOAuthScope string
 }
 
 // Register registers the command line flags.
@@ -62,6 +67,13 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"buganizer-endpoint-base",
 		o.BuganizerEndpointBase,
 		"The base subdomain for Buganizer endpoint.",
+	)
+
+	f.StringVar(
+		&o.BuganizerEndpointOAuthScope,
+		"buganizer-endpoint-oauth-scope",
+		o.BuganizerEndpointOAuthScope,
+		"The Buganizer oauth scope to use for authenticating requests.",
 	)
 }
 
@@ -110,9 +122,12 @@ var BuganizerClientModeKey = "go.chromium.org/luci/analysis/internal/bugs/bugani
 // base subdomain from the Context.
 var BuganizerEndpointBaseKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerEndpointBase"
 
+var BuganizerEndpointOAuthScopeKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerEndpointOAuthScopeKey"
+
 // Initialize is part of module.Module interface.
 func (m *buganizerModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	ctx = context.WithValue(ctx, &BuganizerClientModeKey, m.opts.BuganizerClientMode)
 	ctx = context.WithValue(ctx, &BuganizerEndpointBaseKey, m.opts.BuganizerEndpointBase)
+	ctx = context.WithValue(ctx, &BuganizerEndpointOAuthScopeKey, m.opts.BuganizerEndpointOAuthScope)
 	return ctx, nil
 }

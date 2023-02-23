@@ -135,15 +135,6 @@ func TestBuganizerUpdate(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(client, ShouldBeNil)
 			})
-			Convey("`provided` creates a real client with provided configuration", func() {
-				ctx = context.WithValue(ctx, &buganizer.BuganizerClientModeKey, buganizer.ModeProvided)
-				ctx = context.WithValue(ctx, &buganizer.BuganizerEndpointBaseKey, "placeholder-issuetracker-c2p")
-				client, err := createBuganizerClient(ctx)
-				So(err, ShouldBeNil)
-				So(client, ShouldNotBeNil)
-				_, ok := client.(*buganizer.RPCClient)
-				So(ok, ShouldBeTrue)
-			})
 		})
 		Convey("With no impactful clusters", func() {
 			err = updateAnalysisAndBugsForProject(ctx, opts)

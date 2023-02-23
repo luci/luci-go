@@ -18,15 +18,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/s2a-go"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 	issuetrackerclient "go.chromium.org/luci/third_party/google.golang.org/google/devtools/issuetracker/v1"
 	"google.golang.org/api/option"
 	"google.golang.org/api/option/internaloption"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/oauth"
 )
 
-// An implementation of the client wrapper that uses the Client provided
+const s2aServerAddr = "metadata.google.internal:80"
+
+// RPCClient is an implementation of the client wrapper that uses the Client provided
 // by issuetrackerclient package. This client acts as a delegate and
 // a proxy to the actual implementation.
 type RPCClient struct {
@@ -39,6 +43,28 @@ func NewRPCClient(ctx context.Context) (*RPCClient, error) {
 	if buganizerEndpointBase == nil {
 		return nil, errors.New("Buganizer endpoint base is required for RPC client")
 	}
+
+	buganizerEndpointOAuthScope := ctx.Value(&BuganizerEndpointOAuthScopeKey)
+	if buganizerEndpointOAuthScope == nil {
+		return nil, errors.New("Buganizer OAuth scope is required for RPC client")
+	}
+
+	perRPCCreds, err := oauth.NewApplicationDefault(context.Background(),
+		"https://www.googleapis.com/auth/cloud-platform",
+		buganizerEndpointOAuthScope.(string),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	clientOpts := &s2a.ClientOptions{
+		S2AAddress: s2aServerAddr,
+	}
+	creds, err := s2a.NewClientCreds(clientOpts)
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := issuetrackerclient.NewClient(
 		ctx,
 		internaloption.WithDefaultEndpoint(fmt.Sprintf("%v.googleapis.com:443", buganizerEndpointBase)),
@@ -46,6 +72,12 @@ func NewRPCClient(ctx context.Context) (*RPCClient, error) {
 		internaloption.WithDefaultAudience(fmt.Sprintf("https://%v.googleapis.com/", buganizerEndpointBase)),
 		option.WithGRPCDialOption(
 			grpc.WithReturnConnectionError(),
+		),
+		option.WithGRPCDialOption(
+			grpc.WithTransportCredentials(creds),
+		),
+		option.WithGRPCDialOption(
+			grpc.WithPerRPCCredentials(perRPCCreds),
 		),
 	)
 

@@ -52,6 +52,7 @@ luci_gae_vars:
     DISABLE_PROJECT_SCOPED_AUTH: TRUE
     BUGANIZER_MODE: disable
     BUGANIZER_ENDPOINT_BASE: placeholder-issuetracker-c2p
+    BUGANIZER_ENDPOINT_OAUTH_SCOPE: https://www.googleapis.com/auth/placeholder
     SERVICE_ACCOUNT: luci-analysis-dev@appspot.gserviceaccount.com
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml and service-result-ingestion.yaml.
@@ -85,3 +86,4 @@ entrypoint: >
   -disable-project-scoped-auth=${DISABLE_PROJECT_SCOPED_AUTH}
   -buganizer-mode=${BUGANIZER_MODE}
   -buganizer-endpoint-base=${BUGANIZER_ENDPOINT_BASE}
+  -buganizer-endpoint-oauth-scope=${BUGANIZER_ENDPOINT_OAUTH_SCOPE}
