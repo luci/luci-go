@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -41,11 +42,12 @@ import (
 )
 
 var (
-	pool        = flag.String("pool", "local-test", "Value for `pool` dimension")
-	rbeInstance = flag.String("rbe-instance", "projects/chromium-swarm-dev/instances/default_instance", "Full RBE instance name to use for tests")
-	expiration  = flag.Duration("expiration", 10*time.Minute, "Task expiration time")
-	tasks       = flag.Int("tasks", 1, "How many tasks to submit in parallel")
-	noop        = flag.Bool("noop", false, "If set, mark tasks as noop")
+	pool         = flag.String("pool", "local-test", "Value for `pool` dimension")
+	rbeInstance  = flag.String("rbe-instance", "projects/chromium-swarm-dev/instances/default_instance", "Full RBE instance name to use for tests")
+	expiration   = flag.Duration("expiration", 10*time.Minute, "Task expiration time")
+	tasks        = flag.Int("tasks", 1, "How many tasks to submit in parallel")
+	noop         = flag.Bool("noop", false, "If set, mark tasks as noop")
+	taskIDPrefix = flag.String("task-id-prefix", "", "Prefix for reservation IDs")
 )
 
 func main() {
@@ -85,7 +87,9 @@ func run(ctx context.Context) error {
 		cancel()
 	})
 
-	taskIDPrefix := uuid.New().String()
+	if *taskIDPrefix == "" {
+		*taskIDPrefix = uuid.New().String()
+	}
 
 	type execResult struct {
 		taskID      string
@@ -99,7 +103,7 @@ func run(ctx context.Context) error {
 	for i := 0; i < *tasks; i++ {
 		i := i
 		go func() {
-			taskID := fmt.Sprintf("%s-%04d", taskIDPrefix, i)
+			taskID := fmt.Sprintf("%s-%04d", *taskIDPrefix, i)
 			start := clock.Now(ctx)
 			reservation, err := execTask(ctx, loopCtx, rbe, taskID)
 			results <- execResult{
@@ -149,20 +153,20 @@ func execTask(ctx, loopCtx context.Context, rbe remoteworkers.ReservationsClient
 			Name:       reservationName,
 			Payload:    payload,
 			ExpireTime: timestamppb.New(time.Now().Add(*expiration)),
-			Requirements: &remoteworkers.Worker{
-				Devices: []*remoteworkers.Device{
-					{
-						Handle: "primary", // required, but appears to be unused
-						Properties: []*remoteworkers.Device_Property{
-							{Key: "label:pool", Value: *pool},
-						},
-					},
-				},
+			Constraints: []*remoteworkers.Constraint{
+				{Key: "label:pool", AllowedValues: []string{*pool}},
 			},
 		},
 	})
-	if err != nil {
-		return nil, err
+	if status.Code(err) == codes.AlreadyExists {
+		reservation, err = rbe.GetReservation(ctx, &remoteworkers.GetReservationRequest{
+			Name: reservationName,
+		})
+		if err != nil {
+			return nil, errors.Annotate(err, "GetReservation").Err()
+		}
+	} else if err != nil {
+		return nil, errors.Annotate(err, "CreateReservation").Err()
 	}
 
 	for loopCtx.Err() == nil {
