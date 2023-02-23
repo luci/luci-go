@@ -35,6 +35,12 @@ import (
 // ipAllowlistNameRE is the regular expression for IP Allowlist Names.
 var ipAllowlistNameRE = regexp.MustCompile(`^[0-9A-Za-z_\-\+\.\ ]{2,200}$`)
 
+const (
+	prefixRole         = "role/"
+	prefixCustomRole   = "customRole/"
+	prefixRoleInternal = "role/luci.internal."
+)
+
 // validateAllowlist validates an ip_allowlist.cfg file.
 func validateAllowlist(ctx *validation.Context, configSet, path string, content []byte) error {
 	cfg := configspb.IPAllowlistConfig{}
@@ -233,6 +239,147 @@ func validateImportsCfg(ctx *validation.Context, configSet, path string, content
 	ctx.Exit()
 
 	return nil
+}
+
+// validatePermissionsCfg does basic validation that the permissions.cfg file has the proper format.
+func validatePermissionsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	ctx.SetFile(path)
+	cfg := configspb.PermissionsConfig{}
+
+	// Helper Functions
+	testPrefixes := func(s string, prefixes ...string) bool {
+		for _, p := range prefixes {
+			if strings.HasPrefix(s, p) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Start validation
+	ctx.Enter("validating permissions.cfg")
+	defer ctx.Exit()
+
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
+		ctx.Error(err)
+	}
+
+	roleMap := make(map[string]*configspb.PermissionsConfig_Role, len(cfg.GetRole()))
+	var startPoint string
+
+	ctx.Enter("checking role names and building map")
+	for _, role := range cfg.GetRole() {
+		if role.GetName() == "" {
+			ctx.Errorf("name is required")
+		}
+
+		if !testPrefixes(role.GetName(), prefixRole, prefixCustomRole, prefixRoleInternal) {
+			ctx.Errorf(`invalid prefix, possible prefixes: ("%s", "%s", "%s")`, prefixRole, prefixCustomRole, prefixRoleInternal)
+		}
+
+		if _, ok := roleMap[role.GetName()]; ok {
+			ctx.Errorf("%s is already defined", role.GetName())
+		}
+
+		if startPoint == "" {
+			startPoint = role.GetName()
+		}
+		roleMap[role.GetName()] = role
+	}
+	ctx.Exit()
+
+	ctx.Enter("checking permissions and includes")
+	for _, roleObj := range roleMap {
+		for _, perm := range roleObj.GetPermissions() {
+			if strings.Count(perm, ".") != 2 {
+				ctx.Errorf("invalid format: Permissions must have the form <service>.<subject>.<verb>")
+			}
+		}
+
+		for _, inc := range roleObj.GetIncludes() {
+			if _, ok := roleMap[inc]; !ok {
+				ctx.Errorf("%s not defined", inc)
+			}
+		}
+	}
+	ctx.Exit()
+
+	ctx.Enter("checking for cycles")
+	if startPoint != "" {
+		cycle, err := findRoleDependencyCycle(startPoint, roleMap)
+		if err != nil {
+			ctx.Error(err)
+		}
+		if cycle != nil {
+			cycleStr := strings.Join(cycle, " -> ")
+			ctx.Errorf(fmt.Sprintf("cycle found: %s", cycleStr))
+		}
+	}
+	ctx.Exit()
+
+	return nil
+}
+
+// findRoleDependencyCycle performs a DFS over our roleMap to see if there is a cycle present.
+func findRoleDependencyCycle(startPoint string, roleMap map[string]*configspb.PermissionsConfig_Role) ([]string, error) {
+	visited := stringset.Set{}
+
+	stack := []*configspb.PermissionsConfig_Role{}
+
+	indexOf := func(roles []*configspb.PermissionsConfig_Role, name string) int {
+		for i, r := range roles {
+			if r.GetName() == name {
+				return i
+			}
+		}
+		return -1
+	}
+
+	var visit func(roleName string) (bool, error)
+	visit = func(roleName string) (bool, error) {
+		// Push the current role mapping onto the stack
+		stack = append(stack, roleMap[roleName])
+
+		// Examine children.
+		for _, included := range roleMap[roleName].GetIncludes() {
+			if visited.Has(included) {
+				return true, nil
+			}
+
+			if i := indexOf(stack, included); i > -1 {
+				stack = append(stack, stack[i])
+				return true, nil
+			}
+
+			cycle, err := visit(included)
+			if err != nil {
+				return false, err
+			}
+			if cycle {
+				return true, nil
+			}
+		}
+		stack = stack[:len(stack)-1]
+		visited.Add(roleName)
+
+		return false, nil
+	}
+
+	cycle, err := visit(startPoint)
+	if err != nil {
+		return nil, err
+	}
+	if cycle {
+		if len(stack) == 0 {
+			return nil, errors.New("cycle found with empty stack")
+		}
+		names := make([]string, len(stack))
+		for i, g := range stack {
+			names[i] = g.GetName()
+		}
+		return names, nil
+	}
+	return nil, nil
 }
 
 func validateSystems(systems []string, seenSystems map[string]bool, title string) error {

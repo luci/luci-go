@@ -525,3 +525,204 @@ func TestImportsConfigValidation(t *testing.T) {
 		})
 	})
 }
+
+func TestPermissionsConfigValidation(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	Convey("validate permissions.cfg", t, func() {
+		vctx := &validation.Context{Context: ctx}
+		path := "permissions.cfg"
+		configSet := ""
+
+		Convey("loading bad proto", func() {
+			content := []byte(` bad: "config" `)
+			So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "unknown field")
+		})
+
+		Convey("load config bad config structure", func() {
+			Convey("name undefined", func() {
+				content := []byte(`
+					role {
+						permissions: [
+							"test.state.create"
+							"test.state.delete"
+						]
+						includes: [
+							"role/testproject.state.creator"
+						]
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "name is required")
+			})
+
+			Convey("testing prefixes", func() {
+				content := []byte(`
+					role {
+						name: "notRole/test.role"
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, `invalid prefix, possible prefixes: ("role/", "customRole/", "role/luci.internal.")`)
+			})
+
+			Convey("role defined twice", func() {
+				content := []byte(`
+					role {
+						name: "role/test.role"
+					}
+					role {
+						name: "role/role.two"
+					}
+					role {
+						name: "role/test.role"
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "role/test.role is already defined")
+			})
+
+			Convey("invalid permissions format", func() {
+				content := []byte(`
+					role {
+						name: "role/test.role"
+						permissions: [
+							"examplePermission"
+						]
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "Permissions must have the form <service>.<subject>.<verb>")
+			})
+
+			Convey("role not defined in includes", func() {
+				content := []byte(`
+					role {
+						name: "role/test.role"
+						includes: [
+							"role/not.defined"
+						]
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "role/not.defined not defined")
+			})
+
+			Convey("cycles", func() {
+				Convey("reference self", func() {
+					content := []byte(`
+						role {
+							name: "role/test.role"
+							includes: [
+								"role/test.role"
+							]
+						}
+					`)
+					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "cycle found:")
+				})
+
+				Convey("small cycle", func() {
+					content := []byte(`
+						role {
+							name: "role/test.role"
+							includes: [
+								"role/test.role2"
+							]
+						}
+						role {
+							name: "role/test.role2"
+							includes: [
+								"role/test.role"
+							]
+						}
+					`)
+					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "cycle found: role/test.role -> role/test.role2 -> role/test.role")
+				})
+
+				Convey("bigger cycle", func() {
+					content := []byte(`
+						role {
+							name: "role/test.role"
+							includes: [
+								"role/test.role3"
+							]
+						}
+						role {
+							name: "role/test.role2"
+							includes: [
+								"role/test.role"
+							]
+						}
+						role {
+							name: "role/test.role3"
+							includes: [
+								"role/test.role4"
+							]
+						}
+						role {
+							name: "role/test.role4"
+							includes: [
+								"role/test.role2"
+							]
+						}
+					`)
+					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize().Error(), ShouldContainSubstring, "cycle found: role/test.role -> role/test.role3 -> role/test.role4 -> role/test.role2 -> role/test.role")
+				})
+			})
+		})
+
+		Convey("valid configs", func() {
+
+			Convey("1 entry", func() {
+				content := []byte(`
+					role {
+						name: "role/test.role.writer"
+						permissions: [
+							"testproject.state.create",
+							"testproject.state.update"
+						]
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("multiple entries", func() {
+				content := []byte(`
+					role {
+						name: "role/test.role.writer"
+						permissions: [
+							"testproject.state.create",
+							"testproject.state.update"
+						]
+					}
+					role {
+						name: "role/test.role.reader"
+						permissions: [
+							"testproject.state.get",
+							"testproject.state.list"
+						]
+					}
+					role {
+						name: "role/test.role.owner"
+						permissions: [
+							"testproject.state.delete"
+						]
+						includes: [
+							"role/test.role.writer",
+							"role/test.role.reader"
+						]
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+		})
+	})
+}
