@@ -201,6 +201,50 @@ type AuthReplicationState struct {
 	ShardIDs   []string `gae:"shard_ids,noindex"`
 }
 
+// AuthRealmsGlobals is a singleton entity with global portions of realms configuration.
+//
+// Data here does not relate to any individual realm or project. Currently
+// contains a list of all defined permissions (with their metadata).
+type AuthRealmsGlobals struct {
+	// AuthVersionedEntityMixin is embedded
+	// to include modification details related to this entity.
+	AuthVersionedEntityMixin
+
+	Kind string `gae:"$kind,AuthRealmsGlobal"`
+	ID   string `gae:"$id,globals"`
+
+	Parent *datastore.Key `gae:"$parent"`
+
+	// Permissions is all globally defined permissions, in alphabetical order.
+	Permissions []string `gae:"permissions,noindex"`
+}
+
+// AuthProjectRealms is all realms of a single LUCI project.
+//
+// They are defined as Realms proto message reduced to a single project:
+//   - Only project's realms are listed in `realms` field.
+//   - Only permissions used by the project are listed in `permissions` field.
+//   - Permissions have their metadata stripped, they have only names.
+type AuthProjectRealms struct {
+	// AuthVersionedEntityMixin is embedded
+	// to include modification details related to this entity.
+	AuthVersionedEntityMixin
+
+	Kind string `gae:"$kind,AuthProjectRealms"`
+	ID   string `gae:"$id"`
+
+	Parent *datastore.Key `gae:"$parent"`
+
+	// Realms is all the realms of a project, see comment for AuthProjectRealms.
+	Realms []byte `gae:"realms,noindex"`
+
+	// ConfigRev is the git revision the config was picked up from.
+	ConfigRev string `gae:"config_rev,noindex"`
+
+	// PermsRev is the revision of permissions DB used to expand roles.
+	PermsRev string `gae:"perms_rev,noindex"`
+}
+
 // AuthGroup is a group of identities, the entity id is the group name.
 type AuthGroup struct {
 	// AuthVersionedEntityMixin is embedded
@@ -390,6 +434,24 @@ func makeAuthIPAllowlist(ctx context.Context, id string) *AuthIPAllowlist {
 	return &AuthIPAllowlist{
 		Kind:   "AuthIPWhitelist",
 		ID:     id,
+		Parent: RootKey(ctx),
+	}
+}
+
+// makeAuthRealmsGlobals is a convenience function for creating an AuthRealmsGlobals.
+func makeAuthRealmsGlobals(ctx context.Context) *AuthRealmsGlobals {
+	return &AuthRealmsGlobals{
+		Kind:   "AuthRealmsGlobals",
+		ID:     "globals",
+		Parent: RootKey(ctx),
+	}
+}
+
+// makeAuthProjectRealms is a convenience function for creating an AuthProjectRealms for a given project.
+func makeAuthProjectRealms(ctx context.Context, project string) *AuthProjectRealms {
+	return &AuthProjectRealms{
+		Kind:   "AuthProjectRealms",
+		ID:     project,
 		Parent: RootKey(ctx),
 	}
 }
@@ -1170,6 +1232,38 @@ func GetAuthDBSnapshotLatest(ctx context.Context) (*AuthDBSnapshotLatest, error)
 		return nil, err
 	default:
 		return nil, errors.Annotate(err, "error getting AuthDBSnapshotLatest").Err()
+	}
+}
+
+// GetAuthRealmsGlobals returns the AuthRealmsGlobals singleton datastore entity.
+//
+// Returns datastore.ErrNoSuchEntity if the AuthRealmsGlobals entity is not present.
+// Returns an annotated error for other errors.
+func GetAuthRealmsGlobals(ctx context.Context) (*AuthRealmsGlobals, error) {
+	authRealmsGlobals := makeAuthRealmsGlobals(ctx)
+	switch err := datastore.Get(ctx, authRealmsGlobals); {
+	case err == nil:
+		return authRealmsGlobals, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthRealmsGlobals").Err()
+	}
+}
+
+// GetAuthProjectRealms returns the AuthProjectRealms datastore entity for a given project.
+//
+// Returns datastore.ErrNoSuchEntity if the AuthProjectRealms entity is not present.
+// Returns an annotated error for other errors.
+func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectRealms, error) {
+	authProjectRealms := makeAuthProjectRealms(ctx, project)
+	switch err := datastore.Get(ctx, authProjectRealms); {
+	case err == nil:
+		return authProjectRealms, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthProjectRealms %s", project).Err()
 	}
 }
 

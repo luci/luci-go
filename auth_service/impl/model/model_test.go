@@ -163,6 +163,24 @@ func testAuthDBSnapshot(ctx context.Context, rev int64) *AuthDBSnapshot {
 	}
 }
 
+func testAuthRealmsGlobals(ctx context.Context) *AuthRealmsGlobals {
+	return &AuthRealmsGlobals{
+		AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
+		Kind:                     "AuthRealmsGlobals",
+		ID:                       "globals",
+		Parent:                   RootKey(ctx),
+	}
+}
+
+func testAuthProjectRealms(ctx context.Context, projectName string) *AuthProjectRealms {
+	return &AuthProjectRealms{
+		AuthVersionedEntityMixin: testAuthVersionedEntityMixin(),
+		Kind:                     "AuthProjectRealms",
+		ID:                       projectName,
+		Parent:                   RootKey(ctx),
+	}
+}
+
 func testAuthDBSnapshotSharded(ctx context.Context, rev int64, shardCount int) (*AuthDBSnapshot, []byte, error) {
 	snapshot := &AuthDBSnapshot{
 		Kind:         "AuthDBSnapshot",
@@ -1412,6 +1430,38 @@ func TestAuthGlobalConfig(t *testing.T) {
 			So(getStringProp(historicalEntity, "auth_db_app_version"), ShouldEqual, "test-version")
 			So(getBoolProp(historicalEntity, "auth_db_deleted"), ShouldBeFalse)
 		})
+	})
+}
+
+func TestAuthRealmsConfig(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+
+	Convey("Testing GetAuthRealmsGlobals", t, func() {
+		_, err := GetAuthRealmsGlobals(ctx)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		realmGlobals := testAuthRealmsGlobals(ctx)
+		err = datastore.Put(ctx, realmGlobals)
+		So(err, ShouldBeNil)
+
+		actual, err := GetAuthRealmsGlobals(ctx)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, realmGlobals)
+	})
+
+	Convey("Testing GetAuthProjectRealms", t, func() {
+		testProject := "testproject"
+		_, err := GetAuthProjectRealms(ctx, testProject)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		projectRealms := testAuthProjectRealms(ctx, testProject)
+		err = datastore.Put(ctx, projectRealms)
+		So(err, ShouldBeNil)
+
+		actual, err := GetAuthProjectRealms(ctx, testProject)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, projectRealms)
 	})
 }
 
