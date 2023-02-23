@@ -1478,6 +1478,123 @@ func (x *BuildRange) GetEndBuildId() int64 {
 	return 0
 }
 
+// A request message for RegisterBuildTask RPC.
+type RegisterBuildTaskRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A nonce to deduplicate requests.
+	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	// Id of the build the task to register to.
+	BuildId int64 `protobuf:"varint,2,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	// Task to be registered to the build.
+	// Task.Id is required.
+	Task *Task `protobuf:"bytes,3,opt,name=task,proto3" json:"task,omitempty"`
+}
+
+func (x *RegisterBuildTaskRequest) Reset() {
+	*x = RegisterBuildTaskRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterBuildTaskRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterBuildTaskRequest) ProtoMessage() {}
+
+func (x *RegisterBuildTaskRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterBuildTaskRequest.ProtoReflect.Descriptor instead.
+func (*RegisterBuildTaskRequest) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *RegisterBuildTaskRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *RegisterBuildTaskRequest) GetBuildId() int64 {
+	if x != nil {
+		return x.BuildId
+	}
+	return 0
+}
+
+func (x *RegisterBuildTaskRequest) GetTask() *Task {
+	if x != nil {
+		return x.Task
+	}
+	return nil
+}
+
+// A response message for RegisterBuildTask RPC.
+type RegisterBuildTaskResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Token for the subsequent UpdateBuildTask calls.
+	UpdateBuildTaskToken string `protobuf:"bytes,1,opt,name=update_build_task_token,json=updateBuildTaskToken,proto3" json:"update_build_task_token,omitempty"`
+}
+
+func (x *RegisterBuildTaskResponse) Reset() {
+	*x = RegisterBuildTaskResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterBuildTaskResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterBuildTaskResponse) ProtoMessage() {}
+
+func (x *RegisterBuildTaskResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterBuildTaskResponse.ProtoReflect.Descriptor instead.
+func (*RegisterBuildTaskResponse) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *RegisterBuildTaskResponse) GetUpdateBuildTaskToken() string {
+	if x != nil {
+		return x.UpdateBuildTaskToken
+	}
+	return ""
+}
+
 type UpdateBuildTaskRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1492,7 +1609,7 @@ type UpdateBuildTaskRequest struct {
 func (x *UpdateBuildTaskRequest) Reset() {
 	*x = UpdateBuildTaskRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[13]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1505,7 +1622,7 @@ func (x *UpdateBuildTaskRequest) String() string {
 func (*UpdateBuildTaskRequest) ProtoMessage() {}
 
 func (x *UpdateBuildTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1518,7 +1635,7 @@ func (x *UpdateBuildTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBuildTaskRequest.ProtoReflect.Descriptor instead.
 func (*UpdateBuildTaskRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDescGZIP(), []int{13}
+	return file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *UpdateBuildTaskRequest) GetBuildId() string {
@@ -1553,7 +1670,7 @@ type BatchRequest_Request struct {
 func (x *BatchRequest_Request) Reset() {
 	*x = BatchRequest_Request{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[14]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1566,7 +1683,7 @@ func (x *BatchRequest_Request) String() string {
 func (*BatchRequest_Request) ProtoMessage() {}
 
 func (x *BatchRequest_Request) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[14]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1664,7 +1781,7 @@ type BatchResponse_Response struct {
 func (x *BatchResponse_Response) Reset() {
 	*x = BatchResponse_Response{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[15]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1677,7 +1794,7 @@ func (x *BatchResponse_Response) String() string {
 func (*BatchResponse_Response) ProtoMessage() {}
 
 func (x *BatchResponse_Response) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[15]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1798,7 +1915,7 @@ type ScheduleBuildRequest_Swarming struct {
 func (x *ScheduleBuildRequest_Swarming) Reset() {
 	*x = ScheduleBuildRequest_Swarming{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[17]
+		mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1811,7 +1928,7 @@ func (x *ScheduleBuildRequest_Swarming) String() string {
 func (*ScheduleBuildRequest_Swarming) ProtoMessage() {}
 
 func (x *ScheduleBuildRequest_Swarming) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2172,53 +2289,74 @@ var file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDesc = [
 	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0c, 0x73, 0x74, 0x61, 0x72, 0x74,
 	0x42, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x20, 0x0a, 0x0c, 0x65, 0x6e, 0x64, 0x5f, 0x62,
 	0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x65,
-	0x6e, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x67, 0x0a, 0x16, 0x55, 0x70, 0x64,
-	0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x03, 0xe0, 0x41, 0x02, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c,
-	0x64, 0x49, 0x64, 0x12, 0x2d, 0x0a, 0x04, 0x74, 0x61, 0x73, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x14, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e,
-	0x76, 0x32, 0x2e, 0x54, 0x61, 0x73, 0x6b, 0x42, 0x03, 0xe0, 0x41, 0x02, 0x52, 0x04, 0x74, 0x61,
-	0x73, 0x6b, 0x32, 0xce, 0x05, 0x0a, 0x06, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x12, 0x44, 0x0a,
-	0x08, 0x47, 0x65, 0x74, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12, 0x1f, 0x2e, 0x62, 0x75, 0x69, 0x6c,
-	0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x47, 0x65, 0x74, 0x42, 0x75,
-	0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69,
-	0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c,
-	0x64, 0x22, 0x00, 0x12, 0x5b, 0x0a, 0x0c, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x42, 0x75, 0x69,
-	0x6c, 0x64, 0x73, 0x12, 0x23, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
-	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x42, 0x75, 0x69, 0x6c, 0x64,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64,
-	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68,
-	0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
-	0x12, 0x4a, 0x0a, 0x0b, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12,
-	0x22, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
-	0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
-	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00, 0x12, 0x4e, 0x0a, 0x0d,
-	0x53, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12, 0x24, 0x2e,
-	0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x53,
-	0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
-	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00, 0x12, 0x4a, 0x0a, 0x0b,
-	0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12, 0x22, 0x2e, 0x62, 0x75,
-	0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x43, 0x61, 0x6e,
-	0x63, 0x65, 0x6c, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
-	0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00, 0x12, 0x46, 0x0a, 0x05, 0x42, 0x61, 0x74, 0x63,
-	0x68, 0x12, 0x1c, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e,
-	0x76, 0x32, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x1d, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
-	0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
-	0x12, 0x4a, 0x0a, 0x0b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12,
-	0x22, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
-	0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
-	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00, 0x12, 0x52, 0x0a, 0x0f,
-	0x53, 0x79, 0x6e, 0x74, 0x68, 0x65, 0x73, 0x69, 0x7a, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12,
-	0x26, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
-	0x2e, 0x53, 0x79, 0x6e, 0x74, 0x68, 0x65, 0x73, 0x69, 0x7a, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64,
+	0x6e, 0x64, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x22, 0x8d, 0x01, 0x0a, 0x18, 0x52, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x22, 0x0a, 0x0a, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x03, 0xe0, 0x41, 0x02, 0x52,
+	0x09, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x49, 0x64, 0x12, 0x1e, 0x0a, 0x08, 0x62, 0x75,
+	0x69, 0x6c, 0x64, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x03, 0xe0, 0x41,
+	0x02, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x2d, 0x0a, 0x04, 0x74, 0x61,
+	0x73, 0x6b, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x54, 0x61, 0x73, 0x6b, 0x42, 0x03,
+	0xe0, 0x41, 0x02, 0x52, 0x04, 0x74, 0x61, 0x73, 0x6b, 0x22, 0x52, 0x0a, 0x19, 0x52, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x65, 0x72, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x35, 0x0a, 0x17, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x74, 0x61, 0x73, 0x6b, 0x5f, 0x74, 0x6f, 0x6b, 0x65,
+	0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x14, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42,
+	0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x67, 0x0a,
+	0x16, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x03, 0xe0, 0x41, 0x02, 0x52, 0x07,
+	0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64, 0x12, 0x2d, 0x0a, 0x04, 0x74, 0x61, 0x73, 0x6b, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x54, 0x61, 0x73, 0x6b, 0x42, 0x03, 0xe0, 0x41, 0x02,
+	0x52, 0x04, 0x74, 0x61, 0x73, 0x6b, 0x32, 0xba, 0x06, 0x0a, 0x06, 0x42, 0x75, 0x69, 0x6c, 0x64,
+	0x73, 0x12, 0x44, 0x0a, 0x08, 0x47, 0x65, 0x74, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12, 0x1f, 0x2e,
+	0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x47,
+	0x65, 0x74, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15,
+	0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e,
+	0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00, 0x12, 0x5b, 0x0a, 0x0c, 0x53, 0x65, 0x61, 0x72, 0x63,
+	0x68, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x12, 0x23, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x42,
+	0x75, 0x69, 0x6c, 0x64, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x62,
+	0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x65,
+	0x61, 0x72, 0x63, 0x68, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x4a, 0x0a, 0x0b, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75,
+	0x69, 0x6c, 0x64, 0x12, 0x22, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
 	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00,
+	0x12, 0x4e, 0x0a, 0x0d, 0x53, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x42, 0x75, 0x69, 0x6c,
+	0x64, 0x12, 0x24, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e,
+	0x76, 0x32, 0x2e, 0x53, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00,
+	0x12, 0x4a, 0x0a, 0x0b, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x12,
+	0x22, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32,
+	0x2e, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00, 0x12, 0x46, 0x0a, 0x05,
+	0x42, 0x61, 0x74, 0x63, 0x68, 0x12, 0x1c, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x12, 0x4a, 0x0a, 0x0b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75,
+	0x69, 0x6c, 0x64, 0x12, 0x22, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62,
+	0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x22, 0x00,
+	0x12, 0x52, 0x0a, 0x0f, 0x53, 0x79, 0x6e, 0x74, 0x68, 0x65, 0x73, 0x69, 0x7a, 0x65, 0x42, 0x75,
+	0x69, 0x6c, 0x64, 0x12, 0x26, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x79, 0x6e, 0x74, 0x68, 0x65, 0x73, 0x69, 0x7a, 0x65, 0x42,
+	0x75, 0x69, 0x6c, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x62, 0x75,
+	0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x42, 0x75, 0x69,
+	0x6c, 0x64, 0x22, 0x00, 0x12, 0x6a, 0x0a, 0x11, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72,
+	0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x12, 0x28, 0x2e, 0x62, 0x75, 0x69, 0x6c,
+	0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73,
+	0x74, 0x65, 0x72, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x42, 0x75, 0x69,
+	0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
 	0x12, 0x51, 0x0a, 0x0f, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54,
 	0x61, 0x73, 0x6b, 0x12, 0x26, 0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65,
 	0x74, 0x2e, 0x76, 0x32, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x42, 0x75, 0x69, 0x6c, 0x64,
@@ -2243,7 +2381,7 @@ func file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDescGZI
 	return file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_goTypes = []interface{}{
 	(*GetBuildRequest)(nil),               // 0: buildbucket.v2.GetBuildRequest
 	(*SearchBuildsRequest)(nil),           // 1: buildbucket.v2.SearchBuildsRequest
@@ -2258,115 +2396,120 @@ var file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_goTypes = [
 	(*BuildMask)(nil),                     // 10: buildbucket.v2.BuildMask
 	(*BuildPredicate)(nil),                // 11: buildbucket.v2.BuildPredicate
 	(*BuildRange)(nil),                    // 12: buildbucket.v2.BuildRange
-	(*UpdateBuildTaskRequest)(nil),        // 13: buildbucket.v2.UpdateBuildTaskRequest
-	(*BatchRequest_Request)(nil),          // 14: buildbucket.v2.BatchRequest.Request
-	(*BatchResponse_Response)(nil),        // 15: buildbucket.v2.BatchResponse.Response
-	nil,                                   // 16: buildbucket.v2.ScheduleBuildRequest.ExperimentsEntry
-	(*ScheduleBuildRequest_Swarming)(nil), // 17: buildbucket.v2.ScheduleBuildRequest.Swarming
-	nil,                                   // 18: buildbucket.v2.SynthesizeBuildRequest.ExperimentsEntry
-	(*BuilderID)(nil),                     // 19: buildbucket.v2.BuilderID
-	(*fieldmaskpb.FieldMask)(nil),         // 20: google.protobuf.FieldMask
-	(*Build)(nil),                         // 21: buildbucket.v2.Build
-	(Trinary)(0),                          // 22: buildbucket.v2.Trinary
-	(*structpb.Struct)(nil),               // 23: google.protobuf.Struct
-	(*GitilesCommit)(nil),                 // 24: buildbucket.v2.GitilesCommit
-	(*GerritChange)(nil),                  // 25: buildbucket.v2.GerritChange
-	(*StringPair)(nil),                    // 26: buildbucket.v2.StringPair
-	(*RequestedDimension)(nil),            // 27: buildbucket.v2.RequestedDimension
-	(*NotificationConfig)(nil),            // 28: buildbucket.v2.NotificationConfig
-	(*Executable)(nil),                    // 29: buildbucket.v2.Executable
-	(*durationpb.Duration)(nil),           // 30: google.protobuf.Duration
-	(*structmask.StructMask)(nil),         // 31: structmask.StructMask
-	(Status)(0),                           // 32: buildbucket.v2.Status
-	(*TimeRange)(nil),                     // 33: buildbucket.v2.TimeRange
-	(*Task)(nil),                          // 34: buildbucket.v2.Task
-	(*status.Status)(nil),                 // 35: google.rpc.Status
+	(*RegisterBuildTaskRequest)(nil),      // 13: buildbucket.v2.RegisterBuildTaskRequest
+	(*RegisterBuildTaskResponse)(nil),     // 14: buildbucket.v2.RegisterBuildTaskResponse
+	(*UpdateBuildTaskRequest)(nil),        // 15: buildbucket.v2.UpdateBuildTaskRequest
+	(*BatchRequest_Request)(nil),          // 16: buildbucket.v2.BatchRequest.Request
+	(*BatchResponse_Response)(nil),        // 17: buildbucket.v2.BatchResponse.Response
+	nil,                                   // 18: buildbucket.v2.ScheduleBuildRequest.ExperimentsEntry
+	(*ScheduleBuildRequest_Swarming)(nil), // 19: buildbucket.v2.ScheduleBuildRequest.Swarming
+	nil,                                   // 20: buildbucket.v2.SynthesizeBuildRequest.ExperimentsEntry
+	(*BuilderID)(nil),                     // 21: buildbucket.v2.BuilderID
+	(*fieldmaskpb.FieldMask)(nil),         // 22: google.protobuf.FieldMask
+	(*Build)(nil),                         // 23: buildbucket.v2.Build
+	(Trinary)(0),                          // 24: buildbucket.v2.Trinary
+	(*structpb.Struct)(nil),               // 25: google.protobuf.Struct
+	(*GitilesCommit)(nil),                 // 26: buildbucket.v2.GitilesCommit
+	(*GerritChange)(nil),                  // 27: buildbucket.v2.GerritChange
+	(*StringPair)(nil),                    // 28: buildbucket.v2.StringPair
+	(*RequestedDimension)(nil),            // 29: buildbucket.v2.RequestedDimension
+	(*NotificationConfig)(nil),            // 30: buildbucket.v2.NotificationConfig
+	(*Executable)(nil),                    // 31: buildbucket.v2.Executable
+	(*durationpb.Duration)(nil),           // 32: google.protobuf.Duration
+	(*structmask.StructMask)(nil),         // 33: structmask.StructMask
+	(Status)(0),                           // 34: buildbucket.v2.Status
+	(*TimeRange)(nil),                     // 35: buildbucket.v2.TimeRange
+	(*Task)(nil),                          // 36: buildbucket.v2.Task
+	(*status.Status)(nil),                 // 37: google.rpc.Status
 }
 var file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_depIdxs = []int32{
-	19, // 0: buildbucket.v2.GetBuildRequest.builder:type_name -> buildbucket.v2.BuilderID
-	20, // 1: buildbucket.v2.GetBuildRequest.fields:type_name -> google.protobuf.FieldMask
+	21, // 0: buildbucket.v2.GetBuildRequest.builder:type_name -> buildbucket.v2.BuilderID
+	22, // 1: buildbucket.v2.GetBuildRequest.fields:type_name -> google.protobuf.FieldMask
 	10, // 2: buildbucket.v2.GetBuildRequest.mask:type_name -> buildbucket.v2.BuildMask
 	11, // 3: buildbucket.v2.SearchBuildsRequest.predicate:type_name -> buildbucket.v2.BuildPredicate
-	20, // 4: buildbucket.v2.SearchBuildsRequest.fields:type_name -> google.protobuf.FieldMask
+	22, // 4: buildbucket.v2.SearchBuildsRequest.fields:type_name -> google.protobuf.FieldMask
 	10, // 5: buildbucket.v2.SearchBuildsRequest.mask:type_name -> buildbucket.v2.BuildMask
-	21, // 6: buildbucket.v2.SearchBuildsResponse.builds:type_name -> buildbucket.v2.Build
-	14, // 7: buildbucket.v2.BatchRequest.requests:type_name -> buildbucket.v2.BatchRequest.Request
-	15, // 8: buildbucket.v2.BatchResponse.responses:type_name -> buildbucket.v2.BatchResponse.Response
-	21, // 9: buildbucket.v2.UpdateBuildRequest.build:type_name -> buildbucket.v2.Build
-	20, // 10: buildbucket.v2.UpdateBuildRequest.update_mask:type_name -> google.protobuf.FieldMask
-	20, // 11: buildbucket.v2.UpdateBuildRequest.fields:type_name -> google.protobuf.FieldMask
+	23, // 6: buildbucket.v2.SearchBuildsResponse.builds:type_name -> buildbucket.v2.Build
+	16, // 7: buildbucket.v2.BatchRequest.requests:type_name -> buildbucket.v2.BatchRequest.Request
+	17, // 8: buildbucket.v2.BatchResponse.responses:type_name -> buildbucket.v2.BatchResponse.Response
+	23, // 9: buildbucket.v2.UpdateBuildRequest.build:type_name -> buildbucket.v2.Build
+	22, // 10: buildbucket.v2.UpdateBuildRequest.update_mask:type_name -> google.protobuf.FieldMask
+	22, // 11: buildbucket.v2.UpdateBuildRequest.fields:type_name -> google.protobuf.FieldMask
 	10, // 12: buildbucket.v2.UpdateBuildRequest.mask:type_name -> buildbucket.v2.BuildMask
-	19, // 13: buildbucket.v2.ScheduleBuildRequest.builder:type_name -> buildbucket.v2.BuilderID
-	22, // 14: buildbucket.v2.ScheduleBuildRequest.canary:type_name -> buildbucket.v2.Trinary
-	22, // 15: buildbucket.v2.ScheduleBuildRequest.experimental:type_name -> buildbucket.v2.Trinary
-	16, // 16: buildbucket.v2.ScheduleBuildRequest.experiments:type_name -> buildbucket.v2.ScheduleBuildRequest.ExperimentsEntry
-	23, // 17: buildbucket.v2.ScheduleBuildRequest.properties:type_name -> google.protobuf.Struct
-	24, // 18: buildbucket.v2.ScheduleBuildRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	25, // 19: buildbucket.v2.ScheduleBuildRequest.gerrit_changes:type_name -> buildbucket.v2.GerritChange
-	26, // 20: buildbucket.v2.ScheduleBuildRequest.tags:type_name -> buildbucket.v2.StringPair
-	27, // 21: buildbucket.v2.ScheduleBuildRequest.dimensions:type_name -> buildbucket.v2.RequestedDimension
-	28, // 22: buildbucket.v2.ScheduleBuildRequest.notify:type_name -> buildbucket.v2.NotificationConfig
-	20, // 23: buildbucket.v2.ScheduleBuildRequest.fields:type_name -> google.protobuf.FieldMask
+	21, // 13: buildbucket.v2.ScheduleBuildRequest.builder:type_name -> buildbucket.v2.BuilderID
+	24, // 14: buildbucket.v2.ScheduleBuildRequest.canary:type_name -> buildbucket.v2.Trinary
+	24, // 15: buildbucket.v2.ScheduleBuildRequest.experimental:type_name -> buildbucket.v2.Trinary
+	18, // 16: buildbucket.v2.ScheduleBuildRequest.experiments:type_name -> buildbucket.v2.ScheduleBuildRequest.ExperimentsEntry
+	25, // 17: buildbucket.v2.ScheduleBuildRequest.properties:type_name -> google.protobuf.Struct
+	26, // 18: buildbucket.v2.ScheduleBuildRequest.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	27, // 19: buildbucket.v2.ScheduleBuildRequest.gerrit_changes:type_name -> buildbucket.v2.GerritChange
+	28, // 20: buildbucket.v2.ScheduleBuildRequest.tags:type_name -> buildbucket.v2.StringPair
+	29, // 21: buildbucket.v2.ScheduleBuildRequest.dimensions:type_name -> buildbucket.v2.RequestedDimension
+	30, // 22: buildbucket.v2.ScheduleBuildRequest.notify:type_name -> buildbucket.v2.NotificationConfig
+	22, // 23: buildbucket.v2.ScheduleBuildRequest.fields:type_name -> google.protobuf.FieldMask
 	10, // 24: buildbucket.v2.ScheduleBuildRequest.mask:type_name -> buildbucket.v2.BuildMask
-	22, // 25: buildbucket.v2.ScheduleBuildRequest.critical:type_name -> buildbucket.v2.Trinary
-	29, // 26: buildbucket.v2.ScheduleBuildRequest.exe:type_name -> buildbucket.v2.Executable
-	17, // 27: buildbucket.v2.ScheduleBuildRequest.swarming:type_name -> buildbucket.v2.ScheduleBuildRequest.Swarming
-	30, // 28: buildbucket.v2.ScheduleBuildRequest.scheduling_timeout:type_name -> google.protobuf.Duration
-	30, // 29: buildbucket.v2.ScheduleBuildRequest.execution_timeout:type_name -> google.protobuf.Duration
-	30, // 30: buildbucket.v2.ScheduleBuildRequest.grace_period:type_name -> google.protobuf.Duration
-	22, // 31: buildbucket.v2.ScheduleBuildRequest.can_outlive_parent:type_name -> buildbucket.v2.Trinary
-	20, // 32: buildbucket.v2.CancelBuildRequest.fields:type_name -> google.protobuf.FieldMask
+	24, // 25: buildbucket.v2.ScheduleBuildRequest.critical:type_name -> buildbucket.v2.Trinary
+	31, // 26: buildbucket.v2.ScheduleBuildRequest.exe:type_name -> buildbucket.v2.Executable
+	19, // 27: buildbucket.v2.ScheduleBuildRequest.swarming:type_name -> buildbucket.v2.ScheduleBuildRequest.Swarming
+	32, // 28: buildbucket.v2.ScheduleBuildRequest.scheduling_timeout:type_name -> google.protobuf.Duration
+	32, // 29: buildbucket.v2.ScheduleBuildRequest.execution_timeout:type_name -> google.protobuf.Duration
+	32, // 30: buildbucket.v2.ScheduleBuildRequest.grace_period:type_name -> google.protobuf.Duration
+	24, // 31: buildbucket.v2.ScheduleBuildRequest.can_outlive_parent:type_name -> buildbucket.v2.Trinary
+	22, // 32: buildbucket.v2.CancelBuildRequest.fields:type_name -> google.protobuf.FieldMask
 	10, // 33: buildbucket.v2.CancelBuildRequest.mask:type_name -> buildbucket.v2.BuildMask
-	21, // 34: buildbucket.v2.CreateBuildRequest.build:type_name -> buildbucket.v2.Build
+	23, // 34: buildbucket.v2.CreateBuildRequest.build:type_name -> buildbucket.v2.Build
 	10, // 35: buildbucket.v2.CreateBuildRequest.mask:type_name -> buildbucket.v2.BuildMask
-	19, // 36: buildbucket.v2.SynthesizeBuildRequest.builder:type_name -> buildbucket.v2.BuilderID
-	18, // 37: buildbucket.v2.SynthesizeBuildRequest.experiments:type_name -> buildbucket.v2.SynthesizeBuildRequest.ExperimentsEntry
-	20, // 38: buildbucket.v2.BuildMask.fields:type_name -> google.protobuf.FieldMask
-	31, // 39: buildbucket.v2.BuildMask.input_properties:type_name -> structmask.StructMask
-	31, // 40: buildbucket.v2.BuildMask.output_properties:type_name -> structmask.StructMask
-	31, // 41: buildbucket.v2.BuildMask.requested_properties:type_name -> structmask.StructMask
-	32, // 42: buildbucket.v2.BuildMask.step_status:type_name -> buildbucket.v2.Status
-	19, // 43: buildbucket.v2.BuildPredicate.builder:type_name -> buildbucket.v2.BuilderID
-	32, // 44: buildbucket.v2.BuildPredicate.status:type_name -> buildbucket.v2.Status
-	25, // 45: buildbucket.v2.BuildPredicate.gerrit_changes:type_name -> buildbucket.v2.GerritChange
-	24, // 46: buildbucket.v2.BuildPredicate.output_gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	26, // 47: buildbucket.v2.BuildPredicate.tags:type_name -> buildbucket.v2.StringPair
-	33, // 48: buildbucket.v2.BuildPredicate.create_time:type_name -> buildbucket.v2.TimeRange
+	21, // 36: buildbucket.v2.SynthesizeBuildRequest.builder:type_name -> buildbucket.v2.BuilderID
+	20, // 37: buildbucket.v2.SynthesizeBuildRequest.experiments:type_name -> buildbucket.v2.SynthesizeBuildRequest.ExperimentsEntry
+	22, // 38: buildbucket.v2.BuildMask.fields:type_name -> google.protobuf.FieldMask
+	33, // 39: buildbucket.v2.BuildMask.input_properties:type_name -> structmask.StructMask
+	33, // 40: buildbucket.v2.BuildMask.output_properties:type_name -> structmask.StructMask
+	33, // 41: buildbucket.v2.BuildMask.requested_properties:type_name -> structmask.StructMask
+	34, // 42: buildbucket.v2.BuildMask.step_status:type_name -> buildbucket.v2.Status
+	21, // 43: buildbucket.v2.BuildPredicate.builder:type_name -> buildbucket.v2.BuilderID
+	34, // 44: buildbucket.v2.BuildPredicate.status:type_name -> buildbucket.v2.Status
+	27, // 45: buildbucket.v2.BuildPredicate.gerrit_changes:type_name -> buildbucket.v2.GerritChange
+	26, // 46: buildbucket.v2.BuildPredicate.output_gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	28, // 47: buildbucket.v2.BuildPredicate.tags:type_name -> buildbucket.v2.StringPair
+	35, // 48: buildbucket.v2.BuildPredicate.create_time:type_name -> buildbucket.v2.TimeRange
 	12, // 49: buildbucket.v2.BuildPredicate.build:type_name -> buildbucket.v2.BuildRange
-	22, // 50: buildbucket.v2.BuildPredicate.canary:type_name -> buildbucket.v2.Trinary
-	34, // 51: buildbucket.v2.UpdateBuildTaskRequest.task:type_name -> buildbucket.v2.Task
-	0,  // 52: buildbucket.v2.BatchRequest.Request.get_build:type_name -> buildbucket.v2.GetBuildRequest
-	1,  // 53: buildbucket.v2.BatchRequest.Request.search_builds:type_name -> buildbucket.v2.SearchBuildsRequest
-	6,  // 54: buildbucket.v2.BatchRequest.Request.schedule_build:type_name -> buildbucket.v2.ScheduleBuildRequest
-	7,  // 55: buildbucket.v2.BatchRequest.Request.cancel_build:type_name -> buildbucket.v2.CancelBuildRequest
-	21, // 56: buildbucket.v2.BatchResponse.Response.get_build:type_name -> buildbucket.v2.Build
-	2,  // 57: buildbucket.v2.BatchResponse.Response.search_builds:type_name -> buildbucket.v2.SearchBuildsResponse
-	21, // 58: buildbucket.v2.BatchResponse.Response.schedule_build:type_name -> buildbucket.v2.Build
-	21, // 59: buildbucket.v2.BatchResponse.Response.cancel_build:type_name -> buildbucket.v2.Build
-	35, // 60: buildbucket.v2.BatchResponse.Response.error:type_name -> google.rpc.Status
-	0,  // 61: buildbucket.v2.Builds.GetBuild:input_type -> buildbucket.v2.GetBuildRequest
-	1,  // 62: buildbucket.v2.Builds.SearchBuilds:input_type -> buildbucket.v2.SearchBuildsRequest
-	5,  // 63: buildbucket.v2.Builds.UpdateBuild:input_type -> buildbucket.v2.UpdateBuildRequest
-	6,  // 64: buildbucket.v2.Builds.ScheduleBuild:input_type -> buildbucket.v2.ScheduleBuildRequest
-	7,  // 65: buildbucket.v2.Builds.CancelBuild:input_type -> buildbucket.v2.CancelBuildRequest
-	3,  // 66: buildbucket.v2.Builds.Batch:input_type -> buildbucket.v2.BatchRequest
-	8,  // 67: buildbucket.v2.Builds.CreateBuild:input_type -> buildbucket.v2.CreateBuildRequest
-	9,  // 68: buildbucket.v2.Builds.SynthesizeBuild:input_type -> buildbucket.v2.SynthesizeBuildRequest
-	13, // 69: buildbucket.v2.Builds.UpdateBuildTask:input_type -> buildbucket.v2.UpdateBuildTaskRequest
-	21, // 70: buildbucket.v2.Builds.GetBuild:output_type -> buildbucket.v2.Build
-	2,  // 71: buildbucket.v2.Builds.SearchBuilds:output_type -> buildbucket.v2.SearchBuildsResponse
-	21, // 72: buildbucket.v2.Builds.UpdateBuild:output_type -> buildbucket.v2.Build
-	21, // 73: buildbucket.v2.Builds.ScheduleBuild:output_type -> buildbucket.v2.Build
-	21, // 74: buildbucket.v2.Builds.CancelBuild:output_type -> buildbucket.v2.Build
-	4,  // 75: buildbucket.v2.Builds.Batch:output_type -> buildbucket.v2.BatchResponse
-	21, // 76: buildbucket.v2.Builds.CreateBuild:output_type -> buildbucket.v2.Build
-	21, // 77: buildbucket.v2.Builds.SynthesizeBuild:output_type -> buildbucket.v2.Build
-	34, // 78: buildbucket.v2.Builds.UpdateBuildTask:output_type -> buildbucket.v2.Task
-	70, // [70:79] is the sub-list for method output_type
-	61, // [61:70] is the sub-list for method input_type
-	61, // [61:61] is the sub-list for extension type_name
-	61, // [61:61] is the sub-list for extension extendee
-	0,  // [0:61] is the sub-list for field type_name
+	24, // 50: buildbucket.v2.BuildPredicate.canary:type_name -> buildbucket.v2.Trinary
+	36, // 51: buildbucket.v2.RegisterBuildTaskRequest.task:type_name -> buildbucket.v2.Task
+	36, // 52: buildbucket.v2.UpdateBuildTaskRequest.task:type_name -> buildbucket.v2.Task
+	0,  // 53: buildbucket.v2.BatchRequest.Request.get_build:type_name -> buildbucket.v2.GetBuildRequest
+	1,  // 54: buildbucket.v2.BatchRequest.Request.search_builds:type_name -> buildbucket.v2.SearchBuildsRequest
+	6,  // 55: buildbucket.v2.BatchRequest.Request.schedule_build:type_name -> buildbucket.v2.ScheduleBuildRequest
+	7,  // 56: buildbucket.v2.BatchRequest.Request.cancel_build:type_name -> buildbucket.v2.CancelBuildRequest
+	23, // 57: buildbucket.v2.BatchResponse.Response.get_build:type_name -> buildbucket.v2.Build
+	2,  // 58: buildbucket.v2.BatchResponse.Response.search_builds:type_name -> buildbucket.v2.SearchBuildsResponse
+	23, // 59: buildbucket.v2.BatchResponse.Response.schedule_build:type_name -> buildbucket.v2.Build
+	23, // 60: buildbucket.v2.BatchResponse.Response.cancel_build:type_name -> buildbucket.v2.Build
+	37, // 61: buildbucket.v2.BatchResponse.Response.error:type_name -> google.rpc.Status
+	0,  // 62: buildbucket.v2.Builds.GetBuild:input_type -> buildbucket.v2.GetBuildRequest
+	1,  // 63: buildbucket.v2.Builds.SearchBuilds:input_type -> buildbucket.v2.SearchBuildsRequest
+	5,  // 64: buildbucket.v2.Builds.UpdateBuild:input_type -> buildbucket.v2.UpdateBuildRequest
+	6,  // 65: buildbucket.v2.Builds.ScheduleBuild:input_type -> buildbucket.v2.ScheduleBuildRequest
+	7,  // 66: buildbucket.v2.Builds.CancelBuild:input_type -> buildbucket.v2.CancelBuildRequest
+	3,  // 67: buildbucket.v2.Builds.Batch:input_type -> buildbucket.v2.BatchRequest
+	8,  // 68: buildbucket.v2.Builds.CreateBuild:input_type -> buildbucket.v2.CreateBuildRequest
+	9,  // 69: buildbucket.v2.Builds.SynthesizeBuild:input_type -> buildbucket.v2.SynthesizeBuildRequest
+	13, // 70: buildbucket.v2.Builds.RegisterBuildTask:input_type -> buildbucket.v2.RegisterBuildTaskRequest
+	15, // 71: buildbucket.v2.Builds.UpdateBuildTask:input_type -> buildbucket.v2.UpdateBuildTaskRequest
+	23, // 72: buildbucket.v2.Builds.GetBuild:output_type -> buildbucket.v2.Build
+	2,  // 73: buildbucket.v2.Builds.SearchBuilds:output_type -> buildbucket.v2.SearchBuildsResponse
+	23, // 74: buildbucket.v2.Builds.UpdateBuild:output_type -> buildbucket.v2.Build
+	23, // 75: buildbucket.v2.Builds.ScheduleBuild:output_type -> buildbucket.v2.Build
+	23, // 76: buildbucket.v2.Builds.CancelBuild:output_type -> buildbucket.v2.Build
+	4,  // 77: buildbucket.v2.Builds.Batch:output_type -> buildbucket.v2.BatchResponse
+	23, // 78: buildbucket.v2.Builds.CreateBuild:output_type -> buildbucket.v2.Build
+	23, // 79: buildbucket.v2.Builds.SynthesizeBuild:output_type -> buildbucket.v2.Build
+	14, // 80: buildbucket.v2.Builds.RegisterBuildTask:output_type -> buildbucket.v2.RegisterBuildTaskResponse
+	36, // 81: buildbucket.v2.Builds.UpdateBuildTask:output_type -> buildbucket.v2.Task
+	72, // [72:82] is the sub-list for method output_type
+	62, // [62:72] is the sub-list for method input_type
+	62, // [62:62] is the sub-list for extension type_name
+	62, // [62:62] is the sub-list for extension extendee
+	0,  // [0:62] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_init() }
@@ -2537,7 +2680,7 @@ func file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UpdateBuildTaskRequest); i {
+			switch v := v.(*RegisterBuildTaskRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2549,7 +2692,7 @@ func file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchRequest_Request); i {
+			switch v := v.(*RegisterBuildTaskResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2561,7 +2704,19 @@ func file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchResponse_Response); i {
+			switch v := v.(*UpdateBuildTaskRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BatchRequest_Request); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2573,6 +2728,18 @@ func file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BatchResponse_Response); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ScheduleBuildRequest_Swarming); i {
 			case 0:
 				return &v.state
@@ -2585,13 +2752,13 @@ func file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_init() {
 			}
 		}
 	}
-	file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[14].OneofWrappers = []interface{}{
+	file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[16].OneofWrappers = []interface{}{
 		(*BatchRequest_Request_GetBuild)(nil),
 		(*BatchRequest_Request_SearchBuilds)(nil),
 		(*BatchRequest_Request_ScheduleBuild)(nil),
 		(*BatchRequest_Request_CancelBuild)(nil),
 	}
-	file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[15].OneofWrappers = []interface{}{
+	file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_msgTypes[17].OneofWrappers = []interface{}{
 		(*BatchResponse_Response_GetBuild)(nil),
 		(*BatchResponse_Response_SearchBuilds)(nil),
 		(*BatchResponse_Response_ScheduleBuild)(nil),
@@ -2604,7 +2771,7 @@ func file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -2691,18 +2858,21 @@ type BuildsClient interface {
 	//
 	// This RPC is exclusively for generating led builds.
 	SynthesizeBuild(ctx context.Context, in *SynthesizeBuildRequest, opts ...grpc.CallOption) (*Build, error)
+	// Register a TaskBackend task to the build it runs.
+	//
+	// RPC metadata must include "x-buildbucket-token" key with a
+	// REGISTER_TASK token generated by the server when it called RunTask
+	// on the backend.
+	RegisterBuildTask(ctx context.Context, in *RegisterBuildTaskRequest, opts ...grpc.CallOption) (*RegisterBuildTaskResponse, error)
 	// UpdateBuildTask allows the Backend to preemptively update the
 	// status of the task (e.g. if it knows that the task has crashed, etc.).
 	//
-	// The Backend must supply the RunTaskRequest.backend_token supplied during
-	// TaskBackend.RunTask() as the header:
-	//
-	//	X-Buildbucket-Backend-Token
+	// RPC metadata must include "x-buildbucket-token" key with a TASK token
+	// returned by RegisterBuildTask.
 	//
 	// Buildbucket will validate this against the build ID supplied in
-	// the UpdateBuildTaskRequest and verify task ID in the request matches the task
-	// ID associated with the build (if any). It will establish this association if
-	// the build is not associated with a task yet.
+	// the UpdateBuildTaskRequest and verify task ID in the request matches the
+	// task ID associated with the build.
 	UpdateBuildTask(ctx context.Context, in *UpdateBuildTaskRequest, opts ...grpc.CallOption) (*Task, error)
 }
 type buildsPRPCClient struct {
@@ -2779,6 +2949,15 @@ func (c *buildsPRPCClient) CreateBuild(ctx context.Context, in *CreateBuildReque
 func (c *buildsPRPCClient) SynthesizeBuild(ctx context.Context, in *SynthesizeBuildRequest, opts ...grpc.CallOption) (*Build, error) {
 	out := new(Build)
 	err := c.client.Call(ctx, "buildbucket.v2.Builds", "SynthesizeBuild", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *buildsPRPCClient) RegisterBuildTask(ctx context.Context, in *RegisterBuildTaskRequest, opts ...grpc.CallOption) (*RegisterBuildTaskResponse, error) {
+	out := new(RegisterBuildTaskResponse)
+	err := c.client.Call(ctx, "buildbucket.v2.Builds", "RegisterBuildTask", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2874,6 +3053,15 @@ func (c *buildsClient) SynthesizeBuild(ctx context.Context, in *SynthesizeBuildR
 	return out, nil
 }
 
+func (c *buildsClient) RegisterBuildTask(ctx context.Context, in *RegisterBuildTaskRequest, opts ...grpc.CallOption) (*RegisterBuildTaskResponse, error) {
+	out := new(RegisterBuildTaskResponse)
+	err := c.cc.Invoke(ctx, "/buildbucket.v2.Builds/RegisterBuildTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *buildsClient) UpdateBuildTask(ctx context.Context, in *UpdateBuildTaskRequest, opts ...grpc.CallOption) (*Task, error) {
 	out := new(Task)
 	err := c.cc.Invoke(ctx, "/buildbucket.v2.Builds/UpdateBuildTask", in, out, opts...)
@@ -2946,18 +3134,21 @@ type BuildsServer interface {
 	//
 	// This RPC is exclusively for generating led builds.
 	SynthesizeBuild(context.Context, *SynthesizeBuildRequest) (*Build, error)
+	// Register a TaskBackend task to the build it runs.
+	//
+	// RPC metadata must include "x-buildbucket-token" key with a
+	// REGISTER_TASK token generated by the server when it called RunTask
+	// on the backend.
+	RegisterBuildTask(context.Context, *RegisterBuildTaskRequest) (*RegisterBuildTaskResponse, error)
 	// UpdateBuildTask allows the Backend to preemptively update the
 	// status of the task (e.g. if it knows that the task has crashed, etc.).
 	//
-	// The Backend must supply the RunTaskRequest.backend_token supplied during
-	// TaskBackend.RunTask() as the header:
-	//
-	//	X-Buildbucket-Backend-Token
+	// RPC metadata must include "x-buildbucket-token" key with a TASK token
+	// returned by RegisterBuildTask.
 	//
 	// Buildbucket will validate this against the build ID supplied in
-	// the UpdateBuildTaskRequest and verify task ID in the request matches the task
-	// ID associated with the build (if any). It will establish this association if
-	// the build is not associated with a task yet.
+	// the UpdateBuildTaskRequest and verify task ID in the request matches the
+	// task ID associated with the build.
 	UpdateBuildTask(context.Context, *UpdateBuildTaskRequest) (*Task, error)
 }
 
@@ -2988,6 +3179,9 @@ func (*UnimplementedBuildsServer) CreateBuild(context.Context, *CreateBuildReque
 }
 func (*UnimplementedBuildsServer) SynthesizeBuild(context.Context, *SynthesizeBuildRequest) (*Build, error) {
 	return nil, status1.Errorf(codes.Unimplemented, "method SynthesizeBuild not implemented")
+}
+func (*UnimplementedBuildsServer) RegisterBuildTask(context.Context, *RegisterBuildTaskRequest) (*RegisterBuildTaskResponse, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method RegisterBuildTask not implemented")
 }
 func (*UnimplementedBuildsServer) UpdateBuildTask(context.Context, *UpdateBuildTaskRequest) (*Task, error) {
 	return nil, status1.Errorf(codes.Unimplemented, "method UpdateBuildTask not implemented")
@@ -3141,6 +3335,24 @@ func _Builds_SynthesizeBuild_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Builds_RegisterBuildTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterBuildTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BuildsServer).RegisterBuildTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buildbucket.v2.Builds/RegisterBuildTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BuildsServer).RegisterBuildTask(ctx, req.(*RegisterBuildTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Builds_UpdateBuildTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateBuildTaskRequest)
 	if err := dec(in); err != nil {
@@ -3194,6 +3406,10 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SynthesizeBuild",
 			Handler:    _Builds_SynthesizeBuild_Handler,
+		},
+		{
+			MethodName: "RegisterBuildTask",
+			Handler:    _Builds_RegisterBuildTask_Handler,
 		},
 		{
 			MethodName: "UpdateBuildTask",
