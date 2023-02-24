@@ -20,6 +20,7 @@ package botsrv
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -77,16 +78,21 @@ type Server struct {
 }
 
 // New constructs new Server.
-func New(ctx context.Context, r *router.Router, hmacSecret *hmactoken.Secret) *Server {
+func New(ctx context.Context, r *router.Router, projectID string, hmacSecret *hmactoken.Secret) *Server {
+	gaeAppDomain := fmt.Sprintf("%s.appspot.com", projectID)
 	return &Server{
 		router: r,
 		middlewares: router.MiddlewareChain{
 			// All supported bot authentication schemes. The first matching one wins.
 			auth.Authenticate(
-				// This checks "X-Luci-Gce-Vm-Token" header if present.
+				// This checks "X-Luci-Gce-Vm-Token" header if present. The token
+				// audience should be `[https://][<prefix>-dot-]app.appspot.com`.
 				&openid.GoogleComputeAuthMethod{
-					Header:        "X-Luci-Gce-Vm-Token",
-					AudienceCheck: openid.AudienceMatchesHost,
+					Header: "X-Luci-Gce-Vm-Token",
+					AudienceCheck: func(_ context.Context, _ auth.RequestMetadata, aud string) (bool, error) {
+						aud = strings.TrimPrefix(aud, "https://")
+						return aud == gaeAppDomain || strings.HasSuffix(aud, "-dot-"+gaeAppDomain), nil
+					},
 				},
 				// This checks "X-Luci-Machine-Token" header if present.
 				&machine.MachineTokenAuthMethod{},

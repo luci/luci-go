@@ -64,7 +64,7 @@ func main() {
 			return err
 		}
 
-		botSrv := botsrv.New(srv.Context, srv.Routes, tokenSecret)
+		botSrv := botsrv.New(srv.Context, srv.Routes, srv.Options.CloudProject, tokenSecret)
 
 		// Endpoints hit by bots.
 		rbeSessions := rbe.NewSessionServer(srv.Context, rbeConn, tokenSecret)
