@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -276,16 +275,16 @@ func consolePreview(c context.Context, summaries *ui.BuilderSummaryGroup, def *c
 	}, nil
 }
 
-var treeStatusCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(256),
-	GlobalNamespace: "tree-status",
-	Marshal:         json.Marshal,
+var treeStatusCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 256,
+	GlobalNamespace:      "tree-status",
+	Marshal:              json.Marshal,
 	Unmarshal: func(blob []byte) (any, error) {
 		treeStatus := &ui.TreeStatus{}
 		err := json.Unmarshal(blob, treeStatus)
 		return treeStatus, err
 	},
-}
+})
 
 // getTreeStatus returns the current tree status from the chromium-status app.
 // This never errors, instead it constructs a fake purple TreeStatus
@@ -318,16 +317,16 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 	return status.(*ui.TreeStatus)
 }
 
-var oncallDataCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(256),
-	GlobalNamespace: "oncall-data",
-	Marshal:         json.Marshal,
+var oncallDataCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 256,
+	GlobalNamespace:      "oncall-data",
+	Marshal:              json.Marshal,
 	Unmarshal: func(blob []byte) (any, error) {
 		oncall := &ui.Oncall{}
 		err := json.Unmarshal(blob, oncall)
 		return oncall, err
 	},
-}
+})
 
 // getOncallData fetches oncall data and caches it for 10 minutes.
 func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {

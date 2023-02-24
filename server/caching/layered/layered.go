@@ -33,26 +33,48 @@ import (
 // produces an item that expires sooner than the requested MinTTL.
 var ErrCantSatisfyMinTTL = errors.New("new item produced by the factory has insufficient TTL")
 
-// Cache implements a cache of serializable objects on top of process and
-// global caches.
+// RegisterCache registers a layered cache used by a process.
 //
-// If the global cache is not available or fails, degrades to using only process
-// cache.
-//
-// Since global cache errors are ignored, gives no guarantees of consistency or
-// item uniqueness. Thus supposed to be used only when caching results of
-// computations without side effects.
-type Cache struct {
-	// ProcessLRUCache is a handle to a process LRU cache that holds the data.
-	ProcessLRUCache caching.LRUHandle
+// It must be called during init time to declare an intent that a package
+// wants to use an LRU cache. The actual local cache itself will be stored in
+// ProcessCacheData inside a context, see caching.RegisterLRUCache.
+func RegisterCache(p Parameters) Cache {
+	if p.GlobalNamespace == "" {
+		panic("empty namespace is forbidden, please specify GlobalNamespace")
+	}
+	if p.Marshal == nil {
+		panic("Marshal is required")
+	}
+	if p.Unmarshal == nil {
+		panic("Unmarshal is required")
+	}
+	return Cache{
+		procCache: caching.RegisterLRUCache(p.ProcessCacheCapacity),
+		params:    p,
+	}
+}
+
+// Parameters describes parameters of a layered cache.
+type Parameters struct {
+	// ProcessCacheCapacity is a maximum number of items to keep in the process
+	// memory.
+	//
+	// If 0, will be unlimited.
+	ProcessCacheCapacity int
 
 	// GlobalNamespace is a global cache namespace to use for the data.
+	//
+	// Must be set.
 	GlobalNamespace string
 
 	// Marshal converts an item being cached to a byte blob.
+	//
+	// Must be set.
 	Marshal func(item any) ([]byte, error)
 
 	// Unmarshal takes output of Marshal and converts it to an item to return.
+	//
+	// Must be set.
 	Unmarshal func(blob []byte) (any, error)
 
 	// AllowNoProcessCacheFallback is true to allow bypassing all the caching if
@@ -63,6 +85,22 @@ type Cache struct {
 	// the item. If AllowNoProcessCacheFallback is false, it would instead
 	// return caching.ErrNoProcessCache.
 	AllowNoProcessCacheFallback bool
+}
+
+// Cache implements a cache of serializable objects on top of process and
+// global caches.
+//
+// If the global cache is not available or fails, degrades to using only process
+// cache.
+//
+// Since global cache errors are ignored, gives no guarantees of consistency or
+// item uniqueness. Thus supposed to be used only when caching results of
+// computations without side effects.
+type Cache struct {
+	// procCache is a handle to a process LRU cache that holds the data.
+	procCache caching.LRUHandle
+	// params are Parameters passed to Register(...) when creating the cache.
+	params Parameters
 }
 
 // Option is a base interface of options for GetOrCreate call.
@@ -112,20 +150,16 @@ func WithRandomizedExpiration(threshold time.Duration) Option {
 // Expiration time is used with seconds precision. Zero expiration time means
 // the item doesn't expire on its own.
 func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts ...Option) (any, error) {
-	if c.GlobalNamespace == "" {
-		panic("empty namespace is forbidden, please specify GlobalNamespace")
-	}
-
 	o := options{}
 	for _, opt := range opts {
 		opt.apply(&o)
 	}
 
 	now := clock.Now(ctx)
-	lru := c.ProcessLRUCache.LRU(ctx)
+	lru := c.procCache.LRU(ctx)
 
 	if lru == nil {
-		if !c.AllowNoProcessCacheFallback {
+		if !c.params.AllowNoProcessCacheFallback {
 			return nil, caching.ErrNoProcessCache
 		}
 		item, _, err := fn()
@@ -195,6 +229,16 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 		return nil, err
 	}
 	return v.(*itemWithExp).val, nil
+}
+
+// CachedLocally returns the number of items stored in the local process memory.
+func (c *Cache) CachedLocally(ctx context.Context) int {
+	return c.procCache.LRU(ctx).Len()
+}
+
+// Parameters returns the parameters the cache was created with.
+func (c *Cache) Parameters() Parameters {
+	return c.params
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -281,7 +325,7 @@ func (i *itemWithExp) expiration(now time.Time) time.Duration {
 // If the global cache is not available or the cached item there is broken
 // returns nil. Logs errors inside.
 func (c *Cache) maybeFetchItem(ctx context.Context, key string) *itemWithExp {
-	g := caching.GlobalCache(ctx, c.GlobalNamespace)
+	g := caching.GlobalCache(ctx, c.params.GlobalNamespace)
 	if g == nil {
 		return nil
 	}
@@ -309,7 +353,7 @@ func (c *Cache) maybeFetchItem(ctx context.Context, key string) *itemWithExp {
 //
 // Global cache errors are logged and ignored.
 func (c *Cache) maybeStoreItem(ctx context.Context, key string, item *itemWithExp, now time.Time) error {
-	g := caching.GlobalCache(ctx, c.GlobalNamespace)
+	g := caching.GlobalCache(ctx, c.params.GlobalNamespace)
 	if g == nil {
 		return nil
 	}
@@ -327,7 +371,7 @@ func (c *Cache) maybeStoreItem(ctx context.Context, key string, item *itemWithEx
 
 // serializeItem packs item and its expiration time into a byte blob.
 func (c *Cache) serializeItem(item *itemWithExp) ([]byte, error) {
-	blob, err := c.Marshal(item.val)
+	blob, err := c.params.Marshal(item.val)
 	if err != nil {
 		return nil, err
 	}
@@ -360,6 +404,6 @@ func (c *Cache) deserializeItem(blob []byte) (item *itemWithExp, err error) {
 	if deadline != 0 {
 		item.exp = time.Unix(int64(deadline), 0)
 	}
-	item.val, err = c.Unmarshal(blob[9:])
+	item.val, err = c.params.Unmarshal(blob[9:])
 	return
 }

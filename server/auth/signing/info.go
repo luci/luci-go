@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
@@ -32,16 +31,16 @@ import (
 const infoCacheNamespace = "__luciauth__.signing.info"
 
 // URL string => *ServiceInfo.
-var infoCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(256),
-	GlobalNamespace: infoCacheNamespace,
-	Marshal:         json.Marshal, // marshals *ServiceInfo
+var infoCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 256,
+	GlobalNamespace:      infoCacheNamespace,
+	Marshal:              json.Marshal, // marshals *ServiceInfo
 	Unmarshal: func(blob []byte) (any, error) {
 		out := &ServiceInfo{}
 		err := json.Unmarshal(blob, out)
 		return out, err
 	},
-}
+})
 
 // ServiceInfo describes identity of some service.
 //

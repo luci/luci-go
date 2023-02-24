@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/delegation/messages"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
 
@@ -136,7 +135,7 @@ type delegationTokenMinterClient interface {
 var delegationTokenCache = newTokenCache(tokenCacheConfig{
 	Kind:                         "delegation",
 	Version:                      7,
-	ProcessLRUCache:              caching.RegisterLRUCache(8192),
+	ProcessCacheCapacity:         8192,
 	ExpiryRandomizationThreshold: MaxDelegationTokenTTL / 10, // 10%
 })
 

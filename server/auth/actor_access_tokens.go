@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/server/caching"
 )
 
 // MintAccessTokenParams is passed to MintAccessTokenForServiceAccount.
@@ -52,7 +51,7 @@ type MintAccessTokenParams struct {
 var actorAccessTokenCache = newTokenCache(tokenCacheConfig{
 	Kind:                         "as_actor_access_tok",
 	Version:                      1,
-	ProcessLRUCache:              caching.RegisterLRUCache(8192),
+	ProcessCacheCapacity:         8192,
 	ExpiryRandomizationThreshold: 5 * time.Minute, // ~10% of regular 1h expiration
 })
 

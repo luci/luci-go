@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/tq"
 
@@ -68,16 +67,16 @@ type cipdPackageDetails struct {
 	Hash string `json:"hash,omitempty"`
 }
 
-var cipdDescribeBootstrapBundleCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(1000),
-	GlobalNamespace: "cipd-describeBootstrapBundle-v1",
-	Marshal:         json.Marshal,
+var cipdDescribeBootstrapBundleCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 1000,
+	GlobalNamespace:      "cipd-describeBootstrapBundle-v1",
+	Marshal:              json.Marshal,
 	Unmarshal: func(blob []byte) (any, error) {
 		res := map[string]*cipdPackageDetails{}
 		err := json.Unmarshal(blob, &res)
 		return res, err
 	},
-}
+})
 
 type MockTaskBackendClientKey struct{}
 

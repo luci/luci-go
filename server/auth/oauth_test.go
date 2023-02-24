@@ -51,7 +51,7 @@ func TestGoogleOAuth2Method(t *testing.T) {
 	Convey("with mock backend", t, func(c C) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
-			oauthValidationCache.GlobalNamespace: &cachingtest.BlobCache{LRU: lru.New(0)},
+			oauthValidationCache.Parameters().GlobalNamespace: &cachingtest.BlobCache{LRU: lru.New(0)},
 		})
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 

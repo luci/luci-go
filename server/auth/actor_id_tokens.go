@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/server/caching"
 )
 
 // MintIDTokenParams is passed to MintIDTokenForServiceAccount.
@@ -53,7 +52,7 @@ type MintIDTokenParams struct {
 var actorIDTokenCache = newTokenCache(tokenCacheConfig{
 	Kind:                         "as_actor_id_tok",
 	Version:                      1,
-	ProcessLRUCache:              caching.RegisterLRUCache(8192),
+	ProcessCacheCapacity:         8192,
 	ExpiryRandomizationThreshold: 5 * time.Minute, // ~10% of regular 1h expiration
 })
 

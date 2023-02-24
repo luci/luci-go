@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
@@ -53,16 +52,16 @@ func (i *gsObjInfo) Exists() bool {
 }
 
 // GS path (string) => details about the file at that path (gsObjInfo).
-var signedURLsCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(4096),
-	GlobalNamespace: "signed_gs_urls_v2",
-	Marshal:         json.Marshal,
+var signedURLsCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 4096,
+	GlobalNamespace:      "signed_gs_urls_v2",
+	Marshal:              json.Marshal,
 	Unmarshal: func(blob []byte) (any, error) {
 		out := &gsObjInfo{}
 		err := json.Unmarshal(blob, out)
 		return out, err
 	},
-}
+})
 
 // getSignedURL returns a signed URL that can be used to fetch the given file
 // as well as the size of that file in bytes.

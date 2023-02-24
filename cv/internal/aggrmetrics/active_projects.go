@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
@@ -44,14 +43,14 @@ func activeProjects(ctx context.Context) ([]string, error) {
 
 // activeProjectsCache caches active projects to avoid hammering Datastore on
 // something which doesn't change very often.
-var activeProjectsCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(1),
-	GlobalNamespace: "aggrmetrics_active_projects",
-	Marshal:         json.Marshal,
+var activeProjectsCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 1,
+	GlobalNamespace:      "aggrmetrics_active_projects",
+	Marshal:              json.Marshal,
 	Unmarshal: func(blob []byte) (any, error) {
 		// There are ~100 active LUCI projects.
 		out := make([]string, 0, 100)
 		err := json.Unmarshal(blob, &out)
 		return out, err
 	},
-}
+})

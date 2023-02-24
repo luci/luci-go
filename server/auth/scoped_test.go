@@ -88,7 +88,7 @@ func TestMintServiceOAuthToken(t *testing.T) {
 			})
 
 			// Cached now.
-			So(scopedTokenCache.lc.ProcessLRUCache.LRU(ctx).Len(), ShouldEqual, 1)
+			So(scopedTokenCache.lc.CachedLocally(ctx), ShouldEqual, 1)
 
 			// On subsequence request the cached token is used.
 			mockedClient.response.AccessToken = "another token"

@@ -25,7 +25,6 @@ import (
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/milo/common"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
@@ -51,16 +50,16 @@ func (p *implementation) CLEmail(c context.Context, host string, changeNumber in
 	return
 }
 
-var gerritChangeInfoCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(4096),
-	GlobalNamespace: "gerrit-change-info",
-	Marshal:         json.Marshal,
+var gerritChangeInfoCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 4096,
+	GlobalNamespace:      "gerrit-change-info",
+	Marshal:              json.Marshal,
 	Unmarshal: func(blob []byte) (any, error) {
 		changeInfo := &gerritpb.ChangeInfo{}
 		err := json.Unmarshal(blob, changeInfo)
 		return changeInfo, err
 	},
-}
+})
 
 // clEmailAndProjectNoACLs fetches and caches change owner email and project.
 //

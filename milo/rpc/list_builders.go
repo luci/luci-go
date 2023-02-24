@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
@@ -55,16 +54,16 @@ var listBuildersPageSize = PageSizeLimiter{
 	Default: 100,
 }
 
-var buildbucketBuildersCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(64),
-	GlobalNamespace: "buildbucket-builders-v4",
-	Marshal:         json.Marshal,
+var buildbucketBuildersCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 64,
+	GlobalNamespace:      "buildbucket-builders-v4",
+	Marshal:              json.Marshal,
 	Unmarshal: func(blob []byte) (any, error) {
 		res := make([]*buildbucketpb.BuilderID, 0)
 		err := json.Unmarshal(blob, &res)
 		return res, err
 	},
-}
+})
 
 // ListBuilders implements milopb.MiloInternal service
 func (s *MiloInternalService) ListBuilders(ctx context.Context, req *milopb.ListBuildersRequest) (_ *milopb.ListBuildersResponse, err error) {

@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
@@ -46,8 +45,8 @@ type tokenCacheConfig struct {
 	// just become inaccessible and eventually will be evicted from the cache).
 	Version int
 
-	// ProcessLRUCache is a handle to a process LRU cache that holds the tokens.
-	ProcessLRUCache caching.LRUHandle
+	// ProcessCacheCapacity is capacity of a process cache that holds the tokens.
+	ProcessCacheCapacity int
 
 	// ExpiryRandomizationThreshold defines a threshold for item expiration after
 	// which the randomized early expiration kick in.
@@ -68,16 +67,16 @@ type tokenCache struct {
 func newTokenCache(cfg tokenCacheConfig) *tokenCache {
 	return &tokenCache{
 		cfg: cfg,
-		lc: layered.Cache{
-			ProcessLRUCache: cfg.ProcessLRUCache,
-			GlobalNamespace: globalCacheNamespace,
-			Marshal:         json.Marshal, // marshals *cachedToken
+		lc: layered.RegisterCache(layered.Parameters{
+			ProcessCacheCapacity: cfg.ProcessCacheCapacity,
+			GlobalNamespace:      globalCacheNamespace,
+			Marshal:              json.Marshal, // marshals *cachedToken
 			Unmarshal: func(blob []byte) (any, error) {
 				out := &cachedToken{}
 				err := json.Unmarshal(blob, out)
 				return out, err
 			},
-		},
+		}),
 	}
 }
 

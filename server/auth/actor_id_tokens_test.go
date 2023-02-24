@@ -73,7 +73,7 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 		So(tok, ShouldResemble, token1)
 
 		// Cached now.
-		So(actorIDTokenCache.lc.ProcessLRUCache.LRU(ctx).Len(), ShouldEqual, 1)
+		So(actorIDTokenCache.lc.CachedLocally(ctx), ShouldEqual, 1)
 
 		// On subsequence request the cached token is used.
 		returnedToken = token2

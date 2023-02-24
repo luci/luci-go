@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -33,16 +32,16 @@ const (
 )
 
 // legacyCQStatusHostCache caches CQ status hosts per LUCI project.
-var legacyCQStatusHostCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(100),
-	GlobalNamespace: "acls_legacy_cqstatus_v1",
+var legacyCQStatusHostCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 100,
+	GlobalNamespace:      "acls_legacy_cqstatus_v1",
 	Marshal: func(host any) ([]byte, error) {
 		return []byte(host.(string)), nil
 	},
 	Unmarshal: func(blob []byte) (any, error) {
 		return string(blob), nil
 	},
-}
+})
 
 // checkLegacyCQStatusAccess checks if the calling user has access to the Runs
 // of the given LUCI project via the legacy CQ status app.

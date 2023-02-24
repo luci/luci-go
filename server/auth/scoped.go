@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 )
@@ -77,7 +76,7 @@ type ProjectTokenParams struct {
 var scopedTokenCache = newTokenCache(tokenCacheConfig{
 	Kind:                         "scoped",
 	Version:                      2,
-	ProcessLRUCache:              caching.RegisterLRUCache(8192),
+	ProcessCacheCapacity:         8192,
 	ExpiryRandomizationThreshold: MaxScopedTokenTTL / 10, // 10%
 })
 

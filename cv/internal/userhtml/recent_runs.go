@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -206,16 +205,16 @@ type runWithExternalCLs struct {
 	ExternalCLs []changelist.ExternalID
 }
 
-var tokenCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(1024),
-	GlobalNamespace: "recent_cv_runs_page_token_cache",
+var tokenCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 1024,
+	GlobalNamespace:      "recent_cv_runs_page_token_cache",
 	Marshal: func(item any) ([]byte, error) {
 		return []byte(item.(string)), nil
 	},
 	Unmarshal: func(blob []byte) (any, error) {
 		return string(blob), nil
 	},
-}
+})
 
 var tokenExp = 24 * time.Hour
 

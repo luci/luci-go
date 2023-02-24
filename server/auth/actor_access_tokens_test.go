@@ -76,7 +76,7 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		})
 
 		// Cached now.
-		So(actorAccessTokenCache.lc.ProcessLRUCache.LRU(ctx).Len(), ShouldEqual, 1)
+		So(actorAccessTokenCache.lc.CachedLocally(ctx), ShouldEqual, 1)
 
 		// On subsequence request the cached token is used.
 		returnedToken = "token2"

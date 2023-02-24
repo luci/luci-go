@@ -30,7 +30,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var testCache = caching.RegisterLRUCache(8)
+var testCache = newTokenCache(tokenCacheConfig{
+	Kind:                 "testing",
+	ProcessCacheCapacity: 9,
+})
 
 func TestTokenCache(t *testing.T) {
 	t.Parallel()
@@ -45,11 +48,6 @@ func TestTokenCache(t *testing.T) {
 			globalCacheNamespace: global,
 		})
 
-		cache := newTokenCache(tokenCacheConfig{
-			Kind:            "testing",
-			ProcessLRUCache: testCache,
-		})
-
 		makeTestToken := func(ctx context.Context, val string) *cachedToken {
 			return &cachedToken{
 				Created:     clock.Now(ctx),
@@ -59,7 +57,7 @@ func TestTokenCache(t *testing.T) {
 		}
 
 		call := func(mocked *cachedToken, err error, label string) (*cachedToken, error, string) {
-			return cache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
+			return testCache.fetchOrMintToken(ctx, &fetchOrMintTokenOp{
 				CacheKey: "key",
 				MinTTL:   10 * time.Minute,
 				Mint: func(ctx context.Context) (*cachedToken, error, string) {

@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -57,9 +56,9 @@ const (
 // Cache "<project>/<bucket>" => wirepb-serialized pb.Bucket.
 //
 // Missing buckets are represented by empty pb.Bucket protos.
-var bucketCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(65536),
-	GlobalNamespace: "bucket_cache_v1",
+var bucketCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 65536,
+	GlobalNamespace:      "bucket_cache_v1",
 	Marshal: func(item any) ([]byte, error) {
 		pb := item.(*pb.Bucket)
 		return proto.Marshal(pb)
@@ -72,7 +71,7 @@ var bucketCache = layered.Cache{
 		return pb, nil
 	},
 	AllowNoProcessCacheFallback: true, // allow skipping cache in tests
-}
+})
 
 // getBucket fetches a cached bucket proto.
 //

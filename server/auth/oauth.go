@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
@@ -63,9 +62,9 @@ type tokenValidationOutcome struct {
 }
 
 // SHA256(access token) => JSON-marshalled *tokenValidationOutcome.
-var oauthValidationCache = layered.Cache{
-	ProcessLRUCache: caching.RegisterLRUCache(65536),
-	GlobalNamespace: "oauth_validation_v1",
+var oauthValidationCache = layered.RegisterCache(layered.Parameters{
+	ProcessCacheCapacity: 65536,
+	GlobalNamespace:      "oauth_validation_v1",
 	Marshal: func(item any) ([]byte, error) {
 		return json.Marshal(item.(*tokenValidationOutcome))
 	},
@@ -76,7 +75,7 @@ var oauthValidationCache = layered.Cache{
 		}
 		return tok, nil
 	},
-}
+})
 
 // GoogleOAuth2Method implements Method via Google's OAuth2 token info endpoint.
 //
