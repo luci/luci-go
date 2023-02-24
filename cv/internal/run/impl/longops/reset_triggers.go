@@ -153,10 +153,6 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 	)
 	eg, ctx := errgroup.WithContext(ctx)
 	requests := op.Op.GetResetTriggers().GetRequests()
-	if len(requests) == 0 {
-		requests = convertFromLegacyRequests(op.Op.GetCancelTriggers().GetRequests())
-	}
-
 	eg.Go(func() (err error) {
 		clids := make(common.CLIDs, len(requests))
 		for i, req := range requests {
@@ -330,37 +326,4 @@ func (c resetRetryIterator) Next(ctx context.Context, err error) time.Duration {
 	default:
 		return retry.Stop
 	}
-}
-
-func convertFromLegacyRequests(legacyReqs []*run.OngoingLongOps_Op_TriggersCancellation_Request) []*run.OngoingLongOps_Op_ResetTriggers_Request {
-	ret := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(legacyReqs))
-	for i, legacyReq := range legacyReqs {
-		ret[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
-			Clid:                 legacyReq.GetClid(),
-			Message:              legacyReq.GetMessage(),
-			Notify:               convertFromLegacyWhoms(legacyReq.GetNotify()),
-			AddToAttention:       convertFromLegacyWhoms(legacyReq.GetAddToAttention()),
-			AddToAttentionReason: legacyReq.GetAddToAttentionReason(),
-		}
-	}
-	return ret
-}
-
-func convertFromLegacyWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom) []run.OngoingLongOps_Op_ResetTriggers_Whom {
-	ret := make([]run.OngoingLongOps_Op_ResetTriggers_Whom, len(whoms))
-	for i, whom := range whoms {
-		switch whom {
-		case run.OngoingLongOps_Op_TriggersCancellation_OWNER:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_OWNER
-		case run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_REVIEWERS
-		case run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS
-		case run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER:
-			ret[i] = run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER
-		default:
-			panic(fmt.Errorf("unrecognized whom [%s] in trigger reset", whom))
-		}
-	}
-	return ret
 }

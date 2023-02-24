@@ -190,7 +190,7 @@ func TestPurgeCL(t *testing.T) {
 			So(fakeCLUpdater.scheduledTasks, ShouldHaveLength, 2)
 			assertPMNotified("op")
 		})
-		Convey("Happy path: cancel both triggers, schedule CL refresh, and notify PM", func() {
+		Convey("Happy path: reset both triggers, schedule CL refresh, and notify PM", func() {
 			So(schedule(), ShouldBeNil)
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.PurgeProjectCLTaskClass))
 

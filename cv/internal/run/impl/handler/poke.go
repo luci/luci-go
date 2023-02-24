@@ -47,7 +47,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 		rs.CloneSubmission()
 		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {
 		case err != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
-			// The tree has been erroring for too long. Cancel the triggers and
+			// The tree has been erroring for too long. Reset the triggers and
 			// fail the run.
 			cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
 			if err != nil {

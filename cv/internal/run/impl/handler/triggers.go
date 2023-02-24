@@ -43,9 +43,6 @@ func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunSta
 		return &Result{State: rs}, nil
 	}
 	runStatus := op.GetResetTriggers().GetRunStatusIfSucceeded()
-	if op.GetCancelTriggers() != nil {
-		runStatus = op.GetCancelTriggers().GetRunStatusIfSucceeded()
-	}
 	switch opCompleted.GetStatus() {
 	case eventpb.LongOpCompleted_EXPIRED:
 		runStatus = run.Status_FAILED
@@ -54,29 +51,15 @@ func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunSta
 		runStatus = run.Status_FAILED
 		fallthrough
 	case eventpb.LongOpCompleted_SUCCEEDED:
-		if opCompleted.GetResetTriggers() != nil {
-			for _, result := range opCompleted.GetResetTriggers().GetResults() {
-				changeURL := changelist.ExternalID(result.GetExternalId()).MustURL()
-				switch result.GetDetail().(type) {
-				case *eventpb.LongOpCompleted_ResetTriggers_Result_SuccessInfo:
-					rs.LogInfofAt(result.GetSuccessInfo().GetResetAt().AsTime(), logEntryLabelResetTriggers, "successfully reset the trigger of change %s", changeURL)
-				case *eventpb.LongOpCompleted_ResetTriggers_Result_FailureInfo:
-					rs.LogInfof(ctx, logEntryLabelResetTriggers, "failed to reset the trigger of change %s. Reason: %s", changeURL, result.GetFailureInfo().GetFailureMessage())
-				default:
-					panic(fmt.Errorf("unexpected long op result status: %s", opCompleted.GetStatus()))
-				}
-			}
-		} else {
-			for _, result := range opCompleted.GetCancelTriggers().GetResults() {
-				changeURL := changelist.ExternalID(result.GetExternalId()).MustURL()
-				switch result.GetDetail().(type) {
-				case *eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo:
-					rs.LogInfofAt(result.GetSuccessInfo().GetCancelledAt().AsTime(), logEntryLabelResetTriggers, "successfully cancelled the trigger of change %s", changeURL)
-				case *eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo:
-					rs.LogInfof(ctx, logEntryLabelResetTriggers, "failed to cancel the trigger of change %s. Reason: %s", changeURL, result.GetFailureInfo().GetFailureMessage())
-				default:
-					panic(fmt.Errorf("unexpected long op result status: %s", opCompleted.GetStatus()))
-				}
+		for _, result := range opCompleted.GetResetTriggers().GetResults() {
+			changeURL := changelist.ExternalID(result.GetExternalId()).MustURL()
+			switch result.GetDetail().(type) {
+			case *eventpb.LongOpCompleted_ResetTriggers_Result_SuccessInfo:
+				rs.LogInfofAt(result.GetSuccessInfo().GetResetAt().AsTime(), logEntryLabelResetTriggers, "successfully reset the trigger of change %s", changeURL)
+			case *eventpb.LongOpCompleted_ResetTriggers_Result_FailureInfo:
+				rs.LogInfof(ctx, logEntryLabelResetTriggers, "failed to reset the trigger of change %s. Reason: %s", changeURL, result.GetFailureInfo().GetFailureMessage())
+			default:
+				panic(fmt.Errorf("unexpected long op result status: %s", opCompleted.GetStatus()))
 			}
 		}
 	default:

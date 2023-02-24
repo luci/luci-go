@@ -42,7 +42,7 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case isCurrentlyResettingTriggers(rs):
 		// It's likely CL is updated when resetting the triggers, defer the process
-		// of CLsUpdated event till triggers cancellation is done.
+		// of CLsUpdated event till resetting the trigger is done.
 		return &Result{State: rs, PreserveEvents: true}, nil
 	case run.IsEnded(status):
 		logging.Debugf(ctx, "skipping OnCLUpdated because Run is %s", status)

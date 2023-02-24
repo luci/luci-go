@@ -256,7 +256,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 		if err != nil {
 			return nil, err
 		}
-		if err := impl.cancelNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
+		if err := impl.resetNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
 			return nil, err
 		}
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
@@ -333,7 +333,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 				return nil, err
 			}
 
-			if err := impl.cancelNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
+			if err := impl.resetNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
 				return nil, err
 			}
 		}
@@ -477,7 +477,7 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	return nil
 }
 
-func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
+func (impl *Impl) resetNotSubmittedCLTriggers(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
 	allCLIDs := common.MakeCLIDs(rs.Submission.GetCls()...)
 	allRunCLs, err := run.LoadRunCLs(ctx, rs.ID, allCLIDs)
 	if err != nil {
@@ -515,7 +515,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, rs *state.Ru
 	case sc.GetClFailures() != nil:
 		var wg sync.WaitGroup
 		errs := make(errors.MultiError, len(allRunCLs))
-		// cancel triggers of CLs that fail to submit.
+		// reset triggers of CLs that fail to submit.
 		messages := make(map[common.CLID]string, len(sc.GetClFailures().GetFailures()))
 		for _, f := range sc.GetClFailures().GetFailures() {
 			messages[common.CLID(f.GetClid())] = f.GetMessage()
@@ -530,7 +530,7 @@ func (impl *Impl) cancelNotSubmittedCLTriggers(ctx context.Context, rs *state.Ru
 				errs[i] = impl.resetCLTriggers(ctx, rs.ID, []*run.RunCL{failedCL}, cg, meta)
 			}()
 		}
-		// Cancel triggers of CLs that CV won't try to submit.
+		// Reset triggers of CLs that CV won't try to submit.
 		var sb strings.Builder
 		// TODO(yiwzhang): Once CV learns how to submit multiple CLs in parallel,
 		// this should be optimized to print out failed CLs that each pending CL

@@ -256,7 +256,7 @@ func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[co
 
 func isCurrentlyResettingTriggers(rs *state.RunState) bool {
 	for _, op := range rs.OngoingLongOps.GetOps() {
-		if op.GetCancelTriggers() != nil || op.GetResetTriggers() != nil {
+		if op.GetResetTriggers() != nil {
 			return true
 		}
 	}

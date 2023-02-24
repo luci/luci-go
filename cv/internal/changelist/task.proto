@@ -26,6 +26,7 @@ import "go.chromium.org/luci/cv/internal/changelist/storage.proto";
 //
 // Queue: "update-cl".
 message UpdateCLTask {
+  reserved 9; // CANCEL_CL_TRIGGER
   string luci_project = 1;
 
   // At least one of internal or external ID must be given.
@@ -44,7 +45,6 @@ message UpdateCLTask {
     RPC_ADMIN = 6;
     RUN_POKE = 7;
     RUN_REMOVAL = 8;
-    CANCEL_CL_TRIGGER = 9 [deprecated = true];
     RESET_CL_TRIGGER = 11;
     UPDATE_CONFIG = 10;
   }

@@ -160,7 +160,7 @@ func TestReset(t *testing.T) {
 				},
 			}
 			err := Reset(ctx, input)
-			So(err, ShouldErrLike, "failed to cancel trigger because CV lost access to this CL")
+			So(err, ShouldErrLike, "failed to reset trigger because CV lost access to this CL")
 			So(ErrResetPreconditionFailedTag.In(err), ShouldBeTrue)
 		})
 
@@ -213,7 +213,7 @@ func TestReset(t *testing.T) {
 
 		Convey("Cancelling NewPatchsetRun", func() {
 			input.Triggers.NewPatchsetRunTrigger = nprTrigger
-			input.Message = "cancelling new patchset run trigger"
+			input.Message = "reset new patchset run trigger"
 
 			cl := &changelist.CL{ID: input.CL.ID}
 			So(datastore.Get(ctx, cl), ShouldBeNil)
