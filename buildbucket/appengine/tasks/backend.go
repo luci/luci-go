@@ -220,6 +220,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		GracePeriod:      gracePeriod,
 		Caches:           caches,
 		AgentArgs:        computeAgentArgs(build.Proto, infra.Proto),
+		Dimensions:       infra.Proto.Backend.GetTaskDimensions(),
 	}
 
 	project := build.Proto.Builder.Project

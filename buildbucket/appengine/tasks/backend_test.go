@@ -356,6 +356,12 @@ func TestCreateBackendTask(t *testing.T) {
 								Target: "swarming:/chromium-swarm-dev",
 							},
 						},
+						TaskDimensions: []*pb.RequestedDimension{
+							{
+								Key:   "dim_key_1",
+								Value: "dim_val_1",
+							},
+						},
 					},
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir: "cache",
@@ -410,6 +416,12 @@ func TestCreateBackendTask(t *testing.T) {
 			})
 			So(req.AgentArgs, ShouldResemble, []string{
 				"-cache-base", "cache"})
+			So(req.Dimensions, ShouldResembleProto, []*pb.RequestedDimension{
+				{
+					Key:   "dim_key_1",
+					Value: "dim_val_1",
+				},
+			})
 		})
 	})
 }
