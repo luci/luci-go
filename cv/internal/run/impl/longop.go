@@ -143,6 +143,13 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 			CLMutator:   rm.clMutator,
 			Concurrency: 8,
 		}
+	case *run.OngoingLongOps_Op_ResetTriggers_:
+		op = &longops.ResetTriggersOp{
+			Base:        opBase,
+			GFactory:    rm.gFactory,
+			CLMutator:   rm.clMutator,
+			Concurrency: 8,
+		}
 	case *run.OngoingLongOps_Op_ExecuteTryjobs:
 		op = &longops.ExecuteTryjobsOp{
 			Base:        opBase,

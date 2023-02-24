@@ -85,27 +85,27 @@ func (op *ResetTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, er
 	op.executeInParallel(ctx)
 
 	longOpStatus := eventpb.LongOpCompleted_SUCCEEDED // be optimistic
-	ct := &eventpb.LongOpCompleted_CancelTriggers{
-		Results: make([]*eventpb.LongOpCompleted_CancelTriggers_Result, len(op.results)),
+	rt := &eventpb.LongOpCompleted_ResetTriggers{
+		Results: make([]*eventpb.LongOpCompleted_ResetTriggers_Result, len(op.results)),
 	}
 	var lastTransErr, lastPermErr error
 	for i, result := range op.results {
 		cl := op.inputs[i].CL
-		ct.Results[i] = &eventpb.LongOpCompleted_CancelTriggers_Result{
+		rt.Results[i] = &eventpb.LongOpCompleted_ResetTriggers_Result{
 			Id:         int64(cl.ID),
 			ExternalId: string(cl.ExternalID),
 		}
 		switch err := result.err; {
 		case err == nil:
-			ct.Results[i].Detail = &eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo{
-				SuccessInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Success{
-					CancelledAt: timestamppb.New(result.resetAt),
+			rt.Results[i].Detail = &eventpb.LongOpCompleted_ResetTriggers_Result_SuccessInfo{
+				SuccessInfo: &eventpb.LongOpCompleted_ResetTriggers_Result_Success{
+					ResetAt: timestamppb.New(result.resetAt),
 				},
 			}
 		default:
 			longOpStatus = eventpb.LongOpCompleted_FAILED
-			ct.Results[i].Detail = &eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo{
-				FailureInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Failure{
+			rt.Results[i].Detail = &eventpb.LongOpCompleted_ResetTriggers_Result_FailureInfo{
+				FailureInfo: &eventpb.LongOpCompleted_ResetTriggers_Result_Failure{
 					FailureMessage: err.Error(),
 				},
 			}
@@ -119,8 +119,8 @@ func (op *ResetTriggersOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, er
 	}
 	ret := &eventpb.LongOpCompleted{
 		Status: longOpStatus,
-		Result: &eventpb.LongOpCompleted_CancelTriggers_{
-			CancelTriggers: ct,
+		Result: &eventpb.LongOpCompleted_ResetTriggers_{
+			ResetTriggers: rt,
 		},
 	}
 	switch ctxErr := ctx.Err(); {
@@ -152,7 +152,11 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 		cfg        *prjcfg.ConfigGroup
 	)
 	eg, ctx := errgroup.WithContext(ctx)
-	requests := op.Op.GetCancelTriggers().GetRequests()
+	requests := op.Op.GetResetTriggers().GetRequests()
+	if len(requests) == 0 {
+		requests = convertFromLegacyRequests(op.Op.GetCancelTriggers().GetRequests())
+	}
+
 	eg.Go(func() (err error) {
 		clids := make(common.CLIDs, len(requests))
 		for i, req := range requests {
@@ -206,17 +210,17 @@ func (op *ResetTriggersOp) loadInputs(ctx context.Context) error {
 	return nil
 }
 
-func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom) gerrit.Whoms {
+func convertToGerritWhoms(whoms []run.OngoingLongOps_Op_ResetTriggers_Whom) gerrit.Whoms {
 	ret := make(gerrit.Whoms, len(whoms))
 	for i, whom := range whoms {
 		switch whom {
-		case run.OngoingLongOps_Op_TriggersCancellation_OWNER:
+		case run.OngoingLongOps_Op_ResetTriggers_OWNER:
 			ret[i] = gerrit.Owner
-		case run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS:
+		case run.OngoingLongOps_Op_ResetTriggers_REVIEWERS:
 			ret[i] = gerrit.Reviewers
-		case run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS:
+		case run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS:
 			ret[i] = gerrit.CQVoters
-		case run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER:
+		case run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER:
 			ret[i] = gerrit.PSUploader
 		default:
 			panic(fmt.Errorf("unrecognized whom [%s] in trigger reset", whom))
@@ -326,4 +330,37 @@ func (c resetRetryIterator) Next(ctx context.Context, err error) time.Duration {
 	default:
 		return retry.Stop
 	}
+}
+
+func convertFromLegacyRequests(legacyReqs []*run.OngoingLongOps_Op_TriggersCancellation_Request) []*run.OngoingLongOps_Op_ResetTriggers_Request {
+	ret := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(legacyReqs))
+	for i, legacyReq := range legacyReqs {
+		ret[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
+			Clid:                 legacyReq.GetClid(),
+			Message:              legacyReq.GetMessage(),
+			Notify:               convertFromLegacyWhoms(legacyReq.GetNotify()),
+			AddToAttention:       convertFromLegacyWhoms(legacyReq.GetAddToAttention()),
+			AddToAttentionReason: legacyReq.GetAddToAttentionReason(),
+		}
+	}
+	return ret
+}
+
+func convertFromLegacyWhoms(whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom) []run.OngoingLongOps_Op_ResetTriggers_Whom {
+	ret := make([]run.OngoingLongOps_Op_ResetTriggers_Whom, len(whoms))
+	for i, whom := range whoms {
+		switch whom {
+		case run.OngoingLongOps_Op_TriggersCancellation_OWNER:
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_OWNER
+		case run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS:
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_REVIEWERS
+		case run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS:
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS
+		case run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER:
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER
+		default:
+			panic(fmt.Errorf("unrecognized whom [%s] in trigger reset", whom))
+		}
+	}
+	return ret
 }

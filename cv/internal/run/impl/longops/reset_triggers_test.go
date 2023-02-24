@@ -106,18 +106,18 @@ func TestResetTriggers(t *testing.T) {
 		}
 
 		makeOp := func(r *run.Run) *ResetTriggersOp {
-			reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, len(r.CLs))
+			reqs := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(r.CLs))
 			for i, clid := range r.CLs {
-				reqs[i] = &run.OngoingLongOps_Op_TriggersCancellation_Request{
+				reqs[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
 					Clid:    int64(clid),
 					Message: fmt.Sprintf("reset message for CL %d", clid),
-					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS,
+					Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+						run.OngoingLongOps_Op_ResetTriggers_OWNER,
+						run.OngoingLongOps_Op_ResetTriggers_REVIEWERS,
 					},
-					AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+						run.OngoingLongOps_Op_ResetTriggers_OWNER,
+						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 					},
 					AddToAttentionReason: fmt.Sprintf("attention reason for CL %d", clid),
 				}
@@ -128,8 +128,8 @@ func TestResetTriggers(t *testing.T) {
 					Op: &run.OngoingLongOps_Op{
 						Deadline:        timestamppb.New(clock.Now(ctx).Add(10000 * time.Hour)), // infinite
 						CancelRequested: false,
-						Work: &run.OngoingLongOps_Op_CancelTriggers{
-							CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
+						Work: &run.OngoingLongOps_Op_ResetTriggers_{
+							ResetTriggers: &run.OngoingLongOps_Op_ResetTriggers{
 								Requests: reqs,
 							},
 						},
@@ -163,14 +163,14 @@ func TestResetTriggers(t *testing.T) {
 				res, err := op.Do(ctx)
 				So(err, ShouldBeNil)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-				results := res.GetCancelTriggers().GetResults()
+				results := res.GetResetTriggers().GetResults()
 				So(results, ShouldHaveLength, clCount)
 				processedCLIDs := make(common.CLIDsSet, clCount)
 				for _, result := range results {
 					So(processedCLIDs.HasI64(result.Id), ShouldBeFalse) // duplicate processing
 					processedCLIDs.AddI64(result.Id)
 					assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
-					So(result.GetSuccessInfo().GetCancelledAt().AsTime(), ShouldHappenOnOrAfter, startTime)
+					So(result.GetSuccessInfo().GetResetAt().AsTime(), ShouldHappenOnOrAfter, startTime)
 				}
 			})
 		}
@@ -204,11 +204,11 @@ func TestResetTriggers(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			results := res.GetCancelTriggers().GetResults()
+			results := res.GetResetTriggers().GetResults()
 			So(results, ShouldHaveLength, len(cis))
 			for i, result := range results {
 				So(result.Id, ShouldEqual, clids[i])
-				So(result.GetSuccessInfo().GetCancelledAt().AsTime(), ShouldHappenAfter, startTime.Add(time.Duration(cis[i].GetNumber())*time.Minute))
+				So(result.GetSuccessInfo().GetResetAt().AsTime(), ShouldHappenAfter, startTime.Add(time.Duration(cis[i].GetNumber())*time.Minute))
 				assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
 			}
 		})
@@ -230,12 +230,12 @@ func TestResetTriggers(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldNotBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
-			results := res.GetCancelTriggers().GetResults()
+			results := res.GetResetTriggers().GetResults()
 			So(results, ShouldHaveLength, len(cis))
 			for _, result := range results {
 				switch common.CLID(result.Id) {
 				case clids[0]: // Change 1
-					So(result.GetSuccessInfo().GetCancelledAt().AsTime(), ShouldHappenAfter, startTime)
+					So(result.GetSuccessInfo().GetResetAt().AsTime(), ShouldHappenAfter, startTime)
 				case clids[1]: // Change 2
 					So(result.GetFailureInfo().GetFailureMessage(), ShouldNotBeEmpty)
 				}
@@ -252,12 +252,12 @@ func TestResetTriggers(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			results := res.GetCancelTriggers().GetResults()
+			results := res.GetResetTriggers().GetResults()
 			So(results, ShouldHaveLength, len(cis))
 			for i, result := range results {
 				So(result.Id, ShouldEqual, clids[i])
 				assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
-				So(result.GetSuccessInfo().GetCancelledAt(), ShouldNotBeNil)
+				So(result.GetSuccessInfo().GetResetAt(), ShouldNotBeNil)
 			}
 		})
 	})
@@ -265,14 +265,14 @@ func TestResetTriggers(t *testing.T) {
 
 func TestGerritWhoms(t *testing.T) {
 	Convey("Test gerrit whoms conversion", t, func() {
-		for name, v := range run.OngoingLongOps_Op_TriggersCancellation_Whom_value {
+		for name, v := range run.OngoingLongOps_Op_ResetTriggers_Whom_value {
 			switch name {
 			case "NONE":
 				So(func() {
-					_ = convertToGerritWhoms([]run.OngoingLongOps_Op_TriggersCancellation_Whom{run.OngoingLongOps_Op_TriggersCancellation_Whom(v)})
+					_ = convertToGerritWhoms([]run.OngoingLongOps_Op_ResetTriggers_Whom{run.OngoingLongOps_Op_ResetTriggers_Whom(v)})
 				}, ShouldPanic)
 			default:
-				g := convertToGerritWhoms([]run.OngoingLongOps_Op_TriggersCancellation_Whom{run.OngoingLongOps_Op_TriggersCancellation_Whom(v)})
+				g := convertToGerritWhoms([]run.OngoingLongOps_Op_ResetTriggers_Whom{run.OngoingLongOps_Op_ResetTriggers_Whom(v)})
 				So(g, ShouldHaveLength, 1)
 				So(g[0], ShouldNotEqual, 0)
 			}
