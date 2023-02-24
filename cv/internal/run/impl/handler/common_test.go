@@ -130,10 +130,10 @@ func TestEndRun(t *testing.T) {
 	})
 }
 
-func TestCancelTriggers(t *testing.T) {
+func TestResetTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey("CancelTriggers on a CL just deleted by its owner force-updates CL", t, func() {
+	Convey("Reset triggers on a CL just deleted by its owner force-updates CL", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -193,14 +193,14 @@ func TestCancelTriggers(t *testing.T) {
 		}
 		So(datastore.Put(ctx, &cl, &rcl), ShouldBeNil)
 		// Simulate CL no longer existing in Gerrit (e.g. ct.GFake) 1 minute later,
-		// just as Run Manager decides to cancel the CL triggers.
+		// just as Run Manager decides to reset the CL triggers.
 		ct.Clock.Add(time.Minute)
 		impl, deps := makeImpl(&ct)
 		meta := reviewInputMeta{
 			message: "Dry Run OK",
 		}
 		err = impl.resetCLTriggers(ctx, rid, []*run.RunCL{&rcl}, cg, meta)
-		// The cancellation errors out, but the CL refresh is scheduled.
+		// The reset errors out, but the CL refresh is scheduled.
 		// TODO(crbug/1227369): fail transiently or better yet schedule another
 		// retry in the future and fail with tq.Ignore.
 		So(trigger.ErrResetPermanentTag.In(err), ShouldBeTrue)
@@ -289,7 +289,7 @@ func TestCheckRunCreate(t *testing.T) {
 			So(ok, ShouldBeFalse)
 			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
 			So(rs.OngoingLongOps.Ops, ShouldContainKey, "1-1")
-			reqs := rs.OngoingLongOps.Ops["1-1"].GetCancelTriggers().GetRequests()
+			reqs := rs.OngoingLongOps.Ops["1-1"].GetResetTriggers().GetRequests()
 			So(reqs, ShouldHaveLength, 1)
 			So(reqs[0].Message, ShouldEqual, "")
 			So(reqs[0].AddToAttention, ShouldBeEmpty)
@@ -301,12 +301,12 @@ func TestCheckRunCreate(t *testing.T) {
 			So(ok, ShouldBeFalse)
 			So(rs.OngoingLongOps.Ops, ShouldHaveLength, 1)
 			So(rs.OngoingLongOps.Ops, ShouldContainKey, "1-1")
-			reqs := rs.OngoingLongOps.Ops["1-1"].GetCancelTriggers().GetRequests()
+			reqs := rs.OngoingLongOps.Ops["1-1"].GetResetTriggers().GetRequests()
 			So(reqs, ShouldHaveLength, 1)
 			So(reqs[0].Message, ShouldEqual, "CV cannot start a Run for `user-1@example.com` because the user is neither the CL owner nor a committer.")
-			So(reqs[0].AddToAttention, ShouldResemble, []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-				run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-				run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS})
+			So(reqs[0].AddToAttention, ShouldResemble, []run.OngoingLongOps_Op_ResetTriggers_Whom{
+				run.OngoingLongOps_Op_ResetTriggers_OWNER,
+				run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS})
 		})
 	})
 }

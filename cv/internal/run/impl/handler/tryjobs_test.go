@@ -186,8 +186,8 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 				So(res.State.Status, ShouldEqual, run.Status_RUNNING)
 				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
 				for _, op := range res.State.OngoingLongOps.GetOps() {
-					So(op.GetCancelTriggers(), ShouldNotBeNil)
-					So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+					So(op.GetResetTriggers(), ShouldNotBeNil)
+					So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
 				}
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)
@@ -253,23 +253,23 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					})
 					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetCancelTriggers(), ShouldNotBeNil)
-						So(op.GetCancelTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+						So(op.GetResetTriggers(), ShouldNotBeNil)
+						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{
 								Clid:    int64(rs.CLs[0]),
 								Message: "This CL has passed the run",
-								Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-									run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-									run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+								Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+									run.OngoingLongOps_Op_ResetTriggers_OWNER,
+									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 								},
-								AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-									run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-									run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+								AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+									run.OngoingLongOps_Op_ResetTriggers_OWNER,
+									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 								},
 								AddToAttentionReason: "Run succeeded",
 							},
 						})
-						So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
+						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
 					}
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
@@ -286,11 +286,11 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 					})
 					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
 					for _, op := range res.State.OngoingLongOps.GetOps() {
-						So(op.GetCancelTriggers(), ShouldNotBeNil)
-						So(op.GetCancelTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+						So(op.GetResetTriggers(), ShouldNotBeNil)
+						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
 							{Clid: int64(rs.CLs[0])},
 						})
-						So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
+						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_SUCCEEDED)
 					}
 					So(res.SideEffectFn, ShouldBeNil)
 					So(res.PreserveEvents, ShouldBeFalse)
@@ -298,19 +298,19 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 			})
 
 			Convey("Tryjob execution failed", func() {
-				var whoms []run.OngoingLongOps_Op_TriggersCancellation_Whom
+				var whoms []run.OngoingLongOps_Op_ResetTriggers_Whom
 				Convey("On CQ Vote Run", func() {
 					rs.Mode = run.DryRun
-					whoms = []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+						run.OngoingLongOps_Op_ResetTriggers_OWNER,
+						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 					}
 				})
 				Convey("On New Patchset Run", func() {
 					rs.Mode = run.NewPatchsetRun
-					whoms = []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER,
+					whoms = []run.OngoingLongOps_Op_ResetTriggers_Whom{
+						run.OngoingLongOps_Op_ResetTriggers_OWNER,
+						run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER,
 					}
 				})
 				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -331,8 +331,8 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 				})
 				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
 				for _, op := range res.State.OngoingLongOps.GetOps() {
-					So(op.GetCancelTriggers(), ShouldNotBeNil)
-					So(op.GetCancelTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+					So(op.GetResetTriggers(), ShouldNotBeNil)
+					So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, []*run.OngoingLongOps_Op_ResetTriggers_Request{
 						{
 							Clid:                 int64(rs.CLs[0]),
 							Message:              "This CL has failed the run. Reason:\n\nbuild 12345 failed",
@@ -341,7 +341,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							AddToAttentionReason: "Tryjobs failed",
 						},
 					})
-					So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+					So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
 				}
 				So(res.SideEffectFn, ShouldBeNil)
 				So(res.PreserveEvents, ShouldBeFalse)

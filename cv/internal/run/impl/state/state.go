@@ -223,6 +223,10 @@ func validateLongOp(op *run.OngoingLongOps_Op) error {
 		if st := op.GetCancelTriggers().GetRunStatusIfSucceeded(); !run.IsEnded(st) {
 			return errors.Reason("expect terminal run status; got %s", st).Err()
 		}
+	case op.GetResetTriggers() != nil:
+		if st := op.GetResetTriggers().GetRunStatusIfSucceeded(); !run.IsEnded(st) {
+			return errors.Reason("expect terminal run status; got %s", st).Err()
+		}
 	}
 	return nil
 }

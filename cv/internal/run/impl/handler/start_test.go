@@ -194,13 +194,13 @@ func TestStart(t *testing.T) {
 			So(res.State.Tryjobs, ShouldBeNil)
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
 			op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-			So(op.GetCancelTriggers(), ShouldNotBeNil)
-			So(op.GetCancelTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
-			cancelledCLs := common.CLIDs{}
-			for _, req := range op.GetCancelTriggers().GetRequests() {
-				cancelledCLs = append(cancelledCLs, common.CLID(req.Clid))
+			So(op.GetResetTriggers(), ShouldNotBeNil)
+			So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+			resetCLs := common.CLIDs{}
+			for _, req := range op.GetResetTriggers().GetRequests() {
+				resetCLs = append(resetCLs, common.CLID(req.Clid))
 			}
-			So(cancelledCLs, ShouldResemble, res.State.CLs)
+			So(resetCLs, ShouldResemble, res.State.CLs)
 			So(res.State.LogEntries, ShouldHaveLength, 1)
 			So(res.State.LogEntries[0].GetInfo(), ShouldResembleProto, &run.LogEntry_Info{
 				Label:   "Tryjob Requirement Computation",
@@ -226,26 +226,26 @@ func TestStart(t *testing.T) {
 
 			So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-			cancelOp := longOp.GetCancelTriggers()
-			So(cancelOp.Requests, ShouldHaveLength, 1)
-			So(cancelOp.Requests[0], ShouldResembleProto,
-				&run.OngoingLongOps_Op_TriggersCancellation_Request{
+			resetOp := longOp.GetResetTriggers()
+			So(resetOp.Requests, ShouldHaveLength, 1)
+			So(resetOp.Requests[0], ShouldResembleProto,
+				&run.OngoingLongOps_Op_ResetTriggers_Request{
 					Clid: int64(cl.ID),
 					Message: fmt.Sprintf(
 						"CV cannot start a Run for `%s` because the user is not a dry-runner.", gf.U(triggerer).Email,
 					),
-					Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+						run.OngoingLongOps_Op_ResetTriggers_OWNER,
+						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 					},
-					AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-						run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-						run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+					AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+						run.OngoingLongOps_Op_ResetTriggers_OWNER,
+						run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 					},
 					AddToAttentionReason: "CQ/CV Run failed",
 				},
 			)
-			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+			So(resetOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
 		})
 
 		statuses := []run.Status{

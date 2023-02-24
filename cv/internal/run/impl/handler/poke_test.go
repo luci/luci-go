@@ -200,7 +200,7 @@ func TestPoke(t *testing.T) {
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
 						So(res.State.NewLongOpIDs, ShouldHaveLength, 1)
-						ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetCancelTriggers()
+						ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetResetTriggers()
 						So(ct.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
 						So(ct.Requests, ShouldHaveLength, 1)
 						So(ct.Requests[0].Message, ShouldContainSubstring, "Could not submit this CL because the tree status app at tree.example.com repeatedly returned failures")
@@ -274,7 +274,7 @@ func TestPoke(t *testing.T) {
 				rs.LatestCLsRefresh = ct.Clock.Now().Add(-clRefreshInterval - time.Second)
 				ct.ResetMockedAuthDB(ctx)
 
-				// verify that it did not schedule refresh but CancelTrigger.
+				// verify that it did not schedule refresh but reset triggers.
 				res, err := h.Poke(ctx, rs)
 				So(err, ShouldBeNil)
 				So(res.SideEffectFn, ShouldBeNil)
@@ -284,24 +284,24 @@ func TestPoke(t *testing.T) {
 				So(deps.clUpdater.refreshedCLs, ShouldBeEmpty)
 
 				longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-				cancelOp := longOp.GetCancelTriggers()
-				So(cancelOp.Requests, ShouldHaveLength, 1)
-				So(cancelOp.Requests[0], ShouldResembleProto,
-					&run.OngoingLongOps_Op_TriggersCancellation_Request{
+				resetOp := longOp.GetResetTriggers()
+				So(resetOp.Requests, ShouldHaveLength, 1)
+				So(resetOp.Requests[0], ShouldResembleProto,
+					&run.OngoingLongOps_Op_ResetTriggers_Request{
 						Clid:    int64(gChange),
 						Message: "CV cannot start a Run for `foo@example.com` because the user is not a dry-runner.",
-						Notify: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-							run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-							run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+						Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+							run.OngoingLongOps_Op_ResetTriggers_OWNER,
+							run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 						},
-						AddToAttention: []run.OngoingLongOps_Op_TriggersCancellation_Whom{
-							run.OngoingLongOps_Op_TriggersCancellation_OWNER,
-							run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS,
+						AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+							run.OngoingLongOps_Op_ResetTriggers_OWNER,
+							run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
 						},
 						AddToAttentionReason: "CQ/CV Run failed",
 					},
 				)
-				So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
+				So(resetOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
 			})
 		})
 

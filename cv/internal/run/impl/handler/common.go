@@ -233,9 +233,9 @@ func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[co
 	case isCurrentlyResettingTriggers(rs):
 		return
 	}
-	reqs := make([]*run.OngoingLongOps_Op_TriggersCancellation_Request, 0, len(rs.CLs))
+	reqs := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, 0, len(rs.CLs))
 	for clid, meta := range metas {
-		reqs = append(reqs, &run.OngoingLongOps_Op_TriggersCancellation_Request{
+		reqs = append(reqs, &run.OngoingLongOps_Op_ResetTriggers_Request{
 			Clid:                 int64(clid),
 			Notify:               fromGerritWhoms(meta.notify),
 			Message:              meta.message,
@@ -245,8 +245,8 @@ func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[co
 	}
 	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 		Deadline: timestamppb.New(clock.Now(ctx).Add(maxResetTriggersDuration)),
-		Work: &run.OngoingLongOps_Op_CancelTriggers{
-			CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
+		Work: &run.OngoingLongOps_Op_ResetTriggers_{
+			ResetTriggers: &run.OngoingLongOps_Op_ResetTriggers{
 				Requests:             reqs,
 				RunStatusIfSucceeded: statusIfSucceeded,
 			},
@@ -256,28 +256,28 @@ func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[co
 
 func isCurrentlyResettingTriggers(rs *state.RunState) bool {
 	for _, op := range rs.OngoingLongOps.GetOps() {
-		if op.GetCancelTriggers() != nil {
+		if op.GetCancelTriggers() != nil || op.GetResetTriggers() != nil {
 			return true
 		}
 	}
 	return false
 }
 
-func fromGerritWhoms(whoms gerrit.Whoms) []run.OngoingLongOps_Op_TriggersCancellation_Whom {
+func fromGerritWhoms(whoms gerrit.Whoms) []run.OngoingLongOps_Op_ResetTriggers_Whom {
 	if len(whoms) == 0 {
 		return nil
 	}
-	ret := make([]run.OngoingLongOps_Op_TriggersCancellation_Whom, len(whoms))
+	ret := make([]run.OngoingLongOps_Op_ResetTriggers_Whom, len(whoms))
 	for i, whom := range whoms {
 		switch whom {
 		case gerrit.Owner:
-			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_OWNER
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_OWNER
 		case gerrit.Reviewers:
-			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_REVIEWERS
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_REVIEWERS
 		case gerrit.CQVoters:
-			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_CQ_VOTERS
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS
 		case gerrit.PSUploader:
-			ret[i] = run.OngoingLongOps_Op_TriggersCancellation_PS_UPLOADER
+			ret[i] = run.OngoingLongOps_Op_ResetTriggers_PS_UPLOADER
 		default:
 			panic(fmt.Errorf("unknown gerrit.Whom; got %s", whom))
 		}

@@ -210,16 +210,16 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeTrue)
 		})
 
-		Convey("Preserve events for if trigger cancellation is ongoing", func() {
+		Convey("Preserve events for if trigger reset is ongoing", func() {
 			rs.OngoingLongOps = &run.OngoingLongOps{
 				Ops: map[string]*run.OngoingLongOps_Op{
 					"op_id": {
-						Work: &run.OngoingLongOps_Op_CancelTriggers{
-							CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
-								Requests: []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+						Work: &run.OngoingLongOps_Op_ResetTriggers_{
+							ResetTriggers: &run.OngoingLongOps_Op_ResetTriggers{
+								Requests: []*run.OngoingLongOps_Op_ResetTriggers_Request{
 									{
 										Clid:    1,
-										Message: "no perimission to Run",
+										Message: "no permission to Run",
 									},
 								},
 							},
@@ -310,7 +310,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			})
 		})
 
-		verifyHasCancelTriggerLongOpScheduled := func(res *Result, expect map[common.CLID]string) {
+		verifyHasResetTriggerLongOpScheduled := func(res *Result, expect map[common.CLID]string) {
 			// The status should be still RUNNING,
 			// because it has not been cancelled yet.
 			// It's scheduled to be cancelled.
@@ -319,7 +319,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(res.PreserveEvents, ShouldBeFalse)
 
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
-			cancelOp := longOp.GetCancelTriggers()
+			cancelOp := longOp.GetResetTriggers()
 			So(cancelOp.Requests, ShouldHaveLength, len(expect))
 			for _, req := range cancelOp.Requests {
 				clid := common.CLID(req.Clid)
@@ -331,14 +331,14 @@ func TestOnCLsUpdated(t *testing.T) {
 			So(cancelOp.RunStatusIfSucceeded, ShouldEqual, run.Status_FAILED)
 		}
 
-		Convey("Schedules a CancelTrigger long op if the approval was revoked", func() {
+		Convey("Schedules a ResetTrigger long op if the approval was revoked", func() {
 			Convey("Single CL", func() {
 				updateCL(1, gf.CI(
 					gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 				), aplConfigOK, accessOK)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
 				So(err, ShouldBeNil)
-				verifyHasCancelTriggerLongOpScheduled(res, map[common.CLID]string{
+				verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 					1: "CV cannot start a Run because this CL is missing approval.",
 					2: "CV cannot start a Run due to errors in the following CL(s).",
 				})
@@ -352,7 +352,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				), aplConfigOK, accessOK)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
 				So(err, ShouldBeNil)
-				verifyHasCancelTriggerLongOpScheduled(res, map[common.CLID]string{
+				verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 					1: "CV cannot start a Run because this CL is missing approval.",
 					2: "CV cannot start a Run because this CL is missing approval.",
 				})
