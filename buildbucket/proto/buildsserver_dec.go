@@ -159,6 +159,23 @@ func (s *DecoratedBuilds) SynthesizeBuild(ctx context.Context, req *SynthesizeBu
 	return
 }
 
+func (s *DecoratedBuilds) StartBuild(ctx context.Context, req *StartBuildRequest) (rsp *StartBuildResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "StartBuild", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.StartBuild(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "StartBuild", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedBuilds) RegisterBuildTask(ctx context.Context, req *RegisterBuildTaskRequest) (rsp *RegisterBuildTaskResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

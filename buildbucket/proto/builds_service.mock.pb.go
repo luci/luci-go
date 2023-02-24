@@ -244,6 +244,26 @@ func (mr *MockBuildsClientMockRecorder) SearchBuilds(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchBuilds", reflect.TypeOf((*MockBuildsClient)(nil).SearchBuilds), varargs...)
 }
 
+// StartBuild mocks base method.
+func (m *MockBuildsClient) StartBuild(ctx context.Context, in *StartBuildRequest, opts ...grpc.CallOption) (*StartBuildResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StartBuild", varargs...)
+	ret0, _ := ret[0].(*StartBuildResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartBuild indicates an expected call of StartBuild.
+func (mr *MockBuildsClientMockRecorder) StartBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartBuild", reflect.TypeOf((*MockBuildsClient)(nil).StartBuild), varargs...)
+}
+
 // SynthesizeBuild mocks base method.
 func (m *MockBuildsClient) SynthesizeBuild(ctx context.Context, in *SynthesizeBuildRequest, opts ...grpc.CallOption) (*Build, error) {
 	m.ctrl.T.Helper()
@@ -430,6 +450,21 @@ func (m *MockBuildsServer) SearchBuilds(arg0 context.Context, arg1 *SearchBuilds
 func (mr *MockBuildsServerMockRecorder) SearchBuilds(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchBuilds", reflect.TypeOf((*MockBuildsServer)(nil).SearchBuilds), arg0, arg1)
+}
+
+// StartBuild mocks base method.
+func (m *MockBuildsServer) StartBuild(arg0 context.Context, arg1 *StartBuildRequest) (*StartBuildResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartBuild", arg0, arg1)
+	ret0, _ := ret[0].(*StartBuildResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartBuild indicates an expected call of StartBuild.
+func (mr *MockBuildsServerMockRecorder) StartBuild(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartBuild", reflect.TypeOf((*MockBuildsServer)(nil).StartBuild), arg0, arg1)
 }
 
 // SynthesizeBuild mocks base method.
