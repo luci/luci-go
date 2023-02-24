@@ -41,6 +41,7 @@ const LINK_ARTIFACT_HOST_ALLOWLIST = [
 @customElement('milo-link-artifact')
 export class LinkArtifactElement extends MobxLitElement {
   @observable.ref artifact!: Artifact;
+  @observable.ref label?: string;
 
   @observable.ref private loadError = false;
 
@@ -48,11 +49,7 @@ export class LinkArtifactElement extends MobxLitElement {
   private get content$(): IPromiseBasedObservable<string> {
     return fromPromise(
       // TODO(crbug/1206109): use permanent raw artifact URL.
-      fetch(
-        urlSetSearchQueryParam(
-          this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT
-        )
-      ).then((res) => {
+      fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => {
         if (!res.ok) {
           this.loadError = true;
           return '';
@@ -87,17 +84,12 @@ export class LinkArtifactElement extends MobxLitElement {
 
   protected render = reportRenderError(this, () => {
     if (this.loadError) {
-      return html`
-        <span class="load-error">
-          Error loading ${this.artifact.artifactId} link
-        </span>`;
+      return html` <span class="load-error"> Error loading ${this.artifact.artifactId} link </span>`;
     }
 
     if (this.content) {
-      return html`
-        <a href=${this.content} target="_blank">
-          ${this.artifact.artifactId}
-        </a>`;
+      const linkText = this.label || this.artifact.artifactId;
+      return html`<a href=${this.content} target="_blank">${linkText}</a>`;
     }
 
     return html`<span class="greyed-out">Loading...</span>`;

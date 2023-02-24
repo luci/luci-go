@@ -200,6 +200,33 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
+  private renderLogLinkArtifacts() {
+    if (this.testhausLogArtifact || this.stainlessLogArtifact) {
+      let testhausLink = null;
+      if (this.testhausLogArtifact) {
+        testhausLink = html`<milo-link-artifact
+          .artifact=${this.testhausLogArtifact}
+          .label=${'Testhaus'}
+        ></milo-link-artifact>`;
+      }
+      let delimiter = null;
+      if (this.testhausLogArtifact && this.stainlessLogArtifact) {
+        delimiter = ', ';
+      }
+      let stainlessLink = null;
+      if (this.stainlessLogArtifact) {
+        stainlessLink = html`<milo-link-artifact
+          .artifact=${this.stainlessLogArtifact}
+          .label=${'Stainless'}
+        ></milo-link-artifact>`;
+      }
+
+      return html` <div class="summary-log-link">View logs in: ${testhausLink}${delimiter}${stainlessLink}</div> `;
+    }
+
+    return null;
+  }
+
   private renderSummaryHtml() {
     if (!this.testResult.summaryHtml) {
       return html``;
@@ -217,18 +244,7 @@ export class ResultEntryElement extends MobxLitElement {
               ${unsafeHTML(this.testResult.summaryHtml)}
             </milo-artifact-provider>
           </div>
-          ${this.testhausLogArtifact &&
-          html`
-            <div class="summary-log-link">
-              <milo-link-artifact .artifact=${this.testhausLogArtifact}></milo-link-artifact>
-            </div>
-          `}
-          ${this.stainlessLogArtifact &&
-          html`
-            <div class="summary-log-link">
-              <milo-link-artifact .artifact=${this.stainlessLogArtifact}></milo-link-artifact>
-            </div>
-          `}
+          ${this.renderLogLinkArtifacts()}
         </div>
       </milo-expandable-entry>
     `;
