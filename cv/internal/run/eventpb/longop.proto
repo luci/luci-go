@@ -20,6 +20,7 @@ option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/task.proto";
+import "go.chromium.org/luci/cv/internal/run/postaction/tasks.proto";
 
 message LongOpCompleted {
   // Next tag: 4.
@@ -51,6 +52,7 @@ message LongOpCompleted {
     CancelTriggers cancel_triggers = 4 [deprecated = true];
     ResetTriggers reset_triggers = 6;
     cv.internal.tryjob.ExecuteTryjobsResult execute_tryjobs = 5;
+    cv.internal.run.postaction.ExecutePostActionResult execute_post_action = 7;
   }
 
   message PostStartMessage {

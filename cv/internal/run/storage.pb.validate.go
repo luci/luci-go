@@ -3612,6 +3612,47 @@ func (m *OngoingLongOps_Op) validate(all bool) error {
 			}
 		}
 
+	case *OngoingLongOps_Op_ExecutePostAction:
+		if v == nil {
+			err := OngoingLongOps_OpValidationError{
+				field:  "Work",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetExecutePostAction()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, OngoingLongOps_OpValidationError{
+						field:  "ExecutePostAction",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, OngoingLongOps_OpValidationError{
+						field:  "ExecutePostAction",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetExecutePostAction()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return OngoingLongOps_OpValidationError{
+					field:  "ExecutePostAction",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}

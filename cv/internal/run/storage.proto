@@ -23,6 +23,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/storage.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/task.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
+import "go.chromium.org/luci/cv/internal/run/postaction/tasks.proto";
 
 // Status describes the status of a CV Run.
 enum Status {
@@ -460,6 +461,7 @@ message OngoingLongOps {
       TriggersCancellation cancel_triggers = 4 [deprecated = true];
       ResetTriggers reset_triggers = 6;
       cv.internal.tryjob.ExecuteTryjobsPayload execute_tryjobs = 5;
+      cv.internal.run.postaction.ExecutePostActionPayload execute_post_action = 7;
     }
   }
   // Ops map operation ID to details.

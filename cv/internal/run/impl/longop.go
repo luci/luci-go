@@ -159,6 +159,11 @@ func (rm *RunManager) doLongOperationWithDeadline(ctx context.Context, opBase *l
 				ClientFactory: rm.bbFactory,
 			},
 		}
+	case *run.OngoingLongOps_Op_ExecutePostAction:
+		op = &longops.ExecutePostActionOp{
+			Base:     opBase,
+			GFactory: rm.gFactory,
+		}
 	default:
 		logging.Errorf(ctx, "unknown LongOp work %T", w)
 		// Fail task quickly for backwards compatibility in case of a rollback during
