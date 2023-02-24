@@ -1492,10 +1492,10 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 	masks := make([]*model.BuildMask, len(reqs))
 	wellKnownExperiments := protoutil.WellKnownExperiments(globalCfg)
 
-	errorInBatch := func(err error) errors.MultiError {
+	errorInBatch := func(err error, attach func(error) error) errors.MultiError {
 		for i, e := range merr {
 			if e == nil {
-				merr[i] = appstatus.BadRequest(errors.Annotate(err, "error in schedule batch").Err())
+				merr[i] = attach(err)
 			}
 		}
 		return merr
@@ -1504,7 +1504,9 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 	// Validate parent.
 	pBld, err := validateParent(ctx)
 	if err != nil {
-		return nil, errorInBatch(err)
+		return nil, errorInBatch(err, func(err error) error {
+			return appstatus.BadRequest(errors.Annotate(err, "error in schedule batch").Err())
+		})
 	}
 
 	// Validate requests.
@@ -1526,7 +1528,13 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 		if me, ok := err.(errors.MultiError); ok {
 			merr = mergeErrs(merr, me, "", func(i int) int { return idxMapValidReqs[i] })
 		} else {
-			return nil, errorInBatch(err)
+			return nil, errorInBatch(err, func(err error) error {
+				if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+					return err
+				} else {
+					return appstatus.Errorf(codes.Internal, "error in schedule batch: %s", err)
+				}
+			})
 		}
 	}
 
