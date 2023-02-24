@@ -265,7 +265,7 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 	}
 
 	roleMap := make(map[string]*configspb.PermissionsConfig_Role, len(cfg.GetRole()))
-	var startPoint string
+	roleSet := stringset.Set{}
 
 	ctx.Enter("checking role names and building map")
 	for _, role := range cfg.GetRole() {
@@ -280,11 +280,8 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 		if _, ok := roleMap[role.GetName()]; ok {
 			ctx.Errorf("%s is already defined", role.GetName())
 		}
-
-		if startPoint == "" {
-			startPoint = role.GetName()
-		}
 		roleMap[role.GetName()] = role
+		roleSet.Add(role.GetName())
 	}
 	ctx.Exit()
 
@@ -305,23 +302,28 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 	ctx.Exit()
 
 	ctx.Enter("checking for cycles")
-	if startPoint != "" {
-		cycle, err := findRoleDependencyCycle(startPoint, roleMap)
-		if err != nil {
-			ctx.Error(err)
-		}
-		if cycle != nil {
-			cycleStr := strings.Join(cycle, " -> ")
-			ctx.Errorf(fmt.Sprintf("cycle found: %s", cycleStr))
+	seen := stringset.New(len(roleSet))
+	for _, roleName := range roleSet.ToSortedSlice() {
+		if !seen.Has(roleName) {
+			cycle, visited, err := findRoleDependencyCycle(roleName, roleMap)
+			if err != nil {
+				ctx.Error(err)
+			}
+			if cycle != nil {
+				cycleStr := strings.Join(cycle, " -> ")
+				ctx.Errorf(fmt.Sprintf("cycle found: %s", cycleStr))
+			}
+			seen.AddAll(visited)
 		}
 	}
+
 	ctx.Exit()
 
 	return nil
 }
 
 // findRoleDependencyCycle performs a DFS over our roleMap to see if there is a cycle present.
-func findRoleDependencyCycle(startPoint string, roleMap map[string]*configspb.PermissionsConfig_Role) ([]string, error) {
+func findRoleDependencyCycle(startPoint string, roleMap map[string]*configspb.PermissionsConfig_Role) ([]string, []string, error) {
 	visited := stringset.Set{}
 
 	stack := []*configspb.PermissionsConfig_Role{}
@@ -343,7 +345,8 @@ func findRoleDependencyCycle(startPoint string, roleMap map[string]*configspb.Pe
 		// Examine children.
 		for _, included := range roleMap[roleName].GetIncludes() {
 			if visited.Has(included) {
-				return true, nil
+				// cross edge is okay.
+				continue
 			}
 
 			if i := indexOf(stack, included); i > -1 {
@@ -367,19 +370,19 @@ func findRoleDependencyCycle(startPoint string, roleMap map[string]*configspb.Pe
 
 	cycle, err := visit(startPoint)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if cycle {
 		if len(stack) == 0 {
-			return nil, errors.New("cycle found with empty stack")
+			return nil, nil, errors.New("cycle found with empty stack")
 		}
 		names := make([]string, len(stack))
 		for i, g := range stack {
 			names[i] = g.GetName()
 		}
-		return names, nil
+		return names, nil, nil
 	}
-	return nil, nil
+	return nil, visited.ToSlice(), nil
 }
 
 func validateSystems(systems []string, seenSystems map[string]bool, title string) error {

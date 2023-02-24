@@ -674,6 +674,63 @@ func TestPermissionsConfigValidation(t *testing.T) {
 					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
 					So(vctx.Finalize().Error(), ShouldContainSubstring, "cycle found: role/test.role -> role/test.role3 -> role/test.role4 -> role/test.role2 -> role/test.role")
 				})
+
+				Convey("cross edge", func() {
+					// This is ok!
+					//          (r1)
+					//          /  \
+					//       (r2)  (r3)
+					//        /      \
+					//      (r4) --- (r5) r5 includes r4 here
+					//      /        /  \
+					//    (r6)     (r7) (r8)
+					content := []byte(`
+						role {
+							name: "role/test.role1"
+							includes: [
+								"role/test.role2",
+								"role/test.role3"
+							]
+						}
+						role {
+							name: "role/test.role2"
+							includes: [
+								"role/test.role4"
+							]
+						}
+						role {
+							name: "role/test.role3"
+							includes: [
+								"role/test.role5"
+							]
+						}
+						role {
+							name: "role/test.role4"
+							includes: [
+								"role/test.role6"
+							]
+						}
+						role {
+							name: "role/test.role5"
+							includes: [
+								"role/test.role4",
+								"role/test.role7",
+								"role/test.role8"
+							]
+						}
+						role {
+							name: "role/test.role6"
+						}
+						role {
+							name: "role/test.role7"
+						}
+						role {
+							name: "role/test.role8"
+						}
+					`)
+					So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+					So(vctx.Finalize(), ShouldBeNil)
+				})
 			})
 		})
 
