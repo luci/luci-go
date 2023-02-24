@@ -33,10 +33,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestOnCompletedCancelTriggers(t *testing.T) {
+func TestOnCompletedResetTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestOnCompletedCancelTriggers works", t, func() {
+	Convey("OnCompletedResetTriggers works", t, func() {
 		ct := cvtesting.Test{}
 		ctx, cancel := ct.SetUp()
 		defer cancel()
@@ -58,9 +58,9 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 				OngoingLongOps: &run.OngoingLongOps{
 					Ops: map[string]*run.OngoingLongOps_Op{
 						opID: {
-							Work: &run.OngoingLongOps_Op_CancelTriggers{
-								CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
-									Requests: []*run.OngoingLongOps_Op_TriggersCancellation_Request{
+							Work: &run.OngoingLongOps_Op_ResetTriggers_{
+								ResetTriggers: &run.OngoingLongOps_Op_ResetTriggers{
+									Requests: []*run.OngoingLongOps_Op_ResetTriggers_Request{
 										{Clid: 1},
 									},
 									RunStatusIfSucceeded: run.Status_SUCCEEDED,
@@ -96,8 +96,8 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 				Time: timestamppb.New(now),
 				Kind: &run.LogEntry_Info_{
 					Info: &run.LogEntry_Info{
-						Label:   logEntryLabelTriggerCancellation,
-						Message: fmt.Sprintf("failed to cancel the triggers of CLs within the %s deadline", maxTriggersCancellationDuration),
+						Label:   logEntryLabelResetTriggers,
+						Message: fmt.Sprintf("failed to reset the triggers of CLs within the %s deadline", maxResetTriggersDuration),
 					},
 				},
 			})
@@ -107,14 +107,14 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 
 		Convey("on failure", func() {
 			result.Status = eventpb.LongOpCompleted_FAILED
-			result.Result = &eventpb.LongOpCompleted_CancelTriggers_{
-				CancelTriggers: &eventpb.LongOpCompleted_CancelTriggers{
-					Results: []*eventpb.LongOpCompleted_CancelTriggers_Result{
+			result.Result = &eventpb.LongOpCompleted_ResetTriggers_{
+				ResetTriggers: &eventpb.LongOpCompleted_ResetTriggers{
+					Results: []*eventpb.LongOpCompleted_ResetTriggers_Result{
 						{
 							Id:         1,
 							ExternalId: string(changelist.MustGobID(gHost, 111)),
-							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo{
-								FailureInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Failure{
+							Detail: &eventpb.LongOpCompleted_ResetTriggers_Result_FailureInfo{
+								FailureInfo: &eventpb.LongOpCompleted_ResetTriggers_Result_Failure{
 									FailureMessage: "no permission to vote",
 								},
 							},
@@ -130,8 +130,8 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 				Time: timestamppb.New(now),
 				Kind: &run.LogEntry_Info_{
 					Info: &run.LogEntry_Info{
-						Label:   logEntryLabelTriggerCancellation,
-						Message: "failed to cancel the trigger of change https://example-review.googlesource.com/c/111. Reason: no permission to vote",
+						Label:   logEntryLabelResetTriggers,
+						Message: "failed to reset the trigger of change https://example-review.googlesource.com/c/111. Reason: no permission to vote",
 					},
 				},
 			})
@@ -141,15 +141,15 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 
 		Convey("on success", func() {
 			result.Status = eventpb.LongOpCompleted_SUCCEEDED
-			result.Result = &eventpb.LongOpCompleted_CancelTriggers_{
-				CancelTriggers: &eventpb.LongOpCompleted_CancelTriggers{
-					Results: []*eventpb.LongOpCompleted_CancelTriggers_Result{
+			result.Result = &eventpb.LongOpCompleted_ResetTriggers_{
+				ResetTriggers: &eventpb.LongOpCompleted_ResetTriggers{
+					Results: []*eventpb.LongOpCompleted_ResetTriggers_Result{
 						{
 							Id:         1,
 							ExternalId: string(changelist.MustGobID(gHost, 111)),
-							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo{
-								SuccessInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Success{
-									CancelledAt: timestamppb.New(now.Add(-1 * time.Minute)),
+							Detail: &eventpb.LongOpCompleted_ResetTriggers_Result_SuccessInfo{
+								SuccessInfo: &eventpb.LongOpCompleted_ResetTriggers_Result_Success{
+									ResetAt: timestamppb.New(now.Add(-1 * time.Minute)),
 								},
 							},
 						},
@@ -164,8 +164,8 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 				Time: timestamppb.New(now.Add(-1 * time.Minute)),
 				Kind: &run.LogEntry_Info_{
 					Info: &run.LogEntry_Info{
-						Label:   logEntryLabelTriggerCancellation,
-						Message: "successfully cancelled the trigger of change https://example-review.googlesource.com/c/111",
+						Label:   logEntryLabelResetTriggers,
+						Message: "successfully reset the trigger of change https://example-review.googlesource.com/c/111",
 					},
 				},
 			})
@@ -175,28 +175,28 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 
 		Convey("on partial failure", func() {
 			result.Status = eventpb.LongOpCompleted_FAILED
-			rs.OngoingLongOps.GetOps()[opID].GetCancelTriggers().Requests =
-				[]*run.OngoingLongOps_Op_TriggersCancellation_Request{
+			rs.OngoingLongOps.GetOps()[opID].GetResetTriggers().Requests =
+				[]*run.OngoingLongOps_Op_ResetTriggers_Request{
 					{Clid: 1},
 					{Clid: 2},
 				}
-			result.Result = &eventpb.LongOpCompleted_CancelTriggers_{
-				CancelTriggers: &eventpb.LongOpCompleted_CancelTriggers{
-					Results: []*eventpb.LongOpCompleted_CancelTriggers_Result{
+			result.Result = &eventpb.LongOpCompleted_ResetTriggers_{
+				ResetTriggers: &eventpb.LongOpCompleted_ResetTriggers{
+					Results: []*eventpb.LongOpCompleted_ResetTriggers_Result{
 						{
 							Id:         1,
 							ExternalId: string(changelist.MustGobID(gHost, 111)),
-							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo{
-								SuccessInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Success{
-									CancelledAt: timestamppb.New(now.Add(-1 * time.Minute)),
+							Detail: &eventpb.LongOpCompleted_ResetTriggers_Result_SuccessInfo{
+								SuccessInfo: &eventpb.LongOpCompleted_ResetTriggers_Result_Success{
+									ResetAt: timestamppb.New(now.Add(-1 * time.Minute)),
 								},
 							},
 						},
 						{
 							Id:         2,
 							ExternalId: string(changelist.MustGobID(gHost, 222)),
-							Detail: &eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo{
-								FailureInfo: &eventpb.LongOpCompleted_CancelTriggers_Result_Failure{
+							Detail: &eventpb.LongOpCompleted_ResetTriggers_Result_FailureInfo{
+								FailureInfo: &eventpb.LongOpCompleted_ResetTriggers_Result_Failure{
 									FailureMessage: "no permission to vote",
 								},
 							},
@@ -212,8 +212,8 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 				Time: timestamppb.New(now.Add(-1 * time.Minute)),
 				Kind: &run.LogEntry_Info_{
 					Info: &run.LogEntry_Info{
-						Label:   logEntryLabelTriggerCancellation,
-						Message: "successfully cancelled the trigger of change https://example-review.googlesource.com/c/111",
+						Label:   logEntryLabelResetTriggers,
+						Message: "successfully reset the trigger of change https://example-review.googlesource.com/c/111",
 					},
 				},
 			})
@@ -221,8 +221,8 @@ func TestOnCompletedCancelTriggers(t *testing.T) {
 				Time: timestamppb.New(now),
 				Kind: &run.LogEntry_Info_{
 					Info: &run.LogEntry_Info{
-						Label:   logEntryLabelTriggerCancellation,
-						Message: "failed to cancel the trigger of change https://example-review.googlesource.com/c/222. Reason: no permission to vote",
+						Label:   logEntryLabelResetTriggers,
+						Message: "failed to reset the trigger of change https://example-review.googlesource.com/c/222. Reason: no permission to vote",
 					},
 				},
 			})

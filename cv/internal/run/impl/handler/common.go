@@ -244,7 +244,7 @@ func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[co
 		})
 	}
 	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-		Deadline: timestamppb.New(clock.Now(ctx).Add(maxTriggersCancellationDuration)),
+		Deadline: timestamppb.New(clock.Now(ctx).Add(maxResetTriggersDuration)),
 		Work: &run.OngoingLongOps_Op_CancelTriggers{
 			CancelTriggers: &run.OngoingLongOps_Op_TriggersCancellation{
 				Requests:             reqs,

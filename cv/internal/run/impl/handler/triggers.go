@@ -27,39 +27,56 @@ import (
 )
 
 const (
-	// maxTriggersCancellationDuration is the maximum duration allowed for a Run
-	// to cancel the triggers of all CLs.
-	maxTriggersCancellationDuration = 5 * time.Minute
+	// maxResetTriggersDuration is the maximum duration allowed for a Run
+	// to reset the triggers of all CLs.
+	maxResetTriggersDuration = 5 * time.Minute
 
-	logEntryLabelTriggerCancellation = "Trigger Cancellation"
+	logEntryLabelResetTriggers = "Reset Triggers"
 )
 
-func (impl *Impl) onCompletedCancelTriggers(ctx context.Context, rs *state.RunState, op *run.OngoingLongOps_Op, opCompleted *eventpb.LongOpCompleted) (*Result, error) {
+func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunState, op *run.OngoingLongOps_Op, opCompleted *eventpb.LongOpCompleted) (*Result, error) {
 	opID := opCompleted.GetOperationId()
 	rs = rs.ShallowCopy()
 	rs.RemoveCompletedLongOp(opID)
 	if status := rs.Status; run.IsEnded(status) || status == run.Status_SUBMITTING {
-		logging.Warningf(ctx, "long operation to cancel triggers has completed but Run is %s. Cancellation Result: %s", rs.Status, opCompleted)
+		logging.Warningf(ctx, "long operation to reset triggers has completed but Run is %s. Result: %s", rs.Status, opCompleted)
 		return &Result{State: rs}, nil
 	}
-	runStatus := op.GetCancelTriggers().GetRunStatusIfSucceeded()
+	runStatus := op.GetResetTriggers().GetRunStatusIfSucceeded()
+	if op.GetCancelTriggers() != nil {
+		runStatus = op.GetCancelTriggers().GetRunStatusIfSucceeded()
+	}
 	switch opCompleted.GetStatus() {
 	case eventpb.LongOpCompleted_EXPIRED:
 		runStatus = run.Status_FAILED
-		rs.LogInfof(ctx, logEntryLabelTriggerCancellation, "failed to cancel the triggers of CLs within the %s deadline", maxTriggersCancellationDuration)
+		rs.LogInfof(ctx, logEntryLabelResetTriggers, "failed to reset the triggers of CLs within the %s deadline", maxResetTriggersDuration)
 	case eventpb.LongOpCompleted_FAILED:
 		runStatus = run.Status_FAILED
 		fallthrough
 	case eventpb.LongOpCompleted_SUCCEEDED:
-		for _, result := range opCompleted.GetCancelTriggers().GetResults() {
-			changeURL := changelist.ExternalID(result.GetExternalId()).MustURL()
-			switch result.GetDetail().(type) {
-			case *eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo:
-				rs.LogInfofAt(result.GetSuccessInfo().GetCancelledAt().AsTime(), logEntryLabelTriggerCancellation, "successfully cancelled the trigger of change %s", changeURL)
-			case *eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo:
-				rs.LogInfof(ctx, logEntryLabelTriggerCancellation, "failed to cancel the trigger of change %s. Reason: %s", changeURL, result.GetFailureInfo().GetFailureMessage())
-			default:
-				panic(fmt.Errorf("unexpected long op result status: %s", opCompleted.GetStatus()))
+		if opCompleted.GetResetTriggers() != nil {
+			for _, result := range opCompleted.GetResetTriggers().GetResults() {
+				changeURL := changelist.ExternalID(result.GetExternalId()).MustURL()
+				switch result.GetDetail().(type) {
+				case *eventpb.LongOpCompleted_ResetTriggers_Result_SuccessInfo:
+					rs.LogInfofAt(result.GetSuccessInfo().GetResetAt().AsTime(), logEntryLabelResetTriggers, "successfully reset the trigger of change %s", changeURL)
+				case *eventpb.LongOpCompleted_ResetTriggers_Result_FailureInfo:
+					rs.LogInfof(ctx, logEntryLabelResetTriggers, "failed to reset the trigger of change %s. Reason: %s", changeURL, result.GetFailureInfo().GetFailureMessage())
+				default:
+					panic(fmt.Errorf("unexpected long op result status: %s", opCompleted.GetStatus()))
+				}
+			}
+		} else {
+			for _, result := range opCompleted.GetCancelTriggers().GetResults() {
+				changeURL := changelist.ExternalID(result.GetExternalId()).MustURL()
+				switch result.GetDetail().(type) {
+				case *eventpb.LongOpCompleted_CancelTriggers_Result_SuccessInfo:
+					rs.LogInfofAt(result.GetSuccessInfo().GetCancelledAt().AsTime(), logEntryLabelResetTriggers, "successfully cancelled the trigger of change %s", changeURL)
+				case *eventpb.LongOpCompleted_CancelTriggers_Result_FailureInfo:
+					rs.LogInfof(ctx, logEntryLabelResetTriggers, "failed to cancel the trigger of change %s. Reason: %s", changeURL, result.GetFailureInfo().GetFailureMessage())
+				default:
+					panic(fmt.Errorf("unexpected long op result status: %s", opCompleted.GetStatus()))
+				}
 			}
 		}
 	default:

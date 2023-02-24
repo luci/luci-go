@@ -47,7 +47,9 @@ func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, res
 	case *run.OngoingLongOps_Op_PostStartMessage:
 		return impl.onCompletedPostStartMessage(ctx, rs, op, result)
 	case *run.OngoingLongOps_Op_CancelTriggers:
-		return impl.onCompletedCancelTriggers(ctx, rs, op, result)
+		return impl.onCompletedResetTriggers(ctx, rs, op, result)
+	case *run.OngoingLongOps_Op_ResetTriggers_:
+		return impl.onCompletedResetTriggers(ctx, rs, op, result)
 	case *run.OngoingLongOps_Op_ExecuteTryjobs:
 		return impl.onCompletedExecuteTryjobs(ctx, rs, op, result)
 	default:
