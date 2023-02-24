@@ -93,9 +93,13 @@ func useTaskBackendClientForTesting(ctx context.Context, client *MockTaskBackend
 	return context.WithValue(ctx, MockTaskBackendClientKey{}, client)
 }
 
+// This will help track the number of times the cipd server is called to test if the cache is working as intended.
+var numCipdCalls int
+
 func describeBootstrapBundle(c C) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.So(r.URL.Path, ShouldEqual, "/prpc/cipd.Repository/DescribeBootstrapBundle")
+		numCipdCalls++
 		reqBody, err := io.ReadAll(r.Body)
 		c.So(err, ShouldBeNil)
 		req := &cipdpb.DescribeBootstrapBundleRequest{}
@@ -202,6 +206,26 @@ func TestBackendTaskClient(t *testing.T) {
 	})
 }
 
+func helpTestCipdCall(c C, ctx context.Context, infra *pb.BuildInfra) {
+	m, err := extractCipdDetails(ctx, "project", infra)
+	c.So(err, ShouldBeNil)
+	detail, ok := m["infra/tools/luci/bbagent/linux-amd64"]
+	c.So(ok, ShouldBeTrue)
+	c.So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+		Sha256:    "this_is_a_sha_256_I_swear",
+		SizeBytes: 100,
+		Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
+	})
+	detail, ok = m["infra/tools/luci/bbagent/mac-amd64"]
+	c.So(ok, ShouldBeTrue)
+	c.So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
+		Sha256:    "this_is_a_sha_256_I_swear",
+		SizeBytes: 100,
+		Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
+	})
+	c.So(numCipdCalls, ShouldEqual, 1)
+}
+
 func TestCipdClient(t *testing.T) {
 	t.Parallel()
 
@@ -216,6 +240,7 @@ func TestCipdClient(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
 		mockCipdServer := httptest.NewServer(describeBootstrapBundle(c))
+		defer mockCipdServer.Close()
 		mockCipdClient := &prpc.Client{
 			Host: strings.TrimPrefix(mockCipdServer.URL, "http://"),
 			Options: &prpc.Options{
@@ -256,22 +281,12 @@ func TestCipdClient(t *testing.T) {
 					Hostname: "some unique host name",
 				},
 			}
-			m, err := extractCipdDetails(ctx, "project", infra)
-			So(err, ShouldBeNil)
-			detail, ok := m["infra/tools/luci/bbagent/linux-amd64"]
-			So(ok, ShouldBeTrue)
-			So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
-				Sha256:    "this_is_a_sha_256_I_swear",
-				SizeBytes: 100,
-				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/linux-amd64/+/latest",
-			})
-			detail, ok = m["infra/tools/luci/bbagent/mac-amd64"]
-			So(ok, ShouldBeTrue)
-			So(detail, ShouldResembleProto, &pb.RunTaskRequest_AgentExecutable_AgentSource{
-				Sha256:    "this_is_a_sha_256_I_swear",
-				SizeBytes: 100,
-				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
-			})
+			numCipdCalls = 0
+			// call extractCipdDetails function 10 times.
+			// The test asserts that numCipdCalls should always be 1
+			for i := 0; i < 10; i++ {
+				helpTestCipdCall(c, ctx, infra)
+			}
 		})
 	})
 }
@@ -300,6 +315,7 @@ func TestCreateBackendTask(t *testing.T) {
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
 		So(err, ShouldBeNil)
 		server := httptest.NewServer(describeBootstrapBundle(c))
+		defer server.Close()
 		client := &prpc.Client{
 			Host: strings.TrimPrefix(server.URL, "http://"),
 			Options: &prpc.Options{
