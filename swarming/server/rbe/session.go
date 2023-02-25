@@ -18,6 +18,7 @@ package rbe
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sort"
 	"time"
 
@@ -288,14 +289,18 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		}
 	}
 
-	// Since we are running on GAE, we can't really block for long waiting for new
-	// leases. Note that giving very small deadlines to RBE may cause it not to do
-	// anything at all. 20s seems fine though.
+	// If there are no pending leases, RBE seems to block for `<rpc deadline>-10s`
+	// (not doing anything at all if the RPC deadline is less than 10s). Since we
+	// are running on GAE, we are limited by 1m total. Tell RBE we have ~50s, it
+	// will block for ~40s, giving us ~20s of spare time.
+	//
+	// Randomize this timeout a bit to avoid freshly restarted bots call us
+	// in synchronized "waves".
 	//
 	// TODO(vadimsh): This needs more tuning, in particular in combination with
 	// GAE's `max_concurrent_requests` parameter.
 	started := clock.Now(ctx)
-	rpcCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	rpcCtx, cancel := context.WithTimeout(ctx, randomDuration(45*time.Second, 55*time.Second))
 	defer cancel()
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
 		Name:       r.SessionID,
@@ -507,4 +512,9 @@ func rbeBotSession(sessionID string, status remoteworkers.BotStatus, dims map[st
 			},
 		},
 	}
+}
+
+// randomDuration returns a uniformly distributed random number in range [a, b).
+func randomDuration(a, b time.Duration) time.Duration {
+	return a + time.Duration(rand.Int63n(int64(b-a)))
 }

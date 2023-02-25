@@ -4,7 +4,8 @@ runtime: go120
 instance_class: F4
 
 automatic_scaling:
-  max_concurrent_requests: 80
+  # Most requests do nothing waiting for RBE's UpdateBotSession to unblock.
+  max_concurrent_requests: 500
 
 inbound_services:
 - warmup
