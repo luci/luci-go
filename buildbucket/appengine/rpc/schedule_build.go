@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/caching"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
@@ -160,6 +161,25 @@ func validateNotificationConfig(ctx context.Context, n *pb.NotificationConfig) e
 	if err != nil {
 		return errors.Annotate(err, "invalid pubsub_topic %s", n.PubsubTopic).Err()
 	}
+
+	// Check the global cache first to reduce calls to the actual IAM api.
+	cache := caching.GlobalCache(ctx, "has_perm_on_pubsub_callback_topic")
+	if cache == nil {
+		logging.Warningf(ctx, "global has_perm_on_pubsub_callback_topic cache is not found")
+	}
+	switch hasPerm, err := cache.Get(ctx, n.PubsubTopic); {
+	case err == caching.ErrCacheMiss:
+	case err != nil:
+		logging.Warningf(ctx, "failed to check %s from the global cache", n.PubsubTopic)
+	case hasPerm != nil:
+		return nil
+	}
+
+	// Check perm via the IAM api and save into the cache iff BB has the access on
+	// that topic. Why not also caching the bad result? Because users will usually
+	// correct the permission once they receive the bad response and retry again.
+	// Caching the bad result means we have to figure out a way to invalidate the
+	// cached item before it expires.
 	client, err := clients.NewPubsubClient(ctx, cloudProj, "")
 	if err != nil {
 		return errors.Annotate(err, "failed to create a pubsub client").Err()
@@ -169,7 +189,11 @@ func validateNotificationConfig(ctx context.Context, n *pb.NotificationConfig) e
 	case err != nil:
 		return errors.Annotate(err, "failed to check existence for topic %s", topic).Err()
 	case len(perms) < 1:
-		return errors.Reason("Buildbucket account (%s@appspot.gserviceaccount.com) doesn't have the publishing permission for %s", info.AppID(ctx), topic).Err()
+		return errors.Reason("%s@appspot.gserviceaccount.com account doesn't have the 'pubsub.topics.publish' or 'pubsub.topics.get' permission for %s", info.AppID(ctx), topic).Err()
+	default:
+		if err := cache.Set(ctx, topicID, []byte{1}, 10*time.Hour); err != nil {
+			logging.Warningf(ctx, "failed to save into has_perm_on_pubsub_callback_topic cache for %s", n.PubsubTopic)
+		}
 	}
 	return nil
 }

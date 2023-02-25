@@ -51,8 +51,8 @@ type NotificationConfig struct {
 	// it and will be migrated soon.
 	//
 	// <buildbucket-app-id>@appspot.gserviceaccount.com must have
-	// "pubsub.topics.publish" permissions on the topic, where
-	// <buildbucket-app-id> is usually "cr-buildbucket."
+	// "pubsub.topics.publish" and "pubsub.topics.get" permissions on the topic,
+	// where <buildbucket-app-id> is usually "cr-buildbucket."
 	PubsubTopic string `protobuf:"bytes,1,opt,name=pubsub_topic,json=pubsubTopic,proto3" json:"pubsub_topic,omitempty"`
 	// Will be available in PubSubCallBack.user_data.
 	// Max length: 4096.

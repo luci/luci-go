@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -48,6 +49,8 @@ import (
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/tq"
 
 	bb "go.chromium.org/luci/buildbucket"
@@ -6497,6 +6500,11 @@ func TestScheduleBuild(t *testing.T) {
 			tpc, err := psclient.CreateTopic(ctx, "topic")
 			tpc.IAM()
 			So(err, ShouldBeNil)
+			ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+				"has_perm_on_pubsub_callback_topic": &cachingtest.BlobCache{
+					LRU: lru.New(0),
+				},
+			})
 			Convey("empty", func() {
 				req := &pb.ScheduleBuildRequest{
 					Notify:          &pb.NotificationConfig{},
@@ -6529,7 +6537,22 @@ func TestScheduleBuild(t *testing.T) {
 				So(err, ShouldErrLike, "user_data")
 			})
 
-			Convey("ok", func() {
+			Convey("ok - pubsub topic perm cached", func() {
+				cache := caching.GlobalCache(ctx, "has_perm_on_pubsub_callback_topic")
+				err := cache.Set(ctx, "projects/project/topics/topic", []byte{1}, 10*time.Hour)
+				So(err, ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					Notify: &pb.NotificationConfig{
+						PubsubTopic: "projects/project/topics/topic",
+						UserData:    []byte("user data"),
+					},
+					TemplateBuildId: 1,
+				}
+				err = validateSchedule(ctx, req, nil, nil)
+				So(err, ShouldBeNil)
+			})
+
+			Convey("ok - pubsub topic perm not cached", func() {
 				req := &pb.ScheduleBuildRequest{
 					Notify: &pb.NotificationConfig{
 						PubsubTopic: "projects/project/topics/topic",
@@ -6543,6 +6566,10 @@ func TestScheduleBuild(t *testing.T) {
 				// tries to call `topic.IAM().TestPermissions()` and get the expected
 				// `Unimplemented` err msg.
 				So(err, ShouldErrLike, "Unimplemented desc = unknown service google.iam.v1.IAMPolicy")
+				// The bad result should not be cached.
+				cache := caching.GlobalCache(ctx, "has_perm_on_pubsub_callback_topic")
+				_, err = cache.Get(ctx, "projects/project/topics/topic")
+				So(err, ShouldErrLike, caching.ErrCacheMiss)
 			})
 		})
 

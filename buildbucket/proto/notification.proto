@@ -32,8 +32,8 @@ message NotificationConfig {
   // it and will be migrated soon.
   //
   // <buildbucket-app-id>@appspot.gserviceaccount.com must have
-  // "pubsub.topics.publish" permissions on the topic, where
-  // <buildbucket-app-id> is usually "cr-buildbucket."
+  // "pubsub.topics.publish" and "pubsub.topics.get" permissions on the topic,
+  // where <buildbucket-app-id> is usually "cr-buildbucket."
   string pubsub_topic = 1;
 
   // Will be available in PubSubCallBack.user_data.
