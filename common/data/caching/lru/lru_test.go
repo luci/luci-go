@@ -403,13 +403,28 @@ func TestGetOrCreate(t *testing.T) {
 }
 
 func shouldHaveValues(actual any, expected ...any) string {
-	cache := actual.(*Cache)
-
-	actualSnapshot := cache.snapshot()
+	actualSnapshot := makeSnapshot(actual.(*Cache))
 
 	expectedSnapshot := snapshot{}
 	for _, k := range expected {
 		expectedSnapshot[k] = k.(string) + "v"
 	}
 	return ShouldResemble(actualSnapshot, expectedSnapshot)
+}
+
+// snapshot is a snapshot of the contents of the Cache.
+type snapshot map[any]any
+
+// snapshot returns a snapshot map of the cache's entries.
+func makeSnapshot(c *Cache) (ss snapshot) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	if len(c.cache) > 0 {
+		ss = make(snapshot, len(c.cache))
+		for k, e := range c.cache {
+			ss[k] = e.v
+		}
+	}
+	return
 }
