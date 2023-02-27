@@ -16,6 +16,8 @@
 // lit-css-loader. This doesn't work for React, so we need to tell webpack the
 // exact loaders to use.
 import '!!style-loader!css-loader?modules=global!./styles/common_style.css';
+import '!!style-loader!css-loader?modules=global!./styles/color_classes.css';
+import { ThemeProvider } from '@emotion/react';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
@@ -43,6 +45,7 @@ import { NotFoundPage } from './pages/not_found_page';
 import { SearchPage } from './pages/search_page';
 import { TestResultsTab } from './pages/test_results_tab';
 import { Store, StoreProvider } from './store';
+import { theme } from './theme';
 
 export function App() {
   const [store] = useState(() => Store.create());
@@ -78,57 +81,62 @@ export function App() {
 
   return (
     <StoreProvider value={store}>
-      <LitEnvProvider>
-        <milo-tooltip />
-        <Routes>
-          <Route path="/ui" element={<BaseLayout />}>
-            <Route path="login" element={<LoginPage />} />
-            <Route path="search" element={<SearchPage />} />
-            <Route path="auth-callback/:channelId" element={<AuthChannelClosePage />} />
-            <Route path="p/:project/builders" element={<BuildersPage />} />
-            <Route path="p/:project/g/:group/builders" element={<BuildersPage />} />
-            <Route path="b/:buildId/*?" element={<BuildPageShortLink />} />
-            <Route path="p/:project/builders/:bucket/:builder/:buildNumOrId" element={<BuildPage />}>
-              <Route index element={<BuildDefaultTab />} />
-              <Route path="overview" element={<OverviewTab />} />
-              <Route path="test-results" element={<TestResultsTab />} />
-              <Route path="steps" element={<StepsTab />}>
-                {/* Some old systems generate links to a step by appending
+      <ThemeProvider theme={theme}>
+        <LitEnvProvider>
+          <milo-tooltip />
+          <Routes>
+            <Route path="/ui" element={<BaseLayout />}>
+              <Route path="login" element={<LoginPage />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="auth-callback/:channelId" element={<AuthChannelClosePage />} />
+              <Route path="p/:project/builders" element={<BuildersPage />} />
+              <Route path="p/:project/g/:group/builders" element={<BuildersPage />} />
+              <Route path="b/:buildId/*?" element={<BuildPageShortLink />} />
+              <Route path="p/:project/builders/:bucket/:builder/:buildNumOrId" element={<BuildPage />}>
+                <Route index element={<BuildDefaultTab />} />
+                <Route path="overview" element={<OverviewTab />} />
+                <Route path="test-results" element={<TestResultsTab />} />
+                <Route path="steps" element={<StepsTab />}>
+                  {/* Some old systems generate links to a step by appending
                 suffix to /steps/ (crbug/1204954).
                 This allows those links to continue to work. */}
-                <Route path="*" />
+                  <Route path="*" />
+                </Route>
+                <Route path="related-builds" element={<RelatedBuildsTab />} />
+                <Route path="timeline" element={<TimelineTab />} />
+                <Route path="blamelist" element={<BlamelistTab />} />
               </Route>
-              <Route path="related-builds" element={<RelatedBuildsTab />} />
-              <Route path="timeline" element={<TimelineTab />} />
-              <Route path="blamelist" element={<BlamelistTab />} />
+              <Route path="artifact" element={<ArtifactPageLayout />}>
+                <Route
+                  path="text-diff/invocations/:invId/tests/:testId/artifacts/:artifactId"
+                  element={<TextDiffArtifactPage />}
+                />
+                <Route
+                  path="text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
+                  element={<TextDiffArtifactPage />}
+                />
+                <Route
+                  path="image-diff/invocations/:invId/tests/:testId/artifacts/:artifactId"
+                  element={<ImageDiffArtifactPage />}
+                />
+                <Route
+                  path="image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
+                  element={<ImageDiffArtifactPage />}
+                />
+                <Route
+                  path="raw/invocations/:invId/tests/:testId/artifacts/:artifactId"
+                  element={<RawArtifactPage />}
+                />
+                <Route
+                  path="raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
+                  element={<RawArtifactPage />}
+                />
+              </Route>
+              <Route path="*" element={<NotFoundPage />} />
             </Route>
-            <Route path="artifact" element={<ArtifactPageLayout />}>
-              <Route
-                path="text-diff/invocations/:invId/tests/:testId/artifacts/:artifactId"
-                element={<TextDiffArtifactPage />}
-              />
-              <Route
-                path="text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
-                element={<TextDiffArtifactPage />}
-              />
-              <Route
-                path="image-diff/invocations/:invId/tests/:testId/artifacts/:artifactId"
-                element={<ImageDiffArtifactPage />}
-              />
-              <Route
-                path="image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
-                element={<ImageDiffArtifactPage />}
-              />
-              <Route path="raw/invocations/:invId/tests/:testId/artifacts/:artifactId" element={<RawArtifactPage />} />
-              <Route
-                path="raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
-                element={<RawArtifactPage />}
-              />
-            </Route>
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
-        </Routes>
-      </LitEnvProvider>
+          </Routes>
+        </LitEnvProvider>
+      </ThemeProvider>
     </StoreProvider>
   );
 }

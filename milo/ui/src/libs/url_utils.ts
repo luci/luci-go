@@ -19,11 +19,11 @@ export function getBuildURLPathFromBuildData(build: Pick<Build, 'builder' | 'num
 }
 
 export function getBuildURLPathFromBuildId(buildId: string): string {
-  return `/b/${buildId}`;
+  return `/ui/b/${buildId}`;
 }
 
 export function getBuildURLPath(builder: BuilderID, buildIdOrNum: string): string {
-  return getBuilderURLPath(builder) + `/${buildIdOrNum}`;
+  return `/ui${getBuilderURLPath(builder)}/${buildIdOrNum}`;
 }
 
 export function getBuilderURLPath(builder: BuilderID): string {

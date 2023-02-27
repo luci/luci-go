@@ -117,6 +117,15 @@ export const BUILD_STATUS_COLOR_MAP = Object.freeze({
   [BuildStatus.Canceled]: 'var(--canceled-color)',
 });
 
+export const BUILD_STATUS_COLOR_THEME_MAP = Object.freeze({
+  [BuildStatus.Scheduled]: 'scheduled',
+  [BuildStatus.Started]: 'started',
+  [BuildStatus.Success]: 'success',
+  [BuildStatus.Failure]: 'error',
+  [BuildStatus.InfraFailure]: 'criticalFailure',
+  [BuildStatus.Canceled]: 'canceled',
+});
+
 export const ARTIFACT_LENGTH_LIMIT = 50000;
 
 /**

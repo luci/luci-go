@@ -19,11 +19,10 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../components/status_bar';
-import '../../components/tab_bar';
+import '../../components/tabs';
 import '../../components/timeline';
 import '../test_results_tab/count_indicator';
 import { MiloBaseElement } from '../../components/milo_base';
-import { TabDef } from '../../components/tab_bar';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
@@ -131,7 +130,7 @@ export class InvocationPageElement extends MiloBaseElement implements BeforeEnte
     `;
   }
 
-  @computed get tabDefs(): TabDef[] {
+  @computed get tabDefs() {
     return [
       {
         id: 'test-results',

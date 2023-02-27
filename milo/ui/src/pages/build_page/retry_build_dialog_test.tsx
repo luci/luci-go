@@ -66,6 +66,6 @@ describe('RetryBuildDialog', () => {
     expect(onCloseSpy.callCount).to.eq(1);
     expect(retryBuildStub.callCount).to.eq(1);
     expect(routerGoStub.callCount).to.eq(1);
-    expect(routerGoStub.getCall(0).args[0]).to.eq('/p/proj/builders/bucket/builder/123');
+    expect(routerGoStub.getCall(0).args[0]).to.eq('/ui/p/proj/builders/bucket/builder/123');
   });
 });
