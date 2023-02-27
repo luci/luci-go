@@ -41,4 +41,17 @@ message Config {
   // Can be used to stop LUCI Analysis auto-bug filing and updates in
   // response to a problem.
   bool bug_updates_enabled = 5;
+
+  // Config related to test variant analysis.
+  TestVariantAnalysis test_variant_analysis = 6;
+}
+
+// TestVariantAnalysis controls how LUCI Analysis run test variant
+// analysis.
+// It can be used to turn on or off test variant analysis if a problem occurs.
+message TestVariantAnalysis {
+  // Controls whether we should run test variant analysis during ingestion.
+  // It should be only enabled on dev at the beginning, before we are confident
+  // enough to turn it on for prod.
+  bool enabled = 1;
 }
