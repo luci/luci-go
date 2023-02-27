@@ -234,30 +234,44 @@ func (c *Client) PurgeStaleRows(ctx context.Context, luciProject string) error {
 	q := c.client.Query(`
 		DELETE FROM clustered_failures cf1
 		WHERE
-			cf1.partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY) AND
-			-- Not in the streaming buffer. Streaming buffer keeps up to
-			-- 30 minutes of data. We use 40 minutes here to allow some
-			-- margin as our last_updated timestamp is the timestamp
-			-- the chunk was committed in Spanner and export to BigQuery
-			-- can be delayed from that.
-			cf1.last_updated < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 40 MINUTE) AND
-			(
-				-- Not the latest (cluster, test result) entry.
-				cf1.last_updated < (SELECT MAX(cf2.last_updated)
-								FROM clustered_failures cf2
-								WHERE cf2.partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-									AND cf2.partition_time = cf1.partition_time
-									AND cf2.cluster_algorithm = cf1.cluster_algorithm
-									AND cf2.cluster_id = cf1.cluster_id
-									AND cf2.chunk_id = cf1.chunk_id
-									AND cf2.chunk_index = cf1.chunk_index
-									)
-				-- Or is the latest (cluster, test result) entry, but test result
-				-- is no longer in cluster.
-				OR NOT COALESCE(cf1.is_included, FALSE)
-			)
+			-- Delete from the last 7 days only for cost reasons.
+			cf1.partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY) AND (
+				(
+					-- Not the latest (cluster, test result) entry.
+					cf1.last_updated < (
+						SELECT MAX(cf2.last_updated)
+						FROM clustered_failures cf2
+						WHERE cf2.partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+							AND cf2.partition_time = cf1.partition_time
+							AND cf2.cluster_algorithm = cf1.cluster_algorithm
+							AND cf2.cluster_id = cf1.cluster_id
+							AND cf2.chunk_id = cf1.chunk_id
+							AND cf2.chunk_index = cf1.chunk_index
+					)
+				) OR (
+					-- Or is the latest (cluster, test result) entry, but test result
+					-- is no longer in cluster.
+					NOT COALESCE(cf1.is_included, FALSE) AND
+					-- It is possible to have multiple rows exported for the same
+					-- clustered failure in close time proximity (for example,
+					-- a failure is added into a rule cluster, and then removed
+					-- again in response to a rule change).
+					-- Even though in the Spanner ClusteringState table the insert
+					-- will occur become visible before the delete, there is no
+					-- similar guarantee for the BigQuery export: the delete could
+					-- become visible before the insert.
+					-- To avoid us deleting the deletion before the insert lands,
+					-- and as a result never deleting the insert, we wait a short time.
+					cf1.last_updated < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 20 MINUTE)
+				)
+			) AND
+			-- Don't try to delete rows in the BigQuery streaming buffer unless fastDeletion enabled.
+			(@fastDeletion OR cf1.last_updated < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 40 MINUTE))
 	`)
 	q.DefaultDatasetID = dataset.DatasetID
+	q.Parameters = []bigquery.QueryParameter{
+		{Name: "fastDeletion", Value: c.fastDeletionEnabled},
+	}
 
 	job, err := q.Run(ctx)
 	if err != nil {

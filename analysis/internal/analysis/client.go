@@ -42,12 +42,17 @@ func NewClient(ctx context.Context, gcpProject string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{client: client}, nil
+	// TODO(b/1013592): Enable on all projects when ready (review in January 2024).
+	fastDeletionEnabled := gcpProject == "luci-analysis-dev"
+	return &Client{client: client, fastDeletionEnabled: fastDeletionEnabled}, nil
 }
 
 // Client may be used to read LUCI Analysis clusters.
 type Client struct {
 	client *bigquery.Client
+	// fastDeletionEnabled controls whether we will try to delete rows
+	// still in the streaming buffer.
+	fastDeletionEnabled bool
 }
 
 // Close releases any resources held by the client.

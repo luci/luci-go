@@ -68,11 +68,6 @@ type ClusterSummary struct {
 	MetricValues         map[metrics.ID]int64
 }
 
-// metricFieldName returns the protocol buffer field path that
-// func metricFieldName(id metrics.ID) string {
-// 	return fmt.Sprintf("metrics.`%s`.value", string(m.ID))
-// }
-
 func defaultOrder(ms []metrics.Definition) []aip.OrderBy {
 	sortedMetrics := make([]metrics.Definition, len(ms))
 	copy(sortedMetrics, ms)
