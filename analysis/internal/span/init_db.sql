@@ -760,3 +760,52 @@ CREATE TABLE TestRealms (
 -- Use a slightly longer retention period to prevent the invocation being
 -- dropped before the associated TestResults.
 , ROW DELETION POLICY (OLDER_THAN(LastIngestionTime, INTERVAL 100 DAY));
+
+-- Uses in test variant analysis (see go/luci-test-variant-analysis-design).
+-- Stores information about (test, variant, branch) combination.
+-- The information stored is the verdict history, and the analyzed segment
+-- results.
+CREATE TABLE TestVariantBranch (
+  -- The LUCI Project.
+  Project STRING(40) NOT NULL,
+  -- Unique identifier for the test.
+  TestId STRING(MAX) NOT NULL,
+  -- The identify of the test variant.
+  -- Computed as hex(sha256(<concatenated_key_value_pairs>)[:8]),
+  -- where concatenated_key_value_pairs is the result of concatenating
+  -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
+  VariantHash STRING(16) NOT NULL,
+  -- The identity of the branch that was tested. Cross-references to
+  -- GitReferences table.
+  GitReferenceHash STRING(8) NOT NULL,
+  -- key:value pairs in the test variant. See also Variant on the ResultDB
+  -- TestResults table. Only written the first time the row is created.
+  Variant ARRAY<STRING(MAX)>,
+  -- ZStandard-compressed representation of up to 100 recent test verdicts for
+  --  the test variant.
+  HotInputBuffer BYTES(MAX) NOT NULL,
+  -- ZStandard-compressed representation of up to 2000 recent test verdicts for
+  --  the test variant, after those in HotInputBuffer. Verdicts in
+  -- HotInputBuffer are pushed here when HotInputBuffer is full.
+  ColdInputBuffer BYTES(MAX) NOT NULL,
+  -- The number of changepoints (between active and active, or active and
+  -- finalized segments) that were detected in the last analysis of the input
+  --  buffer.
+  -- The position of such segments is not specified here (but can be obtained
+  -- by running changepoint analysis on the input buffer).
+  -- Facilitates detecting changes in the number of changepoints detected, to
+  -- trigger BigQuery exports.
+  RecentChangepointCount INT64 NOT NULL,
+  -- ZStandard-compressed, serialized Segment proto describing the finalizing
+  -- segment (if any). When verdicts are evicted from the ColdInputBuffer,
+  -- their totals are added to this segment.
+  FinalizingSegment BYTES(MAX) NOT NULL,
+  -- ZStandard-compressed, serialized Segments proto describing the finalized
+  -- segments only.
+  -- We only store up to 100 finalized segments.
+  FinalizedSegments BYTES(MAX) NOT NULL,
+  -- The Spanner commit timestamp this row was last updated.
+  -- Used as version timestamp for BigQuery export.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY(Project, TestId, VariantHash, GitReferenceHash),
+  ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 90 DAY));
