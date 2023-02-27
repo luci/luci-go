@@ -26,7 +26,7 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 // A backend task.
 message Task {
-  TaskID id = 1;
+  TaskID id = 1 [ (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED ];
 
   // (optional) Human-clickable link to the status page for this task.
   string link = 2;
@@ -52,9 +52,12 @@ message Task {
 // A unique identifier for tasks.
 message TaskID {
   // Target backend. e.g. "swarming://chromium-swarm".
-  string target = 1 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
+  string target = 1 [
+    (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED,
+    (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED
+  ];
 
   // An ID unique to the target used to identify this task. e.g. Swarming task
   // ID.
-  string id = 2;
+  string id = 2 [ (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED ];
 }

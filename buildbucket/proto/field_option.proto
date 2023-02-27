@@ -25,6 +25,11 @@ message CreateBuildFieldOption {
   google.api.FieldBehavior field_behavior = 1;
 }
 
+message RegisterBuildTaskFieldOption {
+  google.api.FieldBehavior field_behavior = 1;
+}
+
 extend google.protobuf.FieldOptions {
   CreateBuildFieldOption create_build_field_option = 54321;
+  RegisterBuildTaskFieldOption register_build_task_field_option = 54322;
 }

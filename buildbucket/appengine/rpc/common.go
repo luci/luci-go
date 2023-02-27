@@ -172,6 +172,21 @@ func getBuild(ctx context.Context, id int64) (*model.Build, error) {
 	}
 }
 
+// getBuildAndInfra returns the build and its infra entity with the given ID
+// or NotFound appstatus if either entity is not found.
+func getBuildAndInfra(ctx context.Context, id int64) (*model.Build, *model.BuildInfra, error) {
+	bld := &model.Build{ID: id}
+	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: id})}
+	switch err := datastore.Get(ctx, bld, infra); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity):
+		return nil, nil, perm.NotFoundErr(ctx)
+	case err != nil:
+		return nil, nil, errors.Annotate(err, "error fetching build or infra with ID %d", id).Err()
+	default:
+		return bld, infra, nil
+	}
+}
+
 // validateTags validates build tags.
 //
 // tagValidationMode should be one of the enum - TagNew, TagAppend
@@ -292,6 +307,8 @@ var tokenHeaders = map[pb.TokenBody_Purpose][]string{
 		// TODO(crbug.com/1031205): remove buildbucket.BuildTokenHeader.
 		buildbucket.BuildTokenHeader,
 	},
+	pb.TokenBody_REGISTER_TASK: {buildbucket.BuildbucketTokenHeader},
+	pb.TokenBody_START_BUILD:   {buildbucket.BuildbucketTokenHeader},
 }
 
 // validateToken validates the update token from the header.
@@ -351,6 +368,11 @@ func validateToken(ctx context.Context, bID int64, purpose pb.TokenBody_Purpose)
 
 	if bID == 0 {
 		return nil, nil, errors.Reason("failed to get build id to validate the build token").Err()
+	}
+
+	// REGISTER_TASK and START_BUILD tokens are not saved in datastore.
+	if purpose == pb.TokenBody_REGISTER_TASK || purpose == pb.TokenBody_START_BUILD {
+		return tokBody, nil, nil
 	}
 
 	bld, err := getBuild(ctx, bID)

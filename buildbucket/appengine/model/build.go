@@ -148,6 +148,14 @@ type Build struct {
 	// This does not include any "siblings" at higher levels of the tree, just
 	// the direct chain of ancestors from root to this build.
 	AncestorIds []int64 `gae:"ancestor_ids"`
+
+	// Id of the first RegisterBuildTask call Buildbucket receives for the build.
+	// Buildbucket uses this to deduplicate the other RegisterBuildTask calls.
+	RegisterTaskRequestID string `gae:"register_task_request_id,noindex"`
+
+	// BackendTaskToken is set at the first RegisterBuildTask, and UpdateBuildTask
+	// requests are required to have it in the header.
+	BackendTaskToken string `gae:"backend_task_token,noindex"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the
