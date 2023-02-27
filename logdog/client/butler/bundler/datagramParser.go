@@ -72,7 +72,7 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		size, _, err := rio.ReadFrame()
 		if err != nil {
 			switch err {
-			case io.EOF:
+			case io.EOF, io.ErrUnexpectedEOF:
 				// Not enough data for a size header.
 				return nil, nil
 

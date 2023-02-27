@@ -23,6 +23,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func init() {
+	rand.Seed(1)
+}
+
 func Test(t *testing.T) {
 	t.Parallel()
 

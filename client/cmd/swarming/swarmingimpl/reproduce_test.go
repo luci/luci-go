@@ -177,7 +177,11 @@ func TestPrepareTaskRequestEnvironment(t *testing.T) {
 		expectedEnvMap.Set("CHICKENS", strings.Join(chickens, string(os.PathListSeparator)))
 
 		expected.Env = expectedEnvMap.Sorted()
-		So(cmd, ShouldResemble, expected)
+
+		So(cmd.Path, ShouldEqual, expected.Path)
+		So(cmd.Args, ShouldResemble, expected.Args)
+		So(cmd.Env, ShouldResemble, expected.Env)
+		So(cmd.Dir, ShouldEqual, expected.Dir)
 
 		So(fetchedCASFiles, ShouldBeTrue)
 
