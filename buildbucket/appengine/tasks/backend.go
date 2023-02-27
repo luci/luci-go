@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock"
@@ -58,6 +59,10 @@ const (
 	// runTaskGiveUpTimeout indicates how long to retry
 	// the CreateBackendTask before giving up with INFRA_FAILURE.
 	runTaskGiveUpTimeout = 10 * 60 * time.Second
+
+	// buildStartGiveUpTimeout indicates how long the build has
+	// to start before givin up with INFRA_FAILURE.
+	buildStartGiveUpTimeout = 60 * 60 * time.Second
 
 	cipdCacheTTL = 10 * time.Minute
 )
@@ -207,6 +212,10 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Seconds: build.Proto.GetGracePeriod().GetSeconds() + bbagentReservedGracePeriod,
 	}
 
+	startDeadline := &timestamppb.Timestamp{
+		Seconds: build.Proto.GetCreateTime().GetSeconds() + int64(buildStartGiveUpTimeout.Seconds()),
+	}
+
 	taskReq := &pb.RunTaskRequest{
 		BuildbucketHost:  infra.Proto.Buildbucket.Hostname,
 		BackendToken:     taskToken,
@@ -221,6 +230,8 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		Caches:           caches,
 		AgentArgs:        computeAgentArgs(build.Proto, infra.Proto),
 		Dimensions:       infra.Proto.Backend.GetTaskDimensions(),
+		StartDeadline:    startDeadline,
+		Experiments:      build.Proto.Input.GetExperiments(),
 	}
 
 	project := build.Proto.Builder.Project

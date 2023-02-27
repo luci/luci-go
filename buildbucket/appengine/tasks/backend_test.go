@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -341,8 +342,17 @@ func TestCreateBackendTask(t *testing.T) {
 						Bucket:  "bucket",
 						Project: "project",
 					},
+					CreateTime: &timestamppb.Timestamp{
+						Seconds: 1677511793,
+					},
 					ExecutionTimeout: &durationpb.Duration{Seconds: 500},
-					GracePeriod:      &durationpb.Duration{Seconds: 50},
+					Input: &pb.Build_Input{
+						Experiments: []string{
+							"cow_eggs_experiment",
+							"are_cow_eggs_real_experiment",
+						},
+					},
+					GracePeriod: &durationpb.Duration{Seconds: 50},
 				},
 			}
 			key := datastore.KeyForObj(ctx, build)
@@ -437,6 +447,11 @@ func TestCreateBackendTask(t *testing.T) {
 					Key:   "dim_key_1",
 					Value: "dim_val_1",
 				},
+			})
+			So(req.StartDeadline.Seconds, ShouldEqual, 1677515393)
+			So(req.Experiments, ShouldResemble, []string{
+				"cow_eggs_experiment",
+				"are_cow_eggs_real_experiment",
 			})
 		})
 	})
