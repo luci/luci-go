@@ -1,4 +1,4 @@
-runtime: go119
+runtime: go120
 
 # Note: this is interpreted by gae.py, it maps the app ID being deployed to
 # values of ${...} vars.
