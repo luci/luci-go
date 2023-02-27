@@ -42,6 +42,4 @@ func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	default:
 		panic("impossible")
 	}
-
-	return nil
 }

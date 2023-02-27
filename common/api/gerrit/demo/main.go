@@ -37,7 +37,7 @@ const gerritHost = "chromium-review.googlesource.com"
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	interrupt := make(chan os.Signal)
+	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 	go func() {
 		<-interrupt

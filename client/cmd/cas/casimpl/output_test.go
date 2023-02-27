@@ -22,7 +22,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func Testpack(t *testing.T) {
+func TestPack(t *testing.T) {
 	t.Parallel()
 	Convey(`Simple test for pack.`, t, func() {
 		Convey(`1m 1`, func() {

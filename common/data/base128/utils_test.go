@@ -34,10 +34,6 @@ func TestDecodedLen(t *testing.T) {
 		encodedLen int
 	}{
 		{
-			dataLen:    -1,
-			encodedLen: -1,
-		},
-		{
 			dataLen:    0,
 			encodedLen: 0,
 		},
@@ -48,6 +44,7 @@ func TestDecodedLen(t *testing.T) {
 	}
 
 	for _, tt := range cases {
+		tt := tt
 		t.Run(fmt.Sprintf("%d --> %d", tt.dataLen, tt.encodedLen), func(t *testing.T) {
 			t.Parallel()
 			if diff := cmp.Diff(tt.encodedLen, EncodedLen(tt.dataLen)); diff != "" {

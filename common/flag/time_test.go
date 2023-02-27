@@ -41,6 +41,7 @@ func TestTimeFlag(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		c := c
 		t.Run(c.Tag, func(t *testing.T) {
 			t.Parallel()
 			var got time.Time
@@ -80,6 +81,7 @@ func TestTimeFlagErrors(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		c := c
 		t.Run(c.Tag, func(t *testing.T) {
 			t.Parallel()
 			var got time.Time

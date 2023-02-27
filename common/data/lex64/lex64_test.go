@@ -210,6 +210,7 @@ func TestPreservationOfComparisonOrder(t *testing.T) {
 			opts: V1Padding,
 		},
 	} {
+		v := v
 		t.Run(v.name, func(t *testing.T) {
 			t.Parallel()
 			expected := func(a []byte, b []byte) int {

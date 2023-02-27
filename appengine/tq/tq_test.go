@@ -286,7 +286,6 @@ func TestDispatcher(t *testing.T) {
 			// Never called.
 			handler := func(ctx context.Context, payload proto.Message) error {
 				panic("handler was called in GetQueues")
-				return nil
 			}
 
 			Convey("empty queue name", func() {

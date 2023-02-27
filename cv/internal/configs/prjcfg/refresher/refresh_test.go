@@ -37,6 +37,8 @@ import (
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/configs/srvcfg"
+	listenerpb "go.chromium.org/luci/cv/settings/listener"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -68,7 +70,7 @@ var testCfg = &cfgpb.Config{
 	},
 }
 
-func TestupdateProject(t *testing.T) {
+func TestUpdateProject(t *testing.T) {
 	Convey("Update Project", t, func() {
 		ctx, testClock, _ := mkTestingCtx()
 		chromiumConfig := &cfgpb.Config{
@@ -284,7 +286,7 @@ func TestupdateProject(t *testing.T) {
 	})
 }
 
-func TestdisableProject(t *testing.T) {
+func TestDisableProject(t *testing.T) {
 	Convey("Disable", t, func() {
 		ctx, testClock, _ := mkTestingCtx()
 		writeProjectConfig := func(enabled bool) {
@@ -346,6 +348,9 @@ func mkTestingCtx() (context.Context, testclock.TestClock, *tqtesting.Scheduler)
 	datastore.GetTestable(ctx).Consistent(true)
 
 	ctx, scheduler := tq.TestingContext(ctx, nil)
+	if err := srvcfg.SetTestListenerConfig(ctx, &listenerpb.Settings{}, nil); err != nil {
+		panic(err)
+	}
 	return ctx, clock, scheduler
 }
 

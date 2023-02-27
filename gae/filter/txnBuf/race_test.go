@@ -16,6 +16,7 @@ package txnBuf
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -46,20 +47,20 @@ func TestRace(t *testing.T) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						ctr := &Counter{ID: id}
 						if err := ds.Get(c, ctr); err != nil && err != ds.ErrNoSuchEntity {
-							t.Fatal("bad Get", err)
+							panic(fmt.Sprintf("bad Get: %s", err))
 						}
 						ctr.Value++
 						return ds.Put(c, ctr)
 					}, nil)
 					if err != nil {
-						t.Fatal("bad inner RIT", err)
+						panic(fmt.Sprintf("bad inner RIT: %s", err))
 					}
 				}
 
 				return nil
 			}, nil)
 			if err != nil {
-				t.Fatal("bad outer RIT", err)
+				panic(fmt.Sprintf("bad outer RIT: %s", err))
 			}
 		}()
 	}

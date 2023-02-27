@@ -16,6 +16,7 @@ package memory
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -43,7 +44,7 @@ func TestRaceGetPut(t *testing.T) {
 
 				obj := pmap("$key", ds.MakeKey(c, "Obj", 1))
 				if err := ds.Get(c, obj); err != nil && err != ds.ErrNoSuchEntity {
-					t.Fatal("error get", err)
+					panic(fmt.Sprintf("error get: %s", err))
 				}
 				cur := int64(0)
 				if ps := obj.Slice("Value"); len(ps) > 0 {
@@ -57,7 +58,7 @@ func TestRaceGetPut(t *testing.T) {
 			}, &ds.TransactionOptions{Attempts: 200})
 
 			if err != nil {
-				t.Fatal("error during transaction", err)
+				panic(fmt.Sprintf("error during transaction: %s", err))
 			}
 
 			atomic.AddInt32(&value, 1)
@@ -95,7 +96,7 @@ func TestRaceNonConflictingPuts(t *testing.T) {
 					"Value", 100))
 			}, nil)
 			if err != nil {
-				t.Fatal("error during transaction", err)
+				panic(fmt.Sprintf("error during transaction: %s", err))
 			}
 			atomic.AddInt32(&num, 1)
 		}()
