@@ -78,9 +78,9 @@ message RunTaskRequest {
   // of a single backend handling multiple different protocols.
   string target = 1;
 
-  // A token that the backend can use to preemptively report status back
-  // to Buildbucket via the UpdateBuildTask RPC.
-  string backend_token = 2;
+  // A REGISTER_TASK token that the backend can use to register the backend task
+  // to Buildbucket via the RegisterBuildTask RPC.
+  string register_backend_task_token = 2;
 
   // The LUCI Realm that the created task should be associated with.
   string realm = 3;

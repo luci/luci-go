@@ -24,11 +24,15 @@ import "go.chromium.org/luci/buildbucket/proto/build.proto";
 
 // A collection of build-related secrets we might pass from Buildbucket to Kitchen.
 message BuildSecrets {
-  // Token to identify RPCs associated with the same build.
+  // A BUILD token to identify UpdateBuild RPCs associated with the same build.
   string build_token = 1;
 
   // Token to allow updating this build's invocation in ResultDB.
   string resultdb_invocation_update_token = 2;
+
+  // A START_BUILD token to identify StartBuild RPCs associated with
+  // the same build.
+  string start_build_token = 3;
 }
 
 // Arguments for bbagent command.
