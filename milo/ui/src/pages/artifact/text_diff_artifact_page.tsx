@@ -117,3 +117,16 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-text-diff-artifact-page': {};
+    }
+  }
+}
+
+export function TextDiffArtifactPage() {
+  return <milo-text-diff-artifact-page></milo-text-diff-artifact-page>;
+}

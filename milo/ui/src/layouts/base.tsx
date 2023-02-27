@@ -12,6 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export function NotFoundPage() {
-  return <div css={{ margin: '8px 16px' }}>We couldn't find the page you were looking for.</div>;
+import { Outlet } from 'react-router-dom';
+
+import { TopBar } from '../components/top_bar';
+
+/**
+ * Renders page header, and tooltip.
+ */
+export function BaseLayout() {
+  return (
+    <>
+      <TopBar />
+      <Outlet />
+    </>
+  );
 }

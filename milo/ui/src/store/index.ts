@@ -44,7 +44,6 @@ export const Store = types
      */
     hasSettingsDialog: 0,
     showSettingsDialog: false,
-    banners: types.array(types.frozen<unknown>()),
     workbox: types.optional(WorkboxState, {}),
 
     authState: types.optional(AuthStateStore, {}),
@@ -77,12 +76,6 @@ export const Store = types
     },
     unregisterSettingsDialog() {
       self.hasSettingsDialog--;
-    },
-    addBanner(banner: unknown) {
-      self.banners.push(banner);
-    },
-    removeBanner(banner: unknown) {
-      self.banners.remove(banner);
     },
     setShowSettingsDialog(show: boolean) {
       self.showSettingsDialog = show;

@@ -13,9 +13,11 @@
 // limitations under the License.
 
 import { configure } from 'mobx';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 
-import './routes';
 import './stackdriver_errors';
+import { App } from './App';
 import { initDefaultTrustedTypesPolicy } from './libs/sanitize_html';
 
 initDefaultTrustedTypesPolicy();
@@ -27,3 +29,11 @@ configure({ enforceActions: 'never' });
 // Reload the page after a new version is activated to avoid different versions
 // of the code talking to each other.
 navigator.serviceWorker?.addEventListener('controllerchange', () => window.location.reload());
+
+const container = document.getElementById('app-root');
+const root = createRoot(container!);
+root.render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
