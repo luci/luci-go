@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -68,8 +67,6 @@ func handleInterruption(ctx context.Context) context.Context {
 // of `ks`. The only implementation of `ks` that matters is in the
 // 'infra/tools/led2' package.
 func Main(ks job.KitchenSupport) {
-	mathrand.SeedRandomly()
-
 	if ks == nil {
 		ks = job.NoKitchenSupport()
 	}

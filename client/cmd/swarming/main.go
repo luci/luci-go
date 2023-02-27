@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/client/casclient"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/client/versioncli"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -116,6 +115,5 @@ func getApplication() *subcommands.DefaultApplication {
 
 func main() {
 	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
-	mathrand.SeedRandomly()
 	os.Exit(subcommands.Run(getApplication(), nil))
 }

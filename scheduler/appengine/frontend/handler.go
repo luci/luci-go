@@ -42,7 +42,6 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
@@ -139,11 +138,6 @@ func initializeGlobalState(c context.Context) {
 //// Routes.
 
 func main() {
-	// Dev server likes to restart a lot, and upon a restart math/rand seed is
-	// always set to 1, resulting in lots of presumably "random" IDs not being
-	// very random. Seed it with real randomness.
-	mathrand.SeedRandomly()
-
 	// Register tasks handled here. 'NewEngine' call below will register more.
 	globalDispatcher.RegisterTask(&internal.ReadProjectConfigTask{}, readProjectConfig, "read-project-config", nil)
 

@@ -18,13 +18,11 @@ import (
 	"os"
 	"strings"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/resultdb/cli"
 )
 
 func main() {
-	mathrand.SeedRandomly()
 	p := cli.Params{
 		Auth:                chromeinfra.DefaultAuthOptions(),
 		DefaultResultDBHost: chromeinfra.ResultDBHost,

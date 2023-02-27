@@ -18,7 +18,6 @@ package main
 import (
 	"os"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 
 	"go.chromium.org/luci/lucicfg/cli"
@@ -26,7 +25,6 @@ import (
 )
 
 func main() {
-	mathrand.SeedRandomly()
 	params := base.Parameters{
 		AuthOptions:       chromeinfra.DefaultAuthOptions(),
 		ConfigServiceHost: chromeinfra.ConfigServiceHost,

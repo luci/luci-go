@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/clock/clockflag"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/multiflag"
 	log "go.chromium.org/luci/common/logging"
@@ -310,8 +309,6 @@ func mainImpl(ctx context.Context, defaultAuthOpts auth.Options, argv []string) 
 // Main execution function. This immediately jumps to 'mainImpl' and uses its
 // result as an exit code.
 func main() {
-	mathrand.SeedRandomly()
-
 	ctx := context.Background()
 	ctx = gologger.StdConfig.Use(ctx)
 

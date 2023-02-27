@@ -26,12 +26,10 @@ import (
 	"os"
 
 	"go.chromium.org/luci/cipd/client/cli"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 func main() {
-	mathrand.SeedRandomly()
 	params := cli.Parameters{
 		DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
 		ServiceURL:         chromeinfra.CIPDServiceURL,

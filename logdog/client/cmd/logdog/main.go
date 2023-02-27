@@ -18,13 +18,11 @@ import (
 	"context"
 	"os"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/logdog/client/cli"
 )
 
 func main() {
-	mathrand.SeedRandomly()
 	os.Exit(cli.Main(context.Background(), cli.Parameters{
 		Args:               os.Args[1:],
 		DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),

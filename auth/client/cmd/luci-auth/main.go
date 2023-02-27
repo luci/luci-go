@@ -26,13 +26,11 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth/client/luci_auth"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 func main() {
-	mathrand.SeedRandomly()
 	app := luci_auth.GetApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, nil))
 }

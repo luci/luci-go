@@ -34,7 +34,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -101,7 +100,6 @@ func (c *commandLine) check() error {
 }
 
 func main() {
-	mathrand.SeedRandomly()
 	os.Exit(realMain())
 }
 

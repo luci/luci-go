@@ -199,7 +199,6 @@ import (
 	octrace "go.opencensus.io/trace"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/iotools"
@@ -286,7 +285,6 @@ var cloudRegionFromGAERegion = map[string]string{
 //
 // On errors, logs them and aborts the process with non-zero exit code.
 func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
-	mathrand.SeedRandomly()
 	if opts == nil {
 		opts = &Options{}
 	}

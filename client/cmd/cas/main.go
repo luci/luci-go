@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/client/cmd/cas/casimpl"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -93,7 +92,6 @@ func getApplication() *cli.Application {
 
 func main() {
 	log.SetFlags(log.Lmicroseconds)
-	mathrand.SeedRandomly()
 	app := getApplication()
 	os.Exit(subcommands.Run(app, nil))
 }
