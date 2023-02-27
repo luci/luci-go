@@ -198,3 +198,16 @@ export class TestResultsTabElement extends MiloBaseElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-test-results-tab': {};
+    }
+  }
+}
+
+export function TestResultsTab() {
+  return <milo-test-results-tab />;
+}

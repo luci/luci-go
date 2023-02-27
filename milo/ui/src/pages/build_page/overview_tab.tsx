@@ -656,3 +656,16 @@ export class OverviewTabElement extends MobxLitElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-overview-tab': {};
+    }
+  }
+}
+
+export function OverviewTab() {
+  return <milo-overview-tab />;
+}

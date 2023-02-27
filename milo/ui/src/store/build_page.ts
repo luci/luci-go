@@ -387,7 +387,7 @@ export const BuildPage = types
     setUseComputedInvId(useComputed: boolean) {
       self.useComputedInvId = useComputed;
     },
-    setParams(builderId: BuilderID, buildNumOrId: string) {
+    setParams(builderId: BuilderID | undefined, buildNumOrId: string) {
       self.builderIdParam = builderId;
       self.buildNumOrIdParam = buildNumOrId;
     },

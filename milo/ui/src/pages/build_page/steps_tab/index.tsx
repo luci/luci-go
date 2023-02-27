@@ -99,3 +99,16 @@ export class StepsTabElement extends MiloBaseElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-steps-tab': {};
+    }
+  }
+}
+
+export function StepsTab() {
+  return <milo-steps-tab />;
+}

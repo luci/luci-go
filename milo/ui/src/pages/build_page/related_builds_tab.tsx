@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import createCache from '@emotion/cache';
-import { CacheProvider, EmotionCache } from '@emotion/react';
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import {
   Box,
@@ -28,25 +25,19 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { createRoot, Root } from 'react-dom/client';
 
 import '../../components/dot_spinner';
 import { DotSpinner } from '../../components/dot_spinner';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../libs/constants';
-import { consumer } from '../../libs/context';
 import { renderMarkdown } from '../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { getBuilderURLPath, getBuildURLPathFromBuildData, getProjectURLPath } from '../../libs/url_utils';
-import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
+import { useStore } from '../../store';
 import { BuildStateInstance } from '../../store/build_state';
 import { ExpandableEntriesState, ExpandableEntriesStateInstance } from '../../store/expandable_entries_state';
-import colorClasses from '../../styles/color_classes.css';
-import commonStyle from '../../styles/common_style.css';
 
 const TableStateContext = createContext<ExpandableEntriesStateInstance>(ExpandableEntriesState.create());
 
@@ -181,39 +172,3 @@ export const RelatedBuildsTab = observer(() => {
     </Box>
   );
 });
-
-@customElement('milo-related-builds-tab')
-@consumer
-export class BuildPageRelatedBuildsTabElement extends MobxLitElement {
-  @observable.ref @consumeStore() store!: StoreInstance;
-
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLDivElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    makeObservable(this);
-    this.parent = document.createElement('div');
-    const child = document.createElement('div');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-related-builds-tab',
-      container: this.parent,
-    });
-  }
-
-  protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <StoreProvider value={this.store}>
-          <RelatedBuildsTab />
-        </StoreProvider>
-      </CacheProvider>
-    );
-    return this.parent;
-  }
-
-  static styles = [commonStyle, colorClasses];
-}

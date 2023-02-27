@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { computed, makeObservable, observable, reaction, when } from 'mobx';
+import { computed, makeObservable, observable, reaction } from 'mobx';
+import { observer } from 'mobx-react-lite';
+import { ReactNode, useEffect } from 'react';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
 
 import '../../components/status_bar';
 import '../../components/tab_bar';
@@ -32,26 +34,14 @@ import {
   POTENTIALLY_EXPIRED,
 } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
-import {
-  errorHandler,
-  forwardWithoutMsg,
-  renderErrorInPre,
-  reportError,
-  reportRenderError,
-} from '../../libs/error_handler';
+import { errorHandler, forwardWithoutMsg, renderErrorInPre, reportRenderError } from '../../libs/error_handler';
 import { attachTags, hasTags } from '../../libs/tag';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
-import {
-  getBuilderURLPath,
-  getBuildURLPath,
-  getLegacyBuildURLPath,
-  getProjectURLPath,
-  NOT_FOUND_URL,
-} from '../../libs/url_utils';
+import { getBuilderURLPath, getBuildURLPath, getLegacyBuildURLPath, getProjectURLPath } from '../../libs/url_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
-import { consumeStore, StoreInstance } from '../../store';
+import { consumeStore, StoreInstance, useStore } from '../../store';
 import { GetBuildError } from '../../store/build_page';
 import { provideInvocationState, QueryInvocationError } from '../../store/invocation_state';
 import colorClasses from '../../styles/color_classes.css';
@@ -131,7 +121,14 @@ function renderError(err: ErrorEvent, ele: BuildPageElement) {
 @errorHandler(retryWithoutComputedInvId, renderError)
 @provider
 @consumer
-export class BuildPageElement extends MiloBaseElement implements BeforeEnterObserver {
+export class BuildPageElement extends MiloBaseElement {
+  static get properties() {
+    return {
+      builderIdParam: { type: Object, attribute: 'builder-id-param' },
+      buildNumOrIdParam: { type: String, attribute: 'build-num-or-id-param' },
+    };
+  }
+
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
@@ -152,14 +149,21 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     return this.store.buildPage.build?.data.builder.project;
   }
 
-  // The page is visited via a short link.
-  // The page will be redirected to the long link after the build is fetched.
-  private isShortLink = false;
-  private urlSuffix = '';
+  @observable.ref private _builderIdParam!: BuilderID;
+  @computed get builderIdParam() {
+    return this._builderIdParam;
+  }
+  set builderIdParam(newVal: BuilderID) {
+    this._builderIdParam = newVal;
+  }
 
-  // builderParam is only set when the page visited via a full link.
-  @observable.ref private builderIdParam?: BuilderID;
-  @observable.ref private buildNumOrIdParam = '';
+  @observable.ref private _buildNumOrIdParam = '';
+  @computed get buildNumOrIdParam() {
+    return this._buildNumOrIdParam;
+  }
+  set buildNumOrIdParam(newVal: string) {
+    this._buildNumOrIdParam = newVal;
+  }
 
   @computed private get buildNumOrId() {
     return this.store.buildPage.build?.buildNumOrId || this.buildNumOrIdParam;
@@ -186,34 +190,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     makeObservable(this);
   }
 
-  onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
-    const buildId = location.params['build_id'];
-    const path = location.params['path'];
-    if (typeof buildId === 'string' && path instanceof Array) {
-      this.isShortLink = true;
-      this.buildNumOrIdParam = ('b' + buildId) as string;
-      this.urlSuffix = '/' + path.join('/') + location.search + location.hash;
-      return;
-    }
-
-    this.isShortLink = false;
-    const project = location.params['project'];
-    const bucket = location.params['bucket'];
-    const builder = location.params['builder'];
-    const buildNumOrId = location.params['build_num_or_id'];
-    if ([project, bucket, builder, buildNumOrId].some((param) => typeof param !== 'string')) {
-      return cmd.redirect(NOT_FOUND_URL);
-    }
-
-    this.builderIdParam = {
-      project: project as string,
-      bucket: bucket as string,
-      builder: builder as string,
-    };
-    this.buildNumOrIdParam = buildNumOrId as string;
-    return;
-  }
-
   @computed private get faviconUrl() {
     if (this.build?.data) {
       return `/static/common/favicon/${STATUS_FAVICON_MAP[this.build?.data.status]}-32.png`;
@@ -229,23 +205,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
 
   connectedCallback() {
     super.connectedCallback();
-
-    if (!this.isShortLink && !window.location.href.includes('javascript:')) {
-      trackEvent(GA_CATEGORIES.NEW_BUILD_PAGE, GA_ACTIONS.PAGE_VISITED, window.location.href);
-      trackEvent(GA_CATEGORIES.PROJECT_BUILD_PAGE, GA_ACTIONS.VISITED_NEW, this.builderIdParam!.project);
-    }
-
-    this.store.registerSettingsDialog();
-
-    this.addDisposer(
-      reaction(
-        () => [this.store, this.builderIdParam, this.buildNumOrIdParam] as const,
-        ([store, builderIdParam, builderNumOrIdParam]) => {
-          store.buildPage.setParams(builderIdParam!, builderNumOrIdParam);
-        },
-        { fireImmediately: true }
-      )
-    );
 
     this.addDisposer(
       reaction(
@@ -269,30 +228,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       )
     );
 
-    if (this.isShortLink) {
-      // Redirect to the long link after the build is fetched.
-      this.addDisposer(
-        when(
-          reportError(this, () => Boolean(this.build?.data)),
-          () => {
-            const build = this.build!.data!;
-            if (build.number !== undefined) {
-              this.store.buildPage.setBuildId(build.builder, build.number, build.id);
-            }
-            const buildUrl = getBuildURLPath(build.builder, this.build!.buildNumOrId);
-
-            const newUrl = buildUrl + this.urlSuffix;
-            // Prevent the router from pushing the history state.
-            window.history.replaceState(null, '', newUrl);
-            Router.go(newUrl);
-          }
-        )
-      );
-
-      // Skip rendering-related reactions.
-      return;
-    }
-
     this.addDisposer(
       reaction(
         () => this.faviconUrl,
@@ -310,13 +245,8 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     );
   }
 
-  disconnectedCallback() {
-    this.store.unregisterSettingsDialog();
-    super.disconnectedCallback();
-  }
-
   @computed get tabDefs(): TabDef[] {
-    const buildURLPath = getBuildURLPath(this.builderIdParam!, this.buildNumOrIdParam);
+    const buildURLPath = getBuildURLPath(this.builderIdParam, this.buildNumOrIdParam);
     return [
       {
         id: 'overview',
@@ -399,10 +329,6 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
   }
 
   protected render = reportRenderError(this, () => {
-    if (this.isShortLink) {
-      return html``;
-    }
-
     return html`
       <milo-bp-change-config-dialog
         .open=${this.store.showSettingsDialog}
@@ -411,11 +337,11 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
       <div id="build-summary">
         <div id="build-id">
           <span id="build-id-label">Build </span>
-          <a href=${getProjectURLPath(this.builderIdParam!.project)}>${this.builderIdParam!.project}</a>
+          <a href=${getProjectURLPath(this.builderIdParam.project)}>${this.builderIdParam.project}</a>
           <span>&nbsp;/&nbsp;</span>
-          <span>${this.builderIdParam!.bucket}</span>
+          <span>${this.builderIdParam.bucket}</span>
           <span>&nbsp;/&nbsp;</span>
-          <a href=${getBuilderURLPath(this.builderIdParam!)}>${this.builderIdParam!.builder}</a>
+          <a href=${getBuilderURLPath(this.builderIdParam)}>${this.builderIdParam.builder}</a>
           <span>&nbsp;/&nbsp;</span>
           <span>${this.buildNumOrId}</span>
         </div>
@@ -522,3 +448,86 @@ export class BuildPageElement extends MiloBaseElement implements BeforeEnterObse
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-build-page': {
+        'builder-id-param': string;
+        'build-num-or-id-param': string;
+        children: ReactNode;
+      };
+    }
+  }
+}
+
+export const BuildPageShortLink = observer(() => {
+  const { buildId, ['*']: pathSuffix } = useParams();
+  const navigate = useNavigate();
+  const store = useStore();
+
+  if (!buildId) {
+    throw new Error('invariant violated: buildId should be set');
+  }
+
+  useEffect(() => {
+    store.buildPage.setParams(undefined, `b${buildId}`);
+  }, [store, buildId]);
+
+  const buildLoaded = Boolean(store.buildPage.build?.data);
+
+  useEffect(() => {
+    // Redirect to the long link after the build is fetched.
+    if (!buildLoaded) {
+      return;
+    }
+    const build = store.buildPage.build!;
+    if (build.data.number !== undefined) {
+      store.buildPage.setBuildId(build.data.builder, build.data.number, build.data.id);
+    }
+    const buildUrl = getBuildURLPath(build.data.builder, build.buildNumOrId);
+    const newUrl = '/ui' + buildUrl + (pathSuffix ? `/${pathSuffix}` : '');
+
+    navigate(newUrl, { replace: true });
+  }, [buildLoaded]);
+
+  // Page will be redirected once the build is loaded.
+  // Don't need to render anything.
+  return <></>;
+});
+
+export const BuildPage = observer(() => {
+  const { project, bucket, builder, buildNumOrId } = useParams();
+  const store = useStore();
+
+  if (!project || !bucket || !builder || !buildNumOrId) {
+    throw new Error('invariant violated: project, bucket, builder, buildNumOrId should be set');
+  }
+
+  useEffect(() => {
+    if (window.location.href.includes('javascript:')) {
+      return;
+    }
+    trackEvent(GA_CATEGORIES.NEW_BUILD_PAGE, GA_ACTIONS.PAGE_VISITED, window.location.href);
+    trackEvent(GA_CATEGORIES.PROJECT_BUILD_PAGE, GA_ACTIONS.VISITED_NEW, project);
+  }, [project, bucket, builder, buildNumOrId]);
+
+  useEffect(() => {
+    store.registerSettingsDialog();
+    return () => store.unregisterSettingsDialog();
+  }, [store]);
+
+  useEffect(() => {
+    store.buildPage.setParams({ project, bucket, builder }, buildNumOrId);
+  }, [store, project, bucket, builder, buildNumOrId]);
+
+  return (
+    <milo-build-page
+      builder-id-param={JSON.stringify({ project, bucket, builder })}
+      build-num-or-id-param={buildNumOrId}
+    >
+      <Outlet />
+    </milo-build-page>
+  );
+});

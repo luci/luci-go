@@ -29,11 +29,19 @@ import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
 import { RawArtifactPage } from './pages/artifact/raw_artifact_page';
 import { TextDiffArtifactPage } from './pages/artifact/text_diff_artifact_page';
+import { BuildPage, BuildPageShortLink } from './pages/build_page';
+import { BlamelistTab } from './pages/build_page/blamelist_tab';
+import { BuildDefaultTab } from './pages/build_page/build_default_tab';
+import { OverviewTab } from './pages/build_page/overview_tab';
+import { RelatedBuildsTab } from './pages/build_page/related_builds_tab';
+import { StepsTab } from './pages/build_page/steps_tab';
+import { TimelineTab } from './pages/build_page/timeline_tab';
 import { BuildersPage } from './pages/builders_page';
 import { AuthChannelClosePage } from './pages/close_page';
 import { LoginPage } from './pages/login_page';
 import { NotFoundPage } from './pages/not_found_page';
 import { SearchPage } from './pages/search_page';
+import { TestResultsTab } from './pages/test_results_tab';
 import { Store, StoreProvider } from './store';
 
 export function App() {
@@ -79,6 +87,21 @@ export function App() {
             <Route path="auth-callback/:channelId" element={<AuthChannelClosePage />} />
             <Route path="p/:project/builders" element={<BuildersPage />} />
             <Route path="p/:project/g/:group/builders" element={<BuildersPage />} />
+            <Route path="b/:buildId/*?" element={<BuildPageShortLink />} />
+            <Route path="p/:project/builders/:bucket/:builder/:buildNumOrId" element={<BuildPage />}>
+              <Route index element={<BuildDefaultTab />} />
+              <Route path="overview" element={<OverviewTab />} />
+              <Route path="test-results" element={<TestResultsTab />} />
+              <Route path="steps" element={<StepsTab />}>
+                {/* Some old systems generate links to a step by appending
+                suffix to /steps/ (crbug/1204954).
+                This allows those links to continue to work. */}
+                <Route path="*" />
+              </Route>
+              <Route path="related-builds" element={<RelatedBuildsTab />} />
+              <Route path="timeline" element={<TimelineTab />} />
+              <Route path="blamelist" element={<BlamelistTab />} />
+            </Route>
             <Route path="artifact" element={<ArtifactPageLayout />}>
               <Route
                 path="text-diff/invocations/:invId/tests/:testId/artifacts/:artifactId"

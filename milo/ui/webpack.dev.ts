@@ -28,7 +28,9 @@ const DEBUG_SW = process.env.DEBUG_SW === 'true';
 
 export default merge(common, {
   mode: 'development',
-  devtool: 'eval-source-map',
+  // Needed to avoid CORS issue when loading sourcemap in -dev mode.
+  // See https://reactjs.org/docs/cross-origin-errors.html#source-maps
+  devtool: 'cheap-module-source-map',
   output: {
     crossOriginLoading: 'anonymous',
   },

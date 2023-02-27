@@ -580,3 +580,16 @@ export class TimelineTabElement extends MiloBaseElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-timeline-tab': {};
+    }
+  }
+}
+
+export function TimelineTab() {
+  return <milo-timeline-tab />;
+}

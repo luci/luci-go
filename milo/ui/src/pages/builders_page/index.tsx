@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { css, html, render } from 'lit';
+import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import '../../components/status_bar';
@@ -37,6 +37,17 @@ import commonStyle from '../../styles/common_style.css';
 @provider
 @consumer
 export class BuildersPageElement extends MiloBaseElement {
+  static get properties() {
+    return {
+      project: {
+        type: String,
+      },
+      group: {
+        type: String,
+      },
+    };
+  }
+
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
@@ -44,8 +55,21 @@ export class BuildersPageElement extends MiloBaseElement {
   @provideNotifier()
   notifier = new IntersectionNotifier({ rootMargin: '1000px' });
 
-  @observable.ref project!: string;
-  @observable.ref group!: string;
+  @observable.ref _project!: string;
+  @computed get project() {
+    return this._project;
+  }
+  set project(newVal: string) {
+    this._project = newVal;
+  }
+
+  @observable.ref _group!: string;
+  @computed get group() {
+    return this._group;
+  }
+  set group(newVal: string) {
+    this._group = newVal;
+  }
 
   @observable.ref private numOfBuilds = 25;
   @observable.ref private builders: readonly BuilderID[] = [];
@@ -199,22 +223,28 @@ export class BuildersPageElement extends MiloBaseElement {
   ];
 }
 
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-builders-page': {
+        project: string;
+        group: string;
+      };
+    }
+  }
+}
+
 export function BuildersPage() {
   const { project, group } = useParams();
 
-  document.title = (group || project) + ' | Builders';
-
-  const container = useRef(null);
+  if (!project) {
+    throw new Error('invariant violated: project should be set');
+  }
 
   useEffect(() => {
-    if (!container.current) {
-      return;
-    }
-    render(
-      html`<milo-builders-page .project=${project} .group=${group || ''}></milo-builders-page>`,
-      container.current
-    );
-  }, [container.current]);
+    document.title = (group || project) + ' | Builders';
+  }, [project, group]);
 
-  return <div ref={container}></div>;
+  return <milo-builders-page project={project} group={group || ''}></milo-builders-page>;
 }
