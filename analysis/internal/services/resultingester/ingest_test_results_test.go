@@ -805,6 +805,16 @@ func TestIngestTestResults(t *testing.T) {
 				mrc.QueryTestVariants(tvReq, tvRsp)
 			}
 
+			setupConfig := func(ctx context.Context) {
+				cfg := &configpb.Config{
+					TestVariantAnalysis: &configpb.TestVariantAnalysis{
+						Enabled: true,
+					},
+				}
+				err := config.SetTestConfig(ctx, cfg)
+				So(err, ShouldBeNil)
+			}
+
 			// Prepare some existing analyzed test variants to update.
 			tmdBytes, _ := proto.Marshal(originalTmd)
 			ms := []*spanner.Mutation{
@@ -886,6 +896,7 @@ func TestIngestTestResults(t *testing.T) {
 			Convey("First task", func() {
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
+				setupConfig(ctx)
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
@@ -916,6 +927,7 @@ func TestIngestTestResults(t *testing.T) {
 				setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
 					rsp.NextPageToken = ""
 				})
+				setupConfig(ctx)
 
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
@@ -950,6 +962,8 @@ func TestIngestTestResults(t *testing.T) {
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
+				setupConfig(ctx)
+
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
@@ -980,6 +994,8 @@ func TestIngestTestResults(t *testing.T) {
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
+				setupConfig(ctx)
+
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
@@ -1010,6 +1026,8 @@ func TestIngestTestResults(t *testing.T) {
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
+				setupConfig(ctx)
+
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 

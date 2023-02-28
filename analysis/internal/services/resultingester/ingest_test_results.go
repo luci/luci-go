@@ -39,6 +39,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
+	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -271,9 +272,6 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 
 	failingTVs := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
 	nextPageToken := rsp.NextPageToken
-	// Allow garbage collector to free test variants except for those that are
-	// unexpected.
-	rsp = nil
 
 	// Insert the test results for clustering.
 	err = ingestForClustering(ctx, i.clustering, payload, ingestedInv, failingTVs)
@@ -318,6 +316,19 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 				return transient.Tag.Apply(err)
 			}
 		}
+	}
+
+	// Ingest for test variant analysis (changepoint analysis).
+	// Note that this is different from the ingestForTestVariantAnalysis above
+	// which should eventually be removed.
+	// See go/luci-test-variant-analysis-design for details.
+	err = ingestForChangePointAnalysis(ctx, rsp.TestVariants, payload)
+	if err != nil {
+		// Only log the error for now, we will return error when everything is
+		// working.
+		err = errors.Annotate(err, "ingestForChangePointAnalysis").Err()
+		logging.Errorf(ctx, err.Error())
+		// return err
 	}
 
 	if nextPageToken == "" {
@@ -451,6 +462,22 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	if err := clustering.Ingest(ctx, opts, tvs); err != nil {
 		err = errors.Annotate(err, "ingesting for clustering").Err()
 		return transient.Tag.Apply(err)
+	}
+	return nil
+}
+
+func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) error {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return errors.Annotate(err, "couldn't read config").Err()
+	}
+	tvaEnabled := cfg.TestVariantAnalysis.Enabled
+	if !tvaEnabled {
+		return nil
+	}
+	err = changepoints.Analyze(ctx, tvs, payload)
+	if err != nil {
+		return errors.Annotate(err, "analyze test variant").Err()
 	}
 	return nil
 }
