@@ -101,7 +101,7 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
     params.push(['selectedMetrics', selectedMetricsIds]);
 
     const orderByParam = searchParams.get('orderBy');
-
+    let addedOrderBy = false;
     if (selectedMetrics.findIndex((m) => m.metricId === orderByParam) < 0) {
       let highestMetric = selectedMetrics[0];
       selectedMetrics.forEach((m) => {
@@ -111,12 +111,15 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
       });
       params.push(['orderBy', highestMetric.metricId]);
       params.push(['orderDir', 'desc']);
+      addedOrderBy = true;
     }
 
     for (const [k, v] of searchParams.entries()) {
-      if (k !== 'selectedMetrics') {
-        params.push([k, v]);
+      if (((k === 'orderBy' || k === 'orderDir') && addedOrderBy) ||
+        k === 'selectedMetrics') {
+        continue;
       }
+      params.push([k, v]);
     }
     setSearchParams(params);
   }
