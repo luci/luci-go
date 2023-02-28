@@ -59,6 +59,7 @@ func NewRPCClient(ctx context.Context) (*RPCClient, error) {
 
 	clientOpts := &s2a.ClientOptions{
 		S2AAddress: s2aServerAddr,
+		EnableV2:   true,
 	}
 	creds, err := s2a.NewClientCreds(clientOpts)
 	if err != nil {
@@ -79,6 +80,7 @@ func NewRPCClient(ctx context.Context) (*RPCClient, error) {
 		option.WithGRPCDialOption(
 			grpc.WithPerRPCCredentials(perRPCCreds),
 		),
+		option.WithEndpoint(fmt.Sprintf("%v.mtls.googleapis.com:443", buganizerEndpointBase)),
 	)
 
 	if err != nil {

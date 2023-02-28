@@ -32,7 +32,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/gomodule/redigo v1.8.9
 	github.com/google/go-cmp v0.5.9
-	github.com/google/s2a-go v0.0.0-20230207213108-7f75a7516db1
+	github.com/google/s2a-go v0.0.0-20230227181719-36dafe55c348
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.3.0
 	github.com/googleapis/gax-go/v2 v2.7.0

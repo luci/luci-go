@@ -264,8 +264,8 @@ github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1/go.mod h1:kpwsk12EmLe
 github.com/google/pprof v0.0.0-20221103000818-d260c55eee4c h1:lvddKcYTQ545ADhBujtIJmqQrZBDsGo7XIMbAQe/sNY=
 github.com/google/pprof v0.0.0-20221103000818-d260c55eee4c/go.mod h1:dDKJzRmX4S37WGHujM7tX//fmj1uioxKzKxz3lo4HJo=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
-github.com/google/s2a-go v0.0.0-20230207213108-7f75a7516db1 h1:2k/lK2qPvhipMGXfrDyYA6Jok9xbC0M56WyfYy5jD0U=
-github.com/google/s2a-go v0.0.0-20230207213108-7f75a7516db1/go.mod h1:OJpEgntRZo8ugHpF9hkoLJbS5dSI20XZeXJ9JVywLlM=
+github.com/google/s2a-go v0.0.0-20230227181719-36dafe55c348 h1:CJvqImzfN55VyULytSY2kDX+l4xgvTKKKTcNyWO9plE=
+github.com/google/s2a-go v0.0.0-20230227181719-36dafe55c348/go.mod h1:OJpEgntRZo8ugHpF9hkoLJbS5dSI20XZeXJ9JVywLlM=
 github.com/google/tink/go v1.7.0 h1:6Eox8zONGebBFcCBqkVmt60LaWZa6xg1cl/DwAh/J1w=
 github.com/google/tink/go v1.7.0/go.mod h1:GAUOd+QE3pgj9q8VKIGTCP33c/B7eb4NhxLcgTJZStM=
 github.com/google/uuid v1.0.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
