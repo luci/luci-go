@@ -166,7 +166,7 @@ func TestReclustering(t *testing.T) {
 
 				// BigQuery exports should correctly reflect the new
 				// test result-cluster inclusions.
-				exports := clusteredFailures.InsertionsByProject[testProject]
+				exports := clusteredFailures.Insertions
 				sortBQExport(exports)
 				netExports := flattenBigQueryExports(append(initial.netBQExports, exports...))
 				So(netExports, ShouldResembleProto, expected.netBQExports)
@@ -190,7 +190,7 @@ func TestReclustering(t *testing.T) {
 				// should there be zero net changes to the BigQuery
 				// export, no changes should be written to BigQuery
 				// at all.
-				So(clusteredFailures.InsertionsByProject[testProject], ShouldBeEmpty)
+				So(clusteredFailures.Insertions, ShouldBeEmpty)
 			})
 			Convey("From old algorithms", func() {
 				expected := newScenario().build()
@@ -245,7 +245,7 @@ func TestReclustering(t *testing.T) {
 			So(actualState, ShouldResemble, s.clusteringState)
 
 			// No changes written to BigQuery.
-			So(clusteredFailures.InsertionsByProject[testProject], ShouldBeEmpty)
+			So(clusteredFailures.Insertions, ShouldBeEmpty)
 
 			// No progress is reported.
 			actualShards, err := shards.ReadAll(span.Single(ctx))
@@ -316,7 +316,7 @@ func TestReclustering(t *testing.T) {
 			So(actualState, ShouldResemble, expected.clusteringState)
 
 			// No changes written to BigQuery.
-			So(clusteredFailures.InsertionsByProject[testProject], ShouldBeEmpty)
+			So(clusteredFailures.Insertions, ShouldBeEmpty)
 
 			// Shard is reported as complete.
 			actualShards, err := shards.ReadAll(span.Single(ctx))
@@ -547,6 +547,7 @@ func (b *testResultBuilder) buildBQExport(clusterIDs []clustering.ClusterID) []*
 			TestResultSystem: "resultdb",
 			TestResultId:     fmt.Sprintf("invocations/testrun-%v/tests/test-name-%v/results/%v", b.uniqifier, b.uniqifier, b.uniqifier),
 			LastUpdated:      nil, // To be set by caller.
+			Project:          testProject,
 
 			PartitionTime:              timestamppb.New(time.Date(2020, time.April, 1, 2, 3, 4, 0, time.UTC)),
 			IsIncluded:                 true,

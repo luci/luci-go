@@ -37,7 +37,9 @@ type ClusteringHandler struct {
 // further analysis.
 type ClusteredFailuresClient interface {
 	// Insert inserts the given rows into BigQuery.
-	Insert(ctx context.Context, luciProject string, rows []*bqpb.ClusteredFailureRow) error
+	Insert(ctx context.Context, rows []*bqpb.ClusteredFailureRow) error
+	// InsertDeprecated inserts the given rows into BigQuery.
+	InsertDeprecated(ctx context.Context, luciProject string, rows []*bqpb.ClusteredFailureRow) error
 }
 
 func NewClusteringHandler(cf ClusteredFailuresClient) *ClusteringHandler {
@@ -57,7 +59,10 @@ func NewClusteringHandler(cf ClusteredFailuresClient) *ClusteringHandler {
 // a later point if they do not succeed).
 func (r *ClusteringHandler) HandleUpdatedClusters(ctx context.Context, updates *clustering.Update, commitTime time.Time) error {
 	rowUpdates := prepareInserts(updates, commitTime)
-	return r.cfClient.Insert(ctx, updates.Project, rowUpdates)
+	if err := r.cfClient.InsertDeprecated(ctx, updates.Project, rowUpdates); err != nil {
+		return err
+	}
+	return r.cfClient.Insert(ctx, rowUpdates)
 }
 
 // prepareInserts prepares entries into the BigQuery clustered failures table
@@ -147,6 +152,7 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 		TestResultSystem: failure.TestResultId.System,
 		TestResultId:     failure.TestResultId.Id,
 		LastUpdated:      timestamppb.New(commitTime),
+		Project:          project,
 
 		PartitionTime: failure.PartitionTime,
 

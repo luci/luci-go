@@ -23,20 +23,24 @@ import (
 // FakeClient represents a fake implementation of the clustered failures
 // exporter, for testing.
 type FakeClient struct {
-	InsertionsByProject map[string][]*bqp.ClusteredFailureRow
+	Insertions []*bqp.ClusteredFailureRow
 }
 
 // NewFakeClient creates a new FakeClient for exporting clustered failures.
 func NewFakeClient() *FakeClient {
 	return &FakeClient{
-		InsertionsByProject: make(map[string][]*bqp.ClusteredFailureRow),
+		Insertions: []*bqp.ClusteredFailureRow{},
 	}
 }
 
 // Insert inserts the given rows in BigQuery.
-func (fc *FakeClient) Insert(ctx context.Context, luciProject string, rows []*bqp.ClusteredFailureRow) error {
-	inserts := fc.InsertionsByProject[luciProject]
-	inserts = append(inserts, rows...)
-	fc.InsertionsByProject[luciProject] = inserts
+func (fc *FakeClient) Insert(ctx context.Context, rows []*bqp.ClusteredFailureRow) error {
+	fc.Insertions = append(fc.Insertions, rows...)
+	return nil
+}
+
+// InsertDeprecated inserts the given rows in BigQuery.
+// Deprecated: Use insert() instead.
+func (fc *FakeClient) InsertDeprecated(ctx context.Context, luciProject string, rows []*bqp.ClusteredFailureRow) error {
 	return nil
 }

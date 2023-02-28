@@ -77,7 +77,7 @@ type Client struct {
 	mwClient  *managedwriter.Client
 }
 
-func (s *Client) ensureSchema(ctx context.Context, datasetID string) error {
+func (s *Client) ensureSchema(ctx context.Context) error {
 	// Dataset for the project may have to be manually created.
 	table := s.bqClient.Dataset(datasetID).Table(tableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
@@ -86,14 +86,38 @@ func (s *Client) ensureSchema(ctx context.Context, datasetID string) error {
 	return nil
 }
 
+func (s *Client) ensureSchemaDeprecated(ctx context.Context, datasetID string) error {
+	// Dataset for the project may have to be manually created.
+	table := s.bqClient.Dataset(datasetID).Table(tableName)
+	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadataDeprecated); err != nil {
+		return errors.Annotate(err, "ensuring clustered failures table in dataset %q", datasetID).Err()
+	}
+	return nil
+}
+
 // Insert inserts the given rows in BigQuery.
-func (s *Client) Insert(ctx context.Context, luciProject string, rows []*bqpb.ClusteredFailureRow) error {
+func (s *Client) Insert(ctx context.Context, rows []*bqpb.ClusteredFailureRow) error {
+	if err := s.ensureSchema(ctx); err != nil {
+		return errors.Annotate(err, "ensure schema").Err()
+	}
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, datasetID, tableName)
+	writer := bqutil.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
+	payload := make([]proto.Message, len(rows))
+	for i, r := range rows {
+		payload[i] = r
+	}
+	return writer.AppendRowsWithDefaultStream(ctx, payload)
+}
+
+// InsertDeprecated inserts the given rows in BigQuery.
+// Deprecated: Use insert() instead.
+func (s *Client) InsertDeprecated(ctx context.Context, luciProject string, rows []*bqpb.ClusteredFailureRow) error {
 	dataset, err := bqutil.DatasetForProject(luciProject)
 	if err != nil {
 		return errors.Annotate(err, "getting dataset").Err()
 	}
 
-	if err := s.ensureSchema(ctx, dataset); err != nil {
+	if err := s.ensureSchemaDeprecated(ctx, dataset); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
 

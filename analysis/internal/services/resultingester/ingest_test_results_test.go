@@ -585,11 +585,9 @@ func TestIngestTestResults(t *testing.T) {
 				// Confirm clustering has occurred, with each test result in at
 				// least one cluster.
 				actualClusteredFailures := make(map[string]int)
-				for project, insertions := range clusteredFailures.InsertionsByProject {
-					So(project, ShouldEqual, "project")
-					for _, f := range insertions {
-						actualClusteredFailures[f.TestId] += 1
-					}
+				for _, f := range clusteredFailures.Insertions {
+					So(f.Project, ShouldEqual, "project")
+					actualClusteredFailures[f.TestId] += 1
 				}
 				expectedClusteredFailures := map[string]int{
 					"ninja://test_new_failure":        1,
@@ -1027,7 +1025,7 @@ func TestIngestTestResults(t *testing.T) {
 				// Confirm no chunks have been written to GCS.
 				So(len(chunkStore.Contents), ShouldEqual, 0)
 				// Confirm no clustering has occurred.
-				So(clusteredFailures.InsertionsByProject, ShouldHaveLength, 0)
+				So(clusteredFailures.Insertions, ShouldHaveLength, 0)
 			})
 			Convey(`build included by ancestor`, func() {
 				payload.Build.IsIncludedByAncestor = true

@@ -38,4 +38,21 @@ func TestSchema(t *testing.T) {
 			}
 		})
 	})
+
+	Convey(`With Schema Deprecated`, t, func() {
+		var fieldNames []string
+		for _, field := range tableMetadataDeprecated.Schema {
+			fieldNames = append(fieldNames, field.Name)
+		}
+		Convey(`Time partitioning field is defined`, func() {
+			for _, clusteringField := range tableMetadataDeprecated.Clustering.Fields {
+				So(clusteringField, ShouldBeIn, fieldNames)
+			}
+		})
+		Convey(`Clustering fields are defined`, func() {
+			for _, clusteringField := range tableMetadataDeprecated.Clustering.Fields {
+				So(clusteringField, ShouldBeIn, fieldNames)
+			}
+		})
+	})
 }

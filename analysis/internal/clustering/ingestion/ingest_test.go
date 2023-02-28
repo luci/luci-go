@@ -91,7 +91,7 @@ func TestIngest(t *testing.T) {
 			err := ingestor.Ingest(ctx, opts, input)
 			So(err, ShouldBeNil)
 
-			insertions := clusteredFailures.InsertionsByProject["chromium"]
+			insertions := clusteredFailures.Insertions
 			So(len(insertions), ShouldEqual, len(expectedCFs))
 
 			// Sort both actuals and expectations by key so that we compare corresponding rows.
@@ -473,12 +473,12 @@ func newTestResult(uniqifier, testRunNum, resultNum int) *rdbpb.TestResult {
 func expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTestRun, resultNum int) *bqpb.ClusteredFailureRow {
 	resultID := fmt.Sprintf("result-%v-%v", testRunNum, resultNum)
 	return &bqpb.ClusteredFailureRow{
-		ClusterAlgorithm: "", // Determined by clustering algorithm.
-		ClusterId:        "", // Determined by clustering algorithm.
-		TestResultSystem: "resultdb",
-		TestResultId:     fmt.Sprintf("invocations/testrun-%v/tests/test-name-%v/results/%s", testRunNum, uniqifier, resultID),
-		LastUpdated:      nil, // Only known at runtime, Spanner commit timestamp.
-
+		ClusterAlgorithm:           "", // Determined by clustering algorithm.
+		ClusterId:                  "", // Determined by clustering algorithm.
+		TestResultSystem:           "resultdb",
+		TestResultId:               fmt.Sprintf("invocations/testrun-%v/tests/test-name-%v/results/%s", testRunNum, uniqifier, resultID),
+		LastUpdated:                nil, // Only known at runtime, Spanner commit timestamp.
+		Project:                    "chromium",
 		PartitionTime:              timestamppb.New(time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)),
 		IsIncluded:                 true,
 		IsIncludedWithHighPriority: false,

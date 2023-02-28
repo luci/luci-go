@@ -33,6 +33,9 @@ import (
 // tableName is the name of the exported BigQuery table.
 const tableName = "clustered_failures"
 
+// datasetID is the name of the exported BigQuery dataset.
+const datasetID = "internal"
+
 // schemaApplyer ensures BQ schema matches the row proto definitions.
 var schemaApplyer = bq.NewSchemaApplyer(caching.RegisterLRUCache(50))
 
@@ -41,6 +44,7 @@ const partitionExpirationTime = 90 * 24 * time.Hour
 const rowMessage = "luci.analysis.bq.ClusteredFailureRow"
 
 var tableMetadata *bigquery.TableMetadata
+var tableMetadataDeprecated *bigquery.TableMetadata
 
 // tableSchemaDescriptor is a self-contained DescriptorProto for describing
 // row protocol buffers sent to the BigQuery Write API.
@@ -57,6 +61,19 @@ func init() {
 	}
 
 	tableMetadata = &bigquery.TableMetadata{
+		TimePartitioning: &bigquery.TimePartitioning{
+			Type:       bigquery.DayPartitioningType,
+			Expiration: partitionExpirationTime,
+			Field:      "partition_time",
+		},
+		Clustering: &bigquery.Clustering{
+			Fields: []string{"project", "cluster_algorithm", "cluster_id"},
+		},
+		// Relax ensures no fields are marked "required".
+		Schema: schema.Relax(),
+	}
+
+	tableMetadataDeprecated = &bigquery.TableMetadata{
 		TimePartitioning: &bigquery.TimePartitioning{
 			Type:       bigquery.DayPartitioningType,
 			Expiration: partitionExpirationTime,
