@@ -12,21 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import createCache, { EmotionCache } from '@emotion/cache';
-import { CacheProvider } from '@emotion/react';
-import { Router } from '@vaadin/router';
-import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { createRoot, Root } from 'react-dom/client';
+import { useNavigate } from 'react-router-dom';
 
 import { changeUserState } from '../components/signin';
-import { consumer } from '../libs/context';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
-import { consumeStore, StoreInstance, StoreProvider, useStore } from '../store';
-import commonStyle from '../styles/common_style.css';
+import { useStore } from '../store';
 
 /**
  * Prompts the user to login.
@@ -37,6 +29,7 @@ import commonStyle from '../styles/common_style.css';
  */
 export const LoginPage = observer(() => {
   const store = useStore();
+  const navigate = useNavigate();
 
   const isLoggedIn = ![undefined, ANONYMOUS_IDENTITY].includes(store.authState.userIdentity);
 
@@ -45,7 +38,7 @@ export const LoginPage = observer(() => {
       return;
     }
     const redirect = new URLSearchParams(window.location.search).get('redirect');
-    Router.go(redirect || '/');
+    navigate(redirect || '/');
   }, [isLoggedIn]);
 
   return (
@@ -58,39 +51,3 @@ export const LoginPage = observer(() => {
     </div>
   );
 });
-
-@customElement('milo-login-page')
-@consumer
-export class SearchPageElement extends MobxLitElement {
-  @observable.ref @consumeStore() store!: StoreInstance;
-
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLDivElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    makeObservable(this);
-    this.parent = document.createElement('div');
-    const child = document.createElement('div');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-login-page',
-      container: this.parent,
-    });
-  }
-
-  protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <StoreProvider value={this.store}>
-          <LoginPage />
-        </StoreProvider>
-      </CacheProvider>
-    );
-    return this.parent;
-  }
-
-  static styles = [commonStyle];
-}

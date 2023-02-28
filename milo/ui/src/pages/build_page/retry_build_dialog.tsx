@@ -16,12 +16,12 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
-import { Router } from '@vaadin/router';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useCallback } from 'react';
 import { createRoot, Root } from 'react-dom/client';
+import { useNavigate } from 'react-router-dom';
 
 import '../../components/dot_spinner';
 import { consumer } from '../../libs/context';
@@ -37,12 +37,13 @@ export interface RetryBuildDialogProps {
 
 export const RetryBuildDialog = observer(({ open, onClose, container }: RetryBuildDialogProps) => {
   const pageState = useStore().buildPage;
+  const navigate = useNavigate();
 
   const handleConfirm = useCallback(async () => {
     const build = await pageState.retryBuild();
     onClose?.();
     if (build) {
-      Router.go(getBuildURLPathFromBuildData(build));
+      navigate(getBuildURLPathFromBuildData(build));
     }
   }, [pageState]);
 
