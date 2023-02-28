@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
+	"go.chromium.org/luci/swarming/server/internals"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
 )
@@ -63,6 +64,10 @@ func main() {
 		if err != nil {
 			return err
 		}
+		internals, err := internals.Client(srv.Context, srv.Options.CloudProject)
+		if err != nil {
+			return err
+		}
 
 		botSrv := botsrv.New(srv.Context, srv.Routes, srv.Options.CloudProject, tokenSecret)
 
@@ -73,7 +78,7 @@ func main() {
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
 
 		// Handlers for TQ tasks submitted by Python Swarming.
-		rbeReservations := rbe.NewReservationServer(srv.Context, rbeConn, srv.Options.ImageVersion())
+		rbeReservations := rbe.NewReservationServer(srv.Context, rbeConn, internals, srv.Options.ImageVersion())
 		rbeReservations.RegisterTQTasks(&tq.Default)
 
 		// Helpers for running local integration tests. They fake some of Swarming

@@ -8,7 +8,9 @@ package swarming.internals.rbe;
 
 option go_package = "go.chromium.org/luci/swarming/proto/internals;internalspb";
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+
 import "go.chromium.org/luci/swarming/proto/config/pools.proto";
 
 // TaggedMessage is an envelope for an HMAC-tagged protobuf message.
@@ -248,7 +250,7 @@ message TaskPayload {
 
 // TaskResult is used as an RBE task result.
 //
-// TaskResult represents an outcome of a reservation that was completed by a bot
+// TaskResult represents an outcome of a reservation that was processed by a bot
 // (successfully or not). If a bot never saw the reservation, or crashed midway,
 // TaskResult is not available. There's more generic Reservation.status field
 // for these cases in the RBE API.
@@ -260,5 +262,43 @@ message TaskPayload {
 // Reservation proto that contains TaskResult, so TaskPayload fields are not
 // duplicated in the TaskResult.
 message TaskResult {
-  // Empty for now.
+  // Set to a human readable string if the bot skipped executing the
+  // reservation. Used for debugging only.
+  string skip_reason = 1;
+}
+
+
+// This service is exposed by the Python Swarming, called by the Go Swarming.
+//
+// All RPCs are internal to the Swarming backend.
+service Internals {
+  // Marks the slice as expired or failed, switches the task to the next slice.
+  //
+  // Does nothing (and succeeds) is the slice is no longer pending or doesn't
+  // exist.
+  rpc ExpireSlice(ExpireSliceRequest) returns (google.protobuf.Empty);
+}
+
+
+// Body of ExpireSlice internal RPC call.
+//
+// It identifies a concrete TaskToRunShardXXX entity and the reason it has
+// expired.
+message ExpireSliceRequest {
+  // Swarming task ID (aka TaskResultSummary packed id), identifies TaskRequest.
+  string task_id = 1;
+  // Shard index of TaskToRunShardXXX entity class.
+  int32 task_to_run_shard = 2;
+  // Datastore ID of TaskToRunShardXXX entity (a child of the TaskRequest).
+  int64 task_to_run_id = 3;
+
+  // The reason the slice is marked as expired.
+  enum Reason {
+    REASON_UNSPECIFIED = 0;
+    NO_RESOURCE = 1;        // no bots alive that match the requested dimensions
+    PERMISSION_DENIED = 2;  // no access to the RBE instance
+    INVALID_ARGUMENT = 3;   // RBE didn't like something about the reservation
+  }
+  Reason reason = 4;
+  string details = 5;
 }

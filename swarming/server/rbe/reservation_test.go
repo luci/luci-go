@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -43,8 +44,10 @@ func TestReservationServer(t *testing.T) {
 		rbe := mockedReservationClient{
 			newState: remoteworkers.ReservationState_RESERVATION_PENDING,
 		}
+		internals := mockedInternalsClient{}
 		srv := ReservationServer{
 			rbe:           &rbe,
+			internals:     &internals,
 			serverVersion: "go-version",
 		}
 
@@ -111,8 +114,14 @@ func TestReservationServer(t *testing.T) {
 		Convey("handleEnqueueRBETask fatal error", func() {
 			Convey("expected error, report ok", func() {
 				rbe.errCreate = status.Errorf(codes.FailedPrecondition, "boom")
-				srv.testReservationDenied = func(reason error) error {
-					So(reason, ShouldHaveGRPCStatus, codes.FailedPrecondition)
+				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
+					So(req, ShouldResembleProto, &internalspb.ExpireSliceRequest{
+						TaskId:         enqueueTask.Payload.TaskId,
+						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
+						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
+						Reason:         internalspb.ExpireSliceRequest_NO_RESOURCE,
+						Details:        "rpc error: code = FailedPrecondition desc = boom",
+					})
 					return nil
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
@@ -121,8 +130,14 @@ func TestReservationServer(t *testing.T) {
 
 			Convey("unexpected error, report ok", func() {
 				rbe.errCreate = status.Errorf(codes.PermissionDenied, "boom")
-				srv.testReservationDenied = func(reason error) error {
-					So(reason, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				internals.expireSlice = func(req *internalspb.ExpireSliceRequest) error {
+					So(req, ShouldResembleProto, &internalspb.ExpireSliceRequest{
+						TaskId:         enqueueTask.Payload.TaskId,
+						TaskToRunShard: enqueueTask.Payload.TaskToRunShard,
+						TaskToRunId:    enqueueTask.Payload.TaskToRunId,
+						Reason:         internalspb.ExpireSliceRequest_PERMISSION_DENIED,
+						Details:        "rpc error: code = PermissionDenied desc = boom",
+					})
 					return nil
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
@@ -131,7 +146,7 @@ func TestReservationServer(t *testing.T) {
 
 			Convey("expected, report failed", func() {
 				rbe.errCreate = status.Errorf(codes.FailedPrecondition, "boom")
-				srv.testReservationDenied = func(reason error) error {
+				internals.expireSlice = func(_ *internalspb.ExpireSliceRequest) error {
 					return status.Errorf(codes.InvalidArgument, "boom")
 				}
 				err := srv.handleEnqueueRBETask(ctx, enqueueTask)
@@ -174,4 +189,18 @@ func (m *mockedReservationClient) GetReservation(ctx context.Context, in *remote
 
 func (m *mockedReservationClient) CancelReservation(ctx context.Context, in *remoteworkers.CancelReservationRequest, opts ...grpc.CallOption) (*remoteworkers.CancelReservationResponse, error) {
 	panic("unused yet")
+}
+
+type mockedInternalsClient struct {
+	expireSlice func(*internalspb.ExpireSliceRequest) error
+}
+
+func (m *mockedInternalsClient) ExpireSlice(ctx context.Context, in *internalspb.ExpireSliceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	if m.expireSlice == nil {
+		panic("must not be called")
+	}
+	if err := m.expireSlice(in); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }

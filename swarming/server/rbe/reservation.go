@@ -37,17 +37,16 @@ import (
 // ReservationServer is responsible for creating and canceling RBE reservations.
 type ReservationServer struct {
 	rbe           remoteworkers.ReservationsClient
+	internals     internalspb.InternalsClient
 	serverVersion string
-
-	// This is temporary until there's a Swarming client that can be mocked.
-	testReservationDenied func(reason error) error
 }
 
 // NewReservationServer creates a new reservation server given an RBE client
 // connection.
-func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, serverVersion string) *ReservationServer {
+func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, internals internalspb.InternalsClient, serverVersion string) *ReservationServer {
 	return &ReservationServer{
 		rbe:           remoteworkers.NewReservationsClient(cc),
+		internals:     internals,
 		serverVersion: serverVersion,
 	}
 }
@@ -89,7 +88,7 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 	defer func() {
 		if err != nil && !transient.Tag.In(err) {
 			// Something is fatally broken, report this to Swarming.
-			if derr := s.reservationDenied(ctx, task, err); derr != nil {
+			if derr := s.reservationDenied(ctx, task.Payload, err); derr != nil {
 				// If the report itself failed for whatever reason, ask TQ to retry by
 				// returning this error as is (i.e. not tagged with Fatal or Ignore).
 				err = derr
@@ -100,7 +99,7 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 				// unexpected ones (e.g. PermissionDenied due to misconfiguration) with
 				// Fatal tag. This will make them show up differently in monitoring and
 				// logs.
-				if status.Code(err) == codes.FailedPrecondition {
+				if isExpectedRBEError(err) {
 					err = tq.Ignore.Apply(err)
 				} else {
 					err = tq.Fatal.Apply(err)
@@ -161,11 +160,41 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 // reservationDenied notifies the Swarming Python side that the reservation
 // cannot be created due to some fatal error (in particular if there are no
 // RBE bots that can execute it).
-func (s *ReservationServer) reservationDenied(ctx context.Context, task *internalspb.EnqueueRBETask, reason error) error {
-	// TODO(vadimsh): Implement.
-	logging.Errorf(ctx, "Failed to submit RBE reservation %q: %s", task.Payload.ReservationId, reason)
-	if s.testReservationDenied != nil {
-		return s.testReservationDenied(reason)
+func (s *ReservationServer) reservationDenied(ctx context.Context, task *internalspb.TaskPayload, reason error) error {
+	level := logging.Error
+	if isExpectedRBEError(reason) {
+		level = logging.Warning
 	}
-	return nil
+	logging.Logf(ctx, level, "Failed to submit RBE reservation %q: %s", task.ReservationId, reason)
+
+	// Convert RBE reply to a slice expiration reason. Note that there's
+	// specifically no generic "UNKNOWN" error: all possible RBE errors should
+	// have known reasons.
+	var reasonCode internalspb.ExpireSliceRequest_Reason
+	switch grpcutil.Code(reason) {
+	case codes.FailedPrecondition:
+		reasonCode = internalspb.ExpireSliceRequest_NO_RESOURCE
+	case codes.PermissionDenied:
+		reasonCode = internalspb.ExpireSliceRequest_PERMISSION_DENIED
+	case codes.InvalidArgument:
+		reasonCode = internalspb.ExpireSliceRequest_INVALID_ARGUMENT
+	default:
+		return errors.Reason("unexpected RBE gRPC status code in %s", reason).Err()
+	}
+
+	// Tell Swarming to switch to the next slice, if necessary.
+	_, err := s.internals.ExpireSlice(ctx, &internalspb.ExpireSliceRequest{
+		TaskId:         task.TaskId,
+		TaskToRunShard: task.TaskToRunShard,
+		TaskToRunId:    task.TaskToRunId,
+		Reason:         reasonCode,
+		Details:        reason.Error(),
+	})
+	return err
+}
+
+// isExpectedRBEError returns true for errors that are expected to happen during
+// normal code flow.
+func isExpectedRBEError(err error) bool {
+	return grpcutil.Code(err) == codes.FailedPrecondition
 }

@@ -501,6 +501,9 @@ message SwarmingTaskBackendConfig {
   // Name of the file within the CIPD package and should be used to construct
   // the task command line.
   string agent_binary_cipd_filename = 8;
+
+  // Name of the CIPD server.
+  string agent_binary_cipd_server = 9;
 }
 
 // Swarming:ResultDB integration configuration for a task.
@@ -588,6 +591,7 @@ message NewTaskRequest {
     CANARY_NEVER = 2;
     SKIP = 3;
   }
+  PoolTaskTemplateField pool_task_template = 14;
 
   // Maximum delay between bot pings before the bot is considered dead
   // while running a task.
