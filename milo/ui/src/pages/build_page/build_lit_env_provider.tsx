@@ -17,7 +17,6 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ReactNode } from 'react';
 
-import '../test_results_tab/count_indicator';
 import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { POTENTIALLY_EXPIRED } from '../../libs/constants';
@@ -166,10 +165,10 @@ declare global {
   }
 }
 
-export interface LitEnvProviderParams {
+export interface BuildLitEnvProviderParams {
   readonly children: React.ReactNode;
 }
 
-export function BuildLitEnvProvider({ children }: LitEnvProviderParams) {
+export function BuildLitEnvProvider({ children }: BuildLitEnvProviderParams) {
   return <milo-build-lit-env-provider>{children}</milo-build-lit-env-provider>;
 }

@@ -19,6 +19,7 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { DateTime } from 'luxon';
 import { autorun, computed, makeObservable, observable } from 'mobx';
 
+import '../../components/timeline';
 import { MiloBaseElement } from '../../components/milo_base';
 import { TimelineBlock } from '../../components/timeline';
 import { consumer } from '../../libs/context';
@@ -207,4 +208,17 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
       }
     `,
   ];
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-invocation-details-tab': {};
+    }
+  }
+}
+
+export function InvocationDetailsTab() {
+  return <milo-invocation-details-tab />;
 }

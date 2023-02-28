@@ -40,6 +40,9 @@ import { StepsTab } from './pages/build_page/steps_tab';
 import { TimelineTab } from './pages/build_page/timeline_tab';
 import { BuildersPage } from './pages/builders_page';
 import { AuthChannelClosePage } from './pages/close_page';
+import { InvocationPage } from './pages/invocation_page';
+import { InvocationDefaultTab } from './pages/invocation_page/invocation_default_tab';
+import { InvocationDetailsTab } from './pages/invocation_page/invocation_details_tab';
 import { LoginPage } from './pages/login_page';
 import { NotFoundPage } from './pages/not_found_page';
 import { SearchPage } from './pages/search_page';
@@ -105,6 +108,11 @@ export function App() {
                 <Route path="related-builds" element={<RelatedBuildsTab />} />
                 <Route path="timeline" element={<TimelineTab />} />
                 <Route path="blamelist" element={<BlamelistTab />} />
+              </Route>
+              <Route path="inv/:invId" element={<InvocationPage />}>
+                <Route index element={<InvocationDefaultTab />} />
+                <Route index path="test-results" element={<TestResultsTab />} />
+                <Route path="invocation-details" element={<InvocationDetailsTab />} />
               </Route>
               <Route path="artifact" element={<ArtifactPageLayout />}>
                 <Route
