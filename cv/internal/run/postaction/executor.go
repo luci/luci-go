@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/run"
 )
 
 // Executor executes a PostAction for a Run termination event.
@@ -31,7 +32,7 @@ func NewExecutor(gf gerrit.Factory) *Executor {
 }
 
 // Do executes the payload.
-func (exe *Executor) Do(ctx context.Context, payload *ExecutePostActionPayload) error {
+func (exe *Executor) Do(ctx context.Context, payload *run.OngoingLongOps_Op_ExecutePostActionPayload) error {
 	// TODO(ddoman): implement me
 	return nil
 }

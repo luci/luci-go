@@ -20,7 +20,6 @@ option go_package = "go.chromium.org/luci/cv/internal/run/eventpb;eventpb";
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/task.proto";
-import "go.chromium.org/luci/cv/internal/run/postaction/tasks.proto";
 
 message LongOpCompleted {
   reserved 4; // cancel_triggers
@@ -47,11 +46,14 @@ message LongOpCompleted {
   // Status of the long operation.
   Status status = 2;
 
+  message ExecutePostActionResult {
+  }
+
   oneof result {
     PostStartMessage post_start_message = 3;
     ResetTriggers reset_triggers = 6;
     cv.internal.tryjob.ExecuteTryjobsResult execute_tryjobs = 5;
-    cv.internal.run.postaction.ExecutePostActionResult execute_post_action = 7;
+    ExecutePostActionResult execute_post_action = 7;
   }
 
   message PostStartMessage {
@@ -89,6 +91,7 @@ message LongOpCompleted {
         Failure failure_info = 4;
       }
     }
+
     // The top-level long ops status will be SUCCEEDED iff all triggers are
     // reset successfully, in other word, all results have `reset_at` set.
     repeated Result results = 1;

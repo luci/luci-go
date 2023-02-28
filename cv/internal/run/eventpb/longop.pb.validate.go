@@ -308,6 +308,112 @@ var _ interface {
 	ErrorName() string
 } = LongOpCompletedValidationError{}
 
+// Validate checks the field values on LongOpCompleted_ExecutePostActionResult
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *LongOpCompleted_ExecutePostActionResult) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// LongOpCompleted_ExecutePostActionResult with the rules defined in the proto
+// definition for this message. If any rules are violated, the result is a
+// list of violation errors wrapped in
+// LongOpCompleted_ExecutePostActionResultMultiError, or nil if none found.
+func (m *LongOpCompleted_ExecutePostActionResult) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *LongOpCompleted_ExecutePostActionResult) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return LongOpCompleted_ExecutePostActionResultMultiError(errors)
+	}
+
+	return nil
+}
+
+// LongOpCompleted_ExecutePostActionResultMultiError is an error wrapping
+// multiple validation errors returned by
+// LongOpCompleted_ExecutePostActionResult.ValidateAll() if the designated
+// constraints aren't met.
+type LongOpCompleted_ExecutePostActionResultMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m LongOpCompleted_ExecutePostActionResultMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m LongOpCompleted_ExecutePostActionResultMultiError) AllErrors() []error { return m }
+
+// LongOpCompleted_ExecutePostActionResultValidationError is the validation
+// error returned by LongOpCompleted_ExecutePostActionResult.Validate if the
+// designated constraints aren't met.
+type LongOpCompleted_ExecutePostActionResultValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e LongOpCompleted_ExecutePostActionResultValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e LongOpCompleted_ExecutePostActionResultValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e LongOpCompleted_ExecutePostActionResultValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e LongOpCompleted_ExecutePostActionResultValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e LongOpCompleted_ExecutePostActionResultValidationError) ErrorName() string {
+	return "LongOpCompleted_ExecutePostActionResultValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e LongOpCompleted_ExecutePostActionResultValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sLongOpCompleted_ExecutePostActionResult.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = LongOpCompleted_ExecutePostActionResultValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = LongOpCompleted_ExecutePostActionResultValidationError{}
+
 // Validate checks the field values on LongOpCompleted_PostStartMessage with
 // the rules defined in the proto definition for this message. If any rules
 // are violated, the first error encountered is returned, or nil if there are

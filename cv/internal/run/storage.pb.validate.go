@@ -3835,6 +3835,141 @@ var _ interface {
 	ErrorName() string
 } = OngoingLongOps_Op_ResetTriggersValidationError{}
 
+// Validate checks the field values on
+// OngoingLongOps_Op_ExecutePostActionPayload with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *OngoingLongOps_Op_ExecutePostActionPayload) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// OngoingLongOps_Op_ExecutePostActionPayload with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in
+// OngoingLongOps_Op_ExecutePostActionPayloadMultiError, or nil if none found.
+func (m *OngoingLongOps_Op_ExecutePostActionPayload) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *OngoingLongOps_Op_ExecutePostActionPayload) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetPostAction()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+					field:  "PostAction",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+					field:  "PostAction",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetPostAction()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return OngoingLongOps_Op_ExecutePostActionPayloadValidationError{
+				field:  "PostAction",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return OngoingLongOps_Op_ExecutePostActionPayloadMultiError(errors)
+	}
+
+	return nil
+}
+
+// OngoingLongOps_Op_ExecutePostActionPayloadMultiError is an error wrapping
+// multiple validation errors returned by
+// OngoingLongOps_Op_ExecutePostActionPayload.ValidateAll() if the designated
+// constraints aren't met.
+type OngoingLongOps_Op_ExecutePostActionPayloadMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m OngoingLongOps_Op_ExecutePostActionPayloadMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m OngoingLongOps_Op_ExecutePostActionPayloadMultiError) AllErrors() []error { return m }
+
+// OngoingLongOps_Op_ExecutePostActionPayloadValidationError is the validation
+// error returned by OngoingLongOps_Op_ExecutePostActionPayload.Validate if
+// the designated constraints aren't met.
+type OngoingLongOps_Op_ExecutePostActionPayloadValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e OngoingLongOps_Op_ExecutePostActionPayloadValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e OngoingLongOps_Op_ExecutePostActionPayloadValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e OngoingLongOps_Op_ExecutePostActionPayloadValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e OngoingLongOps_Op_ExecutePostActionPayloadValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e OngoingLongOps_Op_ExecutePostActionPayloadValidationError) ErrorName() string {
+	return "OngoingLongOps_Op_ExecutePostActionPayloadValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e OngoingLongOps_Op_ExecutePostActionPayloadValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sOngoingLongOps_Op_ExecutePostActionPayload.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = OngoingLongOps_Op_ExecutePostActionPayloadValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = OngoingLongOps_Op_ExecutePostActionPayloadValidationError{}
+
 // Validate checks the field values on OngoingLongOps_Op_ResetTriggers_Request
 // with the rules defined in the proto definition for this message. If any
 // rules are violated, the first error encountered is returned, or nil if

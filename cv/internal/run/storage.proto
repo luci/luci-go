@@ -20,10 +20,10 @@ option go_package = "go.chromium.org/luci/cv/internal/run;run";
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/cv/api/config/v2/config.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/storage.proto";
 import "go.chromium.org/luci/cv/internal/tryjob/task.proto";
 import "go.chromium.org/luci/cv/internal/run/eventpb/submission.proto";
-import "go.chromium.org/luci/cv/internal/run/postaction/tasks.proto";
 
 // Status describes the status of a CV Run.
 enum Status {
@@ -424,12 +424,18 @@ message OngoingLongOps {
       Status run_status_if_succeeded = 2;
     }
 
+    // ExecutePostActionPayload is the payload of a long-op task that executes
+    // a given post action.
+    message ExecutePostActionPayload {
+      cv.config.ConfigGroup.PostAction post_action = 1;
+    }
+
     oneof work {
       // If true, posts a start message.
       bool post_start_message = 3;
       ResetTriggers reset_triggers = 6;
       cv.internal.tryjob.ExecuteTryjobsPayload execute_tryjobs = 5;
-      cv.internal.run.postaction.ExecutePostActionPayload execute_post_action = 7;
+      ExecutePostActionPayload execute_post_action = 7;
     }
   }
   // Ops map operation ID to details.
