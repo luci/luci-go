@@ -1169,6 +1169,7 @@ type ConfigGroup_PostAction_TriggeringCondition struct {
 	// Statuses to trigger the action on.
 	//
 	// Must be terminal statuses.
+	// Duplicates are not allowed.
 	Statuses []v1.Run_Status `protobuf:"varint,2,rep,packed,name=statuses,proto3,enum=cv.v1.Run_Status" json:"statuses,omitempty"`
 }
 

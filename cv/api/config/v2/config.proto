@@ -204,6 +204,7 @@ message ConfigGroup {
       // Statuses to trigger the action on.
       //
       // Must be terminal statuses.
+      // Duplicates are not allowed.
       repeated cv.v1.Run.Status statuses = 2 [
           (validate.rules).repeated = {
             min_items: 1,

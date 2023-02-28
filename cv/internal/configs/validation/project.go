@@ -255,16 +255,18 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 			// pgv's enum.in accepts the numeric representation of enum values,
 			// which produces non-so-readable error messages.
 			// check the statuses here to produce better error messages.
+			sts := stringset.New(len(tc.GetStatuses()))
 			for i, st := range tc.GetStatuses() {
+				vd.ctx.Enter("statuses #%d", (i + 1))
 				switch st {
-				case apipb.Run_SUCCEEDED:
-				case apipb.Run_FAILED:
-				case apipb.Run_CANCELLED:
+				case apipb.Run_SUCCEEDED, apipb.Run_FAILED, apipb.Run_CANCELLED:
+					if !sts.Add(st.String()) {
+						vd.ctx.Errorf("%q was specified already", st)
+					}
 				default:
-					vd.ctx.Enter("statuses #%d", (i + 1))
 					vd.ctx.Errorf("%q is not a terminal status", st)
-					vd.ctx.Exit()
 				}
+				vd.ctx.Exit() // statuses #i
 			}
 			vd.ctx.Exit() // conditions #i
 		}

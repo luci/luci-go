@@ -508,6 +508,14 @@ func TestValidateProjectDetailed(t *testing.T) {
 							validateProjectConfig(vctx, &cfg)
 							So(vctx.Finalize(), ShouldErrLike, `"PENDING" is not a terminal status`)
 						})
+						Convey("duplicates", func() {
+							tc.Statuses = []apipb.Run_Status{
+								apipb.Run_SUCCEEDED,
+								apipb.Run_SUCCEEDED,
+							}
+							validateProjectConfig(vctx, &cfg)
+							So(vctx.Finalize(), ShouldErrLike, `"SUCCEEDED" was specified already`)
+						})
 					})
 				})
 			})
