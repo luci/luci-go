@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	apiv0pb "go.chromium.org/luci/cv/api/v0"
+	apipb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -59,11 +59,27 @@ func TestEndRun(t *testing.T) {
 		ctx, cancel := ct.SetUp()
 		defer cancel()
 
-		const clid = 1
-		rid := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("deadbeef"))
+		const (
+			clid     = 1
+			lProject = "infra"
+		)
+
+		// mock a CL with two onoging Runs.
+		rids := common.RunIDs{
+			common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef")),
+			common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("cafecafe")),
+		}
+		sort.Sort(rids)
+		cl := changelist.CL{
+			ID:             clid,
+			EVersion:       3,
+			IncompleteRuns: rids,
+			UpdateTime:     ct.Clock.Now().UTC(),
+		}
+		So(datastore.Put(ctx, &cl), ShouldBeNil)
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:            rid,
+				ID:            rids[0],
 				Status:        run.Status_RUNNING,
 				ConfigGroupID: prjcfg.MakeConfigGroupID("deadbeef", "main"),
 				CreateTime:    ct.Clock.Now().Add(-2 * time.Minute),
@@ -80,39 +96,52 @@ func TestEndRun(t *testing.T) {
 				},
 			},
 		}
-		anotherRID := common.MakeRunID("infra", ct.Clock.Now(), 1, []byte("cafecafe"))
-		cl := changelist.CL{
-			ID:             clid,
-			IncompleteRuns: common.RunIDs{rid, anotherRID},
-			EVersion:       3,
-			UpdateTime:     ct.Clock.Now().UTC(),
-		}
-		sort.Sort(cl.IncompleteRuns)
-		So(datastore.Put(ctx, &cl), ShouldBeNil)
 
 		impl, deps := makeImpl(&ct)
 		se := impl.endRun(ctx, rs, run.Status_FAILED)
 		So(rs.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
-		So(rs.OngoingLongOps.GetOps()["11-22"].GetCancelRequested(), ShouldBeTrue)
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
-		cl = changelist.CL{ID: clid}
-		So(datastore.Get(ctx, &cl), ShouldBeNil)
-		So(cl, ShouldResemble, changelist.CL{
-			ID:             clid,
-			IncompleteRuns: common.RunIDs{anotherRID},
-			EVersion:       4,
-			UpdateTime:     ct.Clock.Now().UTC(),
-		})
-		ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
-		pmtest.AssertReceivedRunFinished(ctx, rid)
-		pmtest.AssertReceivedCLsNotified(ctx, rid.LUCIProject(), []*changelist.CL{&cl})
-		So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
-		So(ct.TSMonSentValue(ctx, metrics.Public.RunEnded, "infra", "main", string(run.DryRun), apiv0pb.Run_FAILED.String(), true), ShouldEqual, 1)
-		So(ct.TSMonSentDistr(ctx, metrics.Public.RunDuration, "infra", "main", string(run.DryRun), apiv0pb.Run_FAILED.String()).Sum(), ShouldAlmostEqual, (1 * time.Minute).Seconds())
-		So(ct.TSMonSentDistr(ctx, metrics.Public.RunTotalDuration, "infra", "main", string(run.DryRun), apiv0pb.Run_FAILED.String(), true).Sum(), ShouldAlmostEqual, (2 * time.Minute).Seconds())
 
-		Convey("Publish RunEnded event", func() {
+		Convey("removeRunFromCLs", func() {
+			// fetch the updated CL entity.
+			cl = changelist.CL{ID: clid}
+			So(datastore.Get(ctx, &cl), ShouldBeNil)
+
+			// it should have removed the ended Run, but not the other
+			// ongoing Run from the CL entity.
+			So(cl, ShouldResemble, changelist.CL{
+				ID:             clid,
+				IncompleteRuns: common.RunIDs{rids[1]},
+				EVersion:       4,
+				UpdateTime:     ct.Clock.Now().UTC(),
+			})
+			Convey("schedule CLUpdate for the removed Run", func() {
+				ct.TQ.Run(ctx, tqtesting.StopAfterTask(changelist.BatchOnCLUpdatedTaskClass))
+				pmtest.AssertReceivedRunFinished(ctx, rids[0])
+				pmtest.AssertReceivedCLsNotified(ctx, rids[0].LUCIProject(), []*changelist.CL{&cl})
+				So(deps.clUpdater.refreshedCLs, ShouldResemble, common.MakeCLIDs(clid))
+			})
+		})
+
+		Convey("cancel ongoing LongOps", func() {
+			So(rs.OngoingLongOps.GetOps()["11-22"].GetCancelRequested(), ShouldBeTrue)
+		})
+
+		Convey("populate metrics for run events", func() {
+			fset1 := []interface{}{
+				lProject, "main", string(run.DryRun),
+				apipb.Run_FAILED.String(), true,
+			}
+			fset2 := fset1[0 : len(fset1)-1]
+			So(ct.TSMonSentValue(ctx, metrics.Public.RunEnded, fset1...), ShouldEqual, 1)
+			So(ct.TSMonSentDistr(ctx, metrics.Public.RunDuration, fset2...).Sum(),
+				ShouldAlmostEqual, (1 * time.Minute).Seconds())
+			So(ct.TSMonSentDistr(ctx, metrics.Public.RunTotalDuration, fset1...).Sum(),
+				ShouldAlmostEqual, (2 * time.Minute).Seconds())
+		})
+
+		Convey("publish RunEnded event", func() {
 			var task *pubsub.PublishRunEndedTask
 			for _, t := range ct.TQ.Tasks() {
 				if p, ok := t.Payload.(*pubsub.PublishRunEndedTask); ok {
