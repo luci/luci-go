@@ -22,8 +22,10 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
 	"go.chromium.org/luci/cv/internal/run"
@@ -42,13 +44,20 @@ func TestCancel(t *testing.T) {
 		ctx, _ = pmtest.MockDispatch(ctx)
 
 		const lProject = "chromium"
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}},
+		})
+		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
+		So(err, ShouldBeNil)
+		cg := cgs[0]
 		runID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
 		clid := common.CLID(11)
 		rs := &state.RunState{
 			Run: run.Run{
-				ID:         runID,
-				CreateTime: clock.Now(ctx).UTC().Add(-2 * time.Minute),
-				CLs:        common.CLIDs{clid},
+				ID:            runID,
+				ConfigGroupID: cg.ID,
+				CreateTime:    clock.Now(ctx).UTC().Add(-2 * time.Minute),
+				CLs:           common.CLIDs{clid},
 			},
 		}
 		So(datastore.Put(ctx, &changelist.CL{

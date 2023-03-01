@@ -63,6 +63,27 @@ func TestEndRun(t *testing.T) {
 			clid     = 1
 			lProject = "infra"
 		)
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					PostActions: []*cfgpb.ConfigGroup_PostAction{
+						{
+							Name: "run-verification-label",
+							Conditions: []*cfgpb.ConfigGroup_PostAction_TriggeringCondition{
+								{
+									Mode:     string(run.DryRun),
+									Statuses: []apipb.Run_Status{apipb.Run_FAILED},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
+		So(err, ShouldBeNil)
+		cg := cgs[0]
 
 		// mock a CL with two onoging Runs.
 		rids := common.RunIDs{
@@ -81,7 +102,7 @@ func TestEndRun(t *testing.T) {
 			Run: run.Run{
 				ID:            rids[0],
 				Status:        run.Status_RUNNING,
-				ConfigGroupID: prjcfg.MakeConfigGroupID("deadbeef", "main"),
+				ConfigGroupID: cg.ID,
 				CreateTime:    ct.Clock.Now().Add(-2 * time.Minute),
 				StartTime:     ct.Clock.Now().Add(-1 * time.Minute),
 				Mode:          run.DryRun,
@@ -98,7 +119,7 @@ func TestEndRun(t *testing.T) {
 		}
 
 		impl, deps := makeImpl(&ct)
-		se := impl.endRun(ctx, rs, run.Status_FAILED)
+		se := impl.endRun(ctx, rs, run.Status_FAILED, cg)
 		So(rs.Status, ShouldEqual, run.Status_FAILED)
 		So(rs.EndTime, ShouldEqual, ct.Clock.Now())
 		So(datastore.RunInTransaction(ctx, se, nil), ShouldBeNil)
@@ -155,6 +176,27 @@ func TestEndRun(t *testing.T) {
 				Status:      rs.Status,
 				Eversion:    int64(rs.EVersion + 1),
 			})
+		})
+
+		Convey("enqueue a long-op for PostAction", func() {
+			for _, op := range rs.OngoingLongOps.GetOps() {
+				if act := op.GetExecutePostAction(); act != nil {
+					d := timestamppb.New(ct.Clock.Now().UTC().Add(maxPostActionExecutionDuration))
+					So(op.GetDeadline(), ShouldResembleProto, d)
+					So(op.GetCancelRequested(), ShouldBeFalse)
+					So(act.Action, ShouldResembleProto, &cfgpb.ConfigGroup_PostAction{
+						Name: "run-verification-label",
+						Conditions: []*cfgpb.ConfigGroup_PostAction_TriggeringCondition{
+							{
+								Mode:     string(run.DryRun),
+								Statuses: []apipb.Run_Status{apipb.Run_FAILED},
+							},
+						},
+					})
+					return
+				}
+			}
+			So(errors.New("failed to find a long op for PostAction"), ShouldBeNil)
 		})
 	})
 }

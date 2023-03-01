@@ -218,14 +218,19 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			},
 		})
 	}
-	switch {
-	case sc.GetResult() == eventpb.SubmissionResult_SUCCEEDED:
-		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED)
+
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+	if err != nil {
+		return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+	}
+	switch sc.GetResult() {
+	case eventpb.SubmissionResult_SUCCEEDED:
+		se := impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
 		}, nil
-	case sc.GetResult() == eventpb.SubmissionResult_FAILED_TRANSIENT:
+	case eventpb.SubmissionResult_FAILED_TRANSIENT:
 		rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
 			Time: timestamppb.New(clock.Now(ctx)),
 			Kind: &run.LogEntry_SubmissionFailure_{
@@ -235,7 +240,7 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 			},
 		})
 		return impl.tryResumeSubmission(ctx, rs, sc)
-	case sc.GetResult() == eventpb.SubmissionResult_FAILED_PERMANENT:
+	case eventpb.SubmissionResult_FAILED_PERMANENT:
 		if clFailures := sc.GetClFailures(); clFailures != nil {
 			failedCLs := make([]int64, len(clFailures.GetFailures()))
 			for i, f := range clFailures.GetFailures() {
@@ -252,14 +257,10 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 				},
 			})
 		}
-		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-		if err != nil {
-			return nil, err
-		}
 		if err := impl.resetNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
 			return nil, err
 		}
-		se := impl.endRun(ctx, rs, run.Status_FAILED)
+		se := impl.endRun(ctx, rs, run.Status_FAILED, cg)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,
@@ -293,6 +294,11 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 
 	switch expired := clock.Now(ctx).After(deadline.AsTime()); {
 	case expired:
+		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+		if err != nil {
+			return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+		}
+
 		rs = rs.ShallowCopy()
 		var status run.Status
 		switch submittedCnt := len(rs.Submission.GetSubmittedCls()); {
@@ -328,11 +334,6 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 					},
 				}
 			}
-			cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-			if err != nil {
-				return nil, err
-			}
-
 			if err := impl.resetNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
 				return nil, err
 			}
@@ -340,7 +341,7 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		if err := releaseSubmitQueueIfTaken(ctx, rs, impl.RM); err != nil {
 			return nil, err
 		}
-		se := impl.endRun(ctx, rs, status)
+		se := impl.endRun(ctx, rs, status, cg)
 		return &Result{
 			State:        rs,
 			SideEffectFn: se,

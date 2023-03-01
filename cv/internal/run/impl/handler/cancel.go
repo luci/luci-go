@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 )
@@ -40,13 +41,16 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []stri
 		logging.Debugf(ctx, "skipping cancellation because Run is %s", status)
 		return &Result{State: rs}, nil
 	}
-
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+	if err != nil {
+		return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+	}
 	rs = rs.ShallowCopy()
 	// make sure reasons are unique and doesn't contain empty reasons.
 	uniqueReasons := stringset.NewFromSlice(reasons...)
 	uniqueReasons.Del("")
 	rs.CancellationReasons = uniqueReasons.ToSortedSlice()
-	se := impl.endRun(ctx, rs, run.Status_CANCELLED)
+	se := impl.endRun(ctx, rs, run.Status_CANCELLED, cg)
 
 	return &Result{
 		State:        rs,

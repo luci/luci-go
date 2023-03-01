@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -65,8 +67,12 @@ func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunSta
 	default:
 		panic(fmt.Errorf("unexpected LongOpCompleted status: %s", opCompleted.GetStatus()))
 	}
+	cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
+	if err != nil {
+		return nil, errors.Annotate(err, "prjcfg.GetConfigGroup").Err()
+	}
 	return &Result{
 		State:        rs,
-		SideEffectFn: impl.endRun(ctx, rs, runStatus),
+		SideEffectFn: impl.endRun(ctx, rs, runStatus, cg),
 	}, nil
 }

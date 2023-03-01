@@ -427,7 +427,7 @@ message OngoingLongOps {
     // ExecutePostActionPayload is the payload of a long-op task that executes
     // a given post action.
     message ExecutePostActionPayload {
-      cv.config.ConfigGroup.PostAction post_action = 1;
+      cv.config.ConfigGroup.PostAction action = 1;
     }
 
     oneof work {
@@ -435,6 +435,19 @@ message OngoingLongOps {
       bool post_start_message = 3;
       ResetTriggers reset_triggers = 6;
       cv.internal.tryjob.ExecuteTryjobsPayload execute_tryjobs = 5;
+      // The PostActions from different runs can race each other in case
+      // the actions from an earlier Run transiently failed and are being
+      // retried. However, the resolution depends on the type of the post
+      // action.
+      //
+      // If the action is to export the Run records to BQ, each of the Run
+      // records should be exported, and CV should still attempt to execute post
+      // actions for all the Runs ever triggered.
+      //
+      // In contrast, if the action is to vote a label, the post action handler
+      // should check if the originated patchset is still the latest at the time
+      // of the long-op processing time, and skip the action, if the patchset
+      // is no longer the latest.
       ExecutePostActionPayload execute_post_action = 7;
     }
   }

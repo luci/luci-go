@@ -184,7 +184,7 @@ func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error)
 // mutation.
 func (rs *RunState) EnqueueLongOp(op *run.OngoingLongOps_Op) string {
 	if err := validateLongOp(op); err != nil {
-		panic(err)
+		panic(errors.Annotate(err, "validateLongOp").Err())
 	}
 	// Find an ID which wasn't used yet.
 	// Use future EVersion as a prefix to ensure resulting ID is unique over Run's

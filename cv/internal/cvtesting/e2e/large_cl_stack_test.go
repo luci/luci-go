@@ -44,7 +44,7 @@ func TestHandleLargeCLStack(t *testing.T) {
 		// NOTE: current datastore in-memory emulates classic Datastore, not the
 		// Firestore used by CV, and as such its limit of 25 counts entity *groups*,
 		// thus Run and all its CLs count as 1 such group.
-		const N = 18
+		const N = 17
 
 		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef)
 		prjcfgtest.Create(ctx, lProject, cfg)

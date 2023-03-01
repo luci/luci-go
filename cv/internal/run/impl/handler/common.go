@@ -49,11 +49,12 @@ import (
 // Returns the side effect when Run is ended.
 //
 // Panics if the provided status is not ended status.
-func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status) eventbox.SideEffectFn {
+func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status, cg *prjcfg.ConfigGroup) eventbox.SideEffectFn {
 	if !run.IsEnded(st) {
 		panic(fmt.Errorf("can't end run with non-final status %s", st))
 	}
 
+	origSt := rs.Status
 	rs.Status = st
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	rs.EndTime = now
@@ -64,11 +65,18 @@ func (impl *Impl) endRun(ctx context.Context, rs *state.RunState, st run.Status)
 		},
 	})
 	for id, op := range rs.OngoingLongOps.GetOps() {
-		if !op.GetCancelRequested() {
+		switch pa := op.GetExecutePostAction(); {
+		case pa != nil:
+			// Must be a bug. Non terminal Runs should never have ongoing
+			// PostAction(s).
+			logging.Errorf(ctx, "BUG: Run with status(%s) has ongoing PostActions (%s, %s)",
+				origSt, id, pa.Action.Name)
+		case !op.GetCancelRequested():
 			logging.Warningf(ctx, "Requesting best-effort cancellation of long op %q %T", id, op.GetWork())
 			op.CancelRequested = true
 		}
 	}
+	enqueueExecutePostActionTask(ctx, rs, cg)
 
 	return eventbox.Chain(
 		func(ctx context.Context) error {
