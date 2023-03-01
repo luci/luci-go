@@ -156,6 +156,10 @@ type Build struct {
 	// BackendTaskToken is set at the first RegisterBuildTask, and UpdateBuildTask
 	// requests are required to have it in the header.
 	BackendTaskToken string `gae:"backend_task_token,noindex"`
+
+	// Id of the first StartBuild call Buildbucket receives for the build.
+	// Buildbucket uses this to deduplicate the other StartBuild calls.
+	StartBuildRequestID string `gae:"start_build_request_id,noindex"`
 }
 
 // Realm returns this build's auth realm, or an empty string if not opted into the
