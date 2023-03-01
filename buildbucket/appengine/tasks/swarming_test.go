@@ -32,7 +32,6 @@ import (
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -901,9 +900,7 @@ func TestSubNotify(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
-			"swarming-pubsub-msg-id": &cachingtest.BlobCache{
-				LRU: lru.New(0),
-			},
+			"swarming-pubsub-msg-id": cachingtest.NewBlobCache(),
 		})
 		ctx, sch := tq.TestingContext(ctx, nil)
 

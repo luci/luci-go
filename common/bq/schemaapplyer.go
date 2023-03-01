@@ -38,15 +38,33 @@ type Table interface {
 	Update(ctx context.Context, md bigquery.TableMetadataToUpdate, etag string, opts ...bigquery.TableUpdateOption) (*bigquery.TableMetadata, error)
 }
 
+// SchemaApplyerCache is used by SchemaApplyer to avoid making redundant BQ
+// calls.
+//
+// Instantiate it with RegisterSchemaApplyerCache(capacity) during init time.
+type SchemaApplyerCache struct {
+	handle caching.LRUHandle[string, error]
+}
+
+// RegisterSchemaApplyerCache allocates a process cached used by SchemaApplier.
+//
+// The capacity should roughly match expected number of tables the schema
+// applier will work on.
+//
+// Must be called during init time.
+func RegisterSchemaApplyerCache(capacity int) SchemaApplyerCache {
+	return SchemaApplyerCache{caching.RegisterLRUCache[string, error](capacity)}
+}
+
 // SchemaApplyer provides methods to synchronise BigQuery schema
 // to match a desired state.
 type SchemaApplyer struct {
-	cache caching.LRUHandle
+	cache SchemaApplyerCache
 }
 
 // NewSchemaApplyer initialises a new schema applyer, using the given cache
 // to cache BQ schema to avoid making duplicate BigQuery calls.
-func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
+func NewSchemaApplyer(cache SchemaApplyerCache) *SchemaApplyer {
 	return &SchemaApplyer{
 		cache: cache,
 	}
@@ -63,8 +81,8 @@ func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
 // // At top of file
 // var schemaApplyer = bq.NewSchemaApplyer(
 //
-//	caching.RegisterLRUCache(50) // depending on how many different
-//	                             // tables will be used.
+//	bq.RegisterSchemaApplyerCache(50 ) // depending on how many different
+//	                                   // tables will be used.
 //
 // )
 //
@@ -93,7 +111,7 @@ func NewSchemaApplyer(cache caching.LRUHandle) *SchemaApplyer {
 func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) error {
 	// Note: creating/updating the table inside GetOrCreate ensures that different
 	// goroutines do not attempt to create/update the same table concurrently.
-	cachedErr, err := s.cache.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (any, time.Duration, error) {
+	cachedErr, err := s.cache.handle.LRU(ctx).GetOrCreate(ctx, t.FullyQualifiedName(), func() (error, time.Duration, error) {
 		if err := EnsureTable(ctx, t, spec); err != nil {
 			if !transient.Tag.In(err) {
 				// Cache the fatal error for one minute.
@@ -107,10 +125,7 @@ func (s *SchemaApplyer) EnsureTable(ctx context.Context, t Table, spec *bigquery
 	if err != nil {
 		return err
 	}
-	if cachedErr != nil {
-		return cachedErr.(error)
-	}
-	return nil
+	return cachedErr
 }
 
 // EnsureTable creates a BigQuery table if it doesn't exist and updates its

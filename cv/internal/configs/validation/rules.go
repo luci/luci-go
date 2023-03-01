@@ -40,18 +40,17 @@ func addRules(r *validation.RuleSet) {
 //
 // Most config files use the same regexp many times.
 func regexpCompileCached(pattern string) (*regexp.Regexp, error) {
-	cached, err := regexpCache.GetOrCreate(context.Background(), pattern, func() (any, time.Duration, error) {
+	cached, err := regexpCache.GetOrCreate(context.Background(), pattern, func() (regexpCacheValue, time.Duration, error) {
 		r, err := regexp.Compile(pattern)
 		return regexpCacheValue{r, err}, 0, nil
 	})
 	if err != nil {
 		panic(err)
 	}
-	v := cached.(regexpCacheValue)
-	return v.r, v.err
+	return cached.r, cached.err
 }
 
-var regexpCache = lru.New(1024)
+var regexpCache = lru.New[string, regexpCacheValue](1024)
 
 type regexpCacheValue struct {
 	r   *regexp.Regexp

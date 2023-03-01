@@ -72,12 +72,16 @@ type cipdPackageDetails struct {
 	Hash string `json:"hash,omitempty"`
 }
 
-var cipdDescribeBootstrapBundleCache = layered.RegisterCache(layered.Parameters{
+type cipdPackageDetailsMap map[string]*cipdPackageDetails
+
+var cipdDescribeBootstrapBundleCache = layered.RegisterCache(layered.Parameters[cipdPackageDetailsMap]{
 	ProcessCacheCapacity: 1000,
 	GlobalNamespace:      "cipd-describeBootstrapBundle-v1",
-	Marshal:              json.Marshal,
-	Unmarshal: func(blob []byte) (any, error) {
-		res := map[string]*cipdPackageDetails{}
+	Marshal: func(item cipdPackageDetailsMap) ([]byte, error) {
+		return json.Marshal(item)
+	},
+	Unmarshal: func(blob []byte) (cipdPackageDetailsMap, error) {
+		res := cipdPackageDetailsMap{}
 		err := json.Unmarshal(blob, &res)
 		return res, err
 	},
@@ -274,13 +278,13 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 		return nil, err
 	}
 	cachePrefix := base64.StdEncoding.EncodeToString(bytes)
-	cached, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (any, time.Duration, error) {
+	cipdDetails, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (cipdPackageDetailsMap, time.Duration, error) {
 		out := &cipdpb.DescribeBootstrapBundleResponse{}
 		err := cipdClient.Call(ctx, "cipd.Repository", "DescribeBootstrapBundle", req, out)
 		if err != nil {
 			return nil, 0, err
 		}
-		resp := make(map[string]*cipdPackageDetails, len(out.Files))
+		resp := make(cipdPackageDetailsMap, len(out.Files))
 		for _, file := range out.Files {
 			resp[file.Package] = &cipdPackageDetails{
 				Hash: file.Instance.HexDigest,
@@ -293,7 +297,6 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 		return nil, errors.Annotate(err, "cache error for cipd request").Err()
 	}
 	details = map[string]*pb.RunTaskRequest_AgentExecutable_AgentSource{}
-	cipdDetails := cached.(map[string]*cipdPackageDetails)
 	for k, v := range cipdDetails {
 		val := &pb.RunTaskRequest_AgentExecutable_AgentSource{
 			Sha256:    v.Hash,

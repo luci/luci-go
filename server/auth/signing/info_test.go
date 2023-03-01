@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
@@ -36,10 +35,8 @@ func TestFetchServiceInfo(t *testing.T) {
 
 	Convey("With empty cache", t, func() {
 		ctx := caching.WithEmptyProcessCache(context.Background())
-
-		global := &cachingtest.BlobCache{LRU: lru.New(0)}
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
-			infoCacheNamespace: global,
+			infoCacheNamespace: cachingtest.NewBlobCache(),
 		})
 
 		Convey("Works", func() {

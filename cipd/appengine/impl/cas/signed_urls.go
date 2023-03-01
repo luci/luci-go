@@ -52,11 +52,13 @@ func (i *gsObjInfo) Exists() bool {
 }
 
 // GS path (string) => details about the file at that path (gsObjInfo).
-var signedURLsCache = layered.RegisterCache(layered.Parameters{
+var signedURLsCache = layered.RegisterCache(layered.Parameters[*gsObjInfo]{
 	ProcessCacheCapacity: 4096,
 	GlobalNamespace:      "signed_gs_urls_v2",
-	Marshal:              json.Marshal,
-	Unmarshal: func(blob []byte) (any, error) {
+	Marshal: func(item *gsObjInfo) ([]byte, error) {
+		return json.Marshal(item)
+	},
+	Unmarshal: func(blob []byte) (*gsObjInfo, error) {
 		out := &gsObjInfo{}
 		err := json.Unmarshal(blob, out)
 		return out, err
@@ -79,7 +81,7 @@ var signedURLsCache = layered.RegisterCache(layered.Parameters{
 // On failures returns grpc-annotated errors. In particular, if the requested
 // file is missing, returns NotFound grpc-annotated error.
 func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error) {
-	cached, err := signedURLsCache.GetOrCreate(ctx, gsPath, func() (any, time.Duration, error) {
+	info, err := signedURLsCache.GetOrCreate(ctx, gsPath, func() (*gsObjInfo, time.Duration, error) {
 		info := &gsObjInfo{}
 		switch size, yes, err := gs.Size(ctx, gsPath); {
 		case err != nil:
@@ -112,7 +114,6 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 			Tag(grpcutil.InternalTag).Err()
 	}
 
-	info := cached.(*gsObjInfo)
 	if !info.Exists() {
 		return "", 0, errors.Reason("object %q doesn't exist", gsPath).
 			Tag(grpcutil.NotFoundTag).Err()

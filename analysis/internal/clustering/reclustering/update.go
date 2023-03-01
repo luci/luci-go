@@ -32,7 +32,7 @@ import (
 
 // TODO(crbug.com/1243174). Instrument the size of this cache so that we
 // can monitor it.
-var rulesCache = cache.NewRulesCache(caching.RegisterLRUCache(0))
+var rulesCache = cache.NewRulesCache(caching.RegisterLRUCache[string, *cache.Ruleset](0))
 
 // Ruleset returns the cached ruleset for the given project. If a minimum
 // version of rule predicates is required, pass it as minimumPredicatesVersion.

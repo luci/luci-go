@@ -35,7 +35,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -6502,9 +6501,7 @@ func TestScheduleBuild(t *testing.T) {
 			tpc.IAM()
 			So(err, ShouldBeNil)
 			ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
-				"has_perm_on_pubsub_callback_topic": &cachingtest.BlobCache{
-					LRU: lru.New(0),
-				},
+				"has_perm_on_pubsub_callback_topic": cachingtest.NewBlobCache(),
 			})
 			Convey("empty", func() {
 				req := &pb.ScheduleBuildRequest{

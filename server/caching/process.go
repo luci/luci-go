@@ -34,9 +34,12 @@ var (
 )
 
 type registeredCache struct {
+	// Produces an empty *lru.Cache[...]. Has to return `any` since factories for
+	// different types of caches are all registered in a single registry.
+	factory func() any
+
 	// TODO(vadimsh): Add a name here and start exporting LRU cache sizes as
 	// monitoring metrics.
-	capacity int
 }
 
 var (
@@ -65,15 +68,15 @@ func checkStillInitTime() {
 // method to access an actual LRU cache associated with this handle.
 //
 // The cache itself lives inside a context. See WithProcessCacheData.
-type LRUHandle struct{ h int }
+type LRUHandle[K comparable, V any] struct{ h int }
 
 // Valid returns true if h was initialized.
-func (h LRUHandle) Valid() bool { return h.h != 0 }
+func (h LRUHandle[K, V]) Valid() bool { return h.h != 0 }
 
 // LRU returns global lru.Cache referenced by this handle.
 //
 // Returns nil if the context doesn't have ProcessCacheData.
-func (h LRUHandle) LRU(ctx context.Context) *lru.Cache {
+func (h LRUHandle[K, V]) LRU(ctx context.Context) *lru.Cache[K, V] {
 	if h.h == 0 {
 		panic("calling LRU on a uninitialized LRUHandle")
 	}
@@ -81,7 +84,7 @@ func (h LRUHandle) LRU(ctx context.Context) *lru.Cache {
 	if pcd == nil {
 		return nil
 	}
-	return pcd.caches[h.h-1]
+	return pcd.caches[h.h-1].(*lru.Cache[K, V])
 }
 
 // RegisterLRUCache is used during init time to declare an intent that a package
@@ -89,10 +92,12 @@ func (h LRUHandle) LRU(ctx context.Context) *lru.Cache {
 // unlimited).
 //
 // The actual cache itself will be stored in ProcessCacheData inside a context.
-func RegisterLRUCache(capacity int) LRUHandle {
+func RegisterLRUCache[K comparable, V any](capacity int) LRUHandle[K, V] {
 	checkStillInitTime()
-	registeredCaches = append(registeredCaches, registeredCache{capacity})
-	return LRUHandle{len(registeredCaches)}
+	registeredCaches = append(registeredCaches, registeredCache{
+		factory: func() any { return lru.New[K, V](capacity) },
+	})
+	return LRUHandle[K, V]{len(registeredCaches)}
 }
 
 // SlotHandle is indirect pointer to a registered process cache slot.
@@ -152,7 +157,7 @@ func RegisterCacheSlot() SlotHandle {
 // Each instance of ProcessCacheData is its own universe of global data. This is
 // useful in unit tests as replacement for global variables.
 type ProcessCacheData struct {
-	caches []*lru.Cache    // handle => lru.Cache, never nil once initialized
+	caches []any           // handle => *lru.Cache, never nil once initialized
 	slots  []lazyslot.Slot // handle => corresponding slot
 }
 
@@ -169,11 +174,11 @@ func NewProcessCacheData() *ProcessCacheData {
 	// happen during module init time.
 	finishInitTime()
 	d := &ProcessCacheData{
-		caches: make([]*lru.Cache, len(registeredCaches)),
+		caches: make([]any, len(registeredCaches)),
 		slots:  make([]lazyslot.Slot, registeredSlots),
 	}
 	for i, params := range registeredCaches {
-		d.caches[i] = lru.New(params.capacity)
+		d.caches[i] = params.factory()
 	}
 	return d
 }

@@ -53,7 +53,7 @@ type cache struct {
 	expiration time.Duration
 
 	// cache is the LRU state cache.
-	lru *lru.Cache
+	lru *lru.Cache[cacheEntryKey, *cacheEntry]
 }
 
 // NewCache creates a new Coordinator instance that wraps another Coordinator
@@ -73,7 +73,7 @@ func NewCache(c Coordinator, size int, expiration time.Duration) Coordinator {
 	return &cache{
 		Coordinator: c,
 		expiration:  expiration,
-		lru:         lru.New(size),
+		lru:         lru.New[cacheEntryKey, *cacheEntry](size),
 	}
 }
 
@@ -81,14 +81,14 @@ func (c *cache) getCacheEntry(ctx context.Context, k cacheEntryKey) (*cacheEntry
 	// Get the cacheEntry from our cache. If it is expired or doesn't exist,
 	// generate a new cache entry for this key.
 	created := false
-	entry, _ := c.lru.Mutate(ctx, k, func(it *lru.Item) *lru.Item {
+	entry, _ := c.lru.Mutate(ctx, k, func(it *lru.Item[*cacheEntry]) *lru.Item[*cacheEntry] {
 		// Don't replace an existing entry, unless it has an error or has expired.
 		if it != nil {
 			return it
 		}
 
 		created = true
-		return &lru.Item{
+		return &lru.Item[*cacheEntry]{
 			Value: &cacheEntry{
 				cacheEntryKey: k,
 				terminalIndex: -1,
@@ -96,7 +96,7 @@ func (c *cache) getCacheEntry(ctx context.Context, k cacheEntryKey) (*cacheEntry
 			Exp: c.expiration,
 		}
 	})
-	return entry.(*cacheEntry), created
+	return entry, created
 }
 
 // RegisterStream invokes the wrapped Coordinator's RegisterStream method and

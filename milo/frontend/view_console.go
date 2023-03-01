@@ -275,11 +275,13 @@ func consolePreview(c context.Context, summaries *ui.BuilderSummaryGroup, def *c
 	}, nil
 }
 
-var treeStatusCache = layered.RegisterCache(layered.Parameters{
+var treeStatusCache = layered.RegisterCache(layered.Parameters[*ui.TreeStatus]{
 	ProcessCacheCapacity: 256,
 	GlobalNamespace:      "tree-status",
-	Marshal:              json.Marshal,
-	Unmarshal: func(blob []byte) (any, error) {
+	Marshal: func(item *ui.TreeStatus) ([]byte, error) {
+		return json.Marshal(item)
+	},
+	Unmarshal: func(blob []byte) (*ui.TreeStatus, error) {
 		treeStatus := &ui.TreeStatus{}
 		err := json.Unmarshal(blob, treeStatus)
 		return treeStatus, err
@@ -297,7 +299,7 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 		Path:     "current",
 		RawQuery: q.Encode(),
 	}).String()
-	status, err := treeStatusCache.GetOrCreate(c, url, func() (v any, exp time.Duration, err error) {
+	status, err := treeStatusCache.GetOrCreate(c, url, func() (v *ui.TreeStatus, exp time.Duration, err error) {
 		out := &ui.TreeStatus{}
 		if err := common.GetJSONData(http.DefaultClient, url, out); err != nil {
 			return nil, 0, err
@@ -314,14 +316,16 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 		}
 	}
 
-	return status.(*ui.TreeStatus)
+	return status
 }
 
-var oncallDataCache = layered.RegisterCache(layered.Parameters{
+var oncallDataCache = layered.RegisterCache(layered.Parameters[*ui.Oncall]{
 	ProcessCacheCapacity: 256,
 	GlobalNamespace:      "oncall-data",
-	Marshal:              json.Marshal,
-	Unmarshal: func(blob []byte) (any, error) {
+	Marshal: func(item *ui.Oncall) ([]byte, error) {
+		return json.Marshal(item)
+	},
+	Unmarshal: func(blob []byte) (*ui.Oncall, error) {
 		oncall := &ui.Oncall{}
 		err := json.Unmarshal(blob, oncall)
 		return oncall, err
@@ -330,7 +334,7 @@ var oncallDataCache = layered.RegisterCache(layered.Parameters{
 
 // getOncallData fetches oncall data and caches it for 10 minutes.
 func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
-	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v any, exp time.Duration, err error) {
+	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v *ui.Oncall, exp time.Duration, err error) {
 		out := &ui.Oncall{}
 		if err := common.GetJSONData(http.DefaultClient, config.Url, out); err != nil {
 			return nil, 0, err
@@ -340,7 +344,7 @@ func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary,
 
 	var renderedHTML template.HTML
 	if err == nil {
-		renderedHTML = renderOncallers(config, oncall.(*ui.Oncall))
+		renderedHTML = renderOncallers(config, oncall)
 	} else {
 		renderedHTML = template.HTML("ERROR: Fetching oncall failed")
 	}

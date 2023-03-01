@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,7 +29,7 @@ func TestWorks(t *testing.T) {
 
 	Convey("Works", t, func() {
 		c := context.Background()
-		b := BlobCache{LRU: lru.New(0)}
+		b := NewBlobCache()
 
 		res, err := b.Get(c, "key")
 		So(res, ShouldBeNil)
@@ -47,7 +46,8 @@ func TestWorks(t *testing.T) {
 		fail := errors.New("fail")
 
 		c := context.Background()
-		b := BlobCache{LRU: lru.New(0), Err: fail}
+		b := NewBlobCache()
+		b.Err = fail
 
 		_, err := b.Get(c, "key")
 		So(err, ShouldEqual, fail)

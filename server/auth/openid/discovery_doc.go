@@ -26,8 +26,8 @@ import (
 const GoogleDiscoveryURL = "https://accounts.google.com/.well-known/openid-configuration"
 
 var (
-	discoveryDocCache = caching.RegisterLRUCache(8) // URL string => *DiscoveryDoc
-	signingKeysCache  = caching.RegisterLRUCache(8) // URL string => *JSONWebKeySet
+	discoveryDocCache = caching.RegisterLRUCache[string, *DiscoveryDoc](8)
+	signingKeysCache  = caching.RegisterLRUCache[string, *JSONWebKeySet](8)
 )
 
 // DiscoveryDoc describes a subset of OpenID Discovery JSON document.
@@ -49,7 +49,7 @@ type DiscoveryDoc struct {
 //
 // May return both fatal and transient errors.
 func (d *DiscoveryDoc) SigningKeys(ctx context.Context) (*JSONWebKeySet, error) {
-	fetcher := func() (any, time.Duration, error) {
+	return signingKeysCache.LRU(ctx).GetOrCreate(ctx, d.JwksURI, func() (*JSONWebKeySet, time.Duration, error) {
 		raw := &JSONWebKeySetStruct{}
 		req := internal.Request{
 			Method: "GET",
@@ -64,20 +64,14 @@ func (d *DiscoveryDoc) SigningKeys(ctx context.Context) (*JSONWebKeySet, error) 
 			return nil, 0, err
 		}
 		return keys, time.Hour * 6, nil
-	}
-
-	cached, err := signingKeysCache.LRU(ctx).GetOrCreate(ctx, d.JwksURI, fetcher)
-	if err != nil {
-		return nil, err
-	}
-	return cached.(*JSONWebKeySet), nil
+	})
 }
 
 // FetchDiscoveryDoc fetches the discovery document from the given URL.
 //
 // It is cached in the process cache for 24 hours.
 func FetchDiscoveryDoc(ctx context.Context, url string) (*DiscoveryDoc, error) {
-	fetcher := func() (any, time.Duration, error) {
+	return discoveryDocCache.LRU(ctx).GetOrCreate(ctx, url, func() (*DiscoveryDoc, time.Duration, error) {
 		doc := &DiscoveryDoc{}
 		req := internal.Request{
 			Method: "GET",
@@ -88,12 +82,5 @@ func FetchDiscoveryDoc(ctx context.Context, url string) (*DiscoveryDoc, error) {
 			return nil, 0, err
 		}
 		return doc, time.Hour * 24, nil
-	}
-
-	// Cache the document in the process cache.
-	cached, err := discoveryDocCache.LRU(ctx).GetOrCreate(ctx, url, fetcher)
-	if err != nil {
-		return nil, err
-	}
-	return cached.(*DiscoveryDoc), nil
+	})
 }

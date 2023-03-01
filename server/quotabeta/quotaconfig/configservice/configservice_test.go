@@ -20,7 +20,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -39,9 +38,7 @@ func TestConfigService(t *testing.T) {
 
 	Convey("ConfigService", t, func() {
 		ctx := cachingtest.WithGlobalCache(context.Background(), map[string]caching.BlobCache{
-			"quota.configservice": &cachingtest.BlobCache{
-				LRU: lru.New(0),
-			},
+			"quota.configservice": cachingtest.NewBlobCache(),
 		})
 
 		Convey("New", func() {

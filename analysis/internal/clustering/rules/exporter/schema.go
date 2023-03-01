@@ -20,7 +20,6 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"go.chromium.org/luci/common/bq"
-	"go.chromium.org/luci/server/caching"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -35,7 +34,7 @@ const tableName = "failure_association_rules_history"
 const datasetID = "internal"
 
 // schemaApplyer ensures BQ schema matches the row proto definitions.
-var schemaApplyer = bq.NewSchemaApplyer(caching.RegisterLRUCache(50))
+var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 
 const rowMessage = "luci.analysis.bq.FailureAssociationRulesHistoryRow"
 

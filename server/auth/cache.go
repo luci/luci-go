@@ -60,18 +60,20 @@ type tokenCacheConfig struct {
 // Must be initialized during init-time via newTokenCache.
 type tokenCache struct {
 	cfg tokenCacheConfig
-	lc  layered.Cache
+	lc  layered.Cache[*cachedToken]
 }
 
 // newTokenCache configures tokenCache based on given parameters.
 func newTokenCache(cfg tokenCacheConfig) *tokenCache {
 	return &tokenCache{
 		cfg: cfg,
-		lc: layered.RegisterCache(layered.Parameters{
+		lc: layered.RegisterCache(layered.Parameters[*cachedToken]{
 			ProcessCacheCapacity: cfg.ProcessCacheCapacity,
 			GlobalNamespace:      globalCacheNamespace,
-			Marshal:              json.Marshal, // marshals *cachedToken
-			Unmarshal: func(blob []byte) (any, error) {
+			Marshal: func(item *cachedToken) ([]byte, error) {
+				return json.Marshal(item)
+			},
+			Unmarshal: func(blob []byte) (*cachedToken, error) {
 				out := &cachedToken{}
 				err := json.Unmarshal(blob, out)
 				return out, err
@@ -137,7 +139,7 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 		layered.WithMinTTL(op.MinTTL),
 		layered.WithRandomizedExpiration(tc.cfg.ExpiryRandomizationThreshold),
 	}
-	fetched, err := tc.lc.GetOrCreate(ctx, cacheKey, func() (val any, ttl time.Duration, err error) {
+	tok, err = tc.lc.GetOrCreate(ctx, cacheKey, func() (val *cachedToken, ttl time.Duration, err error) {
 		logging.Debugf(ctx, "Minting the new token")
 
 		// Minting a new token involves RPCs to remote services that should be fast.
@@ -164,7 +166,7 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 		return tok, clock.Until(ctx, tok.Expiry), nil
 	}, opts...)
 
-	switch tok, _ = fetched.(*cachedToken); {
+	switch {
 	case errors.Unwrap(err) == context.DeadlineExceeded:
 		return nil, err, "ERROR_DEADLINE"
 	case err == layered.ErrCantSatisfyMinTTL:

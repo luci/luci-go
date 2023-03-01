@@ -26,7 +26,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 
@@ -51,7 +50,7 @@ func TestGoogleOAuth2Method(t *testing.T) {
 	Convey("with mock backend", t, func(c C) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
-			oauthValidationCache.Parameters().GlobalNamespace: &cachingtest.BlobCache{LRU: lru.New(0)},
+			oauthValidationCache.Parameters().GlobalNamespace: cachingtest.NewBlobCache(),
 		})
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 

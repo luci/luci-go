@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -57,7 +56,7 @@ import (
 const partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 
 // schemaApplyer ensures BQ schema matches the row proto definitons.
-var schemaApplyer = bq.NewSchemaApplyer(caching.RegisterLRUCache(50))
+var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 
 // Options is bqexporter configuration.
 type Options struct {

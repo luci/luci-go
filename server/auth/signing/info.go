@@ -31,11 +31,13 @@ import (
 const infoCacheNamespace = "__luciauth__.signing.info"
 
 // URL string => *ServiceInfo.
-var infoCache = layered.RegisterCache(layered.Parameters{
+var infoCache = layered.RegisterCache(layered.Parameters[*ServiceInfo]{
 	ProcessCacheCapacity: 256,
 	GlobalNamespace:      infoCacheNamespace,
-	Marshal:              json.Marshal, // marshals *ServiceInfo
-	Unmarshal: func(blob []byte) (any, error) {
+	Marshal: func(info *ServiceInfo) ([]byte, error) {
+		return json.Marshal(info)
+	},
+	Unmarshal: func(blob []byte) (*ServiceInfo, error) {
 		out := &ServiceInfo{}
 		err := json.Unmarshal(blob, out)
 		return out, err
@@ -60,7 +62,7 @@ type ServiceInfo struct {
 //
 // LUCI services serve the service info at /auth/api/v1/server/info.
 func FetchServiceInfo(ctx context.Context, url string) (*ServiceInfo, error) {
-	info, err := infoCache.GetOrCreate(ctx, url, func() (any, time.Duration, error) {
+	return infoCache.GetOrCreate(ctx, url, func() (*ServiceInfo, time.Duration, error) {
 		info := &ServiceInfo{}
 		req := internal.Request{
 			Method: "GET",
@@ -72,10 +74,6 @@ func FetchServiceInfo(ctx context.Context, url string) (*ServiceInfo, error) {
 		}
 		return info, time.Hour, nil
 	}, layered.WithRandomizedExpiration(10*time.Minute))
-	if err != nil {
-		return nil, err
-	}
-	return info.(*ServiceInfo), nil
 }
 
 // FetchServiceInfoFromLUCIService is shortcut for FetchServiceInfo that uses

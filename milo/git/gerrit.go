@@ -50,11 +50,13 @@ func (p *implementation) CLEmail(c context.Context, host string, changeNumber in
 	return
 }
 
-var gerritChangeInfoCache = layered.RegisterCache(layered.Parameters{
+var gerritChangeInfoCache = layered.RegisterCache(layered.Parameters[*gerritpb.ChangeInfo]{
 	ProcessCacheCapacity: 4096,
 	GlobalNamespace:      "gerrit-change-info",
-	Marshal:              json.Marshal,
-	Unmarshal: func(blob []byte) (any, error) {
+	Marshal: func(item *gerritpb.ChangeInfo) ([]byte, error) {
+		return json.Marshal(item)
+	},
+	Unmarshal: func(blob []byte) (*gerritpb.ChangeInfo, error) {
 		changeInfo := &gerritpb.ChangeInfo{}
 		err := json.Unmarshal(blob, changeInfo)
 		return changeInfo, err
@@ -68,7 +70,7 @@ var gerritChangeInfoCache = layered.RegisterCache(layered.Parameters{
 // associated with this account id may change, but this is rare.
 func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string, changeNumber int64) (*gerritpb.ChangeInfo, error) {
 	key := fmt.Sprintf("%s/%d", host, changeNumber)
-	changeInfo, err := gerritChangeInfoCache.GetOrCreate(c, key, func() (v any, exp time.Duration, err error) {
+	return gerritChangeInfoCache.GetOrCreate(c, key, func() (v *gerritpb.ChangeInfo, exp time.Duration, err error) {
 		client, err := p.gerritClient(c, host)
 		if err != nil {
 			return nil, 0, err
@@ -97,6 +99,4 @@ func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string,
 
 		return ret, 0, nil
 	})
-
-	return changeInfo.(*gerritpb.ChangeInfo), err
 }

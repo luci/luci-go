@@ -41,7 +41,7 @@ import (
 // is stored in the same slot). We use LRU cache instead of cache slot
 // as we sometimes want to refresh config before it has expired.
 // Only the LRU Cache has the methods to do this.
-var projectsCache = caching.RegisterLRUCache(1)
+var projectsCache = caching.RegisterLRUCache[string, projectConfigsMap](1)
 
 const projectConfigKind = "luci.analysis.ProjectConfig"
 
@@ -66,6 +66,8 @@ var (
 		// status can be "success" or "failure".
 		field.String("project"), field.String("status"))
 )
+
+type projectConfigsMap map[string]*configpb.ProjectConfig
 
 type cachedProjectConfig struct {
 	_extra datastore.PropertyMap `gae:"-,extra"`
@@ -289,10 +291,10 @@ func projectsWithMinimumVersion(ctx context.Context, project string, minimumVers
 			return nil, err
 		}
 	} else {
-		value, _ := projectsCache.LRU(ctx).Mutate(ctx, "projects", func(it *lru.Item) *lru.Item {
-			var pc map[string]*configpb.ProjectConfig
+		value, _ := projectsCache.LRU(ctx).Mutate(ctx, "projects", func(it *lru.Item[projectConfigsMap]) *lru.Item[projectConfigsMap] {
+			var pc projectConfigsMap
 			if it != nil {
-				pc = it.Value.(map[string]*configpb.ProjectConfig)
+				pc = it.Value
 				projectCfg, ok := pc[project]
 				if project == "" || (ok && !projectCfg.LastUpdated.AsTime().Before(minimumVersion)) {
 					// Projects contains the specified project at the given minimum version.
@@ -304,7 +306,7 @@ func projectsWithMinimumVersion(ctx context.Context, project string, minimumVers
 				// Error refreshing config. Keep existing entry (if any).
 				return it
 			}
-			return &lru.Item{
+			return &lru.Item[projectConfigsMap]{
 				Value: pc,
 				Exp:   ProjectCacheExpiry,
 			}
@@ -312,7 +314,7 @@ func projectsWithMinimumVersion(ctx context.Context, project string, minimumVers
 		if err != nil {
 			return nil, err
 		}
-		pc = value.(map[string]*configpb.ProjectConfig)
+		pc = value
 	}
 
 	projectCfg, ok := pc[project]

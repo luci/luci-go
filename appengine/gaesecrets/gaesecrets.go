@@ -81,7 +81,7 @@ func Use(ctx context.Context, cfg *Config) context.Context {
 }
 
 // full secret key (including prefix) => secrets.Secret.
-var secretsCache = caching.RegisterLRUCache(100)
+var secretsCache = caching.RegisterLRUCache[string, secrets.Secret](100)
 
 // storeImpl is implementation of secrets.Store bound to a GAE context.
 type storeImpl struct {
@@ -104,17 +104,13 @@ func (s *storeImpl) AddRotationHandler(ctx context.Context, name string, cb secr
 }
 
 func (s *storeImpl) getSecret(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {
-	secret, err := secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (any, time.Duration, error) {
+	return secretsCache.LRU(ctx).GetOrCreate(ctx, s.cfg.Prefix+":"+string(k), func() (secrets.Secret, time.Duration, error) {
 		secret, err := s.getSecretFromDatastore(ctx, k, autogen)
 		if err != nil {
-			return nil, 0, err
+			return secrets.Secret{}, 0, err
 		}
 		return secret, cacheExp, nil
 	})
-	if err != nil {
-		return secrets.Secret{}, err
-	}
-	return secret.(secrets.Secret), nil
 }
 
 func (s *storeImpl) getSecretFromDatastore(ctx context.Context, k string, autogen bool) (secrets.Secret, error) {

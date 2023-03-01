@@ -62,13 +62,13 @@ type tokenValidationOutcome struct {
 }
 
 // SHA256(access token) => JSON-marshalled *tokenValidationOutcome.
-var oauthValidationCache = layered.RegisterCache(layered.Parameters{
+var oauthValidationCache = layered.RegisterCache(layered.Parameters[*tokenValidationOutcome]{
 	ProcessCacheCapacity: 65536,
 	GlobalNamespace:      "oauth_validation_v1",
-	Marshal: func(item any) ([]byte, error) {
-		return json.Marshal(item.(*tokenValidationOutcome))
+	Marshal: func(item *tokenValidationOutcome) ([]byte, error) {
+		return json.Marshal(item)
 	},
-	Unmarshal: func(blob []byte) (any, error) {
+	Unmarshal: func(blob []byte) (*tokenValidationOutcome, error) {
 		tok := &tokenValidationOutcome{}
 		if err := json.Unmarshal(blob, tok); err != nil {
 			return nil, err
@@ -137,7 +137,7 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r RequestMetadata
 	// TODO(vadimsh): Strictly speaking we need to store bad tokens in a separate
 	// cache, so a flood of bad tokens (which are very easy to produce, compared
 	// to good tokens) doesn't evict good tokens from the process cache.
-	cached, err := oauthValidationCache.GetOrCreate(ctx, cacheKey, func() (any, time.Duration, error) {
+	outcome, err := oauthValidationCache.GetOrCreate(ctx, cacheKey, func() (*tokenValidationOutcome, time.Duration, error) {
 		logging.Infof(ctx, "oauth: validating access token SHA256=%q", cacheKey)
 		outcome, expiresIn, err := validateAccessToken(ctx, accessToken, m.tokenInfoEndpoint)
 		if err != nil {
@@ -148,8 +148,6 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r RequestMetadata
 	if err != nil {
 		return nil, nil, err // the check itself failed
 	}
-
-	outcome := cached.(*tokenValidationOutcome)
 
 	// Fail if the token was never valid.
 	if outcome.Error != "" {

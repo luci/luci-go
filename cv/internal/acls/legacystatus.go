@@ -32,13 +32,13 @@ const (
 )
 
 // legacyCQStatusHostCache caches CQ status hosts per LUCI project.
-var legacyCQStatusHostCache = layered.RegisterCache(layered.Parameters{
+var legacyCQStatusHostCache = layered.RegisterCache(layered.Parameters[string]{
 	ProcessCacheCapacity: 100,
 	GlobalNamespace:      "acls_legacy_cqstatus_v1",
-	Marshal: func(host any) ([]byte, error) {
-		return []byte(host.(string)), nil
+	Marshal: func(host string) ([]byte, error) {
+		return []byte(host), nil
 	},
-	Unmarshal: func(blob []byte) (any, error) {
+	Unmarshal: func(blob []byte) (string, error) {
 		return string(blob), nil
 	},
 })
@@ -75,7 +75,7 @@ func checkLegacyCQStatusAccess(ctx context.Context, luciProject string) (bool, e
 
 // loadCQStatusHost returns CQ status host configured for a LUCI projects.
 func loadCQStatusHost(ctx context.Context, luciProject string) (string, error) {
-	host, err := legacyCQStatusHostCache.GetOrCreate(ctx, luciProject, func() (any, time.Duration, error) {
+	return legacyCQStatusHostCache.GetOrCreate(ctx, luciProject, func() (string, time.Duration, error) {
 		m, err := prjcfg.GetLatestMeta(ctx, luciProject)
 		switch {
 		case err != nil:
@@ -92,9 +92,4 @@ func loadCQStatusHost(ctx context.Context, luciProject string) (string, error) {
 			return cfg.CQStatusHost, legacyCQStatusHostTTL, nil
 		}
 	})
-
-	if err != nil {
-		return "", err
-	}
-	return host.(string), nil
 }

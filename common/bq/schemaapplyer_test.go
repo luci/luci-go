@@ -62,7 +62,7 @@ func (t *tableMock) Update(ctx context.Context, md bigquery.TableMetadataToUpdat
 	return t.md, t.updateErr
 }
 
-var cache = caching.RegisterLRUCache(50)
+var cache = RegisterSchemaApplyerCache(50)
 
 func TestBqTableCache(t *testing.T) {
 	t.Parallel()

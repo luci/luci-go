@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/caching/layered"
@@ -42,10 +41,8 @@ func TestTokenCache(t *testing.T) {
 		ctx := context.Background()
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
-
-		global := &cachingtest.BlobCache{LRU: lru.New(0)}
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
-			globalCacheNamespace: global,
+			globalCacheNamespace: cachingtest.NewBlobCache(),
 		})
 
 		makeTestToken := func(ctx context.Context, val string) *cachedToken {

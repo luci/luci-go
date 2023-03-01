@@ -23,18 +23,18 @@ import (
 
 // CachingFactory caches clients produced by another Factory.
 func CachingFactory(lruSize int, f Factory) Factory {
-	return &cachingFactory{Factory: f, cache: lru.New(lruSize)}
+	return &cachingFactory{Factory: f, cache: lru.New[string, Client](lruSize)}
 }
 
 type cachingFactory struct {
 	Factory
-	cache *lru.Cache
+	cache *lru.Cache[string, Client]
 }
 
 // MakeClient implements Factory.
 func (c cachingFactory) MakeClient(ctx context.Context, gerritHost string, luciProject string) (Client, error) {
 	key := luciProject + "/" + gerritHost
-	client, err := c.cache.GetOrCreate(ctx, key, func() (value any, ttl time.Duration, err error) {
+	client, err := c.cache.GetOrCreate(ctx, key, func() (value Client, ttl time.Duration, err error) {
 		// Default ttl of 0 means never expire. Note that specific authorization
 		// token is still loaded per each request (see transport() function).
 		value, err = c.Factory.MakeClient(ctx, gerritHost, luciProject)
@@ -43,5 +43,5 @@ func (c cachingFactory) MakeClient(ctx context.Context, gerritHost string, luciP
 	if err != nil {
 		return nil, err
 	}
-	return client.(Client), nil
+	return client, nil
 }

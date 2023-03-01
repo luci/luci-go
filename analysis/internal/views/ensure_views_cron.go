@@ -24,11 +24,10 @@ import (
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/server/caching"
 	"google.golang.org/api/iterator"
 )
 
-var schemaApplyer = bq.NewSchemaApplyer(caching.RegisterLRUCache(50))
+var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 
 const rulesViewBaseQuery = `
 	WITH items AS (

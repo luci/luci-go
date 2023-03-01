@@ -31,7 +31,7 @@ import (
 
 // TODO(crbug.com/1243174). Instrument the size of this cache so that we
 // can monitor it.
-var configCache = caching.RegisterLRUCache(0)
+var configCache = caching.RegisterLRUCache[string, *ProjectConfig](0)
 
 // NotExistsErr is returned if no matching configuration could be found
 // for the specified project.
@@ -92,7 +92,7 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 		return config, nil
 	} else {
 		var err error
-		val, _ := cache.Mutate(ctx, project, func(it *lru.Item) *lru.Item {
+		val, _ := cache.Mutate(ctx, project, func(it *lru.Item[*ProjectConfig]) *lru.Item[*ProjectConfig] {
 			var projectCfg *configpb.ProjectConfig
 			// Fetch the latest configuration for the given project, with
 			// the specified minimum version.
@@ -103,7 +103,7 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 			}
 
 			if it != nil {
-				cfg := it.Value.(*ProjectConfig)
+				cfg := it.Value
 				if cfg.LastUpdated.Equal(projectCfg.LastUpdated.AsTime()) {
 					// Cached value is already up to date.
 					return it
@@ -115,7 +115,7 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 				// Delete cached value.
 				return nil
 			}
-			return &lru.Item{
+			return &lru.Item[*ProjectConfig]{
 				Value: config,
 				Exp:   0, // No expiry.
 			}
@@ -126,7 +126,6 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 			}
 			return nil, errors.Annotate(err, "obtain compiled configuration").Err()
 		}
-		cfg := val.(*ProjectConfig)
-		return cfg, nil
+		return val, nil
 	}
 }

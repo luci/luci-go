@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
@@ -33,22 +32,22 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-var testingCache = RegisterCache(Parameters{
+var testingCache = RegisterCache(Parameters[[]byte]{
 	GlobalNamespace: "namespace",
-	Marshal: func(item any) ([]byte, error) {
-		return item.([]byte), nil
+	Marshal: func(item []byte) ([]byte, error) {
+		return item, nil
 	},
-	Unmarshal: func(blob []byte) (any, error) {
+	Unmarshal: func(blob []byte) ([]byte, error) {
 		return blob, nil
 	},
 })
 
-var testingCacheWithFallback = RegisterCache(Parameters{
+var testingCacheWithFallback = RegisterCache(Parameters[[]byte]{
 	GlobalNamespace: "namespace",
-	Marshal: func(item any) ([]byte, error) {
-		return item.([]byte), nil
+	Marshal: func(item []byte) ([]byte, error) {
+		return item, nil
 	},
-	Unmarshal: func(blob []byte) (any, error) {
+	Unmarshal: func(blob []byte) ([]byte, error) {
 		return blob, nil
 	},
 	AllowNoProcessCacheFallback: true,
@@ -60,13 +59,13 @@ func TestCache(t *testing.T) {
 	Convey("Without process cache", t, func() {
 		ctx := context.Background()
 
-		_, err := testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+		_, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 			panic("should not be called")
 		})
 		So(err, ShouldEqual, caching.ErrNoProcessCache)
 
 		calls := 0
-		_, err = testingCacheWithFallback.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+		_, err = testingCacheWithFallback.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 			calls += 1
 			return nil, 0, nil
 		})
@@ -84,7 +83,7 @@ func TestCache(t *testing.T) {
 		value := []byte("value")
 		anotherValue := []byte("anotherValue")
 
-		getter := func() (any, time.Duration, error) {
+		getter := func() ([]byte, time.Duration, error) {
 			calls++
 			return value, time.Hour, nil
 		}
@@ -111,7 +110,7 @@ func TestCache(t *testing.T) {
 		})
 
 		Convey("With global cache", func() {
-			global := &cachingtest.BlobCache{LRU: lru.New(0)}
+			global := cachingtest.NewBlobCache()
 			ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 				"namespace": global,
 			})
@@ -161,7 +160,7 @@ func TestCache(t *testing.T) {
 		})
 
 		Convey("Never expiring item", func() {
-			item, err := testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			item, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -169,7 +168,7 @@ func TestCache(t *testing.T) {
 
 			tc.Add(100 * time.Hour)
 
-			item, err = testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return nil, 0, errors.New("must not be called")
 			})
 			So(err, ShouldBeNil)
@@ -177,7 +176,7 @@ func TestCache(t *testing.T) {
 		})
 
 		Convey("WithMinTTL works", func() {
-			item, err := testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			item, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, time.Hour, nil
 			})
 			So(err, ShouldBeNil)
@@ -186,14 +185,14 @@ func TestCache(t *testing.T) {
 			tc.Add(50 * time.Minute)
 
 			// 9 min minTTL is still ok.
-			item, err = testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return nil, 0, errors.New("must not be called")
 			}, WithMinTTL(9*time.Minute))
 			So(err, ShouldBeNil)
 			So(item, ShouldResemble, value)
 
 			// But 10 min is not and the item is refreshed.
-			item, err = testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return anotherValue, time.Hour, nil
 			}, WithMinTTL(10*time.Minute))
 			So(err, ShouldBeNil)
@@ -201,7 +200,7 @@ func TestCache(t *testing.T) {
 		})
 
 		Convey("ErrCantSatisfyMinTTL", func() {
-			_, err := testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			_, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, time.Minute, nil
 			}, WithMinTTL(2*time.Minute))
 			So(err, ShouldEqual, ErrCantSatisfyMinTTL)
@@ -213,7 +212,7 @@ func TestCache(t *testing.T) {
 			ctx, tc := testclock.UseTime(ctx, time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC))
 
 			// Put the item in the cache.
-			item, err := testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			item, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, time.Hour, nil
 			})
 			So(err, ShouldBeNil)
@@ -222,11 +221,11 @@ func TestCache(t *testing.T) {
 			tc.Add(now)
 
 			// Grab it (or trigger a refresh if randomly expired).
-			item, err = testingCache.GetOrCreate(ctx, "item", func() (any, time.Duration, error) {
+			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return anotherValue, time.Hour, nil
 			}, WithRandomizedExpiration(threshold))
 			So(err, ShouldBeNil)
-			return bytes.Equal(item.([]byte), value)
+			return bytes.Equal(item, value)
 		}
 
 		testCases := []struct {
@@ -263,19 +262,19 @@ func TestSerialization(t *testing.T) {
 	Convey("With cache", t, func() {
 		now := time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-		c := Cache{
-			params: Parameters{
-				Marshal: func(item any) ([]byte, error) {
-					return item.([]byte), nil
+		c := Cache[[]byte]{
+			params: Parameters[[]byte]{
+				Marshal: func(item []byte) ([]byte, error) {
+					return item, nil
 				},
-				Unmarshal: func(blob []byte) (any, error) {
+				Unmarshal: func(blob []byte) ([]byte, error) {
 					return blob, nil
 				},
 			},
 		}
 
 		Convey("Happy path with deadline", func() {
-			originalItem := itemWithExp{[]byte("blah-blah"), now}
+			originalItem := itemWithExp[[]byte]{[]byte("blah-blah"), now}
 
 			blob, err := c.serializeItem(&originalItem)
 			So(err, ShouldBeNil)
@@ -287,7 +286,7 @@ func TestSerialization(t *testing.T) {
 		})
 
 		Convey("Happy path without deadline", func() {
-			originalItem := itemWithExp{[]byte("blah-blah"), time.Time{}}
+			originalItem := itemWithExp[[]byte]{[]byte("blah-blah"), time.Time{}}
 
 			blob, err := c.serializeItem(&originalItem)
 			So(err, ShouldBeNil)
@@ -300,10 +299,10 @@ func TestSerialization(t *testing.T) {
 
 		Convey("Marshal error", func() {
 			fail := errors.New("failure")
-			c.params.Marshal = func(item any) ([]byte, error) {
+			c.params.Marshal = func(item []byte) ([]byte, error) {
 				return nil, fail
 			}
-			_, err := c.serializeItem(&itemWithExp{})
+			_, err := c.serializeItem(&itemWithExp[[]byte]{})
 			So(err, ShouldEqual, fail)
 		})
 
@@ -319,11 +318,11 @@ func TestSerialization(t *testing.T) {
 
 		Convey("Unmarshal error", func() {
 			fail := errors.New("failure")
-			c.params.Unmarshal = func(blob []byte) (any, error) {
+			c.params.Unmarshal = func(blob []byte) ([]byte, error) {
 				return nil, fail
 			}
 
-			blob, err := c.serializeItem(&itemWithExp{[]byte("blah-blah"), now})
+			blob, err := c.serializeItem(&itemWithExp[[]byte]{[]byte("blah-blah"), now})
 			So(err, ShouldBeNil)
 
 			_, err = c.deserializeItem(blob)

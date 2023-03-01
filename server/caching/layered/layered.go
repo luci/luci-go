@@ -38,7 +38,7 @@ var ErrCantSatisfyMinTTL = errors.New("new item produced by the factory has insu
 // It must be called during init time to declare an intent that a package
 // wants to use an LRU cache. The actual local cache itself will be stored in
 // ProcessCacheData inside a context, see caching.RegisterLRUCache.
-func RegisterCache(p Parameters) Cache {
+func RegisterCache[T any](p Parameters[T]) Cache[T] {
 	if p.GlobalNamespace == "" {
 		panic("empty namespace is forbidden, please specify GlobalNamespace")
 	}
@@ -48,14 +48,14 @@ func RegisterCache(p Parameters) Cache {
 	if p.Unmarshal == nil {
 		panic("Unmarshal is required")
 	}
-	return Cache{
-		procCache: caching.RegisterLRUCache(p.ProcessCacheCapacity),
+	return Cache[T]{
+		procCache: caching.RegisterLRUCache[string, *itemWithExp[T]](p.ProcessCacheCapacity),
 		params:    p,
 	}
 }
 
 // Parameters describes parameters of a layered cache.
-type Parameters struct {
+type Parameters[T any] struct {
 	// ProcessCacheCapacity is a maximum number of items to keep in the process
 	// memory.
 	//
@@ -70,12 +70,12 @@ type Parameters struct {
 	// Marshal converts an item being cached to a byte blob.
 	//
 	// Must be set.
-	Marshal func(item any) ([]byte, error)
+	Marshal func(item T) ([]byte, error)
 
 	// Unmarshal takes output of Marshal and converts it to an item to return.
 	//
 	// Must be set.
-	Unmarshal func(blob []byte) (any, error)
+	Unmarshal func(blob []byte) (T, error)
 
 	// AllowNoProcessCacheFallback is true to allow bypassing all the caching if
 	// the process cache is not configured (which often happens in tests).
@@ -96,11 +96,11 @@ type Parameters struct {
 // Since global cache errors are ignored, gives no guarantees of consistency or
 // item uniqueness. Thus supposed to be used only when caching results of
 // computations without side effects.
-type Cache struct {
+type Cache[T any] struct {
 	// procCache is a handle to a process LRU cache that holds the data.
-	procCache caching.LRUHandle
+	procCache caching.LRUHandle[string, *itemWithExp[T]]
 	// params are Parameters passed to Register(...) when creating the cache.
-	params Parameters
+	params Parameters[T]
 }
 
 // Option is a base interface of options for GetOrCreate call.
@@ -149,7 +149,7 @@ func WithRandomizedExpiration(threshold time.Duration) Option {
 //
 // Expiration time is used with seconds precision. Zero expiration time means
 // the item doesn't expire on its own.
-func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts ...Option) (any, error) {
+func (c *Cache[T]) GetOrCreate(ctx context.Context, key string, fn lru.Maker[T], opts ...Option) (T, error) {
 	o := options{}
 	for _, opt := range opts {
 		opt.apply(&o)
@@ -160,7 +160,8 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 
 	if lru == nil {
 		if !c.params.AllowNoProcessCacheFallback {
-			return nil, caching.ErrNoProcessCache
+			var zero T
+			return zero, caching.ErrNoProcessCache
 		}
 		item, _, err := fn()
 		return item, err
@@ -168,9 +169,8 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 
 	// Check that the item is in the local cache, its TTL is acceptable and we
 	// don't want to randomly prematurely expire it, see WithRandomizedExpiration.
-	var ignored *itemWithExp
-	if v, ok := lru.Get(ctx, key); ok {
-		item := v.(*itemWithExp)
+	var ignored *itemWithExp[T]
+	if item, ok := lru.Get(ctx, key); ok {
 		if item.isAcceptableTTL(now, o.minTTL) && !item.randomlyExpired(ctx, now, o.expRandThreshold) {
 			return item.val, nil
 		}
@@ -182,11 +182,11 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 	// to fetch from the global cache or create a new one. Disable expiration
 	// randomization at this point, it has served its purpose already, since only
 	// unlucky callers will reach this code path.
-	v, err := lru.Create(ctx, key, func() (any, time.Duration, error) {
+	v, err := lru.Create(ctx, key, func() (*itemWithExp[T], time.Duration, error) {
 		// Now that we have the lock, recheck that the item still needs a refresh.
 		// Purposely ignore an item we decided we want to prematurely expire.
-		if v, ok := lru.Get(ctx, key); ok {
-			if item := v.(*itemWithExp); item != ignored && item.isAcceptableTTL(now, o.minTTL) {
+		if item, ok := lru.Get(ctx, key); ok {
+			if item != ignored && item.isAcceptableTTL(now, o.minTTL) {
 				return item, item.expiration(now), nil
 			}
 		}
@@ -198,7 +198,7 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 
 		// Either a cache miss, problems with the cached item or its TTL is not
 		// acceptable. Need a to make a new item.
-		var item itemWithExp
+		var item itemWithExp[T]
 		val, exp, err := fn()
 		item.val = val
 		switch {
@@ -226,18 +226,19 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 	})
 
 	if err != nil {
-		return nil, err
+		var zero T
+		return zero, err
 	}
-	return v.(*itemWithExp).val, nil
+	return v.val, nil
 }
 
 // CachedLocally returns the number of items stored in the local process memory.
-func (c *Cache) CachedLocally(ctx context.Context) int {
+func (c *Cache[T]) CachedLocally(ctx context.Context) int {
 	return c.procCache.LRU(ctx).Len()
 }
 
 // Parameters returns the parameters the cache was created with.
-func (c *Cache) Parameters() Parameters {
+func (c *Cache[T]) Parameters() Parameters[T] {
 	return c.params
 }
 
@@ -265,13 +266,13 @@ func (o expRandThresholdOpt) apply(opts *options) { opts.expRandThreshold = time
 //
 // It is a user-generated value plus its expiration time (or zero time if it
 // doesn't expire).
-type itemWithExp struct {
-	val any
+type itemWithExp[T any] struct {
+	val T
 	exp time.Time
 }
 
 // isAcceptableTTL returns true if item's TTL is large enough.
-func (i *itemWithExp) isAcceptableTTL(now time.Time, minTTL time.Duration) bool {
+func (i *itemWithExp[T]) isAcceptableTTL(now time.Time, minTTL time.Duration) bool {
 	if i.exp.IsZero() {
 		return true // never expires
 	}
@@ -284,7 +285,7 @@ func (i *itemWithExp) isAcceptableTTL(now time.Time, minTTL time.Duration) bool 
 //
 // See WithRandomizedExpiration for the rationale. The context is used only to
 // grab RNG.
-func (i *itemWithExp) randomlyExpired(ctx context.Context, now time.Time, threshold time.Duration) bool {
+func (i *itemWithExp[T]) randomlyExpired(ctx context.Context, now time.Time, threshold time.Duration) bool {
 	if i.exp.IsZero() {
 		return false // never expires
 	}
@@ -309,7 +310,7 @@ func (i *itemWithExp) randomlyExpired(ctx context.Context, now time.Time, thresh
 // Zero return value means "does not expire" (as understood by both LRU and
 // Global caches). Panics if the calculated expiration is negative. Use
 // isAcceptableTTL to detect this case beforehand.
-func (i *itemWithExp) expiration(now time.Time) time.Duration {
+func (i *itemWithExp[T]) expiration(now time.Time) time.Duration {
 	if i.exp.IsZero() {
 		return 0 // never expires
 	}
@@ -324,7 +325,7 @@ func (i *itemWithExp) expiration(now time.Time) time.Duration {
 //
 // If the global cache is not available or the cached item there is broken
 // returns nil. Logs errors inside.
-func (c *Cache) maybeFetchItem(ctx context.Context, key string) *itemWithExp {
+func (c *Cache[T]) maybeFetchItem(ctx context.Context, key string) *itemWithExp[T] {
 	g := caching.GlobalCache(ctx, c.params.GlobalNamespace)
 	if g == nil {
 		return nil
@@ -352,7 +353,7 @@ func (c *Cache) maybeFetchItem(ctx context.Context, key string) *itemWithExp {
 // serialization code is buggy and should be adjusted.
 //
 // Global cache errors are logged and ignored.
-func (c *Cache) maybeStoreItem(ctx context.Context, key string, item *itemWithExp, now time.Time) error {
+func (c *Cache[T]) maybeStoreItem(ctx context.Context, key string, item *itemWithExp[T], now time.Time) error {
 	g := caching.GlobalCache(ctx, c.params.GlobalNamespace)
 	if g == nil {
 		return nil
@@ -370,7 +371,7 @@ func (c *Cache) maybeStoreItem(ctx context.Context, key string, item *itemWithEx
 }
 
 // serializeItem packs item and its expiration time into a byte blob.
-func (c *Cache) serializeItem(item *itemWithExp) ([]byte, error) {
+func (c *Cache[T]) serializeItem(item *itemWithExp[T]) ([]byte, error) {
 	blob, err := c.params.Marshal(item.val)
 	if err != nil {
 		return nil, err
@@ -390,7 +391,7 @@ func (c *Cache) serializeItem(item *itemWithExp) ([]byte, error) {
 }
 
 // deserializeItem is reverse of serializeItem.
-func (c *Cache) deserializeItem(blob []byte) (item *itemWithExp, err error) {
+func (c *Cache[T]) deserializeItem(blob []byte) (item *itemWithExp[T], err error) {
 	if len(blob) < 9 {
 		err = fmt.Errorf("the received buffer is too small")
 		return
@@ -399,7 +400,7 @@ func (c *Cache) deserializeItem(blob []byte) (item *itemWithExp, err error) {
 		err = fmt.Errorf("bad format version, expecting %d, got %d", formatVersionByte, blob[0])
 		return
 	}
-	item = &itemWithExp{}
+	item = &itemWithExp[T]{}
 	deadline := binary.LittleEndian.Uint64(blob[1:])
 	if deadline != 0 {
 		item.exp = time.Unix(int64(deadline), 0)

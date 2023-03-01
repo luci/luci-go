@@ -30,14 +30,16 @@ var requestCacheKey = "server.caching Per-Request Cache"
 //
 // It can be used as a second fast layer of caching in front of memcache.
 // It is never trimmed, only released at once upon the request completion.
+//
+// TODO(vadimsh): Get rid of it, there's only one caller of RequestCache(...).
 func WithRequestCache(c context.Context) context.Context {
-	return context.WithValue(c, &requestCacheKey, lru.New(0))
+	return context.WithValue(c, &requestCacheKey, lru.New[string, any](0))
 }
 
 // RequestCache retrieves a per-request in-memory cache of the Context. If no
 // request cache is installed, this will panic.
-func RequestCache(c context.Context) *lru.Cache {
-	rc, _ := c.Value(&requestCacheKey).(*lru.Cache)
+func RequestCache(c context.Context) *lru.Cache[string, any] {
+	rc, _ := c.Value(&requestCacheKey).(*lru.Cache[string, any])
 	if rc == nil {
 		panic("server/caching: no request cache installed in Context")
 	}

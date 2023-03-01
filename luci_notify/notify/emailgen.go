@@ -36,7 +36,7 @@ type bundle struct {
 }
 
 // bundleCache is a in-process cache of email template bundles.
-var bundleCache = caching.RegisterLRUCache(128)
+var bundleCache = caching.RegisterLRUCache[string, *bundle](128)
 
 // getBundle returns a bundle of all email templates for the given project.
 // The returned bundle is cached in the process memory, do not modify it.
@@ -58,8 +58,8 @@ func getBundle(c context.Context, projectID string) (*bundle, error) {
 	// Lookup an existing bundle in the process cache.
 	// If not available, make one and cache it.
 	var transientErr error
-	value, ok := bundleCache.LRU(c).Mutate(c, projectID, func(it *lru.Item) *lru.Item {
-		if it != nil && it.Value.(*bundle).revision == project.Revision {
+	value, ok := bundleCache.LRU(c).Mutate(c, projectID, func(it *lru.Item[*bundle]) *lru.Item[*bundle] {
+		if it != nil && it.Value.revision == project.Revision {
 			return it // Cache hit.
 		}
 
@@ -95,7 +95,7 @@ func getBundle(c context.Context, projectID string) (*bundle, error) {
 		}
 
 		// Cache without expiration.
-		return &lru.Item{Value: b}
+		return &lru.Item[*bundle]{Value: b}
 	})
 
 	switch {
@@ -104,6 +104,6 @@ func getBundle(c context.Context, projectID string) (*bundle, error) {
 	case !ok:
 		panic("impossible: no cached value and no error")
 	default:
-		return value.(*bundle), nil
+		return value, nil
 	}
 }

@@ -759,7 +759,9 @@ func UpdateProjects(c context.Context) error {
 	return merr
 }
 
-type consolesCacheKey string
+func consolesCacheKey(builderID string) string {
+	return "milo:consolesCacheKey:" + builderID
+}
 
 // GetAllConsoles returns all Consoles (across all projects) which contain the
 // builder ID. If builderID is empty, then this retrieves all Consoles.

@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 )
@@ -54,7 +53,7 @@ func SetUpTestGlobalCache(ctx context.Context) context.Context {
 	return caching.WithGlobalCache(ctx, func(namespace string) caching.BlobCache {
 		cache, ok := caches[namespace]
 		if !ok {
-			cache = &cachingtest.BlobCache{LRU: lru.New(0)}
+			cache = cachingtest.NewBlobCache()
 			caches[namespace] = cache
 		}
 		return cache

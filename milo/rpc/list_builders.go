@@ -54,11 +54,13 @@ var listBuildersPageSize = PageSizeLimiter{
 	Default: 100,
 }
 
-var buildbucketBuildersCache = layered.RegisterCache(layered.Parameters{
+var buildbucketBuildersCache = layered.RegisterCache(layered.Parameters[[]*buildbucketpb.BuilderID]{
 	ProcessCacheCapacity: 64,
 	GlobalNamespace:      "buildbucket-builders-v4",
-	Marshal:              json.Marshal,
-	Unmarshal: func(blob []byte) (any, error) {
+	Marshal: func(item []*buildbucketpb.BuilderID) ([]byte, error) {
+		return json.Marshal(item)
+	},
+	Unmarshal: func(blob []byte) ([]*buildbucketpb.BuilderID, error) {
 		res := make([]*buildbucketpb.BuilderID, 0)
 		err := json.Unmarshal(blob, &res)
 		return res, err
@@ -322,7 +324,7 @@ func (s *MiloInternalService) GetAllVisibleBuilders(c context.Context, project s
 		return nil, errors.New("buildbucket host is missing in config")
 	}
 
-	builders, err := buildbucketBuildersCache.GetOrCreate(c, host, func() (v any, exp time.Duration, err error) {
+	builders, err := buildbucketBuildersCache.GetOrCreate(c, host, func() (v []*buildbucketpb.BuilderID, exp time.Duration, err error) {
 		start := time.Now()
 
 		buildersClient, err := s.GetBuildersClient(c, host, auth.AsSelf)
@@ -357,7 +359,7 @@ func (s *MiloInternalService) GetAllVisibleBuilders(c context.Context, project s
 		return nil, err
 	}
 
-	return buildbucket.FilterVisibleBuilders(c, builders.([]*buildbucketpb.BuilderID), project)
+	return buildbucket.FilterVisibleBuilders(c, builders, project)
 }
 
 // UpdateBuilderCache updates the builders cache if the cache TTL falls below

@@ -53,14 +53,13 @@ func GetAccessToken(ctx context.Context, scopes []string) (*oauth2.Token, error)
 	// parallel requests that use access tokens suddenly see the cache expired
 	// and rush to refresh the token all at once.
 	lru := tokensCache.LRU(ctx)
-	if tokIface, ok := lru.Get(ctx, cacheKey); ok {
-		tok := tokIface.(*oauth2.Token)
+	if tok, ok := lru.Get(ctx, cacheKey); ok {
 		if !closeToExpRandomized(ctx, tok.Expiry) {
 			return tok, nil
 		}
 	}
 
-	tokIface, err := lru.Create(ctx, cacheKey, func() (any, time.Duration, error) {
+	return lru.Create(ctx, cacheKey, func() (*oauth2.Token, time.Duration, error) {
 		// The token needs to be refreshed.
 		logging.Debugf(ctx, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
 		accessToken, exp, err := info.AccessToken(ctx, scopes...)
@@ -80,10 +79,6 @@ func GetAccessToken(ctx context.Context, scopes []string) (*oauth2.Token, error)
 
 		return tok, now.Sub(tok.Expiry), nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return tokIface.(*oauth2.Token), nil
 }
 
 // NewTokenSource makes oauth2.TokenSource implemented on top of GetAccessToken.
@@ -105,7 +100,7 @@ func (ts *tokenSource) Token() (*oauth2.Token, error) {
 //// Internal stuff.
 
 // normalized scopes string => *oauth2.Token.
-var tokensCache = caching.RegisterLRUCache(100)
+var tokensCache = caching.RegisterLRUCache[string, *oauth2.Token](100)
 
 const (
 	// expirationMinLifetime is minimal possible lifetime of a returned token.

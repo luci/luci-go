@@ -31,7 +31,7 @@ import (
 )
 
 // "url:..." | "email:..." | "google_auth2_certs" => *PublicCertificates.
-var certsCache = caching.RegisterLRUCache(1024)
+var certsCache = caching.RegisterLRUCache[string, *PublicCertificates](1024)
 
 const (
 	robotCertsURL  = "https://www.googleapis.com/robot/v1/metadata/x509/"
@@ -99,7 +99,7 @@ func (t JSONTime) MarshalJSON() ([]byte, error) {
 //
 // LUCI services serve certificates at /auth/api/v1/server/certificates.
 func FetchCertificates(ctx context.Context, url string) (*PublicCertificates, error) {
-	certs, err := certsCache.LRU(ctx).GetOrCreate(ctx, "url:"+url, func() (any, time.Duration, error) {
+	return certsCache.LRU(ctx).GetOrCreate(ctx, "url:"+url, func() (*PublicCertificates, time.Duration, error) {
 		certs := &PublicCertificates{}
 		req := internal.Request{
 			Method: "GET",
@@ -111,10 +111,6 @@ func FetchCertificates(ctx context.Context, url string) (*PublicCertificates, er
 		}
 		return certs, CertsCacheExpiration, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return certs.(*PublicCertificates), nil
 }
 
 // FetchCertificatesFromLUCIService is shortcut for FetchCertificates
@@ -142,7 +138,7 @@ func FetchCertificatesForServiceAccount(ctx context.Context, email string) (*Pub
 	if !strings.HasSuffix(email, ".gserviceaccount.com") {
 		return nil, fmt.Errorf("signature: not a google service account %q", email)
 	}
-	certs, err := certsCache.LRU(ctx).GetOrCreate(ctx, "email:"+email, func() (any, time.Duration, error) {
+	return certsCache.LRU(ctx).GetOrCreate(ctx, "email:"+email, func() (*PublicCertificates, time.Duration, error) {
 		certs, err := fetchCertsJSON(ctx, robotCertsURL+url.QueryEscape(email))
 		if err != nil {
 			return nil, 0, err
@@ -150,10 +146,6 @@ func FetchCertificatesForServiceAccount(ctx context.Context, email string) (*Pub
 		certs.ServiceAccountName = email
 		return certs, CertsCacheExpiration, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return certs.(*PublicCertificates), nil
 }
 
 // FetchGoogleOAuth2Certificates fetches root certificates of Google OAuth2
@@ -164,17 +156,13 @@ func FetchCertificatesForServiceAccount(ctx context.Context, email string) (*Pub
 //
 // Uses the process cache to cache them for CertsCacheExpiration minutes.
 func FetchGoogleOAuth2Certificates(ctx context.Context) (*PublicCertificates, error) {
-	certs, err := certsCache.LRU(ctx).GetOrCreate(ctx, "google_auth2_certs", func() (any, time.Duration, error) {
+	return certsCache.LRU(ctx).GetOrCreate(ctx, "google_auth2_certs", func() (*PublicCertificates, time.Duration, error) {
 		certs, err := fetchCertsJSON(ctx, oauth2CertsURL)
 		if err != nil {
 			return nil, 0, err
 		}
 		return certs, CertsCacheExpiration, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return certs.(*PublicCertificates), nil
 }
 
 // fetchCertsJSON loads certificates from a JSON dict "key id => x509 PEM cert".

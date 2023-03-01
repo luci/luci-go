@@ -33,8 +33,7 @@ const (
 	defaultCompressionThreshold = 64 * 1024 // 64KiB
 )
 
-// storage.CacheKey => []byte.
-var storageCache = caching.RegisterLRUCache(65535)
+var storageCache = caching.RegisterLRUCache[storage.CacheKey, []byte](65535)
 
 // StorageCache implements a generic storage.Cache for Storage instances.
 //
@@ -45,12 +44,11 @@ type StorageCache struct {
 
 // Get implements storage.Cache.
 func (sc *StorageCache) Get(c context.Context, key storage.CacheKey) ([]byte, bool) {
-	itm, ok := storageCache.LRU(c).Get(c, key)
+	data, ok := storageCache.LRU(c).Get(c, key)
 	if !ok {
 		return nil, false
 	}
 
-	data := itm.([]byte)
 	if len(data) == 0 {
 		// No cache item (missing or invalid/empty).
 		return nil, false

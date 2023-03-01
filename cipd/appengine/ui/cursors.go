@@ -58,7 +58,7 @@ func (k cursorKind) fetchPrevCursor(ctx context.Context, pkg, cursor string) str
 
 // localCursorCache is used as a replacement for the global cache when running
 // locally during development.
-var localCursorCache = caching.RegisterLRUCache(1)
+var localCursorCache = caching.RegisterLRUCache[string, string](1)
 
 // storeInCache puts the value in the global memory cache.
 //
@@ -84,7 +84,7 @@ func loadFromCache(ctx context.Context, key string) ([]byte, error) {
 		return val, err
 	}
 	if val, ok := localCursorCache.LRU(ctx).Get(ctx, key); ok {
-		return []byte(val.(string)), nil
+		return []byte(val), nil
 	}
 	return nil, nil
 }

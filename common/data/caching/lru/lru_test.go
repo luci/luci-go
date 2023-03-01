@@ -31,9 +31,9 @@ func TestCache(t *testing.T) {
 
 	Convey(`An locking LRU cache with size heuristic 3`, t, func() {
 		ctx := context.Background()
-		cache := New(3)
+		cache := New[string, string](3)
 
-		Convey(`A Get() returns nil.`, func() {
+		Convey(`A Get() returns "no item".`, func() {
 			_, has := cache.Get(ctx, "test")
 			So(has, ShouldBeFalse)
 		})
@@ -48,7 +48,7 @@ func TestCache(t *testing.T) {
 			}
 		}
 
-		get := func(key any) (val any) {
+		get := func(key string) (val string) {
 			val, _ = cache.Get(ctx, key)
 			return
 		}
@@ -86,7 +86,7 @@ func TestCache(t *testing.T) {
 
 				v, has = cache.Peek(ctx, "nonexist")
 				So(has, ShouldBeFalse)
-				So(v, ShouldBeNil)
+				So(v, ShouldEqual, "")
 
 				addCacheValues("d")
 				So(cache, shouldHaveValues, "b", "c", "d")
@@ -99,8 +99,8 @@ func TestCache(t *testing.T) {
 
 			So(cache, shouldHaveValues, "b", "c", "d")
 
-			Convey(`Requests for "a" will be nil.`, func() {
-				So(get("a"), ShouldBeNil)
+			Convey(`Requests for "a" will be empty.`, func() {
+				So(get("a"), ShouldEqual, "")
 			})
 		})
 
@@ -123,10 +123,10 @@ func TestCache(t *testing.T) {
 			})
 		})
 
-		Convey(`When removing a value that isn't there, returns nil.`, func() {
+		Convey(`When removing a value that isn't there, returns "no item".`, func() {
 			v, has := cache.Remove("foo")
 			So(has, ShouldBeFalse)
-			So(v, ShouldBeNil)
+			So(v, ShouldEqual, "")
 		})
 	})
 }
@@ -136,7 +136,7 @@ func TestCacheWithExpiry(t *testing.T) {
 
 	Convey(`A cache of size 3 with a Clock`, t, func() {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
-		cache := New(3)
+		cache := New[string, string](3)
 
 		cache.Put(ctx, "a", "av", 1*time.Second)
 		cache.Put(ctx, "b", "bv", 2*time.Second)
@@ -154,12 +154,12 @@ func TestCacheWithExpiry(t *testing.T) {
 			})
 
 			Convey(`Mutate treats "a" as missing.`, func() {
-				v, ok := cache.Mutate(ctx, "a", func(it *Item) *Item {
+				v, ok := cache.Mutate(ctx, "a", func(it *Item[string]) *Item[string] {
 					So(it, ShouldBeNil)
 					return nil
 				})
 				So(ok, ShouldBeFalse)
-				So(v, ShouldBeNil)
+				So(v, ShouldEqual, "")
 				So(cache.Len(), ShouldEqual, 2)
 
 				_, has := cache.Get(ctx, "a")
@@ -167,9 +167,9 @@ func TestCacheWithExpiry(t *testing.T) {
 			})
 
 			Convey(`Mutate replaces "a" if a value is supplied.`, func() {
-				v, ok := cache.Mutate(ctx, "a", func(it *Item) *Item {
+				v, ok := cache.Mutate(ctx, "a", func(it *Item[string]) *Item[string] {
 					So(it, ShouldBeNil)
-					return &Item{"av", 0}
+					return &Item[string]{"av", 0}
 				})
 				So(ok, ShouldBeTrue)
 				So(v, ShouldEqual, "av")
@@ -181,8 +181,8 @@ func TestCacheWithExpiry(t *testing.T) {
 			})
 
 			Convey(`Mutateing "b" yields the remaining time.`, func() {
-				v, ok := cache.Mutate(ctx, "b", func(it *Item) *Item {
-					So(it, ShouldResemble, &Item{"bv", 1 * time.Second})
+				v, ok := cache.Mutate(ctx, "b", func(it *Item[string]) *Item[string] {
+					So(it, ShouldResemble, &Item[string]{"bv", 1 * time.Second})
 					return it
 				})
 				So(ok, ShouldBeTrue)
@@ -212,7 +212,7 @@ func TestUnboundedCache(t *testing.T) {
 
 	Convey(`An unbounded cache`, t, func() {
 		ctx := context.Background()
-		cache := New(0)
+		cache := New[int, string](0)
 
 		Convey(`Grows indefinitely`, func() {
 			for i := 0; i < 1000; i++ {
@@ -238,7 +238,7 @@ func TestUnboundedCacheWithExpiry(t *testing.T) {
 
 	Convey(`An unbounded cache with a clock`, t, func() {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
-		cache := New(0)
+		cache := New[int, string](0)
 
 		Convey(`Grows indefinitely`, func() {
 			for i := 0; i < 1000; i++ {
@@ -262,11 +262,11 @@ func TestUnboundedCacheWithExpiry(t *testing.T) {
 			Convey(`Get works`, func() {
 				v, has := cache.Get(ctx, 1)
 				So(has, ShouldBeFalse)
-				So(v, ShouldBeNil)
+				So(v, ShouldEqual, "")
 
 				v, has = cache.Get(ctx, 500)
 				So(has, ShouldBeFalse)
-				So(v, ShouldBeNil)
+				So(v, ShouldEqual, "")
 
 				v, has = cache.Get(ctx, 501)
 				So(has, ShouldBeTrue)
@@ -290,10 +290,11 @@ func TestGetOrCreate(t *testing.T) {
 
 	Convey(`An unbounded cache`, t, func() {
 		ctx := context.Background()
-		cache := New(0)
 
 		Convey(`Can create a new value, and will synchronize around that creation`, func() {
-			v, err := cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
+			cache := New[string, string](0)
+
+			v, err := cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "bar", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -305,12 +306,14 @@ func TestGetOrCreate(t *testing.T) {
 		})
 
 		Convey(`Will not retain a value if an error is returned.`, func() {
+			cache := New[string, string](0)
+
 			errWat := errors.New("wat")
-			v, err := cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
-				return nil, 0, errWat
+			v, err := cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
+				return "", 0, errWat
 			})
 			So(err, ShouldEqual, errWat)
-			So(v, ShouldBeNil)
+			So(v, ShouldEqual, "")
 
 			_, ok := cache.Get(ctx, "foo")
 			So(ok, ShouldBeFalse)
@@ -320,6 +323,8 @@ func TestGetOrCreate(t *testing.T) {
 			const count = 16
 			const contention = 16
 
+			cache := New[int, int](0)
+
 			var wg sync.WaitGroup
 			vals := make([]int, count)
 			for i := 0; i < count; i++ {
@@ -328,7 +333,7 @@ func TestGetOrCreate(t *testing.T) {
 					wg.Add(1)
 					go func(cctx C) {
 						defer wg.Done()
-						v, err := cache.GetOrCreate(ctx, i, func() (any, time.Duration, error) {
+						v, err := cache.GetOrCreate(ctx, i, func() (int, time.Duration, error) {
 							val := vals[i]
 							vals[i]++
 							return val, 0, nil
@@ -349,10 +354,11 @@ func TestGetOrCreate(t *testing.T) {
 		})
 
 		Convey(`Can retrieve values while a Maker is in-progress.`, func() {
+			cache := New[string, string](0)
 			cache.Put(ctx, "foo", "bar", 0)
 
 			// Value already exists, so retrieves current value.
-			v, err := cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
+			v, err := cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "baz", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -366,7 +372,7 @@ func TestGetOrCreate(t *testing.T) {
 			var setV any
 			var setErr error
 			go func() {
-				setV, setErr = cache.Create(ctx, "foo", func() (any, time.Duration, error) {
+				setV, setErr = cache.Create(ctx, "foo", func() (string, time.Duration, error) {
 					close(changingC)
 					<-waitC
 					return "qux", 0, nil
@@ -378,7 +384,7 @@ func TestGetOrCreate(t *testing.T) {
 			// The goroutine's Create is in-progress, but the value is still present,
 			// so we should be able to get the old value.
 			<-changingC
-			v, err = cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
+			v, err = cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "never", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -393,7 +399,7 @@ func TestGetOrCreate(t *testing.T) {
 
 			// Run GetOrCreate. The value should be present, and should hold the new
 			// value added by the goroutine.
-			v, err = cache.GetOrCreate(ctx, "foo", func() (any, time.Duration, error) {
+			v, err = cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "never", 0, nil
 			})
 			So(err, ShouldBeNil)
@@ -403,28 +409,17 @@ func TestGetOrCreate(t *testing.T) {
 }
 
 func shouldHaveValues(actual any, expected ...any) string {
-	actualSnapshot := makeSnapshot(actual.(*Cache))
+	cache := actual.(*Cache[string, string])
 
-	expectedSnapshot := snapshot{}
+	actualSnapshot := map[string]string{}
+	for k, e := range cache.cache {
+		actualSnapshot[k] = e.v
+	}
+
+	expectedSnapshot := map[string]string{}
 	for _, k := range expected {
-		expectedSnapshot[k] = k.(string) + "v"
+		expectedSnapshot[k.(string)] = k.(string) + "v"
 	}
+
 	return ShouldResemble(actualSnapshot, expectedSnapshot)
-}
-
-// snapshot is a snapshot of the contents of the Cache.
-type snapshot map[any]any
-
-// snapshot returns a snapshot map of the cache's entries.
-func makeSnapshot(c *Cache) (ss snapshot) {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
-	if len(c.cache) > 0 {
-		ss = make(snapshot, len(c.cache))
-		for k, e := range c.cache {
-			ss[k] = e.v
-		}
-	}
-	return
 }

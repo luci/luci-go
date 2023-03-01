@@ -30,8 +30,13 @@ import (
 // Useful for mocking caching.GlobalCache in tests. See also WithGlobalCache
 // below.
 type BlobCache struct {
-	LRU *lru.Cache // underlying LRU cache, create it with lru.New(capacity).
-	Err error      // if non-nil, will be returned by Get and Set
+	LRU *lru.Cache[string, []byte] // the underlying LRU cache
+	Err error                      // if non-nil, will be returned by Get and Set
+}
+
+// NewBlobCache initializes empty blob cache with unlimited capacity.
+func NewBlobCache() *BlobCache {
+	return &BlobCache{LRU: lru.New[string, []byte](0)}
 }
 
 // Get returns a cached item or ErrCacheMiss if it's not in the cache.
@@ -43,7 +48,7 @@ func (b *BlobCache) Get(c context.Context, key string) ([]byte, error) {
 	if !ok {
 		return nil, caching.ErrCacheMiss
 	}
-	return item.([]byte), nil
+	return item, nil
 }
 
 // Set unconditionally overwrites an item in the cache.

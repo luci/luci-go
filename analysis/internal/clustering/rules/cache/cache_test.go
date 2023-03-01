@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 )
 
-var cache = caching.RegisterLRUCache(50)
+var cache = caching.RegisterLRUCache[string, *Ruleset](50)
 
 func TestRulesCache(t *testing.T) {
 	Convey(`With Spanner Test Database`, t, func() {

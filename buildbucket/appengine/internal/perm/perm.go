@@ -56,14 +56,13 @@ const (
 // Cache "<project>/<bucket>" => wirepb-serialized pb.Bucket.
 //
 // Missing buckets are represented by empty pb.Bucket protos.
-var bucketCache = layered.RegisterCache(layered.Parameters{
+var bucketCache = layered.RegisterCache(layered.Parameters[*pb.Bucket]{
 	ProcessCacheCapacity: 65536,
 	GlobalNamespace:      "bucket_cache_v1",
-	Marshal: func(item any) ([]byte, error) {
-		pb := item.(*pb.Bucket)
-		return proto.Marshal(pb)
+	Marshal: func(item *pb.Bucket) ([]byte, error) {
+		return proto.Marshal(item)
 	},
-	Unmarshal: func(blob []byte) (any, error) {
+	Unmarshal: func(blob []byte) (*pb.Bucket, error) {
 		pb := &pb.Bucket{}
 		if err := proto.Unmarshal(blob, pb); err != nil {
 			return nil, err
@@ -91,7 +90,7 @@ func getBucket(ctx context.Context, project, bucket string) (*pb.Bucket, error) 
 		return nil, errors.Reason("bucket name is empty").Err()
 	}
 
-	item, err := bucketCache.GetOrCreate(ctx, project+"/"+bucket, func() (any, time.Duration, error) {
+	item, err := bucketCache.GetOrCreate(ctx, project+"/"+bucket, func() (*pb.Bucket, time.Duration, error) {
 		entity := &model.Bucket{ID: bucket, Parent: model.ProjectKey(ctx, project)}
 		switch err := datastore.Get(ctx, entity); {
 		case err == nil:
@@ -117,11 +116,10 @@ func getBucket(ctx context.Context, project, bucket string) (*pb.Bucket, error) 
 
 	// Name is always populated in existing buckets. It is never populated in
 	// missing buckets.
-	pb := item.(*pb.Bucket)
-	if pb.Name == "" {
+	if item.Name == "" {
 		return nil, nil
 	}
-	return pb, nil
+	return item, nil
 }
 
 // HasInBucket checks the caller has the given permission in the bucket.

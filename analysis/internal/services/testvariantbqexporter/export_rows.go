@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
@@ -42,7 +41,7 @@ const (
 )
 
 // schemaApplyer ensures BQ schema matches the row proto definitions.
-var schemaApplyer = bq.NewSchemaApplyer(caching.RegisterLRUCache(50))
+var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 
 // Options specifies the requirements of the bq export.
 type Options struct {

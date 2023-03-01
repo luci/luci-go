@@ -45,7 +45,7 @@ var ErrNoPrimaryAEAD = errors.New("the primary AEAD primitive is not configured"
 //
 // It is essentially a map (living in the process memory cache) with some
 // synchronization around item instantiation.
-var handles = caching.RegisterLRUCache(0)
+var handles = caching.RegisterLRUCache[string, *AEADHandle](0)
 
 // primaryAEADCtxKey is used to construct context key for PrimaryTinkAEAD.
 var primaryAEADCtxKey = "go.chromium.org/luci/secrets.PrimaryTinkAEAD"
@@ -177,14 +177,10 @@ func LoadTinkAEAD(ctx context.Context, secretName string) (*AEADHandle, error) {
 		// more subscription handlers, essentially leaking memory.
 		return loadTinkAEADLocked(ctx, secretName, false)
 	}
-	handle, err := cache.GetOrCreate(ctx, secretName, func() (any, time.Duration, error) {
+	return cache.GetOrCreate(ctx, secretName, func() (*AEADHandle, time.Duration, error) {
 		handle, err := loadTinkAEADLocked(ctx, secretName, true)
 		return handle, 0, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return handle.(*AEADHandle), nil
 }
 
 func setPrimaryTinkAEAD(ctx context.Context, val *AEADHandle) context.Context {

@@ -38,11 +38,11 @@ var StrongRead = time.Unix(0, 0).In(time.FixedZone("RuleCache StrongRead", 0xDB)
 // RulesCache is an in-process cache of failure association rules used
 // by LUCI projects.
 type RulesCache struct {
-	cache caching.LRUHandle
+	cache caching.LRUHandle[string, *Ruleset]
 }
 
 // NewRulesCache initialises a new RulesCache.
-func NewRulesCache(c caching.LRUHandle) *RulesCache {
+func NewRulesCache(c caching.LRUHandle[string, *Ruleset]) *RulesCache {
 	return &RulesCache{
 		cache: c,
 	}
@@ -59,9 +59,8 @@ func (c *RulesCache) Ruleset(ctx context.Context, project string, minimumPredica
 	readStart := clock.Now(ctx)
 
 	// Fast path: try and use the existing cached value (if any).
-	entry, ok := c.cache.LRU(ctx).Get(ctx, project)
+	ruleset, ok := c.cache.LRU(ctx).Get(ctx, project)
 	if ok {
-		ruleset := entry.(*Ruleset)
 		if isRulesetUpToDate(ruleset, readStart, minimumPredicatesVersion) {
 			return ruleset, nil
 		}
@@ -69,11 +68,11 @@ func (c *RulesCache) Ruleset(ctx context.Context, project string, minimumPredica
 
 	// Update the cache. This requires acquiring the mutex that
 	// controls updates to the cache entry.
-	value, _ := c.cache.LRU(ctx).Mutate(ctx, project, func(it *lru.Item) *lru.Item {
+	ruleset, _ = c.cache.LRU(ctx).Mutate(ctx, project, func(it *lru.Item[*Ruleset]) *lru.Item[*Ruleset] {
 		// Only one goroutine will enter this section at one time.
 		var ruleset *Ruleset
 		if it != nil {
-			ruleset = it.Value.(*Ruleset)
+			ruleset = it.Value
 			if isRulesetUpToDate(ruleset, readStart, minimumPredicatesVersion) {
 				// The ruleset is up-to-date. Do not mutate it further.
 				// This can happen if the ruleset updated while we were
@@ -88,7 +87,7 @@ func (c *RulesCache) Ruleset(ctx context.Context, project string, minimumPredica
 			// Issue refreshing ruleset. Keep the cached value (if any) for now.
 			return it
 		}
-		return &lru.Item{
+		return &lru.Item[*Ruleset]{
 			Value: ruleset,
 			Exp:   0, // Never.
 		}
@@ -96,7 +95,6 @@ func (c *RulesCache) Ruleset(ctx context.Context, project string, minimumPredica
 	if err != nil {
 		return nil, err
 	}
-	ruleset := value.(*Ruleset)
 	if minimumPredicatesVersion != StrongRead && ruleset.Version.Predicates.Before(minimumPredicatesVersion) {
 		return nil, fmt.Errorf("could not obtain ruleset of requested minimum predicate version (%v)", minimumPredicatesVersion)
 	}

@@ -205,13 +205,13 @@ type runWithExternalCLs struct {
 	ExternalCLs []changelist.ExternalID
 }
 
-var tokenCache = layered.RegisterCache(layered.Parameters{
+var tokenCache = layered.RegisterCache(layered.Parameters[string]{
 	ProcessCacheCapacity: 1024,
 	GlobalNamespace:      "recent_cv_runs_page_token_cache",
-	Marshal: func(item any) ([]byte, error) {
-		return []byte(item.(string)), nil
+	Marshal: func(item string) ([]byte, error) {
+		return []byte(item), nil
 	},
-	Unmarshal: func(blob []byte) (any, error) {
+	Unmarshal: func(blob []byte) (string, error) {
 		return string(blob), nil
 	},
 })
@@ -231,21 +231,19 @@ func pageTokens(ctx context.Context, pageToken, nextPageToken string) (prev stri
 	// query when the given page token is valid, but we can't retrieve its
 	// previous page.
 	blankToken := " "
-	var cachedV any
 
 	if pageToken == "" {
 		pageToken = blankToken
 	} else {
-		cachedV, err = tokenCache.GetOrCreate(ctx, pageToken, func() (v any, exp time.Duration, err error) {
+		prev, err = tokenCache.GetOrCreate(ctx, pageToken, func() (v string, exp time.Duration, err error) {
 			// We haven't seen this token yet, we don't know what its previous page is.
 			return "", 0, nil
 		})
 		if err != nil {
 			return
 		}
-		prev = cachedV.(string)
 	}
-	_, err = tokenCache.GetOrCreate(ctx, nextPageToken, func() (v any, exp time.Duration, err error) {
+	_, err = tokenCache.GetOrCreate(ctx, nextPageToken, func() (v string, exp time.Duration, err error) {
 		return pageToken, tokenExp, nil
 	})
 	return

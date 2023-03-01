@@ -26,7 +26,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/mailer/api/mailer"
 	"go.chromium.org/luci/server/auth"
@@ -72,9 +71,7 @@ func TestMailer(t *testing.T) {
 
 		srv := &mailerServer{
 			callersGroup: "auth-mailer-access",
-			cache: &cachingtest.BlobCache{
-				LRU: lru.New(0),
-			},
+			cache:        cachingtest.NewBlobCache(),
 			send: func(msg *email.Email, timeout time.Duration) error {
 				if sendErr != nil {
 					return sendErr

@@ -25,9 +25,9 @@ import (
 )
 
 // Item is a Cache item. It's used when interfacing with Mutate.
-type Item struct {
+type Item[V any] struct {
 	// Value is the item's value. It may be nil.
-	Value any
+	Value V
 	// Exp is the item's expiration.
 	Exp time.Duration
 }
@@ -44,7 +44,7 @@ type Item struct {
 // value (if any) will be purged. If the returned Item's expiration is <=0,
 // the returned Item will never expire. Otherwise, the Item will expire in the
 // future.
-type Generator func(it *Item) *Item
+type Generator[V any] func(it *Item[V]) *Item[V]
 
 // Maker generates a new value. It is used by GetOrCreate, and is run while a
 // lock on that value's key is held, but not while the larger Cache is locked,
@@ -54,7 +54,7 @@ type Generator func(it *Item) *Item
 //
 // If the Maker returns an error, the returned value will not be cached, and
 // the error will be returned by GetOrCreate.
-type Maker func() (v any, exp time.Duration, err error)
+type Maker[V any] func() (v V, exp time.Duration, err error)
 
 // Cache is a least-recently-used (LRU) cache implementation. The cache stores
 // key-value mapping entries up to a size limit. If more items are added past
@@ -66,7 +66,7 @@ type Maker func() (v any, exp time.Duration, err error)
 // Cache is safe for concurrent access, using a read-write mutex to allow
 // multiple non-mutating readers (Peek) or only one mutating reader/writer (Get,
 // Put, Mutate).
-type Cache struct {
+type Cache[K comparable, V any] struct {
 	// maxSize, if >0, is the maximum number of elements that can reside in the
 	// LRU. If 0, elements will not be evicted based on count. This creates a flat
 	// cache that may never shrink.
@@ -79,26 +79,27 @@ type Cache struct {
 	//
 	// Cache reads may be made while holding the read or write lock. Modifications
 	// to cache require the write lock to be held.
-	cache map[any]*cacheEntry
+	cache map[K]*cacheEntry[K, V]
 
 	// head is the first element in a linked list of least-recently-used elements.
 	//
 	// Each time an element is used, it is moved to the beginning of the list.
 	// Consequently, items at the end of the list will be the least-recently-used
 	// items.
-	head *cacheEntry
+	head *cacheEntry[K, V]
 
 	// tail is the last element in a linked list of least-recently-used elements.
-	tail *cacheEntry
+	tail *cacheEntry[K, V]
 
 	// mp is a Mutex pool used in GetOrCreate to lock around individual keys.
 	mp mutexpool.P
 }
 
-type cacheEntry struct {
-	k, v       any
+type cacheEntry[K comparable, V any] struct {
+	k          K
+	v          V
 	expiry     time.Time
-	next, prev *cacheEntry
+	next, prev *cacheEntry[K, V]
 }
 
 // New creates a new LRU with given maximum size.
@@ -106,10 +107,10 @@ type cacheEntry struct {
 // If maxSize is <= 0, the LRU cache will have infinite capacity and will never
 // prune LRU elements when adding new ones. Use Prune to reclaim memory occupied
 // by expired elements.
-func New(maxSize int) *Cache {
-	return &Cache{
+func New[K comparable, V any](maxSize int) *Cache[K, V] {
+	return &Cache[K, V]{
 		maxSize: maxSize,
-		cache:   make(map[any]*cacheEntry),
+		cache:   make(map[K]*cacheEntry[K, V]),
 	}
 }
 
@@ -117,7 +118,7 @@ func New(maxSize int) *Cache {
 // the element's recently-used standing.
 //
 // Peek uses the cache read lock.
-func (c *Cache) Peek(ctx context.Context, key any) (any, bool) {
+func (c *Cache[K, V]) Peek(ctx context.Context, key K) (V, bool) {
 	now := clock.Now(ctx)
 
 	c.lock.RLock()
@@ -128,14 +129,16 @@ func (c *Cache) Peek(ctx context.Context, key any) (any, bool) {
 			return ent.v, true
 		}
 	}
-	return nil, false
+
+	var zero V
+	return zero, false
 }
 
 // Get fetches the element associated with the supplied key, updating its
 // recently-used standing.
 //
 // Get uses the cache read/write lock.
-func (c *Cache) Get(ctx context.Context, key any) (any, bool) {
+func (c *Cache[K, V]) Get(ctx context.Context, key K) (V, bool) {
 	now := clock.Now(ctx)
 
 	// We need a Read/Write lock here because if the entry is present, we are
@@ -151,7 +154,8 @@ func (c *Cache) Get(ctx context.Context, key any) (any, bool) {
 		c.deleteLocked(ent)
 	}
 
-	return nil, false
+	var zero V
+	return zero, false
 }
 
 // Put adds a new value to the cache. The value in the cache will be replaced
@@ -166,12 +170,12 @@ func (c *Cache) Get(ctx context.Context, key any) (any, bool) {
 // Returns whether not a value already existed for the key.
 //
 // The new item will be considered most recently used.
-func (c *Cache) Put(ctx context.Context, key, value any, exp time.Duration) (prev any, had bool) {
-	c.Mutate(ctx, key, func(cur *Item) *Item {
+func (c *Cache[K, V]) Put(ctx context.Context, key K, value V, exp time.Duration) (prev V, had bool) {
+	c.Mutate(ctx, key, func(cur *Item[V]) *Item[V] {
 		if cur != nil {
 			prev, had = cur.Value, true
 		}
-		return &Item{value, exp}
+		return &Item[V]{value, exp}
 	})
 	return
 }
@@ -192,7 +196,7 @@ func (c *Cache) Put(ctx context.Context, key, value any, exp time.Duration) (pre
 //
 // The key will be considered most recently used regardless of whether it was
 // put.
-func (c *Cache) Mutate(ctx context.Context, key any, gen Generator) (value any, ok bool) {
+func (c *Cache[K, V]) Mutate(ctx context.Context, key K, gen Generator[V]) (value V, ok bool) {
 	now := clock.Now(ctx)
 
 	c.lock.Lock()
@@ -202,9 +206,9 @@ func (c *Cache) Mutate(ctx context.Context, key any, gen Generator) (value any, 
 
 	// Populate `it` only if there's a non-expired entry. Otherwise pretend
 	// there's no existing item.
-	var it *Item
+	var it *Item[V]
 	if ent != nil && !c.hasExpired(now, ent) {
-		it = &Item{Value: ent.v}
+		it = &Item[V]{Value: ent.v}
 		if !ent.expiry.IsZero() {
 			// Get remaining lifetime of this entry.
 			it.Exp = ent.expiry.Sub(now)
@@ -220,14 +224,15 @@ func (c *Cache) Mutate(ctx context.Context, key any, gen Generator) (value any, 
 		if ent != nil {
 			c.deleteLocked(ent)
 		}
-		return nil, false
+		var zero V
+		return zero, false
 	}
 
 	// Generate our entry.
 	if ent == nil {
 		// This is a new entry. Put into the map and place at the front in the
 		// linked list.
-		ent = &cacheEntry{k: key, v: it.Value}
+		ent = &cacheEntry[K, V]{k: key, v: it.Value}
 		c.cache[key] = ent
 		c.pushToFrontLocked(ent)
 		// Because we added a new entry, we need to perform a pruning round.
@@ -254,7 +259,7 @@ func (c *Cache) Mutate(ctx context.Context, key any, gen Generator) (value any, 
 // value will be returned; otherwise, nil will be returned.
 //
 // Remove uses the cache read/write lock.
-func (c *Cache) Remove(key any) (val any, has bool) {
+func (c *Cache[K, V]) Remove(key K) (val V, has bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -283,7 +288,7 @@ func (c *Cache) Remove(key any) (val any, has bool) {
 // Note that the Cache's lock will not be held while the Maker is running.
 // Operations on to the Cache using other methods will not lock around
 // key. This will not interfere with GetOrCreate.
-func (c *Cache) GetOrCreate(ctx context.Context, key any, fn Maker) (v any, err error) {
+func (c *Cache[K, V]) GetOrCreate(ctx context.Context, key K, fn Maker[V]) (v V, err error) {
 	// First, check if the value is the cache. We don't need to hold the item's
 	// Mutex for this.
 	var ok bool
@@ -328,7 +333,7 @@ func (c *Cache) GetOrCreate(ctx context.Context, key any, fn Maker) (v any, err 
 // Note that the Cache's lock will not be held while the Maker is running.
 // Operations on to the Cache using other methods will not lock around
 // key. This will not interfere with Create.
-func (c *Cache) Create(ctx context.Context, key any, fn Maker) (v any, err error) {
+func (c *Cache[K, V]) Create(ctx context.Context, key K, fn Maker[V]) (v V, err error) {
 	c.mp.WithMutex(key, func() {
 		// Generate a new value.
 		var exp time.Duration
@@ -344,7 +349,7 @@ func (c *Cache) Create(ctx context.Context, key any, fn Maker) (v any, err error
 }
 
 // Prune iterates through entries in the Cache and prunes any which are expired.
-func (c *Cache) Prune(ctx context.Context) {
+func (c *Cache[K, V]) Prune(ctx context.Context) {
 	now := clock.Now(ctx)
 
 	c.lock.Lock()
@@ -356,11 +361,11 @@ func (c *Cache) Prune(ctx context.Context) {
 // Reset clears the full contents of the cache.
 //
 // Purge uses the cache read/write lock.
-func (c *Cache) Reset() {
+func (c *Cache[K, V]) Reset() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.cache = make(map[any]*cacheEntry)
+	c.cache = make(map[K]*cacheEntry[K, V])
 	c.head = nil
 	c.tail = nil
 }
@@ -368,7 +373,7 @@ func (c *Cache) Reset() {
 // Len returns the number of entries in the cache.
 //
 // Len uses the cache read lock.
-func (c *Cache) Len() (size int) {
+func (c *Cache[K, V]) Len() (size int) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -378,14 +383,14 @@ func (c *Cache) Len() (size int) {
 // pruneSizeLocked prunes LRU elements until it has `size` items or less.
 //
 // Its write lock must be held by the caller.
-func (c *Cache) pruneSizeLocked(size int) {
+func (c *Cache[K, V]) pruneSizeLocked(size int) {
 	for e := c.tail; e != nil && len(c.cache) > size; e = c.tail {
 		c.deleteLocked(e)
 	}
 }
 
 // pruneExpiredLocked prunes any entries that have expired.
-func (c *Cache) pruneExpiredLocked(now time.Time) {
+func (c *Cache[K, V]) pruneExpiredLocked(now time.Time) {
 	for e := c.head; e != nil; {
 		next := e.next
 		if c.hasExpired(now, e) {
@@ -402,12 +407,12 @@ func (c *Cache) pruneExpiredLocked(now time.Time) {
 //
 // Will return false if the entry has no expiration, or if the entry is not
 // expired.
-func (c *Cache) hasExpired(now time.Time, ent *cacheEntry) bool {
+func (c *Cache[K, V]) hasExpired(now time.Time, ent *cacheEntry[K, V]) bool {
 	return !(ent.expiry.IsZero() || now.Before(ent.expiry))
 }
 
 // pushToFrontLocked adds a new entry to the front of the linked list.
-func (c *Cache) pushToFrontLocked(e *cacheEntry) {
+func (c *Cache[K, V]) pushToFrontLocked(e *cacheEntry[K, V]) {
 	e.prev = nil
 	e.next = c.head
 	if c.head != nil {
@@ -420,7 +425,7 @@ func (c *Cache) pushToFrontLocked(e *cacheEntry) {
 }
 
 // moveToFrontLocked moves an entry to the front of the linked list.
-func (c *Cache) moveToFrontLocked(e *cacheEntry) {
+func (c *Cache[K, V]) moveToFrontLocked(e *cacheEntry[K, V]) {
 	if c.head == e {
 		return
 	}
@@ -444,7 +449,7 @@ func (c *Cache) moveToFrontLocked(e *cacheEntry) {
 }
 
 // deleteLocked removes the entry from the cache.
-func (c *Cache) deleteLocked(e *cacheEntry) {
+func (c *Cache[K, V]) deleteLocked(e *cacheEntry[K, V]) {
 	delete(c.cache, e.k)
 
 	if c.head == e {
