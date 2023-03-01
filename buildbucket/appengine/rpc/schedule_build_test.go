@@ -3404,6 +3404,7 @@ func TestScheduleBuild(t *testing.T) {
 			expectedBackendConfig.Fields["agent_binary_cipd_pkg"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_pkg/${platform}"}}
 			expectedBackendConfig.Fields["agent_binary_cipd_vers"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_vers"}}
 			expectedBackendConfig.Fields["agent_binary_cipd_server"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_server"}}
+			expectedBackendConfig.Fields["agent_binary_cipd_filename"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bbagent${EXECUTABLE_SUFFIX}"}}
 
 			So(buildResult.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
 				Caches: []*pb.CacheEntry{
