@@ -17,6 +17,7 @@ package rbe
 import (
 	"context"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -28,9 +29,12 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/model"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -40,7 +44,7 @@ func TestReservationServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		ctx := context.Background()
+		ctx := memory.Use(context.Background())
 		rbe := mockedReservationClient{
 			newState: remoteworkers.ReservationState_RESERVATION_PENDING,
 		}
@@ -55,8 +59,10 @@ func TestReservationServer(t *testing.T) {
 
 		enqueueTask := &internalspb.EnqueueRBETask{
 			Payload: &internalspb.TaskPayload{
-				ReservationId: "reservation-id",
-				TaskId:        "task-id",
+				ReservationId:  "reservation-id",
+				TaskId:         "60b2ed0a43023110",
+				TaskToRunShard: 14,
+				TaskToRunId:    1,
 				DebugInfo: &internalspb.TaskPayload_DebugInfo{
 					PySwarmingVersion: "py-version",
 				},
@@ -71,13 +77,25 @@ func TestReservationServer(t *testing.T) {
 			Priority: 123,
 		}
 
+		taskReqKey, err := model.TaskRequestKey(ctx, enqueueTask.Payload.TaskId)
+		So(err, ShouldBeNil)
+		taskToRun := &model.TaskToRun{
+			Kind:       model.TaskToRunKind(enqueueTask.Payload.TaskToRunShard),
+			ID:         enqueueTask.Payload.TaskToRunId,
+			Parent:     taskReqKey,
+			Expiration: testclock.TestRecentTimeUTC,
+		}
+		So(datastore.Put(ctx, taskToRun), ShouldBeNil)
+
 		Convey("handleEnqueueRBETask ok", func() {
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
 			So(err, ShouldBeNil)
 
 			expectedPayload, _ := anypb.New(&internalspb.TaskPayload{
-				ReservationId: "reservation-id",
-				TaskId:        "task-id",
+				ReservationId:  "reservation-id",
+				TaskId:         "60b2ed0a43023110",
+				TaskToRunShard: 14,
+				TaskToRunId:    1,
 				DebugInfo: &internalspb.TaskPayload_DebugInfo{
 					PySwarmingVersion: "py-version",
 					GoSwarmingVersion: "go-version",
@@ -96,6 +114,27 @@ func TestReservationServer(t *testing.T) {
 				Priority:       123,
 				RequestedBotId: "some-bot-id",
 			})
+		})
+
+		Convey("handleEnqueueRBETask TaskToRun is gone", func() {
+			So(datastore.Delete(ctx, datastore.KeyForObj(ctx, taskToRun)), ShouldBeNil)
+
+			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
+			So(err, ShouldBeNil)
+
+			// Didn't call RBE.
+			So(rbe.reservation, ShouldBeNil)
+		})
+
+		Convey("handleEnqueueRBETask TaskToRun is claimed", func() {
+			taskToRun.Expiration = time.Time{}
+			So(datastore.Put(ctx, taskToRun), ShouldBeNil)
+
+			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
+			So(err, ShouldBeNil)
+
+			// Didn't call RBE.
+			So(rbe.reservation, ShouldBeNil)
 		})
 
 		Convey("handleEnqueueRBETask transient err", func() {

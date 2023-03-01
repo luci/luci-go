@@ -27,11 +27,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/model"
 )
 
 // ReservationServer is responsible for creating and canceling RBE reservations.
@@ -68,11 +70,6 @@ func (s *ReservationServer) RegisterTQTasks(disp *tq.Dispatcher) {
 
 // handleEnqueueRBETask is responsible for creating a reservation.
 func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *internalspb.EnqueueRBETask) (err error) {
-	// TODO(vadimsh): Fetch TaskToRun and verify it is still pending. This is
-	// important to eventually skip TQ tasks representing "broken" reservations
-	// (e.g. misconfigured RBE instance or some internal errors). Swarming
-	// eventually marks their TaskToRun as consumed.
-
 	// TODO(vadimsh): The following edge case is broken:
 	// 1. Try to submit a reservation, get FailedPrecondition, because no bots.
 	// 2. Try to report this to Swarming in reservationDenied(...) and fail.
@@ -107,6 +104,30 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 			}
 		}
 	}()
+
+	// Fetch TaskToRun and verify it is still pending. It may have been canceled
+	// already. This check is especially important if handleEnqueueRBETask is
+	// being retried in a loop due to some repeating error. Canceling TaskToRun
+	// should stop this retry loop.
+	taskReqKey, err := model.TaskRequestKey(ctx, task.Payload.TaskId)
+	if err != nil {
+		return errors.Annotate(err, "bad EnqueueRBETask payload").Err()
+	}
+	ttr := model.TaskToRun{
+		Kind:   model.TaskToRunKind(task.Payload.TaskToRunShard),
+		ID:     task.Payload.TaskToRunId,
+		Parent: taskReqKey,
+	}
+	switch err := datastore.Get(ctx, &ttr); {
+	case err == datastore.ErrNoSuchEntity:
+		logging.Warningf(ctx, "TaskToRun entity is already gone")
+		return nil
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
+	case !ttr.IsReapable():
+		logging.Warningf(ctx, "TaskToRun is no longer pending")
+		return nil
+	}
 
 	// This will show up in e.g. Swarming bot logs.
 	if task.Payload.DebugInfo != nil {
