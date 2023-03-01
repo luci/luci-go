@@ -52,7 +52,7 @@ const ClustersTable = ({
   useEffect(() => {
     if (!selectedMetrics.length && metrics) {
       const defaultMetrics = metrics?.filter((m) => m.isDefault);
-      updateSelectedMetricsParam(defaultMetrics);
+      updateSelectedMetricsParam(defaultMetrics, true);
     }
   }, [metrics, selectedMetrics, updateSelectedMetricsParam]);
 

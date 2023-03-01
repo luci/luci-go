@@ -26,11 +26,11 @@ export interface OrderBy {
 }
 
 
-export function useFilterParam(): [string, (failureFilter: string) => void] {
+export function useFilterParam(): [string, (failureFilter: string, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const failureFilter = searchParams.get('q') || '';
 
-  function updateFailureFilterParam(failureFilter: string) {
+  function updateFailureFilterParam(failureFilter: string, replace = false) {
     const params : ParamKeyValuePair[] = [];
 
     for (const [k, v] of searchParams.entries()) {
@@ -42,13 +42,15 @@ export function useFilterParam(): [string, (failureFilter: string) => void] {
     if (failureFilter !== '') {
       params.push(['q', failureFilter]);
     }
-    setSearchParams(params);
+    setSearchParams(params, {
+      replace,
+    });
   }
 
   return [failureFilter, updateFailureFilterParam];
 }
 
-export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (orderBy: OrderBy) => void] {
+export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (orderBy: OrderBy, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const orderByParam = searchParams.get('orderBy') || '';
   const orderDir = searchParams.get('orderDir') || '';
@@ -66,7 +68,7 @@ export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (order
     }
   }
 
-  function updateOrderByParams(orderBy: OrderBy) {
+  function updateOrderByParams(orderBy: OrderBy, replace = false) {
     const params : ParamKeyValuePair[] = [];
 
     for (const [k, v] of searchParams.entries()) {
@@ -80,13 +82,15 @@ export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (order
         params.push(['orderDir', 'asc']);
       }
     }
-    setSearchParams(params);
+    setSearchParams(params, {
+      replace,
+    });
   }
 
   return [orderBy, updateOrderByParams];
 }
 
-export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selectedMetrics: Metric[]) => void] {
+export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selectedMetrics: Metric[], replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedMetricsParam = searchParams.get('selectedMetrics') || '';
   const selectedMetricsIds = selectedMetricsParam.split(',');
@@ -94,7 +98,7 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
   const selectedMetrics = metrics.filter((metric) => selectedMetricsIds.indexOf(metric.metricId) > -1);
 
 
-  function updateSelectedMetricsParam(selectedMetrics: Metric[]) {
+  function updateSelectedMetricsParam(selectedMetrics: Metric[], replace = false) {
     const params : ParamKeyValuePair[] = [];
 
     const selectedMetricsIds = selectedMetrics.map((metric) => metric.metricId).join(',');
@@ -121,7 +125,9 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
       }
       params.push([k, v]);
     }
-    setSearchParams(params);
+    setSearchParams(params, {
+      replace,
+    });
   }
 
   return [selectedMetrics, updateSelectedMetricsParam];
