@@ -1,0 +1,41 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package auth.service.permissions;
+
+import "go.chromium.org/luci/server/auth/service/protocol/components/auth/proto/realms.proto";
+
+option go_package = "go.chromium.org/luci/auth_service/internal/permissions";
+
+// PermissionsList is an internal protobuf which is just a wrapper for a
+// repeated permissions value. The reason why this is necessary is because
+// this field is stored on it's own in datastore. The luci-go datastore
+// library does not support slices of *protobuf.Msg, the workaround is to
+// declare repeated in the protobuf and just store the *protobuf.Msg.
+//
+// This is a property value for the AuthRealmsGlobals entity defined in impl/model.go.
+message PermissionsList {
+  // List of all possible permissions in alphabetical order.
+  //
+  // Acts as a universal set of permissions in Binding messages.
+  //
+  // Services may also use this field to check that permissions they are about
+  // to use are actually known to the LUCI auth system. This is useful for
+  // debugging when adding or removing permissions.
+  //
+  // See Permission message for more details.
+  repeated components.auth.realms.Permission permissions = 1;
+}

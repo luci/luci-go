@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/info"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -215,8 +216,23 @@ type AuthRealmsGlobals struct {
 
 	Parent *datastore.Key `gae:"$parent"`
 
+	// TODO(cjacomet): Remove this once Python version no longer depends on
+	// this.
+	//
+	// Permissions and PermissionsList are the same, they are just represented
+	// differently in datastore from Python to Golang. In Python lists of pointers
+	// to protobuf types would serialize automagically and store as an array of
+	// serialized strings in datastore. In Go this is not supported in the luci datastore
+	// package. It is better to define the list as repeated protobuf.Msg instead of
+	// []*protobuf.Msg. This will yield the same results in the end but with a bit different steps.
+	// Permissions will not be unmarshalled in this version, the declaration
+	// is to avoid any issues when fetching the entity from datastore.
+	//
 	// Permissions is all globally defined permissions, in alphabetical order.
 	Permissions []string `gae:"permissions,noindex"`
+
+	// PermissionsList is all globally defined permissions, in alphabetical order.
+	PermissionsList *permissions.PermissionsList `gae:"permissionslist"`
 }
 
 // AuthProjectRealms is all realms of a single LUCI project.
