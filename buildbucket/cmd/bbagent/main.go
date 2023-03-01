@@ -224,6 +224,14 @@ func backendTaskInfoExists(ci clientInput) bool {
 	return len(ci.input.Build.GetInfra().GetSwarming().GetBotDimensions()) > 0
 }
 
+func chooseCacheDir(input *bbpb.BBAgentArgs, cacheBaseFlag string) string {
+	cache := input.GetCacheDir()
+	if input.Build.GetInfra().GetBackend() != nil && cacheBaseFlag != "" {
+		cache = cacheBaseFlag
+	}
+	return cache
+}
+
 // backFillTaskInfo gets the task info from LUCI_CONTEXT and backs fill it to input.Build.
 //
 // Currently only read from swarming part of LUCI_CONTEXT and only update
@@ -495,6 +503,7 @@ func mainImpl() int {
 	hostname := flag.String("host", "", "Buildbucket server hostname")
 	buildID := flag.Int64("build-id", 0, "Buildbucket build ID")
 	useGCEAccount := flag.Bool("use-gce-account", false, "Use GCE metadata service account for all calls")
+	cacheBase := flag.String("cache-base", "", "Directory where all the named caches are mounted for the build")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
 
 	flag.Parse()
@@ -645,11 +654,12 @@ func mainImpl() int {
 	var statusDetails *bbpb.StatusDetails
 	var subprocErr error
 	builds, err := host.Run(cctx, opts, func(ctx context.Context, hostOpts host.Options, deadlineEvntCh <-chan lucictx.DeadlineEvent, shutdown func()) {
+		cache := chooseCacheDir(bbclientInput.input, *cacheBase)
 		logging.Infof(ctx, "running luciexe: %q", exeArgs)
-		logging.Infof(ctx, "  (cache dir): %q", bbclientInput.input.CacheDir)
+		logging.Infof(ctx, "  (cache dir): %q", cache)
 		invokeOpts := &invoke.Options{
 			BaseDir:  hostOpts.BaseDir,
-			CacheDir: bbclientInput.input.CacheDir,
+			CacheDir: cache,
 			Env:      environ.System(),
 		}
 		experiments := stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...)

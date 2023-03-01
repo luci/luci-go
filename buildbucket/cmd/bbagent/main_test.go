@@ -146,3 +146,34 @@ func TestDownloadInputs(t *testing.T) {
 	})
 
 }
+
+func TestChooseCacheDir(t *testing.T) {
+	input := &bbpb.BBAgentArgs{
+		Build:    &bbpb.Build{},
+		CacheDir: "inputCacheDir",
+	}
+
+	Convey("use input.CacheDir no backend", t, func() {
+		cacheDir := chooseCacheDir(input, "")
+		So(cacheDir, ShouldEqual, "inputCacheDir")
+
+	})
+
+	Convey("use input.CacheDir backend exists", t, func() {
+		input.Build.Infra = &bbpb.BuildInfra{
+			Backend: &bbpb.BuildInfra_Backend{},
+		}
+		cacheDir := chooseCacheDir(input, "")
+		So(cacheDir, ShouldEqual, "inputCacheDir")
+
+	})
+
+	Convey("use cache-base flag backend exists", t, func() {
+		input.Build.Infra = &bbpb.BuildInfra{
+			Backend: &bbpb.BuildInfra_Backend{},
+		}
+		cacheDir := chooseCacheDir(input, "cache")
+		So(cacheDir, ShouldEqual, "cache")
+
+	})
+}
