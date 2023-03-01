@@ -45,6 +45,7 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 		spanner.Delete("TestVariantRealms", spanner.AllKeys()),
 		spanner.Delete("TestRealms", spanner.AllKeys()),
 		spanner.Delete("TestVariantBranch", spanner.AllKeys()),
+		spanner.Delete("TestVariantBranchCheckpoint", spanner.AllKeys()),
 	})
 	return err
 }
