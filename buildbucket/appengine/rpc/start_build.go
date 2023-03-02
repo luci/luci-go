@@ -46,20 +46,96 @@ func validateStartBuildRequest(ctx context.Context, req *pb.StartBuildRequest) e
 	return nil
 }
 
-func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildRequest, b *model.Build, infra *model.BuildInfra) error {
-	taskID := infra.Proto.Backend.Task.GetId()
+func checkBuildStatus(b *model.Build) error {
+	switch {
+	case protoutil.IsEnded(b.Status):
+		// The build has ended.
+		// For example the StartBuild request reaches Buildbucket late, when the task
+		// has crashed (e.g. BOT_DIED).
+		return appstatus.Errorf(codes.FailedPrecondition, "cannot start ended build %d", b.ID)
+	case b.Status == pb.Status_STARTED:
+		// In theory this should be impossible. But check it any way.
+		return appstatus.Errorf(codes.FailedPrecondition, "cannot start started build %d", b.ID)
+	default:
+		return nil
+	}
+}
 
+// startBuildOnSwarming starts a build if it runs on swarming.
+//
+// For builds on Swarming, the swarming task id and update_token have been
+// saved in datastore during task creation.
+func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest) (*model.Build, bool, error) {
+	_, _, err := validateToken(ctx, req.BuildId, pb.TokenBody_BUILD)
+	if err != nil {
+		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
+			return nil, false, err
+		} else {
+			return nil, false, appstatus.BadRequest(errors.Annotate(err, "invalid token for starting build %d", req.BuildId).Err())
+		}
+	}
+
+	var b *model.Build
+	buildStatusChanged := false
+	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		var infra *model.BuildInfra
+		b, infra, err = getBuildAndInfra(ctx, req.BuildId)
+		if err != nil {
+			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
+		}
+
+		if infra.Proto.GetSwarming() == nil {
+			return appstatus.Errorf(codes.Internal, "the build %d does not run on swarming", req.BuildId)
+		}
+
+		// First StartBuild request.
+		if b.StartBuildRequestID == "" {
+			if infra.Proto.Swarming.TaskId == req.TaskId {
+				if err = checkBuildStatus(b); err != nil {
+					return err
+				}
+
+				// Start the build.
+				b.StartBuildRequestID = req.RequestId
+				protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
+				buildStatusChanged = true
+				if err = datastore.Put(ctx, b); err != nil {
+					return appstatus.Errorf(codes.Internal, "failed to start build %d: %s", b.ID, err)
+				}
+				// Notify Pubsub.
+				// NotifyPubSub is a Transactional task, so do it inside the transaction.
+				_ = tasks.NotifyPubSub(ctx, b)
+				return nil
+			}
+
+			// Duplicated task.
+			return buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, infra.Proto.Swarming.TaskId))
+		}
+		return checkSubsequentRequest(req, b.StartBuildRequestID, infra.Proto.Swarming.TaskId)
+	}, nil)
+	if txErr != nil {
+		return nil, false, txErr
+	}
+	return b, buildStatusChanged, nil
+}
+
+func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildRequest, b *model.Build, infra *model.BuildInfra) (bool, error) {
+	taskID := infra.Proto.Backend.Task.GetId()
 	if taskID.GetId() != "" && taskID.GetId() != req.TaskId {
 		// The build has been associated with another task, possible from a previous
 		// RegisterBuildTask call from a different task.
-		return buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, taskID.Id))
+		return false, buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, taskID.Id))
+	}
+
+	if err := checkBuildStatus(b); err != nil {
+		return false, err
 	}
 
 	// Start the build.
 	b.StartBuildRequestID = req.RequestId
 	updateBuildToken, err := buildtoken.GenerateToken(ctx, b.ID, pb.TokenBody_BUILD)
 	if err != nil {
-		return errors.Annotate(err, "failed to generate BUILD token for build %d", b.ID).Err()
+		return false, errors.Annotate(err, "failed to generate BUILD token for build %d", b.ID).Err()
 	}
 	b.UpdateToken = updateBuildToken
 	protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
@@ -72,14 +148,14 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	}
 	err = datastore.Put(ctx, toSave)
 	if err != nil {
-		return errors.Annotate(err, "failed to start build %d: %s", b.ID, err).Err()
+		return false, errors.Annotate(err, "failed to start build %d: %s", b.ID, err).Err()
 	}
 
 	// Notify Pubsub.
 	// NotifyPubSub is a Transactional task, so do it inside the transaction.
 	_ = tasks.NotifyPubSub(ctx, b)
 
-	return nil
+	return true, nil
 }
 
 func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model.Build, bool, error) {
@@ -90,9 +166,6 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model
 		var err error
 		b, infra, err = getBuildAndInfra(ctx, req.BuildId)
 		if err != nil {
-			if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
-				return err
-			}
 			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
 		}
 
@@ -102,10 +175,7 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model
 
 		if b.StartBuildRequestID == "" {
 			// First StartBuild for the build.
-			err = startBuildOnBackendOnFirstReq(ctx, req, b, infra)
-			if err == nil {
-				buildStatusChanged = true
-			}
+			buildStatusChanged, err = startBuildOnBackendOnFirstReq(ctx, req, b, infra)
 			return err
 		}
 
@@ -142,11 +212,13 @@ func (*Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.S
 	var b *model.Build
 	var buildStatusChanged bool
 	var err error
-	// TODO(crbug.com/1416971): support build on swarming.
 	_, _, err = validateToken(ctx, req.BuildId, pb.TokenBody_START_BUILD)
+
 	switch {
+	case buildtoken.WrongPurpose.In(err):
+		b, buildStatusChanged, err = startBuildOnSwarming(ctx, req)
 	case err != nil:
-		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid start build token for starting build %d", req.BuildId).Err())
+		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid token for starting build %d", req.BuildId).Err())
 	default:
 		b, buildStatusChanged, err = startBuildOnBackend(ctx, req)
 	}

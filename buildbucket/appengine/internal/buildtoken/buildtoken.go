@@ -41,6 +41,8 @@ const (
 // package.
 var additionalData = []byte("buildtoken")
 
+var WrongPurpose = errors.BoolTag{Key: errors.NewTagKey("wrong_purpose_token")}
+
 // GenerateToken generates base64 encoded byte string token for a build.
 // In the future, it will be replaced by a self-verifiable token.
 func GenerateToken(_ context.Context, buildID int64, purpose pb.TokenBody_Purpose) (string, error) {
@@ -142,7 +144,7 @@ func ParseToTokenBody(ctx context.Context, bldTok string, buildID int64, purpose
 	}
 
 	if purpose != tb.Purpose {
-		return nil, errors.Reason("token is for purpose %s, but expected %s", tb.Purpose, purpose).Err()
+		return nil, errors.Reason("token is for purpose %s, but expected %s", tb.Purpose, purpose).Tag(WrongPurpose).Err()
 	}
 
 	return tb, nil
