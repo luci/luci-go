@@ -166,4 +166,7 @@ message PermissionsConfig {
 
   // Representation of all defined roles.
   repeated Role role = 1;
+
+  // Defines attributes that can be referenced in certain conditions.
+  repeated string attribute = 2;
 }
