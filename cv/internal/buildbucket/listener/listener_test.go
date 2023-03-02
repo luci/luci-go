@@ -15,8 +15,11 @@
 package bblistener
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -26,7 +29,10 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -41,11 +47,11 @@ import (
 
 func TestParseData(t *testing.T) {
 	t.Parallel()
-	Convey("parseData", t, func() {
+	Convey("parseV1Data", t, func() {
 		Convey("handles valid expected input", func() {
 			json := `{"hostname": "buildbucket.example.com", ` +
 				`"build": {"id": "123456789", "other": "ignored"}}`
-			extracted, err := parseData(context.Background(), []byte(json))
+			extracted, err := parseV1Data(context.Background(), []byte(json))
 			So(err, ShouldBeNil)
 			So(extracted, ShouldResemble, buildbucket.PubsubMessage{
 				Hostname: "buildbucket.example.com",
@@ -54,13 +60,13 @@ func TestParseData(t *testing.T) {
 		})
 		Convey("with no build ID gives error", func() {
 			json := `{"hostname": "buildbucket.example.com", "build": {"other": "ignored"}}`
-			data, err := parseData(context.Background(), []byte(json))
+			data, err := parseV1Data(context.Background(), []byte(json))
 			So(err, ShouldErrLike, "missing build details")
 			So(data, ShouldResemble, buildbucket.PubsubMessage{})
 		})
 		Convey("with no build details gives error", func() {
 			json := `{"hostname": "buildbucket.example.com"}`
-			data, err := parseData(context.Background(), []byte(json))
+			data, err := parseV1Data(context.Background(), []byte(json))
 			So(err, ShouldErrLike, "missing build details")
 			So(data, ShouldResemble, buildbucket.PubsubMessage{})
 		})
@@ -91,9 +97,11 @@ func TestListener(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		tjNotifier := &testTryjobNotifier{}
+		tjUpdater := &testTryjobUpdater{}
 		l := &listener{
 			subscription: sub,
 			tjNotifier:   tjNotifier,
+			tjUpdater:    tjUpdater,
 			processedCh:  make(chan string, 10),
 		}
 
@@ -140,6 +148,34 @@ func TestListener(t *testing.T) {
 				ensureAcked(msgID)
 			})
 
+			Convey("Relevant v2", func() {
+				eid := tryjob.MustBuildbucketID(bbHost, 123)
+				eid.MustCreateIfNotExists(ctx)
+				b := &buildbucketpb.Build{
+					Id: 123,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Infra: &buildbucketpb.BuildInfra{
+						Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+							Hostname: bbHost,
+						},
+					},
+					Status: buildbucketpb.Status_SUCCESS,
+				}
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjUpdater.updated, ShouldResemble, []tryjob.ExternalID{eid})
+				ensureAcked(msgID)
+			})
+
 			Convey("Irrelevant", func() {
 				eid := tryjob.MustBuildbucketID(bbHost, 404)
 				msgID := srv.Publish(topic.String(), toPubsubMessageData(eid), nil)
@@ -150,6 +186,32 @@ func TestListener(t *testing.T) {
 					So(processedMsgID, ShouldEqual, msgID)
 				}
 				So(tjNotifier.notified, ShouldBeEmpty)
+				ensureAcked(msgID)
+			})
+
+			Convey("Irrelevant v2", func() {
+				b := &buildbucketpb.Build{
+					Id: 404,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Infra: &buildbucketpb.BuildInfra{
+						Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+							Hostname: bbHost,
+						},
+					},
+					Status: buildbucketpb.Status_SUCCESS,
+				}
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjUpdater.updated, ShouldBeEmpty)
 				ensureAcked(msgID)
 			})
 		})
@@ -177,7 +239,7 @@ func TestListener(t *testing.T) {
 		})
 
 		Convey("Permanent failure", func() {
-			Convey("Unparseable", func() {
+			Convey("Unparseable v1 msg", func() {
 				msgID := srv.Publish(topic.String(), []byte("Unparseable hot garbage.'}]\""), nil)
 				select {
 				case <-time.After(15 * time.Second):
@@ -186,6 +248,51 @@ func TestListener(t *testing.T) {
 					So(processedMsgID, ShouldEqual, msgID)
 				}
 				So(tjNotifier.notified, ShouldBeEmpty)
+				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				ensureAcked(msgID)
+			})
+
+			Convey("Unparseable v2 msg", func() {
+				msgID := srv.Publish(topic.String(), []byte("Unparseable hot garbage.'}]\""), makeBuildsV2PubsubAttrs(&buildbucketpb.Build{}))
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjUpdater.updated, ShouldBeEmpty)
+				So(l.stats.permanentErrCount, ShouldEqual, 1)
+				ensureAcked(msgID)
+			})
+
+			Convey("tjUpdater failure", func() {
+				eid := tryjob.MustBuildbucketID(bbHost, 123)
+				eid.MustCreateIfNotExists(ctx)
+				tjUpdater.response = map[tryjob.ExternalID]error{
+					eid: errors.New("failed to update tryjob"),
+				}
+				b := &buildbucketpb.Build{
+					Id: 123,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Infra: &buildbucketpb.BuildInfra{
+						Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+							Hostname: bbHost,
+						},
+					},
+					Status: buildbucketpb.Status_SUCCESS,
+				}
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjUpdater.updated, ShouldBeEmpty)
 				So(l.stats.permanentErrCount, ShouldEqual, 1)
 				ensureAcked(msgID)
 			})
@@ -228,6 +335,61 @@ func toPubsubMessageData(eid tryjob.ExternalID) []byte {
 	return json
 }
 
+func makeBuildsV2PubsubAttrs(b *buildbucketpb.Build) map[string]string {
+	isCompleted := b.Status&buildbucketpb.Status_ENDED_MASK == buildbucketpb.Status_ENDED_MASK
+	return map[string]string{
+		"project":      b.Builder.GetProject(),
+		"bucket":       b.Builder.GetBucket(),
+		"builder":      b.Builder.GetBuilder(),
+		"is_completed": strconv.FormatBool(isCompleted),
+		"version":      "v2",
+	}
+}
+
+func makeBuildsV2PubsubData(b *buildbucketpb.Build) []byte {
+	copyB := proto.Clone(b).(*buildbucketpb.Build)
+	large := &buildbucketpb.Build{
+		Input: &buildbucketpb.Build_Input{
+			Properties: copyB.GetInput().GetProperties(),
+		},
+		Output: &buildbucketpb.Build_Output{
+			Properties: copyB.GetOutput().GetProperties(),
+		},
+		Steps: copyB.GetSteps(),
+	}
+	if copyB.Input != nil {
+		copyB.Input.Properties = nil
+	}
+	if copyB.Output != nil {
+		copyB.Output.Properties = nil
+	}
+	copyB.Steps = nil
+	compress := func(data []byte) []byte {
+		buf := &bytes.Buffer{}
+		zw := zlib.NewWriter(buf)
+		if _, err := zw.Write(data); err != nil {
+			panic(errors.Annotate(err, "failed to compress"))
+		}
+		if err := zw.Close(); err != nil {
+			panic(errors.Annotate(err, "error closing zlib writer"))
+		}
+		return buf.Bytes()
+	}
+	largeBytes, err := proto.Marshal(large)
+	if err != nil {
+		panic(errors.Annotate(err, "failed to marshal build large fields"))
+	}
+	compressedLarge := compress(largeBytes)
+	data, err := protojson.Marshal(&buildbucketpb.BuildsV2PubSub{
+		Build:            copyB,
+		BuildLargeFields: compressedLarge,
+	})
+	if err != nil {
+		panic(errors.Annotate(err, "failed to marshal BuildsV2PubSub message"))
+	}
+	return data
+}
+
 type testTryjobNotifier struct {
 	mu sync.Mutex
 
@@ -247,6 +409,35 @@ func (ttn *testTryjobNotifier) ScheduleUpdate(ctx context.Context, id common.Try
 		return err
 	}
 	ttn.notified = append(ttn.notified, eid)
+	return nil
+}
+
+type testTryjobUpdater struct {
+	mu sync.Mutex
+
+	response map[tryjob.ExternalID]error
+	updated  []tryjob.ExternalID
+}
+
+func (ttu *testTryjobUpdater) Update(ctx context.Context, eid tryjob.ExternalID, data any) error {
+	host, buildID, err := eid.ParseBuildbucketID()
+	if err != nil {
+		return err
+	}
+	build, ok := data.(*buildbucketpb.Build)
+	if !ok {
+		return errors.Reason("not buildbucket.build proto").Err()
+	}
+	if build.Id != buildID || build.Infra.GetBuildbucket().GetHostname() != host {
+		return errors.Reason("build id or build hostname doesn't match").Err()
+	}
+
+	ttu.mu.Lock()
+	defer ttu.mu.Unlock()
+	if err, ok := ttu.response[eid]; ok {
+		return err
+	}
+	ttu.updated = append(ttu.updated, eid)
 	return nil
 }
 

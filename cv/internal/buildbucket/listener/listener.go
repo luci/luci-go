@@ -15,21 +15,27 @@
 package bblistener
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
@@ -180,11 +186,32 @@ func (l *listener) start(ctx context.Context) error {
 }
 
 func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
-	parsedMsg, err := parseData(ctx, msg.Data)
-	if err != nil {
-		return err
+	var isV2Msg bool
+	var buildID int64
+	var hostname string
+	var build *buildbucketpb.Build
+	var err error
+	if v, ok := msg.Attributes["version"]; ok && v == "v2" {
+		isV2Msg = true
+		if build, err = parseV2Data(msg); err != nil {
+			return err
+		}
+		hostname, buildID = build.GetInfra().GetBuildbucket().GetHostname(), build.GetId()
+	} else {
+		// TODO(crbug.com/1406393): delete it once the migration is done. And the
+		// above pre-declared variables can also be deleted to make code more clean.
+		parsedMsg, err := parseV1Data(ctx, msg.Data)
+		if err != nil {
+			return err
+		}
+		hostname, buildID = parsedMsg.Hostname, parsedMsg.Build.ID
 	}
-	eid, err := tryjob.BuildbucketID(parsedMsg.Hostname, parsedMsg.Build.ID)
+
+	if hostname == "" {
+		logging.Errorf(ctx, "received pubsub message with empty hostname for build %d, using the default one %s", build.GetId(), chromeinfra.BuildbucketHost)
+		hostname = chromeinfra.BuildbucketHost
+	}
+	eid, err := tryjob.BuildbucketID(hostname, buildID)
 	if err != nil {
 		return err
 	}
@@ -195,13 +222,38 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 		panic(fmt.Errorf("impossible; requested to resolve 1 external ID %s, got %d", eid, len(ids)))
 	case ids[0] != 0:
 		// Build that is tracked by LUCI CV.
-		return l.tjNotifier.ScheduleUpdate(ctx, ids[0], eid)
+		if !isV2Msg {
+			return l.tjNotifier.ScheduleUpdate(ctx, ids[0], eid)
+		}
+		// TODO(crbug.com/1406393): remove the debugging once the migration is done.
+		logging.Debugf(ctx, "builds_v2 pubsub listener: updating tryjob %s", eid)
+		return l.tjUpdater.Update(ctx, eid, build)
 	}
 	return nil
 }
 
-// parseData extracts the relevant information from the Pub/Sub message data.
-func parseData(ctx context.Context, data []byte) (buildbucket.PubsubMessage, error) {
+// parseV2Data parses Buildbucket new `builds_v2` pubsub message data.
+func parseV2Data(msg *pubsub.Message) (*buildbucketpb.Build, error) {
+	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
+	if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(msg.Data, buildsV2Msg); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
+	}
+	largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+	}
+	largeFields := &buildbucketpb.Build{}
+	if err := (proto.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(largeFieldsData, largeFields); err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+	}
+	proto.Merge(buildsV2Msg.Build, largeFields)
+
+	return buildsV2Msg.Build, nil
+}
+
+// parseV1Data extracts the relevant information from Buildbucket old `builds`
+// topic Pub/Sub message data.
+func parseV1Data(ctx context.Context, data []byte) (buildbucket.PubsubMessage, error) {
 	message := buildbucket.PubsubMessage{}
 	// Extra fields that are not in the struct are ignored by json.Unmarshal.
 	if err := json.Unmarshal(data, &message); err != nil {
@@ -220,4 +272,14 @@ func (l *listener) reportStats(ctx context.Context) {
 		l.stats.permanentErrCount)
 	// TODO(yiwzhang): send tsmon metrics. Especially for non-transient count to
 	// to alert on.
+}
+
+// zlibDecompress decompresses data using zlib.
+func zlibDecompress(compressed []byte) ([]byte, error) {
+	r, err := zlib.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = r.Close() }()
+	return io.ReadAll(r)
 }
