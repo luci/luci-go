@@ -137,12 +137,21 @@ type fakeAnalysisClient struct {
 	clusters      []*analysis.Cluster
 }
 
-func (f *fakeAnalysisClient) RebuildAnalysis(ctx context.Context, project string) error {
+func (f *fakeAnalysisClient) RebuildAnalysis(ctx context.Context) error {
 	f.analysisBuilt = true
 	return nil
 }
 
-func (f *fakeAnalysisClient) PurgeStaleRows(ctx context.Context, luciProject string) error {
+func (f *fakeAnalysisClient) RebuildAnalysisDeprecated(ctx context.Context, project string) error {
+	f.analysisBuilt = true
+	return nil
+}
+
+func (f *fakeAnalysisClient) PurgeStaleRows(ctx context.Context) error {
+	return nil
+}
+
+func (f *fakeAnalysisClient) PurgeStaleRowsDeprecated(ctx context.Context, luciProject string) error {
 	return nil
 }
 

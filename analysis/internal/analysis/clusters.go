@@ -83,14 +83,24 @@ type TopCount struct {
 }
 
 // RebuildAnalysis re-builds the cluster summaries analysis from
-// clustered test results.
-func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error {
+// clustered test results for all LUCI projects.
+func (c *Client) RebuildAnalysis(ctx context.Context) error {
+	dataset := c.client.Dataset("internal")
+	return c.rebuildAnalysisForDataset(ctx, dataset, true)
+}
+
+// RebuildAnalysisDeprecated re-builds the cluster summaries analysis from
+// clustered test results for a given LUCI project.
+func (c *Client) RebuildAnalysisDeprecated(ctx context.Context, luciProject string) error {
 	datasetID, err := bqutil.DatasetForProject(luciProject)
 	if err != nil {
 		return errors.Annotate(err, "getting dataset").Err()
 	}
 	dataset := c.client.Dataset(datasetID)
+	return c.rebuildAnalysisForDataset(ctx, dataset, false)
+}
 
+func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquery.Dataset, aggregateByProject bool) error {
 	dstTable := dataset.Table("cluster_summaries")
 
 	var precomputeList []string
@@ -130,10 +140,15 @@ func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error 
 		expr := `TO_JSON(STRUCT(` + strings.Join(selectLists[i], ",\n") + `))`
 		selectList = append(selectList, fmt.Sprintf("%s AS %s,", expr, columnName))
 	}
+	projectSelection := ""
+	if aggregateByProject {
+		projectSelection = "project, "
+	}
 
 	q := c.client.Query(`
 		WITH clustered_failures_latest AS (
 		  SELECT
+			` + projectSelection + `
 			cluster_algorithm,
 			cluster_id,
 			test_result_system,
@@ -142,11 +157,12 @@ func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error 
 			ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as f
 		  FROM clustered_failures cf
 		  WHERE partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-		  GROUP BY cluster_algorithm, cluster_id, test_result_system, test_result_id, partition_time
+		  GROUP BY ` + projectSelection + `cluster_algorithm, cluster_id, test_result_system, test_result_id, partition_time
 		  HAVING f.is_included
 		),
 		clustered_failures_precompute AS (
 		  SELECT
+			` + projectSelection + `
 			cluster_algorithm,
 			cluster_id,
 			f,
@@ -166,6 +182,7 @@ func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error 
 		  FROM clustered_failures_latest
 		)
 		SELECT
+			` + projectSelection + `
 			cluster_algorithm,
 			cluster_id,
 			` + strings.Join(selectList, "\n") + `
@@ -183,7 +200,7 @@ func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error 
 			APPROX_TOP_COUNT(f.test_id, 5) as top_test_ids,
 			APPROX_TOP_COUNT(IF(f.bug_tracking_component.system = 'monorail', f.bug_tracking_component.component, NULL), 5) as top_monorail_components,
 		FROM clustered_failures_precompute
-		GROUP BY cluster_algorithm, cluster_id
+		GROUP BY ` + projectSelection + `cluster_algorithm, cluster_id
 	`)
 	q.DefaultDatasetID = dataset.DatasetID
 	q.Dst = dstTable
@@ -219,13 +236,37 @@ func (c *Client) RebuildAnalysis(ctx context.Context, luciProject string) error 
 //
 // We currently only purge the last 7 days to keep purging costs to a minimum and
 // as this is as far as QueryClusterSummaries looks back.
-func (c *Client) PurgeStaleRows(ctx context.Context, luciProject string) error {
+func (c *Client) PurgeStaleRows(ctx context.Context) error {
+	dataset := c.client.Dataset("internal")
+	return c.purgeStaleRowsForDataset(ctx, dataset, true)
+}
+
+// PurgeStaleRowsDeprecated purges stale clustered failure rows from the per-project table.
+// Stale rows are those rows which have been superseded by a new row with a later
+// version, or where the latest version of the row has the row not included in a
+// cluster.
+// This is necessary for:
+//   - Our QueryClusterSummaries query, which for performance reasons (UI-interactive)
+//     does not do filtering to fetch the latest version of rows and instead uses all
+//     rows.
+//   - Keeping the size of the BigQuery table to a minimum.
+//
+// We currently only purge the last 7 days to keep purging costs to a minimum and
+// as this is as far as QueryClusterSummaries looks back.
+func (c *Client) PurgeStaleRowsDeprecated(ctx context.Context, luciProject string) error {
 	datasetID, err := bqutil.DatasetForProject(luciProject)
 	if err != nil {
 		return errors.Annotate(err, "getting dataset").Err()
 	}
 	dataset := c.client.Dataset(datasetID)
+	return c.purgeStaleRowsForDataset(ctx, dataset, false)
+}
 
+func (c *Client) purgeStaleRowsForDataset(ctx context.Context, dataset *bigquery.Dataset, requireProjectEqual bool) error {
+	projectEqualStatement := ""
+	if requireProjectEqual {
+		projectEqualStatement = "AND cf2.project = cf1.project"
+	}
 	// If something goes wrong with this statement it deletes everything
 	// for some reason, the system can be restored as follows:
 	// - Fix the statement.
@@ -243,6 +284,7 @@ func (c *Client) PurgeStaleRows(ctx context.Context, luciProject string) error {
 						FROM clustered_failures cf2
 						WHERE cf2.partition_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
 							AND cf2.partition_time = cf1.partition_time
+							` + projectEqualStatement + `
 							AND cf2.cluster_algorithm = cf1.cluster_algorithm
 							AND cf2.cluster_id = cf1.cluster_id
 							AND cf2.chunk_id = cf1.chunk_id
@@ -290,7 +332,7 @@ func (c *Client) PurgeStaleRows(ctx context.Context, luciProject string) error {
 		// so it is better to ignore them.
 		if strings.Contains(err.Error(), "would affect rows in the streaming buffer, which is not supported") {
 			logging.Warningf(ctx, "Row purge failed for %v because rows were in the streaming buffer for over 30 minutes. "+
-				"If this message occurs more than 25 percent of the time, it should be investigated.", luciProject)
+				"If this message occurs more than 25 percent of the time, it should be investigated.", dataset.DatasetID)
 			return nil
 		}
 		return errors.Annotate(err, "waiting for stale row purge to complete").Err()

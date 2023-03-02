@@ -78,13 +78,19 @@ const workerCount = 8
 type AnalysisClient interface {
 	// RebuildAnalysis rebuilds analysis from the latest clustered test
 	// results.
-	RebuildAnalysis(ctx context.Context, project string) error
+	RebuildAnalysis(ctx context.Context) error
+	// RebuildAnalysisDeprecated rebuilds analysis from the latest clustered test
+	// results.
+	RebuildAnalysisDeprecated(ctx context.Context, project string) error
 	// ReadImpactfulClusters reads analysis for clusters matching the
 	// specified criteria.
 	ReadImpactfulClusters(ctx context.Context, opts analysis.ImpactfulClusterReadOptions) ([]*analysis.Cluster, error)
 	// PurgeStaleRows purges stale clustered failure rows
 	// from the table.
-	PurgeStaleRows(ctx context.Context, luciProject string) error
+	PurgeStaleRows(ctx context.Context) error
+	// PurgeStaleRowsDeprecated purges stale clustered failure rows
+	// from the table.
+	PurgeStaleRowsDeprecated(ctx context.Context, luciProject string) error
 }
 
 func init() {
@@ -183,6 +189,10 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		defer buganizerClient.Close()
 	}
 
+	if err := analysisClient.RebuildAnalysis(ctx); err != nil {
+		return errors.Annotate(err, "update cluster summary analysis").Err()
+	}
+
 	taskGenerator := func(c chan<- func() error) {
 		for project := range projectCfg {
 			if _, ok := projectsWithDataset[project]; !ok {
@@ -228,7 +238,11 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		}
 	}
 
-	return parallel.WorkPool(workerCount, taskGenerator)
+	if err := parallel.WorkPool(workerCount, taskGenerator); err != nil {
+		return err
+	}
+	// Do last, as this failing should not block bug updates.
+	return analysisClient.PurgeStaleRows(ctx)
 }
 
 func createBuganizerClient(ctx context.Context) (buganizer.Client, error) {
@@ -287,7 +301,7 @@ func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (r
 		return errors.Annotate(err, "read project config").Err()
 	}
 
-	if err := opts.analysisClient.RebuildAnalysis(ctx, opts.project); err != nil {
+	if err := opts.analysisClient.RebuildAnalysisDeprecated(ctx, opts.project); err != nil {
 		return errors.Annotate(err, "update cluster summary analysis").Err()
 	}
 	if opts.enableBugUpdates {
@@ -326,7 +340,7 @@ func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (r
 		}
 	}
 	// Do last, as this failing should not block bug updates.
-	if err := opts.analysisClient.PurgeStaleRows(ctx, opts.project); err != nil {
+	if err := opts.analysisClient.PurgeStaleRowsDeprecated(ctx, opts.project); err != nil {
 		return errors.Annotate(err, "purge stale rows").Err()
 	}
 	return nil
