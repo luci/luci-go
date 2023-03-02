@@ -333,6 +333,10 @@ func FromBuild(build *bbpb.Build, hostname, name string, priorityDiff int, extra
 		Key:   "led-job-name",
 		Value: name,
 	})
+	tags = append(tags, &bbpb.StringPair{
+		Key:   "user_agent",
+		Value: "led",
+	})
 	for _, tag := range extraTags {
 		k, v := strpair.Parse(tag)
 		tags = append(tags, &bbpb.StringPair{
