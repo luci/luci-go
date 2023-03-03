@@ -30,6 +30,31 @@ import (
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
+// RecipeDirectory is a very unfortunate constant which is here for
+// a combination of reasons:
+//  1. swarming doesn't allow you to 'checkout' an isolate relative to any
+//     path in the task (other than the task root). This means that
+//     whatever value we pick for EditRecipeBundle must be used EVERYWHERE
+//     the isolated hash is used.
+//  2. Currently the 'recipe_engine/led' module will blindly take the
+//     isolated input and 'inject' it into further uses of led. This module
+//     currently doesn't specify the checkout dir, relying on kitchen's
+//     default value of (you guessed it) "kitchen-checkout".
+//
+// In order to fix this (and it will need to be fixed for bbagent support):
+//   - The 'recipe_engine/led' module needs to accept 'checkout-dir' as
+//     a parameter in its input properties.
+//   - led needs to start passing the checkout dir to the led module's input
+//     properties.
+//   - `led edit` needs a way to manipulate the checkout directory in a job
+//   - The 'recipe_engine/led' module needs to set this in the job
+//     alongside the isolate hash when it's doing the injection.
+//
+// For now, we just hard-code it.
+//
+// TODO(crbug.com/1072117): Fix this, it's weird.
+const RecipeDirectory = "kitchen-checkout"
+
 type buildbucketEditor struct {
 	jd *Definition
 	bb *Buildbucket
@@ -83,14 +108,15 @@ func (bbe *buildbucketEditor) Tags(values []string) {
 
 func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 	bbe.tweak(func() error {
+		usedCipdVers := cipdVers
+		if cipdVers == "" {
+			usedCipdVers = "latest"
+		}
+		// Update exe.
 		exe := bbe.bb.BbagentArgs.Build.Exe
 		if cipdPkg != "" {
 			exe.CipdPackage = cipdPkg
-			if cipdVers == "" {
-				exe.CipdVersion = "latest"
-			} else {
-				exe.CipdVersion = cipdVers
-			}
+			exe.CipdVersion = usedCipdVers
 		} else if cipdPkg == "" && cipdVers == "" {
 			exe.CipdPackage = ""
 			exe.CipdVersion = ""
@@ -99,6 +125,45 @@ func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 				"cipdPkg and cipdVers must both be set or both be empty: cipdPkg=%q cipdVers=%q",
 				cipdPkg, cipdVers).Err()
 		}
+
+		// Update infra.Buildbucket.Agent.Input
+		if cipdPkg == "" && cipdVers == "" {
+			return nil
+		}
+		bbe.TaskPayloadPath(RecipeDirectory)
+		input := bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent.Input
+		if input == nil {
+			input = &bbpb.BuildInfra_Buildbucket_Agent_Input{}
+			bbe.bb.BbagentArgs.Build.Infra.Buildbucket.Agent.Input = input
+		}
+		inputData := input.GetData()
+		if len(inputData) == 0 {
+			inputData = make(map[string]*bbpb.InputDataRef)
+			input.Data = inputData
+		}
+		if ref, ok := inputData[RecipeDirectory]; ok && ref.GetCipd() != nil {
+			if len(ref.GetCipd().Specs) > 1 {
+				return errors.Reason("can only have one user payload under %s", RecipeDirectory).Err()
+			}
+			ref.GetCipd().Specs[0] = &bbpb.InputDataRef_CIPD_PkgSpec{
+				Package: cipdPkg,
+				Version: usedCipdVers,
+			}
+			return nil
+		}
+		inputData[RecipeDirectory] = &bbpb.InputDataRef{
+			DataType: &bbpb.InputDataRef_Cipd{
+				Cipd: &bbpb.InputDataRef_CIPD{
+					Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{
+						&bbpb.InputDataRef_CIPD_PkgSpec{
+							Package: cipdPkg,
+							Version: usedCipdVers,
+						},
+					},
+				},
+			},
+		}
+
 		return nil
 	})
 }

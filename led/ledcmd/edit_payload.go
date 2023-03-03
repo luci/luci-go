@@ -75,11 +75,11 @@ func editPayloadWithCASRef(ctx context.Context, jd *job.Definition, opts *EditPa
 	}
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
 		je.TaskPayloadSource("", "")
-		je.CASTaskPayload(RecipeDirectory, casRef)
+		je.CASTaskPayload(job.RecipeDirectory, casRef)
 	})
 }
 
-// editPayloadWithCASRef overrides the job payload with given CIPD info.
+// editPayloadWithCIPD overrides the job payload with given CIPD info.
 func editPayloadWithCIPD(ctx context.Context, jd *job.Definition, opts *EditPayloadOpts) (err error) {
 	setRecipeBundleProperty := opts.PropertyOnly || jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties().GetFields()[LEDBuilderIsBootstrappedProperty].GetBoolValue()
 	if setRecipeBundleProperty {

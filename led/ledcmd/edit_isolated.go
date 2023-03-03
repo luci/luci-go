@@ -141,7 +141,7 @@ func EditIsolated(ctx context.Context, authOpts auth.Options, jd *job.Definition
 
 	return jd.HighLevelEdit(func(je job.HighLevelEditor) {
 		je.TaskPayloadSource("", "")
-		je.CASTaskPayload(RecipeDirectory, casRef)
+		je.CASTaskPayload(job.RecipeDirectory, casRef)
 	})
 }
 

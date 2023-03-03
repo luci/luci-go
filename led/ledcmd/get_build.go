@@ -75,6 +75,10 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 		return nil, err
 	}
 
+	if answer.Infra.GetBuildbucket().GetAgent().GetOutput() != nil {
+		answer.Infra.Buildbucket.Agent.Output = nil
+	}
+
 	logging.Infof(ctx, "getting build definition: done")
 
 	swarmingTaskID := answer.Infra.Swarming.TaskId
