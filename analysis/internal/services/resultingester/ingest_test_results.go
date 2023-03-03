@@ -77,7 +77,8 @@ var (
 		field.String("project"),
 		// "success", "failed_validation",
 		// "ignored_no_invocation", "ignored_has_ancestor",
-		// "ignored_invocation_not_found", "ignored_resultdb_permission_denied".
+		// "ignored_invocation_not_found", "ignored_resultdb_permission_denied",
+		// "ignored_project_not_allowlisted".
 		field.String("outcome"))
 
 	testVariantReadMask = &fieldmaskpb.FieldMask{
@@ -173,6 +174,15 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		}
 		taskCounter.Add(ctx, 1, project, "failed_validation")
 		return tq.Fatal.Apply(err)
+	}
+
+	isProjectEnabled, err := isProjectEnabledForIngestion(ctx, payload.Build.Project)
+	if err != nil {
+		return transient.Tag.Apply(err)
+	}
+	if !isProjectEnabled {
+		taskCounter.Add(ctx, 1, payload.Build.Project, "ignored_project_not_allowlisted")
+		return nil
 	}
 
 	if !payload.Build.HasInvocation {
@@ -336,6 +346,27 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		taskCounter.Add(ctx, 1, payload.Build.Project, "success")
 	}
 	return nil
+}
+
+// isProjectEnabledForIngestion returns if the LUCI project is enabled for
+// ingestion. By default, all LUCI projects are enabled for ingestion, but
+// it is possible to limit ingestion to an allowlisted set in the
+// service configuration.
+func isProjectEnabledForIngestion(ctx context.Context, project string) (bool, error) {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return false, errors.Annotate(err, "get service config").Err()
+	}
+	if !cfg.Ingestion.GetProjectAllowlistEnabled() {
+		return true, nil
+	}
+	allowList := cfg.Ingestion.GetProjectAllowlist()
+	for _, entry := range allowList {
+		if project == entry {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // filterToTestVariantsWithUnexpectedFailures filters the given list of

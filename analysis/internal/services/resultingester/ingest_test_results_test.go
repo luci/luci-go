@@ -805,12 +805,12 @@ func TestIngestTestResults(t *testing.T) {
 				mrc.QueryTestVariants(tvReq, tvRsp)
 			}
 
-			setupConfig := func(ctx context.Context) {
-				cfg := &configpb.Config{
-					TestVariantAnalysis: &configpb.TestVariantAnalysis{
-						Enabled: true,
-					},
-				}
+			cfg := &configpb.Config{
+				TestVariantAnalysis: &configpb.TestVariantAnalysis{
+					Enabled: true,
+				},
+			}
+			setupConfig := func(ctx context.Context, cfg *configpb.Config) {
 				err := config.SetTestConfig(ctx, cfg)
 				So(err, ShouldBeNil)
 			}
@@ -893,10 +893,10 @@ func TestIngestTestResults(t *testing.T) {
 					WithTaskCount(1).
 					Build()
 
-			Convey("First task", func() {
+			Convey(`First task`, func() {
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
-				setupConfig(ctx)
+				setupConfig(ctx, cfg)
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
 
@@ -919,7 +919,7 @@ func TestIngestTestResults(t *testing.T) {
 				expectCollectTaskExists := false
 				verifyCollectTask(expectCollectTaskExists)
 			})
-			Convey("Last task", func() {
+			Convey(`Last task`, func() {
 				payload.TaskIndex = 10
 				ingestionCtl.TaskCount = 11
 
@@ -927,7 +927,7 @@ func TestIngestTestResults(t *testing.T) {
 				setupQueryTestVariantsMock(func(rsp *rdbpb.QueryTestVariantsResponse) {
 					rsp.NextPageToken = ""
 				})
-				setupConfig(ctx)
+				setupConfig(ctx, cfg)
 
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
@@ -955,14 +955,14 @@ func TestIngestTestResults(t *testing.T) {
 				expectCollectTaskExists := true
 				verifyCollectTask(expectCollectTaskExists)
 			})
-			Convey("Retry task after continuation task already created", func() {
+			Convey(`Retry task after continuation task already created`, func() {
 				// Scenario: First task fails after it has already scheduled
 				// its continuation.
 				ingestionCtl.TaskCount = 2
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
-				setupConfig(ctx)
+				setupConfig(ctx, cfg)
 
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
@@ -987,14 +987,14 @@ func TestIngestTestResults(t *testing.T) {
 				expectCollectTaskExists := false
 				verifyCollectTask(expectCollectTaskExists)
 			})
-			Convey("No commit position", func() {
+			Convey(`No commit position`, func() {
 				// Scenario: The build which completed did not include commit
 				// position data in its output or input.
 				payload.Build.Commit = nil
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
-				setupConfig(ctx)
+				setupConfig(ctx, cfg)
 
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
@@ -1018,15 +1018,15 @@ func TestIngestTestResults(t *testing.T) {
 				expectCommitPosition := false
 				verifyTestResults(expectCommitPosition)
 			})
-			Convey("No project config", func() {
+			Convey(`No project config`, func() {
 				// If no project config exists, results should be ingested into
-				// TestResults, but not clustered or used for test variant
+				// TestResults, but not clustered or used for the legacy test variant
 				// analysis.
 				config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
 
 				setupGetInvocationMock()
 				setupQueryTestVariantsMock()
-				setupConfig(ctx)
+				setupConfig(ctx, cfg)
 
 				_, err := control.SetEntriesForTesting(ctx, ingestionCtl)
 				So(err, ShouldBeNil)
@@ -1045,8 +1045,29 @@ func TestIngestTestResults(t *testing.T) {
 				// Confirm no clustering has occurred.
 				So(clusteredFailures.Insertions, ShouldHaveLength, 0)
 			})
-			Convey(`build included by ancestor`, func() {
+			Convey(`Build included by ancestor`, func() {
 				payload.Build.IsIncludedByAncestor = true
+				setupConfig(ctx, cfg)
+
+				// Act
+				err := ri.ingestTestResults(ctx, payload)
+				So(err, ShouldBeNil)
+
+				// Verify no test results ingested into test history.
+				var actualTRs []*testresults.TestResult
+				err = testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
+					actualTRs = append(actualTRs, tr)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(actualTRs, ShouldHaveLength, 0)
+			})
+			Convey(`Project not allowed`, func() {
+				cfg.Ingestion = &configpb.Ingestion{
+					ProjectAllowlistEnabled: true,
+					ProjectAllowlist:        []string{"other"},
+				}
+				setupConfig(ctx, cfg)
 
 				// Act
 				err := ri.ingestTestResults(ctx, payload)

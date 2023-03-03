@@ -44,6 +44,9 @@ message Config {
 
   // Config related to test variant analysis.
   TestVariantAnalysis test_variant_analysis = 6;
+
+  // Config related to ingestion.
+  Ingestion ingestion = 7;
 }
 
 // TestVariantAnalysis controls how LUCI Analysis run test variant
@@ -54,4 +57,15 @@ message TestVariantAnalysis {
   // It should be only enabled on dev at the beginning, before we are confident
   // enough to turn it on for prod.
   bool enabled = 1;
+}
+
+// Settings to control ingestion.
+message Ingestion {
+  // Whether ingestion should be limited to allowlisted projects only.
+  // By default, allowlisting is not enabled and all projects are ingested.
+  bool project_allowlist_enabled = 1;
+
+  // The list of allowlisted LUCI projects, e.g. "chromium", "chromeos".
+  // Only used if project_allowlist_enabled is set.
+  repeated string project_allowlist = 2;
 }
