@@ -122,3 +122,142 @@ func TestEncodeAndDecode(t *testing.T) {
 		So(decodedHistory, ShouldResemble, history)
 	})
 }
+
+func TestInputBuffer(t *testing.T) {
+	Convey(`Add item to input buffer`, t, func() {
+		ib := InputBuffer{
+			HotBufferCapacity:  10,
+			ColdBufferCapacity: 100,
+		}
+		// Insert 9 verdicts into hot buffer.
+		ib.InsertVerdict(createTestVerdict(1, 4))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(2, 2))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(3, 3))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(2, 3))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(4, 5))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(1, 1))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(2, 3))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(7, 8))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		ib.InsertVerdict(createTestVerdict(7, 7))
+		So(ib.IsColdBufferDirty, ShouldBeFalse)
+		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 9)
+		So(ib.HotBuffer.Verdicts, ShouldResemble, []PositionVerdict{
+			createTestVerdict(1, 1),
+			createTestVerdict(1, 4),
+			createTestVerdict(2, 2),
+			createTestVerdict(2, 3),
+			createTestVerdict(2, 3),
+			createTestVerdict(3, 3),
+			createTestVerdict(4, 5),
+			createTestVerdict(7, 7),
+			createTestVerdict(7, 8),
+		})
+		// Insert the last verdict, expecting a compaction.
+		ib.InsertVerdict(createTestVerdict(6, 2))
+		So(ib.IsColdBufferDirty, ShouldBeTrue)
+		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
+		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 10)
+		So(ib.ColdBuffer.Verdicts, ShouldResemble, []PositionVerdict{
+			createTestVerdict(1, 1),
+			createTestVerdict(1, 4),
+			createTestVerdict(2, 2),
+			createTestVerdict(2, 3),
+			createTestVerdict(2, 3),
+			createTestVerdict(3, 3),
+			createTestVerdict(4, 5),
+			createTestVerdict(6, 2),
+			createTestVerdict(7, 7),
+			createTestVerdict(7, 8),
+		})
+	})
+
+	Convey(`Compaction should maintain order`, t, func() {
+		ib := InputBuffer{
+			HotBufferCapacity: 5,
+			HotBuffer: History{
+				Verdicts: []PositionVerdict{
+					createTestVerdict(1, 1),
+					createTestVerdict(3, 1),
+					createTestVerdict(5, 1),
+					createTestVerdict(7, 1),
+					createTestVerdict(9, 1),
+				},
+			},
+			ColdBufferCapacity: 10,
+			ColdBuffer: History{
+				Verdicts: []PositionVerdict{
+					createTestVerdict(2, 1),
+					createTestVerdict(4, 1),
+					createTestVerdict(6, 1),
+					createTestVerdict(8, 1),
+					createTestVerdict(10, 1),
+				},
+			},
+		}
+
+		ib.Compact()
+		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
+		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 10)
+		So(ib.ColdBuffer.Verdicts, ShouldResemble, []PositionVerdict{
+			createTestVerdict(1, 1),
+			createTestVerdict(2, 1),
+			createTestVerdict(3, 1),
+			createTestVerdict(4, 1),
+			createTestVerdict(5, 1),
+			createTestVerdict(6, 1),
+			createTestVerdict(7, 1),
+			createTestVerdict(8, 1),
+			createTestVerdict(9, 1),
+			createTestVerdict(10, 1),
+		})
+	})
+
+	Convey(`Cold buffer should discard old verdicts after compaction`, t, func() {
+		ib := InputBuffer{
+			HotBufferCapacity: 2,
+			HotBuffer: History{
+				Verdicts: []PositionVerdict{
+					createTestVerdict(7, 1),
+					createTestVerdict(9, 1),
+				},
+			},
+			ColdBufferCapacity: 5,
+			ColdBuffer: History{
+				Verdicts: []PositionVerdict{
+					createTestVerdict(2, 1),
+					createTestVerdict(4, 1),
+					createTestVerdict(6, 1),
+					createTestVerdict(8, 1),
+					createTestVerdict(10, 1),
+				},
+			},
+		}
+
+		ib.Compact()
+		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
+		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 5)
+		So(ib.ColdBuffer.Verdicts, ShouldResemble, []PositionVerdict{
+			createTestVerdict(6, 1),
+			createTestVerdict(7, 1),
+			createTestVerdict(8, 1),
+			createTestVerdict(9, 1),
+			createTestVerdict(10, 1),
+		})
+	})
+}
+
+func createTestVerdict(pos int, hour int) PositionVerdict {
+	return PositionVerdict{
+		CommitPosition:   pos,
+		IsSimpleExpected: true,
+		Hour:             time.Unix(int64(3600*hour), 0),
+	}
+}

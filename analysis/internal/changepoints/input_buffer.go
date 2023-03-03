@@ -24,7 +24,23 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-const encodingVersion = 1
+const (
+	// The version of the encoding to encode the verdict history.
+	encodingVersion = 1
+)
+
+type InputBuffer struct {
+	// Capacity of the hot buffer. If it is full, the content will be written
+	// into the cold buffer.
+	HotBufferCapacity int
+	HotBuffer         History
+	// Capacity of the cold buffer.
+	ColdBufferCapacity int
+	ColdBuffer         History
+	// IsColdBufferDirty will be set to 1 if the cold buffer is dirty.
+	// This means we need to write the cold buffer to Spanner.
+	IsColdBufferDirty bool
+}
 
 type History struct {
 	// Verdicts, sorted by commit position (oldest first), and
@@ -59,6 +75,73 @@ type Run struct {
 	UnexpectedResultCount int
 	// Whether this run is a recycled run.
 	IsDuplicate bool
+}
+
+// InsertVerdict inserts a new verdict into the input buffer.
+// It will first try to insert in the hot buffer, and if the hot buffer is full
+// as the result of the insert, then a compaction will occur.
+// If a compaction occurs, the IsColdBufferDirty flag will be set to true,
+// implying that the cold buffer content needs to be written to Spanner.
+func (ib *InputBuffer) InsertVerdict(v PositionVerdict) {
+	// Find the position to insert the verdict.
+	// As the new verdict is likely to have the the latest commit position, we
+	// will iterate backwards from the end of the slice.
+	verdicts := ib.HotBuffer.Verdicts
+	pos := len(ib.HotBuffer.Verdicts) - 1
+	for ; pos >= 0; pos-- {
+		if compareVerdict(v, verdicts[pos]) == 1 {
+			break
+		}
+	}
+
+	verdicts = append(verdicts[:pos+1], append([]PositionVerdict{v}, verdicts[pos+1:]...)...)
+	ib.HotBuffer.Verdicts = verdicts
+
+	if len(verdicts) == ib.HotBufferCapacity {
+		ib.IsColdBufferDirty = true
+		ib.Compact()
+	}
+}
+
+// Compact moves the content from the hot buffer to the cold buffer.
+func (ib *InputBuffer) Compact() {
+	// Because the hot buffer and cold buffer are both sorted, we can simply use
+	// a single merge to merge the 2 buffers.
+	hVerdicts := ib.HotBuffer.Verdicts
+	cVerdicts := ib.ColdBuffer.Verdicts
+	merged := make([]PositionVerdict, len(hVerdicts)+len(cVerdicts))
+
+	hPos := 0
+	cPos := 0
+	for hPos < len(hVerdicts) && cPos < len(cVerdicts) {
+		cmp := compareVerdict(hVerdicts[hPos], cVerdicts[cPos])
+		// Item in hot buffer is strictly older.
+		if cmp == -1 {
+			merged[hPos+cPos] = hVerdicts[hPos]
+			hPos++
+		} else {
+			merged[hPos+cPos] = cVerdicts[cPos]
+			cPos++
+		}
+	}
+
+	// Add the remaining items.
+	for ; hPos < len(hVerdicts); hPos++ {
+		merged[hPos+cPos] = hVerdicts[hPos]
+	}
+	for ; cPos < len(cVerdicts); cPos++ {
+		merged[hPos+cPos] = cVerdicts[cPos]
+	}
+
+	ib.HotBuffer.Verdicts = []PositionVerdict{}
+	// If the cold verdicts exceeds the capacity, we want to move the
+	// oldest verdicts to the output buffer.
+	// TODO (nqmtuan): Move extra verdicts to output buffer.
+	// For now, just discard them.
+	if len(merged) > ib.ColdBufferCapacity {
+		merged = merged[len(merged)-ib.ColdBufferCapacity:]
+	}
+	ib.ColdBuffer.Verdicts = merged
 }
 
 // EncodeHistory uses varint encoding to encode history into a byte array.
@@ -268,4 +351,23 @@ func boolToUInt64(b bool) uint64 {
 
 func uInt64ToBool(u uint64) bool {
 	return u == 1
+}
+
+// compareVerdict returns 1 if v1 is later than v2, -1 if v1 is earlier than
+// v2, and 0 if they are at the same time.
+// The comparision is done on commit position, then on hour.
+func compareVerdict(v1 PositionVerdict, v2 PositionVerdict) int {
+	if v1.CommitPosition > v2.CommitPosition {
+		return 1
+	}
+	if v1.CommitPosition < v2.CommitPosition {
+		return -1
+	}
+	if v1.Hour.Unix() > v2.Hour.Unix() {
+		return 1
+	}
+	if v1.Hour.Unix() < v2.Hour.Unix() {
+		return -1
+	}
+	return 0
 }
