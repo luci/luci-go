@@ -18,6 +18,8 @@ import (
 	"context"
 	"sort"
 
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -73,6 +75,19 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 	bld := buildFromScheduleRequest(ctx, schReq, nil, "", bldrCfg.Config, globalCfg)
 
 	if bktCfg.Proto.GetShadow() != "" && bktCfg.Proto.Shadow != builder.Bucket {
+		bld.Input.Properties.Fields["$recipe_engine/led"] = &structpb.Value{
+			Kind: &structpb.Value_StructValue{
+				StructValue: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"shadowed_bucket": {
+							Kind: &structpb.Value_StringValue{
+								StringValue: bld.Builder.Bucket,
+							},
+						},
+					},
+				},
+			},
+		}
 		bld.Builder.Bucket = bktCfg.Proto.Shadow
 		if shadowBldrCfg := bldrCfg.Config.GetShadowBuilderAdjustments(); shadowBldrCfg != nil {
 			if shadowBldrCfg.ServiceAccount != "" {

@@ -340,7 +340,23 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					},
 					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"$recipe_engine/led": {
+									Kind: &structpb.Value_StructValue{
+										StructValue: &structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"shadowed_bucket": {
+													Kind: &structpb.Value_StringValue{
+														StringValue: "bucket",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 					SchedulingTimeout: &durationpb.Duration{
 						Seconds: 21600,
@@ -439,7 +455,23 @@ func TestSynthesizeBuild(t *testing.T) {
 						},
 					},
 					Input: &pb.Build_Input{
-						Properties: &structpb.Struct{},
+						Properties: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"$recipe_engine/led": {
+									Kind: &structpb.Value_StructValue{
+										StructValue: &structpb.Struct{
+											Fields: map[string]*structpb.Value{
+												"shadowed_bucket": {
+													Kind: &structpb.Value_StringValue{
+														StringValue: "bucket",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 						Experiments: []string{
 							"cool.experiment_thing",
 						},
