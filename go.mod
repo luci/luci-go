@@ -23,7 +23,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20220510175640-3b4b64021035
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230123164355-3533698631dd
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230303145537-3a73c5ed0419
 	github.com/danjacques/gofslock v0.0.0-20220131014315-6e321f4509c8
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1
@@ -68,7 +68,7 @@ require (
 	google.golang.org/api v0.108.0
 	google.golang.org/appengine v1.6.8-0.20221117013220-504804fb50de
 	google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2
-	google.golang.org/grpc v1.52.1
+	google.golang.org/grpc v1.52.3
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
