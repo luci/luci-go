@@ -82,6 +82,14 @@ func (c *ColumnBuilder) FilterableImplicitly() *ColumnBuilder {
 	return c
 }
 
+// WithArgumentSubstitutor specifies a substitution that should happen to the user-specified
+// filter argument before it is matched against the database value. If this option is enabled,
+// the filter operators permitted will be limited to = (equals) and != (not equals).
+func (c *ColumnBuilder) WithArgumentSubstitutor(f func(sub string) string) *ColumnBuilder {
+	c.column.argSubstitute = f
+	return c
+}
+
 // Build returns the built column.
 func (c *ColumnBuilder) Build() *Column {
 	result := &Column{}

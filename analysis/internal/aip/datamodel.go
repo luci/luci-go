@@ -72,6 +72,9 @@ type Column struct {
 
 	// The type of the column, defaults to ColumnType_STRING.
 	columnType ColumnType
+
+	// The function which is applied to the filter arguments.
+	argSubstitute func(sub string) string
 }
 
 // Table represents the schema of a Database table, view or query.

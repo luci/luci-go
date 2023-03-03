@@ -86,17 +86,13 @@ const OverviewTab = ({ value }: Props) => {
   // The values will not be annotated by default.
   const [isAnnotated, setIsAnnotated] = useState(false);
 
-  // FIXME: normally we fix this up on the server where we have access to the
-  // latest version number.  Is there a way to do the same in the client?
-  const algorithm = clusterId.algorithm == 'rules' ? 'rules-v2' : clusterId.algorithm;
-
   // Note that querying the history of a single cluster is faster and cheaper.
   const {
     isLoading,
     isSuccess,
     data,
     error,
-  } = useQueryClusterHistory(clusterId.project, `cluster_algorithm="${algorithm}" cluster_id="${clusterId.id}"`, days, metricIds);
+  } = useQueryClusterHistory(clusterId.project, `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`, days, metricIds);
 
   const fetchedMetrics = useFetchMetrics();
   const metric = (metricId: string): Metric | undefined =>

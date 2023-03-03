@@ -24,6 +24,12 @@ import (
 
 func TestWhereClause(t *testing.T) {
 	Convey("WhereClause", t, func() {
+		subFunc := func(sub string) string {
+			if sub == "somevalue" {
+				return "somevalue-v2"
+			}
+			return sub
+		}
 		table := NewTable().WithColumns(
 			NewColumn().WithFieldPath("foo").WithDatabaseName("db_foo").FilterableImplicitly().Build(),
 			NewColumn().WithFieldPath("bar").WithDatabaseName("db_bar").FilterableImplicitly().Build(),
@@ -31,6 +37,8 @@ func TestWhereClause(t *testing.T) {
 			NewColumn().WithFieldPath("kv").WithDatabaseName("db_kv").KeyValue().Filterable().Build(),
 			NewColumn().WithFieldPath("bool").WithDatabaseName("db_bool").Bool().Filterable().Build(),
 			NewColumn().WithFieldPath("unfilterable").WithDatabaseName("unfilterable").Build(),
+			NewColumn().WithFieldPath("qux").WithDatabaseName("db_qux").WithArgumentSubstitutor(subFunc).Filterable().Build(),
+			NewColumn().WithFieldPath("quux").WithDatabaseName("db_quux").WithArgumentSubstitutor(subFunc).Filterable().KeyValue().Build(),
 		).Build()
 
 		Convey("Empty filter", func() {
@@ -202,6 +210,45 @@ func TestWhereClause(t *testing.T) {
 
 				_, _, err = table.WhereClause(filter, "p_")
 				So(err, ShouldErrLike, "fields are not allowed on the RHS of has (:) operator")
+			})
+			Convey("WithArgumentSubstitutor filter substituted", func() {
+				filter, err := ParseFilter("qux=somevalue")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldResemble, []QueryParameter{
+					{
+						Name:  "p_0",
+						Value: "somevalue-v2",
+					},
+				})
+				So(result, ShouldEqual, "(COALESCE(db_qux, '') = @p_0)")
+			})
+			Convey("WithArgumentSubstitutor filter not supported", func() {
+				filter, err := ParseFilter("qux:some")
+				So(err, ShouldEqual, nil)
+
+				_, _, err = table.WhereClause(filter, "p_")
+				So(err, ShouldErrLike, "cannot use has (:) operator on a field that have argSubstitute function")
+			})
+			Convey("WithArgumentSubstitutor filter key value", func() {
+				filter, err := ParseFilter("quux.somekey=somevalue")
+				So(err, ShouldEqual, nil)
+
+				result, pars, err := table.WhereClause(filter, "p_")
+				So(err, ShouldBeNil)
+				So(pars, ShouldResemble, []QueryParameter{
+					{
+						Name:  "p_0",
+						Value: "somekey",
+					},
+					{
+						Name:  "p_1",
+						Value: "somevalue-v2",
+					},
+				})
+				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_quux) WHERE key = @p_0 AND value = @p_1))")
 			})
 		})
 		Convey("Complex filter", func() {

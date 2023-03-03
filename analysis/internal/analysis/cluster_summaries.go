@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
+	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 )
@@ -36,7 +37,7 @@ var ClusteredFailuresTable = aip.NewTable().WithColumns(
 	aip.NewColumn().WithFieldPath("failure_reason").WithDatabaseName("failure_reason.primary_error_message").FilterableImplicitly().Build(),
 	aip.NewColumn().WithFieldPath("realm").WithDatabaseName("realm").Filterable().Build(),
 	aip.NewColumn().WithFieldPath("ingested_invocation_id").WithDatabaseName("ingested_invocation_id").Filterable().Build(),
-	aip.NewColumn().WithFieldPath("cluster_algorithm").WithDatabaseName("cluster_algorithm").Filterable().Build(),
+	aip.NewColumn().WithFieldPath("cluster_algorithm").WithDatabaseName("cluster_algorithm").Filterable().WithArgumentSubstitutor(resolveAlgorithm).Build(),
 	aip.NewColumn().WithFieldPath("cluster_id").WithDatabaseName("cluster_id").Filterable().Build(),
 	aip.NewColumn().WithFieldPath("variant_hash").WithDatabaseName("variant_hash").Filterable().Build(),
 	aip.NewColumn().WithFieldPath("test_run_id").WithDatabaseName("test_run_id").Filterable().Build(),
@@ -45,6 +46,15 @@ var ClusteredFailuresTable = aip.NewTable().WithColumns(
 	aip.NewColumn().WithFieldPath("is_test_run_blocked").WithDatabaseName("is_test_run_blocked").Bool().Filterable().Build(),
 	aip.NewColumn().WithFieldPath("is_ingested_invocation_blocked").WithDatabaseName("is_ingested_invocation_blocked").Bool().Filterable().Build(),
 ).Build()
+
+func resolveAlgorithm(algorithm string) string {
+	// Resolve an alias to the rules algorithm to the concrete
+	// implementation, e.g. "rules" -> "rules-v2".
+	if algorithm == "rules" {
+		return rulesalgorithm.AlgorithmName
+	}
+	return algorithm
+}
 
 const MetricValueColumnSuffix = "value"
 

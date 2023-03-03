@@ -157,13 +157,13 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		}
 		key := w.bind(restriction.Comparable.Member.Fields[0])
 		if restriction.Comparator == ":" {
-			value, err := w.likeArgValue(restriction.Arg, column.columnType)
+			value, err := w.likeArgValue(restriction.Arg, column)
 			if err != nil {
 				return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 			}
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value LIKE %s))", column.databaseName, key, value), nil
 		}
-		value, err := w.argValue(restriction.Arg, column.columnType)
+		value, err := w.argValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
@@ -193,7 +193,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		if err != nil {
 			return "", err
 		}
-		arg, err := w.argValue(restriction.Arg, column.columnType)
+		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
@@ -203,7 +203,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		if err != nil {
 			return "", err
 		}
-		arg, err := w.argValue(restriction.Arg, column.columnType)
+		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
@@ -213,7 +213,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		if err != nil {
 			return "", err
 		}
-		arg, err := w.likeArgValue(restriction.Arg, column.columnType)
+		arg, err := w.likeArgValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
@@ -226,30 +226,34 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 // argValue returns a SQL expression representing the value of the specified
 // arg.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) argValue(arg *Arg, columnType ColumnType) (string, error) {
+func (w *whereClause) argValue(arg *Arg, column *Column) (string, error) {
 	if arg.Composite != nil {
 		return "", fmt.Errorf("composite expressions in arguments not implemented yet")
 	}
 	if arg.Comparable == nil {
 		return "", fmt.Errorf("missing comparable in argument")
 	}
-	return w.comparableValue(arg.Comparable, columnType)
+	return w.comparableValue(arg.Comparable, column)
 }
 
 // argValue returns a SQL expression representing the value of the specified
 // comparable.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) comparableValue(comparable *Comparable, columnType ColumnType) (string, error) {
+func (w *whereClause) comparableValue(comparable *Comparable, column *Column) (string, error) {
 	if comparable.Member == nil {
 		return "", fmt.Errorf("invalid comparable")
 	}
 	if len(comparable.Member.Fields) > 0 {
 		return "", fmt.Errorf("fields not implemented yet")
 	}
-	switch columnType {
+	switch column.columnType {
 	case ColumnTypeString:
+		value := comparable.Member.Value
+		if column.argSubstitute != nil {
+			value = column.argSubstitute(value)
+		}
 		// Bind unsanitised user input to a parameter to protect against SQL injection.
-		return w.bind(comparable.Member.Value), nil
+		return w.bind(value), nil
 	case ColumnTypeBool:
 		if strings.EqualFold(comparable.Member.Value, "true") {
 			return "TRUE", nil
@@ -258,22 +262,25 @@ func (w *whereClause) comparableValue(comparable *Comparable, columnType ColumnT
 		}
 		return "", fmt.Errorf("only TRUE or FALSE can be specified as the value for a boolean field")
 	}
-	return "", fmt.Errorf("unable to generate SQL value for unknown field type: %s", columnType.String())
+	return "", fmt.Errorf("unable to generate SQL value for unknown field type: %s", column.columnType.String())
 }
 
 // likeArgValue returns a SQL expression that, when passed to the
 // right hand side of a LIKE operator, performs substring matching against
 // the value of the argument.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) likeArgValue(arg *Arg, columnType ColumnType) (string, error) {
+func (w *whereClause) likeArgValue(arg *Arg, column *Column) (string, error) {
 	if arg.Composite != nil {
 		return "", fmt.Errorf("composite expressions are not allowed as RHS to has (:) operator")
 	}
 	if arg.Comparable == nil {
 		return "", fmt.Errorf("missing comparable in argument")
 	}
-	if columnType != ColumnTypeString {
-		return "", fmt.Errorf("cannot use has (:) operator on a non-string field %q", columnType.String())
+	if column.columnType != ColumnTypeString {
+		return "", fmt.Errorf("cannot use has (:) operator on a non-string field %q", column.columnType.String())
+	}
+	if column.argSubstitute != nil {
+		return "", fmt.Errorf("cannot use has (:) operator on a field that have argSubstitute function")
 	}
 	return w.likeComparableValue(arg.Comparable)
 }
