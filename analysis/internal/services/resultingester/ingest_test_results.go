@@ -502,7 +502,7 @@ func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant,
 	if err != nil {
 		return errors.Annotate(err, "couldn't read config").Err()
 	}
-	tvaEnabled := cfg.TestVariantAnalysis.Enabled
+	tvaEnabled := cfg.TestVariantAnalysis != nil && cfg.TestVariantAnalysis.Enabled
 	if !tvaEnabled {
 		return nil
 	}
