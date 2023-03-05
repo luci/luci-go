@@ -28,7 +28,7 @@ type Algorithm struct{}
 // version should be incremented whenever existing test results may be
 // clustered differently (i.e. Cluster(f) returns a different value for some
 // f that may have been already ingested).
-const AlgorithmVersion = 2
+const AlgorithmVersion = 3
 
 // AlgorithmName is the identifier for the clustering algorithm.
 // LUCI Analysis requires all clustering algorithms to have a unique

@@ -865,7 +865,7 @@ func TestRules(t *testing.T) {
 	IsActive: false,
 	IsManagingBug: true,
 	IsManagingBugPriority: true,
-	SourceCluster: "testname-v3:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	SourceCluster: "testname-v4:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	LastUpdated: "1900-01-02T03:04:07Z"
 }`
 		So(formatRule(rule), ShouldEqual, expectedRule)
