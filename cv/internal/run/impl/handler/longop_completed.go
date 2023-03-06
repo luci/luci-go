@@ -32,11 +32,6 @@ const longOpGracePeriod = time.Minute
 
 // OnLongOpCompleted implements Handler interface.
 func (impl *Impl) OnLongOpCompleted(ctx context.Context, rs *state.RunState, result *eventpb.LongOpCompleted) (*Result, error) {
-	if run.IsEnded(rs.Status) {
-		logging.Debugf(ctx, "Ignoring %s long operation %q because Run is %s", result.GetStatus(), result.GetOperationId(), rs.Status)
-		return &Result{State: rs}, nil
-	}
-
 	op := rs.OngoingLongOps.GetOps()[result.GetOperationId()]
 	if op == nil {
 		logging.Warningf(ctx, "Long operation %q has no entry in Run (maybe already expired?)", result.GetOperationId())
