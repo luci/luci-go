@@ -156,7 +156,6 @@ func (impl *Impl) removeRunFromCLs(ctx context.Context, runID common.RunID, clid
 }
 
 type reviewInputMeta struct {
-
 	// notify is whom to notify.
 	notify gerrit.Whoms
 	// message provides the reason and details of the review change performed.

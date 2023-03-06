@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -57,24 +58,63 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 
 	hasNilSnapshot := false
 	var earliestReconsiderAt time.Time
-	for i := range clids {
-		if cls[i].Snapshot == nil {
+	clsCausingCancellation := make(common.CLIDsSet, len(clids))
+	cancellationReasons := make([]string, 0, len(clids))
+	for i, clid := range clids {
+		cl, runCL := cls[i], runCLs[i]
+		if cl.Snapshot == nil {
 			// This doesn't necessarily assume that shouldCancel() would
 			// or would not return a cancelReason for nil Snapshot; hence,
 			// let it decide. hasNilSnapshot is to decide whether
 			// runs.CheckRunCreate() should be checked or not.
 			hasNilSnapshot = true
 		}
-		switch reconsiderAt, cancellationReason := shouldCancel(ctx, cls[i], runCLs[i], cg); {
+		switch reconsiderAt, cancellationReason := shouldCancel(ctx, cl, runCL, cg); {
 		case !reconsiderAt.IsZero():
 			if earliestReconsiderAt.IsZero() || earliestReconsiderAt.After(reconsiderAt) {
 				earliestReconsiderAt = reconsiderAt
 			}
 		case cancellationReason != "":
-			return impl.Cancel(ctx, rs, []string{cancellationReason})
+			clsCausingCancellation.Add(clid)
+			cancellationReasons = append(cancellationReasons, cancellationReason)
 		}
 	}
-	if !earliestReconsiderAt.IsZero() {
+
+	switch numCLsCausingCancellation := len(clsCausingCancellation); {
+	// If all CLs in this Run have been updated at the same time and cause
+	// Run cancellation, directly cancel the Run. Otherwise, if part of the
+	// CLs cause Run cancellation, LUCI CV would need to reset the trigger on
+	// the rest of the CLs in this Run so that the existing trigger won't
+	// end up with creating new Run that developers are not intended. For example
+	// imagine a stack of CL A, B, C where C depends on B depends on A and a
+	// Dry Run is currently running involving all CLs. If B gains a new patchset,
+	// CV needs to reset the trigger on A and C and then patiently wait for
+	// developers creating a new Run with all 3 CLs.
+	case numCLsCausingCancellation == len(rs.CLs):
+		sort.Strings(cancellationReasons)
+		return impl.Cancel(ctx, rs, cancellationReasons)
+	case numCLsCausingCancellation > 0:
+		rs = rs.ShallowCopy()
+		meta := reviewInputMeta{
+			// Just pick the very first reason as the reason to reset the trigger.
+			// In typical cases, there will only be one cancellation reason anyway.
+			message: fmt.Sprintf("Reset the trigger of this CL because %s", cancellationReasons[0]),
+			notify:  rs.Mode.GerritNotifyTargets(),
+		}
+		metas := make(map[common.CLID]reviewInputMeta, len(rs.CLs)-numCLsCausingCancellation)
+		for _, clid := range rs.CLs {
+			if !clsCausingCancellation.Has(clid) {
+				metas[clid] = meta
+			}
+		}
+		scheduleTriggersReset(ctx, rs, metas, run.Status_CANCELLED)
+		// TODO(yiwzhang): It is unfortunate that CV has to set the cancellation
+		// reason before triggers are reset and status is turned to CANCELLED. Find
+		// a way to pass the cancellation reasons to `onCompletedResetTriggers`.
+		rs.CancellationReasons = append(rs.CancellationReasons, cancellationReasons...)
+		sort.Strings(rs.CancellationReasons)
+		return &Result{State: rs}, nil
+	case !earliestReconsiderAt.IsZero():
 		logging.Debugf(ctx, "Will reconsider OnCLUpdated event(s) after %s", earliestReconsiderAt.Sub(clock.Now(ctx)))
 		if err := impl.RM.Invoke(ctx, rs.ID, earliestReconsiderAt); err != nil {
 			return nil, err
