@@ -191,7 +191,7 @@ func validateNotificationConfig(ctx context.Context, n *pb.NotificationConfig) e
 	case len(perms) < 1:
 		return errors.Reason("%s@appspot.gserviceaccount.com account doesn't have the 'pubsub.topics.publish' or 'pubsub.topics.get' permission for %s", info.AppID(ctx), topic).Err()
 	default:
-		if err := cache.Set(ctx, topicID, []byte{1}, 10*time.Hour); err != nil {
+		if err := cache.Set(ctx, n.PubsubTopic, []byte{1}, 10*time.Hour); err != nil {
 			logging.Warningf(ctx, "failed to save into has_perm_on_pubsub_callback_topic cache for %s", n.PubsubTopic)
 		}
 	}
