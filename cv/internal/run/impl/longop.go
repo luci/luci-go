@@ -105,24 +105,29 @@ func (rm *RunManager) doLongOperation(ctx context.Context, task *eventpb.ManageR
 
 	switch {
 	case err == nil:
-		return notifyCompleted(result)
 	case transient.Tag.In(err):
 		// Just retry.
 		return err
-	case errors.Unwrap(err) == dctx.Err() && result == nil:
+	case result != nil:
+		// honor the result status returned by the long op
+	case errors.Unwrap(err) == dctx.Err():
 		logging.Warningf(ctx, "Failed long op due to hitting a deadline, setting result as EXPIRED")
 		result = &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_EXPIRED}
-		fallthrough
 	default:
-		// On permanent failure, don't fail the task until the Run Manager is
-		// notified.
-		if result == nil {
-			result = &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_FAILED}
-		}
-		if nerr := notifyCompleted(result); nerr != nil {
-			logging.Errorf(ctx, "Long op %T permanently failed with %s, but also failed to notify Run Manager", op.GetWork(), err)
-			return nerr
-		}
+		// permanent failure
+		result = &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_FAILED}
+	}
+
+	switch nerr := notifyCompleted(result); {
+	case nerr == nil:
+		return err
+	case err == nil:
+		// the op suceeded, but notify failed.
+		logging.Errorf(ctx, "Long op suceeded but it failed to notify Run Manager: %s", err)
+		return nerr
+	default:
+		// both op and notify failed.
+		logging.Errorf(ctx, "Long op %T permanently failed with %s, but also failed to notify Run Manager", op.GetWork(), nerr)
 		return err
 	}
 }
