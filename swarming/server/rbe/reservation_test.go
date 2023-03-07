@@ -16,6 +16,7 @@ package rbe
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -44,6 +45,9 @@ func TestReservationServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
+		const rbeInstance = "projects/x/instances/y"
+		const rbeReservation = "reservation-id"
+
 		ctx := memory.Use(context.Background())
 		rbe := mockedReservationClient{
 			newState: remoteworkers.ReservationState_RESERVATION_PENDING,
@@ -59,7 +63,7 @@ func TestReservationServer(t *testing.T) {
 
 		enqueueTask := &internalspb.EnqueueRBETask{
 			Payload: &internalspb.TaskPayload{
-				ReservationId:  "reservation-id",
+				ReservationId:  rbeReservation,
 				TaskId:         "60b2ed0a43023110",
 				TaskToRunShard: 14,
 				TaskToRunId:    1,
@@ -67,7 +71,7 @@ func TestReservationServer(t *testing.T) {
 					PySwarmingVersion: "py-version",
 				},
 			},
-			RbeInstance:    "projects/x/instances/y",
+			RbeInstance:    rbeInstance,
 			Expiry:         timestamppb.New(expiry),
 			RequestedBotId: "some-bot-id",
 			Constraints: []*internalspb.EnqueueRBETask_Constraint{
@@ -92,7 +96,7 @@ func TestReservationServer(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			expectedPayload, _ := anypb.New(&internalspb.TaskPayload{
-				ReservationId:  "reservation-id",
+				ReservationId:  rbeReservation,
 				TaskId:         "60b2ed0a43023110",
 				TaskToRunShard: 14,
 				TaskToRunId:    1,
@@ -103,7 +107,7 @@ func TestReservationServer(t *testing.T) {
 			})
 
 			So(rbe.reservation, ShouldResembleProto, &remoteworkers.Reservation{
-				Name:    "projects/x/instances/y/reservations/reservation-id",
+				Name:    fmt.Sprintf("%s/reservations/%s", rbeInstance, rbeReservation),
 				State:   remoteworkers.ReservationState_RESERVATION_PENDING,
 				Payload: expectedPayload,
 				Constraints: []*remoteworkers.Constraint{
@@ -194,15 +198,47 @@ func TestReservationServer(t *testing.T) {
 				So(tq.Fatal.In(err), ShouldBeFalse)
 			})
 		})
+
+		Convey("handleCancelRBETask ok", func() {
+			err := srv.handleCancelRBETask(ctx, &internalspb.CancelRBETask{
+				RbeInstance:   rbeInstance,
+				ReservationId: rbeReservation,
+			})
+			So(err, ShouldBeNil)
+			So(rbe.lastCancel, ShouldResembleProto, &remoteworkers.CancelReservationRequest{
+				Name:   fmt.Sprintf("%s/reservations/%s", rbeInstance, rbeReservation),
+				Intent: remoteworkers.CancelReservationIntent_ANY,
+			})
+		})
+
+		Convey("handleCancelRBETask not found", func() {
+			rbe.errCancel = status.Errorf(codes.NotFound, "boo")
+			err := srv.handleCancelRBETask(ctx, &internalspb.CancelRBETask{
+				RbeInstance:   rbeInstance,
+				ReservationId: rbeReservation,
+			})
+			So(tq.Ignore.In(err), ShouldBeTrue)
+		})
+
+		Convey("handleCancelRBETask internal", func() {
+			rbe.errCancel = status.Errorf(codes.Internal, "boo")
+			err := srv.handleCancelRBETask(ctx, &internalspb.CancelRBETask{
+				RbeInstance:   rbeInstance,
+				ReservationId: rbeReservation,
+			})
+			So(transient.Tag.In(err), ShouldBeTrue)
+		})
 	})
 }
 
 type mockedReservationClient struct {
 	lastCreate *remoteworkers.CreateReservationRequest
 	lastGet    *remoteworkers.GetReservationRequest
+	lastCancel *remoteworkers.CancelReservationRequest
 
 	errCreate error
 	errGet    error
+	errCancel error
 
 	newState    remoteworkers.ReservationState
 	reservation *remoteworkers.Reservation
@@ -227,7 +263,11 @@ func (m *mockedReservationClient) GetReservation(ctx context.Context, in *remote
 }
 
 func (m *mockedReservationClient) CancelReservation(ctx context.Context, in *remoteworkers.CancelReservationRequest, opts ...grpc.CallOption) (*remoteworkers.CancelReservationResponse, error) {
-	panic("unused yet")
+	m.lastCancel = in
+	if m.errCancel != nil {
+		return nil, m.errCancel
+	}
+	return &remoteworkers.CancelReservationResponse{}, nil
 }
 
 type mockedInternalsClient struct {

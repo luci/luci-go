@@ -352,7 +352,7 @@ message TaskProperties {
   repeated string command = 3;
   // Relative working directory to start the 'command' in, defaults to the root
   // mapped directory or what is provided in the isolated file, if any.
-  repeated string relative_cwd = 4;
+  string relative_cwd = 4;
   // Dimensions are what is used to determine which bot can run the task. The
   // bot must have all the matching dimensions, even for repeated keys with
   // multiple different values. It is a logical AND, all values must match.
@@ -715,9 +715,9 @@ message TasksCancelResponse {
 }
 
 
-// A task's output as a string.
+// A task's output as a bytestring
 message TaskOutputResponse {
-  string output = 1;
+  bytes output = 1;
   // Current state of the task (e.g. PENDING, RUNNING, COMPLETED, EXPIRED, etc).
   TaskState state = 2;
 }

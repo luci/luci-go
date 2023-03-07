@@ -207,6 +207,26 @@ message EnqueueRBETask {
 }
 
 
+// CancelRBETask describes payload of `rbe-cancel` TQ tasks.
+//
+// It is submitted into `rbe-cancel` Cloud Tasks queue by the Python side and
+// processed by the Go side (resulting in cancellation of an RBE reservation).
+message CancelRBETask {
+  // Full RBE instance ID with the reservation, extracted from TaskRequest.
+  string rbe_instance = 1;
+  // Reservation to cancel (scoped to the instance).
+  string reservation_id = 2;
+
+  // Optional information used for debugging and tracing purposes.
+  message DebugInfo {
+    google.protobuf.Timestamp created = 1;  // when this message was created
+    string py_swarming_version = 2;         // version of the Python Swarming
+    string task_name = 3;                   // the user-supplied task name FYI
+  }
+  DebugInfo debug_info = 3;
+}
+
+
 // TaskPayload is used as an RBE task payload.
 //
 // It is serialized as anypb.Any when passed to RBE, and its full proto name

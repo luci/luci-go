@@ -66,6 +66,15 @@ func (s *ReservationServer) RegisterTQTasks(disp *tq.Dispatcher) {
 			return s.handleEnqueueRBETask(ctx, payload.(*internalspb.EnqueueRBETask))
 		},
 	})
+	disp.RegisterTaskClass(tq.TaskClass{
+		ID:        "rbe-cancel",
+		Prototype: &internalspb.CancelRBETask{},
+		Kind:      tq.Transactional,
+		Queue:     "rbe-cancel",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			return s.handleCancelRBETask(ctx, payload.(*internalspb.CancelRBETask))
+		},
+	})
 }
 
 // handleEnqueueRBETask is responsible for creating a reservation.
@@ -212,6 +221,25 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 		Details:        reason.Error(),
 	})
 	return err
+}
+
+// handleCancelRBETask cancels a reservation.
+func (s *ReservationServer) handleCancelRBETask(ctx context.Context, task *internalspb.CancelRBETask) error {
+	logging.Infof(ctx, "Cancelling reservation %q", task.ReservationId)
+	resp, err := s.rbe.CancelReservation(ctx, &remoteworkers.CancelReservationRequest{
+		Name:   fmt.Sprintf("%s/reservations/%s", task.RbeInstance, task.ReservationId),
+		Intent: remoteworkers.CancelReservationIntent_ANY,
+	})
+	switch status.Code(err) {
+	case codes.OK:
+		logging.Infof(ctx, "Cancel result: %s", resp.Result)
+		return nil
+	case codes.NotFound:
+		logging.Warningf(ctx, "No such reservation, nothing to cancel")
+		return tq.Ignore.Apply(err)
+	default:
+		return grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded)
+	}
 }
 
 // isExpectedRBEError returns true for errors that are expected to happen during
