@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import createCache from '@emotion/cache';
-import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Feedback, MoreVert } from '@mui/icons-material';
 import { Box, IconButton, Link, LinkProps, styled } from '@mui/material';
-import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import { createRoot, Root } from 'react-dom/client';
 
-import { consumer } from '../libs/context';
 import { genFeedbackUrl } from '../libs/utils';
-import { consumeStore, StoreInstance, StoreProvider, useStore } from '../store';
-import commonStyle from '../styles/common_style.css';
+import { useStore } from '../store';
 import { AppMenu } from './app_menu';
 import { SignIn } from './signin';
 
@@ -87,39 +79,3 @@ export const TopBar = observer(({ container }: TopBarProps) => {
     </Box>
   );
 });
-
-@customElement('milo-top-bar')
-@consumer
-export class TopBarElement extends MobxLitElement {
-  @observable.ref @consumeStore() store!: StoreInstance;
-
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLDivElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    makeObservable(this);
-    this.parent = document.createElement('div');
-    const child = document.createElement('div');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-top-bar',
-      container: this.parent,
-    });
-  }
-
-  protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <StoreProvider value={this.store}>
-          <TopBar container={this.parent} />
-        </StoreProvider>
-      </CacheProvider>
-    );
-    return this.parent;
-  }
-
-  static styles = [commonStyle];
-}

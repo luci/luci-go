@@ -12,23 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import createCache from '@emotion/cache';
-import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Search } from '@mui/icons-material';
 import { Box, FormControl, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
-import { customElement } from 'lit/decorators.js';
 import { debounce } from 'lodash-es';
-import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useState } from 'react';
-import { createRoot, Root } from 'react-dom/client';
 
-import { consumer } from '../../libs/context';
 import { URLExt } from '../../libs/utils';
-import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
+import { useStore } from '../../store';
 import { DEFAULT_SEARCH_TARGET, DEFAULT_TEST_PROJECT, SearchTarget } from '../../store/search_page';
-import commonStyle from '../../styles/common_style.css';
 import { BuilderList } from './builder_list';
 import { TestList } from './test_list';
 
@@ -176,39 +168,3 @@ export const SearchPage = observer(() => {
     </Box>
   );
 });
-
-@customElement('milo-search-page')
-@consumer
-export class SearchPageElement extends MobxLitElement {
-  @observable.ref @consumeStore() store!: StoreInstance;
-
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLDivElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    makeObservable(this);
-    this.parent = document.createElement('div');
-    const child = document.createElement('div');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-search-page',
-      container: this.parent,
-    });
-  }
-
-  protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <StoreProvider value={this.store}>
-          <SearchPage></SearchPage>
-        </StoreProvider>
-      </CacheProvider>
-    );
-    return this.parent;
-  }
-
-  static styles = [commonStyle];
-}
