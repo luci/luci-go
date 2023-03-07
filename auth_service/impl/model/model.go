@@ -1267,6 +1267,95 @@ func GetAuthRealmsGlobals(ctx context.Context) (*AuthRealmsGlobals, error) {
 	}
 }
 
+// UpdateAuthRealmsGlobals updates the AuthRealmsGlobals singleton entity in datastore, creating
+// the entity if necessary.
+//
+// Returns
+//
+//	formatted error if stored permissions and permissions.cfg don't match
+//	proto unmarshalling error if format in datastore is incorrect.
+//	internal annotated error for all other
+//
+// NOTE:
+// Since the original property that is used to store permissions was
+// of type []*protocol.Permission, we have to convert twice. This is because
+// slices of pointers are not supported in luci-go gae/datastore package
+// and it converts to a weird format when using datastore.Get.
+// As a result we will also use the dryRun flag to just log the results
+// until we don't depend on it, then once we switch we'll just stop
+// writing to the entity.
+//
+// TODO(crbug/1336137): Remove all references and checks to old permissions
+// once Python version knows how to work with permissions.cfg.
+func UpdateAuthRealmsGlobals(ctx context.Context, permcfg *configspb.PermissionsConfig, dryRun bool) error {
+	return runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
+		// map the permission name to the protobuf.
+		permsMap := make(map[string]*protocol.Permission)
+
+		// set of permission names found in config
+		cfgPermsSet := stringset.Set{}
+
+		// All permissions from cfg
+		for _, r := range permcfg.GetRole() {
+			for _, p := range r.GetPermissions() {
+				isInternal := strings.HasPrefix(r.GetName(), "role/luci.internal.")
+				permsMap[p] = &protocol.Permission{
+					Name:     p,
+					Internal: isInternal,
+				}
+			}
+			cfgPermsSet.AddAll(r.GetPermissions())
+		}
+
+		stored, err := GetAuthRealmsGlobals(ctx)
+		if err != nil && err != datastore.ErrNoSuchEntity {
+			return errors.Annotate(err, "error while fetching AuthRealmsGlobals entity").Err()
+		}
+
+		if stored == nil {
+			stored = makeAuthRealmsGlobals(ctx)
+		}
+
+		// convert what is stored by Python to proto to compare to cfg we pulled
+		storedPermProto := make([]*protocol.Permission, len(stored.Permissions))
+
+		// converting again from format we got from datastore.Get
+		for i, s := range stored.Permissions {
+			tempProto := &protocol.Permission{}
+			err := proto.Unmarshal([]byte(s), tempProto)
+			if err != nil {
+				return errors.Annotate(err, "error while unmarshalling stored proto").Err()
+			}
+			storedPermProto[i] = tempProto
+		}
+
+		// make a set of the permission names
+		storedPermsSet := stringset.New(len(storedPermProto))
+		for _, p := range storedPermProto {
+			storedPermsSet.Add(p.GetName())
+		}
+
+		// enforce that permissions match each other
+		diff := storedPermsSet.Difference(cfgPermsSet)
+		if len(diff) != 0 && stored.Permissions != nil {
+			return fmt.Errorf("the stored permissions and the permissions.cfg are not the same... diff: %v", diff)
+		}
+
+		stored.PermissionsList = &permissions.PermissionsList{
+			Permissions: make([]*protocol.Permission, len(cfgPermsSet)),
+		}
+		for i, p := range cfgPermsSet.ToSortedSlice() {
+			stored.PermissionsList.Permissions[i] = permsMap[p]
+		}
+
+		if !dryRun {
+			return commitEntity(stored, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
+		}
+		logging.Infof(ctx, "(dryRun) entity: %v", stored)
+		return nil
+	})
+}
+
 // GetAuthProjectRealms returns the AuthProjectRealms datastore entity for a given project.
 //
 // Returns datastore.ErrNoSuchEntity if the AuthProjectRealms entity is not present.

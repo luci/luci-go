@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -1435,9 +1436,19 @@ func TestAuthGlobalConfig(t *testing.T) {
 
 func TestAuthRealmsConfig(t *testing.T) {
 	t.Parallel()
-	ctx := memory.Use(context.Background())
+
+	getCtx := func() (context.Context, *tqtesting.Scheduler) {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		})
+		ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		return tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+	}
 
 	Convey("Testing GetAuthRealmsGlobals", t, func() {
+		ctx := memory.Use(context.Background())
+
 		_, err := GetAuthRealmsGlobals(ctx)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
@@ -1451,6 +1462,8 @@ func TestAuthRealmsConfig(t *testing.T) {
 	})
 
 	Convey("Testing GetAuthProjectRealms", t, func() {
+		ctx := memory.Use(context.Background())
+
 		testProject := "testproject"
 		_, err := GetAuthProjectRealms(ctx, testProject)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
@@ -1462,6 +1475,90 @@ func TestAuthRealmsConfig(t *testing.T) {
 		actual, err := GetAuthProjectRealms(ctx, testProject)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, projectRealms)
+	})
+
+	Convey("Testing UpdateAuthRealmsGlobals", t, func() {
+		Convey("no previous AuthRealmsGlobals entity present", func() {
+			ctx, ts := getCtx()
+
+			permCfg := &configspb.PermissionsConfig{
+				Role: []*configspb.PermissionsConfig_Role{
+					{
+						Name: "role/test.role",
+						Permissions: []string{
+							"test.perm.create",
+						},
+					},
+				},
+			}
+			protoPerm := &protocol.Permission{
+				Name:     "test.perm.create",
+				Internal: false,
+			}
+
+			err := UpdateAuthRealmsGlobals(ctx, permCfg, false)
+			So(err, ShouldBeNil)
+			So(ts.Tasks(), ShouldHaveLength, 2)
+
+			fetched, err := GetAuthRealmsGlobals(ctx)
+			So(err, ShouldBeNil)
+			So(fetched.PermissionsList.GetPermissions()[0], ShouldResembleProto, protoPerm)
+		})
+
+		Convey("updating permissions entity already present", func() {
+			ctx, ts := getCtx()
+
+			permCreate, _ := proto.Marshal(&protocol.Permission{
+				Name: "test.perm.create",
+			})
+			permTwoCreate, _ := proto.Marshal(&protocol.Permission{
+				Name: "testtwo.perm.delete",
+			})
+			permIntSched, _ := proto.Marshal(&protocol.Permission{
+				Name:     "testint.perm.schedule",
+				Internal: true,
+			})
+
+			authRealmGlobals := testAuthRealmsGlobals(ctx)
+			// this is a little incosistent with how exactly it'll be in datastore but
+			// sinc we can't get the exact format that the python version got, this is
+			// the closest we can get which is what it looks like after it's been unmarshalled
+			// from python.
+			authRealmGlobals.Permissions = []string{
+				string(permCreate),
+				string(permTwoCreate),
+				string(permIntSched),
+			}
+
+			datastore.Put(ctx, authRealmGlobals)
+
+			permsCfg := &configspb.PermissionsConfig{
+				Role: []*configspb.PermissionsConfig_Role{
+					{
+						Name: "role/test.role",
+						Permissions: []string{
+							"test.perm.create",
+						},
+						Includes: []string{},
+					},
+					{
+						Name: "role/test.role.two",
+						Permissions: []string{
+							"testtwo.perm.delete",
+						},
+					},
+					{
+						Name: "role/luci.internal.testint.role",
+						Permissions: []string{
+							"testint.perm.schedule",
+						},
+					},
+				},
+			}
+
+			So(UpdateAuthRealmsGlobals(ctx, permsCfg, false), ShouldBeNil)
+			So(ts.Tasks(), ShouldHaveLength, 2)
+		})
 	})
 }
 
