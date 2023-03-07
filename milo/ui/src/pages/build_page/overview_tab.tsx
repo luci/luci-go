@@ -22,7 +22,7 @@ import { action, computed, makeObservable, observable } from 'mobx';
 import '../../components/build_tag_row';
 import '../../components/expandable_entry';
 import '../../components/link';
-import '../../components/log';
+import '../../components/buildbucket_log_link';
 import '../../components/property_viewer';
 import '../../components/relative_timestamp';
 import '../../components/timestamp';
@@ -264,57 +264,57 @@ export class OverviewTabElement extends MobxLitElement {
       <table>
         <tr>
           <td>Buildbucket ID:</td>
-          <td><milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} .target=${'_blank'}></td>
+          <td>
+            <milo-link .link=${getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, build.id)} .target=${'_blank'}></milo-link>
+          </td>
         </tr>
-        ${
-          build.infra?.swarming
-            ? html`
-                <tr>
-                  <td>Swarming Task:</td>
-                  <td>
-                    ${!build.infra.swarming.taskId
-                      ? 'N/A'
-                      : html`
-                          <a href=${getSwarmingTaskURL(build.infra.swarming.hostname, build.infra.swarming.taskId)}>
-                            ${build.infra.swarming.taskId}
-                          </a>
-                        `}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Bot:</td>
-                  <td>${botLink ? html`<milo-link .link=${botLink} .target=${'_blank'}></milo-link>` : 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td>Service Account:</td>
-                  <td>${build.infra.swarming.taskServiceAccount}</td>
-                </tr>
-                <tr>
-                  <td>Ancestor Builds:</td>
-                  <td>
-                    ${!build.ancestorIds?.length
-                      ? 'no ancestor builds'
-                      : build.ancestorIds.map((id) => html`<a href="/b/${id}">${id}</a> `)}
-                  </td>
-                </tr>
-              `
-            : ''
-        }
-        ${
-          this.build?.recipeLink
-            ? html`
-                <tr>
-                  <td>Recipe:</td>
-                  <td><milo-link .link=${this.build.recipeLink} .target=${'_blank'}></milo-link></td>
-                </tr>
-              `
-            : ''
-        }
+        ${build.infra?.swarming
+          ? html`
+              <tr>
+                <td>Swarming Task:</td>
+                <td>
+                  ${!build.infra.swarming.taskId
+                    ? 'N/A'
+                    : html`
+                        <a href=${getSwarmingTaskURL(build.infra.swarming.hostname, build.infra.swarming.taskId)}>
+                          ${build.infra.swarming.taskId}
+                        </a>
+                      `}
+                </td>
+              </tr>
+              <tr>
+                <td>Bot:</td>
+                <td>${botLink ? html`<milo-link .link=${botLink} .target=${'_blank'}></milo-link>` : 'N/A'}</td>
+              </tr>
+              <tr>
+                <td>Service Account:</td>
+                <td>${build.infra.swarming.taskServiceAccount}</td>
+              </tr>
+              <tr>
+                <td>Ancestor Builds:</td>
+                <td>
+                  ${!build.ancestorIds?.length
+                    ? 'no ancestor builds'
+                    : build.ancestorIds.map((id) => html`<a href="/b/${id}">${id}</a> `)}
+                </td>
+              </tr>
+            `
+          : ''}
+        ${this.build?.recipeLink
+          ? html`
+              <tr>
+                <td>Recipe:</td>
+                <td>
+                  <milo-link .link=${this.build.recipeLink} .target=${'_blank'}></milo-link>
+                </td>
+              </tr>
+            `
+          : ''}
         <tr>
           <td>ResultDB Invocation:</td>
-          <td>${
-            invocationLink ? html`<milo-link .link=${invocationLink} .target=${'_blank'}></milo-link>` : 'None'
-          }</td>
+          <td>
+            ${invocationLink ? html`<milo-link .link=${invocationLink} .target=${'_blank'}></milo-link>` : 'None'}
+          </td>
         </tr>
       </table>
     `;
@@ -492,7 +492,7 @@ export class OverviewTabElement extends MobxLitElement {
     return html`
       <h3>Build Logs</h3>
       <ul>
-        ${logs.map((log) => html`<li><milo-log .log=${log}></li>`)}
+        ${logs.map((log) => html`<li><milo-buildbucket-log-link .log=${log}></milo-buildbucket-log-link></li>`)}
       </ul>
     `;
   }

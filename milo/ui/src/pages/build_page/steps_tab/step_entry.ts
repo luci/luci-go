@@ -21,7 +21,7 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import '../../../components/copy_to_clipboard';
 import '../../../components/expandable_entry';
-import '../../../components/log';
+import '../../../components/buildbucket_log_link';
 import '../../../components/pin_toggle';
 import './step_cluster';
 import { MiloBaseElement } from '../../../components/milo_base';
@@ -88,7 +88,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         ${this.step.summary}
       </div>
       <ul id="log-links" style=${styleMap({ display: this.step.filteredLogs.length ? '' : 'none' })}>
-        ${this.step.filteredLogs.map((log) => html`<li><milo-log .log=${log}></li>`)}
+        ${this.step.filteredLogs.map(
+          (log) => html`<li><milo-buildbucket-log-link .log=${log}></milo-buildbucket-log-link></li>`
+        )}
       </ul>
       ${this.step.tags.length ? html`<milo-tags-entry .tags=${this.step.tags}></milo-tags-entry>` : ''}
       ${this.step.clusteredChildren.map(
