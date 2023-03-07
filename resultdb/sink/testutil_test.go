@@ -118,6 +118,14 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 				FileName: "//artifact_dir/a_test.cc",
 				Line:     54,
 			},
+			BugComponent: &pb.BugComponent{
+				System: &pb.BugComponent_Monorail{
+					Monorail: &pb.MonorailComponent{
+						Project: "chromium",
+						Value: "Component>Value",
+					},
+				},
+			},
 		},
 		FailureReason: &pb.FailureReason{
 			PrimaryErrorMessage: "This is a failure message.",

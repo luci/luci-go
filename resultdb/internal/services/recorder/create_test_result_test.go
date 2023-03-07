@@ -74,7 +74,16 @@ func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.Cre
 					Repo:     "https://chromium.googlesource.com/chromium/src",
 					FileName: "//a_test.go",
 					Line:     54,
-				}},
+				},
+				BugComponent: &pb.BugComponent{
+					System: &pb.BugComponent_Monorail{
+						Monorail: &pb.MonorailComponent{
+							Project: "chromium",
+							Value:   "Component>Value",
+						},
+					},
+				},
+			},
 			FailureReason: &pb.FailureReason{
 				PrimaryErrorMessage: "got 1, want 0",
 			},

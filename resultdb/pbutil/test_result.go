@@ -48,6 +48,11 @@ var (
 	)
 )
 
+var (
+	monorailProjectRe   = regexp.MustCompile(`[a-z0-9]*[a-z]+[a-z0-9]*`)
+	monorailComponentRe = regexp.MustCompile(`^[a-zA-Z]([-_]?[a-zA-Z0-9])+(\>[a-zA-Z]([-_]?[a-zA-Z0-9])+)*$`)
+)
+
 type checker struct {
 	lastCheckedErr *error
 }
@@ -146,11 +151,49 @@ func ValidateTestResultStatus(s pb.TestStatus) error {
 
 // ValidateTestMetadata returns a non-nil error if tmd is invalid.
 func ValidateTestMetadata(tmd *pb.TestMetadata) error {
-	if tmd.Location == nil {
-		return nil
+	if tmd.BugComponent != nil {
+		if err := ValidateBugComponent(tmd.BugComponent); err != nil {
+			return errors.Annotate(err, "bug_component").Err()
+		}
 	}
-	if err := ValidateTestLocation(tmd.Location); err != nil {
-		return errors.Annotate(err, "location").Err()
+	if tmd.Location != nil {
+		if err := ValidateTestLocation(tmd.Location); err != nil {
+			return errors.Annotate(err, "location").Err()
+		}
+	}
+	return nil
+}
+
+// ValidateBugComponent returns a non-nil error if bug component is invalid.
+func ValidateBugComponent(bugComponent *pb.BugComponent) error {
+	if bugComponent.System == nil {
+		return errors.New("bug system is required for bug components")
+	}
+
+	switch system := bugComponent.System.(type) {
+	case *pb.BugComponent_Monorail:
+		{
+			// Validate project length is not greater than 63 bytes.
+			if len(system.Monorail.Project) > 63 ||
+				!monorailProjectRe.MatchString(system.Monorail.Project) {
+				return errors.New("monorail.project: is invalid")
+			}
+			// Validate component length is not greater than 600 bytes.
+			if len(system.Monorail.Value) > 600 ||
+				!monorailComponentRe.MatchString(system.Monorail.Value) {
+				return errors.New("monorail.value: is invalid")
+			}
+		}
+	case *pb.BugComponent_IssueTracker:
+		{
+			if system.IssueTracker.ComponentId <= 0 {
+				return errors.New("issue_tracker.component_id: is invalid")
+			}
+		}
+	default:
+		{
+			return errors.New("unsupported bug component system")
+		}
 	}
 	return nil
 }

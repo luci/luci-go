@@ -160,7 +160,16 @@ func TestQueryTestVariants(t *testing.T) {
 			Location: &pb.TestLocation{
 				FileName: "//t4.go",
 				Line:     54,
-			}}
+			},
+			BugComponent: &pb.BugComponent{
+				System: &pb.BugComponent_Monorail{
+					Monorail: &pb.MonorailComponent{
+						Project: "chromium",
+						Value:   "Component>Value",
+					},
+				},
+			},
+		}
 		tmdBytes, _ := proto.Marshal(tmd)
 
 		failureReason := &pb.FailureReason{

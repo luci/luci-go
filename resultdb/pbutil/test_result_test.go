@@ -53,6 +53,14 @@ func validTestResult(now time.Time) *pb.TestResult {
 				FileName: "//a_test.go",
 				Line:     54,
 			},
+			BugComponent: &pb.BugComponent{
+				System: &pb.BugComponent_Monorail{
+					Monorail: &pb.MonorailComponent{
+						Project: "chromium",
+						Value:   "Component>Value",
+					},
+				},
+			},
 		},
 		Tags: StringPairs("k1", "v1"),
 	}
@@ -286,7 +294,7 @@ func TestValidateTestResult(t *testing.T) {
 				So(validate(msg), ShouldErrLike, "test_metadata: location: repo: must not end with .git")
 			})
 
-			Convey("no location", func() {
+			Convey("no location and no bug component", func() {
 				msg.TestMetadata = &pb.TestMetadata{Name: "name"}
 				So(validate(msg), ShouldBeNil)
 			})
@@ -298,6 +306,126 @@ func TestValidateTestResult(t *testing.T) {
 					},
 				}
 				So(validate(msg), ShouldErrLike, "test_metadata: location: repo: required")
+			})
+
+			Convey("nil bug system in bug component", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: nil,
+					},
+				}
+				So(validate(msg), ShouldErrLike, "bug system is required for bug components")
+			})
+			Convey("valid monorail bug component", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: "1chromium1",
+								Value:   "Component>Value",
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldBeNil)
+			})
+			Convey("wrong size monorail bug component value", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: "chromium",
+								Value:   strings.Repeat("a", 601),
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "monorail.value: is invalid")
+			})
+			Convey("invalid monorail bug component value", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: "chromium",
+								Value:   "Component<><>Value",
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "monorail.value: is invalid")
+			})
+			Convey("wrong size monorail bug component project", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: strings.Repeat("a", 64),
+								Value:   "Component>Value",
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "monorail.project: is invalid")
+			})
+			Convey("using invalid characters in monorail bug component project", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: "$%^ $$^%",
+								Value:   "Component>Value",
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "monorail.project: is invalid")
+			})
+			Convey("using only numbers in monorail bug component project", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: "11111",
+								Value:   "Component>Value",
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "monorail.project: is invalid")
+			})
+			Convey("valid buganizer component", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_IssueTracker{
+							IssueTracker: &pb.IssueTrackerComponent{
+								ComponentId: 1234,
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldBeNil)
+			})
+			Convey("invalid buganizer component id", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Name: "name",
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_IssueTracker{
+							IssueTracker: &pb.IssueTrackerComponent{
+								ComponentId: -1,
+							},
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "issue_tracker.component_id: is invalid")
 			})
 		})
 

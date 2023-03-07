@@ -350,6 +350,14 @@ func TestQueryTestResults(t *testing.T) {
 					FileName: "//a_test.go",
 					Line:     54,
 				},
+				BugComponent: &pb.BugComponent{
+					System: &pb.BugComponent_Monorail{
+						Monorail: &pb.MonorailComponent{
+							Project: "chromium",
+							Value:   "Component>Value",
+						},
+					},
+				},
 			}
 			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
@@ -594,6 +602,14 @@ func TestToLimitedData(t *testing.T) {
 						FileName: "//artifact_dir/a_test.cc",
 						Line:     54,
 					},
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: "chromium",
+								Value:   "Component>Value",
+							},
+						},
+					},
 				},
 				FailureReason: &pb.FailureReason{
 					PrimaryErrorMessage: "an error message",
@@ -646,6 +662,14 @@ func TestToLimitedData(t *testing.T) {
 						Repo:     "https://chromium.googlesource.com/chromium/src",
 						FileName: "//artifact_dir/a_test.cc",
 						Line:     54,
+					},
+					BugComponent: &pb.BugComponent{
+						System: &pb.BugComponent_Monorail{
+							Monorail: &pb.MonorailComponent{
+								Project: "chromium",
+								Value:   "Component>Value",
+							},
+						},
 					},
 				},
 				FailureReason: &pb.FailureReason{
