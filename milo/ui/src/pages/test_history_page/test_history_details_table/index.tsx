@@ -14,11 +14,13 @@
 
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import { Interpolation, Theme } from '@emotion/react';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
+import { ForwardedRef, forwardRef } from 'react';
 
 import '../../../components/dot_spinner';
 import '../../../components/column_header';
@@ -35,7 +37,7 @@ import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
 /**
  * Displays test variants in a table.
  */
-@customElement('milo-test-history-details-table')
+@customElement('milo-th-details-table')
 @consumer
 export class TestHistoryDetailsTableElement extends MiloBaseElement {
   @observable.ref @consumeStore() store!: StoreInstance;
@@ -65,9 +67,11 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     return '24px 135px 250px 400px' + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr';
   }
 
-  toggleAllVariants(expand: boolean) {
+  private allVariantsWereExpanded = false;
+  toggleAllVariants(expand?: boolean) {
+    this.allVariantsWereExpanded = expand ?? !this.allVariantsWereExpanded;
     this.shadowRoot!.querySelectorAll<TestHistoryDetailsEntryElement>('milo-test-history-details-entry').forEach(
-      (e) => (e.expanded = expand)
+      (e) => (e.expanded = this.allVariantsWereExpanded)
     );
   }
 
@@ -249,3 +253,27 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-th-details-table': {
+        css?: Interpolation<Theme>;
+        ref?: ForwardedRef<TestHistoryDetailsTableElement>;
+        class?: string;
+      };
+    }
+  }
+}
+
+export interface DetailsTableParams {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export const DetailsTable = forwardRef(
+  (props: DetailsTableParams, ref: ForwardedRef<TestHistoryDetailsTableElement>) => {
+    return <milo-th-details-table {...props} ref={ref} class={props.className} />;
+  }
+);

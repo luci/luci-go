@@ -173,3 +173,16 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-th-graph-config': {};
+    }
+  }
+}
+
+export function GraphConfig() {
+  return <milo-th-graph-config />;
+}

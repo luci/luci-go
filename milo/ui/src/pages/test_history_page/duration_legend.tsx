@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Interpolation, Theme } from '@emotion/react';
 import {
   axisRight,
   NumberValue,
@@ -136,4 +137,25 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
       height: fit-content;
     }
   `;
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-th-duration-legend': {
+        css?: Interpolation<Theme>;
+        class?: string;
+      };
+    }
+  }
+}
+
+export interface DurationLegendParams {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export function DurationLegend(props: DurationLegendParams) {
+  return <milo-th-duration-legend {...props} class={props.className} />;
 }

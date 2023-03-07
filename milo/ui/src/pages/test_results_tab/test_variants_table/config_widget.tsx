@@ -16,27 +16,28 @@ import '@material/mwc-button';
 import '@material/mwc-dialog';
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { Interpolation, Theme } from '@emotion/react';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { computed, makeObservable, observable } from 'mobx';
+import { makeObservable, observable } from 'mobx';
 
 import { consumer } from '../../../libs/context';
-import { consumeStore, StoreInstance } from '../../../store';
+import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
 import commonStyle from '../../../styles/common_style.css';
 
-@customElement('milo-thdt-config-widget')
+@customElement('milo-tvt-config-widget')
 @consumer
-export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
-  @observable.ref @consumeStore() store!: StoreInstance;
-  @computed get pageState() {
-    return this.store.testHistoryPage;
-  }
+export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
+  @observable.ref
+  @consumeInvocationState()
+  invState!: InvocationStateInstance;
 
   // These properties are frequently updated.
   // Don't set them as observables so updating them won't have big performance
   // impact.
   private uncommittedColumnKeys: readonly string[] = [];
   private uncommittedSortingKeys: readonly string[] = [];
+  private uncommittedGroupingKeys: readonly string[] = [];
 
   @observable.ref private showTableConfigDialog = false;
 
@@ -72,8 +73,9 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
         id="configure-table"
         class="filters-container"
         @click=${() => {
-          this.uncommittedColumnKeys = this.pageState.columnKeys;
-          this.uncommittedSortingKeys = this.pageState.sortingKeys;
+          this.uncommittedColumnKeys = this.invState.columnKeys;
+          this.uncommittedSortingKeys = this.invState.sortingKeys;
+          this.uncommittedGroupingKeys = this.invState.groupingKeys;
           this.showTableConfigDialog = true;
         }}
       >
@@ -86,8 +88,9 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
         ?open=${this.showTableConfigDialog}
         @closed=${(event: CustomEvent<{ action: string }>) => {
           if (event.detail.action === 'apply') {
-            this.pageState.setColumnKeys(this.uncommittedColumnKeys);
-            this.pageState.setSortingKeys(this.uncommittedSortingKeys);
+            this.invState.setColumnKeys(this.uncommittedColumnKeys);
+            this.invState.setSortingKeys(this.uncommittedSortingKeys);
+            this.invState.setGroupingKeys(this.uncommittedGroupingKeys);
           }
           this.showTableConfigDialog = false;
         }}
@@ -103,6 +106,11 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
             this.uncommittedSortingKeys,
             (newKeys) => (this.uncommittedSortingKeys = newKeys)
           )}
+          ${this.renderPropKeysConfigRow(
+            'Group by',
+            this.uncommittedGroupingKeys,
+            (newKeys) => (this.uncommittedGroupingKeys = newKeys)
+          )}
           </tr>
         </table>
         <mwc-button
@@ -110,8 +118,9 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
           dense
           unelevated
           @click=${() => {
-            this.uncommittedColumnKeys = this.pageState.defaultColumnKeys;
-            this.uncommittedSortingKeys = this.pageState.defaultSortingKeys;
+            this.uncommittedColumnKeys = this.invState.defaultColumnKeys;
+            this.uncommittedSortingKeys = this.invState.defaultSortingKeys;
+            this.uncommittedGroupingKeys = this.invState.defaultGroupingKeys;
 
             // this.uncommittedXXXKeys are not observables.
             // Manually trigger an updated.
@@ -123,6 +132,7 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
         <p>A key must be one of the following:</p>
         <ol>
           <li>'status': status of the test variant (e.g. Unexpected, Flaky).</li>
+          <li>'name': name of the test variant.</li>
           <li>'v.{variant_key}': variant key of the test variant (e.g. v.gpu).</li>
         </ol>
         <p>Sorting keys can have '-' prefix to sort in descending order (e.g. -status, -v.gpu).</p>
@@ -179,4 +189,25 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
       }
     `,
   ];
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-tvt-config-widget': {
+        css?: Interpolation<Theme>;
+        class?: string;
+      };
+    }
+  }
+}
+
+export interface ConfigWidgetParams {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export function ConfigWidget(props: ConfigWidgetParams) {
+  return <milo-tvt-config-widget {...props} class={props.className} />;
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Interpolation, Theme } from '@emotion/react';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
@@ -80,4 +81,25 @@ export class TestHistoryVariantDefTableElement extends MiloBaseElement {
       padding: 0 2px;
     }
   `;
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-th-variant-def-table': {
+        css?: Interpolation<Theme>;
+        class?: string;
+      };
+    }
+  }
+}
+
+export interface VariantDefTableParams {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export function VariantDefTable(props: VariantDefTableParams) {
+  return <milo-th-variant-def-table {...props} class={props.className} />;
 }

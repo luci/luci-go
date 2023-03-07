@@ -14,6 +14,7 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { Interpolation, Theme } from '@emotion/react';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
@@ -154,4 +155,25 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
       vertical-align: middle;
     }
   `;
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-th-filter-box': {
+        css?: Interpolation<Theme>;
+        class?: string;
+      };
+    }
+  }
+}
+
+export interface FilterBoxParams {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export function FilterBox(props: FilterBoxParams) {
+  return <milo-th-filter-box {...props} class={props.className} />;
 }

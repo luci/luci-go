@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Interpolation, Theme } from '@emotion/react';
 import { AxisScale, axisTop, scaleTime, select as d3Select, timeDay, timeFormat } from 'd3';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
@@ -86,4 +87,25 @@ export class TestHistoryDateAxisElement extends MiloBaseElement {
       width: 100%;
     }
   `;
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-th-date-axis': {
+        css?: Interpolation<Theme>;
+        class?: string;
+      };
+    }
+  }
+}
+
+export interface DateAxisParams {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export function DateAxis(props: DateAxisParams) {
+  return <milo-th-date-axis {...props} class={props.className} />;
 }

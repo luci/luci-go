@@ -46,6 +46,7 @@ import { InvocationDetailsTab } from './pages/invocation_page/invocation_details
 import { LoginPage } from './pages/login_page';
 import { NotFoundPage } from './pages/not_found_page';
 import { SearchPage } from './pages/search_page';
+import { TestHistoryPage } from './pages/test_history_page';
 import { TestResultsTab } from './pages/test_results_tab';
 import { Store, StoreProvider } from './store';
 import { theme } from './theme';
@@ -140,6 +141,7 @@ export function App() {
                   element={<RawArtifactPage />}
                 />
               </Route>
+              <Route path="test/:realm/:testId/*" element={<TestHistoryPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

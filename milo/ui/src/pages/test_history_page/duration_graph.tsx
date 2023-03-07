@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Interpolation, Theme } from '@emotion/react';
 import { css, html, svg, SVGTemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { Duration } from 'luxon';
@@ -127,4 +128,25 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
       }
     `,
   ];
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-th-duration-graph': {
+        css?: Interpolation<Theme>;
+        class?: string;
+      };
+    }
+  }
+}
+
+export interface DurationGraphProps {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export function DurationGraph(props: DurationGraphProps) {
+  return <milo-th-duration-graph {...props} class={props.className} />;
 }
