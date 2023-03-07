@@ -17,11 +17,11 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 
-import '../test_results_tab/count_indicator';
 import { Tab, Tabs } from '../../components/tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
 import { getBuildURLPathFromBuildId, getInvURLPath, getSwarmingTaskURL } from '../../libs/url_utils';
 import { useStore } from '../../store';
+import { CountIndicator } from '../test_results_tab/count_indicator';
 import { InvLitEnvProvider } from './inv_lit_env_provider';
 
 // Should be checked upstream, but allowlist URLs here just to be safe.
@@ -109,7 +109,7 @@ export const InvocationPage = observer(() => {
           label="Test Results"
           value="test-results"
           href={invUrlPath + '/test-results'}
-          icon={<milo-trt-count-indicator />}
+          icon={<CountIndicator />}
           iconPosition="end"
         />
         <Tab label="Invocation Details" value="invocation-details" href={invUrlPath + '/invocation-details'} />

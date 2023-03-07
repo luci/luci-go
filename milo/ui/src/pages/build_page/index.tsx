@@ -18,7 +18,6 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 
-import '../test_results_tab/count_indicator';
 import { Tab, Tabs } from '../../components/tabs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_THEME_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
@@ -27,6 +26,7 @@ import { getBuilderURLPath, getBuildURLPath, getLegacyBuildURLPath, getProjectUR
 import { unwrapOrElse } from '../../libs/utils';
 import { BuildStatus } from '../../services/buildbucket';
 import { useStore } from '../../store';
+import { CountIndicator } from '../test_results_tab/count_indicator';
 import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
 
@@ -252,7 +252,7 @@ export const BuildPage = observer(() => {
             label="Test Results"
             value="test-results"
             href={buildURLPath + '/test-results'}
-            icon={<milo-trt-count-indicator />}
+            icon={<CountIndicator />}
             iconPosition="end"
           />
         )}

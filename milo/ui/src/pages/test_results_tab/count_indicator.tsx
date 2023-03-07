@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Interpolation, Theme } from '@emotion/react';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { reaction } from 'mobx';
@@ -159,7 +160,19 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      ['milo-trt-count-indicator']: {};
+      ['milo-trt-count-indicator']: {
+        css?: Interpolation<Theme>;
+        class?: string;
+      };
     }
   }
+}
+
+export interface CountIndicatorParams {
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
+}
+
+export function CountIndicator(props: CountIndicatorParams) {
+  return <milo-trt-count-indicator {...props} class={props.className} />;
 }
