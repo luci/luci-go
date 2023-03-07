@@ -25,6 +25,7 @@ import (
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/errors"
 )
 
 // ClusteringHandler handles test result (re-)clustering events, to
@@ -60,9 +61,12 @@ func NewClusteringHandler(cf ClusteredFailuresClient) *ClusteringHandler {
 func (r *ClusteringHandler) HandleUpdatedClusters(ctx context.Context, updates *clustering.Update, commitTime time.Time) error {
 	rowUpdates := prepareInserts(updates, commitTime)
 	if err := r.cfClient.InsertDeprecated(ctx, updates.Project, rowUpdates); err != nil {
-		return err
+		return errors.Annotate(err, "inserting %d deprecated clustered failure rows", len(rowUpdates)).Err()
 	}
-	return r.cfClient.Insert(ctx, rowUpdates)
+	if err := r.cfClient.Insert(ctx, rowUpdates); err != nil {
+		return errors.Annotate(err, "inserting %d clustered failure rows", len(rowUpdates)).Err()
+	}
+	return nil
 }
 
 // prepareInserts prepares entries into the BigQuery clustered failures table

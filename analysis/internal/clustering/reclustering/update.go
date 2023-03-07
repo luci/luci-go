@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/caching"
 
@@ -149,7 +150,7 @@ func (p *PendingUpdate) ApplyToAnalysis(ctx context.Context, analysis Analysis, 
 			Updates: p.updates,
 		}
 		if err := analysis.HandleUpdatedClusters(ctx, update, commitTime); err != nil {
-			return err
+			return errors.Annotate(err, "handle updated clusters (project: %s chunkID: %s)", p.existingState.Project, p.existingState.ChunkID).Err()
 		}
 	}
 	return nil
