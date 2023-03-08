@@ -58,11 +58,12 @@ containing information about the launched task to stdout.
 type cmdLaunch struct {
 	cmdBase
 
-	modernize bool
-	dump      bool
-	noLEDTag  bool
-	resultdb  job.RDBEnablement
-	realBuild bool
+	modernize     bool
+	dump          bool
+	noLEDTag      bool
+	resultdb      job.RDBEnablement
+	realBuild     bool
+	boundToParent bool
 }
 
 func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
@@ -76,7 +77,11 @@ func (c *cmdLaunch) initFlags(opts cmdBaseOptions) {
 		 If "off", resultdb will be forcefully disabled.
 		 If unspecified, resultdb will be enabled if the original build had resultdb enabled.`))
 	c.Flags.BoolVar(&c.realBuild, "real-build", false,
-		"Launch a real buildbucket build instead of a raw swarming task.")
+		"Launch a real Buildbucket build instead of a raw swarming task.")
+	c.Flags.BoolVar(&c.boundToParent, "bound-to-parent", false, text.Doc(`
+		If the launched job is bound to its parent or not.
+		If true, the launched job CANNOT outlive its parent.
+		This flag only has effect if the launched job is a real Buildbucket build.`))
 	c.cmdBase.initFlags(opts)
 }
 
@@ -94,13 +99,14 @@ func (c *cmdLaunch) execute(ctx context.Context, authClient *http.Client, _ auth
 	}
 
 	opts := ledcmd.LaunchSwarmingOpts{
-		DryRun:          c.dump,
-		UserID:          uid,
-		FinalBuildProto: "build.proto.json",
-		KitchenSupport:  c.kitchenSupport,
-		ParentTaskId:    os.Getenv(swarmingimpl.TaskIDEnvVar),
-		ResultDB:        c.resultdb,
-		NoLEDTag:        c.noLEDTag,
+		DryRun:           c.dump,
+		UserID:           uid,
+		FinalBuildProto:  "build.proto.json",
+		KitchenSupport:   c.kitchenSupport,
+		ParentTaskId:     os.Getenv(swarmingimpl.TaskIDEnvVar),
+		ResultDB:         c.resultdb,
+		NoLEDTag:         c.noLEDTag,
+		CanOutliveParent: !c.boundToParent,
 	}
 
 	buildbucketHostname := inJob.GetBuildbucket().GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetHostname()

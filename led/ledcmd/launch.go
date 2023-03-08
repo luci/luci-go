@@ -19,7 +19,10 @@ import (
 	"net/http"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
@@ -27,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/job/jobexport"
+	"go.chromium.org/luci/lucictx"
 )
 
 // UserAgentTag is added by default to all Swarming tasks launched by LED.
@@ -63,6 +67,10 @@ type LaunchSwarmingOpts struct {
 	// If true, `user_agent:led` tag will not be added to the launched task tags,
 	// which is otherwise added by default.
 	NoLEDTag bool
+
+	// If the launched real Buildbucket build can outlive its parent or not.
+	// Only works in the real build mode.
+	CanOutliveParent bool
 }
 
 // GetUID derives a user id string from the Authenticator for use with
@@ -142,12 +150,21 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	if jd.GetBuildbucket() == nil {
 		return nil, nil
 	}
+	build := jd.GetBuildbucket().GetBbagentArgs().GetBuild()
+	build.CanOutliveParent = opts.CanOutliveParent
 	if opts.DryRun {
-		return jd.GetBuildbucket().GetBbagentArgs().GetBuild(), nil
+		return build, nil
 	}
 
-	bbClient := newBuildbucketClient(authClient, jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetHostname())
+	bbClient := newBuildbucketClient(authClient, build.GetInfra().GetBuildbucket().GetHostname())
+
+	bbCtx := lucictx.GetBuildbucket(ctx)
+	if bbCtx != nil && bbCtx.GetScheduleBuildToken() != "" {
+		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bbCtx.ScheduleBuildToken))
+	} else {
+		build.CanOutliveParent = false
+	}
 	return bbClient.CreateBuild(ctx, &bbpb.CreateBuildRequest{
-		Build: jd.GetBuildbucket().GetBbagentArgs().GetBuild(),
+		Build: build,
 	})
 }
