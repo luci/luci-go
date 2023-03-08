@@ -308,6 +308,22 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	})
 	logging.Infof(ctx, "UpdateBotSession took %s", clock.Now(ctx).Sub(started))
 	if err != nil {
+		// If the bot was just polling for new work, treat DEADLINE_EXCEEDED as
+		// "no work available". Otherwise we may end up replying with a lot of
+		// errors and GAE treats this as a signal that the instance is unhealthy
+		// and kills it.
+		if status.Code(err) == codes.DeadlineExceeded && leaseIn == nil && botStatus == remoteworkers.BotStatus_OK {
+			logging.Warningf(ctx, "Deadline exceeded when polling for new leases")
+			sessionToken, tokenExpiry, err := srv.genSessionToken(ctx, r.PollState, r.SessionID)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
+			}
+			return &UpdateBotSessionResponse{
+				SessionToken:  sessionToken,
+				SessionExpiry: tokenExpiry.Unix(),
+				Status:        "OK",
+			}, nil
+		}
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
 		// bot, it has already been authorized. It is useful for debugging to see
 		// the original RBE errors.

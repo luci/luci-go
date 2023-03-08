@@ -5,7 +5,7 @@ instance_class: F4
 
 automatic_scaling:
   # Most requests do nothing waiting for RBE's UpdateBotSession to unblock.
-  max_concurrent_requests: 500
+  max_concurrent_requests: 50
 
 inbound_services:
 - warmup

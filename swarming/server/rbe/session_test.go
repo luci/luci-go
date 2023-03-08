@@ -211,6 +211,25 @@ func TestSessionServer(t *testing.T) {
 			})
 		})
 
+		Convey("UpdateBotSession IDLE + DEADLINE_EXCEEDED", func() {
+			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
+				return nil, status.Errorf(codes.DeadlineExceeded, "boom")
+			})
+
+			resp, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
+				Status: "OK",
+			}, fakeRequest)
+
+			So(err, ShouldBeNil)
+
+			expectedExpiry := now.Add(sessionTokenExpiry).Round(time.Second)
+
+			msg := resp.(*UpdateBotSessionResponse)
+			So(msg.Status, ShouldEqual, "OK")
+			So(msg.SessionExpiry, ShouldEqual, expectedExpiry.Unix())
+			So(msg.Lease, ShouldBeNil)
+		})
+
 		Convey("UpdateBotSession TERMINATING", func() {
 			rbe.expectUpdateBotSession(func(r *remoteworkers.UpdateBotSessionRequest) (*remoteworkers.BotSession, error) {
 				So(r.BotSession.Status, ShouldEqual, remoteworkers.BotStatus_BOT_TERMINATING)
