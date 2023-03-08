@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,14 +19,16 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
+	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
-
-	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 var (
@@ -40,7 +42,7 @@ var (
 		field.String("status"))
 )
 
-// BuildbucketPubSubHandler accepts and process buildbucket Pub/Sub messages.
+// BuildbucketPubSubHandler accepts and process buildbucket v2 Pub/Sub messages.
 // LUCI Analysis ingests buildbucket builds upon completion, with the
 // caveat that for builds related to CV runs, we also wait for the
 // CV run to complete (via CV Pub/Sub).
@@ -72,15 +74,74 @@ func BuildbucketPubSubHandler(ctx *router.Context) {
 }
 
 func bbPubSubHandlerImpl(ctx context.Context, request *http.Request) (project string, processed bool, err error) {
-	msg, err := parseBBMessage(ctx, request)
-	if err != nil {
-		return "unknown", false, errors.Annotate(err, "failed to parse buildbucket pub/sub message").Err()
+	var psMsg pubsubMessage
+	if err := json.NewDecoder(request.Body).Decode(&psMsg); err != nil {
+		return "unknown", false, errors.Annotate(err, "could not decode buildbucket pubsub message").Err()
 	}
-	processed, err = processBBMessage(ctx, msg)
-	if err != nil {
-		return msg.Build.Project, false, errors.Annotate(err, "processing build").Err()
+	// Handle messages from both topics in parallel for now.
+	// The build join step is resilient to being notified of the
+	// build completion more than once. This ensures we don't
+	// lose data as we are migrating to the new pub/sub topic.
+	if v, ok := psMsg.Message.Attributes["version"].(string); ok && v == "v2" {
+		// Handle message from the builds (v2) topic.
+		msg, err := parseBBV2Message(ctx, psMsg)
+		if err != nil {
+			return "unknown", false, errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
+		}
+		processed, err = processBBV2Message(ctx, msg)
+		if err != nil {
+			return msg.Build.Builder.Project, false, errors.Annotate(err, "process buildbucket v2 build").Err()
+		}
+		return msg.Build.Builder.Project, processed, nil
+	} else {
+		// TODO(b/266640146): Remove this when migration complete.
+		// Handle message from the builds (v1) topic.
+		msg, err := parseBBV1Message(ctx, psMsg)
+		if err != nil {
+			return "unknown", false, errors.Annotate(err, "unmarshal buildbucket v1 pub/sub message").Err()
+		}
+		processed, err = processBBV1Message(ctx, msg)
+		if err != nil {
+			return msg.Build.Project, false, errors.Annotate(err, "process buildbucket v1 build").Err()
+		}
+		return msg.Build.Project, processed, nil
 	}
-	return msg.Build.Project, processed, nil
+}
+
+func parseBBV2Message(ctx context.Context, pbMsg pubsubMessage) (*buildbucketpb.BuildsV2PubSub, error) {
+	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
+	opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
+	if err := opts.Unmarshal(pbMsg.Message.Data, buildsV2Msg); err != nil {
+		return nil, err
+	}
+	// Optional: implement decompression of large fields. As we don't need build.input,
+	// build.output or build.steps here, we omit it.
+	// See https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/luci_notify/notify/pubsub.go;l=442;drc=2ed735a67ecfe6a824076d231a4c7268b84e8e95;bpv=0
+	// for an example.
+	return buildsV2Msg, nil
+}
+
+func processBBV2Message(ctx context.Context, message *buildbucketpb.BuildsV2PubSub) (processed bool, err error) {
+	if message.Build.Status&buildbucketpb.Status_ENDED_MASK != buildbucketpb.Status_ENDED_MASK {
+		// Received build that hasn't completed yet, ignore it.
+		return false, nil
+	}
+	if message.Build.Infra.GetBuildbucket().GetHostname() == "" {
+		// This is a permanent (non-retryable) error.
+		return false, errors.New("build did not specify buildbucket hostname")
+	}
+
+	project := message.Build.Builder.Project
+	task := &taskspb.JoinBuild{
+		Project: project,
+		Id:      message.Build.Id,
+		Host:    message.Build.Infra.Buildbucket.Hostname,
+	}
+	err = buildjoiner.Schedule(ctx, task)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 type buildBucketMessage struct {
@@ -88,20 +149,15 @@ type buildBucketMessage struct {
 	Hostname string
 }
 
-func parseBBMessage(ctx context.Context, r *http.Request) (*buildBucketMessage, error) {
-	var psMsg pubsubMessage
-	if err := json.NewDecoder(r.Body).Decode(&psMsg); err != nil {
-		return nil, errors.Annotate(err, "could not decode buildbucket pubsub message").Err()
-	}
-
+func parseBBV1Message(ctx context.Context, psMsg pubsubMessage) (*buildBucketMessage, error) {
 	var bbMsg buildBucketMessage
 	if err := json.Unmarshal(psMsg.Message.Data, &bbMsg); err != nil {
-		return nil, errors.Annotate(err, "could not parse buildbucket pubsub message data").Err()
+		return nil, err
 	}
 	return &bbMsg, nil
 }
 
-func processBBMessage(ctx context.Context, message *buildBucketMessage) (processed bool, err error) {
+func processBBV1Message(ctx context.Context, message *buildBucketMessage) (processed bool, err error) {
 	if message.Build.Status != bbv1.StatusCompleted {
 		// Received build that hasn't completed yet, ignore it.
 		return false, nil
@@ -114,6 +170,8 @@ func processBBMessage(ctx context.Context, message *buildBucketMessage) (process
 		Host:    message.Hostname,
 	}
 	err = buildjoiner.Schedule(ctx, task)
-
-	return true, err
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

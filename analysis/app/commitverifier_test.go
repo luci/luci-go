@@ -84,7 +84,7 @@ func TestCVRunHandler(t *testing.T) {
 				panic("Should not be reached.")
 			}
 
-			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"))}
+			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), nil)}
 			h.Handle(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)
 			So(cvRunCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
@@ -94,7 +94,7 @@ func TestCVRunHandler(t *testing.T) {
 
 func makeCVRunReq(message *cvv1.PubSubRun) io.ReadCloser {
 	blob, _ := protojson.Marshal(message)
-	return makeReq(blob)
+	return makeReq(blob, nil)
 }
 
 func fullRunID(project, runID string) string {

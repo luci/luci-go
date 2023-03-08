@@ -26,9 +26,9 @@ import (
 // See https://source.chromium.org/chromium/infra/infra/+/main:luci/appengine/components/components/pubsub.py;l=178;drc=78ce3aa55a2e5f77dc05517ef3ec377b3f36dc6e.
 type pubsubMessage struct {
 	Message struct {
-		Data []byte
+		Data       []byte
+		Attributes map[string]any
 	}
-	Attributes map[string]any
 }
 
 func processErr(ctx *router.Context, err error) string {

@@ -23,13 +23,16 @@ import (
 	_ "go.chromium.org/luci/analysis/internal/services/resultingester"
 )
 
-func makeReq(blob []byte) io.ReadCloser {
+func makeReq(blob []byte, attributes map[string]any) io.ReadCloser {
 	msg := struct {
 		Message struct {
-			Data []byte
+			Data       []byte
+			Attributes map[string]any
 		}
+	}{struct {
+		Data       []byte
 		Attributes map[string]any
-	}{struct{ Data []byte }{Data: blob}, nil}
+	}{Data: blob, Attributes: attributes}}
 	jmsg, _ := json.Marshal(msg)
 	return io.NopCloser(bytes.NewReader(jmsg))
 }

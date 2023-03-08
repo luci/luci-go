@@ -81,7 +81,7 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 				panic("Should not be reached.")
 			}
 
-			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"))}
+			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), nil)}
 
 			h.Handle(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)
@@ -95,5 +95,5 @@ func makeInvocationFinalizedReq(buildID int64, realm string) io.ReadCloser {
 		Invocation: fmt.Sprintf("invocations/build-%v", buildID),
 		Realm:      realm,
 	})
-	return makeReq(blob)
+	return makeReq(blob, nil)
 }
