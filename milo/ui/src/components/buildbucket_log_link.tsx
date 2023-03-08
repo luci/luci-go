@@ -36,14 +36,14 @@ export function BuildbucketLogLink({ log }: BuildbucketLogLinkProps) {
 
   return (
     <>
-      <Link href={log.viewUrl} target="_blank" color="var(--default-text-color)">
+      <Link href={log.viewUrl} target="_blank" css={{ color: 'var(--default-text-color)' }}>
         {log.name}
       </Link>
       {logdogRawUrl && (
         <>
           {' '}
           [
-          <Link href={logdogRawUrl} target="_blank" color="var(--default-text-color)">
+          <Link href={logdogRawUrl} target="_blank" css={{ color: 'var(--default-text-color)' }}>
             raw
           </Link>
           ]
