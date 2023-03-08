@@ -19,6 +19,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -33,12 +34,15 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -712,6 +716,98 @@ func TestCreateBuild(t *testing.T) {
 		}), ShouldBeNil)
 
 		req := validCreateBuildRequest()
+
+		Convey("with parent", func() {
+			Convey("parent ended", func() {
+				pTok, _ := buildtoken.GenerateToken(ctx, 97654321, pb.TokenBody_BUILD)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, pTok))
+
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+						{Realm: "project:bucket", Permission: bbperms.BuildsGet},
+					},
+				})
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Constraints: &pb.Bucket_Constraints{
+						Pools:           []string{"example.pool"},
+						ServiceAccounts: []string{"example@account.com"},
+					}})
+				testutil.PutBuilder(ctx, "project", "bucket", "parent", "")
+				So(datastore.Put(ctx, &model.Build{
+					ID: 97654321,
+					Proto: &pb.Build{
+						Id: 97654321,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "parent",
+						},
+						Status: pb.Status_SUCCESS,
+					},
+					UpdateToken: pTok,
+				}), ShouldBeNil)
+				_, err := srv.CreateBuild(ctx, req)
+				So(err, ShouldErrLike, `build parent: 97654321 has ended, cannot add child to it`)
+			})
+
+			Convey("pass", func() {
+				pTok, _ := buildtoken.GenerateToken(ctx, 97654321, pb.TokenBody_BUILD)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, pTok))
+
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+						{Realm: "project:bucket", Permission: bbperms.BuildsGet},
+					},
+				})
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Constraints: &pb.Bucket_Constraints{
+						Pools:           []string{"example.pool"},
+						ServiceAccounts: []string{"example@account.com"},
+					}})
+				testutil.PutBuilder(ctx, "project", "bucket", "parent", "")
+				pBld := &model.Build{
+					ID: 97654321,
+					Proto: &pb.Build{
+						Id: 97654321,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "parent",
+						},
+						Status: pb.Status_STARTED,
+					},
+					UpdateToken: pTok,
+				}
+				So(datastore.Put(ctx, pBld), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInfra{
+					Build: datastore.KeyForObj(ctx, pBld),
+					Proto: &pb.BuildInfra{
+						Swarming: &pb.BuildInfra_Swarming{
+							TaskId: "544239050",
+						},
+					},
+				}), ShouldBeNil)
+				req.Mask = &pb.BuildMask{
+					Fields: &fieldmaskpb.FieldMask{
+						Paths: []string{
+							"id",
+							"tags",
+							"ancestor_ids",
+						},
+					},
+				}
+				b, err := srv.CreateBuild(ctx, req)
+				So(b, ShouldNotBeNil)
+				So(err, ShouldBeNil)
+				So(sch.Tasks(), ShouldHaveLength, 1)
+				So(protoutil.StringPairMap(b.Tags).Format(), ShouldResemble, []string{"parent_task_id:544239051"})
+				So(b.AncestorIds, ShouldResemble, []int64{97654321})
+			})
+		})
 
 		Convey("passes", func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{

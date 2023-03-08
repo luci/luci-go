@@ -1311,6 +1311,31 @@ func setExperimentsFromProto(build *model.Build) {
 	build.Experimental = build.Proto.Input.Experimental
 }
 
+func getParentInfo(ctx context.Context, pBld *model.Build) (ancestors []int64, pRunID string, err error) {
+	switch {
+	case pBld == nil:
+		ancestors = make([]int64, 0)
+	case len(pBld.AncestorIds) > 0:
+		ancestors = append(pBld.AncestorIds, pBld.ID)
+	default:
+		ancestors = append(ancestors, pBld.ID)
+	}
+
+	if pBld != nil {
+		parentBuildMask := model.HardcodedBuildMask("infra.swarming.task_id")
+		pBuild := pBld.ToSimpleBuildProto(ctx)
+		if err = model.LoadBuildDetails(ctx, parentBuildMask, nil, pBuild); err != nil {
+			return
+		}
+
+		pRunID = pBuild.GetInfra().GetSwarming().GetTaskId()
+		if pRunID != "" {
+			pRunID = pRunID[:len(pRunID)-1] + "1"
+		}
+	}
+	return
+}
+
 // scheduleBuilds handles requests to schedule builds. Requests must be validated and authorized.
 // The length of returned builds always equal to len(reqs).
 // A single returned error means a global error which applies to every request.
@@ -1348,28 +1373,9 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 		return nil, err
 	}
 
-	var ancestors []int64
-	switch {
-	case pBld == nil:
-		ancestors = make([]int64, 0)
-	case len(pBld.AncestorIds) > 0:
-		ancestors = append(pBld.AncestorIds, pBld.ID)
-	default:
-		ancestors = append(ancestors, pBld.ID)
-	}
-
-	pRunID := ""
-	if pBld != nil {
-		parentBuildMask := model.HardcodedBuildMask("infra.swarming.task_id")
-		pBuild := pBld.ToSimpleBuildProto(ctx)
-		if err := model.LoadBuildDetails(ctx, parentBuildMask, nil, pBuild); err != nil {
-			return nil, err
-		}
-
-		pRunID = pBuild.GetInfra().GetSwarming().GetTaskId()
-		if pRunID != "" {
-			pRunID = pRunID[:len(pRunID)-1] + "1"
-		}
+	ancestors, pRunID, err := getParentInfo(ctx, pBld)
+	if err != nil {
+		return nil, err
 	}
 
 	for i := range blds {
