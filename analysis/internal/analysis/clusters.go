@@ -448,13 +448,9 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 		}
 	}
 
-	dataset, err := bqutil.DatasetForProject(project)
-	if err != nil {
-		return nil, errors.Annotate(err, "getting dataset").Err()
-	}
-
 	q := c.client.Query(`
 		SELECT
+			project,
 			cluster_algorithm,
 			cluster_id,
 			` + strings.Join(selectList, "\n") + `
@@ -471,10 +467,12 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 				WHERE value IS NOT NULL
 			) as top_monorail_components
 		FROM cluster_summaries
-		WHERE ` + whereClause,
+		WHERE
+			project = @project
+			AND ` + whereClause,
 	)
-	q.DefaultDatasetID = dataset
-	q.Parameters = params
+	q.DefaultDatasetID = "internal"
+	q.Parameters = append(params, bigquery.QueryParameter{Name: "project", Value: project})
 
 	job, err := q.Run(ctx)
 	if err != nil {

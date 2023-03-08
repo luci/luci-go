@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 )
@@ -60,11 +59,6 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 		return nil, errors.Annotate(err, "failure_filter").Tag(InvalidArgumentTag).Err()
 	}
 
-	dataset, err := bqutil.DatasetForProject(options.Project)
-	if err != nil {
-		return nil, errors.Annotate(err, "getting dataset").Err()
-	}
-
 	var precomputeList []string
 	var metricSelectList []string
 	for _, metric := range options.Metrics {
@@ -86,18 +80,21 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 	// Works out to ~ 0.4 cents for 7 days on 1 cluster as measured 2022-11-29
 	// TODO: should we make this use only the latest versions in the table for greater accuracy?
 	sql := `
-	WITH items AS (SELECT
-		cluster_algorithm,
-		cluster_id,
-		partition_time,
-		test_run_id,
-		CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) as unique_test_result_id,
-		` + strings.Join(precomputeList, "\n") + `
+	WITH items AS (
+		SELECT
+			project,
+			cluster_algorithm,
+			cluster_id,
+			partition_time,
+			test_run_id,
+			CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) as unique_test_result_id,
+			` + strings.Join(precomputeList, "\n") + `
 	  FROM
 		clustered_failures f
 	  WHERE
 	    is_included_with_high_priority
 		AND partition_time > TIMESTAMP_TRUNC(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY), DAY)
+		AND project = @project
 		AND ` + whereClause + `
 		AND realm IN UNNEST(@realms)
 	  )
@@ -109,9 +106,10 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 	  ORDER BY 1 ASC
 	`
 	q := c.client.Query(sql)
-	q.DefaultDatasetID = dataset
+	q.DefaultDatasetID = "internal"
 	q.Parameters = toBigQueryParameters(parameters)
 	q.Parameters = append(q.Parameters,
+		bigquery.QueryParameter{Name: "project", Value: options.Project},
 		bigquery.QueryParameter{Name: "realms", Value: options.Realms},
 		bigquery.QueryParameter{Name: "days", Value: options.Days})
 	job, err := q.Run(ctx)

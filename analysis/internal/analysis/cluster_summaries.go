@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
 	"go.chromium.org/luci/common/errors"
@@ -137,11 +136,6 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 		return nil, errors.Annotate(err, "order_by").Tag(InvalidArgumentTag).Err()
 	}
 
-	dataset, err := bqutil.DatasetForProject(luciProject)
-	if err != nil {
-		return nil, errors.Annotate(err, "getting dataset").Err()
-	}
-
 	// The following query does not take into account removals of test failures
 	// from clusters as this dramatically slows down the query. Instead, we
 	// rely upon a periodic job to purge these results from the table.
@@ -169,6 +163,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	sql := `
 		WITH clustered_failure_precompute AS (
 			SELECT
+				project,
 				cluster_algorithm,
 				cluster_id,
 				test_id,
@@ -179,6 +174,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 			WHERE
 				is_included_with_high_priority
 				AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+				AND project = @project
 				AND ` + whereClause + `
 				AND realm IN UNNEST(@realms)
 		)
@@ -198,12 +194,11 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	`
 
 	q := c.client.Query(sql)
-	q.DefaultDatasetID = dataset
+	q.DefaultDatasetID = "internal"
 	q.Parameters = toBigQueryParameters(parameters)
-	q.Parameters = append(q.Parameters, bigquery.QueryParameter{
-		Name:  "realms",
-		Value: options.Realms,
-	})
+	q.Parameters = append(q.Parameters,
+		bigquery.QueryParameter{Name: "realms", Value: options.Realms},
+		bigquery.QueryParameter{Name: "project", Value: luciProject})
 
 	job, err := q.Run(ctx)
 	if err != nil {

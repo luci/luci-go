@@ -84,11 +84,11 @@ message ClusteredFailureRow {
   // the last updated time column to query the table:
   //   SELECT
   //     ARRAY_AGG(cf ORDER BY last_updated DESC LIMIT 1)[OFFSET(0)] as row
-  //   FROM ${LUCI_PROJECT}.clustered_failures cf
+  //   FROM clustered_failures cf
   //   -- Recommended: Apply restriction on partitions (e.g. last 14 days) as
   //   -- desired.
   //   -- WHERE partition_time >= TIMESTAMP_SUB(@as_at_time, INTERVAL 14 DAY)
-  //   GROUP BY cluster_algorithm, cluster_id, test_result_system, test_result_id
+  //   GROUP BY project, cluster_algorithm, cluster_id, test_result_system, test_result_id
   //   HAVING row.is_included
   //
   // This is based on the query design in [1].
