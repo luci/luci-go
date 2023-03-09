@@ -146,9 +146,9 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 		return nil, err
 	}
 	_, res, err := base.Validate(ctx, base.ValidateParams{
-		Output:        configSet.AsOutput("."),
-		Meta:          vr.Meta,
-		ConfigService: vr.ConfigService,
+		Output:              configSet.AsOutput("."),
+		Meta:                vr.Meta,
+		ConfigServiceClient: vr.ConfigServiceClient,
 	}, nil)
 	return &validateResult{Validation: res}, err
 }
@@ -228,11 +228,11 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 	// Apply local linters and validate outputs via LUCI Config RPC. This silently
 	// skips configs not belonging to any config sets.
 	result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
-		Loader:        state.Inputs.Code,
-		Source:        state.Visited,
-		Output:        output,
-		Meta:          meta,
-		ConfigService: vr.ConfigService,
+		Loader:              state.Inputs.Code,
+		Source:              state.Visited,
+		Output:              output,
+		Meta:                meta,
+		ConfigServiceClient: vr.ConfigServiceClient,
 	}, rewriterFactory.GetRewriter)
 	return result, err
 }

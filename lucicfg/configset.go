@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -26,6 +27,7 @@ import (
 	"sync"
 
 	"github.com/dustin/go-humanize"
+	"google.golang.org/api/option"
 
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
@@ -151,10 +153,17 @@ func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) 
 }
 
 // RemoteValidator returns ConfigSetValidator that makes RPCs to LUCI Config.
-func RemoteValidator(svc *config.Service) ConfigSetValidator {
+func RemoteValidator(client *http.Client, host string) ConfigSetValidator {
 	return &remoteValidator{
 		requestSizeLimitBytes: 8 * 1024 * 1024,
 		validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
+			svc, err := config.NewService(ctx, option.WithHTTPClient(client))
+			if err != nil {
+				return nil, err
+			}
+			svc.BasePath = fmt.Sprintf("https://%s/_ah/api/config/v1/", host)
+			svc.UserAgent = UserAgent
+
 			debug := make([]string, len(req.Files))
 			for i, f := range req.Files {
 				debug[i] = fmt.Sprintf("%s (%s)", f.Path, humanize.Bytes(uint64(len(f.Content))))

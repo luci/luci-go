@@ -17,11 +17,11 @@ package base
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 
 	"github.com/bazelbuild/buildtools/build"
-	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/starlark/interpreter"
@@ -37,16 +37,16 @@ type ValidateParams struct {
 	Output lucicfg.Output     // generated output files to validate
 	Meta   lucicfg.Meta       // validation options (settable through Starlark)
 
-	// ConfigService returns a LUCI Config RPC client that sends requests
-	// to the given host.
+	// ConfigServiceClientFactory returns a HTTP client that is used to end
+	// request to LUCI Config service.
 	//
-	// This is usually just subcommand.ConfigService.
-	ConfigService ConfigServiceFactory
+	// This is usually just subcommand.ConfigServiceClient.
+	ConfigServiceClient ConfigServiceClientFactory
 }
 
-// ConfigServiceFactory returns a LUCI Config RPC client that sends requests
-// to the given host.
-type ConfigServiceFactory func(ctx context.Context, host string) (*config.Service, error)
+// ConfigServiceClientFactory returns a HTTP client that is used to end
+// request to LUCI Config service.
+type ConfigServiceClientFactory func(ctx context.Context) (*http.Client, error)
 
 // Validate validates both input source code and generated config files.
 //
@@ -83,7 +83,7 @@ func Validate(ctx context.Context, params ValidateParams, getRewriterForPath fun
 		defer wg.Done()
 		remoteRes, remoteErr = validateOutput(ctx,
 			params.Output,
-			params.ConfigService,
+			params.ConfigServiceClient,
 			params.Meta.ConfigServiceHost,
 			params.Meta.FailOnWarnings,
 		)
@@ -139,7 +139,7 @@ func mergeMerr(merr errors.MultiError, err error) errors.MultiError {
 
 // validateOutput splits the output into 0 or more config sets and sends them
 // for validation to LUCI Config.
-func validateOutput(ctx context.Context, output lucicfg.Output, svc ConfigServiceFactory, host string, failOnWarns bool) ([]*lucicfg.ValidationResult, error) {
+func validateOutput(ctx context.Context, output lucicfg.Output, clientFactory ConfigServiceClientFactory, host string, failOnWarns bool) ([]*lucicfg.ValidationResult, error) {
 	configSets, err := output.ConfigSets()
 	if len(configSets) == 0 || err != nil {
 		return nil, err // nothing to validate or failed to serialize
@@ -151,11 +151,11 @@ func validateOutput(ctx context.Context, output lucicfg.Output, svc ConfigServic
 		return nil, nil
 	}
 
-	srv, err := svc(ctx, host)
+	configClient, err := clientFactory(ctx)
 	if err != nil {
 		return nil, err
 	}
-	validator := lucicfg.RemoteValidator(srv)
+	validator := lucicfg.RemoteValidator(configClient, host)
 
 	// Validate all config sets in parallel.
 	results := make([]*lucicfg.ValidationResult, len(configSets))

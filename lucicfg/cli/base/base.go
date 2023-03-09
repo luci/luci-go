@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -28,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 
@@ -170,27 +170,13 @@ func (c *Subcommand) CheckArgs(args []string, minPosCount, maxPosCount int) bool
 	return true
 }
 
-// ConfigService returns a wrapper around LUCI Config API.
-//
-// It is ready for making authenticated RPCs. 'host' is a hostname of the
-// service to hit, e.g. "luci-config.appspot.com".
-func (c *Subcommand) ConfigService(ctx context.Context, host string) (*config.Service, error) {
+// ConfigServiceClient returns an authenticated client to call LUCI Config.
+func (c *Subcommand) ConfigServiceClient(ctx context.Context) (*http.Client, error) {
 	authOpts, err := c.authFlags.Options()
 	if err != nil {
 		return nil, err
 	}
-	client, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
-	if err != nil {
-		return nil, err
-	}
-
-	svc, err := config.New(client)
-	if err != nil {
-		return nil, err
-	}
-	svc.BasePath = fmt.Sprintf("https://%s/_ah/api/config/v1/", host)
-	svc.UserAgent = lucicfg.UserAgent
-	return svc, nil
+	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 }
 
 // Done is called as the last step of processing a subcommand.
@@ -238,7 +224,7 @@ func (c *Subcommand) writeJSONOutput(result any, err error) error {
 		Generator string          `json:"generator"`        // lucicfg version
 		Error     string          `json:"error,omitempty"`  // overall error
 		Errors    []detailedError `json:"errors,omitempty"` // detailed errors
-		Result    any     `json:"result,omitempty"` // command-specific result
+		Result    any             `json:"result,omitempty"` // command-specific result
 	}
 	output.Generator = lucicfg.UserAgent
 	output.Result = result

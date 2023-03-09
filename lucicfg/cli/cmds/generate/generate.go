@@ -155,12 +155,12 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 	// default.
 	if gr.validate {
 		result.LinterFindings, result.Validation, err = base.Validate(ctx, base.ValidateParams{
-			Loader:        state.Inputs.Code,
-			Source:        state.Visited,
-			Output:        output,
-			Meta:          meta,
-			ConfigService: gr.ConfigService,
+			Loader:              state.Inputs.Code,
+			Source:              state.Visited,
+			Output:              output,
+			Meta:                meta,
+			ConfigServiceClient: gr.ConfigServiceClient,
 		}, nil)
 	}
-	return result, nil
+	return result, err
 }
