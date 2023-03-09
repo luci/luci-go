@@ -22,6 +22,8 @@ import os
 import re
 import sys
 
+USE_PYTHON3 = True
+
 # Note that the URL http://www.apache.org/licenses/LICENSE-2.0
 # is not indented.
 COPYRIGHT_TEMPLATE = """
@@ -43,7 +45,7 @@ limitations under the License.
 def header(input_api):
   """Returns the expected license header regexp for this project."""
   current_year = int(input_api.time.strftime('%Y'))
-  allowed_years = (str(s) for s in reversed(xrange(2011, current_year + 1)))
+  allowed_years = (str(s) for s in reversed(range(2011, current_year + 1)))
   years_re = '(' + '|'.join(allowed_years) + ')'
   # The regex below should accept the following comment styles at the beginning of the line:
   # 1) #  -- Python, Bash
