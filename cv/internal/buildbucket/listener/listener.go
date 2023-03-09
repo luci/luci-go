@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"sync/atomic"
 	"time"
 
@@ -35,7 +36,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
@@ -59,6 +59,9 @@ const (
 	// listener to ensure continuous processing of Buildbucket Pub/Sub events.
 	ListenDuration = 5 * time.Minute
 )
+
+// topicNameRegexp - the Cloud project Pub/Sub topic name regex expression.
+var topicNameRegexp = regexp.MustCompile(`^projects/(.*)/topics/(.*)$`)
 
 // This interface encapsulate the communication with tryjob component.
 type tryjobNotifier interface {
@@ -96,8 +99,19 @@ func Register(tqd *tq.Dispatcher, projectID string, tjNotifier tryjobNotifier, t
 					logging.Errorf(ctx, "failed to close PubSub client: %s", err)
 				}
 			}()
+
+			sub := client.Subscription(SubscriptionID)
+			subConfig, err := sub.Config(ctx)
+			if err != nil {
+				return errors.Annotate(err, "failed to get configuration for the subscription %s", sub.String()).Err()
+			}
+			subscribedProj, err := extractTopicProject(subConfig.Topic.String())
+			if err != nil {
+				return errors.Annotate(err, "for subscription %s", sub.String()).Err()
+			}
 			l := &listener{
-				subscription: client.Subscription(SubscriptionID),
+				bbHost:       fmt.Sprintf("%s.appspot.com", subscribedProj),
+				subscription: sub,
 				tjNotifier:   tjNotifier,
 				tjUpdater:    tjUpdater,
 			}
@@ -151,6 +165,7 @@ func StartListenerForTest(ctx context.Context, sub *pubsub.Subscription, tjNotif
 }
 
 type listener struct {
+	bbHost       string // Buildbucket host that the subscription subscribes to. e.g. cr-buildbucket.appspot.com
 	subscription *pubsub.Subscription
 	tjNotifier   tryjobNotifier
 	tjUpdater    tryjobUpdater
@@ -208,8 +223,8 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 	}
 
 	if hostname == "" {
-		logging.Errorf(ctx, "received pubsub message with empty hostname for build %d, using the default one %s", build.GetId(), chromeinfra.BuildbucketHost)
-		hostname = chromeinfra.BuildbucketHost
+		logging.Warningf(ctx, "received pubsub message with empty hostname for build %d, using the computed one %s", build.GetId(), l.bbHost)
+		hostname = l.bbHost
 	}
 	eid, err := tryjob.BuildbucketID(hostname, buildID)
 	if err != nil {
@@ -282,4 +297,13 @@ func zlibDecompress(compressed []byte) ([]byte, error) {
 	}
 	defer func() { _ = r.Close() }()
 	return io.ReadAll(r)
+}
+
+// extractTopicProject extracts the subscribed project name from the given subscription.
+func extractTopicProject(topic string) (string, error) {
+	matches := topicNameRegexp.FindStringSubmatch(topic)
+	if len(matches) != 3 {
+		return "", errors.Reason("topic %s doesn't match %q", topic, topicNameRegexp.String()).Err()
+	}
+	return matches[1], nil
 }

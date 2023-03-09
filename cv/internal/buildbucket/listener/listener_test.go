@@ -19,6 +19,7 @@ import (
 	"compress/zlib"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"sync"
 	"testing"
@@ -73,6 +74,20 @@ func TestParseData(t *testing.T) {
 	})
 }
 
+func TestExtractTopicProject(t *testing.T) {
+	t.Parallel()
+	Convey("bad", t, func() {
+		_, err := extractTopicProject("bad-topic")
+		So(err, ShouldErrLike, `topic bad-topic doesn't match "^projects/(.*)/topics/(.*)$"`)
+	})
+
+	Convey("success", t, func() {
+		prj, err := extractTopicProject("projects/my-project/topics/topic")
+		So(err, ShouldBeNil)
+		So(prj, ShouldEqual, "my-project")
+	})
+}
+
 func TestListener(t *testing.T) {
 	t.Parallel()
 	const bbHost = "buildbucket.example.com"
@@ -91,19 +106,23 @@ func TestListener(t *testing.T) {
 		defer client.Close()
 		topic, err := client.CreateTopic(ctx, "build-update")
 		So(err, ShouldBeNil)
-		sub, err := client.CreateSubscription(ctx, SubscriptionID, pubsub.SubscriptionConfig{
+		subConfig := pubsub.SubscriptionConfig{
 			Topic: topic,
-		})
+		}
+		sub, err := client.CreateSubscription(ctx, SubscriptionID, subConfig)
 		So(err, ShouldBeNil)
-
+		tProj, err := extractTopicProject(subConfig.Topic.String())
+		So(err, ShouldBeNil)
 		tjNotifier := &testTryjobNotifier{}
 		tjUpdater := &testTryjobUpdater{}
 		l := &listener{
+			bbHost:       fmt.Sprintf("%s.appspot.com", tProj),
 			subscription: sub,
 			tjNotifier:   tjNotifier,
 			tjUpdater:    tjUpdater,
 			processedCh:  make(chan string, 10),
 		}
+		So(l.bbHost, ShouldEqual, "testProj.appspot.com")
 
 		cctx, cancel := context.WithCancel(ctx)
 		listenerDoneCh := make(chan struct{})
@@ -165,6 +184,31 @@ func TestListener(t *testing.T) {
 					},
 					Status: buildbucketpb.Status_SUCCESS,
 				}
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					So(processedMsgID, ShouldEqual, msgID)
+				}
+				So(tjUpdater.updated, ShouldResemble, []tryjob.ExternalID{eid})
+				ensureAcked(msgID)
+			})
+
+			Convey("Relevant v2 - empty hostname in pubsub msg", func() {
+				b := &buildbucketpb.Build{
+					Id: 123,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: buildbucketpb.Status_SUCCESS,
+				}
+				// When b.infra.buildbucket.hostname is empty, it should use the computed bbhost in listener - l.
+				eid := tryjob.MustBuildbucketID(l.bbHost, 123)
+				eid.MustCreateIfNotExists(ctx)
+
 				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
 				select {
 				case <-time.After(15 * time.Second):
@@ -428,8 +472,12 @@ func (ttu *testTryjobUpdater) Update(ctx context.Context, eid tryjob.ExternalID,
 	if !ok {
 		return errors.Reason("not buildbucket.build proto").Err()
 	}
-	if build.Id != buildID || build.Infra.GetBuildbucket().GetHostname() != host {
-		return errors.Reason("build id or build hostname doesn't match").Err()
+	hostInBuild := build.GetInfra().GetBuildbucket().GetHostname()
+	if hostInBuild != "" && hostInBuild != host {
+		return errors.Reason("build hostname doesn't match").Err()
+	}
+	if build.Id != buildID {
+		return errors.Reason("build id doesn't match").Err()
 	}
 
 	ttu.mu.Lock()
