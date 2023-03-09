@@ -469,7 +469,7 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 		FROM cluster_summaries
 		WHERE
 			project = @project
-			AND ` + whereClause,
+			AND (` + whereClause + `)`,
 	)
 	q.DefaultDatasetID = "internal"
 	q.Parameters = append(params, bigquery.QueryParameter{Name: "project", Value: project})

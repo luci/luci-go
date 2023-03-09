@@ -95,7 +95,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 	    is_included_with_high_priority
 		AND partition_time > TIMESTAMP_TRUNC(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY), DAY)
 		AND project = @project
-		AND ` + whereClause + `
+		AND (` + whereClause + `)
 		AND realm IN UNNEST(@realms)
 	  )
 	  SELECT

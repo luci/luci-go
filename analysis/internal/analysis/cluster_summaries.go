@@ -175,7 +175,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 				is_included_with_high_priority
 				AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
 				AND project = @project
-				AND ` + whereClause + `
+				AND (` + whereClause + `)
 				AND realm IN UNNEST(@realms)
 		)
 		SELECT
