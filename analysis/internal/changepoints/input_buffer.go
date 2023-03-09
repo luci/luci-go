@@ -27,6 +27,10 @@ import (
 const (
 	// The version of the encoding to encode the verdict history.
 	encodingVersion = 1
+	// Capacity of the hot buffer, i.e. how many verdicts it can hold.
+	defaultHotBufferCapacity = 100
+	// Capacity of the cold buffer, i.e. how many verdicts it can hold.
+	defaultColdBufferCapacity = 2000
 )
 
 type InputBuffer struct {

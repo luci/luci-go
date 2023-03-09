@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/grpc/codes"
 
-	ispan "go.chromium.org/luci/analysis/internal/span"
+	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
 
 // hasCheckPoint returns true if a checkpoint exists in the
@@ -48,5 +48,5 @@ func (cp CheckPoint) ToMutation() *spanner.Mutation {
 		"StartingVariantHash": cp.StartingVariantHash,
 		"InsertionTime":       spanner.CommitTimestamp,
 	}
-	return ispan.InsertMap("TestVariantBranchCheckpoint", values)
+	return spanutil.InsertMap("TestVariantBranchCheckpoint", values)
 }
