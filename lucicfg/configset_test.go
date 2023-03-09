@@ -17,7 +17,6 @@ package lucicfg
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -37,10 +36,7 @@ func TestConfigSet(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("With temp dir", t, func() {
-		tmp, err := ioutil.TempDir("", "lucicfg")
-		So(err, ShouldBeNil)
-		defer os.RemoveAll(tmp)
-
+		tmp := t.TempDir()
 		path := func(p ...string) string {
 			return filepath.Join(append([]string{tmp}, p...)...)
 		}
@@ -185,8 +181,7 @@ func TestRemoteValidator(t *testing.T) {
 		var lock sync.Mutex
 
 		val := &remoteValidator{
-			requestSizeLimitBytes: 5,
-
+			requestSizeLimitBytes: 6,
 			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
 				lock.Lock()
 				reqs = append(reqs, req)
@@ -221,19 +216,27 @@ func TestRemoteValidator(t *testing.T) {
 
 		var sets []string
 		for _, req := range reqs {
+			var reqSize int
 			var names []string
 			for _, f := range req.Files {
+				reqSize += len(f.Content)
 				names = append(names, f.Path)
 			}
 			sets = append(sets, strings.Join(names, "+"))
+			So(reqSize, ShouldBeLessThanOrEqualTo, val.requestSizeLimitBytes)
 		}
 		sort.Strings(sets)
 		So(sets, ShouldResemble, []string{"b+a", "c", "d"})
+		Convey("Single file too large", func() {
+			val.requestSizeLimitBytes = 5
+			_, err := val.Validate(ctx, testReq)
+			So(err, ShouldErrLike, "the size of file \"c\" is 6")
+		})
 	})
 
 	Convey("Handles errors", t, func() {
 		val := &remoteValidator{
-			requestSizeLimitBytes: 5,
+			requestSizeLimitBytes: 6,
 
 			validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
 				if req.ConfigSet != "config-set" {

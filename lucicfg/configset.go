@@ -16,8 +16,10 @@ package lucicfg
 
 import (
 	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -27,7 +29,7 @@ import (
 	"sync"
 
 	"github.com/dustin/go-humanize"
-	"google.golang.org/api/option"
+	"google.golang.org/api/googleapi"
 
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
 	"go.chromium.org/luci/common/errors"
@@ -115,10 +117,15 @@ func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) 
 		curSize = 0
 	}
 	for _, f := range files {
-		curFiles = append(curFiles, f)
-		curSize += int64(len(f.Content))
-		if curSize >= r.requestSizeLimitBytes {
+		switch contentSize := int64(len(f.Content)); {
+		case contentSize > r.requestSizeLimitBytes:
+			return nil, errors.Reason("the size of file %q is %s that is exceeding the limit of %s", f.Path, humanize.Bytes(uint64(contentSize)), humanize.Bytes(uint64(r.requestSizeLimitBytes))).Err()
+		case curSize+contentSize > r.requestSizeLimitBytes:
 			flush()
+			fallthrough
+		default:
+			curFiles = append(curFiles, f)
+			curSize += int64(len(f.Content))
 		}
 	}
 	flush()
@@ -154,26 +161,58 @@ func (r *remoteValidator) Validate(ctx context.Context, req *ValidationRequest) 
 
 // RemoteValidator returns ConfigSetValidator that makes RPCs to LUCI Config.
 func RemoteValidator(client *http.Client, host string) ConfigSetValidator {
+	validateURL := fmt.Sprintf("https://%s/_ah/api/config/v1/validate-config", host)
 	return &remoteValidator{
-		requestSizeLimitBytes: 8 * 1024 * 1024,
+		// 160 MiB is picked because compression is done before sending the final
+		// request and the real request size limit is 32 MiB. Since config is
+		// highly repetitive content, it should easily achieve 5:1 compression
+		// ratio.
+		requestSizeLimitBytes: 160 * 1024 * 1024,
 		validateConfig: func(ctx context.Context, req *ValidationRequest) (*config.LuciConfigValidateConfigResponseMessage, error) {
-			svc, err := config.NewService(ctx, option.WithHTTPClient(client))
-			if err != nil {
-				return nil, err
-			}
-			svc.BasePath = fmt.Sprintf("https://%s/_ah/api/config/v1/", host)
-			svc.UserAgent = UserAgent
 
 			debug := make([]string, len(req.Files))
 			for i, f := range req.Files {
 				debug[i] = fmt.Sprintf("%s (%s)", f.Path, humanize.Bytes(uint64(len(f.Content))))
 			}
 			logging.Debugf(ctx, "Sending request to %s to validate %d files: %s",
-				svc.BasePath,
+				validateURL,
 				len(req.Files),
 				strings.Join(debug, ", "),
 			)
-			return svc.ValidateConfig(req).Context(ctx).Do()
+
+			var body bytes.Buffer
+			zlibWriter := zlib.NewWriter(&body)
+			if err := json.NewEncoder(zlibWriter).Encode(req); err != nil {
+				return nil, errors.Annotate(err, "failed to encode the request").Err()
+			}
+			if err := zlibWriter.Close(); err != nil {
+				return nil, errors.Annotate(err, "failed to close the zlib stream").Err()
+			}
+			httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, validateURL, &body)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to create a new request").Err()
+			}
+			httpReq.Header.Add("Content-Type", `application/json-zlib`)
+			httpReq.Header.Add("User-Agent", UserAgent)
+
+			res, err := client.Do(httpReq)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to execute HTTP request").Err()
+			}
+			defer func() { _ = res.Body.Close() }()
+			if res.StatusCode < 200 || res.StatusCode > 299 {
+				return nil, googleapi.CheckResponse(res)
+			}
+			ret := &config.LuciConfigValidateConfigResponseMessage{
+				ServerResponse: googleapi.ServerResponse{
+					Header:         res.Header,
+					HTTPStatusCode: res.StatusCode,
+				},
+			}
+			if err := json.NewDecoder(res.Body).Decode(&ret); err != nil {
+				return nil, err
+			}
+			return ret, nil
 		},
 	}
 }
