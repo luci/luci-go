@@ -1477,6 +1477,50 @@ func TestAuthRealmsConfig(t *testing.T) {
 		So(actual, ShouldResemble, projectRealms)
 	})
 
+	Convey("Testing GetAuthProjectRealmsMeta", t, func() {
+		ctx := memory.Use(context.Background())
+
+		testProject := "testproject"
+		_, err := GetAuthProjectRealmsMeta(ctx, testProject)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		projectRealms := testAuthProjectRealms(ctx, testProject)
+		projectRealmsMeta := makeAuthProjectRealmsMeta(ctx, testProject)
+
+		So(datastore.Put(ctx, projectRealms), ShouldBeNil)
+		So(datastore.Put(ctx, projectRealmsMeta), ShouldBeNil)
+
+		actual, err := GetAuthProjectRealmsMeta(ctx, testProject)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, projectRealmsMeta)
+		actualID, err := actual.projectID()
+		So(err, ShouldBeNil)
+		So(actualID, ShouldEqual, testProject)
+	})
+
+	Convey("Testing GetAllAuthProjectRealmsMeta", t, func() {
+		ctx := memory.Use(context.Background())
+
+		testProjects := []string{"testproject-1", "testproject-2", "testproject-3"}
+		projectRealms := make([]*AuthProjectRealms, len(testProjects))
+		projectRealmsMeta := make([]*AuthProjectRealmsMeta, len(testProjects))
+		for i, project := range testProjects {
+			projectRealms[i] = testAuthProjectRealms(ctx, project)
+			projectRealmsMeta[i] = makeAuthProjectRealmsMeta(ctx, project)
+		}
+
+		So(datastore.Put(ctx, projectRealms, projectRealmsMeta), ShouldBeNil)
+
+		actual, err := GetAllAuthProjectRealmsMeta(ctx)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, projectRealmsMeta)
+		for idx, proj := range testProjects {
+			id, err := actual[idx].projectID()
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, proj)
+		}
+	})
+
 	Convey("Testing UpdateAuthRealmsGlobals", t, func() {
 		Convey("no previous AuthRealmsGlobals entity present", func() {
 			ctx, ts := getCtx()

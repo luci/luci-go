@@ -261,6 +261,34 @@ type AuthProjectRealms struct {
 	PermsRev string `gae:"perms_rev,noindex"`
 }
 
+// AuthProjectRealmsMeta is the metadata of some AuthProjectRealms entity.
+//
+// Always created/deleted/updated transactionally with the corresponding
+// AuthProjectRealms entity, but it is not part of AuthDB itself.
+//
+// Used to hold bookkeeping state related to realms.cfg processing. Can
+// be fetched very efficiently (compared to fetching AuthProjectRealms).
+//
+// ID is always meta, the parent entity is the corresponding AuthProjectRealms.
+type AuthProjectRealmsMeta struct {
+	Kind string `gae:"$kind,AuthProjectRealmsMeta"`
+	ID   string `gae:"$id,meta"`
+
+	Parent *datastore.Key `gae:"$parent"`
+
+	// ConfigRev is the revision the config was picked up from.
+	ConfigRev string `gae:"config_rev,noindex"`
+
+	// PermsRev is the revision of permissions.cfg used to expand roles.
+	PermsRev string `gae:"perms_rev,noindex"`
+
+	// ConfigDigest is a SHA256 digest of the raw config body.
+	ConfigDigest string `gae:"config_digest,noindex"`
+
+	// ModifiedTS is when it was last updated, (mostly FYI).
+	ModifiedTS time.Time `gae:"modified_ts,noindex"`
+}
+
 // AuthGroup is a group of identities, the entity id is the group name.
 type AuthGroup struct {
 	// AuthVersionedEntityMixin is embedded
@@ -470,6 +498,29 @@ func makeAuthProjectRealms(ctx context.Context, project string) *AuthProjectReal
 		ID:     project,
 		Parent: RootKey(ctx),
 	}
+}
+
+// projectRealmsKey is a convenience function for getting a key for an AuthProjectRealms.
+func projectRealmsKey(ctx context.Context, project string) *datastore.Key {
+	return datastore.NewKey(ctx, "AuthProjectRealms", project, 0, RootKey(ctx))
+}
+
+// makeAuthProjectRealmsMeta is a convenience function for creating an AuthProjectRealms meta for a given
+// project.
+func makeAuthProjectRealmsMeta(ctx context.Context, project string) *AuthProjectRealmsMeta {
+	return &AuthProjectRealmsMeta{
+		Kind:   "AuthProjectRealmsMeta",
+		ID:     "meta",
+		Parent: projectRealmsKey(ctx, project),
+	}
+}
+
+// projectID is for checking the project that an AuthProjectRealmsMeta is connected to.
+func (aprm *AuthProjectRealmsMeta) projectID() (string, error) {
+	if aprm.Parent.Kind() != "AuthProjectRealms" {
+		return "", fmt.Errorf("incorrect key pattern for AuthProjectRealmsMeta %s", aprm.ID)
+	}
+	return aprm.Parent.StringID(), nil
 }
 
 // makeAuthGlobalConfig is a convenience function for creating AuthGlobalConfig.
@@ -1370,6 +1421,35 @@ func GetAuthProjectRealms(ctx context.Context, project string) (*AuthProjectReal
 	default:
 		return nil, errors.Annotate(err, "error getting AuthProjectRealms %s", project).Err()
 	}
+}
+
+// GetAuthProjectRealmsMeta returns the AuthProjectRealmsMeta datastore entity for a given project.
+//
+// Returns datastore.ErrNoSuchEntity if the AuthProjectRealmsMeta is not present.
+// Returns an annotated error for other errors.
+func GetAuthProjectRealmsMeta(ctx context.Context, project string) (*AuthProjectRealmsMeta, error) {
+	authProjectRealmsMeta := makeAuthProjectRealmsMeta(ctx, project)
+	switch err := datastore.Get(ctx, authProjectRealmsMeta); {
+	case err == nil:
+		return authProjectRealmsMeta, nil
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	default:
+		return nil, errors.Annotate(err, "error getting AuthProjectRealmsMeta %s", project).Err()
+	}
+}
+
+// GetAllAuthProjectRealmsMeta returns all the AuthProjectRealmsMeta entities in datastore.
+//
+// Returns an annotated error.
+func GetAllAuthProjectRealmsMeta(ctx context.Context) ([]*AuthProjectRealmsMeta, error) {
+	query := datastore.NewQuery("AuthProjectRealmsMeta").Ancestor(RootKey(ctx))
+	var authProjectRealmsMeta []*AuthProjectRealmsMeta
+	err := datastore.GetAll(ctx, query, &authProjectRealmsMeta)
+	if err != nil {
+		return nil, errors.Annotate(err, "error getting all AuthProjectRealmsMeta entities").Err()
+	}
+	return authProjectRealmsMeta, nil
 }
 
 // Fetches a list of AuthDBShard entities and merges their payload.
