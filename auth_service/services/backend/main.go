@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/oauthcfg"
+	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/permissionscfg"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/securitycfg"
 )
 
@@ -82,6 +83,22 @@ func main() {
 			}
 			return nil
 		})
+
+		cron.RegisterHandler("update-realms", func(ctx context.Context) error {
+			// permissions.cfg handling.
+			if err := permissionscfg.Update(ctx); err != nil {
+				return err
+			}
+			permscfg, err := permissionscfg.Get(ctx)
+			if err != nil {
+				return err
+			}
+			if err := model.UpdateAuthRealmsGlobals(ctx, permscfg, true); err != nil {
+				return err
+			}
+			return nil
+		})
+
 		return nil
 	})
 }
