@@ -55,7 +55,9 @@ func TestBase128(t *testing.T) {
 				_, err = Decode(nil, bytes.Repeat([]byte{0xff}, 9))
 				So(err, ShouldEqual, ErrLength)
 
-				So(func() { Decode(nil, []byte{0xff, 0xff}) }, ShouldPanic)
+				// This test case panicked before, but I don't see a reason why it is different from the two previous test cases, which don't panic.
+				_, err = Decode(nil, []byte{0xff, 0xff})
+				So(err, ShouldEqual, ErrLength)
 			})
 
 			Convey("bad byte", func() {

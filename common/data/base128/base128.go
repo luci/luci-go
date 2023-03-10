@@ -40,25 +40,11 @@ var (
 //
 // Encode implements base128 encoding.
 func Encode(dst, src []byte) int {
-	ret := EncodedLen(len(src))
-	if len(dst) < ret {
-		panic("dst has insufficient length")
+	n, err := encode(dst, src)
+	if err != nil {
+		panic(err)
 	}
-	dst = dst[:0]
-	whichByte := uint(1)
-	bufByte := byte(0)
-	for _, v := range src {
-		dst = append(dst, bufByte|(v>>whichByte))
-		bufByte = (v&(1<<whichByte) - 1) << (7 - whichByte)
-		if whichByte == 7 {
-			dst = append(dst, bufByte)
-			bufByte = 0
-			whichByte = 0
-		}
-		whichByte++
-	}
-	dst = append(dst, bufByte)
-	return ret
+	return n
 }
 
 // Decode decodes src into DecodedLen(len(src)) bytes, returning the actual
@@ -67,30 +53,12 @@ func Encode(dst, src []byte) int {
 // If Decode encounters invalid input, it returns an error describing the
 // failure.
 func Decode(dst, src []byte) (int, error) {
-	dLen := DecodedLen(len(src))
-	if EncodedLen(dLen) != len(src) {
+	n, err := decode(dst, src)
+	switch err {
+	case ErrCongruence:
 		return 0, ErrLength
 	}
-	if len(dst) < dLen {
-		panic("dst has insufficient length")
-	}
-	dst = dst[:0]
-	whichByte := uint(1)
-	bufByte := byte(0)
-	for _, v := range src {
-		if (v & 0x80) != 0 {
-			return len(dst), ErrBit
-		}
-		if whichByte > 1 {
-			dst = append(dst, bufByte|(v>>(8-whichByte)))
-		}
-		bufByte = v << whichByte
-		if whichByte == 8 {
-			whichByte = 0
-		}
-		whichByte++
-	}
-	return len(dst), nil
+	return n, err
 }
 
 // DecodeString returns the bytes represented by the base128 string s.
