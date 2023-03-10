@@ -277,7 +277,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 	// Handle bugs marked as duplicate.
 	for _, bug := range duplicateBugs {
 		err := b.handleDuplicateBug(ctx, bug)
-		if err == mergeIntoCycleErr {
+		if errors.Is(err, mergeIntoCycleErr) {
 			request := bugs.UpdateDuplicateSourceRequest{
 				Bug:          bug,
 				ErrorMessage: mergeIntoCycleMessage,
@@ -285,7 +285,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 			if err := b.updateDuplicateSource(ctx, request); err != nil {
 				return errors.Annotate(err, "update source bug after a cycle was found").Err()
 			}
-		} else if err == ruleDefinitionTooLongErr {
+		} else if errors.Is(err, ruleDefinitionTooLongErr) {
 			request := bugs.UpdateDuplicateSourceRequest{
 				Bug:          bug,
 				ErrorMessage: ruleDefinitionTooLongMessage,
@@ -553,6 +553,15 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 		system := mergedIntoBug.System
 		manager, ok := b.managers[system]
 		if !ok {
+			// TODO: Remove once Buganizer integration launched.
+			if mergedIntoBug.System == "buganizer" {
+				// Do not attempt to resolve the canoncial bug within
+				// buganizer if buganizer is not registered. We hit this
+				// path with buganizer not registered if a monorail bug marks
+				// itself as a duplicate of a buganizer bug.
+				isResolved = true
+				break
+			}
 			return bugs.BugID{}, fmt.Errorf("encountered unknown bug system: %q", system)
 		}
 		mergedInto, err := manager.GetMergedInto(ctx, mergedIntoBug)
@@ -560,6 +569,7 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 			return bugs.BugID{}, err
 		}
 		if mergedInto == nil {
+			// We have found the canoncial merged-into bug.
 			isResolved = true
 			break
 		} else {
@@ -567,6 +577,7 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 		}
 	}
 	if !isResolved {
+		// We found a cycle in the graph.
 		return bugs.BugID{}, mergeIntoCycleErr
 	}
 	if mergedIntoBug == bug {
