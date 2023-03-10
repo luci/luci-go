@@ -21,6 +21,7 @@ import (
 	"math/bits"
 	"testing"
 	"testing/quick"
+	"unicode/utf8"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -493,6 +494,26 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 	}
 
 	if err := quick.Check(roundTrip, nil); err != nil {
+		t.Error(err)
+	}
+}
+
+// TestValidUTF8 is a property-based test that checks that encode always produces valid
+// utf8 and, indirectly, that writing any byte array to a destination of the proper length
+// will never result in an error.
+func TestValidUTF8(t *testing.T) {
+	t.Parallel()
+
+	checker := func(input []byte) bool {
+		encoded := make([]byte, EncodedLen(len(input)))
+		_, err := encode(encoded, input)
+		if err != nil {
+			panic(err)
+		}
+		return utf8.Valid(encoded)
+	}
+
+	if err := quick.Check(checker, nil); err != nil {
 		t.Error(err)
 	}
 }
