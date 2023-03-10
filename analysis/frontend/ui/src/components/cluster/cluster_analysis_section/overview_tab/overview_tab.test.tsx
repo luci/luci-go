@@ -21,7 +21,7 @@ import { QueryClusterHistoryResponse } from '@/services/cluster';
 import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import { mockQueryHistory } from '@/testing_tools/mocks/cluster_mock';
-import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
+import { mockFetchMetrics, getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 
 import { ClusterContextProvider } from '../../cluster_context';
 import OverviewTab from './overview_tab';
@@ -48,7 +48,7 @@ describe('test ImpactSection component', () => {
     fetchMock.reset();
   });
 
-  it('given an algorithm, should fetch cluster for that algorithm', async () => {
+  it('given a project and cluster ID, should fetch cluster history for that cluster', async () => {
     const history: QueryClusterHistoryResponse = { days: [{ date: '2023-02-16', metrics: { 'human-cls-failed-presubmit': 10, 'critical-failures-exonerated': 20, 'test-runs-failed': 100 } }] };
     mockQueryHistory(history);
 
@@ -61,5 +61,15 @@ describe('test ImpactSection component', () => {
     await screen.findAllByTestId('history-chart');
 
     expect(screen.getByTestId('history-chart')).toBeInTheDocument();
+
+    // Expect charts only for the default metrics.
+    const metrics = getMockMetricsList();
+    metrics.forEach((m) => {
+      if (m.isDefault) {
+        expect(screen.getByTestId('chart-' + m.metricId)).toBeInTheDocument();
+      } else {
+        expect(screen.queryByTestId('chart-' + m.metricId)).toBeNull();
+      }
+    })
   });
 });

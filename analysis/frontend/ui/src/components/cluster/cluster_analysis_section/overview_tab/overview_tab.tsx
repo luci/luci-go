@@ -72,19 +72,41 @@ interface Props {
   value: string;
 }
 
-const metricColors = {
-  'human-cls-failed-presubmit': '#6c40bf',
-  'critical-failures-exonerated': '#0084ff',
-  'test-runs-failed': '#d23a2d',
-};
-const metricIds = ['human-cls-failed-presubmit', 'critical-failures-exonerated', 'test-runs-failed'];
+const metricColors = [
+  '#4a148c', // Material Purple 900.
+  '#0d47a1', // Material Blue 900.
+  '#b71c1c', // Material Red 900.
+  '#1b5e20', // Material Green 900.
+  '#f57f17', // Material Yellow 900.
+  '#006064', // Material Cyan 900.
+  '#212121', // Material Grey 900.
+  '#827717', // Material Lime 900.
+  '#880E4F', // Material Pink 900.
+  '#bf360c', // Material Deep Orange 900.
+];
+
 const OverviewTab = ({ value }: Props) => {
   const clusterId = useContext(ClusterContext);
   // TODO: move days and selectedMetrics into the URL.
   const [days, setDays] = useState(7);
-  const [selectedMetrics, setSelectedMetrics] = useState([...metricIds]);
   // The values will not be annotated by default.
   const [isAnnotated, setIsAnnotated] = useState(false);
+
+  const [selectedMetrics, setSelectedMetrics] = useState<Metric[]>([]);
+
+  const onMetricsSuccess = (metrics: Metric[]) => {
+    if (!selectedMetrics.length) {
+      const defaultMetrics = metrics?.filter((m) => m.isDefault);
+      setSelectedMetrics(defaultMetrics);
+    }
+  };
+
+  const {
+    isLoading: isMetricsLoading,
+    isSuccess: isMetricsSuccess,
+    data: metrics,
+    error: metricError,
+  } = useFetchMetrics(onMetricsSuccess);
 
   // Note that querying the history of a single cluster is faster and cheaper.
   const {
@@ -92,26 +114,25 @@ const OverviewTab = ({ value }: Props) => {
     isSuccess,
     data,
     error,
-  } = useQueryClusterHistory(clusterId.project, `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`, days, metricIds);
+  } = useQueryClusterHistory(clusterId.project, `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`, days, selectedMetrics.map((m) => m.metricId));
 
-  const fetchedMetrics = useFetchMetrics();
-  const metric = (metricId: string): Metric | undefined =>
-    fetchedMetrics?.data?.filter((m) => m.metricId == metricId)?.[0];
-
-  const handleMetricChange = (event: SelectChangeEvent<typeof selectedMetrics>) => {
+  const handleMetricChange = (event: SelectChangeEvent<string[]>) => {
     const {
       target: { value },
     } = event;
     // On autofill we get a stringified value.
-    const selected = typeof value === 'string' ? value.split(',') : value;
-    // Keep the order of the selected metrics consistent.
-    const orderedSelection = metricIds.filter((m) => selected.indexOf(m) > -1);
-    setSelectedMetrics(orderedSelection);
+    const selectedMetricIds = typeof value === 'string' ? value.split(',') : value;
+    const selectedMetrics = (metrics || []).filter((m) => selectedMetricIds.indexOf(m.metricId) > -1);
+    setSelectedMetrics(selectedMetrics);
   };
 
   const handleAnnotationsChange = () => {
     setIsAnnotated(!isAnnotated);
   };
+  const renderValue = (selected: string[]): string => {
+    return (metrics || []).filter((m) => selected.indexOf(m.metricId) >= 0)
+        .map((m) => m.humanReadableName).join(', ');
+  }
 
   return (
     <TabPanel value={value}>
@@ -144,53 +165,58 @@ const OverviewTab = ({ value }: Props) => {
           <Select
             labelId="metric-label"
             multiple
-            value={selectedMetrics}
+            value={selectedMetrics.map((m) => m.metricId)}
             onChange={handleMetricChange}
             input={<OutlinedInput label="Name" />}
-            renderValue={(selected) => selected.map((m) => metric(m)?.humanReadableName || m).join(', ')}
+            renderValue={renderValue}
             MenuProps={MenuProps}
           >
-            {metricIds.map((m) => {
-              return <MenuItem key={m} value={m}>
-                <Checkbox checked={selectedMetrics.indexOf(m) > -1} />
-                <ListItemText primary={metric(m)?.humanReadableName || m} />
+            {(metrics||[]).map((metric) => {
+              return <MenuItem key={metric.metricId} value={metric.metricId}>
+                <Checkbox checked={selectedMetrics.indexOf(metric) > -1} />
+                <ListItemText primary={metric.humanReadableName} />
               </MenuItem>;
             })}
           </Select>
         </FormControl>
       </div>
-      {isLoading && (
+      {(metricError) && (
+        <LoadErrorAlert entityName="metrics" error={metricError} />
+      )}
+      {error && (
+        <LoadErrorAlert entityName="cluster history" error={error} />
+      )}
+      {!(error || metricError) && (isLoading || isMetricsLoading) && (
         <Grid container item alignItems="center" justifyContent="center">
           <CircularProgress />
         </Grid>
       )}
-      {!isLoading && error && (
-        <LoadErrorAlert entityName="metrics" error={error} />
-      )}
-      {isSuccess && data && (
+      {isSuccess && isMetricsSuccess && data && metrics && (
         <div
           className="overview-tab-charts-container"
           data-testid="history-chart"
         >
           {selectedMetrics.length > 0 ?
             selectedMetrics.map((m) => {
-              const mk = m as keyof typeof metricColors;
+              const metricIndex = metrics.indexOf(m);
+              const metricColor = metricColors[metricIndex % metricColors.length];
+
               // Calculate the relative minimum width of the chart based on the
               // number of days (90 days is the max).
               const chartMinWidth = (days / 90) * 100;
               // Reduce chart height if all charts don't fit in 1 row.
               const chartHeight = chartMinWidth * selectedMetrics.length > 100 ? 200 : 400;
               return (
-                <div key={m} className="overview-tab-charts-item" style={{ minWidth: `${chartMinWidth}%` }}>
+                <div key={m.metricId} data-testid={'chart-'+m.metricId} className="overview-tab-charts-item" style={{ minWidth: `${chartMinWidth}%` }}>
                   <ResponsiveContainer width="100%" height={chartHeight}>
                     <BarChart data={data.days} syncId="impactMetrics" margin={{ top: 20, bottom: 20 }}>
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Legend />
                       <Tooltip />
-                      <Bar name={metric(m)?.humanReadableName || m} dataKey={`metrics.${m}`} fill={metricColors[mk]}>
+                      <Bar name={m.humanReadableName} dataKey={`metrics.${m.metricId}`} fill={metricColor}>
                         {isAnnotated && (
-                          <LabelList dataKey={`metrics.${m}`} position="top" />
+                          <LabelList dataKey={`metrics.${m.metricId}`} position="top" />
                         )}
                       </Bar>
                     </BarChart>

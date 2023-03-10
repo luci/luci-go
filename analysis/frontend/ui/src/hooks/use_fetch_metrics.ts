@@ -21,7 +21,7 @@ import {
 } from '@/services/metrics';
 import { prpcRetrier } from '@/services/shared_models';
 
-const useFetchMetrics = (): UseQueryResult<Metric[], Error> => {
+const useFetchMetrics = (onSuccess?: (data: Metric[]) => void): UseQueryResult<Metric[], Error> => {
   const metricsService = getMetricsService();
   return useQuery(['metrics'], async () => {
     const request: ListMetricsRequest = {};
@@ -30,6 +30,7 @@ const useFetchMetrics = (): UseQueryResult<Metric[], Error> => {
     return response.metrics || [];
   }, {
     retry: prpcRetrier,
+    onSuccess: onSuccess,
   });
 };
 

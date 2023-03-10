@@ -23,7 +23,7 @@ const useQueryClusterHistory = (
     metricIds: string[],
 ) => {
   const clustersService = getClustersService();
-  return useQuery(['cluster', project, 'history', days, failureFilter], async () => {
+  return useQuery(['cluster', project, 'history', days, failureFilter, metricIds.join(',')], async () => {
     const request: QueryClusterHistoryRequest = {
       project,
       failureFilter,
@@ -37,6 +37,7 @@ const useQueryClusterHistory = (
     return response;
   }, {
     retry: prpcRetrier,
+    enabled: metricIds.length > 0,
   });
 };
 
