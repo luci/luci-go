@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/errors"
 )
 
 func emptyMetricValues() map[metrics.ID]metrics.TimewiseCounts {
@@ -133,17 +132,10 @@ func bugClusterID(ruleID string) clustering.ClusterID {
 }
 
 type fakeAnalysisClient struct {
-	analysisBuilt bool
-	clusters      []*analysis.Cluster
+	clusters []*analysis.Cluster
 }
 
 func (f *fakeAnalysisClient) RebuildAnalysis(ctx context.Context) error {
-	f.analysisBuilt = true
-	return nil
-}
-
-func (f *fakeAnalysisClient) RebuildAnalysisDeprecated(ctx context.Context, project string) error {
-	f.analysisBuilt = true
 	return nil
 }
 
@@ -151,14 +143,7 @@ func (f *fakeAnalysisClient) PurgeStaleRows(ctx context.Context) error {
 	return nil
 }
 
-func (f *fakeAnalysisClient) PurgeStaleRowsDeprecated(ctx context.Context, luciProject string) error {
-	return nil
-}
-
 func (f *fakeAnalysisClient) ReadImpactfulClusters(ctx context.Context, opts analysis.ImpactfulClusterReadOptions) ([]*analysis.Cluster, error) {
-	if !f.analysisBuilt {
-		return nil, errors.New("cluster_summaries does not exist")
-	}
 	var results []*analysis.Cluster
 	for _, c := range f.clusters {
 		include := opts.AlwaysIncludeBugClusters && c.ClusterID.IsBugCluster()

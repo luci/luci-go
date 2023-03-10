@@ -39,8 +39,6 @@ type ClusteringHandler struct {
 type ClusteredFailuresClient interface {
 	// Insert inserts the given rows into BigQuery.
 	Insert(ctx context.Context, rows []*bqpb.ClusteredFailureRow) error
-	// InsertDeprecated inserts the given rows into BigQuery.
-	InsertDeprecated(ctx context.Context, luciProject string, rows []*bqpb.ClusteredFailureRow) error
 }
 
 func NewClusteringHandler(cf ClusteredFailuresClient) *ClusteringHandler {
@@ -60,9 +58,6 @@ func NewClusteringHandler(cf ClusteredFailuresClient) *ClusteringHandler {
 // a later point if they do not succeed).
 func (r *ClusteringHandler) HandleUpdatedClusters(ctx context.Context, updates *clustering.Update, commitTime time.Time) error {
 	rowUpdates := prepareInserts(updates, commitTime)
-	if err := r.cfClient.InsertDeprecated(ctx, updates.Project, rowUpdates); err != nil {
-		return errors.Annotate(err, "inserting %d deprecated clustered failure rows", len(rowUpdates)).Err()
-	}
 	if err := r.cfClient.Insert(ctx, rowUpdates); err != nil {
 		return errors.Annotate(err, "inserting %d clustered failure rows", len(rowUpdates)).Err()
 	}

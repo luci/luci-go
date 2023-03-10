@@ -38,9 +38,3 @@ func (fc *FakeClient) Insert(ctx context.Context, rows []*bqp.ClusteredFailureRo
 	fc.Insertions = append(fc.Insertions, rows...)
 	return nil
 }
-
-// InsertDeprecated inserts the given rows in BigQuery.
-// Deprecated: Use insert() instead.
-func (fc *FakeClient) InsertDeprecated(ctx context.Context, luciProject string, rows []*bqp.ClusteredFailureRow) error {
-	return nil
-}

@@ -43,7 +43,6 @@ const partitionExpirationTime = 90 * 24 * time.Hour
 const rowMessage = "luci.analysis.bq.ClusteredFailureRow"
 
 var tableMetadata *bigquery.TableMetadata
-var tableMetadataDeprecated *bigquery.TableMetadata
 
 // tableSchemaDescriptor is a self-contained DescriptorProto for describing
 // row protocol buffers sent to the BigQuery Write API.
@@ -67,19 +66,6 @@ func init() {
 		},
 		Clustering: &bigquery.Clustering{
 			Fields: []string{"project", "cluster_algorithm", "cluster_id"},
-		},
-		// Relax ensures no fields are marked "required".
-		Schema: schema.Relax(),
-	}
-
-	tableMetadataDeprecated = &bigquery.TableMetadata{
-		TimePartitioning: &bigquery.TimePartitioning{
-			Type:       bigquery.DayPartitioningType,
-			Expiration: partitionExpirationTime,
-			Field:      "partition_time",
-		},
-		Clustering: &bigquery.Clustering{
-			Fields: []string{"cluster_algorithm", "cluster_id", "test_result_system", "test_result_id"},
 		},
 		// Relax ensures no fields are marked "required".
 		Schema: schema.Relax(),

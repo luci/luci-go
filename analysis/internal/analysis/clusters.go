@@ -25,7 +25,6 @@ import (
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -87,17 +86,6 @@ type TopCount struct {
 func (c *Client) RebuildAnalysis(ctx context.Context) error {
 	dataset := c.client.Dataset("internal")
 	return c.rebuildAnalysisForDataset(ctx, dataset, true)
-}
-
-// RebuildAnalysisDeprecated re-builds the cluster summaries analysis from
-// clustered test results for a given LUCI project.
-func (c *Client) RebuildAnalysisDeprecated(ctx context.Context, luciProject string) error {
-	datasetID, err := bqutil.DatasetForProject(luciProject)
-	if err != nil {
-		return errors.Annotate(err, "getting dataset").Err()
-	}
-	dataset := c.client.Dataset(datasetID)
-	return c.rebuildAnalysisForDataset(ctx, dataset, false)
 }
 
 func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquery.Dataset, aggregateByProject bool) error {
@@ -239,27 +227,6 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 func (c *Client) PurgeStaleRows(ctx context.Context) error {
 	dataset := c.client.Dataset("internal")
 	return c.purgeStaleRowsForDataset(ctx, dataset, true)
-}
-
-// PurgeStaleRowsDeprecated purges stale clustered failure rows from the per-project table.
-// Stale rows are those rows which have been superseded by a new row with a later
-// version, or where the latest version of the row has the row not included in a
-// cluster.
-// This is necessary for:
-//   - Our QueryClusterSummaries query, which for performance reasons (UI-interactive)
-//     does not do filtering to fetch the latest version of rows and instead uses all
-//     rows.
-//   - Keeping the size of the BigQuery table to a minimum.
-//
-// We currently only purge the last 7 days to keep purging costs to a minimum and
-// as this is as far as QueryClusterSummaries looks back.
-func (c *Client) PurgeStaleRowsDeprecated(ctx context.Context, luciProject string) error {
-	datasetID, err := bqutil.DatasetForProject(luciProject)
-	if err != nil {
-		return errors.Annotate(err, "getting dataset").Err()
-	}
-	dataset := c.client.Dataset(datasetID)
-	return c.purgeStaleRowsForDataset(ctx, dataset, false)
 }
 
 func (c *Client) purgeStaleRowsForDataset(ctx context.Context, dataset *bigquery.Dataset, requireProjectEqual bool) error {

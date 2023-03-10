@@ -79,18 +79,12 @@ type AnalysisClient interface {
 	// RebuildAnalysis rebuilds analysis from the latest clustered test
 	// results.
 	RebuildAnalysis(ctx context.Context) error
-	// RebuildAnalysisDeprecated rebuilds analysis from the latest clustered test
-	// results.
-	RebuildAnalysisDeprecated(ctx context.Context, project string) error
 	// ReadImpactfulClusters reads analysis for clusters matching the
 	// specified criteria.
 	ReadImpactfulClusters(ctx context.Context, opts analysis.ImpactfulClusterReadOptions) ([]*analysis.Cluster, error)
 	// PurgeStaleRows purges stale clustered failure rows
 	// from the table.
 	PurgeStaleRows(ctx context.Context) error
-	// PurgeStaleRowsDeprecated purges stale clustered failure rows
-	// from the table.
-	PurgeStaleRowsDeprecated(ctx context.Context, luciProject string) error
 }
 
 func init() {
@@ -300,10 +294,6 @@ func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (r
 	if err != nil {
 		return errors.Annotate(err, "read project config").Err()
 	}
-
-	if err := opts.analysisClient.RebuildAnalysisDeprecated(ctx, opts.project); err != nil {
-		return errors.Annotate(err, "update cluster summary analysis").Err()
-	}
 	if opts.enableBugUpdates {
 		mgrs := make(map[string]BugManager)
 
@@ -338,10 +328,6 @@ func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (r
 		if err := bugUpdater.Run(ctx, progress); err != nil {
 			return errors.Annotate(err, "update bugs").Err()
 		}
-	}
-	// Do last, as this failing should not block bug updates.
-	if err := opts.analysisClient.PurgeStaleRowsDeprecated(ctx, opts.project); err != nil {
-		return errors.Annotate(err, "purge stale rows").Err()
 	}
 	return nil
 }
