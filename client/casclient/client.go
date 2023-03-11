@@ -167,6 +167,17 @@ func Options(creds credentials.PerRPCCredentials) []client.Opt {
 		casConcurrency = runtime.NumCPU()
 	}
 
+	rpcTimeouts := make(client.RPCTimeouts)
+	for k, v := range client.DefaultRPCTimeouts {
+		rpcTimeouts[k] = v
+	}
+
+	// Extend the timeout for write operations beyond the default, as writes can
+	// sometimes be quite slow. This timeout only applies to writing a single
+	// file chunk, so there isn't a risk of setting a timeout that's to low for
+	// large files.
+	rpcTimeouts["Write"] = 2 * time.Minute
+
 	return []client.Opt{
 		&client.PerRPCCreds{Creds: creds},
 		client.CASConcurrency(casConcurrency),
@@ -181,17 +192,12 @@ func Options(creds credentials.PerRPCCredentials) []client.Opt {
 			// the symlink.
 			MaterializeOutsideExecRoot: true,
 		},
+		rpcTimeouts,
 		// Set restricted permission for written files.
 		client.DirMode(0700),
 		client.ExecutableMode(0700),
 		client.RegularMode(0600),
 		client.CompressedBytestreamThreshold(0),
-
-		// Set per RPC timeout only for batch operations.
-		client.RPCTimeouts{
-			"BatchUpdateBlobs": time.Minute,
-			"BatchReadBlobs":   time.Minute,
-		},
 	}
 }
 
