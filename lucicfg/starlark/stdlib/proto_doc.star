@@ -45,7 +45,7 @@ def _to_wirepb(msg):
     """
     _unused(msg)
 
-def _from_textpb(ctor, text):
+def _from_textpb(ctor, text, discard_unknown = None):
     """Deserializes a protobuf message given its ASCII proto serialization.
 
     The returned message is frozen. Use proto.clone(...) to get a mutable
@@ -55,13 +55,15 @@ def _from_textpb(ctor, text):
       ctor: a message constructor function, the same one you would normally use
         to create a new message. Required.
       text: a string with the serialized message. Required.
+      discard_unknown: boolean, whether to discard unrecognized fields. The
+        default is False.
 
     Returns:
       Deserialized frozen message constructed via `ctor`.
     """
-    _unused(ctor, text)
+    _unused(ctor, text, discard_unknown)
 
-def _from_jsonpb(ctor, text):
+def _from_jsonpb(ctor, text, discard_unknown = None):
     """Deserializes a protobuf message given its JSONPB serialization.
 
     The returned message is frozen. Use proto.clone(...) to get a mutable
@@ -71,13 +73,15 @@ def _from_jsonpb(ctor, text):
       ctor: a message constructor function, the same one you would normally use
         to create a new message. Required.
       text: a string with the serialized message. Required.
+      discard_unknown: boolean, whether to discard unrecognized fields. The
+        default is True.
 
     Returns:
       Deserialized frozen message constructed via `ctor`.
     """
-    _unused(ctor, text)
+    _unused(ctor, text, discard_unknown)
 
-def _from_wirepb(ctor, blob):
+def _from_wirepb(ctor, blob, discard_unknown = None):
     """Deserializes a protobuf message given its wire serialization.
 
     The returned message is frozen. Use proto.clone(...) to get a mutable
@@ -87,11 +91,13 @@ def _from_wirepb(ctor, blob):
       ctor: a message constructor function, the same one you would normally use
         to create a new message. Required.
       blob: a string with the serialized message. Required.
+      discard_unknown: boolean, whether to discard unrecognized fields. The
+        default is True.
 
     Returns:
       Deserialized frozen message constructed via `ctor`.
     """
-    _unused(ctor, blob)
+    _unused(ctor, text, discard_unknown)
 
 def _struct_to_textpb(s):
     """Converts a struct to a text proto string.

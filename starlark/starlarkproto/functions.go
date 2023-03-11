@@ -82,11 +82,12 @@ func ToWirePB(msg *Message) ([]byte, error) {
 // Unlike the equivalent Starlark proto.from_textpb(...), this low-level native
 // function doesn't freeze returned messages, but also doesn't use the message
 // cache.
-func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
+func FromTextPB(typ *MessageType, blob []byte, discardUnknown bool) (*Message, error) {
 	pb := dynamicpb.NewMessage(typ.desc)
 	opts := prototext.UnmarshalOptions{
-		AllowPartial: true,
-		Resolver:     typ.loader.types, // used for google.protobuf.Any fields
+		AllowPartial:   true,
+		DiscardUnknown: discardUnknown,
+		Resolver:       typ.loader.types, // used for google.protobuf.Any fields
 	}
 	if err := opts.Unmarshal(blob, pb); err != nil {
 		return nil, err
@@ -99,11 +100,11 @@ func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
 // Unlike the equivalent Starlark proto.from_jsonpb(...), this low-level native
 // function doesn't freeze returned messages, but also doesn't use the message
 // cache.
-func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
+func FromJSONPB(typ *MessageType, blob []byte, discardUnknown bool) (*Message, error) {
 	pb := dynamicpb.NewMessage(typ.desc)
 	opts := protojson.UnmarshalOptions{
 		AllowPartial:   true,
-		DiscardUnknown: true,
+		DiscardUnknown: discardUnknown,
 		Resolver:       typ.loader.types, // used for google.protobuf.Any fields
 	}
 	if err := opts.Unmarshal(blob, pb); err != nil {
@@ -117,11 +118,11 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 // Unlike the equivalent Starlark proto.from_wirepb(...), this low-level native
 // function doesn't freeze returned messages, but also doesn't use the message
 // cache.
-func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
+func FromWirePB(typ *MessageType, blob []byte, discardUnknown bool) (*Message, error) {
 	pb := dynamicpb.NewMessage(typ.desc)
 	opts := proto.UnmarshalOptions{
 		AllowPartial:   true,
-		DiscardUnknown: true,
+		DiscardUnknown: discardUnknown,
 		Resolver:       typ.loader.types, // used for google.protobuf.Any fields
 	}
 	if err := opts.Unmarshal(blob, pb); err != nil {
@@ -196,6 +197,8 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //	  Args:
 //	    ctor: a message constructor function.
 //	    body: a string with serialized message.
+//	    discard_unknown: boolean, whether to discard unrecognized fields. The
+//	      default is False.
 //
 //	  Returns:
 //	    Deserialized frozen message constructed via `ctor`.
@@ -209,6 +212,8 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //	  Args:
 //	    ctor: a message constructor function.
 //	    body: a string with serialized message.
+//	    discard_unknown: boolean, whether to discard unrecognized fields. The
+//	      default is True.
 //
 //	  Returns:
 //	    Deserialized frozen message constructed via `ctor`.
@@ -222,6 +227,8 @@ func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
 //	  Args:
 //	    ctor: a message constructor function.
 //	    body: a string with serialized message.
+//	    discard_unknown: boolean, whether to discard unrecognized fields. The
+//	      default is True.
 //
 //	  Returns:
 //	    Deserialized frozen message constructed via `ctor`.
@@ -267,9 +274,9 @@ func ProtoLib() starlark.StringDict {
 			"to_textpb":          marshallerBuiltin("to_textpb", ToTextPB),
 			"to_jsonpb":          toJSONPBBuiltin("to_jsonpb"),
 			"to_wirepb":          marshallerBuiltin("to_wirepb", ToWirePB),
-			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB),
-			"from_jsonpb":        unmarshallerBuiltin("from_jsonpb", FromJSONPB),
-			"from_wirepb":        unmarshallerBuiltin("from_wirepb", FromWirePB),
+			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB, false),
+			"from_jsonpb":        unmarshallerBuiltin("from_jsonpb", FromJSONPB, true),
+			"from_wirepb":        unmarshallerBuiltin("from_wirepb", FromWirePB, true),
 			"struct_to_textpb":   starlark.NewBuiltin("struct_to_textpb", structToTextPb),
 			"clone":              starlark.NewBuiltin("clone", clone),
 			"has":                starlark.NewBuiltin("has", has),
@@ -409,11 +416,12 @@ func toJSONPBBuiltin(name string) *starlark.Builtin {
 //
 // It also knows how to use the message cache in the thread to cache
 // deserialized messages.
-func unmarshallerBuiltin(name string, impl func(*MessageType, []byte) (*Message, error)) *starlark.Builtin {
+func unmarshallerBuiltin(name string, impl func(*MessageType, []byte, bool) (*Message, error), discardUnknownDefault bool) *starlark.Builtin {
 	return starlark.NewBuiltin(name, func(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		var ctor starlark.Value
 		var body string
-		if err := starlark.UnpackArgs(name, args, kwargs, "ctor", &ctor, "body", &body); err != nil {
+		discardUnknown := starlark.Bool(discardUnknownDefault)
+		if err := starlark.UnpackArgs(name, args, kwargs, "ctor", &ctor, "body", &body, "discard_unknown?", &discardUnknown); err != nil {
 			return nil, err
 		}
 		typ, ok := ctor.(*MessageType)
@@ -422,8 +430,9 @@ func unmarshallerBuiltin(name string, impl func(*MessageType, []byte) (*Message,
 		}
 
 		cache := messageCache(th)
+		cacheName := fmt.Sprintf("%s:%s", name, discardUnknown)
 		if cache != nil {
-			cached, err := cache.Fetch(th, name, body, typ)
+			cached, err := cache.Fetch(th, cacheName, body, typ)
 			if err != nil {
 				return nil, fmt.Errorf("%s: internal message cache error when fetching: %s", name, err)
 			}
@@ -438,14 +447,14 @@ func unmarshallerBuiltin(name string, impl func(*MessageType, []byte) (*Message,
 			}
 		}
 
-		msg, err := impl(typ, []byte(body))
+		msg, err := impl(typ, []byte(body), bool(discardUnknown))
 		if err != nil {
 			return nil, fmt.Errorf("%s: %s", name, err)
 		}
 		msg.Freeze()
 
 		if cache != nil {
-			if err := cache.Store(th, name, body, msg); err != nil {
+			if err := cache.Store(th, cacheName, body, msg); err != nil {
 				return nil, fmt.Errorf("%s: internal message cache error when storing: %s", name, err)
 			}
 		}

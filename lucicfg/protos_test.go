@@ -82,7 +82,7 @@ func testMessage(i int, f float64) *starlarkproto.Message {
 // testMessageProto returns new testproto.Msg as proto.Message, deserializing
 // it from a text proto.
 func testMessageProto(body string) proto.Message {
-	msg, err := starlarkproto.FromTextPB(testMessageType, []byte(body))
+	msg, err := starlarkproto.FromTextPB(testMessageType, []byte(body), false)
 	if err != nil {
 		panic(err)
 	}

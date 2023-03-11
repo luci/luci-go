@@ -23,6 +23,11 @@ assert.eq(m.i, 123)
 # Unrecognized fields are OK.
 proto.from_jsonpb(testprotos.Simple, '{"unknown": 123}')
 
+# Unrecognized fields are rejected if discard_unknown is false.
+def from_jsonpb_reject_unknown():
+  proto.from_jsonpb(testprotos.Simple, '{"unknown": 123}', discard_unknown = False)
+assert.fails(from_jsonpb_reject_unknown, 'unknown field')
+
 # The returned message is frozen.
 def from_jsonpb_frozen():
   proto.from_jsonpb(testprotos.Simple, '{"i": 123}').i = 456
@@ -35,8 +40,8 @@ assert.fails(from_jsonpb_bad_proto, "syntax error")
 
 # Too many arguments.
 def from_jsonpb_too_many_args():
-  proto.from_jsonpb(testprotos.Simple, '{"i": 123}', '{"i": 123}')
-assert.fails(from_jsonpb_too_many_args, 'from_jsonpb: got 3 arguments, want at most 2')
+  proto.from_jsonpb(testprotos.Simple, '{"i": 123}', True, True)
+assert.fails(from_jsonpb_too_many_args, 'from_jsonpb: got 4 arguments, want at most 3')
 
 # Wrong type for constructor.
 def from_jsonpb_with_wrong_ctor():

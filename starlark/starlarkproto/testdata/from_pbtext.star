@@ -25,6 +25,9 @@ def unrecognized_field():
   proto.from_textpb(testprotos.Simple, 'unknown: 123')
 assert.fails(unrecognized_field, 'unknown field')
 
+# Unrecognized fields are allowed if discard_unknown is true.
+proto.from_textpb(testprotos.Simple, 'unknown: 123', discard_unknown = True)
+
 # The returned message is frozen.
 def from_textpb_frozen():
   proto.from_textpb(testprotos.Simple, 'i: 123').i = 456
@@ -37,8 +40,8 @@ assert.fails(from_textpb_bad_proto, 'syntax error')
 
 # Too many arguments.
 def from_textpb_too_many_args():
-  proto.from_textpb(testprotos.Simple, 'i: 123', 'i: 123')
-assert.fails(from_textpb_too_many_args, 'from_textpb: got 3 arguments, want at most 2')
+  proto.from_textpb(testprotos.Simple, 'i: 123', False, False)
+assert.fails(from_textpb_too_many_args, 'from_textpb: got 4 arguments, want at most 3')
 
 # Wrong type for constructor.
 def from_textpb_with_wrong_ctor():

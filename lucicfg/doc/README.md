@@ -3879,7 +3879,7 @@ Serializes a protobuf message to a string using binary wire encoding.
 ### proto.from_textpb {#proto.from-textpb}
 
 ```python
-proto.from_textpb(ctor, text)
+proto.from_textpb(ctor, text, discard_unknown = None)
 ```
 
 
@@ -3893,6 +3893,7 @@ copy if necessary.
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **text**: a string with the serialized message. Required.
+* **discard_unknown**: boolean, whether to discard unrecognized fields. The default is False.
 
 
 #### Returns  {#proto.from-textpb-returns}
@@ -3904,7 +3905,7 @@ Deserialized frozen message constructed via `ctor`.
 ### proto.from_jsonpb {#proto.from-jsonpb}
 
 ```python
-proto.from_jsonpb(ctor, text)
+proto.from_jsonpb(ctor, text, discard_unknown = None)
 ```
 
 
@@ -3918,6 +3919,7 @@ copy if necessary.
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **text**: a string with the serialized message. Required.
+* **discard_unknown**: boolean, whether to discard unrecognized fields. The default is True.
 
 
 #### Returns  {#proto.from-jsonpb-returns}
@@ -3929,7 +3931,7 @@ Deserialized frozen message constructed via `ctor`.
 ### proto.from_wirepb {#proto.from-wirepb}
 
 ```python
-proto.from_wirepb(ctor, blob)
+proto.from_wirepb(ctor, blob, discard_unknown = None)
 ```
 
 
@@ -3943,6 +3945,7 @@ copy if necessary.
 
 * **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **blob**: a string with the serialized message. Required.
+* **discard_unknown**: boolean, whether to discard unrecognized fields. The default is True.
 
 
 #### Returns  {#proto.from-wirepb-returns}
