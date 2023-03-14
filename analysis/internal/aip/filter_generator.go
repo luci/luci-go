@@ -197,7 +197,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
-		return fmt.Sprintf("(COALESCE(%s, %s) = %s)", column.databaseName, columnDefaultValue(column.columnType), arg), nil
+		return fmt.Sprintf("(%s = %s)", column.databaseName, arg), nil
 	} else if restriction.Comparator == "!=" {
 		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
 		if err != nil {
@@ -207,7 +207,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
-		return fmt.Sprintf("(COALESCE(%s, %s) <> %s)", column.databaseName, columnDefaultValue(column.columnType), arg), nil
+		return fmt.Sprintf("(%s <> %s)", column.databaseName, arg), nil
 	} else if restriction.Comparator == ":" {
 		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
 		if err != nil {

@@ -97,7 +97,8 @@ func defaultOrder(ms []metrics.Definition) []aip.OrderBy {
 }
 
 // ClusterSummariesTable returns the schema of the table returned by
-// the cluster summaries query. This can be used to validate
+// the cluster summaries query. This can be used to generate and
+// validate the order by clause.
 func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip.Table {
 	var columns []*aip.Column
 	for _, metric := range queriedMetrics {

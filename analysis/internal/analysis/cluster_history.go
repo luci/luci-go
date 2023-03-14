@@ -62,48 +62,68 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 	var precomputeList []string
 	var metricSelectList []string
 	for _, metric := range options.Metrics {
-		itemIdentifier := "unique_test_result_id"
-		if metric.CountSQL != "" {
-			itemIdentifier = metric.ColumnName("item")
-			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.CountSQL, itemIdentifier))
-		}
 		filterIdentifier := "TRUE"
 		if metric.FilterSQL != "" {
 			filterIdentifier = metric.ColumnName("filter")
 			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.FilterSQL, filterIdentifier))
 		}
+		var itemIdentifier string
+		if metric.CountSQL != "" {
+			itemIdentifier = metric.ColumnName("item")
+			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.CountSQL, itemIdentifier))
+		}
+
 		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
-		metricSelect := fmt.Sprintf("APPROX_COUNT_DISTINCT(IF(%s,%s,NULL)) AS %s,", filterIdentifier, itemIdentifier, metricColumnName)
+
+		var metricExpr string
+		if metric.CountSQL != "" {
+			metricExpr = fmt.Sprintf("COUNT(DISTINCT IF(%s, %s, NULL))", filterIdentifier, itemIdentifier)
+		} else {
+			metricExpr = fmt.Sprintf("COUNTIF(%s)", filterIdentifier)
+		}
+
+		metricSelect := fmt.Sprintf("%s AS %s,", metricExpr, metricColumnName)
 		metricSelectList = append(metricSelectList, metricSelect)
 	}
 
-	// Works out to ~ 0.4 cents for 7 days on 1 cluster as measured 2022-11-29
-	// TODO: should we make this use only the latest versions in the table for greater accuracy?
+	// Works out to 1.5GB procssed (~0.8 cents) for 7 days on 1 cluster as measured 2023-03-13.
 	sql := `
-	WITH items AS (
+		WITH latest_failures AS (
+			SELECT
+				DATE(cf.partition_time) as partition_day,
+				project,
+				cluster_algorithm,
+				cluster_id,
+				test_result_system,
+				test_result_id,
+				ARRAY_AGG(cf ORDER BY cf.last_updated DESC LIMIT 1)[OFFSET(0)] as f
+			FROM clustered_failures cf
+			WHERE cf.partition_time >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL @days DAY)
+				AND project = @project
+				AND (` + whereClause + `)
+				AND realm IN UNNEST(@realms)
+			GROUP BY partition_day, project, cluster_algorithm, cluster_id, test_result_system, test_result_id
+			HAVING f.is_included
+		), failures_precompute AS (
+			SELECT
+				partition_day,
+				cluster_algorithm,
+				cluster_id,
+				` + strings.Join(precomputeList, "\n") + `
+			FROM latest_failures
+		)
 		SELECT
-			project,
-			cluster_algorithm,
-			cluster_id,
-			partition_time,
-			test_run_id,
-			CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) as unique_test_result_id,
-			` + strings.Join(precomputeList, "\n") + `
-	  FROM
-		clustered_failures f
-	  WHERE
-	    is_included_with_high_priority
-		AND partition_time > TIMESTAMP_TRUNC(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL @days DAY), DAY)
-		AND project = @project
-		AND (` + whereClause + `)
-		AND realm IN UNNEST(@realms)
-	  )
-	  SELECT
-		TIMESTAMP(day) as Date,
-		` + strings.Join(metricSelectList, "\n") + `
-	  FROM UNNEST(GENERATE_DATE_ARRAY(DATE_SUB(CURRENT_DATE(), INTERVAL @days - 1 DAY),CURRENT_DATE())) AS day LEFT OUTER JOIN items i ON date(i.partition_time) = day
-	  GROUP BY 1
-	  ORDER BY 1 ASC
+			TIMESTAMP(day) as day,
+			` + strings.Join(metricSelectList, "\n") + `
+		FROM UNNEST(
+			GENERATE_DATE_ARRAY(
+				DATE_SUB(CURRENT_DATE(), INTERVAL @days - 1 DAY),
+				CURRENT_DATE()
+			)
+		) day
+		LEFT JOIN failures_precompute ON day = partition_day
+		GROUP BY day
+		ORDER BY day ASC
 	`
 	q := c.client.Query(sql)
 	q.DefaultDatasetID = "internal"
@@ -130,7 +150,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 		if err != nil {
 			return nil, errors.Annotate(err, "obtain next cluster history day row").Err()
 		}
-		row := &ReadClusterHistoryDay{Date: rowVals["Date"].(time.Time)}
+		row := &ReadClusterHistoryDay{Date: rowVals["day"].(time.Time)}
 		row.MetricValues = map[metrics.ID]int32{}
 		for _, metric := range options.Metrics {
 			row.MetricValues[metric.ID] = int32(rowVals[metric.ColumnName(MetricValueColumnSuffix)].(int64))

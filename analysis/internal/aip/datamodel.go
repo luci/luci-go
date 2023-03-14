@@ -120,16 +120,3 @@ func (t *Table) SortableColumnByFieldPath(path FieldPath) (*Column, error) {
 	}
 	return nil, fmt.Errorf("no sortable field named %q, valid fields are %s", path.String(), strings.Join(columnNames, ", "))
 }
-
-func columnDefaultValue(columnType ColumnType) string {
-	switch columnType {
-	case ColumnTypeString:
-		return "''"
-	case ColumnTypeBool:
-		return "FALSE"
-	default:
-		// This case should not be possible unless there is an implementation error becuase columns are
-		// created through the builder, so panic is acceptable.
-		panic(fmt.Sprintf("cannot get default value of column type %s", columnType.String()))
-	}
-}

@@ -55,7 +55,6 @@ func (c *ColumnBuilder) KeyValue() *ColumnBuilder {
 }
 
 // Bool specifies this column has bool type in the database.
-// NULL values are coalesced to FALSE.
 func (c *ColumnBuilder) Bool() *ColumnBuilder {
 	c.column.columnType = ColumnTypeBool
 	return c
