@@ -52,7 +52,7 @@ func enqueueExecutePostActionTask(ctx context.Context, rs *state.RunState, cg *p
 	for _, pacfg := range cg.Content.GetPostActions() {
 		if postaction.IsTriggeringConditionMet(pacfg, &rs.Run) {
 			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxTryjobExecutorDuration)),
+				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostActionExecutionDuration)),
 				Work: &run.OngoingLongOps_Op_ExecutePostAction{
 					ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
 						Action: pacfg,

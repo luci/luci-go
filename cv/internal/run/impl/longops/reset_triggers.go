@@ -291,39 +291,14 @@ func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher
 }
 
 func (op *ResetTriggersOp) makeRetryFactory() retry.Factory {
-	return func() retry.Iterator {
-		return &resetRetryIterator{
-			inner: &retry.ExponentialBackoff{
-				Limited: retry.Limited{
-					Delay:   100 * time.Millisecond,
-					Retries: -1, // unlimited
-				},
-				Multiplier: 2,
-				MaxDelay:   1 * time.Minute,
+	return lease.RetryIfLeased(transient.Only(func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   100 * time.Millisecond,
+				Retries: -1, // unlimited
 			},
+			Multiplier: 2,
+			MaxDelay:   1 * time.Minute,
 		}
-	}
-}
-
-// resetRetryIterator retries on transient failure in an exponential
-// fashion. If the error is alreadyInLease, this iterator returns the earliest
-// time of the lease expiry and the inner's iterator next retry.
-type resetRetryIterator struct {
-	inner retry.Iterator
-}
-
-// Next implements retry.Iterator
-func (c resetRetryIterator) Next(ctx context.Context, err error) time.Duration {
-	switch leaseErr, isLeaseErr := lease.IsAlreadyInLeaseErr(err); {
-	case isLeaseErr:
-		innerNext := c.inner.Next(ctx, err)
-		if timeToExpire := clock.Until(ctx, leaseErr.ExpireTime); timeToExpire > 0 && timeToExpire < innerNext {
-			return timeToExpire
-		}
-		return innerNext
-	case transient.Tag.In(err):
-		return c.inner.Next(ctx, err)
-	default:
-		return retry.Stop
-	}
+	}))
 }

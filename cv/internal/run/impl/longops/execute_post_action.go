@@ -32,10 +32,40 @@ type ExecutePostActionOp struct {
 
 // Do implements Operation interface.
 func (op *ExecutePostActionOp) Do(ctx context.Context) (*eventpb.LongOpCompleted, error) {
-	exe := postaction.NewExecutor(op.GFactory)
-	err := exe.Do(ctx, op.Op.GetExecutePostAction())
-	if err == nil {
-		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_SUCCEEDED}, nil
+	if op.IsCancelRequested() {
+		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, nil
 	}
-	return nil, errors.Annotate(err, "postaction.Executor.Do").Err()
+	exe := postaction.Executor{
+		GFactory:          op.GFactory,
+		Run:               op.Run,
+		Payload:           op.Op.GetExecutePostAction(),
+		IsCancelRequested: op.IsCancelRequested,
+	}
+	err := exe.Do(ctx)
+	return op.report(ctx, err), errors.Annotate(
+		err, "post-action-%s", exe.Payload.GetAction().GetName()).Err()
+}
+
+func (op *ExecutePostActionOp) report(ctx context.Context, err error) *eventpb.LongOpCompleted {
+	var status eventpb.LongOpCompleted_Status
+	switch {
+	case err == nil:
+		status = eventpb.LongOpCompleted_SUCCEEDED
+	case op.IsCancelRequested():
+		// It's possible that the cancellation was detected after Do() failed
+		// by permanent failures. It's still ok to mark the op as cancelled.
+		// Cancallation can happen after partial successes and failures anyways.
+		status = eventpb.LongOpCompleted_CANCELLED
+	case ctx.Err() != nil:
+		// Same as CANCELLED. It's ok to mark the op as expired, regardless
+		// of the error that Do returned.
+		status = eventpb.LongOpCompleted_EXPIRED
+	default:
+		status = eventpb.LongOpCompleted_FAILED
+	}
+
+	return &eventpb.LongOpCompleted{
+		Status: status,
+		Result: &eventpb.LongOpCompleted_ExecutePostAction{},
+	}
 }

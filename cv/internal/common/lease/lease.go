@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -303,4 +304,60 @@ func Apply(ctx context.Context, app Application) (*Lease, error) {
 		return nil, errors.Annotate(finalErr, "failed to create lease for resource %s", rid).Tag(transient.Tag).Err()
 	}
 	return ret, nil
+}
+
+// RetryIfLeased returns a retry.Factory that generates an iterator that
+// retries on AlreadyInLeaseErr.
+//
+// If the error != AlreadyInLease, the `next` iterator is used to compute
+// the delays for retries.
+//
+// If the error == AlreadyInLease, it tags AlreadyInLease as transient, and
+// passes it to the `next` iterator. Then, it chooses a shorter delay
+// between the time until lease expiry and the delay from the `next` iterator.
+//
+// If the `next` delay == retry.Stop, the iterator always returns retry.Stop,
+// whether the error was AlreadyInLease or not.
+func RetryIfLeased(next retry.Factory) retry.Factory {
+	return func() retry.Iterator {
+		var inner retry.Iterator
+		if next != nil {
+			inner = next()
+		}
+		return &retryIfLeasedIterator{inner: inner}
+	}
+}
+
+// retryIfLeasedIterator retries on AlreadyInLeaseErr with a shorter duration
+// between the lease expiry and what the inner iterator would generate.
+//
+// If the error is not AlreadyInLeaseErr, it uses the inner iterator to
+// determine if it should continue the iteration and how long the delay should
+// be, if so.
+type retryIfLeasedIterator struct {
+	inner retry.Iterator
+}
+
+// Next implements retry.Iterator
+func (c retryIfLeasedIterator) Next(ctx context.Context, err error) time.Duration {
+	if info, isLeasedErr := IsAlreadyInLeaseErr(err); isLeasedErr {
+		timeToExpire := clock.Until(ctx, info.ExpireTime)
+		if c.inner == nil {
+			return timeToExpire
+		}
+
+		switch innerNext := c.inner.Next(ctx, transient.Tag.Apply(err)); {
+		case innerNext == retry.Stop:
+			return retry.Stop
+		case timeToExpire < innerNext:
+			return timeToExpire
+		default:
+			return innerNext
+		}
+	}
+
+	if c.inner == nil {
+		return retry.Stop
+	}
+	return c.inner.Next(ctx, err)
 }

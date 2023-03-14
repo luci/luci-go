@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry"
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
@@ -231,4 +233,58 @@ func mustLoadLease(ctx context.Context, rid ResourceID) *Lease {
 		panic(err)
 	}
 	return ret
+}
+
+func TestRetryIfLeased(t *testing.T) {
+	t.Parallel()
+
+	Convey("RetryIfLeased", t, func() {
+		ct := cvtesting.Test{}
+		ctx, cancel := ct.SetUp()
+		defer cancel()
+
+		innerDelay, leaseDur := 2*time.Minute, 3*time.Minute
+		innerPolicy := func() retry.Iterator {
+			return &retry.Limited{
+				Delay:   innerDelay,
+				Retries: 1,
+			}
+		}
+		expire := clock.Now(ctx).UTC().Truncate(time.Second).Add(leaseDur)
+		leaseErr := &AlreadyInLeaseErr{ExpireTime: expire}
+		notLeaseErr := errors.New("successful error")
+
+		Convey("with nil inner", func() {
+			it := RetryIfLeased(nil)()
+
+			Convey("returns stop, if not AlreadyInLeaseErr", func() {
+				So(it.Next(ctx, notLeaseErr), ShouldEqual, retry.Stop)
+			})
+			Convey("returns the lease expiration, if AlreadyInLeaseErr", func() {
+				So(it.Next(ctx, leaseErr).Truncate(time.Second), ShouldEqual, leaseDur)
+			})
+		})
+
+		Convey("with limited inner", func() {
+			it := RetryIfLeased(innerPolicy)()
+
+			Convey("returns inner.next(), if not AlreadyInLeaseErr", func() {
+				So(it.Next(ctx, notLeaseErr), ShouldEqual, innerDelay)
+				So(it.Next(ctx, notLeaseErr), ShouldEqual, retry.Stop)
+			})
+			Convey("returns whichever comes earlier", func() {
+				Convey("inner.Delay < expiration", func() {
+					So(it.Next(ctx, leaseErr), ShouldEqual, innerDelay)
+				})
+				Convey("inner.Delay > expiration", func() {
+					it.(*retryIfLeasedIterator).inner.(*retry.Limited).Delay *= 2
+					So(it.Next(ctx, leaseErr), ShouldEqual, leaseDur)
+				})
+				Convey("inner.Delay > 0 but inner returns stop", func() {
+					So(it.Next(ctx, notLeaseErr), ShouldEqual, innerDelay)
+					So(it.Next(ctx, leaseErr), ShouldEqual, retry.Stop)
+				})
+			})
+		})
+	})
 }
