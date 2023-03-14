@@ -25,24 +25,12 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging/memlogger"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
 )
-
-type testBBClient struct {
-	requests []*bbpb.UpdateBuildRequest
-}
-
-func (t *testBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error) {
-	req := proto.Clone(in).(*bbpb.UpdateBuildRequest)
-	t.requests = append(t.requests, req)
-	return &bbpb.Build{}, nil
-}
 
 var successResult = &cipdOut{
 	Result: map[string][]*cipdPkg{

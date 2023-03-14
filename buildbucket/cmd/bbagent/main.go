@@ -41,6 +41,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -181,32 +182,76 @@ func parseBbAgentArgs(ctx context.Context, arg string) (clientInput, *bbpb.Build
 	return clientInput{bbclient, input}, secrets
 }
 
-func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64) (clientInput, *bbpb.BuildSecrets) {
+func startBuild(ctx context.Context, bbclient BuildsClient, buildID int64, taskID string) (*bbpb.StartBuildResponse, error) {
+	return bbclient.StartBuild(
+		ctx,
+		&bbpb.StartBuildRequest{
+			RequestId: uuid.NewSHA1(uuid.Nil, []byte(taskID)).String(),
+			BuildId:   buildID,
+			TaskId:    taskID,
+		},
+	)
+}
+
+func retrieveTaskIDFromContext(ctx context.Context) string {
+	swarmingCtx := lucictx.GetSwarming(ctx)
+	if swarmingCtx == nil || swarmingCtx.GetTask() == nil || swarmingCtx.Task.GetTaskId() == "" {
+		check(ctx, errors.New("incomplete swarming context"))
+	}
+	return swarmingCtx.Task.TaskId
+}
+
+// Get the build info by the provided buildID.
+//
+// If taskID is provided, or if *startBuildFirst is true, this function will also
+// start the build.
+//
+// Note: taskID may be updated if startBuildFirst is true and the swarming task
+// id can be found from swarming part of luci context.
+func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, taskID *string, startBuildFirst *bool) (clientInput, *bbpb.BuildSecrets) {
 	logging.Debugf(ctx, "fetching build %d", *buildID)
 	bbclient, secrets, err := newBuildsClient(ctx, *hostname, defaultRetryStrategy)
 	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
-	// Get everything from the build.
-	// Here we use UpdateBuild instead of GetBuild, so that
-	// * bbagent can always get the build because of the build token.
-	//   * This was not guaranteed for GetBuild, because it's possible that a
-	//     service account has permission to run a build but doesn't have
-	//     permission to view the build.
-	//   * bbagent could tear down the build earlier if the parent build is canceled.
-	// TODO(crbug.com/1019272):  we should also use this RPC to set the initial
-	// status of the build to STARTED (and also be prepared to quit in the case
-	// that this build got double-scheduled).
-	build, err := bbclient.UpdateBuild(
-		ctx,
-		&bbpb.UpdateBuildRequest{
-			Build: &bbpb.Build{
-				Id: *buildID,
-			},
-			Mask: &bbpb.BuildMask{
-				AllFields: true,
-			},
-		})
 
-	check(ctx, errors.Annotate(err, "failed to fetch build").Err())
+	var build *bbpb.Build
+	if *taskID == "" && *startBuildFirst {
+		*taskID = retrieveTaskIDFromContext(ctx)
+	}
+	if *taskID == "" {
+		// Get everything from the build.
+		// Here we use UpdateBuild instead of GetBuild, so that
+		// * bbagent can always get the build because of the build token.
+		//   * This was not guaranteed for GetBuild, because it's possible that a
+		//     service account has permission to run a build but doesn't have
+		//     permission to view the build.
+		//   * bbagent could tear down the build earlier if the parent build is canceled.
+		// TODO(crbug.com/1019272):  we should also use this RPC to set the initial
+		// status of the build to STARTED (and also be prepared to quit in the case
+		// that this build got double-scheduled).
+		build, err = bbclient.UpdateBuild(
+			ctx,
+			&bbpb.UpdateBuildRequest{
+				Build: &bbpb.Build{
+					Id: *buildID,
+				},
+				Mask: &bbpb.BuildMask{
+					AllFields: true,
+				},
+			})
+		check(ctx, errors.Annotate(err, "failed to fetch build").Err())
+	} else {
+		var res *bbpb.StartBuildResponse
+		res, err = startBuild(ctx, bbclient, *buildID, *taskID)
+		if err != nil && buildbucket.DuplicateTask.In(err) {
+			// This task is a duplicate, bail out.
+			logging.Infof(ctx, err.Error())
+			os.Exit(0)
+		}
+		check(ctx, errors.Annotate(err, "failed to start build").Err())
+		build = res.Build
+		secrets.BuildToken = res.UpdateBuildToken
+	}
+
 	input := &bbpb.BBAgentArgs{
 		Build:                  build,
 		CacheDir:               protoutil.CacheDir(build),
@@ -260,9 +305,11 @@ func backFillTaskInfo(ctx context.Context, ci clientInput) int {
 
 // prepareInputBuild sets status=STARTED and adds log entries
 func prepareInputBuild(ctx context.Context, build, updatedBuild *bbpb.Build) {
-	build.Status = updatedBuild.Status
-	build.StartTime = updatedBuild.StartTime
-	build.UpdateTime = updatedBuild.UpdateTime
+	if updatedBuild != nil {
+		build.Status = updatedBuild.Status
+		build.StartTime = updatedBuild.StartTime
+		build.UpdateTime = updatedBuild.UpdateTime
+	}
 
 	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
 	// for the top level user stdout/stderr streams.
@@ -504,6 +551,8 @@ func mainImpl() int {
 	buildID := flag.Int64("build-id", 0, "Buildbucket build ID")
 	useGCEAccount := flag.Bool("use-gce-account", false, "Use GCE metadata service account for all calls")
 	cacheBase := flag.String("cache-base", "", "Directory where all the named caches are mounted for the build")
+	taskID := flag.String("task-id", "", "ID of the task")
+	startBuildFirst := flag.Bool("start-build-first", false, "Call StartBuild before making any UpdateBuild calls")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
 
 	flag.Parse()
@@ -521,9 +570,14 @@ func mainImpl() int {
 	case len(args) == 1:
 		bbclientInput, secrets = parseBbAgentArgs(ctx, args[0])
 	case *hostname != "" && *buildID > 0:
-		bbclientInput, secrets = parseHostBuildID(ctx, hostname, buildID)
+		bbclientInput, secrets = parseHostBuildID(ctx, hostname, buildID, taskID, startBuildFirst)
 	default:
 		check(ctx, errors.Reason("-host and -build-id are required").Err())
+	}
+
+	// The build has been canceled, bail out early.
+	if bbclientInput.input.Build.CancelTime != nil {
+		return cancelBuild(ctx, bbclientInput.bbclient, bbclientInput.input.Build)
 	}
 
 	isChildBuild := len(bbclientInput.input.Build.AncestorIds) > 0
@@ -561,23 +615,28 @@ func mainImpl() int {
 	}
 	defer cancel()
 
-	// We send a single status=STARTED here, and will send the final build status
-	// after the user executable completes.
-	updatedBuild, err := bbclientInput.bbclient.UpdateBuild(
-		cctx,
-		&bbpb.UpdateBuildRequest{
-			Build: &bbpb.Build{
-				Id:     bbclientInput.input.Build.Id,
-				Status: bbpb.Status_STARTED,
-			},
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
-			Mask:       readMask,
-		})
-	check(ctx, errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
+	var updatedBuild *bbpb.Build
+	if *taskID == "" {
+		// We send a single status=STARTED here, and will send the final build status
+		// after the user executable completes.
+		// TODO(crbug.com/1416971): remove this UpdateBuild call, after it's fully
+		// enabled for bbagent to call StartBuild.
+		updatedBuild, err = bbclientInput.bbclient.UpdateBuild(
+			cctx,
+			&bbpb.UpdateBuildRequest{
+				Build: &bbpb.Build{
+					Id:     bbclientInput.input.Build.Id,
+					Status: bbpb.Status_STARTED,
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"build.status"}},
+				Mask:       readMask,
+			})
+		check(ctx, errors.Annotate(err, "failed to report status STARTED to Buildbucket").Err())
 
-	// The build has been canceled, bail out early.
-	if updatedBuild.CancelTime != nil {
-		return cancelBuild(ctx, bbclientInput.bbclient, updatedBuild)
+		// The build has been canceled, bail out early.
+		if updatedBuild.CancelTime != nil {
+			return cancelBuild(ctx, bbclientInput.bbclient, updatedBuild)
+		}
 	}
 
 	prepareInputBuild(cctx, bbclientInput.input.Build, updatedBuild)

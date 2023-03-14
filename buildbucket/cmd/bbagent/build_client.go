@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/auth"
@@ -53,6 +52,7 @@ import (
 // Make sure any code using BuildsClient can handle this scenario.
 type BuildsClient interface {
 	UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (*bbpb.Build, error)
+	StartBuild(ctx context.Context, in *bbpb.StartBuildRequest, opts ...grpc.CallOption) (*bbpb.StartBuildResponse, error)
 }
 
 var _ BuildsClient = dummyBBClient{}
@@ -75,29 +75,52 @@ func (dummyBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildReques
 	return &bbpb.Build{}, nil
 }
 
-type liveBBClient struct {
-	tok    string
-	c      bbpb.BuildsClient
-	retryF retry.Factory
+func (dummyBBClient) StartBuild(ctx context.Context, in *bbpb.StartBuildRequest, opts ...grpc.CallOption) (*bbpb.StartBuildResponse, error) {
+	return &bbpb.StartBuildResponse{}, nil
 }
 
-func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (build *bbpb.Build, err error) {
-	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bb.tok))
-	err = retry.Retry(ctx, transient.Only(bb.retryF), func() (err error) {
-		build, err = bb.c.UpdateBuild(ctx, in)
+type liveBBClient struct {
+	// A BUILD token for agent to call UpdateBuild.
+	buildToken string
+	// A START_BUILD token for agent to call StartBuild.
+	startBuildToken string
+	c               bbpb.BuildsClient
+	retryF          retry.Factory
+}
 
-		// Attach transient tag to internal transient error and NotFound.
-		code := status.Code(err)
-		if grpcutil.IsTransientCode(code) || code == codes.NotFound || code == codes.DeadlineExceeded {
-			err = transient.Tag.Apply(err)
-		}
-		return err
-	}, func(err error, sleepTime time.Duration) {
+func retryRPC(ctx context.Context, retryF retry.Factory, funcName string, f func() error) error {
+	return retry.Retry(ctx, transient.Only(retryF), f, func(err error, sleepTime time.Duration) {
 		logging.Fields{
 			logging.ErrorKey: err,
 			"sleepTime":      sleepTime,
-		}.Warningf(ctx, "UpdateBuild will retry in %s", sleepTime)
+		}.Warningf(ctx, "%s will retry in %s", funcName, sleepTime)
 	})
+}
+
+func (bb *liveBBClient) UpdateBuild(ctx context.Context, in *bbpb.UpdateBuildRequest, opts ...grpc.CallOption) (build *bbpb.Build, err error) {
+	if bb.buildToken == "" {
+		return nil, errors.New("update build token not found.")
+	}
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bb.buildToken))
+	err = retryRPC(ctx, bb.retryF, "UpdateBuild", func() (err error) {
+		build, err = bb.c.UpdateBuild(ctx, in)
+		return grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded, codes.NotFound)
+	})
+	return
+}
+
+func (bb *liveBBClient) StartBuild(ctx context.Context, in *bbpb.StartBuildRequest, opts ...grpc.CallOption) (res *bbpb.StartBuildResponse, err error) {
+	if bb.startBuildToken == "" {
+		return nil, errors.New("start build token not found.")
+	}
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bb.startBuildToken))
+	err = retryRPC(ctx, bb.retryF, "StartBuild", func() (err error) {
+		res, err = bb.c.StartBuild(ctx, in)
+		return grpcutil.WrapIfTransientOr(err, codes.DeadlineExceeded, codes.NotFound)
+	})
+	if err == nil {
+		bb.buildToken = res.UpdateBuildToken
+	}
 	return
 }
 
@@ -135,17 +158,15 @@ func newBuildsClient(ctx context.Context, hostname string, retryF retry.Factory)
 	if err != nil {
 		return nil, nil, err
 	}
-	// TODO(iannucci): Exchange secret build token+nonce for a running build token
-	// here to confirm that:
-	//   * We're the ONLY ones servicing this build (detect duplicate Swarming
-	//     tasks). Failure to exchange the token would let us know that we got
-	//     double-booked.
-	//   * Auth is properly configured for buildbucket before we start running the
-	//     user code.
 	return &liveBBClient{
-		secrets.BuildToken,
-		bbpb.NewBuildsPRPCClient(prpcClient),
-		retryF,
+		// Currently for builds on Swarming, buildToken and startBuildToken are the
+		// same.
+		// TODO(crbug.com/1416971): Stop setting buildToken here after bbagent
+		// always calls StartBuild.
+		buildToken:      secrets.BuildToken,
+		startBuildToken: secrets.BuildToken,
+		c:               bbpb.NewBuildsPRPCClient(prpcClient),
+		retryF:          retryF,
 	}, secrets, nil
 }
 

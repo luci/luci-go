@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -145,6 +146,25 @@ func TestDownloadInputs(t *testing.T) {
 		})
 	})
 
+}
+
+func TestStartBuild(t *testing.T) {
+	Convey("startBuild", t, func() {
+		ctx := context.Background()
+		Convey("pass", func() {
+			bbclient := &testBBClient{}
+			res, err := startBuild(ctx, bbclient, 87654321, "pass")
+			So(err, ShouldBeNil)
+			So(res, ShouldNotBeNil)
+		})
+
+		Convey("duplicate", func() {
+			bbclient := &testBBClient{}
+			res, err := startBuild(ctx, bbclient, 87654321, "duplicate")
+			So(res, ShouldBeNil)
+			So(buildbucket.DuplicateTask.In(err), ShouldBeTrue)
+		})
+	})
 }
 
 func TestChooseCacheDir(t *testing.T) {
