@@ -878,13 +878,17 @@ func computeEnvPrefixes(build *model.Build) []*swarming.SwarmingRpcsStringListPa
 // computeCommand computes the command for bbagent.
 func computeCommand(build *model.Build) []string {
 	if strings.Contains(build.ExperimentsString(), buildbucket.ExperimentBBAgentGetBuild) {
-		return []string{
+		cmd := []string{
 			"bbagent${EXECUTABLE_SUFFIX}",
 			"-host",
 			build.Proto.GetInfra().GetBuildbucket().GetHostname(),
 			"-build-id",
 			strconv.FormatInt(build.ID, 10),
 		}
+		if strings.Contains(build.ExperimentsString(), buildbucket.ExperimentBBAgentStartBuild) {
+			cmd = append(cmd, "-start-build-first")
+		}
+		return cmd
 	}
 
 	return []string{

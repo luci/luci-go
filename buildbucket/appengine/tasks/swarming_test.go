@@ -208,6 +208,22 @@ func TestTaskDef(t *testing.T) {
 			})
 		})
 
+		Convey("bbagent_startbuild experiment", func() {
+			b.Experiments = []string{
+				"+luci.buildbucket.bbagent_getbuild",
+				"+luci.buildbucket.agent.start_build",
+			}
+			bbagentCmd := computeCommand(b)
+			So(bbagentCmd, ShouldResemble, []string{
+				"bbagent${EXECUTABLE_SUFFIX}",
+				"-host",
+				"bbhost.com",
+				"-build-id",
+				"123",
+				"-start-build-first",
+			})
+		})
+
 		Convey("no bbagent_getbuild experiment", func() {
 			b.Experiments = []string{"-luci.buildbucket.bbagent_getbuild"}
 			b.Proto.Infra.Bbagent = &pb.BuildInfra_BBAgent{
