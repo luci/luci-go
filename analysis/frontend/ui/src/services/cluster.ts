@@ -132,6 +132,16 @@ export interface ClusteringVersion {
   algorithmsVersion: number;
 }
 
+export interface TimeRange {
+  // RFC 3339 encoded date/time which is the start of the range, inclusive.
+  // e.g. "2019-01-25T02:00:00.000Z"
+  earliest: string;
+
+  // RFC 3339 encoded date/time which is the end of the range, exclusive.
+  // e.g. "2019-01-26T02:00:00.000Z"
+  latest: string;
+}
+
 export interface QueryClusterSummariesRequest {
   // The LUCI project.
   project: string;
@@ -143,6 +153,9 @@ export interface QueryClusterSummariesRequest {
   // An AIP-132-style order_by clause, which specifies the sort order
   // of the result.
   orderBy: string;
+
+  // The time range over which to get the cluster summaries.
+  timeRange: TimeRange;
 
   // The resource name(s) of the metrics to include for each cluster
   // in the response.
@@ -184,52 +197,52 @@ export interface QueryClusterFailuresResponse {
 
 // The reason a test result was exonerated.
 export type ExonerationReason =
-    // The exoneration reason is not known to LUCI Analysis.
-    'EXONERATION_REASON_UNSPECIFIED'
-    // Similar unexpected results were observed in presubmit run(s) for other,
-    // unrelated CL(s). (This is suggestive of the issue being present
-    // on mainline but is not confirmed as there are possible confounding
-    // factors, like how tests are run on CLs vs how tests are run on
-    // mainline branches.)
-    // Applies to unexpected results in presubmit/CQ runs only.
-    | 'OCCURS_ON_OTHER_CLS'
-    // Similar unexpected results were observed on a mainline branch
-    // (i.e. against a build without unsubmitted changes applied).
-    // (For avoidance of doubt, this includes both flakily and
-    // deterministically occurring unexpected results.)
-    // Applies to unexpected results in presubmit/CQ runs only.
-    | 'OCCURS_ON_MAINLINE'
-    // The tests are not critical to the test subject (e.g. CL) passing.
-    // This could be because more data is being collected to determine if
-    // the tests are stable enough to be made critical (as is often the
-    // case for experimental test suites).
-    | 'NOT_CRITICAL'
-    // The test variant was exonerated because it contained an unexpected
-    // pass.
-    | 'UNEXPECTED_PASS';
+  // The exoneration reason is not known to LUCI Analysis.
+  'EXONERATION_REASON_UNSPECIFIED'
+  // Similar unexpected results were observed in presubmit run(s) for other,
+  // unrelated CL(s). (This is suggestive of the issue being present
+  // on mainline but is not confirmed as there are possible confounding
+  // factors, like how tests are run on CLs vs how tests are run on
+  // mainline branches.)
+  // Applies to unexpected results in presubmit/CQ runs only.
+  | 'OCCURS_ON_OTHER_CLS'
+  // Similar unexpected results were observed on a mainline branch
+  // (i.e. against a build without unsubmitted changes applied).
+  // (For avoidance of doubt, this includes both flakily and
+  // deterministically occurring unexpected results.)
+  // Applies to unexpected results in presubmit/CQ runs only.
+  | 'OCCURS_ON_MAINLINE'
+  // The tests are not critical to the test subject (e.g. CL) passing.
+  // This could be because more data is being collected to determine if
+  // the tests are stable enough to be made critical (as is often the
+  // case for experimental test suites).
+  | 'NOT_CRITICAL'
+  // The test variant was exonerated because it contained an unexpected
+  // pass.
+  | 'UNEXPECTED_PASS';
 
 // Refer to luci.analysis.v1.PresubmitRunMode for documentation.
 export type PresubmitRunMode =
-    'PRESUBMIT_RUN_MODE_UNSPECIFIED'
-    | 'DRY_RUN'
-    | 'FULL_RUN'
-    | 'QUICK_DRY_RUN'
-    | 'NEW_PATCHSET_RUN';
+  'PRESUBMIT_RUN_MODE_UNSPECIFIED'
+  | 'DRY_RUN'
+  | 'FULL_RUN'
+  | 'QUICK_DRY_RUN'
+  | 'NEW_PATCHSET_RUN';
 
 // Refer to luci.analysis.v1.PresubmitRunStatus for documentation.
 export type PresubmitRunStatus =
-    'PRESUBMIT_RUN_STATUS_UNSPECIFIED'
-    | 'PRESUBMIT_RUN_STATUS_SUCCEEDED'
-    | 'PRESUBMIT_RUN_STATUS_FAILED'
-    | 'PRESUBMIT_RUN_STATUS_CANCELED';
+  'PRESUBMIT_RUN_STATUS_UNSPECIFIED'
+  | 'PRESUBMIT_RUN_STATUS_SUCCEEDED'
+  | 'PRESUBMIT_RUN_STATUS_FAILED'
+  | 'PRESUBMIT_RUN_STATUS_CANCELED';
 
 // Refer to luci.analysis.v1.BuildStatus for documentation.
 export type BuildStatus =
-    'BUILD_STATUS_UNSPECIFIED'
-    | 'BUILD_STATUS_SUCCESS'
-    | 'BUILD_STATUS_FAILURE'
-    | 'BUILD_STATUS_INFRA_FAILURE'
-    | 'BUILD_STATUS_CANCELED';
+  'BUILD_STATUS_UNSPECIFIED'
+  | 'BUILD_STATUS_SUCCESS'
+  | 'BUILD_STATUS_FAILURE'
+  | 'BUILD_STATUS_INFRA_FAILURE'
+  | 'BUILD_STATUS_CANCELED';
 
 // Refer to luci.analysis.v1.ClusterFailureGroup.Exoneration for documentation.
 export interface Exoneration {
@@ -304,7 +317,7 @@ export interface DistinctClusterFailure {
   changelists?: Changelist[];
 
   // The number of test results in the group.
-  count : number;
+  count: number;
 }
 
 export interface QueryClusterExoneratedTestVariantsRequest {
@@ -354,5 +367,5 @@ export interface QueryClusterHistoryResponse {
 
 export interface ClusterHistoryDay {
   date: string;
-  metrics: {[metricId: string]: number};
+  metrics: { [metricId: string]: number };
 }

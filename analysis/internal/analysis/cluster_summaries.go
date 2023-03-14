@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
+	"go.chromium.org/luci/analysis/pbutil"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 )
@@ -64,7 +66,8 @@ type QueryClusterSummariesOptions struct {
 	Realms        []string
 	// Metrics is the set of metrics to query. If a metric is referenced
 	// in the OrderBy clause, it must also be included here.
-	Metrics []metrics.Definition
+	Metrics   []metrics.Definition
+	TimeRange *pb.TimeRange
 }
 
 // ClusterSummary represents a summary of the cluster's failures
@@ -112,6 +115,9 @@ func ClusterSummariesTable(queriedMetrics []metrics.Definition) *aip.Table {
 // The subset of failures included in the clustering may be filtered.
 // If the dataset for the LUCI project does not exist, returns
 // ProjectNotExistsErr.
+// If options.TimeRange is invalid, returns an error tagged with
+// InvalidArgumentTag so that the appropriate gRPC error can be returned to the
+// client (if applicable).
 // If options.FailuresFilter or options.OrderBy is invalid with respect to the
 // query schema, returns an error tagged with InvalidArgumentTag so that the
 // appropriate gRPC error can be returned to the client (if applicable).
@@ -119,6 +125,10 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	_, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/analysis/QueryClusterSummaries")
 	s.Attribute("project", luciProject)
 	defer func() { s.End(err) }()
+
+	if err := pbutil.ValidateTimeRange(ctx, options.TimeRange); err != nil {
+		return nil, errors.Annotate(err, "time_range").Tag(InvalidArgumentTag).Err()
+	}
 
 	// Note that the content of the filter and order_by clause is untrusted
 	// user input and is validated as part of the Where/OrderBy clause
@@ -174,7 +184,8 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 			FROM clustered_failures f
 			WHERE
 				is_included_with_high_priority
-				AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
+				AND partition_time >= @earliest
+				AND partition_time < @latest
 				AND project = @project
 				AND (` + whereClause + `)
 				AND realm IN UNNEST(@realms)
@@ -199,7 +210,9 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	q.Parameters = toBigQueryParameters(parameters)
 	q.Parameters = append(q.Parameters,
 		bigquery.QueryParameter{Name: "realms", Value: options.Realms},
-		bigquery.QueryParameter{Name: "project", Value: luciProject})
+		bigquery.QueryParameter{Name: "project", Value: luciProject},
+		bigquery.QueryParameter{Name: "earliest", Value: options.TimeRange.Earliest.AsTime()},
+		bigquery.QueryParameter{Name: "latest", Value: options.TimeRange.Latest.AsTime()})
 
 	job, err := q.Run(ctx)
 	if err != nil {

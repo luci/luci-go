@@ -87,34 +87,6 @@ func validateTable(ctx context.Context, realm, cloudProject, dataset, table stri
 	return err
 }
 
-func validateTimeRange(ctx context.Context, timeRange *pb.TimeRange) error {
-	switch {
-	case timeRange.GetEarliest() == nil:
-		return unspecified("timeRange.Earliest")
-	case timeRange.GetLatest() == nil:
-		return unspecified("timeRange.Latest")
-	}
-
-	earliest, err := pbutil.AsTime(timeRange.Earliest)
-	if err != nil {
-		return err
-	}
-
-	latest, err := pbutil.AsTime(timeRange.Latest)
-	if err != nil {
-		return err
-	}
-
-	if !earliest.Before(latest) {
-		return fmt.Errorf("timeRange: earliest must be before latest")
-	}
-
-	if !latest.Before(clock.Now(ctx)) {
-		return fmt.Errorf("timeRange: latest must not be in the future")
-	}
-	return nil
-}
-
 func validateExportTestVariantsRequest(ctx context.Context, req *adminpb.ExportTestVariantsRequest) error {
 	if req.GetRealm() == "" {
 		return unspecified("realm")
@@ -123,7 +95,17 @@ func validateExportTestVariantsRequest(ctx context.Context, req *adminpb.ExportT
 		return err
 	}
 
-	return validateTimeRange(ctx, req.GetTimeRange())
+	tr := req.GetTimeRange()
+	if err := pbutil.ValidateTimeRange(ctx, tr); err != nil {
+		return errors.Annotate(err, "time_range").Err()
+	}
+	// Also check that the time range does not span into the future.
+	latest, _ := pbutil.AsTime(tr.Latest)
+	if !latest.Before(clock.Now(ctx)) {
+		return errors.New("time_range: latest must not be in the future")
+	}
+
+	return nil
 }
 
 type rangeInTime struct {

@@ -14,14 +14,18 @@
 
 import Grid from '@mui/material/Grid';
 
-import ClustersTableMetricSelection from './clusters_table_metric_selection/clusters_table_metric_selection';
 import ClustersTableFilter from './clusters_table_filter/clusters_table_filter';
+import { ClustersTableIntervalSelection } from './clusters_table_interval_selection/clusters_table_interval_selection';
+import ClustersTableMetricSelection from './clusters_table_metric_selection/clusters_table_metric_selection';
 
 const ClustersTableForm = () => {
   return (
     <Grid container item xs={12} spacing={2} data-testid="clusters_table_filter">
-      <Grid item xs={8}>
+      <Grid item xs={6}>
         <ClustersTableFilter />
+      </Grid>
+      <Grid item xs={2}>
+        <ClustersTableIntervalSelection />
       </Grid>
       <Grid item xs={4}>
         <ClustersTableMetricSelection />

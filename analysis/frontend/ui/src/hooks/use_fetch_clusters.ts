@@ -12,24 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQuery, UseQueryResult } from 'react-query';
+import dayjs from 'dayjs';
+import {
+  useQuery,
+  UseQueryResult,
+} from 'react-query';
 
 import {
   getClustersService,
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
 } from '@/services/cluster';
+import { Metric } from '@/services/metrics';
 import {
-  prpcRetrier,
   MetricId,
+  prpcRetrier,
 } from '@/services/shared_models';
-import {
-  Metric,
-} from '@/services/metrics';
+
+export interface ClustersFetchOptions {
+  project: string,
+  failureFilter: string,
+  orderBy?: OrderBy,
+  metrics: Metric[],
+  interval?: TimeInterval,
+}
 
 export interface OrderBy {
   metric: MetricId,
   isAscending: boolean,
+}
+
+export interface TimeInterval {
+  id: string; // ID for the time interval, e.g. '3d'
+  label: string; // Human-readable name for the time interval, e.g. '3 days'
+  duration: number; // Duration of the time interval in hours
+}
+
+const intervalDuration = (interval?: TimeInterval): number => {
+  if (!interval) {
+    return 0;
+  }
+  return interval.duration;
 }
 
 // orderByClause returns the AIP-132 order by clause needed
@@ -55,29 +78,34 @@ const metricsKey = (metrics: Metric[]): string => {
   return metricIds.join(':');
 };
 
-const useFetchClusters = (
-    project: string,
-    failureFilter: string,
-    orderBy: OrderBy | undefined,
-    metrics: Metric[],
+export const useFetchClusters = (
+  { project, failureFilter, orderBy, metrics, interval }: ClustersFetchOptions,
 ): UseQueryResult<QueryClusterSummariesResponse, Error> => {
   const clustersService = getClustersService();
   return useQuery(
-      ['clusters', project, failureFilter, orderByClause(orderBy), metricsKey(metrics)],
-      async () => {
-        const request : QueryClusterSummariesRequest = {
-          project: project,
-          failureFilter: failureFilter,
-          orderBy: orderByClause(orderBy),
-          metrics: metrics.map((m) => m.name),
-        };
+    ['clusters', project, failureFilter, orderByClause(orderBy), metricsKey(metrics), intervalDuration(interval)],
+    async () => {
+      const now = dayjs();
+      const request: QueryClusterSummariesRequest = {
+        project: project,
+        timeRange: {
+          earliest: now.subtract(intervalDuration(interval), 'hours').toISOString(),
+          latest: now.toISOString(),
+        },
+        failureFilter: failureFilter,
+        orderBy: orderByClause(orderBy),
+        metrics: metrics.map((m) => m.name),
+      };
 
-        return await clustersService.queryClusterSummaries(request);
-      }, {
-        retry: prpcRetrier,
-        enabled: orderBy !== undefined && orderBy.metric !== '' && metrics.length > 0,
-      },
+      return await clustersService.queryClusterSummaries(request);
+    }, {
+    retry: prpcRetrier,
+    enabled: (
+      orderBy !== undefined &&
+      orderBy.metric !== '' &&
+      metrics.length > 0 &&
+      interval !== undefined
+    ),
+  },
   );
 };
-
-export default useFetchClusters;

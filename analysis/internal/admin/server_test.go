@@ -174,7 +174,7 @@ func TestValidateExportTestVariantsRequest(t *testing.T) {
 					Table:        table,
 					TimeRange:    &pb.TimeRange{},
 				})
-				So(err, ShouldErrLike, "timeRange.Earliest is not specified")
+				So(err, ShouldErrLike, "time_range: earliest: unspecified")
 			})
 
 			Convey("no latest", func() {
@@ -187,7 +187,7 @@ func TestValidateExportTestVariantsRequest(t *testing.T) {
 						Earliest: timestamppb.New(start),
 					},
 				})
-				So(err, ShouldErrLike, "timeRange.Latest is not specified")
+				So(err, ShouldErrLike, "time_range: latest: unspecified")
 			})
 
 			Convey("earliest is after latest", func() {
@@ -201,7 +201,7 @@ func TestValidateExportTestVariantsRequest(t *testing.T) {
 						Latest:   timestamppb.New(start),
 					},
 				})
-				So(err, ShouldErrLike, "timeRange: earliest must be before latest")
+				So(err, ShouldErrLike, "time_range: earliest must be before latest")
 			})
 
 			Convey("latest is in the future", func() {
@@ -216,7 +216,7 @@ func TestValidateExportTestVariantsRequest(t *testing.T) {
 						Latest:   timestamppb.New(now.Add(time.Hour)),
 					},
 				})
-				So(err, ShouldErrLike, "timeRange: latest must not be in the future")
+				So(err, ShouldErrLike, "time_range: latest must not be in the future")
 			})
 		})
 	})

@@ -61,5 +61,8 @@ message ExportTestVariantsRequest {
   // If the time range spans longer than 1 hour, the RPC will shard this range
   // into a list of smaller time_ranges each spans 1 hour and schedule
   // ExportTestVariants tasks for each of the smaller ones.
+  //
+  // The time range is valid if Earliest is before Latest, and both times are
+  // not in the future.
   luci.analysis.v1.TimeRange time_range = 6;
 }

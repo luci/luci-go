@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-import {
-  useEffect,
-} from 'react';
+import { useEffect } from 'react';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
@@ -26,12 +23,14 @@ import useFetchMetrics from '@/hooks/use_fetch_metrics';
 import ClustersTableContent from './clusters_table_content/clusters_table_content';
 import { ClusterTableContextWrapper } from './clusters_table_context';
 import ClustersTableForm from './clusters_table_form/clusters_table_form';
+import { TIME_INTERVAL_OPTIONS } from './clusters_table_form/clusters_table_interval_selection/clusters_table_interval_selection';
 import {
+  useIntervalParam,
   useSelectedMetricsParam,
 } from './hooks';
 
 interface Props {
-    project: string;
+  project: string;
 }
 
 const ClustersTable = ({
@@ -56,6 +55,15 @@ const ClustersTable = ({
     }
   }, [metrics, selectedMetrics, updateSelectedMetricsParam]);
 
+  const [selectedInterval, updateIntervalParam] = useIntervalParam(TIME_INTERVAL_OPTIONS);
+
+  // Set the default selected interval to be the first interval option
+  // if there are none in the URL already.
+  useEffect(() => {
+    if (!selectedInterval) {
+      updateIntervalParam(TIME_INTERVAL_OPTIONS[0]);
+    }
+  }, [selectedInterval, updateIntervalParam]);
 
   return (
     <ClusterTableContextWrapper metrics={metrics}>

@@ -59,6 +59,9 @@ type ExportTestVariantsRequest struct {
 	// If the time range spans longer than 1 hour, the RPC will shard this range
 	// into a list of smaller time_ranges each spans 1 hour and schedule
 	// ExportTestVariants tasks for each of the smaller ones.
+	//
+	// The time range is valid if Earliest is before Latest, and both times are
+	// not in the future.
 	TimeRange *v1.TimeRange `protobuf:"bytes,6,opt,name=time_range,json=timeRange,proto3" json:"time_range,omitempty"`
 }
 

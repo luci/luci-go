@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	"go.chromium.org/luci/analysis/internal/perms"
+	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -379,6 +380,11 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 		return nil, invalidArgumentError(errors.Reason("project").Err())
 	}
 
+	if err := pbutil.ValidateTimeRange(ctx, req.TimeRange); err != nil {
+		err = errors.Annotate(err, "time_range").Err()
+		return nil, invalidArgumentError(err)
+	}
+
 	// TODO(b/239768873): Provide some sort of fallback for users who do not
 	// have permission to run expensive queries if no filters are applied.
 
@@ -424,7 +430,9 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 			// To avoid the error returned from the service being non-deterministic
 			// if both goroutines error, populate any error encountered here
 			// into bqErr and return no error.
-			opts := &analysis.QueryClusterSummariesOptions{}
+			opts := &analysis.QueryClusterSummariesOptions{
+				TimeRange: req.TimeRange,
+			}
 			var err error
 			opts.FailureFilter, err = aip.ParseFilter(req.FailureFilter)
 			if err != nil {

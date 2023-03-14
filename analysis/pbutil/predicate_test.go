@@ -15,13 +15,17 @@
 package pbutil
 
 import (
+	"context"
 	"strings"
 	"testing"
+	"time"
 
 	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -151,6 +155,49 @@ func TestValidateVariantPredicate(t *testing.T) {
 		Convey(`Unspecified`, func() {
 			err := validate(&pb.VariantPredicate{})
 			So(err, ShouldErrLike, `unspecified`)
+		})
+	})
+}
+
+func TestValidateTimeRange(t *testing.T) {
+	Convey(`ValidateTimeRange`, t, func() {
+		ctx := context.Background()
+		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
+		ctx, _ = testclock.UseTime(ctx, now)
+
+		Convey(`Unspecified`, func() {
+			err := ValidateTimeRange(ctx, nil)
+			So(err, ShouldErrLike, `unspecified`)
+		})
+		Convey(`Earliest unspecified`, func() {
+			tr := &pb.TimeRange{
+				Latest: timestamppb.New(now.Add(-1 * time.Hour)),
+			}
+			err := ValidateTimeRange(ctx, tr)
+			So(err, ShouldErrLike, `earliest: unspecified`)
+		})
+		Convey(`Latest unspecified`, func() {
+			tr := &pb.TimeRange{
+				Earliest: timestamppb.New(now.Add(-1 * time.Hour)),
+			}
+			err := ValidateTimeRange(ctx, tr)
+			So(err, ShouldErrLike, `latest: unspecified`)
+		})
+		Convey(`Earliest before Latest`, func() {
+			tr := &pb.TimeRange{
+				Earliest: timestamppb.New(now.Add(-1 * time.Hour)),
+				Latest:   timestamppb.New(now.Add(-2 * time.Hour)),
+			}
+			err := ValidateTimeRange(ctx, tr)
+			So(err, ShouldErrLike, `earliest must be before latest`)
+		})
+		Convey(`Valid`, func() {
+			tr := &pb.TimeRange{
+				Earliest: timestamppb.New(now.Add(-1 * time.Hour)),
+				Latest:   timestamppb.New(now.Add(-1 * time.Microsecond)),
+			}
+			err := ValidateTimeRange(ctx, tr)
+			So(err, ShouldBeNil)
 		})
 	})
 }

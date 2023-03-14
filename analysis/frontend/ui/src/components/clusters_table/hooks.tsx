@@ -17,6 +17,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import { TimeInterval } from '@/hooks/use_fetch_clusters';
 import { Metric } from '@/services/metrics';
 import { MetricId } from '@/services/shared_models';
 
@@ -25,13 +26,12 @@ export interface OrderBy {
   isAscending: boolean,
 }
 
-
 export function useFilterParam(): [string, (failureFilter: string, replace?: boolean) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const failureFilter = searchParams.get('q') || '';
 
   function updateFailureFilterParam(failureFilter: string, replace = false) {
-    const params : ParamKeyValuePair[] = [];
+    const params: ParamKeyValuePair[] = [];
 
     for (const [k, v] of searchParams.entries()) {
       if (k !== 'q') {
@@ -48,6 +48,33 @@ export function useFilterParam(): [string, (failureFilter: string, replace?: boo
   }
 
   return [failureFilter, updateFailureFilterParam];
+}
+
+export function useIntervalParam(intervals: TimeInterval[]): [TimeInterval | undefined, (selectedInterval: TimeInterval, replace?: boolean) => void] {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const intervalParam = searchParams.get('interval') || '';
+  let interval: TimeInterval | undefined = undefined;
+  if (intervalParam) {
+    interval = intervals.find((option) => option.id === intervalParam);
+  }
+
+  function updateIntervalParam(selectedInterval: TimeInterval, replace = false) {
+    const params: ParamKeyValuePair[] = [];
+
+    for (const [k, v] of searchParams.entries()) {
+      if (k !== 'interval') {
+        params.push([k, v]);
+      }
+    }
+
+    params.push(['interval', selectedInterval.id]);
+
+    setSearchParams(params, {
+      replace,
+    });
+  }
+
+  return [interval, updateIntervalParam];
 }
 
 export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (orderBy: OrderBy, replace?: boolean) => void] {
@@ -69,7 +96,7 @@ export function useOrderByParam(metrics: Metric[]): [OrderBy | undefined, (order
   }
 
   function updateOrderByParams(orderBy: OrderBy, replace = false) {
-    const params : ParamKeyValuePair[] = [];
+    const params: ParamKeyValuePair[] = [];
 
     for (const [k, v] of searchParams.entries()) {
       if (k !== 'orderBy' && k !== 'orderDir') {
@@ -99,7 +126,7 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
 
 
   function updateSelectedMetricsParam(selectedMetrics: Metric[], replace = false) {
-    const params : ParamKeyValuePair[] = [];
+    const params: ParamKeyValuePair[] = [];
 
     const selectedMetricsIds = selectedMetrics.map((metric) => metric.metricId).join(',');
     params.push(['selectedMetrics', selectedMetricsIds]);

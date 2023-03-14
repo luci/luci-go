@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -691,6 +692,7 @@ func TestClusters(t *testing.T) {
 			}
 			analysisClient.expectedRealmsQueried = []string{"testproject:realm1", "testproject:realm2"}
 
+			now := clock.Now(ctx)
 			request := &pb.QueryClusterSummariesRequest{
 				Project:       "testproject",
 				FailureFilter: "test_id:\"pita.Boot\" failure_reason:\"failed to boot\"",
@@ -700,7 +702,21 @@ func TestClusters(t *testing.T) {
 					"metrics/critical-failures-exonerated",
 					"metrics/failures",
 				},
+				TimeRange: &pb.TimeRange{
+					Earliest: timestamppb.New(now.Add(-24 * time.Hour)),
+					Latest:   timestamppb.New(now),
+				},
 			}
+			Convey("Invalid time range", func() {
+				request.TimeRange = &pb.TimeRange{
+					Earliest: timestamppb.New(now),
+					Latest:   timestamppb.New(now.Add(-24 * time.Hour)),
+				}
+
+				response, err := server.QueryClusterSummaries(ctx, request)
+				So(err, ShouldBeRPCInvalidArgument, "time_range: earliest must be before latest")
+				So(response, ShouldBeNil)
+			})
 			Convey("Not authorised to list clusters", func() {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListClusters)
 

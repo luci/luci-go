@@ -20,12 +20,21 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import useFetchClusters from '@/hooks/use_fetch_clusters';
+import {
+  ClustersFetchOptions,
+  useFetchClusters,
+} from '@/hooks/use_fetch_clusters';
 
 import { ClusterTableContextData } from '../clusters_table_context';
+import { TIME_INTERVAL_OPTIONS } from '../clusters_table_form/clusters_table_interval_selection/clusters_table_interval_selection';
 import ClustersTableHead from '../clusters_table_head/clusters_table_head';
 import ClustersTableRow from '../clusters_table_row/clusters_table_row';
-import { useFilterParam as useFailureFilterParam, useOrderByParam, useSelectedMetricsParam } from '../hooks';
+import {
+  useFilterParam as useFailureFilterParam,
+  useIntervalParam,
+  useOrderByParam,
+  useSelectedMetricsParam,
+} from '../hooks';
 
 interface Props {
   project: string,
@@ -37,21 +46,25 @@ const ClustersTableContent = ({
   const metrics = useContext(ClusterTableContextData).metrics;
 
   const [failureFilter] = useFailureFilterParam();
+  const [interval] = useIntervalParam(TIME_INTERVAL_OPTIONS);
   const [orderBy] = useOrderByParam(metrics);
   const [selectedMetrics] = useSelectedMetricsParam(metrics);
 
   const fetchMetrics = metrics.filter((m) => selectedMetrics.indexOf(m) > -1);
 
+  const fetchOptions: ClustersFetchOptions = {
+    project: project,
+    failureFilter: failureFilter,
+    orderBy: orderBy,
+    metrics: fetchMetrics,
+    interval: interval,
+  };
   const {
     isLoading,
     isSuccess,
     data: clusters,
     error,
-  } = useFetchClusters(project,
-      failureFilter,
-      orderBy,
-      fetchMetrics);
-
+  } = useFetchClusters(fetchOptions);
   const rows = clusters?.clusterSummaries || [];
 
   if (isLoading && !isSuccess) {
@@ -94,7 +107,7 @@ const ClustersTableContent = ({
         </Table>
         {isSuccess && rows.length === 0 && (
           <Grid container item alignItems="center" justifyContent="center">
-              Hooray! There are no failures matching the specified criteria.
+            Hooray! There are no failures matching the specified criteria.
           </Grid>
         )}
       </Grid>

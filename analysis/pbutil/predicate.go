@@ -16,6 +16,8 @@
 package pbutil
 
 import (
+	"context"
+	"fmt"
 	"regexp"
 	"regexp/syntax"
 	"strings"
@@ -27,7 +29,7 @@ import (
 )
 
 var (
-	// Unspecified is the error to be used when something is unpeicified when it's
+	// Unspecified is the error to be used when something is unspecified when it's
 	// supposed to.
 	Unspecified = errors.Reason("unspecified").Err()
 
@@ -159,5 +161,30 @@ func ValidateAnalyzedTestVariantPredicate(p *atvpb.Predicate) error {
 	if err := ValidateAnalyzedTestVariantStatus(p.Status); err != nil {
 		return errors.Annotate(err, "status").Err()
 	}
+	return nil
+}
+
+// ValidateTimeRange returns a non-nil error if tr is determined to be invalid.
+// To be valid, a TimeRange must have both Earliest and Latest fields specified,
+// and the Earliest time must be chronologically before the Latest time.
+func ValidateTimeRange(ctx context.Context, tr *pb.TimeRange) error {
+	if tr == nil {
+		return Unspecified
+	}
+
+	earliest, err := AsTime(tr.Earliest)
+	if err != nil {
+		return errors.Annotate(err, "earliest").Err()
+	}
+
+	latest, err := AsTime(tr.Latest)
+	if err != nil {
+		return errors.Annotate(err, "latest").Err()
+	}
+
+	if !earliest.Before(latest) {
+		return fmt.Errorf("earliest must be before latest")
+	}
+
 	return nil
 }

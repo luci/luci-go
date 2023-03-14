@@ -14,7 +14,9 @@
 
 import '@testing-library/jest-dom';
 
+import dayjs from 'dayjs';
 import fetchMock from 'fetch-mock-jest';
+import MockDate from 'mockdate';
 
 import {
   fireEvent,
@@ -26,6 +28,7 @@ import {
 import {
   QueryClusterSummariesRequest,
   QueryClusterSummariesResponse,
+  TimeRange,
 } from '@/services/cluster';
 import { Metric } from '@/services/metrics';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
@@ -40,6 +43,11 @@ import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 import ClustersTable from './clusters_table';
 
 describe('Test ClustersTable component', () => {
+  const testNow = '2023-02-01 04:05:06.789+10:00';
+
+  beforeAll(() => {
+    MockDate.set(testNow);
+  });
   beforeEach(() => {
     mockFetchAuthState();
   });
@@ -47,9 +55,17 @@ describe('Test ClustersTable component', () => {
     fetchMock.mockClear();
     fetchMock.reset();
   });
+  afterAll(() => {
+    MockDate.reset();
+  });
+
+  const last24Hours: TimeRange = {
+    earliest: dayjs(testNow).subtract(24, 'hours').toISOString(),
+    latest: dayjs(testNow).toISOString(),
+  };
 
   it('should display column headings reflecting the system metrics', async () => {
-    const metrics : Metric[] = [{
+    const metrics: Metric[] = [{
       name: 'metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
@@ -76,6 +92,7 @@ describe('Test ClustersTable component', () => {
     // Only default metrics (i.e. metric A and B) should be queried and shown.
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`metric-b`.value desc',
       failureFilter: '',
       metrics: ['metrics/metric-a', 'metrics/metric-b'],
@@ -84,7 +101,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+      <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -100,6 +117,7 @@ describe('Test ClustersTable component', () => {
     ];
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
       metrics: ['metrics/human-cls-failed-presubmit',
@@ -110,7 +128,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -122,6 +140,7 @@ describe('Test ClustersTable component', () => {
 
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
       metrics: ['metrics/human-cls-failed-presubmit',
@@ -132,7 +151,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -147,6 +166,7 @@ describe('Test ClustersTable component', () => {
     const ruleCluster = getMockRuleClusterSummary('10000000000000001000000000000000');
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
       metrics: ['metrics/human-cls-failed-presubmit',
@@ -159,7 +179,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -167,6 +187,7 @@ describe('Test ClustersTable component', () => {
     // Prepare an updated set of clusters to show after sorting.
     const updatedRequest: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`failures`.value desc',
       failureFilter: '',
       metrics: ['metrics/human-cls-failed-presubmit',
@@ -196,6 +217,7 @@ describe('Test ClustersTable component', () => {
     const ruleCluster = getMockRuleClusterSummary('10000000000000001000000000000000');
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
       metrics: ['metrics/human-cls-failed-presubmit',
@@ -208,7 +230,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -216,6 +238,7 @@ describe('Test ClustersTable component', () => {
     // Prepare an updated set of clusters to show after filtering.
     const updatedRequest: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: 'new_criteria',
       metrics: ['metrics/human-cls-failed-presubmit',
@@ -245,6 +268,7 @@ describe('Test ClustersTable component', () => {
     ];
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
       metrics: ['metrics/human-cls-failed-presubmit',
@@ -255,7 +279,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_head');
@@ -266,6 +290,7 @@ describe('Test ClustersTable component', () => {
 
     const request2 = {
       project: 'testproject',
+      timeRange: last24Hours,
       failureFilter: '',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       metrics: ['metrics/critical-failures-exonerated', 'metrics/failures'],
@@ -280,12 +305,12 @@ describe('Test ClustersTable component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('clusters_table_head')).toBeInTheDocument();
       expect(within(screen.getByTestId('clusters_table_head')).queryByText('User Cls Failed Presubmit'))
-          .not.toBeInTheDocument();
+        .not.toBeInTheDocument();
     });
   });
 
   it('when removing order by column, should select highest sort order in selected metrics', async () => {
-    const metrics : Metric[] = [{
+    const metrics: Metric[] = [{
       name: 'metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
@@ -312,6 +337,7 @@ describe('Test ClustersTable component', () => {
     // Only default metrics (i.e. metric A and B) should be queried and shown.
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
+      timeRange: last24Hours,
       orderBy: 'metrics.`metric-a`.value desc',
       failureFilter: '',
       metrics: ['metrics/metric-a', 'metrics/metric-b'],
@@ -320,7 +346,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+      <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -328,10 +354,12 @@ describe('Test ClustersTable component', () => {
 
     fireEvent.mouseDown(within(screen.getByTestId('metrics-selection')).getByRole('button'));
 
-    const request2: QueryClusterSummariesRequest = { 'project': 'testproject',
-      'failureFilter': '',
-      'orderBy': 'metrics.`metric-a`.value desc',
-      'metrics': ['metrics/metric-a', 'metrics/metric-b', 'metrics/metric-c'],
+    const request2: QueryClusterSummariesRequest = {
+      project: 'testproject',
+      failureFilter: '',
+      timeRange: last24Hours,
+      orderBy: 'metrics.`metric-a`.value desc',
+      metrics: ['metrics/metric-a', 'metrics/metric-b', 'metrics/metric-c'],
     };
     const response2 = { clusterSummaries: [] };
 
@@ -343,6 +371,7 @@ describe('Test ClustersTable component', () => {
 
     const request3 = {
       project: 'testproject',
+      timeRange: last24Hours,
       failureFilter: '',
       orderBy: 'metrics.`metric-c`.value desc',
       metrics: ['metrics/metric-b', 'metrics/metric-c'],
@@ -357,6 +386,69 @@ describe('Test ClustersTable component', () => {
       expect(screen.getByTestId('clusters_table_head')).toBeInTheDocument();
       expect(within(screen.getByTestId('clusters_table_head')).getByText('Metric Charlie')).toBeInTheDocument();
       expect(within(screen.getByTestId('clusters_table_head')).queryByText('Metric Alpha')).not.toBeInTheDocument();
+    });
+  });
+
+  it('queries for clusters based on the selected time interval', async () => {
+    mockFetchMetrics();
+
+    // Default time interval should be last 24 hours.
+    const request: QueryClusterSummariesRequest = {
+      project: 'testproject',
+      timeRange: last24Hours,
+      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
+      failureFilter: '',
+      metrics: [
+        'metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'
+      ],
+    };
+    const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
+    mockQueryClusterSummaries(request, response);
+
+    renderWithRouterAndClient(
+      <ClustersTable project="testproject" />,
+    );
+
+    await screen.findByTestId('clusters_table_body');
+
+    expect(screen.getByText('Last 24 hours')).toBeInTheDocument();
+
+    const weekRequest: QueryClusterSummariesRequest = {
+      project: 'testproject',
+      timeRange: {
+        earliest: dayjs(testNow).subtract(7 * 24, 'hours').toISOString(),
+        latest: dayjs(testNow).toISOString(),
+      },
+      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
+      failureFilter: '',
+      metrics: ['metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures'],
+    };
+    const mockClusters = [
+      getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf'),
+      getMockRuleClusterSummary('10000000000000001000000000000000'),
+    ]
+    const weekResponse: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
+    mockQueryClusterSummaries(weekRequest, weekResponse);
+
+    // Change interval to the last week.
+    fireEvent.mouseDown(within(screen.getByTestId('interval-selection')).getByRole('button'));
+    const options = within(screen.getByRole('listbox'));
+    fireEvent.click(options.getByText('Last 7 days'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('clusters_table_body')).toBeInTheDocument();
+
+      // Check the time interval has been changed.
+      expect(screen.queryByText('Last 24 hours')).not.toBeInTheDocument();
+      expect(screen.getByText('Last 7 days')).toBeInTheDocument();
+
+      // Clusters for the last week should be displayed
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      expect(screen.getByText(mockClusters[1].bug!.linkText)).toBeInTheDocument();
     });
   });
 });
