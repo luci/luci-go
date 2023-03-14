@@ -37,7 +37,7 @@ const FilterHelp = () => {
     <p>A bare value is searched for in the columns test_id and failure_reason.  Values are case-sensitive. E.g. <b>ninja</b> or <b>&ldquo;test failed&rdquo;</b>.</p>
     <p>You can use AND, OR and NOT (case sensitive) logical operators, along with grouping. &lsquo;-&rsquo; is equivalent to NOT. Multiple bare values are considered to be AND separated.  These are equivalent: <b>hello world</b> and <b>hello AND world</b>.
       More examples: <b>a OR b</b> or <b>a AND NOT(b or -c)</b>.</p>
-    <p>You can search particular columns with &lsquo;=&rsquo;, &lsquo;!=&rsquo; and &lsquo;:&rsquo; (has) operators. The right hand side of the operator must be a simple value. E.g. <b>test_id:telemetry</b>, <b>-failure_reason:Timeout</b> or <b>ingested_invocation_id=&ldquo;build-8822963500388678513&rdquo;</b>.</p>
+    <p>You can search particular columns with &lsquo;=&rsquo;, &lsquo;!=&rsquo; and &lsquo;:&rsquo; (has) operators. The right hand side of the operator must be a simple value. E.g. <b>test_id:telemetry</b>, <b>-failure_reason:Timeout</b>, <b>tags.monorail_component=Blink</b> or <b>ingested_invocation_id=&ldquo;build-8822963500388678513&rdquo;</b>.</p>
     <p>Supported columns to search on:
       <ul>
         <li>test_id</li>
@@ -49,6 +49,7 @@ const FilterHelp = () => {
         <li>variant_hash</li>
         <li>test_run_id</li>
         <li>presubmit_run_owner</li>
+        <li>tags</li>
       </ul>
     </p>
   </Typography>;
@@ -92,7 +93,7 @@ const ClustersTableFilter = () => {
               setDirty(false);
             }
           }}
-          onBlur={()=> {
+          onBlur={() => {
             if (inputRef.current) {
               handleFailureFilterChanged(inputRef.current.value);
               setDirty(false);
