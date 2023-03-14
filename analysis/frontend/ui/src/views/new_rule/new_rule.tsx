@@ -168,8 +168,8 @@ const NewRulePage = () => {
           </Grid>
           <Grid item container xs>
             <Grid item xs={6}>
-              <Typography variant='overline'>
-                Associated Bug
+              <Typography>
+                Associated bug
               </Typography>
               <BugPicker
                 bugSystem={bugSystem}
@@ -179,7 +179,7 @@ const NewRulePage = () => {
             </Grid>
           </Grid>
           <Grid item xs marginTop='1rem'>
-            <Typography variant='overline'>
+            <Typography>
               Rule definition
             </Typography>
             <RuleEditInput
