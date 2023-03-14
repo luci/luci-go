@@ -360,6 +360,9 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 	//   (3) changes which depend on this change transitively
 	// We need (1).
 	if len(related) == 0 {
+		if priorGitDeps := f.priorGitDeps(); len(priorGitDeps) > 0 {
+			logging.Infof(ctx, "b/272828859: This change %s/%d depended on changes [%s] before. However, GetRelatedChange returns 0 related change this time.", f.host, f.change, strings.Join(priorGitDeps, ", "))
+		}
 		// Gerrit may not bother to return the CL itself if there are no related
 		// changes.
 		return
@@ -384,6 +387,19 @@ func (f *fetcher) setGitDeps(ctx context.Context, related []*gerritpb.GetRelated
 
 	thisParentsCount := f.countRelatedWhichAreParents(this, byRevision)
 	if thisParentsCount == 0 {
+		if priorGitDeps := f.priorGitDeps(); len(priorGitDeps) > 0 {
+			log := &strings.Builder{}
+			fmt.Fprintf(log, "b/272828859: This change %s/%d depended on changes [%s] before. However, this change no longer depends on any change any more. The get related response is\n[", f.host, f.change, strings.Join(priorGitDeps, ", "))
+			for _, r := range related {
+				parentCommitIDs := make([]string, len(r.GetCommit().GetParents()))
+				for i, p := range r.GetCommit().GetParents() {
+					parentCommitIDs[i] = p.GetId()
+				}
+				fmt.Fprintf(log, "\n  change: %s/%d/%d revID: %s parent revIDs: [%s]", f.host, r.GetNumber(), r.GetCurrentPatchset(), r.GetCommit().GetId(), strings.Join(parentCommitIDs, ", "))
+			}
+			log.WriteString("\n]")
+			logging.Infof(ctx, log.String())
+		}
 		// Quick exit if there are no dependencies of this change (1), only changes
 		// depending on this change (3).
 		return
@@ -692,6 +708,17 @@ func (f *fetcher) priorNoAccessTime() time.Time {
 		return time.Time{}
 	}
 	return t.AsTime()
+}
+
+func (f *fetcher) priorGitDeps() []string {
+	if priorGitDeps := f.priorSnapshot().GetGerrit().GetGitDeps(); f.priorCL != nil && len(priorGitDeps) > 0 {
+		ret := make([]string, len(priorGitDeps))
+		for i, dep := range priorGitDeps {
+			ret[i] = fmt.Sprintf("%s/%d", f.host, dep.GetChange())
+		}
+		return ret
+	}
+	return nil
 }
 
 func (f *fetcher) mustHaveCurrentRevision() string {
