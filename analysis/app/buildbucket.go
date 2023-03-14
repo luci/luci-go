@@ -26,6 +26,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
@@ -127,8 +128,9 @@ func processBBV2Message(ctx context.Context, message *buildbucketpb.BuildsV2PubS
 		return false, nil
 	}
 	if message.Build.Infra.GetBuildbucket().GetHostname() == "" {
-		// This is a permanent (non-retryable) error.
-		return false, errors.New("build did not specify buildbucket hostname")
+		// Invalid build. Ignore.
+		logging.Warningf(ctx, "Build %v did not specify buildbucket hostname, ignoring.", message.Build.Id)
+		return false, nil
 	}
 
 	project := message.Build.Builder.Project
