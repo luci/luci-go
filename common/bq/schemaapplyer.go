@@ -29,6 +29,9 @@ import (
 	"go.chromium.org/luci/server/caching"
 )
 
+// ErrWrongTableKind represents a mismatch in BigQuery table type.
+var ErrWrongTableKind = errors.New("cannot change a regular table into a view table")
+
 // Table is implemented by *bigquery.Table.
 // See its documentation for description of the methods below.
 type Table interface {
@@ -158,6 +161,9 @@ func EnsureTable(ctx context.Context, t Table, spec *bigquery.TableMetadata) err
 			return errors.Annotate(err, "ensure bq table view query").Err()
 		}
 	} else {
+		if spec.ViewQuery != "" {
+			return ErrWrongTableKind
+		}
 		if err = ensureBQTableFields(ctx, t, spec.Schema); err != nil {
 			return errors.Annotate(err, "ensure bq table fields").Err()
 		}

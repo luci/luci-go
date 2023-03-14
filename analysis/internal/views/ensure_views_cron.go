@@ -57,6 +57,21 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			WHERE project = "` + luciProject + `"
 		`}
 	},
+	"clustered_failures": func(luciProject string) *bigquery.TableMetadata {
+		if !config.ProjectRe.MatchString(luciProject) {
+			panic("invalid LUCI Project")
+		}
+		return &bigquery.TableMetadata{
+			ViewQuery: `SELECT * FROM internal.clustered_failures WHERE project = "` + luciProject + `"
+		`}
+	},
+	"cluster_summaries": func(luciProject string) *bigquery.TableMetadata {
+		if !config.ProjectRe.MatchString(luciProject) {
+			panic("invalid LUCI Project")
+		}
+		return &bigquery.TableMetadata{
+			ViewQuery: `SELECT * FROM internal.cluster_summaries WHERE project = "` + luciProject + `"`}
+	},
 }
 
 // CronHandler is then entry-point for the ensure views cron job.
@@ -111,6 +126,10 @@ func createViewsForLUCIDataset(ctx context.Context, bqClient *bigquery.Client, d
 		table := bqClient.Dataset(datasetID).Table(tableName)
 		spec := specFunc(luciProject)
 		if err := schemaApplyer.EnsureTable(ctx, table, spec); err != nil {
+			// TODO: Stop skipping this error when migration to centralised cluster table is done.
+			if errors.Is(err, bq.ErrWrongTableKind) {
+				continue
+			}
 			return errors.Annotate(err, "ensure view %s", tableName).Err()
 		}
 	}

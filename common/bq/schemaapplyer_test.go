@@ -23,10 +23,10 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/server/caching"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock/testclock"
+	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/caching"
 )
 
 type tableMock struct {
@@ -131,6 +131,13 @@ func TestBqTableCache(t *testing.T) {
 			err := sa.EnsureTable(ctx, t, table)
 			So(err, ShouldBeNil)
 			So(t.updateMD, ShouldBeNil) // we did not try to update it
+		})
+
+		Convey(`Invalid attempt to convert regular table into view`, func() {
+			table.ViewQuery = "SELECT * FROM a"
+			err := sa.EnsureTable(ctx, t, table)
+			So(err, ShouldErrLike, "cannot change a regular table into a view table")
+			So(t.updateMD, ShouldBeNil)
 		})
 
 		Convey(`View is up to date`, func() {
