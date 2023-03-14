@@ -30,7 +30,7 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`Rules older than 30 days should have their CreationUser cleared`, func() {
 			expectedRule := NewRule(101).
-				WithCreationTime(time.Now().AddDate(0, 0, -30)).
+				WithCreationTime(time.Now().AddDate(0, 0, -31)).
 				WithCreationUser("user@example.com").
 				Build()
 			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
@@ -60,7 +60,7 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`Rules updated more than 30 days ago have their LastUpdateUser cleared`, func() {
 			expectedRule := NewRule(101).
-				WithLastUpdated(time.Now().AddDate(0, 0, -30)).
+				WithLastUpdated(time.Now().AddDate(0, 0, -31)).
 				WithLastUpdatedUser("user@example.com").
 				Build()
 			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
@@ -77,7 +77,7 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`Rules updated less than 30 days ago should not change`, func() {
 			expectedRule := NewRule(101).
-				WithLastUpdated(time.Now()).
+				WithLastUpdated(time.Now().AddDate(0, 0, -29)).
 				WithLastUpdatedUser("user@example.com").
 				Build()
 			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
@@ -90,9 +90,9 @@ func TestClearRuleUsers(t *testing.T) {
 
 		Convey(`ClearRulesUsers clears both LastUpdatedUser and CreationUser`, func() {
 			expectedRule := NewRule(101).
-				WithCreationTime(time.Now().AddDate(0, 0, -30)).
+				WithCreationTime(time.Now().AddDate(0, 0, -31)).
 				WithCreationUser("user@example.com").
-				WithLastUpdated(time.Now().AddDate(0, 0, -30)).
+				WithLastUpdated(time.Now().AddDate(0, 0, -31)).
 				WithLastUpdatedUser("user@example.com").
 				Build()
 			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
