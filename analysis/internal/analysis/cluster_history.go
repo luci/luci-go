@@ -62,11 +62,13 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 	var precomputeList []string
 	var metricSelectList []string
 	for _, metric := range options.Metrics {
-		filterIdentifier := "TRUE"
+		filterIdentifier := metric.ColumnName("filter")
+		filterSQL := "TRUE"
 		if metric.FilterSQL != "" {
-			filterIdentifier = metric.ColumnName("filter")
-			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.FilterSQL, filterIdentifier))
+			filterSQL = metric.FilterSQL
 		}
+		precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", filterSQL, filterIdentifier))
+
 		var itemIdentifier string
 		if metric.CountSQL != "" {
 			itemIdentifier = metric.ColumnName("item")
