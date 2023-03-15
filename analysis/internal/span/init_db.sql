@@ -832,3 +832,22 @@ CREATE TABLE TestVariantBranchCheckpoint (
   InsertionTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 ) PRIMARY KEY(InvocationId, StartingTestId, StartingVariantHash),
   ROW DELETION POLICY (OLDER_THAN(InsertionTime, INTERVAL 31 DAY));
+
+-- This table is to determine if a run is a recycled run for test variant
+-- analysis.
+CREATE TABLE Invocations (
+  -- The LUCI Project of the Ingested Invocation. Although Invocation IDs
+  -- are unique on their own, this enforces hard separation between the data
+  -- of each project. It ensures the same test results can be ingested into two
+  -- different LUCI Projects, but not the same project.
+  Project STRING(40) NOT NULL,
+  -- The invocation of the test run.
+  InvocationID STRING(MAX) NOT NULL,
+  -- The top-level invocation the test run will be ingested as part of.
+  -- If it is seen in another invocation ID, it will be considered a
+  -- duplicate test run.
+  IngestedInvocationID STRING(MAX) NOT NULL,
+  -- Used to enforce a deletion policy on this data.
+  CreationTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+) PRIMARY KEY(Project, InvocationID),
+  ROW DELETION POLICY (OLDER_THAN(CreationTime, INTERVAL 91 DAY));
