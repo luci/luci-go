@@ -441,7 +441,10 @@ func TestCreateBackendTask(t *testing.T) {
 				Url:       "https://chrome-infra-packages.appspot.com/bootstrap/infra/tools/luci/bbagent/mac-amd64/+/latest",
 			})
 			So(req.AgentArgs, ShouldResemble, []string{
-				"-cache-base", "cache"})
+				"-build-id", "1",
+				"-host", "some unique host name",
+				"-cache-base", "cache",
+			})
 			So(req.Dimensions, ShouldResembleProto, []*pb.RequestedDimension{
 				{
 					Key:   "dim_key_1",

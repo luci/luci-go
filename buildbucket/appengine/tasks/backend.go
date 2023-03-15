@@ -183,6 +183,12 @@ func computeTaskCaches(infra *model.BuildInfra) []*pb.CacheEntry {
 
 func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	args = []string{}
+	// build-id arg
+	args = append(args, "-build-id")
+	args = append(args, strconv.FormatInt(build.GetId(), 10))
+	// host arg
+	args = append(args, "-host")
+	args = append(args, infra.Buildbucket.GetHostname())
 	// cache-base arg
 	args = append(args, "-cache-base")
 	args = append(args, infra.Bbagent.GetCacheDir())

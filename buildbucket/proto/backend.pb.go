@@ -60,6 +60,12 @@ type RunTaskRequest struct {
 	Agent *RunTaskRequest_AgentExecutable `protobuf:"bytes,4,opt,name=agent,proto3" json:"agent,omitempty"`
 	// An opaque argv[1:] to be passed to the agent.
 	//
+	// Must contain build-id and hostname.
+	// i.e.
+	//
+	//	`-build-id=<build id>`
+	//	`-host=cr-buildbucket@appspot.com`
+	//
 	// Named caches set for this Build must be mounted all under some directory
 	// and that root directory must be passed by appending a CLI argument:
 	//
