@@ -777,7 +777,7 @@ CREATE TABLE TestVariantBranch (
   VariantHash STRING(16) NOT NULL,
   -- The identity of the branch that was tested. Cross-references to
   -- GitReferences table.
-  GitReferenceHash STRING(8) NOT NULL,
+  GitReferenceHash BYTES(8) NOT NULL,
   -- key:value pairs in the test variant. See also Variant on the ResultDB
   -- TestResults table. Only written the first time the row is created.
   Variant ARRAY<STRING(MAX)>,

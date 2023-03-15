@@ -19,9 +19,11 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 )
 
@@ -47,7 +49,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			Project:          "proj_1",
 			TestID:           "test_id_1",
 			VariantHash:      "variant_hash_1",
-			GitReferenceHash: "githash1",
+			GitReferenceHash: []byte("githash1"),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"key1": "val1",
@@ -75,7 +77,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			Project:          "proj_3",
 			TestID:           "test_id_3",
 			VariantHash:      "variant_hash_3",
-			GitReferenceHash: "githash3",
+			GitReferenceHash: []byte("githash3"),
 			InputBuffer: &InputBuffer{
 				HotBufferCapacity: 100,
 				HotBuffer: History{
@@ -124,7 +126,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			Project:          "proj_1",
 			TestID:           "test_id_1",
 			VariantHash:      "variant_hash_1",
-			GitReferenceHash: "githash1",
+			GitReferenceHash: []byte("githash1"),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"key1": "val1",
@@ -155,7 +157,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			Project:          "proj_1",
 			TestID:           "test_id_1",
 			VariantHash:      "variant_hash_1",
-			GitReferenceHash: "githash1",
+			GitReferenceHash: []byte("githash1"),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"key1": "val1",
@@ -200,6 +202,134 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb.IsNew = false
 		tvb.InputBuffer.IsColdBufferDirty = false
 		So(tvbs[0], ShouldResemble, tvb)
+	})
+}
+
+func TestInsertToInputBuffer(t *testing.T) {
+	Convey("Insert simple test variant", t, func() {
+		tvb := &TestVariantBranch{
+			InputBuffer: &InputBuffer{
+				HotBufferCapacity:  10,
+				ColdBufferCapacity: 100,
+			},
+		}
+		payload := samplePayload(12)
+		tv := &rdbpb.TestVariant{
+			Status: rdbpb.TestVariantStatus_EXPECTED,
+			Results: []*rdbpb.TestResultBundle{
+				{
+					Result: &rdbpb.TestResult{
+						Expected:  true,
+						StartTime: timestamppb.New(time.Unix(3600*10, 0)),
+					},
+				},
+			},
+		}
+		pv, err := toPositionVerdict(tv, payload)
+		So(err, ShouldBeNil)
+		tvb.InsertToInputBuffer(pv)
+		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
+
+		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, PositionVerdict{
+			CommitPosition:   12,
+			IsSimpleExpected: true,
+			Hour:             tv.Results[0].Result.StartTime.AsTime(),
+		})
+	})
+
+	Convey("Insert non-simple test variant", t, func() {
+		tvb := &TestVariantBranch{
+			InputBuffer: &InputBuffer{
+				HotBufferCapacity:  10,
+				ColdBufferCapacity: 100,
+			},
+		}
+		payload := samplePayload(12)
+		tv := &rdbpb.TestVariant{
+			Status: rdbpb.TestVariantStatus_FLAKY,
+			Results: []*rdbpb.TestResultBundle{
+				{
+					Result: &rdbpb.TestResult{
+						Name:      "invocations/run-1/tests/abc",
+						Expected:  false,
+						StartTime: timestamppb.New(time.Unix(3600*10, 0)),
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:      "invocations/run-1/tests/abc",
+						Expected:  false,
+						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:      "invocations/run-1/tests/abc",
+						Expected:  true,
+						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:      "invocations/run-2/tests/abc",
+						Expected:  false,
+						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:      "invocations/run-3/tests/abc",
+						Expected:  true,
+						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:      "invocations/run-3/tests/abc",
+						Expected:  true,
+						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+					},
+				},
+				{
+					Result: &rdbpb.TestResult{
+						Name:      "invocations/run-4/tests/abc",
+						Expected:  true,
+						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+					},
+				},
+			},
+		}
+		pv, err := toPositionVerdict(tv, payload)
+		So(err, ShouldBeNil)
+		tvb.InsertToInputBuffer(pv)
+		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
+
+		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, PositionVerdict{
+			CommitPosition:   12,
+			IsSimpleExpected: false,
+			Hour:             tv.Results[0].Result.StartTime.AsTime(),
+			Details: VerdictDetails{
+				IsExonerated: false,
+				Runs: []Run{
+					{
+						ExpectedResultCount:   1,
+						UnexpectedResultCount: 2,
+					},
+					{
+						ExpectedResultCount:   0,
+						UnexpectedResultCount: 1,
+					},
+					{
+						ExpectedResultCount:   2,
+						UnexpectedResultCount: 0,
+					},
+					{
+						ExpectedResultCount:   1,
+						UnexpectedResultCount: 0,
+					},
+				},
+			},
+		})
 	})
 }
 

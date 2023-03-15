@@ -23,6 +23,8 @@ import (
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
+	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 
@@ -32,11 +34,7 @@ import (
 func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`Can batch result`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		payload := &taskspb.IngestTestResults{
-			Build: &controlpb.BuildResult{
-				Id: 1234,
-			},
-		}
+		payload := samplePayload(10)
 		// 900 test variants should result in 5 batches (1000 each, last one has 500).
 		tvs := testVariants(4500)
 		err := Analyze(ctx, tvs, payload)
@@ -48,11 +46,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 
 	Convey(`Can skip batch`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		payload := &taskspb.IngestTestResults{
-			Build: &controlpb.BuildResult{
-				Id: 1234,
-			},
-		}
+		payload := samplePayload(10)
 		tvs := testVariants(100)
 		err := analyzeSingleBatch(ctx, tvs, payload)
 		So(err, ShouldBeNil)
@@ -62,6 +56,96 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		err = analyzeSingleBatch(ctx, tvs, payload)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
+	})
+
+	Convey(`No commit position should skip`, t, func() {
+		ctx := testutil.IntegrationTestContext(t)
+		// Commit position = 0
+		payload := samplePayload(0)
+		tvs := testVariants(100)
+		err := Analyze(ctx, tvs, payload)
+		So(err, ShouldBeNil)
+		So(countCheckPoint(ctx), ShouldEqual, 0)
+	})
+
+	Convey(`Unsubmitted code should skip`, t, func() {
+		ctx := testutil.IntegrationTestContext(t)
+		payload := samplePayload(10)
+		payload.Build.Changelists = []*analysispb.Changelist{
+			{
+				Host:     "host",
+				Change:   123,
+				Patchset: 1,
+			},
+		}
+		payload.PresubmitRun = &controlpb.PresubmitResult{
+			Status: analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
+		}
+		tvs := testVariants(100)
+		err := Analyze(ctx, tvs, payload)
+		So(err, ShouldBeNil)
+		So(countCheckPoint(ctx), ShouldEqual, 0)
+	})
+
+	Convey(`Filter test variant`, t, func() {
+		tvs := []*rdbpb.TestVariant{
+			{
+				TestId: "1",
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Status: rdbpb.TestStatus_SKIP,
+						},
+					},
+				},
+			},
+			{
+				TestId: "2",
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+			},
+		}
+		tvs = filterTestVariants(tvs)
+		So(len(tvs), ShouldEqual, 1)
+		So(tvs[0].TestId, ShouldEqual, "2")
+	})
+}
+
+func TestAnalyzeSingleBatch(t *testing.T) {
+	Convey(`Analyze batch`, t, func() {
+		ctx := testutil.IntegrationTestContext(t)
+		payload := samplePayload(10)
+
+		tvs := []*rdbpb.TestVariant{
+			{
+				TestId:      "test_1",
+				VariantHash: "hash1",
+				Status:      rdbpb.TestVariantStatus_EXPECTED,
+			},
+			{
+				TestId:      "test_2",
+				VariantHash: "hash2",
+				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/abc/tests/xyz",
+							Status: rdbpb.TestStatus_CRASH,
+						},
+					},
+				},
+			},
+		}
+
+		err := analyzeSingleBatch(ctx, tvs, payload)
+		// As we haven't inserted anything in spanner yet, just check that it does
+		// not error out.
+		So(err, ShouldBeNil)
 	})
 }
 
@@ -90,4 +174,19 @@ func testVariants(n int) []*rdbpb.TestVariant {
 		}
 	}
 	return tvs
+}
+
+func samplePayload(commitPosition int) *taskspb.IngestTestResults {
+	return &taskspb.IngestTestResults{
+		Build: &controlpb.BuildResult{
+			Id:      1234,
+			Project: "chromium",
+			Commit: &buildbucketpb.GitilesCommit{
+				Host:     "host",
+				Project:  "proj",
+				Ref:      "ref",
+				Position: uint32(commitPosition),
+			},
+		},
+	}
 }
