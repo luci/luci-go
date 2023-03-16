@@ -33,6 +33,7 @@ import commonStyle from '../../styles/common_style.css';
 const LINK_ARTIFACT_HOST_ALLOWLIST = [
   'cros-test-analytics.appspot.com', // Testhaus logs
   'stainless.corp.google.com', // Stainless logs
+  'tests.chromeos.goog', // Preferred. A hostname alias for Testhaus logs.
 ];
 
 /**
