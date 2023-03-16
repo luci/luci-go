@@ -94,6 +94,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							Name:   "invocations/inv-1/tests/abc",
 							Status: rdbpb.TestStatus_SKIP,
 						},
 					},
@@ -104,7 +105,14 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							Name:   "invocations/inv-2/tests/abc",
 							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/inv-2/tests/abc",
+							Status: rdbpb.TestStatus_FAIL,
 						},
 					},
 				},

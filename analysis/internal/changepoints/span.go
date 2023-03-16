@@ -175,3 +175,36 @@ func (tvb *TestVariantBranch) ToMutation() *spanner.Mutation {
 	}
 	return spanner.Update("TestVariantBranch", cols, values)
 }
+
+// readInvocations reads the Invocations spanner table for invocation IDs.
+// It returns a mapping of (InvocationID, IngestedInvocationID) for the found
+// invocations.
+// This function assumes that it is running inside a transaction.
+func readInvocations(ctx context.Context, project string, invocationIDs []string) (map[string]string, error) {
+	result := map[string]string{}
+	// Create the keyset.
+	keys := make([]spanner.Key, len(invocationIDs))
+	for i := 0; i < len(keys); i++ {
+		keys[i] = spanner.Key{project, invocationIDs[i]}
+	}
+	keyset := spanner.KeySetFromKeys(keys...)
+	cols := []string{"InvocationID", "IngestedInvocationID"}
+
+	err := span.Read(ctx, "Invocations", keyset, cols).Do(
+		func(row *spanner.Row) error {
+			var b spanutil.Buffer
+			var invID string
+			var ingestedInvID string
+			if err := b.FromSpanner(row, &invID, &ingestedInvID); err != nil {
+				return errors.Annotate(err, "read values from spanner").Err()
+			}
+			result[invID] = ingestedInvID
+			return nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}

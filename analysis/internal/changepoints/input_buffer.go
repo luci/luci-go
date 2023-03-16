@@ -77,7 +77,7 @@ type Run struct {
 	ExpectedResultCount int
 	// Number of non-skipped unexpected results in the run.
 	UnexpectedResultCount int
-	// Whether this run is a recycled run.
+	// Whether this run is a duplicate run.
 	IsDuplicate bool
 }
 

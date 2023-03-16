@@ -39,7 +39,7 @@ type CheckPoint struct {
 }
 
 func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) error {
-	logging.Debugf(ctx, "Analyzing %d changepoints for build %d", len(tvs), payload.Build.Id)
+	logging.Debugf(ctx, "Analyzing %d test variants for build %d", len(tvs), payload.Build.Id)
 
 	// Check if the build has commit data. If not, then skip it.
 	if !hasCommitData(payload) {
@@ -105,6 +105,11 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			return nil
 		}
 
+		duplicateMap, err := duplicateMap(ctx, tvs, payload)
+		if err != nil {
+			return errors.Annotate(err, "duplicate map").Err()
+		}
+
 		// Only keep "relevant" test variants.
 		filteredTVs := filterTestVariants(tvs)
 
@@ -117,13 +122,15 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 		for i, tv := range filteredTVs {
 			// "Insert" the new test variant to input buffer.
-			_, err := insertIntoInputBuffer(tvbs[i], tv, payload)
+			_, err := insertIntoInputBuffer(tvbs[i], tv, payload, duplicateMap)
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
 			// TODO(nqmtuan): Run changepoint analysis on test variant branch.
 			// TODO(nqmtuan): Store test variant branch in spanner.
 		}
+
+		// TODO (nqmtuan): Store non-duplicate runs to Invocations table.
 
 		// Store checkpoint in TestVariantBranchCheckpoint table.
 		m := checkPoint.ToMutation()
@@ -138,7 +145,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 // of TestVariantBranch tvb.
 // If tvb is nil, it means it is not in spanner. In this case, return a new
 // TestVariantBranch object with a single element in the input buffer.
-func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults) (*TestVariantBranch, error) {
+func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool) (*TestVariantBranch, error) {
 	if tvb == nil {
 		tvb = &TestVariantBranch{
 			IsNew:            true,
@@ -151,7 +158,7 @@ func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payloa
 		}
 	}
 
-	pv, err := toPositionVerdict(tv, payload)
+	pv, err := toPositionVerdict(tv, payload, duplicateMap)
 	if err != nil {
 		return nil, err
 	}
@@ -159,16 +166,15 @@ func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payloa
 	return tvb, nil
 }
 
-// filterTestVariants only keeps test variants that have at least 1 non-recycled
-// and non-skipped test result (the test result needs to be both non-recycled
-// and non-skipped).
+// filterTestVariants only keeps test variants that have at least 1 non-skipped
+// test result.
 func filterTestVariants(tvs []*rdbpb.TestVariant) []*rdbpb.TestVariant {
 	results := []*rdbpb.TestVariant{}
 	for _, tv := range tvs {
 		for _, r := range tv.Results {
-			// TODO (nqmtuan): Also check that this is non-recycled.
 			if r.Result.Status != rdbpb.TestStatus_SKIP {
 				results = append(results, tv)
+				break
 			}
 		}
 	}

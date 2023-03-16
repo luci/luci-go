@@ -225,7 +225,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 				},
 			},
 		}
-		pv, err := toPositionVerdict(tv, payload)
+		pv, err := toPositionVerdict(tv, payload, map[string]bool{})
 		So(err, ShouldBeNil)
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
@@ -299,7 +299,11 @@ func TestInsertToInputBuffer(t *testing.T) {
 				},
 			},
 		}
-		pv, err := toPositionVerdict(tv, payload)
+		duplicateMap := map[string]bool{
+			"run-1": true,
+			"run-3": true,
+		}
+		pv, err := toPositionVerdict(tv, payload, duplicateMap)
 		So(err, ShouldBeNil)
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
@@ -312,20 +316,24 @@ func TestInsertToInputBuffer(t *testing.T) {
 				IsExonerated: false,
 				Runs: []Run{
 					{
-						ExpectedResultCount:   1,
-						UnexpectedResultCount: 2,
-					},
-					{
 						ExpectedResultCount:   0,
 						UnexpectedResultCount: 1,
+						IsDuplicate:           false,
+					},
+					{
+						ExpectedResultCount:   1,
+						UnexpectedResultCount: 0,
+						IsDuplicate:           false,
+					},
+					{
+						ExpectedResultCount:   1,
+						UnexpectedResultCount: 2,
+						IsDuplicate:           true,
 					},
 					{
 						ExpectedResultCount:   2,
 						UnexpectedResultCount: 0,
-					},
-					{
-						ExpectedResultCount:   1,
-						UnexpectedResultCount: 0,
+						IsDuplicate:           true,
 					},
 				},
 			},

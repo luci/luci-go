@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
-func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults) (PositionVerdict, error) {
+func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool) (PositionVerdict, error) {
 	// It may be enough to check the condition status == expected, given that
 	// an expected verdict should have only one expected run.
 	// However, we also check the length of the result just to be certain.
@@ -45,7 +45,7 @@ func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults
 
 	// Add verdict details only if verdict is not simple.
 	if !isSimpleExpected {
-		vd, err := toVerdictDetails(tv)
+		vd, err := toVerdictDetails(tv, duplicateMap)
 		if err != nil {
 			return PositionVerdict{}, errors.Annotate(err, "to verdict details").Err()
 		}
@@ -59,7 +59,7 @@ func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults
 // - IsDuplicate, in which non-duplicate runs come first, then
 // - UnexpectedCount, descendingly, then
 // - ExpectedCount, descendingly.
-func toVerdictDetails(tv *rdbpb.TestVariant) (VerdictDetails, error) {
+func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (VerdictDetails, error) {
 	isExonerated := (tv.Status == rdbpb.TestVariantStatus_EXONERATED)
 	vd := VerdictDetails{
 		IsExonerated: isExonerated,
@@ -73,8 +73,9 @@ func toVerdictDetails(tv *rdbpb.TestVariant) (VerdictDetails, error) {
 			return vd, errors.Annotate(err, "invocation from test result name").Err()
 		}
 		if _, ok := runData[invocationName]; !ok {
+			_, isDuplicate := duplicateMap[invocationName]
 			runData[invocationName] = &Run{
-				// TODO (nqmtuan): Set correct value for isDuplicate field
+				IsDuplicate: isDuplicate,
 			}
 		}
 		if tr.Expected {
