@@ -134,6 +134,28 @@ func newBuildsClient(ctx context.Context, hostname string, retryF retry.Factory)
 		return dummyBBClient{}, &bbpb.BuildSecrets{BuildToken: buildbucket.DummyBuildbucketToken}, nil
 	}
 
+	secrets, err := readBuildSecrets(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bc, err := newBuildsClientWithSecrets(ctx, hostname, retryF, secrets)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bc, secrets, nil
+}
+
+// Reads the provided build secrets and constructs a BuildsClient
+// which can be used to update the build state.
+//
+// retryEnabled allows us to switch retries for this client on and off
+func newBuildsClientWithSecrets(ctx context.Context, hostname string, retryF retry.Factory, secrets *bbpb.BuildSecrets) (BuildsClient, error) {
+	if hostname == "" {
+		logging.Infof(ctx, "No buildbucket hostname set; making dummy buildbucket client.")
+		return dummyBBClient{}, nil
+	}
+
 	prpcClient := &prpc.Client{
 		Host: hostname,
 		Options: &prpc.Options{
@@ -142,32 +164,31 @@ func newBuildsClient(ctx context.Context, hostname string, retryF retry.Factory)
 			Debug:         true,
 		},
 	}
-	secrets, err := readBuildSecrets(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	// Use "system" account to call UpdateBuild RPCs.
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
+		return nil, errors.Annotate(err, "could not switch to 'system' account in LUCI_CONTEXT").Err()
 	}
 	prpcClient.C, err = auth.NewAuthenticator(sctx, auth.SilentLogin, auth.Options{
 		MonitorAs: "bbagent/buildbucket",
 	}).Client()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+
+	startBuildToken := secrets.StartBuildToken
+	if startBuildToken == "" {
+		// TODO(crbug.com/1416971): remove this.
+		startBuildToken = secrets.BuildToken
+	}
+
 	return &liveBBClient{
-		// Currently for builds on Swarming, buildToken and startBuildToken are the
-		// same.
-		// TODO(crbug.com/1416971): Stop setting buildToken here after bbagent
-		// always calls StartBuild.
 		buildToken:      secrets.BuildToken,
-		startBuildToken: secrets.BuildToken,
+		startBuildToken: startBuildToken,
 		c:               bbpb.NewBuildsPRPCClient(prpcClient),
 		retryF:          retryF,
-	}, secrets, nil
+	}, nil
 }
 
 // options for the dispatcher.Channel

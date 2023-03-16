@@ -522,6 +522,7 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 		return tq.Fatal.Apply(err)
 	}
 	secrets := &pb.BuildSecrets{
+		StartBuildToken:               token,
 		BuildToken:                    token,
 		ResultdbInvocationUpdateToken: build.ResultDBUpdateToken,
 	}

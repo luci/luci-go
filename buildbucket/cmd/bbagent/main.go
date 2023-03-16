@@ -701,7 +701,9 @@ func mainImpl() int {
 	invokeErr := make(chan error)
 	// Use a dedicated BuildsClient for dispatcher, which turns off retries.
 	// dispatcher.Channel will handle retries instead.
-	bbclientForDispatcher, _, err := newBuildsClient(cctx, bbclientInput.input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil })
+	// Create the build client with a provided secrets, because secrets could have
+	// been updated with a build token from the response of the StartBuild call.
+	bbclientForDispatcher, err := newBuildsClientWithSecrets(cctx, bbclientInput.input.Build.Infra.Buildbucket.GetHostname(), func() retry.Iterator { return nil }, secrets)
 	if err != nil {
 		checkReport(ctx, bbclientInput, errors.Annotate(err, "could not connect to Buildbucket").Err())
 	}
