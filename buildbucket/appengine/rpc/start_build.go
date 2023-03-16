@@ -46,21 +46,6 @@ func validateStartBuildRequest(ctx context.Context, req *pb.StartBuildRequest) e
 	return nil
 }
 
-func checkBuildStatus(b *model.Build) error {
-	switch {
-	case protoutil.IsEnded(b.Status):
-		// The build has ended.
-		// For example the StartBuild request reaches Buildbucket late, when the task
-		// has crashed (e.g. BOT_DIED).
-		return appstatus.Errorf(codes.FailedPrecondition, "cannot start ended build %d", b.ID)
-	case b.Status == pb.Status_STARTED:
-		// In theory this should be impossible. But check it any way.
-		return appstatus.Errorf(codes.FailedPrecondition, "cannot start started build %d", b.ID)
-	default:
-		return nil
-	}
-}
-
 // startBuildOnSwarming starts a build if it runs on swarming.
 //
 // For builds on Swarming, the swarming task id and update_token have been
@@ -91,20 +76,31 @@ func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest) (*mode
 		// First StartBuild request.
 		if b.StartBuildRequestID == "" {
 			if infra.Proto.Swarming.TaskId == req.TaskId {
-				if err = checkBuildStatus(b); err != nil {
-					return err
+				if protoutil.IsEnded(b.Status) {
+					// The build has ended.
+					// For example the StartBuild request reaches Buildbucket late, when the task
+					// has crashed (e.g. BOT_DIED).
+					return appstatus.Errorf(codes.FailedPrecondition, "cannot start ended build %d", b.ID)
 				}
 
 				// Start the build.
 				b.StartBuildRequestID = req.RequestId
-				protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
-				buildStatusChanged = true
+				if b.Status == pb.Status_SCHEDULED {
+					// Should only set the build to STARTED if it's still pending.
+					// Because of the swarming sync flow, it's possible that build is
+					// already in STARTED status.
+					protoutil.SetStatus(clock.Now(ctx), b.Proto, pb.Status_STARTED)
+					buildStatusChanged = true
+				}
 				if err = datastore.Put(ctx, b); err != nil {
 					return appstatus.Errorf(codes.Internal, "failed to start build %d: %s", b.ID, err)
 				}
-				// Notify Pubsub.
-				// NotifyPubSub is a Transactional task, so do it inside the transaction.
-				_ = tasks.NotifyPubSub(ctx, b)
+
+				if buildStatusChanged {
+					// Notify Pubsub.
+					// NotifyPubSub is a Transactional task, so do it inside the transaction.
+					_ = tasks.NotifyPubSub(ctx, b)
+				}
 				return nil
 			}
 
@@ -127,8 +123,17 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 		return false, buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, taskID.Id))
 	}
 
-	if err := checkBuildStatus(b); err != nil {
-		return false, err
+	if protoutil.IsEnded(b.Status) {
+		// The build has ended.
+		// For example the StartBuild request reaches Buildbucket late, when the task
+		// has crashed (e.g. BOT_DIED).
+		return false, appstatus.Errorf(codes.FailedPrecondition, "cannot start ended build %d", b.ID)
+	}
+
+	if b.Status == pb.Status_STARTED {
+		// The build has started.
+		// Currently for builds on backend this should not happen.
+		return false, appstatus.Errorf(codes.FailedPrecondition, "cannot start started build %d", b.ID)
 	}
 
 	// Start the build.

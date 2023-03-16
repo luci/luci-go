@@ -393,8 +393,12 @@ func TestStartBuild(t *testing.T) {
 						}
 						build.Proto.Status = pb.Status_STARTED
 						So(datastore.Put(ctx, infra, build), ShouldBeNil)
-						_, err := srv.StartBuild(ctx, req)
-						So(err, ShouldErrLike, `cannot start started build`)
+						res, err := srv.StartBuild(ctx, req)
+						So(err, ShouldBeNil)
+						So(res.UpdateBuildToken, ShouldEqual, build.UpdateToken)
+						// TQ tasks for pubsub-notification.
+						tasks := sch.Tasks()
+						So(tasks, ShouldHaveLength, 0)
 					})
 
 					Convey("build has ended", func() {
