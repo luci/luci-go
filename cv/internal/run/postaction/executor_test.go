@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 	"time"
+	"sync"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -200,24 +201,16 @@ func TestExecutePostActionOp(t *testing.T) {
 			})
 			Convey("after the execution started", func() {
 				doErr := make(chan error)
+				var lck sync.Mutex
+				exe.testBeforeCLMutation = func(ctx context.Context, rcl *run.RunCL, req *gerritpb.SetReviewRequest) {
+					lck.Lock()
+					exe.IsCancelRequested = func() bool { return true }
+					lck.Unlock()
+				}
 				go func() {
 					doErr <- exe.Do(ctx)
 					close(doErr)
 				}()
-
-				mutStarted := make(chan struct{})
-				mutDone := make(chan struct{})
-				exe.testBeforeCLMutation = func(ctx context.Context, rcl *run.RunCL, req *gerritpb.SetReviewRequest) {
-					close(mutStarted)
-					<-mutDone
-				}
-				select {
-				case <-mutStarted:
-					exe.IsCancelRequested = func() bool { return true }
-					close(mutDone)
-				case <-ctx.Done():
-					panic("mutation didn't start within 10 secs")
-				}
 				select {
 				case err := <-doErr:
 					So(err, ShouldErrLike, "CL 1: CancelRequested for Run")
