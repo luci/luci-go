@@ -46,6 +46,10 @@
         "revision": {
           "location": "query",
           "type": "string"
+        },
+        "use_zlib": {
+          "location": "query",
+          "type": "boolean"
         }
       },
       "path": "config_sets/{config_set}/config/{path}",
@@ -443,6 +447,9 @@
         "content_hash": {
           "required": true,
           "type": "string"
+        },
+        "is_zlib_compressed": {
+          "type": "boolean"
         },
         "revision": {
           "required": true,

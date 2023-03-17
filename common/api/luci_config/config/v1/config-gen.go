@@ -760,15 +760,15 @@ func (c *GetConfigCall) HashOnly(hashOnly bool) *GetConfigCall {
 	return c
 }
 
-// UseZlib sets the optional parameter "use_zlib":
-func (c *GetConfigCall) UseZlib(useZlib bool) *GetConfigCall {
-	c.urlParams_.Set("use_zlib", fmt.Sprint(useZlib))
-	return c
-}
-
 // Revision sets the optional parameter "revision":
 func (c *GetConfigCall) Revision(revision string) *GetConfigCall {
 	c.urlParams_.Set("revision", revision)
+	return c
+}
+
+// UseZlib sets the optional parameter "use_zlib":
+func (c *GetConfigCall) UseZlib(useZlib bool) *GetConfigCall {
+	c.urlParams_.Set("use_zlib", fmt.Sprint(useZlib))
 	return c
 }
 
@@ -898,6 +898,10 @@ func (c *GetConfigCall) Do(opts ...googleapi.CallOption) (*LuciConfigGetConfigRe
 	//     "revision": {
 	//       "location": "query",
 	//       "type": "string"
+	//     },
+	//     "use_zlib": {
+	//       "location": "query",
+	//       "type": "boolean"
 	//     }
 	//   },
 	//   "path": "config_sets/{config_set}/config/{path}",
