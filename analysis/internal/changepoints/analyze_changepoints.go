@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -111,7 +112,10 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		}
 
 		// Only keep "relevant" test variants.
-		filteredTVs := filterTestVariants(tvs)
+		filteredTVs, err := filterTestVariants(tvs, duplicateMap)
+		if err != nil {
+			return errors.Annotate(err, "filter test variants").Err()
+		}
 
 		// Query TestVariantBranch from spanner.
 		tvbks := testVariantBranchKeys(filteredTVs, payload)
@@ -166,19 +170,25 @@ func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payloa
 	return tvb, nil
 }
 
-// filterTestVariants only keeps test variants that have at least 1 non-skipped
-// test result.
-func filterTestVariants(tvs []*rdbpb.TestVariant) []*rdbpb.TestVariant {
+// filterTestVariants only keeps test variants that have at least 1 non-duplicate
+// and non-skipped test result (the test result needs to be both non-duplicate
+// and non-skipped).
+func filterTestVariants(tvs []*rdbpb.TestVariant, duplicateMap map[string]bool) ([]*rdbpb.TestVariant, error) {
 	results := []*rdbpb.TestVariant{}
 	for _, tv := range tvs {
 		for _, r := range tv.Results {
-			if r.Result.Status != rdbpb.TestStatus_SKIP {
+			invID, err := resultdb.InvocationFromTestResultName(r.Result.Name)
+			if err != nil {
+				return nil, errors.Annotate(err, "invocation from test result name").Err()
+			}
+			_, isDuplicate := duplicateMap[invID]
+			if r.Result.Status != rdbpb.TestStatus_SKIP && !isDuplicate {
 				results = append(results, tv)
 				break
 			}
 		}
 	}
-	return results
+	return results, nil
 }
 
 func testVariantBranchKeys(tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) []TestVariantBranchKey {

@@ -117,10 +117,25 @@ func TestAnalyzeChangePoint(t *testing.T) {
 					},
 				},
 			},
+			{
+				TestId: "3",
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/inv-3/tests/abc",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+			},
 		}
-		tvs = filterTestVariants(tvs)
+		recycleMap := map[string]bool{
+			"inv-2": true,
+		}
+		tvs, err := filterTestVariants(tvs, recycleMap)
+		So(err, ShouldBeNil)
 		So(len(tvs), ShouldEqual, 1)
-		So(tvs[0].TestId, ShouldEqual, "2")
+		So(tvs[0].TestId, ShouldEqual, "3")
 	})
 }
 
