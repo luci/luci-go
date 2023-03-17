@@ -370,6 +370,8 @@ type LuciConfigGetConfigResponseMessage struct {
 
 	ContentHash string `json:"content_hash,omitempty"`
 
+	IsZlibCompressed bool `json:"is_zlib_compressed,omitempty"`
+
 	Revision string `json:"revision,omitempty"`
 
 	Url string `json:"url,omitempty"`
@@ -755,6 +757,12 @@ func (s *Service) GetConfig(configSet string, path string) *GetConfigCall {
 // HashOnly sets the optional parameter "hash_only":
 func (c *GetConfigCall) HashOnly(hashOnly bool) *GetConfigCall {
 	c.urlParams_.Set("hash_only", fmt.Sprint(hashOnly))
+	return c
+}
+
+// UseZlib sets the optional parameter "use_zlib":
+func (c *GetConfigCall) UseZlib(useZlib bool) *GetConfigCall {
+	c.urlParams_.Set("use_zlib", fmt.Sprint(useZlib))
 	return c
 }
 

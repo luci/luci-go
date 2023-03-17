@@ -15,11 +15,14 @@
 package remote
 
 import (
+	"compress/zlib"
 	"context"
 	"encoding/base64"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 
 	"google.golang.org/api/googleapi"
 
@@ -94,16 +97,25 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 		return nil, err
 	}
 
-	resp, err := srv.GetConfig(string(configSet), path).HashOnly(metaOnly).Context(ctx).Do()
+	resp, err := srv.GetConfig(string(configSet), path).HashOnly(metaOnly).UseZlib(true).Context(ctx).Do()
 	if err != nil {
 		return nil, apiErr(err)
 	}
 
 	var decoded []byte
 	if !metaOnly {
-		decoded, err = base64.StdEncoding.DecodeString(resp.Content)
-		if err != nil {
-			return nil, err
+		if resp.IsZlibCompressed {
+			reader, err := zlib.NewReader(base64.NewDecoder(base64.StdEncoding, strings.NewReader(resp.Content)))
+			if err != nil {
+				return nil, err
+			}
+			if decoded, err = io.ReadAll(reader); err != nil {
+				return nil, err
+			}
+		} else {
+			if decoded, err = base64.StdEncoding.DecodeString(resp.Content); err != nil {
+				return nil, err
+			}
 		}
 	}
 

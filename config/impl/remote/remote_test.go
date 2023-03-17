@@ -15,10 +15,13 @@
 package remote
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -29,8 +32,22 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func encodeToB(s string) string {
-	return base64.StdEncoding.EncodeToString([]byte(s))
+func encodeToB(s string, compress bool) string {
+	var b []byte
+	if compress {
+		buf := &bytes.Buffer{}
+		w := zlib.NewWriter(buf)
+		if _, err := io.WriteString(w, s); err != nil {
+			panic(err)
+		}
+		if err := w.Close(); err != nil {
+			panic(err)
+		}
+		b = buf.Bytes()
+	} else {
+		b = []byte(s)
+	}
+	return base64.StdEncoding.EncodeToString(b)
 }
 
 func testTools(code int, resp any) (*httptest.Server, config.Interface) {
@@ -56,10 +73,34 @@ func TestRemoteCalls(t *testing.T) {
 	Convey("Should pass through calls to the generated API", t, func() {
 		Convey("GetConfig", func() {
 			server, remoteImpl := testTools(200, map[string]string{
-				"content":      encodeToB("hi"),
+				"content":      encodeToB("hi", false),
 				"content_hash": "bar",
 				"revision":     "3",
 				"url":          "config_url",
+			})
+			defer server.Close()
+
+			res, err := remoteImpl.GetConfig(ctx, "a", "b", false)
+
+			So(err, ShouldBeNil)
+			So(*res, ShouldResemble, config.Config{
+				Meta: config.Meta{
+					ConfigSet:   "a",
+					Path:        "b",
+					ContentHash: "bar",
+					Revision:    "3",
+					ViewURL:     "config_url",
+				},
+				Content: "hi",
+			})
+		})
+		Convey("GetConfig (zlib)", func() {
+			server, remoteImpl := testTools(200, map[string]any{
+				"content":            encodeToB("hi", true),
+				"content_hash":       "bar",
+				"is_zlib_compressed": true,
+				"revision":           "3",
+				"url":                "config_url",
 			})
 			defer server.Close()
 
@@ -99,7 +140,6 @@ func TestRemoteCalls(t *testing.T) {
 
 			res, err := remoteImpl.ListFiles(ctx, "a")
 
-			fmt.Println("Response: ", res)
 			So(err, ShouldBeNil)
 			So(res, ShouldResemble, []string{"first.template", "second.template"})
 		})
@@ -107,7 +147,7 @@ func TestRemoteCalls(t *testing.T) {
 			server, remoteImpl := testTools(200, map[string]any{
 				"configs": [...]any{map[string]string{
 					"config_set":   "a",
-					"content":      encodeToB("hi"),
+					"content":      encodeToB("hi", false),
 					"content_hash": "bar",
 					"revision":     "3",
 				}},
