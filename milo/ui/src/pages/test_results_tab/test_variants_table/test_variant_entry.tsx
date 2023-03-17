@@ -14,12 +14,13 @@
 
 import '@material/mwc-icon';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { css, html } from 'lit';
+import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
+import { useEffect, useRef } from 'react';
 
 import '../../../components/associated_bugs_badge';
 import '../../../components/expandable_entry';
@@ -426,4 +427,31 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
       }
     `,
   ];
+}
+
+export interface TestVariantEntryProps {
+  readonly variant: TestVariant;
+  readonly columnGetters: Array<(v: TestVariant) => unknown>;
+  readonly historyUrl?: string;
+}
+
+export function TestVariantEntry({ variant, columnGetters, historyUrl }: TestVariantEntryProps) {
+  const container = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // This will never happen. But useful for type checking.
+    if (!container.current) {
+      return;
+    }
+    render(
+      html`<milo-test-variant-entry
+        .variant=${variant}
+        .columnGetters=${columnGetters}
+        .historyUrl=${historyUrl}
+      ></milo-test-variant-entry>`,
+      container.current
+    );
+  }, [variant, columnGetters, historyUrl]);
+
+  return <div ref={container} />;
 }

@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import createCache from '@emotion/cache';
-import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import { Fragment, useState } from 'react';
-import { createRoot, Root } from 'react-dom/client';
 
-import '../../components/dot_spinner';
 import { MiloLink } from '../../components/link';
 import { getCipdLink } from '../../libs/build_utils';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { Build } from '../../services/buildbucket';
-import colorClasses from '../../styles/color_classes.css';
-import commonStyle from '../../styles/common_style.css';
 
 export interface BuildPackagesInfoProps {
-  readonly build: Build;
+  readonly build?: Build;
 }
 
-export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
+export const BuildPackagesInfo = observer(({ build }: BuildPackagesInfoProps) => {
+  if (!build) {
+    return <></>;
+  }
+
   const [displayType, setDisplayType] = useState<null | 'requested' | 'resolved'>(null);
   const experiments = build.input?.experiments;
   const agent = build.infra?.buildbucket?.agent;
@@ -113,12 +109,10 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
                     <tr css={{ height: '10px' }}>
                       <td colSpan={2}></td>
                     </tr>
-                    {dir ? (
+                    {dir && (
                       <tr>
                         <td colSpan={2}>@Subdir {dir}</td>
                       </tr>
-                    ) : (
-                      <></>
                     )}
                     {ref.cipd.specs.map((spec) => (
                       <tr key={spec.package}>
@@ -141,37 +135,4 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
       )}
     </>
   );
-}
-
-@customElement('milo-bp-build-packages-info')
-export class BuildPageBuildPackagesInfoElement extends MobxLitElement {
-  @observable.ref build!: Build;
-
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLDivElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    makeObservable(this);
-    this.parent = document.createElement('div');
-    const child = document.createElement('div');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-bp-build-packages-info',
-      container: this.parent,
-    });
-  }
-
-  protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <BuildPackagesInfo build={this.build} />
-      </CacheProvider>
-    );
-    return this.parent;
-  }
-
-  static styles = [commonStyle, colorClasses];
-}
+});

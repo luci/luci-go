@@ -12,20 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import createCache from '@emotion/cache';
-import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
-import { customElement } from 'lit/decorators.js';
-import { computed, makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useState } from 'react';
-import { createRoot, Root } from 'react-dom/client';
 
-import '../../components/dot_spinner';
-import { consumer } from '../../libs/context';
-import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../store';
-import commonStyle from '../../styles/common_style.css';
+import { useStore } from '../../store';
 
 export interface CancelBuildDialogProps {
   readonly open: boolean;
@@ -82,57 +73,3 @@ export const CancelBuildDialog = observer(({ open, onClose, container }: CancelB
     </Dialog>
   );
 });
-
-@customElement('milo-bp-cancel-build-dialog')
-@consumer
-export class BuildPageCancelBuildDialogElement extends MobxLitElement {
-  static get properties() {
-    return {
-      open: { type: Boolean },
-    };
-  }
-
-  @observable.ref @consumeStore() store!: StoreInstance;
-
-  @observable.ref _open = false;
-  @computed get open() {
-    return this._open;
-  }
-  set open(newVal: boolean) {
-    this._open = newVal;
-  }
-
-  private readonly cache: EmotionCache;
-  private readonly parent: HTMLDivElement;
-  private readonly root: Root;
-
-  constructor() {
-    super();
-    makeObservable(this);
-    this.parent = document.createElement('div');
-    const child = document.createElement('div');
-    this.root = createRoot(child);
-    this.parent.appendChild(child);
-    this.cache = createCache({
-      key: 'milo-bp-cancel-build-dialog',
-      container: this.parent,
-    });
-  }
-
-  protected render() {
-    this.root.render(
-      <CacheProvider value={this.cache}>
-        <StoreProvider value={this.store}>
-          <CancelBuildDialog
-            open={this.open}
-            onClose={() => this.dispatchEvent(new Event('close', { bubbles: false }))}
-            container={this.parent}
-          ></CancelBuildDialog>
-        </StoreProvider>
-      </CacheProvider>
-    );
-    return this.parent;
-  }
-
-  static styles = [commonStyle];
-}

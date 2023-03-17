@@ -82,3 +82,16 @@ export class BuildPageStepListElement extends MiloBaseElement {
     `,
   ];
 }
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-bp-step-list': {};
+    }
+  }
+}
+
+export function StepList() {
+  return <milo-bp-step-list />;
+}
