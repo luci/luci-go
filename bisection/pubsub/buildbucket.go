@@ -31,7 +31,9 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server/router"
+	"google.golang.org/protobuf/encoding/protojson"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/server/tq"
 )
@@ -102,81 +104,76 @@ func buildbucketPubSubHandlerImpl(c context.Context, r *http.Request) error {
 	// Handle the message from `builds_v2` pubsub topic.
 	if v, ok := psMsg.Message.Attributes["version"].(string); ok && v == "v2" {
 		logging.Debugf(c, "Got message from v2")
-		return nil
-	} else {
-		// Handle v1 message.
-		// TODO (nqmtuan): Remove this when we finish migration.
-		bbmsg, err := parseBBMessage(psMsg)
+		bbmsg, err := parseBBV2Message(c, psMsg)
 		if err != nil {
-			return err
+			return errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
 		}
-		c = loggingutil.SetAnalyzedBBID(c, bbmsg.Build.Id)
-		logging.Debugf(c, "Received message for build id %d", bbmsg.Build.Id)
+
+		bbid := bbmsg.GetBuild().GetId()
+		project := bbmsg.GetBuild().GetBuilder().GetProject()
+		bucket := bbmsg.GetBuild().GetBuilder().GetBucket()
+		status := bbmsg.GetBuild().GetStatus()
+
+		c = loggingutil.SetAnalyzedBBID(c, bbid)
+		logging.Debugf(c, "Received message for build id %d", bbid)
 
 		// Special handling for pubsub message for LUCI Bisection
-		if bbmsg.Build.Project == "chromium" && bbmsg.Build.Bucket == "luci.chromium.findit" {
-			logging.Infof(c, "Received pubsub for luci bisection build %d", bbmsg.Build.Id)
-			bbCounter.Add(c, 1, bbmsg.Build.Project, string(OutcomeTypeUpdateRerun))
-			if bbmsg.Build.Status == bbv1.StatusStarted {
-				return rerun.UpdateRerunStartTime(c, bbmsg.Build.Id)
+		if project == "chromium" && bucket == "findit" {
+			logging.Infof(c, "Received pubsub for luci bisection build %d", bbid)
+			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateRerun))
+			if bbmsg.Build.Status == buildbucketpb.Status_STARTED {
+				return rerun.UpdateRerunStartTime(c, bbid)
 			}
 			return nil
 		}
 
 		// For now, we only handle chromium/ci builds
 		// TODO (nqmtuan): Move this into config
-		if !(bbmsg.Build.Project == "chromium" && bbmsg.Build.Bucket == "luci.chromium.ci") {
-			logging.Debugf(c, "Unsupported build for bucket (%q, %q). Exiting early...", bbmsg.Build.Project, bbmsg.Build.Bucket)
-			bbCounter.Add(c, 1, bbmsg.Build.Project, string(OutcomeTypeUnsupported))
+		if !(project == "chromium" && bucket == "ci") {
+			logging.Debugf(c, "Unsupported build for bucket (%q, %q). Exiting early...", project, bucket)
+			bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
 			return nil
 		}
 
-		// Just ignore non-completed builds
-		if bbmsg.Build.Status != bbv1.StatusCompleted {
-			logging.Debugf(c, "Build status = %s. Exiting early...", bbmsg.Build.Status)
-			bbCounter.Add(c, 1, bbmsg.Build.Project, string(OutcomeTypeIgnore))
+		// Just ignore non-successful and non-failed builds
+		if status != buildbucketpb.Status_SUCCESS && status != buildbucketpb.Status_FAILURE {
+			logging.Debugf(c, "Build status = %s. Exiting early...", status)
+			bbCounter.Add(c, 1, project, string(OutcomeTypeIgnore))
 			return nil
 		}
 
 		// If the build is succeeded -> some running analysis may not be necessary
-		if bbmsg.Build.Result == bbv1.ResultSuccess {
-			bbCounter.Add(c, 1, bbmsg.Build.Project, string(OutcomeTypeUpdateSucceededBuild))
-			err := compilefailuredetection.UpdateSucceededBuild(c, bbmsg.Build.Id)
+		if bbmsg.Build.Status == buildbucketpb.Status_SUCCESS {
+			bbCounter.Add(c, 1, project, string(OutcomeTypeUpdateSucceededBuild))
+			err := compilefailuredetection.UpdateSucceededBuild(c, bbid)
 			if err != nil {
 				return errors.Annotate(err, "UpdateSucceededBuild").Err()
 			}
 			return nil
 		}
 
-		// If the build is not succeed, and not failed either
-		if bbmsg.Build.Result != bbv1.ResultFailure {
-			logging.Debugf(c, "Result = %s. Exiting early...", bbmsg.Build.Result)
-			bbCounter.Add(c, 1, bbmsg.Build.Project, string(OutcomeTypeIgnore))
-			return nil
-		}
-
 		// Create a task for task queue
 		err = tq.AddTask(c, &tq.Task{
-			Title: fmt.Sprintf("failed_build_%d", bbmsg.Build.Id),
+			Title: fmt.Sprintf("failed_build_%d", bbid),
 			Payload: &taskpb.FailedBuildIngestionTask{
-				Bbid: bbmsg.Build.Id,
+				Bbid: bbid,
 			},
 		})
 
 		if err != nil {
-			logging.Errorf(c, "Failed creating task in task queue for build %d", bbmsg.Build.Id)
+			logging.Errorf(c, "Failed creating task in task queue for build %d", bbid)
 			return err
 		}
-		bbCounter.Add(c, 1, bbmsg.Build.Project, string(OutcomeTypeAnalyze))
-
-		return nil
+		bbCounter.Add(c, 1, project, string(OutcomeTypeAnalyze))
 	}
+	return nil
 }
 
-func parseBBMessage(psMsg pubsubMessage) (*buildBucketMessage, error) {
-	var bbMsg buildBucketMessage
-	if err := json.Unmarshal(psMsg.Message.Data, &bbMsg); err != nil {
-		return nil, errors.Annotate(err, "could not parse buildbucket pubsub message data").Err()
+func parseBBV2Message(ctx context.Context, pbMsg pubsubMessage) (*buildbucketpb.BuildsV2PubSub, error) {
+	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
+	opts := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
+	if err := opts.Unmarshal(pbMsg.Message.Data, buildsV2Msg); err != nil {
+		return nil, err
 	}
-	return &bbMsg, nil
+	return buildsV2Msg, nil
 }

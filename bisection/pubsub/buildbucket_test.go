@@ -23,40 +23,64 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/bisection/compilefailuredetection"
+	taskpb "go.chromium.org/luci/bisection/task/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/tq"
 )
 
 func TestBuildBucketPubsub(t *testing.T) {
 	t.Parallel()
 
 	Convey("Buildbucket Pubsub Handler", t, func() {
-		c := context.Background()
-		buildExp := bbv1.LegacyApiCommonBuildMessage{
-			Project: "fake",
-			Bucket:  "luci.fake.bucket",
-			Id:      87654321,
-			Status:  bbv1.StatusCompleted,
+		c, scheduler := tq.TestingContext(context.Background(), nil)
+		compilefailuredetection.RegisterTaskClass()
+
+		buildPubsub := &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Id: 8000,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
+				Status: buildbucketpb.Status_FAILURE,
+			},
 		}
-		r := &http.Request{Body: makeBBReq(buildExp, "bb-hostname")}
+		r := &http.Request{Body: makeBBReq(buildPubsub)}
 		err := buildbucketPubSubHandlerImpl(c, r)
 		So(err, ShouldBeNil)
+		// Check that a test was created
+		task := &taskpb.FailedBuildIngestionTask{
+			Bbid: 8000,
+		}
+		expected := proto.Clone(task).(*taskpb.FailedBuildIngestionTask)
+		So(scheduler.Tasks().Payloads()[0], ShouldResembleProto, expected)
 	})
 }
 
-func makeBBReq(build bbv1.LegacyApiCommonBuildMessage, hostname string) io.ReadCloser {
-	bmsg := struct {
-		Build    bbv1.LegacyApiCommonBuildMessage `json:"build"`
-		Hostname string                           `json:"hostname"`
-	}{build, hostname}
-	bm, _ := json.Marshal(bmsg)
+func makeBBReq(message *buildbucketpb.BuildsV2PubSub) io.ReadCloser {
+	bm, err := protojson.Marshal(message)
+	if err != nil {
+		panic(err)
+	}
+
+	attributes := map[string]any{
+		"version": "v2",
+	}
 
 	msg := struct {
 		Message struct {
-			Data []byte
+			Data       []byte
+			Attributes map[string]any
 		}
+	}{struct {
+		Data       []byte
 		Attributes map[string]any
-	}{struct{ Data []byte }{Data: bm}, nil}
+	}{Data: bm, Attributes: attributes}}
 	jmsg, _ := json.Marshal(msg)
 	return io.NopCloser(bytes.NewReader(jmsg))
 }
