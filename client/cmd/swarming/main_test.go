@@ -59,6 +59,7 @@ func runCmd(t *testing.T, cmd string, args ...string) int {
 }
 
 func TestBotsCommand(t *testing.T) {
+	t.Skip("TODO(crbug.com/1424866): flaky. often timed out.")
 	t.Parallel()
 
 	Convey(`ok`, t, func() {
@@ -70,6 +71,7 @@ func TestBotsCommand(t *testing.T) {
 }
 
 func TestTasksCommand(t *testing.T) {
+	t.Skip("TODO(crbug.com/1424866): flaky. often timed out.")
 	t.Parallel()
 
 	Convey(`ok`, t, func() {
@@ -181,6 +183,7 @@ const spawnTaskInputJSON = `
 `
 
 func TestSpawnTasksCommand(t *testing.T) {
+	t.Skip("TODO(crbug.com/1424866): flaky. often timed out.")
 	t.Parallel()
 
 	Convey(`ok`, t, func() {
