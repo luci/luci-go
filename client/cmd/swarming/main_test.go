@@ -135,6 +135,7 @@ func runIntegrationTest(t *testing.T, triggerArgs []string) {
 }
 
 func TestWithCAS(t *testing.T) {
+	t.Skip("TODO(crbug.com/1424866): flaky. often timed out.")
 	t.Parallel()
 
 	Convey(`ok`, t, func() {
