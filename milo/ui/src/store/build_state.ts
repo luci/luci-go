@@ -323,7 +323,7 @@ export const BuildState = types
       }
 
       return {
-        label: recipeName,
+        label: recipeName as string,
         url: `https://${csHost}/search/?${new URLSearchParams([['q', `file:recipes/${recipeName}.py`]]).toString()}`,
         ariaLabel: `recipe ${recipeName}`,
       };

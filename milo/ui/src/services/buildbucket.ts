@@ -115,7 +115,7 @@ export interface Build {
   readonly schedulingTimeout?: string;
   readonly executionTimeout?: string;
   readonly gracePeriod?: string;
-  readonly ancestorIds?: number[];
+  readonly ancestorIds?: string[];
 }
 
 // This is from https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/proto/common.proto#25

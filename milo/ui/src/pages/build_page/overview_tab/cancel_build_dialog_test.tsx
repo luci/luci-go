@@ -17,8 +17,8 @@ import { expect } from 'chai';
 import { destroy, Instance, protect, unprotect } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
-import { Store, StoreProvider } from '../../store';
-import { BuildPageInstance } from '../../store/build_page';
+import { Store, StoreProvider } from '../../../store';
+import { BuildPageInstance } from '../../../store/build_page';
 import { CancelBuildDialog } from './cancel_build_dialog';
 
 describe('CancelBuildDialog', () => {

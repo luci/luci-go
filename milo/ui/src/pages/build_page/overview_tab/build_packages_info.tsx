@@ -16,10 +16,10 @@ import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { Fragment, useState } from 'react';
 
-import { MiloLink } from '../../components/link';
-import { getCipdLink } from '../../libs/build_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
-import { Build } from '../../services/buildbucket';
+import { MiloLink } from '../../../components/link';
+import { getCipdLink } from '../../../libs/build_utils';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../../libs/constants';
+import { Build } from '../../../services/buildbucket';
 
 export interface BuildPackagesInfoProps {
   readonly build?: Build;

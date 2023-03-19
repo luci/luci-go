@@ -26,6 +26,7 @@ import { getBuilderURLPath, getBuildURLPath, getLegacyBuildURLPath, getProjectUR
 import { unwrapOrElse } from '../../libs/utils';
 import { BuildStatus } from '../../services/buildbucket';
 import { useStore } from '../../store';
+import { InvocationProvider } from '../../store/invocation_state';
 import { CountIndicator } from '../test_results_tab/count_indicator';
 import { BuildLitEnvProvider } from './build_lit_env_provider';
 import { ChangeConfigDialog } from './change_config_dialog';
@@ -135,141 +136,143 @@ export const BuildPage = observer(() => {
   }, [faviconUrl]);
 
   return (
-    <BuildLitEnvProvider>
-      <ChangeConfigDialog open={store.showSettingsDialog} onClose={() => store.setShowSettingsDialog(false)} />
-      <div
-        css={{
-          backgroundColor: 'var(--block-background-color)',
-          padding: '6px 16px',
-          fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-          fontSize: '14px',
-          display: 'flex',
-        }}
-      >
+    <InvocationProvider value={store.buildPage.invocation}>
+      <BuildLitEnvProvider>
+        <ChangeConfigDialog open={store.showSettingsDialog} onClose={() => store.setShowSettingsDialog(false)} />
         <div
           css={{
-            flex: '0 auto',
-            fontSize: '0px',
-            '& > *': {
-              fontSize: '14px',
-            },
+            backgroundColor: 'var(--block-background-color)',
+            padding: '6px 16px',
+            fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
+            fontSize: '14px',
+            display: 'flex',
           }}
         >
-          <span css={{ color: 'var(--light-text-color)' }}>Build </span>
-          <a href={getProjectURLPath(project)}>{project}</a>
-          <span>&nbsp;/&nbsp;</span>
-          <span>{bucket}</span>
-          <span>&nbsp;/&nbsp;</span>
-          <a href={getBuilderURLPath({ project, bucket, builder })}>{builder}</a>
-          <span>&nbsp;/&nbsp;</span>
-          <span>{buildNumOrId}</span>
-        </div>
-        {customBugLink && (
-          <>
-            <div css={delimiter}></div>
-            <a href={customBugLink} target="_blank">
-              File a bug
-            </a>
-          </>
-        )}
-        {store.redirectSw && (
-          <>
-            <div css={delimiter}></div>
-            <a
-              onClick={(e) => {
-                const switchVerTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
-                trackEvent(
-                  GA_CATEGORIES.LEGACY_BUILD_PAGE,
-                  switchVerTemporarily ? GA_ACTIONS.SWITCH_VERSION_TEMP : GA_ACTIONS.SWITCH_VERSION,
-                  window.location.href
-                );
-
-                if (switchVerTemporarily) {
-                  return;
-                }
-
-                const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
-                document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
-                store.redirectSw?.unregister();
-              }}
-              href={getLegacyBuildURLPath({ project, bucket, builder }, buildNumOrId)}
-            >
-              Switch to the legacy build page
-            </a>
-          </>
-        )}
-        <div
-          css={{
-            marginLeft: 'auto',
-            flex: '0 auto',
-          }}
-        >
-          {build && (
+          <div
+            css={{
+              flex: '0 auto',
+              fontSize: '0px',
+              '& > *': {
+                fontSize: '14px',
+              },
+            }}
+          >
+            <span css={{ color: 'var(--light-text-color)' }}>Build </span>
+            <a href={getProjectURLPath(project)}>{project}</a>
+            <span>&nbsp;/&nbsp;</span>
+            <span>{bucket}</span>
+            <span>&nbsp;/&nbsp;</span>
+            <a href={getBuilderURLPath({ project, bucket, builder })}>{builder}</a>
+            <span>&nbsp;/&nbsp;</span>
+            <span>{buildNumOrId}</span>
+          </div>
+          {customBugLink && (
             <>
-              <i className={`status ${BUILD_STATUS_CLASS_MAP[build.data.status]}`}>
-                {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'unknown status'}{' '}
-              </i>
-              {(() => {
-                switch (build.data.status) {
-                  case BuildStatus.Scheduled:
-                    return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
-                  case BuildStatus.Started:
-                    return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
-                  case BuildStatus.Canceled:
-                    return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${
-                      build.data.canceledBy || 'unknown'
-                    }`;
-                  case BuildStatus.Failure:
-                  case BuildStatus.InfraFailure:
-                  case BuildStatus.Success:
-                    return `after ${displayDuration(build.endTime!.diff(build.startTime || build.createTime))}`;
-                  default:
-                    return '';
-                }
-              })()}
+              <div css={delimiter}></div>
+              <a href={customBugLink} target="_blank">
+                File a bug
+              </a>
             </>
           )}
+          {store.redirectSw && (
+            <>
+              <div css={delimiter}></div>
+              <a
+                onClick={(e) => {
+                  const switchVerTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
+                  trackEvent(
+                    GA_CATEGORIES.LEGACY_BUILD_PAGE,
+                    switchVerTemporarily ? GA_ACTIONS.SWITCH_VERSION_TEMP : GA_ACTIONS.SWITCH_VERSION,
+                    window.location.href
+                  );
+
+                  if (switchVerTemporarily) {
+                    return;
+                  }
+
+                  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+                  document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
+                  store.redirectSw?.unregister();
+                }}
+                href={getLegacyBuildURLPath({ project, bucket, builder }, buildNumOrId)}
+              >
+                Switch to the legacy build page
+              </a>
+            </>
+          )}
+          <div
+            css={{
+              marginLeft: 'auto',
+              flex: '0 auto',
+            }}
+          >
+            {build && (
+              <>
+                <i className={`status ${BUILD_STATUS_CLASS_MAP[build.data.status]}`}>
+                  {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'unknown status'}{' '}
+                </i>
+                {(() => {
+                  switch (build.data.status) {
+                    case BuildStatus.Scheduled:
+                      return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
+                    case BuildStatus.Started:
+                      return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
+                    case BuildStatus.Canceled:
+                      return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${
+                        build.data.canceledBy || 'unknown'
+                      }`;
+                    case BuildStatus.Failure:
+                    case BuildStatus.InfraFailure:
+                    case BuildStatus.Success:
+                      return `after ${displayDuration(build.endTime!.diff(build.startTime || build.createTime))}`;
+                    default:
+                      return '';
+                  }
+                })()}
+              </>
+            )}
+          </div>
         </div>
-      </div>
-      <LinearProgress
-        value={100}
-        variant={build ? 'determinate' : 'indeterminate'}
-        color={build ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status] : 'primary'}
-      />
-      <Tabs
-        value={store.selectedTabId || false}
-        onChange={(_, tabId) => {
-          navigate(`${buildURLPath}/${tabId}`);
-        }}
-      >
-        <Tab label="Overview" value="overview" href={buildURLPath + '/overview'} />
-        {/* If the tab is visited directly via URL before we know if it could
+        <LinearProgress
+          value={100}
+          variant={build ? 'determinate' : 'indeterminate'}
+          color={build ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status] : 'primary'}
+        />
+        <Tabs
+          value={store.selectedTabId || false}
+          onChange={(_, tabId) => {
+            navigate(`${buildURLPath}/${tabId}`);
+          }}
+        >
+          <Tab label="Overview" value="overview" href={buildURLPath + '/overview'} />
+          {/* If the tab is visited directly via URL before we know if it could
         exists, display the tab heading so <Tabs /> won't throw no matching tab
         error */}
-        {(store.selectedTabId === 'test-results' ||
-          (store.buildPage.hasInvocation && store.buildPage.canReadTestVerdicts)) && (
-          <Tab
-            label="Test Results"
-            value="test-results"
-            href={buildURLPath + '/test-results'}
-            icon={<CountIndicator />}
-            iconPosition="end"
-          />
-        )}
-        {(store.selectedTabId === 'steps' || store.buildPage.canReadFullBuild) && (
-          <Tab label="Steps & Logs" value="steps" href={buildURLPath + '/steps'} />
-        )}
-        {(store.selectedTabId === 'related-builds' || store.buildPage.canReadFullBuild) && (
-          <Tab label="Related Builds" value="related-builds" href={buildURLPath + '/related-builds'} />
-        )}
-        {(store.selectedTabId === 'timeline' || store.buildPage.canReadFullBuild) && (
-          <Tab label="Timeline" value="timeline" href={buildURLPath + '/timeline'} />
-        )}
-        {(store.selectedTabId === 'blamelist' || store.buildPage.canReadFullBuild) && (
-          <Tab label="Blamelist" value="blamelist" href={buildURLPath + '/blamelist'} />
-        )}
-      </Tabs>
-      <Outlet />
-    </BuildLitEnvProvider>
+          {(store.selectedTabId === 'test-results' ||
+            (store.buildPage.hasInvocation && store.buildPage.canReadTestVerdicts)) && (
+            <Tab
+              label="Test Results"
+              value="test-results"
+              href={buildURLPath + '/test-results'}
+              icon={<CountIndicator />}
+              iconPosition="end"
+            />
+          )}
+          {(store.selectedTabId === 'steps' || store.buildPage.canReadFullBuild) && (
+            <Tab label="Steps & Logs" value="steps" href={buildURLPath + '/steps'} />
+          )}
+          {(store.selectedTabId === 'related-builds' || store.buildPage.canReadFullBuild) && (
+            <Tab label="Related Builds" value="related-builds" href={buildURLPath + '/related-builds'} />
+          )}
+          {(store.selectedTabId === 'timeline' || store.buildPage.canReadFullBuild) && (
+            <Tab label="Timeline" value="timeline" href={buildURLPath + '/timeline'} />
+          )}
+          {(store.selectedTabId === 'blamelist' || store.buildPage.canReadFullBuild) && (
+            <Tab label="Blamelist" value="blamelist" href={buildURLPath + '/blamelist'} />
+          )}
+        </Tabs>
+        <Outlet />
+      </BuildLitEnvProvider>
+    </InvocationProvider>
   );
 });

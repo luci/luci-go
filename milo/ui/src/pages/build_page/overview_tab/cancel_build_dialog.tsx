@@ -16,7 +16,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } 
 import { observer } from 'mobx-react-lite';
 import { useCallback, useState } from 'react';
 
-import { useStore } from '../../store';
+import { useStore } from '../../../store';
 
 export interface CancelBuildDialogProps {
   readonly open: boolean;

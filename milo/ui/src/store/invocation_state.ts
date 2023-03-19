@@ -17,6 +17,7 @@ import { html } from 'lit';
 import { autorun, comparer, computed } from 'mobx';
 import { addDisposer, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
+import { createContext, useContext } from 'react';
 
 import { NEVER_OBSERVABLE, NEVER_PROMISE } from '../libs/constants';
 import { createContextLink } from '../libs/context';
@@ -259,3 +260,15 @@ export type InvocationStateSnapshotIn = SnapshotIn<typeof InvocationState>;
 export type InvocationStateSnapshotOut = SnapshotOut<typeof InvocationState>;
 
 export const [provideInvocationState, consumeInvocationState] = createContextLink<InvocationStateInstance>();
+
+export const InvocationContext = createContext<InvocationStateInstance | null>(null);
+export const InvocationProvider = InvocationContext.Provider;
+
+export function useInvocation() {
+  const context = useContext(InvocationContext);
+  if (!context) {
+    throw new Error('useInvocation must be used within InvocationProvider');
+  }
+
+  return context;
+}
