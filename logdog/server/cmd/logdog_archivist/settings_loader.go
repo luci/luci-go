@@ -75,7 +75,8 @@ func GetSettingsLoader(serviceID string, flags *CommandLineFlags) archivist.Sett
 			IndexPrefixRange: indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.PrefixRange }),
 			IndexByteRange:   indexParam(func(ic *svcconfig.ArchiveIndexConfig) int32 { return ic.ByteRange }),
 
-			CloudLoggingProjectID: pcfg.CloudLoggingConfig.GetDestination(),
+			CloudLoggingProjectID:   pcfg.CloudLoggingConfig.GetDestination(),
+			CloudLoggingBufferLimit: flags.CloudLoggingExportBufferLimit,
 		}, nil
 	}
 }

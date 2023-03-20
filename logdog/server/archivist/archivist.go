@@ -146,6 +146,9 @@ type Settings struct {
 	//
 	// May be empty, if no export is configured.
 	CloudLoggingProjectID string
+	// CloudLoggingBufferLimit is the maximum number of bytes that the Cloud
+	// Logger will keep in memory per concurrent-task before flushing them out.
+	CloudLoggingBufferLimit int
 }
 
 // SettingsLoader returns archival Settings for a given project.
@@ -449,7 +452,8 @@ func (a *Archivist) makeStagedArchival(ctx context.Context, project string, real
 		return nil, err
 	}
 
-	// Construct a CloudLogging client, if the config is set and the input stream type is TEXT.
+	// Construct a CloudLogging client, if the config is set and the input
+	// stream type is TEXT.
 	if st.CloudLoggingProjectID != "" && sa.desc.StreamType == logpb.StreamType_TEXT {
 		// Validate the project ID, and ping the project to verify the auth.
 		if err = gcloud.ValidateProjectID(st.CloudLoggingProjectID); err != nil {
@@ -703,6 +707,7 @@ func (sa *stagedArchival) stage() (err error) {
 					"job":        "cloud-logging-export",
 				},
 			}),
+			cl.BufferedByteLimit(sa.CloudLoggingBufferLimit),
 		)
 	}
 

@@ -81,14 +81,23 @@ type CommandLineFlags struct {
 	//
 	// Default is 0.
 	ArchiveIndexByteRange int
+
+	// CloudLoggingExportBufferLimit, is the maximum number of bytes that
+	// the CloudLogger will keep in memory per concurrent-task before flushing
+	// them out.
+	//
+	// Default is 10MiB.
+	// Must be > 0.
+	CloudLoggingExportBufferLimit int
 }
 
 // DefaultCommandLineFlags returns CommandLineFlags with populated defaults.
 func DefaultCommandLineFlags() CommandLineFlags {
 	return CommandLineFlags{
-		MaxConcurrentTasks: 1,
-		LeaseBatchSize:     500,
-		LeaseTime:          40 * time.Minute,
+		MaxConcurrentTasks:            1,
+		LeaseBatchSize:                500,
+		LeaseTime:                     40 * time.Minute,
+		CloudLoggingExportBufferLimit: 10 * 1024 * 1024,
 	}
 }
 
@@ -108,12 +117,17 @@ func (f *CommandLineFlags) Register(fs *flag.FlagSet) {
 		"The maximum number of prefix indexes between index entries.")
 	fs.IntVar(&f.ArchiveIndexByteRange, "archive-index-byte-range", f.ArchiveIndexByteRange,
 		"The maximum number of log data bytes between index entries.")
+	fs.IntVar(&f.CloudLoggingExportBufferLimit, "cloud-logging-export-buffer-limit", f.CloudLoggingExportBufferLimit,
+		"Maximum number of bytes that the Cloud Logger will keep in memory before flushing out.")
 }
 
 // Validate returns an error if some parsed flags have invalid values.
 func (f *CommandLineFlags) Validate() error {
 	if f.StagingBucket == "" {
 		return errors.New("-staging-bucket is required")
+	}
+	if f.CloudLoggingExportBufferLimit == 0 {
+		return errors.New("-cloud-logging-export-buffer-limit must be > 0")
 	}
 	return nil
 }
