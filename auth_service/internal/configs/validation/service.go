@@ -288,8 +288,11 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 	ctx.Enter("checking permissions and includes")
 	for _, roleObj := range roleMap {
 		for _, perm := range roleObj.GetPermissions() {
-			if strings.Count(perm, ".") != 2 {
+			if strings.Count(perm.GetName(), ".") != 2 {
 				ctx.Errorf("invalid format: Permissions must have the form <service>.<subject>.<verb>")
+			}
+			if perm.GetInternal() && !strings.HasPrefix(roleObj.GetName(), prefixRoleInternal) {
+				ctx.Errorf("invalid format: can only define internal permissions for internal roles")
 			}
 		}
 

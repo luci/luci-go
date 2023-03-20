@@ -547,8 +547,12 @@ func TestPermissionsConfigValidation(t *testing.T) {
 				content := []byte(`
 					role {
 						permissions: [
-							"test.state.create"
-							"test.state.delete"
+							{
+								name: "test.state.create",
+							},
+							{
+								name: "test.state.delete",
+							}
 						]
 						includes: [
 							"role/testproject.state.creator"
@@ -590,12 +594,30 @@ func TestPermissionsConfigValidation(t *testing.T) {
 					role {
 						name: "role/test.role"
 						permissions: [
-							"examplePermission"
+							{
+								name: "examplePermission",
+							}
 						]
 					}
 				`)
 				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
 				So(vctx.Finalize().Error(), ShouldContainSubstring, "Permissions must have the form <service>.<subject>.<verb>")
+			})
+
+			Convey("invalid internal definition", func() {
+				content := []byte(`
+					role {
+						name: "role/test.role"
+						permissions: [
+							{
+								name: "testinternal.state.create",
+								internal: true
+							}
+						]
+					}
+				`)
+				So(validatePermissionsCfg(vctx, configSet, path, content), ShouldBeNil)
+				So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid format: can only define internal permissions for internal roles")
 			})
 
 			Convey("role not defined in includes", func() {
@@ -741,8 +763,12 @@ func TestPermissionsConfigValidation(t *testing.T) {
 					role {
 						name: "role/test.role.writer"
 						permissions: [
-							"testproject.state.create",
-							"testproject.state.update"
+							{
+								name: "testproject.state.create",
+							},
+							{
+								name: "testproject.state.update"
+							}
 						]
 					}
 				`)
@@ -755,25 +781,44 @@ func TestPermissionsConfigValidation(t *testing.T) {
 					role {
 						name: "role/test.role.writer"
 						permissions: [
-							"testproject.state.create",
-							"testproject.state.update"
+							{
+								name: "testproject.state.create",
+							},
+							{
+								name: "testproject.state.update"
+							}
 						]
 					}
 					role {
 						name: "role/test.role.reader"
 						permissions: [
-							"testproject.state.get",
-							"testproject.state.list"
+							{
+								name: "testproject.state.get",
+							},
+							{
+								name: "testproject.state.list"
+							}
 						]
 					}
 					role {
 						name: "role/test.role.owner"
 						permissions: [
-							"testproject.state.delete"
+							{
+								name: "testproject.state.delete"
+							}
 						]
 						includes: [
 							"role/test.role.writer",
 							"role/test.role.reader"
+						]
+					}
+					role {
+						name: "role/luci.internal.test.role.owner",
+						permissions: [
+							{
+								name: "testinternal.state.create",
+								internal: true
+							}
 						]
 					}
 				`)

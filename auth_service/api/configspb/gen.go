@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate cproto
+//go:generate cproto -proto-path ../../../server/auth/service/protocol/
 
 // Package configspb defines configs that are used by auth service.
 package configspb

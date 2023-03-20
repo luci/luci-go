@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
 func TestConfigContext(t *testing.T) {
@@ -31,22 +32,32 @@ func TestConfigContext(t *testing.T) {
 		Role: []*configspb.PermissionsConfig_Role{
 			{
 				Name: "role/test.datastore.reader",
-				Permissions: []string{
-					"test.datastore.get",
-					"test.datastore.list",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "test.datastore.get",
+					},
+					{
+						Name: "test.datastore.list",
+					},
 				},
 			},
 			{
 				Name: "role/test.datastore.writer",
-				Permissions: []string{
-					"test.datastore.write",
-					"test.datastore.create",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "test.datastore.write",
+					},
+					{
+						Name: "test.datastore.create",
+					},
 				},
 			},
 			{
 				Name: "role/test.datastore.admin",
-				Permissions: []string{
-					"test.datastore.delete",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "test.datastore.delete",
+					},
 				},
 				Includes: []string{
 					"role/test.datastore.reader",

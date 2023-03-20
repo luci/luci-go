@@ -1349,13 +1349,10 @@ func UpdateAuthRealmsGlobals(ctx context.Context, permcfg *configspb.Permissions
 		// All permissions from cfg
 		for _, r := range permcfg.GetRole() {
 			for _, p := range r.GetPermissions() {
-				isInternal := strings.HasPrefix(r.GetName(), "role/luci.internal.")
-				permsMap[p] = &protocol.Permission{
-					Name:     p,
-					Internal: isInternal,
-				}
+				permName := p.GetName()
+				permsMap[permName] = p
+				cfgPermsSet.Add(permName)
 			}
-			cfgPermsSet.AddAll(r.GetPermissions())
 		}
 
 		stored, err := GetAuthRealmsGlobals(ctx)

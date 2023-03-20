@@ -1529,8 +1529,10 @@ func TestAuthRealmsConfig(t *testing.T) {
 				Role: []*configspb.PermissionsConfig_Role{
 					{
 						Name: "role/test.role",
-						Permissions: []string{
-							"test.perm.create",
+						Permissions: []*protocol.Permission{
+							{
+								Name: "test.perm.create",
+							},
 						},
 					},
 				},
@@ -1580,21 +1582,28 @@ func TestAuthRealmsConfig(t *testing.T) {
 				Role: []*configspb.PermissionsConfig_Role{
 					{
 						Name: "role/test.role",
-						Permissions: []string{
-							"test.perm.create",
+						Permissions: []*protocol.Permission{
+							{
+								Name: "test.perm.create",
+							},
 						},
 						Includes: []string{},
 					},
 					{
 						Name: "role/test.role.two",
-						Permissions: []string{
-							"testtwo.perm.delete",
+						Permissions: []*protocol.Permission{
+							{
+								Name: "testtwo.perm.delete",
+							},
 						},
 					},
 					{
 						Name: "role/luci.internal.testint.role",
-						Permissions: []string{
-							"testint.perm.schedule",
+						Permissions: []*protocol.Permission{
+							{
+								Name:     "testint.perm.schedule",
+								Internal: true,
+							},
 						},
 					},
 				},
