@@ -17,20 +17,25 @@ package postaction
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/util"
 )
+
+var errOpCancel = errors.New("CL mutation aborted due to op cancellation")
 
 // Executor executes a PostAction for a Run termination event.
 type Executor struct {
@@ -39,9 +44,6 @@ type Executor struct {
 	Payload           *run.OngoingLongOps_Op_ExecutePostActionPayload
 	IsCancelRequested func() bool
 
-	actName string // for logging
-	// TODO(ddoman): report run log
-
 	// test function for unit test.
 	//
 	// Called before CL mutation.
@@ -49,12 +51,17 @@ type Executor struct {
 }
 
 // Do executes the payload.
-func (exe *Executor) Do(ctx context.Context) error {
-	act := exe.Payload.GetAction()
-	exe.actName = fmt.Sprintf("post-action-%s", act.GetName())
+//
+// Returns a summary of the action execution, and the error.
+// The summary is meant to be added to run.LogEntries.
+func (exe *Executor) Do(ctx context.Context) (string, error) {
+	if exe.IsCancelRequested() {
+		return "cancellation has been requested before the post action starts",
+			errors.Reason("CancelRequested for Run %q", exe.Run.ID).Err()
+	}
 
 	// determine the action handler.
-	switch w := act.GetAction().(type) {
+	switch w := exe.Payload.GetAction().GetAction().(type) {
 	case *cfgpb.ConfigGroup_PostAction_VoteGerritLabels_:
 		return exe.voteGerritLabels(ctx, w.VoteGerritLabels.GetVotes())
 	case nil:
@@ -77,31 +84,27 @@ func (exe *Executor) makeVoteLabelRetryFactory() retry.Factory {
 	}))
 }
 
-func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.ConfigGroup_PostAction_VoteGerritLabels_Vote) error {
-	if exe.IsCancelRequested() {
-		return errors.Reason("CancelRequested for Run %q", exe.Run.ID).Err()
-	}
+func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.ConfigGroup_PostAction_VoteGerritLabels_Vote) (string, error) {
 	if len(votes) == 0 {
 		// This should never happen, as the validation requires the config to
 		// have at least one vote in the message.
-		return errors.Reason("no votes in the config").Err()
+		return "", errors.Reason("no votes in the config").Err()
 	}
-	labelsToSet := make(map[string]int32, len(votes))
-	for _, vote := range votes {
-		labelsToSet[vote.GetName()] = vote.GetValue()
-	}
-
-	// TODO(ddoman): skip the votes, if any of the snapshot(s) changed.
 	rcls, err := run.LoadRunCLs(ctx, exe.Run.ID, exe.Run.CLs)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// This retries the Gerrit APIs by itself until the context is cancelled, or
 	// all the executions are permanent failed/succeeded.
-	return parallel.WorkPool(min(len(rcls), 8), func(work chan<- func() error) {
-		for _, rcl := range rcls {
-			rcl := rcl
+	errs := make(errors.MultiError, len(rcls))
+	perr := parallel.WorkPool(min(len(rcls), 8), func(work chan<- func() error) {
+		labelsToSet := make(map[string]int32, len(votes))
+		for _, vote := range votes {
+			labelsToSet[vote.GetName()] = vote.GetValue()
+		}
+		for i, rcl := range rcls {
+			i, rcl := i, rcl
 			work <- func() error {
 				req := &gerritpb.SetReviewRequest{
 					Project:    rcl.Detail.GetGerrit().GetInfo().GetProject(),
@@ -110,18 +113,62 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 					Notify:     gerritpb.Notify_NOTIFY_NONE,
 					Labels:     labelsToSet,
 				}
-				return retry.Retry(ctx, exe.makeVoteLabelRetryFactory(), func() error {
+				errs[i] = retry.Retry(ctx, exe.makeVoteLabelRetryFactory(), func() error {
 					if exe.testBeforeCLMutation != nil {
 						exe.testBeforeCLMutation(ctx, rcl, req)
 					}
 					if exe.IsCancelRequested() {
-						return errors.Reason("CL %d: CancelRequested for Run %q", rcl.ID, exe.Run.ID).Err()
+						return errOpCancel
 					}
-					return util.MutateGerritCL(ctx, exe.GFactory, rcl, req, 2*time.Minute, exe.actName)
+					return util.MutateGerritCL(ctx, exe.GFactory, rcl, req, 2*time.Minute,
+						fmt.Sprintf("post-action-%s", exe.Payload.GetAction().GetName()))
 				}, nil)
+				return nil
 			}
 		}
 	})
+	if perr != nil {
+		panic(errors.Reason("parallel.WorkPool returned error %q", perr).Err())
+	}
+	return exe.voteSummary(ctx, rcls, errs), errors.Flatten(errs)
+}
+
+func (exe *Executor) voteSummary(ctx context.Context, rcls []*run.RunCL, errs errors.MultiError) string {
+	var failed, cancelled []changelist.ExternalID
+	succeeded := make([]changelist.ExternalID, 0, len(rcls))
+	for i, err := range errs {
+		switch err {
+		case nil:
+			succeeded = append(succeeded, rcls[i].ExternalID)
+		case errOpCancel:
+			cancelled = append(cancelled, rcls[i].ExternalID)
+		default:
+			failed = append(failed, rcls[i].ExternalID)
+			logging.Errorf(ctx, "failed to vote labels on CL %d: %s", rcls[i].ID, err)
+		}
+	}
+
+	var s strings.Builder
+	switch {
+	case len(succeeded) == len(rcls):
+		fmt.Fprint(&s, "all votes succeeded")
+	case len(failed) == len(rcls):
+		fmt.Fprint(&s, "all votes failed")
+	case len(cancelled) == len(rcls):
+		fmt.Fprint(&s, "all votes cancelled")
+	default:
+		fmt.Fprintf(&s, "Results for Gerrit label votes")
+		if len(succeeded) > 0 {
+			fmt.Fprintf(&s, "\n- succeeded: %s", changelist.JoinExternalURLs(succeeded, ", "))
+		}
+		if len(failed) > 0 {
+			fmt.Fprintf(&s, "\n- failed: %s", changelist.JoinExternalURLs(failed, ", "))
+		}
+		if len(cancelled) > 0 {
+			fmt.Fprintf(&s, "\n- cancelled: %s", changelist.JoinExternalURLs(cancelled, ", "))
+		}
+	}
+	return s.String()
 }
 
 func min(i, j int) int {

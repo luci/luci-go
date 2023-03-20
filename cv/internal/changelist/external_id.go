@@ -86,11 +86,25 @@ func (eid ExternalID) MustURL() string {
 	return ret
 }
 
-func (e ExternalID) kind() (string, error) {
-	s := string(e)
+func (eid ExternalID) kind() (string, error) {
+	s := string(eid)
 	idx := strings.IndexRune(s, '/')
 	if idx <= 0 {
 		return "", errors.Reason("invalid ExternalID: %q", s).Err()
 	}
 	return s[:idx], nil
+}
+
+// JoinExternalURLs the URL of given ExternalIDs.
+//
+// Panics if any of the ExternalIDs is invalid.
+func JoinExternalURLs(ids []ExternalID, sep string) string {
+	var s strings.Builder
+	for i, id := range ids {
+		fmt.Fprint(&s, id.MustURL())
+		if i != len(ids)-1 {
+			fmt.Fprint(&s, sep)
+		}
+	}
+	return s.String()
 }

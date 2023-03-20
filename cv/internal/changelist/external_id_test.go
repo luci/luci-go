@@ -49,3 +49,28 @@ func TestExternalID(t *testing.T) {
 
 	})
 }
+
+func TestJoinExternalURLs(t *testing.T) {
+	t.Parallel()
+
+	Convey("JoinExternalURLs works", t, func() {
+		gob := func(num int64) ExternalID {
+			eid, err := GobID("example.com", num)
+			So(err, ShouldBeNil)
+			return eid
+		}
+		var eids []ExternalID
+		Convey("with empty input", func() {
+			So(JoinExternalURLs(eids, ", "), ShouldEqual, "")
+		})
+		Convey("with single input", func() {
+			eids = append(eids, gob(1))
+			So(JoinExternalURLs(eids, ", "), ShouldEqual, "https://example.com/c/1")
+		})
+		Convey("with > 1 inputs", func() {
+			eids = append(eids, gob(1), gob(2))
+			So(JoinExternalURLs(eids, ", "), ShouldEqual,
+				"https://example.com/c/1, https://example.com/c/2")
+		})
+	})
+}

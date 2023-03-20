@@ -41,7 +41,7 @@ func (op *ExecutePostActionOp) Do(ctx context.Context) (*eventpb.LongOpCompleted
 		Payload:           op.Op.GetExecutePostAction(),
 		IsCancelRequested: op.IsCancelRequested,
 	}
-	err := exe.Do(ctx)
+	_, err := exe.Do(ctx)
 	return op.report(ctx, err), errors.Annotate(
 		err, "post-action-%s", exe.Payload.GetAction().GetName()).Err()
 }

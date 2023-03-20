@@ -17,10 +17,12 @@ package postaction
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 	"sync"
 
+	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -110,7 +112,7 @@ func TestExecutePostActionOp(t *testing.T) {
 		}
 
 		postActionCfg := &cfgpb.ConfigGroup_PostAction{
-			Name: "vote verification labels",
+			Name: "label-vote",
 			Action: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels_{
 				VoteGerritLabels: &cfgpb.ConfigGroup_PostAction_VoteGerritLabels{},
 			},
@@ -140,12 +142,14 @@ func TestExecutePostActionOp(t *testing.T) {
 		}
 
 		Convey("votes labels", func() {
+			var summary string
+			var err error
 			configPostVote("label-1", 2)
 			configPostVote("label-2", 0)
 
 			Convey("adds new labels", func() {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1)))
-				err := exe.Do(ctx)
+				summary, err = exe.Do(ctx)
 				So(err, ShouldBeNil)
 				So(listLabels(gChange1), ShouldResemble, map[string]int32{
 					"label-1": 2,
@@ -155,7 +159,7 @@ func TestExecutePostActionOp(t *testing.T) {
 
 			Convey("leaves other labels as they are", func() {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1, gf.Vote("label-3", 1))))
-				err := exe.Do(ctx)
+				summary, err = exe.Do(ctx)
 				So(err, ShouldBeNil)
 				So(listLabels(gChange1), ShouldResemble, map[string]int32{
 					"label-1": 2,
@@ -166,7 +170,7 @@ func TestExecutePostActionOp(t *testing.T) {
 
 			Convey("overrides the values if a given label already exists", func() {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1, gf.Vote("label-1", -1))))
-				err := exe.Do(ctx)
+				summary, err = exe.Do(ctx)
 				So(err, ShouldBeNil)
 				So(listLabels(gChange1), ShouldResemble, map[string]int32{
 					"label-1": 2,
@@ -176,7 +180,7 @@ func TestExecutePostActionOp(t *testing.T) {
 
 			Convey("multi CL run", func() {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1), gf.CI(gChange2)))
-				err := exe.Do(ctx)
+				summary, err = exe.Do(ctx)
 				So(err, ShouldBeNil)
 				So(listLabels(gChange1), ShouldResemble, map[string]int32{
 					"label-1": 2,
@@ -187,6 +191,7 @@ func TestExecutePostActionOp(t *testing.T) {
 					"label-2": 0,
 				})
 			})
+			So(summary, ShouldEqual, "all votes succeeded")
 		})
 
 		Convey("cancel if requested", func() {
@@ -197,7 +202,9 @@ func TestExecutePostActionOp(t *testing.T) {
 
 			Convey("before the execution started", func() {
 				exe.IsCancelRequested = func() bool { return true }
-				So(exe.Do(ctx), ShouldErrLike, "CancelRequested")
+				summary, err := exe.Do(ctx)
+				So(err, ShouldErrLike, "CancelRequested")
+				So(summary, ShouldEqual, "cancellation has been requested before the post action starts")
 			})
 			Convey("after the execution started", func() {
 				doErr := make(chan error)
@@ -208,15 +215,52 @@ func TestExecutePostActionOp(t *testing.T) {
 					lck.Unlock()
 				}
 				go func() {
-					doErr <- exe.Do(ctx)
+					_, err := exe.Do(ctx)
+					doErr <- err
 					close(doErr)
 				}()
 				select {
 				case err := <-doErr:
-					So(err, ShouldErrLike, "CL 1: CancelRequested for Run")
+					So(err, ShouldErrLike, "CL mutation aborted due to op cancellation")
 				case <-ctx.Done():
 					panic("mutation didn't start within 10 secs")
 				}
+			})
+		})
+
+		Convey("setVoteSummary", func() {
+			exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1)))
+			newRCLs := func(n int) []*run.RunCL {
+				var ret []*run.RunCL
+				for i := 0; i < n; i++ {
+					ret = append(ret, &run.RunCL{
+						ExternalID: changelist.MustGobID("example.com", int64(i+1)),
+					})
+				}
+				return ret
+			}
+			permErr := errors.New("permanently failed")
+			rcls := newRCLs(4)
+			errs := errors.NewMultiError(nil, nil, nil, nil)
+
+			Convey("all succeeded/failed/cancelled", func() {
+				So(exe.voteSummary(ctx, rcls, errs), ShouldEqual, "all votes succeeded")
+				errs = errors.NewMultiError(permErr, permErr, permErr, permErr)
+				So(exe.voteSummary(ctx, rcls, errs), ShouldEqual, "all votes failed")
+				errs = errors.NewMultiError(errOpCancel, errOpCancel, errOpCancel, errOpCancel)
+				So(exe.voteSummary(ctx, rcls, errs), ShouldEqual, "all votes cancelled")
+			})
+			Convey("a mix of succeeded/failed/cancelled", func() {
+				// mix of all
+				errs[1], errs[2] = permErr, errOpCancel
+				So(exe.voteSummary(ctx, rcls, errs), ShouldEqual,
+					strings.Join([]string{
+						"Results for Gerrit label votes",
+						"- succeeded: https://example.com/c/1, https://example.com/c/4",
+						"- failed: https://example.com/c/2",
+						"- cancelled: https://example.com/c/3",
+					}, "\n"),
+				)
 			})
 		})
 	})
