@@ -65,18 +65,21 @@ func TestExecutePostActionOp(t *testing.T) {
 
 			Convey("CANCELLED", func() {
 				op.IsCancelRequested = func() bool { return true }
-				res := op.report(ctx, exeErr)
+				res := op.report(ctx, exeErr, "votes cancelled")
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_CANCELLED)
+				So(res.GetExecutePostAction().GetSummary(), ShouldEqual, "votes cancelled")
 			})
 			Convey("EXPIRED", func() {
 				nctx, cancel := context.WithCancel(ctx)
 				cancel()
-				res := op.report(nctx, exeErr)
+				res := op.report(nctx, exeErr, "votes expired")
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_EXPIRED)
+				So(res.GetExecutePostAction().GetSummary(), ShouldEqual, "votes expired")
 			})
 			Convey("FAILED", func() {
-				res := op.report(ctx, exeErr)
+				res := op.report(ctx, exeErr, "votes failed")
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
+				So(res.GetExecutePostAction().GetSummary(), ShouldEqual, "votes failed")
 			})
 		})
 	})

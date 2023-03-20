@@ -46,9 +46,6 @@ message LongOpCompleted {
   // Status of the long operation.
   Status status = 2;
 
-  message ExecutePostActionResult {
-  }
-
   oneof result {
     PostStartMessage post_start_message = 3;
     ResetTriggers reset_triggers = 6;
@@ -95,5 +92,9 @@ message LongOpCompleted {
     // The top-level long ops status will be SUCCEEDED iff all triggers are
     // reset successfully, in other word, all results have `reset_at` set.
     repeated Result results = 1;
+  }
+
+  message ExecutePostActionResult {
+    string summary = 1;
   }
 }

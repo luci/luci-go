@@ -16,11 +16,13 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -30,11 +32,36 @@ import (
 
 const maxPostActionExecutionDuration = 8 * time.Minute
 
-func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState, op *run.OngoingLongOps_Op, opCompleted *eventpb.LongOpCompleted) (*Result, error) {
-	opID := opCompleted.GetOperationId()
+func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState, op *run.OngoingLongOps_Op, opResult *eventpb.LongOpCompleted) (*Result, error) {
+	opID := opResult.GetOperationId()
 	rs = rs.ShallowCopy()
 	rs.RemoveCompletedLongOp(opID)
-	// TODO(ddoman): handle errors
+	summary := opResult.GetExecutePostAction().GetSummary()
+	label := fmt.Sprintf("PostAction[%s]", op.GetExecutePostAction().GetAction().GetName())
+
+	switch st := opResult.GetStatus(); {
+	// If there is a summary reported by the executor, add it to the run log,
+	// regardless of the stauts. For example, the op could be EXPIRED after
+	// a number of votes succeeded.
+	case len(summary) > 0:
+		rs.LogInfo(ctx, label, summary)
+
+	// If len(summary) == 0, it implies that the long op was completed before
+	// the op was dispatched to the PostAction execution handler.
+	//
+	// The PostAction handler should set Summary if postaction.Executor.Do()
+	// is called.
+	case st == eventpb.LongOpCompleted_EXPIRED:
+		rs.LogInfo(ctx, label, "the execution deadline was exceeded")
+	case st == eventpb.LongOpCompleted_FAILED:
+		rs.LogInfo(ctx, label, "the execution failed")
+	case st == eventpb.LongOpCompleted_CANCELLED:
+		rs.LogInfo(ctx, label, "the execution was cancelled")
+	case st == eventpb.LongOpCompleted_SUCCEEDED:
+		rs.LogInfo(ctx, label, "the execution succeeded")
+	default:
+		panic(fmt.Errorf("unexpected LongOpCompleted status: %s", st))
+	}
 	return &Result{State: rs}, nil
 }
 

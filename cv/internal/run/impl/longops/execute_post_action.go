@@ -41,12 +41,12 @@ func (op *ExecutePostActionOp) Do(ctx context.Context) (*eventpb.LongOpCompleted
 		Payload:           op.Op.GetExecutePostAction(),
 		IsCancelRequested: op.IsCancelRequested,
 	}
-	_, err := exe.Do(ctx)
-	return op.report(ctx, err), errors.Annotate(
+	summary, err := exe.Do(ctx)
+	return op.report(ctx, err, summary), errors.Annotate(
 		err, "post-action-%s", exe.Payload.GetAction().GetName()).Err()
 }
 
-func (op *ExecutePostActionOp) report(ctx context.Context, err error) *eventpb.LongOpCompleted {
+func (op *ExecutePostActionOp) report(ctx context.Context, err error, summary string) *eventpb.LongOpCompleted {
 	var status eventpb.LongOpCompleted_Status
 	switch {
 	case err == nil:
@@ -63,9 +63,12 @@ func (op *ExecutePostActionOp) report(ctx context.Context, err error) *eventpb.L
 	default:
 		status = eventpb.LongOpCompleted_FAILED
 	}
-
 	return &eventpb.LongOpCompleted{
 		Status: status,
-		Result: &eventpb.LongOpCompleted_ExecutePostAction{},
+		Result: &eventpb.LongOpCompleted_ExecutePostAction{
+			ExecutePostAction: &eventpb.LongOpCompleted_ExecutePostActionResult{
+				Summary: summary,
+			},
+		},
 	}
 }
