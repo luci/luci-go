@@ -27,7 +27,10 @@ import (
 )
 
 // Dial dials RBE backend with proper authentication.
-func Dial(ctx context.Context) (*grpc.ClientConn, error) {
+//
+// Returns multiple identical clients each representing a separate HTTP2
+// connection.
+func Dial(ctx context.Context, count int) ([]grpc.ClientConnInterface, error) {
 	creds, err := auth.GetPerRPCCredentials(ctx,
 		auth.AsSelf,
 		auth.WithScopes(auth.CloudOAuthScopes...),
@@ -35,16 +38,18 @@ func Dial(ctx context.Context) (*grpc.ClientConn, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get credentials").Err()
 	}
-
-	logging.Infof(ctx, "Dialing the RBE backend...")
-	conn, err := grpc.DialContext(ctx, "remotebuildexecution.googleapis.com:443",
-		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
-		grpc.WithPerRPCCredentials(creds),
-		grpc.WithBlock(),
-		grpcmon.WithClientRPCStatsMonitor(),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to dial RBE backend").Err()
+	logging.Infof(ctx, "Dialing %d RBE backend connections...", count)
+	conns := make([]grpc.ClientConnInterface, count)
+	for i := 0; i < count; i++ {
+		conns[i], err = grpc.DialContext(ctx, "remotebuildexecution.googleapis.com:443",
+			grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+			grpc.WithPerRPCCredentials(creds),
+			grpc.WithBlock(),
+			grpcmon.WithClientRPCStatsMonitor(),
+		)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to dial RBE backend").Err()
+		}
 	}
-	return conn, nil
+	return conns, nil
 }

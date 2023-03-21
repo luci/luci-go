@@ -46,9 +46,9 @@ type SessionServer struct {
 }
 
 // NewSessionServer creates a new session server given an RBE client connection.
-func NewSessionServer(ctx context.Context, cc grpc.ClientConnInterface, hmacSecret *hmactoken.Secret) *SessionServer {
+func NewSessionServer(ctx context.Context, cc []grpc.ClientConnInterface, hmacSecret *hmactoken.Secret) *SessionServer {
 	return &SessionServer{
-		rbe:        remoteworkers.NewBotsClient(cc),
+		rbe:        botsConnectionPool(cc),
 		hmacSecret: hmacSecret,
 	}
 }

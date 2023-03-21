@@ -5,7 +5,7 @@ instance_class: F4
 
 automatic_scaling:
   # Most requests do nothing waiting for RBE's UpdateBotSession to unblock.
-  max_concurrent_requests: 50
+  max_concurrent_requests: 200
 
 inbound_services:
 - warmup
@@ -19,6 +19,7 @@ luci_gae_vars:
 
 entrypoint: >
   main
+  -rbe-conn-pool 4
   -auth-service-host ${AUTH_SERVICE_HOST}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -cloud-error-reporting

@@ -47,7 +47,10 @@ func main() {
 		"sm://shared-hmac",
 		"A name of a secret with an HMAC key to use to produce various tokens.",
 	)
-
+	connPoolSize := flag.Int(
+		"rbe-conn-pool",
+		1,
+		"RBE client connection pool size.")
 	exposeIntegrationMocks := flag.Bool(
 		"expose-integration-mocks",
 		false,
@@ -60,25 +63,29 @@ func main() {
 			return err
 		}
 
-		rbeConn, err := rbe.Dial(srv.Context)
+		// Open *connPoolSize connections for SessionServer and one dedicated
+		// connection for ReservationServer.
+		rbeConns, err := rbe.Dial(srv.Context, *connPoolSize+1)
 		if err != nil {
 			return err
 		}
+		sessionsConns, reservationsConn := rbeConns[:*connPoolSize], rbeConns[*connPoolSize]
+
+		// A client to talk back to Python Swarming.
 		internals, err := internals.Client(srv.Context, srv.Options.CloudProject)
 		if err != nil {
 			return err
 		}
 
-		botSrv := botsrv.New(srv.Context, srv.Routes, srv.Options.CloudProject, tokenSecret)
-
 		// Endpoints hit by bots.
-		rbeSessions := rbe.NewSessionServer(srv.Context, rbeConn, tokenSecret)
+		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret)
+		botSrv := botsrv.New(srv.Context, srv.Routes, srv.Options.CloudProject, tokenSecret)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
 		botsrv.InstallHandler(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
 
 		// Handlers for TQ tasks submitted by Python Swarming.
-		rbeReservations := rbe.NewReservationServer(srv.Context, rbeConn, internals, srv.Options.ImageVersion())
+		rbeReservations := rbe.NewReservationServer(srv.Context, reservationsConn, internals, srv.Options.ImageVersion())
 		rbeReservations.RegisterTQTasks(&tq.Default)
 
 		// Helpers for running local integration tests. They fake some of Swarming
