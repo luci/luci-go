@@ -109,6 +109,20 @@ func (ib *InputBuffer) InsertVerdict(v PositionVerdict) {
 
 // Compact moves the content from the hot buffer to the cold buffer.
 func (ib *InputBuffer) Compact() {
+	merged := ib.MergeBuffer()
+	// If the cold verdicts exceeds the capacity, we want to move the
+	// oldest verdicts to the output buffer.
+	// TODO (nqmtuan): Move extra verdicts to output buffer.
+	// For now, just discard them.
+	if len(merged) > ib.ColdBufferCapacity {
+		merged = merged[len(merged)-ib.ColdBufferCapacity:]
+	}
+
+	ib.HotBuffer.Verdicts = []PositionVerdict{}
+	ib.ColdBuffer.Verdicts = merged
+}
+
+func (ib *InputBuffer) MergeBuffer() []PositionVerdict {
 	// Because the hot buffer and cold buffer are both sorted, we can simply use
 	// a single merge to merge the 2 buffers.
 	hVerdicts := ib.HotBuffer.Verdicts
@@ -137,15 +151,7 @@ func (ib *InputBuffer) Compact() {
 		merged[hPos+cPos] = cVerdicts[cPos]
 	}
 
-	ib.HotBuffer.Verdicts = []PositionVerdict{}
-	// If the cold verdicts exceeds the capacity, we want to move the
-	// oldest verdicts to the output buffer.
-	// TODO (nqmtuan): Move extra verdicts to output buffer.
-	// For now, just discard them.
-	if len(merged) > ib.ColdBufferCapacity {
-		merged = merged[len(merged)-ib.ColdBufferCapacity:]
-	}
-	ib.ColdBuffer.Verdicts = merged
+	return merged
 }
 
 // EncodeHistory uses varint encoding to encode history into a byte array.

@@ -65,6 +65,7 @@ require (
 	golang.org/x/term v0.4.0
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.5.0
+	gonum.org/v1/gonum v0.12.0
 	google.golang.org/api v0.108.0
 	google.golang.org/appengine v1.6.8-0.20221117013220-504804fb50de
 	google.golang.org/genproto v0.0.0-20230124163310-31e0e69b6fc2
