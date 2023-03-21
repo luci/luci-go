@@ -82,11 +82,11 @@ type CommandLineFlags struct {
 	// Default is 0.
 	ArchiveIndexByteRange int
 
-	// CloudLoggingExportBufferLimit, is the maximum number of bytes that
+	// CloudLoggingExportBufferLimit, is the maximum number of megabytes that
 	// the CloudLogger will keep in memory per concurrent-task before flushing
 	// them out.
 	//
-	// Default is 10MiB.
+	// Default is 10.
 	// Must be > 0.
 	CloudLoggingExportBufferLimit int
 }
@@ -97,7 +97,7 @@ func DefaultCommandLineFlags() CommandLineFlags {
 		MaxConcurrentTasks:            1,
 		LeaseBatchSize:                500,
 		LeaseTime:                     40 * time.Minute,
-		CloudLoggingExportBufferLimit: 10 * 1024 * 1024,
+		CloudLoggingExportBufferLimit: 10,
 	}
 }
 

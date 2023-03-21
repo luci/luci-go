@@ -358,7 +358,7 @@ func TestHandleArchive(t *testing.T) {
 		}
 
 		stBase := Settings{}
-		expectedCLBufferLimit := 123331
+		CLBufferLimit := 12334
 		ar := Archivist{
 			Service: &sc,
 			SettingsLoader: func(c context.Context, project string) (*Settings, error) {
@@ -367,7 +367,7 @@ func TestHandleArchive(t *testing.T) {
 				st.GSBase = gs.Path(fmt.Sprintf("gs://archival/%s/path/to/archive/", project))
 				st.GSStagingBase = gs.Path(fmt.Sprintf("gs://archival-staging/%s/path/to/archive/", project))
 				st.CloudLoggingProjectID = func() string { return clProject }()
-				st.CloudLoggingBufferLimit = expectedCLBufferLimit
+				st.CloudLoggingBufferLimit = CLBufferLimit
 				return &st, nil
 			},
 			Storage:         &st,
@@ -844,7 +844,7 @@ func TestHandleArchive(t *testing.T) {
 			Convey("With BufferedByteLimit", func() {
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
 				So(logID, ShouldEqual, "luci-logs")
-				So(opts[2], ShouldResemble, cl.BufferedByteLimit(expectedCLBufferLimit))
+				So(opts[2], ShouldResemble, cl.BufferedByteLimit(CLBufferLimit*1024*1024))
 			})
 
 			Convey("With MonitoredResource and labels", func() {

@@ -146,8 +146,9 @@ type Settings struct {
 	//
 	// May be empty, if no export is configured.
 	CloudLoggingProjectID string
-	// CloudLoggingBufferLimit is the maximum number of bytes that the Cloud
-	// Logger will keep in memory per concurrent-task before flushing them out.
+	// CloudLoggingBufferLimit is the maximum number of megabytes that the
+	// Cloud Logger will keep in memory per concurrent-task before flushing them
+	// out.
 	CloudLoggingBufferLimit int
 }
 
@@ -707,7 +708,7 @@ func (sa *stagedArchival) stage() (err error) {
 					"job":        "cloud-logging-export",
 				},
 			}),
-			cl.BufferedByteLimit(sa.CloudLoggingBufferLimit),
+			cl.BufferedByteLimit(sa.CloudLoggingBufferLimit*1024*1024),
 		)
 	}
 
