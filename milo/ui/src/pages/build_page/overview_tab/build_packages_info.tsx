@@ -26,11 +26,12 @@ export interface BuildPackagesInfoProps {
 }
 
 export const BuildPackagesInfo = observer(({ build }: BuildPackagesInfoProps) => {
+  const [displayType, setDisplayType] = useState<null | 'requested' | 'resolved'>(null);
+
   if (!build) {
     return <></>;
   }
 
-  const [displayType, setDisplayType] = useState<null | 'requested' | 'resolved'>(null);
   const experiments = build.input?.experiments;
   const agent = build.infra?.buildbucket?.agent;
   if (!experiments?.includes('luci.buildbucket.agent.cipd_installation') || !agent) {

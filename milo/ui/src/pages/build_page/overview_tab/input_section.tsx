@@ -31,8 +31,8 @@ export const InputSection = observer(() => {
       <table>
         <tbody>
           {input.gitilesCommit && <RevisionRow commit={input.gitilesCommit} />}
-          {(input.gerritChanges || []).map((gc) => (
-            <PatchRow gerritChange={gc} />
+          {(input.gerritChanges || []).map((gc, i) => (
+            <PatchRow key={i} gerritChange={gc} />
           ))}
         </tbody>
       </table>

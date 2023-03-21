@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
@@ -32,7 +33,7 @@ import { SummarySection } from './summary_section';
 import { TagsSection } from './tags_section';
 import { TimingSection } from './timing_section';
 
-export function OverviewTab() {
+export const OverviewTab = observer(() => {
   const store = useStore();
 
   const [activeDialog, setActiveDialog] = useState(Dialog.None);
@@ -90,4 +91,4 @@ export function OverviewTab() {
       </div>
     </>
   );
-}
+});
