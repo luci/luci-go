@@ -97,7 +97,7 @@ def _from_wirepb(ctor, blob, discard_unknown = None):
     Returns:
       Deserialized frozen message constructed via `ctor`.
     """
-    _unused(ctor, text, discard_unknown)
+    _unused(ctor, blob, discard_unknown)
 
 def _struct_to_textpb(s):
     """Converts a struct to a text proto string.
