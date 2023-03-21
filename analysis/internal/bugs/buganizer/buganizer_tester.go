@@ -35,7 +35,7 @@ func CreateSampleIssue(ctx context.Context) (int64, error) {
 			Comment: fmt.Sprintf("A test issue description %d", rand.Int()),
 		},
 		IssueState: &issuetracker.IssueState{
-			ComponentId: 1013592,
+			ComponentId: 417560,
 			Type:        issuetracker.Issue_BUG,
 			Priority:    issuetracker.Issue_P2,
 			Severity:    issuetracker.Issue_S2,
