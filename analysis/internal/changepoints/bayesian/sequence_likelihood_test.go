@@ -127,3 +127,24 @@ func TestSequenceLikelihood(t *testing.T) {
 		})
 	})
 }
+
+func TestAddLogLikelihood(t *testing.T) {
+	Convey("AddLogLikelihood", t, func() {
+		Convey("One element", func() {
+			So(AddLogLikelihoods([]float64{math.Log(0.1)}), ShouldEqual, math.Log(0.1))
+		})
+
+		Convey("Many elements", func() {
+			So(AddLogLikelihoods([]float64{math.Log(0.1), math.Log(0.2), math.Log(0.3)}), ShouldAlmostEqual, math.Log(0.6))
+		})
+
+		Convey("Many small elements", func() {
+			var eles = make([]float64, 10)
+			for i := 0; i < 10; i++ {
+				eles[i] = math.Log(0.0000001)
+			}
+			So(AddLogLikelihoods(eles), ShouldAlmostEqual, math.Log(0.000001))
+		})
+
+	})
+}

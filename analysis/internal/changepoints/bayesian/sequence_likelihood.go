@@ -188,3 +188,32 @@ func (s SequenceLikelihood) LogLikelihoodPartial(x, n int, maxProportion float64
 	// K * Beta(c, d) * I_{maxProportion}(c, d)
 	return s.logK + logBeta + logRegIncBeta
 }
+
+func AddLogLikelihoods(x []float64) float64 {
+	if len(x) == 1 {
+		return x[0]
+	}
+	maxValue := -math.MaxFloat64
+	for i := 0; i < len(x); i++ {
+		if x[i] > maxValue {
+			maxValue = x[i]
+		}
+	}
+
+	// Rearrange:
+	//
+	//   log(e^x + e^y + e^z + ...)
+	// = log(e^a * (e^(x-a) + e^(y-a) + e^(z-a))),
+	//   letting a = max(x, y, z, ...)
+	// = log(e^a) + log(e^(x-a) + e^(y-a) + e^(z-a))
+	// = a + log(e^(x-a) + e^(y-a) + e^(z-a))
+	//
+	// This keeps us running into limits of float64s
+	// (e.g. max exponent of 10^(+/-308)) when
+	// adding very small (or very large) values.
+	sum := 0.0
+	for i := 0; i < len(x); i++ {
+		sum += math.Exp(x[i] - maxValue)
+	}
+	return maxValue + math.Log(sum)
+}
