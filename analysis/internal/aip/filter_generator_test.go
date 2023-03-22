@@ -176,6 +176,13 @@ func TestWhereClause(t *testing.T) {
 				})
 				So(result, ShouldEqual, "(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value <> @p_1))")
 			})
+			Convey("key value missing key contains operator", func() {
+				filter, err := ParseFilter("kv:somevalue")
+				So(err, ShouldEqual, nil)
+
+				_, _, err = table.WhereClause(filter, "p_")
+				So(err, ShouldErrLike, "key value columns must specify the key to search on")
+			})
 			Convey("unsupported composite to LIKE", func() {
 				filter, err := ParseFilter("foo:(somevalue)")
 				So(err, ShouldEqual, nil)

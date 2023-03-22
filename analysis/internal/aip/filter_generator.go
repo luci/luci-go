@@ -144,11 +144,31 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 	if restriction.Comparable.Member == nil {
 		return "", fmt.Errorf("invalid comparable")
 	}
-	if len(restriction.Comparable.Member.Fields) > 0 {
-		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
+	if restriction.Comparator == "" {
+		if len(restriction.Comparable.Member.Fields) > 0 {
+			value := restriction.Comparable.Member.Value
+			fields := strings.Join(restriction.Comparable.Member.Fields, ".")
+			return "", fmt.Errorf("fields are not allowed without an operator, try wrapping %s.%s in double quotes: \"%s.%s\"", value, fields, value, fields)
+		}
+		arg, err := w.likeComparableValue(restriction.Comparable)
 		if err != nil {
 			return "", err
 		}
+		clauses := []string{}
+		// This is a value that should be substring matched against columns
+		// marked for implicit matching.
+		for _, column := range w.table.columns {
+			if column.implicitFilter {
+				clauses = append(clauses, fmt.Sprintf("%s LIKE %s", column.databaseName, arg))
+			}
+		}
+		return "(" + strings.Join(clauses, " OR ") + ")", nil
+	}
+	column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
+	if err != nil {
+		return "", err
+	}
+	if len(restriction.Comparable.Member.Fields) > 0 {
 		if !column.keyValue {
 			return "", fmt.Errorf("fields are only supported for key value columns.  Try removing the '.' from after your column named %q", column.fieldPath.String())
 		}
@@ -173,46 +193,23 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 			return fmt.Sprintf("(EXISTS (SELECT key, value FROM UNNEST(%s) WHERE key = %s AND value <> %s))", column.databaseName, key, value), nil
 		}
 		return "", fmt.Errorf("comparator operator not implemented for fields yet")
+	} else if column.keyValue {
+		// TODO: AIP-160 specifies the has operator on maps will check for the presence of a key.
+		return "", fmt.Errorf("key value columns must specify the key to search on.  Instead of '%s%s' try '%s.key%s'", column.fieldPath.String(), restriction.Comparator, column.fieldPath.String(), restriction.Comparator)
 	}
-	if restriction.Comparator == "" {
-		arg, err := w.likeComparableValue(restriction.Comparable)
-		if err != nil {
-			return "", err
-		}
-		clauses := []string{}
-		// This is a value that should be substring matched against columns
-		// marked for implicit matching.
-		for _, column := range w.table.columns {
-			if column.implicitFilter {
-				clauses = append(clauses, fmt.Sprintf("%s LIKE %s", column.databaseName, arg))
-			}
-		}
-		return "(" + strings.Join(clauses, " OR ") + ")", nil
-	} else if restriction.Comparator == "=" {
-		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
-		if err != nil {
-			return "", err
-		}
+	if restriction.Comparator == "=" {
 		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
 		return fmt.Sprintf("(%s = %s)", column.databaseName, arg), nil
 	} else if restriction.Comparator == "!=" {
-		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
-		if err != nil {
-			return "", err
-		}
 		arg, err := w.argValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()
 		}
 		return fmt.Sprintf("(%s <> %s)", column.databaseName, arg), nil
 	} else if restriction.Comparator == ":" {
-		column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
-		if err != nil {
-			return "", err
-		}
 		arg, err := w.likeArgValue(restriction.Arg, column)
 		if err != nil {
 			return "", errors.Annotate(err, "argument for field %s", column.fieldPath.String()).Err()

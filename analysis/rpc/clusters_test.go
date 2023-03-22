@@ -871,7 +871,7 @@ func TestClusters(t *testing.T) {
 					So(err, ShouldBeRPCInvalidArgument, `failure_filter: no filterable field "test"`)
 				})
 				Convey("Failure filter references unimplemented feature", func() {
-					request.FailureFilter = "test<=\"blah\""
+					request.FailureFilter = "test_id<=\"blah\""
 
 					// Run
 					response, err := server.QueryClusterSummaries(ctx, request)
