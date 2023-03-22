@@ -63,11 +63,50 @@ message StringPair {
   string value = 2;
 }
 
-// CommitPosition specifies the numerical position of the commit an invocation
-// runs against, in a repository's commit log. More specifically, a ref's commit
+// GitilesCommit specifies the position of the gitiles commit an invocation
+// ran against, in a repository's commit log. More specifically, a ref's commit
 // log.
-// It also specifies the repo/ref combination that the commit position exists
-// in, to provide context.
+//
+// It also specifies the host/project/ref combination that the commit
+// exists in, to provide context.
+message GitilesCommit {
+  // The identity of the gitiles host, e.g. "chromium.googlesource.com".
+  // Mandatory.
+  string host = 1;
+
+  // Repository name on the host, e.g. "chromium/src". Mandatory.
+  string project = 2;
+
+  // Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
+  // Not the branch name, use "refs/heads/branch"
+  // Mandatory.
+  string ref = 3;
+
+  // Commit HEX SHA1. All lowercase. Mandatory.
+  string commit_hash = 4;
+
+  // Defines a total order of commits on the ref.
+  // A positive, monotonically increasing integer. The recommended
+  // way of obtaining this is by using the goto.google.com/git-numberer
+  // Gerrit plugin. Other solutions can be used as well, so long
+  // as the same scheme is used consistently for a ref.
+  // Mandatory.
+  uint64 position = 5;
+}
+
+// A Gerrit patchset.
+message GerritChange {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+  // Gerrit project, e.g. "chromium/src".
+  string project = 2;
+  // Change number, e.g. 12345.
+  int64 change = 3;
+  // Patch set number, e.g. 1.
+  int64 patchset = 4;
+}
+
+// Deprecated: Use GitilesCommit instead.
 message CommitPosition {
   // The following fields identify a git repository and a ref within which the
   // numerical position below identifies a single commit.
@@ -80,12 +119,7 @@ message CommitPosition {
   int64 position = 4;
 }
 
-// A range of commit positions.
-// Commit positions are assumed to increase from earliest to latest.
-// Note that if both earliest and latest are set, their host/project/ref must
-// be identical.
-//
-// Currently unused.
+// Deprecated: Do not use.
 message CommitPositionRange {
   // The lowest commit position to include in the range.
   CommitPosition earliest = 1;
