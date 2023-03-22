@@ -537,5 +537,54 @@ func TestSpan(t *testing.T) {
 				})
 			})
 		})
+		Convey(`One rule managing bug constraint is correctly enforced`, func() {
+			testCreate := func(r *FailureAssociationRule, user string) error {
+				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+					return Create(ctx, r, user)
+				})
+				return err
+			}
+			testUpdate := func(r *FailureAssociationRule, options UpdateOptions, user string) error {
+				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+					return Update(ctx, r, options, user)
+				})
+				return err
+			}
+
+			bug := bugs.BugID{System: "monorail", ID: "project/1234567890"}
+			rulesToCreate := []*FailureAssociationRule{
+				NewRule(0).WithProject("project-a").WithBug(bug).WithBugManaged(true).Build(),
+				NewRule(1).WithProject("project-b").WithBug(bug).WithBugManaged(false).Build(),
+				NewRule(2).WithProject("project-c").WithBug(bug).WithBugManaged(false).Build(),
+			}
+			for _, r := range rulesToCreate {
+				err := testCreate(r, LUCIAnalysisSystem)
+				So(err, ShouldBeNil)
+			}
+			Convey("Cannot create a second rule managing a bug", func() {
+				// Cannot create a second rule managing the same bug.
+				secondManagingRule := NewRule(3).WithProject("project-d").WithBug(bug).WithBugManaged(true).Build()
+				err := testCreate(secondManagingRule, LUCIAnalysisSystem)
+				So(err, ShouldBeRPCAlreadyExists)
+			})
+			Convey("Cannot update a rule to manage the same bug", func() {
+				ruleToUpdate := rulesToCreate[2]
+				ruleToUpdate.IsManagingBug = true
+				err := testUpdate(ruleToUpdate, UpdateOptions{}, LUCIAnalysisSystem)
+				So(err, ShouldBeRPCAlreadyExists)
+			})
+			Convey("Can swap which rule is managing a bug", func() {
+				// Stop the first rule from managing the bug.
+				ruleToUpdate := rulesToCreate[0]
+				ruleToUpdate.IsManagingBug = false
+				err := testUpdate(ruleToUpdate, UpdateOptions{}, LUCIAnalysisSystem)
+				So(err, ShouldBeNil)
+
+				ruleToUpdate = rulesToCreate[2]
+				ruleToUpdate.IsManagingBug = true
+				err = testUpdate(ruleToUpdate, UpdateOptions{}, LUCIAnalysisSystem)
+				So(err, ShouldBeNil)
+			})
+		})
 	})
 }

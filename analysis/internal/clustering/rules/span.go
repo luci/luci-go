@@ -437,9 +437,9 @@ func Create(ctx context.Context, rule *FailureAssociationRule, user string) erro
 		"LastUpdatedUser":      user,
 		"BugSystem":            rule.BugID.System,
 		"BugId":                rule.BugID.ID,
-		// IsActive uses the value 'NULL' to indicate false, and true to indicate true.
+		// IsActive and IsManagingBug uses the value NULL to indicate false, and TRUE to indicate true.
 		"IsActive":                         spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive},
-		"IsManagingBug":                    rule.IsManagingBug,
+		"IsManagingBug":                    spanner.NullBool{Bool: rule.IsManagingBug, Valid: rule.IsManagingBug},
 		"IsManagingBugPriority":            rule.IsManagingBugPriority,
 		"IsManagingBugPriorityLastUpdated": spanner.CommitTimestamp,
 		"SourceClusterAlgorithm":           rule.SourceCluster.Algorithm,
@@ -468,11 +468,12 @@ func Update(ctx context.Context, rule *FailureAssociationRule, options UpdateOpt
 		"BugId":                  rule.BugID.ID,
 		"SourceClusterAlgorithm": rule.SourceCluster.Algorithm,
 		"SourceClusterId":        rule.SourceCluster.ID,
-		"IsManagingBug":          rule.IsManagingBug,
+		// IsManagingBug uses the value NULL to indicate false, and TRUE to indicate true.
+		"IsManagingBug": spanner.NullBool{Bool: rule.IsManagingBug, Valid: rule.IsManagingBug},
 	}
 	if options.PredicateUpdated {
 		update["RuleDefinition"] = rule.RuleDefinition
-		// IsActive uses the value 'NULL' to indicate false, and true to indicate true.
+		// IsActive uses the value NULL to indicate false, and TRUE to indicate true.
 		update["IsActive"] = spanner.NullBool{Bool: rule.IsActive, Valid: rule.IsActive}
 		update["PredicateLastUpdated"] = spanner.CommitTimestamp
 	}
