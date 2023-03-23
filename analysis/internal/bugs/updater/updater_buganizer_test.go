@@ -89,15 +89,6 @@ func TestBuganizerUpdate(t *testing.T) {
 		buganizerClient := buganizer.NewFakeClient()
 		fakeStore := buganizerClient.FakeStore
 
-		opts := updateOptions{
-			appID:              "luci-analysis-test",
-			project:            project,
-			analysisClient:     analysisClient,
-			buganizerClient:    buganizerClient,
-			enableBugUpdates:   true,
-			maxBugsFiledPerRun: 1,
-		}
-
 		// Unless otherwise specified, assume re-clustering has caught up to
 		// the latest version of algorithms and config.
 		err = runs.SetRunsForTesting(ctx, []*runs.ReclusteringRun{
@@ -109,6 +100,18 @@ func TestBuganizerUpdate(t *testing.T) {
 				WithCompletedProgress().Build(),
 		})
 		So(err, ShouldBeNil)
+
+		progress, err := runs.ReadReclusteringProgress(ctx, project)
+		So(err, ShouldBeNil)
+
+		opts := updateOptions{
+			appID:                "luci-analysis-test",
+			project:              project,
+			analysisClient:       analysisClient,
+			buganizerClient:      buganizerClient,
+			maxBugsFiledPerRun:   1,
+			reclusteringProgress: progress,
+		}
 
 		// Mock current time. This is needed to control behaviours like
 		// automatic archiving of rules after 30 days of bug being marked
@@ -137,7 +140,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			})
 		})
 		Convey("With no impactful clusters", func() {
-			err = updateAnalysisAndBugsForProject(ctx, opts)
+			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 
 			// No failure association rules.
@@ -183,7 +186,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			}
 
 			testWithIssueId := func(id int64) {
-				err = updateAnalysisAndBugsForProject(ctx, opts)
+				err = updateBugsForProject(ctx, opts)
 				So(err, ShouldBeNil)
 
 				rs, err := rules.ReadActive(span.Single(ctx), project)
@@ -352,18 +355,13 @@ func TestBuganizerUpdate(t *testing.T) {
 						WithCompletedProgress().Build(),
 				})
 				So(err, ShouldBeNil)
+				progress, err := runs.ReadReclusteringProgress(ctx, project)
+				So(err, ShouldBeNil)
+				opts.reclusteringProgress = progress
 
 				expectCreate = true
 				expectedRule.BugID.ID = "2"
 				testWithIssueId(2)
-			})
-			Convey("With bug updates disabled", func() {
-				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
-
-				opts.enableBugUpdates = false
-
-				expectCreate = false
-				test()
 			})
 			Convey("Without re-clustering caught up to latest algorithms", func() {
 				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{OneDay: metrics.Counts{Residual: 100}}
@@ -377,6 +375,9 @@ func TestBuganizerUpdate(t *testing.T) {
 						WithCompletedProgress().Build(),
 				})
 				So(err, ShouldBeNil)
+				progress, err := runs.ReadReclusteringProgress(ctx, project)
+				So(err, ShouldBeNil)
+				opts.reclusteringProgress = progress
 
 				expectCreate = false
 				test()
@@ -393,6 +394,9 @@ func TestBuganizerUpdate(t *testing.T) {
 						WithCompletedProgress().Build(),
 				})
 				So(err, ShouldBeNil)
+				progress, err := runs.ReadReclusteringProgress(ctx, project)
+				So(err, ShouldBeNil)
+				opts.reclusteringProgress = progress
 
 				expectCreate = false
 				test()
@@ -422,7 +426,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			Convey("Reason clusters preferred over test name clusters", func() {
 				// Test name cluster has <34% more impact than the reason
 				// cluster.
-				err = updateAnalysisAndBugsForProject(ctx, opts)
+				err = updateBugsForProject(ctx, opts)
 				So(err, ShouldBeNil)
 
 				// Reason cluster filed.
@@ -441,7 +445,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					SevenDay: metrics.Counts{Residual: 390},
 				}
 
-				err = updateAnalysisAndBugsForProject(ctx, opts)
+				err = updateBugsForProject(ctx, opts)
 				So(err, ShouldBeNil)
 
 				// Test name cluster filed first.
@@ -485,15 +489,15 @@ func TestBuganizerUpdate(t *testing.T) {
 			// we test change throttling.
 			opts.maxBugsFiledPerRun = 1
 
-			err = updateAnalysisAndBugsForProject(ctx, opts)
+			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 			expectBugClusters(1)
 
-			err = updateAnalysisAndBugsForProject(ctx, opts)
+			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 			expectBugClusters(2)
 
-			err = updateAnalysisAndBugsForProject(ctx, opts)
+			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 
 			expectedRules := []*rules.FailureAssociationRule{
@@ -570,7 +574,7 @@ func TestBuganizerUpdate(t *testing.T) {
 
 			// Further updates do nothing.
 			// originalIssues := monorail.CopyIssuesStore(fakeStore)
-			err = updateAnalysisAndBugsForProject(ctx, opts)
+			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 			// So(fakeStore, monorail.ShouldResembleIssuesStore, originalIssues)
 			expectRules(expectedRules)
@@ -596,7 +600,7 @@ func TestBuganizerUpdate(t *testing.T) {
 
 					SetResidualImpact(
 						bugClusters[1], bugs.ClosureImpact())
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					So(len(fakeStore.Issues), ShouldEqual, 3)
@@ -631,6 +635,9 @@ func TestBuganizerUpdate(t *testing.T) {
 						WithCompletedProgress().Build(),
 				})
 				So(err, ShouldBeNil)
+				progress, err := runs.ReadReclusteringProgress(ctx, project)
+				So(err, ShouldBeNil)
+				opts.reclusteringProgress = progress
 
 				Convey("Cluster impact does not change if bug not managed by rule", func() {
 					// Set IsManagingBug to false on one rule.
@@ -646,7 +653,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					// Set P0 impact on the cluster.
 					SetResidualImpact(
 						bugClusters[2], bugs.P0Impact())
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					// Check that the rule priority and status has not changed.
@@ -661,7 +668,7 @@ func TestBuganizerUpdate(t *testing.T) {
 
 					SetResidualImpact(
 						bugClusters[2], bugs.P0Impact())
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					So(len(fakeStore.Issues), ShouldEqual, 3)
@@ -677,7 +684,7 @@ func TestBuganizerUpdate(t *testing.T) {
 
 					SetResidualImpact(
 						bugClusters[2], bugs.P3Impact())
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					So(len(fakeStore.Issues), ShouldEqual, 3)
@@ -705,7 +712,7 @@ func TestBuganizerUpdate(t *testing.T) {
 
 					SetResidualImpact(
 						bugClusters[2], bugs.P0Impact())
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					So(len(fakeStore.Issues), ShouldEqual, 3)
@@ -725,7 +732,7 @@ func TestBuganizerUpdate(t *testing.T) {
 
 					SetResidualImpact(
 						bugClusters[2], bugs.P0Impact())
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					So(len(fakeStore.Issues), ShouldEqual, 3)
@@ -742,7 +749,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					// Drop the bug cluster at index 2.
 					bugClusters = bugClusters[:2]
 					analysisClient.clusters = append(suggestedClusters, bugClusters...)
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					So(len(fakeStore.Issues), ShouldEqual, 3)
@@ -756,7 +763,7 @@ func TestBuganizerUpdate(t *testing.T) {
 						tc.Add(time.Hour * 24 * 30)
 
 						// Act
-						err = updateAnalysisAndBugsForProject(ctx, opts)
+						err = updateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
@@ -782,7 +789,7 @@ func TestBuganizerUpdate(t *testing.T) {
 
 					Convey("Happy path", func() {
 						// Act
-						err = updateAnalysisAndBugsForProject(ctx, opts)
+						err = updateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
@@ -804,7 +811,7 @@ func TestBuganizerUpdate(t *testing.T) {
 						issueTwo.IssueState.CanonicalIssueId = issueOne.IssueId
 
 						// Act
-						err = updateAnalysisAndBugsForProject(ctx, opts)
+						err = updateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
@@ -841,7 +848,7 @@ func TestBuganizerUpdate(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						// Act
-						err = updateAnalysisAndBugsForProject(ctx, opts)
+						err = updateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
@@ -882,7 +889,7 @@ func TestBuganizerUpdate(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						// Act
-						err = updateAnalysisAndBugsForProject(ctx, opts)
+						err = updateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
@@ -898,7 +905,7 @@ func TestBuganizerUpdate(t *testing.T) {
 						fakeStore.StoreIssue(ctx, buganizer.NewFakeIssue(1234))
 
 						// Act
-						err = updateAnalysisAndBugsForProject(ctx, opts)
+						err = updateBugsForProject(ctx, opts)
 						So(err, ShouldBeNil)
 
 						// Verify
@@ -916,7 +923,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					issueOne.IsArchived = true
 
 					// Act
-					err = updateAnalysisAndBugsForProject(ctx, opts)
+					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
 					// Assert

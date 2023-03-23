@@ -168,11 +168,6 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		}
 	}()
 
-	projectsWithDataset, err := analysisClient.ProjectsWithDataset(ctx)
-	if err != nil {
-		return errors.Annotate(err, "querying projects with dataset").Err()
-	}
-
 	buganizerClient, err := createBuganizerClient(ctx)
 
 	if err != nil {
@@ -183,27 +178,32 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 		defer buganizerClient.Close()
 	}
 
+	// Capture the current state of re-clustering before running analysis.
+	// This will reflect how up-to-date our analysis is when it completes.
+	projectProgress := make(map[string]*runs.ReclusteringProgress)
+	for _, project := range projectCfg.Keys() {
+		progress, err := runs.ReadReclusteringProgress(ctx, project)
+		if err != nil {
+			return errors.Annotate(err, "read re-clustering progress").Err()
+		}
+		projectProgress[project] = progress
+	}
+
 	if err := analysisClient.RebuildAnalysis(ctx); err != nil {
 		return errors.Annotate(err, "update cluster summary analysis").Err()
 	}
 
 	taskGenerator := func(c chan<- func() error) {
 		for _, project := range projectCfg.Keys() {
-			if _, ok := projectsWithDataset[project]; !ok {
-				// Dataset not provisioned for project.
-				statusByProject.Store(project, "disabled")
-				continue
-			}
-
 			opts := updateOptions{
-				appID:              gcpProject,
-				project:            project,
-				analysisClient:     analysisClient,
-				monorailClient:     monorailClient,
-				buganizerClient:    buganizerClient,
-				simulateBugUpdates: simulate,
-				enableBugUpdates:   enable,
-				maxBugsFiledPerRun: 1,
+				appID:                gcpProject,
+				project:              project,
+				analysisClient:       analysisClient,
+				monorailClient:       monorailClient,
+				buganizerClient:      buganizerClient,
+				simulateBugUpdates:   simulate,
+				maxBugsFiledPerRun:   1,
+				reclusteringProgress: projectProgress[project],
 			}
 
 			// Assign project to local variable to ensure it can be
@@ -213,7 +213,7 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 				// Isolate other projects from bug update errors
 				// in one project.
 				start := time.Now()
-				err := updateAnalysisAndBugsForProject(ctx, opts)
+				err := updateBugsForProject(ctx, opts)
 				if err != nil {
 					err = errors.Annotate(err, "in project %v", project).Err()
 					logging.Errorf(ctx, "Updating analysis and bugs: %s", err)
@@ -231,9 +231,10 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 			}
 		}
 	}
-
-	if err := parallel.WorkPool(workerCount, taskGenerator); err != nil {
-		return err
+	if enable {
+		if err := parallel.WorkPool(workerCount, taskGenerator); err != nil {
+			return err
+		}
 	}
 	// Do last, as this failing should not block bug updates.
 	return analysisClient.PurgeStaleRows(ctx)
@@ -262,18 +263,18 @@ func createBuganizerClient(ctx context.Context) (buganizer.Client, error) {
 }
 
 type updateOptions struct {
-	appID              string
-	project            string
-	analysisClient     AnalysisClient
-	monorailClient     *monorail.Client
-	buganizerClient    buganizer.Client
-	enableBugUpdates   bool
-	simulateBugUpdates bool
-	maxBugsFiledPerRun int
+	appID                string
+	project              string
+	analysisClient       AnalysisClient
+	monorailClient       *monorail.Client
+	buganizerClient      buganizer.Client
+	simulateBugUpdates   bool
+	maxBugsFiledPerRun   int
+	reclusteringProgress *runs.ReclusteringProgress
 }
 
-// updateAnalysisAndBugsForProject updates LUCI Analysis-managed bugs for a particular LUCI project.
-func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (retErr error) {
+// updateBugsForProject updates LUCI Analysis-managed bugs for a particular LUCI project.
+func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error) {
 	defer func() {
 		// Catch panics, to avoid panics in one project from affecting
 		// analysis and bug-filing in another.
@@ -282,52 +283,46 @@ func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (r
 		}
 	}()
 
-	// Capture the current state of re-clustering before running analysis.
-	// This will reflect how up-to-date our analysis is when it completes.
-	progress, err := runs.ReadReclusteringProgress(ctx, opts.project)
-	if err != nil {
-		return errors.Annotate(err, "read re-clustering progress").Err()
-	}
-
-	projectCfg, err := compiledcfg.Project(ctx, opts.project, progress.Next.ConfigVersion)
+	projectCfg, err := compiledcfg.Project(ctx, opts.project, opts.reclusteringProgress.Next.ConfigVersion)
 	if err != nil {
 		return errors.Annotate(err, "read project config").Err()
 	}
 	hasBugSystem := projectCfg.Config.Monorail != nil || projectCfg.Config.Buganizer != nil
-	if opts.enableBugUpdates && hasBugSystem {
-		mgrs := make(map[string]BugManager)
+	if !hasBugSystem {
+		return nil
+	}
+	mgrs := make(map[string]BugManager)
 
-		if projectCfg.Config.Monorail != nil {
-			// Create Monorail bug manager
-			monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.appID, opts.project, projectCfg.Config)
-			if err != nil {
-				return errors.Annotate(err, "create monorail bug manager").Err()
-			}
-
-			monorailBugManager.Simulate = opts.simulateBugUpdates
-			mgrs[bugs.MonorailSystem] = monorailBugManager
-
+	if projectCfg.Config.Monorail != nil {
+		// Create Monorail bug manager
+		monorailBugManager, err := monorail.NewBugManager(opts.monorailClient, opts.appID, opts.project, projectCfg.Config)
+		if err != nil {
+			return errors.Annotate(err, "create monorail bug manager").Err()
 		}
-		if projectCfg.Config.Buganizer != nil {
-			if opts.buganizerClient == nil {
-				return errors.New("buganizerClient cannot be nil.")
-			}
-			// Create Buganizer bug manager
-			buganizerBugManager := buganizer.NewBugManager(
-				opts.buganizerClient,
-				opts.appID,
-				opts.project,
-				projectCfg.Config,
-				opts.simulateBugUpdates,
-			)
 
-			mgrs[bugs.BuganizerSystem] = buganizerBugManager
+		monorailBugManager.Simulate = opts.simulateBugUpdates
+		mgrs[bugs.MonorailSystem] = monorailBugManager
+
+	}
+	if projectCfg.Config.Buganizer != nil {
+		if opts.buganizerClient == nil {
+			return errors.New("buganizerClient cannot be nil.")
 		}
-		bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg)
-		bugUpdater.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
-		if err := bugUpdater.Run(ctx, progress); err != nil {
-			return errors.Annotate(err, "update bugs").Err()
-		}
+		// Create Buganizer bug manager
+		buganizerBugManager := buganizer.NewBugManager(
+			opts.buganizerClient,
+			opts.appID,
+			opts.project,
+			projectCfg.Config,
+			opts.simulateBugUpdates,
+		)
+
+		mgrs[bugs.BuganizerSystem] = buganizerBugManager
+	}
+	bugUpdater := NewBugUpdater(opts.project, mgrs, opts.analysisClient, projectCfg)
+	bugUpdater.MaxBugsFiledPerRun = opts.maxBugsFiledPerRun
+	if err := bugUpdater.Run(ctx, opts.reclusteringProgress); err != nil {
+		return errors.Annotate(err, "update bugs").Err()
 	}
 	return nil
 }
