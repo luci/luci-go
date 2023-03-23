@@ -441,16 +441,6 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
 	defer func() { s.End(err) }()
 
-	if _, err := config.Project(ctx, payload.Build.Project); err != nil {
-		if err == config.NotExistsErr {
-			// Project not configured in LUCI Analysis, ignore it.
-			return nil
-		} else {
-			// Transient error.
-			return transient.Tag.Apply(errors.Annotate(err, "get project config").Err())
-		}
-	}
-
 	changelists := make([]*pb.Changelist, 0, len(inv.Changelists))
 	for _, cl := range inv.Changelists {
 		changelists = append(changelists, &pb.Changelist{

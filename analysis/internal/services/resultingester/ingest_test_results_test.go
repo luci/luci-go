@@ -1020,7 +1020,7 @@ func TestIngestTestResults(t *testing.T) {
 			})
 			Convey(`No project config`, func() {
 				// If no project config exists, results should be ingested into
-				// TestResults, but not clustered or used for the legacy test variant
+				// TestResults and clustered, but not used for the legacy test variant
 				// analysis.
 				config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
 
@@ -1040,10 +1040,8 @@ func TestIngestTestResults(t *testing.T) {
 				expectCommitPosition := true
 				verifyTestResults(expectCommitPosition)
 
-				// Confirm no chunks have been written to GCS.
-				So(len(chunkStore.Contents), ShouldEqual, 0)
-				// Confirm no clustering has occurred.
-				So(clusteredFailures.Insertions, ShouldHaveLength, 0)
+				// Cluster has happened.
+				verifyClustering()
 			})
 			Convey(`Build included by ancestor`, func() {
 				payload.Build.IsIncludedByAncestor = true

@@ -33,10 +33,6 @@ import (
 // can monitor it.
 var configCache = caching.RegisterLRUCache[string, *ProjectConfig](0)
 
-// NotExistsErr is returned if no matching configuration could be found
-// for the specified project.
-var NotExistsErr = errors.New("no config exists for the specified project")
-
 // ProjectConfig is a compiled version of LUCI Analysis project configuration.
 type ProjectConfig struct {
 	// Config is the raw, uncompiled, configuration.
@@ -80,9 +76,6 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 		// by the framework code that initializes the root context.
 		projectCfg, err := config.ProjectWithMinimumVersion(ctx, project, minimumVersion)
 		if err != nil {
-			if err == config.NotExistsErr {
-				return nil, NotExistsErr
-			}
 			return nil, err
 		}
 		config, err := NewConfig(projectCfg)
@@ -121,9 +114,6 @@ func Project(ctx context.Context, project string, minimumVersion time.Time) (*Pr
 			}
 		})
 		if err != nil {
-			if err == config.NotExistsErr {
-				return nil, NotExistsErr
-			}
 			return nil, errors.Annotate(err, "obtain compiled configuration").Err()
 		}
 		return val, nil

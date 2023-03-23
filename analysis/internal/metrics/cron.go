@@ -134,7 +134,7 @@ func GlobalMetrics(ctx context.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "collect total active rules").Err()
 	}
-	for project := range projectConfigs {
+	for _, project := range projectConfigs.Keys() {
 		// If there is no entry in activeRules for this project
 		// (e.g. because there are no rules in that project),
 		// the read count defaults to zero, which is the correct

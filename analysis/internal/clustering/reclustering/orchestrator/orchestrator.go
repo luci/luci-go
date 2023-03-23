@@ -117,14 +117,9 @@ func orchestrate(ctx context.Context) error {
 		statusGauge.Set(ctx, status)
 	}()
 
-	projectCfg, err := config.Projects(ctx)
+	projects, err := state.ReadProjects(span.Single(ctx))
 	if err != nil {
-		status = "failure"
-		return errors.Annotate(err, "get projects config").Err()
-	}
-	var projects []string
-	for project := range projectCfg {
-		projects = append(projects, project)
+		return errors.Annotate(err, "get projects").Err()
 	}
 	// The order of projects affects worker allocations if projects
 	// are entitled to fractional workers. Ensure the project order

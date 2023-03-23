@@ -282,6 +282,29 @@ func readWhere(ctx context.Context, project, whereClause string, params map[stri
 	return results, nil
 }
 
+// ReadProjects read all distinct projects with a clustering state entry..
+func ReadProjects(ctx context.Context) ([]string, error) {
+	stmt := spanner.NewStatement(`
+		SELECT Project
+		FROM ClusteringState
+		GROUP BY Project
+	`)
+	it := span.Query(ctx, stmt)
+	var projects []string
+	err := it.Do(func(r *spanner.Row) error {
+		var project string
+		if err := r.Columns(&project); err != nil {
+			return errors.Annotate(err, "read project row").Err()
+		}
+		projects = append(projects, project)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
 // EstimateChunks estimates the total number of chunks in the ClusteringState
 // table for the given project.
 func EstimateChunks(ctx context.Context, project string) (int, error) {

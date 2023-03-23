@@ -56,8 +56,8 @@ func TestProjectConfig(t *testing.T) {
 		cfg, err := Projects(ctx)
 
 		So(err, ShouldBeNil)
-		So(len(cfg), ShouldEqual, 1)
-		So(cfg["a"], ShouldResembleProto, projectA)
+		So(len(cfg.Keys()), ShouldEqual, 1)
+		So(cfg.Project("a"), ShouldResembleProto, projectA)
 	})
 
 	Convey("With mocks", t, WithBothBugSystems(func(system configpb.ProjectConfig_BugSystem, name string) {
@@ -85,9 +85,9 @@ func TestProjectConfig(t *testing.T) {
 			// Get works.
 			projects, err := Projects(ctx)
 			So(err, ShouldBeNil)
-			So(len(projects), ShouldEqual, 2)
-			So(projects["a"], ShouldResembleProto, withLastUpdated(projectA, creationTime))
-			So(projects["b"], ShouldResembleProto, withLastUpdated(projectB, creationTime))
+			So(len(projects.Keys()), ShouldEqual, 2)
+			So(projects.Project("a"), ShouldResembleProto, withLastUpdated(projectA, creationTime))
+			So(projects.Project("b"), ShouldResembleProto, withLastUpdated(projectB, creationTime))
 
 			tc.Add(1 * time.Second)
 
@@ -107,6 +107,7 @@ func TestProjectConfig(t *testing.T) {
 			configs["projects/c"] = cfgmem.Files{
 				"${appid}.cfg": textPBMultiline.Format(projectC),
 			}
+			newProjectA := &configpb.ProjectConfig{}
 			updateTime := clock.Now(ctx)
 			err = updateProjects(ctx)
 			So(err, ShouldBeNil)
@@ -115,16 +116,30 @@ func TestProjectConfig(t *testing.T) {
 			// Fetch returns the new value right away.
 			projects, err = fetchProjects(ctx)
 			So(err, ShouldBeNil)
-			So(len(projects), ShouldEqual, 2)
-			So(projects["b"], ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
-			So(projects["c"], ShouldResembleProto, withLastUpdated(projectC, updateTime))
+			So(len(projects.Keys()), ShouldEqual, 3)
+			So(projects.Project("a"), ShouldResembleProto, withLastUpdated(newProjectA, updateTime)) // Retained.
+			So(projects.Project("b"), ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
+			So(projects.Project("c"), ShouldResembleProto, withLastUpdated(projectC, updateTime))
 
 			// Get still uses in-memory cached copy.
 			projects, err = Projects(ctx)
 			So(err, ShouldBeNil)
-			So(len(projects), ShouldEqual, 2)
-			So(projects["a"], ShouldResembleProto, withLastUpdated(projectA, creationTime))
-			So(projects["b"], ShouldResembleProto, withLastUpdated(projectB, creationTime))
+			So(len(projects.Keys()), ShouldEqual, 2)
+			So(projects.Project("a"), ShouldResembleProto, withLastUpdated(projectA, creationTime)) // Retained.
+			So(projects.Project("b"), ShouldResembleProto, withLastUpdated(projectB, creationTime))
+
+			// Noop update again.
+			err = updateProjects(ctx)
+			So(err, ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// No change for all projects.
+			projects, err = fetchProjects(ctx)
+			So(err, ShouldBeNil)
+			So(len(projects.Keys()), ShouldEqual, 3)
+			So(projects.Project("a"), ShouldResembleProto, withLastUpdated(newProjectA, updateTime)) // Retained.
+			So(projects.Project("b"), ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
+			So(projects.Project("c"), ShouldResembleProto, withLastUpdated(projectC, updateTime))
 
 			Convey("Expedited cache eviction", func() {
 				projectB, err = ProjectWithMinimumVersion(ctx, "b", updateTime)
@@ -138,9 +153,10 @@ func TestProjectConfig(t *testing.T) {
 				// Get returns the new value now too.
 				projects, err = Projects(ctx)
 				So(err, ShouldBeNil)
-				So(len(projects), ShouldEqual, 2)
-				So(projects["b"], ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
-				So(projects["c"], ShouldResembleProto, withLastUpdated(projectC, updateTime))
+				So(len(projects.Keys()), ShouldEqual, 3)
+				So(projects.Project("a"), ShouldResembleProto, withLastUpdated(newProjectA, updateTime)) // Retained.
+				So(projects.Project("b"), ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
+				So(projects.Project("c"), ShouldResembleProto, withLastUpdated(projectC, updateTime))
 
 				// Time passes, in-memory cached copy expires.
 				tc.Add(2 * time.Minute)
@@ -148,9 +164,30 @@ func TestProjectConfig(t *testing.T) {
 				// Get returns the same value.
 				projects, err = Projects(ctx)
 				So(err, ShouldBeNil)
-				So(len(projects), ShouldEqual, 2)
-				So(projects["b"], ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
-				So(projects["c"], ShouldResembleProto, withLastUpdated(projectC, updateTime))
+				So(len(projects.Keys()), ShouldEqual, 3)
+				So(projects.Project("a"), ShouldResembleProto, withLastUpdated(newProjectA, updateTime))
+				So(projects.Project("b"), ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
+				So(projects.Project("c"), ShouldResembleProto, withLastUpdated(projectC, updateTime))
+			})
+
+			Convey("Add config for previously deleted project", func() {
+				tc.Add(2 * time.Second)
+				configs["projects/a"] = cfgmem.Files{
+					"${appid}.cfg": textPBMultiline.Format(projectA),
+				}
+				newUpdateTime := clock.Now(ctx)
+				err = updateProjects(ctx)
+				So(err, ShouldBeNil)
+				datastore.GetTestable(ctx).CatchupIndexes()
+
+				// Fetch returns the new value right away.
+				projects, err = fetchProjects(ctx)
+				So(err, ShouldBeNil)
+				So(len(projects.Keys()), ShouldEqual, 3)
+				So(projects.Project("a"), ShouldResembleProto, withLastUpdated(projectA, newUpdateTime))
+				So(projects.Project("b"), ShouldResembleProto, withLastUpdated(newProjectB, updateTime))
+				So(projects.Project("c"), ShouldResembleProto, withLastUpdated(projectC, updateTime))
+
 			})
 		})
 
@@ -166,8 +203,8 @@ func TestProjectConfig(t *testing.T) {
 			// as is not available.
 			projects, err := Projects(ctx)
 			So(err, ShouldBeNil)
-			So(len(projects), ShouldEqual, 1)
-			So(projects["a"], ShouldResembleProto, withLastUpdated(projectA, creationTime))
+			So(len(projects.Keys()), ShouldEqual, 1)
+			So(projects.Project("a"), ShouldResembleProto, withLastUpdated(projectA, creationTime))
 		})
 
 		Convey(fmt.Sprintf("%s - Update retains existing config if new config is invalid", name), func() {
@@ -180,9 +217,9 @@ func TestProjectConfig(t *testing.T) {
 			// Get works.
 			projects, err := Projects(ctx)
 			So(err, ShouldBeNil)
-			So(len(projects), ShouldEqual, 2)
-			So(projects["a"], ShouldResembleProto, withLastUpdated(projectA, creationTime))
-			So(projects["b"], ShouldResembleProto, withLastUpdated(projectB, creationTime))
+			So(len(projects.Keys()), ShouldEqual, 2)
+			So(projects.Project("a"), ShouldResembleProto, withLastUpdated(projectA, creationTime))
+			So(projects.Project("b"), ShouldResembleProto, withLastUpdated(projectB, creationTime))
 
 			tc.Add(1 * time.Second)
 
@@ -206,9 +243,9 @@ func TestProjectConfig(t *testing.T) {
 			// config does not result in a service outage for that project.
 			projects, err = Projects(ctx)
 			So(err, ShouldBeNil)
-			So(len(projects), ShouldEqual, 2)
-			So(projects["a"], ShouldResembleProto, withLastUpdated(newProjectA, updateTime))
-			So(projects["b"], ShouldResembleProto, withLastUpdated(projectB, creationTime))
+			So(len(projects.Keys()), ShouldEqual, 2)
+			So(projects.Project("a"), ShouldResembleProto, withLastUpdated(newProjectA, updateTime))
+			So(projects.Project("b"), ShouldResembleProto, withLastUpdated(projectB, creationTime))
 		})
 	}))
 }
@@ -241,8 +278,8 @@ func TestProject(t *testing.T) {
 
 		Convey(fmt.Sprintf("%s - not found", name), func() {
 			pj, err := Project(ctx, "random")
-			So(err, ShouldEqual, NotExistsErr)
-			So(pj, ShouldBeNil)
+			So(err, ShouldBeNil)
+			So(pj, ShouldResembleProto, &configpb.ProjectConfig{LastUpdated: timestamppb.New(StartingEpoch)})
 		})
 	}))
 }

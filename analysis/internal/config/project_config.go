@@ -41,7 +41,7 @@ import (
 // is stored in the same slot). We use LRU cache instead of cache slot
 // as we sometimes want to refresh config before it has expired.
 // Only the LRU Cache has the methods to do this.
-var projectsCache = caching.RegisterLRUCache[string, projectConfigsMap](1)
+var projectsCache = caching.RegisterLRUCache[string, ProjectConfigs](1)
 
 const projectConfigKind = "luci.analysis.ProjectConfig"
 
@@ -54,10 +54,6 @@ const ProjectCacheExpiry = 1 * time.Minute
 // discernible from "timestamp not populated" programming errors.
 var StartingEpoch = time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-// NotExistsErr is returned if no matching configuration could be found
-// for the specified project.
-var NotExistsErr = errors.New("no config exists for the specified project")
-
 var (
 	importAttemptCounter = metric.NewCounter(
 		"analysis/project_config/import_attempt",
@@ -66,8 +62,6 @@ var (
 		// status can be "success" or "failure".
 		field.String("project"), field.String("status"))
 )
-
-type projectConfigsMap map[string]*configpb.ProjectConfig
 
 type cachedProjectConfig struct {
 	_extra datastore.PropertyMap `gae:"-,extra"`
@@ -222,20 +216,43 @@ func updateStoredConfig(ctx context.Context, fetchedConfigs map[string]*fetchedP
 			Meta:   fetch.Meta,
 		})
 	}
-	if err := datastore.Put(ctx, toPut); err != nil {
-		errs = append(errs, errors.Annotate(err, "updating project configs").Err())
-	}
 
 	var toDelete []*datastore.Key
 	for project, cur := range currentConfigs {
 		if _, ok := fetchedConfigs[project]; ok {
 			continue
 		}
-		toDelete = append(toDelete, datastore.KeyForObj(ctx, cur))
+		logging.Infof(ctx, "Mark config deleted %s", cur.ID)
+		if setForTesting {
+			toDelete = append(toDelete, datastore.KeyForObj(ctx, cur))
+			continue
+		}
+		// Config already marked as deleted in datastore.
+		if cur.Meta.ContentHash == "" {
+			continue
+		}
+		// For config that is deleted from LUCI config, we keep an entry in datastore with
+		// an empty config except having lastUpdatedTime as the time of deletion.
+		// This is to avoid a timestamp rollback situation.
+		configToSave := &configpb.ProjectConfig{LastUpdated: timestamppb.New(clock.Now(ctx))}
+		blob, err := proto.Marshal(configToSave)
+		if err != nil {
+			// Continue through errors to ensure bad config for one project
+			// does not affect others.
+			errs = append(errs, errors.Annotate(err, "marshal deleted config").Err())
+			continue
+		}
+		toPut = append(toPut, &cachedProjectConfig{
+			ID:     cur.ID,
+			Config: blob,
+			Meta:   config.Meta{},
+		})
 	}
-
 	if err := datastore.Delete(ctx, toDelete); err != nil {
 		errs = append(errs, errors.Annotate(err, "deleting stale project configs").Err())
+	}
+	if err := datastore.Put(ctx, toPut); err != nil {
+		errs = append(errs, errors.Annotate(err, "updating project configs").Err())
 	}
 
 	if len(errs) > 0 {
@@ -274,12 +291,37 @@ func fetchProjectConfigEntities(ctx context.Context) (map[string]*cachedProjectC
 	return result, nil
 }
 
+// ProjectConfigs represents the physcial to logical content translation of project configs.
+type ProjectConfigs struct {
+	// Configs physically present in datastore.
+	contents map[string]*configpb.ProjectConfig
+}
+
+// Project returns the logical project config.
+func (p *ProjectConfigs) Project(project string) *configpb.ProjectConfig {
+	if cfg, ok := p.contents[project]; ok {
+		return cfg
+	}
+	// Return project if it exists, otherwise the fake empty one with the LastUpdated = StartEpoch time set.
+	return NewEmptyProject()
+}
+
+// Keys returns all projects that have a record in datastore.
+// It can be a project that currently have a config or had a config before but then deleted.
+func (p *ProjectConfigs) Keys() []string {
+	keys := make([]string, 0, len(p.contents))
+	for k := range p.contents {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // projectsWithMinimumVersion retrieves projects configurations, with
 // the specified project at at least the specified minimumVersion.
 // If no particular minimum version is desired, specify a project of ""
 // or a minimumVersion of time.Time{}.
-func projectsWithMinimumVersion(ctx context.Context, project string, minimumVersion time.Time) (map[string]*configpb.ProjectConfig, error) {
-	var pc map[string]*configpb.ProjectConfig
+func projectsWithMinimumVersion(ctx context.Context, project string, minimumVersion time.Time) (ProjectConfigs, error) {
+	var pc ProjectConfigs
 	var err error
 	cache := projectsCache.LRU(ctx)
 	if cache == nil {
@@ -288,15 +330,15 @@ func projectsWithMinimumVersion(ctx context.Context, project string, minimumVers
 		// by the framework code that initializes the root context.
 		pc, err = fetchProjects(ctx)
 		if err != nil {
-			return nil, err
+			return ProjectConfigs{}, err
 		}
 	} else {
-		value, _ := projectsCache.LRU(ctx).Mutate(ctx, "projects", func(it *lru.Item[projectConfigsMap]) *lru.Item[projectConfigsMap] {
-			var pc projectConfigsMap
+		value, _ := projectsCache.LRU(ctx).Mutate(ctx, "projects", func(it *lru.Item[ProjectConfigs]) *lru.Item[ProjectConfigs] {
+			var pc ProjectConfigs
 			if it != nil {
 				pc = it.Value
-				projectCfg, ok := pc[project]
-				if project == "" || (ok && !projectCfg.LastUpdated.AsTime().Before(minimumVersion)) {
+				projectCfg := pc.Project(project)
+				if project == "" || (!projectCfg.LastUpdated.AsTime().Before(minimumVersion)) {
 					// Projects contains the specified project at the given minimum version.
 					// There is no need to update it.
 					return it
@@ -306,47 +348,47 @@ func projectsWithMinimumVersion(ctx context.Context, project string, minimumVers
 				// Error refreshing config. Keep existing entry (if any).
 				return it
 			}
-			return &lru.Item[projectConfigsMap]{
+			return &lru.Item[ProjectConfigs]{
 				Value: pc,
 				Exp:   ProjectCacheExpiry,
 			}
 		})
 		if err != nil {
-			return nil, err
+			return ProjectConfigs{}, err
 		}
 		pc = value
 	}
 
-	projectCfg, ok := pc[project]
-	if project != "" && (ok && projectCfg.LastUpdated.AsTime().Before(minimumVersion)) {
-		return nil, fmt.Errorf("could not obtain projects configuration with project %s at minimum version (%v)", project, minimumVersion)
+	projectCfg := pc.Project(project)
+	if project != "" && (projectCfg.LastUpdated.AsTime().Before(minimumVersion)) {
+		return ProjectConfigs{}, fmt.Errorf("could not obtain projects configuration with project %s at minimum version (%v)", project, minimumVersion)
 	}
 	return pc, nil
 }
 
 // Projects returns all project configurations, in a map by project name.
 // Uses in-memory cache to avoid hitting datastore all the time.
-func Projects(ctx context.Context) (map[string]*configpb.ProjectConfig, error) {
+func Projects(ctx context.Context) (ProjectConfigs, error) {
 	return projectsWithMinimumVersion(ctx, "", time.Time{})
 }
 
 // fetchProjects retrieves all project configurations from datastore.
-func fetchProjects(ctx context.Context) (map[string]*configpb.ProjectConfig, error) {
+func fetchProjects(ctx context.Context) (ProjectConfigs, error) {
 	ctx = cleanContext(ctx)
 
 	cachedCfgs, err := fetchProjectConfigEntities(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "fetching cached config").Err()
+		return ProjectConfigs{}, errors.Annotate(err, "fetching cached config").Err()
 	}
 	result := make(map[string]*configpb.ProjectConfig)
 	for project, cached := range cachedCfgs {
 		cfg := &configpb.ProjectConfig{}
 		if err := proto.Unmarshal(cached.Config, cfg); err != nil {
-			return nil, errors.Annotate(err, "unmarshalling cached config").Err()
+			return ProjectConfigs{}, errors.Annotate(err, "unmarshalling cached config").Err()
 		}
 		result[project] = cfg
 	}
-	return result, nil
+	return ProjectConfigs{contents: result}, nil
 }
 
 // cleanContext returns a context with datastore using the default namespace
@@ -393,8 +435,12 @@ func ProjectWithMinimumVersion(ctx context.Context, project string, minimumVersi
 	if err != nil {
 		return nil, err
 	}
-	if c, ok := configs[project]; ok {
-		return c, nil
+	return configs.Project(project), nil
+}
+
+// NewEmptyProject returnes an empty project config.
+func NewEmptyProject() *configpb.ProjectConfig {
+	return &configpb.ProjectConfig{
+		LastUpdated: timestamppb.New(StartingEpoch),
 	}
-	return nil, NotExistsErr
 }

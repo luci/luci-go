@@ -69,16 +69,33 @@ func TestCompiledConfig(t *testing.T) {
 		}
 		verifyNotExists := func(minimumVersion time.Time) {
 			cfg, err := Project(ctx, "myproject", minimumVersion)
-			So(err, ShouldEqual, NotExistsErr)
-			So(cfg, ShouldBeNil)
+			So(err, ShouldBeNil)
+			So(cfg.Config, ShouldResembleProto, &configpb.ProjectConfig{LastUpdated: timestamppb.New(config.StartingEpoch)})
 		}
-
 		Convey(`Does not exist`, func() {
 			verifyNotExists(config.StartingEpoch)
 
 			Convey(`Then exists`, func() {
 				create(1)
-				verify(config.StartingEpoch, 1)
+
+				// Verify the old cache item is retained.
+				verifyNotExists(config.StartingEpoch)
+
+				Convey(`Evict by cache expiry`, func() {
+					// Let the cache expire (note this expires the cache
+					// in the config package, not this package).
+					tc.Add(2 * config.ProjectCacheExpiry)
+
+					verify(config.StartingEpoch, 1)
+					verify(configVersion(1), 1)
+				})
+				Convey(`Manually evict`, func() {
+					// Force the cache to be cleared by requesting
+					// a more recent version of config.
+					verify(configVersion(1), 1)
+
+					verify(config.StartingEpoch, 1)
+				})
 			})
 			Convey(`Then not exists`, func() {
 				clear()

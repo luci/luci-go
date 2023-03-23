@@ -149,11 +149,12 @@ func TestProjectConfigValidator(t *testing.T) {
 		So(validate(cfg), ShouldBeNil)
 	})
 
-	Convey("must be specified", t, func() {
+	Convey("no bug system specified", t, func() {
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_BUGANIZER)
+		cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
 		cfg.Monorail = nil
 		cfg.Buganizer = nil
-		So(validate(cfg), ShouldErrLike, "either a monorail or buganizer configuration must be specified")
+		So(validate(cfg), ShouldBeNil)
 	})
 
 	Convey("monorail", t, func() {
@@ -367,63 +368,71 @@ func TestProjectConfigValidator(t *testing.T) {
 		})
 	})
 
-	Convey("bug filing threshold", t, WithBothProjectConfigs(func(cfg *configpb.ProjectConfig, name string) {
-		threshold := cfg.BugFilingThreshold
-		So(threshold, ShouldNotBeNil)
-
-		Convey(fmt.Sprintf("%s - must be specified", name), func() {
+	Convey("bug filing threshold", t, func() {
+		Convey("not specified with no bug system", func() {
+			cfg := CreateMonorailPlaceholderProjectConfig()
+			cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
 			cfg.BugFilingThreshold = nil
-			So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
+			So(validate(cfg), ShouldBeNil)
 		})
-
-		Convey(fmt.Sprintf("%s - handles unset metric thresholds", name), func() {
+		Convey("with both configs", WithBothProjectConfigs(func(cfg *configpb.ProjectConfig, name string) {
 			threshold := cfg.BugFilingThreshold
-			threshold.CriticalFailuresExonerated = nil
-			threshold.TestResultsFailed = nil
-			threshold.TestRunsFailed = nil
-			threshold.PresubmitRunsFailed = nil
 			So(threshold, ShouldNotBeNil)
-		})
 
-		Convey(fmt.Sprintf("%s - metric values are not negative", name), func() {
-			// Test by threshold period.
-			Convey("one day", func() {
-				threshold.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
-				So(validate(cfg), ShouldErrLike, "value must be non-negative")
+			Convey(fmt.Sprintf("%s - not specified", name), func() {
+				cfg.BugFilingThreshold = nil
+				So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
 			})
 
-			Convey("three day", func() {
-				threshold.TestResultsFailed = &configpb.MetricThreshold{ThreeDay: proto.Int64(-1)}
-				So(validate(cfg), ShouldErrLike, "value must be non-negative")
+			Convey(fmt.Sprintf("%s - handles unset metric thresholds", name), func() {
+				threshold := cfg.BugFilingThreshold
+				threshold.CriticalFailuresExonerated = nil
+				threshold.TestResultsFailed = nil
+				threshold.TestRunsFailed = nil
+				threshold.PresubmitRunsFailed = nil
+				So(threshold, ShouldNotBeNil)
 			})
 
-			Convey("seven day", func() {
-				threshold.TestResultsFailed = &configpb.MetricThreshold{SevenDay: proto.Int64(-1)}
-				So(validate(cfg), ShouldErrLike, "value must be non-negative")
-			})
+			Convey(fmt.Sprintf("%s - metric values are not negative", name), func() {
+				// Test by threshold period.
+				Convey("one day", func() {
+					threshold.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
 
-			// Test by metric.
-			Convey("critical test failures exonerated", func() {
-				threshold.CriticalFailuresExonerated = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
-				So(validate(cfg), ShouldErrLike, "value must be non-negative")
-			})
+				Convey("three day", func() {
+					threshold.TestResultsFailed = &configpb.MetricThreshold{ThreeDay: proto.Int64(-1)}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
 
-			Convey("test results failed", func() {
-				threshold.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
-				So(validate(cfg), ShouldErrLike, "value must be non-negative")
-			})
+				Convey("seven day", func() {
+					threshold.TestResultsFailed = &configpb.MetricThreshold{SevenDay: proto.Int64(-1)}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
 
-			Convey("test runs failed", func() {
-				threshold.TestRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
-				So(validate(cfg), ShouldErrLike, "value must be non-negative")
-			})
+				// Test by metric.
+				Convey("critical test failures exonerated", func() {
+					threshold.CriticalFailuresExonerated = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
 
-			Convey("presubmit runs failed", func() {
-				threshold.PresubmitRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
-				So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				Convey("test results failed", func() {
+					threshold.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
+
+				Convey("test runs failed", func() {
+					threshold.TestRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
+
+				Convey("presubmit runs failed", func() {
+					threshold.PresubmitRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(-1)}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
 			})
-		})
-	}))
+		}))
+	})
 
 	Convey("realm config", t, func() {
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)

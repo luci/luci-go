@@ -125,16 +125,6 @@ func TestProjects(t *testing.T) {
 					Name: "projects/testprojectbuganizer/config",
 				})
 			})
-			Convey("Invalid request", func() {
-				requestMonorail.Name = "blah"
-
-				// Run
-				response, err := server.GetConfig(ctx, requestMonorail)
-
-				// Verify
-				So(err, ShouldBeRPCInvalidArgument, "name: invalid project config name, expected format: projects/{project}/config")
-				So(response, ShouldBeNil)
-			})
 			Convey("With project not configured", func() {
 				err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
 				So(err, ShouldBeNil)
@@ -143,7 +133,19 @@ func TestProjects(t *testing.T) {
 				response, err := server.GetConfig(ctx, requestMonorail)
 
 				// Verify
-				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
+				So(err, ShouldBeNil)
+				So(response, ShouldResembleProto, &pb.ProjectConfig{
+					Name: "projects/testprojectmonorail/config",
+				})
+			})
+			Convey("Invalid request", func() {
+				requestMonorail.Name = "blah"
+
+				// Run
+				response, err := server.GetConfig(ctx, requestMonorail)
+
+				// Verify
+				So(err, ShouldBeRPCInvalidArgument, "name: invalid project config name, expected format: projects/{project}/config")
 				So(response, ShouldBeNil)
 			})
 		})

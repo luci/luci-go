@@ -107,8 +107,8 @@ func ScheduleTasks(ctx context.Context) error {
 	}
 
 	var errs []error
-	for pj, cg := range pjcs {
-		for _, rc := range cg.GetRealms() {
+	for _, pj := range pjcs.Keys() {
+		for _, rc := range pjcs.Project(pj).GetRealms() {
 			fullRealm := realms.Join(pj, rc.Name)
 			bqcs := rc.GetTestVariantAnalysis().GetBqExports()
 			for _, bqc := range bqcs {

@@ -72,8 +72,8 @@ func (*projectServer) List(ctx context.Context, request *pb.ListProjectsRequest)
 		return nil, errors.Annotate(err, "fetching project configs").Err()
 	}
 
-	readableProjects := make([]string, 0, len(projects))
-	for project := range projects {
+	readableProjects := make([]string, 0, len(projects.Keys()))
+	for _, project := range projects.Keys() {
 		hasAccess, err := perms.HasProjectPermission(ctx, project, perms.PermGetConfig)
 		if err != nil {
 			return nil, err

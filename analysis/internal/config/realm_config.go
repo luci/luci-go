@@ -34,9 +34,6 @@ func Realm(ctx context.Context, global string) (*configpb.RealmConfig, error) {
 	project, realm := realms.Split(global)
 	pc, err := Project(ctx, project)
 	if err != nil {
-		if err == NotExistsErr {
-			return nil, RealmNotExistsErr
-		}
 		return nil, err
 	}
 	for _, rc := range pc.GetRealms() {

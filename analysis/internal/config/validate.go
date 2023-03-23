@@ -191,11 +191,6 @@ func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb
 }
 
 func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
-	if cfg.Monorail == nil && cfg.Buganizer == nil {
-		ctx.Errorf("either a monorail or buganizer configuration must be specified")
-		return
-	}
-
 	if cfg.BugSystem == configpb.ProjectConfig_MONORAIL && cfg.Monorail == nil {
 		ctx.Errorf("monorail configuration is required when the configured bug system is Monorail")
 		return
@@ -212,7 +207,10 @@ func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig)
 	if cfg.Buganizer != nil {
 		validateBuganizer(ctx, cfg.Buganizer, cfg.BugFilingThreshold)
 	}
-	validateImpactThreshold(ctx, cfg.BugFilingThreshold, "bug_filing_threshold")
+	// Validate BugFilingThreshold when it is not nil or there is a bug system specified.
+	if cfg.BugFilingThreshold != nil || cfg.BugSystem != configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED {
+		validateImpactThreshold(ctx, cfg.BugFilingThreshold, "bug_filing_threshold")
+	}
 	for _, rCfg := range cfg.Realms {
 		validateRealmConfig(ctx, rCfg)
 	}

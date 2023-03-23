@@ -57,11 +57,11 @@ func TestOrchestrator(t *testing.T) {
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		cfg := &configpb.Config{
-			ReclusteringWorkers: 4,
+			ReclusteringWorkers: 5,
 		}
 		config.SetTestConfig(ctx, cfg)
 
-		testProjects := []string{"project-a", "project-b"}
+		testProjects := []string{"project-a", "project-b", "project-c"}
 
 		testOrchestratorDoesNothing := func() {
 			beforeTasks := tasks(skdr)
@@ -77,15 +77,21 @@ func TestOrchestrator(t *testing.T) {
 		}
 
 		Convey("Without Projects", func() {
-			projectCfg := make(map[string]*configpb.ProjectConfig)
-			err := config.SetTestProjectConfig(ctx, projectCfg)
-			So(err, ShouldBeNil)
+			testutil.MustApply(ctx,
+				spanner.Delete("ClusteringState", spanner.AllKeys()))
 
 			testOrchestratorDoesNothing()
 		})
 		Convey("With Projects", func() {
-			// Orchestrator only looks at the projects that have config,
-			// and the config version.
+			// Orchestrator only looks at the projects in ClusteringState table.
+			var projectEntries []*state.Entry
+			for _, p := range testProjects {
+				projectEntries = append(projectEntries, state.NewEntry(0).WithProject(p).Build())
+			}
+			_, err := state.CreateEntriesForTesting(ctx, projectEntries)
+			So(err, ShouldBeNil)
+
+			// Some projects have config.
 			configVersionA := time.Date(2029, time.April, 1, 0, 0, 0, 1, time.UTC)
 			configVersionB := time.Date(2029, time.May, 1, 0, 0, 0, 1, time.UTC)
 			projectCfg := make(map[string]*configpb.ProjectConfig)
@@ -101,11 +107,12 @@ func TestOrchestrator(t *testing.T) {
 			// for the projects should be:
 			// project-a: ~100
 			// project-b: ~450
+			// project-c: ~100
 			var entries []*state.Entry
-			for i := 0; i < 450; i++ {
+			for i := 1; i < 450; i++ {
 				entries = append(entries, state.NewEntry(i).WithProject("project-b").Build())
 			}
-			_, err := state.CreateEntriesForTesting(ctx, entries)
+			_, err = state.CreateEntriesForTesting(ctx, entries)
 			So(err, ShouldBeNil)
 
 			rulesVersionB := time.Date(2020, time.January, 10, 9, 8, 7, 0, time.UTC)
@@ -160,6 +167,17 @@ func TestOrchestrator(t *testing.T) {
 					},
 					ShardNumber: 4,
 				},
+				{
+					Project:      "project-c",
+					AttemptTime:  timestamppb.New(expectedRunEndTime),
+					StartChunkId: "",
+					EndChunkId:   state.EndOfTable,
+					State: &taskspb.ReclusterChunkState{
+						CurrentChunkId: "",
+						NextReportDue:  timestamppb.New(expectedRunStartTime),
+					},
+					ShardNumber: 5,
+				},
 			}
 
 			expectedShards := []shards.ReclusteringShard{
@@ -187,6 +205,12 @@ func TestOrchestrator(t *testing.T) {
 					Project:          "project-b",
 					Progress:         spanner.NullInt64{},
 				},
+				{
+					ShardNumber:      5,
+					AttemptTimestamp: expectedRunEndTime,
+					Project:          "project-c",
+					Progress:         spanner.NullInt64{},
+				},
 			}
 
 			expectedRunA := &runs.ReclusteringRun{
@@ -209,9 +233,20 @@ func TestOrchestrator(t *testing.T) {
 				ShardsReported:    0,
 				Progress:          0,
 			}
+			expectedRunC := &runs.ReclusteringRun{
+				Project:           "project-c",
+				AttemptTimestamp:  expectedRunEndTime,
+				AlgorithmsVersion: algorithms.AlgorithmsVersion,
+				ConfigVersion:     config.StartingEpoch,
+				RulesVersion:      rules.StartingEpoch,
+				ShardCount:        1,
+				ShardsReported:    0,
+				Progress:          0,
+			}
 			expectedRuns := make(map[string]*runs.ReclusteringRun)
 			expectedRuns["project-a"] = expectedRunA
 			expectedRuns["project-b"] = expectedRunB
+			expectedRuns["project-c"] = expectedRunC
 
 			// updateExpectedTasks sets the Algorithms Version,
 			// Rules Version and Config Version of expected tasks

@@ -287,7 +287,7 @@ func TestRules(t *testing.T) {
 				So(response, ShouldBeNil)
 			})
 			Convey("Non-Empty", func() {
-				test := func(includeDefinition bool) {
+				test := func(includeDefinition bool, cfg *configpb.ProjectConfig) {
 					rs := []*rules.FailureAssociationRule{
 						ruleManaged,
 						ruleBuganizer,
@@ -322,13 +322,18 @@ func TestRules(t *testing.T) {
 				}
 				Convey("With get rule definition permission", func() {
 					includeDefinition := true
-					test(includeDefinition)
+					test(includeDefinition, cfg)
 				})
 				Convey("Without get rule definition permission", func() {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 					includeDefinition := false
-					test(includeDefinition)
+					test(includeDefinition, cfg)
+				})
+				Convey("With project not configured", func() {
+					err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
+					includeDefinition := true
+					test(includeDefinition, config.NewEmptyProject())
 				})
 			})
 			Convey("Empty", func() {
@@ -340,17 +345,6 @@ func TestRules(t *testing.T) {
 
 				expected := &pb.ListRulesResponse{}
 				So(response, ShouldResembleProto, expected)
-			})
-			Convey("With project not configured", func() {
-				err = config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
-				So(err, ShouldBeNil)
-
-				// Run
-				response, err := srv.List(ctx, request)
-
-				// Verify
-				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
-				So(response, ShouldBeNil)
 			})
 		})
 		Convey("Update", func() {

@@ -290,8 +290,8 @@ func TestClusters(t *testing.T) {
 				response, err := server.Cluster(ctx, request)
 
 				// Verify
-				So(response, ShouldBeNil)
-				So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
+				So(response.ClusteringVersion.ConfigVersion.AsTime(), ShouldEqual, config.StartingEpoch)
+				So(err, ShouldBeNil)
 			})
 		})
 		Convey("Get", func() {
@@ -558,6 +558,17 @@ func TestClusters(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(response, ShouldResembleProto, expectedResponse)
 				})
+				Convey("With project not configured", func() {
+					err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
+					So(err, ShouldBeNil)
+
+					// Run
+					response, err := server.Get(ctx, request)
+
+					// Verify
+					So(response, ShouldResembleProto, expectedResponse)
+					So(err, ShouldBeNil)
+				})
 			})
 			Convey("With invalid request", func() {
 				Convey("No name specified", func() {
@@ -609,17 +620,6 @@ func TestClusters(t *testing.T) {
 					// Verify
 					So(response, ShouldBeNil)
 					So(err, ShouldBeRPCNotFound, "LUCI Analysis BigQuery dataset not provisioned for project or cluster analysis is not yet available")
-				})
-				Convey("With project not configured", func() {
-					err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
-					So(err, ShouldBeNil)
-
-					// Run
-					response, err := server.Get(ctx, request)
-
-					// Verify
-					So(response, ShouldBeNil)
-					So(err, ShouldBeRPCFailedPrecondition, "project does not exist in LUCI Analysis")
 				})
 			})
 		})

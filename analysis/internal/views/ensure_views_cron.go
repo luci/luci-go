@@ -147,7 +147,7 @@ func projectDatasets(ctx context.Context, bqClient *bigquery.Client) ([]string, 
 		return nil, errors.Annotate(err, "list gcp datasets").Err()
 	}
 	projectDatasetIDs := []string{}
-	for project := range projectCfg {
+	for _, project := range projectCfg.Keys() {
 		datasetID, err := bqutil.DatasetForProject(project)
 		if err != nil {
 			return nil, errors.Annotate(err, "get dataset name for project %s", project).Err()

@@ -80,6 +80,8 @@ type scenario struct {
 	// testResults are the actual test failures ingested by LUCI Analysis,
 	// organised in chunks by object ID.
 	testResultsByObjectID map[string]*cpb.Chunk
+	// noProjectConfig set to true to not set up any project configuration.
+	noProjectConfig bool
 }
 
 func TestReclustering(t *testing.T) {
@@ -129,6 +131,9 @@ func TestReclustering(t *testing.T) {
 					Clustering:  s.config,
 					LastUpdated: timestamppb.New(s.configVersion),
 				},
+			}
+			if s.noProjectConfig {
+				cfg = map[string]*configpb.ProjectConfig{}
 			}
 			So(config.SetTestProjectConfig(ctx, cfg), ShouldBeNil)
 
@@ -215,6 +220,16 @@ func TestReclustering(t *testing.T) {
 
 				// Start with clustering based on old rules.
 				s := newScenario().withOldRules(true).build()
+				s.rules = expected.rules
+				s.rulesVersion = expected.rulesVersion
+
+				testReclustering(s, expected)
+			})
+			Convey("From old rules with no project config", func() {
+				expected := newScenario().withNoConfig(true).build()
+
+				// Start with clustering based on old rules.
+				s := newScenario().withNoConfig(true).withOldRules(true).build()
 				s.rules = expected.rules
 				s.rulesVersion = expected.rulesVersion
 
@@ -802,6 +817,7 @@ type scenarioBuilder struct {
 	oldAlgorithms bool
 	oldRules      bool
 	oldConfig     bool
+	noConfig      bool
 }
 
 func newScenario() *scenarioBuilder {
@@ -823,6 +839,11 @@ func (b *scenarioBuilder) withOldRules(value bool) *scenarioBuilder {
 
 func (b *scenarioBuilder) withOldConfig(value bool) *scenarioBuilder {
 	b.oldConfig = value
+	return b
+}
+
+func (b *scenarioBuilder) withNoConfig(value bool) *scenarioBuilder {
+	b.noConfig = value
 	return b
 }
 
@@ -886,12 +907,15 @@ func (b *scenarioBuilder) build() *scenario {
 		Clustering:  cfgpb,
 		LastUpdated: timestamppb.New(configVersion),
 	}
+	if b.noConfig {
+		projectCfg = config.NewEmptyProject()
+		configVersion = projectCfg.LastUpdated.AsTime()
+	}
 	cfg, err := compiledcfg.NewConfig(projectCfg)
 	if err != nil {
 		// Should never occur as config should be valid.
 		panic(err)
 	}
-
 	var state []*state.Entry
 	testResultsByObjectID := make(map[string]*cpb.Chunk)
 	var bqExports []*bqpb.ClusteredFailureRow
@@ -924,6 +948,7 @@ func (b *scenarioBuilder) build() *scenario {
 		testResultsByObjectID: testResultsByObjectID,
 		clusteringState:       state,
 		netBQExports:          bqExports,
+		noProjectConfig:       b.noConfig,
 	}
 }
 

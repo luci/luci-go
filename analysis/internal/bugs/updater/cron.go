@@ -139,7 +139,7 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 	}
 
 	statusByProject := &sync.Map{}
-	for project := range projectCfg {
+	for _, project := range projectCfg.Keys() {
 		// Until each project succeeds, report "failure".
 		statusByProject.Store(project, "failure")
 	}
@@ -188,7 +188,7 @@ func updateAnalysisAndBugs(ctx context.Context, monorailHost, gcpProject string,
 	}
 
 	taskGenerator := func(c chan<- func() error) {
-		for project := range projectCfg {
+		for _, project := range projectCfg.Keys() {
 			if _, ok := projectsWithDataset[project]; !ok {
 				// Dataset not provisioned for project.
 				statusByProject.Store(project, "disabled")
@@ -272,8 +272,7 @@ type updateOptions struct {
 	maxBugsFiledPerRun int
 }
 
-// updateAnalysisAndBugsForProject updates BigQuery analysis, and
-// LUCI Analysis-managed bugs for a particular LUCI project.
+// updateAnalysisAndBugsForProject updates LUCI Analysis-managed bugs for a particular LUCI project.
 func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (retErr error) {
 	defer func() {
 		// Catch panics, to avoid panics in one project from affecting
@@ -294,7 +293,8 @@ func updateAnalysisAndBugsForProject(ctx context.Context, opts updateOptions) (r
 	if err != nil {
 		return errors.Annotate(err, "read project config").Err()
 	}
-	if opts.enableBugUpdates {
+	hasBugSystem := projectCfg.Config.Monorail != nil || projectCfg.Config.Buganizer != nil
+	if opts.enableBugUpdates && hasBugSystem {
 		mgrs := make(map[string]BugManager)
 
 		if projectCfg.Config.Monorail != nil {
