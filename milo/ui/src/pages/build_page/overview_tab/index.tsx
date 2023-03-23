@@ -15,6 +15,7 @@
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
+import { PropertyViewer } from '../../../components/property_viewer';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { useStore } from '../../../store';
 import { ActionsSection, Dialog } from './actions_section';
@@ -87,6 +88,16 @@ export const OverviewTab = observer(() => {
           <TagsSection />
           <ExperimentsSection />
           <BuildPackagesInfo build={store.buildPage.build?.data} />
+          <PropertyViewer
+            title="Input Properties"
+            properties={store.buildPage.build?.data.input?.properties || {}}
+            config={store.userConfig.build.inputProperties}
+          />
+          <PropertyViewer
+            title="Output Properties"
+            properties={store.buildPage.build?.data.output?.properties || {}}
+            config={store.userConfig.build.outputProperties}
+          />
         </div>
       </div>
     </>
