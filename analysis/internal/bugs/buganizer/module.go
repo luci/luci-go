@@ -52,6 +52,9 @@ type ModuleOptions struct {
 	// for the Buganizer client to use for authenticating requests.
 	// Example: "https://www.googleapis.com/auth/placeholder".
 	BuganizerEndpointOAuthScope string
+
+	// The component ID used for creating test issues in Buganizer.
+	BuganizerTestComponentId int64
 }
 
 // Register registers the command line flags.
@@ -74,6 +77,13 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"buganizer-endpoint-oauth-scope",
 		o.BuganizerEndpointOAuthScope,
 		"The Buganizer oauth scope to use for authenticating requests.",
+	)
+
+	f.Int64Var(
+		&o.BuganizerTestComponentId,
+		"buganizer-test-component-id",
+		o.BuganizerTestComponentId,
+		"The Buganizer component to be used for creating test issues.",
 	)
 }
 
@@ -124,10 +134,13 @@ var BuganizerEndpointBaseKey = "go.chromium.org/luci/analysis/internal/bugs/buga
 
 var BuganizerEndpointOAuthScopeKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerEndpointOAuthScopeKey"
 
+var BuganizerTestComponentIdKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerTestComponentIdKey"
+
 // Initialize is part of module.Module interface.
 func (m *buganizerModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	ctx = context.WithValue(ctx, &BuganizerClientModeKey, m.opts.BuganizerClientMode)
 	ctx = context.WithValue(ctx, &BuganizerEndpointBaseKey, m.opts.BuganizerEndpointBase)
 	ctx = context.WithValue(ctx, &BuganizerEndpointOAuthScopeKey, m.opts.BuganizerEndpointOAuthScope)
+	ctx = context.WithValue(ctx, &BuganizerTestComponentIdKey, m.opts.BuganizerTestComponentId)
 	return ctx, nil
 }
