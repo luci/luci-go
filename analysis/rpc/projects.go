@@ -21,8 +21,9 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
-	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/perms"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -67,22 +68,17 @@ func (*projectServer) GetConfig(ctx context.Context, req *pb.GetProjectConfigReq
 }
 
 func (*projectServer) List(ctx context.Context, request *pb.ListProjectsRequest) (*pb.ListProjectsResponse, error) {
-	projects, err := config.Projects(ctx)
+	readableRealms, err := auth.QueryRealms(ctx, perms.PermGetConfig, "", nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "fetching project configs").Err()
+		return nil, err
 	}
-
-	readableProjects := make([]string, 0, len(projects.Keys()))
-	for _, project := range projects.Keys() {
-		hasAccess, err := perms.HasProjectPermission(ctx, project, perms.PermGetConfig)
-		if err != nil {
-			return nil, err
-		}
-		if hasAccess {
+	readableProjects := make([]string, 0)
+	for _, r := range readableRealms {
+		project, realm := realms.Split(r)
+		if realm == "@root" {
 			readableProjects = append(readableProjects, project)
 		}
 	}
-
 	// Return projects in a stable order.
 	sort.Strings(readableProjects)
 

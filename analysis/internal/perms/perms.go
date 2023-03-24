@@ -116,6 +116,7 @@ var ListTestResultsAndExonerations = []realms.Permission{
 }
 
 func init() {
+	PermGetConfig.AddFlags(realms.UsedInQueryRealms)
 	rdbperms.PermListTestResults.AddFlags(realms.UsedInQueryRealms)
 	rdbperms.PermListTestExonerations.AddFlags(realms.UsedInQueryRealms)
 }

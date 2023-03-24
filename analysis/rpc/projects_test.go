@@ -165,19 +165,6 @@ func TestProjects(t *testing.T) {
 				},
 			}
 
-			// Setup
-			projectChromium := config.CreateMonorailPlaceholderProjectConfig()
-			projectChrome := config.CreateMonorailPlaceholderProjectConfig()
-			projectSecret := config.CreateMonorailPlaceholderProjectConfig()
-			projectChromeOS := config.CreateBuganizerPlaceholderProjectConfig()
-
-			configs := make(map[string]*configpb.ProjectConfig)
-			configs["chromium"] = projectChromium
-			configs["chrome"] = projectChrome
-			configs["secret"] = projectSecret
-			configs["chromeos"] = projectChromeOS
-			config.SetTestProjectConfig(ctx, configs)
-
 			request := &pb.ListProjectsRequest{}
 
 			Convey("No permission to view any project", func() {
