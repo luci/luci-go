@@ -852,10 +852,9 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 			Project:  build.Builder.GetProject(),
 		},
 		Resultdb: &pb.BuildInfra_ResultDB{
-			Hostname:       globalCfg.GetResultdb().GetHostname(),
-			Enable:         cfg.GetResultdb().GetEnable(),
-			BqExports:      cfg.GetResultdb().GetBqExports(),
-			HistoryOptions: cfg.GetResultdb().GetHistoryOptions(),
+			Hostname:  globalCfg.GetResultdb().GetHostname(),
+			Enable:    cfg.GetResultdb().GetEnable(),
+			BqExports: cfg.GetResultdb().GetBqExports(),
 		},
 	}
 	if cfg.GetRecipe() != nil {

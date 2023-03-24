@@ -56,7 +56,6 @@ func TestCreateInvocations(t *testing.T) {
 		ctx = memory.UseInfo(ctx, "cr-buildbucket-dev")
 
 		bqExports := []*rdbPb.BigQueryExport{}
-		historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
 
 		Convey("builds without number", func() {
 			builds := []*model.Build{
@@ -71,10 +70,9 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname:       "host",
-								Enable:         true,
-								HistoryOptions: historyOptions,
-								BqExports:      bqExports,
+								Hostname:  "host",
+								Enable:    true,
+								BqExports: bqExports,
 							},
 						},
 					},
@@ -90,9 +88,8 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
-								Enable:         true,
-								HistoryOptions: historyOptions,
-								BqExports:      bqExports,
+								Enable:    true,
+								BqExports: bqExports,
 							},
 						},
 					},
@@ -106,7 +103,6 @@ func TestCreateInvocations(t *testing.T) {
 						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
-						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-1",
@@ -122,7 +118,6 @@ func TestCreateInvocations(t *testing.T) {
 						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/2",
-						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-2",
@@ -154,10 +149,9 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname:       "host",
-								Enable:         true,
-								HistoryOptions: historyOptions,
-								BqExports:      bqExports,
+								Hostname:  "host",
+								Enable:    true,
+								BqExports: bqExports,
 							},
 						},
 						ExecutionTimeout:  durationpb.New(1000),
@@ -175,7 +169,6 @@ func TestCreateInvocations(t *testing.T) {
 						Deadline:         timestamppb.New(deadline),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
-						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-1",
@@ -217,10 +210,9 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname:       "host",
-								Enable:         true,
-								HistoryOptions: historyOptions,
-								BqExports:      bqExports,
+								Hostname:  "host",
+								Enable:    true,
+								BqExports: bqExports,
 							},
 						},
 					},
@@ -234,7 +226,6 @@ func TestCreateInvocations(t *testing.T) {
 						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
-						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-1",
@@ -257,10 +248,9 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname:       "host",
-								Enable:         true,
-								HistoryOptions: historyOptions,
-								BqExports:      bqExports,
+								Hostname:  "host",
+								Enable:    true,
+								BqExports: bqExports,
 							},
 						},
 					},
@@ -286,10 +276,9 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname:       "host",
-								Enable:         true,
-								HistoryOptions: historyOptions,
-								BqExports:      bqExports,
+								Hostname:  "host",
+								Enable:    true,
+								BqExports: bqExports,
 							},
 						},
 					},
@@ -305,10 +294,9 @@ func TestCreateInvocations(t *testing.T) {
 						},
 						Infra: &pb.BuildInfra{
 							Resultdb: &pb.BuildInfra_ResultDB{
-								Hostname:       "host",
-								Enable:         true,
-								HistoryOptions: historyOptions,
-								BqExports:      bqExports,
+								Hostname:  "host",
+								Enable:    true,
+								BqExports: bqExports,
 							},
 						},
 					},
@@ -322,7 +310,6 @@ func TestCreateInvocations(t *testing.T) {
 						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/1",
-						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-1",
@@ -334,7 +321,6 @@ func TestCreateInvocations(t *testing.T) {
 						Deadline:         timestamppb.New(testclock.TestRecentTimeUTC),
 						BigqueryExports:  bqExports,
 						ProducerResource: "//cr-buildbucket-dev.appspot.com/builds/2",
-						HistoryOptions:   historyOptions,
 						Realm:            "proj1:bucket",
 					},
 					RequestId: "build-2",

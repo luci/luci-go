@@ -152,9 +152,5 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		row["CreateRequestId"] = createRequestID
 	}
 
-	if inv.GetHistoryOptions().GetUseInvocationTimestamp() {
-		row["HistoryTime"] = spanner.CommitTimestamp
-	}
-
 	return row
 }

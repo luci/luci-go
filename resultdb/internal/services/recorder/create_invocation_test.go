@@ -508,11 +508,8 @@ func TestCreateInvocation(t *testing.T) {
 					BigqueryExports: []*pb.BigQueryExport{
 						bqExport,
 					},
-					ProducerResource: "//builds.example.com/builds/1",
-					Realm:            "testproject:testrealm",
-					HistoryOptions: &pb.HistoryOptions{
-						UseInvocationTimestamp: true,
-					},
+					ProducerResource:    "//builds.example.com/builds/1",
+					Realm:               "testproject:testrealm",
 					IncludedInvocations: []string{"invocations/u-inv-child"},
 					State:               pb.Invocation_FINALIZING,
 				},

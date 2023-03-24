@@ -178,8 +178,7 @@ type Invocation struct {
 	// Realm that the invocation exists under.
 	// See https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/master/appengine/auth_service/proto/realms_config.proto
 	Realm string `protobuf:"bytes,12,opt,name=realm,proto3" json:"realm,omitempty"`
-	// Specifies if/how to index the contents of this invocation.
-	// Deprecated: values are no longer stored or used.
+	// Deprecated. Values specified here are ignored.
 	HistoryOptions *HistoryOptions `protobuf:"bytes,13,opt,name=history_options,json=historyOptions,proto3" json:"history_options,omitempty"`
 	// Arbitrary JSON object that contains structured, domain-specific properties
 	// of the invocation.

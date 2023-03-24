@@ -21,7 +21,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
@@ -72,7 +71,6 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
 		 i.ProducerResource,
 		 i.Realm,
-		 i.HistoryTime,
 		 i.Properties,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
@@ -89,7 +87,6 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		var createdBy spanner.NullString
 		var producerResource spanner.NullString
 		var realm spanner.NullString
-		var historyTime *timestamppb.Timestamp
 		var properties spanutil.Compressed
 		err := b.FromSpanner(row, &id,
 			&inv.State,
@@ -102,7 +99,6 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&included,
 			&producerResource,
 			&realm,
-			&historyTime,
 			&properties)
 		if err != nil {
 			return err
@@ -113,12 +109,6 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		inv.CreatedBy = createdBy.StringVal
 		inv.ProducerResource = producerResource.StringVal
 		inv.Realm = realm.StringVal
-
-		if historyTime != nil {
-			inv.HistoryOptions = &pb.HistoryOptions{
-				UseInvocationTimestamp: true,
-			}
-		}
 
 		if len(properties) != 0 {
 			inv.Properties = &structpb.Struct{}

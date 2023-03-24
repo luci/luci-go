@@ -74,25 +74,6 @@ CREATE TABLE Invocations (
   -- Value of Invocation.producer_resource. See its documentation.
   ProducerResource STRING(MAX),
 
-  -- If this invocation is to be queried (e.g. for test results history) by an
-  -- ordinal range, such as a commit range, set the following two fields for
-  -- indexing.
-  -- Either _both_ Ordinal and OrdinalDomain need to be NOT NULL to be indexed
-  -- by ordinal, or _both_ are expected to be NULL to skip this index.
-
-  -- A numeric value, where higher values are more recent.
-  Ordinal INT64,
-
-  -- A string, e.g. 'gitiles://<host>/<project>/<ref>', that provides context
-  -- for the Ordinal column, e.g. if it is to be treated as a commit position.
-  OrdinalDomain STRING(MAX),
-
-  -- If this invocation is to be queried by a time range, e.g. for test results
-  -- history query, set this field for indexing. If set, this should match
-  -- CreateTime.
-  -- Nullable to skip indexing some invocations.
-  HistoryTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
-
   -- The common test id prefix for all test results directly included by the
   -- invocation.
   CommonTestIDPrefix STRING(MAX),
@@ -119,16 +100,6 @@ CREATE TABLE Invocations (
 -- tables (Artifacts, IncludedInvocations, TestExonerations, TestResults,
 -- TestResultCounts).
   ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 540 DAY));
-
--- Used by test results history to find a history of test results ordered by
--- invocation timestamp.
-CREATE NULL_FILTERED INDEX InvocationsByTimestamp
-  ON Invocations (Realm, HistoryTime DESC);
-
--- Used by test results history, to find test results ordered by e.g. commit
--- position.
-CREATE NULL_FILTERED INDEX InvocationsByOrdinal
-  ON Invocations (Realm, OrdinalDomain, Ordinal DESC);
 
 -- Index of invocations by expiration time.
 -- Used by a cron job that periodically removes expired invocations.

@@ -171,8 +171,7 @@ message BuilderConfig {
     // tables, or to support multiple test result predicates.
     repeated luci.resultdb.v1.BigQueryExport bq_exports = 2;
 
-    // Specifies if and how to index this build's test results for historical
-    // queries.
+    // Deprecated. Any values specified here are ignored.
     luci.resultdb.v1.HistoryOptions history_options = 3;
   }
 

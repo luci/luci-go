@@ -1139,8 +1139,7 @@ type BuilderConfig_ResultDB struct {
 	// This can have multiple values to export results to multiple BigQuery
 	// tables, or to support multiple test result predicates.
 	BqExports []*v1.BigQueryExport `protobuf:"bytes,2,rep,name=bq_exports,json=bqExports,proto3" json:"bq_exports,omitempty"`
-	// Specifies if and how to index this build's test results for historical
-	// queries.
+	// Deprecated. Any values specified here are ignored.
 	HistoryOptions *v1.HistoryOptions `protobuf:"bytes,3,opt,name=history_options,json=historyOptions,proto3" json:"history_options,omitempty"`
 }
 

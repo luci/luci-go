@@ -99,9 +99,6 @@ func CreateInvocations(ctx context.Context, builds []*model.Build) errors.MultiE
 						Deadline:         timestamppb.New(deadline),
 						ProducerResource: fmt.Sprintf("//%s/builds/%d", bbHost, b.Proto.Id),
 						Realm:            realm,
-						HistoryOptions: &rdbPb.HistoryOptions{
-							UseInvocationTimestamp: b.Proto.GetInfra().GetResultdb().GetHistoryOptions().GetUseInvocationTimestamp(),
-						},
 					},
 					RequestId: invID,
 				}

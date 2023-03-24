@@ -3676,12 +3676,10 @@ func TestScheduleBuild(t *testing.T) {
 			}
 
 			bqExports := []*rdbPb.BigQueryExport{}
-			historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
 			cfg := &pb.BuilderConfig{
 				Resultdb: &pb.BuilderConfig_ResultDB{
-					Enable:         true,
-					HistoryOptions: historyOptions,
-					BqExports:      bqExports,
+					Enable:    true,
+					BqExports: bqExports,
 				},
 			}
 
@@ -3699,10 +3697,9 @@ func TestScheduleBuild(t *testing.T) {
 					Project:  "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{
-					Hostname:       "host",
-					Enable:         true,
-					HistoryOptions: historyOptions,
-					BqExports:      bqExports,
+					Hostname:  "host",
+					Enable:    true,
+					BqExports: bqExports,
 				},
 				Swarming: &pb.BuildInfra_Swarming{
 					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
@@ -5750,7 +5747,6 @@ func TestScheduleBuild(t *testing.T) {
 					},
 				}), ShouldBeNil)
 				bqExports := []*rdbPb.BigQueryExport{}
-				historyOptions := &rdbPb.HistoryOptions{UseInvocationTimestamp: true}
 				So(datastore.Put(ctx, &model.Builder{
 					Parent: model.BucketKey(ctx, "project", "bucket"),
 					ID:     "builder_with_rdb",
@@ -5759,9 +5755,8 @@ func TestScheduleBuild(t *testing.T) {
 						Name:         "builder_with_rdb",
 						SwarmingHost: "host",
 						Resultdb: &pb.BuilderConfig_ResultDB{
-							Enable:         true,
-							HistoryOptions: historyOptions,
-							BqExports:      bqExports,
+							Enable:    true,
+							BqExports: bqExports,
 						},
 					},
 				}), ShouldBeNil)
@@ -5778,7 +5773,6 @@ func TestScheduleBuild(t *testing.T) {
 						Invocation: &rdbPb.Invocation{
 							BigqueryExports:  bqExports,
 							ProducerResource: "//app.appspot.com/builds/9021868963221610321",
-							HistoryOptions:   historyOptions,
 							Realm:            "project:bucket",
 							Deadline:         timestamppb.New(deadline),
 						},
