@@ -20,6 +20,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/luciexe/exe"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -102,5 +104,97 @@ func TestUpdatePayloadPath(t *testing.T) {
 					},
 				},
 			})
+	})
+}
+
+func TestUpdateLedProperties(t *testing.T) {
+	t.Parallel()
+
+	Convey(`UpdateLedProperties`, t, func() {
+		bb := testBBJob(false).GetBuildbucket()
+		bb.EnsureBasics()
+		Convey(`cas input`, func() {
+			bld := bb.BbagentArgs.Build
+			bld.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{
+				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+					Data: map[string]*bbpb.InputDataRef{
+						"kitchen-checkout": {
+							DataType: &bbpb.InputDataRef_Cas{
+								Cas: &bbpb.InputDataRef_CAS{
+									CasInstance: "projects/project/instances/instance",
+									Digest: &bbpb.InputDataRef_CAS_Digest{
+										Hash:      "hash",
+										SizeBytes: 1,
+									},
+								},
+							},
+						},
+					},
+				},
+				Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+					"kitchen-checkout": bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+				},
+			}
+			bb.WriteProperties(map[string]any{
+				"$recipe_engine/led": &ledProperties{
+					ShadowedBucket: "bucket",
+				},
+			})
+
+			err := bb.UpdateLedProperties()
+			So(err, ShouldBeNil)
+			newProps := ledProperties{}
+			err = exe.ParseProperties(bld.Input.Properties, map[string]any{
+				"$recipe_engine/led": &newProps,
+			})
+			So(err, ShouldBeNil)
+			So(newProps, ShouldResemble, ledProperties{
+				RbeCasInput: &swarmingpb.CASReference{
+					CasInstance: "projects/project/instances/instance",
+					Digest: &swarmingpb.Digest{
+						Hash:      "hash",
+						SizeBytes: 1,
+					},
+				},
+				ShadowedBucket: "bucket",
+			})
+		})
+		Convey(`cipd input`, func() {
+			bld := bb.BbagentArgs.Build
+			bld.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{
+				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
+					Data: map[string]*bbpb.InputDataRef{
+						"kitchen-checkout": {
+							DataType: &bbpb.InputDataRef_Cipd{
+								Cipd: &bbpb.InputDataRef_CIPD{
+									Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{
+										{
+											Package: "package",
+											Version: "version"},
+									},
+								},
+							},
+						},
+					},
+				},
+				Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
+					"kitchen-checkout": bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
+				},
+			}
+
+			err := bb.UpdateLedProperties()
+			So(err, ShouldBeNil)
+			newProps := ledProperties{}
+			err = exe.ParseProperties(bld.Input.Properties, map[string]any{
+				"$recipe_engine/led": &newProps,
+			})
+			So(err, ShouldBeNil)
+			So(newProps, ShouldResemble, ledProperties{
+				CIPDInput: &cipdInput{
+					Package: "package",
+					Version: "version",
+				},
+			})
+		})
 	})
 }

@@ -39,33 +39,15 @@ func (b bbInfo) TaskName() string {
 }
 
 func (b bbInfo) CurrentIsolated() (*swarmingpb.CASReference, error) {
-	agent := b.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetAgent()
-	if agent == nil {
-		return nil, nil
-	}
-
-	payloadPath := ""
-	for p, purpose := range agent.GetPurposes() {
-		if purpose == bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD {
-			payloadPath = p
-			break
-		}
-	}
-	if payloadPath == "" {
-		return nil, nil
-	}
-	inputData := agent.GetInput().GetData()
-	if ref, ok := inputData[payloadPath]; ok {
-		cas := ref.GetCas()
-		if cas != nil {
-			return &swarmingpb.CASReference{
-				CasInstance: cas.GetCasInstance(),
-				Digest: &swarmingpb.Digest{
-					Hash:      cas.GetDigest().GetHash(),
-					SizeBytes: cas.GetDigest().GetSizeBytes(),
-				},
-			}, nil
-		}
+	cas, _ := b.Payload()
+	if cas != nil {
+		return &swarmingpb.CASReference{
+			CasInstance: cas.GetCasInstance(),
+			Digest: &swarmingpb.Digest{
+				Hash:      cas.GetDigest().GetHash(),
+				SizeBytes: cas.GetDigest().GetSizeBytes(),
+			},
+		}, nil
 	}
 	return nil, nil
 }
@@ -169,6 +151,13 @@ func (b bbInfo) GitilesCommit() (ret *bbpb.GitilesCommit) {
 }
 
 func (b bbInfo) TaskPayloadSource() (cipdPkg, cipdVers string) {
+	_, cipd := b.Payload()
+	if len(cipd.GetSpecs()) > 0 {
+		cipdPkg = cipd.Specs[0].GetPackage()
+		cipdVers = cipd.Specs[0].GetVersion()
+		return
+	}
+	// Fall back to getting payload from exe.
 	exe := b.GetBbagentArgs().GetBuild().GetExe()
 	cipdPkg = exe.GetCipdPackage()
 	cipdVers = exe.GetCipdVersion()

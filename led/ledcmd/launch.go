@@ -150,8 +150,14 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	if jd.GetBuildbucket() == nil {
 		return nil, nil
 	}
-	build := jd.GetBuildbucket().GetBbagentArgs().GetBuild()
+	bb := jd.GetBuildbucket()
+	build := bb.GetBbagentArgs().GetBuild()
 	build.CanOutliveParent = opts.CanOutliveParent
+	err := bb.UpdateLedProperties()
+	if err != nil {
+		return nil, err
+	}
+
 	if opts.DryRun {
 		return build, nil
 	}
@@ -159,7 +165,7 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	bbClient := newBuildbucketClient(authClient, build.GetInfra().GetBuildbucket().GetHostname())
 
 	bbCtx := lucictx.GetBuildbucket(ctx)
-	if bbCtx != nil && bbCtx.GetScheduleBuildToken() != "" {
+	if bbCtx != nil && bbCtx.GetScheduleBuildToken() != "" && bbCtx.GetScheduleBuildToken() != buildbucket.DummyBuildbucketToken {
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, bbCtx.ScheduleBuildToken))
 	} else {
 		build.CanOutliveParent = false

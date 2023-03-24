@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/luciexe/exe"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
 // WriteProperties writes an input property on this Buildbucket message.
@@ -112,6 +113,18 @@ func (b *Buildbucket) PayloadPath() string {
 	return protoutil.ExePayloadPath(b.BbagentArgs.GetBuild())
 }
 
+func (b *Buildbucket) Payload() (*bbpb.InputDataRef_CAS, *bbpb.InputDataRef_CIPD) {
+	payloadPath := b.PayloadPath()
+	inputData := b.BbagentArgs.GetBuild().GetInfra().GetBuildbucket().GetAgent().GetInput().GetData()
+	if inputData == nil {
+		return nil, nil
+	}
+	if ref, ok := inputData[payloadPath]; ok {
+		return ref.GetCas(), ref.GetCipd()
+	}
+	return nil, nil
+}
+
 func (b *Buildbucket) CacheDir() string {
 	return protoutil.CacheDir(b.BbagentArgs.GetBuild())
 }
@@ -120,4 +133,42 @@ func (b *Buildbucket) CacheDir() string {
 // downloading CIPD packages.
 func (b *Buildbucket) BbagentDownloadCIPDPkgs() bool {
 	return !b.LegacyKitchen && stringset.NewFromSlice(b.GetBbagentArgs().GetBuild().GetInput().GetExperiments()...).Has(buildbucket.ExperimentBBAgentDownloadCipd)
+}
+
+func (b *Buildbucket) UpdateLedProperties() error {
+	curLedProps := &ledProperties{}
+	err := exe.ParseProperties(b.GetBbagentArgs().GetBuild().GetInput().GetProperties(), map[string]any{
+		"$recipe_engine/led": curLedProps,
+	})
+	if err != nil {
+		return errors.Annotate(err, `failed to parse input property "$recipe_engine/led"`).Err()
+	}
+	props := &ledProperties{
+		ShadowedBucket: curLedProps.ShadowedBucket,
+	}
+
+	cas, cipd := b.Payload()
+	switch {
+	case len(cipd.GetSpecs()) > 0:
+		props.CIPDInput = &cipdInput{
+			Package: cipd.Specs[0].GetPackage(),
+			Version: cipd.Specs[0].GetVersion(),
+		}
+	case cas != nil:
+		props.RbeCasInput = &swarmingpb.CASReference{
+			CasInstance: cas.GetCasInstance(),
+			Digest: &swarmingpb.Digest{
+				Hash:      cas.GetDigest().GetHash(),
+				SizeBytes: cas.GetDigest().GetSizeBytes(),
+			},
+		}
+	}
+
+	b.WriteProperties(map[string]any{
+		"$recipe_engine/led": nil,
+	})
+	b.WriteProperties(map[string]any{
+		"$recipe_engine/led": props,
+	})
+	return nil
 }

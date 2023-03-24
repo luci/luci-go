@@ -50,6 +50,8 @@ type ledProperties struct {
 	RbeCasInput *swarmingpb.CASReference `json:"rbe_cas_input,omitempty"`
 
 	CIPDInput *cipdInput `json:"cipd_input,omitempty"`
+
+	ShadowedBucket string `json:"shadowed_bucket"`
 }
 
 // For accepting the "-resultdb" flag of "led launch".
