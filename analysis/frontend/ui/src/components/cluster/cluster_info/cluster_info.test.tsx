@@ -16,7 +16,9 @@ import '@testing-library/jest-dom';
 
 import fetchMock from 'fetch-mock-jest';
 
-import { screen } from '@testing-library/react';
+import {
+  screen,
+} from '@testing-library/react';
 
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
@@ -52,6 +54,7 @@ describe('test ClusterInfo component', () => {
     );
 
     await screen.findByText('Failure reason cluster');
+    await screen.findByTestId('cluster-definition');
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(screen.getByText(mockCluster.title!)).toBeInTheDocument();
@@ -67,11 +70,12 @@ describe('test ClusterInfo component', () => {
 
     renderWithRouterAndClient(
         <ClusterContextProvider project={project} clusterAlgorithm={algorithm} clusterId={id}>
-          <ClusterInfo/>
+          <ClusterInfo />
         </ClusterContextProvider>,
     );
 
     await screen.findByText('Test name cluster');
+    await screen.findByTestId('cluster-definition');
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(screen.getByText(mockCluster.title!)).toBeInTheDocument();

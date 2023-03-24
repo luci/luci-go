@@ -19,7 +19,7 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import UTC from 'dayjs/plugin/utc';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
 import createInnerHTMLSanitizingPolicy from '@chopsui/trusted-types-policy';
@@ -32,8 +32,11 @@ dayjs.extend(localizedFormat);
 
 createInnerHTMLSanitizingPolicy();
 
-ReactDOM.render(
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const root = createRoot( document.getElementById('app-root')!);
+
+root.render(
     <BrowserRouter>
       <App />
-    </BrowserRouter>
-    , document.getElementById('app-root'));
+    </BrowserRouter>,
+);

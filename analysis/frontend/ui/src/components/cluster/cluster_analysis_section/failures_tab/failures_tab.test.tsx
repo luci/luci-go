@@ -19,6 +19,7 @@ import fetchMock from 'fetch-mock-jest';
 import {
   fireEvent,
   screen,
+  waitFor,
 } from '@testing-library/react';
 
 import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
@@ -52,7 +53,7 @@ describe('Test FailureTable component', () => {
 
     await screen.findByRole('table');
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    expect(screen.getByText(mockFailures[0].testId!)).toBeInTheDocument();
+    await waitFor( () => expect(screen.getByText(mockFailures[0].testId!)).toBeInTheDocument());
   });
 
   it('when clicking a sortable column then should modify groups order', async () => {
@@ -76,6 +77,7 @@ describe('Test FailureTable component', () => {
     );
 
     await screen.findByRole('table');
+    await screen.findAllByTestId('failures_table_group_cell');
 
     let allGroupCells = screen.getAllByTestId('failures_table_group_cell');
     expect(allGroupCells.length).toBe(3);
@@ -108,6 +110,7 @@ describe('Test FailureTable component', () => {
     );
 
     await screen.findByRole('table');
+    await screen.findAllByTestId('failures_table_group_cell');
 
     let allGroupCells = screen.getAllByTestId('failures_table_group_cell');
     expect(allGroupCells.length).toBe(1);
@@ -135,6 +138,7 @@ describe('Test FailureTable component', () => {
     );
 
     await screen.findByRole('table');
+    await screen.findAllByTestId('failures_table_group_cell');
 
     let allGroupCells = screen.getAllByTestId('failures_table_group_cell');
     expect(allGroupCells.length).toBe(3);
@@ -165,7 +169,10 @@ describe('Test FailureTable component', () => {
     );
 
     await screen.findByRole('table');
+    await screen.findByTestId('failure_table_group_presubmitrejects');
+
     await fireEvent.change(screen.getByTestId('impact_filter_input'), { target: { value: 'Without Any Retries' } });
+
 
     let presubmitRejects = screen.getByTestId('failure_table_group_presubmitrejects');
     expect(presubmitRejects).toHaveTextContent('1');

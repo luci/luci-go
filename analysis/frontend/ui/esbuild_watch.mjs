@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import { sassPlugin } from 'esbuild-sass-plugin';
-import esbuild from 'esbuild';
+import { context } from 'esbuild';
 
-esbuild.build({
+const ctx = await context({
   entryPoints: ['index.tsx'],
   bundle: true,
   inject: ['src/tools/react_shim.ts'],
@@ -23,7 +23,6 @@ esbuild.build({
   sourcemap: true,
   logLevel: 'debug',
   plugins: [sassPlugin()],
-  watch: true,
   loader: {
     '.png': 'dataurl',
     '.woff': 'dataurl',
@@ -32,7 +31,5 @@ esbuild.build({
     '.ttf': 'dataurl',
     '.svg': 'dataurl',
   },
-}).catch((e) => {
-  // eslint-disable-next-line no-console
-  console.log(e);
 });
+await ctx.watch();

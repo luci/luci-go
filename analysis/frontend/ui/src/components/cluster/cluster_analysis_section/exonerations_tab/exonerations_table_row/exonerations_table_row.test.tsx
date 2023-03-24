@@ -15,6 +15,7 @@
 import '@testing-library/jest-dom';
 
 import {
+  fireEvent,
   render,
   screen,
   waitForElementToBeRemoved,
@@ -60,11 +61,11 @@ describe('Test ExonerationsTableRows component', () => {
     expect(await screen.findByText('someTestId')).toBeInTheDocument();
 
     // Open dialog.
-    screen.getByText('Why?').click();
+    fireEvent.click(screen.getByText('Why?'));
     expect(await screen.findByText('Why is this test variant close to being exonerated?')).toBeInTheDocument();
 
     // Close dialog.
-    screen.getByText('Close').click();
+    fireEvent.click(screen.getByText('Close'));
     await waitForElementToBeRemoved(() => screen.queryByText('Why is this test variant close to being exonerated?'));
     expect(screen.queryByText('Why is this test variant close to being exonerated?')).toBeNull();
   });

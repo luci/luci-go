@@ -20,6 +20,7 @@ import fetchMock from 'fetch-mock-jest';
 import {
   fireEvent,
   screen,
+  waitFor,
 } from '@testing-library/react';
 
 import { Issue } from '@/services/monorail';
@@ -31,7 +32,8 @@ import { mockFetchProjectConfig } from '@/testing_tools/mocks/projects_mock';
 import {
   createDefaultMockRule,
   mockFetchRule,
-} from '../../../testing_tools/mocks/rule_mock';
+} from '@/testing_tools/mocks/rule_mock';
+
 import BugInfo from './bug_info';
 
 describe('Test BugInfo component', () => {
@@ -79,11 +81,10 @@ describe('Test BugInfo component', () => {
     };
 
     renderWithRouterAndClient(
-        <BugInfo
-          rule={mockRule}/>,
+        <BugInfo rule={mockRule}/>,
     );
 
-    expect(screen.getByText(mockRule.bug.linkText)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(mockRule.bug.linkText)).toBeInTheDocument());
   });
 
   it('when clicking edit, should open dialog, even if bug does not load', async () => {

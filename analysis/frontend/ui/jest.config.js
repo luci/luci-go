@@ -24,7 +24,7 @@ module.exports = {
    * The reason we need to set this is because we are importing node_modules which are using
    * `es6` modules and that is not compatible with jest, so we need to transform them.
    */
-  transformIgnorePatterns: ['/node_modules/(?!(lit-element|lit-html|@material|lit|@lit|node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)'],
+  transformIgnorePatterns: ['/node_modules/(?!(node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill|nanoid)/)'],
   moduleNameMapper: {
     '\\.(css|less)$': 'identity-obj-proxy',
     '@/(.*)': '<rootDir>/src/$1',

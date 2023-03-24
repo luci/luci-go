@@ -65,7 +65,7 @@ describe('Test ClustersTable component', () => {
   };
 
   it('should display column headings reflecting the system metrics', async () => {
-    const metrics: Metric[] = [{
+    const metrics : Metric[] = [{
       name: 'metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
@@ -101,7 +101,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject"/>,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -151,7 +151,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject"/>,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -179,7 +179,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject"/>,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -202,7 +202,7 @@ describe('Test ClustersTable component', () => {
     };
     mockQueryClusterSummaries(updatedRequest, updatedResponse);
 
-    await fireEvent.click(screen.getByText('Total Failures'));
+    fireEvent.click(screen.getByText('Total Failures'));
 
     await screen.findByText('crbug.com/2222222');
     await screen.findByTestId('clusters_table_body');
@@ -230,7 +230,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject"/>,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -279,12 +279,12 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_head');
 
-    expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('User Cls Failed Presubmit')).toBeInTheDocument());
 
     fireEvent.mouseDown(within(screen.getByTestId('metrics-selection')).getByRole('button'));
 
@@ -305,12 +305,12 @@ describe('Test ClustersTable component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('clusters_table_head')).toBeInTheDocument();
       expect(within(screen.getByTestId('clusters_table_head')).queryByText('User Cls Failed Presubmit'))
-        .not.toBeInTheDocument();
+          .not.toBeInTheDocument();
     });
   });
 
   it('when removing order by column, should select highest sort order in selected metrics', async () => {
-    const metrics: Metric[] = [{
+    const metrics : Metric[] = [{
       name: 'metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
@@ -346,7 +346,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -366,7 +366,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request2, response2);
 
     const listOfItems = within(screen.getByRole('listbox'));
-    await fireEvent.click(listOfItems.getByText('Metric Charlie'));
+    fireEvent.click(listOfItems.getByText('Metric Charlie'));
     await screen.findByTestId('clusters_table_head');
 
     const request3 = {
@@ -379,7 +379,7 @@ describe('Test ClustersTable component', () => {
     const response3 = { clusterSummaries: [] };
 
     mockQueryClusterSummaries(request3, response3);
-    await fireEvent.click(listOfItems.getByText('Metric Alpha'));
+    fireEvent.click(listOfItems.getByText('Metric Alpha'));
     await screen.findByTestId('clusters_table_head');
 
     await waitFor(() => {
@@ -401,14 +401,14 @@ describe('Test ClustersTable component', () => {
       metrics: [
         'metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
-        'metrics/failures'
+        'metrics/failures',
       ],
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-      <ClustersTable project="testproject" />,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -430,7 +430,7 @@ describe('Test ClustersTable component', () => {
     const mockClusters = [
       getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf'),
       getMockRuleClusterSummary('10000000000000001000000000000000'),
-    ]
+    ];
     const weekResponse: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
     mockQueryClusterSummaries(weekRequest, weekResponse);
 

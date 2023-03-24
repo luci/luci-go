@@ -15,6 +15,7 @@
 import '@testing-library/jest-dom';
 
 import {
+  fireEvent,
   render,
   screen,
   waitForElementToBeRemoved,
@@ -66,11 +67,11 @@ describe('Test CLList component', () => {
     expect(screen.getByText('...')).toBeInTheDocument();
     expect(screen.queryByText('85132217 #432')).toBeNull();
 
-    screen.getByText('...').click();
+    fireEvent.click(screen.getByText('...'));
 
     expect(await screen.findByText('85132217 #432')).toBeInTheDocument();
 
-    screen.getByText('...').click();
+    fireEvent.click(screen.getByText('...'));
 
     await waitForElementToBeRemoved(() => screen.queryByText('85132217 #432'));
     expect(screen.queryByText('85132217 #432')).toBeNull();
