@@ -386,7 +386,6 @@ func (ac *Context) Export(ctx context.Context, env environ.Env) context.Context 
 
 	if ac.EnableGitAuth {
 		env.Set("GIT_TERMINAL_PROMPT", "0")           // no interactive prompts
-		env.Set("GIT_CONFIG_NOSYSTEM", "1")           // no $(prefix)/etc/gitconfig
 		env.Set("INFRA_GIT_WRAPPER_HOME", ac.gitHome) // tell gitwrapper about the new HOME
 	}
 

@@ -58,7 +58,7 @@ func TestGitConfig(t *testing.T) {
 [pack]
   packSizeLimit = 2g
 
-; Reduce noise.
+# Reduce noise.
 [advice]
   detachedHead = false
 
@@ -72,6 +72,7 @@ func TestGitConfig(t *testing.T) {
   autodetach = false
 
 [credential]
+  helper =
   helper = luci
 
 [url "https://host-a/a/"]
@@ -100,7 +101,7 @@ func TestGitConfig(t *testing.T) {
 [pack]
   packSizeLimit = 2g
 
-; Reduce noise.
+# Reduce noise.
 [advice]
   detachedHead = false
 
@@ -110,9 +111,6 @@ func TestGitConfig(t *testing.T) {
   # X-Encrypted-Debug-Headers.
   extraheader = X-Return-Encrypted-Headers: all
 
-  # This is path inside mingw64 installation, bundled with Git For Windows.
-  sslCAinfo = /ssl/certs/ca-bundle.crt
-
 [diff "astextplain"]
   textconv = astextplain
 
@@ -120,6 +118,7 @@ func TestGitConfig(t *testing.T) {
   autodetach = false
 
 [credential]
+  helper =
   helper = luci
 
 [url "https://host-a/a/"]
