@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import styled from '@emotion/styled';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
@@ -34,6 +35,34 @@ import { SummarySection } from './summary_section';
 import { TagsSection } from './tags_section';
 import { TimingSection } from './timing_section';
 
+const ContainerDiv = styled.div({
+  margin: '10px 16px',
+  '@media screen and (min-width: 1300px)': { display: 'grid', gridTemplateColumns: '1fr 20px 40vw' },
+  '& h3': {
+    marginBlock: '15px 10px',
+  },
+  '& h4': {
+    marginBlock: '10px 10px',
+  },
+  '& td:nth-of-type(2)': {
+    clear: 'both',
+    overflowWrap: 'anywhere',
+  },
+  '& h3:first-of-type': {
+    marginBlock: '5px 10px',
+  },
+});
+
+const FirstColumn = styled.div({
+  overflow: 'hidden',
+  gridColumn: 1,
+});
+
+const SecondColumn = styled.div({
+  overflow: 'hidden',
+  gridColumn: 3,
+});
+
 export const OverviewTab = observer(() => {
   const store = useStore();
 
@@ -48,36 +77,13 @@ export const OverviewTab = observer(() => {
     <>
       <RetryBuildDialog open={activeDialog === Dialog.RetryBuild} onClose={() => setActiveDialog(Dialog.None)} />
       <CancelBuildDialog open={activeDialog === Dialog.CancelBuild} onClose={() => setActiveDialog(Dialog.None)} />
-      <div
-        css={{
-          margin: '10px 16px',
-          '@media screen and (min-width: 1300px)': { display: 'grid', gridTemplateColumns: '1fr 20px 40vw' },
-          '& h3': {
-            marginBlock: '15px 10px',
-          },
-          '& h4': {
-            marginBlock: '10px 10px',
-          },
-          '& td:nth-of-type(2)': {
-            clear: 'both',
-            overflowWrap: 'anywhere',
-          },
-        }}
-      >
-        <div css={{ overflow: 'hidden', gridColumn: 1 }}>
+      <ContainerDiv>
+        <FirstColumn>
           <SummarySection />
           <FailedTestSection />
           <StepsSection />
-        </div>
-        <div
-          css={{
-            overflow: 'hidden',
-            gridColumn: 3,
-            '& h3:first-of-type': {
-              marginBlock: '5px 10px',
-            },
-          }}
-        >
+        </FirstColumn>
+        <SecondColumn>
           <BuilderInfoSection />
           <InputSection />
           <OutputSection />
@@ -98,8 +104,8 @@ export const OverviewTab = observer(() => {
             properties={store.buildPage.build?.data.output?.properties || {}}
             config={store.userConfig.build.outputProperties}
           />
-        </div>
-      </div>
+        </SecondColumn>
+      </ContainerDiv>
     </>
   );
 });

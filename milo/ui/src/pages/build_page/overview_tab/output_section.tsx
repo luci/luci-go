@@ -20,7 +20,7 @@ import { RevisionRow } from './revision_row';
 export const OutputSection = observer(() => {
   const store = useStore();
   const output = store.buildPage.build?.data.output;
-  if (!output) {
+  if (!output?.gitilesCommit) {
     return <></>;
   }
 
@@ -28,7 +28,9 @@ export const OutputSection = observer(() => {
     <>
       <h3>Output</h3>
       <table>
-        <tbody>{output.gitilesCommit && <RevisionRow commit={output.gitilesCommit} />}</tbody>
+        <tbody>
+          <RevisionRow commit={output.gitilesCommit} />
+        </tbody>
       </table>
     </>
   );

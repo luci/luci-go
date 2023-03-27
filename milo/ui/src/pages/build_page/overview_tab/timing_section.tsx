@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import styled from '@emotion/styled';
 import { Info } from '@mui/icons-material';
+import { IconProps } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
 import { Timestamp } from '../../../components/timestamp';
 import { displayDuration } from '../../../libs/time_utils';
 import { useStore } from '../../../store';
+
+const InlineInfo = styled(Info)<IconProps>({
+  verticalAlign: 'bottom',
+});
 
 export const TimingSection = observer(() => {
   const store = useStore();
@@ -48,14 +54,15 @@ export const TimingSection = observer(() => {
           <tr>
             <td>Pending:</td>
             <td>
-              {displayDuration(build.pendingDuration)} {build.isPending ? '(and counting)' : ''}
+              {displayDuration(build.pendingDuration)}
+              {build.isPending ? '(and counting)' : ''}
               {build.exceededSchedulingTimeout ? <span className="warning">(exceeded timeout)</span> : ''}
               <span
                 title={`Maximum pending duration: ${
                   build.schedulingTimeout ? displayDuration(build.schedulingTimeout) : 'N/A'
                 }`}
               >
-                <Info />
+                <InlineInfo fontSize="small" />
               </span>
             </td>
           </tr>
@@ -70,7 +77,7 @@ export const TimingSection = observer(() => {
                   build.executionTimeout ? displayDuration(build.executionTimeout) : 'N/A'
                 }`}
               >
-                <Info />
+                <InlineInfo fontSize="small" />
               </span>
             </td>
           </tr>
