@@ -44,11 +44,11 @@ export const createDefaultMockListRulesResponse = (): ListRulesResponse => {
   };
 };
 
-export const mockFetchRules = () => {
+export const mockFetchRules = (response: ListRulesResponse) => {
   fetchMock.post('http://localhost/prpc/luci.analysis.v1.Rules/List', {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(createDefaultMockListRulesResponse()),
+    body: ')]}\'' + JSON.stringify(response),
   });
 };

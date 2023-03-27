@@ -66,7 +66,7 @@ export interface Rule {
     name: string;
     project: string;
     ruleId: string;
-    ruleDefinition: string;
+    ruleDefinition?: string;
     bug: AssociatedBug;
     isActive: boolean;
     isManagingBug: boolean;

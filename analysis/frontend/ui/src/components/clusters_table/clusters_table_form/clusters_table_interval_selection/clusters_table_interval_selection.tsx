@@ -41,18 +41,18 @@ const MenuProps = {
 // selection.
 export const TIME_INTERVAL_OPTIONS: TimeInterval[] = [
   {
-    id: "24h",
-    label: "Last 24 hours",
+    id: '24h',
+    label: 'Last 24 hours',
     duration: 24,
   },
   {
-    id: "3d",
-    label: "Last 3 days",
+    id: '3d',
+    label: 'Last 3 days',
     duration: 3 * 24,
   },
   {
-    id: "7d",
-    label: "Last 7 days",
+    id: '7d',
+    label: 'Last 7 days',
     duration: 7 * 24,
   },
 ];
@@ -74,16 +74,16 @@ export const ClustersTableIntervalSelection = () => {
     <Grid item>
       <FormControl
         data-testid="interval-selection"
-        sx={{ width: "100%" }}>
+        sx={{ width: '100%' }}>
         <InputLabel id="interval-selection-label">Time range</InputLabel>
         <Select
           labelId="interval-selection-label"
           id="interval-selection"
-          value={selectedInterval ? selectedInterval.id : ""}
+          value={selectedInterval ? selectedInterval.id : ''}
           onChange={handleIntervalChanged}
           input={<OutlinedInput label="Time range" />}
           MenuProps={MenuProps}
-          inputProps={{ "data-testid": "clusters-table-interval-selection" }}
+          inputProps={{ 'data-testid': 'clusters-table-interval-selection' }}
         >
           {TIME_INTERVAL_OPTIONS.map((interval) => (
             <MenuItem key={interval.id} value={interval.id}>

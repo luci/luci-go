@@ -70,6 +70,6 @@ describe('test ImpactSection component', () => {
       } else {
         expect(screen.queryByTestId('chart-' + m.metricId)).toBeNull();
       }
-    })
+    });
   });
 });

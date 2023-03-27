@@ -101,7 +101,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+        <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -179,7 +179,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -230,7 +230,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject"/>,
+        <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');

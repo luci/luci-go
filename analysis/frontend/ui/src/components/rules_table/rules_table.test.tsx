@@ -15,18 +15,28 @@
 import '@testing-library/jest-dom';
 import 'node-fetch';
 
+import fetchMock from 'fetch-mock-jest';
+
 import { screen } from '@testing-library/react';
 
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
-import { mockFetchRules } from '@/testing_tools/mocks/rules_mock';
+import {
+  mockFetchRules,
+  createDefaultMockListRulesResponse,
+} from '@/testing_tools/mocks/rules_mock';
 
 import RulesTable from './rules_table';
 
 describe('Test RulesTable component', () => {
+  afterEach(() => {
+    fetchMock.mockClear();
+    fetchMock.reset();
+  });
+
   it('given a project, should display the active rules', async () => {
     mockFetchAuthState();
-    mockFetchRules();
+    mockFetchRules(createDefaultMockListRulesResponse());
 
     renderWithRouterAndClient(
         <RulesTable
@@ -40,5 +50,25 @@ describe('Test RulesTable component', () => {
     expect(screen.getByText('crbug.com/90002')).toBeInTheDocument();
     expect(screen.getByText('test LIKE "rule1%"')).toBeInTheDocument();
     expect(screen.getByText('reason LIKE "rule2%"')).toBeInTheDocument();
+  });
+
+  it('if rule definitions are unavailable, filler text is displayed', async () => {
+    mockFetchAuthState();
+    const response = createDefaultMockListRulesResponse();
+    response.rules?.forEach((r) => {
+      r.ruleDefinition = undefined;
+    });
+
+    mockFetchRules(response);
+
+    renderWithRouterAndClient(
+        <RulesTable
+          project='chromium'/>,
+        '/p/chromium/rules',
+        '/p/:project/rules',
+    );
+    await screen.findByText('Rule Definition');
+
+    expect(screen.queryAllByText('Click to see example failures.')).toHaveLength(2);
   });
 });

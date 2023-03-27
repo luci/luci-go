@@ -41,7 +41,8 @@ describe('Test RuleInfo component', () => {
 
     await screen.findByText('Rule Details');
 
-    expect(screen.getByText(mockRule.ruleDefinition)).toBeInTheDocument();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(screen.getByText(mockRule.ruleDefinition!)).toBeInTheDocument();
     expect(screen.getByText(`${mockRule.sourceCluster.algorithm}/${mockRule.sourceCluster.id}`)).toBeInTheDocument();
     expect(screen.getByText('Archived')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();

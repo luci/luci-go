@@ -29,7 +29,7 @@ import {
 describe('Test ClustersTableIntervalSelection component', () => {
   it('should display the time interval selector', async () => {
     renderWithRouter(
-      <ClustersTableIntervalSelection />,
+        <ClustersTableIntervalSelection />,
     );
 
     await screen.findByTestId('interval-selection');
@@ -43,8 +43,8 @@ describe('Test ClustersTableIntervalSelection component', () => {
   it('given a time interval param in the URL, the interval selection should match', async () => {
     const lastOption = TIME_INTERVAL_OPTIONS[TIME_INTERVAL_OPTIONS.length - 1];
     renderWithRouter(
-      <ClustersTableIntervalSelection />,
-      `/?interval=${lastOption.id}`,
+        <ClustersTableIntervalSelection />,
+        `/?interval=${lastOption.id}`,
     );
 
     await screen.findByTestId('interval-selection');
@@ -54,8 +54,8 @@ describe('Test ClustersTableIntervalSelection component', () => {
 
   it('should have no selection when given an unrecognized time interval ID', async () => {
     renderWithRouter(
-      <ClustersTableIntervalSelection />,
-      '/?interval=5d',
+        <ClustersTableIntervalSelection />,
+        '/?interval=5d',
     );
 
     await screen.findByTestId('interval-selection');

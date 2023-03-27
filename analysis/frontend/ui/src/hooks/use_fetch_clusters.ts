@@ -53,7 +53,7 @@ const intervalDuration = (interval?: TimeInterval): number => {
     return 0;
   }
   return interval.duration;
-}
+};
 
 // orderByClause returns the AIP-132 order by clause needed
 // to sort by the given metric.
@@ -79,33 +79,33 @@ const metricsKey = (metrics: Metric[]): string => {
 };
 
 export const useFetchClusters = (
-  { project, failureFilter, orderBy, metrics, interval }: ClustersFetchOptions,
+    { project, failureFilter, orderBy, metrics, interval }: ClustersFetchOptions,
 ): UseQueryResult<QueryClusterSummariesResponse, Error> => {
   const clustersService = getClustersService();
   return useQuery(
-    ['clusters', project, failureFilter, orderByClause(orderBy), metricsKey(metrics), intervalDuration(interval)],
-    async () => {
-      const now = dayjs();
-      const request: QueryClusterSummariesRequest = {
-        project: project,
-        timeRange: {
-          earliest: now.subtract(intervalDuration(interval), 'hours').toISOString(),
-          latest: now.toISOString(),
-        },
-        failureFilter: failureFilter,
-        orderBy: orderByClause(orderBy),
-        metrics: metrics.map((m) => m.name),
-      };
+      ['clusters', project, failureFilter, orderByClause(orderBy), metricsKey(metrics), intervalDuration(interval)],
+      async () => {
+        const now = dayjs();
+        const request: QueryClusterSummariesRequest = {
+          project: project,
+          timeRange: {
+            earliest: now.subtract(intervalDuration(interval), 'hours').toISOString(),
+            latest: now.toISOString(),
+          },
+          failureFilter: failureFilter,
+          orderBy: orderByClause(orderBy),
+          metrics: metrics.map((m) => m.name),
+        };
 
-      return await clustersService.queryClusterSummaries(request);
-    }, {
-    retry: prpcRetrier,
-    enabled: (
-      orderBy !== undefined &&
+        return await clustersService.queryClusterSummaries(request);
+      }, {
+        retry: prpcRetrier,
+        enabled: (
+          orderBy !== undefined &&
       orderBy.metric !== '' &&
       metrics.length > 0 &&
       interval !== undefined
-    ),
-  },
+        ),
+      },
   );
 };

@@ -79,7 +79,7 @@ const RulesTable = ({ project } : Props ) => {
         <TableHead>
           <TableRow>
             <TableCell>Rule Definition</TableCell>
-            <TableCell sx={{ width: '150px' }}>Bug</TableCell>
+            <TableCell sx={{ width: '180px' }}>Bug</TableCell>
             <TableCell sx={{ width: '100px' }}>Last Updated</TableCell>
           </TableRow>
         </TableHead>
@@ -88,7 +88,11 @@ const RulesTable = ({ project } : Props ) => {
             rules && (
               rules.map((rule) => (
                 <TableRow key={rule.ruleId}>
-                  <TableCell><Link component={RouterLink} to={linkToRule(rule.project, rule.ruleId)} underline="hover">{rule.ruleDefinition}</Link></TableCell>
+                  <TableCell>
+                    <Link component={RouterLink} to={linkToRule(rule.project, rule.ruleId)} underline="hover">
+                      {rule.ruleDefinition || 'Click to see example failures.'}
+                    </Link>
+                  </TableCell>
                   <TableCell><Link href={rule.bug.url} underline="hover">{rule.bug.linkText}</Link></TableCell>
                   <TableCell>{dayjs.utc(rule.lastUpdateTime).local().fromNow()}</TableCell>
                 </TableRow>

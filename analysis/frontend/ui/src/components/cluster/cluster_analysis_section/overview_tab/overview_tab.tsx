@@ -132,7 +132,7 @@ const OverviewTab = ({ value }: Props) => {
   const renderValue = (selected: string[]): string => {
     return (metrics || []).filter((m) => selected.indexOf(m.metricId) >= 0)
         .map((m) => m.humanReadableName).join(', ');
-  }
+  };
 
   return (
     <TabPanel value={value}>

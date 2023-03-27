@@ -16,18 +16,15 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import Archive from '@mui/icons-material/Archive';
-import Edit from '@mui/icons-material/Edit';
 import Unarchive from '@mui/icons-material/Unarchive';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
-import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 
-import CodeBlock from '@/components/codeblock/codeblock';
 import ConfirmDialog from '@/components/confirm_dialog/confirm_dialog';
 import GridLabel from '@/components/grid_label/grid_label';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
@@ -38,10 +35,12 @@ import {
   UpdateRuleRequest,
 } from '@/services/rules';
 import { linkToCluster } from '@/tools/urlHandling/links';
+import RuleDefinition from '../rule_definition/rule_definition';
 
 const definitionTooltipText = 'The failures matched by this rule.';
 const archivedTooltipText = 'Archived failure association rules do not match failures. If a rule is no longer needed, it should be archived.';
 const sourceClusterTooltipText = 'The cluster this rule was originally created from.';
+
 interface Props {
     project: string;
     rule: Rule;
@@ -85,12 +84,7 @@ const RuleInfo = ({ project, rule }: Props) => {
             <HelpTooltip text={definitionTooltipText} />
           </GridLabel>
           <Grid item xs={10} alignItems="center">
-            <IconButton data-testid="rule-definition-edit" onClick={() => setEditDialogOpen(true)} aria-label="edit" sx={{ float: 'right' }}>
-              <Edit />
-            </IconButton>
-            <Box data-testid="rule-definition" sx={{ display: 'grid' }}>
-              <CodeBlock code={rule.ruleDefinition} />
-            </Box>
+            <RuleDefinition definition={rule.ruleDefinition} onEditClicked={() => setEditDialogOpen(true)} />
           </Grid>
           <GridLabel text="Source cluster">
             <HelpTooltip text={sourceClusterTooltipText} />

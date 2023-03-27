@@ -79,7 +79,7 @@ const RuleEditDialog = ({
       <DialogTitle>Edit rule definition</DialogTitle>
       <DialogContent>
         <RuleEditInput
-          definition={currentRuleDefinition}
+          definition={currentRuleDefinition || ''}
           onDefinitionChange={handleDefinitionChange}
         />
       </DialogContent>
