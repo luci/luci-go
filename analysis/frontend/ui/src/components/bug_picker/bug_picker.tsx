@@ -180,8 +180,8 @@ const BugPicker = ({
             onChange={onBugSystemChange}
             variant="standard"
             inputProps={{ 'data-testid': 'bug-system' }}>
-            <MenuItem value={getStaticBugSystem('monorail')}>
-              {projectConfig.monorail.displayPrefix}
+            <MenuItem value={getStaticBugSystem('monorail')} disabled={!projectConfig.monorail}>
+              {projectConfig.monorail?.displayPrefix || 'monorail'}
             </MenuItem>
             <MenuItem value={getStaticBugSystem('buganizer')}>
                 Buganizer
