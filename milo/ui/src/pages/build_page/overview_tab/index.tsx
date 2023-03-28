@@ -20,7 +20,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_u
 import { useStore } from '../../../store';
 import { ActionsSection, Dialog } from './actions_section';
 import { BuildLogSection } from './build_log_section';
-import { BuildPackagesInfo } from './build_packages_info';
+import { BuildPackagesInfoSection } from './build_packages_info_section';
 import { BuilderInfoSection } from './builder_info_section';
 import { CancelBuildDialog } from './cancel_build_dialog';
 import { ExperimentsSection } from './experiments_section';
@@ -94,7 +94,7 @@ export const OverviewTab = observer(() => {
           <TagsSection />
           <ExperimentsSection />
           <PropertiesSection />
-          <BuildPackagesInfo build={store.buildPage.build?.data} />
+          <BuildPackagesInfoSection />
         </SecondColumn>
       </ContainerDiv>
     </>

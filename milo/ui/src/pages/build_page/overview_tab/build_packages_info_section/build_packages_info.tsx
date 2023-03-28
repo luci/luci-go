@@ -13,25 +13,19 @@
 // limitations under the License.
 
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 import { Fragment, useState } from 'react';
 
-import { MiloLink } from '../../../components/link';
-import { getCipdLink } from '../../../libs/build_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../../libs/constants';
-import { Build } from '../../../services/buildbucket';
+import { MiloLink } from '../../../../components/link';
+import { getCipdLink } from '../../../../libs/build_utils';
+import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../../../libs/constants';
+import { Build } from '../../../../services/buildbucket';
 
 export interface BuildPackagesInfoProps {
-  readonly build?: Build;
+  readonly build: Build;
 }
 
-export const BuildPackagesInfo = observer(({ build }: BuildPackagesInfoProps) => {
+export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
   const [displayType, setDisplayType] = useState<null | 'requested' | 'resolved'>(null);
-
-  if (!build) {
-    return <></>;
-  }
-
   const experiments = build.input?.experiments;
   const agent = build.infra?.buildbucket?.agent;
   if (!experiments?.includes('luci.buildbucket.agent.cipd_installation') || !agent) {
@@ -42,7 +36,6 @@ export const BuildPackagesInfo = observer(({ build }: BuildPackagesInfoProps) =>
 
   return (
     <>
-      <h3>Build Packages Info</h3>
       {agent.output?.summaryHtml && (
         <Box
           sx={{ padding: '10px', marginBottom: '10px', clear: 'both', overlapWrap: 'break-word' }}
@@ -136,4 +129,4 @@ export const BuildPackagesInfo = observer(({ build }: BuildPackagesInfoProps) =>
       )}
     </>
   );
-});
+}
