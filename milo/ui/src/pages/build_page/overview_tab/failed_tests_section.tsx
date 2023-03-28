@@ -49,7 +49,7 @@ export const FailedTestSection = observer(() => {
   const testsTabUrl =
     getBuildURLPath(store.buildPage.builderIdParam, store.buildPage.buildNumOrIdParam) + '/test-results';
 
-  if (!testLoader) {
+  if (!testLoader?.firstPageLoaded) {
     return (
       <>
         <Header url={testsTabUrl} />

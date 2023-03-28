@@ -24,12 +24,11 @@ import { ConnectionEvent, ConnectionObserverElement } from './connection_observe
 const LEFT_RIGHT_ARROW = '\u2194';
 
 export interface PropertyViewerProps {
-  readonly title: string;
   readonly properties: { readonly [key: string]: unknown };
   readonly config: PropertyViewerConfigInstance;
 }
 
-export function PropertyViewer({ title, properties, config }: PropertyViewerProps) {
+export function PropertyViewer({ properties, config }: PropertyViewerProps) {
   const formattedValue = JSON.stringify(properties, undefined, 2);
 
   // Ensure the callbacks always refer to the latest values.
@@ -90,26 +89,21 @@ export function PropertyViewer({ title, properties, config }: PropertyViewerProp
     };
   }, []);
 
+  const onChangeHandler = (editor: CodeMirror.Editor) => {
+    formattedValueLines.current.forEach((line, lineIndex) => {
+      if (config.isFolded(line)) {
+        // This triggers folded-root-lvl-prop then this.toggleFold which
+        // updates the timestamp in this.propLineFoldTime[line].
+        // As a result, recently accessed this.propLineFoldTime[line] is
+        // kept fresh.
+        editor.foldCode(lineIndex);
+      }
+    });
+  };
+
   return (
-    <>
-      <h3>{title}</h3>
-      <div ref={containerRef} css={{ minWidth: '600px', maxWidth: '1000px' }}>
-        <CodeMirrorEditor
-          value={formattedValue}
-          initOptions={editorOptions.current}
-          onChange={(editor: CodeMirror.Editor) => {
-            formattedValueLines.current.forEach((line, lineIndex) => {
-              if (config.isFolded(line)) {
-                // This triggers folded-root-lvl-prop then this.toggleFold which
-                // updates the timestamp in this.propLineFoldTime[line].
-                // As a result, recently accessed this.propLineFoldTime[line] is
-                // kept fresh.
-                editor.foldCode(lineIndex);
-              }
-            });
-          }}
-        />
-      </div>
-    </>
+    <div ref={containerRef} css={{ minWidth: '600px', maxWidth: '1000px' }}>
+      <CodeMirrorEditor value={formattedValue} initOptions={editorOptions.current} onChange={onChangeHandler} />
+    </div>
   );
 }

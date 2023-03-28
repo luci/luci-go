@@ -16,7 +16,6 @@ import styled from '@emotion/styled';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
-import { PropertyViewer } from '../../../components/property_viewer';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
 import { useStore } from '../../../store';
 import { ActionsSection, Dialog } from './actions_section';
@@ -29,6 +28,7 @@ import { FailedTestSection } from './failed_tests_section';
 import { InfraSection } from './infra_section';
 import { InputSection } from './input_section';
 import { OutputSection } from './output_section';
+import { PropertiesSection } from './properties_section';
 import { RetryBuildDialog } from './retry_build_dialog';
 import { StepsSection } from './steps_section';
 import { SummarySection } from './summary_section';
@@ -93,17 +93,8 @@ export const OverviewTab = observer(() => {
           <ActionsSection openDialog={(dialog) => setActiveDialog(dialog)} />
           <TagsSection />
           <ExperimentsSection />
+          <PropertiesSection />
           <BuildPackagesInfo build={store.buildPage.build?.data} />
-          <PropertyViewer
-            title="Input Properties"
-            properties={store.buildPage.build?.data.input?.properties || {}}
-            config={store.userConfig.build.inputProperties}
-          />
-          <PropertyViewer
-            title="Output Properties"
-            properties={store.buildPage.build?.data.output?.properties || {}}
-            config={store.userConfig.build.outputProperties}
-          />
         </SecondColumn>
       </ContainerDiv>
     </>
