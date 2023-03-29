@@ -15,11 +15,11 @@
 import { getGerritChangeURL } from '../../../libs/url_utils';
 import { GerritChange } from '../../../services/buildbucket';
 
-export interface PatchRowParams {
+export interface PatchRowProps {
   readonly gerritChange: GerritChange;
 }
 
-export function PatchRow({ gerritChange }: PatchRowParams) {
+export function PatchRow({ gerritChange }: PatchRowProps) {
   return (
     <tr>
       <td>Patch:</td>

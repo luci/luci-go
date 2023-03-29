@@ -203,11 +203,11 @@ declare global {
   }
 }
 
-export interface ConfigWidgetParams {
+export interface ConfigWidgetProps {
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
 
-export function ConfigWidget(props: ConfigWidgetParams) {
+export function ConfigWidget(props: ConfigWidgetProps) {
   return <milo-tvt-config-widget {...props} class={props.className} />;
 }

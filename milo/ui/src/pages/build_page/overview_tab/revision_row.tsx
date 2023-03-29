@@ -15,11 +15,11 @@
 import { getGitilesCommitURL } from '../../../libs/url_utils';
 import { GitilesCommit } from '../../../services/buildbucket';
 
-export interface RevisionRowParams {
+export interface RevisionRowProps {
   readonly commit: GitilesCommit;
 }
 
-export function RevisionRow({ commit }: RevisionRowParams) {
+export function RevisionRow({ commit }: RevisionRowProps) {
   return (
     <tr>
       <td>Revision:</td>

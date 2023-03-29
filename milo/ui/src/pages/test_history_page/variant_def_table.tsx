@@ -95,11 +95,11 @@ declare global {
   }
 }
 
-export interface VariantDefTableParams {
+export interface VariantDefTableProps {
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
 
-export function VariantDefTable(props: VariantDefTableParams) {
+export function VariantDefTable(props: VariantDefTableProps) {
   return <milo-th-variant-def-table {...props} class={props.className} />;
 }

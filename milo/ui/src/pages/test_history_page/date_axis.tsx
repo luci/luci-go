@@ -101,11 +101,11 @@ declare global {
   }
 }
 
-export interface DateAxisParams {
+export interface DateAxisProps {
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
 
-export function DateAxis(props: DateAxisParams) {
+export function DateAxis(props: DateAxisProps) {
   return <milo-th-date-axis {...props} class={props.className} />;
 }

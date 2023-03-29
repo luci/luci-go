@@ -94,10 +94,10 @@ declare global {
   }
 }
 
-export interface InvLitEnvProviderParams {
+export interface InvLitEnvProviderProps {
   readonly children: React.ReactNode;
 }
 
-export function InvLitEnvProvider({ children }: InvLitEnvProviderParams) {
+export function InvLitEnvProvider({ children }: InvLitEnvProviderProps) {
   return <milo-inv-lit-env-provider>{children}</milo-inv-lit-env-provider>;
 }

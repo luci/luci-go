@@ -151,11 +151,11 @@ declare global {
   }
 }
 
-export interface DurationLegendParams {
+export interface DurationLegendProps {
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
 
-export function DurationLegend(props: DurationLegendParams) {
+export function DurationLegend(props: DurationLegendProps) {
   return <milo-th-duration-legend {...props} class={props.className} />;
 }

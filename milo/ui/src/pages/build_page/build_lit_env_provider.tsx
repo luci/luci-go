@@ -165,10 +165,10 @@ declare global {
   }
 }
 
-export interface BuildLitEnvProviderParams {
+export interface BuildLitEnvProviderProps {
   readonly children: React.ReactNode;
 }
 
-export function BuildLitEnvProvider({ children }: BuildLitEnvProviderParams) {
+export function BuildLitEnvProvider({ children }: BuildLitEnvProviderProps) {
   return <milo-build-lit-env-provider>{children}</milo-build-lit-env-provider>;
 }

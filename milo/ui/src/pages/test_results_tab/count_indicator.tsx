@@ -168,11 +168,11 @@ declare global {
   }
 }
 
-export interface CountIndicatorParams {
+export interface CountIndicatorProps {
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
 
-export function CountIndicator(props: CountIndicatorParams) {
+export function CountIndicator(props: CountIndicatorProps) {
   return <milo-trt-count-indicator {...props} class={props.className} />;
 }

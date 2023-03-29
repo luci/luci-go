@@ -267,13 +267,13 @@ declare global {
   }
 }
 
-export interface DetailsTableParams {
+export interface DetailsTableProps {
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
 
 export const DetailsTable = forwardRef(
-  (props: DetailsTableParams, ref: ForwardedRef<TestHistoryDetailsTableElement>) => {
+  (props: DetailsTableProps, ref: ForwardedRef<TestHistoryDetailsTableElement>) => {
     return <milo-th-details-table {...props} ref={ref} class={props.className} />;
   }
 );

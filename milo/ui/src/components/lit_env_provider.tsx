@@ -92,11 +92,11 @@ declare global {
   }
 }
 
-export interface LitEnvProviderParams {
+export interface LitEnvProviderProps {
   readonly children: React.ReactNode;
 }
 
-export function LitEnvProvider({ children }: LitEnvProviderParams) {
+export function LitEnvProvider({ children }: LitEnvProviderProps) {
   const store = useStore();
   const envProviderRef = useRef<LitEnvProviderElement | null>(null);
   const [initialized, setInitialized] = useState(false);

@@ -169,11 +169,11 @@ declare global {
   }
 }
 
-export interface FilterBoxParams {
+export interface FilterBoxProps {
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
 
-export function FilterBox(props: FilterBoxParams) {
+export function FilterBox(props: FilterBoxProps) {
   return <milo-th-filter-box {...props} class={props.className} />;
 }
