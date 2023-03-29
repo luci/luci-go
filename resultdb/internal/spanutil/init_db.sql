@@ -94,7 +94,14 @@ CREATE TABLE Invocations (
   -- See spanutil.Compressed type for details of compression.
   Properties BYTES(MAX),
 
-) PRIMARY KEY (InvocationId), 
+  -- Whether the invocation inherits its source information from the invocation that included it.
+  InheritSources BOOL,
+
+  -- A serialized luci.resultdb.v1.Sources message describing the source information for the
+  -- invocation. Only this or InheritSources may be set, not both.
+  Sources BYTES(MAX),
+
+) PRIMARY KEY (InvocationId),
 -- Add TTL of 1.5 years to Invocations table. The row deletion policy
 -- configured in the parent table will also take effect on the interleaved child
 -- tables (Artifacts, IncludedInvocations, TestExonerations, TestResults,
