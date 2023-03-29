@@ -619,10 +619,6 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		}
 		return nil, appstatus.Errorf(codes.Internal, "failed to update the build entity: %s", err)
 	}
-	experiments := stringset.NewFromSlice(build.Proto.GetInput().GetExperiments()...)
-	if experiments.Has("luci.debug.dump_buildsecret_for_manual_debugging") {
-		logging.Debugf(ctx, fmt.Sprintf("Saved build %d with status: %s", build.ID, build.Status.String()))
-	}
 	// We don't need to redact the build details here, because this can only be called
 	// by the specific machine that has the update token for this build.
 	return build.ToProto(ctx, readMask, nil)

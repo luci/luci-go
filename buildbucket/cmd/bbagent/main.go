@@ -580,21 +580,6 @@ func mainImpl() int {
 		return cancelBuild(ctx, bbclientInput.bbclient, bbclientInput.input.Build)
 	}
 
-	isChildBuild := len(bbclientInput.input.Build.AncestorIds) > 0
-	experiments := stringset.NewFromSlice(bbclientInput.input.Build.GetInput().GetExperiments()...)
-	if experiments.Has("luci.debug.dump_buildsecret_for_manual_debugging") && isChildBuild {
-		// To debug the race issue with bbagent and UpdateBuild
-		// we are going to put bbagent to sleep for 10 min.
-		// Manual calls of UpdateBuild will be done via CLI
-		// during this time.
-		secrets, _ := readBuildSecrets(ctx)
-		logging.Infof(ctx, fmt.Sprintf("dumping build token: %s", secrets.BuildToken))
-		logging.Infof(ctx, "going to sleep for 10 minutes")
-		time.Sleep(10 * time.Minute)
-		logging.Infof(ctx, "finished sleeping")
-		os.Exit(0)
-	}
-
 	// Manipulate the context and obtain a context with cancel
 	ctx = setBuildbucketContext(ctx, hostname, secrets)
 	ctx = setRealmContext(ctx, bbclientInput.input)
