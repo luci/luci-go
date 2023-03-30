@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -59,6 +60,11 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		case "properties":
 			if err := pbutil.ValidateProperties(req.Invocation.Properties); err != nil {
 				return errors.Annotate(err, "invocation: properties").Err()
+			}
+
+		case "source_spec":
+			if err := pbutil.ValidateSourceSpec(req.Invocation.SourceSpec); err != nil {
+				return errors.Annotate(err, "invocation: source_spec").Err()
 			}
 
 		default:
@@ -106,6 +112,11 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			case "properties":
 				values["Properties"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.Properties))
 				ret.Properties = in.Invocation.Properties
+
+			case "source_spec":
+				values["InheritSources"] = spanner.NullBool{Valid: in.Invocation.SourceSpec != nil, Bool: in.Invocation.SourceSpec.GetInherit()}
+				values["Sources"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.SourceSpec.GetSources()))
+				ret.SourceSpec = in.Invocation.SourceSpec
 
 			default:
 				panic("impossible")

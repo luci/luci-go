@@ -18,14 +18,16 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/server/span"
-
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/span"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -36,12 +38,44 @@ func TestRead(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		start := testclock.TestRecentTimeUTC
 
+		properties := &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"key_1": structpb.NewStringValue("value_1"),
+				"key_2": structpb.NewStructValue(&structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"child_key": structpb.NewNumberValue(1),
+					},
+				}),
+			},
+		}
+		sources := &pb.Sources{
+			GitilesCommit: &pb.GitilesCommit{
+				Host:       "chromium.googlesource.com",
+				Project:    "infra/infra",
+				Ref:        "refs/heads/main",
+				CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
+				Position:   567,
+			},
+			Changelists: []*pb.GerritChange{
+				{
+					Host:     "chromium-review.googlesource.com",
+					Project:  "infra/luci-go",
+					Change:   12345,
+					Patchset: 321,
+				},
+			},
+			IsDirty: true,
+		}
+
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
 			insertInvocation("including", map[string]any{
-				"State":      pb.Invocation_ACTIVE,
-				"CreateTime": start,
-				"Deadline":   start.Add(time.Hour),
+				"State":          pb.Invocation_ACTIVE,
+				"CreateTime":     start,
+				"Deadline":       start.Add(time.Hour),
+				"Properties":     spanutil.Compressed(pbutil.MustMarshal(properties)),
+				"Sources":        spanutil.Compressed(pbutil.MustMarshal(sources)),
+				"InheritSources": spanner.NullBool{Bool: true, Valid: true},
 			}),
 			insertInvocation("included0", nil),
 			insertInvocation("included1", nil),
@@ -61,6 +95,11 @@ func TestRead(t *testing.T) {
 			CreateTime:          pbutil.MustTimestampProto(start),
 			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
+			Properties:          properties,
+			SourceSpec: &pb.SourceSpec{
+				Inherit: true,
+				Sources: sources,
+			},
 		})
 	})
 }

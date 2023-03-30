@@ -16,6 +16,7 @@ package recorder
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -223,114 +225,99 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 	now := testclock.TestRecentTimeUTC
 	Convey(`TestValidateCreateInvocationRequest`, t, func() {
 		addedInvs := make(invocations.IDSet)
+		deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+		request := &pb.CreateInvocationRequest{
+			InvocationId: "u-abc",
+			Invocation: &pb.Invocation{
+				Deadline:            deadline,
+				Tags:                pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+				Realm:               "chromium:ci",
+				IncludedInvocations: []string{"invocations/u-abc-2"},
+				State:               pb.Invocation_FINALIZING,
+			},
+		}
+
+		Convey(`valid`, func() {
+			err := validateCreateInvocationRequest(request, now, addedInvs)
+			So(err, ShouldBeNil)
+		})
+
 		Convey(`empty`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now, addedInvs)
 			So(err, ShouldErrLike, `invocation_id: unspecified`)
 		})
 
 		Convey(`invalid id`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "1",
-			}, now, addedInvs)
+			request.InvocationId = "1"
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `invocation_id: does not match`)
 		})
 
 		Convey(`invalid request id`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-a",
-				RequestId:    "😃",
-			}, now, addedInvs)
+			request.RequestId = "😃"
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 
 		Convey(`invalid tags`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-abc",
-				Invocation: &pb.Invocation{
-					Realm: "chromium:ci",
-					Tags:  pbutil.StringPairs("1", "a"),
-				},
-			}, now, addedInvs)
+			request.Invocation.Tags = pbutil.StringPairs("1", "a")
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
 		})
 
 		Convey(`invalid deadline`, func() {
-			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-abc",
-				Invocation: &pb.Invocation{
-					Realm:    "chromium:ci",
-					Deadline: deadline,
-				},
-			}, now, addedInvs)
+			request.Invocation.Deadline = pbutil.MustTimestampProto(now.Add(-time.Hour))
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
 		Convey(`invalid realm`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-abc",
-				Invocation: &pb.Invocation{
-					Realm: "B@d/f::rm@t",
-				},
-			}, now, addedInvs)
+			request.Invocation.Realm = "B@d/f::rm@t"
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `invocation.realm: bad global realm name`)
 		})
 
 		Convey(`invalid state`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-abc",
-				Invocation: &pb.Invocation{
-					Realm: "chromium:ci",
-					State: pb.Invocation_FINALIZED,
-				},
-			}, now, addedInvs)
+			request.Invocation.State = pb.Invocation_FINALIZED
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `invocation.state: cannot be created in the state FINALIZED`)
 		})
 
 		Convey(`invalid included invocation`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-abc",
-				Invocation: &pb.Invocation{
-					Realm:               "chromium:ci",
-					IncludedInvocations: []string{"not an invocation name"},
-				},
-			}, now, addedInvs)
+			request.Invocation.IncludedInvocations = []string{"not an invocation name"}
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `included_invocations[0]: invalid included invocation name`)
 		})
 
 		Convey(`invalid bigqueryExports`, func() {
-			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-abc",
-				Invocation: &pb.Invocation{
-					Deadline: deadline,
-					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
-					Realm:    "chromium:ci",
-					BigqueryExports: []*pb.BigQueryExport{
-						{
-							Project: "project",
-						},
-					},
+			request.Invocation.BigqueryExports = []*pb.BigQueryExport{
+				{
+					Project: "project",
 				},
-			}, now, addedInvs)
+			}
+			err := validateCreateInvocationRequest(request, now, addedInvs)
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
 		})
 
-		Convey(`valid`, func() {
-			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u-abc",
-				Invocation: &pb.Invocation{
-					Deadline:            deadline,
-					Tags:                pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
-					Realm:               "chromium:ci",
-					IncludedInvocations: []string{"invocations/u-abc-2"},
-					State:               pb.Invocation_FINALIZING,
+		Convey(`invalid source spec`, func() {
+			request.Invocation.SourceSpec = &pb.SourceSpec{
+				Sources: &pb.Sources{
+					GitilesCommit: &pb.GitilesCommit{},
 				},
-			}, now, addedInvs)
-			So(err, ShouldBeNil)
+			}
+			err := validateCreateInvocationRequest(request, now, addedInvs)
+			So(err, ShouldErrLike, `source_spec: sources: gitiles_commit: host: unspecified`)
 		})
 
+		Convey(`invalid properties`, func() {
+			request.Invocation.Properties = &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"a": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeProperties)),
+				},
+			}
+			err := validateCreateInvocationRequest(request, now, addedInvs)
+			So(err, ShouldErrLike, `properties: exceeds the maximum size of`, `bytes`)
+		})
 	})
 }
 
@@ -500,6 +487,7 @@ func TestCreateInvocation(t *testing.T) {
 					TestResults: &pb.BigQueryExport_TestResults{},
 				},
 			}
+
 			req = &pb.CreateInvocationRequest{
 				InvocationId: "u-inv",
 				Invocation: &pb.Invocation{
@@ -512,6 +500,10 @@ func TestCreateInvocation(t *testing.T) {
 					Realm:               "testproject:testrealm",
 					IncludedInvocations: []string{"invocations/u-inv-child"},
 					State:               pb.Invocation_FINALIZING,
+					Properties:          testutil.TestProperties(),
+					SourceSpec: &pb.SourceSpec{
+						Sources: testutil.TestSources(),
+					},
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, grpc.Header(headers))

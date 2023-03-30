@@ -130,6 +130,15 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 		includedIDs.Add(invocations.ID(incInvID))
 	}
+
+	if err := pbutil.ValidateSourceSpec(inv.GetSourceSpec()); err != nil {
+		return errors.Annotate(err, "source_spec").Err()
+	}
+
+	if err := pbutil.ValidateProperties(req.Invocation.GetProperties()); err != nil {
+		return errors.Annotate(err, "properties").Err()
+	}
+
 	return nil
 }
 

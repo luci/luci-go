@@ -232,6 +232,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 							ProducerResource:    "//builds.example.com/builds/1",
 							Realm:               "testproject:testrealm",
 							IncludedInvocations: []string{"invocations/u-batch-inv2"},
+							Properties:          testutil.TestProperties(),
+							SourceSpec: &pb.SourceSpec{
+								Inherit: true,
+							},
 						},
 					},
 					{
@@ -244,6 +248,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 							},
 							ProducerResource: "//builds.example.com/builds/2",
 							Realm:            "testproject:testrealm",
+							Properties:       testutil.TestProperties(),
+							SourceSpec: &pb.SourceSpec{
+								Sources: testutil.TestSources(),
+							},
 						},
 					},
 				},

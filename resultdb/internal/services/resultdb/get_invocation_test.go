@@ -18,12 +18,14 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -69,13 +71,15 @@ func TestGetInvocation(t *testing.T) {
 		srv := newTestResultDBService()
 
 		Convey(`Valid`, func() {
-
 			// Insert some Invocations.
 			testutil.MustApply(ctx,
 				insert.Invocation("including", pb.Invocation_ACTIVE, map[string]any{
-					"CreateTime": ct,
-					"Deadline":   deadline,
-					"Realm":      "testproject:testrealm",
+					"CreateTime":     ct,
+					"Deadline":       deadline,
+					"Realm":          "testproject:testrealm",
+					"Properties":     spanutil.Compress(pbutil.MustMarshal(testutil.TestProperties())),
+					"Sources":        spanutil.Compress(pbutil.MustMarshal(testutil.TestSources())),
+					"InheritSources": spanner.NullBool{Valid: true, Bool: true},
 				}),
 				insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
 				insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
@@ -94,6 +98,11 @@ func TestGetInvocation(t *testing.T) {
 				Deadline:            pbutil.MustTimestampProto(deadline),
 				IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 				Realm:               "testproject:testrealm",
+				Properties:          testutil.TestProperties(),
+				SourceSpec: &pb.SourceSpec{
+					Sources: testutil.TestSources(),
+					Inherit: true,
+				},
 			})
 		})
 

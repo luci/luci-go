@@ -72,6 +72,8 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		 i.ProducerResource,
 		 i.Realm,
 		 i.Properties,
+		 i.Sources,
+		 i.InheritSources,
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
 	`)
@@ -84,10 +86,14 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 		included := IDSet{}
 		inv := &pb.Invocation{}
 
-		var createdBy spanner.NullString
-		var producerResource spanner.NullString
-		var realm spanner.NullString
-		var properties spanutil.Compressed
+		var (
+			createdBy        spanner.NullString
+			producerResource spanner.NullString
+			realm            spanner.NullString
+			properties       spanutil.Compressed
+			sources          spanutil.Compressed
+			inheritSources   spanner.NullBool
+		)
 		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&createdBy,
@@ -99,7 +105,9 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			&included,
 			&producerResource,
 			&realm,
-			&properties)
+			&properties,
+			&sources,
+			&inheritSources)
 		if err != nil {
 			return err
 		}
@@ -117,6 +125,16 @@ func readMulti(ctx context.Context, ids IDSet, f func(id ID, inv *pb.Invocation)
 			}
 		}
 
+		if inheritSources.Valid || len(sources) > 0 {
+			inv.SourceSpec = &pb.SourceSpec{}
+			inv.SourceSpec.Inherit = inheritSources.Valid && inheritSources.Bool
+			if len(sources) != 0 {
+				inv.SourceSpec.Sources = &pb.Sources{}
+				if err := proto.Unmarshal(sources, inv.SourceSpec.Sources); err != nil {
+					return err
+				}
+			}
+		}
 		return f(id, inv)
 	})
 }

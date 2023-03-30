@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -56,4 +57,31 @@ func InvocationName(id string) string {
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	SortStringPairs(inv.Tags)
+}
+
+// ValidateSourceSpec validates a source specification.
+func ValidateSourceSpec(sourceSpec *pb.SourceSpec) error {
+	// Treat nil sourceSpec message as empty message.
+	if sourceSpec.GetInherit() && sourceSpec.GetSources() != nil {
+		return errors.Reason("only one of inherit and sources may be set").Err()
+	}
+	if sourceSpec.GetSources() != nil {
+		if err := ValidateSources(sourceSpec.Sources); err != nil {
+			return errors.Annotate(err, "sources").Err()
+		}
+	}
+	return nil
+}
+
+// ValidateSources validates a set of sources.
+func ValidateSources(sources *pb.Sources) error {
+	if err := ValidateGitilesCommit(sources.GetGitilesCommit()); err != nil {
+		return errors.Annotate(err, "gitiles_commit").Err()
+	}
+	for i, cl := range sources.Changelists {
+		if err := ValidateGerritChange(cl); err != nil {
+			return errors.Annotate(err, "changelists[%v]", i).Err()
+		}
+	}
+	return nil
 }

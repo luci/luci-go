@@ -17,9 +17,11 @@ package pbutil
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -31,6 +33,17 @@ import (
 const MaxSizeProperties = 4 * 1024
 
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
+
+// Allow hostnames permitted by
+// https://www.rfc-editor.org/rfc/rfc1123#page-13. (Note that
+// the 255 character limit must be seperately applied.)
+var hostnameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]+(\.[a-z0-9-]+)*$`)
+
+// The maximum hostname permitted by
+// https://www.rfc-editor.org/rfc/rfc1123#page-13.
+const hostnameMaxLength = 255
+
+var sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
 
 func regexpf(patternFormat string, subpatterns ...any) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(patternFormat, subpatterns...))
@@ -126,4 +139,74 @@ func ValidateProperties(properties *structpb.Struct) error {
 		return errors.Reason("exceeds the maximum size of %d bytes", MaxSizeProperties).Err()
 	}
 	return nil
+}
+
+// ValidateGitilesCommit validates a gitiles commit.
+func ValidateGitilesCommit(commit *pb.GitilesCommit) error {
+	switch {
+	case commit.GetHost() == "":
+		return errors.Reason("host: unspecified").Err()
+	case len(commit.Host) > 255:
+		return errors.Reason("host: exceeds 255 characters").Err()
+	case !hostnameRE.MatchString(commit.Host):
+		return errors.Reason("host: does not match %q", hostnameRE).Err()
+
+	case commit.Project == "":
+		return errors.Reason("project: unspecified").Err()
+	case len(commit.Project) > hostnameMaxLength:
+		return errors.Reason("project: exceeds %v characters", hostnameMaxLength).Err()
+
+	case commit.Ref == "":
+		return errors.Reason("ref: unspecified").Err()
+
+	// The 255 character ref limit is arbitrary and not based on a known
+	// restriction in Git. It exists simply because there should be a limit
+	// to protect downstream clients.
+	case len(commit.Ref) > 255:
+		return errors.Reason("ref: exceeds 255 characters").Err()
+	case !strings.HasPrefix(commit.Ref, "refs/"):
+		return errors.Reason("ref: does not match refs/.*").Err()
+
+	case commit.CommitHash == "":
+		return errors.Reason("commit_hash: unspecified").Err()
+	case !sha1Regex.MatchString(commit.CommitHash):
+		return errors.Reason("commit_hash: does not match %q", sha1Regex).Err()
+
+	case commit.Position == 0:
+		return errors.Reason("position: unspecified").Err()
+	}
+	return nil
+}
+
+// ValidateGerritChange validates a gerrit change.
+func ValidateGerritChange(change *pb.GerritChange) error {
+	switch {
+	case change.GetHost() == "":
+		return errors.Reason("host: unspecified").Err()
+	case len(change.Host) > hostnameMaxLength:
+		return errors.Reason("host: exceeds %v characters", hostnameMaxLength).Err()
+	case !hostnameRE.MatchString(change.Host):
+		return errors.Reason("host: does not match %q", hostnameRE).Err()
+
+	case change.Change == 0:
+		return errors.Reason("change: unspecified").Err()
+	case change.Change < 0:
+		return errors.Reason("change: cannot be negative").Err()
+
+	case change.Patchset == 0:
+		return errors.Reason("patchset: unspecified").Err()
+	case change.Patchset < 0:
+		return errors.Reason("patchset: cannot be negative").Err()
+
+	case change.Project == "":
+		return errors.Reason("project: unspecified").Err()
+
+	// The 255 character project limit is arbitrary and not based on a known
+	// restriction in Gerrit. It exists simply because there should be a limit
+	// to protect downstream clients.
+	case len(change.Project) > 255:
+		return errors.Reason("project: exceeds 255 characters").Err()
+	default:
+		return nil
+	}
 }

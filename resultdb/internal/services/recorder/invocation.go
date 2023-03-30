@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -136,6 +138,9 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"Tags":             inv.Tags,
 		"ProducerResource": inv.ProducerResource,
 		"BigQueryExports":  inv.BigqueryExports,
+		"Properties":       spanutil.Compressed(pbutil.MustMarshal(inv.Properties)),
+		"InheritSources":   spanner.NullBool{Valid: inv.SourceSpec != nil, Bool: inv.SourceSpec.GetInherit()},
+		"Sources":          spanutil.Compressed(pbutil.MustMarshal(inv.SourceSpec.GetSources())),
 	}
 
 	if inv.State == pb.Invocation_FINALIZED {
