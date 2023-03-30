@@ -20,6 +20,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.12
 	github.com/Microsoft/go-winio v0.6.0
 	github.com/alecthomas/participle/v2 v2.0.0-alpha7
+	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
 	github.com/bazelbuild/remote-apis v0.0.0-20220510175640-3b4b64021035
@@ -81,7 +82,6 @@ require (
 	cloud.google.com/go/longrunning v0.3.0 // indirect
 	cloud.google.com/go/monitoring v1.8.0 // indirect
 	cloud.google.com/go/trace v1.4.0 // indirect
-	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/aws/aws-sdk-go v1.44.20 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect

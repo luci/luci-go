@@ -115,6 +115,8 @@ const (
 	// go out of [0, Policy.limit], or cause an Account already in such a state
 	// to go MORE out of bounds. This option only affects the behavior of `delta`.
 	//
+	// REQUIRED to do an operation on an Account with no associated Policy.
+	//
 	// Mutually exclusive with DO_NOT_CAP_PROPOSED.
 	Op_IGNORE_POLICY_BOUNDS Op_Options = 1
 	// If set, and this Op's positive delta would be capped by the policy limit,

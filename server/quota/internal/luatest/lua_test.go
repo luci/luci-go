@@ -23,8 +23,10 @@ import (
 	"strings"
 	"testing"
 
+	luajson "github.com/alicebob/gopher-json"
+	lua "github.com/yuin/gopher-lua"
+
 	. "github.com/smartystreets/goconvey/convey"
-	gLua "github.com/yuin/gopher-lua"
 )
 
 func intMin(a, b int) int {
@@ -38,7 +40,7 @@ var hexFinder = regexp.MustCompile(`\\x[a-f0-9]{2}`)
 
 // hackedFormat is like the built in implementation of string.format, except
 // that it correctly implements %q on strings containing binary characters.
-func hackedFormat(L *gLua.LState) int {
+func hackedFormat(L *lua.LState) int {
 	str := L.CheckString(1)
 	args := make([]any, L.GetTop()-1)
 	top := L.GetTop()
@@ -55,7 +57,7 @@ func hackedFormat(L *gLua.LState) int {
 		return fmt.Sprintf("\\%03d", dec)
 	})
 
-	L.Push(gLua.LString(ret))
+	L.Push(lua.LString(ret))
 	return 1
 }
 
@@ -90,17 +92,22 @@ func TestLua(t *testing.T) {
 		t.Fatalf("could not glob: %s", err)
 	}
 	if len(matches) == 0 {
-		// TODO(iannucci) - make this fatal in subsequent CL
-		t.Log("found no lua tests")
-		return
+		t.Fatal("found no lua tests")
 	}
 
 	Convey(`lua`, t, func() {
 		for _, filename := range matches {
 			Convey(filename, func(c C) {
-				L := gLua.NewState(gLua.Options{})
+				L := lua.NewState(lua.Options{})
 				defer L.Close()
-				L.GetGlobal("string").(*gLua.LTable).RawSet(gLua.LString("format"), L.NewFunction(hackedFormat))
+
+				// install `cjson` global; used for DUMP debugging function.
+				luajson.Loader(L)
+				mod := L.Get(1)
+				L.Pop(1)
+				L.SetGlobal("cjson", mod)
+
+				L.GetGlobal("string").(*lua.LTable).RawSet(lua.LString("format"), L.NewFunction(hackedFormat))
 				So(L.DoFile(filename), ShouldBeNil)
 				SoMsg("luaunit tests failed", L.CheckInt(1), ShouldEqual, 0)
 				_, err := Println() // space between luaunit outputs

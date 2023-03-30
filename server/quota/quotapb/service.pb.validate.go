@@ -473,46 +473,51 @@ var _ interface {
 	ErrorName() string
 } = ApplyOpsRequestValidationError{}
 
-// Validate checks the field values on OpError with the rules defined in the
+// Validate checks the field values on OpResult with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
-func (m *OpError) Validate() error {
+func (m *OpResult) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on OpError with the rules defined in the
-// proto definition for this message. If any rules are violated, the result is
-// a list of violation errors wrapped in OpErrorMultiError, or nil if none found.
-func (m *OpError) ValidateAll() error {
+// ValidateAll checks the field values on OpResult with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in OpResultMultiError, or nil
+// if none found.
+func (m *OpResult) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *OpError) validate(all bool) error {
+func (m *OpResult) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
 	var errors []error
 
+	// no validation rules for NewBalance
+
+	// no validation rules for PreviousBalance
+
+	// no validation rules for AccountStatus
+
 	// no validation rules for Status
 
-	// no validation rules for Balance
-
-	// no validation rules for Info
+	// no validation rules for StatusMsg
 
 	if len(errors) > 0 {
-		return OpErrorMultiError(errors)
+		return OpResultMultiError(errors)
 	}
 
 	return nil
 }
 
-// OpErrorMultiError is an error wrapping multiple validation errors returned
-// by OpError.ValidateAll() if the designated constraints aren't met.
-type OpErrorMultiError []error
+// OpResultMultiError is an error wrapping multiple validation errors returned
+// by OpResult.ValidateAll() if the designated constraints aren't met.
+type OpResultMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m OpErrorMultiError) Error() string {
+func (m OpResultMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -521,11 +526,11 @@ func (m OpErrorMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m OpErrorMultiError) AllErrors() []error { return m }
+func (m OpResultMultiError) AllErrors() []error { return m }
 
-// OpErrorValidationError is the validation error returned by OpError.Validate
-// if the designated constraints aren't met.
-type OpErrorValidationError struct {
+// OpResultValidationError is the validation error returned by
+// OpResult.Validate if the designated constraints aren't met.
+type OpResultValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -533,22 +538,22 @@ type OpErrorValidationError struct {
 }
 
 // Field function returns field value.
-func (e OpErrorValidationError) Field() string { return e.field }
+func (e OpResultValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e OpErrorValidationError) Reason() string { return e.reason }
+func (e OpResultValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e OpErrorValidationError) Cause() error { return e.cause }
+func (e OpResultValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e OpErrorValidationError) Key() bool { return e.key }
+func (e OpResultValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e OpErrorValidationError) ErrorName() string { return "OpErrorValidationError" }
+func (e OpResultValidationError) ErrorName() string { return "OpResultValidationError" }
 
 // Error satisfies the builtin error interface
-func (e OpErrorValidationError) Error() string {
+func (e OpResultValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -560,14 +565,14 @@ func (e OpErrorValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sOpError.%s: %s%s",
+		"invalid %sOpResult.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = OpErrorValidationError{}
+var _ error = OpResultValidationError{}
 
 var _ interface {
 	Field() string
@@ -575,7 +580,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = OpErrorValidationError{}
+} = OpResultValidationError{}
 
 // Validate checks the field values on ApplyOpsResponse with the rules defined
 // in the proto definition for this message. If any rules are violated, the
@@ -598,6 +603,40 @@ func (m *ApplyOpsResponse) validate(all bool) error {
 	}
 
 	var errors []error
+
+	for idx, item := range m.GetResults() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ApplyOpsResponseValidationError{
+						field:  fmt.Sprintf("Results[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ApplyOpsResponseValidationError{
+						field:  fmt.Sprintf("Results[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ApplyOpsResponseValidationError{
+					field:  fmt.Sprintf("Results[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
 
 	if all {
 		switch v := interface{}(m.GetOriginallySet()).(type) {
@@ -625,52 +664,6 @@ func (m *ApplyOpsResponse) validate(all bool) error {
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
-		}
-	}
-
-	{
-		sorted_keys := make([]uint32, len(m.GetErrors()))
-		i := 0
-		for key := range m.GetErrors() {
-			sorted_keys[i] = key
-			i++
-		}
-		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
-		for _, key := range sorted_keys {
-			val := m.GetErrors()[key]
-			_ = val
-
-			// no validation rules for Errors[key]
-
-			if all {
-				switch v := interface{}(val).(type) {
-				case interface{ ValidateAll() error }:
-					if err := v.ValidateAll(); err != nil {
-						errors = append(errors, ApplyOpsResponseValidationError{
-							field:  fmt.Sprintf("Errors[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				case interface{ Validate() error }:
-					if err := v.Validate(); err != nil {
-						errors = append(errors, ApplyOpsResponseValidationError{
-							field:  fmt.Sprintf("Errors[%v]", key),
-							reason: "embedded message failed validation",
-							cause:  err,
-						})
-					}
-				}
-			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
-				if err := v.Validate(); err != nil {
-					return ApplyOpsResponseValidationError{
-						field:  fmt.Sprintf("Errors[%v]", key),
-						reason: "embedded message failed validation",
-						cause:  err,
-					}
-				}
-			}
-
 		}
 	}
 

@@ -12,22 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build luagentest
+//go:generate go run go.chromium.org/luci/tools/cmd/assets -ext *.lua
 
-package main
-
-import (
-	"go.chromium.org/luci/common/proto/msgpackpb/luagen"
-	"go.chromium.org/luci/server/quota/quotapb"
-)
-
-func main() {
-	luagen.Main(
-		&quotapb.Account{},
-		&quotapb.ApplyOpsRequest{},
-		&quotapb.ApplyOpsResponse{},
-		&quotapb.Policy{},
-		&quotapb.UpdateAccountsInput{},
-		quotapb.Op_NO_OPTIONS,
-	)
-}
+package luamsgpack

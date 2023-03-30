@@ -55,7 +55,9 @@ message ApplyOpsRequest {
 
   // Must be set, and positive, if request_id is set.
   //
-  // This currently only has per-second granularity.
+  // If this is omitted, the request_id_ttl is 2 hours.
+  //
+  // If this is zero, the request_id_ttl is infinite.
   google.protobuf.Duration request_id_ttl = 2 [
     (validate.rules).duration.required = false,
     (validate.rules).duration.gt.seconds = 0
@@ -65,66 +67,92 @@ message ApplyOpsRequest {
   repeated Op ops = 3;
 }
 
-message OpError {
-  enum Status {
+// OpResult contains the summary of applying a single Op as part of an
+// ApplyOpsRequest.
+//
+// Note that `previous_balance` and `balance` are first in this message to make
+// the success-case encoding of an OpResult with non-zero balances as compact as
+// possible (will be represented by a 2-number msgpack array, rather than
+// a msgpack object).
+message OpResult {
+  // This will be set to the balance of the Account after the SUCCESS-ful
+  // operation.
+  int64 new_balance = 1;
+
+  // If the account already existed, this will be set to the balance observed at
+  // the start of this Operation (after applying refill under existing policy,
+  // if the account had one set). If the account did not previously exist, this
+  // will be 0, even if the Policy in this Op would set a default value.
+  //
+  // Note that if the same account is used for multiple operations in the same
+  // RPC, for the N'th operation on account X, this will have the N-1'th
+  // `balance` value.
+  int64 previous_balance = 2;
+
+  enum AccountStatus {
+    // This Op updated an existing account.
+    ALREADY_EXISTS = 0;
+
+    // This Op resulted in the creation of an account.
+    CREATED = 1;
+
+    // This Op found an existing, unreadable, account, and the account was
+    // recreated (as if it were missing).
+    //
+    // Note that this is supposed to be a rare condition, and will be monitored
+    // on the server side. If seen at elevated rates, this is likely alertable.
+    RECREATED = 2;
+  }
+  AccountStatus account_status = 3;
+
+  enum OpStatus {
+    // The Operation was successful.
+    SUCCESS = 0;
+
     // There was an otherwise-unclassified error while applying this operation.
-    UNKNOWN = 0;
+    ERR_UNKNOWN = 1;
 
     // The Op failed because it would bring the Account balance above the policy
     // limit.
-    OVERFLOW = 1;
+    ERR_OVERFLOW = 2;
 
     // The Op failed because it would bring the Account balance below 0.
-    UNDERFLOW = 2;
+    ERR_UNDERFLOW = 3;
 
     // The Op failed because it referred to a Policy which doesn't exist.
-    UNKNOWN_POLICY = 3;
+    ERR_UNKNOWN_POLICY = 4;
 
     // The Op failed because it applied to a non-existant Account and no Policy
     // was given.
-    MISSING_ACCOUNT = 4;
+    ERR_MISSING_ACCOUNT = 5;
 
     // The Op failed because it used relative_to=DEFAULT or LIMIT, but the Account
-    // had no Policy attached to it.
-    POLICY_REQUIRED = 5;
+    // had no Policy attached to it, or if the Op did not include the
+    // IGNORE_POLICY_BOUNDS option.
+    ERR_POLICY_REQUIRED = 6;
   }
-  // Status for this error.
-  Status status = 1;
-
-  // For UNDERFLOW or OVERFLOW, this will be set to the observed balance of the
-  // Account.
-  //
-  // Note that for Accounts with an 'infinite' quota, this will be a reflection
-  // of the policy's `limit`.
-  int64 balance = 2;
+  // Status for this operation.
+  OpStatus status = 4;
 
   // Extra context for `status` as english text. Usually unset, but will be most
   // frequently set for UNKNOWN errors.
-  string info = 3;
+  string status_msg = 5;
 }
 
 message ApplyOpsResponse {
-  // Index of Op->balance for the specified account. If your request includes
-  // multiple Ops for the same account, this will include the balance after
-  // applying each Op.
+  // This is a sequence of results, one per op in the original ApplyOpsRequest.
   //
-  // For example, if you had an Account with a balance of 0 and made
-  // a BALANCE+2, BALANCE+2 ApplyOpsRequest, this `balances` field would be
-  // [2, 4].
+  // NOTE: The caller must observe the `status` field of each result in order to
+  // determine if this request was successful.
   //
-  // Only set when `errors` is empty.
-  repeated int64 balances = 1;
+  // If any result contains a non-SUCCESS `status`, NONE of the operations have
+  // been saved.
+  repeated OpResult results = 1;
 
   // The time this ApplyOpsResponse was created, according to the quota state.
   // Note that for deduplicated requests, this could be fairly old (assuming the
   // original request was made a while ago).
   google.protobuf.Timestamp originally_set = 2;
-
-  // A map of input operation index to outcome.
-  //
-  // Any missing outcomes imply an `OpError{Status: OK}`. Thus, an empty map
-  // here means that all operations were successfully applied.
-  map<uint32,OpError> errors = 3;
 }
 
 message WritePolicyConfigRequest {

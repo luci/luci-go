@@ -12,22 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build luagentest
+//go:generate go run go.chromium.org/luci/tools/cmd/luapp update-accounts.lua
+//go:generate go run go.chromium.org/luci/tools/cmd/assets -ext *.gen.lua
 
-package main
+package lua
 
-import (
-	"go.chromium.org/luci/common/proto/msgpackpb/luagen"
-	"go.chromium.org/luci/server/quota/quotapb"
-)
+import "github.com/gomodule/redigo/redis"
 
-func main() {
-	luagen.Main(
-		&quotapb.Account{},
-		&quotapb.ApplyOpsRequest{},
-		&quotapb.ApplyOpsResponse{},
-		&quotapb.Policy{},
-		&quotapb.UpdateAccountsInput{},
-		quotapb.Op_NO_OPTIONS,
-	)
-}
+// UpdateAccountsScript is a redis.Script for 'update-accounts.lua'.
+//
+// Prefer this to using the raw asset directly, because this has already
+// calculated the script SHA1.
+var UpdateAccountsScript = redis.NewScript(-1, GetAssetString("update-accounts.gen.lua"))
