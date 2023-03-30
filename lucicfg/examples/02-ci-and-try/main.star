@@ -119,6 +119,39 @@ luci.cq_group(
     user_limit_default = cq.user_limit(
         name = "default_user_quota",
     ),
+    post_actions = [
+        cq.post_action_gerrit_label_votes(
+            name = "dry-run_verification_label",
+            conditions = [
+                cq.post_action_triggering_condition(
+                    mode = cq.MODE_DRY_RUN,
+                    statuses = [cq.STATUS_SUCCEEDED],
+                ),
+            ],
+            labels = {
+                "CQ-Verified": 1,
+            },
+        ),
+        cq.post_action_gerrit_label_votes(
+            name = "any-run-failures-and-cancellations",
+            conditions = [
+                cq.post_action_triggering_condition(
+                    mode = m,
+                    statuses = [cq.STATUS_FAILED, cq.STATUS_CANCELLED],
+                )
+                for m in [
+                    cq.MODE_DRY_RUN,
+                    cq.MODE_FULL_RUN,
+                    cq.MODE_QUICK_DRY_RUN,
+                    cq.MODE_NEW_PATCHSET_RUN,
+                ]
+            ],
+            labels = {
+                "Code-Review": -1,
+                "CQ-Verified": 0,
+            },
+        ),
+    ],
 )
 
 # The gitiles poller: a source of commits that trigger CI builders.

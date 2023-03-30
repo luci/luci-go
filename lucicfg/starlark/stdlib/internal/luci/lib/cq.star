@@ -14,7 +14,7 @@
 
 """CQ related supporting structs and functions."""
 
-load("@stdlib//internal/luci/proto.star", "cq_pb")
+load("@stdlib//internal/luci/proto.star", "cq_pb", "cv_v1pb")
 load("@stdlib//internal/validate.star", "validate")
 
 # A struct returned by cq.refset(...).
@@ -48,6 +48,14 @@ _run_limits_ctor = __native__.genstruct("cq.run_limits")
 
 # A struct returned by cq.tryjob_limits(...).
 _tryjob_limits_ctor = __native__.genstruct("cq.tryjob_limits")
+
+# A struct returned by _post_action(...).
+_post_action_ctor = __native__.genstruct("cq.post_action")
+
+# A struct returned by cq.post_action_triggering_condition(...).
+_post_action_triggering_condition_ctor = __native__.genstruct(
+    "cq.post_acttion_triggering_condition",
+)
 
 def _refset(repo = None, *, refs = None, refs_exclude = None):
     """Defines a repository and a subset of its refs.
@@ -357,6 +365,126 @@ def _tryjob_limits(max_active = None):
         ),
     )
 
+def _post_action_gerrit_label_votes(name = None, labels = None, conditions = None):
+    """Constructs a post action that votes Gerrit labels.
+
+    Args:
+      name: the name of the post action.
+        Must be unqiue in scope where is is given. e.g., cg_group.
+        Must match regex '^[0-9A-Za-z][0-9A-Za-z\\.\\-@_+]{0,511}$'.
+        Required.
+      labels: a dict of labels to vote.
+        key is the label name in string.
+        value is an int value to vote the label with.
+        Required.
+      conditions: a list of cq.post_action_triggering_condition(...), of which
+        at least one condition has to be met for the action to be executed.
+        Required.
+    """
+    validate.str_dict("labels", labels, required = True)
+    for k, v in labels.items():
+        validate.int("labels[%s]" % k, v, required = True)
+    return _post_action(
+        name = name,
+        conditions = conditions,
+        vote_gerrit_labels = labels,
+    )
+
+def _post_action(name = None, conditions = None, vote_gerrit_labels = None):
+    """Constructs a post action.
+
+    This is intended to be used by the factory functions that construct and
+    return a specific post action. e.g., cq.gerrit_label_votes(...).
+
+    Args:
+      name: the name of the post action.
+        Must be unqiue in scope where is is given. e.g., cg_group.
+        Must match regex '^[0-9A-Za-z][0-9A-Za-z\\.\\-@_+]{0,511}$'.
+        Required.
+      conditions: a list of cq.post_action_triggering_condition(...), of which
+        at least one condition has to be met for the action to be executed.
+        Required.
+      vote_gerrit_labels: a dict of labels to vote with values.
+    """
+    name = validate.string(
+        "name",
+        name,
+        required = True,
+        regexp = "^[0-9A-Za-z][0-9A-Za-z.\\-@_+]{0,511}$",
+    )
+    _validate_post_action_triggering_conditions(
+        "conditions",
+        conditions,
+        required = True,
+    )
+    return _post_action_ctor(
+        name = name,
+        conditions = conditions,
+        vote_gerrit_labels = vote_gerrit_labels,
+    )
+
+def _validate_post_action(attr, val, *, default = None, required = False):
+    """Validates that `val` was constructed via cq._post_action(...)."""
+    return validate.struct(
+        attr,
+        val,
+        _post_action_ctor,
+        default = default,
+        required = required,
+    )
+
+def _post_action_triggering_condition(mode = None, statuses = None):
+    """Constructs cq.post_action_triggering_condition(...).
+
+    The condition is met if a Run in the mode terminates with one of
+      the statuses.
+
+    Args:
+        mode: a Run mode. Must be one of the terminal cq.MODE_*. Required.
+        statuses: a list of cq.STATUS_*. Required
+    """
+    supported_modes = [
+        cq.MODE_DRY_RUN,
+        cq.MODE_QUICK_DRY_RUN,
+        cq.MODE_FULL_RUN,
+        cq.MODE_NEW_PATCHSET_RUN,
+    ]
+    if mode == None:
+        fail("missing required param `mode`")
+    if mode not in supported_modes:
+        fail("unknown mode %r" % mode)
+
+    validate.list("statuses", statuses, required = True)
+    terminal = [cq.STATUS_CANCELLED, cq.STATUS_FAILED, cq.STATUS_SUCCEEDED]
+    for i, st in enumerate(statuses):
+        if st not in terminal:
+            fail("statuses[%d]: expecting terminal status, but %r" % (i, st))
+    return _post_action_triggering_condition_ctor(
+        mode = mode,
+        statuses = statuses,
+    )
+
+def _validate_post_action_triggering_conditions(attr, val, *, required = False):
+    """Validates that `val` is a list of cq._triggering_condition(...)."""
+    conds = validate.list(attr, val, required = required)
+    for i, cond in enumerate(conds):
+        conds[i] = _validate_post_action_triggering_condition(
+            "%s[%d]" % (attr, i),
+            cond,
+            required = True,
+        )
+    return conds
+
+def _validate_post_action_triggering_condition(attr, val, *, default = None, required = False):
+    """Validates that `val` was constructed vai cq.triggering_condition(...)."""
+    return validate.struct(
+        attr,
+        val,
+        _post_action_triggering_condition_ctor,
+        default = default,
+        required = required,
+    )
+
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
 # entities.
 #
@@ -405,11 +533,37 @@ def _tryjob_limits(max_active = None):
 #   * **cq.MODE_ANALYZER_RUN**: Run code analyzers on patchset upload.
 #     As of April 2021, all such runs are launched by Tricium. Eventually,
 #     Change Verifier(CV) will launch and manage all analyzer runs.
+#
+# `cq.STATUS_*` constants define possible values for cq run statuses.
+#
+# `cq.post_action._*` functions construct a post action that performs an action
+# on a Run completion. They are passed to cq_group() via param `post_actions`.
+# For exmaple, the following param constructs a post action that votes labels
+# when a dry-run completes successfully in the cq group.
+#
+# ```python
+# luci.cq_group(
+#     name = "main",
+#     post_actions = [
+#         cq.post_action_gerrit_label_votes(
+#             name = "dry-run-verification",
+#             labels = {"dry-run-succeeded": 1},
+#             conditions = [cq.post_action_triggering_condition(
+#                mode = cq.MODE_DRY_RUN,
+#                statuses = [cq.STATUS_SUCCEEDED],
+#             )],
+#         ),
+#     ],
+#     ...
+# )
+# ```
 cq = struct(
     refset = _refset,
     retry_config = _retry_config,
     run_mode = _run_mode,
     location_filter = _location_filter,
+    post_action_triggering_condition = _post_action_triggering_condition,
+    post_action_gerrit_label_votes = _post_action_gerrit_label_votes,
     user_limit = _user_limit,
     run_limits = _run_limits,
     tryjob_limits = _tryjob_limits,
@@ -439,6 +593,9 @@ cq = struct(
     MODE_FULL_RUN = "FULL_RUN",
     MODE_ANALYZER_RUN = "ANALYZER_RUN",
     MODE_NEW_PATCHSET_RUN = "NEW_PATCHSET_RUN",
+    STATUS_CANCELLED = cv_v1pb.Run.CANCELLED,
+    STATUS_FAILED = cv_v1pb.Run.FAILED,
+    STATUS_SUCCEEDED = cv_v1pb.Run.SUCCEEDED,
 )
 
 cqimpl = struct(
@@ -447,4 +604,5 @@ cqimpl = struct(
     validate_run_mode = _validate_run_mode,
     validate_location_filter = _validate_location_filter,
     validate_user_limit = _validate_user_limit,
+    validate_post_action = _validate_post_action,
 )

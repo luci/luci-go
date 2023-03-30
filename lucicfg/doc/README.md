@@ -2301,6 +2301,7 @@ luci.cq_group(
     additional_modes = None,
     user_limits = None,
     user_limit_default = None,
+    post_actions = None,
 )
 ```
 
@@ -2333,6 +2334,7 @@ pub/sub integration is enabled for the Gerrit host.
 * **additional_modes**: either a single [cq.run_mode(...)](#cq.run-mode) or a list of [cq.run_mode(...)](#cq.run-mode) defining additional run modes supported by this CQ group apart from standard DRY_RUN and FULL_RUN. If specified, CQ will create the Run with the first mode for which triggering conditions are fulfilled. If there is no such mode, CQ will fallback to standard DRY_RUN or FULL_RUN.
 * **user_limits**: a list of [cq.user_limit(...)](#cq.user-limit) or None. **WARNING**: Please contact luci-eng@ before setting this param. They specify per-user limits/quotas for given principals. At the time of a Run start, CV looks up and applies the first matching [cq.user_limit(...)](#cq.user-limit) to the Run, and postpones the start if limits were reached already. If none of the user_limit(s) were applicable, `user_limit_default` will be applied instead. Each [cq.user_limit(...)](#cq.user-limit) must specify at least one user or group.
 * **user_limit_default**: [cq.user_limit(...)](#cq.user-limit) or None. **WARNING*:: Please contact luci-eng@ before setting this param. If none of limits in `user_limits` are applicable and `user_limit_default` is not specified, the user is granted unlimited runs and tryjobs. `user_limit_default` must not specify users and groups.
+* **post_actions**: a list of post actions or None. Please refer to cq.post_action_* for all the available post actions. e.g., [cq.post_action_gerrit_label_votes(...)](#cq.post-action-gerrit-label-votes)
 
 
 
@@ -3337,6 +3339,30 @@ field of [luci.cq_group(...)](#luci.cq-group):
     As of April 2021, all such runs are launched by Tricium. Eventually,
     Change Verifier(CV) will launch and manage all analyzer runs.
 
+`cq.STATUS_*` constants define possible values for cq run statuses.
+
+`cq.post_action._*` functions construct a post action that performs an action
+on a Run completion. They are passed to cq_group() via param `post_actions`.
+For exmaple, the following param constructs a post action that votes labels
+when a dry-run completes successfully in the cq group.
+
+```python
+luci.cq_group(
+    name = "main",
+    post_actions = [
+        cq.post_action_gerrit_label_votes(
+            name = "dry-run-verification",
+            labels = {"dry-run-succeeded": 1},
+            conditions = [cq.post_action_triggering_condition(
+               mode = cq.MODE_DRY_RUN,
+               statuses = [cq.STATUS_SUCCEEDED],
+            )],
+        ),
+    ],
+    ...
+)
+```
+
 
 ### cq.refset {#cq.refset}
 
@@ -3469,6 +3495,46 @@ wildcard which should match anything. Patterns are implicitly wrapped with
 #### Returns  {#cq.location-filter-returns}
 
 cq.location_filter struct.
+
+
+
+### cq.post_action_triggering_condition {#cq.post-action-triggering-condition}
+
+```python
+cq.post_action_triggering_condition(mode, statuses = None)
+```
+
+
+
+Constructs [cq.post_action_triggering_condition(...)](#cq.post-action-triggering-condition).
+
+The condition is met if a Run in the mode terminates with one of
+  the statuses.
+
+#### Arguments {#cq.post-action-triggering-condition-args}
+
+* **mode**: a Run mode. Must be one of the terminal cq.MODE_*. Required.
+* **statuses**: a list of cq.STATUS_*. Required
+
+
+
+
+### cq.post_action_gerrit_label_votes {#cq.post-action-gerrit-label-votes}
+
+```python
+cq.post_action_gerrit_label_votes(name, labels, conditions)
+```
+
+
+
+Constructs a post action that votes Gerrit labels.
+
+#### Arguments {#cq.post-action-gerrit-label-votes-args}
+
+* **name**: the name of the post action. Must be unqiue in scope where is is given. e.g., cg_group. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
+* **labels**: a dict of labels to vote. key is the label name in string. value is an int value to vote the label with. Required.
+* **conditions**: a list of [cq.post_action_triggering_condition(...)](#cq.post-action-triggering-condition), of which at least one condition has to be met for the action to be executed. Required.
+
 
 
 

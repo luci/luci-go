@@ -1121,6 +1121,9 @@ def _cq_config_group(cq_group, project):
     user_limit_default = cq_group.props.user_limit_default
     if user_limit_default != None:
         user_limit_default = _cq_user_limit(user_limit_default)
+    post_actions = cq_group.props.post_actions
+    if post_actions != None:
+        post_actions = [_cq_post_action(pa) for pa in post_actions]
 
     return cq_pb.ConfigGroup(
         name = cq_group.key.id,
@@ -1149,6 +1152,7 @@ def _cq_config_group(cq_group, project):
         ] if cq_group.props.additional_modes else None,
         user_limits = user_limits,
         user_limit_default = user_limit_default,
+        post_actions = post_actions,
     )
 
 def _cq_retry_config(retry_config):
@@ -1162,6 +1166,31 @@ def _cq_retry_config(retry_config):
         transient_failure_weight = retry_config.transient_failure_weight,
         timeout_weight = retry_config.timeout_weight,
     )
+
+def _cq_post_action(post_action):
+    """Converts a post action to cq_pb.ConfigGroup.PostAction."""
+    ret = cq_pb.ConfigGroup.PostAction(
+        name = post_action.name,
+        conditions = [
+            cq_pb.ConfigGroup.PostAction.TriggeringCondition(
+                mode = cond.mode,
+                statuses = cond.statuses,
+            )
+            for cond in post_action.conditions
+        ],
+    )
+    if post_action.vote_gerrit_labels != None:
+        ret.vote_gerrit_labels = cq_pb.ConfigGroup.PostAction.VoteGerritLabels(
+            votes = [
+                cq_pb.ConfigGroup.PostAction.VoteGerritLabels.Vote(
+                    name = k,
+                    value = v,
+                )
+                for k, v in post_action.vote_gerrit_labels.items()
+            ],
+        )
+
+    return ret
 
 def _cq_run_mode(run_mode):
     """cq._run_mode(...) => cq_pb.Mode."""
