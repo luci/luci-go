@@ -37,7 +37,7 @@ func TestValidate(t *testing.T) {
 			So(ValidateGitilesCommit(commit), ShouldBeNil)
 		})
 		Convey(`Nil`, func() {
-			So(ValidateGitilesCommit(nil), ShouldErrLike, `host: unspecified`)
+			So(ValidateGitilesCommit(nil), ShouldErrLike, `unspecified`)
 		})
 		Convey(`Host`, func() {
 			Convey(`Missing`, func() {
@@ -113,7 +113,7 @@ func TestValidate(t *testing.T) {
 			So(ValidateGerritChange(change), ShouldBeNil)
 		})
 		Convey(`Nil`, func() {
-			So(ValidateGerritChange(nil), ShouldErrLike, `host: unspecified`)
+			So(ValidateGerritChange(nil), ShouldErrLike, `unspecified`)
 		})
 		Convey(`Host`, func() {
 			Convey(`Missing`, func() {

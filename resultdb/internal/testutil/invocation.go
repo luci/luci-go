@@ -33,8 +33,8 @@ func TestProperties() *structpb.Struct {
 	}
 }
 
-func TestSources() *pb.Sources {
-	return &pb.Sources{
+func TestSources(changelistNumbers ...int) *pb.Sources {
+	result := &pb.Sources{
 		GitilesCommit: &pb.GitilesCommit{
 			Host:       "chromium.googlesource.com",
 			Project:    "infra/infra",
@@ -42,14 +42,15 @@ func TestSources() *pb.Sources {
 			CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
 			Position:   567,
 		},
-		Changelists: []*pb.GerritChange{
-			{
-				Host:     "chromium-review.googlesource.com",
-				Project:  "infra/luci-go",
-				Change:   12345,
-				Patchset: 321,
-			},
-		},
 		IsDirty: true,
 	}
+	for _, cl := range changelistNumbers {
+		result.Changelists = append(result.Changelists, &pb.GerritChange{
+			Host:     "chromium-review.googlesource.com",
+			Project:  "infra/luci-go",
+			Change:   int64(cl),
+			Patchset: 321,
+		})
+	}
+	return result
 }

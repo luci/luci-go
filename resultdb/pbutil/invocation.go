@@ -57,6 +57,9 @@ func InvocationName(id string) string {
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	SortStringPairs(inv.Tags)
+
+	changelists := inv.SourceSpec.GetSources().GetChangelists()
+	SortGerritChanges(changelists)
 }
 
 // ValidateSourceSpec validates a source specification.
@@ -75,13 +78,36 @@ func ValidateSourceSpec(sourceSpec *pb.SourceSpec) error {
 
 // ValidateSources validates a set of sources.
 func ValidateSources(sources *pb.Sources) error {
+	if sources == nil {
+		return errors.Reason("unspecified").Err()
+	}
 	if err := ValidateGitilesCommit(sources.GetGitilesCommit()); err != nil {
 		return errors.Annotate(err, "gitiles_commit").Err()
 	}
+
+	if len(sources.Changelists) > 10 {
+		return errors.Reason("changelists: exceeds maximum of 10 changelists").Err()
+	}
+	type distinctChangelist struct {
+		host    string
+		project string
+		change  int64
+	}
+	clToIndex := make(map[distinctChangelist]int)
+
 	for i, cl := range sources.Changelists {
 		if err := ValidateGerritChange(cl); err != nil {
 			return errors.Annotate(err, "changelists[%v]", i).Err()
 		}
+		cl := distinctChangelist{
+			host:    cl.Host,
+			project: cl.Project,
+			change:  cl.Change,
+		}
+		if duplicateIndex, ok := clToIndex[cl]; ok {
+			return errors.Reason("changelists[%v]: duplicate change modulo patchset number; same change at changelists[%v]", i, duplicateIndex).Err()
+		}
+		clToIndex[cl] = i
 	}
 	return nil
 }

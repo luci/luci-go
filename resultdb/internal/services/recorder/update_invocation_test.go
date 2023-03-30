@@ -221,9 +221,6 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 			},
 		}
-		validSourceSpec := &pb.SourceSpec{
-			Sources: testutil.TestSources(),
-		}
 
 		updateMask := &field_mask.FieldMask{
 			Paths: []string{"deadline", "bigquery_exports", "properties", "source_spec"},
@@ -241,8 +238,6 @@ func TestUpdateInvocation(t *testing.T) {
 					Name:            "invocations/inv",
 					Deadline:        validDeadline,
 					BigqueryExports: validBigqueryExports,
-					Properties:      testutil.TestProperties(),
-					SourceSpec:      validSourceSpec,
 				},
 				UpdateMask: updateMask,
 			}
@@ -254,19 +249,32 @@ func TestUpdateInvocation(t *testing.T) {
 		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 		Convey("e2e", func() {
+			req := &pb.UpdateInvocationRequest{
+				Invocation: &pb.Invocation{
+					Name:            "invocations/inv",
+					Deadline:        validDeadline,
+					BigqueryExports: validBigqueryExports,
+					Properties:      testutil.TestProperties(),
+					SourceSpec: &pb.SourceSpec{
+						Sources: testutil.TestSources(431, 123),
+					},
+				},
+				UpdateMask: updateMask,
+			}
+			inv, err := recorder.UpdateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+
 			expected := &pb.Invocation{
 				Name:            "invocations/inv",
 				Deadline:        validDeadline,
 				BigqueryExports: validBigqueryExports,
 				Properties:      testutil.TestProperties(),
-				SourceSpec:      validSourceSpec,
+				SourceSpec: &pb.SourceSpec{
+					// The invocation should be stored and returned
+					// normalized.
+					Sources: testutil.TestSources(123, 431),
+				},
 			}
-			req := &pb.UpdateInvocationRequest{
-				Invocation: expected,
-				UpdateMask: updateMask,
-			}
-			inv, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldBeNil)
 			So(inv.Name, ShouldEqual, expected.Name)
 			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
 			So(inv.Deadline, ShouldResembleProto, expected.Deadline)

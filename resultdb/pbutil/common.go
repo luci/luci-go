@@ -17,6 +17,7 @@ package pbutil
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -144,7 +145,10 @@ func ValidateProperties(properties *structpb.Struct) error {
 // ValidateGitilesCommit validates a gitiles commit.
 func ValidateGitilesCommit(commit *pb.GitilesCommit) error {
 	switch {
-	case commit.GetHost() == "":
+	case commit == nil:
+		return errors.Reason("unspecified").Err()
+
+	case commit.Host == "":
 		return errors.Reason("host: unspecified").Err()
 	case len(commit.Host) > 255:
 		return errors.Reason("host: exceeds 255 characters").Err()
@@ -181,12 +185,23 @@ func ValidateGitilesCommit(commit *pb.GitilesCommit) error {
 // ValidateGerritChange validates a gerrit change.
 func ValidateGerritChange(change *pb.GerritChange) error {
 	switch {
-	case change.GetHost() == "":
+	case change == nil:
+		return errors.Reason("unspecified").Err()
+
+	case change.Host == "":
 		return errors.Reason("host: unspecified").Err()
 	case len(change.Host) > hostnameMaxLength:
 		return errors.Reason("host: exceeds %v characters", hostnameMaxLength).Err()
 	case !hostnameRE.MatchString(change.Host):
 		return errors.Reason("host: does not match %q", hostnameRE).Err()
+
+	case change.Project == "":
+		return errors.Reason("project: unspecified").Err()
+	// The 255 character project limit is arbitrary and not based on a known
+	// restriction in Gerrit. It exists simply because there should be a limit
+	// to protect downstream clients.
+	case len(change.Project) > 255:
+		return errors.Reason("project: exceeds 255 characters").Err()
 
 	case change.Change == 0:
 		return errors.Reason("change: unspecified").Err()
@@ -197,16 +212,23 @@ func ValidateGerritChange(change *pb.GerritChange) error {
 		return errors.Reason("patchset: unspecified").Err()
 	case change.Patchset < 0:
 		return errors.Reason("patchset: cannot be negative").Err()
-
-	case change.Project == "":
-		return errors.Reason("project: unspecified").Err()
-
-	// The 255 character project limit is arbitrary and not based on a known
-	// restriction in Gerrit. It exists simply because there should be a limit
-	// to protect downstream clients.
-	case len(change.Project) > 255:
-		return errors.Reason("project: exceeds 255 characters").Err()
 	default:
 		return nil
 	}
+}
+
+// SortGerritChanges sorts in-place the gerrit changes lexicographically.
+func SortGerritChanges(changes []*pb.GerritChange) {
+	sort.Slice(changes, func(i, j int) bool {
+		if changes[i].Host != changes[j].Host {
+			return changes[i].Host < changes[j].Host
+		}
+		if changes[i].Project != changes[j].Project {
+			return changes[i].Project < changes[j].Project
+		}
+		if changes[i].Change != changes[j].Change {
+			return changes[i].Change < changes[j].Change
+		}
+		return changes[i].Patchset < changes[j].Patchset
+	})
 }

@@ -114,6 +114,8 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 				ret.Properties = in.Invocation.Properties
 
 			case "source_spec":
+				// Store any gerrit changes in normalised form.
+				pbutil.SortGerritChanges(in.Invocation.SourceSpec.GetSources().GetChangelists())
 				values["InheritSources"] = spanner.NullBool{Valid: in.Invocation.SourceSpec != nil, Bool: in.Invocation.SourceSpec.GetInherit()}
 				values["Sources"] = spanutil.Compressed(pbutil.MustMarshal(in.Invocation.SourceSpec.GetSources()))
 				ret.SourceSpec = in.Invocation.SourceSpec
