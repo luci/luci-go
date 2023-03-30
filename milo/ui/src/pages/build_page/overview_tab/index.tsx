@@ -37,7 +37,10 @@ import { TimingSection } from './timing_section';
 
 const ContainerDiv = styled.div({
   margin: '10px 16px',
-  '@media screen and (min-width: 1300px)': { display: 'grid', gridTemplateColumns: '1fr 20px 40vw' },
+  '@media screen and (min-width: 1300px)': {
+    display: 'grid',
+    gridTemplateColumns: '1fr 20px 40vw',
+  },
   '& h3': {
     marginBlock: '15px 10px',
   },
@@ -48,7 +51,7 @@ const ContainerDiv = styled.div({
     clear: 'both',
     overflowWrap: 'anywhere',
   },
-  '& h3:first-of-type': {
+  '& h3:first-child': {
     marginBlock: '5px 10px',
   },
 });
