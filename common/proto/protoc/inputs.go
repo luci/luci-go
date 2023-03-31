@@ -231,13 +231,26 @@ func StageGenericInputs(ctx context.Context, inputDir string, protoImportPaths [
 	}
 
 	absImportPaths := make([]string, 0, len(protoImportPaths)+1)
-	absImportPaths = append(absImportPaths, absInputDir)
+	includesInputDir := false
+	protoPackageDir := ""
 	for _, path := range protoImportPaths {
 		abs, err := filepath.Abs(path)
 		if err != nil {
 			return nil, errors.Annotate(err, "could not make path %q absolute", path).Err()
 		}
 		absImportPaths = append(absImportPaths, abs)
+		if strings.HasPrefix(absInputDir, abs+string(filepath.Separator)) && !includesInputDir {
+			includesInputDir = true
+			protoPackageDir = filepath.ToSlash(absInputDir[len(abs)+1:])
+		}
+	}
+
+	// Add the input directory to the proto import path only if it is not already
+	// included via some existing import path. Adding it twice confuses protoc.
+	// Not adding it at all breaks relative imports.
+	if !includesInputDir {
+		absImportPaths = append(absImportPaths, absInputDir)
+		protoPackageDir = "."
 	}
 
 	protoFiles, err := findProtoFiles(absInputDir)
@@ -253,7 +266,7 @@ func StageGenericInputs(ctx context.Context, inputDir string, protoImportPaths [
 		InputDir:     absInputDir,
 		OutputDir:    absInputDir, // drop generated files (if any) right there
 		ProtoFiles:   protoFiles,
-		ProtoPackage: ".", // we added inputDir as a proto path
+		ProtoPackage: protoPackageDir,
 	}, nil
 }
 

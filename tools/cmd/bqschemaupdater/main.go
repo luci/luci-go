@@ -151,6 +151,7 @@ type flags struct {
 	force       bool
 	verbose     bool
 	importPaths stringlistflag.Flag
+	noGoMode    bool
 	goModules   stringlistflag.Flag
 }
 
@@ -164,12 +165,13 @@ func parseFlags() (*flags, error) {
 	flag.BoolVar(&f.PartitioningDisabled, "disable-partitioning", false, "Makes the table not time-partitioned.")
 	flag.DurationVar(&f.PartitioningExpiration, "partitioning-expiration", 0, "Expiration for partitions. 0 for no expiration.")
 	flag.Var(luciflag.StringSlice(&f.ClusteringFields), "clustering-field", "Optional, one or more clustering fields. Can be specified multiple times and order is significant.")
-	flag.StringVar(&f.protoDir, "message-dir", ".", "path to directory with the .proto file that defines the schema message.")
-	flag.Var(&f.goModules, "go-module", "make protos in the given module available in proto import path. Can be specified multiple times.")
-	flag.BoolVar(&f.force, "force", false, "proceed without a user confirmation.")
-	flag.BoolVar(&f.verbose, "verbose", false, "print more information in the log.")
+	flag.StringVar(&f.protoDir, "message-dir", ".", "Path to directory with the .proto file that defines the schema message.")
+	flag.BoolVar(&f.noGoMode, "no-go-mode", false, "Don't try to recognize active Go module based on cwd.")
+	flag.Var(&f.goModules, "go-module", "Make protos in the given module available in proto import path. Can be specified multiple times.")
+	flag.BoolVar(&f.force, "force", false, "Proceed without a user confirmation.")
+	flag.BoolVar(&f.verbose, "verbose", false, "Print more information in the log.")
 	// -I matches protoc's flag and its error message suggesting to pass -I.
-	flag.Var(&f.importPaths, "I", "path to directory with the imported .proto file; can be specified multiple times.")
+	flag.Var(&f.importPaths, "I", "Path to directory with the imported .proto file; can be specified multiple times.")
 
 	flag.StringVar(&f.messageName,
 		"message",
@@ -187,6 +189,8 @@ func parseFlags() (*flags, error) {
 		return nil, fmt.Errorf("-message is required (the name must contain the proto package name)")
 	case f.PartitioningField != "" && f.PartitioningDisabled:
 		return nil, fmt.Errorf("partitioning field cannot be non-empty with disabled partitioning")
+	case f.noGoMode && len(f.goModules) > 0:
+		return nil, fmt.Errorf("-no-go-mode and -go-module flags are not compatible")
 	}
 	if parts := strings.Split(*table, "."); len(parts) == 3 {
 		f.ProjectID = parts[0]
@@ -213,7 +217,7 @@ func run(ctx context.Context) error {
 
 	td := flags.tableDef
 
-	desc, err := loadProtoDescription(ctx, flags.protoDir, flags.goModules, flags.importPaths)
+	desc, err := loadProtoDescription(ctx, flags.protoDir, !flags.noGoMode, flags.goModules, flags.importPaths)
 	if err != nil {
 		return errors.Annotate(err, "failed to load proto descriptor").Err()
 	}
@@ -291,9 +295,9 @@ func checkGoMode(dir string) (bool, error) {
 }
 
 // prepInputs prepares inputs for protoc depending on Go vs non-Go mode.
-func prepInputs(ctx context.Context, dir string, goModules, importPaths []string) (*protoc.StagedInputs, error) {
-	useGo := len(goModules) > 0
-	if !useGo {
+func prepInputs(ctx context.Context, dir string, allowGoMode bool, goModules, importPaths []string) (*protoc.StagedInputs, error) {
+	useGo := allowGoMode && len(goModules) > 0
+	if !useGo && allowGoMode {
 		var err error
 		if useGo, err = checkGoMode(dir); err != nil {
 			return nil, err
@@ -309,9 +313,9 @@ func prepInputs(ctx context.Context, dir string, goModules, importPaths []string
 
 // loadProtoDescription compiles .proto files in the dir
 // and returns their descriptor.
-func loadProtoDescription(ctx context.Context, dir string, goModules, importPaths []string) (*descriptorpb.FileDescriptorSet, error) {
+func loadProtoDescription(ctx context.Context, dir string, allowGoMode bool, goModules, importPaths []string) (*descriptorpb.FileDescriptorSet, error) {
 	// Stage all requested Go modules under a single root.
-	inputs, err := prepInputs(ctx, dir, goModules, importPaths)
+	inputs, err := prepInputs(ctx, dir, allowGoMode, goModules, importPaths)
 	if err != nil {
 		return nil, err
 	}
