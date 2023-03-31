@@ -24,7 +24,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"flag"
-	"io/fs"
 	"log"
 	"math/big"
 	"os"
@@ -81,16 +80,16 @@ func main() {
 		log.Fatalf("Failed to create certificate: %s", err)
 	}
 
-	writePEM(*certOut, "CERTIFICATE", certBytes, 0666)
-	writePEM(*keyOut, "PRIVATE KEY", privBytes, 0600)
+	writePEM(*certOut, "CERTIFICATE", certBytes)
+	writePEM(*keyOut, "PRIVATE KEY", privBytes)
 }
 
-func writePEM(path, typ string, bytes []byte, perm fs.FileMode) {
+func writePEM(path, typ string, bytes []byte) {
 	log.Printf("Writing %s", path)
 	if err := os.MkdirAll(filepath.Dir(path), 0777); err != nil {
 		log.Fatalf("Failed to create path to %s: %s", path, err)
 	}
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+	f, err := os.Create(path)
 	if err != nil {
 		log.Fatalf("Failed to open %s: %s", path, err)
 	}
