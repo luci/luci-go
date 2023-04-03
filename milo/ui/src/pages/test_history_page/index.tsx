@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import styled from '@emotion/styled';
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
@@ -37,6 +38,22 @@ const GRAPH_TYPE_COMPONENT_MAP = {
   [GraphType.DURATION]: DurationGraph,
   [GraphType.STATUS]: StatusGraph,
 };
+
+const PageContainer = styled.div({
+  display: 'grid',
+  width: '100%',
+  minWidth: '800px',
+  gridTemplateRows: 'auto auto 1fr',
+});
+
+const GraphContainer = styled.div({
+  display: 'grid',
+  margin: '0 5px',
+  gridTemplateColumns: 'auto 1fr auto',
+  gridTemplateRows: 'auto 1fr',
+  gridTemplateAreas: `
+  'v-table graph extra'`,
+});
 
 export const TestHistoryPage = observer(() => {
   const { realm, testId } = useParams();
@@ -82,40 +99,27 @@ export const TestHistoryPage = observer(() => {
   const Graph = GRAPH_TYPE_COMPONENT_MAP[pageState.graphType];
 
   return (
-    <div
-      css={{
-        display: 'grid',
-        width: '100%',
-        minWidth: '800px',
-        gridTemplateRows: 'auto auto 1fr',
-      }}
-    >
+    <PageContainer>
       <TestIdLabel realm={realm} testId={testId} />
       <LinearProgress value={100} variant="determinate" />
       <FilterBox css={{ width: 'calc(100% - 10px)', margin: '5px' }} />
       <GraphConfig />
-      <div
-        css={{
-          display: 'grid',
-          margin: '0 5px',
-          gridTemplateColumns: 'auto 1fr auto',
-          gridTemplateRows: 'auto 1fr',
-          gridTemplateAreas: `
-          'v-table x-axis extra'
-          'v-table graph extra'`,
-        }}
-      >
+      <GraphContainer>
         <VariantDefTable css={{ gridArea: 'v-table' }} />
-        <DateAxis css={{ gridArea: 'x-axis' }} />
-        <Graph css={{ gridArea: 'graph' }} />
-        {pageState.graphType === GraphType.DURATION && <DurationLegend css={{ gridArea: 'extra' }} />}
-      </div>
+        <div css={{ gridArea: 'graph', overflow: 'scroll' }}>
+          <DateAxis css={{ width: '2600px' }} />
+          <Graph css={{ width: '2600px' }} />
+        </div>
+        {pageState.graphType === GraphType.DURATION && (
+          <DurationLegend css={{ gridArea: 'extra', marginLeft: '20px' }} />
+        )}
+      </GraphContainer>
       <div css={{ padding: '5px' }}>
         <VariantCounts />
       </div>
       <VerdictDetailsDialog />
       {/* Add padding to support free scrolling when the dialog is open. */}
       {!pageState.selectedGroup && <div css={{ width: '100%', height: '60vh' }} />}
-    </div>
+    </PageContainer>
   );
 });

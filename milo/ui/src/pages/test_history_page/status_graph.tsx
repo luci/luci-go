@@ -186,6 +186,10 @@ Click to view test details.</title>`;
   static styles = [
     commonStyles,
     css`
+      :host {
+        display: block;
+      }
+
       #graph {
         width: 100%;
       }

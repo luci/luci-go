@@ -111,6 +111,10 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
   static styles = [
     commonStyles,
     css`
+      :host {
+        display: block;
+      }
+
       #graph {
         width: 100%;
       }
