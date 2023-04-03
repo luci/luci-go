@@ -14,6 +14,7 @@
 
 import { Outlet } from 'react-router-dom';
 
+import { ErrorBoundary } from '../components/error_boundary';
 import { TopBar } from '../components/top_bar';
 
 /**
@@ -23,7 +24,9 @@ export function BaseLayout() {
   return (
     <>
       <TopBar />
-      <Outlet />
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
     </>
   );
 }
