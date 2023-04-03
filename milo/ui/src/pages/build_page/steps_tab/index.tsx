@@ -25,7 +25,7 @@ import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_u
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
 import { consumeStore, StoreInstance } from '../../../store';
-import commonStyle from '../../../styles/common_style.css';
+import { commonStyles } from '../../../styles/stylesheets';
 import { BuildPageStepListElement } from './step_list';
 
 @customElement('milo-steps-tab')
@@ -72,7 +72,7 @@ export class StepsTabElement extends MiloBaseElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #header {
         display: grid;

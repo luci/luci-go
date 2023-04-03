@@ -105,7 +105,6 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-sourcemap-loader": "^0.3.8",
     "karma-webpack": "^5.0.0",
-    "lit-css-loader": "^2.0.0",
     "mocha": "^10.2.0",
     "patch-package": "^6.5.1",
     "process": "^0.11.10",

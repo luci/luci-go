@@ -27,7 +27,7 @@ import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 import { consumeArtifactIdent } from './artifact_page_layout';
 
 /**
@@ -128,7 +128,7 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

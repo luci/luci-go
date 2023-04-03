@@ -19,7 +19,7 @@ import { LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { createRoot, Root } from 'react-dom/client';
 
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 
 const bounceEffect = keyframes`
   0%,
@@ -98,5 +98,5 @@ export class DotSpinnerElement extends LitElement {
     return this.parent;
   }
 
-  static styles = [commonStyle];
+  static styles = [commonStyles];
 }

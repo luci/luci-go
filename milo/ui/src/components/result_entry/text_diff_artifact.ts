@@ -28,7 +28,7 @@ import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { getRawArtifactURLPath, getTextDiffArtifactURLPath } from '../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { Artifact } from '../../services/resultdb';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 /**
  * Renders a text diff artifact.
@@ -76,7 +76,7 @@ export class TextDiffArtifactElement extends MobxLitElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #content {
         padding-top: 5px;

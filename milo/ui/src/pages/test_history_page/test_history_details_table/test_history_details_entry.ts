@@ -33,8 +33,7 @@ import { getBuildURLPathFromBuildId, getInvURLPath } from '../../../libs/url_uti
 import { TestVerdictBundle } from '../../../services/luci_analysis';
 import { RESULT_LIMIT } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
-import colorClasses from '../../../styles/color_classes.css';
-import commonStyle from '../../../styles/common_style.css';
+import { colorClasses, commonStyles } from '../../../styles/stylesheets';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -241,7 +240,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     colorClasses,
     css`
       :host {

@@ -22,7 +22,7 @@ import { createRoot, Root } from 'react-dom/client';
 
 import { getLogdogRawUrl } from '../libs/build_utils';
 import { Log } from '../services/buildbucket';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 
 export interface BuildbucketLogLinkProps {
   readonly log: Log;
@@ -83,5 +83,5 @@ export class SearchPageElement extends MobxLitElement {
     return this.parent;
   }
 
-  static styles = [commonStyle];
+  static styles = [commonStyles];
 }

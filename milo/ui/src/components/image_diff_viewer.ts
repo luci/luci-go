@@ -22,7 +22,7 @@ import './pixel_viewer';
 import { provider } from '../libs/context';
 import { getRawArtifactURLPath } from '../libs/url_utils';
 import { Artifact } from '../services/resultdb';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 import { MiloBaseElement } from './milo_base';
 import { Coordinate, provideCoord } from './pixel_viewer';
 
@@ -186,7 +186,7 @@ export class ImageDiffViewerElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

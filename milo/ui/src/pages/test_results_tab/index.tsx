@@ -29,7 +29,7 @@ import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/e
 import { URLExt } from '../../libs/utils';
 import { consumeStore, StoreInstance } from '../../store';
 import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 import { TestVariantsTableElement } from './test_variants_table';
 
 /**
@@ -148,7 +148,7 @@ export class TestResultsTabElement extends MiloBaseElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         /* Required to make 'position: sticky' work in Safari. */

@@ -25,7 +25,7 @@ import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { Artifact } from '../../services/resultdb';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 // Allowlist of hosts, used to validate URLs specified in the contents of link
 // artifacts. If the URL specified in a link artifact is not in this allowlist,
@@ -97,7 +97,7 @@ export class LinkArtifactElement extends MobxLitElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       .greyed-out {
         color: var(--greyed-out-text-color);

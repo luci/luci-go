@@ -33,7 +33,7 @@ import { PREDEFINED_TIME_INTERVALS } from '../libs/constants';
 import { enumerate } from '../libs/iter_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { roundDown } from '../libs/utils';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
 const TOP_AXIS_HEIGHT = 35;
@@ -436,7 +436,7 @@ export class Timeline extends MobxLitElement {
       });
   }
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #timeline {
         display: grid;

@@ -23,7 +23,7 @@ import { MiloBaseElement } from '../../../components/milo_base';
 import { consumer } from '../../../libs/context';
 import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
 import { consumeStore, StoreInstance } from '../../../store';
-import commonStyle from '../../../styles/common_style.css';
+import { commonStyles } from '../../../styles/stylesheets';
 import { BuildPageStepClusterElement } from './step_cluster';
 
 @customElement('milo-bp-step-list')
@@ -66,7 +66,7 @@ export class BuildPageStepListElement extends MiloBaseElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

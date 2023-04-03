@@ -20,7 +20,7 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import './drag_tracker';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 import { DragEvent } from './drag_tracker';
 
 @customElement('milo-column-header')
@@ -105,7 +105,7 @@ export class ColumnHeaderElement extends MobxLitElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: flex;

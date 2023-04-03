@@ -19,7 +19,7 @@ import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
 import { Cluster, makeRuleLink } from '../services/luci_analysis';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 
 @customElement('milo-associated-bugs-tooltip')
 export class AssociatedBugsTooltipElement extends MobxLitElement {
@@ -57,7 +57,7 @@ export class AssociatedBugsTooltipElement extends MobxLitElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

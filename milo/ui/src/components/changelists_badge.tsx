@@ -24,7 +24,7 @@ import { createRoot, Root } from 'react-dom/client';
 
 import './changelists_tooltip';
 import { Changelist } from '../services/luci_analysis';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 import { getClLabel, getClLink } from './changelists_tooltip';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
@@ -107,5 +107,5 @@ export class ChangelistsBadgeElement extends MobxLitElement {
     return this.parent;
   }
 
-  static styles = [commonStyle];
+  static styles = [commonStyles];
 }

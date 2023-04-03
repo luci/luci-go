@@ -24,7 +24,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { createContextLink, provider } from '../../libs/context';
 import { getInvURLPath } from '../../libs/url_utils';
 import { ArtifactIdentifier } from '../../services/resultdb';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 export const [provideArtifactIdent, consumeArtifactIdent] = createContextLink<ArtifactIdentifier>();
 
@@ -108,7 +108,7 @@ export class ArtifactPageLayoutElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

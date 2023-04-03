@@ -26,7 +26,7 @@ import { consumer } from '../../libs/context';
 import { Invocation } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 const MARGIN = 20;
 const MIN_GRAPH_WIDTH = 900;
@@ -189,7 +189,7 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

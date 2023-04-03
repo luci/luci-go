@@ -33,8 +33,7 @@ import { BuildStatus } from '../../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../../store';
 import { StepExt } from '../../../store/build_state';
 import { ExpandStepOption } from '../../../store/user_config';
-import colorClasses from '../../../styles/color_classes.css';
-import commonStyle from '../../../styles/common_style.css';
+import { colorClasses, commonStyles } from '../../../styles/stylesheets';
 import { BuildPageStepClusterElement } from './step_cluster';
 
 /**
@@ -247,7 +246,7 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     colorClasses,
     css`
       :host {

@@ -22,7 +22,7 @@ import { MiloBaseElement } from '../../components/milo_base';
 import { consumer } from '../../libs/context';
 import { consumeStore, StoreInstance } from '../../store';
 import { GraphType, XAxisType } from '../../store/test_history_page';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 @customElement('milo-th-graph-config')
 @consumer
@@ -125,7 +125,7 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: grid;

@@ -34,8 +34,7 @@ import { attachTags, hasTags } from '../../../libs/tag';
 import { Cluster } from '../../../services/luci_analysis';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
-import colorClasses from '../../../styles/color_classes.css';
-import commonStyle from '../../../styles/common_style.css';
+import { colorClasses, commonStyles } from '../../../styles/stylesheets';
 import { consumeProject } from './context';
 
 // This list defines the order in which variant def keys should be displayed.
@@ -331,8 +330,8 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     `;
   }
 
-  static styles = [
-    commonStyle,
+  private static _styles = [
+    commonStyles,
     colorClasses,
     css`
       :host {
@@ -427,6 +426,12 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
       }
     `,
   ];
+  public static get styles() {
+    return TestVariantEntryElement._styles;
+  }
+  public static set styles(value) {
+    TestVariantEntryElement._styles = value;
+  }
 }
 
 export interface TestVariantEntryProps {

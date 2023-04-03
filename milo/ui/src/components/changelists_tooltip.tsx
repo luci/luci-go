@@ -20,7 +20,7 @@ import { makeObservable, observable } from 'mobx';
 import { createRoot, Root } from 'react-dom/client';
 
 import { Changelist } from '../services/luci_analysis';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 
 export interface ChangelistBadgeProps {
   readonly changelists: readonly Changelist[];
@@ -76,5 +76,5 @@ export class ChangelistsTooltipElement extends MobxLitElement {
     return this.parent;
   }
 
-  static styles = [commonStyle];
+  static styles = [commonStyles];
 }

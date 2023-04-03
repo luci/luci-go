@@ -21,7 +21,7 @@ import { observer } from 'mobx-react-lite';
 import { createRoot, Root } from 'react-dom/client';
 
 import { Link } from '../models/link';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 
 export interface MiloLinkProps {
   readonly link: Link;
@@ -70,5 +70,5 @@ export class MiloLinkElement extends MobxLitElement {
     return this.parent;
   }
 
-  static styles = [commonStyle];
+  static styles = [commonStyles];
 }

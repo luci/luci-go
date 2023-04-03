@@ -31,7 +31,7 @@ import { getProjectURLPath } from '../../libs/url_utils';
 import { BuilderID } from '../../services/buildbucket';
 import { ListBuildersRequest, ListBuildersResponse } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 @customElement('milo-builders-page')
 @provider
@@ -186,7 +186,7 @@ export class BuildersPageElement extends MiloBaseElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #builders-group-id {
         background-color: var(--block-background-color);

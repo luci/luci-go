@@ -27,7 +27,7 @@ import { getBuilderURLPath, getBuildURLPathFromBuildData } from '../../libs/url_
 import { Build, BuilderID } from '../../services/buildbucket';
 import { BuilderStats } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 @customElement('milo-builders-page-row')
 @lazyRendering
@@ -147,7 +147,7 @@ export class BuildersPageRowElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: table-row;

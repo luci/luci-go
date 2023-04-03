@@ -30,8 +30,7 @@ import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
 import { createTVPropGetter, getPropKeyLabel } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
-import colorClasses from '../../../styles/color_classes.css';
-import commonStyle from '../../../styles/common_style.css';
+import { colorClasses, commonStyles } from '../../../styles/stylesheets';
 import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
 
 /**
@@ -211,7 +210,7 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     colorClasses,
     css`
       :host {

@@ -19,7 +19,7 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 
 import './associated_bugs_tooltip';
 import { AssociatedBug, Cluster } from '../services/luci_analysis';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 import { MiloBaseElement } from './milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from './tooltip';
 
@@ -97,7 +97,7 @@ export class AssociatedBugsBadgeElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       .badge {
         display: inline-block;

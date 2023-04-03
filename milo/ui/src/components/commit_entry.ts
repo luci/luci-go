@@ -29,7 +29,7 @@ import { defaultTarget } from '../libs/markdown_it_plugins/default_target';
 import { reviewerLine } from '../libs/markdown_it_plugins/reviewer_line';
 import { NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 
 const md = MarkdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])
@@ -120,7 +120,7 @@ export class CommitEntryElement extends MobxLitElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

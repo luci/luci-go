@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// By default the file will be loaded as a constructive stylesheet by
-// lit-css-loader. This doesn't work for React, so we need to tell webpack the
-// exact loaders to use.
-import '!!style-loader!css-loader?modules=global!codemirror/addon/fold/foldgutter.css';
-import '!!style-loader!css-loader?modules=global!codemirror/lib/codemirror.css';
+import 'codemirror/addon/fold/foldgutter.css';
+import 'codemirror/lib/codemirror.css';
 import 'codemirror/addon/edit/matchbrackets';
 import 'codemirror/addon/fold/brace-fold';
 import 'codemirror/addon/fold/foldcode';

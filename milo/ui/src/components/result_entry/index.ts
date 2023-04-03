@@ -40,8 +40,7 @@ import { unwrapOrElse } from '../../libs/utils';
 import { Cluster, makeClusterLink } from '../../services/luci_analysis';
 import { Artifact, ListArtifactsResponse, parseTestResultName, TestResult } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
-import colorClasses from '../../styles/color_classes.css';
-import commonStyle from '../../styles/common_style.css';
+import { colorClasses, commonStyles } from '../../styles/stylesheets';
 
 /**
  * Renders an expandable entry of the given test result.
@@ -389,7 +388,7 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     colorClasses,
     css`
       :host {

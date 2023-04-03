@@ -26,7 +26,7 @@ import { consumer } from '../../../libs/context';
 import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
 import { consumeStore, StoreInstance } from '../../../store';
 import { StepExt } from '../../../store/build_state';
-import commonStyle from '../../../styles/common_style.css';
+import { commonStyles } from '../../../styles/stylesheets';
 import { BuildPageStepEntryElement } from './step_entry';
 
 @customElement('milo-bp-step-cluster')
@@ -198,7 +198,7 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

@@ -23,7 +23,7 @@ import { computed, makeObservable, observable } from 'mobx';
 
 import { consumer } from '../../../libs/context';
 import { consumeStore, StoreInstance } from '../../../store';
-import commonStyle from '../../../styles/common_style.css';
+import { commonStyles } from '../../../styles/stylesheets';
 
 @customElement('milo-thdt-config-widget')
 @consumer
@@ -135,7 +135,7 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #configure-table {
         cursor: pointer;

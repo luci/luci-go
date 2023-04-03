@@ -23,7 +23,7 @@ import { makeObservable, observable } from 'mobx';
 
 import { consumer } from '../../../libs/context';
 import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
-import commonStyle from '../../../styles/common_style.css';
+import { commonStyles } from '../../../styles/stylesheets';
 
 @customElement('milo-tvt-config-widget')
 @consumer
@@ -144,7 +144,7 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #configure-table {
         cursor: pointer;

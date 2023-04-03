@@ -23,7 +23,7 @@ import { consumer } from '../../libs/context';
 import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
 import { QueryTestHistoryStatsResponseGroup } from '../../services/luci_analysis';
 import { consumeStore, StoreInstance } from '../../store';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 @customElement('milo-th-duration-graph')
@@ -109,7 +109,7 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #graph {
         width: 100%;

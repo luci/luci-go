@@ -27,7 +27,7 @@ import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { Artifact } from '../../services/resultdb';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 /**
  * Renders a text artifact.
@@ -113,7 +113,7 @@ export class TextArtifactElement extends MobxLitElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #load {
         color: var(--active-text-color);

@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// By default the file will be loaded as a constructive stylesheet by
-// lit-css-loader. This doesn't work for React, so we need to tell webpack the
-// exact loaders to use.
-import '!!style-loader!css-loader?modules=global!./styles/common_style.css';
-import '!!style-loader!css-loader?modules=global!./styles/color_classes.css';
 import { ThemeProvider } from '@emotion/react';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
+import './styles/common_style.css';
+import './styles/color_classes.css';
 import './components/tooltip';
 import { LitEnvProvider } from './components/lit_env_provider';
 import { BaseLayout } from './layouts/base';

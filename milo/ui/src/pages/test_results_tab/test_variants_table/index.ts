@@ -33,8 +33,7 @@ import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { getPropKeyLabel, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
 import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
-import colorClasses from '../../../styles/color_classes.css';
-import commonStyle from '../../../styles/common_style.css';
+import { colorClasses, commonStyles } from '../../../styles/stylesheets';
 import { consumeProject } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
@@ -271,7 +270,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     colorClasses,
     css`
       :host {

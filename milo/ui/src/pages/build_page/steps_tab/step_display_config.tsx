@@ -35,7 +35,7 @@ import '../../../components/dot_spinner';
 import { consumer } from '../../../libs/context';
 import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../../store';
 import { ExpandStepOption } from '../../../store/user_config';
-import commonStyle from '../../../styles/common_style.css';
+import { commonStyles } from '../../../styles/stylesheets';
 
 const StepCategoryLabelMap = Object.freeze({
   [ExpandStepOption.All]: 'All',
@@ -158,5 +158,5 @@ export class BuildPageStepDisplayConfigElement extends MobxLitElement {
     return this.parent;
   }
 
-  static styles = [commonStyle];
+  static styles = [commonStyles];
 }

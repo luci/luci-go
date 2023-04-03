@@ -21,7 +21,7 @@ import { Fragment, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 
 import { StringPair } from '../services/common';
-import commonStyle from '../styles/common_style.css';
+import { commonStyles } from '../styles/stylesheets';
 import { ExpandableEntry, ExpandableEntryBody, ExpandableEntryHeader } from './expandable_entry';
 
 export interface TagsEntryProps {
@@ -102,5 +102,5 @@ export class DotSpinnerElement extends MobxLitElement {
     return this.parent;
   }
 
-  static styles = [commonStyle];
+  static styles = [commonStyles];
 }

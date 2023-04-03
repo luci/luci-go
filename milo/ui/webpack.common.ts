@@ -48,7 +48,7 @@ const config: Configuration = {
       },
       {
         test: /\.css$/,
-        loader: 'lit-css-loader',
+        use: ['style-loader', 'css-loader'],
       },
     ],
   },

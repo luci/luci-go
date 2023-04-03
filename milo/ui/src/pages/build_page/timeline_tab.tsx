@@ -40,7 +40,7 @@ import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { roundDown } from '../../libs/utils';
 import { consumeStore, StoreInstance } from '../../store';
 import { StepExt } from '../../store/build_state';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 const MARGIN = 10;
 const TOP_AXIS_HEIGHT = 35;
@@ -470,7 +470,7 @@ export class TimelineTabElement extends MiloBaseElement {
   }
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       :host {
         display: block;

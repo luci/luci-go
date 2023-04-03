@@ -29,7 +29,7 @@ import { errorHandler, forwardWithoutMsg, reportErrorAsync, reportRenderError } 
 import { getGitilesRepoURL } from '../../libs/url_utils';
 import { GitCommit } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
-import commonStyle from '../../styles/common_style.css';
+import { commonStyles } from '../../styles/stylesheets';
 
 @customElement('milo-blamelist-tab')
 @errorHandler(forwardWithoutMsg)
@@ -247,7 +247,7 @@ export class BlamelistTabElement extends MiloBaseElement {
   });
 
   static styles = [
-    commonStyle,
+    commonStyles,
     css`
       #no-blamelist {
         padding: 10px;
