@@ -22,10 +22,12 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/errors"
+	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -62,6 +64,11 @@ func CheckConfigChanges(permissionsDB *permissions.PermissionsDB, latest []*Real
 
 func UpdateRealms(revs []*RealmsCfgRev) {
 	// TODO(cjacomet): Implement
+}
+
+func ExpandRealms(db *permissions.PermissionsDB, projectID string, realmsCfg *realmsconf.RealmsCfg) *protocol.Realms {
+	// TODO(cjacomet): Implement
+	return nil
 }
 
 // GetConfigs fetches the configs concurrently; the
