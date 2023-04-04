@@ -332,7 +332,7 @@ func constructQueryString(includeMetricBreakdown bool, queryMetrics []metrics.De
 			cluster_algorithm,
 			cluster_id
 		` + orderByClause + `
-		LIMIT 1000
+		LIMIT 200
 	`
 
 	if includeMetricBreakdown {
