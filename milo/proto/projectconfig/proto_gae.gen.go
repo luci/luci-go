@@ -17,7 +17,7 @@
 //go:build !copybara
 // +build !copybara
 
-package config
+package projectconfigpb
 
 import (
 	"google.golang.org/protobuf/proto"

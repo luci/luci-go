@@ -16,7 +16,7 @@
 //go:generate proto-gae -type Console
 //go:generate goimports -w .
 
-package config
+package projectconfigpb
 
 import (
 	"google.golang.org/protobuf/proto"

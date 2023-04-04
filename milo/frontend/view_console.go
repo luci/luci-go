@@ -40,12 +40,12 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
 func logTimer(c context.Context, message string) func() {
@@ -68,7 +68,7 @@ func validateFaviconURL(faviconURL string) error {
 	return nil
 }
 
-func getFaviconURL(c context.Context, def *config.Console) string {
+func getFaviconURL(c context.Context, def *projectconfigpb.Console) string {
 	if def.FaviconUrl == "" {
 		return ""
 	}
@@ -89,7 +89,7 @@ func getFaviconURL(c context.Context, def *config.Console) string {
 // specified console column.
 type columnSummaryFn func(columnIdx int) (*model.BuilderSummary, []*model.BuildSummary)
 
-func buildTreeFromDef(def *config.Console, getColumnSummaries columnSummaryFn) (*ui.Category, int) {
+func buildTreeFromDef(def *projectconfigpb.Console, getColumnSummaries columnSummaryFn) (*ui.Category, int) {
 	// Build console table tree from builders.
 	categoryTree := ui.NewCategory("")
 	depth := 0
@@ -113,7 +113,7 @@ func buildTreeFromDef(def *config.Console, getColumnSummaries columnSummaryFn) (
 
 // getConsoleGroups extracts the console summaries for all header summaries
 // out of the summaries map into console groups for the header.
-func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]*ui.BuilderSummaryGroup) []ui.ConsoleGroup {
+func getConsoleGroups(def *projectconfigpb.Header, summaries map[common.ConsoleID]*ui.BuilderSummaryGroup) []ui.ConsoleGroup {
 	if def == nil || len(def.GetConsoleGroups()) == 0 {
 		// No header, no console groups.
 		return nil
@@ -146,7 +146,7 @@ func getConsoleGroups(def *config.Header, summaries map[common.ConsoleID]*ui.Bui
 	return consoleGroups
 }
 
-func consoleRowCommits(c context.Context, project string, def *config.Console, limit int) (
+func consoleRowCommits(c context.Context, project string, def *projectconfigpb.Console, limit int) (
 	[]*buildsource.ConsoleRow, []ui.Commit, error) {
 
 	tGitiles := logTimer(c, "Rows: loading commit from gitiles")
@@ -263,7 +263,7 @@ func console(c context.Context, project, id string, limit int, con *common.Conso
 	}, nil
 }
 
-func consolePreview(c context.Context, summaries *ui.BuilderSummaryGroup, def *config.Console) (*ui.Console, error) {
+func consolePreview(c context.Context, summaries *ui.BuilderSummaryGroup, def *projectconfigpb.Console) (*ui.Console, error) {
 	categoryTree, depth := buildTreeFromDef(def, func(columnIdx int) (*model.BuilderSummary, []*model.BuildSummary) {
 		return summaries.Builders[columnIdx], nil
 	})
@@ -333,7 +333,7 @@ var oncallDataCache = layered.RegisterCache(layered.Parameters[*ui.Oncall]{
 })
 
 // getOncallData fetches oncall data and caches it for 10 minutes.
-func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary, error) {
+func getOncallData(c context.Context, config *projectconfigpb.Oncall) (*ui.OncallSummary, error) {
 	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v *ui.Oncall, exp time.Duration, err error) {
 		out := &ui.Oncall{}
 		if err := common.GetJSONData(http.DefaultClient, config.Url, out); err != nil {
@@ -356,7 +356,7 @@ func getOncallData(c context.Context, config *config.Oncall) (*ui.OncallSummary,
 
 // renderOncallers renders a summary string to be displayed in the UI, showing
 // the current oncallers.
-func renderOncallers(config *config.Oncall, jsonResult *ui.Oncall) template.HTML {
+func renderOncallers(config *projectconfigpb.Oncall, jsonResult *ui.Oncall) template.HTML {
 	var oncallers string
 	if len(jsonResult.Emails) == 1 {
 		oncallers = jsonResult.Emails[0]
@@ -388,7 +388,7 @@ func renderOncallers(config *config.Oncall, jsonResult *ui.Oncall) template.HTML
 	return common.ObfuscateEmail(common.ShortenEmail(oncallers))
 }
 
-func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]*ui.OncallSummary, error) {
+func consoleHeaderOncall(c context.Context, config []*projectconfigpb.Oncall) ([]*ui.OncallSummary, error) {
 	// Get oncall data from URLs.
 	oncalls := make([]*ui.OncallSummary, len(config))
 	err := parallel.WorkPool(8, func(ch chan<- func() error) {
@@ -404,7 +404,7 @@ func consoleHeaderOncall(c context.Context, config []*config.Oncall) ([]*ui.Onca
 	return oncalls, err
 }
 
-func consoleHeader(c context.Context, project string, header *config.Header) (*ui.ConsoleHeader, error) {
+func consoleHeader(c context.Context, project string, header *projectconfigpb.Header) (*ui.ConsoleHeader, error) {
 	// Return nil if the header is empty.
 	switch {
 	case len(header.Oncalls) != 0:
@@ -500,7 +500,7 @@ func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*ui.Link, error) {
 }
 
 // consoleHeaderGroupIDs extracts the console group IDs out of the header config.
-func consoleHeaderGroupIDs(project string, config []*config.ConsoleSummaryGroup) ([]common.ConsoleID, error) {
+func consoleHeaderGroupIDs(project string, config []*projectconfigpb.ConsoleSummaryGroup) ([]common.ConsoleID, error) {
 	consoleIDSet := map[common.ConsoleID]struct{}{}
 	for _, group := range config {
 		for _, id := range group.ConsoleIds {
@@ -621,7 +621,7 @@ func ConsolesHandler(c *router.Context, projectID string) error {
 	type fullConsole struct {
 		ID        string
 		ProjectID string
-		Def       *config.Console
+		Def       *projectconfigpb.Console
 		Render    consoleRenderer
 	}
 	var consoles []fullConsole

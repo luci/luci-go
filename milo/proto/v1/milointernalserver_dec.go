@@ -7,7 +7,7 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 
-	config "go.chromium.org/luci/milo/api/config"
+	projectconfig "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
 type DecoratedMiloInternal struct {
@@ -42,7 +42,7 @@ func (s *DecoratedMiloInternal) QueryBlamelist(ctx context.Context, req *QueryBl
 	return
 }
 
-func (s *DecoratedMiloInternal) GetProjectCfg(ctx context.Context, req *GetProjectCfgRequest) (rsp *config.Project, err error) {
+func (s *DecoratedMiloInternal) GetProjectCfg(ctx context.Context, req *GetProjectCfgRequest) (rsp *projectconfig.Project, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
 		newCtx, err = s.Prelude(ctx, "GetProjectCfg", req)

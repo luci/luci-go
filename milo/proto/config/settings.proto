@@ -4,9 +4,9 @@
 
 syntax = "proto3";
 
-package milo;
+package luci.milo.config;
 
-option go_package = "go.chromium.org/luci/milo/api/config";
+option go_package = "go.chromium.org/luci/milo/proto/config;configpb";
 
 // Settings represents the format for the global (service) config for Milo.
 message Settings {

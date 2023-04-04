@@ -21,8 +21,8 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
+	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/milo/rpc"
 	"go.chromium.org/luci/server/auth"
 )
@@ -31,7 +31,7 @@ import (
 // cacheRefreshThreshold.
 func UpdateBuilders(c context.Context) error {
 	service := &rpc.MiloInternalService{
-		GetSettings: func(c context.Context) (*config.Settings, error) {
+		GetSettings: func(c context.Context) (*configpb.Settings, error) {
 			settings := common.GetSettings(c)
 			return settings, nil
 		},

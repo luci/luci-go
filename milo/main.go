@@ -27,11 +27,11 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/milo/api/config"
-	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend"
+	configpb "go.chromium.org/luci/milo/proto/config"
+	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/milo/rpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
@@ -68,7 +68,7 @@ func main() {
 		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
 		milopb.RegisterMiloInternalServer(srv, &milopb.DecoratedMiloInternal{
 			Service: &rpc.MiloInternalService{
-				GetSettings: func(c context.Context) (*config.Settings, error) {
+				GetSettings: func(c context.Context) (*configpb.Settings, error) {
 					settings := common.GetSettings(c)
 					return settings, nil
 				},

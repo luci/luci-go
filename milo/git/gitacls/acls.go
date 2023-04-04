@@ -26,12 +26,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/milo/api/config"
+	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 )
 
 // FromConfig returns ACLs if config is valid.
-func FromConfig(c context.Context, cfg []*config.Settings_SourceAcls) (*ACLs, error) {
+func FromConfig(c context.Context, cfg []*configpb.Settings_SourceAcls) (*ACLs, error) {
 	ctx := validation.Context{Context: c}
 	ACLs := &ACLs{}
 	ACLs.load(&ctx, cfg)
@@ -42,7 +42,7 @@ func FromConfig(c context.Context, cfg []*config.Settings_SourceAcls) (*ACLs, er
 }
 
 // ValidateConfig passes all validation errors through validation context.
-func ValidateConfig(ctx *validation.Context, cfg []*config.Settings_SourceAcls) {
+func ValidateConfig(ctx *validation.Context, cfg []*configpb.Settings_SourceAcls) {
 	var a ACLs
 	a.load(ctx, cfg)
 }
@@ -103,7 +103,7 @@ type hostACLs struct {
 }
 
 // load validates and loads ACLs from config.
-func (a *ACLs) load(ctx *validation.Context, cfg []*config.Settings_SourceAcls) {
+func (a *ACLs) load(ctx *validation.Context, cfg []*configpb.Settings_SourceAcls) {
 	a.hosts = map[string]*hostACLs{}
 	for i, group := range cfg {
 		ctx.Enter("source_acls #%d", i)

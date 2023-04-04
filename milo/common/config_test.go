@@ -48,7 +48,7 @@ func TestConfig(t *testing.T) {
 			Convey("Load a bad config", func() {
 				content := []byte(badCfg)
 				validateProjectCfg(ctx, configSet, path, content)
-				So(ctx.Finalize().Error(), ShouldResemble, "in <unspecified file>: line 4: unknown field name \"\" in config.Header")
+				So(ctx.Finalize().Error(), ShouldResemble, "in <unspecified file>: line 4: unknown field name \"\" in projectconfigpb.Header")
 			})
 			Convey("Load another bad config", func() {
 				content := []byte(badCfg2)

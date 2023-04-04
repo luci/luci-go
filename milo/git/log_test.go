@@ -28,8 +28,8 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
+	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/redisconn"
@@ -59,7 +59,7 @@ func TestLog(t *testing.T) {
 		gitilesMock := mock_gitiles.NewMockGitilesClient(ctl)
 
 		host := "limited.googlesource.com"
-		acls, err := gitacls.FromConfig(c, []*config.Settings_SourceAcls{
+		acls, err := gitacls.FromConfig(c, []*configpb.Settings_SourceAcls{
 			{Hosts: []string{host}, Readers: []string{"allowed@example.com"}},
 		})
 		So(err, ShouldBeNil)

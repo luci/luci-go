@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	protoutil "go.chromium.org/luci/common/proto"
-	configpb "go.chromium.org/luci/common/proto/config"
+	luciconfigpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	configInterface "go.chromium.org/luci/config"
@@ -41,8 +41,9 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
+	configpb "go.chromium.org/luci/milo/proto/config"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
 // Project is a datastore entity representing a single project.
@@ -119,7 +120,7 @@ type Console struct {
 	// If this console is external (i.e. a reference to a console from
 	// another project), this will contain the resolved Console definition,
 	// but with ExternalId and ExternalProject also set.
-	Def config.Console `gae:",noindex"`
+	Def projectconfigpb.Console `gae:",noindex"`
 
 	// Realm that the console exists under.
 	Realm string
@@ -167,7 +168,7 @@ func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 		okBuilderIDs = append(okBuilderIDs, id)
 	}
 	c.Builders = okBuilderIDs
-	okBuilders := make([]*config.Builder, 0, len(c.Def.Builders))
+	okBuilders := make([]*projectconfigpb.Builder, 0, len(c.Def.Builders))
 	for _, b := range c.Def.Builders {
 		bid, err := ParseLegacyBuilderID(b.Name)
 		if err != nil {
@@ -289,8 +290,8 @@ func ReplaceNSEWith(err errors.MultiError, replacement error) error {
 // instance of Milo from the datastore.  Returns an empty config and warn heavily
 // if none is found.
 // TODO(hinoka): Use process cache to cache configs.
-func GetSettings(c context.Context) *config.Settings {
-	settings := config.Settings{}
+func GetSettings(c context.Context) *configpb.Settings {
+	settings := configpb.Settings{}
 
 	msg, err := GetCurrentServiceConfig(c)
 	if err != nil {
@@ -308,7 +309,7 @@ func GetSettings(c context.Context) *config.Settings {
 		logging.WithError(err).Errorf(c,
 			"Encountered error while unmarshalling service config, using empty config.")
 		// Zero out the message just in case something got written in.
-		settings = config.Settings{}
+		settings = configpb.Settings{}
 	}
 
 	return &settings
@@ -344,7 +345,7 @@ const globalConfigFilename = "settings.cfg"
 
 // UpdateServiceConfig fetches the service config from luci-config
 // and then stores a snapshot of the configuration in datastore.
-func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
+func UpdateServiceConfig(c context.Context) (*configpb.Settings, error) {
 	// Acquire the raw config client.
 	content := ""
 	meta := configInterface.Meta{}
@@ -361,7 +362,7 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	// Reserialize it into a binary proto to make sure older/newer Milo versions
 	// can safely use the entity when some fields are added/deleted. Text protos
 	// do not guarantee that.
-	settings := &config.Settings{}
+	settings := &configpb.Settings{}
 	err = protoutil.UnmarshalTextML(content, settings)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -419,7 +420,7 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 //   - A Project entity to store in Datastore
 //   - The parsed Milo config (may be nil if there was no milo.cfg)
 //   - Metadata for the Milo config (may be nil if there was no milo.cfg)
-func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *config.Project, *configInterface.Meta, error) {
+func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *projectconfigpb.Project, *configInterface.Meta, error) {
 	logging.Infof(c, "fetching configs from %q", cfg.ConfigSet)
 
 	projectID := cfg.ConfigSet.Project()
@@ -440,7 +441,7 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *co
 	}
 
 	// Load the Milo config (if it exists).
-	miloCfg := config.Project{}
+	miloCfg := projectconfigpb.Project{}
 	miloCfgMeta := configInterface.Meta{}
 	err = cfgclient.Get(c,
 		cfg.ConfigSet,
@@ -484,15 +485,15 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *co
 // entities should be updated for a given project.
 //
 // Returns a list of entities to store to apply the update.
-func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[string]*config.Console,
-	project *Project, cfg *config.Project, meta *configInterface.Meta) ([]any, error) {
+func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[string]*projectconfigpb.Console,
+	project *Project, cfg *projectconfigpb.Project, meta *configInterface.Meta) ([]any, error) {
 	// If no Milo config was loaded, there are no consoles to update.
 	if cfg == nil {
 		return []any{}, nil
 	}
 
 	// Extract the headers into a map for convenience.
-	headers := make(map[string]*config.Header, len(cfg.Headers))
+	headers := make(map[string]*projectconfigpb.Header, len(cfg.Headers))
 	for _, header := range cfg.Headers {
 		headers[header.Id] = header
 	}
@@ -514,7 +515,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			}
 			// Copy the fields of the external console into this one, but keep Id, Name,
 			// ExternalProject, and ExternalId.
-			mergedPc := proto.Clone(externalConsole).(*config.Console)
+			mergedPc := proto.Clone(externalConsole).(*projectconfigpb.Console)
 			mergedPc.Id = pc.Id
 			mergedPc.Name = pc.Name
 			mergedPc.ExternalProject = pc.ExternalProject
@@ -551,7 +552,7 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 
 // parseProjectACL parses project.cfg and extracts project ACL from it.
 func parseProjectACL(projectCfg string) (ACL, error) {
-	var cfg configpb.ProjectCfg
+	var cfg luciconfigpb.ProjectCfg
 	if err := protoutil.UnmarshalTextML(projectCfg, &cfg); err != nil {
 		return ACL{}, err
 	}
@@ -585,8 +586,8 @@ func parseProjectACL(projectCfg string) (ACL, error) {
 // and returns them in a map, indexed by name.
 //
 // If miloCfg is nil or doesn't have any consoles, returns non-nil empty map.
-func getConsolesFromMiloCfg(miloCfg *config.Project) map[string]*config.Console {
-	consoles := make(map[string]*config.Console, len(miloCfg.GetConsoles()))
+func getConsolesFromMiloCfg(miloCfg *projectconfigpb.Project) map[string]*projectconfigpb.Console {
+	consoles := make(map[string]*projectconfigpb.Console, len(miloCfg.GetConsoles()))
 	for _, console := range miloCfg.GetConsoles() {
 		consoles[console.Id] = console
 	}
@@ -614,7 +615,7 @@ func UpdateProjects(c context.Context) error {
 	type result struct {
 		projectID   string
 		project     *Project
-		miloCfg     *config.Project
+		miloCfg     *projectconfigpb.Project
 		miloCfgMeta *configInterface.Meta
 		err         error
 	}
@@ -646,7 +647,7 @@ func UpdateProjects(c context.Context) error {
 	//   * Pruning consoles that were deleted.
 	// Projects with broken configs that could not be fetched are represented by
 	// nil entries. Projects without consoles are represented by empty maps.
-	knownProjects := map[string]map[string]*config.Console{}
+	knownProjects := map[string]map[string]*projectconfigpb.Console{}
 	merr := errors.MultiError{}
 	resultsList := make([]result, 0, len(cfgs))
 	for i := 0; i < len(cfgs); i++ {
@@ -920,7 +921,7 @@ func init() {
 // * Make sure the config is able to be unmarshalled.
 // * Make sure all consoles have either builder_view_only: true or manifest_name
 func validateProjectCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	proj := config.Project{}
+	proj := projectconfigpb.Project{}
 	if err := protoutil.UnmarshalTextML(string(content), &proj); err != nil {
 		ctx.Error(err)
 		return nil
@@ -957,7 +958,7 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 	return nil
 }
 
-func validateConsole(ctx *validation.Context, knownConsoles *stringset.Set, knownHeaders *stringset.Set, console *config.Console) {
+func validateConsole(ctx *validation.Context, knownConsoles *stringset.Set, knownHeaders *stringset.Set, console *projectconfigpb.Console) {
 	if console.Id == "" {
 		ctx.Errorf("missing id")
 	} else if strings.ContainsAny(console.Id, "/") {
@@ -975,7 +976,7 @@ func validateConsole(ctx *validation.Context, knownConsoles *stringset.Set, know
 	}
 }
 
-func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, console *config.Console) {
+func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, console *projectconfigpb.Console) {
 	// If this is a CI console and it's missing manifest name, the author
 	// probably forgot something.
 	if !console.BuilderViewOnly {
@@ -1016,7 +1017,7 @@ func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, 
 	}
 }
 
-func validateExternalConsole(ctx *validation.Context, console *config.Console) {
+func validateExternalConsole(ctx *validation.Context, console *projectconfigpb.Console) {
 	// Verify that both project and external ID are set.
 	if console.ExternalProject == "" {
 		ctx.Errorf("missing external project")
@@ -1050,7 +1051,7 @@ func validateExternalConsole(ctx *validation.Context, console *config.Console) {
 //
 // * Make sure the config is able to be unmarshalled.
 func validateServiceCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	settings := config.Settings{}
+	settings := configpb.Settings{}
 	if err := protoutil.UnmarshalTextML(string(content), &settings); err != nil {
 		ctx.Error(err)
 	}

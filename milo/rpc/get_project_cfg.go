@@ -19,15 +19,15 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/grpc/appstatus"
-	milo "go.chromium.org/luci/milo/api/config"
-	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
+	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
 )
 
 // GetProjectCfg implements milopb.MiloInternal service
-func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.GetProjectCfgRequest) (_ *milo.Project, err error) {
+func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.GetProjectCfgRequest) (_ *projectconfigpb.Project, err error) {
 	projectName := req.GetProject()
 	if projectName == "" {
 		return nil, appstatus.Error(codes.InvalidArgument, "project must be specified")
@@ -48,7 +48,7 @@ func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.Get
 	if err != nil {
 		return nil, err
 	}
-	return &milo.Project{
+	return &projectconfigpb.Project{
 		LogoUrl:        project.LogoURL,
 		BugUrlTemplate: project.BugURLTemplate,
 	}, nil

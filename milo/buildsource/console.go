@@ -25,10 +25,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
 // ConsoleRow is one row of a particular console.
@@ -48,7 +48,7 @@ type ConsoleRow struct {
 // GetConsoleRows returns a row-oriented collection of BuildSummary
 // objects. Each row corresponds to the similarly-indexed commit in the
 // `commits` slice.
-func GetConsoleRows(c context.Context, project string, console *config.Console, commits []string) ([]*ConsoleRow, error) {
+func GetConsoleRows(c context.Context, project string, console *projectconfigpb.Console, commits []string) ([]*ConsoleRow, error) {
 	rawCommits := make([][]byte, len(commits))
 	for i, c := range commits {
 		var err error
@@ -108,7 +108,7 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 	map[common.ConsoleID]*ui.BuilderSummaryGroup, error) {
 
 	// Maps consoleID -> console config definition.
-	consoles := make(map[common.ConsoleID]*config.Console, len(consoleEnts))
+	consoles := make(map[common.ConsoleID]*projectconfigpb.Console, len(consoleEnts))
 
 	// Maps the BuilderID to the per-console pointer-to-summary in the summaries
 	// map. Note that builders with multiple builderIDs in the same console will

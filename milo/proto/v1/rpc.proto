@@ -20,9 +20,9 @@ import "go.chromium.org/luci/common/proto/git/commit.proto";
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
-import "go.chromium.org/luci/milo/api/config/project.proto";
+import "go.chromium.org/luci/milo/proto/projectconfig/project.proto";
 
-option go_package = "go.chromium.org/luci/milo/api/service/v1;milopb";
+option go_package = "go.chromium.org/luci/milo/proto/v1;milopb";
 
 // Service to query data on the Milo server.
 //
@@ -42,7 +42,7 @@ service MiloInternal {
   // Gets the project config.
   //
   // Return the config of the project.
-  rpc GetProjectCfg(GetProjectCfgRequest) returns (.milo.Project) {};
+  rpc GetProjectCfg(GetProjectCfgRequest) returns (luci.milo.projectconfig.Project) {};
 
   // Retrieves the recent, finished builds of a builder.
   rpc QueryRecentBuilds(QueryRecentBuildsRequest) returns (QueryRecentBuildsResponse) {};

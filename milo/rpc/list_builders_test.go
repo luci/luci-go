@@ -26,9 +26,9 @@ import (
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/api/config"
-	milopb "go.chromium.org/luci/milo/api/service/v1"
 	"go.chromium.org/luci/milo/common"
+	configpb "go.chromium.org/luci/milo/proto/config"
+	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -69,9 +69,9 @@ func TestListBuilders(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		mockBuildersClient := buildbucketpb.NewMockBuildersClient(gomock.NewController(t))
 		srv := &MiloInternalService{
-			GetSettings: func(c context.Context) (*config.Settings, error) {
-				return &config.Settings{
-					Buildbucket: &config.Settings_Buildbucket{
+			GetSettings: func(c context.Context) (*configpb.Settings, error) {
+				return &configpb.Settings{
+					Buildbucket: &configpb.Settings_Buildbucket{
 						Host: "buildbucket_host",
 					},
 				}, nil

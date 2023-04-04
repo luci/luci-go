@@ -55,7 +55,7 @@ import (
 	_ "go.chromium.org/luci/cv/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
-	_ "go.chromium.org/luci/milo/api/config"
+	_ "go.chromium.org/luci/milo/proto/projectconfig"
 	_ "go.chromium.org/luci/resultdb/proto/v1"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
 )
@@ -114,7 +114,7 @@ func init() {
 		"go.chromium.org/luci/cv/api/config/v2/config.proto",
 		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
 		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
-		"go.chromium.org/luci/milo/api/config/project.proto",
+		"go.chromium.org/luci/milo/proto/projectconfig/project.proto",
 		"go.chromium.org/luci/resultdb/proto/v1/invocation.proto",
 		"go.chromium.org/luci/resultdb/proto/v1/predicate.proto",
 		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",

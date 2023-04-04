@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2015 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+//go:generate cproto
+//go:generate goimports -w .
 
-import "strings"
+package configpb
 
-// ParseCategory takes a Builder's Category and parses it into a list of
-// subcategories. The top-level category is listed first.
-func (b *Builder) ParseCategory() []string {
-	return strings.Split(b.Category, "|")
-}
+import (
+	"google.golang.org/protobuf/proto"
+)
 
-// AllBuilderIDs returns all BuilderIDs mentioned by this Console.
-func (c *Console) AllBuilderIDs() []string {
-	builders := make([]string, 0, len(c.Builders))
-	for _, b := range c.Builders {
-		builders = append(builders, b.Name)
-	}
-	return builders
-}
+var _ = proto.Marshal

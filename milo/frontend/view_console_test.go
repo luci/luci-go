@@ -23,8 +23,8 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/frontend/ui"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
 func TestRenderOncallers(t *testing.T) {
@@ -49,7 +49,7 @@ func TestRenderOncallers(t *testing.T) {
 		defer server.Close()
 
 		Convey("Fetch failed", func() {
-			oncallConfig := config.Oncall{
+			oncallConfig := projectconfigpb.Oncall{
 				Url: server.URL + "?name=bad",
 			}
 			result, err := getOncallData(ctx, &oncallConfig)
@@ -57,7 +57,7 @@ func TestRenderOncallers(t *testing.T) {
 			So(result.Oncallers, ShouldEqual, template.HTML(`ERROR: Fetching oncall failed`))
 		})
 		Convey("Fetch succeeded", func() {
-			oncallConfig := config.Oncall{
+			oncallConfig := projectconfigpb.Oncall{
 				Name: "Good rotation",
 				Url:  server.URL + "?name=good",
 			}
@@ -70,7 +70,7 @@ func TestRenderOncallers(t *testing.T) {
 
 	Convey("Rendering oncallers works", t, func() {
 		Convey("Legacy trooper format", func() {
-			oncallConfig := config.Oncall{
+			oncallConfig := projectconfigpb.Oncall{
 				Name: "Legacy trooper",
 				Url:  "http://fake-rota.appspot.com/legacy/trooper.json",
 			}
@@ -120,7 +120,7 @@ func TestRenderOncallers(t *testing.T) {
 			})
 		})
 		Convey("Email-only format", func() {
-			oncallConfig := config.Oncall{
+			oncallConfig := projectconfigpb.Oncall{
 				Name: "Legacy trooper",
 				Url:  "http://fake-rota.appspot.com/legacy/trooper.json",
 			}
@@ -161,7 +161,7 @@ func TestRenderOncallers(t *testing.T) {
 						`foo, bar, baz<span style="display:none">ohnoyoudont</span>@example.com`))
 				})
 				Convey("Primary/secondary labeling enabled", func() {
-					oncallConfig := config.Oncall{
+					oncallConfig := projectconfigpb.Oncall{
 						Name:                       "Legacy trooper",
 						Url:                        "http://fake-rota.appspot.com/legacy/trooper.json",
 						ShowPrimarySecondaryLabels: true,

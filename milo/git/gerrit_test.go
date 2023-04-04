@@ -22,8 +22,8 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
+	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -42,7 +42,7 @@ func TestCLEmail(t *testing.T) {
 		gerritMock := gerritpb.NewMockGerritClient(ctl)
 
 		host := "limited-review.googlesource.com"
-		acls, err := gitacls.FromConfig(c, []*config.Settings_SourceAcls{
+		acls, err := gitacls.FromConfig(c, []*configpb.Settings_SourceAcls{
 			{Hosts: []string{"limited.googlesource.com"}, Readers: []string{"allowed@example.com"}},
 		})
 		So(err, ShouldBeNil)

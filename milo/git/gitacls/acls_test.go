@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/milo/api/config"
+	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -35,26 +35,26 @@ func TestACLsWork(t *testing.T) {
 
 	Convey("ACLs work", t, func() {
 		Convey("Validation works", func() {
-			validate := func(cfg ...*config.Settings_SourceAcls) error {
+			validate := func(cfg ...*configpb.Settings_SourceAcls) error {
 				ctx := validation.Context{Context: c}
 				ctx.SetFile("settings.cfg")
 				ValidateConfig(&ctx, cfg)
 				return ctx.Finalize()
 			}
-			mustError := func(cfg ...*config.Settings_SourceAcls) multiError {
+			mustError := func(cfg ...*configpb.Settings_SourceAcls) multiError {
 				err := validate(cfg...)
 				So(err, ShouldNotBeNil)
 				return multiError(err.(*validation.Error).Errors)
 			}
 
-			valid := config.Settings_SourceAcls{
+			valid := configpb.Settings_SourceAcls{
 				Hosts:    []string{"a.googlesource.com"},
 				Projects: []string{"https://b.googlesource.com/c"},
 				Readers:  []string{"group:g", "user@example.com"},
 			}
 			So(validate(&valid), ShouldBeNil)
 
-			mustError(&config.Settings_SourceAcls{}).with(
+			mustError(&configpb.Settings_SourceAcls{}).with(
 				"at least 1 reader required",
 				"at least 1 host or project required",
 			)
@@ -71,7 +71,7 @@ func TestACLsWork(t *testing.T) {
 			})
 
 			Convey("hosts", func() {
-				second := config.Settings_SourceAcls{
+				second := configpb.Settings_SourceAcls{
 					Hosts: []string{
 						valid.Hosts[0],
 						"example.com",
@@ -88,7 +88,7 @@ func TestACLsWork(t *testing.T) {
 			})
 
 			Convey("projects", func() {
-				second := config.Settings_SourceAcls{
+				second := configpb.Settings_SourceAcls{
 					Hosts: []string{"r.googlesource.com"},
 					Projects: []string{
 						valid.Projects[0], // dups of prev blocks are OK.
@@ -114,7 +114,7 @@ func TestACLsWork(t *testing.T) {
 			})
 		})
 
-		load := func(cfg ...*config.Settings_SourceAcls) *ACLs {
+		load := func(cfg ...*configpb.Settings_SourceAcls) *ACLs {
 			a, err := FromConfig(c, cfg)
 			if err != nil {
 				panic(err) // for stacktrace.
@@ -124,7 +124,7 @@ func TestACLsWork(t *testing.T) {
 
 		Convey("Loading works", func() {
 			So(load(
-				&config.Settings_SourceAcls{
+				&configpb.Settings_SourceAcls{
 					Hosts: []string{"first.googlesource.com"},
 					Projects: []string{
 						"second.googlesource.com/y1",
@@ -163,7 +163,7 @@ func TestACLsWork(t *testing.T) {
 				})
 
 			So(load(
-				&config.Settings_SourceAcls{
+				&configpb.Settings_SourceAcls{
 					Hosts: []string{"first.googlesource.com"},
 					Projects: []string{
 						"second.googlesource.com/y1",
@@ -171,7 +171,7 @@ func TestACLsWork(t *testing.T) {
 					},
 					Readers: []string{"user@example.com"},
 				},
-				&config.Settings_SourceAcls{
+				&configpb.Settings_SourceAcls{
 					Hosts: []string{"third.googlesource.com"},
 					Projects: []string{
 						"first.googlesource.com/x",
@@ -226,12 +226,12 @@ func TestACLsWork(t *testing.T) {
 
 		Convey("IsAllowed works", func() {
 			acls := load(
-				&config.Settings_SourceAcls{
+				&configpb.Settings_SourceAcls{
 					Hosts:    []string{"public.googlesource.com"},
 					Projects: []string{"limited.googlesource.com/public"},
 					Readers:  []string{"group:all"},
 				},
-				&config.Settings_SourceAcls{
+				&configpb.Settings_SourceAcls{
 					Hosts:    []string{"limited.googlesource.com"},
 					Projects: []string{"c.googlesource.com/private"},
 					Readers:  []string{"group:some", "they@example.com"},
