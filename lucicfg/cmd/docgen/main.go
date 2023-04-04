@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.chromium.org/luci/lucicfg/docgen"
+	"go.chromium.org/luci/starlark/docgen"
 )
 
 func main() {

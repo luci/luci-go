@@ -17,8 +17,7 @@ package symbols
 import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-
-	"go.chromium.org/luci/lucicfg/docgen/ast"
+	"go.chromium.org/luci/starlark/docgen/ast"
 )
 
 // Loader knows how to load symbols from a starlark file, following references

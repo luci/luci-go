@@ -23,10 +23,9 @@ import (
 	"text/template"
 
 	"go.chromium.org/luci/common/data/stringset"
-
-	"go.chromium.org/luci/lucicfg/docgen/ast"
-	"go.chromium.org/luci/lucicfg/docgen/docstring"
-	"go.chromium.org/luci/lucicfg/docgen/symbols"
+	"go.chromium.org/luci/starlark/docgen/ast"
+	"go.chromium.org/luci/starlark/docgen/docstring"
+	"go.chromium.org/luci/starlark/docgen/symbols"
 )
 
 // Generator renders text templates that have access to parsed structured
