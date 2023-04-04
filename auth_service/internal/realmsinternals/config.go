@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
@@ -55,7 +56,7 @@ type realmsMap struct {
 	cfgMap map[string]*config.Config
 }
 
-func CheckConfigChanges(latest []*RealmsCfgRev, stored []*RealmsCfgRev) {
+func CheckConfigChanges(permissionsDB *permissions.PermissionsDB, latest []*RealmsCfgRev, stored []*RealmsCfgRev) {
 	// TODO(cjacomet): Implement
 }
 
