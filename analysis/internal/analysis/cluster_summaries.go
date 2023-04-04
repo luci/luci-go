@@ -17,6 +17,7 @@ package analysis
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -58,6 +59,7 @@ func resolveAlgorithm(algorithm string) string {
 }
 
 const MetricValueColumnSuffix = "value"
+const metricByDayColumnSuffix = "by_day"
 
 type QueryClusterSummariesOptions struct {
 	// A filter on the underlying failures to include in the clusters.
@@ -68,6 +70,25 @@ type QueryClusterSummariesOptions struct {
 	// in the OrderBy clause, it must also be included here.
 	Metrics   []metrics.Definition
 	TimeRange *pb.TimeRange
+	// Whether the daily breakdown should be included in the cluster summaries'
+	// metric values.
+	IncludeMetricBreakdown bool
+}
+
+type MetricValue struct {
+	// The residual value of the cluster metric.
+	// For bug clusters, the residual metric value is the metric value
+	// calculated using all of the failures in the cluster.
+	// For suggested clusters, the residual metric value is calculated
+	// using the failures in the cluster which are not also part of a
+	// bug cluster. In this way, measures attributed to bug clusters
+	// are not counted again against suggested clusters.
+	Value int64
+	// The value of the cluster metric over time, grouped by 24-hour periods
+	// in the queried time range, in reverse chronological order
+	// i.e. the first entry is the metric value for the 24-hour period
+	// immediately preceding the time range's latest time.
+	DailyBreakdown []int64
 }
 
 // ClusterSummary represents a summary of the cluster's failures
@@ -77,7 +98,31 @@ type ClusterSummary struct {
 	ExampleFailureReason bigquery.NullString
 	ExampleTestID        string
 	UniqueTestIDs        int64
-	MetricValues         map[metrics.ID]int64
+	MetricValues         map[metrics.ID]*MetricValue
+}
+
+type QueryClusterMetricBreakdownsOptions struct {
+	// A filter on the underlying failures to include in the clusters.
+	FailureFilter *aip.Filter
+	OrderBy       []aip.OrderBy
+	Realms        []string
+	// Metrics is the set of metrics to query. If a metric is referenced
+	// in the OrderBy clause, it must also be included here.
+	Metrics   []metrics.Definition
+	TimeRange *pb.TimeRange
+}
+
+// ClusterMetricBreakdown is the breakdown of impact metrics over time
+// for a cluster's failures.
+type ClusterMetricBreakdown struct {
+	ClusterID        clustering.ClusterID
+	MetricBreakdowns map[metrics.ID]*MetricBreakdown
+}
+
+// MetricBreakdown is the breakdown of values over time for a single impact
+// metric.
+type MetricBreakdown struct {
+	DailyValues []int64
 }
 
 func defaultOrder(ms []metrics.Definition) []aip.OrderBy {
@@ -147,64 +192,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 		return nil, errors.Annotate(err, "order_by").Tag(InvalidArgumentTag).Err()
 	}
 
-	// The following query does not take into account removals of test failures
-	// from clusters as this dramatically slows down the query. Instead, we
-	// rely upon a periodic job to purge these results from the table.
-	// We avoid double-counting the test failures (e.g. in case of addition
-	// deletion, re-addition) by using APPROX_COUNT_DISTINCT to count the
-	// number of distinct failures / other items in the cluster.
-	var precomputeList []string
-	var metricSelectList []string
-	for _, metric := range options.Metrics {
-		itemIdentifier := "unique_test_result_id"
-		if metric.CountSQL != "" {
-			itemIdentifier = metric.ColumnName("item")
-			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.CountSQL, itemIdentifier))
-		}
-		filterIdentifier := "TRUE"
-		if metric.FilterSQL != "" {
-			filterIdentifier = metric.ColumnName("filter")
-			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.FilterSQL, filterIdentifier))
-		}
-		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
-		metricSelect := fmt.Sprintf("APPROX_COUNT_DISTINCT(IF(%s,%s,NULL)) AS %s,", filterIdentifier, itemIdentifier, metricColumnName)
-		metricSelectList = append(metricSelectList, metricSelect)
-	}
-
-	sql := `
-		WITH clustered_failure_precompute AS (
-			SELECT
-				project,
-				cluster_algorithm,
-				cluster_id,
-				test_id,
-				failure_reason,
-				CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) as unique_test_result_id,
-				` + strings.Join(precomputeList, "\n") + `
-			FROM clustered_failures f
-			WHERE
-				is_included_with_high_priority
-				AND partition_time >= @earliest
-				AND partition_time < @latest
-				AND project = @project
-				AND (` + whereClause + `)
-				AND realm IN UNNEST(@realms)
-		)
-		SELECT
-			cluster_algorithm,
-			cluster_id,
-			ANY_VALUE(failure_reason.primary_error_message) AS example_failure_reason,
-			MIN(test_id) AS example_test_id,
-			APPROX_COUNT_DISTINCT(test_id) AS unique_test_ids,
-		    ` + strings.Join(metricSelectList, "\n") + `
-		FROM clustered_failure_precompute
-		GROUP BY
-			cluster_algorithm,
-			cluster_id
-		` + orderByClause + `
-		LIMIT 1000
-	`
-
+	sql := constructQueryString(options.IncludeMetricBreakdown, options.Metrics, whereClause, orderByClause)
 	q := c.client.Query(sql)
 	q.DefaultDatasetID = "internal"
 	q.Parameters = toBigQueryParameters(parameters)
@@ -222,6 +210,11 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 	if err != nil {
 		return nil, handleJobReadError(err)
 	}
+
+	// Calculate the array length for daily breakdowns for metrics.
+	duration := options.TimeRange.Latest.AsTime().Sub(options.TimeRange.Earliest.AsTime())
+	daysSpanningDuration := int64(math.Ceil(duration.Hours() / 24))
+
 	clusters := []*ClusterSummary{}
 	for {
 		var rowVals rowLoader
@@ -241,9 +234,27 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 		row.ExampleFailureReason = rowVals.NullString("example_failure_reason")
 		row.ExampleTestID = rowVals.String("example_test_id")
 		row.UniqueTestIDs = rowVals.Int64("unique_test_ids")
-		row.MetricValues = make(map[metrics.ID]int64, len(options.Metrics))
+		row.MetricValues = make(map[metrics.ID]*MetricValue, len(options.Metrics))
+
+		// The day indexes to use when constructing daily breakdowns for metrics.
+		var dayIndexes []int64
+		if options.IncludeMetricBreakdown {
+			dayIndexes = rowVals.Int64s("day_indexes")
+		}
+
 		for _, metric := range options.Metrics {
-			row.MetricValues[metric.ID] = rowVals.Int64(metric.ColumnName(MetricValueColumnSuffix))
+			metricValue := &MetricValue{
+				Value: rowVals.Int64(metric.ColumnName(MetricValueColumnSuffix)),
+			}
+			if options.IncludeMetricBreakdown {
+				metricByDayResults := rowVals.Int64s(metric.ColumnName(metricByDayColumnSuffix))
+				dailyBreakdown := make([]int64, daysSpanningDuration)
+				for i, dayIndex := range dayIndexes {
+					dailyBreakdown[dayIndex] = metricByDayResults[i]
+				}
+				metricValue.DailyBreakdown = dailyBreakdown
+			}
+			row.MetricValues[metric.ID] = metricValue
 		}
 		if err := rowVals.Error(); err != nil {
 			return nil, errors.Annotate(err, "marshal cluster summary row").Err()
@@ -262,4 +273,138 @@ func toBigQueryParameters(pars []aip.QueryParameter) []bigquery.QueryParameter {
 		})
 	}
 	return result
+}
+
+func constructQueryString(includeMetricBreakdown bool, queryMetrics []metrics.Definition,
+	whereClause string, orderByClause string) string {
+	// The following query does not take into account removals of test failures
+	// from clusters as this dramatically slows down the query. Instead, we
+	// rely upon a periodic job to purge these results from the table.
+	// We avoid double-counting the test failures (e.g. in case of addition
+	// deletion, re-addition) by using APPROX_COUNT_DISTINCT to count the
+	// number of distinct failures / other items in the cluster.
+	var precomputeList []string
+	var metricSelectList []string
+	for _, metric := range queryMetrics {
+		itemIdentifier := "unique_test_result_id"
+		if metric.CountSQL != "" {
+			itemIdentifier = metric.ColumnName("item")
+			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.CountSQL, itemIdentifier))
+		}
+		filterIdentifier := "TRUE"
+		if metric.FilterSQL != "" {
+			filterIdentifier = metric.ColumnName("filter")
+			precomputeList = append(precomputeList, fmt.Sprintf("%s AS %s,", metric.FilterSQL, filterIdentifier))
+		}
+		metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
+		metricSelect := fmt.Sprintf("APPROX_COUNT_DISTINCT(IF(%s,%s,NULL)) AS %s,", filterIdentifier, itemIdentifier, metricColumnName)
+		metricSelectList = append(metricSelectList, metricSelect)
+	}
+
+	clusteredFailurePrecomputeSQL := `
+		SELECT
+			cluster_algorithm,
+			cluster_id,
+			partition_time,
+			test_id,
+			failure_reason,
+			CONCAT(chunk_id, '/', COALESCE(chunk_index, 0)) AS unique_test_result_id,
+			` + strings.Join(precomputeList, "\n") + `
+		FROM clustered_failures f
+		WHERE
+			is_included_with_high_priority
+			AND partition_time >= @earliest
+			AND partition_time < @latest
+			AND project = @project
+			AND (` + whereClause + `)
+			AND realm IN UNNEST(@realms)
+	`
+	clustersSQL := `
+		SELECT
+			cluster_algorithm,
+			cluster_id,
+			ANY_VALUE(failure_reason.primary_error_message) AS example_failure_reason,
+			MIN(test_id) AS example_test_id,
+			APPROX_COUNT_DISTINCT(test_id) AS unique_test_ids,
+			` + strings.Join(metricSelectList, "\n") + `
+		FROM clustered_failure_precompute
+		GROUP BY
+			cluster_algorithm,
+			cluster_id
+		` + orderByClause + `
+		LIMIT 1000
+	`
+
+	if includeMetricBreakdown {
+		var metricValueColumnList []string
+		var metricByDayAggList []string
+		var metricByDayColumnList []string
+		for _, metric := range queryMetrics {
+			metricColumnName := metric.ColumnName(MetricValueColumnSuffix)
+			metricValueColumnList = append(metricValueColumnList, fmt.Sprintf("%s,", metricColumnName))
+
+			metricByDayColumnName := metric.ColumnName(metricByDayColumnSuffix)
+			metricByDayAggSelect := fmt.Sprintf("ARRAY_AGG(%s ORDER BY day_index) AS %s,", metricColumnName, metricByDayColumnName)
+			metricByDayAggList = append(metricByDayAggList, metricByDayAggSelect)
+			metricByDayColumnList = append(metricByDayColumnList, fmt.Sprintf("%s,", metricByDayColumnName))
+		}
+
+		return `
+			WITH clustered_failure_precompute AS (
+				` + clusteredFailurePrecomputeSQL + `
+			),
+
+			clusters AS (
+				` + clustersSQL + `
+			),
+
+			daily_clusters AS (
+				SELECT
+					cluster_algorithm,
+					cluster_id,
+					DIV(EXTRACT(HOUR from @latest - partition_time), 24) AS day_index,
+					` + strings.Join(metricSelectList, "\n") + `
+				FROM clustered_failure_precompute
+				GROUP BY
+					cluster_algorithm,
+					cluster_id,
+					day_index
+			),
+
+			daily_clusters_agg AS (
+				SELECT
+					cluster_algorithm,
+					cluster_id,
+					ARRAY_AGG(day_index ORDER BY day_index) AS day_indexes,
+					` + strings.Join(metricByDayAggList, "\n") + `
+				FROM daily_clusters
+				GROUP BY
+					cluster_algorithm,
+					cluster_id
+			)
+
+			SELECT
+				c.cluster_algorithm,
+				c.cluster_id,
+				example_failure_reason,
+				example_test_id,
+				unique_test_ids,
+				` + strings.Join(metricValueColumnList, "\n") + `
+				day_indexes,
+				` + strings.Join(metricByDayColumnList, "\n") + `
+			FROM
+				clusters c
+			JOIN
+				daily_clusters_agg d
+			ON
+				c.cluster_algorithm = d.cluster_algorithm
+				AND c.cluster_id = d.cluster_id
+			` + orderByClause
+	}
+
+	return `
+		WITH clustered_failure_precompute AS (
+		` + clusteredFailurePrecomputeSQL + `
+		)
+		` + clustersSQL
 }

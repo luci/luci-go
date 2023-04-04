@@ -142,6 +142,11 @@ export interface TimeRange {
   latest: string;
 }
 
+export type ClusterSummaryView =
+  | 'CLUSTER_SUMMARY_VIEW_UNSPECIFIED'
+  | 'BASIC'
+  | 'FULL';
+
 export interface QueryClusterSummariesRequest {
   // The LUCI project.
   project: string;
@@ -160,6 +165,9 @@ export interface QueryClusterSummariesRequest {
   // The resource name(s) of the metrics to include for each cluster
   // in the response.
   metrics?: string[];
+
+  // The level of detail that the returned cluster summaries should have.
+  view?: ClusterSummaryView;
 }
 
 export interface QueryClusterSummariesResponse {
@@ -182,6 +190,9 @@ export interface ClusterSummary {
 export interface MetricValue {
   // 64-bit integer serialized as a string.
   value?: string;
+  // Metric values for each 24-hour period within the queried time range,
+  // in reverse chronological order, as 64-bit integers serialized as strings.
+  dailyBreakdown?: string[];
 }
 
 export interface QueryClusterFailuresRequest {

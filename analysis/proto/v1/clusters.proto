@@ -321,6 +321,19 @@ message ReclusteringProgress {
     ClusteringVersion next = 6;
 }
 
+enum ClusterSummaryView {
+    // The default / unset value.
+    // The API will default to the BASIC view.
+    CLUSTER_SUMMARY_VIEW_UNSPECIFIED = 0;
+
+    // Include most fields in the cluster summary, EXCLUDING
+    // daily breakdowns of the cluster's impact metrics.
+    BASIC = 1;
+
+    // Include everything in the cluster summary.
+    FULL = 2;
+}
+
 message QueryClusterSummariesRequest {
     // The LUCI Project.
     string project = 1;
@@ -361,6 +374,7 @@ message QueryClusterSummariesRequest {
     // - cluster_id
     // - variant_hash
     // - test_run_id
+    // - tags
     //
     // Note that cost is greatly reduced (more than 90%) if exact matches for the
     // cluster_algorithm and cluster_id field are both provided in the filter string.
@@ -395,6 +409,10 @@ message QueryClusterSummariesRequest {
     // Note: the response will include only data for the portion of the
     // time range that is within the data retention period of 90 days.
     TimeRange time_range = 5;
+
+    // The level of detail that the returned cluster summaries should have. See
+    // luci.analysis.v1.ClusterSummaryView.
+    ClusterSummaryView view = 6;
 }
 
 message QueryClusterSummariesResponse {
@@ -419,9 +437,15 @@ message ClusterSummary {
         // calculated using all of the failures in the cluster.
         // For suggested clusters, the residual metric value is calculated
         // using the failures in the cluster which are not also part of a
-        // bug cluster. In this way, measures attributed the bug clusters
+        // bug cluster. In this way, measures attributed to bug clusters
         // are not counted again against suggested clusters.
         int64 value = 1;
+
+        // The value of the cluster metric over time, grouped by 24-hour periods
+        // in the queried time range, in reverse chronological order
+        // i.e. the first entry is the metric value for the 24-hour period
+        // immediately preceding the time range's latest time.
+        repeated int64 daily_breakdown = 2;
     }
 
     // The values of cluster metrics. The key of the map is the identifier

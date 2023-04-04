@@ -15,24 +15,24 @@
 import fetchMock from 'fetch-mock-jest';
 
 import {
-  GetClusterRequest,
   Cluster,
   ClusterExoneratedTestVariant,
   ClusterSummary,
   DistinctClusterFailure,
-  QueryClusterFailuresRequest,
-  QueryClusterFailuresResponse,
-  QueryClusterSummariesRequest,
-  QueryClusterSummariesResponse,
+  GetClusterRequest,
   QueryClusterExoneratedTestVariantsRequest,
   QueryClusterExoneratedTestVariantsResponse,
+  QueryClusterFailuresRequest,
+  QueryClusterFailuresResponse,
   QueryClusterHistoryResponse,
+  QueryClusterSummariesRequest,
+  QueryClusterSummariesResponse,
 } from '@/services/cluster';
 
 export const getMockCluster = (id: string,
-    project = 'testproject',
-    algorithm = 'reason-v2',
-    title = ''): Cluster => {
+  project = 'testproject',
+  algorithm = 'reason-v2',
+  title = ''): Cluster => {
   return {
     name: `projects/${project}/clusters/${algorithm}/${id}`,
     hasExample: true,
@@ -58,7 +58,7 @@ export const getMockCluster = (id: string,
   };
 };
 
-export const getMockRuleClusterSummary = (id: string): ClusterSummary => {
+export const getMockRuleBasicClusterSummary = (id: string): ClusterSummary => {
   return {
     clusterId: {
       'algorithm': 'rules-v2',
@@ -85,7 +85,37 @@ export const getMockRuleClusterSummary = (id: string): ClusterSummary => {
   };
 };
 
-export const getMockSuggestedClusterSummary = (id: string, algorithm = 'reason-v3'): ClusterSummary => {
+export const getMockRuleFullClusterSummary = (id: string): ClusterSummary => {
+  return {
+    clusterId: {
+      'algorithm': 'rules-v2',
+      'id': id,
+    },
+    title: 'reason LIKE "blah%"',
+    bug: {
+      'system': 'buganizer',
+      'id': '123456789',
+      'linkText': 'b/123456789',
+      'url': 'https://buganizer/123456789',
+    },
+    metrics: {
+      'human-cls-failed-presubmit': {
+        value: '27',
+        dailyBreakdown: new Array(7).fill('1'),
+      },
+      'critical-failures-exonerated': {
+        value: '918',
+        dailyBreakdown: new Array(7).fill('2'),
+      },
+      'failures': {
+        value: '1871',
+        dailyBreakdown: new Array(7).fill('3'),
+      },
+    },
+  };
+}
+
+export const getMockSuggestedBasicClusterSummary = (id: string, algorithm = 'reason-v3'): ClusterSummary => {
   return {
     clusterId: {
       'algorithm': algorithm,
@@ -107,6 +137,31 @@ export const getMockSuggestedClusterSummary = (id: string, algorithm = 'reason-v
   };
 };
 
+export const getMockSuggestedFullClusterSummary = (id: string, algorithm = 'reason-v3'): ClusterSummary => {
+  return {
+    clusterId: {
+      'algorithm': algorithm,
+      'id': id,
+    },
+    bug: undefined,
+    title: 'reason LIKE "blah%"',
+    metrics: {
+      'human-cls-failed-presubmit': {
+        value: '29',
+        dailyBreakdown: new Array(7).fill('4'),
+      },
+      'critical-failures-exonerated': {
+        value: '919',
+        dailyBreakdown: new Array(7).fill('5'),
+      },
+      'failures': {
+        value: '1872',
+        dailyBreakdown: new Array(7).fill('6'),
+      },
+    },
+  };
+};
+
 export const getMockClusterExoneratedTestVariant = (id: string, exoneratedFailures: number): ClusterExoneratedTestVariant => {
   return {
     'testId': id,
@@ -115,7 +170,7 @@ export const getMockClusterExoneratedTestVariant = (id: string, exoneratedFailur
   };
 };
 
-export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest, response: QueryClusterSummariesResponse) => {
+export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest, response: QueryClusterSummariesResponse, overwriteRoutes: boolean = true) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
     body: request,
@@ -124,14 +179,14 @@ export const mockQueryClusterSummaries = (request: QueryClusterSummariesRequest,
       'X-Prpc-Grpc-Code': '0',
     },
     body: ')]}\'' + JSON.stringify(response),
-  }, { overwriteRoutes: true });
+  }, { overwriteRoutes: overwriteRoutes });
 };
 
 export const mockGetCluster = (
-    project: string,
-    algorithm: string,
-    id: string,
-    response: Cluster) => {
+  project: string,
+  algorithm: string,
+  id: string,
+  response: Cluster) => {
   const request: GetClusterRequest = {
     name: `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
   };
@@ -184,7 +239,7 @@ export const mockQueryExoneratedTestVariants = (parent: string, testVariants: Cl
 };
 
 export const mockQueryHistory = (
-    response: QueryClusterHistoryResponse) => {
+  response: QueryClusterHistoryResponse) => {
   fetchMock.post({
     url: 'http://localhost/prpc/luci.analysis.v1.Clusters/QueryHistory',
   }, {

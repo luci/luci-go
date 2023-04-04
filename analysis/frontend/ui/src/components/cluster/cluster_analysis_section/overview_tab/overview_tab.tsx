@@ -53,6 +53,7 @@ import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchMetrics from '@/hooks/use_fetch_metrics';
 import useQueryClusterHistory from '@/hooks/use_query_cluster_history';
 import { Metric } from '@/services/metrics';
+import { getMetricColor } from '@/tools/metric_colors';
 
 import { ClusterContext } from '../../cluster_context';
 
@@ -71,19 +72,6 @@ interface Props {
   // The name of the tab.
   value: string;
 }
-
-const metricColors = [
-  '#4a148c', // Material Purple 900.
-  '#0d47a1', // Material Blue 900.
-  '#b71c1c', // Material Red 900.
-  '#1b5e20', // Material Green 900.
-  '#f57f17', // Material Yellow 900.
-  '#006064', // Material Cyan 900.
-  '#212121', // Material Grey 900.
-  '#827717', // Material Lime 900.
-  '#880E4F', // Material Pink 900.
-  '#bf360c', // Material Deep Orange 900.
-];
 
 const OverviewTab = ({ value }: Props) => {
   const clusterId = useContext(ClusterContext);
@@ -131,7 +119,7 @@ const OverviewTab = ({ value }: Props) => {
   };
   const renderValue = (selected: string[]): string => {
     return (metrics || []).filter((m) => selected.indexOf(m.metricId) >= 0)
-        .map((m) => m.humanReadableName).join(', ');
+      .map((m) => m.humanReadableName).join(', ');
   };
 
   return (
@@ -171,7 +159,7 @@ const OverviewTab = ({ value }: Props) => {
             renderValue={renderValue}
             MenuProps={MenuProps}
           >
-            {(metrics||[]).map((metric) => {
+            {(metrics || []).map((metric) => {
               return <MenuItem key={metric.metricId} value={metric.metricId}>
                 <Checkbox checked={selectedMetrics.indexOf(metric) > -1} />
                 <ListItemText primary={metric.humanReadableName} />
@@ -198,8 +186,7 @@ const OverviewTab = ({ value }: Props) => {
         >
           {selectedMetrics.length > 0 ?
             selectedMetrics.map((m) => {
-              const metricIndex = metrics.indexOf(m);
-              const metricColor = metricColors[metricIndex % metricColors.length];
+              const metricColor = getMetricColor(metrics.indexOf(m));
 
               // Calculate the relative minimum width of the chart based on the
               // number of days (90 days is the max).
@@ -207,7 +194,7 @@ const OverviewTab = ({ value }: Props) => {
               // Reduce chart height if all charts don't fit in 1 row.
               const chartHeight = chartMinWidth * selectedMetrics.length > 100 ? 200 : 400;
               return (
-                <div key={m.metricId} data-testid={'chart-'+m.metricId} className="overview-tab-charts-item" style={{ minWidth: `${chartMinWidth}%` }}>
+                <div key={m.metricId} data-testid={'chart-' + m.metricId} className="overview-tab-charts-item" style={{ minWidth: `${chartMinWidth}%` }}>
                   <ResponsiveContainer width="100%" height={chartHeight}>
                     <BarChart data={data.days} syncId="impactMetrics" margin={{ top: 20, bottom: 20 }}>
                       <XAxis dataKey="date" />

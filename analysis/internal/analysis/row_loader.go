@@ -125,6 +125,28 @@ func (r *rowLoader) Int64(fieldName string) int64 {
 	return val.Int64
 }
 
+// Int64s returns the value of a field of type []Int64.
+// If the field does not exist or is of an incorrect type, an empty
+// array is returned and an error will be available from rowLoader.Error().
+func (r *rowLoader) Int64s(fieldName string) []int64 {
+	repeated := true
+	val, err := r.valueWithType(fieldName, bigquery.IntegerFieldType, repeated)
+	if err != nil {
+		r.reportError(err)
+		return nil
+	}
+	rows := val.([]bigquery.Value)
+	result := make([]int64, 0, len(rows))
+	for i, row := range rows {
+		if row == nil {
+			r.reportError(errors.Annotate(err, "field %s index %v is NULL, expected non-null integer", fieldName, i).Err())
+			return nil
+		}
+		result = append(result, row.(int64))
+	}
+	return result
+}
+
 // TopCounts returns the value of a field of type []TopCount.
 // If the field does not exist or is of an incorrect type, an empty
 // array is returned and an error will be available from rowLoader.Error().

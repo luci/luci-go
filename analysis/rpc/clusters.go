@@ -400,6 +400,12 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 		return nil, err
 	}
 
+	view := req.View
+	if view == pb.ClusterSummaryView_CLUSTER_SUMMARY_VIEW_UNSPECIFIED {
+		view = pb.ClusterSummaryView_BASIC
+	}
+	var includeMetricBreakdown = view == pb.ClusterSummaryView_FULL
+
 	var cfg *compiledcfg.ProjectConfig
 	var ruleset *cache.Ruleset
 	var clusters []*analysis.ClusterSummary
@@ -431,7 +437,8 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 			// if both goroutines error, populate any error encountered here
 			// into bqErr and return no error.
 			opts := &analysis.QueryClusterSummariesOptions{
-				TimeRange: req.TimeRange,
+				TimeRange:              req.TimeRange,
+				IncludeMetricBreakdown: includeMetricBreakdown,
 			}
 			var err error
 			opts.FailureFilter, err = aip.ParseFilter(req.FailureFilter)
@@ -489,7 +496,10 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 			Metrics:   make(map[string]*pb.ClusterSummary_MetricValue),
 		}
 		for id, metricValue := range c.MetricValues {
-			cs.Metrics[string(id)] = &pb.ClusterSummary_MetricValue{Value: metricValue}
+			cs.Metrics[string(id)] = &pb.ClusterSummary_MetricValue{
+				Value:          metricValue.Value,
+				DailyBreakdown: metricValue.DailyBreakdown,
+			}
 		}
 
 		if c.ClusterID.IsBugCluster() {

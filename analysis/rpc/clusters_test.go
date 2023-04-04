@@ -654,10 +654,19 @@ func TestClusters(t *testing.T) {
 						Algorithm: rulesalgorithm.AlgorithmName,
 						ID:        rs[0].RuleID,
 					},
-					MetricValues: map[metrics.ID]int64{
-						metrics.HumanClsFailedPresubmit.ID:    1,
-						metrics.CriticalFailuresExonerated.ID: 2,
-						metrics.Failures.ID:                   3,
+					MetricValues: map[metrics.ID]*analysis.MetricValue{
+						metrics.HumanClsFailedPresubmit.ID: {
+							Value:          1,
+							DailyBreakdown: []int64{1, 0, 0, 0, 0, 0, 0},
+						},
+						metrics.CriticalFailuresExonerated.ID: {
+							Value:          2,
+							DailyBreakdown: []int64{1, 1, 0, 0, 0, 0, 0},
+						},
+						metrics.Failures.ID: {
+							Value:          3,
+							DailyBreakdown: []int64{1, 1, 1, 0, 0, 0, 0},
+						},
 					},
 					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
 					ExampleTestID:        "TestID 1",
@@ -667,10 +676,19 @@ func TestClusters(t *testing.T) {
 						Algorithm: "reason-v3",
 						ID:        "cccccc00000000000000000000000001",
 					},
-					MetricValues: map[metrics.ID]int64{
-						metrics.HumanClsFailedPresubmit.ID:    4,
-						metrics.CriticalFailuresExonerated.ID: 5,
-						metrics.Failures.ID:                   6,
+					MetricValues: map[metrics.ID]*analysis.MetricValue{
+						metrics.HumanClsFailedPresubmit.ID: {
+							Value:          4,
+							DailyBreakdown: []int64{1, 1, 1, 1, 0, 0, 0},
+						},
+						metrics.CriticalFailuresExonerated.ID: {
+							Value:          5,
+							DailyBreakdown: []int64{1, 1, 1, 1, 1, 0, 0},
+						},
+						metrics.Failures.ID: {
+							Value:          6,
+							DailyBreakdown: []int64{1, 1, 1, 1, 1, 1, 0},
+						},
 					},
 					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason 2."},
 					ExampleTestID:        "TestID 3",
@@ -681,10 +699,19 @@ func TestClusters(t *testing.T) {
 						Algorithm: rulesalgorithm.AlgorithmName,
 						ID:        "01234567890abcdef01234567890abcdef",
 					},
-					MetricValues: map[metrics.ID]int64{
-						metrics.HumanClsFailedPresubmit.ID:    7,
-						metrics.CriticalFailuresExonerated.ID: 8,
-						metrics.Failures.ID:                   9,
+					MetricValues: map[metrics.ID]*analysis.MetricValue{
+						metrics.HumanClsFailedPresubmit.ID: {
+							Value:          7,
+							DailyBreakdown: []int64{1, 1, 1, 1, 1, 1, 1},
+						},
+						metrics.CriticalFailuresExonerated.ID: {
+							Value:          8,
+							DailyBreakdown: []int64{2, 1, 1, 1, 1, 1, 1},
+						},
+						metrics.Failures.ID: {
+							Value:          9,
+							DailyBreakdown: []int64{2, 2, 1, 1, 1, 1, 1},
+						},
 					},
 					ExampleFailureReason: bigquery.NullString{Valid: true, StringVal: "Example failure reason."},
 					ExampleTestID:        "TestID 1",
@@ -768,9 +795,15 @@ func TestClusters(t *testing.T) {
 								Url:      "https://bugs.chromium.org/p/chromium/issues/detail?id=7654321",
 							},
 							Metrics: map[string]*pb.ClusterSummary_MetricValue{
-								metrics.HumanClsFailedPresubmit.ID.String():    {Value: 1},
-								metrics.CriticalFailuresExonerated.ID.String(): {Value: 2},
-								metrics.Failures.ID.String():                   {Value: 3},
+								metrics.HumanClsFailedPresubmit.ID.String(): {
+									Value: 1,
+								},
+								metrics.CriticalFailuresExonerated.ID.String(): {
+									Value: 2,
+								},
+								metrics.Failures.ID.String(): {
+									Value: 3,
+								},
 							},
 						},
 						{
@@ -780,9 +813,15 @@ func TestClusters(t *testing.T) {
 							},
 							Title: `Example failure reason 2.`,
 							Metrics: map[string]*pb.ClusterSummary_MetricValue{
-								metrics.HumanClsFailedPresubmit.ID.String():    {Value: 4},
-								metrics.CriticalFailuresExonerated.ID.String(): {Value: 5},
-								metrics.Failures.ID.String():                   {Value: 6},
+								metrics.HumanClsFailedPresubmit.ID.String(): {
+									Value: 4,
+								},
+								metrics.CriticalFailuresExonerated.ID.String(): {
+									Value: 5,
+								},
+								metrics.Failures.ID.String(): {
+									Value: 6,
+								},
 							},
 						},
 						{
@@ -792,9 +831,15 @@ func TestClusters(t *testing.T) {
 							},
 							Title: `(rule archived)`,
 							Metrics: map[string]*pb.ClusterSummary_MetricValue{
-								metrics.HumanClsFailedPresubmit.ID.String():    {Value: 7},
-								metrics.CriticalFailuresExonerated.ID.String(): {Value: 8},
-								metrics.Failures.ID.String():                   {Value: 9},
+								metrics.HumanClsFailedPresubmit.ID.String(): {
+									Value: 7,
+								},
+								metrics.CriticalFailuresExonerated.ID.String(): {
+									Value: 8,
+								},
+								metrics.Failures.ID.String(): {
+									Value: 9,
+								},
 							},
 						},
 					},
@@ -812,6 +857,87 @@ func TestClusters(t *testing.T) {
 					response, err := server.QueryClusterSummaries(ctx, request)
 					So(err, ShouldBeNil)
 					So(response, ShouldResembleProto, expectedResponse)
+				})
+				Convey("With full view", func() {
+					request.View = pb.ClusterSummaryView_FULL
+
+					expectedFullResponse := &pb.QueryClusterSummariesResponse{
+						ClusterSummaries: []*pb.ClusterSummary{
+							{
+								ClusterId: &pb.ClusterId{
+									Algorithm: "rules",
+									Id:        rs[0].RuleID,
+								},
+								Title: rs[0].RuleDefinition,
+								Bug: &pb.AssociatedBug{
+									System:   "monorail",
+									Id:       "chromium/7654321",
+									LinkText: "crbug.com/7654321",
+									Url:      "https://bugs.chromium.org/p/chromium/issues/detail?id=7654321",
+								},
+								Metrics: map[string]*pb.ClusterSummary_MetricValue{
+									metrics.HumanClsFailedPresubmit.ID.String(): {
+										Value:          1,
+										DailyBreakdown: []int64{1, 0, 0, 0, 0, 0, 0},
+									},
+									metrics.CriticalFailuresExonerated.ID.String(): {
+										Value:          2,
+										DailyBreakdown: []int64{1, 1, 0, 0, 0, 0, 0},
+									},
+									metrics.Failures.ID.String(): {
+										Value:          3,
+										DailyBreakdown: []int64{1, 1, 1, 0, 0, 0, 0},
+									},
+								},
+							},
+							{
+								ClusterId: &pb.ClusterId{
+									Algorithm: "reason-v3",
+									Id:        "cccccc00000000000000000000000001",
+								},
+								Title: `Example failure reason 2.`,
+								Metrics: map[string]*pb.ClusterSummary_MetricValue{
+									metrics.HumanClsFailedPresubmit.ID.String(): {
+										Value:          4,
+										DailyBreakdown: []int64{1, 1, 1, 1, 0, 0, 0},
+									},
+									metrics.CriticalFailuresExonerated.ID.String(): {
+										Value:          5,
+										DailyBreakdown: []int64{1, 1, 1, 1, 1, 0, 0},
+									},
+									metrics.Failures.ID.String(): {
+										Value:          6,
+										DailyBreakdown: []int64{1, 1, 1, 1, 1, 1, 0},
+									},
+								},
+							},
+							{
+								ClusterId: &pb.ClusterId{
+									Algorithm: "rules",
+									Id:        "01234567890abcdef01234567890abcdef",
+								},
+								Title: `(rule archived)`,
+								Metrics: map[string]*pb.ClusterSummary_MetricValue{
+									metrics.HumanClsFailedPresubmit.ID.String(): {
+										Value:          7,
+										DailyBreakdown: []int64{1, 1, 1, 1, 1, 1, 1},
+									},
+									metrics.CriticalFailuresExonerated.ID.String(): {
+										Value:          8,
+										DailyBreakdown: []int64{2, 1, 1, 1, 1, 1, 1},
+									},
+									metrics.Failures.ID.String(): {
+										Value:          9,
+										DailyBreakdown: []int64{2, 2, 1, 1, 1, 1, 1},
+									},
+								},
+							},
+						},
+					}
+
+					response, err := server.QueryClusterSummaries(ctx, request)
+					So(err, ShouldBeNil)
+					So(response, ShouldResembleProto, expectedFullResponse)
 				})
 				Convey("Without rule definition get permission", func() {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
@@ -1464,6 +1590,7 @@ type fakeAnalysisClient struct {
 	failuresByProjectAndCluster      map[string]map[clustering.ClusterID][]*analysis.ClusterFailure
 	exoneratedTVsByProjectAndCluster map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant
 	clusterMetricsByProject          map[string][]*analysis.ClusterSummary
+	clusterMetricBreakdownsByProject map[string][]*analysis.ClusterMetricBreakdown
 	expectedRealmsQueried            []string
 }
 
@@ -1473,6 +1600,7 @@ func newFakeAnalysisClient() *fakeAnalysisClient {
 		failuresByProjectAndCluster:      make(map[string]map[clustering.ClusterID][]*analysis.ClusterFailure),
 		exoneratedTVsByProjectAndCluster: make(map[string]map[clustering.ClusterID][]*analysis.ExoneratedTestVariant),
 		clusterMetricsByProject:          make(map[string][]*analysis.ClusterSummary),
+		clusterMetricBreakdownsByProject: make(map[string][]*analysis.ClusterMetricBreakdown),
 	}
 }
 
@@ -1517,21 +1645,27 @@ func (f *fakeAnalysisClient) QueryClusterSummaries(ctx context.Context, project 
 
 	var results []*analysis.ClusterSummary
 	for _, c := range clusters {
-		results = append(results, copyClusterSummary(c, options.Metrics))
+		results = append(results, copyClusterSummary(c, options.Metrics, options.IncludeMetricBreakdown))
 	}
 	return results, nil
 }
 
-func copyClusterSummary(cs *analysis.ClusterSummary, queriedMetrics []metrics.Definition) *analysis.ClusterSummary {
+func copyClusterSummary(cs *analysis.ClusterSummary, queriedMetrics []metrics.Definition, includeMetricBreakdown bool) *analysis.ClusterSummary {
 	result := &analysis.ClusterSummary{
 		ClusterID:            cs.ClusterID,
 		ExampleFailureReason: cs.ExampleFailureReason,
 		ExampleTestID:        cs.ExampleTestID,
 		UniqueTestIDs:        cs.UniqueTestIDs,
-		MetricValues:         make(map[metrics.ID]int64),
+		MetricValues:         make(map[metrics.ID]*analysis.MetricValue),
 	}
 	for _, m := range queriedMetrics {
-		result.MetricValues[m.ID] = cs.MetricValues[m.ID]
+		metricValue := &analysis.MetricValue{
+			Value: cs.MetricValues[m.ID].Value,
+		}
+		if includeMetricBreakdown {
+			metricValue.DailyBreakdown = cs.MetricValues[m.ID].DailyBreakdown
+		}
+		result.MetricValues[m.ID] = metricValue
 	}
 	return result
 }

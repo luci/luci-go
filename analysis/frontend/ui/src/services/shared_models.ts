@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import {
+  GrpcError,
+  RpcCode,
+} from '@chopsui/prpc-client';
 
 // Contains data models shared between multiple services.
 
@@ -76,7 +79,7 @@ export function variantAsPairs(v?: Variant): VariantPair[] {
   return result;
 }
 
-export function isRetriable(e: GrpcError) : boolean {
+export function isRetriable(e: GrpcError): boolean {
   // The following codes indicate transient errors that are retriable. See:
   // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/grpc/grpcutil/errors.go;l=176?q=codeToStatus&type=cs
   switch (e.code) {
@@ -90,7 +93,7 @@ export function isRetriable(e: GrpcError) : boolean {
   return false;
 }
 
-export function prpcRetrier(_failureCount: number, e: Error) : boolean {
+export function prpcRetrier(_failureCount: number, e: Error): boolean {
   if (e instanceof GrpcError && isRetriable(e)) {
     return true;
   }

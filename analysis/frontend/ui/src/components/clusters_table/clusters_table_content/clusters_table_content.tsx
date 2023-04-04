@@ -22,7 +22,7 @@ import TableBody from '@mui/material/TableBody';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
   ClustersFetchOptions,
-  useFetchClusters,
+  useFetchClusterSummaries,
 } from '@/hooks/use_fetch_clusters';
 
 import { ClusterTableContextData } from '../clusters_table_context';
@@ -60,14 +60,22 @@ const ClustersTableContent = ({
     interval: interval,
   };
   const {
-    isLoading,
-    isSuccess,
-    data: clusters,
-    error,
-  } = useFetchClusters(fetchOptions);
-  const rows = clusters?.clusterSummaries || [];
+    isLoading: isBasicSummariesLoading,
+    isSuccess: isBasicSummariesSuccess,
+    data: basicSummaries,
+    error: basicSummariesError
+  } = useFetchClusterSummaries(fetchOptions, 'BASIC');
+  const {
+    isLoading: isFullSummariesLoading,
+    isSuccess: isFullSummariesSuccess,
+    data: fullSummaries,
+  } = useFetchClusterSummaries(fetchOptions, 'FULL');
+  // Note: it is expected that the call for basic cluster summaries will return
+  // before the call for full cluster summaries. Full cluster summaries will be
+  // displayed when available, and will replace basic cluster summaries.
+  const rows = fullSummaries?.clusterSummaries || basicSummaries?.clusterSummaries || [];
 
-  if (isLoading && !isSuccess) {
+  if (isBasicSummariesLoading && !isBasicSummariesSuccess) {
     return (
       <Grid container item alignItems="center" justifyContent="center">
         <CircularProgress />
@@ -75,43 +83,43 @@ const ClustersTableContent = ({
     );
   }
 
-  if (error) {
+  if (basicSummariesError) {
     return (
       <LoadErrorAlert
         entityName="clusters"
-        error={error}
+        error={basicSummariesError}
       />
     );
   }
 
   return (
-    <>
-      <Grid item xs={12}>
-        <Table size="small" sx={{ overflowWrap: 'anywhere' }}>
-          <ClustersTableHead />
-          {
-            isSuccess && (
-              <TableBody data-testid='clusters_table_body'>
-                {
-                  rows.map((row) => (
-                    <ClustersTableRow
-                      key={`${row.clusterId.algorithm}:${row.clusterId.id}`}
-                      project={project}
-                      cluster={row}
-                    />
-                  ))
-                }
-              </TableBody>
-            )
-          }
-        </Table>
-        {isSuccess && rows.length === 0 && (
-          <Grid container item alignItems="center" justifyContent="center">
-            Hooray! There are no failures matching the specified criteria.
-          </Grid>
-        )}
-      </Grid>
-    </>
+    <Grid item xs={12}>
+      <Table size="small" sx={{ overflowWrap: 'anywhere' }}>
+        <ClustersTableHead />
+        {
+          isBasicSummariesSuccess && (
+            <TableBody data-testid='clusters_table_body'>
+              {
+                rows.map((row) => {
+                  return <ClustersTableRow
+                    key={`${row.clusterId.algorithm}:${row.clusterId.id}`}
+                    project={project}
+                    cluster={row}
+                    isBreakdownLoading={isFullSummariesLoading}
+                    isBreakdownSuccess={isFullSummariesSuccess}
+                  />;
+                })
+              }
+            </TableBody>
+          )
+        }
+      </Table>
+      {isBasicSummariesSuccess && rows.length === 0 && (
+        <Grid container item alignItems="center" justifyContent="center">
+          Hooray! There are no failures matching the specified criteria.
+        </Grid>
+      )}
+    </Grid>
   );
 };
 

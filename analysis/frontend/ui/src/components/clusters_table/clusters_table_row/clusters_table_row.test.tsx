@@ -19,8 +19,9 @@ import { screen } from '@testing-library/react';
 import { ClusterTableContextWrapper } from '@/components/clusters_table/clusters_table_context';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import {
-  getMockRuleClusterSummary,
-  getMockSuggestedClusterSummary,
+  getMockRuleBasicClusterSummary,
+  getMockRuleFullClusterSummary,
+  getMockSuggestedBasicClusterSummary,
 } from '@/testing_tools/mocks/cluster_mock';
 import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 
@@ -29,20 +30,20 @@ import ClustersTableRow from './clusters_table_row';
 describe('Test ClustersTableRow component', () => {
   it('given a rule cluster', async () => {
     const metrics = getMockMetricsList();
-    const mockCluster = getMockRuleClusterSummary('abcdef1234567890abcdef1234567890');
+    const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-        <ClusterTableContextWrapper metrics={metrics}>
-          <table>
-            <tbody>
-              <ClustersTableRow
-                project='testproject'
-                cluster={mockCluster}
-              />
-            </tbody>
-          </table>
-        </ClusterTableContextWrapper>,
-        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
-        '/',
+      <ClusterTableContextWrapper metrics={metrics}>
+        <table>
+          <tbody>
+            <ClustersTableRow
+              project='testproject'
+              cluster={mockCluster}
+            />
+          </tbody>
+        </table>
+      </ClusterTableContextWrapper>,
+      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+      '/',
     );
 
     await screen.findByText(mockCluster.title);
@@ -57,20 +58,20 @@ describe('Test ClustersTableRow component', () => {
 
   it('given a suggested cluster', async () => {
     const metrics = getMockMetricsList();
-    const mockCluster = getMockSuggestedClusterSummary('abcdef1234567890abcdef1234567890');
+    const mockCluster = getMockSuggestedBasicClusterSummary('abcdef1234567890abcdef1234567890');
     renderWithRouterAndClient(
-        <ClusterTableContextWrapper metrics={metrics}>
-          <table>
-            <tbody>
-              <ClustersTableRow
-                project='testproject'
-                cluster={mockCluster}
-              />
-            </tbody>
-          </table>
-        </ClusterTableContextWrapper>,
-        '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
-        '/',
+      <ClusterTableContextWrapper metrics={metrics}>
+        <table>
+          <tbody>
+            <ClustersTableRow
+              project='testproject'
+              cluster={mockCluster}
+            />
+          </tbody>
+        </table>
+      </ClusterTableContextWrapper>,
+      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+      '/',
     );
 
     await screen.findByText(mockCluster.title);
@@ -80,5 +81,109 @@ describe('Test ClustersTableRow component', () => {
       const metricValue = metricValues[metrics[i].metricId] || { value: '' };
       expect(screen.getByText(metricValue.value || '0')).toBeInTheDocument();
     }
+  });
+
+  it('shows placeholders for sparklines when breakdown is loading', async () => {
+    const metrics = getMockMetricsList();
+    const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
+    renderWithRouterAndClient(
+      <ClusterTableContextWrapper metrics={metrics}>
+        <table>
+          <tbody>
+            <ClustersTableRow
+              project='testproject'
+              cluster={mockCluster}
+              isBreakdownLoading={true}
+              isBreakdownSuccess={false}
+            />
+          </tbody>
+        </table>
+      </ClusterTableContextWrapper>,
+      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+      '/',
+    );
+
+    await screen.findByText(mockCluster.title);
+
+    // Check the metric total values are displayed.
+    for (let i = 0; i < metrics.length; i++) {
+      const metricValues = mockCluster?.metrics || {};
+      const metricValue = metricValues[metrics[i].metricId] || { value: '' };
+      expect(screen.getByText(metricValue.value || '0')).toBeInTheDocument();
+    }
+
+    // Check there is a placeholder sparkline for each metric, and no actual sparklines.
+    expect(screen.queryAllByTestId('clusters_table_sparkline_skeleton')).toHaveLength(metrics.length);
+    expect(screen.queryAllByTestId('clusters_table_sparkline')).toHaveLength(0);
+  });
+
+  it('handles missing breakdown data', async () => {
+    const metrics = getMockMetricsList();
+    const mockCluster = getMockRuleBasicClusterSummary('abcdef1234567890abcdef1234567890');
+    renderWithRouterAndClient(
+      <ClusterTableContextWrapper metrics={metrics}>
+        <table>
+          <tbody>
+            <ClustersTableRow
+              project='testproject'
+              cluster={mockCluster}
+              isBreakdownLoading={false}
+              isBreakdownSuccess={true}
+            />
+          </tbody>
+        </table>
+      </ClusterTableContextWrapper>,
+      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+      '/',
+    );
+
+    await screen.findByText(mockCluster.title);
+
+    // Check the metric total values are displayed.
+    for (let i = 0; i < metrics.length; i++) {
+      const metricValues = mockCluster?.metrics || {};
+      const metricValue = metricValues[metrics[i].metricId] || { value: '' };
+      expect(screen.getByText(metricValue.value || '0')).toBeInTheDocument();
+    }
+
+    // Check there are neither placeholder sparklines, or actual sparklines.
+    expect(screen.queryAllByTestId('clusters_table_sparkline_skeleton')).toHaveLength(0);
+    expect(screen.queryAllByTestId('clusters_table_sparkline')).toHaveLength(0);
+  });
+
+  it('shows metric breakdowns', async () => {
+    const metrics = getMockMetricsList();
+    const mockCluster = getMockRuleFullClusterSummary('abcdef1234567890abcdef1234567890');
+    renderWithRouterAndClient(
+      <ClusterTableContextWrapper metrics={metrics}>
+        <table>
+          <tbody>
+            <ClustersTableRow
+              project='testproject'
+              cluster={mockCluster}
+              isBreakdownLoading={false}
+              isBreakdownSuccess={true}
+            />
+          </tbody>
+        </table>
+      </ClusterTableContextWrapper>,
+      '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
+      '/',
+    );
+
+    await screen.findByText(mockCluster.title);
+
+    // Check the metric total values are displayed.
+    for (let i = 0; i < metrics.length; i++) {
+      const metricValues = mockCluster?.metrics || {};
+      const metricValue = metricValues[metrics[i].metricId] || { value: '' };
+      expect(screen.getByText(metricValue.value || '0')).toBeInTheDocument();
+    }
+
+    // Check there are no placeholder sparklines.
+    expect(screen.queryAllByTestId('clusters_table_sparkline_skeleton')).toHaveLength(0);
+
+    // Check there are exactly 3 sparklines, for each metric.
+    expect(screen.queryAllByTestId('clusters_table_sparkline')).toHaveLength(3);
   });
 });

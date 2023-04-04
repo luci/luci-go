@@ -34,8 +34,10 @@ import { Metric } from '@/services/metrics';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
-  getMockRuleClusterSummary,
-  getMockSuggestedClusterSummary,
+  getMockRuleBasicClusterSummary,
+  getMockRuleFullClusterSummary,
+  getMockSuggestedBasicClusterSummary,
+  getMockSuggestedFullClusterSummary,
   mockQueryClusterSummaries,
 } from '@/testing_tools/mocks/cluster_mock';
 import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
@@ -43,7 +45,7 @@ import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 import ClustersTable from './clusters_table';
 
 describe('Test ClustersTable component', () => {
-  const testNow = '2023-02-01 04:05:06.789+10:00';
+  const testNow = '2020-01-08 11:02:03.456+10:00';
 
   beforeAll(() => {
     MockDate.set(testNow);
@@ -65,7 +67,7 @@ describe('Test ClustersTable component', () => {
   };
 
   it('should display column headings reflecting the system metrics', async () => {
-    const metrics : Metric[] = [{
+    const metrics: Metric[] = [{
       name: 'metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
@@ -96,12 +98,13 @@ describe('Test ClustersTable component', () => {
       orderBy: 'metrics.`metric-b`.value desc',
       failureFilter: '',
       metrics: ['metrics/metric-a', 'metrics/metric-b'],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -112,8 +115,8 @@ describe('Test ClustersTable component', () => {
     mockFetchMetrics();
 
     const mockClusters = [
-      getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf'),
-      getMockRuleClusterSummary('10000000000000001000000000000000'),
+      getMockSuggestedBasicClusterSummary('1234567890abcedf1234567890abcedf'),
+      getMockRuleBasicClusterSummary('10000000000000001000000000000000'),
     ];
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
@@ -123,12 +126,13 @@ describe('Test ClustersTable component', () => {
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -146,12 +150,13 @@ describe('Test ClustersTable component', () => {
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -162,8 +167,8 @@ describe('Test ClustersTable component', () => {
   it('when clicking a sortable column then should modify cluster order', async () => {
     mockFetchMetrics();
 
-    const suggestedCluster = getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf');
-    const ruleCluster = getMockRuleClusterSummary('10000000000000001000000000000000');
+    const suggestedCluster = getMockSuggestedBasicClusterSummary('1234567890abcedf1234567890abcedf');
+    const ruleCluster = getMockRuleBasicClusterSummary('10000000000000001000000000000000');
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
       timeRange: last24Hours,
@@ -172,6 +177,7 @@ describe('Test ClustersTable component', () => {
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = {
       clusterSummaries: [suggestedCluster, ruleCluster],
@@ -179,7 +185,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -193,8 +199,9 @@ describe('Test ClustersTable component', () => {
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'BASIC',
     };
-    const ruleCluster2 = getMockRuleClusterSummary('20000000000000002000000000000000');
+    const ruleCluster2 = getMockRuleBasicClusterSummary('20000000000000002000000000000000');
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ruleCluster2.bug!.linkText = 'crbug.com/2222222';
     const updatedResponse: QueryClusterSummariesResponse = {
@@ -213,8 +220,8 @@ describe('Test ClustersTable component', () => {
   it('when filtering it should show matching failures', async () => {
     mockFetchMetrics();
 
-    const suggestedCluster = getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf');
-    const ruleCluster = getMockRuleClusterSummary('10000000000000001000000000000000');
+    const suggestedCluster = getMockSuggestedBasicClusterSummary('1234567890abcedf1234567890abcedf');
+    const ruleCluster = getMockRuleBasicClusterSummary('10000000000000001000000000000000');
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
       timeRange: last24Hours,
@@ -223,6 +230,7 @@ describe('Test ClustersTable component', () => {
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = {
       clusterSummaries: [suggestedCluster, ruleCluster],
@@ -230,7 +238,7 @@ describe('Test ClustersTable component', () => {
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
@@ -244,8 +252,9 @@ describe('Test ClustersTable component', () => {
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'BASIC',
     };
-    const ruleCluster2 = getMockRuleClusterSummary('20000000000000002000000000000000');
+    const ruleCluster2 = getMockRuleBasicClusterSummary('20000000000000002000000000000000');
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ruleCluster2.bug!.linkText = 'crbug.com/3333333';
     const updatedResponse: QueryClusterSummariesResponse = {
@@ -263,8 +272,8 @@ describe('Test ClustersTable component', () => {
     mockFetchMetrics();
 
     const mockClusters = [
-      getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf'),
-      getMockRuleClusterSummary('10000000000000001000000000000000'),
+      getMockSuggestedBasicClusterSummary('1234567890abcedf1234567890abcedf'),
+      getMockRuleBasicClusterSummary('10000000000000001000000000000000'),
     ];
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
@@ -274,12 +283,13 @@ describe('Test ClustersTable component', () => {
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_head');
@@ -288,12 +298,13 @@ describe('Test ClustersTable component', () => {
 
     fireEvent.mouseDown(within(screen.getByTestId('metrics-selection')).getByRole('button'));
 
-    const request2 = {
+    const request2: QueryClusterSummariesRequest = {
       project: 'testproject',
       timeRange: last24Hours,
       failureFilter: '',
       orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       metrics: ['metrics/critical-failures-exonerated', 'metrics/failures'],
+      view: 'BASIC',
     };
     const response2 = { clusterSummaries: mockClusters };
 
@@ -305,12 +316,12 @@ describe('Test ClustersTable component', () => {
     await waitFor(() => {
       expect(screen.getByTestId('clusters_table_head')).toBeInTheDocument();
       expect(within(screen.getByTestId('clusters_table_head')).queryByText('User Cls Failed Presubmit'))
-          .not.toBeInTheDocument();
+        .not.toBeInTheDocument();
     });
   });
 
   it('when removing order by column, should select highest sort order in selected metrics', async () => {
-    const metrics : Metric[] = [{
+    const metrics: Metric[] = [{
       name: 'metrics/metric-a',
       metricId: 'metric-a',
       humanReadableName: 'Metric Alpha',
@@ -341,12 +352,13 @@ describe('Test ClustersTable component', () => {
       orderBy: 'metrics.`metric-a`.value desc',
       failureFilter: '',
       metrics: ['metrics/metric-a', 'metrics/metric-b'],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
     await screen.findByTestId('clusters_table_body');
     expect(screen.getByText('Metric Alpha')).toBeInTheDocument();
@@ -360,6 +372,7 @@ describe('Test ClustersTable component', () => {
       timeRange: last24Hours,
       orderBy: 'metrics.`metric-a`.value desc',
       metrics: ['metrics/metric-a', 'metrics/metric-b', 'metrics/metric-c'],
+      view: 'BASIC',
     };
     const response2 = { clusterSummaries: [] };
 
@@ -369,12 +382,13 @@ describe('Test ClustersTable component', () => {
     fireEvent.click(listOfItems.getByText('Metric Charlie'));
     await screen.findByTestId('clusters_table_head');
 
-    const request3 = {
+    const request3: QueryClusterSummariesRequest = {
       project: 'testproject',
       timeRange: last24Hours,
       failureFilter: '',
       orderBy: 'metrics.`metric-c`.value desc',
       metrics: ['metrics/metric-b', 'metrics/metric-c'],
+      view: 'BASIC',
     };
     const response3 = { clusterSummaries: [] };
 
@@ -396,59 +410,92 @@ describe('Test ClustersTable component', () => {
     const request: QueryClusterSummariesRequest = {
       project: 'testproject',
       timeRange: last24Hours,
-      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       failureFilter: '',
+      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       metrics: [
         'metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures',
       ],
+      view: 'BASIC',
     };
     const response: QueryClusterSummariesResponse = { clusterSummaries: [] };
     mockQueryClusterSummaries(request, response);
 
     renderWithRouterAndClient(
-        <ClustersTable project="testproject" />,
+      <ClustersTable project="testproject" />,
     );
 
     await screen.findByTestId('clusters_table_body');
 
     expect(screen.getByText('Last 24 hours')).toBeInTheDocument();
 
-    const weekRequest: QueryClusterSummariesRequest = {
+    // Mock the parallel calls to QueryClusterSummaries for both
+    // the basic and full views of cluster summaries for the last week.
+    const daysInWeek = 7;
+    const lastWeek: TimeRange = {
+      earliest: dayjs(testNow).subtract(24 * daysInWeek, 'hours').toISOString(),
+      latest: dayjs(testNow).toISOString(),
+    };
+    const basicSummariesRequest: QueryClusterSummariesRequest = {
       project: 'testproject',
-      timeRange: {
-        earliest: dayjs(testNow).subtract(7 * 24, 'hours').toISOString(),
-        latest: dayjs(testNow).toISOString(),
-      },
-      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
+      timeRange: lastWeek,
       failureFilter: '',
+      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
+      metrics: [
+        'metrics/human-cls-failed-presubmit',
+        'metrics/critical-failures-exonerated',
+        'metrics/failures',
+      ],
+      view: 'BASIC',
+    };
+    const mockBasicClusterSummaries = [
+      getMockSuggestedBasicClusterSummary('1234567890abcedf1234567890abcedf'),
+      getMockRuleBasicClusterSummary('10000000000000001000000000000000'),
+    ];
+    const basicSummariesResponse: QueryClusterSummariesResponse = {
+      clusterSummaries: mockBasicClusterSummaries
+    };
+    const fullSummariesRequest: QueryClusterSummariesRequest = {
+      project: 'testproject',
+      timeRange: lastWeek,
+      failureFilter: '',
+      orderBy: 'metrics.`critical-failures-exonerated`.value desc',
       metrics: ['metrics/human-cls-failed-presubmit',
         'metrics/critical-failures-exonerated',
         'metrics/failures'],
+      view: 'FULL',
     };
-    const mockClusters = [
-      getMockSuggestedClusterSummary('1234567890abcedf1234567890abcedf'),
-      getMockRuleClusterSummary('10000000000000001000000000000000'),
+    const mockFullClusterSummaries = [
+      getMockSuggestedFullClusterSummary('1234567890abcedf1234567890abcedf'),
+      getMockRuleFullClusterSummary('10000000000000001000000000000000'),
     ];
-    const weekResponse: QueryClusterSummariesResponse = { clusterSummaries: mockClusters };
-    mockQueryClusterSummaries(weekRequest, weekResponse);
+    const fullSummariesResponse: QueryClusterSummariesResponse = {
+      clusterSummaries: mockFullClusterSummaries,
+    };
+    // We need both responses, so these mocks use overwriteRoutes = false.
+    mockQueryClusterSummaries(basicSummariesRequest, basicSummariesResponse, false);
+    mockQueryClusterSummaries(fullSummariesRequest, fullSummariesResponse, false);
 
     // Change interval to the last week.
     fireEvent.mouseDown(within(screen.getByTestId('interval-selection')).getByRole('button'));
     const options = within(screen.getByRole('listbox'));
     fireEvent.click(options.getByText('Last 7 days'));
 
-    await waitFor(() => {
-      expect(screen.getByTestId('clusters_table_body')).toBeInTheDocument();
+    await screen.findByTestId('clusters_table_body');
 
-      // Check the time interval has been changed.
-      expect(screen.queryByText('Last 24 hours')).not.toBeInTheDocument();
-      expect(screen.getByText('Last 7 days')).toBeInTheDocument();
+    // Check the time interval has been changed.
+    expect(screen.queryByText('Last 24 hours')).not.toBeInTheDocument();
+    expect(screen.getByText('Last 7 days')).toBeInTheDocument();
 
-      // Clusters for the last week should be displayed
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(screen.getByText(mockClusters[1].bug!.linkText)).toBeInTheDocument();
-    });
+    // Clusters for the last week should be displayed.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    expect(screen.getByText(mockFullClusterSummaries[1].bug!.linkText)).toBeInTheDocument();
+
+    // Wait until there are no placeholder sparklines.
+    await expect(screen.queryAllByTestId('clusters_table_sparkline_skeleton')).toHaveLength(0);
+
+    // Check there are sparklines for each metric for each cluster.
+    expect(screen.queryAllByTestId('clusters_table_sparkline')).toHaveLength(6);
   });
 });
