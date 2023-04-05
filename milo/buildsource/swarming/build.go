@@ -47,6 +47,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/config"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -855,7 +856,7 @@ type BuildID struct {
 // getSwarmingHost returns default hostname if host is empty.
 // If host is not empty and not allowed, returns an error.
 func getSwarmingHost(c context.Context, host string) (string, error) {
-	settings := common.GetSettings(c)
+	settings := config.GetSettings(c)
 	if settings.Swarming == nil {
 		err := errors.New("swarming not in settings")
 		logging.WithError(err).Errorf(c, "Go configure swarming in the settings page.")

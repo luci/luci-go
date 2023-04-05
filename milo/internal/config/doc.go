@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucket
-
-import (
-	"context"
-	"errors"
-	"time"
-
-	"go.chromium.org/luci/milo/internal/config"
-)
-
-const bbRPCTimeout = time.Minute - time.Second
-
-func GetHost(c context.Context) (string, error) {
-	settings := config.GetSettings(c)
-	if settings.Buildbucket == nil || settings.Buildbucket.Host == "" {
-		return "", errors.New("missing buildbucket host in settings")
-	}
-	return settings.Buildbucket.Host, nil
-}
+// Package config contains all code for managing Milo's global app
+// configuration.
+//
+// Not to be confused with project_config, which manages configurations for
+// projects supported by Milo (e.g. ChromeOS, Chromium).
+package config

@@ -51,6 +51,7 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/milo/git/gitacls"
+	"go.chromium.org/luci/milo/internal/config"
 )
 
 // A collection of useful templating functions
@@ -529,7 +530,7 @@ func withBuildbucketBuildersClient(c *router.Context, next router.Handler) {
 //
 // This middleware must be installed after the auth middleware.
 func withGitMiddleware(c *router.Context, next router.Handler) {
-	acls, err := gitacls.FromConfig(c.Context, common.GetSettings(c.Context).SourceAcls)
+	acls, err := gitacls.FromConfig(c.Context, config.GetSettings(c.Context).SourceAcls)
 	if err != nil {
 		ErrorHandler(c, err)
 		return

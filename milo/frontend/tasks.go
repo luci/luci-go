@@ -21,7 +21,7 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/config"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/milo/rpc"
 	"go.chromium.org/luci/server/auth"
@@ -32,7 +32,7 @@ import (
 func UpdateBuilders(c context.Context) error {
 	service := &rpc.MiloInternalService{
 		GetSettings: func(c context.Context) (*configpb.Settings, error) {
-			settings := common.GetSettings(c)
+			settings := config.GetSettings(c)
 			return settings, nil
 		},
 		GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {

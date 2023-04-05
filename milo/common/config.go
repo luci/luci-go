@@ -41,8 +41,6 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/milo/git/gitacls"
-	configpb "go.chromium.org/luci/milo/proto/config"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -284,130 +282,6 @@ func ReplaceNSEWith(err errors.MultiError, replacement error) error {
 		lme.Assign(i, ierr)
 	}
 	return lme.Get()
-}
-
-// GetSettings returns the service (aka global) config for the current
-// instance of Milo from the datastore.  Returns an empty config and warn heavily
-// if none is found.
-// TODO(hinoka): Use process cache to cache configs.
-func GetSettings(c context.Context) *configpb.Settings {
-	settings := configpb.Settings{}
-
-	msg, err := GetCurrentServiceConfig(c)
-	if err != nil {
-		// The service config does not exist, just return an empty config
-		// and complain loudly in the logs.
-		logging.WithError(err).Errorf(c,
-			"Encountered error while loading service config, using empty config.")
-		return &settings
-	}
-
-	err = proto.Unmarshal(msg.Data, &settings)
-	if err != nil {
-		// The service config is broken, just return an empty config
-		// and complain loudly in the logs.
-		logging.WithError(err).Errorf(c,
-			"Encountered error while unmarshalling service config, using empty config.")
-		// Zero out the message just in case something got written in.
-		settings = configpb.Settings{}
-	}
-
-	return &settings
-}
-
-var serviceCfgCache = caching.RegisterCacheSlot()
-
-// GetCurrentServiceConfig gets the service config for the instance from either
-// process cache or datastore cache.
-func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
-	// This maker function is used to do the actual fetch of the ServiceConfig
-	// from datastore.  It is called if the ServiceConfig is not in proc cache.
-	item, err := serviceCfgCache.Fetch(c, func(any) (any, time.Duration, error) {
-		msg := ServiceConfig{ID: ServiceConfigID}
-		err := datastore.Get(c, &msg)
-		if err != nil {
-			return nil, time.Minute, err
-		}
-		logging.Infof(c, "loaded service config from datastore")
-		return msg, time.Minute, nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get service config: %s", err.Error())
-	}
-	if msg, ok := item.(ServiceConfig); ok {
-		logging.Infof(c, "loaded config entry from %s", msg.LastUpdated.Format(time.RFC3339))
-		return &msg, nil
-	}
-	return nil, fmt.Errorf("could not load service config %#v", item)
-}
-
-const globalConfigFilename = "settings.cfg"
-
-// UpdateServiceConfig fetches the service config from luci-config
-// and then stores a snapshot of the configuration in datastore.
-func UpdateServiceConfig(c context.Context) (*configpb.Settings, error) {
-	// Acquire the raw config client.
-	content := ""
-	meta := configInterface.Meta{}
-	err := cfgclient.Get(c,
-		"services/${appid}",
-		globalConfigFilename,
-		cfgclient.String(&content),
-		&meta,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("could not load %s from luci-config: %s", globalConfigFilename, err)
-	}
-
-	// Reserialize it into a binary proto to make sure older/newer Milo versions
-	// can safely use the entity when some fields are added/deleted. Text protos
-	// do not guarantee that.
-	settings := &configpb.Settings{}
-	err = protoutil.UnmarshalTextML(content, settings)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"could not unmarshal proto from luci-config:\n%s", content)
-	}
-	newConfig := ServiceConfig{
-		ID:          ServiceConfigID,
-		Text:        content,
-		Revision:    meta.Revision,
-		LastUpdated: time.Now().UTC(),
-	}
-	newConfig.Data, err = proto.Marshal(settings)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal proto into binary\n%s", newConfig.Text)
-	}
-
-	// Do the revision check & swap in a datastore transaction.
-	err = datastore.RunInTransaction(c, func(c context.Context) error {
-		oldConfig := ServiceConfig{ID: ServiceConfigID}
-		err := datastore.Get(c, &oldConfig)
-		switch err {
-		case datastore.ErrNoSuchEntity:
-			// Might be the first time this has run.
-			logging.WithError(err).Warningf(c, "No existing service config.")
-		case nil:
-			// Continue
-		default:
-			return fmt.Errorf("could not load existing config: %s", err)
-		}
-		// Check to see if we need to update
-		if oldConfig.Revision == newConfig.Revision {
-			logging.Infof(c, "revisions matched (%s), no need to update", oldConfig.Revision)
-			return nil
-		}
-		logging.Infof(c, "revisions differ (old %s, new %s), updating",
-			oldConfig.Revision, newConfig.Revision)
-		return datastore.Put(c, &newConfig)
-	}, nil)
-
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to update config entry in transaction").Err()
-	}
-	logging.Infof(c, "successfully updated to new config")
-
-	return settings, nil
 }
 
 // fetchProject fetches the config for a single project and parses it.
@@ -910,7 +784,6 @@ func init() {
 	// Milo is only responsible for validating the config matching the instance's
 	// appID in a project config.
 	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", validateProjectCfg)
-	validation.Rules.Add("services/${appid}", globalConfigFilename, validateServiceCfg)
 }
 
 // validateProjectCfg implements validation.Func by taking a potential Milo
@@ -1042,19 +915,4 @@ func validateExternalConsole(ctx *validation.Context, console *projectconfigpb.C
 	if console.HeaderId != "" || console.Header != nil {
 		ctx.Errorf("header found in external console")
 	}
-}
-
-// validateServiceCfg implements validation.Func by taking a potential Milo
-// service global config, validating it, and writing the result into ctx.
-//
-// The validation we do include:
-//
-// * Make sure the config is able to be unmarshalled.
-func validateServiceCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	settings := configpb.Settings{}
-	if err := protoutil.UnmarshalTextML(string(content), &settings); err != nil {
-		ctx.Error(err)
-	}
-	gitacls.ValidateConfig(ctx, settings.SourceAcls)
-	return nil
 }

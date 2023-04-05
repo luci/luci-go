@@ -105,28 +105,6 @@ func TestConfig(t *testing.T) {
 			})
 		})
 
-		Convey("Tests about global configs", func() {
-			Convey("Read a config before anything is set", func() {
-				c = cfgclient.Use(c, memcfg.New(mockedConfigs))
-				_, err := UpdateServiceConfig(c)
-				So(err.Error(), ShouldResemble, "could not load settings.cfg from luci-config: no such config")
-				settings := GetSettings(c)
-				So(settings.Buildbucket, ShouldEqual, nil)
-			})
-			Convey("Read a config", func() {
-				mockedConfigs["services/${appid}"] = memcfg.Files{
-					"settings.cfg": settingsCfg,
-				}
-				c = cfgclient.Use(c, memcfg.New(mockedConfigs))
-				rSettings, err := UpdateServiceConfig(c)
-				So(err, ShouldBeNil)
-				settings := GetSettings(c)
-				So(rSettings, ShouldResembleProto, settings)
-				So(settings.Buildbucket.Name, ShouldEqual, "dev")
-				So(settings.Buildbucket.Host, ShouldEqual, "cr-buildbucket-dev.appspot.com")
-			})
-		})
-
 		Convey("Send update", func() {
 			c := cfgclient.Use(c, memcfg.New(mockedConfigs))
 			So(UpdateProjects(c), ShouldBeNil)
@@ -539,13 +517,6 @@ consoles: {
 	builders: {
 		name: "bad/scheme"
 	}
-}
-`
-
-var settingsCfg = `
-buildbucket: {
-	name: "dev"
-	host: "cr-buildbucket-dev.appspot.com"
 }
 `
 

@@ -22,23 +22,19 @@ import (
 	"go.chromium.org/luci/milo/common"
 )
 
-// UpdateConfigHandler is an HTTP handler that handles configuration update
+// UpdateProjectConfigsHandler is an HTTP handler that handles configuration update
 // requests.
-func UpdateConfigHandler(c context.Context) error {
-	projErr := common.UpdateProjects(c)
-	if projErr != nil {
-		if merr, ok := projErr.(errors.MultiError); ok {
+func UpdateProjectConfigsHandler(c context.Context) error {
+	err := common.UpdateProjects(c)
+	if err != nil {
+		if merr, ok := err.(errors.MultiError); ok {
 			for _, ierr := range merr {
 				logging.WithError(ierr).Errorf(c, "project update handler encountered error")
 			}
 		} else {
-			logging.WithError(projErr).Errorf(c, "project update handler encountered error")
+			logging.WithError(err).Errorf(c, "project update handler encountered error")
 		}
 	}
-	_, servErr := common.UpdateServiceConfig(c)
-	if servErr != nil {
-		logging.WithError(servErr).Errorf(c, "service update handler encountered error")
-	}
 
-	return errors.Flatten(errors.NewMultiError(projErr, servErr))
+	return err
 }

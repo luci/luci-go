@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend"
+	"go.chromium.org/luci/milo/internal/config"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/milo/rpc"
@@ -61,7 +61,8 @@ func main() {
 	}
 	server.Main(nil, modules, func(srv *server.Server) error {
 		frontend.Run(srv, "frontend/templates")
-		cron.RegisterHandler("update-config", frontend.UpdateConfigHandler)
+		cron.RegisterHandler("update-project-configs", frontend.UpdateProjectConfigsHandler)
+		cron.RegisterHandler("update-config", config.UpdateConfigHandler)
 		cron.RegisterHandler("update-pools", buildbucket.UpdatePools)
 		cron.RegisterHandler("update-builders", frontend.UpdateBuilders)
 		cron.RegisterHandler("delete-builds", buildbucket.DeleteOldBuilds)
@@ -69,7 +70,7 @@ func main() {
 		milopb.RegisterMiloInternalServer(srv, &milopb.DecoratedMiloInternal{
 			Service: &rpc.MiloInternalService{
 				GetSettings: func(c context.Context) (*configpb.Settings, error) {
-					settings := common.GetSettings(c)
+					settings := config.GetSettings(c)
 					return settings, nil
 				},
 				GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {

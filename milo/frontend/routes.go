@@ -36,7 +36,7 @@ import (
 
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/config"
 )
 
 // Run sets up all the routes and runs the server.
@@ -270,7 +270,7 @@ func configsJSHandler(c *router.Context) error {
 		return err
 	}
 
-	settings := common.GetSettings(c.Context)
+	settings := config.GetSettings(c.Context)
 
 	header := c.Writer.Header()
 	header.Set("content-type", "application/javascript")
