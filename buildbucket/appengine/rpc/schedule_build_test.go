@@ -3391,6 +3391,9 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "builder",
 					Project: "project",
 				},
+				Experiments: map[string]bool{
+					"luci.buildbucket.backend_alt": true,
+				},
 				RequestId: "request_id",
 				Priority:  100,
 			}
@@ -3538,9 +3541,15 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}
 
+			req := &pb.ScheduleBuildRequest{
+				Experiments: map[string]bool{
+					"luci.buildbucket.backend_alt": true,
+				},
+			}
+
 			Convey("use builder Priority and ServiceAccount", func() {
 
-				setInfra(ctx, nil, bldrCfg, b, s)
+				setInfra(ctx, req, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
@@ -3566,7 +3575,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			Convey("use backend priority and ServiceAccount", func() {
 				bldrCfg.Backend.ConfigJson = "{\"priority\": 2, \"service_account\": \"service_account\"}"
-				setInfra(ctx, nil, bldrCfg, b, s)
+				setInfra(ctx, req, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
 				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
@@ -3591,7 +3600,7 @@ func TestScheduleBuild(t *testing.T) {
 			})
 
 			Convey("use user requested priority", func() {
-				req := &pb.ScheduleBuildRequest{Priority: 22}
+				req.Priority = 22
 				setInfra(ctx, req, bldrCfg, b, s)
 
 				expectedBackendConfig := &structpb.Struct{}
@@ -3611,6 +3620,62 @@ func TestScheduleBuild(t *testing.T) {
 					Task: &pb.Task{
 						Id: &pb.TaskID{
 							Target: "swarming://chromium-swarm",
+						},
+					},
+				})
+			})
+
+			Convey("backend alt is used", func() {
+				bldrCfg.BackendAlt = &pb.BuilderConfig_Backend{
+					Target: "swarming://chromium-swarm-alt",
+				}
+
+				setInfra(ctx, req, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
+					Config: expectedBackendConfig,
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm-alt",
+						},
+					},
+				})
+			})
+
+			Convey("swarming is used, backend_alt exp is true", func() {
+				bldrCfg := &pb.BuilderConfig{
+					ServiceAccount: "account",
+					Priority:       200,
+				}
+
+				setInfra(ctx, req, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Backend, ShouldBeNil)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+					TaskServiceAccount: "account",
+					Priority:           200,
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
 				})

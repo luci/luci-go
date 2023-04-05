@@ -903,40 +903,18 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 	sort.Slice(taskCaches, func(i, j int) bool {
 		return taskCaches[i].Path < taskCaches[j].Path
 	})
-
 	// Need to configure build.Infra for a backend or swarming.
-	isTaskBackend := cfg.GetBackend() != nil
-	if isTaskBackend {
-		config := &structpb.Struct{}
-		err := json.Unmarshal([]byte(cfg.Backend.GetConfigJson()), config)
-		if err != nil {
-			logging.Warningf(ctx, err.Error())
+	isTaskBackend := false
+	backendAltExpIsTrue := req.GetExperiments()["luci.buildbucket.backend_alt"]
+	switch {
+	case backendAltExpIsTrue && (cfg.GetBackendAlt() != nil || cfg.GetBackend() != nil):
+		cfgToPass := cfg.GetBackend()
+		if cfg.GetBackendAlt() != nil {
+			cfgToPass = cfg.BackendAlt
 		}
-		if config.GetFields() == nil {
-			config.Fields = make(map[string]*structpb.Value)
-		}
-
-		if config.Fields["service_account"].GetStringValue() == "" {
-			config.Fields["service_account"] = structpb.NewStringValue(taskServiceAccount)
-		}
-
-		// If request has a priority, use that
-		// else if backend config_json did not have a priority
-		// we use the builder one (or value 30 if builder was not set)
-		if config.Fields["priority"].GetNumberValue() == 0 || req.GetPriority() > 0 {
-			config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
-		}
-
-		build.Infra.Backend = &pb.BuildInfra_Backend{
-			Caches: taskCaches,
-			Config: config,
-			Task: &pb.Task{
-				Id: &pb.TaskID{
-					Target: cfg.GetBackend().GetTarget(),
-				},
-			},
-		}
-	} else {
+		setInfraBackend(ctx, build, cfgToPass, taskCaches, taskServiceAccount, priority, req.GetPriority())
+		isTaskBackend = true
+	default:
 		build.Infra.Swarming = &pb.BuildInfra_Swarming{
 			Caches:             commonCacheToSwarmingCache(taskCaches),
 			Hostname:           cfg.GetSwarmingHost(),
@@ -1289,6 +1267,38 @@ func setInfraBackendConfigAgent(b *pb.Build) {
 	// TODO(crbug.com/1420443): Remove this harcoding and use
 	// globalCfg.GetSwarming().GetBbagentPackage().binary_agent_name.
 	b.Infra.Backend.Config.Fields["agent_binary_cipd_filename"] = structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}")
+}
+
+func setInfraBackend(ctx context.Context, build *pb.Build, backend *pb.BuilderConfig_Backend, taskCaches []*pb.CacheEntry, taskServiceAccount string, priority, reqPriority int32) {
+	config := &structpb.Struct{}
+	err := json.Unmarshal([]byte(backend.GetConfigJson()), config)
+	if err != nil {
+		logging.Warningf(ctx, err.Error())
+	}
+	if config.GetFields() == nil {
+		config.Fields = make(map[string]*structpb.Value)
+	}
+
+	if config.Fields["service_account"].GetStringValue() == "" {
+		config.Fields["service_account"] = structpb.NewStringValue(taskServiceAccount)
+	}
+
+	// If request has a priority, use that
+	// else if backend config_json did not have a priority
+	// we use the builder one (or value 30 if builder was not set)
+	if config.Fields["priority"].GetNumberValue() == 0 || reqPriority > 0 {
+		config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
+	}
+
+	build.Infra.Backend = &pb.BuildInfra_Backend{
+		Caches: taskCaches,
+		Config: config,
+		Task: &pb.Task{
+			Id: &pb.TaskID{
+				Target: backend.GetTarget(),
+			},
+		},
+	}
 }
 
 // setExperimentsFromProto sets experiments in the model (see model/build.go).
