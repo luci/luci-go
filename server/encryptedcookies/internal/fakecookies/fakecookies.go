@@ -139,6 +139,17 @@ func (m *AuthMethod) LogoutURL(ctx context.Context, dest string) (string, error)
 	return internal.MakeRedirectURL(logoutURL, dest)
 }
 
+// IsFakeCookiesSession returns true if the given auth.Session was produced by
+// a fake cookies auth method.
+func IsFakeCookiesSession(s auth.Session) bool {
+	switch s.(type) {
+	case serverSelfSession, erroringSession:
+		return true
+	default:
+		return false
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var loginPageTmpl = template.Must(template.New("login").Parse(`<!DOCTYPE html>

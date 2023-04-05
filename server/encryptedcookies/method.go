@@ -124,6 +124,17 @@ type AuthMethod struct {
 	// This is useful for rolling out changes incrementally. Once the new version
 	// takes over all the traffic, promote the optional scopes to RequiredScopes.
 	OptionalScopes []string
+
+	// ExposeStateEndpoint controls whether "/auth/openid/state" endpoint should
+	// be exposed.
+	//
+	// See AuthState struct for details.
+	//
+	// It is off by default since it can potentially make XSS vulnerabilities more
+	// severe by exposing OAuth and ID tokens to malicious injected code. It
+	// should be enabled only if the frontend code needs it and it is aware of
+	// XSS risks.
+	ExposeStateEndpoint bool
 }
 
 var _ interface {
@@ -137,6 +148,7 @@ const (
 	loginURL    = "/auth/openid/login"
 	logoutURL   = "/auth/openid/logout"
 	callbackURL = "/auth/openid/callback"
+	stateURL    = "/auth/openid/state"
 )
 
 // InstallHandlers installs HTTP handlers used in the login protocol.
@@ -146,6 +158,14 @@ func (m *AuthMethod) InstallHandlers(r *router.Router, base router.MiddlewareCha
 	r.GET(loginURL, base, m.loginHandler)
 	r.GET(logoutURL, base, m.logoutHandler)
 	r.GET(callbackURL, base, m.callbackHandler)
+
+	// Need to build an authenticator that uses this method to properly populate
+	// the auth state for stateHandler. `base` here usually doesn't include
+	// authentication yet (because we are still setting it up).
+	if m.ExposeStateEndpoint {
+		authenticator := auth.Authenticator{Methods: []auth.Method{m}}
+		r.GET(stateURL, base.Extend(authenticator.GetMiddleware()), m.stateHandler)
+	}
 }
 
 // Warmup prepares local caches.
@@ -217,7 +237,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 	}
 
 	// authSessionImpl implements auth.Session.
-	authSession := &authSessionImpl{cookie: cookie, session: session}
+	authSession := &authSessionImpl{method: m, cookie: cookie, session: session}
 
 	// Check if we need to refresh the short-lived tokens stored in the session.
 	ttl := session.NextRefresh.AsTime().Sub(clock.Now(ctx))
@@ -633,6 +653,14 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 	})
 }
 
+// stateHandler serves JSON with the session state, see AuthState.
+func (m *AuthMethod) stateHandler(ctx *router.Context) {
+	stateHandlerImpl(ctx, func(s auth.Session) bool {
+		impl, ok := s.(*authSessionImpl)
+		return ok && impl.method == m
+	})
+}
+
 // refreshSession refreshes the short-lived tokens stored in the session, thus
 // checking that the refresh token (also stored there) is still valid.
 //
@@ -817,6 +845,7 @@ func bumpGeneration(ctx context.Context, s *sessionpb.Session, expected int32) {
 // (and encrypt them and write them back into the datastore). This will be
 // messy.
 type authSessionImpl struct {
+	method  *AuthMethod
 	cookie  *encryptedcookiespb.SessionCookie
 	session *sessionpb.Session
 

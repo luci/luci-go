@@ -26,8 +26,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/warmup"
 
@@ -82,6 +84,17 @@ type ModuleOptions struct {
 	// This is useful for rolling out changes incrementally. Once the new version
 	// takes over all the traffic, promote the optional scopes to RequiredScopes.
 	OptionalScopes stringlistflag.Flag
+
+	// ExposeStateEndpoint controls whether "/auth/openid/state" endpoint should
+	// be exposed.
+	//
+	// See AuthState struct for details.
+	//
+	// It is off by default since it can potentially make XSS vulnerabilities more
+	// severe by exposing OAuth and ID tokens to malicious injected code. It
+	// should be enabled only if the frontend code needs it and it is aware of
+	// XSS risks.
+	ExposeStateEndpoint bool
 }
 
 // Register registers the command line flags.
@@ -142,6 +155,11 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 			`making the OAuth authorization request, in addition to the default `+
 			`scopes (openid email profile) and the required-scopes. Existing `+
 			`sessions without the optional scopes will NOT be closed.`,
+	)
+	f.BoolVar(&o.ExposeStateEndpoint,
+		"encrypted-cookies-expose-state-endpoint",
+		false,
+		`Controls whether to expose "/auth/openid/state" endpoint.`,
 	)
 }
 
@@ -241,12 +259,13 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	// Have enough configuration to create the AuthMethod.
 	method := &AuthMethod{
-		OpenIDConfig:   func(context.Context) (*OpenIDConfig, error) { return cfg.Load().(*OpenIDConfig), nil },
-		AEADProvider:   func(context.Context) tink.AEAD { return aead.Unwrap() },
-		Sessions:       sessions,
-		Insecure:       !opts.Prod,
-		OptionalScopes: m.opts.OptionalScopes,
-		RequiredScopes: m.opts.RequiredScopes,
+		OpenIDConfig:        func(context.Context) (*OpenIDConfig, error) { return cfg.Load().(*OpenIDConfig), nil },
+		AEADProvider:        func(context.Context) tink.AEAD { return aead.Unwrap() },
+		Sessions:            sessions,
+		Insecure:            !opts.Prod,
+		OptionalScopes:      m.opts.OptionalScopes,
+		RequiredScopes:      m.opts.RequiredScopes,
+		ExposeStateEndpoint: m.opts.ExposeStateEndpoint,
 	}
 
 	// Register it with the server guts.
@@ -334,5 +353,16 @@ func (m *serverModule) initInDevMode(ctx context.Context, host module.Host) erro
 	method := &fakecookies.AuthMethod{}
 	host.RegisterCookieAuth(method)
 	method.InstallHandlers(host.Routes(), nil)
+
+	// fakecookies.AuthMethod can't register AuthState handler itself since it
+	// introduces module import cycle, so do it here instead. fakecookies is
+	// internal API of this package.
+	if m.opts.ExposeStateEndpoint {
+		authenticator := auth.Authenticator{Methods: []auth.Method{method}}
+		host.Routes().GET(stateURL, []router.Middleware{authenticator.GetMiddleware()}, func(ctx *router.Context) {
+			stateHandlerImpl(ctx, fakecookies.IsFakeCookiesSession)
+		})
+	}
+
 	return nil
 }

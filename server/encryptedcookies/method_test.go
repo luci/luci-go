@@ -59,7 +59,7 @@ func TestMethod(t *testing.T) {
 		// Instantiate ID provider with mocked time only. It doesn't need other
 		// context features.
 		ctx := context.Background()
-		ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
+		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		provider := openIDProviderFake{
 			ExpectedClientID:     "client_id",
 			ExpectedClientSecret: "client_secret",
@@ -97,10 +97,11 @@ func TestMethod(t *testing.T) {
 						RedirectURI:  provider.ExpectedRedirectURI,
 					}, nil
 				},
-				AEADProvider:   func(context.Context) tink.AEAD { return ae },
-				Sessions:       sessionStore,
-				RequiredScopes: requiredScopes,
-				OptionalScopes: optionalScopes,
+				AEADProvider:        func(context.Context) tink.AEAD { return ae },
+				Sessions:            sessionStore,
+				RequiredScopes:      requiredScopes,
+				OptionalScopes:      optionalScopes,
+				ExposeStateEndpoint: true,
 			}
 		}
 
@@ -209,13 +210,13 @@ func TestMethod(t *testing.T) {
 				tok, err := session.AccessToken(ctx)
 				So(err, ShouldBeNil)
 				So(tok.AccessToken, ShouldEqual, "access_token_1")
-				So(tok.Expiry.Sub(testclock.TestTimeUTC), ShouldEqual, time.Hour)
+				So(tok.Expiry.Sub(testclock.TestRecentTimeUTC), ShouldEqual, time.Hour)
 
 				// Can grab the stored ID token.
 				tok, err = session.IDToken(ctx)
 				So(err, ShouldBeNil)
 				So(tok.AccessToken, ShouldStartWith, "eyJhbG") // JWT header
-				So(tok.Expiry.Sub(testclock.TestTimeUTC), ShouldEqual, time.Hour)
+				So(tok.Expiry.Sub(testclock.TestRecentTimeUTC), ShouldEqual, time.Hour)
 			})
 
 			Convey("Malformed cookie is ignored", func() {
@@ -250,7 +251,7 @@ func TestMethod(t *testing.T) {
 					tok, err := session.AccessToken(ctx)
 					So(err, ShouldBeNil)
 					So(tok.AccessToken, ShouldEqual, "access_token_2")
-					So(tok.Expiry.Sub(testclock.TestTimeUTC), ShouldEqual, 3*time.Hour)
+					So(tok.Expiry.Sub(testclock.TestRecentTimeUTC), ShouldEqual, 3*time.Hour)
 
 					// No need to refresh anymore.
 					user, session, err = methodV1.Authenticate(ctx, phonyRequest(cookieV1))
@@ -395,6 +396,86 @@ func TestMethod(t *testing.T) {
 					Picture:  provider.UserPicture,
 				})
 				So(session, ShouldNotBeNil)
+			})
+		})
+
+		Convey("State endpoint works", func() {
+			r := router.New()
+			r.Use(router.MiddlewareChain{
+				func(rc *router.Context, next router.Handler) {
+					rc.Context = ctx
+					next(rc)
+				},
+			})
+			methodV1.InstallHandlers(r, nil)
+
+			callState := func(cookie string) (code int, state *AuthState) {
+				rw := httptest.NewRecorder()
+				req := httptest.NewRequest("GET", stateURL, nil)
+				if cookie != "" {
+					req.Header.Add("Cookie", cookie)
+				}
+				req.Header.Add("Sec-Fetch-Site", "same-origin")
+				r.ServeHTTP(rw, req)
+				res := rw.Result()
+				code = res.StatusCode
+				if code == 200 {
+					state = &AuthState{}
+					So(json.NewDecoder(res.Body).Decode(&state), ShouldBeNil)
+				}
+				return
+			}
+
+			goodCookie := performCallback(methodV1, performLogin(methodV1))
+			So(provider.AccessTokensMinted(), ShouldEqual, 1)
+			tc.Add(30 * time.Minute)
+
+			Convey("No cookie", func() {
+				code, state := callState("")
+				So(code, ShouldEqual, 200)
+				So(state, ShouldResemble, &AuthState{Identity: "anonymous:anonymous"})
+			})
+
+			Convey("Valid cookie", func() {
+				code, state := callState(goodCookie)
+				So(code, ShouldEqual, 200)
+				So(state, ShouldResemble, &AuthState{
+					Identity:             "user:someone@example.com",
+					Email:                "someone@example.com",
+					Picture:              "https://example.com/picture",
+					AccessToken:          "access_token_1",
+					AccessTokenExpiry:    testclock.TestRecentTimeUTC.Add(time.Hour).Unix(),
+					AccessTokenExpiresIn: 1800,
+					IDToken:              state.IDToken, // checked separately
+					IDTokenExpiry:        testclock.TestRecentTimeUTC.Add(time.Hour).Unix(),
+					IDTokenExpiresIn:     1800,
+				})
+				So(state.IDToken, ShouldStartWith, "eyJhbG") // JWT header
+
+				// Still only 1 token minted overall.
+				So(provider.AccessTokensMinted(), ShouldEqual, 1)
+			})
+
+			Convey("Refreshes tokens", func() {
+				tc.Add(time.Hour) // make sure existing tokens expire
+
+				code, state := callState(goodCookie)
+				So(code, ShouldEqual, 200)
+				So(state, ShouldResemble, &AuthState{
+					Identity:             "user:someone@example.com",
+					Email:                "someone@example.com",
+					Picture:              "https://example.com/picture",
+					AccessToken:          "access_token_2",
+					AccessTokenExpiry:    testclock.TestRecentTimeUTC.Add(2*time.Hour + 30*time.Minute).Unix(),
+					AccessTokenExpiresIn: 3600,
+					IDToken:              state.IDToken, // checked separately
+					IDTokenExpiry:        testclock.TestRecentTimeUTC.Add(2*time.Hour + 30*time.Minute).Unix(),
+					IDTokenExpiresIn:     3600,
+				})
+				So(state.IDToken, ShouldStartWith, "eyJhbG") // JWT header
+
+				// Minted a new token.
+				So(provider.AccessTokensMinted(), ShouldEqual, 2)
 			})
 		})
 	})
