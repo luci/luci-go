@@ -25,7 +25,7 @@ luci.builder(
         cipd_package = "cipd/package",
         cipd_version = "refs/version",
     ),
-    task_backend = "my_task_backend",
+    backend_alt = "my_task_backend",
 )
 
 # Expect configs:
@@ -36,7 +36,7 @@ luci.builder(
 #   swarming {
 #     builders {
 #       name: "builder1"
-#       backend {
+#       backend_alt {
 #         target: "swarming://chromium-swarm"
 #         config_json:
 #           '{'

@@ -605,12 +605,22 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 	}
 
 	// task backend validation
-	if b.GetBackend() != nil && b.GetSwarmingHost() != "" {
+	if (b.GetBackend() != nil || b.GetBackendAlt() != nil) && b.GetSwarmingHost() != "" {
 		ctx.Errorf("only one of swarming host or task backend is allowed")
-	} else if b.GetBackend() != nil {
-		// validate task backend
+	}
+
+	// Need to do seperate checks here since backend and backend_alt can both be set.
+	if b.GetBackend() != nil {
+		// validate backend
 		validateTaskBackend(ctx, b.Backend)
-	} else {
+	}
+	if b.GetBackendAlt() != nil {
+		// validate backend_alt
+		validateTaskBackend(ctx, b.BackendAlt)
+	}
+
+	// If neither backend is set, use swarming
+	if b.GetBackend() == nil && b.GetBackendAlt() == nil {
 		// validate swarming_host
 		validateHostname(ctx, "swarming_host", b.SwarmingHost)
 

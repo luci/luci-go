@@ -1,4 +1,4 @@
-luci.builder.defaults.task_backend.set("default-backend")
+luci.builder.defaults.backend.set("default-backend")
 
 luci.project(
     name = "test",

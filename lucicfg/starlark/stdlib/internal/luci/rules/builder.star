@@ -69,7 +69,8 @@ def _builder(
         test_presentation = None,
 
         # TaskBackend.
-        task_backend = None,
+        backend = None,
+        backend_alt = None,
 
         # led build adjustments.
         shadow_service_account = None,
@@ -230,8 +231,11 @@ def _builder(
       test_presentation: A resultdb.test_presentation(...) struct. A
         configuration that defines how tests should be rendered in the UI.
 
-      task_backend: the name of the task backend defined via luci.task_backend(...).
+      backend: the name of the task backend defined via luci.task_backend(...).
         Supports the module-scoped default.
+
+      backend_alt: the name of the alternative task backend defined via
+        luci.task_backend(...). Supports the module-scoped default.
 
       shadow_service_account: If set, then led builds created for this Builder
         will instead use this service account. This is useful to allow users to
@@ -288,7 +292,8 @@ def _builder(
         "repo": validate.repo_url("repo", repo, required = False),
         "resultdb": resultdb.validate_settings("settings", resultdb_settings),
         "test_presentation": resultdb.validate_test_presentation("test_presentation", test_presentation),
-        "task_backend": keys.task_backend(task_backend) if task_backend != None else None,
+        "backend": keys.task_backend(backend) if backend != None else None,
+        "backend_alt": keys.task_backend(backend_alt) if backend_alt != None else None,
         "shadow_service_account": validate.string("shadow_service_account", shadow_service_account, required = False),
         "shadow_pool": validate.string("shadow_pool", shadow_pool, required = False),
     }
@@ -342,8 +347,10 @@ def _builder(
     graph.add_node(builder_key, props = props)
     graph.add_edge(bucket_key, builder_key)
     graph.add_edge(builder_key, executable_key)
-    if props["task_backend"]:
-        graph.add_edge(builder_key, props["task_backend"])
+    if props["backend"]:
+        graph.add_edge(builder_key, props["backend"])
+    if props["backend_alt"]:
+        graph.add_edge(builder_key, props["backend_alt"])
 
     # Allow this builder to be referenced from other nodes via its bucket-scoped
     # name and via a global (perhaps ambiguous) name. See builder_ref.add(...).
@@ -459,6 +466,7 @@ builder = lucicfg.rule(
         "task_template_canary_percentage": lambda attr, val: validate.int(attr, val, min = 0, max = 100),
         "resultdb": resultdb.validate_settings,
         "test_presentation": resultdb.validate_test_presentation,
-        "task_backend": lambda _attr, val: keys.task_backend(val),
+        "backend": lambda _attr, val: keys.task_backend(val),
+        "backend_alt": lambda _attr, val: keys.task_backend(val),
     }),
 )

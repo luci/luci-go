@@ -1,5 +1,3 @@
-luci.builder.defaults.task_backend.set("deafult-backend")
-
 luci.project(
     name = "test",
     buildbucket = "cr-buildbucket.appspot.com",
@@ -13,6 +11,8 @@ luci.task_backend(
     target = "swarming://chromium-swarm-default",
     config = {"key": "value"},
 )
+
+luci.builder.defaults.backend.set("deafult-backend")
 
 luci.builder(
     name = "builder1",

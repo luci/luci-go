@@ -462,13 +462,19 @@ def _buildbucket_builders(bucket):
             ),
             resultdb = node.props.resultdb,
         )
-        if node.props.task_backend != None:
-            task_backend = graph.node(node.props.task_backend)
+        if node.props.backend != None:
+            backend = graph.node(node.props.backend)
             bldr_config.backend = buildbucket_pb.BuilderConfig.Backend(
-                target = task_backend.props.target,
-                config_json = task_backend.props.config,
+                target = backend.props.target,
+                config_json = backend.props.config,
             )
-        else:
+        if node.props.backend_alt != None:
+            backend_alt = graph.node(node.props.backend_alt)
+            bldr_config.backend_alt = buildbucket_pb.BuilderConfig.Backend(
+                target = backend_alt.props.target,
+                config_json = backend_alt.props.config,
+            )
+        if node.props.backend == None and node.props.backend_alt == None:
             swarming_host = node.props.swarming_host
             if not swarming_host:
                 if not def_swarming_host:

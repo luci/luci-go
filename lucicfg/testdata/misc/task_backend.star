@@ -19,7 +19,7 @@ luci.builder(
         cipd_package = "cipd/package",
         cipd_version = "refs/version",
     ),
-    task_backend = "my_task_backend",
+    backend = "my_task_backend",
 )
 
 # Expect configs:

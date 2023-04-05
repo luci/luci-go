@@ -530,6 +530,40 @@ func TestValidateProject(t *testing.T) {
 			_, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, false)
 		})
+
+		Convey("backend, backend_alt and no swarming in builder", func() {
+			backendSettings := []*pb.BackendSetting{
+				{
+					Target:   "swarming://chromium-swarm",
+					Hostname: "swarming_hostname",
+				},
+				{
+					Target:   "swarming://chromium-swarm-alt",
+					Hostname: "swarming_hostname-alt",
+				},
+			}
+			settingsCfg := &pb.SettingsCfg{Backends: backendSettings}
+			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+			content := `
+				builders {
+					name: "b1"
+					exe {
+						cipd_package: "infra/executable/bar"
+						cipd_version: "refs/heads/main"
+					}
+					properties: "{}"
+					backend: {
+						target: "swarming://chromium-swarm"
+					}
+					backend_alt: {
+						target: "swarming://chromium-swarm-alt"
+					}
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			_, ok := vctx.Finalize().(*validation.Error)
+			So(ok, ShouldEqual, false)
+		})
 	})
 
 	Convey("validate dimensions", t, func() {

@@ -1455,7 +1455,8 @@ luci.builder(
     repo = None,
     resultdb_settings = None,
     test_presentation = None,
-    task_backend = None,
+    backend = None,
+    backend_alt = None,
     shadow_service_account = None,
     shadow_pool = None,
     triggers = None,
@@ -1538,7 +1539,8 @@ Buildbucket.
 * **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles-poller) that trigger this builder if they all poll the same repo.
 * **resultdb_settings**: A buildbucket_pb.BuilderConfig.ResultDB, such as one created with [resultdb.settings(...)](#resultdb.settings). A configuration that defines if Buildbucket:ResultDB integration should be enabled for this builder and which results to export to BigQuery.
 * **test_presentation**: A [resultdb.test_presentation(...)](#resultdb.test-presentation) struct. A configuration that defines how tests should be rendered in the UI.
-* **task_backend**: the name of the task backend defined via [luci.task_backend(...)](#luci.task-backend). Supports the module-scoped default.
+* **backend**: the name of the task backend defined via [luci.task_backend(...)](#luci.task-backend). Supports the module-scoped default.
+* **backend_alt**: the name of the alternative task backend defined via [luci.task_backend(...)](#luci.task-backend). Supports the module-scoped default.
 * **shadow_service_account**: If set, then led builds created for this Builder will instead use this service account. This is useful to allow users to automatically have their testing builds assume a service account which is different than your production service account. When specified, the shadow_service_account will also be included into the shadow bucket's constraints (see [luci.bucket_constraints(...)](#luci.bucket-constraints)). Which also means it will be granted the `role/buildbucket.builderServiceAccount` role in the shadow bucket realm.
 * **shadow_pool**: If set, then led builds created for this Builder will instead be set to use this alternate pool instead. This would allow you to grant users the ability to create led builds in the alternate pool without allowing them to create builds in the production pool. When specified, the shadow_pool will also be included into the shadow bucket's constraints (see [luci.bucket_constraints(...)](#luci.bucket-constraints)).
 * **triggers**: builders this builder triggers.
