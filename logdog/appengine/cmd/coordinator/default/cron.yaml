@@ -23,9 +23,3 @@ cron:
   url: "/admin/cron/sync-configs"
   schedule: "every 1 minutes"
   target: default
-
-# Update critical stats.
-- description: "Stats updater"
-  url: "/admin/cron/stats"
-  schedule: "every 30 minutes"
-  target: default
