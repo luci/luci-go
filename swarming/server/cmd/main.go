@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/secrets"
@@ -32,14 +33,18 @@ import (
 	"go.chromium.org/luci/swarming/server/internals"
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
+
+	// Store auth sessions in the datastore.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
 func main() {
 	modules := []module.Module{
-		gaeemulation.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
-		tq.NewModuleFromFlags(),
+		encryptedcookies.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
 	}
 
 	hmacSecret := flag.String(

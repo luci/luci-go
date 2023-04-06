@@ -10,3 +10,6 @@ dispatch:
   # Serve TQ tasks using Go.
   - url: "*/internal/tasks/t/*"
     service: default-go
+  # Serve web UI authentication endpoints using Go.
+  - url: "*/auth/openid/*"
+    service: default-go
