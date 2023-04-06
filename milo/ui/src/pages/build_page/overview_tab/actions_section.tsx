@@ -64,7 +64,7 @@ export const ActionsSection = observer(({ openDialog }: ActionsSectionProps) => 
       <h3>Actions</h3>
       <div title={tooltip}>
         <Button onClick={() => openDialog(Dialog.CancelBuild)} disabled={!canCancel}>
-          Retry Build
+          Cancel Build
         </Button>
       </div>
     </>

@@ -26,9 +26,11 @@ export function AncestorBuildsRow({ ancestorBuildIds }: AncestorBuildsRowProps) 
         {!ancestorBuildIds?.length
           ? 'no ancestor builds'
           : ancestorBuildIds.map((id) => (
-              <a href={getBuildURLPathFromBuildId(id)} target="_blank">
-                {id}
-              </a>
+              <>
+                <a href={getBuildURLPathFromBuildId(id)} target="_blank">
+                  {id}
+                </a>{' '}
+              </>
             ))}
       </td>
     </tr>
