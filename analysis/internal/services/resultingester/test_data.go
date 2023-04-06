@@ -33,6 +33,14 @@ var originalTmd = &rdbpb.TestMetadata{
 		FileName: "old_file_name",
 		Line:     567,
 	},
+	BugComponent: &rdbpb.BugComponent{
+		System: &rdbpb.BugComponent_Monorail{
+			Monorail: &rdbpb.MonorailComponent{
+				Project: "chrome",
+				Value: "Blink>Component",
+			},
+		},
+	},
 }
 
 var updatedTmd = &rdbpb.TestMetadata{
@@ -41,6 +49,13 @@ var updatedTmd = &rdbpb.TestMetadata{
 		Repo:     "repo",
 		FileName: "file_name",
 		Line:     456,
+	},
+	BugComponent: &rdbpb.BugComponent{
+		System: &rdbpb.BugComponent_IssueTracker{
+			IssueTracker: &rdbpb.IssueTrackerComponent{
+				ComponentId: 12345,
+			},
+		},
 	},
 }
 

@@ -308,27 +308,53 @@ func updatedStatus(derived, old atvpb.Status) (atvpb.Status, error) {
 // updatedTestMetadata returns if the test metadata for the test variant should be
 // replaced. It returns true if the ingested test variant (new) has metadata, and
 // that metadata is different from what is currently stored (old).
-func updateTestMetadata(new *rdbpb.TestMetadata, old *pb.TestMetadata) bool {
-	if new == nil {
+func updateTestMetadata(rdbMetadata *rdbpb.TestMetadata, existingMetadata *pb.TestMetadata) bool {
+	if rdbMetadata == nil {
 		// Keep the existing metadata (if any).
 		return false
 	}
-	if old == nil {
+	if existingMetadata == nil {
 		// Replace the existing metadata.
 		return true
 	}
 	updated := false
-	if new.Name != old.Name {
+	if rdbMetadata.Name != existingMetadata.Name {
 		updated = true
 	}
-	if (new.Location != nil) != (old.Location != nil) {
+	if (rdbMetadata.Location != nil) != (existingMetadata.Location != nil) {
 		updated = true
 	}
-	if new.Location != nil && old.Location != nil {
-		if (new.Location.FileName != old.Location.FileName) ||
-			(new.Location.Line != old.Location.Line) ||
-			(new.Location.Repo != old.Location.Repo) {
+	if rdbMetadata.Location != nil && existingMetadata.Location != nil {
+		if (rdbMetadata.Location.FileName != existingMetadata.Location.FileName) ||
+			(rdbMetadata.Location.Line != existingMetadata.Location.Line) ||
+			(rdbMetadata.Location.Repo != existingMetadata.Location.Repo) {
 			updated = true
+		}
+	}
+	if (rdbMetadata.BugComponent != nil) != (existingMetadata.BugComponent != nil) {
+		updated = true
+	}
+	if rdbMetadata.BugComponent != nil && existingMetadata.BugComponent != nil {
+		switch rdbSystem := rdbMetadata.BugComponent.System.(type) {
+		case *rdbpb.BugComponent_IssueTracker:
+			existingSystem, ok := existingMetadata.BugComponent.System.(*pb.BugComponent_IssueTracker)
+			if !ok {
+				updated = true
+			} else {
+				if rdbSystem.IssueTracker.ComponentId != existingSystem.IssueTracker.ComponentId {
+					updated = true
+				}
+			}
+		case *rdbpb.BugComponent_Monorail:
+			existingSystem, ok := existingMetadata.BugComponent.System.(*pb.BugComponent_Monorail)
+			if !ok {
+				updated = true
+			} else {
+				if rdbSystem.Monorail.Project != existingSystem.Monorail.Project ||
+					rdbSystem.Monorail.Value != existingSystem.Monorail.Value {
+					updated = true
+				}
+			}
 		}
 	}
 	return updated

@@ -140,7 +140,7 @@ func TestIngest(t *testing.T) {
 			const uniqifier = 1
 			const testRunCount = 1
 			const resultsPerTestRun = 1
-			tv := newTestVariant(uniqifier, testRunCount, resultsPerTestRun)
+			tv := newTestVariant(uniqifier, testRunCount, resultsPerTestRun, nil)
 			tvs := []*rdbpb.TestVariant{tv}
 
 			// Expect the test result to be clustered by both reason and test name.
@@ -303,12 +303,46 @@ func TestIngest(t *testing.T) {
 				testIngestion(tvs, expectedCFs)
 				So(len(chunkStore.Contents), ShouldEqual, 1)
 			})
+
+			Convey(`Failure with bug component metadata`, func() {
+				Convey(`With monorail bug system`, func() {
+					tv.Results[0].Result.TestMetadata.BugComponent = &rdbpb.BugComponent{
+						System: &rdbpb.BugComponent_Monorail{
+							Monorail: &rdbpb.MonorailComponent{
+								Project: "chromium",
+								Value:   "Blink>Component",
+							},
+						},
+					}
+					for _, cf := range expectedCFs {
+						cf.BugTrackingComponent.System = "monorail"
+						cf.BugTrackingComponent.Component = "Blink>Component"
+					}
+					testIngestion(tvs, expectedCFs)
+					So(len(chunkStore.Contents), ShouldEqual, 1)
+				})
+				Convey(`With Buganizer bug system`, func() {
+					tv.Results[0].Result.TestMetadata.BugComponent = &rdbpb.BugComponent{
+						System: &rdbpb.BugComponent_IssueTracker{
+							IssueTracker: &rdbpb.IssueTrackerComponent{
+								ComponentId: 12345,
+							},
+						},
+					}
+					for _, cf := range expectedCFs {
+						cf.BugTrackingComponent.System = "buganizer"
+						cf.BugTrackingComponent.Component = "12345"
+					}
+					testIngestion(tvs, expectedCFs)
+					So(len(chunkStore.Contents), ShouldEqual, 1)
+				})
+			})
 		})
 		Convey(`Ingest multiple failures`, func() {
 			const uniqifier = 1
 			const testRunsPerVariant = 2
 			const resultsPerTestRun = 2
-			tv := newTestVariant(uniqifier, testRunsPerVariant, resultsPerTestRun)
+			tv := newTestVariant(uniqifier, testRunsPerVariant, resultsPerTestRun, nil)
 			tvs := []*rdbpb.TestVariant{tv}
 
 			// Setup a scenario as follows:
@@ -367,7 +401,7 @@ func TestIngest(t *testing.T) {
 			const testRunsPerVariant = 10
 			const resultsPerTestRun = 10
 			for uniqifier := 0; uniqifier < variantCount; uniqifier++ {
-				tv := newTestVariant(uniqifier, testRunsPerVariant, resultsPerTestRun)
+				tv := newTestVariant(uniqifier, testRunsPerVariant, resultsPerTestRun, nil)
 				tvs = append(tvs, tv)
 				for t := 0; t < testRunsPerVariant; t++ {
 					for j := 0; j < resultsPerTestRun; j++ {
@@ -418,7 +452,7 @@ func clusteredFailureKey(cf *bqpb.ClusteredFailureRow) string {
 	return fmt.Sprintf("%q/%q/%q/%q", cf.ClusterAlgorithm, cf.ClusterId, cf.TestResultSystem, cf.TestResultId)
 }
 
-func newTestVariant(uniqifier int, testRunCount int, resultsPerTestRun int) *rdbpb.TestVariant {
+func newTestVariant(uniqifier, testRunCount, resultsPerTestRun int, bugComponent *rdbpb.BugComponent) *rdbpb.TestVariant {
 	testID := fmt.Sprintf("ninja://test_name/%v", uniqifier)
 	variant := &rdbpb.Variant{
 		Def: map[string]string{
@@ -435,7 +469,7 @@ func newTestVariant(uniqifier int, testRunCount int, resultsPerTestRun int) *rdb
 	}
 	for i := 0; i < testRunCount; i++ {
 		for j := 0; j < resultsPerTestRun; j++ {
-			tr := newTestResult(uniqifier, i, j)
+			tr := newTestResult(uniqifier, i, j, bugComponent)
 			// Test ID, Variant, VariantHash are not populated on the test
 			// results of a Test Variant as it is present on the parent record.
 			tr.TestId = ""
@@ -447,7 +481,11 @@ func newTestVariant(uniqifier int, testRunCount int, resultsPerTestRun int) *rdb
 	return tv
 }
 
-func newTestResult(uniqifier, testRunNum, resultNum int) *rdbpb.TestResult {
+func newTestResult(uniqifier, testRunNum, resultNum int, bugComponent *rdbpb.BugComponent) *rdbpb.TestResult {
+	return newFakeTestResult(uniqifier, testRunNum, resultNum, bugComponent)
+}
+
+func newFakeTestResult(uniqifier, testRunNum, resultNum int, bugComponent *rdbpb.BugComponent) *rdbpb.TestResult {
 	resultID := fmt.Sprintf("result-%v-%v", testRunNum, resultNum)
 	return &rdbpb.TestResult{
 		Name:        fmt.Sprintf("invocations/testrun-%v/tests/test-name-%v/results/%s", testRunNum, uniqifier, resultID),
@@ -463,7 +501,9 @@ func newTestResult(uniqifier, testRunNum, resultNum int) *rdbpb.TestResult {
 				Value: "Component>MyComponent",
 			},
 		},
-		TestMetadata: &rdbpb.TestMetadata{},
+		TestMetadata: &rdbpb.TestMetadata{
+			BugComponent: bugComponent,
+		},
 		FailureReason: &rdbpb.FailureReason{
 			PrimaryErrorMessage: "Failure reason.",
 		},
@@ -500,12 +540,15 @@ func expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTes
 				Value: "v1",
 			},
 		},
-		VariantHash:          "hash",
-		FailureReason:        &pb.FailureReason{PrimaryErrorMessage: "Failure reason."},
-		BugTrackingComponent: &pb.BugTrackingComponent{System: "monorail", Component: "Component>MyComponent"},
-		StartTime:            timestamppb.New(time.Date(2022, time.February, 12, 0, 0, 0, 0, time.UTC)),
-		Duration:             10.0,
-		Exonerations:         nil,
+		VariantHash:   "hash",
+		FailureReason: &pb.FailureReason{PrimaryErrorMessage: "Failure reason."},
+		BugTrackingComponent: &pb.BugTrackingComponent{
+			System:    "monorail",
+			Component: "Component>MyComponent",
+		},
+		StartTime:    timestamppb.New(time.Date(2022, time.February, 12, 0, 0, 0, 0, time.UTC)),
+		Duration:     10.0,
+		Exonerations: nil,
 
 		PresubmitRunId:     &pb.PresubmitRunId{System: "luci-cv", Id: "cq-run-123"},
 		PresubmitRunOwner:  "automation",

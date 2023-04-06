@@ -15,6 +15,8 @@
 package ingestion
 
 import (
+	"fmt"
+
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -121,7 +123,7 @@ func failureFromResult(tv *rdbpb.TestVariant, tr *rdbpb.TestResult, opts Options
 		Tags:                          pbutil.StringPairFromResultDB(tr.Tags),
 		VariantHash:                   tv.VariantHash, // Get from variant, as it is not populated on each result.
 		FailureReason:                 pbutil.FailureReasonFromResultDB(tr.FailureReason),
-		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags),
+		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags, tr.TestMetadata),
 		StartTime:                     tr.StartTime,
 		Duration:                      tr.Duration,
 		Exonerations:                  exonerations,
@@ -149,19 +151,36 @@ func exonerationFromResultDB(e *rdbpb.TestExoneration) *cpb.TestExoneration {
 	}
 }
 
-func extractBugTrackingComponent(tags []*rdbpb.StringPair) *pb.BugTrackingComponent {
-	var value string
-	for _, tag := range tags {
-		if tag.Key == "monorail_component" {
-			value = tag.Value
-			break
+func extractBugTrackingComponent(tags []*rdbpb.StringPair, testMetadata *rdbpb.TestMetadata) *pb.BugTrackingComponent {
+	if testMetadata != nil && testMetadata.BugComponent != nil {
+		bc := testMetadata.BugComponent
+		switch bcSystem := bc.System.(type) {
+		case *rdbpb.BugComponent_IssueTracker:
+			return &pb.BugTrackingComponent{
+				System:    "buganizer",
+				Component: fmt.Sprint(bcSystem.IssueTracker.ComponentId),
+			}
+		case *rdbpb.BugComponent_Monorail:
+			return &pb.BugTrackingComponent{
+				System:    "monorail",
+				Component: bcSystem.Monorail.Value,
+			}
+		}
+	} else {
+		var value string
+		for _, tag := range tags {
+			if tag.Key == "monorail_component" {
+				value = tag.Value
+				break
+			}
+		}
+		if value != "" {
+			return &pb.BugTrackingComponent{
+				System:    "monorail",
+				Component: value,
+			}
 		}
 	}
-	if value != "" {
-		return &pb.BugTrackingComponent{
-			System:    "monorail",
-			Component: value,
-		}
-	}
+
 	return nil
 }

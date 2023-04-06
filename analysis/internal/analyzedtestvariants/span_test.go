@@ -57,6 +57,14 @@ func TestAnalyzedTestVariantSpan(t *testing.T) {
 				FileName: "filename",
 				Line:     456,
 			},
+			BugComponent: &pb.BugComponent{
+				System: &pb.BugComponent_Monorail{
+					Monorail: &pb.MonorailComponent{
+						Project: "chromium",
+						Value:   "Blink>Component",
+					},
+				},
+			},
 		})
 		So(err, ShouldBeNil)
 		ms := []*spanner.Mutation{
@@ -113,6 +121,14 @@ func TestAnalyzedTestVariantSpan(t *testing.T) {
 							Repo:     "repo",
 							FileName: "filename",
 							Line:     456,
+						},
+						BugComponent: &pb.BugComponent{
+							System: &pb.BugComponent_Monorail{
+								Monorail: &pb.MonorailComponent{
+									Project: "chromium",
+									Value:   "Blink>Component",
+								},
+							},
 						},
 					},
 				},

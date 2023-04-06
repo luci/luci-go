@@ -187,6 +187,7 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 			ARRAY_AGG(DISTINCT f.realm) as realms,
 			APPROX_TOP_COUNT(f.test_id, 5) as top_test_ids,
 			APPROX_TOP_COUNT(IF(f.bug_tracking_component.system = 'monorail', f.bug_tracking_component.component, NULL), 5) as top_monorail_components,
+			APPROX_TOP_COUNT(IF(f.bug_tracking_component.system = 'buganizer', f.bug_tracking_component.component, NULL), 1) as top_buganizer_components
 		FROM clustered_failures_precompute
 		GROUP BY ` + projectSelection + `cluster_algorithm, cluster_id
 	`)

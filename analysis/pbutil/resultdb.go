@@ -94,6 +94,26 @@ func TestMetadataFromResultDB(rdbTmd *rdbpb.TestMetadata) *pb.TestMetadata {
 		}
 	}
 
+	bugComponent := rdbTmd.BugComponent
+	if bugComponent != nil && bugComponent.System != nil {
+		tmd.BugComponent = &pb.BugComponent{}
+		switch v := bugComponent.System.(type) {
+		case *rdbpb.BugComponent_IssueTracker:
+			tmd.BugComponent.System = &pb.BugComponent_IssueTracker{
+				IssueTracker: &pb.IssueTrackerComponent{
+					ComponentId: v.IssueTracker.ComponentId,
+				},
+			}
+		case *rdbpb.BugComponent_Monorail:
+			tmd.BugComponent.System = &pb.BugComponent_Monorail{
+				Monorail: &pb.MonorailComponent{
+					Project: v.Monorail.Project,
+					Value: v.Monorail.Value,
+				},
+			}
+		}
+	}
+
 	return tmd
 }
 

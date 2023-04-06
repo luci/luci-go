@@ -67,7 +67,7 @@ message StringPair {
 message BugTrackingComponent {
   // The bug tracking system corresponding to this test case, as identified
   // by the test results system.
-  // Currently, the only valid value is "monorail".
+  // Currently, the valid values are "monorail" or "buganizer".
   string system = 1;
 
   // The bug tracking component corresponding to this test case, as identified
@@ -208,6 +208,10 @@ message TestMetadata {
   // Where the test is defined, e.g. the file name.
   // location.repo MUST be specified.
   TestLocation location = 2;
+
+  // The bug component the test belongs to.
+  // This can be an issuetracker or a Monorail component.
+  BugComponent bug_component = 3;
 }
 
 // Location of the test definition.
@@ -229,6 +233,34 @@ message TestLocation {
 
   // One-based line number where the test is defined.
   int32 line = 3;
+}
+
+// Represents a component in an issue tracker. A component is
+// a container for issues.
+message BugComponent {
+  oneof system {
+     // The Google Issue Tracker component.
+     IssueTrackerComponent issue_tracker = 1;
+
+     // The monorail component.
+     MonorailComponent monorail = 2;
+  }
+}
+
+// A component in Google Issue Tracker, sometimes known as Buganizer,
+// available at https://issuetracker.google.com.
+message IssueTrackerComponent {
+  // The Google Issue Tracker component ID.
+  int64 component_id = 1;
+}
+
+// A component in monorail issue tracker, available at
+// https://bugs.chromium.org.
+message MonorailComponent {
+  // The monorail project name.
+  string project = 1;
+  // The monorail component value. E.g. "Blink>Accessibility".
+  string value = 2;
 }
 
 // SubmittedFilter filters test verdicts based on whether they had unsubmitted

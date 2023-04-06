@@ -81,4 +81,36 @@ func TestResultDB(t *testing.T) {
 			So(reason, ShouldNotEqual, pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED)
 		}
 	})
+	Convey("BugComponent from ResultDB Metadata", t, func() {
+		Convey("using issuetracker bug component", func() {
+			resultDbTmd := &rdbpb.TestMetadata{
+				BugComponent: &rdbpb.BugComponent{
+					System: &rdbpb.BugComponent_IssueTracker{
+						IssueTracker: &rdbpb.IssueTrackerComponent{
+							ComponentId: 12345,
+						},
+					},
+				},
+			}
+			converted := TestMetadataFromResultDB(resultDbTmd)
+
+			So(converted.BugComponent.System.(*pb.BugComponent_IssueTracker).IssueTracker.ComponentId, ShouldEqual, 12345)
+		})
+		Convey("using monorail bug component", func() {
+			resultDbTmd := &rdbpb.TestMetadata{
+				BugComponent: &rdbpb.BugComponent{
+					System: &rdbpb.BugComponent_Monorail{
+						Monorail: &rdbpb.MonorailComponent{
+							Project: "chrome",
+							Value:   "Blink>Data",
+						},
+					},
+				},
+			}
+			converted := TestMetadataFromResultDB(resultDbTmd)
+
+			So(converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Project, ShouldEqual, "chrome")
+			So(converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Value, ShouldEqual, "Blink>Data")
+		})
+	})
 }

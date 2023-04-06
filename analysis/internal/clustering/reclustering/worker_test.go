@@ -493,8 +493,8 @@ func (b *testResultBuilder) buildFailure() *cpb.Failure {
 		VariantHash:   hex.EncodeToString(keyHash[:]),
 		FailureReason: b.failureReason,
 		BugTrackingComponent: &pb.BugTrackingComponent{
-			System:    "monorail",
-			Component: "Component>MyComponent",
+			System: "monorail",
+			Component:  "Component>MyComponent",
 		},
 		StartTime: timestamppb.New(time.Date(2025, time.March, 2, 2, 2, 2, b.uniqifier, time.UTC)),
 		Duration:  durationpb.New(time.Duration(b.uniqifier) * time.Second),
@@ -579,11 +579,14 @@ func (b *testResultBuilder) buildBQExport(clusterIDs []clustering.ClusterID) []*
 					Value: "value",
 				},
 			},
-			VariantHash:          hex.EncodeToString(keyHash[:]),
-			FailureReason:        b.failureReason,
-			BugTrackingComponent: &pb.BugTrackingComponent{System: "monorail", Component: "Component>MyComponent"},
-			StartTime:            timestamppb.New(time.Date(2025, time.March, 2, 2, 2, 2, b.uniqifier, time.UTC)),
-			Duration:             float64(b.uniqifier * 1.0),
+			VariantHash:   hex.EncodeToString(keyHash[:]),
+			FailureReason: b.failureReason,
+			BugTrackingComponent: &pb.BugTrackingComponent{
+				System: "monorail",
+				Component: "Component>MyComponent",
+			},
+			StartTime: timestamppb.New(time.Date(2025, time.March, 2, 2, 2, 2, b.uniqifier, time.UTC)),
+			Duration:  float64(b.uniqifier * 1.0),
 			Exonerations: []*bqpb.ClusteredFailureRow_TestExoneration{
 				{
 					Reason: pb.ExonerationReason(1 + (b.uniqifier % 3)),

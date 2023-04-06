@@ -80,6 +80,14 @@ func TestQueryTestVariantsToExport(t *testing.T) {
 				Repo:     "https://chromium.googlesource.com/chromium/src",
 				FileName: "//a_test.go",
 			},
+			BugComponent: &pb.BugComponent{
+				System: &pb.BugComponent_Monorail{
+					Monorail: &pb.MonorailComponent{
+						Project: "chrome",
+						Value:   "Blink>Component",
+					},
+				},
+			},
 		}
 		tmdM, _ := proto.Marshal(tmd)
 		now := clock.Now(ctx).Round(time.Microsecond)
