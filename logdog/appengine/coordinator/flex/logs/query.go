@@ -165,8 +165,6 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		}
 	}
 
-	q.TimeBound(r.req.Newer, r.req.Older)
-
 	// Add tag constraints.
 	for k, v := range r.req.Tags {
 		if err := types.ValidateTag(k, v); err != nil {

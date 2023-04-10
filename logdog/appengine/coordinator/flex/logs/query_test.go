@@ -22,9 +22,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -44,39 +44,38 @@ import (
 
 func shouldHaveLogPaths(actual any, expected ...any) string {
 	resp := actual.(*logdog.QueryResponse)
-	var paths []string
+	paths := stringset.New(len(expected))
 	if len(resp.Streams) > 0 {
-		paths = make([]string, len(resp.Streams))
-		for i, s := range resp.Streams {
-			paths[i] = s.Path
+		for _, s := range resp.Streams {
+			paths.Add(s.Path)
 		}
 	}
 
-	var exp []string
+	exp := stringset.New(len(expected))
 	for _, e := range expected {
 		switch t := e.(type) {
 		case []string:
-			exp = append(exp, t...)
+			exp.AddAll(t)
 
 		case string:
-			exp = append(exp, t)
+			exp.Add(t)
 
 		case types.StreamPath:
-			exp = append(exp, string(t))
+			exp.Add(string(t))
 
 		default:
 			panic(fmt.Errorf("unsupported expected type %T: %v", t, t))
 		}
 	}
 
-	return ShouldResemble(paths, exp)
+	return ShouldBeEmpty(paths.Difference(exp))
 }
 
 func TestQuery(t *testing.T) {
 	t.Parallel()
 
 	Convey(`With a testing configuration, a Query request`, t, func() {
-		c, env := ct.Install(true)
+		c, env := ct.Install()
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
 		svr := New()
@@ -387,46 +386,6 @@ func TestQuery(t *testing.T) {
 				sort.Strings(seen)
 				sort.Strings(streamPaths)
 				So(seen, ShouldResemble, streamPaths)
-			})
-		})
-
-		Convey(`When querying against timestamp constraints`, func() {
-			req.Older = timestamppb.New(env.Clock.Now())
-
-			Convey(`Querying for entries created at or after 2 seconds ago (latest 2 entries).`, func() {
-				req.Path = "testing/+/**"
-				req.Newer = timestamppb.New(env.Clock.Now().Add(-2*time.Second - time.Millisecond))
-
-				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
-			})
-
-			Convey(`With a query limit of 2`, func() {
-				svrBase.resultLimit = 2
-
-				Convey(`A query request will return the newest 2 entries and have a Next cursor for the next 2.`, func() {
-					req.Path = "testing/+/**"
-					resp, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
-					So(resp.Next, ShouldNotEqual, "")
-
-					// Iterate.
-					req.Next = resp.Next
-
-					resp, err = svr.Query(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogPaths, "testing/+/foo/bar", "testing/+/foo")
-				})
-
-				Convey(`A datastore query error will return InternalServer error.`, func() {
-					req.Path = "testing/+/**"
-					fb.BreakFeatures(errors.New("testing error"), "Run")
-
-					_, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCInternal)
-				})
 			})
 		})
 

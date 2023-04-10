@@ -32,7 +32,7 @@ import (
 
 func TestTaskQueue(t *testing.T) {
 	Convey(`With a testing configuration`, t, func() {
-		c, env := ct.Install(true)
+		c, env := ct.Install()
 		c = mathrand.Set(c, rand.New(rand.NewSource(1234)))
 
 		// By default, the testing user is a service.

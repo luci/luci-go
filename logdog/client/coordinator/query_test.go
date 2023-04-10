@@ -19,10 +19,10 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -36,12 +36,12 @@ import (
 type testQueryLogsService struct {
 	testLogsServiceBase
 
-	LR logdog.QueryRequest
+	LR *logdog.QueryRequest
 	H  func(*logdog.QueryRequest) (*logdog.QueryResponse, error)
 }
 
 func (s *testQueryLogsService) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
-	s.LR = *req
+	s.LR = proto.Clone(req).(*logdog.QueryRequest)
 	if h := s.H; h != nil {
 		return s.H(req)
 	}
@@ -107,8 +107,6 @@ func TestClientQuery(t *testing.T) {
 					"baz": "qux",
 				},
 				ContentType: "application/text",
-				Before:      now,
-				After:       now,
 				Purged:      Both,
 				State:       true,
 			}
@@ -122,16 +120,6 @@ func TestClientQuery(t *testing.T) {
 				results = append(results, s)
 				return true
 			}
-
-			Convey(`Zero timestamps turn into nil`, func() {
-				q.Before = time.Time{}
-				q.After = time.Time{}
-				_ = client.Query(c, project, path, q, func(*LogStream) bool {
-					return true
-				})
-				So(svc.LR.Newer, ShouldBeNil)
-				So(svc.LR.Older, ShouldBeNil)
-			})
 
 			Convey(`Can accumulate results across queries.`, func() {
 				// This handler will return a single query per request, as well as a

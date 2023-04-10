@@ -20,9 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -34,29 +36,29 @@ import (
 )
 
 func shouldHaveLogPaths(actual any, expected ...any) string {
-	var names []string
+	names := stringset.New(len(expected))
 	switch t := actual.(type) {
 	case error:
 		return t.Error()
 
 	case []*LogStream:
 		for _, ls := range t {
-			names = append(names, string(ls.Path()))
+			names.Add(string(ls.Path()))
 		}
 
 	default:
 		return fmt.Sprintf("unknown 'actual' type: %T", t)
 	}
 
-	exp := make([]string, len(expected))
-	for i, v := range expected {
+	exp := stringset.New(len(expected))
+	for _, v := range expected {
 		s, ok := v.(string)
 		if !ok {
 			panic("non-string stream name specified")
 		}
-		exp[i] = s
+		exp.Add(s)
 	}
-	return ShouldResemble(names, exp)
+	return ShouldBeEmpty(names.Difference(exp))
 }
 
 func updateLogStreamID(ls *LogStream) {
@@ -81,7 +83,7 @@ func TestLogStream(t *testing.T) {
 			Created: now.UTC(),
 		}
 
-		desc := logpb.LogStreamDescriptor{
+		desc := &logpb.LogStreamDescriptor{
 			Prefix:      "testing",
 			Name:        "log/stream",
 			StreamType:  logpb.StreamType_TEXT,
@@ -95,7 +97,7 @@ func TestLogStream(t *testing.T) {
 		}
 
 		Convey(`Can populate the LogStream with descriptor state.`, func() {
-			So(ls.LoadDescriptor(&desc), ShouldBeNil)
+			So(ls.LoadDescriptor(desc), ShouldBeNil)
 			So(ls.Validate(), ShouldBeNil)
 
 			Convey(`Will not validate`, func() {
@@ -134,7 +136,7 @@ func TestLogStream(t *testing.T) {
 
 		Convey(`Will refuse to populate from an invalid descriptor.`, func() {
 			desc.StreamType = -1
-			So(ls.LoadDescriptor(&desc), ShouldErrLike, "invalid descriptor")
+			So(ls.LoadDescriptor(desc), ShouldErrLike, "invalid descriptor")
 		})
 
 		Convey(`Writing multiple LogStream entries`, func() {
@@ -156,10 +158,10 @@ func TestLogStream(t *testing.T) {
 				lsCopy.Created = ds.RoundTime(now.Add(time.Duration(i) * time.Second))
 				updateLogStreamID(&lsCopy)
 
-				descCopy := desc
+				descCopy := proto.Clone(desc).(*logpb.LogStreamDescriptor)
 				descCopy.Name = name
 
-				if err := lsCopy.LoadDescriptor(&descCopy); err != nil {
+				if err := lsCopy.LoadDescriptor(descCopy); err != nil {
 					panic(fmt.Errorf("in %#v: %s", descCopy, err))
 				}
 				So(ds.Put(c, &lsCopy), ShouldBeNil)
@@ -232,33 +234,6 @@ func TestLogStream(t *testing.T) {
 						"testing/+/cat/bird/dog", "testing/+/cat/dog")
 				})
 
-				Convey(`A query for streams older than "baz/qux" returns {"foo/bar/baz", and "foo/bar"}.`, func() {
-					q, err := NewLogStreamQuery("testing")
-					So(err, ShouldBeNil)
-					q.TimeBound(nil, times["baz/qux"])
-
-					So(getAll(q), shouldHaveLogPaths,
-						"testing/+/foo/bar/baz", "testing/+/foo/bar")
-				})
-
-				Convey(`A query for streams newer than "cat/dog" returns {"bird/plane", "cat/bird/dog"}.`, func() {
-					q, err := NewLogStreamQuery("testing")
-					So(err, ShouldBeNil)
-					q.TimeBound(times["cat/dog"], nil)
-
-					So(getAll(q), shouldHaveLogPaths,
-						"testing/+/bird/plane",
-						"testing/+/cat/bird/dog",
-					)
-				})
-
-				Convey(`A query for "cat/**/dog" newer than "cat/dog" returns {"cat/bird/dog"}.`, func() {
-					q, err := NewLogStreamQuery("testing/+/cat/**/dog")
-					So(err, ShouldBeNil)
-					q.TimeBound(times["cat/dog"], nil)
-
-					So(getAll(q), shouldHaveLogPaths, "testing/+/cat/bird/dog")
-				})
 			})
 		})
 	})

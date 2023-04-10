@@ -74,9 +74,6 @@ func main() {
 		config.Sync(c.Context)
 	})
 
-	r.POST("/admin/cron/stats/:stat/:namespace", base, cronStatsNSHandler)
-	r.GET("/admin/cron/stats", base, cronStatsHandler)
-
 	// Redirect "/" to "/rpcexplorer/".
 	r.GET("/", nil, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusFound)

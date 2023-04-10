@@ -23,7 +23,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"google.golang.org/protobuf/proto"
 
@@ -76,7 +75,7 @@ type LogStream struct {
 	Name string `gae:",noindex"`
 
 	// Created is the time when this stream was created.
-	Created time.Time // index needed for Query RPC
+	Created time.Time `gae:",noindex"`
 
 	// Purged, if true, indicates that this log stream has been marked as purged.
 	// Non-administrative queries and requests for this stream will operate as
@@ -278,7 +277,7 @@ func NewLogStreamQuery(pathGlob string) (*LogStreamQuery, error) {
 
 	ret := &LogStreamQuery{
 		Prefix: prefix,
-		q:      ds.NewQuery("LogStream").Eq("Prefix", string(prefix)).Order("-Created"),
+		q:      ds.NewQuery("LogStream").Eq("Prefix", string(prefix)),
 	}
 
 	// Escape all regexp metachars. This will have the effect of escaping * as
@@ -360,19 +359,6 @@ func (lsp *LogStreamQuery) OnlyPurged() {
 	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
 		return ls.Purged
 	})
-}
-
-// TimeBound constrains LogStreams returned to be bound by the given lower and
-// upper creation timestamps.
-func (lsp *LogStreamQuery) TimeBound(lower, upper *timestamppb.Timestamp) {
-	// we use a datastore filter here because lsp.q is already ordered by
-	// -Created, and so we can apply an inequality to it.
-	if lower != nil {
-		lsp.q = lsp.q.Gt("Created", lower.AsTime().UTC())
-	}
-	if upper != nil {
-		lsp.q = lsp.q.Lt("Created", upper.AsTime().UTC())
-	}
 }
 
 // MustHaveTags constrains LogStreams returned to have all of the given tags.

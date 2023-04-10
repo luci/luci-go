@@ -249,7 +249,7 @@ func (s storageclient) GetSignedURLs(context.Context, *coordinator.URLSigningReq
 // the Client do the full Prefix/Stream registration process, and so should also
 // behave like the real thing.
 func NewClient() *Client {
-	ctx, env := coordinatorTest.Install(false)
+	ctx, env := coordinatorTest.Install()
 	env.AddProject(ctx, Project)
 	env.ActAsWriter(Project, Realm)
 	env.JoinAdmins()

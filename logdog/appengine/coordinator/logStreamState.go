@@ -78,7 +78,7 @@ type LogStreamState struct {
 	Schema string `gae:",noindex"`
 
 	// Created is the last time that this state has been created.
-	Created time.Time
+	Created time.Time `gae:",noindex"`
 	// Updated is the last time that this state has been updated.
 	Updated time.Time `gae:",noindex"`
 

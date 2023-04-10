@@ -197,10 +197,13 @@ message QueryRequest {
   }
   StreamTypeFilter stream_type = 11;
 
-  // Newer restricts results to streams created after the specified date.
-  google.protobuf.Timestamp newer = 12;
-  // Older restricts results to streams created before the specified date.
-  google.protobuf.Timestamp older = 13;
+  // [DEPRECATED] `newer` restricts results to streams created after the specified date.
+  reserved "newer";
+  reserved 12;
+
+  // [DEPRECATED] `older` restricts results to streams created before the specified date.
+  reserved "older";
+  reserved 13;
 
   // [DEPRECATED] If not empty, constrains the results to those whose protobuf
   // version string matches the supplied version.

@@ -68,6 +68,10 @@ type LogStream struct {
 	Path types.StreamPath
 
 	// Desc is the log stream's descriptor.
+	//
+	// TODO(iannucci): Do not embed proto messages! This should be a pointer, and
+	// all existing shallow clones of it should be converted to proto.Clone or
+	// similar.
 	Desc logpb.LogStreamDescriptor
 
 	// State is the stream's current state.

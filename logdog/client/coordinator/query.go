@@ -16,9 +16,6 @@ package coordinator
 
 import (
 	"context"
-	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -89,13 +86,6 @@ type QueryOptions struct {
 	// StreamType, if not STAny, is the stream type to query for.
 	StreamType QueryStreamType
 
-	// Before, if not zero, specifies that only streams registered at or before
-	// the supplied time should be returned.
-	Before time.Time
-	// After, if not zero, specifies that only streams registered at or after
-	// the supplied time should be returned.
-	After time.Time
-
 	// Purged, if not QBoth, selects logs streams that are/aren't purged.
 	Purged QueryTrinary
 
@@ -142,12 +132,6 @@ func (c *Client) Query(ctx context.Context, project string, path string, o Query
 		ContentType: o.ContentType,
 		Purged:      o.Purged.queryValue(),
 		State:       o.State,
-	}
-	if !o.Before.IsZero() {
-		req.Older = timestamppb.New(o.Before)
-	}
-	if !o.After.IsZero() {
-		req.Newer = timestamppb.New(o.After)
 	}
 	if st := o.StreamType.queryValue(); st >= 0 {
 		req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: st}

@@ -16,9 +16,6 @@ package coordinatorTest
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -53,13 +50,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 )
-
-// mainServicePath is the path to the main service.
-var mainServicePath string
-
-func init() {
-	mainServicePath = findParentDirectory("logdog", "appengine", "cmd", "coordinator", "default")
-}
 
 // Environment contains all of the testing facilities that are installed into
 // the Context.
@@ -209,12 +199,7 @@ func (e *Environment) addConfigEntry(configSet config.Set, path, content string)
 
 // Install creates a testing Context and installs common test facilities into
 // it, returning the Environment to which they're bound.
-//
-// If useRealIndex is true, this will attempt to load the 'index.yaml' file for
-// logdog (but this is loaded from a relative path, so is only really good for
-// the 'coordinator' package). Otherwise this will turn on datastore's automatic
-// indexing functionality.
-func Install(useRealIndex bool) (context.Context, *Environment) {
+func Install() (context.Context, *Environment) {
 	e := Environment{
 		ServiceID: "logdog-app-id",
 		GSClient:  GSClient{},
@@ -237,17 +222,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// Create/install our BigTable memory instance.
 	e.BigTable = bigtable.NewMemoryInstance(&e.StorageCache)
-
-	if useRealIndex {
-		// Load indexes from "index.yaml".
-		indexDefs, err := ds.FindAndParseIndexYAML(mainServicePath)
-		if err != nil {
-			panic(fmt.Errorf("failed to load 'index.yaml': %s", err))
-		}
-		ds.GetTestable(c).AddIndexes(indexDefs...)
-	} else {
-		ds.GetTestable(c).AutoIndex(true)
-	}
 
 	// Setup clock.
 	e.Clock = clock.Get(c).(testclock.TestClock)
@@ -331,35 +305,4 @@ func WithProjectNamespace(c context.Context, project string, f func(context.Cont
 		panic(err)
 	}
 	f(c)
-}
-
-// findParentDirectory is used to traverse up from the current working directory
-// to identify a target directory structure.
-func findParentDirectory(paths ...string) string {
-	base, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	// Build our basic directory scanning slice template, which consists of a
-	// variable first element (root) and fixed set of remaining elements. We'll
-	// switch out the first element during traversal.
-	components := make([]string, 1, 1+len(paths))
-	components[0] = base
-	components = append(components, paths...)
-
-	prev := ""
-	for {
-		candidate := filepath.Join(components...)
-		if candidate == prev {
-			panic(fmt.Errorf("could not find: %q", filepath.Join(paths...)))
-		}
-
-		if st, err := os.Stat(candidate); err == nil && st.IsDir() {
-			return candidate
-		}
-
-		prev = candidate
-		components[0] = filepath.Dir(components[0])
-	}
 }

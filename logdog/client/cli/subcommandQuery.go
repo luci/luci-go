@@ -21,7 +21,6 @@ import (
 	"io"
 	"os"
 
-	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -43,8 +42,6 @@ type queryCommandRun struct {
 	contentType string
 	tags        streamproto.TagMap
 	results     int
-	before      clockflag.Time
-	after       clockflag.Time
 	purged      trinaryValue
 
 	json bool
@@ -68,8 +65,6 @@ func newQueryCommand() *subcommands.Command {
 			fs.StringVar(&cmd.contentType, "contentType", "", "Limit results to a content type.")
 			fs.Var(&cmd.tags, "tag", "Filter logs containing this tag (key[=value]).")
 			fs.Var(&cmd.purged, "purged", "Include purged streams in the result. This requires administrative privileges.")
-			fs.Var(&cmd.before, "before", "Limit the query to streams registered at or before this RFC3339 time.")
-			fs.Var(&cmd.after, "after", "Limit the query to streams registered at or after this RFC3339 time.")
 			fs.IntVar(&cmd.results, "results", defaultQueryResults,
 				"The maximum number of results to return. If 0, no limit will be applied.")
 			fs.BoolVar(&cmd.json, "json", false, "Output JSON state instead of log stream names.")
@@ -132,8 +127,6 @@ func (cmd *queryCommandRun) Run(scApp subcommands.Application, args []string, _ 
 	qo := coordinator.QueryOptions{
 		ContentType: cmd.contentType,
 		State:       cmd.json,
-		Before:      cmd.before.Time(),
-		After:       cmd.after.Time(),
 		Purged:      cmd.purged.Trinary(),
 	}
 	count := 0
@@ -240,19 +233,15 @@ func (p *jsonQueryOutput) emit(s *coordinator.LogStream) error {
 		Path       string                     `json:"path"`
 		Descriptor *logpb.LogStreamDescriptor `json:"descriptor,omitempty"`
 
-		Created          clockflag.Time `json:"created,omitempty"`
-		Updated          clockflag.Time `json:"updated,omitempty"`
-		TerminalIndex    int64          `json:"terminalIndex"`
-		ArchiveIndexURL  string         `json:"archiveIndexUrl,omitempty"`
-		ArchiveStreamURL string         `json:"archiveStreamUrl,omitempty"`
-		ArchiveDataURL   string         `json:"archiveDataUrl,omitempty"`
-		Purged           bool           `json:"purged,omitempty"`
+		TerminalIndex    int64  `json:"terminalIndex"`
+		ArchiveIndexURL  string `json:"archiveIndexUrl,omitempty"`
+		ArchiveStreamURL string `json:"archiveStreamUrl,omitempty"`
+		ArchiveDataURL   string `json:"archiveDataUrl,omitempty"`
+		Purged           bool   `json:"purged,omitempty"`
 	}{
 		Project: string(s.Project),
 		Path:    string(s.Path),
 	}
-	o.Created = clockflag.Time(s.State.Created)
-	o.Updated = clockflag.Time(s.State.Updated)
 	o.TerminalIndex = int64(s.State.TerminalIndex)
 	o.ArchiveIndexURL = s.State.ArchiveIndexURL
 	o.ArchiveStreamURL = s.State.ArchiveStreamURL
