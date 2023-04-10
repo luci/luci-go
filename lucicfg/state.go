@@ -74,11 +74,11 @@ func NewState(inputs Inputs) *State {
 	}
 }
 
-// checkUncosumedVars returns an error per a provided (via Inputs.Vars), but
+// checkUnconsumedVars returns an error per a provided (via Inputs.Vars), but
 // unused (by lucicfg.var(expose_as=...)) variable.
 //
 // All supplied inputs must be consumed.
-func (s *State) checkUncosumedVars() (errs []error) {
+func (s *State) checkUnconsumedVars() (errs []error) {
 	keys := make([]string, 0, len(s.Inputs.Vars))
 	for k := range s.Inputs.Vars {
 		keys = append(keys, k)

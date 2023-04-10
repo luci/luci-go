@@ -156,7 +156,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 
 	// Verify all var values provided via Inputs.Vars were actually used by
 	// lucicfg.var(expose_as='...') definitions.
-	if errs := state.checkUncosumedVars(); len(errs) != 0 {
+	if errs := state.checkUnconsumedVars(); len(errs) != 0 {
 		return nil, state.err(errs...)
 	}
 
