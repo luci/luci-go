@@ -203,18 +203,18 @@ func retrieveTaskIDFromContext(ctx context.Context) string {
 
 // Get the build info by the provided buildID.
 //
-// If taskID is provided, or if *startBuildFirst is true, this function will also
-// start the build.
+// If the swarming task id can be found from swarming part of luci context, this
+// function also starts the build.
 //
-// Note: taskID may be updated if startBuildFirst is true and the swarming task
-// id can be found from swarming part of luci context.
-func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, taskID *string, startBuildFirst *bool) (clientInput, *bbpb.BuildSecrets) {
+// Note: taskID may be updated if the swarming task id can be found from
+// swarming part of luci context.
+func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, taskID *string) (clientInput, *bbpb.BuildSecrets) {
 	logging.Debugf(ctx, "fetching build %d", *buildID)
 	bbclient, secrets, err := newBuildsClient(ctx, *hostname, defaultRetryStrategy)
 	check(ctx, errors.Annotate(err, "could not connect to Buildbucket").Err())
 
 	var build *bbpb.Build
-	if *taskID == "" && *startBuildFirst {
+	if *taskID == "" {
 		*taskID = retrieveTaskIDFromContext(ctx)
 	}
 	if *taskID == "" {
@@ -240,6 +240,8 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, tas
 			})
 		check(ctx, errors.Annotate(err, "failed to fetch build").Err())
 	} else {
+		// TODO(crbug.com/1416971): Remove this log when removing -start-build-first flag.
+		logging.Infof(ctx, "Start the build via StartBuild RPC.")
 		var res *bbpb.StartBuildResponse
 		res, err = startBuild(ctx, bbclient, *buildID, *taskID)
 		if err != nil && buildbucket.DuplicateTask.In(err) {
@@ -552,7 +554,8 @@ func mainImpl() int {
 	useGCEAccount := flag.Bool("use-gce-account", false, "Use GCE metadata service account for all calls")
 	cacheBase := flag.String("cache-base", "", "Directory where all the named caches are mounted for the build")
 	taskID := flag.String("task-id", "", "ID of the task")
-	startBuildFirst := flag.Bool("start-build-first", false, "Call StartBuild before making any UpdateBuild calls")
+	// TODO(crbug.com/1416971): remove -start-build-first flag.
+	_ = flag.Bool("start-build-first", false, "Call StartBuild before making any UpdateBuild calls")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
 
 	flag.Parse()
@@ -570,7 +573,7 @@ func mainImpl() int {
 	case len(args) == 1:
 		bbclientInput, secrets = parseBbAgentArgs(ctx, args[0])
 	case *hostname != "" && *buildID > 0:
-		bbclientInput, secrets = parseHostBuildID(ctx, hostname, buildID, taskID, startBuildFirst)
+		bbclientInput, secrets = parseHostBuildID(ctx, hostname, buildID, taskID)
 	default:
 		check(ctx, errors.Reason("-host and -build-id are required").Err())
 	}
