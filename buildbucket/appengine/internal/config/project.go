@@ -604,34 +604,31 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 		ctx.Errorf("name must match %s", builderRegex)
 	}
 
-	// task backend validation
-	if (b.GetBackend() != nil || b.GetBackendAlt() != nil) && b.GetSwarmingHost() != "" {
+	// Need to do seperate checks here since backend and backend_alt can both be set.
+	// Either backend or swarming must be set, but not both.
+	switch {
+	case b.GetSwarmingHost() != "" && b.GetBackend() != nil:
 		ctx.Errorf("only one of swarming host or task backend is allowed")
+	case b.GetBackend() != nil:
+		validateTaskBackend(ctx, b.Backend)
+	case b.GetSwarmingHost() != "":
+		validateHostname(ctx, "swarming_host", b.SwarmingHost)
+	default:
+		ctx.Errorf("either swarming host or task backend must be set")
 	}
 
-	// Need to do seperate checks here since backend and backend_alt can both be set.
-	if b.GetBackend() != nil {
-		// validate backend
-		validateTaskBackend(ctx, b.Backend)
-	}
 	if b.GetBackendAlt() != nil {
 		// validate backend_alt
 		validateTaskBackend(ctx, b.BackendAlt)
 	}
 
-	// If neither backend is set, use swarming
-	if b.GetBackend() == nil && b.GetBackendAlt() == nil {
-		// validate swarming_host
-		validateHostname(ctx, "swarming_host", b.SwarmingHost)
-
-		// validate swarming_tags
-		for i, swarmingTag := range b.SwarmingTags {
-			ctx.Enter("swarming_tags #%d", i)
-			if swarmingTag != "vpython:native-python-wrapper" {
-				ctx.Errorf("Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
-			}
-			ctx.Exit()
+	// validate swarming_tags
+	for i, swarmingTag := range b.SwarmingTags {
+		ctx.Enter("swarming_tags #%d", i)
+		if swarmingTag != "vpython:native-python-wrapper" {
+			ctx.Errorf("Deprecated. Used only to enable \"vpython:native-python-wrapper\"")
 		}
+		ctx.Exit()
 	}
 
 	validateDimensions(ctx, b.Dimensions)

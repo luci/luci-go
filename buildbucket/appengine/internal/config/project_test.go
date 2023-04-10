@@ -216,7 +216,7 @@ func TestValidateProject(t *testing.T) {
 			So(ok, ShouldEqual, true)
 			So(len(ve.Errors), ShouldEqual, 3)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): name must match "+builderRegex.String())
-			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): swarming_host unspecified")
+			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): either swarming host or task backend must be set")
 			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #0 - ): exactly one of exe or recipe must be specified")
 		})
 
@@ -474,7 +474,7 @@ func TestValidateProject(t *testing.T) {
 			So(allErrs, ShouldContainSubstring, `(swarming / builders #0 - b1 / experiments "luci.bad"): unknown experiment has reserved prefix "luci."`)
 		})
 
-		Convey("task backend and swarming in builder", func() {
+		Convey("backend and swarming in builder", func() {
 			backendSettings := []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
@@ -504,7 +504,7 @@ func TestValidateProject(t *testing.T) {
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "only one of swarming host or task backend is allowed")
 		})
 
-		Convey("task backend and no swarming in builder", func() {
+		Convey("backend and no swarming in builder", func() {
 			backendSettings := []*pb.BackendSetting{
 				{
 					Target:   "swarming://chromium-swarm",
@@ -563,6 +563,39 @@ func TestValidateProject(t *testing.T) {
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
 			_, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, false)
+		})
+
+		Convey("no backend, backend_alt and no swarming in builder", func() {
+			backendSettings := []*pb.BackendSetting{
+				{
+					Target:   "swarming://chromium-swarm",
+					Hostname: "swarming_hostname",
+				},
+				{
+					Target:   "swarming://chromium-swarm-alt",
+					Hostname: "swarming_hostname-alt",
+				},
+			}
+			settingsCfg := &pb.SettingsCfg{Backends: backendSettings}
+			_ = SetTestSettingsCfg(vctx.Context, settingsCfg)
+			content := `
+				builders {
+					name: "b1"
+					exe {
+						cipd_package: "infra/executable/bar"
+						cipd_version: "refs/heads/main"
+					}
+					properties: "{}"
+					backend_alt: {
+						target: "swarming://chromium-swarm-alt"
+					}
+				}
+			`
+			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
+			ve, ok := vctx.Finalize().(*validation.Error)
+			So(ok, ShouldEqual, true)
+			So(len(ve.Errors), ShouldEqual, 1)
+			So(ve.Errors[0].Error(), ShouldContainSubstring, "either swarming host or task backend must be set")
 		})
 	})
 

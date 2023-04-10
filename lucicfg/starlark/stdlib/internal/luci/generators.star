@@ -474,12 +474,13 @@ def _buildbucket_builders(bucket):
                 target = backend_alt.props.target,
                 config_json = backend_alt.props.config,
             )
-        if node.props.backend == None and node.props.backend_alt == None:
-            swarming_host = node.props.swarming_host
-            if not swarming_host:
-                if not def_swarming_host:
-                    def_swarming_host = get_service("swarming", "defining builders").host
-                swarming_host = def_swarming_host
+
+        swarming_host = node.props.swarming_host
+        if node.props.backend == None and node.props.backend_alt == None and not swarming_host:
+            if not def_swarming_host:
+                def_swarming_host = get_service("swarming", "defining builders").host
+            swarming_host = def_swarming_host
+        if swarming_host:
             bldr_config.swarming_host = swarming_host
             bldr_config.swarming_tags = node.props.swarming_tags
 

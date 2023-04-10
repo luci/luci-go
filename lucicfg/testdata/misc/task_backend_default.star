@@ -1,6 +1,7 @@
 luci.project(
     name = "test",
     buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm-dev.appspot.com",
 )
 luci.bucket(
     name = "ci",

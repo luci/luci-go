@@ -3,6 +3,7 @@ load("@proto//google/protobuf/struct.proto", struct_pb = "google.protobuf")
 luci.project(
     name = "test",
     buildbucket = "cr-buildbucket.appspot.com",
+    swarming = "chromium-swarm-dev.appspot.com",
 )
 luci.bucket(
     name = "ci",
