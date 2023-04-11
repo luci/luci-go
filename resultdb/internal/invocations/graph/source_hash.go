@@ -23,7 +23,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// SourceHash stores a 12 bytes hash of sources, as raw bytes.
+// SourceHash stores a 12 byte hash of sources, as raw bytes.
 // To display, use the String() method.
 type SourceHash string
 
@@ -35,9 +35,9 @@ func (h SourceHash) String() string {
 	return hex.EncodeToString([]byte(h))
 }
 
-// hashSources returns a hash of the given code sources proto,
+// HashSources returns a hash of the given code sources proto,
 // which can be used as a key in maps.
-func hashSources(s *pb.Sources) SourceHash {
+func HashSources(s *pb.Sources) SourceHash {
 	h := sha256.New()
 	b := pbutil.MustMarshal(s)
 	_, err := h.Write(b)

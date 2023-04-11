@@ -273,6 +273,37 @@ func (q *Query) toTestResultProto(r *tvResult, testID string) (*pb.TestResult, e
 	return tr, nil
 }
 
+// populateSources populates the sources tested by each test variant, by
+// setting its source_id and ensuring a corresponding entry exists in
+// the distinctSources map. The sources tested come from the invocation of
+// an *arbitrary* test result in the test variant.
+func (q *Query) populateSources(tv *pb.TestVariant, distinctSources map[string]*pb.Sources) error {
+	if len(tv.Results) == 0 {
+		return nil
+	}
+	// Find the invocation for one of the test results in the test variant.
+	tr := tv.Results[0].Result
+	invID, _, _, err := pbutil.ParseTestResultName(tr.Name)
+	if err != nil {
+		return err
+	}
+	// Look up that invocation's sources.
+	inv, ok := q.ReachableInvocations.Invocations[invocations.ID(invID)]
+	if !ok {
+		return errors.Reason("test result in response referenced an unreachable invocation").Err()
+	}
+	sources := q.ReachableInvocations.Sources[inv.SourceHash]
+	if sources != nil {
+		// Associate those sources with the test variant.
+		tv.SourcesId = inv.SourceHash.String()
+		distinctSources[inv.SourceHash.String()] = sources
+	} else {
+		// No sources available.
+		tv.SourcesId = ""
+	}
+	return nil
+}
+
 // toLimitedData limits the given TestVariant (and its test results and test
 // exonerations) to the fields allowed when the caller only has listLimited
 // permissions for test results and test exonerations. If the caller has
@@ -468,9 +499,22 @@ func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f fu
 	})
 }
 
-func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
+// Page represents a page of test variants fetched
+// in response to a query.
+type Page struct {
+	// TestVariants are the test variants in the page.
+	TestVariants []*pb.TestVariant
+	// DistinctSources are the sources referenced by each test variant's
+	// source_id, stored by their ID. The ID itself should be treated
+	// as an opaque value; its generation is an implementation detail.
+	DistinctSources map[string]*pb.Sources
+	// NextPageToken is used to iterate to the next page of results.
+	NextPageToken string
+}
+
+func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Page, error) {
 	responseSize := 0
-	tvs = make([]*pb.TestVariant, 0, q.PageSize)
+	tvs := make([]*pb.TestVariant, 0, q.PageSize)
 
 	// resultPerms and exonerationPerms are maps in which:
 	// * the key is a realm, and
@@ -482,18 +526,26 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 	resultPerms := make(map[string]bool)
 	exonerationPerms := make(map[string]bool)
 
+	// Sources referenced from each test variant's source_id.
+	distinctSources := make(map[string]*pb.Sources)
+
 	// Fetch test variants with unexpected results.
-	err = q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
+	err := q.queryTestVariantsWithUnexpectedResults(ctx, func(tv *pb.TestVariant) error {
+		// Populate the code sources tested.
+		if err := q.populateSources(tv, distinctSources); err != nil {
+			return errors.Annotate(err, "resolving sources").Err()
+		}
+
 		// Restrict test variant data as required.
 		if q.AccessLevel != AccessLevelUnrestricted {
 			if err := q.toLimitedData(ctx, tv, resultPerms, exonerationPerms); err != nil {
-				return err
+				return errors.Annotate(err, "applying limited access mask").Err()
 			}
 		}
 
 		// Apply field mask.
 		if err := q.trim(tv); err != nil {
-			return err
+			return errors.Annotate(err, "applying field mask").Err()
 		}
 
 		tvs = append(tvs, tv)
@@ -506,9 +558,10 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 		return nil
 	})
 	if err != nil && err != responseLimitReachedErr {
-		return nil, "", err
+		return Page{}, err
 	}
 
+	var nextPageToken string
 	if len(tvs) == q.PageSize || err == responseLimitReachedErr {
 		// There could be more test variants to return.
 		last := tvs[len(tvs)-1]
@@ -526,7 +579,7 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 			nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), "", "")
 		}
 	}
-	return tvs, nextPageToken, nil
+	return Page{TestVariants: tvs, DistinctSources: distinctSources, NextPageToken: nextPageToken}, nil
 }
 
 // queryTestResults returns a page of test results, calling f for each
@@ -675,9 +728,9 @@ func (q *Query) queryTestVariants(ctx context.Context, f func(*pb.TestVariant) e
 // results when the soft response size limit has been reached.
 var responseLimitReachedErr = errors.New("terminating iteration early as response size limit reached")
 
-func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
+func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (Page, error) {
 	responseSize := 0
-	tvs = make([]*pb.TestVariant, 0, q.PageSize)
+	tvs := make([]*pb.TestVariant, 0, q.PageSize)
 
 	// resultPerms and exonerationPerms are maps in which:
 	// * the key is a realm, and
@@ -688,6 +741,9 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 	// that each realm/permission combination is checked at most once.
 	resultPerms := make(map[string]bool)
 	exonerationPerms := make(map[string]bool)
+
+	// Sources referenced from each test variant's source_id.
+	distinctSources := make(map[string]*pb.Sources)
 
 	// The last test variant we have completely processed.
 	var lastProcessedTestID string
@@ -703,6 +759,11 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		isOnlyExpected := tv.Results[0].Result.Expected
 		if isOnlyExpected {
 			tv.Status = pb.TestVariantStatus_EXPECTED
+
+			// Populate the code sources tested.
+			if err := q.populateSources(tv, distinctSources); err != nil {
+				return errors.Annotate(err, "resolving sources").Err()
+			}
 
 			// Restrict test variant data as required.
 			if q.AccessLevel != AccessLevelUnrestricted {
@@ -727,21 +788,22 @@ func (q *Query) fetchTestVariantsWithOnlyExpectedResults(ctx context.Context) (t
 		return nil
 	})
 	if err != nil && err != responseLimitReachedErr {
-		return nil, "", err
+		return Page{}, err
 	}
 
+	var nextPageToken string
 	if finished {
 		nextPageToken = ""
 	} else {
 		nextPageToken = pagination.Token(pb.TestVariantStatus_EXPECTED.String(), lastProcessedTestID, lastProcessedVariantHash)
 	}
 
-	return tvs, nextPageToken, nil
+	return Page{TestVariants: tvs, DistinctSources: distinctSources, NextPageToken: nextPageToken}, nil
 }
 
 // Fetch returns a page of test variants matching q.
 // Returned test variants are ordered by test variant status, test ID and variant hash.
-func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken string, err error) {
+func (q *Query) Fetch(ctx context.Context) (Page, error) {
 	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
@@ -773,18 +835,18 @@ func (q *Query) Fetch(ctx context.Context) (tvs []*pb.TestVariant, nextPageToken
 	var expected bool
 	switch parts, err := pagination.ParseToken(q.PageToken); {
 	case err != nil:
-		return nil, "", err
+		return Page{}, err
 	case len(parts) == 0:
 		expected = false
 		q.params["afterTvStatus"] = 0
 		q.params["afterTestId"] = ""
 		q.params["afterVariantHash"] = ""
 	case len(parts) != 3:
-		return nil, "", pagination.InvalidToken(errors.Reason("expected 3 components, got %q", parts).Err())
+		return Page{}, pagination.InvalidToken(errors.Reason("expected 3 components, got %q", parts).Err())
 	default:
 		status, ok := pb.TestVariantStatus_value[parts[0]]
 		if !ok {
-			return nil, "", pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
+			return Page{}, pagination.InvalidToken(errors.Reason("unrecognized test variant status: %q", parts[0]).Err())
 		}
 		expected = pb.TestVariantStatus(status) == pb.TestVariantStatus_EXPECTED
 		q.params["afterTvStatus"] = int(status)

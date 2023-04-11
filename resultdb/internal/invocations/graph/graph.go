@@ -240,7 +240,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 
 		sources := resolveSources(id, reachableInvocationToParent, invDetails)
 		if sources != nil {
-			sourceHash := hashSources(sources)
+			sourceHash := HashSources(sources)
 			distinctSources[sourceHash] = sources
 			inv.SourceHash = sourceHash
 		}

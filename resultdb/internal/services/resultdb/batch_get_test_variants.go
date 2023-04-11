@@ -101,24 +101,33 @@ func (s *resultDBServer) BatchGetTestVariants(ctx context.Context, in *pb.BatchG
 	}
 
 	tvs := make([]*pb.TestVariant, 0, len(in.TestVariants))
-	for len(tvs) < cap(tvs) {
-		allTvs, pageToken, err := q.Fetch(ctx)
+	distinctSources := make(map[string]*pb.Sources)
+	for len(tvs) < len(in.TestVariants) {
+		page, err := q.Fetch(ctx)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to fetch test variants").Err()
 		}
 
-		for _, tv := range allTvs {
+		for _, tv := range page.TestVariants {
 			if _, ok := variantIDs[key{TestID: tv.TestId, VariantHash: tv.VariantHash}]; ok {
+				// Only return the test variants that were requested. (While we have
+				// pre-filtered on the test, we did not pre-filter on the test variant.)
 				tvs = append(tvs, tv)
+				if tv.SourcesId != "" {
+					distinctSources[tv.SourcesId] = page.DistinctSources[tv.SourcesId]
+				}
 			}
 		}
 
-		if pageToken == "" {
+		if page.NextPageToken == "" {
 			break
 		}
 
-		q.PageToken = pageToken
+		q.PageToken = page.NextPageToken
 	}
 
-	return &pb.BatchGetTestVariantsResponse{TestVariants: tvs}, nil
+	return &pb.BatchGetTestVariantsResponse{
+		TestVariants: tvs,
+		Sources:      distinctSources,
+	}, nil
 }

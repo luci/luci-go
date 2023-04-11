@@ -63,6 +63,16 @@ message TestVariant {
   //
   // Output only.
   bool is_masked = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The identity of the code sources tested. This ID can be used
+  // to lookup of the actual sources in QueryTestVariantsResponse.sources.
+  //
+  // All test results of the same test variant should be attached to the same
+  // sources (via their respective invocation(s)). This RPC relies upon this
+  // and returns sources from an *arbitrary* result of the test variant.
+  //
+  // If the code sources tested are not available, this field is blank.
+  string sources_id = 9;
 }
 
 // Outcomes of an execution of the test variant.

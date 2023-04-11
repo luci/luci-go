@@ -25,7 +25,9 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
@@ -51,13 +53,20 @@ func TestQueryTestVariants(t *testing.T) {
 		})
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
+		// inv0 -> inv1.
 		testutil.MustApply(
 			ctx,
-			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}, "inv1")...,
+			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]any{
+				"Realm":   "testproject:testrealm",
+				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(1))),
+			}, "inv1")...,
 		)
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{
+				"Realm":          "testproject:testrealm",
+				"InheritSources": true,
+			}),
 		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("inv0", "T1", nil, pb.TestStatus_FAIL),
@@ -66,14 +75,22 @@ func TestQueryTestVariants(t *testing.T) {
 			insert.TestResults("inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 		)...)
+
+		// inv2 -> [inv3, inv4, inv5].
 		testutil.MustApply(
 			ctx,
-			insert.InvocationWithInclusions("inv2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testlimitedrealm"}, "inv3", "inv4", "inv5")...,
+			insert.InvocationWithInclusions("inv2", pb.Invocation_ACTIVE, map[string]any{
+				"Realm":   "testproject:testlimitedrealm",
+				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(2))),
+			}, "inv3", "inv4", "inv5")...,
 		)
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("inv3", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testresultrealm"}),
-			insert.Invocation("inv4", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testexonerationrealm"}),
+			insert.Invocation("inv3", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testresultrealm", "InheritSources": true}),
+			insert.Invocation("inv4", pb.Invocation_ACTIVE, map[string]any{
+				"Realm":   "testproject:testexonerationrealm",
+				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(4))),
+			}),
 			insert.Invocation("inv5", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testlimitedrealm"}),
 		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
@@ -152,7 +169,8 @@ func TestQueryTestVariants(t *testing.T) {
 							},
 						},
 					},
-					IsMasked: true,
+					IsMasked:  true,
+					SourcesId: graph.HashSources(testutil.TestSourcesWithChangelistNumbers(2)).String(),
 				},
 				{
 					TestId:      "T1003",
@@ -178,6 +196,7 @@ func TestQueryTestVariants(t *testing.T) {
 							IsMasked:        true,
 						},
 					},
+					SourcesId: graph.HashSources(testutil.TestSourcesWithChangelistNumbers(2)).String(),
 				},
 				{
 					TestId:      "T1004",
@@ -202,7 +221,8 @@ func TestQueryTestVariants(t *testing.T) {
 							Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 						},
 					},
-					IsMasked: true,
+					IsMasked:  true,
+					SourcesId: graph.HashSources(testutil.TestSourcesWithChangelistNumbers(4)).String(),
 				},
 				{
 					TestId:      "T1005",
@@ -230,21 +250,38 @@ func TestQueryTestVariants(t *testing.T) {
 					IsMasked: true,
 				},
 			})
+			expectedSources := []*pb.Sources{
+				testutil.TestSourcesWithChangelistNumbers(2),
+				testutil.TestSourcesWithChangelistNumbers(4),
+			}
+			So(res.Sources, ShouldHaveLength, len(expectedSources))
+			for _, source := range expectedSources {
+				So(res.Sources[graph.HashSources(source).String()], ShouldResembleProto, source)
+			}
 		})
 
 		Convey(`Valid with included invocation`, func() {
-			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
+			page, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0"},
 			})
 			So(err, ShouldBeNil)
-			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
+			So(page.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
 
-			So(len(res.TestVariants), ShouldEqual, 3)
-			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
+			So(len(page.TestVariants), ShouldEqual, 3)
+			So(getTVStrings(page.TestVariants), ShouldResemble, []string{
 				"10/T2/e3b0c44298fc1c14",
 				"30/T1/c467ccce5a16dc72",
 				"40/T1/e3b0c44298fc1c14",
 			})
+
+			expectedSources := testutil.TestSourcesWithChangelistNumbers(1)
+			expectedSourceHash := graph.HashSources(expectedSources).String()
+			for _, tv := range page.TestVariants {
+				So(tv.SourcesId, ShouldEqual, expectedSourceHash)
+			}
+
+			So(page.Sources, ShouldHaveLength, 1)
+			So(page.Sources[expectedSourceHash], ShouldResembleProto, expectedSources)
 		})
 
 		Convey(`Valid without included invocation`, func() {

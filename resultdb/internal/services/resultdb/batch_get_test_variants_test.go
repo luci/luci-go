@@ -22,6 +22,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/resultdb/internal/invocations/graph"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -35,7 +37,7 @@ func variantHash(pairs ...string) string {
 	return pbutil.VariantHash(pbutil.Variant(pairs...))
 }
 
-func getTvStrings(tvs []*pb.TestVariant) []string {
+func tvStrings(tvs []*pb.TestVariant) []string {
 	tvStrings := make([]string, len(tvs))
 	for i, tv := range tvs {
 		tvStrings[i] = fmt.Sprintf("%d/%s/%s", int32(tv.Status), tv.TestId, tv.VariantHash)
@@ -55,11 +57,16 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 		testutil.MustApply(
 			ctx,
-			insert.InvocationWithInclusions("i0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}, "i0")...,
+			insert.InvocationWithInclusions("i0", pb.Invocation_ACTIVE, map[string]any{
+				"Realm":   "testproject:testrealm",
+				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSources())),
+			}, "i0")...,
 		)
 		testutil.MustApply(
 			ctx,
-			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
+			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]any{
+				"Realm": "testproject:testrealm",
+			}),
 		)
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insert.TestResults("i0", "test1", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
@@ -115,7 +122,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
-			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
+			So(tvStrings(res.TestVariants), ShouldResemble, []string{
 				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
 				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
@@ -123,7 +130,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			for _, tv := range res.TestVariants {
 				So(tv.IsMasked, ShouldBeFalse)
+				So(tv.SourcesId, ShouldEqual, graph.HashSources(testutil.TestSources()).String())
 			}
+			So(res.Sources, ShouldHaveLength, 1)
+			So(res.Sources[graph.HashSources(testutil.TestSources()).String()], ShouldResembleProto, testutil.TestSources())
 		})
 
 		Convey(`Valid request without included invocation`, func() {
@@ -138,14 +148,17 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
-			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
+			So(tvStrings(res.TestVariants), ShouldResemble, []string{
 				fmt.Sprintf("50/test1/%s", variantHash("e", "f")),
 				fmt.Sprintf("50/test3/%s", variantHash("c", "d")),
 			})
 
 			for _, tv := range res.TestVariants {
 				So(tv.IsMasked, ShouldBeFalse)
+				So(tv.SourcesId, ShouldBeEmpty)
 			}
+
+			So(res.Sources, ShouldHaveLength, 0)
 		})
 
 		Convey(`Valid request with missing included invocation`, func() {
@@ -166,7 +179,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// NOTE: The order isn't important here, we just don't have a
 			// matcher that does an unordered comparison.
-			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
+			So(tvStrings(res.TestVariants), ShouldResemble, []string{
 				fmt.Sprintf("10/test3/%s", variantHash("a", "b")),
 				fmt.Sprintf("20/test4/%s", variantHash("g", "h")),
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
@@ -174,7 +187,10 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			for _, tv := range res.TestVariants {
 				So(tv.IsMasked, ShouldBeFalse)
+				So(tv.SourcesId, ShouldEqual, graph.HashSources(testutil.TestSources()).String())
 			}
+			So(res.Sources, ShouldHaveLength, 1)
+			So(res.Sources[graph.HashSources(testutil.TestSources()).String()], ShouldResembleProto, testutil.TestSources())
 		})
 
 		Convey(`Requesting > 500 variants fails`, func() {
@@ -203,13 +219,16 @@ func TestBatchGetTestVariants(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 
-			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
+			So(tvStrings(res.TestVariants), ShouldResemble, []string{
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			})
 
 			for _, tv := range res.TestVariants {
 				So(tv.IsMasked, ShouldBeFalse)
+				So(tv.SourcesId, ShouldEqual, graph.HashSources(testutil.TestSources()).String())
 			}
+			So(res.Sources, ShouldHaveLength, 1)
+			So(res.Sources[graph.HashSources(testutil.TestSources()).String()], ShouldResembleProto, testutil.TestSources())
 		})
 
 		Convey(`Request doesn't return variants from other invocations`, func() {
@@ -223,6 +242,7 @@ func TestBatchGetTestVariants(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(res.TestVariants, ShouldBeEmpty)
+			So(res.Sources, ShouldHaveLength, 0)
 		})
 
 		Convey(`Request combines test ID and variant hash correctly`, func() {
@@ -237,13 +257,16 @@ func TestBatchGetTestVariants(t *testing.T) {
 
 			// Testing that we don't match test3, a:b, even though we've
 			// requested that test id and variant hash separately.
-			So(getTvStrings(res.TestVariants), ShouldResemble, []string{
+			So(tvStrings(res.TestVariants), ShouldResemble, []string{
 				fmt.Sprintf("50/test1/%s", variantHash("a", "b")),
 			})
 
 			for _, tv := range res.TestVariants {
 				So(tv.IsMasked, ShouldBeFalse)
+				So(tv.SourcesId, ShouldEqual, graph.HashSources(testutil.TestSources()).String())
 			}
+			So(res.Sources, ShouldHaveLength, 1)
+			So(res.Sources[graph.HashSources(testutil.TestSources()).String()], ShouldResembleProto, testutil.TestSources())
 		})
 	})
 }

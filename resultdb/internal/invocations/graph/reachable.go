@@ -192,7 +192,7 @@ func unmarshalReachableInvocations(value []byte) (ReachableInvocations, error) {
 	sourceHashByIndex := make([]SourceHash, len(message.Sources))
 	sources := make(map[SourceHash]*pb.Sources)
 	for i, source := range message.Sources {
-		hash := hashSources(source)
+		hash := HashSources(source)
 		sources[hash] = source
 		sourceHashByIndex[i] = hash
 	}

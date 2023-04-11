@@ -117,9 +117,9 @@ func TestReachable(t *testing.T) {
 
 				expected.Invocations["a"] = ReachableInvocation{
 					Realm:      insert.TestRealm,
-					SourceHash: hashSources(sources(1)),
+					SourceHash: HashSources(sources(1)),
 				}
-				expected.Sources[hashSources(sources(1))] = sources(1)
+				expected.Sources[HashSources(sources(1))] = sources(1)
 
 				Convey(`Simple`, func() {
 					So(mustRead("a"), ShouldResembleReachable, expected)
@@ -145,11 +145,11 @@ func TestReachable(t *testing.T) {
 					"a": {
 						HasTestExonerations: true,
 						Realm:               insert.TestRealm,
-						SourceHash:          hashSources(sources(1)),
+						SourceHash:          HashSources(sources(1)),
 					},
 					"b": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(1)),
+						SourceHash: HashSources(sources(1)),
 					},
 					"c": {
 						HasTestResults:      true,
@@ -158,7 +158,7 @@ func TestReachable(t *testing.T) {
 					},
 				},
 				Sources: map[SourceHash]*pb.Sources{
-					hashSources(sources(1)): sources(1),
+					HashSources(sources(1)): sources(1),
 				},
 			}
 
@@ -184,21 +184,21 @@ func TestReachable(t *testing.T) {
 					"a": {
 						HasTestExonerations: true,
 						Realm:               insert.TestRealm,
-						SourceHash:          hashSources(sources(1)),
+						SourceHash:          HashSources(sources(1)),
 					},
 					"b": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(1)),
+						SourceHash: HashSources(sources(1)),
 					},
 					"c": {
 						HasTestResults:      true,
 						HasTestExonerations: true,
 						Realm:               insert.TestRealm,
-						SourceHash:          hashSources(sources(1)),
+						SourceHash:          HashSources(sources(1)),
 					},
 				},
 				Sources: map[SourceHash]*pb.Sources{
-					hashSources(sources(1)): sources(1),
+					HashSources(sources(1)): sources(1),
 				},
 			}
 
@@ -239,33 +239,33 @@ func TestReachable(t *testing.T) {
 				Invocations: map[invocations.ID]ReachableInvocation{
 					"a": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(1)),
+						SourceHash: HashSources(sources(1)),
 					},
 					"b1": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(1)),
+						SourceHash: HashSources(sources(1)),
 					},
 					"b2": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(1)),
+						SourceHash: HashSources(sources(1)),
 					},
 					"c": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(2)),
+						SourceHash: HashSources(sources(2)),
 					},
 					"d": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(3)),
+						SourceHash: HashSources(sources(3)),
 					},
 					"e": {
 						Realm:      insert.TestRealm,
-						SourceHash: hashSources(sources(2)),
+						SourceHash: HashSources(sources(2)),
 					},
 				},
 				Sources: map[SourceHash]*pb.Sources{
-					hashSources(sources(1)): sources(1),
-					hashSources(sources(2)): sources(2),
-					hashSources(sources(3)): sources(3),
+					HashSources(sources(1)): sources(1),
+					HashSources(sources(2)): sources(2),
+					HashSources(sources(3)): sources(3),
 				},
 			}
 
@@ -448,7 +448,7 @@ func TestReachCache(t *testing.T) {
 				Position:   105,
 			},
 		}
-		invs.Sources[hashSources(source1)] = source1
+		invs.Sources[HashSources(source1)] = source1
 
 		invs.Invocations["inv"] = ReachableInvocation{
 			HasTestResults:      true,
@@ -458,7 +458,7 @@ func TestReachCache(t *testing.T) {
 		invs.Invocations["a"] = ReachableInvocation{
 			HasTestResults: true,
 			Realm:          insert.TestRealm,
-			SourceHash:     hashSources(source1),
+			SourceHash:     HashSources(source1),
 		}
 		invs.Invocations["b"] = ReachableInvocation{
 			HasTestExonerations: true,

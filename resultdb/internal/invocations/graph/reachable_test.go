@@ -30,32 +30,32 @@ func TestReachableInvocations(t *testing.T) {
 
 		src1 := testutil.TestSourcesWithChangelistNumbers(12)
 		src2 := testutil.TestSourcesWithChangelistNumbers(13)
-		invs.Sources[hashSources(src1)] = src1
-		invs.Sources[hashSources(src2)] = src2
+		invs.Sources[HashSources(src1)] = src1
+		invs.Sources[HashSources(src2)] = src2
 
-		invs.Invocations["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: hashSources(src1)}
+		invs.Invocations["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1)}
 		invs.Invocations["1"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"}
 		invs.Invocations["2"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"}
-		invs.Invocations["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: hashSources(src1)}
-		invs.Invocations["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: hashSources(src2)}
+		invs.Invocations["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: HashSources(src1)}
+		invs.Invocations["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: HashSources(src2)}
 		invs.Invocations["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA"}
 
 		Convey(`Batches`, func() {
 			results := invs.batches(2)
 			So(results[0].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
-				"3": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: hashSources(src1)},
-				"4": {HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: hashSources(src2)},
+				"3": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: HashSources(src1)},
+				"4": {HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: HashSources(src2)},
 			})
 			So(results[0].Sources, ShouldHaveLength, 2)
-			So(results[0].Sources[hashSources(src1)], ShouldResembleProto, src1)
-			So(results[0].Sources[hashSources(src2)], ShouldResembleProto, src2)
+			So(results[0].Sources[HashSources(src1)], ShouldResembleProto, src1)
+			So(results[0].Sources[HashSources(src2)], ShouldResembleProto, src2)
 
 			So(results[1].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
-				"0": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: hashSources(src1)},
+				"0": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1)},
 				"1": {HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"},
 			})
 			So(results[1].Sources, ShouldHaveLength, 1)
-			So(results[1].Sources[hashSources(src1)], ShouldResembleProto, src1)
+			So(results[1].Sources[HashSources(src1)], ShouldResembleProto, src1)
 
 			So(results[2].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
 				"2": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"},

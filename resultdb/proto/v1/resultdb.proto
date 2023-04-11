@@ -432,6 +432,15 @@ message QueryTestVariantsResponse {
   // If this field is omitted, there were no subsequent pages at the time of
   // request.
   string next_page_token = 2;
+
+  // The code sources tested by the returned test variants. The sources are keyed
+  // by an ID which allows them to be cross-referenced from TestVariant.sources_id.
+  //
+  // The sources are returned via this map instead of directly on the TestVariant
+  // to avoid excessive response size. Each source message could be up to a few
+  // kilobytes and there are usually no more than a handful of different sources
+  // tested in an invocation, so deduplicating them here reduces response size.
+  map<string, Sources> sources = 3;
 }
 
 // A request message for BatchGetTestVariants RPC.
@@ -469,4 +478,13 @@ message BatchGetTestVariantsResponse {
   // omitted from the response. Clients shouldn't rely on the ordering of this
   // field, as no particular order is guaranteed.
   repeated TestVariant test_variants = 1;
+
+  // The code sources tested by the returned test variants. The sources are keyed
+  // by an ID which allows them to be cross-referenced from TestVariant.sources_id.
+  //
+  // The sources are returned via this map instead of directly on the TestVariant
+  // to avoid excessive response size. Each source message could be up to a few
+  // kilobytes and there are usually no more than a handful of different sources
+  // tested in an invocation, so deduplicating them here reduces response size.
+  map<string, Sources> sources = 2;
 }

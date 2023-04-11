@@ -104,7 +104,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 	// Get the transitive closure.
 	invs, err := graph.Reachable(ctx, ids)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to read the reach").Err()
+		return nil, errors.Annotate(err, "resolving reachable invocations").Err()
 	}
 
 	// Query test variants.
@@ -119,22 +119,22 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		AccessLevel:          accessLevel,
 	}
 
-	var tvs []*pb.TestVariant
-	var token string
-	for len(tvs) == 0 {
-		if tvs, token, err = q.Fetch(ctx); err != nil {
-			return nil, errors.Annotate(err, "failed to read test variants").Err()
+	var result testvariants.Page
+	for len(result.TestVariants) == 0 {
+		if result, err = q.Fetch(ctx); err != nil {
+			return nil, errors.Annotate(err, "fetching test variants").Err()
 		}
 
-		if token == "" || outOfTime(ctx) {
+		if result.NextPageToken == "" || outOfTime(ctx) {
 			break
 		}
-		q.PageToken = token
+		q.PageToken = result.NextPageToken
 	}
 
 	return &pb.QueryTestVariantsResponse{
-		TestVariants:  tvs,
-		NextPageToken: token,
+		TestVariants:  result.TestVariants,
+		NextPageToken: result.NextPageToken,
+		Sources:       result.DistinctSources,
 	}, nil
 }
 
