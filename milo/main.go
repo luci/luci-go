@@ -62,49 +62,54 @@ func main() {
 	}
 	server.Main(nil, modules, func(srv *server.Server) error {
 		frontend.Run(srv, "frontend/templates")
+
+		service := &rpc.MiloInternalService{
+			GetSettings: func(c context.Context) (*configpb.Settings, error) {
+				settings := config.GetSettings(c)
+				return settings, nil
+			},
+			GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
+				t, err := auth.GetRPCTransport(c, as)
+				if err != nil {
+					return nil, err
+				}
+				client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
+				if err != nil {
+					return nil, err
+				}
+
+				return client, nil
+			},
+			GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
+				t, err := auth.GetRPCTransport(c, as)
+				if err != nil {
+					return nil, err
+				}
+
+				rpcOpts := prpc.DefaultOptions()
+				rpcOpts.PerRPCTimeout = time.Minute - time.Second
+				return buildbucketpb.NewBuildersClient(&prpc.Client{
+					C:       &http.Client{Transport: t},
+					Host:    host,
+					Options: rpcOpts,
+				}), nil
+			},
+		}
+
 		cron.RegisterHandler("update-project-configs", projectconfig.UpdateProjectConfigsHandler)
 		cron.RegisterHandler("update-config", config.UpdateConfigHandler)
+		cron.RegisterHandler("update-builders", service.UpdateBuilderCache)
 		cron.RegisterHandler("update-pools", buildbucket.UpdatePools)
-		cron.RegisterHandler("update-builders", frontend.UpdateBuilders)
 		cron.RegisterHandler("delete-builds", buildbucket.DeleteOldBuilds)
 		cron.RegisterHandler("sync-builds", buildbucket.SyncBuilds)
+
 		milopb.RegisterMiloInternalServer(srv, &milopb.DecoratedMiloInternal{
-			Service: &rpc.MiloInternalService{
-				GetSettings: func(c context.Context) (*configpb.Settings, error) {
-					settings := config.GetSettings(c)
-					return settings, nil
-				},
-				GetGitilesClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (gitilespb.GitilesClient, error) {
-					t, err := auth.GetRPCTransport(c, as)
-					if err != nil {
-						return nil, err
-					}
-					client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
-					if err != nil {
-						return nil, err
-					}
-
-					return client, nil
-				},
-				GetBuildersClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (buildbucketpb.BuildersClient, error) {
-					t, err := auth.GetRPCTransport(c, as)
-					if err != nil {
-						return nil, err
-					}
-
-					rpcOpts := prpc.DefaultOptions()
-					rpcOpts.PerRPCTimeout = time.Minute - time.Second
-					return buildbucketpb.NewBuildersClient(&prpc.Client{
-						C:       &http.Client{Transport: t},
-						Host:    host,
-						Options: rpcOpts,
-					}), nil
-				},
-			},
+			Service: service,
 			Postlude: func(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 				return appstatus.GRPCifyAndLog(ctx, err)
 			},
 		})
+
 		return nil
 	})
 }
