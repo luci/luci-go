@@ -739,8 +739,15 @@ func (m *AuthMethod) refreshSession(ctx context.Context, cookie *encryptedcookie
 			s.NextRefresh = timestamppb.New(exp)
 			s.Sub = tok.Sub
 			s.Email = tok.Email
-			s.Name = tok.Name
-			s.Picture = tok.Picture
+			// User profile information inside the token can be randomly missing.
+			// Update it only when it is present.
+			// See https://github.com/googleapis/google-api-dotnet-client/issues/1141
+			if tok.Name != "" {
+				s.Name = tok.Name
+			}
+			if tok.Picture != "" {
+				s.Picture = tok.Picture
+			}
 			s.EncryptedPrivate = encryptedPrivate
 		} else {
 			s.State = sessionpb.State_STATE_REVOKED
