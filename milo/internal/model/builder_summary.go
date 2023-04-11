@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"

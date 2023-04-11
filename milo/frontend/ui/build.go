@@ -34,7 +34,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/utils"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"

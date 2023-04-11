@@ -46,11 +46,11 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/frontend/ui"
-	"go.chromium.org/luci/milo/git"
-	"go.chromium.org/luci/milo/git/gitacls"
+	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/internal/config"
+	"go.chromium.org/luci/milo/internal/git"
+	"go.chromium.org/luci/milo/internal/git/gitacls"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 )

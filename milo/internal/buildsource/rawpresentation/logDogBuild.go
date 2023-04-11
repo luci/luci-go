@@ -23,8 +23,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 // URLBuilder constructs URLs for various link types.

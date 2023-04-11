@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"

@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"

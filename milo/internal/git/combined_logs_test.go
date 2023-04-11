@@ -29,7 +29,7 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/milo/git/gitacls"
+	"go.chromium.org/luci/milo/internal/git/gitacls"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"

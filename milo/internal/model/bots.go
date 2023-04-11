@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/strpair"
-	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 // PoolDescriptor describes the attributes of a pool in "tag:value" format.

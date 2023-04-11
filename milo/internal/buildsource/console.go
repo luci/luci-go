@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )

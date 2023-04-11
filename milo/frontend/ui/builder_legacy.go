@@ -15,7 +15,7 @@
 package ui
 
 import (
-	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 // BuildSummaryLegacy is a summary of a build, with just enough information for display

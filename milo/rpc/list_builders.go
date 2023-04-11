@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/milo/buildsource/buildbucket"
+	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"

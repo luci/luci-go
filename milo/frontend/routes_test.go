@@ -43,9 +43,9 @@ import (
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/common/model"
-	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/model"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -21,7 +21,7 @@ import (
 	"net/url"
 	"strings"
 
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/internal/model"
 )
 
 // This file contains the structures for defining a Console view.

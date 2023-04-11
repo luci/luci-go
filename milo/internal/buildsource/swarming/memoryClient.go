@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-	"go.chromium.org/luci/milo/buildsource/rawpresentation"
+	"go.chromium.org/luci/milo/internal/buildsource/rawpresentation"
 )
 
 func toLogDogStream(stream streamclient.FakeStreamData) (*rawpresentation.Stream, error) {

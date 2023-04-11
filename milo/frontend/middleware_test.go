@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/milo/internal/git"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"

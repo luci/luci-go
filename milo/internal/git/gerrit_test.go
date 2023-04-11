@@ -22,7 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/milo/git/gitacls"
+	"go.chromium.org/luci/milo/internal/git/gitacls"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"

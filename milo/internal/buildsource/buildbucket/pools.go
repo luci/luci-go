@@ -30,10 +30,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/buildsource/swarming"
-	"go.chromium.org/luci/milo/common/model"
-	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/buildsource/swarming"
+	"go.chromium.org/luci/milo/internal/model"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"
 )

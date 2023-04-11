@@ -34,8 +34,8 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/buildsource/swarming"
+	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
+	"go.chromium.org/luci/milo/internal/buildsource/swarming"
 	"go.chromium.org/luci/milo/internal/config"
 )
 

@@ -43,10 +43,10 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe/legacy/annotee"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-	"go.chromium.org/luci/milo/buildsource/rawpresentation"
-	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/internal/config"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/server/auth"
 )

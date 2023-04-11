@@ -17,7 +17,7 @@ package model
 import (
 	"time"
 
-	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 // Summary summarizes a thing (step, build, group of builds, whatever).

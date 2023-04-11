@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/pagination/dscursor"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"

@@ -21,8 +21,8 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/milo/common/model"
-	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/model"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 type BuilderPage struct {

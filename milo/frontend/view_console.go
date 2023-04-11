@@ -40,10 +40,10 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/milo/buildsource"
-	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
-	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/milo/internal/buildsource"
+	"go.chromium.org/luci/milo/internal/git"
+	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"

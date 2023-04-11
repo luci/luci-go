@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 // MiloBuildLegacy denotes a full renderable Milo build page.
