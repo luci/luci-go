@@ -82,7 +82,7 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 4);
     assert.includeMembers(requestedUrls, [
-      `${self.location.origin}/auth-state`,
+      `${self.location.origin}/auth/openid/state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
@@ -165,7 +165,7 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 4);
     assert.includeMembers(requestedUrls, [
-      `${self.location.origin}/auth-state`,
+      `${self.location.origin}/auth/openid/state`,
       `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
@@ -247,7 +247,7 @@ describe('prefetch', () => {
     const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
     assert.strictEqual(requestedUrls.length, 2);
     assert.includeMembers(requestedUrls, [
-      `${self.location.origin}/auth-state`,
+      `${self.location.origin}/auth/openid/state`,
       `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
     ]);
 

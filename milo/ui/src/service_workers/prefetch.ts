@@ -54,7 +54,7 @@ const CACHE_DURATION = 5000;
 const CACHE_OPTION = { acceptCache: false, skipUpdate: true };
 
 export class Prefetcher {
-  private readonly authStateUrl = `${_self.location.origin}/auth-state`;
+  private readonly authStateUrl = `${_self.location.origin}/auth/openid/state`;
   private readonly cachedUrls: readonly string[] = [
     this.authStateUrl,
     `https://${this.configs.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
