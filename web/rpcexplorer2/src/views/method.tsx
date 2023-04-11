@@ -21,14 +21,6 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 
-import AceEditor from 'react-ace';
-
-// Note: these must be imported after AceEditor for some reason, otherwise the
-// final bundle ends up broken.
-import 'ace-builds/src-noconflict/ext-language_tools';
-import 'ace-builds/src-noconflict/mode-json';
-import 'ace-builds/src-noconflict/theme-tomorrow';
-
 import { useGlobals } from '../context/globals';
 
 import { AuthMethod, AuthSelector } from '../components/auth_selector';
@@ -37,6 +29,9 @@ import { ErrorAlert } from '../components/error_alert';
 import { ExecuteIcon } from '../components/icons';
 import { OAuthError } from '../data/oauth';
 
+import { RequestEditor, RequestEditorRef } from '../components/request_editor';
+import { ResponseEditor } from '../components/response_editor';
+
 
 const Method = () => {
   const { serviceName, methodName } = useParams();
@@ -44,10 +39,12 @@ const Method = () => {
   const { descriptors, oauthClient } = useGlobals();
   const [authMethod, setAuthMethod] = useState(AuthMethod.load());
   const [running, setRunning] = useState(false);
+  const [response, setResponse] = useState('');
   const [error, setError] = useState<Error | null>(null);
 
-  const requestEditor = useRef<AceEditor>(null);
-  const responseEditor = useRef<AceEditor>(null);
+  // Request editor is used via imperative methods since it can be too sluggish
+  // to update on key presses otherwise.
+  const requestEditor = useRef<RequestEditorRef>(null);
 
   // Initial request body can be passed via `request` query parameter.
   // Pretty-print it if it is a valid JSON. Memo this to avoid reparsing
@@ -86,23 +83,14 @@ const Method = () => {
   }
 
   const invokeMethod = () => {
-    if (!requestEditor.current || !responseEditor.current) {
+    if (!requestEditor.current) {
       return;
     }
-    const reqEditor = requestEditor.current.editor;
-    const resEditor = responseEditor.current.editor;
 
-    // Default to an empty request.
-    let requestBody = reqEditor.getValue().trim();
-    if (!requestBody) {
-      requestBody = '{}';
-      reqEditor.setValue(requestBody, -1);
-    }
-
-    // The request must be a valid JSON. Verify locally.
+    // Try to get a parsed JSON request from the editor. Catch bad JSON errors.
     let parsedReq: object;
     try {
-      parsedReq = JSON.parse(requestBody);
+      parsedReq = requestEditor.current.prepareRequest();
     } catch (err) {
       if (err instanceof Error) {
         setError(err);
@@ -112,12 +100,13 @@ const Method = () => {
       return;
     }
 
-    // Update the current location to allow copy-pasting this request via URI.
     // Use compact request serialization (strip spaces etc).
+    const normalizedReq = JSON.stringify(parsedReq);
+
+    // Update the current location to allow copy-pasting this request via URI.
     setSearchParams((params) => {
-      const compact = JSON.stringify(parsedReq);
-      if (compact != '{}') {
-        params.set('request', compact);
+      if (normalizedReq != '{}') {
+        params.set('request', normalizedReq);
       } else {
         params.delete('request');
       }
@@ -125,12 +114,7 @@ const Method = () => {
     }, { replace: true });
 
     // Deactivate the UI while the request is running.
-    reqEditor.setReadOnly(true);
     setRunning(true);
-
-    // Clear the old response and error, if any.
-    resEditor.setValue('');
-    setError(null);
 
     // Grabs the authentication header and invokes the method.
     const authAndInvoke = async () => {
@@ -138,18 +122,22 @@ const Method = () => {
       if (authMethod == AuthMethod.OAuth) {
         authorization = `Bearer ${await oauthClient.accessToken()}`;
       }
-      return await method.invoke(requestBody, authorization);
+      return await method.invoke(normalizedReq, authorization);
     };
     authAndInvoke()
-        .then((response) => resEditor.setValue(response, -1))
+        .then((response) => {
+          setResponse(response);
+          setError(null);
+        })
         .catch((error) => {
+          // Canceled OAuth flow is a user-initiated error, don't show it.
           if (!(error instanceof OAuthError && error.cancelled)) {
+            setResponse('');
             setError(error);
           }
         })
         .finally(() => {
-        // Reactive the UI.
-          reqEditor.setReadOnly(false);
+          // Reactive the UI.
           setRunning(false);
         });
   };
@@ -161,24 +149,12 @@ const Method = () => {
       </Grid>
 
       <Grid item xs={12}>
-        <Box
-          component='div'
-          sx={{ border: '1px solid #e0e0e0', borderRadius: '2px' }}
-        >
-          <AceEditor
-            ref={requestEditor}
-            mode='json'
-            defaultValue={initialRequest}
-            theme='tomorrow'
-            name='request-editor'
-            width='100%'
-            height='200px'
-            setOptions={{
-              enableBasicAutocompletion: true,
-              useWorker: false,
-            }}
-          />
-        </Box>
+        <RequestEditor
+          ref={requestEditor}
+          defaultValue={initialRequest}
+          readOnly={running}
+          onInvokeMethod={invokeMethod}
+        />
       </Grid>
 
       <Grid item xs={2}>
@@ -215,27 +191,7 @@ const Method = () => {
       }
 
       <Grid item xs={12}>
-        <Box
-          component='div'
-          sx={{
-            border: '1px solid #e0e0e0',
-            borderRadius: '2px',
-            mb: 2,
-          }}
-        >
-          <AceEditor
-            ref={responseEditor}
-            mode='json'
-            theme='tomorrow'
-            name='response-editor'
-            width='100%'
-            height='400px'
-            setOptions={{
-              readOnly: true,
-              useWorker: false,
-            }}
-          />
-        </Box>
+        <ResponseEditor value={response} />
       </Grid>
     </Grid>
   );
