@@ -3106,6 +3106,7 @@ func TestScheduleBuild(t *testing.T) {
 				req.Priority = 1
 				setInfra(ctx, req, cfg, ent.Proto, gCfg)
 				setExps()
+				setSwarmingOrBackend(ctx, req, cfg, ent.Proto, gCfg)
 
 				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
 			})
@@ -3384,15 +3385,15 @@ func TestScheduleBuild(t *testing.T) {
 				Backend: &pb.BuilderConfig_Backend{
 					Target: "swarming://chromium-swarm",
 				},
+				Experiments: map[string]int32{
+					"luci.buildbucket.backend_alt": 100,
+				},
 			}
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
 					Bucket:  "bucket",
 					Builder: "builder",
 					Project: "project",
-				},
-				Experiments: map[string]bool{
-					"luci.buildbucket.backend_alt": true,
 				},
 				RequestId: "request_id",
 				Priority:  100,
@@ -3457,18 +3458,6 @@ func TestScheduleBuild(t *testing.T) {
 					Project: "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
-				Swarming: &pb.BuildInfra_Swarming{
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path: "builder",
-							WaitForWarmCache: &durationpb.Duration{
-								Seconds: 240,
-							},
-						},
-					},
-					Priority: 30,
-				},
 			})
 		})
 
@@ -3502,183 +3491,6 @@ func TestScheduleBuild(t *testing.T) {
 					Project: "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
-				Swarming: &pb.BuildInfra_Swarming{
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path: "builder",
-							WaitForWarmCache: &durationpb.Duration{
-								Seconds: 240,
-							},
-						},
-					},
-					Priority: 30,
-				},
-			})
-		})
-
-		Convey("backend", func() {
-			b := &pb.Build{
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-			}
-			s := &pb.SettingsCfg{
-				Backends: []*pb.BackendSetting{
-					{
-						Target:   "swarming://chromium-swarm",
-						Hostname: "chromium-swarm.appspot.com",
-					},
-				},
-			}
-			bldrCfg := &pb.BuilderConfig{
-				ServiceAccount: "account",
-				Priority:       200,
-				Backend: &pb.BuilderConfig_Backend{
-					Target: "swarming://chromium-swarm",
-				},
-			}
-
-			req := &pb.ScheduleBuildRequest{
-				Experiments: map[string]bool{
-					"luci.buildbucket.backend_alt": true,
-				},
-			}
-
-			Convey("use builder Priority and ServiceAccount", func() {
-
-				setInfra(ctx, req, bldrCfg, b, s)
-
-				expectedBackendConfig := &structpb.Struct{}
-				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
-				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
-				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
-
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
-					Caches: []*pb.CacheEntry{
-						{
-							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
-							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
-						},
-					},
-					Config: expectedBackendConfig,
-					Task: &pb.Task{
-						Id: &pb.TaskID{
-							Target: "swarming://chromium-swarm",
-						},
-					},
-				})
-			})
-
-			Convey("use backend priority and ServiceAccount", func() {
-				bldrCfg.Backend.ConfigJson = "{\"priority\": 2, \"service_account\": \"service_account\"}"
-				setInfra(ctx, req, bldrCfg, b, s)
-
-				expectedBackendConfig := &structpb.Struct{}
-				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
-				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 2}}
-				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "service_account"}}
-
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
-					Caches: []*pb.CacheEntry{
-						{
-							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
-							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
-						},
-					},
-					Config: expectedBackendConfig,
-					Task: &pb.Task{
-						Id: &pb.TaskID{
-							Target: "swarming://chromium-swarm",
-						},
-					},
-				})
-			})
-
-			Convey("use user requested priority", func() {
-				req.Priority = 22
-				setInfra(ctx, req, bldrCfg, b, s)
-
-				expectedBackendConfig := &structpb.Struct{}
-				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
-				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 22}}
-				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
-
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
-					Caches: []*pb.CacheEntry{
-						{
-							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
-							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
-						},
-					},
-					Config: expectedBackendConfig,
-					Task: &pb.Task{
-						Id: &pb.TaskID{
-							Target: "swarming://chromium-swarm",
-						},
-					},
-				})
-			})
-
-			Convey("backend alt is used", func() {
-				bldrCfg.BackendAlt = &pb.BuilderConfig_Backend{
-					Target: "swarming://chromium-swarm-alt",
-				}
-
-				setInfra(ctx, req, bldrCfg, b, s)
-
-				expectedBackendConfig := &structpb.Struct{}
-				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
-				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
-				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
-
-				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
-					Caches: []*pb.CacheEntry{
-						{
-							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
-							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
-						},
-					},
-					Config: expectedBackendConfig,
-					Task: &pb.Task{
-						Id: &pb.TaskID{
-							Target: "swarming://chromium-swarm-alt",
-						},
-					},
-				})
-			})
-
-			Convey("swarming is used, backend_alt exp is true", func() {
-				bldrCfg := &pb.BuilderConfig{
-					ServiceAccount: "account",
-					Priority:       200,
-				}
-
-				setInfra(ctx, req, bldrCfg, b, s)
-
-				expectedBackendConfig := &structpb.Struct{}
-				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
-				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
-				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
-
-				So(b.Infra.Backend, ShouldBeNil)
-				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
-					TaskServiceAccount: "account",
-					Priority:           200,
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
-							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
-						},
-					},
-				})
 			})
 		})
 
@@ -3710,18 +3522,6 @@ func TestScheduleBuild(t *testing.T) {
 					Project:  "project",
 				},
 				Resultdb: &pb.BuildInfra_ResultDB{},
-				Swarming: &pb.BuildInfra_Swarming{
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path: "builder",
-							WaitForWarmCache: &durationpb.Duration{
-								Seconds: 240,
-							},
-						},
-					},
-					Priority: 30,
-				},
 			})
 		})
 
@@ -3766,18 +3566,6 @@ func TestScheduleBuild(t *testing.T) {
 					Enable:    true,
 					BqExports: bqExports,
 				},
-				Swarming: &pb.BuildInfra_Swarming{
-					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-						{
-							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path: "builder",
-							WaitForWarmCache: &durationpb.Duration{
-								Seconds: 240,
-							},
-						},
-					},
-					Priority: 30,
-				},
 			})
 		})
 
@@ -3814,301 +3602,6 @@ func TestScheduleBuild(t *testing.T) {
 						Name:        "name",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
-					Swarming: &pb.BuildInfra_Swarming{
-						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-							{
-								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path: "builder",
-								WaitForWarmCache: &durationpb.Duration{
-									Seconds: 240,
-								},
-							},
-						},
-						Priority: 30,
-					},
-				})
-			})
-
-			Convey("swarming", func() {
-				Convey("no dimensions", func() {
-					cfg := &pb.BuilderConfig{
-						Priority:       1,
-						ServiceAccount: "account",
-						SwarmingHost:   "host",
-					}
-					b := &pb.Build{
-						Builder: &pb.BuilderID{
-							Project: "project",
-							Bucket:  "bucket",
-							Builder: "builder",
-						},
-					}
-
-					setInfra(ctx, nil, cfg, b, nil)
-					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
-						Bbagent: &pb.BuildInfra_BBAgent{
-							PayloadPath: "kitchen-checkout",
-							CacheDir:    "cache",
-						},
-						Buildbucket: &pb.BuildInfra_Buildbucket{
-							Hostname: "app.appspot.com",
-						},
-						Logdog: &pb.BuildInfra_LogDog{
-							Project: "project",
-						},
-						Resultdb: &pb.BuildInfra_ResultDB{},
-						Swarming: &pb.BuildInfra_Swarming{
-							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-								{
-									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-									Path: "builder",
-									WaitForWarmCache: &durationpb.Duration{
-										Seconds: 240,
-									},
-								},
-							},
-							Hostname:           "host",
-							Priority:           1,
-							TaskServiceAccount: "account",
-						},
-					})
-				})
-
-				Convey("caches", func() {
-					Convey("nil", func() {
-						b := &pb.Build{
-							Builder: &pb.BuilderID{
-								Project: "project",
-								Bucket:  "bucket",
-								Builder: "builder",
-							},
-						}
-
-						setInfra(ctx, nil, nil, b, nil)
-						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
-							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
-								PayloadPath: "kitchen-checkout",
-							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{
-								Hostname: "app.appspot.com",
-							},
-							Logdog: &pb.BuildInfra_LogDog{
-								Project: "project",
-							},
-							Resultdb: &pb.BuildInfra_ResultDB{},
-							Swarming: &pb.BuildInfra_Swarming{
-								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-									{
-										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-										Path: "builder",
-										WaitForWarmCache: &durationpb.Duration{
-											Seconds: 240,
-										},
-									},
-								},
-								Priority: 30,
-							},
-						})
-					})
-
-					Convey("global", func() {
-						b := &pb.Build{
-							Builder: &pb.BuilderID{
-								Project: "project",
-								Bucket:  "bucket",
-								Builder: "builder",
-							},
-						}
-						s := &pb.SettingsCfg{
-							Swarming: &pb.SwarmingSettings{
-								GlobalCaches: []*pb.BuilderConfig_CacheEntry{
-									{
-										Path: "cache",
-									},
-								},
-							},
-						}
-
-						setInfra(ctx, nil, nil, b, s)
-						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
-							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
-								PayloadPath: "kitchen-checkout",
-							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{
-								Hostname: "app.appspot.com",
-							},
-							Logdog: &pb.BuildInfra_LogDog{
-								Project: "project",
-							},
-							Resultdb: &pb.BuildInfra_ResultDB{},
-							Swarming: &pb.BuildInfra_Swarming{
-								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-									{
-										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-										Path: "builder",
-										WaitForWarmCache: &durationpb.Duration{
-											Seconds: 240,
-										},
-									},
-									{
-										Name: "cache",
-										Path: "cache",
-									},
-								},
-								Priority: 30,
-							},
-						})
-					})
-
-					Convey("config", func() {
-						cfg := &pb.BuilderConfig{
-							Caches: []*pb.BuilderConfig_CacheEntry{
-								{
-									Path: "cache",
-								},
-							},
-						}
-						b := &pb.Build{
-							Builder: &pb.BuilderID{
-								Project: "project",
-								Bucket:  "bucket",
-								Builder: "builder",
-							},
-						}
-
-						setInfra(ctx, nil, cfg, b, nil)
-						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
-							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
-								PayloadPath: "kitchen-checkout",
-							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{
-								Hostname: "app.appspot.com",
-							},
-							Logdog: &pb.BuildInfra_LogDog{
-								Project: "project",
-							},
-							Resultdb: &pb.BuildInfra_ResultDB{},
-							Swarming: &pb.BuildInfra_Swarming{
-								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-									{
-										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-										Path: "builder",
-										WaitForWarmCache: &durationpb.Duration{
-											Seconds: 240,
-										},
-									},
-									{
-										Name: "cache",
-										Path: "cache",
-									},
-								},
-								Priority: 30,
-							},
-						})
-					})
-
-					Convey("config > global", func() {
-						cfg := &pb.BuilderConfig{
-							Caches: []*pb.BuilderConfig_CacheEntry{
-								{
-									Name: "builder only name",
-									Path: "builder only path",
-								},
-								{
-									Name: "name",
-									Path: "builder path",
-								},
-								{
-									Name: "builder name",
-									Path: "path",
-								},
-								{
-									EnvVar: "builder env",
-									Path:   "env",
-								},
-							},
-						}
-						b := &pb.Build{
-							Builder: &pb.BuilderID{
-								Project: "project",
-								Bucket:  "bucket",
-								Builder: "builder",
-							},
-						}
-						s := &pb.SettingsCfg{
-							Swarming: &pb.SwarmingSettings{
-								GlobalCaches: []*pb.BuilderConfig_CacheEntry{
-									{
-										Name: "global only name",
-										Path: "global only path",
-									},
-									{
-										Name: "name",
-										Path: "global path",
-									},
-									{
-										Name: "global name",
-										Path: "path",
-									},
-									{
-										EnvVar: "global env",
-										Path:   "path",
-									},
-								},
-							},
-						}
-
-						setInfra(ctx, nil, cfg, b, s)
-						So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
-							Bbagent: &pb.BuildInfra_BBAgent{
-								CacheDir:    "cache",
-								PayloadPath: "kitchen-checkout",
-							},
-							Buildbucket: &pb.BuildInfra_Buildbucket{
-								Hostname: "app.appspot.com",
-							},
-							Logdog: &pb.BuildInfra_LogDog{
-								Project: "project",
-							},
-							Resultdb: &pb.BuildInfra_ResultDB{},
-							Swarming: &pb.BuildInfra_Swarming{
-								Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-									{
-										Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-										Path: "builder",
-										WaitForWarmCache: &durationpb.Duration{
-											Seconds: 240,
-										},
-									},
-									{
-										Name: "builder only name",
-										Path: "builder only path",
-									},
-									{
-										Name: "name",
-										Path: "builder path",
-									},
-									{
-										EnvVar: "builder env",
-										Name:   "env",
-										Path:   "env",
-									},
-									{
-										Name: "global only name",
-										Path: "global only path",
-									},
-									{
-										Name: "builder name",
-										Path: "path",
-									},
-								},
-								Priority: 30,
-							},
-						})
-					})
 				})
 			})
 		})
@@ -4156,27 +3649,6 @@ func TestScheduleBuild(t *testing.T) {
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
-					Swarming: &pb.BuildInfra_Swarming{
-						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
-							{
-								Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path: "builder",
-								WaitForWarmCache: &durationpb.Duration{
-									Seconds: 240,
-								},
-							},
-						},
-						Priority: 30,
-						TaskDimensions: []*pb.RequestedDimension{
-							{
-								Expiration: &durationpb.Duration{
-									Seconds: 1,
-								},
-								Key:   "key",
-								Value: "value",
-							},
-						},
-					},
 				})
 			})
 
@@ -4222,6 +3694,107 @@ func TestScheduleBuild(t *testing.T) {
 						Project: "project",
 					},
 					Resultdb: &pb.BuildInfra_ResultDB{},
+				})
+			})
+		})
+	})
+
+	Convey("setSwarmingOrBackend", t, func() {
+		ctx := mathrand.Set(memory.Use(context.Background()), rand.New(rand.NewSource(1)))
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		Convey("nil", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
+					Logdog: &pb.BuildInfra_LogDog{
+						Hostname: "host",
+						Project:  "project",
+					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
+				},
+			}
+
+			setSwarmingOrBackend(ctx, nil, nil, b, nil)
+			So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir:    "cache",
+					PayloadPath: "kitchen-checkout",
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "app.appspot.com",
+				},
+				Logdog: &pb.BuildInfra_LogDog{
+					Hostname: "host",
+					Project:  "project",
+				},
+				Resultdb: &pb.BuildInfra_ResultDB{},
+				Swarming: &pb.BuildInfra_Swarming{
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path: "builder",
+							WaitForWarmCache: &durationpb.Duration{
+								Seconds: 240,
+							},
+						},
+					},
+					Priority: 30,
+				},
+			})
+		})
+
+		Convey("swarming", func() {
+			Convey("no dimensions", func() {
+				cfg := &pb.BuilderConfig{
+					Priority:       1,
+					ServiceAccount: "account",
+					SwarmingHost:   "host",
+				}
+				b := &pb.Build{
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							PayloadPath: "kitchen-checkout",
+							CacheDir:    "cache",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+					},
+				}
+
+				setSwarmingOrBackend(ctx, nil, cfg, b, nil)
+				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						PayloadPath: "kitchen-checkout",
+						CacheDir:    "cache",
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
+					Logdog: &pb.BuildInfra_LogDog{
+						Project: "project",
+					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
 					Swarming: &pb.BuildInfra_Swarming{
 						Caches: []*pb.BuildInfra_Swarming_CacheEntry{
 							{
@@ -4232,8 +3805,299 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						},
-						Priority: 30,
+						Hostname:           "host",
+						Priority:           1,
+						TaskServiceAccount: "account",
 					},
+				})
+			})
+
+			Convey("caches", func() {
+				Convey("nil", func() {
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Infra: &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								PayloadPath: "kitchen-checkout",
+								CacheDir:    "cache",
+							},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
+							Logdog: &pb.BuildInfra_LogDog{
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+						},
+					}
+
+					setSwarmingOrBackend(ctx, nil, nil, b, nil)
+					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+							Priority: 30,
+						},
+					})
+				})
+
+				Convey("global", func() {
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Infra: &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								PayloadPath: "kitchen-checkout",
+								CacheDir:    "cache",
+							},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
+							Logdog: &pb.BuildInfra_LogDog{
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+						},
+					}
+					s := &pb.SettingsCfg{
+						Swarming: &pb.SwarmingSettings{
+							GlobalCaches: []*pb.BuilderConfig_CacheEntry{
+								{
+									Path: "cache",
+								},
+							},
+						},
+					}
+
+					setSwarmingOrBackend(ctx, nil, nil, b, s)
+					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+								{
+									Name: "cache",
+									Path: "cache",
+								},
+							},
+							Priority: 30,
+						},
+					})
+				})
+
+				Convey("config", func() {
+					cfg := &pb.BuilderConfig{
+						Caches: []*pb.BuilderConfig_CacheEntry{
+							{
+								Path: "cache",
+							},
+						},
+					}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Infra: &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								PayloadPath: "kitchen-checkout",
+								CacheDir:    "cache",
+							},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
+							Logdog: &pb.BuildInfra_LogDog{
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+						},
+					}
+
+					setSwarmingOrBackend(ctx, nil, cfg, b, nil)
+					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+								{
+									Name: "cache",
+									Path: "cache",
+								},
+							},
+							Priority: 30,
+						},
+					})
+				})
+
+				Convey("config > global", func() {
+					cfg := &pb.BuilderConfig{
+						Caches: []*pb.BuilderConfig_CacheEntry{
+							{
+								Name: "builder only name",
+								Path: "builder only path",
+							},
+							{
+								Name: "name",
+								Path: "builder path",
+							},
+							{
+								Name: "builder name",
+								Path: "path",
+							},
+							{
+								EnvVar: "builder env",
+								Path:   "env",
+							},
+						},
+					}
+					b := &pb.Build{
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Infra: &pb.BuildInfra{
+							Bbagent: &pb.BuildInfra_BBAgent{
+								PayloadPath: "kitchen-checkout",
+								CacheDir:    "cache",
+							},
+							Buildbucket: &pb.BuildInfra_Buildbucket{
+								Hostname: "app.appspot.com",
+							},
+							Logdog: &pb.BuildInfra_LogDog{
+								Project: "project",
+							},
+							Resultdb: &pb.BuildInfra_ResultDB{},
+						},
+					}
+					s := &pb.SettingsCfg{
+						Swarming: &pb.SwarmingSettings{
+							GlobalCaches: []*pb.BuilderConfig_CacheEntry{
+								{
+									Name: "global only name",
+									Path: "global only path",
+								},
+								{
+									Name: "name",
+									Path: "global path",
+								},
+								{
+									Name: "global name",
+									Path: "path",
+								},
+								{
+									EnvVar: "global env",
+									Path:   "path",
+								},
+							},
+						},
+					}
+
+					setSwarmingOrBackend(ctx, nil, cfg, b, s)
+					So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							CacheDir:    "cache",
+							PayloadPath: "kitchen-checkout",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+						Swarming: &pb.BuildInfra_Swarming{
+							Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+								{
+									Name: "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+								{
+									Name: "builder only name",
+									Path: "builder only path",
+								},
+								{
+									Name: "name",
+									Path: "builder path",
+								},
+								{
+									EnvVar: "builder env",
+									Name:   "env",
+									Path:   "env",
+								},
+								{
+									Name: "global only name",
+									Path: "global only path",
+								},
+								{
+									Name: "builder name",
+									Path: "path",
+								},
+							},
+							Priority: 30,
+						},
+					})
 				})
 			})
 
@@ -4249,9 +4113,22 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							PayloadPath: "kitchen-checkout",
+							CacheDir:    "cache",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+					},
 				}
 
-				setInfra(ctx, req, nil, b, nil)
+				setSwarmingOrBackend(ctx, req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
@@ -4290,9 +4167,22 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
+					Infra: &pb.BuildInfra{
+						Bbagent: &pb.BuildInfra_BBAgent{
+							PayloadPath: "kitchen-checkout",
+							CacheDir:    "cache",
+						},
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "app.appspot.com",
+						},
+						Logdog: &pb.BuildInfra_LogDog{
+							Project: "project",
+						},
+						Resultdb: &pb.BuildInfra_ResultDB{},
+					},
 				}
 
-				setInfra(ctx, req, nil, b, nil)
+				setSwarmingOrBackend(ctx, req, nil, b, nil)
 				So(b.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Bbagent: &pb.BuildInfra_BBAgent{
 						CacheDir:    "cache",
@@ -4316,6 +4206,190 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						},
 						Priority: 1,
+					},
+				})
+			})
+		})
+
+		Convey("backend", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
+					Logdog: &pb.BuildInfra_LogDog{
+						Hostname: "host",
+						Project:  "project",
+					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
+				},
+			}
+			s := &pb.SettingsCfg{
+				Backends: []*pb.BackendSetting{
+					{
+						Target:   "swarming://chromium-swarm",
+						Hostname: "chromium-swarm.appspot.com",
+					},
+				},
+			}
+			bldrCfg := &pb.BuilderConfig{
+				ServiceAccount: "account",
+				Priority:       200,
+				Backend: &pb.BuilderConfig_Backend{
+					Target: "swarming://chromium-swarm",
+				},
+				Experiments: map[string]int32{
+					"luci.buildbucket.backend_alt": 100,
+				},
+			}
+
+			// Need these to be set so that setSwarmingOrBackend can be set.
+			setExecutable(nil, bldrCfg, b)
+			setInput(ctx, nil, bldrCfg, b)
+			setExperiments(ctx, nil, bldrCfg, s, b)
+
+			Convey("use builder Priority and ServiceAccount", func() {
+
+				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
+					Config: expectedBackendConfig,
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+				})
+			})
+
+			Convey("use backend priority and ServiceAccount", func() {
+				bldrCfg.Backend.ConfigJson = "{\"priority\": 2, \"service_account\": \"service_account\"}"
+				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 2}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "service_account"}}
+
+				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
+					Config: expectedBackendConfig,
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+				})
+			})
+
+			Convey("use user requested priority", func() {
+				req := &pb.ScheduleBuildRequest{Priority: 22}
+				setSwarmingOrBackend(ctx, req, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 22}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
+					Config: expectedBackendConfig,
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+				})
+			})
+
+			Convey("backend alt is used", func() {
+				bldrCfg.BackendAlt = &pb.BuilderConfig_Backend{
+					Target: "swarming://chromium-swarm-alt",
+				}
+
+				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Backend, ShouldResembleProto, &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
+					},
+					Config: expectedBackendConfig,
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm-alt",
+						},
+					},
+				})
+			})
+
+			Convey("swarming is used, backend_alt exp is true", func() {
+				bldrCfg := &pb.BuilderConfig{
+					ServiceAccount: "account",
+					Priority:       200,
+					Experiments: map[string]int32{
+						"luci.buildbucket.backend_alt": 100,
+					},
+				}
+
+				setSwarmingOrBackend(ctx, nil, bldrCfg, b, s)
+
+				expectedBackendConfig := &structpb.Struct{}
+				expectedBackendConfig.Fields = make(map[string]*structpb.Value)
+				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
+				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
+
+				So(b.Infra.Backend, ShouldBeNil)
+				So(b.Infra.Swarming, ShouldResembleProto, &pb.BuildInfra_Swarming{
+					TaskServiceAccount: "account",
+					Priority:           200,
+					Caches: []*pb.BuildInfra_Swarming_CacheEntry{
+						{
+							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
+							Path:             "builder",
+							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
+						},
 					},
 				})
 			})

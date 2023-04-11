@@ -863,7 +863,9 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 			Name:        cfg.Recipe.Name,
 		}
 	}
+}
 
+func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) {
 	// constructing common TaskBackend/Swarming task fields
 	priority := int32(cfg.GetPriority())
 	if priority == 0 {
@@ -883,7 +885,6 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 		names.Add(taskCaches[i].Name)
 		paths.Add(taskCaches[i].Path)
 	}
-
 	// Requested caches have precedence over global caches.
 	// Apply global caches whose names and paths weren't overridden.
 	for _, c := range globalCaches {
@@ -905,7 +906,7 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 	})
 	// Need to configure build.Infra for a backend or swarming.
 	isTaskBackend := false
-	backendAltExpIsTrue := req.GetExperiments()["luci.buildbucket.backend_alt"]
+	backendAltExpIsTrue := stringset.NewFromSlice(build.GetInput().GetExperiments()...).Has("luci.buildbucket.backend_alt")
 	switch {
 	case backendAltExpIsTrue && (cfg.GetBackendAlt() != nil || cfg.GetBackend() != nil):
 		cfgToPass := cfg.GetBackend()
@@ -1107,6 +1108,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 	setTags(req, b, pRunID)
 	setTimeouts(req, cfg, b)
 	setExperiments(ctx, req, cfg, globalCfg, b)         // Requires setExecutable, setInfra, setInput.
+	setSwarmingOrBackend(ctx, req, cfg, b, globalCfg)   // Requires setExecutable, setInfra, setInput, setExperiments.
 	if err := setInfraAgent(b, globalCfg); err != nil { // Requires setExecutable, setInfra, setExperiments.
 		// TODO(crbug.com/1266060) bubble up the error after TaskBackend workflow is ready.
 		// The current ScheduleBuild doesn't need this info. Swallow it to not interrupt the normal workflow.
