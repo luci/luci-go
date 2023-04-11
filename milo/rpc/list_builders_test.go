@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/testutils"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -40,7 +40,7 @@ func TestListBuilders(t *testing.T) {
 	Convey(`TestListBuilders`, t, func() {
 		ctx := memory.Use(context.Background())
 		ctx = caching.WithEmptyProcessCache(ctx)
-		ctx = common.SetUpTestGlobalCache(ctx)
+		ctx = testutils.SetUpTestGlobalCache(ctx)
 
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user",

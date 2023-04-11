@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/testutils"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -37,7 +37,7 @@ func TestACL(t *testing.T) {
 	Convey("Test Environment", t, func() {
 		c := memory.Use(context.Background())
 		c = gologger.StdConfig.Use(c)
-		c = common.SetUpTestGlobalCache(c)
+		c = testutils.SetUpTestGlobalCache(c)
 
 		Convey("Set up projects", func() {
 			c = cfgclient.Use(c, memcfg.New(aclConfgs))

@@ -23,7 +23,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/testutils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -35,7 +35,7 @@ func TestBatchCheckPermissions(t *testing.T) {
 
 	Convey(`TestBatchCheckPermissions`, t, func() {
 		ctx := context.Background()
-		ctx = common.SetUpTestGlobalCache(ctx)
+		ctx = testutils.SetUpTestGlobalCache(ctx)
 		ctx = auth.WithState(
 			ctx,
 			&authtest.FakeState{

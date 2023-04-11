@@ -26,10 +26,10 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/testutils"
 	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -40,7 +40,7 @@ func TestQueryBuilderStats(t *testing.T) {
 	t.Parallel()
 	Convey(`TestQueryBuilderStats`, t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = common.SetUpTestGlobalCache(ctx)
+		ctx = testutils.SetUpTestGlobalCache(ctx)
 
 		datastore.GetTestable(ctx).AddIndexes(&datastore.IndexDefinition{
 			Kind: "BuildSummary",
