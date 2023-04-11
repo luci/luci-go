@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package utils
 
 import (
 	"encoding/base64"
@@ -20,8 +20,8 @@ import (
 
 type PubSubMessage struct {
 	Attributes map[string]any `json:"attributes"`
-	Data       string                 `json:"data"`
-	MessageID  string                 `json:"message_id"`
+	Data       string         `json:"data"`
+	MessageID  string         `json:"message_id"`
 }
 
 type PubSubSubscription struct {

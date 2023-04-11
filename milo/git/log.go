@@ -36,7 +36,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/redisconn"
 )
@@ -49,7 +49,7 @@ type LogOptions struct {
 
 // Log implements Client interface.
 func (p *implementation) Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) (commits []*gitpb.Commit, err error) {
-	defer func() { err = common.TagGRPC(c, err) }()
+	defer func() { err = utils.TagGRPC(c, err) }()
 
 	allowed, err := p.acls.IsAllowed(c, host, project)
 	switch {

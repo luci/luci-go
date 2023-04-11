@@ -33,9 +33,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 )
 
 // builderPageBuildFields is a field mask used by builder page in build search
@@ -99,7 +99,7 @@ func backPageToken(c context.Context, bid *buildbucketpb.BuilderID, pageSize int
 
 // viewsForBuilder returns a list of links to views that reference the builder.
 func viewsForBuilder(c context.Context, bid *buildbucketpb.BuilderID) ([]*ui.Link, error) {
-	consoles, err := projectconfig.GetAllConsoles(c, common.LegacyBuilderIDString(bid))
+	consoles, err := projectconfig.GetAllConsoles(c, utils.LegacyBuilderIDString(bid))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 		start := clock.Now(c)
 		res, err := buildsClient.SearchBuilds(c, req)
 		if err != nil {
-			err = common.TagGRPC(c, err)
+			err = utils.TagGRPC(c, err)
 			return
 		}
 
@@ -205,7 +205,7 @@ func GetBuilderPage(c context.Context, bid *buildbucketpb.BuilderID, pageSize in
 			}
 			result.Builder, err = buildersClient.GetBuilder(c, req)
 			if err != nil {
-				err = common.TagGRPC(c, err)
+				err = utils.TagGRPC(c, err)
 			}
 			return
 		}

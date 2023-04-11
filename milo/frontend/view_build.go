@@ -40,8 +40,8 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/milo/rpc"
 	"go.chromium.org/luci/server/auth"
@@ -100,7 +100,7 @@ func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamel
 	br.Fields = buildbucket.FullBuildMask
 	b, err := client.GetBuild(c, br)
 	if err != nil {
-		return nil, common.TagGRPC(c, err)
+		return nil, utils.TagGRPC(c, err)
 	}
 
 	var blame []*ui.Commit

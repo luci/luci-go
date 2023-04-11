@@ -29,8 +29,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching/layered"
@@ -155,7 +155,7 @@ func (s *MiloInternalService) listProjectBuilders(ctx context.Context, project s
 
 		externalBuilders := make([]*buildbucketpb.BuilderID, len(project.ExternalBuilderIDs))
 		for i, externalBuilderID := range project.ExternalBuilderIDs {
-			externalBuilders[i], err = common.ParseBuilderID(externalBuilderID)
+			externalBuilders[i], err = utils.ParseBuilderID(externalBuilderID)
 			if err != nil {
 				return nil, err
 			}
@@ -227,7 +227,7 @@ func (s *MiloInternalService) listGroupBuilders(ctx context.Context, project str
 
 	builders := make([]*buildbucketpb.BuilderID, len(con.Builders))
 	for i, bid := range con.Builders {
-		builders[i], err = common.ParseLegacyBuilderID(bid)
+		builders[i], err = utils.ParseLegacyBuilderID(bid)
 		if err != nil {
 			return nil, err
 		}

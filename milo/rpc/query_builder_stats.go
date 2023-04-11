@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
@@ -52,7 +52,7 @@ func (s *MiloInternalService) QueryBuilderStats(ctx context.Context, req *milopb
 		return nil, appstatus.Error(codes.PermissionDenied, "no access to the bucket")
 	}
 
-	legacyBuilderID := common.LegacyBuilderIDString(req.Builder)
+	legacyBuilderID := utils.LegacyBuilderIDString(req.Builder)
 	stats := &milopb.BuilderStats{}
 
 	err = parallel.FanOutIn(func(fetch chan<- func() error) {

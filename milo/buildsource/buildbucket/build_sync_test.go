@@ -38,10 +38,10 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -74,8 +74,8 @@ func makeReq(build bbv1.LegacyApiCommonBuildMessage) io.ReadCloser {
 	}{build, "hostname"}
 	bm, _ := json.Marshal(bmsg)
 
-	msg := common.PubSubSubscription{
-		Message: common.PubSubMessage{
+	msg := utils.PubSubSubscription{
+		Message: utils.PubSubMessage{
 			Data: base64.StdEncoding.EncodeToString(bm),
 		},
 	}

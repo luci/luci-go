@@ -34,9 +34,9 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like
@@ -375,7 +375,7 @@ func BuildSummaryFromBuild(c context.Context, host string, build *buildbucketpb.
 	bs := &BuildSummary{
 		ProjectID:     build.Builder.Project,
 		BuildKey:      buildKey,
-		BuilderID:     common.LegacyBuilderIDString(build.Builder),
+		BuilderID:     utils.LegacyBuilderIDString(build.Builder),
 		BuildID:       "buildbucket/" + buildAddress,
 		BuildSet:      protoutil.BuildSets(build),
 		BlamelistPins: blamelistPins,

@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -64,7 +65,7 @@ func TestQueryBuilderStats(t *testing.T) {
 		}
 
 		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, createdAt time.Time, status milostatus.Status) *model.BuildSummary {
-			builderID := common.LegacyBuilderIDString(builder)
+			builderID := utils.LegacyBuilderIDString(builder)
 			buildID := fmt.Sprintf("%s/%d", builderID, buildNum)
 			return &model.BuildSummary{
 				BuildKey:  datastore.MakeKey(ctx, "build", buildID),

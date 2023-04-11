@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
-	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -82,7 +82,7 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	q := datastore.NewQuery("BuildSummary").Eq("ContextURI", uri).Limit(1)
 	switch err := datastore.GetAll(c, q, &bs); {
 	case err != nil:
-		return nil, projectconfig.ReplaceNSEWith(err.(errors.MultiError), ErrNotFound)
+		return nil, utils.ReplaceNSEWith(err.(errors.MultiError), ErrNotFound)
 	case len(bs) == 0:
 		return nil, ErrNotFound
 	default:

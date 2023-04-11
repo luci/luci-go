@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -65,7 +66,7 @@ func TestQueryRecentBuilds(t *testing.T) {
 		}
 
 		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, buildID int64, createdAt time.Time, status milostatus.Status) *model.BuildSummary {
-			builderID := common.LegacyBuilderIDString(builder)
+			builderID := utils.LegacyBuilderIDString(builder)
 			bsBuildID := fmt.Sprintf("%s/%d", builderID, buildNum)
 			if buildID != 0 {
 				bsBuildID = fmt.Sprintf("buildbucket/%d", buildID)

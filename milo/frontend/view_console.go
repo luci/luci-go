@@ -41,11 +41,11 @@ import (
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/milo/buildsource"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -302,7 +302,7 @@ func getTreeStatus(c context.Context, host string) *ui.TreeStatus {
 	}).String()
 	status, err := treeStatusCache.GetOrCreate(c, url, func() (v *ui.TreeStatus, exp time.Duration, err error) {
 		out := &ui.TreeStatus{}
-		if err := common.GetJSONData(http.DefaultClient, url, out); err != nil {
+		if err := utils.GetJSONData(http.DefaultClient, url, out); err != nil {
 			return nil, 0, err
 		}
 		return out, 30 * time.Second, nil
@@ -337,7 +337,7 @@ var oncallDataCache = layered.RegisterCache(layered.Parameters[*ui.Oncall]{
 func getOncallData(c context.Context, config *projectconfigpb.Oncall) (*ui.OncallSummary, error) {
 	oncall, err := oncallDataCache.GetOrCreate(c, config.Url, func() (v *ui.Oncall, exp time.Duration, err error) {
 		out := &ui.Oncall{}
-		if err := common.GetJSONData(http.DefaultClient, config.Url, out); err != nil {
+		if err := utils.GetJSONData(http.DefaultClient, config.Url, out); err != nil {
 			return nil, 0, err
 		}
 		return out, 10 * time.Minute, nil
@@ -386,7 +386,7 @@ func renderOncallers(config *projectconfigpb.Oncall, jsonResult *ui.Oncall) temp
 	} else {
 		oncallers = "<none>"
 	}
-	return common.ObfuscateEmail(common.ShortenEmail(oncallers))
+	return utils.ObfuscateEmail(utils.ShortenEmail(oncallers))
 }
 
 func consoleHeaderOncall(c context.Context, config []*projectconfigpb.Oncall) ([]*ui.OncallSummary, error) {

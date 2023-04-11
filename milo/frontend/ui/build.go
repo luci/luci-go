@@ -34,8 +34,8 @@ import (
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/internal/utils"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -46,9 +46,9 @@ var crosMainRE = regexp.MustCompile(`^cros/parent_buildbucket_id/(\d+)$`)
 // nesting information.
 type Step struct {
 	*buildbucketpb.Step
-	Children  []*Step         `json:"children,omitempty"`
-	Collapsed bool            `json:"collapsed,omitempty"`
-	Interval  common.Interval `json:"interval,omitempty"`
+	Children  []*Step        `json:"children,omitempty"`
+	Collapsed bool           `json:"collapsed,omitempty"`
+	Interval  utils.Interval `json:"interval,omitempty"`
 }
 
 // ShortName returns the leaf name of a potentially nested step.
@@ -256,7 +256,7 @@ func (bp *BuildPage) Steps() []*Step {
 		s := &Step{
 			Step:      step,
 			Collapsed: collapseGreen && step.Status == buildbucketpb.Status_SUCCESS,
-			Interval:  common.ToInterval(step.GetStartTime(), step.GetEndTime(), bp.Now),
+			Interval:  utils.ToInterval(step.GetStartTime(), step.GetEndTime(), bp.Now),
 		}
 		stepMap[step.Name] = s
 		switch nameParts := strings.Split(step.Name, "|"); len(nameParts) {
@@ -559,7 +559,7 @@ func (bp *BuildPage) Timeline() string {
 		statusClassName := fmt.Sprintf("status-%s", step.Status)
 		data := stepData{
 			Label:           html.EscapeString(step.Name),
-			Duration:        common.Duration(step.StartTime, step.EndTime, bp.Now),
+			Duration:        utils.Duration(step.StartTime, step.EndTime, bp.Now),
 			LogURL:          logURL,
 			StatusClassName: statusClassName,
 		}

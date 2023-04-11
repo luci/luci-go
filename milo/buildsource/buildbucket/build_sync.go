@@ -36,9 +36,9 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -206,7 +206,7 @@ func PubSubHandler(ctx *router.Context) {
 // a common.PubSubSubscription JSON object in the Body, containing a bbPSEvent,
 // and handles the contents with generateSummary.
 func pubSubHandlerImpl(c context.Context, r *http.Request) error {
-	msg := common.PubSubSubscription{}
+	msg := utils.PubSubSubscription{}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		// This might be a transient error, e.g. when the json format changes
 		// and Milo isn't updated yet.
@@ -480,11 +480,11 @@ func syncBuildsImpl(c context.Context) error {
 							}
 
 							var buildID int64 = 0
-							builder, buildNum, err := common.ParseLegacyBuildbucketBuildID(bs.BuildID)
+							builder, buildNum, err := utils.ParseLegacyBuildbucketBuildID(bs.BuildID)
 							if err != nil {
 								// If the BuildID is not the legacy build ID, trying parsing it as
 								// the new build ID.
-								buildID, err = common.ParseBuildbucketBuildID(bs.BuildID)
+								buildID, err = utils.ParseBuildbucketBuildID(bs.BuildID)
 								if err != nil {
 									return err
 								}

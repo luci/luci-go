@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
@@ -33,7 +33,7 @@ var errGRPCNotFound = status.Errorf(codes.NotFound, "not found")
 
 // CLEmail implements Client interface.
 func (p *implementation) CLEmail(c context.Context, host string, changeNumber int64) (email string, err error) {
-	defer func() { err = common.TagGRPC(c, err) }()
+	defer func() { err = utils.TagGRPC(c, err) }()
 	changeInfo, err := p.clEmailAndProjectNoACLs(c, host, changeNumber)
 	if err != nil {
 		return

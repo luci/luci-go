@@ -28,10 +28,10 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
@@ -81,7 +81,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	}
 	commits := logRes.Log
 
-	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", common.LegacyBuilderIDString(req.Builder))
+	q := datastore.NewQuery("BuildSummary").Eq("BuilderID", utils.LegacyBuilderIDString(req.Builder))
 	commitColumn := "BuildSet"
 	if req.MultiProjectSupport {
 		commitColumn = "BlamelistPins"

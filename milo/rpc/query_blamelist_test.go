@@ -30,9 +30,9 @@ import (
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -174,7 +174,7 @@ func TestQueryBlamelist(t *testing.T) {
 		}
 
 		createFakeBuild := func(builder *buildbucketpb.BuilderID, buildNum int, commitID string, additionalBlamelistPins ...string) *model.BuildSummary {
-			builderID := common.LegacyBuilderIDString(builder)
+			builderID := utils.LegacyBuilderIDString(builder)
 			buildID := fmt.Sprintf("%s/%d", builderID, buildNum)
 			buildSet := protoutil.GitilesBuildSet(&buildbucketpb.GitilesCommit{
 				Host:    "fake_gitiles_host",

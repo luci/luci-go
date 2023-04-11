@@ -47,12 +47,12 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/milo/internal/config"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	"go.chromium.org/luci/milo/internal/utils"
 )
 
 // A collection of useful templating functions
@@ -61,22 +61,22 @@ import (
 var funcMap = template.FuncMap{
 	"botLink":          botLink,
 	"logdogLink":       logdogLink,
-	"duration":         common.Duration,
+	"duration":         utils.Duration,
 	"faviconMIMEType":  faviconMIMEType,
 	"formatCommitDesc": formatCommitDesc,
 	"formatTime":       formatTime,
-	"humanDuration":    common.HumanDuration,
+	"humanDuration":    utils.HumanDuration,
 	"localTime":        localTime,
 	"localTimestamp":   localTimestamp,
 	"localTimeTooltip": localTimeTooltip,
-	"obfuscateEmail":   common.ObfuscateEmail,
+	"obfuscateEmail":   utils.ObfuscateEmail,
 	"pagedURL":         pagedURL,
 	"parseRFC3339":     parseRFC3339,
 	"percent":          percent,
 	"prefix":           prefix,
 	"renderMarkdown":   renderMarkdown,
 	"sanitizeHTML":     sanitizeHTML,
-	"shortenEmail":     common.ShortenEmail,
+	"shortenEmail":     utils.ShortenEmail,
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
 	"toLower":          strings.ToLower,

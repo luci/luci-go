@@ -22,8 +22,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -48,12 +48,12 @@ func parseCancelBuildInput(ctx *router.Context) (buildbucketID int64, reason str
 		return 0, "", errors.Annotate(err, "unable to parse cancel build form").Err()
 	}
 
-	buildbucketID, err = common.ParseIntFromForm(ctx.Request.Form, "buildbucket-id", 10, 64)
+	buildbucketID, err = utils.ParseIntFromForm(ctx.Request.Form, "buildbucket-id", 10, 64)
 	if err != nil {
 		return 0, "", errors.Annotate(err, "invalid buildbucket-id").Err()
 	}
 
-	reason, err = common.ReadExactOneFromForm(ctx.Request.Form, "reason")
+	reason, err = utils.ReadExactOneFromForm(ctx.Request.Form, "reason")
 	if err != nil {
 		return 0, "", err
 	}
@@ -89,12 +89,12 @@ func parseRetryBuildInput(ctx *router.Context) (buildbucketID int64, retryReques
 		return 0, "", errors.Annotate(err, "unable to parse retry build form").Err()
 	}
 
-	buildbucketID, err = common.ParseIntFromForm(ctx.Request.Form, "buildbucket-id", 10, 64)
+	buildbucketID, err = utils.ParseIntFromForm(ctx.Request.Form, "buildbucket-id", 10, 64)
 	if err != nil {
 		return 0, "", errors.Annotate(err, "invalid buildbucket-id").Err()
 	}
 
-	retryRequestID, err = common.ReadExactOneFromForm(ctx.Request.Form, "retry-request-id")
+	retryRequestID, err = utils.ReadExactOneFromForm(ctx.Request.Form, "retry-request-id")
 	if err != nil {
 		return 0, "", err
 	}

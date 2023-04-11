@@ -31,17 +31,17 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/buildsource/swarming"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"
 )
 
 func getPool(c context.Context, bid *buildbucketpb.BuilderID) (*ui.MachinePool, error) {
 	// Get PoolKey
 	builderPool := model.BuilderPool{
-		BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, common.LegacyBuilderIDString(bid)),
+		BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, utils.LegacyBuilderIDString(bid)),
 	}
 	// These are eventually consistent, so just log an error and pass if not found.
 	switch err := datastore.Get(c, &builderPool); {
@@ -91,7 +91,7 @@ func processBuilders(c context.Context, builders []*buildbucketpb.BuilderItem) (
 
 	for _, builder := range builders {
 
-		id := common.LegacyBuilderIDString(builder.Id)
+		id := utils.LegacyBuilderIDString(builder.Id)
 		dimensions := stripDimensionExpiration(builder.Config.Dimensions)
 		descriptor := model.NewPoolDescriptor(builder.Config.SwarmingHost, dimensions)
 		dID := descriptor.PoolID()

@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/common/pagination/dscursor"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
@@ -76,7 +76,7 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 	pageSize := int(queryRecentBuildsPageSize.Adjust(req.PageSize))
 
 	// Construct query.
-	legacyBuilderID := common.LegacyBuilderIDString(req.Builder)
+	legacyBuilderID := utils.LegacyBuilderIDString(req.Builder)
 	q := datastore.NewQuery("BuildSummary").
 		Eq("BuilderID", legacyBuilderID).
 		Order("-Created").
@@ -91,11 +91,11 @@ func (s *MiloInternalService) QueryRecentBuilds(ctx context.Context, req *milopb
 		}
 
 		var buildID int64 = 0
-		_, buildNum, err := common.ParseLegacyBuildbucketBuildID(b.BuildID)
+		_, buildNum, err := utils.ParseLegacyBuildbucketBuildID(b.BuildID)
 		if err != nil {
 			// If the BuildID is not the legacy build ID, trying parsing it as
 			// the new build ID.
-			buildID, err = common.ParseBuildbucketBuildID(b.BuildID)
+			buildID, err = utils.ParseBuildbucketBuildID(b.BuildID)
 			if err != nil {
 				return err
 			}

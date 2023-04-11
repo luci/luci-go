@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	protoutil "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -128,7 +128,7 @@ func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, 
 		if b.Name == "" {
 			ctx.Errorf("name must be non-empty")
 		} else {
-			_, err := common.ParseLegacyBuilderID(b.Name)
+			_, err := utils.ParseLegacyBuilderID(b.Name)
 			if err != nil {
 				ctx.Errorf(`name: %v`, err)
 			}
