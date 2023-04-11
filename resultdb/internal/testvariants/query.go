@@ -126,7 +126,7 @@ type Query struct {
 	// The level of access the user has to test results and test exoneration data.
 	AccessLevel AccessLevel
 
-	decompressBuf []byte                 // buffer for decompressing blobs
+	decompressBuf []byte         // buffer for decompressing blobs
 	params        map[string]any // query parameters
 }
 
@@ -291,7 +291,7 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 		}
 
 		// Get the immediate invocation to which this test result belongs.
-		reachableInv, ok := q.ReachableInvocations[invocations.ID(invID)]
+		reachableInv, ok := q.ReachableInvocations.Invocations[invocations.ID(invID)]
 		if !ok {
 			return fmt.Errorf("error finding realm: invocation %s not found", invID)
 		}
@@ -337,7 +337,7 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 		}
 
 		// Get the immediate invocation to which this test exoneration belongs.
-		reachableInv, ok := q.ReachableInvocations[invocations.ID(invID)]
+		reachableInv, ok := q.ReachableInvocations.Invocations[invocations.ID(invID)]
 		if !ok {
 			return fmt.Errorf("error finding realm: invocation %s not found", invID)
 		}
@@ -381,7 +381,7 @@ func (q *Query) toLimitedData(ctx context.Context, tv *pb.TestVariant,
 
 func (q *Query) queryTestVariantsWithUnexpectedResults(ctx context.Context, f func(*pb.TestVariant) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.run")
-	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations))
+	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations.Invocations))
 	defer func() { ts.End(err) }()
 
 	if q.PageSize < 0 {
@@ -534,7 +534,7 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (tvs
 // Within each test variant, unexpected results are returned first.
 func (q *Query) queryTestResults(ctx context.Context, limit int, f func(testId, variantHash string, variant *pb.Variant, tmd spanutil.Compressed, tvr *tvResult) error) (err error) {
 	ctx, ts := trace.StartSpan(ctx, "testvariants.Query.queryTestResults")
-	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations))
+	ts.Attribute("cr.dev/invocations", len(q.ReachableInvocations.Invocations))
 	defer func() { ts.End(err) }()
 	st, err := spanutil.GenerateStatement(allTestResultsSQLTmpl, map[string]any{
 		"ResultColumns": strings.Join(q.resultSelectColumns(), ", "),

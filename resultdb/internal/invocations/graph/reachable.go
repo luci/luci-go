@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // ReachableInvocation contains summary information about a reachable
@@ -33,22 +34,41 @@ type ReachableInvocation struct {
 	HasTestExonerations bool
 	// The realm of the invocation.
 	Realm string
+	// The source associated with the invocation, which can be looked up in
+	// ReachableInvocations.Sources.
+	// If no sources could be resolved, this is EmptySourceHash.
+	SourceHash SourceHash
 }
 
 // ReachableInvocations is a set of reachable invocations,
 // including summary information about each invocation.
 // The set includes the root invocation(s) from which reachables were
 // explored.
-type ReachableInvocations map[invocations.ID]ReachableInvocation
+type ReachableInvocations struct {
+	// The set of reachable invocations, including the root
+	// invocation from which reachability was explored.
+	Invocations map[invocations.ID]ReachableInvocation
+	// The distinct code sources in the reachable invocation graph.
+	// Stored here rather than on the invocations themselves to
+	// simplify deduplicating sources objects as many will be the
+	// same between invocations.
+	Sources map[SourceHash]*pb.Sources
+}
 
 func NewReachableInvocations() ReachableInvocations {
-	return make(ReachableInvocations)
+	return ReachableInvocations{
+		Invocations: make(map[invocations.ID]ReachableInvocation),
+		Sources:     make(map[SourceHash]*pb.Sources),
+	}
 }
 
 // Union adds other reachable invocations.
-func (r ReachableInvocations) Union(other ReachableInvocations) {
-	for id, invocation := range other {
-		r[id] = invocation
+func (r *ReachableInvocations) Union(other ReachableInvocations) {
+	for id, invocation := range other.Invocations {
+		r.Invocations[id] = invocation
+	}
+	for id, sources := range other.Sources {
+		r.Sources[id] = sources
 	}
 }
 
@@ -65,8 +85,8 @@ func (r ReachableInvocations) Batches() []ReachableInvocations {
 // IDSet returns the set of invocation IDs included in the list of
 // reachable invocations.
 func (r ReachableInvocations) IDSet() invocations.IDSet {
-	result := make(invocations.IDSet, len(r))
-	for id := range r {
+	result := make(invocations.IDSet, len(r.Invocations))
+	for id := range r.Invocations {
 		result[id] = struct{}{}
 	}
 	return result
@@ -75,8 +95,8 @@ func (r ReachableInvocations) IDSet() invocations.IDSet {
 // WithTestResultsIDSet returns the set of invocation IDs
 // that contain test results.
 func (r ReachableInvocations) WithTestResultsIDSet() invocations.IDSet {
-	result := make(invocations.IDSet, len(r))
-	for id, inv := range r {
+	result := make(invocations.IDSet, len(r.Invocations))
+	for id, inv := range r.Invocations {
 		if inv.HasTestResults {
 			result[id] = struct{}{}
 		}
@@ -87,8 +107,8 @@ func (r ReachableInvocations) WithTestResultsIDSet() invocations.IDSet {
 // WithExonerationsIDSet returns the set of invocation IDs
 // that contain test exonerations.
 func (r ReachableInvocations) WithExonerationsIDSet() invocations.IDSet {
-	result := make(invocations.IDSet, len(r))
-	for id, inv := range r {
+	result := make(invocations.IDSet, len(r.Invocations))
+	for id, inv := range r.Invocations {
 		if inv.HasTestExonerations {
 			result[id] = struct{}{}
 		}
@@ -104,9 +124,13 @@ func (r ReachableInvocations) batches(size int) []ReachableInvocations {
 		if batchSize > len(ids) {
 			batchSize = len(ids)
 		}
-		batch := make(ReachableInvocations, batchSize)
+		batch := NewReachableInvocations()
 		for _, id := range ids[:batchSize] {
-			batch[id] = r[id]
+			inv := r.Invocations[id]
+			batch.Invocations[id] = inv
+			if inv.SourceHash != EmptySourceHash {
+				batch.Sources[inv.SourceHash] = r.Sources[inv.SourceHash]
+			}
 		}
 		batches = append(batches, batch)
 		ids = ids[batchSize:]
@@ -116,21 +140,33 @@ func (r ReachableInvocations) batches(size int) []ReachableInvocations {
 
 // marshal marshals the ReachableInvocations into a Redis value.
 func (r ReachableInvocations) marshal() ([]byte, error) {
-	if len(r) == 0 {
+	if len(r.Invocations) == 0 {
 		return nil, errors.Reason("reachable invocations is invalid; at minimum the root invocation itself should be included").Err()
 	}
 
-	invocations := make([]*internalpb.ReachableInvocations_ReachableInvocation, 0, len(r))
-	for id, inv := range r {
-		invocations = append(invocations, &internalpb.ReachableInvocations_ReachableInvocation{
+	indexBySourceHash := make(map[SourceHash]int)
+	distinctSources := make([]*pb.Sources, 0, len(r.Sources))
+	for id, source := range r.Sources {
+		distinctSources = append(distinctSources, source)
+		indexBySourceHash[id] = len(distinctSources) - 1
+	}
+
+	invocations := make([]*internalpb.ReachableInvocations_ReachableInvocation, 0, len(r.Invocations))
+	for id, inv := range r.Invocations {
+		proto := &internalpb.ReachableInvocations_ReachableInvocation{
 			InvocationId:        string(id),
 			HasTestResults:      inv.HasTestResults,
 			HasTestExonerations: inv.HasTestExonerations,
 			Realm:               inv.Realm,
-		})
+		}
+		if inv.SourceHash != EmptySourceHash {
+			proto.SourceOffset = int64(indexBySourceHash[inv.SourceHash]) + 1
+		}
+		invocations = append(invocations, proto)
 	}
 	message := &internalpb.ReachableInvocations{
 		Invocations: invocations,
+		Sources:     distinctSources,
 	}
 	result, err := proto.Marshal(message)
 	if err != nil {
@@ -145,21 +181,37 @@ func unmarshalReachableInvocations(value []byte) (ReachableInvocations, error) {
 	decompressed := make([]byte, 0, len(value)*2)
 	decompressed, err := spanutil.Decompress(value, decompressed)
 	if err != nil {
-		return nil, err
+		return ReachableInvocations{}, err
 	}
 
 	message := &internalpb.ReachableInvocations{}
 	if err := proto.Unmarshal(decompressed, message); err != nil {
-		return nil, err
+		return ReachableInvocations{}, err
 	}
 
-	result := make(map[invocations.ID]ReachableInvocation, len(message.Invocations))
+	sourceHashByIndex := make([]SourceHash, len(message.Sources))
+	sources := make(map[SourceHash]*pb.Sources)
+	for i, source := range message.Sources {
+		hash := hashSources(source)
+		sources[hash] = source
+		sourceHashByIndex[i] = hash
+	}
+
+	invs := make(map[invocations.ID]ReachableInvocation, len(message.Invocations))
 	for _, entry := range message.Invocations {
-		result[invocations.ID(entry.InvocationId)] = ReachableInvocation{
+		inv := ReachableInvocation{
 			HasTestResults:      entry.HasTestResults,
 			HasTestExonerations: entry.HasTestExonerations,
 			Realm:               entry.Realm,
+			SourceHash:          EmptySourceHash,
 		}
+		if entry.SourceOffset > 0 {
+			inv.SourceHash = sourceHashByIndex[entry.SourceOffset-1]
+		}
+		invs[invocations.ID(entry.InvocationId)] = inv
 	}
-	return ReachableInvocations(result), nil
+	return ReachableInvocations{
+		Invocations: invs,
+		Sources:     sources,
+	}, nil
 }

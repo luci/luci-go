@@ -17,35 +17,51 @@ package graph
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/testutil"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReachableInvocations(t *testing.T) {
 	Convey(`ReachableInvocations`, t, func() {
-		invs := make(ReachableInvocations)
-		invs["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA"}
-		invs["1"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"}
-		invs["2"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"}
-		invs["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC"}
-		invs["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB"}
-		invs["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA"}
+		invs := NewReachableInvocations()
+
+		src1 := testutil.TestSourcesWithChangelistNumbers(12)
+		src2 := testutil.TestSourcesWithChangelistNumbers(13)
+		invs.Sources[hashSources(src1)] = src1
+		invs.Sources[hashSources(src2)] = src2
+
+		invs.Invocations["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: hashSources(src1)}
+		invs.Invocations["1"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"}
+		invs.Invocations["2"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"}
+		invs.Invocations["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: hashSources(src1)}
+		invs.Invocations["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: hashSources(src2)}
+		invs.Invocations["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA"}
 
 		Convey(`Batches`, func() {
-			So(invs.batches(2), ShouldResemble, []ReachableInvocations{
-				{
-					"3": ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC"},
-					"4": ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB"},
-				},
-				{
-					"0": ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA"},
-					"1": ReachableInvocation{HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"},
-				},
-				{
-					"2": ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"},
-					"5": ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA"},
-				},
+			results := invs.batches(2)
+			So(results[0].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
+				"3": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: hashSources(src1)},
+				"4": {HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: hashSources(src2)},
 			})
+			So(results[0].Sources, ShouldHaveLength, 2)
+			So(results[0].Sources[hashSources(src1)], ShouldResembleProto, src1)
+			So(results[0].Sources[hashSources(src2)], ShouldResembleProto, src2)
+
+			So(results[1].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
+				"0": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: hashSources(src1)},
+				"1": {HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB"},
+			})
+			So(results[1].Sources, ShouldHaveLength, 1)
+			So(results[1].Sources[hashSources(src1)], ShouldResembleProto, src1)
+
+			So(results[2].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
+				"2": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC"},
+				"5": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA"},
+			})
+			So(results[2].Sources, ShouldHaveLength, 0)
 		})
 		Convey(`Marshal and unmarshal`, func() {
 			b, err := invs.marshal()
@@ -54,7 +70,11 @@ func TestReachableInvocations(t *testing.T) {
 			result, err := unmarshalReachableInvocations(b)
 			So(err, ShouldBeNil)
 
-			So(result, ShouldResemble, invs)
+			So(result.Invocations, ShouldResemble, invs.Invocations)
+			So(result.Sources, ShouldHaveLength, len(invs.Sources))
+			for key, value := range invs.Sources {
+				So(result.Sources[key], ShouldResembleProto, value)
+			}
 		})
 		Convey(`IDSet`, func() {
 			invIDs := invs.IDSet()

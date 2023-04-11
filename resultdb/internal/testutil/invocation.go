@@ -33,14 +33,18 @@ func TestProperties() *structpb.Struct {
 	}
 }
 
-func TestSources(changelistNumbers ...int) *pb.Sources {
+func TestSources() *pb.Sources {
+	return TestSourcesWithChangelistNumbers(567)
+}
+
+func TestSourcesWithChangelistNumbers(changelistNumbers ...int) *pb.Sources {
 	result := &pb.Sources{
 		GitilesCommit: &pb.GitilesCommit{
 			Host:       "chromium.googlesource.com",
 			Project:    "infra/infra",
 			Ref:        "refs/heads/main",
 			CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
-			Position:   567,
+			Position:   12345,
 		},
 		IsDirty: true,
 	}

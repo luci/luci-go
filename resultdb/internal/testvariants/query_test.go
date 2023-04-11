@@ -55,15 +55,15 @@ func TestQueryTestVariants(t *testing.T) {
 			},
 		})
 
-		reachableInvs := make(graph.ReachableInvocations)
-		reachableInvs["inv0"] = graph.ReachableInvocation{
+		reachableInvs := graph.NewReachableInvocations()
+		reachableInvs.Invocations["inv0"] = graph.ReachableInvocation{
 			HasTestResults:      true,
 			HasTestExonerations: true,
 		}
-		reachableInvs["inv1"] = graph.ReachableInvocation{
+		reachableInvs.Invocations["inv1"] = graph.ReachableInvocation{
 			HasTestResults: true,
 		}
-		reachableInvs["inv2"] = graph.ReachableInvocation{
+		reachableInvs.Invocations["inv2"] = graph.ReachableInvocation{
 			HasTestExonerations: true,
 		}
 
@@ -678,17 +678,17 @@ func TestQueryTestVariants(t *testing.T) {
 			})
 
 			Convey(`with unrestricted test result access`, func() {
-				reachableInvs := make(graph.ReachableInvocations)
-				reachableInvs["inv0"] = graph.ReachableInvocation{
+				reachableInvs := graph.NewReachableInvocations()
+				reachableInvs.Invocations["inv0"] = graph.ReachableInvocation{
 					HasTestResults:      true,
 					HasTestExonerations: true,
 					Realm:               insert.TestRealm,
 				}
-				reachableInvs["inv1"] = graph.ReachableInvocation{
+				reachableInvs.Invocations["inv1"] = graph.ReachableInvocation{
 					HasTestResults: true,
 					Realm:          "testproject:testresultrealm",
 				}
-				reachableInvs["inv2"] = graph.ReachableInvocation{
+				reachableInvs.Invocations["inv2"] = graph.ReachableInvocation{
 					HasTestExonerations: true,
 					Realm:               insert.TestRealm,
 				}
@@ -790,8 +790,8 @@ func TestQueryTestVariants(t *testing.T) {
 		})
 
 		Convey(`Empty Invocation works`, func() {
-			reachableInvs := make(graph.ReachableInvocations)
-			reachableInvs["invnotexists"] = graph.ReachableInvocation{}
+			reachableInvs := graph.NewReachableInvocations()
+			reachableInvs.Invocations["invnotexists"] = graph.ReachableInvocation{}
 			q.ReachableInvocations = reachableInvs
 
 			var allTVs []*pb.TestVariant

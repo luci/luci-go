@@ -256,7 +256,7 @@ func TestUpdateInvocation(t *testing.T) {
 					BigqueryExports: validBigqueryExports,
 					Properties:      testutil.TestProperties(),
 					SourceSpec: &pb.SourceSpec{
-						Sources: testutil.TestSources(431, 123),
+						Sources: testutil.TestSourcesWithChangelistNumbers(431, 123),
 					},
 				},
 				UpdateMask: updateMask,
@@ -272,7 +272,7 @@ func TestUpdateInvocation(t *testing.T) {
 				SourceSpec: &pb.SourceSpec{
 					// The invocation should be stored and returned
 					// normalized.
-					Sources: testutil.TestSources(123, 431),
+					Sources: testutil.TestSourcesWithChangelistNumbers(123, 431),
 				},
 			}
 			So(inv.Name, ShouldEqual, expected.Name)

@@ -22,13 +22,14 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/gomodule/redigo/redis"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-	resultpb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
 )
@@ -53,13 +54,13 @@ var TooManyTag = errors.BoolTag{
 // edges.  Will return an error if there are more than MaxNodes invocations.
 // May return an appstatus-annotated error.
 func Reachable(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
-	allIDs := ReachableInvocations{}
+	allIDs := NewReachableInvocations()
 	processor := func(ctx context.Context, invs ReachableInvocations) error {
 		allIDs.Union(invs)
 		// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
 		// to run into problems if you try to process all of these in one go (e.g. in a
 		// Spanner query).  If you want more, use the batched call and handle a batch at a time.
-		if len(allIDs) > MaxNodes {
+		if len(allIDs.Invocations) > MaxNodes {
 			return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
 		}
 		return nil
@@ -94,7 +95,7 @@ func BatchedReachable(ctx context.Context, roots invocations.IDSet, processor fu
 func ReachableSkipRootCache(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
 	invs, err := reachable(ctx, roots, false)
 	if err != nil {
-		return nil, err
+		return ReachableInvocations{}, err
 	}
 	return invs, nil
 }
@@ -127,7 +128,7 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 
 	uncachedReachable, err := reachableUncached(ctx, uncachedRoots)
 	if err != nil {
-		return nil, err
+		return ReachableInvocations{}, err
 	}
 	reachable.Union(uncachedReachable)
 
@@ -142,47 +143,60 @@ func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) 
 		state, err := invocations.ReadState(ctx, root)
 		if err != nil {
 			logging.Warningf(ctx, "reachable: failed to read root invocation %s: %s", root, err)
-		} else if state == resultpb.Invocation_FINALIZED {
+		} else if state == pb.Invocation_FINALIZED {
 			// Only populate the cache if the invocation exists and is
 			// finalized.
 			reachCache(root).TryWrite(ctx, uncachedReachable)
 		}
 	}
 
-	logging.Debugf(ctx, "%d invocations are reachable from %s", len(reachable), roots.Names())
+	logging.Debugf(ctx, "%d invocations are reachable from %s", len(reachable.Invocations), roots.Names())
 	return reachable, nil
 }
 
 // reachableUncached queries the Spanner database for the reachability graph if the data is not in the reach cache.
-func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable ReachableInvocations, err error) {
+func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri ReachableInvocations, err error) {
 	ctx, ts := trace.StartSpan(ctx, "resultdb.graph.reachable")
 	defer func() { ts.End(err) }()
 
 	reachableInvocations := invocations.NewIDSet()
 	reachableInvocations.Union(roots)
 
+	// Stores a mapping from reachable invocations to the invocation
+	// they were included by. Roots are not captured.
+	// If the same invocation is included by two or more invocations,
+	// only one of them is recorded as the parent. The exact
+	// parent invocation selected (if multiple are possible) is not
+	// defined, but it is guaranteed that following parents will
+	// eventually lead to a root (i.e. there are no cycles in the
+	// parent graph).
+	reachableInvocationToParent := make(map[invocations.ID]invocations.ID)
+
 	// Find all reachable invocations traversing the graph one level at a time.
 	nextLevel := invocations.NewIDSet()
 	nextLevel.Union(roots)
 	for len(nextLevel) > 0 {
-		nextLevel, err = queryInvocations(ctx, `
-		SELECT
-			ii.IncludedInvocationID,
-		FROM
-			UNNEST(@invocations) inv
-			JOIN IncludedInvocations ii ON inv = ii.InvocationID`, nextLevel)
+		includedInvs, err := queryIncludedInvocations(ctx, nextLevel)
 		if err != nil {
-			return nil, err
+			return ReachableInvocations{}, err
 		}
 
-		// Avoid duplicate lookups and cycles.
-		nextLevel.RemoveAll(reachableInvocations)
-		reachableInvocations.Union(nextLevel)
+		nextLevel = invocations.NewIDSet()
+		for inv, invParent := range includedInvs {
+			// Avoid duplicate lookups and cycles.
+			if _, ok := reachableInvocations[inv]; ok {
+				continue
+			}
+
+			nextLevel.Add(inv)
+			reachableInvocations.Add(inv)
+			reachableInvocationToParent[inv] = invParent
+		}
 	}
 
 	var withTestResults invocations.IDSet
 	var withExonerations invocations.IDSet
-	var realms map[invocations.ID]string
+	var invDetails map[invocations.ID]invocationDetails
 
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
@@ -203,27 +217,166 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (reachable 
 	})
 	eg.Go(func() error {
 		var err error
-		realms, err = invocations.QueryRealms(ctx, reachableInvocations)
+		invDetails, err = queryInvocationDetails(ctx, reachableInvocations)
 		if err != nil {
 			return errors.Annotate(err, "querying realms of reachable invocations").Err()
 		}
 		return nil
 	})
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		return ReachableInvocations{}, err
 	}
 
 	// Limit the returned reachable invocations to those that exist in the
 	// Invocations table; they will have a realm.
-	reachable = make(ReachableInvocations, len(realms))
-	for inv, realm := range realms {
-		reachable[inv] = ReachableInvocation{
-			HasTestResults:      withTestResults.Has(inv),
-			HasTestExonerations: withExonerations.Has(inv),
-			Realm:               realm,
+	invocations := make(map[invocations.ID]ReachableInvocation, len(reachableInvocations))
+	distinctSources := make(map[SourceHash]*pb.Sources)
+	for id, details := range invDetails {
+		inv := ReachableInvocation{
+			HasTestResults:      withTestResults.Has(id),
+			HasTestExonerations: withExonerations.Has(id),
+			Realm:               details.Realm,
 		}
+
+		sources := resolveSources(id, reachableInvocationToParent, invDetails)
+		if sources != nil {
+			sourceHash := hashSources(sources)
+			distinctSources[sourceHash] = sources
+			inv.SourceHash = sourceHash
+		}
+		invocations[id] = inv
 	}
-	return reachable, nil
+	return ReachableInvocations{
+		Invocations: invocations,
+		Sources:     distinctSources,
+	}, nil
+}
+
+// resolveSources resolves the sources tested by the given invocation.
+func resolveSources(id invocations.ID, invToParent map[invocations.ID]invocations.ID, invToDetails map[invocations.ID]invocationDetails) *pb.Sources {
+	// If the invocation specifies that it inherits sources,
+	// walk the invocation graph back towards the root to
+	// resolve the sources.
+	invID := id
+	details := invToDetails[invID]
+	for details.InheritSources {
+		var ok bool
+		invID, ok = invToParent[invID]
+		if !ok {
+			// We have walked all the way back to the root,
+			// and even the root indicates it is inheriting sources.
+			// The actual sources cannot be resolved.
+			return nil
+		}
+		details = invToDetails[invID]
+	}
+	if details.Sources != nil {
+		// Sources found.
+		return details.Sources
+	}
+	// The invocation we inheriting sources from
+	// has no sources.
+	return nil
+}
+
+type invocationDetails struct {
+	Realm          string
+	InheritSources bool
+	Sources        *pb.Sources
+}
+
+// queryInvocationDetails reads realm and source information
+// for the given list of invocations.
+func queryInvocationDetails(ctx context.Context, ids invocations.IDSet) (map[invocations.ID]invocationDetails, error) {
+	st := spanner.NewStatement(`
+		SELECT
+			i.InvocationId,
+			i.Realm,
+			i.InheritSources,
+			i.Sources,
+		FROM UNNEST(@invIDs) inv
+		JOIN Invocations i
+		ON i.InvocationId = inv`)
+	st.Params = spanutil.ToSpannerMap(map[string]any{
+		"invIDs": ids,
+	})
+	b := &spanutil.Buffer{}
+	results := make(map[invocations.ID]invocationDetails)
+	err := spanutil.Query(ctx, st, func(r *spanner.Row) error {
+		var invocationID invocations.ID
+		var realm spanner.NullString
+		var inheritSources spanner.NullBool
+		var sources spanutil.Compressed
+		if err := b.FromSpanner(r, &invocationID, &realm, &inheritSources, &sources); err != nil {
+			return err
+		}
+		var sourcesProto *pb.Sources
+		if len(sources) > 0 {
+			sourcesProto = &pb.Sources{}
+			err := proto.Unmarshal(sources, sourcesProto)
+			if err != nil {
+				return err
+			}
+		}
+		results[invocationID] = invocationDetails{
+			Realm:          realm.StringVal,
+			InheritSources: inheritSources.Valid && inheritSources.Bool,
+			Sources:        sourcesProto,
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// queryIncludedInvocations returns the set of invocations
+// included from invocations `ids`, as well as the invocation
+// they were included from.
+//
+// The returned map has a key for each included invocation.
+// The value corresponding to the key is the parent invocation.
+//
+// The same invocation can be included from multiple invocations,
+// i.e. there are multiple parents, then the parent in the map
+// is selected arbitrarily.
+func queryIncludedInvocations(ctx context.Context, ids invocations.IDSet) (map[invocations.ID]invocations.ID, error) {
+	st := spanner.NewStatement(`
+	SELECT
+		ii.InvocationID,
+		ii.IncludedInvocationID,
+	FROM
+		UNNEST(@invocations) inv
+		JOIN IncludedInvocations ii ON inv = ii.InvocationID`)
+	st.Params = spanutil.ToSpannerMap(spanutil.ToSpannerMap(map[string]any{
+		"invocations": ids,
+	}))
+	results := make(map[invocations.ID]invocations.ID)
+
+	b := &spanutil.Buffer{}
+	err := span.Query(ctx, st).Do(func(r *spanner.Row) error {
+		var invocationID invocations.ID
+		var includedInvocationID invocations.ID
+		if err := b.FromSpanner(r, &invocationID, &includedInvocationID); err != nil {
+			return err
+		}
+		if includingInvocationID, ok := results[includedInvocationID]; ok {
+			// If this invocation was included via multiple paths,
+			// keep just the one with the lexicographically first
+			// invocation ID.
+			if invocationID < includingInvocationID {
+				results[includedInvocationID] = invocationID
+			}
+		} else {
+			results[includedInvocationID] = invocationID
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func queryInvocations(ctx context.Context, query string, invocationsParam invocations.IDSet) (invocations.IDSet, error) {
@@ -257,7 +410,7 @@ type reachCache invocations.ID
 
 // key returns the Redis key.
 func (c reachCache) key() string {
-	return fmt.Sprintf("reach3:%s", c)
+	return fmt.Sprintf("reach4:%s", c)
 }
 
 // Write writes the new value.
@@ -269,7 +422,7 @@ func (c reachCache) Write(ctx context.Context, value ReachableInvocations) (err 
 
 	// Expect the set of reachable invocations to include the invocation
 	// for which the cache entry is.
-	if _, ok := value[invocations.ID(c)]; !ok {
+	if _, ok := value.Invocations[invocations.ID(c)]; !ok {
 		return errors.New("value is invalid, does not contain the root invocation itself")
 	}
 
@@ -321,16 +474,16 @@ func (c reachCache) Read(ctx context.Context) (invs ReachableInvocations, err er
 
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
-		return nil, err
+		return ReachableInvocations{}, err
 	}
 	defer conn.Close()
 
 	b, err := redis.Bytes(conn.Do("GET", c.key()))
 	switch {
 	case err == redis.ErrNil:
-		return nil, ErrUnknownReach
+		return ReachableInvocations{}, ErrUnknownReach
 	case err != nil:
-		return nil, err
+		return ReachableInvocations{}, err
 	}
 	ts.Attribute("size", len(b))
 

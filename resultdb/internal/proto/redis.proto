@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package luci.resultdb.internal;
 
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
+
 option go_package = "go.chromium.org/luci/resultdb/internal/proto;internalpb";
 
 
@@ -32,8 +34,19 @@ message ReachableInvocations {
         bool has_test_exonerations = 3;
         // The realm of the invocation.
         string realm = 4;
+        // The offset of this invocation's resolved sources
+        // in ReachableInvocations.sources.
+        // 0 indicates there are no sources, 1 indicates the
+        // sources are at ReachableInvocations.sources[0], 2 indicates
+        // the sources are at ReachableInvocations.sources[1] and so on.
+        int64 source_offset = 5;
     }
     // The invocations reachable. This includes the root invocation
     // (the invocation for which this cache entry is) itself.
     repeated ReachableInvocation invocations = 1;
+
+    // The distinct sources in the reachable invocation graph.
+    // As many invocations will have the same sources, this
+    // is used to reduce the stored size.
+    repeated luci.resultdb.v1.Sources sources = 2;
 }

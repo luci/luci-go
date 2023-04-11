@@ -81,7 +81,7 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 
 	realms := make([]string, 0, len(invs))
 	for id := range invs {
-		ri, ok := reachableInvs[id]
+		ri, ok := reachableInvs.Invocations[id]
 		if ok {
 			realms = append(realms, ri.Realm)
 		}
