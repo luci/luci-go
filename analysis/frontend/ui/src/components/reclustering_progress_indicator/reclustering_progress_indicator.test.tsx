@@ -21,7 +21,7 @@ import fetchMock from 'fetch-mock-jest';
 
 import {
   screen,
-  waitFor,
+  // waitFor,
 } from '@testing-library/react';
 
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
@@ -80,12 +80,12 @@ describe('Test ReclusteringProgressIndicator component', () => {
 
   it('when progress is done after being on screen, then should display button to refresh analysis', async () => {
     mockFetchAuthState();
-    fetchMock.postOnce('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
       body: ')]}\''+JSON.stringify(createMockProgress(800)),
-    });
+    })
     renderWithRouterAndClient(
         <ReclusteringProgressIndicator
           project='chromium'
@@ -95,14 +95,12 @@ describe('Test ReclusteringProgressIndicator component', () => {
     await screen.findByRole('alert');
     await screen.findByText('80%');
 
-    fetchMock.postOnce('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
+    fetchMock.post('http://localhost/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress', {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
       body: ')]}\''+JSON.stringify(createMockDoneProgress()),
-    }, { overwriteRoutes: false });
-
-    await waitFor(() => fetchMock.calls.length == 2);
+    }, { overwriteRoutes: true });
 
     await screen.findByRole('button');
     expect(screen.getByText('View updated impact')).toBeInTheDocument();
