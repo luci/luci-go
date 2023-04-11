@@ -22,6 +22,7 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/common/bq/pb/options.proto";
 import "go.chromium.org/luci/resultdb/proto/bq/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto";
 
@@ -29,7 +30,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/bq;resultpb";
 
 // TestResultRow represents a row in a BigQuery table for result of a functional
 // test case.
-// Next id: 20.
+// Next id: 21.
 message TestResultRow {
   // Exported contains info of the exported invocation.
   //
@@ -88,6 +89,13 @@ message TestResultRow {
   // If the failures of the test variant are exonerated.
   // Note: the exoneration is at the test variant level, not result level.
   bool exonerated = 13;
+
+  // The code sources tested. If the invocation which contained the test result
+  // specified that code sources directly, this is those sources.
+  // If the code sources were marked as are inherited from the including
+  // invocation, this is the resolved code sources (if they could be resolved).
+  // Unset otherwise.
+  luci.resultdb.v1.Sources sources = 20;
 
   // Partition_time is used to partition the table.
   // It is the time when exported invocation was created in Spanner.

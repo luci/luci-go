@@ -55,9 +55,10 @@ func generateTestResultRowSchema() (schema bigquery.Schema, err error) {
 	// because they are defined in different files.
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})
+	fds, _ := descriptor.MessageDescriptorProto(&pb.Sources{})
 	fdfr, _ := descriptor.MessageDescriptorProto(&pb.FailureReason{})
 	fdinv, _ := descriptor.MessageDescriptorProto(&bqpb.InvocationRecord{})
-	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fdfr, fdinv}}
+	fdset := &desc.FileDescriptorSet{File: []*desc.FileDescriptorProto{fd, fdsp, fdtmd, fds, fdfr, fdinv}}
 	return generateSchema(fdset, testResultRowMessage)
 }
 
@@ -81,6 +82,7 @@ type testResultRowInput struct {
 	exported   *pb.Invocation
 	parent     *pb.Invocation
 	tr         *pb.TestResult
+	sources    *pb.Sources
 	exonerated bool
 }
 
@@ -102,6 +104,7 @@ func (i *testResultRowInput) row() protoiface.MessageV1 {
 		Duration:      tr.Duration,
 		Tags:          tr.Tags,
 		Exonerated:    i.exonerated,
+		Sources:       i.sources,
 		PartitionTime: i.exported.CreateTime,
 		TestMetadata:  tr.TestMetadata,
 		FailureReason: tr.FailureReason,
@@ -150,12 +153,19 @@ func queryExoneratedTestVariants(ctx context.Context, invs invocations.IDSet) (m
 
 func (b *bqExporter) queryTestResults(
 	ctx context.Context,
+	reachableInvs graph.ReachableInvocations,
 	exported *pb.Invocation,
-	q testresults.Query,
+	predicate *pb.TestResultPredicate,
 	exoneratedTestVariants map[testVariantKey]struct{},
 	batchC chan []rowInput) error {
 
-	invs, err := invocations.ReadBatch(ctx, q.InvocationIDs)
+	q := testresults.Query{
+		Predicate:     predicate,
+		InvocationIDs: reachableInvs.IDSet(),
+		Mask:          testresults.AllFields,
+	}
+
+	invs, err := invocations.ReadBatch(ctx, reachableInvs.IDSet())
 	if err != nil {
 		return err
 	}
@@ -166,10 +176,17 @@ func (b *bqExporter) queryTestResults(
 	err = q.Run(ctx, func(tr *pb.TestResult) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: tr.VariantHash}]
 		parentID, _, _ := testresults.MustParseName(tr.Name)
+		sourceHash := reachableInvs.Invocations[parentID].SourceHash
+		var sources *pb.Sources
+		if sourceHash != graph.EmptySourceHash {
+			sources = reachableInvs.Sources[sourceHash]
+		}
+
 		rows = append(rows, &testResultRowInput{
 			exported:   exported,
 			parent:     invs[parentID],
 			tr:         tr,
+			sources:    sources,
 			exonerated: exonerated,
 		})
 		batchSize += proto.Size(tr)
@@ -239,14 +256,10 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 			})
 		})
 
-		q := testresults.Query{
-			Predicate:     bqExport.GetTestResults().GetPredicate(),
-			InvocationIDs: invs.IDSet(),
-			Mask:          testresults.AllFields,
-		}
 		eg.Go(func() error {
 			defer close(batchC)
-			return b.queryTestResults(ctx, exported, q, exoneratedTestVariants, batchC)
+			predicate := bqExport.GetTestResults().GetPredicate()
+			return b.queryTestResults(ctx, invs, exported, predicate, exoneratedTestVariants, batchC)
 		})
 
 		return eg.Wait()

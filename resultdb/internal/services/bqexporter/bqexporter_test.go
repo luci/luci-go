@@ -64,12 +64,19 @@ func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		testutil.MustApply(ctx,
-			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
-			insert.Invocation("b", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm", "Properties": spanutil.Compressed(pbutil.MustMarshal(&structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"key": structpb.NewStringValue("value"),
-				},
-			}))}),
+			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{
+				"Realm":   "testproject:testrealm",
+				"Sources": spanutil.Compressed(pbutil.MustMarshal(testutil.TestSources())),
+			}),
+			insert.Invocation("b", pb.Invocation_FINALIZED, map[string]any{
+				"Realm": "testproject:testrealm",
+				"Properties": spanutil.Compressed(pbutil.MustMarshal(&structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"key": structpb.NewStringValue("value"),
+					},
+				})),
+				"InheritSources": true,
+			}),
 			insert.Inclusion("a", "b"))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
@@ -168,6 +175,8 @@ func TestExportToBigQuery(t *testing.T) {
 				} else {
 					So(tr.Properties, ShouldBeNil)
 				}
+
+				So(tr.Sources, ShouldResembleProto, testutil.TestSources())
 			}
 		})
 
@@ -206,10 +215,12 @@ func TestExportToBigQuery(t *testing.T) {
 
 		opts := DefaultOptions()
 		b := &bqExporter{
-			Options:      &opts,
-			putLimiter:   rate.NewLimiter(100, 1),
-			batchSem:     semaphore.NewWeighted(100),
-			rbecasClient: &artifactcontenttest.FakeByteStreamClient{bytes.Repeat([]byte("short\ncontentspart2\n"), 200000)},
+			Options:    &opts,
+			putLimiter: rate.NewLimiter(100, 1),
+			batchSem:   semaphore.NewWeighted(100),
+			rbecasClient: &artifactcontenttest.FakeByteStreamClient{
+				ExtraResponseData: bytes.Repeat([]byte("short\ncontentspart2\n"), 200000),
+			},
 			maxTokenSize: 10,
 		}
 
