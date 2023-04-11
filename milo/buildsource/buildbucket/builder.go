@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 )
 
 // builderPageBuildFields is a field mask used by builder page in build search
@@ -98,7 +99,7 @@ func backPageToken(c context.Context, bid *buildbucketpb.BuilderID, pageSize int
 
 // viewsForBuilder returns a list of links to views that reference the builder.
 func viewsForBuilder(c context.Context, bid *buildbucketpb.BuilderID) ([]*ui.Link, error) {
-	consoles, err := common.GetAllConsoles(c, common.LegacyBuilderIDString(bid))
+	consoles, err := projectconfig.GetAllConsoles(c, common.LegacyBuilderIDString(bid))
 	if err != nil {
 		return nil, err
 	}

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package config contains all code for managing Milo's global app
+// Package config contains all code for managing Milo's global service
 // configuration.
 //
-// Not to be confused with project_config, which manages configurations for
+// Not to be confused with projectconfig, which manages configurations for
 // projects supported by Milo (e.g. ChromeOS, Chromium).
 package config

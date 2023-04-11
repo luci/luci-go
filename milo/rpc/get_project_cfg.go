@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -33,7 +33,7 @@ func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.Get
 		return nil, appstatus.Error(codes.InvalidArgument, "project must be specified")
 	}
 
-	allowed, err := common.IsAllowed(ctx, projectName)
+	allowed, err := projectconfig.IsAllowed(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.Get
 		return nil, appstatus.Error(codes.PermissionDenied, "no access to the project")
 	}
 
-	project, err := common.GetProject(ctx, projectName)
+	project, err := projectconfig.GetProject(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}

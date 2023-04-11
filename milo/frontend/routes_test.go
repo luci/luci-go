@@ -43,10 +43,10 @@ import (
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -283,7 +283,7 @@ func Frontpage() []TestBundle {
 			Description: "Basic frontpage",
 			Data: templates.Args{
 				"frontpage": ui.Frontpage{
-					Projects: []*common.Project{
+					Projects: []*projectconfig.Project{
 						{
 							ID:        "fakeproject",
 							HasConfig: true,

@@ -18,12 +18,12 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 )
 
 func frontpageHandler(c *router.Context) {
-	projs, err := common.GetVisibleProjects(c.Context)
+	projs, err := projectconfig.GetVisibleProjects(c.Context)
 	if err != nil {
 		ErrorHandler(c, err)
 		return

@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -105,7 +106,7 @@ func TestPubSub(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Initialize the appropriate project config.
-		err = datastore.Put(c, &common.Project{
+		err = datastore.Put(c, &projectconfig.Project{
 			ID: "fake",
 		})
 		So(err, ShouldBeNil)

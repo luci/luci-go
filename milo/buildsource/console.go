@@ -25,9 +25,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -104,19 +104,19 @@ func GetConsoleRows(c context.Context, project string, console *projectconfigpb.
 // datastore using a slice of console definitions as input.
 //
 // This expects all builders in all consoles coming from the same projectID.
-func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Console, projectID string) (
-	map[common.ConsoleID]*ui.BuilderSummaryGroup, error) {
+func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*projectconfig.Console, projectID string) (
+	map[projectconfig.ConsoleID]*ui.BuilderSummaryGroup, error) {
 
 	// Maps consoleID -> console config definition.
-	consoles := make(map[common.ConsoleID]*projectconfigpb.Console, len(consoleEnts))
+	consoles := make(map[projectconfig.ConsoleID]*projectconfigpb.Console, len(consoleEnts))
 
 	// Maps the BuilderID to the per-console pointer-to-summary in the summaries
 	// map. Note that builders with multiple builderIDs in the same console will
 	// all map to the same BuilderSummary.
-	columns := map[BuilderID]map[common.ConsoleID][]*model.BuilderSummary{}
+	columns := map[BuilderID]map[projectconfig.ConsoleID][]*model.BuilderSummary{}
 
 	// The return result.
-	summaries := map[common.ConsoleID]*ui.BuilderSummaryGroup{}
+	summaries := map[projectconfig.ConsoleID]*ui.BuilderSummaryGroup{}
 
 	for _, ent := range consoleEnts {
 		cid := ent.ConsoleID()
@@ -141,7 +141,7 @@ func GetConsoleSummariesFromDefs(c context.Context, consoleEnts []*common.Consol
 			// Find/populate the BuilderID -> {console: summary}
 			colMap, ok := columns[name]
 			if !ok {
-				colMap = map[common.ConsoleID][]*model.BuilderSummary{}
+				colMap = map[projectconfig.ConsoleID][]*model.BuilderSummary{}
 				columns[name] = colMap
 			}
 

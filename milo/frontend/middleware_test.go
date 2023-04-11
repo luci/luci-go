@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -112,7 +112,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},
 			}))
-			So(common.UpdateProjects(c), ShouldBeNil)
+			So(projectconfig.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
 				Context: c,
@@ -142,7 +142,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"public\"\naccess: \"group:all\"",
 				},
 			}))
-			So(common.UpdateProjects(c), ShouldBeNil)
+			So(projectconfig.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
 				Context: c,
@@ -176,7 +176,7 @@ func TestFuncs(t *testing.T) {
 					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
 				},
 			}))
-			So(common.UpdateProjects(c), ShouldBeNil)
+			So(projectconfig.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
 				Context: c,

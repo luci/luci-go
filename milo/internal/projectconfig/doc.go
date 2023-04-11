@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ui
-
-import (
-	"go.chromium.org/luci/milo/internal/projectconfig"
-)
-
-type Frontpage struct {
-	Projects []*projectconfig.Project
-}
+// Package projectconfig contains all code for managing configurations for
+// projects supported by Milo (e.g. ChromeOS, Chromium).
+//
+// Not to be confused with config, which manages Milo's global service
+// configuration.
+package projectconfig

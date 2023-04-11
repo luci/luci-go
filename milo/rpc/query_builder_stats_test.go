@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -91,9 +92,9 @@ func TestQueryBuilderStats(t *testing.T) {
 		err := datastore.Put(ctx, builds)
 		So(err, ShouldBeNil)
 
-		err = datastore.Put(ctx, &common.Project{
+		err = datastore.Put(ctx, &projectconfig.Project{
 			ID:      "fake_project",
-			ACL:     common.ACL{Identities: []identity.Identity{"user"}},
+			ACL:     projectconfig.ACL{Identities: []identity.Identity{"user"}},
 			LogoURL: "https://logo.com",
 		})
 		So(err, ShouldBeNil)

@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -36,9 +36,9 @@ func TestGetProjectCfg(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		srv := &MiloInternalService{}
 
-		err := datastore.Put(c, &common.Project{
+		err := datastore.Put(c, &projectconfig.Project{
 			ID:      "fake_project",
-			ACL:     common.ACL{Identities: []identity.Identity{"user_with_access"}},
+			ACL:     projectconfig.ACL{Identities: []identity.Identity{"user_with_access"}},
 			LogoURL: "https://logo.com",
 		})
 		So(err, ShouldBeNil)

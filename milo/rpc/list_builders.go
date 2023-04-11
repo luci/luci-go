@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching/layered"
@@ -83,7 +84,7 @@ func (s *MiloInternalService) ListBuilders(ctx context.Context, req *milopb.List
 
 	// Perform ACL check when the project is specified.
 	if req.Project != "" {
-		allowed, err := common.IsAllowed(ctx, req.Project)
+		allowed, err := projectconfig.IsAllowed(ctx, req.Project)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +148,7 @@ func (s *MiloInternalService) listProjectBuilders(ctx context.Context, project s
 	// Then, return external builders referenced in the project consoles.
 	remaining := pageSize - len(res.Builders)
 	if remaining > 0 {
-		project := &common.Project{ID: project}
+		project := &projectconfig.Project{ID: project}
 		if err := datastore.Get(ctx, project); err != nil {
 			return nil, err
 		}
@@ -196,7 +197,7 @@ func (s *MiloInternalService) listGroupBuilders(ctx context.Context, project str
 	res := &milopb.ListBuildersResponse{}
 
 	projKey := datastore.MakeKey(ctx, "Project", project)
-	con := common.Console{Parent: projKey, ID: group}
+	con := projectconfig.Console{Parent: projKey, ID: group}
 	switch err := datastore.Get(ctx, &con); err {
 	case nil:
 	case datastore.ErrNoSuchEntity:

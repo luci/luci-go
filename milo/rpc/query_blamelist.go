@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
@@ -49,7 +50,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 		return nil, appstatus.BadRequest(err)
 	}
 
-	allowed, err := common.IsAllowed(ctx, req.GetBuilder().GetProject())
+	allowed, err := projectconfig.IsAllowed(ctx, req.GetBuilder().GetProject())
 	if err != nil {
 		return nil, err
 	}

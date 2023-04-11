@@ -44,10 +44,10 @@ import (
 	"go.chromium.org/luci/luciexe/legacy/annotee"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
-	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model/milostatus"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/internal/config"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -768,7 +768,7 @@ func isAllowed(c context.Context, tags []string) bool {
 			}
 			logging.Debugf(c, "Checking if user has access to %s", sp[1])
 			// sp[1] is the project ID.
-			allowed, err := common.IsAllowed(c, sp[1])
+			allowed, err := projectconfig.IsAllowed(c, sp[1])
 			if err != nil {
 				logging.WithError(err).Errorf(c, "could not perform acl check")
 				return false

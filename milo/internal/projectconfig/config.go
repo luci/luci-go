@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package projectconfig
 
 import (
 	"context"
@@ -25,7 +25,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -35,12 +34,12 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
-	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/milo/common"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -154,7 +153,7 @@ func (c *Console) ProjectID() string {
 func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 	okBuilderIDs := make([]string, 0, len(c.Builders))
 	for _, id := range c.Builders {
-		bid, err := ParseLegacyBuilderID(id)
+		bid, err := common.ParseLegacyBuilderID(id)
 		if err != nil {
 			// The config is validated when ingested by milo, so this should never
 			// happen.
@@ -168,7 +167,7 @@ func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 	c.Builders = okBuilderIDs
 	okBuilders := make([]*projectconfigpb.Builder, 0, len(c.Def.Builders))
 	for _, b := range c.Def.Builders {
-		bid, err := ParseLegacyBuilderID(b.Name)
+		bid, err := common.ParseLegacyBuilderID(b.Name)
 		if err != nil {
 			// The config is validated when ingested by milo, so this should never
 			// happen.
@@ -186,7 +185,7 @@ func (c *Console) FilterBuilders(allowedRealms stringset.Set) {
 func (c *Console) BuilderRealms() stringset.Set {
 	builderRealms := stringset.New(1)
 	for _, id := range c.Builders {
-		bid, err := ParseLegacyBuilderID(id)
+		bid, err := common.ParseLegacyBuilderID(id)
 		if err != nil {
 			// The config is validated when ingested by milo, so this should never
 			// happen.
@@ -341,7 +340,7 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 	// Populate project.ExternalBuilderIDs
 	for _, console := range miloCfg.Consoles {
 		for _, builder := range console.Builders {
-			bid, err := ParseLegacyBuilderID(builder.Name)
+			bid, err := common.ParseLegacyBuilderID(builder.Name)
 			if err != nil {
 				return nil, nil, nil, errors.Annotate(err, "invalid legacy builder name").Err()
 			}
@@ -778,141 +777,19 @@ func GetConsoles(c context.Context, consoles []ConsoleID) ([]*Console, error) {
 	return filterExternalConsoles(c, result, visibleProjects), nil
 }
 
-// Config validation rules go here.
-
-func init() {
-	// Milo is only responsible for validating the config matching the instance's
-	// appID in a project config.
-	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", validateProjectCfg)
-}
-
-// validateProjectCfg implements validation.Func by taking a potential Milo
-// config at path, validating it, and writing the result into ctx.
-//
-// The validation we do include:
-//
-// * Make sure the config is able to be unmarshalled.
-// * Make sure all consoles have either builder_view_only: true or manifest_name
-func validateProjectCfg(ctx *validation.Context, configSet, path string, content []byte) error {
-	proj := projectconfigpb.Project{}
-	if err := protoutil.UnmarshalTextML(string(content), &proj); err != nil {
-		ctx.Error(err)
-		return nil
-	}
-	knownHeaders := stringset.New(len(proj.Headers))
-	for i, header := range proj.Headers {
-		ctx.Enter("header #%d (%s)", i, header.Id)
-		if header.Id == "" {
-			ctx.Errorf("missing id")
-		} else if !knownHeaders.Add(header.Id) {
-			ctx.Errorf("duplicate header id")
-		}
-		ctx.Exit()
-	}
-
-	knownConsoles := stringset.New(len(proj.Consoles))
-	for i, console := range proj.Consoles {
-		ctx.Enter("console #%d (%s)", i, console.Id)
-		validateConsole(ctx, &knownConsoles, &knownHeaders, console)
-		ctx.Exit()
-	}
-	if proj.LogoUrl != "" && !strings.HasPrefix(proj.LogoUrl, "https://storage.googleapis.com/") {
-		ctx.Errorf("invalid logo url %q, must begin with https://storage.googleapis.com/", proj.LogoUrl)
-	}
-
-	for i, builderID := range proj.IgnoredBuilderIds {
-		ctx.Enter("ignored builder ID #%d (%s)", i, builderID)
-		if strings.Count(builderID, "/") != 1 {
-			ctx.Errorf("invaid builder ID, the format must be <bucket>/<builder>")
-		}
-		ctx.Exit()
-	}
-
-	return nil
-}
-
-func validateConsole(ctx *validation.Context, knownConsoles *stringset.Set, knownHeaders *stringset.Set, console *projectconfigpb.Console) {
-	if console.Id == "" {
-		ctx.Errorf("missing id")
-	} else if strings.ContainsAny(console.Id, "/") {
-		// unfortunately httprouter uses decoded path when performing URL routing
-		// therefore we can't use '/' in the console ID. Other chars are safe as long as we encode them
-		ctx.Errorf("id can not contain '/'")
-	} else if !knownConsoles.Add(console.Id) {
-		ctx.Errorf("duplicate console")
-	}
-	isExternalConsole := console.ExternalProject != "" || console.ExternalId != ""
-	if isExternalConsole {
-		validateExternalConsole(ctx, console)
-	} else {
-		validateLocalConsole(ctx, knownHeaders, console)
-	}
-}
-
-func validateLocalConsole(ctx *validation.Context, knownHeaders *stringset.Set, console *projectconfigpb.Console) {
-	// If this is a CI console and it's missing manifest name, the author
-	// probably forgot something.
-	if !console.BuilderViewOnly {
-		if console.ManifestName == "" {
-			ctx.Errorf("ci console missing manifest name")
-		}
-		if console.RepoUrl == "" {
-			ctx.Errorf("ci console missing repo url")
-		}
-		if len(console.Refs) == 0 {
-			ctx.Errorf("ci console missing refs")
-		} else {
-			gitiles.ValidateRefSet(ctx, console.Refs)
-		}
-	} else {
-		if console.IncludeExperimentalBuilds {
-			ctx.Errorf("builder_view_only and include_experimental_builds both set")
-		}
-	}
-
-	if console.HeaderId != "" && !knownHeaders.Has(console.HeaderId) {
-		ctx.Errorf("header %s not defined", console.HeaderId)
-	}
-	if console.HeaderId != "" && console.Header != nil {
-		ctx.Errorf("cannot specify both header and header_id")
-	}
-	for j, b := range console.Builders {
-		ctx.Enter("builders #%d", j+1)
-		if b.Name == "" {
-			ctx.Errorf("name must be non-empty")
-		} else {
-			_, err := ParseLegacyBuilderID(b.Name)
-			if err != nil {
-				ctx.Errorf(`name: %v`, err)
+// UpdateProjectConfigsHandler is an HTTP handler that handles project
+// configuration update requests.
+func UpdateProjectConfigsHandler(c context.Context) error {
+	err := UpdateProjects(c)
+	if err != nil {
+		if merr, ok := err.(errors.MultiError); ok {
+			for _, ierr := range merr {
+				logging.WithError(ierr).Errorf(c, "project update handler encountered error")
 			}
+		} else {
+			logging.WithError(err).Errorf(c, "project update handler encountered error")
 		}
-		ctx.Exit()
-	}
-}
-
-func validateExternalConsole(ctx *validation.Context, console *projectconfigpb.Console) {
-	// Verify that both project and external ID are set.
-	if console.ExternalProject == "" {
-		ctx.Errorf("missing external project")
-	}
-	if console.ExternalId == "" {
-		ctx.Errorf("missing external console id")
 	}
 
-	// Verify that external consoles have no local-console-only fields.
-	if console.RepoUrl != "" {
-		ctx.Errorf("repo url found in external console")
-	}
-	if len(console.Refs) > 0 {
-		ctx.Errorf("refs found in external console")
-	}
-	if console.ManifestName != "" {
-		ctx.Errorf("manifest name found in external console")
-	}
-	if len(console.Builders) > 0 {
-		ctx.Errorf("builders found in external console")
-	}
-	if console.HeaderId != "" || console.Header != nil {
-		ctx.Errorf("header found in external console")
-	}
+	return err
 }

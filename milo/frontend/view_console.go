@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
@@ -113,7 +114,7 @@ func buildTreeFromDef(def *projectconfigpb.Console, getColumnSummaries columnSum
 
 // getConsoleGroups extracts the console summaries for all header summaries
 // out of the summaries map into console groups for the header.
-func getConsoleGroups(def *projectconfigpb.Header, summaries map[common.ConsoleID]*ui.BuilderSummaryGroup) []ui.ConsoleGroup {
+func getConsoleGroups(def *projectconfigpb.Header, summaries map[projectconfig.ConsoleID]*ui.BuilderSummaryGroup) []ui.ConsoleGroup {
 	if def == nil || len(def.GetConsoleGroups()) == 0 {
 		// No header, no console groups.
 		return nil
@@ -123,7 +124,7 @@ func getConsoleGroups(def *projectconfigpb.Header, summaries map[common.ConsoleI
 	for i, group := range groups {
 		groupSummaries := make([]*ui.BuilderSummaryGroup, len(group.ConsoleIds))
 		for j, id := range group.ConsoleIds {
-			cid, err := common.ParseConsoleID(id)
+			cid, err := projectconfig.ParseConsoleID(id)
 			if err != nil {
 				// This should never happen, the consoleID was already validated further
 				// upstream.
@@ -198,13 +199,13 @@ func consoleRowCommits(c context.Context, project string, def *projectconfigpb.C
 	return rows, commits, nil
 }
 
-func console(c context.Context, project, id string, limit int, con *common.Console, headerCons []*common.Console, consoleGroupsErr error) (*ui.Console, error) {
+func console(c context.Context, project, id string, limit int, con *projectconfig.Console, headerCons []*projectconfig.Console, consoleGroupsErr error) (*ui.Console, error) {
 	def := &con.Def
-	consoleID := common.ConsoleID{Project: project, ID: id}
+	consoleID := projectconfig.ConsoleID{Project: project, ID: id}
 	var header *ui.ConsoleHeader
 	var rows []*buildsource.ConsoleRow
 	var commits []ui.Commit
-	var builderSummaries map[common.ConsoleID]*ui.BuilderSummaryGroup
+	var builderSummaries map[projectconfig.ConsoleID]*ui.BuilderSummaryGroup
 	// Get 3 things in parallel:
 	// 1. The console header (except for summaries)
 	// 2. The console header summaries + this console's builders summaries.
@@ -500,18 +501,18 @@ func (c consoleRenderer) BuilderLink(bs *model.BuildSummary) (*ui.Link, error) {
 }
 
 // consoleHeaderGroupIDs extracts the console group IDs out of the header config.
-func consoleHeaderGroupIDs(project string, config []*projectconfigpb.ConsoleSummaryGroup) ([]common.ConsoleID, error) {
-	consoleIDSet := map[common.ConsoleID]struct{}{}
+func consoleHeaderGroupIDs(project string, config []*projectconfigpb.ConsoleSummaryGroup) ([]projectconfig.ConsoleID, error) {
+	consoleIDSet := map[projectconfig.ConsoleID]struct{}{}
 	for _, group := range config {
 		for _, id := range group.ConsoleIds {
-			cid, err := common.ParseConsoleID(id)
+			cid, err := projectconfig.ParseConsoleID(id)
 			if err != nil {
 				return nil, err
 			}
 			consoleIDSet[cid] = struct{}{}
 		}
 	}
-	consoleIDs := make([]common.ConsoleID, 0, len(consoleIDSet))
+	consoleIDs := make([]projectconfig.ConsoleID, 0, len(consoleIDSet))
 	for cid := range consoleIDSet {
 		consoleIDs = append(consoleIDs, cid)
 	}
@@ -519,7 +520,7 @@ func consoleHeaderGroupIDs(project string, config []*projectconfigpb.ConsoleSumm
 }
 
 // filterUnauthorizedBuildersFromConsoles filters out builders the user does not have access to.
-func filterUnauthorizedBuildersFromConsoles(c context.Context, cons []*common.Console) error {
+func filterUnauthorizedBuildersFromConsoles(c context.Context, cons []*projectconfig.Console) error {
 	allRealms := stringset.New(0)
 	for _, con := range cons {
 		allRealms = allRealms.Union(con.BuilderRealms())
@@ -551,13 +552,13 @@ func ConsoleHandler(c *router.Context) error {
 	group := c.Params.ByName("group")
 
 	// Get console from datastore and filter out builders from the definition.
-	con, err := common.GetConsole(c.Context, project, group)
+	con, err := projectconfig.GetConsole(c.Context, project, group)
 	switch {
 	case err != nil:
 		return err
 	case con.IsExternal():
 		// We don't allow navigating directly to external consoles.
-		return common.ErrConsoleNotFound
+		return projectconfig.ErrConsoleNotFound
 	case con.Def.BuilderViewOnly:
 		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
 		return nil
@@ -576,17 +577,17 @@ func ConsoleHandler(c *router.Context) error {
 		limit = maxLimit
 	}
 
-	var headerCons []*common.Console
+	var headerCons []*projectconfig.Console
 	var headerConsError error
 	if con.Def.Header != nil {
 		ids, err := consoleHeaderGroupIDs(project, con.Def.Header.GetConsoleGroups())
 		if err != nil {
 			return err
 		}
-		headerCons, err = common.GetConsoles(c.Context, ids)
+		headerCons, err = projectconfig.GetConsoles(c.Context, ids)
 		if err != nil {
 			headerConsError = errors.Annotate(err, "error getting header consoles").Err()
-			headerCons = make([]*common.Console, 0)
+			headerCons = make([]*projectconfig.Console, 0)
 		}
 	}
 	if err := filterUnauthorizedBuildersFromConsoles(c.Context, append(headerCons, con)); err != nil {
@@ -610,7 +611,7 @@ func ConsoleHandler(c *router.Context) error {
 // console list page (defined in ./appengine/templates/pages/builder_groups.html).
 func ConsolesHandler(c *router.Context, projectID string) error {
 	// Get consoles related to this project and filter out all builders.
-	cons, err := common.GetProjectConsoles(c.Context, projectID)
+	cons, err := projectconfig.GetProjectConsoles(c.Context, projectID)
 	if err != nil {
 		return err
 	}

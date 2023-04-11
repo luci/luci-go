@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/frontend"
 	"go.chromium.org/luci/milo/internal/config"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/milo/rpc"
@@ -61,7 +62,7 @@ func main() {
 	}
 	server.Main(nil, modules, func(srv *server.Server) error {
 		frontend.Run(srv, "frontend/templates")
-		cron.RegisterHandler("update-project-configs", frontend.UpdateProjectConfigsHandler)
+		cron.RegisterHandler("update-project-configs", projectconfig.UpdateProjectConfigsHandler)
 		cron.RegisterHandler("update-config", config.UpdateConfigHandler)
 		cron.RegisterHandler("update-pools", buildbucket.UpdatePools)
 		cron.RegisterHandler("update-builders", frontend.UpdateBuilders)

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 	configpb "go.chromium.org/luci/milo/proto/config"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -81,10 +82,10 @@ func TestListBuilders(t *testing.T) {
 			},
 		}
 
-		err := datastore.Put(ctx, []*common.Project{
+		err := datastore.Put(ctx, []*projectconfig.Project{
 			{
 				ID:  "this_project",
-				ACL: common.ACL{Identities: []identity.Identity{"user"}},
+				ACL: projectconfig.ACL{Identities: []identity.Identity{"user"}},
 				ExternalBuilderIDs: []string{
 					"other_project/bucket_without.access/fake.builder 1",
 					"other_project/fake.bucket_2/fake.builder 1",
@@ -97,7 +98,7 @@ func TestListBuilders(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		err = datastore.Put(ctx, []*common.Console{
+		err = datastore.Put(ctx, []*projectconfig.Console{
 			{
 				Parent: datastore.MakeKey(ctx, "Project", "this_project"),
 				ID:     "console1",

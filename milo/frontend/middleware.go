@@ -52,6 +52,7 @@ import (
 	"go.chromium.org/luci/milo/git"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/milo/internal/config"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 )
 
 // A collection of useful templating functions
@@ -547,7 +548,7 @@ func withGitMiddleware(c *router.Context, next router.Handler) {
 func buildProjectACLMiddleware(optional bool) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		luciProject := c.Params.ByName("project")
-		switch allowed, err := common.IsAllowed(c.Context, luciProject); {
+		switch allowed, err := projectconfig.IsAllowed(c.Context, luciProject); {
 		case err != nil:
 			ErrorHandler(c, err)
 		case allowed:
@@ -586,7 +587,7 @@ func ProjectLinks(c context.Context, project, group string) []ui.LinkGroup {
 	}
 	if group != "" {
 		groupLinks := []*ui.Link{}
-		con, err := common.GetConsole(c, project, group)
+		con, err := projectconfig.GetConsole(c, project, group)
 		if err != nil {
 			logging.WithError(err).Warningf(c, "error getting console")
 		} else if !con.Def.BuilderViewOnly {

@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model/milostatus"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 )
 
 // ManifestKey is an index entry for BuildSummary, which looks like
@@ -266,7 +267,7 @@ func (bs *BuildSummary) AddManifestKeysFromBuildSets(c context.Context) error {
 			logging.Warningf(c, "wrong revision size %d v %d: %q", len(revision), sha1.Size, commit.Id)
 
 		default:
-			consoles, err := common.GetAllConsoles(c, bs.BuilderID)
+			consoles, err := projectconfig.GetAllConsoles(c, bs.BuilderID)
 			if err != nil {
 				return err
 			}

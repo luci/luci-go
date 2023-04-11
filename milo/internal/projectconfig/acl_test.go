@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package projectconfig
 
 import (
 	"context"
@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -36,7 +37,7 @@ func TestACL(t *testing.T) {
 	Convey("Test Environment", t, func() {
 		c := memory.Use(context.Background())
 		c = gologger.StdConfig.Use(c)
-		c = SetUpTestGlobalCache(c)
+		c = common.SetUpTestGlobalCache(c)
 
 		Convey("Set up projects", func() {
 			c = cfgclient.Use(c, memcfg.New(aclConfgs))
