@@ -45,8 +45,10 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
+	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
@@ -314,6 +316,41 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 	return
 }
 
+// failBuild fails the given build with INFRA_FAILURE status.
+func failBuild(ctx context.Context, buildID int64, msg string) error {
+	bld := &model.Build{
+		ID: buildID,
+	}
+
+	var changedToEnded bool
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		switch err := datastore.Get(ctx, bld); {
+		case err == datastore.ErrNoSuchEntity:
+			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
+			return nil
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
+		}
+
+		changedToEnded = !protoutil.IsEnded(bld.Proto.Status)
+		protoutil.SetStatus(clock.Now(ctx), bld.Proto, pb.Status_INFRA_FAILURE)
+		bld.Proto.SummaryMarkdown = msg
+
+		if err := sendOnBuildCompletion(ctx, bld); err != nil {
+			return err
+		}
+
+		return datastore.Put(ctx, bld)
+	}, nil)
+	if err != nil {
+		return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
+	}
+	if changedToEnded {
+		metrics.BuildCompleted(ctx, bld)
+	}
+	return nil
+}
+
 // CreateBackendTask creates a backend task for the build.
 func CreateBackendTask(ctx context.Context, buildID int64) error {
 	bld := &model.Build{ID: buildID}
@@ -348,6 +385,10 @@ func CreateBackendTask(ctx context.Context, buildID int64) error {
 			logging.Errorf(ctx, "Give up backend task creation retry after %s", runTaskGiveUpTimeout.String())
 		}
 		logging.Errorf(ctx, "Backend task creation failure:%s. RunTask request: %+v", err, taskReq)
+		dsPutErr := failBuild(ctx, bld.ID, "Backend task creation failure.")
+		if dsPutErr != nil {
+			return dsPutErr
+		}
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to create a backend task").Err())
 	}
 	return nil

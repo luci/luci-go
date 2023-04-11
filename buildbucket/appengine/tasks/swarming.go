@@ -586,41 +586,6 @@ func createSwarmingTask(ctx context.Context, build *model.Build, swarm clients.S
 	return nil
 }
 
-// failBuild fails the given build with INFRA_FAILURE status.
-func failBuild(ctx context.Context, buildID int64, msg string) error {
-	bld := &model.Build{
-		ID: buildID,
-	}
-
-	var changedToEnded bool
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		switch err := datastore.Get(ctx, bld); {
-		case err == datastore.ErrNoSuchEntity:
-			logging.Warningf(ctx, "build %d not found: %s", buildID, err)
-			return nil
-		case err != nil:
-			return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
-		}
-
-		changedToEnded = !protoutil.IsEnded(bld.Proto.Status)
-		protoutil.SetStatus(clock.Now(ctx), bld.Proto, pb.Status_INFRA_FAILURE)
-		bld.Proto.SummaryMarkdown = msg
-
-		if err := sendOnBuildCompletion(ctx, bld); err != nil {
-			return err
-		}
-
-		return datastore.Put(ctx, bld)
-	}, nil)
-	if err != nil {
-		return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())
-	}
-	if changedToEnded {
-		metrics.BuildCompleted(ctx, bld)
-	}
-	return nil
-}
-
 // sendOnBuildCompletion sends a bunch of related events when build is reaching
 // to an end status, e.g. finalizing the resultdb invocation, exporting to Bq,
 // and notify pubsub topics.

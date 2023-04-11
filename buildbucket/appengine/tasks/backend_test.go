@@ -34,6 +34,7 @@ import (
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -85,6 +86,9 @@ func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient 
 
 // RunTask Mocks the RunTask RPC.
 func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	if taskReq.Target == "fail_me" {
+		return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
+	}
 	return new(emptypb.Empty), nil
 }
 
@@ -457,5 +461,129 @@ func TestCreateBackendTask(t *testing.T) {
 				"are_cow_eggs_real_experiment",
 			})
 		})
+	})
+	Convey("RunTask failed", t, func(c C) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := NewMockedClient(context.Background(), ctl)
+		now := testclock.TestRecentTimeUTC
+		ctx, _ := testclock.UseTime(context.Background(), now)
+		ctx = context.WithValue(ctx, MockTaskBackendClientKey{}, mc)
+		ctx = caching.WithEmptyProcessCache(ctx)
+		ctx = memory.UseWithAppID(ctx, "dev~app-id")
+		ctx = txndefer.FilterRDS(ctx)
+		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx, _ = tq.TestingContext(ctx, nil)
+		backendSetting := []*pb.BackendSetting{}
+		backendSetting = append(backendSetting, &pb.BackendSetting{
+			Target:   "fail_me",
+			Hostname: "hostname",
+		})
+		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
+		err := config.SetTestSettingsCfg(ctx, settingsCfg)
+		So(err, ShouldBeNil)
+		server := httptest.NewServer(describeBootstrapBundle(c))
+		defer server.Close()
+		client := &prpc.Client{
+			Host: strings.TrimPrefix(server.URL, "http://"),
+			Options: &prpc.Options{
+				Retry: func() retry.Iterator {
+					return &retry.Limited{
+						Retries: 3,
+						Delay:   0,
+					}
+				},
+				Insecure:  true,
+				UserAgent: "prpc-test",
+			},
+		}
+		ctx = context.WithValue(ctx, MockCipdClientKey{}, client)
+		build := &model.Build{
+			ID: 1,
+			Proto: &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Builder: "builder",
+					Bucket:  "bucket",
+					Project: "project",
+				},
+				CreateTime: &timestamppb.Timestamp{
+					Seconds: 1,
+				},
+				ExecutionTimeout: &durationpb.Duration{Seconds: 500},
+				Input: &pb.Build_Input{
+					Experiments: []string{
+						"cow_eggs_experiment",
+						"are_cow_eggs_real_experiment",
+					},
+				},
+				GracePeriod: &durationpb.Duration{Seconds: 50},
+			},
+		}
+		key := datastore.KeyForObj(ctx, build)
+		infra := &model.BuildInfra{
+			Build: key,
+			Proto: &pb.BuildInfra{
+				Backend: &pb.BuildInfra_Backend{
+					Caches: []*pb.CacheEntry{
+						{
+							Name: "cache_name",
+							Path: "cache_value",
+						},
+					},
+					Config: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"priority": {
+								Kind: &structpb.Value_NumberValue{NumberValue: 32},
+							},
+							"bot_ping_tolerance": {
+								Kind: &structpb.Value_NumberValue{NumberValue: 2},
+							},
+						},
+					},
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "",
+							Target: "fail_me",
+						},
+					},
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Key:   "dim_key_1",
+							Value: "dim_val_1",
+						},
+					},
+				},
+				Bbagent: &pb.BuildInfra_BBAgent{
+					CacheDir: "cache",
+				},
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "some unique host name",
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Source: &pb.BuildInfra_Buildbucket_Agent_Source{
+							DataType: &pb.BuildInfra_Buildbucket_Agent_Source_Cipd{
+								Cipd: &pb.BuildInfra_Buildbucket_Agent_Source_CIPD{
+									Package: "infra/tools/luci/bbagent/${platform}",
+									Version: "latest",
+									Server:  "https://chrome-infra-packages.appspot.com",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		So(datastore.Put(ctx, build, infra), ShouldBeNil)
+
+		err = CreateBackendTask(ctx, 1)
+
+		expectedBuild := &model.Build{ID: 1}
+
+		So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
+		So(err, ShouldErrLike, "failed to create a backend task")
+		So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+		So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
 	})
 }
