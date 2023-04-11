@@ -48,7 +48,7 @@ export interface AuthState {
 }
 
 export async function queryAuthState(): Promise<AuthState> {
-  const res = await fetch('/api/authState');
+  const res = await fetch('/auth/openid/state');
   if (!res.ok) {
     throw new Error('failed to get authState:\n' + (await res.text()));
   }

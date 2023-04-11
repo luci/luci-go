@@ -80,6 +80,7 @@ entrypoint: >
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
   -frontend-client-id ${OAUTH_CLIENT_ID}
   -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
+  -encrypted-cookies-expose-state-endpoint
   -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
   -encrypted-cookies-tink-aead-key ${TINK_AEAD_KEY}
   -root-secret ${ROOT_SECRET}

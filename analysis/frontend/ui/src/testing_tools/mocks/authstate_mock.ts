@@ -27,5 +27,5 @@ export const createMockAuthState = () => {
 };
 
 export const mockFetchAuthState = () => {
-  fetchMock.get('/api/authState', createMockAuthState());
+  fetchMock.get('/auth/openid/state', createMockAuthState());
 };
