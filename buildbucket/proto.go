@@ -58,7 +58,6 @@ const (
 	ExperimentBBAgent             = "luci.buildbucket.use_bbagent"
 	ExperimentBBAgentDownloadCipd = "luci.buildbucket.agent.cipd_installation"
 	ExperimentBBAgentGetBuild     = "luci.buildbucket.bbagent_getbuild"
-	ExperimentBBAgentStartBuild   = "luci.buildbucket.agent.start_build"
 	ExperimentBBCanarySoftware    = "luci.buildbucket.canary_software"
 	ExperimentBqExporterGo        = "luci.buildbucket.bq_exporter_go"
 	ExperimentNonProduction       = "luci.non_production"
