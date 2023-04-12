@@ -16,7 +16,7 @@ import { css } from '@emotion/react';
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { Tab, Tabs } from '../../components/tabs';
 import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
@@ -42,6 +42,7 @@ const STATUS_FAVICON_MAP = Object.freeze({
 
 export const BuildPageShortLink = observer(() => {
   const { buildId, ['*']: pathSuffix } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const store = useStore();
 
@@ -65,8 +66,11 @@ export const BuildPageShortLink = observer(() => {
       store.buildPage.setBuildId(build.data.builder, build.data.number, build.data.id);
     }
     const buildUrl = getBuildURLPath(build.data.builder, build.buildNumOrId);
-    const newUrl = buildUrl + (pathSuffix ? `/${pathSuffix}` : '');
+    const searchString = searchParams.toString();
+    const newUrl = `${buildUrl}${pathSuffix ? `/${pathSuffix}` : ''}${searchString ? `?${searchParams}` : ''}`;
 
+    // TODO(weiweilin): sinon is not able to mock useNavigate.
+    // Add a unit test once we setup jest.
     navigate(newUrl, { replace: true });
   }, [buildLoaded]);
 
