@@ -34,7 +34,8 @@ import useFetchProjects from '@/hooks/use_fetch_projects';
 import { loginLink } from '@/tools/urlHandling/links';
 
 const ProjectCard = styled(RouterLink)<LinkProps>(() => ({
-  'padding': '1rem',
+  'padding-top': '2rem',
+  'padding-bottom': '2rem',
   'display': 'flex',
   'justify-content': 'center',
   'align-items': 'center',
@@ -44,7 +45,6 @@ const ProjectCard = styled(RouterLink)<LinkProps>(() => ({
   'color': 'black',
   'border-radius': '4px',
   'transition': 'transform .2s',
-  'height': '100%',
   '&:hover': {
     'transform': 'scale(1.1)',
   },
