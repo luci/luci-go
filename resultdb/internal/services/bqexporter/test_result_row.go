@@ -51,7 +51,7 @@ func init() {
 
 func generateTestResultRowSchema() (schema bigquery.Schema, err error) {
 	fd, _ := descriptor.MessageDescriptorProto(&bqpb.TestResultRow{})
-	// We also need to get FileDescriptorProto for StringPair, TestMetadata and FailureReason
+	// We also need to get FileDescriptorProto for StringPair, TestMetadata, Sources and FailureReason
 	// because they are defined in different files.
 	fdsp, _ := descriptor.MessageDescriptorProto(&pb.StringPair{})
 	fdtmd, _ := descriptor.MessageDescriptorProto(&pb.TestMetadata{})

@@ -144,12 +144,34 @@ func cmdStream(p Params) *subcommands.Command {
 			r.Flags.TextVar(&r.invProperties, "inv-properties", &invProperties{}, text.Doc(`
 				Stringified JSON object that contains structured,
 				domain-specific properties of the invocation.
-				The command will fail if the 'properties' is already set on the invocation
-				(NOT ENFORCED YET).
+				The command will fail if properties have already been set on
+				the invocation (NOT ENFORCED YET).
 			`))
 			r.Flags.StringVar(&r.invPropertiesFile, "inv-properties-file", "", text.Doc(`
 				Similar to -inv-properties but takes a path to the file that contains the JSON object.
 				Cannot be used when -inv-properties is specified.
+			`))
+			r.Flags.BoolVar(&r.inheritSources, "inherit-sources", false, text.Doc(`
+				If true, sets that the invocation inherits the code sources tested from its
+				parent invocation (source_spec.inherit = true).
+				If false, does not alter the invocation.
+				Cannot be used in conjunction with -sources or -sources-file.
+				This command will fail if the source_spec has already been set
+				on the invocation (NOT ENFORCED YET).
+			`))
+			r.Flags.TextVar(&r.sources, "sources", &sources{}, text.Doc(`
+				JSON-serialized luci.resultdb.v1.Sources object that
+				contains information about the code sources tested by the
+				invocation.
+				Cannot be used in conjunction with -inherit-sources or -sources-file.
+				This command will fail if the source_spec has already been set
+				on the invocation (NOT ENFORCED YET).
+			`))
+			r.Flags.StringVar(&r.sourcesFile, "sources-file", "", text.Doc(`
+				Similar to -sources, but takes the path to a file that
+				contains the JSON-serialized luci.resultdb.v1.Sources
+				object.
+				Cannot be used in combination with -sources or -inherit-sources.
 			`))
 			return r
 		},
@@ -189,6 +211,39 @@ func (s *invProperties) MarshalText() (text []byte, err error) {
 	return protojson.Marshal(s.Struct)
 }
 
+type sources struct {
+	*pb.Sources
+}
+
+// Implements encoding.TextUnmarshaler.
+func (s *sources) UnmarshalText(text []byte) error {
+	// Treat empty text as nil. This indicates that the code sources
+	// tested are not specified and will not be updated.
+	// '{}' means the sources should be set to an empty object.
+	if len(text) == 0 {
+		s.Sources = nil
+		return nil
+	}
+
+	sources := &pb.Sources{}
+	if err := protojson.Unmarshal(text, sources); err != nil {
+		return err
+	}
+	s.Sources = sources
+	return nil
+}
+
+// Implements encoding.TextMarshaler.
+func (s *sources) MarshalText() (text []byte, err error) {
+	// Serialize nil struct to empty string so nil struct won't be serialized as
+	// '{}'.
+	if s.Sources == nil {
+		return nil, nil
+	}
+
+	return protojson.Marshal(s.Sources)
+}
+
 type streamRun struct {
 	baseCommandRun
 
@@ -207,6 +262,9 @@ type streamRun struct {
 	exonerateUnexpectedPass bool
 	invPropertiesFile       string
 	invProperties           invProperties
+	inheritSources          bool
+	sourcesFile             string
+	sources                 sources
 	// TODO(ddoman): add flags
 	// - invocation-tag
 	// - log-file
@@ -228,6 +286,19 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	}
 	if r.invProperties.Struct != nil && r.invPropertiesFile != "" {
 		return errors.Reason("cannot specify both -inv-properties and -inv-properties-file at the same time").Err()
+	}
+	sourceSpecs := 0
+	if r.sources.Sources != nil {
+		sourceSpecs++
+	}
+	if r.sourcesFile != "" {
+		sourceSpecs++
+	}
+	if r.inheritSources {
+		sourceSpecs++
+	}
+	if sourceSpecs > 1 {
+		return errors.Reason("cannot specify more than one of -inherit-sources, -sources and -sources-file at the same time").Err()
 	}
 	return nil
 }
@@ -296,10 +367,12 @@ func (r *streamRun) Run(a subcommands.Application, args []string, env subcommand
 	if err != nil {
 		return r.done(errors.Annotate(err, "get invocation properties from arguments").Err())
 	}
-	if invProperties != nil {
-		if err := r.updateInvProperties(ctx, invProperties); err != nil {
-			return r.done(err)
-		}
+	sourceSpec, err := r.sourceSpecFromArgs(ctx)
+	if err != nil {
+		return r.done(errors.Annotate(err, "get source spec from arguments").Err())
+	}
+	if err := r.updateInvocation(ctx, invProperties, sourceSpec); err != nil {
+		return r.done(err)
 	}
 
 	defer func() {
@@ -437,20 +510,43 @@ func (r *streamRun) invPropertiesFromArgs(ctx context.Context) (*structpb.Struct
 	}
 
 	f, err := os.ReadFile(r.invPropertiesFile)
-	switch {
-	case os.IsNotExist(err):
-		logging.Warningf(ctx, "rdb-stream: %s does not exist", r.invPropertiesFile)
-		return nil, nil
-	case err != nil:
-		return nil, err
+	if err != nil {
+		return nil, errors.Annotate(err, "read file").Err()
 	}
 
 	properties := &structpb.Struct{}
 	if err = protojson.Unmarshal(f, properties); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "unmarshal file").Err()
 	}
 
 	return properties, nil
+}
+
+// sourceSpecFromArgs gets the invocation source spec from arguments.
+// Return nil if none is set.
+func (r *streamRun) sourceSpecFromArgs(ctx context.Context) (*pb.SourceSpec, error) {
+	if r.sources.Sources != nil {
+		return &pb.SourceSpec{Sources: r.sources.Sources}, nil
+	}
+	if r.inheritSources {
+		return &pb.SourceSpec{Inherit: true}, nil
+	}
+
+	if r.sourcesFile == "" {
+		return nil, nil
+	}
+
+	f, err := os.ReadFile(r.sourcesFile)
+	if err != nil {
+		return nil, errors.Annotate(err, "read file").Err()
+	}
+
+	sources := &pb.Sources{}
+	if err = protojson.Unmarshal(f, sources); err != nil {
+		return nil, errors.Annotate(err, "unmarshal file").Err()
+	}
+
+	return &pb.SourceSpec{Sources: sources}, nil
 }
 
 func (r *streamRun) createInvocation(ctx context.Context, realm string) (ret lucictx.ResultDBInvocation, err error) {
@@ -489,17 +585,28 @@ func (r *streamRun) includeInvocation(ctx context.Context, parent, child *lucict
 	return err
 }
 
-// updateInvProperties sets the properties on the invocation.
-func (r *streamRun) updateInvProperties(ctx context.Context, properties *structpb.Struct) error {
+// updateInvocation sets the properties and/or source spec on the invocation.
+func (r *streamRun) updateInvocation(ctx context.Context, properties *structpb.Struct, sourceSpec *pb.SourceSpec) error {
 	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, r.invocation.UpdateToken)
-	_, err := r.recorder.UpdateInvocation(ctx, &pb.UpdateInvocationRequest{
+	request := &pb.UpdateInvocationRequest{
 		Invocation: &pb.Invocation{
-			Name:       r.invocation.Name,
-			Properties: properties,
+			Name: r.invocation.Name,
 		},
-		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"properties"}},
-	})
-	return err
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{}},
+	}
+	if properties != nil {
+		request.Invocation.Properties = properties
+		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "properties")
+	}
+	if sourceSpec != nil {
+		request.Invocation.SourceSpec = sourceSpec
+		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "source_spec")
+	}
+	if len(request.UpdateMask.Paths) > 0 {
+		_, err := r.recorder.UpdateInvocation(ctx, request)
+		return err
+	}
+	return nil
 }
 
 // finalizeInvocation finalizes the invocation.
