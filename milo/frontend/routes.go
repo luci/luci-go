@@ -154,17 +154,6 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/auth-state", baseAuthMW, handleError(getAuthState))
 }
 
-// handleError is a wrapper for a handler so that the handler can return an error
-// rather than call ErrorHandler directly.
-// This should be used for handlers that render webpages.
-func handleError(handler func(c *router.Context) error) func(c *router.Context) {
-	return func(c *router.Context) {
-		if err := handler(c); err != nil {
-			ErrorHandler(c, err)
-		}
-	}
-}
-
 // redirect returns a handler that responds with given HTTP status
 // with a location specified by the pathTemplate.
 func redirect(pathTemplate string, status int) router.Handler {

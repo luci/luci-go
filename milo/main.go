@@ -34,6 +34,7 @@ import (
 	configpb "go.chromium.org/luci/milo/proto/config"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/milo/rpc"
+	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
@@ -109,6 +110,28 @@ func main() {
 				return appstatus.GRPCifyAndLog(ctx, err)
 			},
 		})
+
+		httpService := frontend.HTTPService{
+			GetSettings: func(c context.Context) (*configpb.Settings, error) {
+				settings := config.GetSettings(c)
+				return settings, nil
+			},
+			GetResultDBClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (resultpb.ResultDBClient, error) {
+				t, err := auth.GetRPCTransport(c, as)
+				if err != nil {
+					return nil, err
+				}
+
+				rpcOpts := prpc.DefaultOptions()
+				rpcOpts.PerRPCTimeout = time.Minute - time.Second
+				return resultpb.NewResultDBClient(&prpc.Client{
+					C:       &http.Client{Transport: t},
+					Host:    host,
+					Options: rpcOpts,
+				}), nil
+			},
+		}
+		httpService.RegisterRoutes(srv)
 
 		return nil
 	})
