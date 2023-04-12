@@ -19,10 +19,7 @@ import 'node-fetch';
 import dayjs from 'dayjs';
 import fetchMock from 'fetch-mock-jest';
 
-import {
-  screen,
-  // waitFor,
-} from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
