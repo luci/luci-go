@@ -36,9 +36,9 @@ import (
 var ipAllowlistNameRE = regexp.MustCompile(`^[0-9A-Za-z_\-\+\.\ ]{2,200}$`)
 
 const (
-	prefixRole         = "role/"
-	prefixCustomRole   = "customRole/"
-	prefixRoleInternal = "role/luci.internal."
+	PrefixBuiltinRole  = "role/"
+	PrefixCustomRole   = "customRole/"
+	PrefixRoleInternal = "role/luci.internal."
 )
 
 // validateAllowlist validates an ip_allowlist.cfg file.
@@ -273,8 +273,8 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 			ctx.Errorf("name is required")
 		}
 
-		if !testPrefixes(role.GetName(), prefixRole, prefixCustomRole, prefixRoleInternal) {
-			ctx.Errorf(`invalid prefix, possible prefixes: ("%s", "%s", "%s")`, prefixRole, prefixCustomRole, prefixRoleInternal)
+		if !testPrefixes(role.GetName(), PrefixBuiltinRole, PrefixCustomRole, PrefixRoleInternal) {
+			ctx.Errorf(`invalid prefix, possible prefixes: ("%s", "%s", "%s")`, PrefixBuiltinRole, PrefixCustomRole, PrefixRoleInternal)
 		}
 
 		if _, ok := roleMap[role.GetName()]; ok {
@@ -291,7 +291,7 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 			if strings.Count(perm.GetName(), ".") != 2 {
 				ctx.Errorf("invalid format: Permissions must have the form <service>.<subject>.<verb>")
 			}
-			if perm.GetInternal() && !strings.HasPrefix(roleObj.GetName(), prefixRoleInternal) {
+			if perm.GetInternal() && !strings.HasPrefix(roleObj.GetName(), PrefixRoleInternal) {
 				ctx.Errorf("invalid format: can only define internal permissions for internal roles")
 			}
 		}

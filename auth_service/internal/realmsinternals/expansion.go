@@ -17,9 +17,13 @@ package realmsinternals
 import (
 	"errors"
 	"sort"
+	"strings"
 
+	"go.chromium.org/luci/auth_service/internal/configs/validation"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
+	lucierr "go.chromium.org/luci/common/errors"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
@@ -30,6 +34,12 @@ var (
 	// ErrFinalized is used when the ConditionsSet has already been finalized
 	// and further modifications are attempted.
 	ErrFinalized = errors.New("conditions set has already been finalized")
+
+	// ErrRoleNotFound is used when a role requested is not found in the internal permissionsDB.
+	ErrRoleNotFound = errors.New("role does not exist in internal representation")
+
+	// ErrImpossibleRole is used when there is an attempt to expand a role that is not allowed.
+	ErrImpossibleRole = errors.New("role is impossible, does not include one of the approved prefixes")
 )
 
 //	ConditionsSet normalizes and dedups conditions, maps them to integers.
@@ -221,15 +231,135 @@ func emptyIndexSet() *indexSet {
 	return &indexSet{make(map[uint32]struct{})}
 }
 
-// toSortedSlice converts and IndexSet to a slice and then sorts the indexes, returning the
-// result.
-func (is *indexSet) toSortedSlice() []uint32 {
+// update adds all indexes from other set.
+func (is *indexSet) update(other *indexSet) {
+	for k := range other.set {
+		is.add(k)
+	}
+}
+
+// toSlice converts an IndexSet to a slice and returns it.
+func (is *indexSet) toSlice() []uint32 {
 	res := make([]uint32, 0, len(is.set))
 	for k := range is.set {
 		res = append(res, k)
 	}
+	return res
+}
+
+// toSortedSlice converts an IndexSet to a slice and then sorts the indexes, returning the
+// result.
+func (is *indexSet) toSortedSlice() []uint32 {
+	res := is.toSlice()
 	sort.Slice(res, func(i, j int) bool {
 		return res[i] < res[j]
 	})
 	return res
+}
+
+// RolesExpander keeps track of permissions and role -> [permission] expansions.
+//
+// Permissions are represented internally as integers to speed up set operations.
+//
+// Should be used only with validated realmsconf.RealmsCfg.
+type RolesExpander struct {
+	// builtinRoles is a mapping from roleName -> *permissions.Role
+	// these are generated from the permissions.cfg and translated to permissions
+	// db which is where these roles come from. If a role is not found here
+	// then it has not been defined in the permissions.cfg. This is assumed
+	// final state and should not be modified.
+	builtinRoles map[string]*permissions.Role
+
+	// customRoles is a mapping from roleName -> *realmsconf.CustomRole
+	// this mapping will be generated from permissionsDB and is defined in
+	// permissisions.go when the DB is initialized. This is assumed final
+	// state and should not be modifed.
+	customRoles map[string]*realmsconf.CustomRole
+
+	// permissions is a mapping from permission name to the internal index
+	// all permissions are converted to a uint32 index for faster queries
+	// this is the list of all declared permissions, this is initially definied
+	// in permissions.cfg and initialized in permissionsDB. This is assumed
+	// final state and should not be modified.
+	permissions map[string]uint32
+
+	// roles contains role to permissions mapping, keyed by roleName
+	// this mapping contains a set of all the permissions a given role
+	// is associated with.
+	roles map[string]*indexSet
+}
+
+// permIndex returns an internal index that represents the given permission string.
+func (re *RolesExpander) permIndex(name string) uint32 {
+	idx, ok := re.permissions[name]
+	if !ok {
+		idx = uint32(len(re.permissions))
+		re.permissions[name] = idx
+	}
+	return idx
+}
+
+// permIndexes returns internal indexes representing the given permission strings.
+func (re *RolesExpander) permIndexes(names ...string) []uint32 {
+	res := make([]uint32, len(names))
+	for idx, name := range names {
+		res[idx] = re.permIndex(name)
+	}
+	return res
+}
+
+// role returns an IndexSet of permissions for a given role.
+//
+// returns
+//
+// ErrRoleNotFound - if given roleName doesn't exist in permissionsDB
+// ErrImpossibleRole - if roleName format is invalid
+func (re *RolesExpander) role(roleName string) (*indexSet, error) {
+	if perms, ok := re.roles[roleName]; ok {
+		return perms, nil
+	}
+
+	var perms *indexSet
+	if strings.HasPrefix(roleName, validation.PrefixBuiltinRole) {
+		role, ok := re.builtinRoles[roleName]
+		if !ok {
+			return nil, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName).Err()
+		}
+		perms = IndexSetFromSlice(re.permIndexes(role.Permissions...))
+	} else if strings.HasPrefix(roleName, validation.PrefixCustomRole) {
+		customRole, ok := re.customRoles[roleName]
+		if !ok {
+			return nil, lucierr.Annotate(ErrRoleNotFound, "customRole: %s", roleName).Err()
+		}
+		perms = IndexSetFromSlice(re.permIndexes(customRole.GetPermissions()...))
+		for _, parent := range customRole.Extends {
+			parentRole, err := re.role(parent)
+			if err != nil {
+				return nil, err
+			}
+			perms.update(parentRole)
+		}
+	} else {
+		return nil, ErrImpossibleRole
+	}
+
+	re.roles[roleName] = perms
+	return perms, nil
+}
+
+// sortedPermissions returns a sorted slice of permissions and slice
+// mapping old -> new indexes.
+func (re *RolesExpander) sortedPermissions() ([]string, []uint32) {
+	perms := make([]string, 0, len(re.permissions))
+	for k := range re.permissions {
+		perms = append(perms, k)
+	}
+	sort.Strings(perms)
+
+	mapping := make([]uint32, len(re.permissions))
+	for newIdx, perm := range perms {
+		oldIdx := re.permissions[perm]
+		mapping[oldIdx] = uint32(newIdx)
+	}
+	return perms, mapping
 }

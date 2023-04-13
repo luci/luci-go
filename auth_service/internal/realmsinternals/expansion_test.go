@@ -15,13 +15,109 @@
 package realmsinternals
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/internal/permissions"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
+
+func testPermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
+	db, _ := permissions.NewPermissionsDB(&configspb.PermissionsConfig{
+		Role: []*configspb.PermissionsConfig_Role{
+			{
+				Name: "role/dev.a",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.p1",
+					},
+					{
+						Name: "luci.dev.p2",
+					},
+				},
+			},
+			{
+				Name: "role/dev.b",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.p2",
+					},
+					{
+						Name: "luci.dev.p3",
+					},
+				},
+			},
+			{
+				Name: "role/dev.all",
+				Includes: []string{
+					"role/dev.a",
+					"role/dev.b",
+				},
+			},
+			{
+				Name: "role/dev.unused",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.p2",
+					},
+					{
+						Name: "luci.dev.p3",
+					},
+					{
+						Name: "luci.dev.p4",
+					},
+					{
+						Name: "luci.dev.p5",
+					},
+					{
+						Name: "luci.dev.unused",
+					},
+				},
+			},
+			{
+				Name: "role/implicitRoot",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "luci.dev.implicitRoot",
+					},
+				},
+			},
+		},
+		Attribute: []string{"a1", "a2", "root"},
+	}, config.Meta{
+		Revision: "123",
+	})
+	if implicitRootBindings {
+		db.ImplicitRootBindings = func(projectID string) []*realmsconf.Binding {
+			return []*realmsconf.Binding{
+				{
+					Role:       "role/implicitRoot",
+					Principals: []string{fmt.Sprintf("project:%s", projectID)},
+				},
+				{
+					Role:       "role/implicitRoot",
+					Principals: []string{"group:root"},
+					Conditions: []*realmsconf.Condition{
+						{
+							Op: &realmsconf.Condition_Restrict{
+								Restrict: &realmsconf.Condition_AttributeRestriction{
+									Attribute: "root",
+									Values:    []string{"yes"},
+								},
+							},
+						},
+					},
+				},
+			}
+		}
+	}
+	return db
+}
 
 func TestConditionsSet(t *testing.T) {
 	t.Parallel()
@@ -128,5 +224,126 @@ func TestConditionsSet(t *testing.T) {
 		So(cs.indexes([]*realmsconf.Condition{r4}), ShouldResemble, []uint32{1})
 		inds := cs.indexes([]*realmsconf.Condition{r1, r2, r3, r4})
 		So(inds, ShouldResemble, []uint32{0, 1, 2})
+	})
+}
+
+func TestRolesExpander(t *testing.T) {
+	t.Parallel()
+
+	Convey("errors", t, func() {
+		permDB := testPermissionsDB(false)
+		r := &RolesExpander{
+			builtinRoles: permDB.Roles,
+			customRoles:  map[string]*realmsconf.CustomRole{},
+			permissions:  map[string]uint32{},
+			roles:        map[string]*indexSet{},
+		}
+		_, err := r.role("role/notbuiltin")
+		So(err, ShouldErrLike, ErrRoleNotFound)
+
+		_, err = r.role("customRole/notarole")
+		So(err, ShouldErrLike, ErrRoleNotFound)
+
+		_, err = r.role("notarole/test")
+		So(err, ShouldErrLike, ErrImpossibleRole)
+	})
+
+	Convey("test builtin roles works", t, func() {
+		permDB := testPermissionsDB(false)
+		r := &RolesExpander{
+			builtinRoles: permDB.Roles,
+			permissions:  map[string]uint32{},
+			roles:        map[string]*indexSet{},
+		}
+		actual, err := r.role("role/dev.a")
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{0, 1}))
+
+		actual, err = r.role("role/dev.b")
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{1, 2}))
+
+		perms, mapping := r.sortedPermissions()
+		So(perms, ShouldResemble, []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"})
+		So(mapping, ShouldResemble, []uint32{0, 1, 2})
+	})
+
+	Convey("test custom roles works", t, func() {
+		permDB := testPermissionsDB(false)
+		r := &RolesExpander{
+			builtinRoles: permDB.Roles,
+			customRoles: map[string]*realmsconf.CustomRole{
+				"customRole/custom1": {
+					Name:        "customRole/custom1",
+					Extends:     []string{"role/dev.a", "customRole/custom2", "customRole/custom3"},
+					Permissions: []string{"luci.dev.p1", "luci.dev.p4"},
+				},
+				"customRole/custom2": {
+					Name:        "customRole/custom2",
+					Extends:     []string{"customRole/custom3"},
+					Permissions: []string{"luci.dev.p4"},
+				},
+				"customRole/custom3": {
+					Name:        "customRole/custom3",
+					Extends:     []string{"role/dev.b"},
+					Permissions: []string{"luci.dev.p5"},
+				},
+			},
+			permissions: map[string]uint32{},
+			roles:       map[string]*indexSet{},
+		}
+
+		actual, err := r.role("customRole/custom1")
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{0, 1, 2, 3, 4}))
+
+		actual, err = r.role("customRole/custom2")
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{1, 2, 3, 4}))
+
+		actual, err = r.role("customRole/custom3")
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, IndexSetFromSlice([]uint32{2, 3, 4}))
+
+		perms, mapping := r.sortedPermissions()
+		So(perms, ShouldResemble, []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3", "luci.dev.p4", "luci.dev.p5"})
+		So(mapping, ShouldResemble, []uint32{0, 3, 1, 4, 2})
+
+		reMap := func(perms []string, mapping []uint32, permSet []uint32) []string {
+			res := make([]string, 0, len(permSet))
+			for _, idx := range permSet {
+				res = append(res, perms[mapping[idx]])
+			}
+			return res
+		}
+
+		// This test is a bit redundant but just to ensure the permissions since
+		// eyeballing the numbers is difficult.
+		permSet, err := r.role("customRole/custom1")
+		So(err, ShouldBeNil)
+		So(reMap(perms, mapping, permSet.toSortedSlice()), ShouldResemble, []string{
+			"luci.dev.p1",
+			"luci.dev.p4",
+			"luci.dev.p2",
+			"luci.dev.p5",
+			"luci.dev.p3",
+		})
+
+		permSet, err = r.role("customRole/custom2")
+		So(err, ShouldBeNil)
+		So(reMap(perms, mapping, permSet.toSortedSlice()), ShouldResemble, []string{
+			"luci.dev.p4",
+			"luci.dev.p2",
+			"luci.dev.p5",
+			"luci.dev.p3",
+		})
+
+		permSet, err = r.role("customRole/custom3")
+		So(err, ShouldBeNil)
+		So(reMap(perms, mapping, permSet.toSortedSlice()), ShouldResemble, []string{
+			"luci.dev.p2",
+			"luci.dev.p5",
+			"luci.dev.p3",
+		})
 	})
 }
