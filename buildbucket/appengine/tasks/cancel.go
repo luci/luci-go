@@ -144,9 +144,10 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		canceled = false // reset canceled in case of retries.
 		inf := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 		stp := &model.BuildSteps{Build: inf.Build}
+		bs := &model.BuildStatus{Build: inf.Build}
 
 		cancelSteps := true
-		if err := datastore.Get(ctx, bld, inf, stp); err != nil {
+		if err := datastore.Get(ctx, bld, inf, stp, bs); err != nil {
 			switch merr, ok := err.(errors.MultiError); {
 			case !ok:
 				return errors.Annotate(err, "failed to fetch build: %d", bld.ID).Err()
@@ -158,6 +159,9 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 				return errors.Annotate(merr[1], "failed to fetch build infra: %d", bld.ID).Err()
 			case merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity:
 				return errors.Annotate(merr[2], "failed to fetch build steps: %d", bld.ID).Err()
+			case merr[3] != nil && merr[3] != datastore.ErrNoSuchEntity:
+				// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
+				return errors.Annotate(merr[3], "failed to fetch build status: %d", bld.ID).Err()
 			case merr[2] == datastore.ErrNoSuchEntity:
 				cancelSteps = false
 			}
@@ -198,8 +202,12 @@ func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 		protoutil.SetStatus(now, bld.Proto, pb.Status_CANCELED)
 		logging.Debugf(ctx, fmt.Sprintf("Build %d status has now been set as canceled.", bld.ID))
 		canceled = true
-
 		toPut := []any{bld}
+
+		if bs.Status != pb.Status_STATUS_UNSPECIFIED {
+			bs.Status = pb.Status_CANCELED
+			toPut = append(toPut, bs)
+		}
 
 		if cancelSteps {
 			switch changed, err := stp.CancelIncomplete(ctx, timestamppb.New(now)); {

@@ -355,7 +355,6 @@ func TestSyncBuild(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, b), ShouldBeNil)
 		inf := &model.BuildInfra{
 			ID:    1,
 			Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
@@ -391,7 +390,11 @@ func TestSyncBuild(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, inf), ShouldBeNil)
+		bs := &model.BuildStatus{
+			Build:  datastore.KeyForObj(ctx, b),
+			Status: b.Proto.Status,
+		}
+		So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
 		Convey("swarming-build-create", func() {
 
 			Convey("build not found", func() {
@@ -454,10 +457,14 @@ func TestSyncBuild(t *testing.T) {
 				err := SyncBuild(ctx, 123, 0)
 				So(err, ShouldBeNil)
 				failedBuild := &model.Build{ID: 123}
-				So(datastore.Get(ctx, failedBuild), ShouldBeNil)
+				bldStatus := &model.BuildStatus{
+					Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
+				}
+				So(datastore.Get(ctx, failedBuild, bldStatus), ShouldBeNil)
 				So(failedBuild.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 				So(failedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "failed to create a swarming task: googleapi: got HTTP response code 400")
 				So(sch.Tasks(), ShouldHaveLength, 4)
+				So(bldStatus.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			})
 
 			Convey("create swarming http 500 err", func() {
@@ -812,6 +819,9 @@ func TestSyncBuild(t *testing.T) {
 						// NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
 						So(sch.Tasks(), ShouldHaveLength, 3)
 					}
+					syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
+					So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
+					So(syncedBuildStatus.Status, ShouldEqual, syncedBuild.Proto.Status)
 				})
 			}
 		})
@@ -926,7 +936,6 @@ func TestSubNotify(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, b), ShouldBeNil)
 		inf := &model.BuildInfra{
 			ID:    1,
 			Build: datastore.KeyForObj(ctx, &model.Build{ID: 123}),
@@ -963,7 +972,11 @@ func TestSubNotify(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, inf), ShouldBeNil)
+		bs := &model.BuildStatus{
+			Build:  datastore.KeyForObj(ctx, b),
+			Status: b.Proto.Status,
+		}
+		So(datastore.Put(ctx, b, inf, bs), ShouldBeNil)
 
 		Convey("bad msg data", func() {
 			body := makeSwarmingPubsubMsg(&userdata{
@@ -1116,6 +1129,9 @@ func TestSubNotify(t *testing.T) {
 					Value: "new_val",
 				},
 			})
+			syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
+			So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
+			So(syncedBuildStatus.Status, ShouldEqual, pb.Status_SUCCESS)
 
 			cache := caching.GlobalCache(ctx, "swarming-pubsub-msg-id")
 			cached, err := cache.Get(ctx, "msg1")
@@ -1128,7 +1144,8 @@ func TestSubNotify(t *testing.T) {
 
 		Convey("status unchanged(in STARTED) while bot dimensions changed", func() {
 			b.Proto.Status = pb.Status_STARTED
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			bs.Status = b.Proto.Status
+			So(datastore.Put(ctx, b, bs), ShouldBeNil)
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
@@ -1156,13 +1173,17 @@ func TestSubNotify(t *testing.T) {
 				Key:   "new_key",
 				Value: "new_val",
 			}})
+			syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
+			So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
+			So(syncedBuildStatus.Status, ShouldEqual, pb.Status_STARTED)
 
 			So(sch.Tasks(), ShouldHaveLength, 0)
 		})
 
 		Convey("status unchanged(not in STARTED) while bot dimensions changed", func() {
 			b.Proto.Status = pb.Status_STARTED
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			bs.Status = b.Proto.Status
+			So(datastore.Put(ctx, b, bs), ShouldBeNil)
 			body := makeSwarmingPubsubMsg(&userdata{
 				BuildID:          123,
 				CreatedTS:        1517260502000000,
@@ -1186,6 +1207,10 @@ func TestSubNotify(t *testing.T) {
 			currentInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, syncedBuild)}
 			So(datastore.Get(ctx, currentInfra), ShouldBeNil)
 			So(currentInfra.Proto.Swarming.BotDimensions, ShouldBeEmpty)
+
+			syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
+			So(datastore.Get(ctx, syncedBuildStatus), ShouldBeNil)
+			So(syncedBuildStatus.Status, ShouldEqual, pb.Status_STARTED)
 
 			So(sch.Tasks(), ShouldHaveLength, 0)
 		})

@@ -333,14 +333,32 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 		}
 
 		changedToEnded = !protoutil.IsEnded(bld.Proto.Status)
+		if !changedToEnded {
+			// Build already ended, no more change to it.
+			return nil
+		}
+
 		protoutil.SetStatus(clock.Now(ctx), bld.Proto, pb.Status_INFRA_FAILURE)
 		bld.Proto.SummaryMarkdown = msg
+
+		toSave := []any{bld}
+		bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, bld)}
+		switch err := datastore.Get(ctx, bs); {
+		case err == datastore.ErrNoSuchEntity:
+			// This is allowed during BuildStatus rollout.
+			// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch build status: %d", bld.ID).Err()
+		default:
+			bs.Status = pb.Status_INFRA_FAILURE
+			toSave = append(toSave, bs)
+		}
 
 		if err := sendOnBuildCompletion(ctx, bld); err != nil {
 			return err
 		}
 
-		return datastore.Put(ctx, bld)
+		return datastore.Put(ctx, toSave)
 	}, nil)
 	if err != nil {
 		return transient.Tag.Apply(errors.Annotate(err, "failed to terminate build: %d", buildID).Err())

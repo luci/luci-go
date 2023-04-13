@@ -65,6 +65,10 @@ func TestCancelBuild(t *testing.T) {
 					},
 				},
 			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildStatus{
+				Build:  datastore.MakeKey(ctx, "Build", 1),
+				Status: pb.Status_SCHEDULED,
+			}), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -79,6 +83,11 @@ func TestCancelBuild(t *testing.T) {
 				Status:     pb.Status_CANCELED,
 			})
 			So(sch.Tasks(), ShouldHaveLength, 3)
+			bs := &model.BuildStatus{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+			}
+			So(datastore.Get(ctx, bs), ShouldBeNil)
+			So(bs.Status, ShouldEqual, pb.Status_CANCELED)
 		})
 
 		Convey("ended", func() {
@@ -92,6 +101,10 @@ func TestCancelBuild(t *testing.T) {
 					},
 					Status: pb.Status_SUCCESS,
 				},
+			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildStatus{
+				Build:  datastore.MakeKey(ctx, "Build", 1),
+				Status: pb.Status_SUCCESS,
 			}), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
@@ -127,6 +140,10 @@ func TestCancelBuild(t *testing.T) {
 					},
 				},
 			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildStatus{
+				Build:  datastore.MakeKey(ctx, "Build", 1),
+				Status: pb.Status_STARTED,
+			}), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -141,6 +158,11 @@ func TestCancelBuild(t *testing.T) {
 				Status:     pb.Status_CANCELED,
 			})
 			So(sch.Tasks(), ShouldHaveLength, 4)
+			bs := &model.BuildStatus{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+			}
+			So(datastore.Get(ctx, bs), ShouldBeNil)
+			So(bs.Status, ShouldEqual, pb.Status_CANCELED)
 		})
 
 		Convey("resultdb finalization", func() {
@@ -163,6 +185,10 @@ func TestCancelBuild(t *testing.T) {
 					},
 				},
 			}), ShouldBeNil)
+			So(datastore.Put(ctx, &model.BuildStatus{
+				Build:  datastore.MakeKey(ctx, "Build", 1),
+				Status: pb.Status_STARTED,
+			}), ShouldBeNil)
 			bld, err := Cancel(ctx, 1)
 			So(err, ShouldBeNil)
 			So(bld.Proto, ShouldResembleProto, &pb.Build{
@@ -177,6 +203,11 @@ func TestCancelBuild(t *testing.T) {
 				Status:     pb.Status_CANCELED,
 			})
 			So(sch.Tasks(), ShouldHaveLength, 4)
+			bs := &model.BuildStatus{
+				Build: datastore.MakeKey(ctx, "Build", 1),
+			}
+			So(datastore.Get(ctx, bs), ShouldBeNil)
+			So(bs.Status, ShouldEqual, pb.Status_CANCELED)
 		})
 	})
 

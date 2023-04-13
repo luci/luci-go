@@ -5357,7 +5357,8 @@ func TestScheduleBuild(t *testing.T) {
 					So(buildInDB.Proto.Infra, ShouldBeNil)
 					inProp := &model.BuildInputProperties{Build: datastore.KeyForObj(ctx, buildInDB)}
 					bInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, buildInDB)}
-					So(datastore.Get(ctx, inProp, bInfra), ShouldBeNil)
+					bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, buildInDB)}
+					So(datastore.Get(ctx, inProp, bInfra, bs), ShouldBeNil)
 					So(inProp.Proto, ShouldResembleProto, &structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"input key": {
@@ -5368,6 +5369,8 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					})
 					So(bInfra.Proto, ShouldNotBeEmpty)
+					So(bs.BuildAddress, ShouldEqual, "project/bucket/builder/1")
+					So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
 
 					So(sch.Tasks(), ShouldHaveLength, 1)
 					So(sch.Tasks().Payloads()[0], ShouldResembleProto, &taskdefs.CreateSwarmingBuildTask{

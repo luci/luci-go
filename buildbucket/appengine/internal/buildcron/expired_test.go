@@ -58,9 +58,9 @@ func setUp() (context.Context, store.Store, *tqtesting.Scheduler) {
 	return ctx, store, sch
 }
 
-func newBuild(ctx context.Context, st pb.Status, t time.Time) *model.Build {
+func newBuildAndStatus(ctx context.Context, st pb.Status, t time.Time) (*model.Build, *model.BuildStatus) {
 	id := buildid.NewBuildIDs(ctx, t, 1)[0]
-	return &model.Build{
+	b := &model.Build{
 		ID: id,
 		Proto: &pb.Build{
 			Id: id,
@@ -72,6 +72,11 @@ func newBuild(ctx context.Context, st pb.Status, t time.Time) *model.Build {
 			Status: st,
 		},
 	}
+	bs := &model.BuildStatus{
+		Build:  datastore.KeyForObj(ctx, b),
+		Status: st,
+	}
+	return b, bs
 }
 
 func TestResetExpiredLeases(t *testing.T) {
@@ -88,12 +93,12 @@ func TestResetExpiredLeases(t *testing.T) {
 		createTime := now.Add(-time.Hour)
 		_, _ = store, sch
 		Convey("skips non-expired leases", func() {
-			b1 := newBuild(ctx, pb.Status_SCHEDULED, createTime)
-			b2 := newBuild(ctx, pb.Status_STARTED, createTime)
+			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, createTime)
+			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, createTime)
 			b2.IsLeased = true
 			b2.LeaseExpirationDate = now.Add(time.Hour)
 
-			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
+			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
 			So(ResetExpiredLeases(ctx), ShouldBeNil)
 
 			b1 = getBuild(ctx, b1.ID)
@@ -102,25 +107,30 @@ func TestResetExpiredLeases(t *testing.T) {
 			b2 = getBuild(ctx, b2.ID)
 			So(b2.IsLeased, ShouldBeTrue)
 			So(b2.LeaseExpirationDate, ShouldEqual, now.Add(time.Hour))
+			bs2 = &model.BuildStatus{Build: datastore.KeyForObj(ctx, b2)}
+			So(datastore.Get(ctx, bs2), ShouldBeNil)
+			So(bs2.Status, ShouldEqual, pb.Status_STARTED)
 		})
 
 		Convey("works w/ a large number of expired leases", func() {
 			bs := make([]*model.Build, 128)
+			bss := make([]*model.BuildStatus, len(bs))
 			for i := 0; i < len(bs); i++ {
-				bs[i] = newBuild(ctx, pb.Status_INFRA_FAILURE, createTime)
+				bs[i], bss[i] = newBuildAndStatus(ctx, pb.Status_INFRA_FAILURE, createTime)
 				bs[i].IsLeased = true
 				bs[i].LeaseExpirationDate = now.Add(-time.Hour)
 			}
 			So(datastore.Put(ctx, bs), ShouldBeNil)
+			So(datastore.Put(ctx, bss), ShouldBeNil)
 			So(ResetExpiredLeases(ctx), ShouldBeNil)
 		})
 
 		Convey("resets expired, terminated leases", func() {
-			b := newBuild(ctx, pb.Status_INFRA_FAILURE, createTime)
+			b, bs := newBuildAndStatus(ctx, pb.Status_INFRA_FAILURE, createTime)
 			b.IsLeased = true
 			b.LeaseExpirationDate = now.Add(-time.Hour)
 
-			So(datastore.Put(ctx, b), ShouldBeNil)
+			So(datastore.Put(ctx, b, bs), ShouldBeNil)
 			So(ResetExpiredLeases(ctx), ShouldBeNil)
 
 			b = getBuild(ctx, b.ID)
@@ -139,7 +149,9 @@ func TestResetExpiredLeases(t *testing.T) {
 		})
 
 		Convey("resets expired, non-terminated leases", func() {
-			b := newBuild(ctx, pb.Status_STARTED, createTime)
+			// don't save BuildStatus to make sure it still works when BuildStatus
+			// doesn't exist.
+			b, _ := newBuildAndStatus(ctx, pb.Status_STARTED, createTime)
 			b.IsLeased = true
 			b.LeaseExpirationDate = now.Add(-time.Hour)
 
@@ -188,24 +200,28 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		ctx, store, sch := setUp()
 
 		Convey("skips young, running builds", func() {
-			b1 := newBuild(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime))
-			b2 := newBuild(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime))
-			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
+			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime))
+			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime))
+			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 
 			b := &model.Build{ID: b1.ID}
-			So(datastore.Get(ctx, b), ShouldBeNil)
+			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
+			So(datastore.Get(ctx, b, bs), ShouldBeNil)
 			So(b.Proto, ShouldResembleProto, b1.Proto)
+			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
 
 			b = &model.Build{ID: b2.ID}
-			So(datastore.Get(ctx, b), ShouldBeNil)
+			bs = &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
+			So(datastore.Get(ctx, b, bs), ShouldBeNil)
 			So(b.Proto, ShouldResembleProto, b2.Proto)
+			So(bs.Status, ShouldEqual, pb.Status_STARTED)
 		})
 
 		Convey("skips old, completed builds", func() {
-			b1 := newBuild(ctx, pb.Status_SUCCESS, now.Add(-model.BuildMaxCompletionTime))
-			b2 := newBuild(ctx, pb.Status_FAILURE, now.Add(-model.BuildMaxCompletionTime))
-			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
+			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SUCCESS, now.Add(-model.BuildMaxCompletionTime))
+			b2, bs2 := newBuildAndStatus(ctx, pb.Status_FAILURE, now.Add(-model.BuildMaxCompletionTime))
+			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 
 			b := &model.Build{ID: b1.ID}
@@ -219,31 +235,37 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 
 		Convey("works w/ a large number of expired builds", func() {
 			bs := make([]*model.Build, 128)
+			bss := make([]*model.BuildStatus, len(bs))
 			createTime := now.Add(-model.BuildMaxCompletionTime - time.Minute)
 			for i := 0; i < len(bs); i++ {
-				bs[i] = newBuild(ctx, pb.Status_SCHEDULED, createTime)
+				bs[i], bss[i] = newBuildAndStatus(ctx, pb.Status_SCHEDULED, createTime)
 			}
 			So(datastore.Put(ctx, bs), ShouldBeNil)
+			So(datastore.Put(ctx, bss), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 		})
 
 		Convey("marks old, running builds w/ infra_failure", func() {
-			b1 := newBuild(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
+			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
 			b1.LegacyProperties.LeaseProperties.IsLeased = true
-			b2 := newBuild(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
-			So(datastore.Put(ctx, b1, b2), ShouldBeNil)
+			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
+			So(datastore.Put(ctx, b1, b2, bs1, bs2), ShouldBeNil)
 			So(TimeoutExpiredBuilds(ctx), ShouldBeNil)
 
 			b := &model.Build{ID: b1.ID}
-			So(datastore.Get(ctx, b), ShouldBeNil)
+			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
+			So(datastore.Get(ctx, b, bs), ShouldBeNil)
 			So(b.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(b.LegacyProperties.LeaseProperties.IsLeased, ShouldBeFalse)
 			So(b.Proto.StatusDetails.GetTimeout(), ShouldNotBeNil)
+			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 
 			b = &model.Build{ID: b2.ID}
-			So(datastore.Get(ctx, b), ShouldBeNil)
+			bs = &model.BuildStatus{Build: datastore.KeyForObj(ctx, b)}
+			So(datastore.Get(ctx, b, bs), ShouldBeNil)
 			So(b.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 			So(b.Proto.StatusDetails.GetTimeout(), ShouldNotBeNil)
+			So(bs.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
 
 			Convey("reports metrics", func() {
 				fv := []any{

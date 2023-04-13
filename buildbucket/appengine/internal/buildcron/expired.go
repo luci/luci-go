@@ -84,6 +84,9 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 				}
 			}
 			workC <- func() error { return datastore.Put(ctx, toUpdate) }
+			workC <- func() error {
+				return updateBuildStatuses(ctx, toUpdate, pb.Status_INFRA_FAILURE)
+			}
 		})
 	}, nil)
 
@@ -195,6 +198,9 @@ func resetLeases(ctx context.Context, bs []*model.Build, mr parallel.MultiRunner
 				workC <- func() error { return tasks.NotifyPubSub(ctx, b) }
 			}
 			workC <- func() error { return datastore.Put(ctx, toReset) }
+			workC <- func() error {
+				return updateBuildStatuses(ctx, toReset, pb.Status_SCHEDULED)
+			}
 		})
 	}, nil)
 
@@ -251,4 +257,39 @@ func ResetExpiredLeases(ctx context.Context) error {
 			}
 		})
 	})
+}
+
+func updateBuildStatuses(ctx context.Context, builds []*model.Build, status pb.Status) error {
+	buildStatuses := make([]*model.BuildStatus, 0, len(builds))
+	for _, b := range builds {
+		buildStatuses = append(buildStatuses, &model.BuildStatus{
+			Build: datastore.KeyForObj(ctx, b),
+		})
+	}
+	err := datastore.Get(ctx, buildStatuses)
+	if err == nil {
+		for _, s := range buildStatuses {
+			s.Status = status
+		}
+		return datastore.Put(ctx, buildStatuses)
+	}
+
+	merr, ok := err.(errors.MultiError)
+	if !ok {
+		return err
+	}
+	existBuildStatuses := make([]*model.BuildStatus, 0, len(buildStatuses))
+	for i, me := range merr {
+		if me == nil {
+			existBuildStatuses = append(existBuildStatuses, buildStatuses[i])
+		}
+		// It is allowed for build created before BuildStatus rollout to not have
+		// BuildStatus.
+		// TODO(crbug.com/1430324): also disallow ErrNoSuchEntity for BuildStatus.
+	}
+
+	for _, s := range existBuildStatuses {
+		s.Status = status
+	}
+	return datastore.Put(ctx, existBuildStatuses)
 }

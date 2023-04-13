@@ -128,7 +128,11 @@ func TestStartBuild(t *testing.T) {
 			Build: bk,
 			Proto: &pb.BuildInfra{},
 		}
-		So(datastore.Put(ctx, build, infra), ShouldBeNil)
+		bs := &model.BuildStatus{
+			Build:  bk,
+			Status: pb.Status_SCHEDULED,
+		}
+		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
 
 		Convey("build on backend", func() {
 			tk, _ := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_START_BUILD)
@@ -152,11 +156,12 @@ func TestStartBuild(t *testing.T) {
 					res, err := srv.StartBuild(ctx, req)
 					So(err, ShouldBeNil)
 
-					build, err = getBuild(ctx, 87654321)
+					err = datastore.Get(ctx, build, bs)
 					So(err, ShouldBeNil)
 					So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
 					So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
 					So(build.Status, ShouldEqual, pb.Status_STARTED)
+					So(bs.Status, ShouldEqual, pb.Status_STARTED)
 
 					err = datastore.Get(ctx, infra)
 					So(err, ShouldBeNil)
@@ -347,7 +352,11 @@ func TestStartBuild(t *testing.T) {
 
 			Convey("StartBuild", func() {
 				build.UpdateToken = tk
-				So(datastore.Put(ctx, build), ShouldBeNil)
+				bs := &model.BuildStatus{
+					Build:  datastore.KeyForObj(ctx, build),
+					Status: pb.Status_SCHEDULED,
+				}
+				So(datastore.Put(ctx, build, bs), ShouldBeNil)
 				Convey("build not on swarming", func() {
 					_, err := srv.StartBuild(ctx, req)
 					So(err, ShouldErrLike, `the build 87654321 does not run on swarming`)
@@ -362,11 +371,12 @@ func TestStartBuild(t *testing.T) {
 						res, err := srv.StartBuild(ctx, req)
 						So(err, ShouldBeNil)
 
-						build, err = getBuild(ctx, 87654321)
+						err = datastore.Get(ctx, build, bs)
 						So(err, ShouldBeNil)
 						So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
 						So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
 						So(build.Status, ShouldEqual, pb.Status_STARTED)
+						So(bs.Status, ShouldEqual, pb.Status_STARTED)
 
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()

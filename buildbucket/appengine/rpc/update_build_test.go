@@ -642,7 +642,12 @@ func TestUpdateBuild(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, build, infra), ShouldBeNil)
+		bs := &model.BuildStatus{
+			Build:  bk,
+			Status: pb.Status_STARTED,
+		}
+		So(datastore.Put(ctx, build, infra, bs), ShouldBeNil)
+
 		req := &pb.UpdateBuildRequest{
 			Build: &pb.Build{Id: 1, SummaryMarkdown: "summary"},
 			UpdateMask: &field_mask.FieldMask{Paths: []string{
@@ -804,6 +809,10 @@ func TestUpdateBuild(t *testing.T) {
 					req.UpdateMask.Paths = []string{"build.status"}
 					req.Build.Status = pb.Status_SUCCESS
 					So(updateBuild(ctx, req), ShouldBeRPCOK)
+					nbs := &model.BuildStatus{Build: bk}
+					err := datastore.Get(ctx, nbs)
+					So(err, ShouldBeNil)
+					So(nbs.Status, ShouldEqual, pb.Status_SUCCESS)
 
 					// the step should have been cancelled.
 					b := getBuildWithDetails(ctx, req.Build.Id)
@@ -940,7 +949,11 @@ func TestUpdateBuild(t *testing.T) {
 				tk, ctx = updateContextForNewBuildToken(ctx, build.ID)
 				build.UpdateToken = tk
 				build.Proto.Status, build.Status = pb.Status_SCHEDULED, pb.Status_SCHEDULED
-				So(datastore.Put(ctx, build), ShouldBeNil)
+				buildStatus := &model.BuildStatus{
+					Build:  datastore.KeyForObj(ctx, build),
+					Status: pb.Status_SCHEDULED,
+				}
+				So(datastore.Put(ctx, build, buildStatus), ShouldBeNil)
 
 				// update it with STARTED
 				req.Build.Id = build.ID
@@ -958,6 +971,11 @@ func TestUpdateBuild(t *testing.T) {
 
 				// BuildStarted metric should be set 1.
 				So(store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), ShouldEqual, 1)
+
+				// BuildStatus should be updated.
+				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
+				So(datastore.Get(ctx, buildStatus), ShouldBeNil)
+				So(buildStatus.Status, ShouldEqual, pb.Status_STARTED)
 			})
 		})
 
@@ -1031,7 +1049,11 @@ func TestUpdateBuild(t *testing.T) {
 				CreateTime:  t0,
 				UpdateToken: tk,
 			}
-			So(datastore.Put(ctx, parent), ShouldBeNil)
+			ps := &model.BuildStatus{
+				Build:  datastore.KeyForObj(ctx, parent),
+				Status: pb.Status_STARTED,
+			}
+			So(datastore.Put(ctx, parent, ps), ShouldBeNil)
 
 			Convey("child can outlive parent", func() {
 				child := &model.Build{
@@ -1075,7 +1097,11 @@ func TestUpdateBuild(t *testing.T) {
 				}
 				tk, ctx = updateContextForNewBuildToken(ctx, 11)
 				child.UpdateToken = tk
-				So(datastore.Put(ctx, child), ShouldBeNil)
+				cs := &model.BuildStatus{
+					Build:  datastore.KeyForObj(ctx, child),
+					Status: pb.Status_STARTED,
+				}
+				So(datastore.Put(ctx, child, cs), ShouldBeNil)
 
 				Convey("request is to terminate the child", func() {
 					req.UpdateMask.Paths[0] = "build.status"
@@ -1144,6 +1170,7 @@ func TestUpdateBuild(t *testing.T) {
 					req.Mask = &pb.BuildMask{
 						Fields: &fieldmaskpb.FieldMask{
 							Paths: []string{
+								"status",
 								"cancel_time",
 								"cancellation_markdown",
 							},
@@ -1151,6 +1178,7 @@ func TestUpdateBuild(t *testing.T) {
 					}
 					build, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
+					So(build.Status, ShouldEqual, pb.Status_STARTED)
 					So(build.CancelTime.AsTime(), ShouldEqual, t0)
 					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 10 has terminated")
 					// One pubsub notification for the status update in the request,
@@ -1158,11 +1186,15 @@ func TestUpdateBuild(t *testing.T) {
 					// one CancelBuildTask for the child build.
 					So(sch.Tasks(), ShouldHaveLength, 4)
 
+					// BuildStatus is updated.
+					updatedStatus := &model.BuildStatus{Build: datastore.MakeKey(ctx, "Build", 11)}
+					So(datastore.Get(ctx, updatedStatus), ShouldBeNil)
+					So(updatedStatus.Status, ShouldEqual, pb.Status_STARTED)
 				})
 
 				Convey("start the cancel process if parent is missing", func() {
 					tk, ctx = updateContextForNewBuildToken(ctx, 15)
-					So(datastore.Put(ctx, &model.Build{
+					b := &model.Build{
 						ID: 15,
 						Proto: &pb.Build{
 							Id: 15,
@@ -1173,15 +1205,22 @@ func TestUpdateBuild(t *testing.T) {
 							},
 							AncestorIds:      []int64{3000000},
 							CanOutliveParent: false,
+							Status:           pb.Status_SCHEDULED,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}
+					buildStatus := &model.BuildStatus{
+						Build:  datastore.KeyForObj(ctx, b),
+						Status: b.Proto.Status,
+					}
+					So(datastore.Put(ctx, b, buildStatus), ShouldBeNil)
 					req.Build.Id = 15
 					req.Build.Status = pb.Status_STARTED
 					req.UpdateMask.Paths[0] = "build.status"
 					req.Mask = &pb.BuildMask{
 						Fields: &fieldmaskpb.FieldMask{
 							Paths: []string{
+								"status",
 								"cancel_time",
 								"cancellation_markdown",
 							},
@@ -1189,10 +1228,15 @@ func TestUpdateBuild(t *testing.T) {
 					}
 					build, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
+					So(build.Status, ShouldEqual, pb.Status_STARTED)
 					So(build.CancelTime.AsTime(), ShouldEqual, t0)
 					So(build.CancellationMarkdown, ShouldEqual, "canceled because its parent 3000000 is missing")
 					So(sch.Tasks(), ShouldHaveLength, 3)
 
+					// BuildStatus is updated.
+					updatedStatus := &model.BuildStatus{Build: datastore.MakeKey(ctx, "Build", 15)}
+					So(datastore.Get(ctx, updatedStatus), ShouldBeNil)
+					So(updatedStatus.Status, ShouldEqual, pb.Status_STARTED)
 				})
 
 				Convey("return err if failed to get parent", func() {
@@ -1278,7 +1322,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				Convey("build is ended, should cancel children", func() {
 					tk, ctx = updateContextForNewBuildToken(ctx, 20)
-					So(datastore.Put(ctx, &model.Build{
+					p := &model.Build{
 						ID: 20,
 						Proto: &pb.Build{
 							Id: 20,
@@ -1289,9 +1333,14 @@ func TestUpdateBuild(t *testing.T) {
 							},
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}
+					ps := &model.BuildStatus{
+						Build:  datastore.KeyForObj(ctx, p),
+						Status: pb.Status_STARTED,
+					}
+					So(datastore.Put(ctx, p, ps), ShouldBeNil)
 					// Child of the requested build.
-					So(datastore.Put(ctx, &model.Build{
+					c := &model.Build{
 						ID: 21,
 						Proto: &pb.Build{
 							Id: 21,
@@ -1304,7 +1353,8 @@ func TestUpdateBuild(t *testing.T) {
 							CanOutliveParent: false,
 						},
 						UpdateToken: tk,
-					}), ShouldBeNil)
+					}
+					So(datastore.Put(ctx, c), ShouldBeNil)
 					req.Build.Id = 20
 					req.Build.Status = pb.Status_INFRA_FAILURE
 					req.UpdateMask.Paths[0] = "build.status"

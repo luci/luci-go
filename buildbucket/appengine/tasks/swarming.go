@@ -339,8 +339,22 @@ func syncBuildWithTaskResult(ctx context.Context, buildID int64, taskID string, 
 			return nil
 		}
 
-		statusChanged = oldStatus != bld.Proto.Status
 		toPut := []any{bld, infra}
+		statusChanged = oldStatus != bld.Proto.Status
+		if statusChanged {
+			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, bld)}
+			switch err := datastore.Get(ctx, bs); {
+			case err == datastore.ErrNoSuchEntity:
+				// This is allowed during BuildStatus rollout.
+				// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
+			case err != nil:
+				return errors.Annotate(err, "failed to get build status for build %d", bld.ID).Err()
+			default:
+				bs.Status = bld.Proto.Status
+				toPut = append(toPut, bs)
+			}
+
+		}
 		switch {
 		case statusChanged && bld.Proto.Status == pb.Status_STARTED:
 			if err := NotifyPubSub(ctx, bld); err != nil {

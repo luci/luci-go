@@ -441,6 +441,17 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 
 		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
 			protoutil.SetStatus(now, b.Proto, req.Build.Status)
+			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, &model.Build{ID: b.ID})}
+			switch err := datastore.Get(ctx, bs); {
+			case err == datastore.ErrNoSuchEntity:
+				// This is allowed during BuildStatus rollout.
+				// TODO(crbug.com/1430324): also check ErrNoSuchEntity.
+			case err != nil:
+				return errors.Annotate(err, "failed to get build status for build %d", b.ID).Err()
+			default:
+				bs.Status = req.Build.Status
+				toSave = append(toSave, bs)
+			}
 		}
 		if err := updateMask.Merge(req.Build, b.Proto); err != nil {
 			return errors.Annotate(err, "attempting to merge masked build").Err()
@@ -452,6 +463,8 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		switch {
 		case origStatus == b.Proto.Status:
 		case b.Proto.Status == pb.Status_STARTED:
+			// TODO(crbug.com/1416971): StartBuild has been fully enabled, remove
+			// the logic in UpdateBuild to start a build.
 			if err := tasks.NotifyPubSub(ctx, b); err != nil {
 				return nil
 			}
@@ -459,6 +472,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 			b.ClearLease()
 			shouldCancelChildren = true
 			invTask := &taskdefs.FinalizeResultDBGo{BuildId: b.ID}
+
 			err := parallel.FanOutIn(func(tks chan<- func() error) {
 				tks <- func() error { return tasks.NotifyPubSub(ctx, b) }
 				tks <- func() error {

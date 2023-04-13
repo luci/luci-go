@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -830,7 +831,10 @@ func TestCreateBuild(t *testing.T) {
 
 			// Check datastore.
 			bld := &model.Build{ID: b.Id}
-			So(datastore.Get(ctx, bld), ShouldBeNil)
+			bs := &model.BuildStatus{Build: datastore.KeyForObj(ctx, &model.Build{ID: b.Id})}
+			So(datastore.Get(ctx, bld, bs), ShouldBeNil)
+			So(bs.Status, ShouldEqual, pb.Status_SCHEDULED)
+			So(bs.BuildAddress, ShouldEqual, fmt.Sprintf("project/bucket/builder/b%d", b.Id))
 		})
 
 		Convey("passes with backend", func() {

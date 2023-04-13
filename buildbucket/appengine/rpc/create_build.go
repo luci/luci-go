@@ -554,8 +554,18 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 
 			reqID := bc.reqIDs[origI]
 			work <- func() error {
+				bldr := b.Proto.Builder
+				bs := &model.BuildStatus{
+					Build:        datastore.KeyForObj(ctx, b),
+					Status:       pb.Status_SCHEDULED,
+					BuildAddress: fmt.Sprintf("%s/%s/%s/b%d", bldr.Project, bldr.Bucket, bldr.Builder, b.ID),
+				}
+				if b.Proto.Number > 0 {
+					bs.BuildAddress = fmt.Sprintf("%s/%s/%s/%d", bldr.Project, bldr.Bucket, bldr.Builder, b.Proto.Number)
+				}
 				toPut := []any{
 					b,
+					bs,
 					&model.BuildInfra{
 						Build: datastore.KeyForObj(ctx, b),
 						Proto: b.Proto.Infra,
