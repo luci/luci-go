@@ -2956,7 +2956,6 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Exe: &pb.Executable{},
 				Infra: &pb.BuildInfra{
-					Swarming: &pb.BuildInfra_Swarming{},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						Hostname: "app.appspot.com",
 					},
@@ -2976,7 +2975,6 @@ func TestScheduleBuild(t *testing.T) {
 					Cmd: []string{"recipes"},
 				},
 				Infra: &pb.BuildInfra{
-					Swarming: &pb.BuildInfra_Swarming{},
 					Buildbucket: &pb.BuildInfra_Buildbucket{
 						Hostname: "app.appspot.com",
 					},
@@ -3080,38 +3078,6 @@ func TestScheduleBuild(t *testing.T) {
 			})
 		})
 
-		Convey("priority", func() {
-			Convey("production", func() {
-				req.Experiments[bb.ExperimentBBAgent] = false
-				setExps()
-				ent.Proto.Infra.Swarming.Priority = 1
-
-				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
-				So(ent.Proto.Input.Experimental, ShouldBeFalse)
-				So(ent.Experimental, ShouldBeFalse)
-			})
-
-			Convey("non-production", func() {
-				req.Experiments[bb.ExperimentNonProduction] = true
-				ent.Proto.Infra.Swarming.Priority = 1
-				setExps()
-
-				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 255)
-				So(ent.Proto.Input.Experimental, ShouldBeTrue)
-				So(ent.Experimental, ShouldBeTrue)
-			})
-
-			Convey("req > experiment", func() {
-				req.Experiments[bb.ExperimentNonProduction] = true
-				req.Priority = 1
-				setInfra(ctx, req, cfg, ent.Proto, gCfg)
-				setExps()
-				setSwarmingOrBackend(ctx, req, cfg, ent.Proto, gCfg)
-
-				So(ent.Proto.Infra.Swarming.Priority, ShouldEqual, 1)
-			})
-		})
-
 		Convey("request only", func() {
 			req.Experiments["experiment1"] = true
 			req.Experiments["experiment2"] = false
@@ -3180,7 +3146,6 @@ func TestScheduleBuild(t *testing.T) {
 				expect.Experimental = true
 				expect.Proto.Input.Experimental = true
 				expect.Proto.Input.Experiments = []string{bb.ExperimentNonProduction}
-				expect.Proto.Infra.Swarming.Priority = 255
 				er := initReasons()
 				er[bb.ExperimentNonProduction] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er[bb.ExperimentBBCanarySoftware] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
@@ -3253,7 +3218,6 @@ func TestScheduleBuild(t *testing.T) {
 					"experiment1",
 					bb.ExperimentNonProduction,
 				}
-				expect.Proto.Infra.Swarming.Priority = 255
 				er := initReasons()
 				er["experiment1"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
 				er["experiment2"] = pb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED
@@ -3751,6 +3715,53 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Priority: 30,
 				},
+			})
+		})
+		Convey("priority", func() {
+			b := &pb.Build{
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Infra: &pb.BuildInfra{
+					Bbagent: &pb.BuildInfra_BBAgent{
+						CacheDir:    "cache",
+						PayloadPath: "kitchen-checkout",
+					},
+					Buildbucket: &pb.BuildInfra_Buildbucket{
+						Hostname: "app.appspot.com",
+					},
+					Logdog: &pb.BuildInfra_LogDog{
+						Hostname: "host",
+						Project:  "project",
+					},
+					Resultdb: &pb.BuildInfra_ResultDB{},
+				},
+				Input: &pb.Build_Input{
+					Experiments: []string{},
+				},
+			}
+			Convey("default production", func() {
+				setSwarmingOrBackend(ctx, nil, nil, b, nil)
+				So(b.Infra.Swarming.Priority, ShouldEqual, 30)
+				So(b.Input.Experimental, ShouldBeFalse)
+			})
+
+			Convey("non-production", func() {
+				b.Input.Experiments = append(b.Input.Experiments, bb.ExperimentNonProduction)
+				setSwarmingOrBackend(ctx, nil, nil, b, nil)
+				So(b.Infra.Swarming.Priority, ShouldEqual, 255)
+				So(b.Input.Experimental, ShouldBeFalse)
+			})
+
+			Convey("req > experiment", func() {
+				b.Input.Experiments = append(b.Input.Experiments, bb.ExperimentNonProduction)
+				req := &pb.ScheduleBuildRequest{
+					Priority: 1,
+				}
+				setSwarmingOrBackend(ctx, req, nil, b, nil)
+				So(b.Infra.Swarming.Priority, ShouldEqual, 1)
 			})
 		})
 

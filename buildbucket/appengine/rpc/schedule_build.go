@@ -681,7 +681,7 @@ func activeGlobalExpsForBuilder(build *pb.Build, globalCfg *pb.SettingsCfg) (act
 
 // setExperiments computes the experiments from the given request, builder and
 // global config, setting them in the proto. Mutates the given *pb.Build.
-// build.Infra.Swarming, build.Input and build.Exe must not be nil (see
+// build.Infra.Buildbucket, build.Input and build.Exe must not be nil (see
 // setInfra, setInput and setExecutable respectively). The request must not set
 // legacy experiment values (see normalizeSchedule).
 func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, globalCfg *pb.SettingsCfg, build *pb.Build) {
@@ -765,11 +765,6 @@ func setExperiments(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.B
 	} else {
 		// User didn't explicitly set Exe, bbagent was not selected
 		build.Exe.Cmd = []string{"recipes"}
-	}
-
-	// Request > experimental > proto precedence.
-	if selections[bb.ExperimentNonProduction] && req.GetPriority() == 0 {
-		build.Infra.Swarming.Priority = 255
 	}
 
 	for exp, en := range selections {
@@ -866,6 +861,7 @@ func setInfra(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.Builder
 }
 
 func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *pb.Build, globalCfg *pb.SettingsCfg) {
+	experiments := stringset.NewFromSlice(build.GetInput().GetExperiments()...)
 	// constructing common TaskBackend/Swarming task fields
 	priority := int32(cfg.GetPriority())
 	if priority == 0 {
@@ -873,6 +869,11 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 	}
 	if req.GetPriority() > 0 {
 		priority = req.Priority
+	}
+
+	// Request > experimental > proto precedence.
+	if experiments.Has(bb.ExperimentNonProduction) && req.GetPriority() == 0 {
+		priority = 255
 	}
 	taskServiceAccount := cfg.GetServiceAccount()
 
@@ -906,7 +907,7 @@ func setSwarmingOrBackend(ctx context.Context, req *pb.ScheduleBuildRequest, cfg
 	})
 	// Need to configure build.Infra for a backend or swarming.
 	isTaskBackend := false
-	backendAltExpIsTrue := stringset.NewFromSlice(build.GetInput().GetExperiments()...).Has("luci.buildbucket.backend_alt")
+	backendAltExpIsTrue := experiments.Has("luci.buildbucket.backend_alt")
 	switch {
 	case backendAltExpIsTrue && (cfg.GetBackendAlt() != nil || cfg.GetBackend() != nil):
 		cfgToPass := cfg.GetBackend()
