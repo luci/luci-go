@@ -77,7 +77,7 @@ func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, audience 
 	// ProcTokenCache variable in proc_cache.go.
 	//
 	// It is possible (though very unusual), for a single process to use multiple
-	// local auth servers (e.g if it enters a subcontext with another "local_auth"
+	// local auth servers (e.g. if it enters a subcontext with another "local_auth"
 	// value).
 	//
 	// For these reasons we use a digest of localAuth parameters as a cache key.

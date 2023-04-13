@@ -104,8 +104,8 @@ type ConfigFetcher interface {
 	// The path is relative to the token server config set root in LUCI config.
 	//
 	// On success returns nil and fills in 'out' (which should be a pointer to
-	// a concrete proto message class). May return transient error (e.g timeouts)
-	// and fatal ones (e.g bad proto file).
+	// a concrete proto message class). May return transient error (e.g. timeouts)
+	// and fatal ones (e.g. bad proto file).
 	FetchTextProto(c context.Context, path string, out proto.Message) error
 }
 

@@ -144,7 +144,7 @@ message Build {
   //
   // The info captures the state of the builder at creation time.
   // If any information is updated, all future builds will have the new
-  // information, while the the historical builds persist the old infromation.
+  // information, while the historical builds persist the old information.
   message BuilderInfo {
     string description = 1;
 

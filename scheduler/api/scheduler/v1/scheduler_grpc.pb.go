@@ -80,7 +80,7 @@ type SchedulerClient interface {
 	//
 	// If at least one job doesn't exist or the caller has no permission to
 	// trigger it, the entire request is aborted. Otherwise, the request is NOT
-	// transactional: if it fails midway (e.g by returning internal server error),
+	// transactional: if it fails midway (e.g. by returning internal server error),
 	// some triggers may have been submitted and some may not. It is safe to retry
 	// the call, supplying the same trigger IDs. Triggers with the same IDs will
 	// be deduplicated. See Trigger message for more details.
@@ -230,7 +230,7 @@ type SchedulerServer interface {
 	//
 	// If at least one job doesn't exist or the caller has no permission to
 	// trigger it, the entire request is aborted. Otherwise, the request is NOT
-	// transactional: if it fails midway (e.g by returning internal server error),
+	// transactional: if it fails midway (e.g. by returning internal server error),
 	// some triggers may have been submitted and some may not. It is safe to retry
 	// the call, supplying the same trigger IDs. Triggers with the same IDs will
 	// be deduplicated. See Trigger message for more details.

@@ -208,7 +208,7 @@ const HelpPage = () => {
           </Typography>
           <Typography paragraph>
             <strong>If the bug closure is erroneous,</strong> go to the rule page (a link to this page is in the comment accompanying
-            the the closure), and turn the <em>Update bug</em> switch in the <em>Associated bug</em> panel to off.
+            the closure), and turn the <em>Update bug</em> switch in the <em>Associated bug</em> panel to off.
             Then manually set the bug state you desire.
           </Typography>
         </AccordionDetails>

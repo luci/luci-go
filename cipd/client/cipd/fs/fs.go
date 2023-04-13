@@ -376,7 +376,7 @@ func (f *fsImpl) EnsureFile(ctx context.Context, path string, write func(*os.Fil
 
 	// Replace the current file (if there's one) with a new one. Use nuclear
 	// version (f.Replace) instead of simple mostlyAtomicRename to handle various
-	// edge cases handled by the nuclear version (e.g replacing a non-empty
+	// edge cases handled by the nuclear version (e.g. replacing a non-empty
 	// directory).
 	if err := f.Replace(ctx, temp, path); err != nil {
 		return err
@@ -406,7 +406,7 @@ func (f *fsImpl) EnsureSymlink(ctx context.Context, path string, target string) 
 
 	// Replace the current symlink with a new one. Use nuclear version (f.Replace)
 	// instead of simple mostlyAtomicRename to handle various edge cases handled
-	// by the nuclear version (e.g replacing a non-empty directory).
+	// by the nuclear version (e.g. replacing a non-empty directory).
 	if err := f.Replace(ctx, temp, path); err != nil {
 		if err2 := os.Remove(temp); err2 != nil && !os.IsNotExist(err2) {
 			logging.Warningf(ctx, "fs: failed to remove %q: %s", temp, err2)

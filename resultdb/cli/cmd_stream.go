@@ -410,7 +410,7 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 	// Interrupt the subprocess if rdb-stream is interrupted or the deadline
 	// approaches.
 	// If it does not finish before the grace period expires, it will be
-	// SIGKILLed by the the expiration of cmdCtx.
+	// SIGKILLed by the expiration of cmdCtx.
 	go func() {
 		evt := <-lucictx.SoftDeadlineDone(cmdCtx)
 		if evt == lucictx.ClosureEvent {

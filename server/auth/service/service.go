@@ -149,7 +149,7 @@ func (s *AuthService) RequestAccess(ctx context.Context) (*AuthDBAccess, error) 
 
 // EnsureSubscription creates a new subscription to AuthDB change notifications
 // topic or changes its pushURL if it already exists. `subscription` is full
-// subscription name e.g "projects/<projectid>/subscriptions/<subid>". Name of
+// subscription name e.g. "projects/<projectid>/subscriptions/<subid>". Name of
 // the topic is fetched from the auth service. Returns nil if such subscription
 // already exists.
 func (s *AuthService) EnsureSubscription(ctx context.Context, subscription, pushURL string) error {

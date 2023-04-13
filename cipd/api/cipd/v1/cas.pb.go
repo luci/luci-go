@@ -152,7 +152,7 @@ type ObjectRef struct {
 	unknownFields protoimpl.UnknownFields
 
 	HashAlgo  HashAlgo `protobuf:"varint,1,opt,name=hash_algo,json=hashAlgo,proto3,enum=cipd.HashAlgo" json:"hash_algo,omitempty"` // an algorithm applied to the body to get the name
-	HexDigest string   `protobuf:"bytes,2,opt,name=hex_digest,json=hexDigest,proto3" json:"hex_digest,omitempty"`                  // the name as lowercase hex string, e.g 'abcdef...'
+	HexDigest string   `protobuf:"bytes,2,opt,name=hex_digest,json=hexDigest,proto3" json:"hex_digest,omitempty"`                  // the name as lowercase hex string, e.g. 'abcdef...'
 }
 
 func (x *ObjectRef) Reset() {

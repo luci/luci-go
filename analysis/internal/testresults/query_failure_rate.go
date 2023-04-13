@@ -323,7 +323,7 @@ type intervalStats struct {
 	// DaysSinceQueryStart is the time interval bucket represented by this
 	// row.
 	// Interval 0 represents the first 24 hours of the partition time range
-	// queried, interval 1 is the the second 24 hours, and so on.
+	// queried, interval 1 is the second 24 hours, and so on.
 	DaysSinceQueryStart int64
 	// TotalRunExpectedVerdicts is the number of verdicts which had only
 	// expected runs. An expected run is a run in which at least one test

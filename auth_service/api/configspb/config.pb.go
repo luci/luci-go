@@ -330,7 +330,7 @@ type GroupImporterConfig_TarballEntry struct {
 	// Email domain to append to imported identities.
 	Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
 	// List of group systems expected to be found in the archive. They act as
-	// prefixes to group names, e.g 'ldap'. Each system corresponds to
+	// prefixes to group names, e.g. 'ldap'. Each system corresponds to
 	// a subdirectory in the tarball. Each tarball may have groups from multiple
 	// external systems, but groups from some external system must not be split
 	// between multiple tarballs. When importer sees <group system name>/* in

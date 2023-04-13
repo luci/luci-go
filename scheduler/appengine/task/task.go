@@ -105,7 +105,7 @@ type Traits struct {
 	Multistage bool
 }
 
-// Manager knows how to work with a particular kind of tasks (e.g URL fetch
+// Manager knows how to work with a particular kind of tasks (e.g. URL fetch
 // tasks, Swarming tasks, etc): how to deserialize, validate and execute them.
 //
 // Manager uses Controller to talk back to the scheduler engine.

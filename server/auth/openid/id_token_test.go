@@ -34,7 +34,7 @@ func TestVerifyIDToken(t *testing.T) {
 	ctx := context.Background()
 	ctx, tc := testclock.UseTime(ctx, time.Unix(1442540000, 0))
 
-	// Prepare the the signing keys.
+	// Prepare the signing keys.
 	const issuer = "https://issuer.example.com"
 	const signingKeyID = "signing-key"
 

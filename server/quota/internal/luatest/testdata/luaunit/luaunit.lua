@@ -629,7 +629,7 @@ function M.adjust_err_msg_with_iter( err_msg, iter_msg )
         if match then
             err_msg = err_msg:gsub( match, match .. iter_msg )
         else
-            -- no file:line: infromation, just add the iteration info at the beginning of the line
+            -- no file:line: information, just add the iteration info at the beginning of the line
             err_msg = iter_msg .. err_msg
         end
     end

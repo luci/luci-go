@@ -51,7 +51,7 @@ var (
 	descFile = flag.String(
 		"desc",
 		"",
-		"write FileDescriptorSet file containing all the the .proto files and their transitive dependencies",
+		"write FileDescriptorSet file containing all the .proto files and their transitive dependencies",
 	)
 	disableGRPC = flag.Bool(
 		"disable-grpc", false,

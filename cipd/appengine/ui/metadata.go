@@ -46,7 +46,7 @@ type prefixMetadataBlock struct {
 
 type metadataACL struct {
 	RolePb     api.Role // original role enum, for sorting
-	Role       string   // e.g "Reader"
+	Role       string   // e.g. "Reader"
 	Who        string   // either an email or a group name
 	WhoHref    string   // for groups, link to a group definition
 	Prefix     string   // via what prefix this role is granted

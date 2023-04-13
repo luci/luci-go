@@ -83,7 +83,7 @@ export class Service {
   readonly name: string;
   // The last component of the name, e.g. `Discovery`.
   readonly title: string;
-  // Short description e.g `Describes services.`.
+  // Short description e.g. `Describes services.`.
   readonly help: string;
   // Paragraphs with full documentation.
   readonly doc: string;
@@ -115,7 +115,7 @@ export class Method {
   readonly service: string;
   // Name of the method, e.g. `Describe `.
   readonly name: string;
-  // Short description e.g `Returns ...`.
+  // Short description e.g. `Returns ...`.
   readonly help: string;
   // Paragraphs with full documentation.
   readonly doc: string;

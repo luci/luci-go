@@ -345,7 +345,7 @@ func TestCreatesSingularQuickDryRunThenUpgradeToFullRunFailed(t *testing.T) {
 		pubsubTask := ct.RunEndedPubSubTasks()[0].Payload.(*pubsub.PublishRunEndedTask)
 		So(pubsubTask.PublicId, ShouldEqual, qdr.ID.PublicID())
 		So(pubsubTask.Status, ShouldEqual, run.Status_CANCELLED)
-		// 2nd message is for the the full-run failed.
+		// 2nd message is for the full-run failed.
 		pubsubTask = ct.RunEndedPubSubTasks()[1].Payload.(*pubsub.PublishRunEndedTask)
 		So(pubsubTask.PublicId, ShouldEqual, fr.ID.PublicID())
 		So(pubsubTask.Status, ShouldEqual, run.Status_FAILED)

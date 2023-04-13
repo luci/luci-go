@@ -46,9 +46,9 @@ func cmdMatchConfig(p Params) *subcommands.Command {
 		ShortDesc: "Match given CL(s) against given config.",
 		LongDesc: text.Doc(`
 			With a given configuration file, validate it, and determine the configuration
-			that would apply to the the given CL(s).
+			that would apply to the given CL(s).
 
-			CFG_PATH must be the the path to a generated "commit-queue.cfg" file.
+			CFG_PATH must be the path to a generated "commit-queue.cfg" file.
 			CL1, CL2, etc. must be given as URLs to Gerrit CLs e.g.:
 			  "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3198992"
 			  "https://crrev.com/c/3198992"

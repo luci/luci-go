@@ -246,7 +246,7 @@ func zipSymlinkFile(dst io.Writer, f fs.File) error {
 // It decides based only on the file name extension. For files that have an
 // optional compression, we assume it is enabled.
 func isLikelyAlreadyCompressed(f fs.File) bool {
-	// TODO(vadimsh): We can sniff MIME type based on the content, e.g via
+	// TODO(vadimsh): We can sniff MIME type based on the content, e.g. via
 	// https://bitbucket.org/taruti/mimemagic/src or http.DetectContentType. Not
 	// sure it's worth it.
 	return compressedExt.Has(strings.ToLower(path.Ext(f.Name())))

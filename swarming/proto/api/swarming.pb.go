@@ -2939,7 +2939,7 @@ type TaskResult struct {
 	//
 	// It is normally 1 for a task that started running and runs a normal flow.
 	//
-	// A number above 1 means that the the task was tried multiple times. It can
+	// A number above 1 means that the task was tried multiple times. It can
 	// be due to a previous try resulting in a task state in the category
 	// CATEGORY_TRANSIENT_DONE.
 	TryNumber int32 `protobuf:"varint,9,opt,name=try_number,json=tryNumber,proto3" json:"try_number,omitempty"`

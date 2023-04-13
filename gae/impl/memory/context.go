@@ -33,7 +33,7 @@ type memContextObj interface {
 	// Must be called with both m and self unlocked. There can be only one commit
 	// operation at a time.
 	//
-	// Returns nil if the commit can't be applied (e.g due to a collision).
+	// Returns nil if the commit can't be applied (e.g. due to a collision).
 	//
 	// Call either txnCommitOp.submit or txnCommitOp.discard to finish the commit.
 	beginCommit(c context.Context, m memContextObj) txnCommitOp

@@ -1078,7 +1078,7 @@ func (x *Build_Output) GetLogs() []*Log {
 //
 // The info captures the state of the builder at creation time.
 // If any information is updated, all future builds will have the new
-// information, while the the historical builds persist the old infromation.
+// information, while the historical builds persist the old information.
 type Build_BuilderInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

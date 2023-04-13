@@ -88,7 +88,7 @@ type Run struct {
 // implying that the cold buffer content needs to be written to Spanner.
 func (ib *InputBuffer) InsertVerdict(v PositionVerdict) {
 	// Find the position to insert the verdict.
-	// As the new verdict is likely to have the the latest commit position, we
+	// As the new verdict is likely to have the latest commit position, we
 	// will iterate backwards from the end of the slice.
 	verdicts := ib.HotBuffer.Verdicts
 	pos := len(ib.HotBuffer.Verdicts) - 1

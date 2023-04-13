@@ -96,7 +96,7 @@ func defaultOptions() Options {
 		ReceiveDuration: 5 * time.Minute,
 
 		// 20 is large enough that the advantages of batching are clear
-		// e.g a 95% reduction in fixed overhead per message
+		// e.g. a 95% reduction in fixed overhead per message
 		// (only true if the overhead is independent of the batch size),
 		// but also not so large that a list of build ids of this size is
 		// unwieldy to visually parse, or process manually.

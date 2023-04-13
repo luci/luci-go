@@ -149,7 +149,7 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 			})
 		}
 
-		// Let the caller do more stuff inside this txn, e.g start TQ tasks.
+		// Let the caller do more stuff inside this txn, e.g. start TQ tasks.
 		toPut := *inst
 		if cb != nil {
 			if err := cb(c, &toPut); err != nil {

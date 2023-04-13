@@ -66,7 +66,7 @@ func WithGlobalCache(c context.Context, provider BlobCacheProvider) context.Cont
 // the global cache is not available in the current environment.
 //
 // Libraries that can live without a global cache mush handle its absence
-// gracefully (e.g by falling back to using only the process cache).
+// gracefully (e.g. by falling back to using only the process cache).
 func GlobalCache(c context.Context, namespace string) BlobCache {
 	if p, _ := c.Value(&globalCacheKey).(BlobCacheProvider); p != nil {
 		return p(namespace)

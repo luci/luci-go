@@ -184,7 +184,7 @@ type Asset struct {
 	LastActuateDecision *ActuationDecision `protobuf:"bytes,5,opt,name=last_actuate_decision,json=lastActuateDecision,proto3" json:"last_actuate_decision,omitempty"`
 	// Asset configuration as defined in the IaC repo.
 	//
-	// It's the configuration consumed the the deployment system itself. Actuated
+	// It's the configuration consumed the deployment system itself. Actuated
 	// resources are configured via `intended_state`.
 	Config *AssetConfig `protobuf:"bytes,6,opt,name=config,proto3" json:"config,omitempty"`
 	// The intended state of the asset as defined in the IaC repo.

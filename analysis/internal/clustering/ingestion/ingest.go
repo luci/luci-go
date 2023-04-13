@@ -64,7 +64,7 @@ type Options struct {
 type PresubmitRun struct {
 	// ID is the identity of the presubmit run (if any).
 	ID *pb.PresubmitRunId
-	// Owner is the the owner of the presubmit
+	// Owner is the owner of the presubmit
 	// run (if any). This is the owner of the CL on which CQ+1/CQ+2 was
 	// clicked (even in case of presubmit run with multiple CLs).
 	Owner string

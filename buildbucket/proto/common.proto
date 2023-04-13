@@ -246,7 +246,7 @@ enum Compression {
 // This message is a duplicate of Build.Infra.Swarming.CacheEntry,
 // however we will be moving from hardcoded swarming -> task backends.
 // This message will remain as the desired CacheEntry and eventually
-// Build.Infra.Swarming will be deperecated, so this will remain.
+// Build.Infra.Swarming will be deprecated, so this will remain.
 //
 // Describes a cache directory persisted on a bot.
 //

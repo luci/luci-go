@@ -327,7 +327,7 @@ func TestInstanceCache(t *testing.T) {
 
 			// Age of last added item (i == 7) is 0 => age of i'th item is 7-i.
 			//
-			// Condition for survival: age < cache.maxAge, e.g 7-i<2.5 => i >= 5.
+			// Condition for survival: age < cache.maxAge, e.g. 7-i<2.5 => i >= 5.
 			//
 			// Thus we expect {5, 6, 7} to still be in the cache after the GC.
 			cache.GC(ctx)

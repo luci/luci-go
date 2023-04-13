@@ -981,7 +981,7 @@ message TaskResult {
   //
   // It is normally 1 for a task that started running and runs a normal flow.
   //
-  // A number above 1 means that the the task was tried multiple times. It can
+  // A number above 1 means that the task was tried multiple times. It can
   // be due to a previous try resulting in a task state in the category
   // CATEGORY_TRANSIENT_DONE.
   int32 try_number = 9;

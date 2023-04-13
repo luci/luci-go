@@ -27,7 +27,7 @@ import (
 // persistent store between events. It's mutated by Machine. So the usage
 // pattern is:
 //   - Deserialize State, construct Machine instance with it.
-//   - Invoke some Machine method (e.g Enable()) to advance the state.
+//   - Invoke some Machine method (e.g. Enable()) to advance the state.
 //   - Acknowledge all actions emitted by the machine (see Machine.Actions).
 //   - Serialize the mutated state (available in Machine.State).
 //

@@ -2542,7 +2542,7 @@ type PrefixMetadata_ACL struct {
 	Role Role `protobuf:"varint,1,opt,name=role,proto3,enum=cipd.Role" json:"role,omitempty"`
 	// Users and groups that have the specified role.
 	//
-	// Each entry has a form "<kind>:<value>", e.g "group:..." or "user:...".
+	// Each entry has a form "<kind>:<value>", e.g. "group:..." or "user:...".
 	Principals []string `protobuf:"bytes,2,rep,name=principals,proto3" json:"principals,omitempty"`
 }
 

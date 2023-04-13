@@ -51,7 +51,7 @@ func TestFullFlow(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
-		// Prepare the the signing keys and the ID token.
+		// Prepare the signing keys and the ID token.
 		const signingKeyID = "signing-key"
 		const clientID = "client_id"
 		signer := signingtest.NewSigner(nil)

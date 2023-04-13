@@ -88,7 +88,7 @@ message NoopTrigger {
 // EmitTriggers API.
 message GitilesTrigger {
   string repo = 1;     // an URL of a repo that changed
-  string ref = 2;      // a ref that changed, in full, e.g "refs/heads/master"
+  string ref = 2;      // a ref that changed, in full, e.g. "refs/heads/master"
   string revision = 3; // a revision (SHA1 in hex) pointed to by the ref
 
   // Properties and tags to add in addition to ones generated from the commit.

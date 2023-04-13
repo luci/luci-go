@@ -2121,7 +2121,7 @@ func (x *Verifiers_Tryjob_RetryConfig) GetTimeoutWeight() int32 {
 // The Gerrit host, Gerrit project and file path are matched against the
 // respective patterns in the LocationFilter. The last LocationFilter
 // that match all patterns (host, project, and path) determines whether
-// the the file is considered included, i.e. if the last matching
+// the file is considered included, i.e. if the last matching
 // LocationFilter has exclude set to false, then it's included; else
 // included.
 //

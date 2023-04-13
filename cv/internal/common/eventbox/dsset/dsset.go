@@ -372,7 +372,7 @@ func (s *Set) BeginPop(c context.Context, listing *Listing) (*PopOp, error) {
 // CanPop returns true if the given item can be popped from the set.
 //
 // Returns false if this item has been popped before (perhaps in another
-// transaction), or it's not in the the listing passed to BeginPop.
+// transaction), or it's not in the listing passed to BeginPop.
 func (p *PopOp) CanPop(id string) bool {
 	if _, hasTomb := p.tombs[id]; hasTomb {
 		return false // already popped by someone else
@@ -386,7 +386,7 @@ func (p *PopOp) CanPop(id string) bool {
 // Pop removed the item from the set and returns true if it was there.
 //
 // Returns false if this item has been popped before (perhaps in another
-// transaction), or it's not in the the listing passed to BeginPop.
+// transaction), or it's not in the listing passed to BeginPop.
 func (p *PopOp) Pop(id string) bool {
 	if p.finished {
 		panic("the operation has already been finished")

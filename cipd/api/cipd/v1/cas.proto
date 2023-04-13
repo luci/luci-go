@@ -108,7 +108,7 @@ enum HashAlgo {
 // A reference to an object in the content-addressable storage.
 message ObjectRef {
   HashAlgo hash_algo = 1;  // an algorithm applied to the body to get the name
-  string hex_digest  = 2;  // the name as lowercase hex string, e.g 'abcdef...'
+  string hex_digest  = 2;  // the name as lowercase hex string, e.g. 'abcdef...'
 }
 
 

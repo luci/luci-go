@@ -69,7 +69,7 @@ message Asset {
 
   // Asset configuration as defined in the IaC repo.
   //
-  // It's the configuration consumed the the deployment system itself. Actuated
+  // It's the configuration consumed the deployment system itself. Actuated
   // resources are configured via `intended_state`.
   AssetConfig config = 6;
 

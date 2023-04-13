@@ -484,7 +484,7 @@ message PrefixMetadata {
     Role role = 1;
     // Users and groups that have the specified role.
     //
-    // Each entry has a form "<kind>:<value>", e.g "group:..." or "user:...".
+    // Each entry has a form "<kind>:<value>", e.g. "group:..." or "user:...".
     repeated string principals = 2;
   }
 

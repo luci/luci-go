@@ -790,7 +790,7 @@ func (a *Authenticator) GetEmail() (string, error) {
 //   - nil if we have a valid cached token or can mint one on the fly.
 //   - ErrLoginRequired if we have no cached token and need to bother the user.
 //   - ErrInsufficientAccess if the configured auth method can't mint the token
-//     we require (e.g when using GCE method and the instance doesn't have all
+//     we require (e.g. when using GCE method and the instance doesn't have all
 //     requested OAuth scopes).
 //   - Generic error on other unexpected errors.
 func (a *Authenticator) CheckLoginRequired() error {

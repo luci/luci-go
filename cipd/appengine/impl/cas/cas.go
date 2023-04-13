@@ -239,7 +239,7 @@ func (s *storageImpl) BeginUpload(ctx context.Context, r *api.BeginUploadRequest
 	// Initiate Google Storage resumable upload session to this path. The returned
 	// URL can be accessed unauthenticated. The client will use it directly to
 	// upload the data. If left open, the GS session eventually expires, so it's
-	// not big deal if we loose it (e.g due to a crash before returning).
+	// not big deal if we loose it (e.g. due to a crash before returning).
 	uploadURL, err := gs.StartUpload(ctx, tempGSPath)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to start resumable upload").

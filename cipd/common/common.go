@@ -182,7 +182,7 @@ func JoinInstanceTag(t *api.Tag) string {
 // ValidateInstanceVersion return error if a string can't be used as version.
 //
 // A version can be specified as:
-//  1. Instance ID (hash, e.g "1234deadbeef2234...").
+//  1. Instance ID (hash, e.g. "1234deadbeef2234...").
 //  2. Package ref (e.g. "latest").
 //  3. Instance tag (e.g. "git_revision:abcdef...").
 func ValidateInstanceVersion(v string) error {

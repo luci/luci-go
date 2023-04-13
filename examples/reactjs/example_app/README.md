@@ -29,7 +29,7 @@ Before running and building the app, you need to fill in some data about it:
 
 ## Deleting framework folders you don't need
 
-Delete the items corresponding the the framework you won't use.
+Delete the items corresponding the framework you won't use.
 
 1. **Redux**:
    1. `store` folder.

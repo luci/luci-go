@@ -68,7 +68,7 @@ type TokenInfo struct {
 // See https://developers.google.com/identity/sign-in/android/backend-auth#calling-the-tokeninfo-endpoint.
 //
 // On invalid token (as indicated by 4** HTTP response) returns ErrBadToken. On
-// other HTTP-level errors (e.g HTTP 500) returns transient-wrapped
+// other HTTP-level errors (e.g. HTTP 500) returns transient-wrapped
 // *googleapi.Error. On network-level errors returns them in a transient
 // wrapper.
 func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error) {

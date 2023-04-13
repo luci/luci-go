@@ -53,7 +53,7 @@ type ProcessingResult struct {
 
 // WriteResult overwrites ResultRaw field with compressed JSON-serialized 'r'.
 //
-// 'r' should serialize into a JSON object, e.g '{...}'.
+// 'r' should serialize into a JSON object, e.g. '{...}'.
 func (p *ProcessingResult) WriteResult(r any) error {
 	blob, err := json.Marshal(r)
 	switch {

@@ -355,7 +355,7 @@ type GitilesTrigger struct {
 	unknownFields protoimpl.UnknownFields
 
 	Repo     string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`         // an URL of a repo that changed
-	Ref      string `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`           // a ref that changed, in full, e.g "refs/heads/master"
+	Ref      string `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`           // a ref that changed, in full, e.g. "refs/heads/master"
 	Revision string `protobuf:"bytes,3,opt,name=revision,proto3" json:"revision,omitempty"` // a revision (SHA1 in hex) pointed to by the ref
 	// Properties and tags to add in addition to ones generated from the commit.
 	Properties *structpb.Struct `protobuf:"bytes,4,opt,name=properties,proto3" json:"properties,omitempty"`

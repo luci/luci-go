@@ -145,7 +145,7 @@ var (
 //
 // where:
 //
-//	original_entity_kind: a kind of modified AuthDB entity (e.g 'AuthGroup')
+//	original_entity_kind: a kind of modified AuthDB entity (e.g. 'AuthGroup')
 //	original_id: ID of modified AuthDB entity (e.g. 'Group name')
 //	subentity_id: optional identified of modified part of the entity, used for
 //	  IP allowlist assignments entity (since it's just one big singleton).
