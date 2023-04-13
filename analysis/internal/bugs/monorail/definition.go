@@ -42,7 +42,9 @@ var AutomationUsers = []string{
 	"users/3816576959", // chops-weetbix@appspot.gserviceaccount.com
 	"users/4149141945", // chops-weetbix-dev@appspot.gserviceaccount.com
 	"users/3371420746", // luci-analysis@appspot.gserviceaccount.com
+	"users/641595106",  // luci-analysis-service@luci-analysis.iam.gserviceaccount.com
 	"users/1503471452", // luci-analysis-dev@appspot.gserviceaccount.com
+	"users/3692272382", // luci-analysis-dev-service@luci-analysis-dev.iam.gserviceaccount.com
 }
 
 // VerifiedStatus is that status of bugs that have been fixed and verified.
