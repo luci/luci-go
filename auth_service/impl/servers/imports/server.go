@@ -24,8 +24,8 @@ import (
 )
 
 type GroupsJSON struct {
-	Groups    map[string]model.GroupBundle `json:"group_imports"`
-	AuthDBRev int64                        `json:"auth_db_rev"`
+	Groups    []string `json:"group_imports"`
+	AuthDBRev int64    `json:"auth_db_rev"`
 }
 
 // HandleTarballIngestHandler handles the endpoint for ingesting tarballs
@@ -34,19 +34,14 @@ func HandleTarballIngestHandler(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 	var err error
 	tarballName := ctx.Params.ByName("tarballName")
-	groups, err := model.IngestTarball(c, tarballName, r.Body)
-	if err != nil {
-		return err
-	}
-
-	snapshotLatest, err := model.GetAuthDBSnapshotLatest(c)
+	groups, revision, err := model.IngestTarball(c, tarballName, r.Body)
 	if err != nil {
 		return err
 	}
 
 	groupResp, err := json.Marshal(GroupsJSON{
 		Groups:    groups,
-		AuthDBRev: snapshotLatest.AuthDBRev,
+		AuthDBRev: revision,
 	})
 
 	w.Header().Set("Content-Type", "application/json")

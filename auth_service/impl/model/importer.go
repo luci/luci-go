@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -114,14 +115,25 @@ func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
 
 // IngestTarball handles upload of tarball's specified in 'tarball_upload' config entries.
 // expected to be called in an auth context of the upload PUT request.
-func IngestTarball(ctx context.Context, name string, content io.Reader) (map[string]GroupBundle, error) {
+//
+// returns
+//
+//	[]string - list of modified groups
+//	int64 - authDBRevision
+//	error
+//		proto translation error
+//		entry is nil
+//		entry not found in tarball upload config
+//		unauthorized uploader
+//		bad tarball structure
+func IngestTarball(ctx context.Context, name string, content io.Reader) ([]string, int64, error) {
 	g, err := GetGroupImporterConfig(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	gConfigProto, err := g.ToProto()
 	if err != nil {
-		return nil, errors.Annotate(err, "issue getting proto from config entity").Err()
+		return nil, 0, errors.Annotate(err, "issue getting proto from config entity").Err()
 	}
 	caller := auth.CurrentIdentity(ctx)
 	var entry *configspb.GroupImporterConfig_TarballUploadEntry
@@ -135,17 +147,22 @@ func IngestTarball(ctx context.Context, name string, content io.Reader) (map[str
 	}
 
 	if entry == nil {
-		return nil, errors.New("entry not found in tarball upload names")
+		return nil, 0, errors.New("entry is nil")
+	}
+
+	if entry.Name == "" {
+		return nil, 0, errors.New("entry not found in tarball upload names")
 	}
 	if !contains(caller.Email(), entry.AuthorizedUploader) {
-		return nil, errors.New(fmt.Sprintf("%q is not an authorized uploader", caller.Email()))
+		return nil, 0, errors.New(fmt.Sprintf("%q is not an authorized uploader", caller.Email()))
 	}
 
 	bundles, err := loadTarball(ctx, content, entry.GetDomain(), entry.GetSystems(), entry.GetGroups())
 	if err != nil {
-		return nil, errors.Annotate(err, "bad tarball").Err()
+		return nil, 0, errors.Annotate(err, "bad tarball").Err()
 	}
-	return bundles, nil
+
+	return importBundles(ctx, bundles, caller, nil)
 }
 
 // loadTarball unzips tarball with groups and deserializes them.
@@ -214,6 +231,248 @@ func loadGroupFile(identities string, domain string) ([]identity.Identity, error
 	})
 
 	return membersSorted, nil
+}
+
+// importBundles imports given set of bundles all at once.
+// A bundle is a map with groups that is the result of a processing of some tarball.
+// A bundle specifies the desired state of all groups under some system, e.g.
+// importBundles({'ldap': {}}, ...) will REMOVE all existing 'ldap/*' groups.
+//
+// Group names in the bundle are specified in their full prefixed form (with
+// system name prefix). An example of expected 'bundles':
+//
+//	{
+//	  'ldap': {
+//			'ldap/group': [Identity(...), Identity(...)],
+//	  },
+//	}
+//
+// Args:
+//
+//	bundles: map system name -> GroupBundle
+//	providedBy: auth.Identity to put in modifiedBy or createdBy fields.
+//
+// Returns:
+//
+//	(list of modified groups,
+//	new AuthDB revision number or 0 if no changes,
+//	error if issue with writing entities).
+func importBundles(ctx context.Context, bundles map[string]GroupBundle, providedBy identity.Identity, testHook func()) ([]string, int64, error) {
+	// Nothing to process.
+	if len(bundles) == 0 {
+		return []string{}, 0, nil
+	}
+
+	getAuthDBRevision := func(ctx context.Context) (int64, error) {
+		state, err := GetReplicationState(ctx)
+		switch {
+		case err == datastore.ErrNoSuchEntity:
+			return 0, nil
+		case err != nil:
+			return -1, err
+		default:
+			return state.AuthDBRev, nil
+		}
+	}
+
+	// Fetches all existing groups and AuthDB revision number.
+	groupsSnapshot := func(ctx context.Context) (gMap map[string]*AuthGroup, rev int64, err error) {
+		err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			groups, err := GetAllAuthGroups(ctx)
+			if err != nil {
+				return err
+			}
+			gMap = make(map[string]*AuthGroup, len(groups))
+			for _, g := range groups {
+				gMap[g.ID] = g
+			}
+			rev, err = getAuthDBRevision(ctx)
+			if err != nil {
+				return errors.Annotate(err, "couldn't get AuthDBRev").Err()
+			}
+			return nil
+		}, nil)
+		return gMap, rev, err
+	}
+
+	// Transactionally puts and deletes a bunch of entities.
+	applyImport := func(expectedRevision int64, entitiesToPut, entitiesToDelete []*AuthGroup, ts time.Time) error {
+		// Runs in transaction.
+		return runAuthDBChange(ctx, func(ctx context.Context, cae commitAuthEntity) error {
+			rev, err := getAuthDBRevision(ctx)
+			if err != nil {
+				return err
+			}
+
+			// DB changed between transactions try again.
+			if rev != expectedRevision {
+				return errors.New("revision numbers don't match")
+			}
+			for _, e := range entitiesToPut {
+				if err := cae(e, ts, providedBy, false); err != nil {
+					return err
+				}
+			}
+
+			for _, e := range entitiesToDelete {
+				if err := cae(e, ts, providedBy, true); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	}
+
+	updatedGroups := stringset.New(0)
+	revision := int64(0)
+	loopCount := 0
+	var groups map[string]*AuthGroup
+	var err error
+
+	// Try to apply the change in batches until it lands completely or deadline
+	// happens. Split each batch update into two transactions (assuming AuthDB
+	// changes infrequently) to avoid reading and writing too much stuff from
+	// within a single transaction (and to avoid keeping the transaction open while
+	// calculating the diff).
+	for {
+		// Use same timestamp everywhere to reflect that groups were imported
+		// atomically within a single transaction.
+		ts := time.Now().UTC()
+		loopCount += 1
+		groups, revision, err = groupsSnapshot(ctx)
+		if err != nil {
+			return nil, revision, err
+		}
+		// For testing purposes only.
+		if testHook != nil && loopCount == 2 {
+			testHook()
+		}
+		entitiesToPut := []*AuthGroup{}
+		entitiesToDel := []*AuthGroup{}
+		for sys := range bundles {
+			iGroups := bundles[sys]
+			toPut, toDel := prepareImport(ctx, sys, groups, iGroups)
+			entitiesToPut = append(entitiesToPut, toPut...)
+			entitiesToDel = append(entitiesToDel, toDel...)
+		}
+
+		if len(entitiesToPut) == 0 && len(entitiesToDel) == 0 {
+			logging.Infof(ctx, "nothing to do")
+			break
+		}
+
+		// An `applyImport` transaction can touch at most 500 entities. Cap the
+		// number of entities we create/delete by 200 each since we attach a historical
+		// entity to each entity. The rest will be updated on the next cycle of the loop.
+		// This is safe to do since:
+		//  * Imported groups are "leaf" groups (have no subgroups) and can be added
+		//    in arbitrary order without worrying about referential integrity.
+		//  * Deleted groups are guaranteed to be unreferenced by `prepareImport`
+		//    and can be deleted in arbitrary order as well.
+		truncated := false
+
+		// Both these operations happen in the same transaction so we have
+		// to trim it to make sure the total is <= 200.
+		if len(entitiesToPut) > 200 {
+			entitiesToPut = entitiesToPut[:200]
+			entitiesToDel = nil
+			truncated = true
+		} else if len(entitiesToPut)+len(entitiesToDel) > 200 {
+			entitiesToDel = entitiesToDel[:200-len(entitiesToPut)]
+			truncated = true
+		}
+
+		// Log what we are about to do to help debugging transaction errors.
+		logging.Infof(ctx, "Preparing AuthDB rev %d with %d puts and %d deletes:", revision+1, len(entitiesToPut), len(entitiesToDel))
+		for _, e := range entitiesToPut {
+			logging.Infof(ctx, "U %s", e.ID)
+			updatedGroups.Add(e.ID)
+		}
+		for _, e := range entitiesToDel {
+			logging.Infof(ctx, "D %s", e.ID)
+			updatedGroups.Add(e.ID)
+		}
+
+		// Land the change iff the current AuthDB revision is still == `revision`.
+		err := applyImport(revision, entitiesToPut, entitiesToDel, ts)
+		if err != nil && strings.Contains(err.Error(), "revision numbers don't match") {
+			logging.Warningf(ctx, "authdb changed between transactions, retrying...")
+			continue
+		} else if err != nil {
+			logging.Errorf(ctx, "couldn't apply changes to datastore entities %s", err.Error())
+			return nil, revision, err
+		}
+
+		// The new revision has landed
+		revision += 1
+
+		if truncated {
+			logging.Infof(ctx, "going for another round to push the rest of the groups")
+			time.Sleep(time.Second * 5)
+			continue
+		}
+
+		logging.Infof(ctx, "Done")
+		break
+	}
+
+	if len(updatedGroups) > 0 {
+		return updatedGroups.ToSortedSlice(), int64(revision), nil
+	}
+
+	return nil, 0, nil
+}
+
+// prepareImport compares the bundle given to the what is currently present in datastore
+// to get the operations for all the groups.
+func prepareImport(ctx context.Context, systemName string, existingGroups map[string]*AuthGroup, iGroups GroupBundle) (toPut []*AuthGroup, toDel []*AuthGroup) {
+	systemGroups := []string{}
+	iGroupsSet := stringset.New(len(iGroups))
+	for gID := range existingGroups {
+		if strings.HasPrefix(gID, fmt.Sprintf("%s/", systemName)) {
+			systemGroups = append(systemGroups, gID)
+		}
+	}
+
+	for groupName := range iGroups {
+		iGroupsSet.Add(groupName)
+	}
+
+	sysGroupsSet := stringset.NewFromSlice(systemGroups...)
+
+	toCreate := iGroupsSet.Difference(sysGroupsSet).ToSlice()
+	for _, g := range toCreate {
+		group := makeAuthGroup(ctx, g)
+		group.Members = identitiesToStrings(iGroups[g])
+		toPut = append(toPut, group)
+	}
+
+	toUpdate := sysGroupsSet.Intersect(iGroupsSet).ToSlice()
+	for _, g := range toUpdate {
+		importGMems := stringset.NewFromSlice(identitiesToStrings(iGroups[g])...)
+		existMems := existingGroups[g].Members
+		if !(len(importGMems) == len(existMems) && importGMems.HasAll(existMems...)) {
+			group := makeAuthGroup(ctx, g)
+			group.Members = importGMems.ToSlice()
+			toPut = append(toPut, group)
+		}
+	}
+
+	toDelete := sysGroupsSet.Difference(iGroupsSet).ToSlice()
+	for _, g := range toDelete {
+		group := makeAuthGroup(ctx, g)
+		toDel = append(toDel, group)
+	}
+
+	return toPut, toDel
+}
+
+func identitiesToStrings(idents []identity.Identity) []string {
+	res := make([]string, len(idents))
+	for i, id := range idents {
+		res[i] = string(id)
+	}
+	return res
 }
 
 // extractTarArchive unpacks a tar archive and returns a map

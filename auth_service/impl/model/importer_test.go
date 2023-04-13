@@ -18,17 +18,24 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/testsupport"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/tq"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -172,6 +179,9 @@ func TestIngestTarball(t *testing.T) {
 	ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 		Identity: "user:test-push-cron@system.example.com",
 	})
+	ctx = clock.Set(ctx, testclock.New(testCreatedTS))
+	ctx = info.SetImageVersion(ctx, "test-version")
+	ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 	cfg := testGroupImporterConfig()
 
@@ -188,42 +198,214 @@ func TestIngestTarball(t *testing.T) {
 	Convey("testing IngestTarball", t, func() {
 		Convey("unknown", func() {
 			datastore.Put(ctx, cfg)
-			_, err := IngestTarball(ctx, "zzz", nil)
-			So(err, ShouldErrLike, "entry not found in tarball upload names")
+			_, _, err := IngestTarball(ctx, "zzz", nil)
+			So(err, ShouldErrLike, "entry is nil")
 		})
 		Convey("unauthorized", func() {
 			badAuthCtx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 			})
-			_, err := IngestTarball(badAuthCtx, "test_groups.tar.gz", bytes.NewReader(bundle))
+			_, _, err := IngestTarball(badAuthCtx, "test_groups.tar.gz", bytes.NewReader(bundle))
 			So(err, ShouldErrLike, `"someone@example.com" is not an authorized uploader`)
 		})
 		Convey("not configured", func() {
 			badCtx := memory.Use(context.Background())
-			_, err := IngestTarball(badCtx, "", nil)
+			_, _, err := IngestTarball(badCtx, "", nil)
 			So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
 		})
 		Convey("happy", func() {
-			groups, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
+			g := makeAuthGroup(ctx, "administrators")
+			g.AuthVersionedEntityMixin = testAuthVersionedEntityMixin()
+			CreateAuthGroup(ctx, g, false)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+			updatedGroups, revision, err := IngestTarball(ctx, "test_groups.tar.gz", bytes.NewReader(bundle))
 			So(err, ShouldBeNil)
-			aIdent, _ := identity.MakeIdentity("user:a@example.com")
-			bIdent, _ := identity.MakeIdentity("user:b@example.test.com")
-			cIdent, _ := identity.MakeIdentity("user:c@test-example.com")
-			So(groups, ShouldResemble, map[string]GroupBundle{
-				"tst": {
-					"tst/group-a": {
-						aIdent,
-						bIdent,
-					},
-					"tst/group-b": {
-						aIdent,
-					},
-					"tst/group-c": {
-						aIdent,
-						cIdent,
-					},
-				},
+			So(revision, ShouldEqual, 2)
+			So(updatedGroups, ShouldResemble, []string{
+				"tst/group-a",
+				"tst/group-b",
+				"tst/group-c",
 			})
 		})
 	})
+}
+
+func TestImportBundles(t *testing.T) {
+	t.Parallel()
+
+	Convey("Testing importBundles", t, func() {
+		userIdent := identity.Identity("user:test-modifier@example.com")
+		ctx := memory.Use(context.Background())
+		ctx = clock.Set(ctx, testclock.New(testModifiedTS))
+		ctx = info.SetImageVersion(ctx, "test-version")
+		ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
+
+		adminGroup := emptyAuthGroup(ctx, AdminGroup)
+		datastore.Put(ctx, adminGroup)
+
+		aIdent, _ := identity.MakeIdentity("user:a@example.com")
+
+		sGroupA := testExternalAuthGroup(ctx, "sys/group-a", []string{string(aIdent)})
+
+		sGroupB := testExternalAuthGroup(ctx, "sys/group-b", []string{string(aIdent)})
+		sGroupC := testExternalAuthGroup(ctx, "sys/group-c", []string{string(aIdent)})
+
+		eGroupA := testExternalAuthGroup(ctx, "ext/group-a", []string{string(aIdent)})
+
+		bundles := map[string]GroupBundle{
+			"ext": {
+				eGroupA.ID: {
+					aIdent,
+				},
+			},
+			"sys": {
+				sGroupA.ID: {
+					aIdent,
+				},
+				sGroupB.ID: {
+					aIdent,
+				},
+				sGroupC.ID: {
+					aIdent,
+				},
+			},
+		}
+
+		baseSlice := []string{eGroupA.ID, sGroupA.ID, sGroupB.ID, sGroupC.ID}
+		baseGroupBundles := stringset.NewFromSlice(baseSlice...).ToSortedSlice()
+
+		Convey("Creating groups", func() {
+			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, baseGroupBundles)
+			So(revision, ShouldEqual, 1)
+			groupA, err := GetAuthGroup(ctx, sGroupA.ID)
+			So(err, ShouldBeNil)
+			So(groupA.Members, ShouldResemble, sGroupA.Members)
+
+			groupB, err := GetAuthGroup(ctx, sGroupB.ID)
+			So(err, ShouldBeNil)
+			So(groupB.Members, ShouldResemble, sGroupB.Members)
+
+			groupC, err := GetAuthGroup(ctx, sGroupC.ID)
+			So(err, ShouldBeNil)
+			So(groupC.Members, ShouldResemble, sGroupC.Members)
+
+			groupAe, err := GetAuthGroup(ctx, eGroupA.ID)
+			So(err, ShouldBeNil)
+			So(groupAe.Members, ShouldResemble, eGroupA.Members)
+
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
+		})
+
+		Convey("Updating Groups", func() {
+			g := testExternalAuthGroup(ctx, "sys/group-a", []string{"user:b@example.com", "user:c@example.com"})
+			_, err := CreateAuthGroup(ctx, g, true)
+			So(err, ShouldBeNil)
+			group, err := GetAuthGroup(ctx, sGroupA.ID)
+			So(err, ShouldBeNil)
+			So(group.Members, ShouldResemble, g.Members)
+			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, baseGroupBundles)
+			So(revision, ShouldEqual, 2)
+			group, err = GetAuthGroup(ctx, sGroupA.ID)
+			So(err, ShouldBeNil)
+			So(group.Members, ShouldResemble, sGroupA.Members)
+		})
+
+		Convey("Deleting Groups", func() {
+			g := testExternalAuthGroup(ctx, "sys/group-d", []string{"user:a@example.com"})
+			_, err := CreateAuthGroup(ctx, g, true)
+			So(err, ShouldBeNil)
+
+			grDS, err := GetAuthGroup(ctx, g.ID)
+			So(err, ShouldBeNil)
+			So(grDS.Members, ShouldResemble, g.Members)
+
+			updatedGroups, revision, err := importBundles(ctx, bundles, userIdent, nil)
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, append(baseGroupBundles, "sys/group-d"))
+			So(revision, ShouldEqual, 2)
+
+			_, err = GetAuthGroup(ctx, g.ID)
+			So(err, ShouldErrLike, datastore.ErrNoSuchEntity)
+		})
+
+		Convey("Large groups", func() {
+			bundle, groupsBundled := makeGroupBundle("test", 400)
+			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, nil)
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, groupsBundled)
+			So(rev, ShouldEqual, 2)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 4)
+			groups, err := GetAllAuthGroups(ctx)
+			So(err, ShouldBeNil)
+			So(groups, ShouldHaveLength, 401)
+		})
+
+		Convey("Revision changes in between transactions", func() {
+			bundle, groupsBundled := makeGroupBundle("test", 500)
+			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, func() {
+				datastore.Put(ctx, testAuthReplicationState(ctx, 3))
+			})
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, groupsBundled)
+			So(rev, ShouldEqual, 5)
+		})
+
+		Convey("Large put Large delete", func() {
+			bundle, groupsBundledTest := makeGroupBundle("test", 1000)
+			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, func() {})
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, groupsBundledTest)
+			So(rev, ShouldEqual, 5)
+			bundle, groupsBundled := makeGroupBundle("example", 400)
+			updatedGroups, rev, err = importBundles(ctx, bundle, userIdent, func() {})
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, groupsBundled)
+			So(rev, ShouldEqual, 7)
+
+			bundle, groupsBundled = makeGroupBundle("tst", 500)
+			bundle["test"] = GroupBundle{}
+			groupsBundled = append(groupsBundled, groupsBundledTest...)
+			updatedGroups, rev, err = importBundles(ctx, bundle, userIdent, func() {})
+			So(err, ShouldBeNil)
+			sort.Strings(groupsBundled)
+			So(updatedGroups, ShouldResemble, groupsBundled)
+			So(rev, ShouldEqual, 15)
+		})
+
+		// The max number of create, update, or delete in one transaction
+		// is 500. For every entity we modify we attach a history entity
+		// in the code for importing we limit this to 200 so we can be
+		// under the limit by only touching 400 entities.
+		Convey("150 put 150 del", func() {
+			bundle, groupsBundledTest := makeGroupBundle("test", 150)
+			updatedGroups, rev, err := importBundles(ctx, bundle, userIdent, func() {})
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, groupsBundledTest)
+			So(rev, ShouldEqual, 1)
+			bundle, groupsBundled := makeGroupBundle("tst", 150)
+			bundle["test"] = GroupBundle{}
+			groupsBundled = append(groupsBundled, groupsBundledTest...)
+			sort.Strings(groupsBundled)
+			updatedGroups, rev, err = importBundles(ctx, bundle, userIdent, func() {})
+			So(err, ShouldBeNil)
+			So(updatedGroups, ShouldResemble, groupsBundled)
+			So(rev, ShouldEqual, 3)
+		})
+	})
+}
+
+func makeGroupBundle(system string, size int) (map[string]GroupBundle, []string) {
+	bundle := map[string]GroupBundle{}
+	groupsBundled := stringset.New(0)
+	bundle[system] = make(GroupBundle, size)
+	for i := 0; i < size; i++ {
+		group := fmt.Sprintf("%s/group-%d", system, i)
+		bundle[system][group] = []identity.Identity{"user:a@example.com"}
+		groupsBundled.Add(group)
+	}
+	return bundle, groupsBundled.ToSortedSlice()
 }

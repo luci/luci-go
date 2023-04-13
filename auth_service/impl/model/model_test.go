@@ -116,6 +116,24 @@ func testAuthGroup(ctx context.Context, name string) *AuthGroup {
 	}
 }
 
+func testExternalAuthGroup(ctx context.Context, name string, members []string) *AuthGroup {
+	return &AuthGroup{
+		Kind:   "AuthGroup",
+		ID:     name,
+		Parent: RootKey(ctx),
+		AuthVersionedEntityMixin: AuthVersionedEntityMixin{
+			ModifiedTS:    testModifiedTS,
+			ModifiedBy:    "user:test-modifier@example.com",
+			AuthDBRev:     1,
+			AuthDBPrevRev: 0,
+		},
+		Members:   members,
+		Owners:    AdminGroup,
+		CreatedTS: testCreatedTS,
+		CreatedBy: "user:test-creator@example.com",
+	}
+}
+
 // emptyAuthGroup creates a new AuthGroup, that owns itself, with no members.
 func emptyAuthGroup(ctx context.Context, name string) *AuthGroup {
 	return &AuthGroup{
@@ -357,21 +375,21 @@ func TestCreateAuthGroup(t *testing.T) {
 		Convey("empty group name", func() {
 			group := testAuthGroup(ctx, "")
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
 		Convey("invalid group name", func() {
 			group := testAuthGroup(ctx, "foo^")
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
 		Convey("external group name", func() {
 			group := testAuthGroup(ctx, "mdb/foo")
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldEqual, ErrInvalidName)
 		})
 
@@ -382,7 +400,7 @@ func TestCreateAuthGroup(t *testing.T) {
 
 			group := testAuthGroup(ctx, "foo")
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldEqual, ErrAlreadyExists)
 		})
 
@@ -390,7 +408,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Members = []string{"no-prefix@google.com"}
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
 		})
@@ -399,7 +417,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Members = []string{"project:abc"}
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
 		})
@@ -408,7 +426,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"*@no-prefix.com"}
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
 		})
@@ -417,7 +435,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Globs = []string{"project:*"}
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
 		})
@@ -427,7 +445,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group.Owners = "bar"
 			group.Nested = []string{"baz", "qux"}
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldUnwrapTo, ErrInvalidReference)
 			So(err, ShouldErrLike, "some referenced groups don't exist: baz, qux, bar")
 		})
@@ -436,7 +454,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 			group.Owners = "bar"
 
-			_, err := CreateAuthGroup(ctx, group)
+			_, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldErrLike, "bar")
 		})
 
@@ -448,7 +466,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = ""
 
-			createdGroup, err := CreateAuthGroup(ctx, group)
+			createdGroup, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldBeNil)
 			So(createdGroup.Owners, ShouldEqual, AdminGroup)
 		})
@@ -457,7 +475,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := emptyAuthGroup(ctx, "foo")
 			group.Owners = "foo"
 
-			createdGroup, err := CreateAuthGroup(ctx, group)
+			createdGroup, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldBeNil)
 			So(createdGroup.Owners, ShouldEqual, createdGroup.ID)
 		})
@@ -465,7 +483,7 @@ func TestCreateAuthGroup(t *testing.T) {
 		Convey("successfully writes to datastore", func() {
 			group := emptyAuthGroup(ctx, "foo")
 
-			createdGroup, err := CreateAuthGroup(ctx, group)
+			createdGroup, err := CreateAuthGroup(ctx, group, false)
 			So(err, ShouldBeNil)
 			So(createdGroup.ID, ShouldEqual, group.ID)
 			So(createdGroup.Description, ShouldEqual, group.Description)
@@ -501,7 +519,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group1 := emptyAuthGroup(ctx, "foo")
 
-				createdGroup1, err := CreateAuthGroup(ctx, group1)
+				createdGroup1, err := CreateAuthGroup(ctx, group1, false)
 				So(err, ShouldBeNil)
 				So(createdGroup1.AuthDBRev, ShouldEqual, 1)
 				So(createdGroup1.AuthDBPrevRev, ShouldEqual, 0)
@@ -523,7 +541,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group2 := emptyAuthGroup(ctx, "foo2")
 
-				createdGroup2, err := CreateAuthGroup(ctx, group2)
+				createdGroup2, err := CreateAuthGroup(ctx, group2, false)
 				So(err, ShouldBeNil)
 				So(createdGroup2.AuthDBRev, ShouldEqual, 2)
 				So(createdGroup2.AuthDBPrevRev, ShouldEqual, 0)
@@ -537,7 +555,7 @@ func TestCreateAuthGroup(t *testing.T) {
 
 			// Try to create another group the same as the second, which should fail.
 			{
-				_, err := CreateAuthGroup(ctx, emptyAuthGroup(ctx, "foo2"))
+				_, err := CreateAuthGroup(ctx, emptyAuthGroup(ctx, "foo2"), false)
 				So(err, ShouldBeError)
 
 				state3, err := GetReplicationState(ctx)
@@ -553,7 +571,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group := emptyAuthGroup(ctx, "foo")
 
-				_, err := CreateAuthGroup(ctx, group)
+				_, err := CreateAuthGroup(ctx, group, false)
 				So(err, ShouldBeNil)
 
 				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
@@ -586,7 +604,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			{
 				group := emptyAuthGroup(ctx, "foo2")
 
-				_, err := CreateAuthGroup(ctx, group)
+				_, err := CreateAuthGroup(ctx, group, false)
 				So(err, ShouldBeNil)
 
 				entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 2))
@@ -643,7 +661,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 		Convey("can't update external group", func() {
 			group.ID = "mdb/foo"
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
 			So(err, ShouldErrLike, "cannot update external group")
 		})
 
@@ -652,7 +670,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				Identity: "user:someone@example.com",
 			})
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
@@ -662,19 +680,19 @@ func TestUpdateAuthGroup(t *testing.T) {
 				IdentityGroups: []string{AdminGroup},
 			})
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("can't delete if etag doesn't match", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag")
+			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag", false)
 			So(err, ShouldErrLike, ErrConcurrentModification)
 		})
 
 		Convey("group name that doesn't exist", func() {
 			group.ID = "non-existent-group"
-			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
@@ -683,7 +701,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Members = []string{"no-prefix@google.com"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity string \"no-prefix@google.com\"")
 		})
@@ -693,7 +711,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Members = []string{"project:abc"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." identities aren't allowed in groups`)
 		})
@@ -703,7 +721,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Globs = []string{"*@no-prefix.com"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, "bad identity glob string \"*@no-prefix.com\"")
 		})
@@ -713,7 +731,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Globs = []string{"project:*"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, false)
 			So(err, ShouldUnwrapTo, ErrInvalidIdentity)
 			So(err, ShouldErrLike, `"project:..." globs aren't allowed in groups`)
 		})
@@ -723,7 +741,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Nested = []string{"baz", "qux"}
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, etag)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, etag, false)
 			So(err, ShouldUnwrapTo, ErrInvalidReference)
 			So(err, ShouldErrLike, "some referenced groups don't exist")
 		})
@@ -733,7 +751,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Owners = "bar"
 
-			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag)
+			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false)
 			So(err, ShouldErrLike, "bar")
 		})
 
@@ -743,7 +761,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 
 			group.Owners = ""
 
-			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"owners"}}, etag, false)
 			So(err, ShouldBeNil)
 			So(updatedGroup.Owners, ShouldEqual, AdminGroup)
 		})
@@ -759,7 +777,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Globs = []string{"user:*@updated.com"}
 			group.Nested = []string{"new-nested-group"}
 
-			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false)
 			So(err, ShouldBeNil)
 			So(updatedGroup.ID, ShouldEqual, group.ID)
 			So(updatedGroup.Description, ShouldEqual, group.Description)
@@ -802,7 +820,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Globs = []string{"user:*@updated.com"}
 			group.Nested = []string{"new-nested-group"}
 
-			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag)
+			updatedGroup, err := UpdateAuthGroup(ctx, group, nil, etag, false)
 			So(err, ShouldBeNil)
 			So(updatedGroup.AuthDBRev, ShouldEqual, 11)
 			So(updatedGroup.AuthDBPrevRev, ShouldEqual, 1)
@@ -820,7 +838,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			So(replicationTask.Payload, ShouldResembleProto, &taskspb.ReplicationTask{AuthDbRev: 11})
 
 			// Update a group, should fail (due to bad etag) and *not* bump AuthDB revision.
-			_, err = UpdateAuthGroup(ctx, group, nil, "bad-etag")
+			_, err = UpdateAuthGroup(ctx, group, nil, "bad-etag", false)
 			So(err, ShouldBeError)
 
 			state, err = GetReplicationState(ctx)
@@ -841,7 +859,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Globs = []string{"user:*@updated.com"}
 			group.Nested = []string{"new-nested-group"}
 
-			_, err := UpdateAuthGroup(ctx, group, nil, etag)
+			_, err := UpdateAuthGroup(ctx, group, nil, etag, false)
 			So(err, ShouldBeNil)
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 11))
@@ -899,7 +917,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				// A
 				a.Nested = []string{"A"}
 
-				_, err := UpdateAuthGroup(ctx, a, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				_, err := UpdateAuthGroup(ctx, a, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: A -> A.")
 			})
 
@@ -911,7 +929,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				//   A
 				b2.Nested = []string{"A"}
 
-				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: B2 -> A -> B2.")
 			})
 
@@ -925,7 +943,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				// A
 				c.Nested = []string{"A"}
 
-				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> A -> B1 -> C.")
 			})
 
@@ -937,7 +955,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				//   B1
 				c.Nested = []string{"B1"}
 
-				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				_, err := UpdateAuthGroup(ctx, c, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
 				So(err, ShouldErrLike, "groups can not have cyclic dependencies: C -> B1 -> C.")
 			})
 
@@ -949,7 +967,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				//      C
 				b2.Nested = []string{"C"}
 
-				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "")
+				_, err := UpdateAuthGroup(ctx, b2, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, "", false)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -978,14 +996,14 @@ func TestDeleteAuthGroup(t *testing.T) {
 		etag := `W/"MjAyMS0wOC0xNlQxMjoyMDowMFo="`
 
 		Convey("can't delete the admin group", func() {
-			err := DeleteAuthGroup(ctx, AdminGroup, "")
+			err := DeleteAuthGroup(ctx, AdminGroup, "", false)
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
 		Convey("can't delete external group", func() {
 			group.ID = "mdb/foo"
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "")
+			err := DeleteAuthGroup(ctx, group.ID, "", false)
 			So(err, ShouldErrLike, "cannot delete external group")
 		})
 
@@ -994,18 +1012,18 @@ func TestDeleteAuthGroup(t *testing.T) {
 				Identity: "user:someone@example.com",
 			})
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "")
+			err := DeleteAuthGroup(ctx, group.ID, "", false)
 			So(err, ShouldEqual, ErrPermissionDenied)
 		})
 
 		Convey("can't delete if etag doesn't match", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "bad-etag")
+			err := DeleteAuthGroup(ctx, group.ID, "bad-etag", false)
 			So(err, ShouldErrLike, ErrConcurrentModification)
 		})
 
 		Convey("group name that doesn't exist", func() {
-			err := DeleteAuthGroup(ctx, "non-existent-group", "")
+			err := DeleteAuthGroup(ctx, "non-existent-group", "", false)
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 		})
 
@@ -1016,7 +1034,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 			ownedGroup.Owners = group.ID
 			So(datastore.Put(ctx, ownedGroup), ShouldBeNil)
 
-			err := DeleteAuthGroup(ctx, group.ID, "")
+			err := DeleteAuthGroup(ctx, group.ID, "", false)
 			So(err, ShouldErrLike, ErrReferencedEntity)
 			So(err, ShouldErrLike, "this group is referenced by other groups: [owned]")
 		})
@@ -1028,14 +1046,14 @@ func TestDeleteAuthGroup(t *testing.T) {
 			nestingGroup.Nested = []string{group.ID}
 			So(datastore.Put(ctx, nestingGroup), ShouldBeNil)
 
-			err := DeleteAuthGroup(ctx, group.ID, "")
+			err := DeleteAuthGroup(ctx, group.ID, "", false)
 			So(err, ShouldErrLike, ErrReferencedEntity)
 			So(err, ShouldErrLike, "this group is referenced by other groups: [nester]")
 		})
 
 		Convey("successfully deletes from datastore and updates AuthDB", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, etag)
+			err := DeleteAuthGroup(ctx, group.ID, etag, false)
 			So(err, ShouldBeNil)
 
 			state1, err := GetReplicationState(ctx)
@@ -1053,7 +1071,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 
 		Convey("creates historical group entities", func() {
 			So(datastore.Put(ctx, group), ShouldBeNil)
-			err := DeleteAuthGroup(ctx, group.ID, "")
+			err := DeleteAuthGroup(ctx, group.ID, "", false)
 			So(err, ShouldBeNil)
 
 			entities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))

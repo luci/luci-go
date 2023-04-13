@@ -801,10 +801,16 @@ func findGroupDependencyCycle(ctx context.Context, group *AuthGroup) ([]string, 
 // CreateAuthGroup creates a new AuthGroup and writes it to the datastore.
 // Only the following fields will be read from the input:
 // ID, Description, Owners, Members, Globs, Nested.
-func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) {
-	// Check the supplied group name is valid, and not an external group.
-	if !isValidAuthGroupName(group.ID) || isExternalAuthGroupName(group.ID) {
-		return nil, ErrInvalidName
+func CreateAuthGroup(ctx context.Context, group *AuthGroup, external bool) (*AuthGroup, error) {
+	if external {
+		if !isExternalAuthGroupName(group.ID) {
+			return nil, ErrInvalidName
+		}
+	} else {
+		// Check the supplied group name is valid, and not an external group.
+		if !isValidAuthGroupName(group.ID) || isExternalAuthGroupName(group.ID) {
+			return nil, ErrInvalidName
+		}
 	}
 
 	// Check that the supplied members and globs are well-formed.
@@ -859,6 +865,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup) (*AuthGroup, error) 
 		// version, and triggers replication.
 		return commitEntity(newGroup, createdTS, creator, false)
 	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -921,7 +928,7 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 //	ErrPermissionDenied if the caller is not allowed to update the group.
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	Annotated error for other errors.
-func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag string) (*AuthGroup, error) {
+func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag string, fromExternal bool) (*AuthGroup, error) {
 	// A nil updateMask means we should update all fields.
 	// If updateable fields are added to AuthGroup in future, they need to be
 	// added to the below list.
@@ -938,7 +945,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	}
 
 	// External groups cannot be manually updated.
-	if isExternalAuthGroupName(groupUpdate.ID) {
+	if isExternalAuthGroupName(groupUpdate.ID) && !fromExternal {
 		return nil, errors.Annotate(ErrPermissionDenied, "cannot update external group").Err()
 	}
 
@@ -961,15 +968,22 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	var authGroup *AuthGroup
 	err := runAuthDBChange(ctx, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		var err error
+		var ok bool
 		// Fetch the group and check the user is an admin or a group owner.
 		authGroup, err = GetAuthGroup(ctx, groupUpdate.ID)
 		if err != nil {
 			return err
 		}
-		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
+		if fromExternal {
+			// Permissions check happens at ingestTarball.
+			ok = true
+		} else {
+			ok, err = auth.IsMember(ctx, AdminGroup, authGroup.Owners)
+		}
 		if err != nil {
 			return errors.Annotate(err, "permission check failed").Err()
 		}
+
 		if !ok {
 			return ErrPermissionDenied
 		}
@@ -1043,14 +1057,14 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	ErrReferencedEntity if the group is referenced by another group.
 //	Annotated error for other errors.
-func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
+func DeleteAuthGroup(ctx context.Context, groupName string, etag string, external bool) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
 		return ErrPermissionDenied
 	}
 
 	// External groups cannot be manually deleted.
-	if isExternalAuthGroupName(groupName) {
+	if isExternalAuthGroupName(groupName) && !external {
 		return errors.Annotate(ErrPermissionDenied, "cannot delete external group").Err()
 	}
 
@@ -1060,7 +1074,12 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string) error {
 		if err != nil {
 			return err
 		}
-		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
+		var ok bool
+		if external {
+			ok = true
+		} else {
+			ok, err = auth.IsMember(ctx, AdminGroup, authGroup.Owners)
+		}
 		if err != nil {
 			return errors.Annotate(err, "permission check failed").Err()
 		}

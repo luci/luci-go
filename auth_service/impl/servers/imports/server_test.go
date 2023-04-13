@@ -24,15 +24,17 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/testsupport"
+	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
@@ -69,6 +71,8 @@ func TestIngestTarball(t *testing.T) {
 	ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 		Identity: "user:test-user@example.com",
 	})
+	ctx = info.SetImageVersion(ctx, "test-version")
+	ctx, taskScheduler := tq.TestingContext(txndefer.FilterRDS(ctx), nil)
 
 	datastore.Put(ctx, &model.GroupImporterConfig{
 		Kind: "GroupImporterConfig",
@@ -106,9 +110,6 @@ func TestIngestTarball(t *testing.T) {
 				"test/group-2": []byte("a@example.com\nb@example.com"),
 			})
 
-			aIdent, _ := identity.MakeIdentity("user:a@example.com")
-			bIdent, _ := identity.MakeIdentity("user:b@example.com")
-
 			res, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
 			So(err, ShouldBeNil)
 
@@ -117,13 +118,14 @@ func TestIngestTarball(t *testing.T) {
 			json.Unmarshal(res, &actual)
 
 			expected := GroupsJSON{
-				Groups: map[string]map[string][]identity.Identity{"test": {
-					"test/group-1": {aIdent, bIdent},
-					"test/group-2": {aIdent, bIdent},
-				}},
-				AuthDBRev: 42,
+				Groups: []string{
+					"test/group-1",
+					"test/group-2",
+				},
+				AuthDBRev: 1,
 			}
 			So(actual, ShouldResemble, expected)
+			So(taskScheduler.Tasks(), ShouldHaveLength, 2)
 		})
 	})
 }
