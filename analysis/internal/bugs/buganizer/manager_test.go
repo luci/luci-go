@@ -262,6 +262,7 @@ func TestBugManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Does not adjust priority if priority manually set", func() {
+					ctx := context.WithValue(ctx, &BuganizerSelfEmailKey, "luci-analysis@prod.google.com")
 					fakeStore.Issues[1].Issue.IssueState.Priority = issuetracker.Issue_P1
 					fakeStore.Issues[1].IssueUpdates = append(fakeStore.Issues[1].IssueUpdates, &issuetracker.IssueUpdate{
 						Author: &issuetracker.User{

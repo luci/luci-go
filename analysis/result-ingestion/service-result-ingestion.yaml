@@ -53,6 +53,7 @@ luci_gae_vars:
     BUGANIZER_ENDPOINT_BASE: placeholder-issuetracker-c2p
     BUGANIZER_ENDPOINT_OAUTH_SCOPE: https://www.googleapis.com/auth/placeholder
     BUGANIZER_TEST_COMPONENT_ID: 12345
+    BUGANIZER_SELF_EMAIL: email@google.com
     SERVICE_ACCOUNT: luci-analysis-dev@appspot.gserviceaccount.com
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml and service-result-ingestion.yaml.
@@ -85,3 +86,4 @@ entrypoint: >
   -buganizer-endpoint-base=${BUGANIZER_ENDPOINT_BASE}
   -buganizer-endpoint-oauth-scope=${BUGANIZER_ENDPOINT_OAUTH_SCOPE}
   -buganizer-test-component-id=${BUGANIZER_TEST_COMPONENT_ID}
+  -buganizer-self-email=${BUGANIZER_SELF_EMAIL}

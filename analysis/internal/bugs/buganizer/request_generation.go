@@ -47,9 +47,6 @@ var configPriorityToIssueTrackerPriority = map[configpb.BuganizerPriority]issuet
 	configpb.BuganizerPriority_P4: issuetracker.Issue_P4,
 }
 
-// TODO (b/263322027)
-const luciAnalysisEmail = ""
-
 // This is the name of the Priority field in IssueState.
 // We use this to look for updates to issue priorities.
 const priorityField = "priority"
@@ -329,6 +326,7 @@ func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
 		if err != nil {
 			return false, errors.Annotate(err, "iterating through issue updates").Err()
 		}
+		luciAnalysisEmail := ctx.Value(&BuganizerSelfEmailKey)
 		if update.Author.EmailAddress != luciAnalysisEmail {
 			// If the modification was done by a user, we check if
 			// the priority was updated in the list of updated fields.

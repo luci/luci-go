@@ -55,6 +55,9 @@ type ModuleOptions struct {
 
 	// The component ID used for creating test issues in Buganizer.
 	BuganizerTestComponentId int64
+
+	// The email used by LUCI Analysis to file bugs.
+	BuganizerSelfEmail string
 }
 
 // Register registers the command line flags.
@@ -84,6 +87,13 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"buganizer-test-component-id",
 		o.BuganizerTestComponentId,
 		"The Buganizer component to be used for creating test issues.",
+	)
+
+	f.StringVar(
+		&o.BuganizerSelfEmail,
+		"buganizer-self-email",
+		o.BuganizerSelfEmail,
+		"The email that LUCI Analysis uses to file bugs. Used to distinguish actions taken by LUCI Analysis from user actions.",
 	)
 }
 
@@ -132,9 +142,16 @@ var BuganizerClientModeKey = "go.chromium.org/luci/analysis/internal/bugs/bugani
 // base subdomain from the Context.
 var BuganizerEndpointBaseKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerEndpointBase"
 
+// BuganizerEndpointOAuthScopeKey the key to get the value for Buganier OAuth scope
+// from the context.
 var BuganizerEndpointOAuthScopeKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerEndpointOAuthScopeKey"
 
+// BuganizerTestComponentIdKey the context key to get Buganizer test component id.
 var BuganizerTestComponentIdKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerTestComponentIdKey"
+
+// BuganizerSelfEmailKey the context key to get email that
+// LUCI Analysis uses to file bugs in Buganizer.
+var BuganizerSelfEmailKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:luciAnalysisBuganizerEmailKey"
 
 // Initialize is part of module.Module interface.
 func (m *buganizerModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
@@ -142,5 +159,6 @@ func (m *buganizerModule) Initialize(ctx context.Context, host module.Host, opts
 	ctx = context.WithValue(ctx, &BuganizerEndpointBaseKey, m.opts.BuganizerEndpointBase)
 	ctx = context.WithValue(ctx, &BuganizerEndpointOAuthScopeKey, m.opts.BuganizerEndpointOAuthScope)
 	ctx = context.WithValue(ctx, &BuganizerTestComponentIdKey, m.opts.BuganizerTestComponentId)
+	ctx = context.WithValue(ctx, &BuganizerSelfEmailKey, m.opts.BuganizerSelfEmail)
 	return ctx, nil
 }
