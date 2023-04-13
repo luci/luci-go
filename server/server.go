@@ -309,13 +309,14 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 		opts.ClientAuth.Scopes = auth.CloudOAuthScopes
 	}
 
-	opts.Register(flag.CommandLine)
-	flag.Parse()
+	// Prepopulate defaults for flags based on the runtime environment.
 	opts.FromGAEEnv()
 	if err := opts.FromCloudRunEnv(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to probe Cloud Run environment: %s\n", err)
 		os.Exit(3)
 	}
+	opts.Register(flag.CommandLine)
+	flag.Parse()
 
 	srv, err := New(context.Background(), *opts, mods)
 	if err != nil {
@@ -564,7 +565,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 //	-prod
 //	-http-addr 0.0.0.0:${PORT}
 //	-admin-addr -
-//	-shutdown-delay 0s
+//	-shutdown-delay 1s
 //	-cloud-project ${GOOGLE_CLOUD_PROJECT}
 //	-cloud-region <derived from the region code in GAE_APPLICATION>
 //	-service-account-json :gce
@@ -595,7 +596,7 @@ func (o *Options) FromGAEEnv() {
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
 	o.GRPCAddr = "-"
 	o.AdminAddr = "-"
-	o.ShutdownDelay = 0
+	o.ShutdownDelay = time.Second
 	o.CloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
 	o.TsMonServiceName = os.Getenv("GOOGLE_CLOUD_PROJECT")
@@ -622,7 +623,7 @@ func (o *Options) FromGAEEnv() {
 //	-http-addr 0.0.0.0:${PORT}
 //	-admin-addr -
 //	-allow-h2c
-//	-shutdown-delay 0s
+//	-shutdown-delay 1s
 //	-cloud-project <cloud project Cloud Run container is running in>
 //	-cloud-region <cloud region Cloud Run container is running in>
 //	-service-account-json :gce
@@ -655,10 +656,10 @@ func (o *Options) FromCloudRunEnv() error {
 	o.Prod = true
 	o.Hostname = uniqueServerlessHostname(os.Getenv("K_REVISION"), instance)
 	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
-	o.GRPCAddr = "-" // TODO(vadimsh): Expose a way to designate gRPC as the main port
+	o.GRPCAddr = "-"
 	o.AdminAddr = "-"
 	o.AllowH2C = true // to allow using HTTP2 end-to-end with `--use-http2` deployment flag
-	o.ShutdownDelay = 0
+	o.ShutdownDelay = time.Second
 	o.CloudProject = project
 	o.CloudRegion = region
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
@@ -1014,6 +1015,13 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	case module.CloudRun:
 		logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
 		logging.Infof(srv.Context, "Revision is %q", os.Getenv("K_REVISION"))
+		// Cloud Run environment can currently expose at most one port. If both gRPC
+		// and HTTP ports are declared, give preference to the gRPC one.
+		configured := func(addr string) bool { return addr != "" && addr != "-" }
+		if configured(srv.Options.GRPCAddr) && configured(srv.Options.HTTPAddr) {
+			logging.Infof(srv.Context, "Ignoring -http-addr since -grpc-addr is also set")
+			srv.Options.HTTPAddr = "-"
+		}
 	default:
 		// On k8s log pod IPs too, this is useful when debugging k8s routing.
 		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
