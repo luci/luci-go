@@ -440,3 +440,23 @@ func LoadBuildDetails(ctx context.Context, m *BuildMask, redact func(*pb.Build) 
 	}
 	return nil
 }
+
+// BuildStatus stores build ids and their statuses.
+type BuildStatus struct {
+	_kind string `gae:"$kind,BuildStatus"`
+
+	// ID is always 1 because only one such entity exists.
+	ID int `gae:"$id,1"`
+
+	// Build is the key for the build this entity belongs to.
+	Build *datastore.Key `gae:"$parent"`
+
+	// Address of a build.
+	// * If build number is enabled for the build, the address would be
+	// <project>/<bucket>/<builder>/<build_number>;
+	// * otherwise the address would be <project>/<bucket>/<builder>/b<build_id> (
+	// to easily differentiate build number and build id).
+	BuildAddress string `gae:"build_address"`
+
+	Status pb.Status `gae:"status,noindex"`
+}

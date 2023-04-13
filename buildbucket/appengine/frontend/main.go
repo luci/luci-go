@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -53,6 +54,8 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+var cacheEnabled = stringset.NewFromSlice("Project", "BuildStatus")
+
 func main() {
 	mods := []module.Module{
 		bqlog.NewModuleFromFlags(),
@@ -79,7 +82,7 @@ func main() {
 		// Enable dscache on Project entities only. Other datastore entities aren't
 		// ready.
 		srv.Context = dscache.AddShardFunctions(srv.Context, func(k *datastore.Key) (shards int, ok bool) {
-			if k.Kind() == "Project" {
+			if cacheEnabled.Has(k.Kind()) {
 				return 1, true
 			}
 			return 0, true
