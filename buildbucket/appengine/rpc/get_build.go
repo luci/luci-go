@@ -45,6 +45,24 @@ func validateGet(req *pb.GetBuildRequest) error {
 	return nil
 }
 
+func getBuildIDByBuildNumber(ctx context.Context, bldr *pb.BuilderID, nbr int32) (int64, error) {
+	addr := fmt.Sprintf("luci.%s.%s/%s/%d", bldr.Project, bldr.Bucket, bldr.Builder, nbr)
+	switch ents, err := model.SearchTagIndex(ctx, "build_address", addr); {
+	case model.TagIndexIncomplete.In(err):
+		// Shouldn't happen because build address is globally unique (exactly one entry in a complete index).
+		return 0, errors.Reason("unexpected incomplete index for build address %q", addr).Err()
+	case err != nil:
+		return 0, err
+	case len(ents) == 0:
+		return 0, perm.NotFoundErr(ctx)
+	case len(ents) == 1:
+		return ents[0].BuildID, nil
+	default:
+		// Shouldn't happen because build address is globally unique and created before the build.
+		return 0, errors.Reason("unexpected number of results for build address %q: %d", addr, len(ents)).Err()
+	}
+}
+
 // GetBuild handles a request to retrieve a build. Implements pb.BuildsServer.
 func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build, error) {
 	if err := validateGet(req); err != nil {
@@ -55,20 +73,9 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
 	}
 	if req.Id == 0 {
-		addr := fmt.Sprintf("luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)
-		switch ents, err := model.SearchTagIndex(ctx, "build_address", addr); {
-		case model.TagIndexIncomplete.In(err):
-			// Shouldn't happen because build address is globally unique (exactly one entry in a complete index).
-			return nil, errors.Reason("unexpected incomplete index for build address %q", addr).Err()
-		case err != nil:
+		req.Id, err = getBuildIDByBuildNumber(ctx, req.Builder, req.BuildNumber)
+		if err != nil {
 			return nil, err
-		case len(ents) == 0:
-			return nil, perm.NotFoundErr(ctx)
-		case len(ents) == 1:
-			req.Id = ents[0].BuildID
-		default:
-			// Shouldn't happen because build address is globally unique and created before the build.
-			return nil, errors.Reason("unexpected number of results for build address %q: %d", addr, len(ents)).Err()
 		}
 	}
 

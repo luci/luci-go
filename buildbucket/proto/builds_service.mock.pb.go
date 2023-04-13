@@ -184,6 +184,26 @@ func (mr *MockBuildsClientMockRecorder) GetBuild(ctx, in interface{}, opts ...in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuild", reflect.TypeOf((*MockBuildsClient)(nil).GetBuild), varargs...)
 }
 
+// GetBuildStatus mocks base method.
+func (m *MockBuildsClient) GetBuildStatus(ctx context.Context, in *GetBuildStatusRequest, opts ...grpc.CallOption) (*Build, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetBuildStatus", varargs...)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBuildStatus indicates an expected call of GetBuildStatus.
+func (mr *MockBuildsClientMockRecorder) GetBuildStatus(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuildStatus", reflect.TypeOf((*MockBuildsClient)(nil).GetBuildStatus), varargs...)
+}
+
 // RegisterBuildTask mocks base method.
 func (m *MockBuildsClient) RegisterBuildTask(ctx context.Context, in *RegisterBuildTaskRequest, opts ...grpc.CallOption) (*RegisterBuildTaskResponse, error) {
 	m.ctrl.T.Helper()
@@ -405,6 +425,21 @@ func (m *MockBuildsServer) GetBuild(arg0 context.Context, arg1 *GetBuildRequest)
 func (mr *MockBuildsServerMockRecorder) GetBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuild", reflect.TypeOf((*MockBuildsServer)(nil).GetBuild), arg0, arg1)
+}
+
+// GetBuildStatus mocks base method.
+func (m *MockBuildsServer) GetBuildStatus(arg0 context.Context, arg1 *GetBuildStatusRequest) (*Build, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBuildStatus", arg0, arg1)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBuildStatus indicates an expected call of GetBuildStatus.
+func (mr *MockBuildsServerMockRecorder) GetBuildStatus(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuildStatus", reflect.TypeOf((*MockBuildsServer)(nil).GetBuildStatus), arg0, arg1)
 }
 
 // RegisterBuildTask mocks base method.

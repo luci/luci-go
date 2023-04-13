@@ -41,6 +41,10 @@ service Builds {
   // * step support is not implemented for Buildbot builds.
   // Note that it does not support getting a buildbot build by build number.
   // Examples: go/buildbucket-rpc#getbuild
+  //
+  // GetBuild is good for getting detailed information for a build.
+  // For use cases that only requires build status checking (e.g. wait for a
+  // build to complete), please use GetBuildStatus instead.
   rpc GetBuild(GetBuildRequest) returns (Build) {};
 
   // Searches for builds.
@@ -95,6 +99,15 @@ service Builds {
   //
   // This RPC is exclusively for generating led builds.
   rpc SynthesizeBuild(SynthesizeBuildRequest) returns (Build) {};
+
+  // Gets a build's status.
+  //
+  // The returned build contains the requested build id or
+  // (builder + build number), and build status.
+  //
+  // It's useful when a user only wants to check the build's status (i.e. wait
+  // for a build to complete).
+  rpc GetBuildStatus(GetBuildStatusRequest) returns (Build) {};
 
   // Starts a build.
   //
@@ -575,7 +588,20 @@ message StartBuildResponse {
   Build build = 1;
   // a build token for agent to use when making subsequent UpdateBuild calls.
   string update_build_token = 2;
+}
 
+// A request message for GetBuildStatus RPC.
+message GetBuildStatusRequest {
+  // Build ID.
+  // Mutually exclusive with builder and number.
+  int64 id = 1;
+
+  // Builder of the build.
+  // Requires number. Mutually exclusive with id.
+  BuilderID builder = 2;
+  // Build number.
+  // Requires builder. Mutually exclusive with id.
+  int32 build_number = 3;
 }
 
 // Defines a subset of Build fields and properties to return.

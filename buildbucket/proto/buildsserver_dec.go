@@ -16,7 +16,7 @@ type DecoratedBuilds struct {
 	// processed via the Postlude (if one is defined), or it is returned directly.
 	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
-	// after the Prelude has returned an error. This takes the Service's
+	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
@@ -155,6 +155,23 @@ func (s *DecoratedBuilds) SynthesizeBuild(ctx context.Context, req *SynthesizeBu
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "SynthesizeBuild", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedBuilds) GetBuildStatus(ctx context.Context, req *GetBuildStatusRequest) (rsp *Build, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetBuildStatus", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetBuildStatus(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetBuildStatus", rsp, err)
 	}
 	return
 }

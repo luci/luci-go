@@ -36,6 +36,10 @@ import (
 const (
 	// BuildKind is a Build entity's kind in the datastore.
 	BuildKind = "Build"
+
+	// BuildStatusKind is a BuildStatus entity's kind in the datastore.
+	BuildStatusKind = "BuildStatus"
+
 	// BuildStorageDuration is the maximum lifetime of a Build.
 	//
 	// Lifetime is the time elapsed since the Build creation time.
