@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"strconv"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
@@ -744,21 +745,23 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 		Impact:      ExtractResidualImpact(cs),
 	}
 
-	var system string
-	if b.projectCfg.Config.BugSystem == configpb.ProjectConfig_BUGANIZER {
-		system = bugs.BuganizerSystem
-	} else {
-		system = bugs.MonorailSystem
-		var monorailComponents []string
-		for _, tc := range cs.TopMonorailComponents {
-			// Any monorail component is associated for more than 30% of the
-			// failures in the cluster should be on the filed bug.
-			if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
-				monorailComponents = append(monorailComponents, tc.Value)
+	system, err := routeToBugSystem(b.projectCfg, cs)
+	if err != nil {
+		return false, errors.Annotate(err, "extracting bug system").Err()
+	}
+
+	if system == bugs.BuganizerSystem {
+		if cs.TopBuganizerComponent.Value != "" {
+			var err error
+			request.BuganizerComponent, err = extractBuganizerComponent(cs)
+			if err != nil {
+				return false, errors.Annotate(err, "extracting buganizer component").Err()
 			}
 		}
-		request.MonorailComponents = monorailComponents
+	} else {
+		request.MonorailComponents = extractMonorailComponents(cs)
 	}
+
 	manager := b.managers[system]
 	name, err := manager.Create(ctx, request)
 	if err == bugs.ErrCreateSimulated {
@@ -790,6 +793,71 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	}
 
 	return true, nil
+}
+
+func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluster) (string, error) {
+	// If we have no components associated to failures, return the default system.
+	if len(cs.TopMonorailComponents) == 0 && cs.TopBuganizerComponent.Value == "" {
+		return findDefaultBugSystem(projectCfg), nil
+	}
+
+	// The most impactful monorail component.
+	var topMonorailComponent analysis.TopCount
+	for _, tc := range cs.TopMonorailComponents {
+		// Any monorail component is associated for more than 30% of the
+		// failures in the cluster should be checked for top impact.
+		if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
+			if tc.Count > topMonorailComponent.Count || topMonorailComponent.Value == "" {
+				topMonorailComponent = tc
+			}
+		}
+	}
+
+	if cs.TopBuganizerComponent.Value != "" {
+		if topMonorailComponent.Value == "" {
+			return bugs.BuganizerSystem, nil
+		} else {
+			// Return the system corresponding with the highest impact.
+			if topMonorailComponent.Count > cs.TopBuganizerComponent.Count {
+				return bugs.MonorailSystem, nil
+			} else if topMonorailComponent.Count == cs.TopBuganizerComponent.Count {
+				// If top components have equal impact, use the configured default system.
+				return findDefaultBugSystem(projectCfg), nil
+			} else {
+				return bugs.BuganizerSystem, nil
+			}
+		}
+	} else {
+		return bugs.MonorailSystem, nil
+	}
+}
+
+func extractBuganizerComponent(cs *analysis.Cluster) (int64, error) {
+	componentID, err := strconv.ParseInt(cs.TopBuganizerComponent.Value, 10, 64)
+	if err != nil {
+		return 0, errors.Annotate(err, "parse buganizer component id").Err()
+	}
+	return componentID, nil
+}
+
+func extractMonorailComponents(cs *analysis.Cluster) []string {
+	var monorailComponents []string
+	for _, tc := range cs.TopMonorailComponents {
+		// Any monorail component is associated for more than 30% of the
+		// failures in the cluster should be on the filed bug.
+		if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
+			monorailComponents = append(monorailComponents, tc.Value)
+		}
+	}
+	return monorailComponents
+}
+
+func findDefaultBugSystem(projectCfg *compiledcfg.ProjectConfig) string {
+	if projectCfg.Config.BugSystem == configpb.ProjectConfig_BUGANIZER {
+		return bugs.BuganizerSystem
+	} else {
+		return bugs.MonorailSystem
+	}
 }
 
 func clusterSummaryFromAnalysis(c *analysis.Cluster) *clustering.ClusterSummary {

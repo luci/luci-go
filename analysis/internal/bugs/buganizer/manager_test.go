@@ -84,9 +84,9 @@ func TestBugManager(t *testing.T) {
 				createRequest.Description.Title = reason
 				createRequest.Description.Description = "A cluster of failures has been found with reason: " + reason
 
-				bugId, err := bm.Create(ctx, createRequest)
+				bugID, err := bm.Create(ctx, createRequest)
 				So(err, ShouldBeNil)
-				So(bugId, ShouldEqual, "1")
+				So(bugID, ShouldEqual, "1")
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issueData := fakeStore.Issues[1]
 
@@ -112,13 +112,14 @@ func TestBugManager(t *testing.T) {
 					Comment: "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html" +
 						commonIssueCommentPart,
 				}
-				bugId, err := bm.Create(ctx, createRequest)
+				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
+
+				bugID, err := bm.Create(ctx, createRequest)
 				So(err, ShouldBeNil)
-				So(bugId, ShouldEqual, "1")
+				So(bugID, ShouldEqual, "1")
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 
-				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 1)
 				So(issue.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
@@ -130,19 +131,29 @@ func TestBugManager(t *testing.T) {
 				So(err, ShouldEqual, bugs.ErrCreateSimulated)
 				So(len(fakeStore.Issues), ShouldEqual, 0)
 			})
+
+			Convey("With provided component id", func() {
+				createRequest.BuganizerComponent = 7890
+				bugID, err := bm.Create(ctx, createRequest)
+				So(err, ShouldBeNil)
+				So(bugID, ShouldEqual, "1")
+				So(len(fakeStore.Issues), ShouldEqual, 1)
+				issue := fakeStore.Issues[1]
+				So(issue.Issue.IssueState.ComponentId, ShouldEqual, 7890)
+			})
 		})
 
 		Convey("Update", func() {
 			c := newCreateRequest()
 			c.Impact = bugs.P2Impact()
-			bugId, err := bm.Create(ctx, c)
+			bugID, err := bm.Create(ctx, c)
 			So(err, ShouldBeNil)
-			So(bugId, ShouldEqual, "1")
+			So(bugID, ShouldEqual, "1")
 			So(len(fakeStore.Issues), ShouldEqual, 1)
 			So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P2)
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
-					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugId},
+					Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
 					Impact:                           c.Impact,
 					IsManagingBug:                    true,
 					RuleID:                           "123",

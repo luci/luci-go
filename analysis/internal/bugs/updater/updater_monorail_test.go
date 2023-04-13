@@ -261,6 +261,67 @@ func TestMonorailUpdate(t *testing.T) {
 				So(f.Issues[0].Comments[1].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/chromium/100")
 			}
 
+			Convey("With top buganizer component", func() {
+				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{
+					OneDay: metrics.Counts{Residual: 100},
+				}
+				Convey("Buganzier component with lower impact should create monorail issue", func() {
+					suggestedClusters[1].TopBuganizerComponent = analysis.TopCount{
+						Value: "12345",
+						Count: 39,
+					}
+					test()
+				})
+				Convey("Buganizer component with higher impact should create buganizer issue", func() {
+					suggestedClusters[1].TopBuganizerComponent = analysis.TopCount{
+						Value: "12345",
+						Count: 41,
+					}
+					expectedRule.BugID = bugs.BugID{
+						System: "buganizer",
+						ID:     "1",
+					}
+					err = updateBugsForProject(ctx, opts)
+					So(err, ShouldBeNil)
+
+					rs, err := rules.ReadActive(span.Single(ctx), project)
+					So(err, ShouldBeNil)
+
+					var cleanedRules []*rules.FailureAssociationRule
+					for _, r := range rs {
+						if r.RuleID != ignoreRuleID {
+							cleanedRules = append(cleanedRules, r)
+						}
+					}
+
+					So(len(cleanedRules), ShouldEqual, 1)
+					rule := cleanedRules[0]
+
+					// Accept whatever bug cluster ID has been generated.
+					So(rule.RuleID, ShouldNotBeEmpty)
+					expectedRule.RuleID = rule.RuleID
+
+					// Accept creation and last updated times, as set by Spanner.
+					So(rule.CreationTime, ShouldNotBeZeroValue)
+					expectedRule.CreationTime = rule.CreationTime
+					So(rule.LastUpdated, ShouldNotBeZeroValue)
+					expectedRule.LastUpdated = rule.LastUpdated
+					So(rule.PredicateLastUpdated, ShouldNotBeZeroValue)
+					expectedRule.PredicateLastUpdated = rule.PredicateLastUpdated
+					So(rule.IsManagingBugPriorityLastUpdated, ShouldNotBeZeroValue)
+					expectedRule.IsManagingBugPriorityLastUpdated = rule.IsManagingBugPriorityLastUpdated
+					So(rule, ShouldResemble, expectedRule)
+					So(len(fakeBuganizerStore.Issues), ShouldEqual, 1)
+				})
+				Convey("Buganizer component with equal impact should use default bug system", func() {
+					suggestedClusters[1].TopBuganizerComponent = analysis.TopCount{
+						Value: "12345",
+						Count: 40,
+					}
+					test()
+				})
+			})
+
 			Convey("Dispersion threshold", func() {
 				// Meets impact threshold.
 				suggestedClusters[1].MetricValues[metrics.Failures.ID] = metrics.TimewiseCounts{

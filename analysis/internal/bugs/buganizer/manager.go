@@ -117,11 +117,15 @@ func NewBugManager(client Client,
 }
 
 // Create creates an issue in Buganizer and returns the issue ID.
-func (bm *BugManager) Create(ctx context.Context, cluster *bugs.CreateRequest) (string, error) {
+func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequest) (string, error) {
+	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
+	if createRequest.BuganizerComponent > 0 {
+		componentID = createRequest.BuganizerComponent
+	}
 	createIssueRequest := bm.requestGenerator.PrepareNew(
-		cluster.Impact,
-		cluster.Description,
-		bm.projectCfg.Buganizer.DefaultComponent.Id,
+		createRequest.Impact,
+		createRequest.Description,
+		componentID,
 	)
 	var issueId int64
 	if bm.Simulate {

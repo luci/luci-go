@@ -93,6 +93,9 @@ type CreateRequest struct {
 	// The monorail components (if any) to use.
 	// This value is ignored for Buganizer.
 	MonorailComponents []string
+	// The buganizer component id (if any) to use.
+	// This value is ignored for Monorail.
+	BuganizerComponent int64
 }
 
 // ClusterImpact captures details of a cluster's impact, as needed

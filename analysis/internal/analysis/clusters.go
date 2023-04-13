@@ -61,6 +61,9 @@ type Cluster struct {
 	// Top Monorail Components indicates the top monorail components failures
 	// in the cluster are associated with by number of failures, up to 5.
 	TopMonorailComponents []TopCount
+	// Top Buganizer Component indicates the top buganizer component for the top failure
+	// in the cluster.
+	TopBuganizerComponent TopCount
 }
 
 // ExampleTestID returns an example Test ID that is part of the cluster, or
@@ -433,7 +436,12 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 				SELECT AS STRUCT value, count
 				FROM UNNEST(top_monorail_components)
 				WHERE value IS NOT NULL
-			) as top_monorail_components
+			) as top_monorail_components,
+			ARRAY(
+				SELECT AS STRUCT value, count
+				FROM UNNEST(top_buganizer_components)
+				WHERE value IS NOT NULL
+			) AS top_buganizer_components
 		FROM cluster_summaries
 		WHERE
 			project = @project
@@ -495,6 +503,9 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 		row.ExampleFailureReason = rowVals.NullString("example_failure_reason")
 		row.TopTestIDs = rowVals.TopCounts("top_test_ids")
 		row.TopMonorailComponents = rowVals.TopCounts("top_monorail_components")
+		if len(rowVals.TopCounts("top_buganizer_components")) > 0 {
+			row.TopBuganizerComponent = rowVals.TopCounts("top_buganizer_components")[0]
+		}
 		row.Realms = rowVals.Strings("realms")
 
 		if err := rowVals.Error(); err != nil {
