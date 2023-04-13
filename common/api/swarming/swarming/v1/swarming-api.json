@@ -1861,6 +1861,9 @@
         "pubsub_userdata": {
           "type": "string"
         },
+        "rbe_instance": {
+          "type": "string"
+        },
         "realm": {
           "type": "string"
         },

@@ -1572,6 +1572,8 @@ type SwarmingRpcsTaskRequest struct {
 
 	PubsubUserdata string `json:"pubsub_userdata,omitempty"`
 
+	RbeInstance string `json:"rbe_instance,omitempty"`
+
 	Realm string `json:"realm,omitempty"`
 
 	// Resultdb: Swarming:ResultDB integration configuration for a task. See
