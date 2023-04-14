@@ -49,6 +49,7 @@ func TestBuganizerUpdate(t *testing.T) {
 	Convey("Run bug updates", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = memory.Use(ctx)
+		ctx = context.WithValue(ctx, &buganizer.BuganizerSelfEmailKey, "email@test.com")
 
 		const project = "chromeos"
 		buganizerCfg := buganizer.ChromeOSTestConfig()

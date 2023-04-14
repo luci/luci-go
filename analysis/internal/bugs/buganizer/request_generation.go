@@ -261,11 +261,14 @@ func (rg *RequestGenerator) MakeUpdate(
 	}
 
 	var commentary []bugs.Commentary
-	makeUpdateResult := makeUpdateResult{}
+	mur := makeUpdateResult{}
 	issueVerified := options.issue.IssueState.Status == issuetracker.Issue_VERIFIED
 	if !rg.isCompatibleWithVerified(options.impact, issueVerified) {
 		// Verify or reopen the issue.
-		comment := rg.prepareBugVerifiedUpdate(options.impact, options.issue, request)
+		comment, err := rg.prepareBugVerifiedUpdate(ctx, options.impact, options.issue, request)
+		if err != nil {
+			return makeUpdateResult{}, errors.Annotate(err, "prepare bug verified update ").Err()
+		}
 		commentary = append(commentary, comment)
 		// After the update, whether the issue was verified will have changed.
 		issueVerified = rg.clusterResolved(options.impact)
@@ -275,14 +278,14 @@ func (rg *RequestGenerator) MakeUpdate(
 		!rg.isCompatibleWithPriority(options.impact, options.issue.IssueState.Priority) {
 		hasManuallySetPriority, err := rg.hasManuallySetPriority(ctx, options.issue, options)
 		if err != nil {
-			return makeUpdateResult, errors.Annotate(err, "create issue update request").Err()
+			return makeUpdateResult{}, errors.Annotate(err, "create issue update request").Err()
 		}
 		if hasManuallySetPriority {
 			comment := bugs.Commentary{
 				Body: "The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, enable the update priority flag on the rule.",
 			}
 			commentary = append(commentary, comment)
-			makeUpdateResult.disablePriorityUpdates = true
+			mur.disablePriorityUpdates = true
 		} else {
 			// We were the last to update the bug priority.
 			// Apply the priority update.
@@ -300,8 +303,8 @@ func (rg *RequestGenerator) MakeUpdate(
 		IssueId: options.issue.IssueId,
 		Comment: bugs.MergeCommentary(commentary...),
 	}
-	makeUpdateResult.request = request
-	return makeUpdateResult, nil
+	mur.request = request
+	return mur, nil
 }
 
 // hasManuallySetPriority checks whether this issue's priority was last modified by
@@ -353,16 +356,30 @@ func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
 
 // prepareBugVerifiedUpdate adds bug status update to the request.
 // Returns the commentary about this change.
-func (rg *RequestGenerator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact,
+func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
+	impact *bugs.ClusterImpact,
 	issue *issuetracker.Issue,
-	request *issuetracker.ModifyIssueRequest) bugs.Commentary {
+	request *issuetracker.ModifyIssueRequest) (bugs.Commentary, error) {
 	resolved := rg.clusterResolved(impact)
 	priorityMappings := rg.buganizerCfg.PriorityMappings
 	var status issuetracker.Issue_Status
 	var body strings.Builder
 	var trailer string
 	if resolved {
+		// If the issue is not already closed by the user.
+		if issue.IssueState.Assignee != nil {
+			request.Add.Verifier = issue.IssueState.Assignee
+		} else {
+			if ctx.Value(&BuganizerSelfEmailKey) == nil {
+				return bugs.Commentary{}, errors.New("buganizer self email is required to file buganizer bugs.")
+			}
+			request.Add.Verifier = &issuetracker.User{
+				EmailAddress: ctx.Value(&BuganizerSelfEmailKey).(string),
+			}
+		}
 		status = issuetracker.Issue_VERIFIED
+		request.AddMask.Paths = append(request.AddMask.Paths, "verifier")
+
 		oldPriorityIndex := len(priorityMappings) - 1
 		// A priority index of len(priorityMappings) indicates
 		// a priority lower than the lowest defined priority (i.e. bug verified.)
@@ -393,7 +410,7 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact,
 	}
 	request.AddMask.Paths = append(request.AddMask.Paths, "status")
 	request.Add.Status = status
-	return commentary
+	return commentary, nil
 }
 
 // preparePriorityUpdate updates the issue's priority and creates a commentary for it.
