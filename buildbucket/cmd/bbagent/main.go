@@ -240,8 +240,6 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, tas
 			})
 		check(ctx, errors.Annotate(err, "failed to fetch build").Err())
 	} else {
-		// TODO(crbug.com/1416971): Remove this log when removing -start-build-first flag.
-		logging.Infof(ctx, "Start the build via StartBuild RPC.")
 		var res *bbpb.StartBuildResponse
 		res, err = startBuild(ctx, bbclient, *buildID, *taskID)
 		if err != nil && buildbucket.DuplicateTask.In(err) {
@@ -554,8 +552,6 @@ func mainImpl() int {
 	useGCEAccount := flag.Bool("use-gce-account", false, "Use GCE metadata service account for all calls")
 	cacheBase := flag.String("cache-base", "", "Directory where all the named caches are mounted for the build")
 	taskID := flag.String("task-id", "", "ID of the task")
-	// TODO(crbug.com/1416971): remove -start-build-first flag.
-	_ = flag.Bool("start-build-first", false, "Call StartBuild before making any UpdateBuild calls")
 	outputFile := luciexe.AddOutputFlagToSet(flag.CommandLine)
 
 	flag.Parse()
