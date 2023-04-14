@@ -71,13 +71,9 @@ func (*Builds) GetBuildStatus(ctx context.Context, req *pb.GetBuildStatusRequest
 		return nil, err
 	}
 
-	build := &pb.Build{
-		Id:      req.Id,
-		Builder: req.Builder,
-		Number:  req.BuildNumber,
-	}
+	var buildStatus pb.Status
 	if bs != nil && bs.Status != pb.Status_STATUS_UNSPECIFIED {
-		build.Status = bs.Status
+		buildStatus = bs.Status
 	} else {
 		// BuildStatus not found, fall back to Build.
 		bID := req.Id
@@ -91,7 +87,7 @@ func (*Builds) GetBuildStatus(ctx context.Context, req *pb.GetBuildStatusRequest
 		if err != nil {
 			return nil, err
 		}
-		build.Status = bld.Proto.Status
+		buildStatus = bld.Proto.Status
 		bldr = bld.Proto.Builder
 	}
 
@@ -113,5 +109,10 @@ func (*Builds) GetBuildStatus(ctx context.Context, req *pb.GetBuildStatusRequest
 		return nil, err
 	}
 
-	return build, nil
+	return &pb.Build{
+		Id:      req.Id,
+		Builder: req.Builder,
+		Number:  req.BuildNumber,
+		Status:  buildStatus,
+	}, nil
 }
