@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -304,7 +303,15 @@ func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
 		dimMap := dims.toLogical()
 		dimEdits.apply(dimMap, 0)
 
-		sw := bbe.bb.BbagentArgs.Build.Infra.Swarming
+		build := bbe.bb.BbagentArgs.Build
+		var curTimeout time.Duration
+		if build.SchedulingTimeout != nil {
+			if err := build.SchedulingTimeout.CheckValid(); err != nil {
+				return err
+			}
+			curTimeout = build.SchedulingTimeout.AsDuration()
+		}
+		sw := build.Infra.Swarming
 		var maxExp time.Duration
 		newDims := make([]*bbpb.RequestedDimension, 0,
 			len(sw.TaskDimensions)+len(dimEdits))
@@ -320,7 +327,7 @@ func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
 					Key:   key,
 					Value: value,
 				}
-				if exp > 0 {
+				if exp > 0 && exp != curTimeout {
 					toAdd.Expiration = durationpb.New(exp)
 				}
 				newDims = append(newDims, toAdd)
@@ -328,14 +335,6 @@ func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
 		}
 		sw.TaskDimensions = newDims
 
-		build := bbe.bb.BbagentArgs.Build
-		var curTimeout time.Duration
-		if build.SchedulingTimeout != nil {
-			var err error
-			if curTimeout, err = ptypes.Duration(build.SchedulingTimeout); err != nil {
-				return err
-			}
-		}
 		if maxExp > curTimeout {
 			build.SchedulingTimeout = durationpb.New(maxExp)
 		}
