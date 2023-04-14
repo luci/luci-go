@@ -429,8 +429,8 @@ PB.M = {
         end
         local maxIdx = 0
         local length = 0
-        for k, v in next, val do
-          if type(k) ~= "number" then
+        for i, v in next, val do
+          if type(i) ~= "number" then
             error("field ops: expected list[message], but got table")
           end
           local T = type(v)
@@ -444,8 +444,8 @@ PB.M = {
             error("field ops["..(i-1).."]: expected message type 'go.chromium.org.luci.server.quota.quotapb.Op', but got "..v["$type"])
           end
           val[i] = PB.M["go.chromium.org.luci.server.quota.quotapb.Op"].marshal(v)
-          if k > maxIdx then
-            maxIdx = k
+          if i > maxIdx then
+            maxIdx = i
           end
           length = length + 1
         end
@@ -554,8 +554,8 @@ PB.M = {
         end
         local maxIdx = 0
         local length = 0
-        for k, v in next, val do
-          if type(k) ~= "number" then
+        for i, v in next, val do
+          if type(i) ~= "number" then
             error("field results: expected list[message], but got table")
           end
           local T = type(v)
@@ -569,8 +569,8 @@ PB.M = {
             error("field results["..(i-1).."]: expected message type 'go.chromium.org.luci.server.quota.quotapb.OpResult', but got "..v["$type"])
           end
           val[i] = PB.M["go.chromium.org.luci.server.quota.quotapb.OpResult"].marshal(v)
-          if k > maxIdx then
-            maxIdx = k
+          if i > maxIdx then
+            maxIdx = i
           end
           length = length + 1
         end
@@ -1939,8 +1939,8 @@ PB.M = {
         end
         local maxIdx = 0
         local length = 0
-        for k, v in next, val do
-          if type(k) ~= "number" then
+        for i, v in next, val do
+          if type(i) ~= "number" then
             error("field ops: expected list[message], but got table")
           end
           local T = type(v)
@@ -1954,8 +1954,8 @@ PB.M = {
             error("field ops["..(i-1).."]: expected message type 'go.chromium.org.luci.server.quota.quotapb.RawOp', but got "..v["$type"])
           end
           val[i] = PB.M["go.chromium.org.luci.server.quota.quotapb.RawOp"].marshal(v)
-          if k > maxIdx then
-            maxIdx = k
+          if i > maxIdx then
+            maxIdx = i
           end
           length = length + 1
         end

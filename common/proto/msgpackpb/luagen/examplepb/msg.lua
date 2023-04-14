@@ -186,16 +186,16 @@ PB.M = {
         end
         local maxIdx = 0
         local length = 0
-        for k, v in next, val do
-          if type(k) ~= "number" then
+        for i, v in next, val do
+          if type(i) ~= "number" then
             error("field strings: expected list[string], but got table")
           end
           local T = type(v)
           if T ~= "string" then
             error("field strings["..(i-1).."]: expected string, but got "..T)
           end
-          if k > maxIdx then
-            maxIdx = k
+          if i > maxIdx then
+            maxIdx = i
           end
           length = length + 1
         end
@@ -229,8 +229,8 @@ PB.M = {
         end
         local maxIdx = 0
         local length = 0
-        for k, v in next, val do
-          if type(k) ~= "number" then
+        for i, v in next, val do
+          if type(i) ~= "number" then
             error("field multi_recursion: expected list[message], but got table")
           end
           local T = type(v)
@@ -244,8 +244,8 @@ PB.M = {
             error("field multi_recursion["..(i-1).."]: expected message type 'go.chromium.org.luci.common.proto.msgpackpb.luagen.examplepb.TestMessage', but got "..v["$type"])
           end
           val[i] = PB.M["go.chromium.org.luci.common.proto.msgpackpb.luagen.examplepb.TestMessage"].marshal(v)
-          if k > maxIdx then
-            maxIdx = k
+          if i > maxIdx then
+            maxIdx = i
           end
           length = length + 1
         end

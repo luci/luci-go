@@ -584,14 +584,14 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 
 									pl("local maxIdx = 0")
 									pl("local length = 0")
-									pl("for k, v in next, val do")
+									pl("for i, v in next, val do")
 									suite(func() {
-										cond(`type(k) ~= "number"`)(func() {
+										cond(`type(i) ~= "number"`)(func() {
 											pl(`error("field %s: expected list[%s], but got table")`, name, kind)
 										})
 										emitMarshalTypecheck(&printerState, "v", field, fmt.Sprintf(`%s["..(i-1).."]`, name), "val[i]")
-										cond(`k > maxIdx`)(func() {
-											pl("maxIdx = k")
+										cond(`i > maxIdx`)(func() {
+											pl("maxIdx = i")
 										})
 										pl("length = length + 1")
 									}, "end")
