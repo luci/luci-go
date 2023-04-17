@@ -39,8 +39,7 @@ go run main.go \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
  -default-request-timeout 10m0s \
  -config-local-dir ../configs \
- -buganizer-mode provided \
- -buganizer-endpoint-base bifrost-issuetracker-c2p
+ -encrypted-cookies-expose-state-endpoint
 ```
 
 `-default-request-timeout` is needed if exercising cron jobs through the admin
