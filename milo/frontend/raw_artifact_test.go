@@ -72,7 +72,10 @@ func TestRawArtifactHandler(t *testing.T) {
 					FetchUrl: "https://test.com/artifact/fetch/url",
 				}, nil)
 
-			req := &http.Request{URL: &url.URL{Path: "/prefix/test/artifact/name"}}
+			url, err := url.Parse("/prefix/test/artifact/name")
+			So(err, ShouldBeNil)
+
+			req := &http.Request{URL: url}
 			w := httptest.NewRecorder()
 			c := context.Background()
 			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
@@ -82,7 +85,7 @@ func TestRawArtifactHandler(t *testing.T) {
 				Writer:  w,
 			}
 
-			err := handler(ctx)
+			err = handler(ctx)
 			So(err, ShouldBeNil)
 
 			res := w.Result()
@@ -103,17 +106,50 @@ func TestRawArtifactHandler(t *testing.T) {
 					FetchUrl: "https://test.com/artifact/fetch/url",
 				}, nil)
 
-			req := &http.Request{URL: &url.URL{
-				Path:    "/prefix/test/artifact/name",
-				RawPath: "/prefix/test/artifact%2fname",
-			}}
+			url, err := url.Parse("/prefix/test/artifact%2fname")
+			So(url.RawPath, ShouldNotBeEmpty)
+			So(err, ShouldBeNil)
+
+			req := &http.Request{URL: url}
 			ctx := &router.Context{
 				Context: c,
 				Request: req,
 				Writer:  w,
 			}
 
-			err := handler(ctx)
+			err = handler(ctx)
+			So(err, ShouldBeNil)
+
+			res := w.Result()
+			So(res.StatusCode, ShouldEqual, http.StatusFound)
+			So(res.Header.Get("location"), ShouldEqual, "https://test.com/artifact/fetch/url")
+		})
+
+		Convey(`with encoded character but the URL.RawPath is not set`, func() {
+			resultdbMock.
+				EXPECT().
+				GetArtifact(
+					gomock.Any(),
+					&resultpb.GetArtifactRequest{
+						Name: "test/artifact%20name",
+					},
+				).
+				Return(&resultpb.Artifact{
+					FetchUrl: "https://test.com/artifact/fetch/url",
+				}, nil)
+
+			url, err := url.Parse("/prefix/test/artifact%20name")
+			So(err, ShouldBeNil)
+			So(url.RawPath, ShouldBeEmpty)
+
+			req := &http.Request{URL: url}
+			ctx := &router.Context{
+				Context: c,
+				Request: req,
+				Writer:  w,
+			}
+
+			err = handler(ctx)
 			So(err, ShouldBeNil)
 
 			res := w.Result()

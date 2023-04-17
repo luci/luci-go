@@ -37,14 +37,8 @@ import (
 // "/raw-artifact/*artifactName".
 func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Context) error {
 	return func(ctx *router.Context) error {
-		// Get RawPath so we can obtain the undecoded artifact name.
-		path := ctx.Request.URL.RawPath
-		// URL.RawPath is not populated when decoded path is the same as the
-		// undecoded path.
-		// So we need to read from URL.Path when URL.RawPath is empty.
-		if path == "" {
-			path = ctx.Request.URL.Path
-		}
+		// Use EscapedPath so we can obtain the undecoded artifact name.
+		path := ctx.Request.URL.EscapedPath()
 		// Read artifactName by removing the prefix.
 		// We cannot read the artifactName from ctx.Params.ByName("ArtifactName")
 		// because the value is decoded automatically, making it impossible to
