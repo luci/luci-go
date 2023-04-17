@@ -58,7 +58,7 @@ func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Co
 		if err != nil {
 			return errors.Annotate(err, "failed to get Milo's service settings").Err()
 		}
-		rdbClient, err := s.GetResultDBClient(ctx.Context, settings.Resultdb.Host, auth.AsCredentialsForwarder)
+		rdbClient, err := s.GetResultDBClient(ctx.Context, settings.Resultdb.Host, auth.AsSessionUser)
 		if err != nil {
 			return errors.Annotate(err, "failed to get ResultDB client").Err()
 		}

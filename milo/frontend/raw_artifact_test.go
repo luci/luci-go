@@ -48,7 +48,7 @@ func TestRawArtifactHandler(t *testing.T) {
 			},
 			GetResultDBClient: func(c context.Context, host string, as auth.RPCAuthorityKind) (resultpb.ResultDBClient, error) {
 				So(host, ShouldEqual, "test.result.api.cr.dev")
-				So(as, ShouldEqual, auth.AsCredentialsForwarder)
+				So(as, ShouldEqual, auth.AsSessionUser)
 				return resultdbMock, nil
 			},
 		}
