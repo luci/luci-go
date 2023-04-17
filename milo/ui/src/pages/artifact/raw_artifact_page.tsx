@@ -12,30 +12,111 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { autorun, computed, makeObservable, observable } from 'mobx';
+import { fromPromise } from 'mobx-utils';
 
-import { getRawArtifactURLPath } from '../../libs/url_utils';
-import { constructArtifactName } from '../../services/resultdb';
+import '../../components/dot_spinner';
+import '../../components/status_bar';
+import { MiloBaseElement } from '../../components/milo_base';
+import { consumer } from '../../libs/context';
+import { reportError, reportRenderError } from '../../libs/error_handler';
+import { unwrapObservable } from '../../libs/milo_mobx_utils';
+import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
+import { consumeStore, StoreInstance } from '../../store';
+import { commonStyles } from '../../styles/stylesheets';
+import { consumeArtifactIdent } from './artifact_page_layout';
 
-// Redirects user to the new URL for raw artifact "/raw-artifact/:artifactName".
-// Keep this around so we don't break the old URLs.
-export function RawArtifactPage() {
-  // We cannot use splats (i.e. "/raw/*") because react-router would return
-  // decoded path and we can't recover the original path from that.
-  // This is important because testId may contain encoded characters (e.g. %2f).
-  const { invId, testId, resultId, artifactId } = useParams();
+/**
+ * Renders a raw artifact.
+ */
+@customElement('milo-raw-artifact-page')
+@consumer
+export class RawArtifactPageElement extends MiloBaseElement {
+  @observable.ref
+  @consumeStore()
+  store!: StoreInstance;
 
-  if (!invId || !testId || !artifactId) {
-    throw new Error('invId, testId, and artifactId must be set');
+  @observable.ref
+  @consumeArtifactIdent()
+  artifactIdent!: ArtifactIdentifier;
+
+  @computed
+  private get artifact$() {
+    if (!this.store.services.resultDb) {
+      return fromPromise(Promise.race([]));
+    }
+    return fromPromise(this.store.services.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
   }
 
-  const artifactName = constructArtifactName({ invocationId: invId, testId, resultId, artifactId });
-  useEffect(() => {
-    // Use window.location.replace instead of useNavigate so the route isn't
-    // intercepted by react-router.
-    window.location.replace(getRawArtifactURLPath(artifactName));
-  }, []);
+  @computed
+  private get artifact() {
+    return unwrapObservable(this.artifact$, null);
+  }
 
-  return <>Redirecting to the new raw artifact URL...</>;
+  constructor() {
+    super();
+    makeObservable(this);
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    /**
+     * TODO(crbug/1206109): artifact.fetchUrl has an expire time. Ideally, we
+     * want to handle the request on the server side, so we can avoid
+     * redirecting to a temporary URL (users may save the URL). However, due to
+     * a bug in golang http/net, we can't handle this on server side before
+     * migrating to GAE v2.
+     */
+    this.addDisposer(
+      autorun(
+        reportError(this, () => {
+          if (this.artifact) {
+            window.open(this.artifact.fetchUrl, '_self');
+          }
+        })
+      )
+    );
+  }
+
+  protected render = reportRenderError(this, () => {
+    if (!this.artifact) {
+      return html`<div id="content" class="active-text">Loading artifact <milo-dot-spinner></milo-dot-spinner></div>`;
+    }
+    // The page should've navigated to the artifact fetch URL, but the browser
+    // may decide to download it instead of rendering it as a page.
+    // Render a download link in that case.
+    return html`
+      <div id="content">
+        The artifact content can not be directly rendered as a page.<br />
+        The browser should start downloading the artifact momentarily.<br />
+        If not, you can use the following link to download the artifact.<br />
+        <a href=${this.artifact.fetchUrl}>${this.artifact.fetchUrl}</a>
+      </div>
+    `;
+  });
+
+  static styles = [
+    commonStyles,
+    css`
+      #content {
+        margin: 20px;
+      }
+    `,
+  ];
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'milo-raw-artifact-page': {};
+    }
+  }
+}
+
+export function RawArtifactPage() {
+  return <milo-raw-artifact-page></milo-raw-artifact-page>;
 }

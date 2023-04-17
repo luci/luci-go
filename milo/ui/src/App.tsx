@@ -113,17 +113,26 @@ export function App() {
                 <Route path="invocation-details" element={<InvocationDetailsTab />} />
               </Route>
               <Route path="artifact" element={<ArtifactPageLayout />}>
-                <Route path="text-diff/invocations/:invId/artifacts/:artifactId" element={<TextDiffArtifactPage />} />
+                <Route
+                  path="text-diff/invocations/:invId/tests/:testId/artifacts/:artifactId"
+                  element={<TextDiffArtifactPage />}
+                />
                 <Route
                   path="text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
                   element={<TextDiffArtifactPage />}
                 />
-                <Route path="image-diff/invocations/:invId/artifacts/:artifactId" element={<ImageDiffArtifactPage />} />
+                <Route
+                  path="image-diff/invocations/:invId/tests/:testId/artifacts/:artifactId"
+                  element={<ImageDiffArtifactPage />}
+                />
                 <Route
                   path="image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
                   element={<ImageDiffArtifactPage />}
                 />
-                <Route path="raw/invocations/:invId/artifacts/:artifactId" element={<RawArtifactPage />} />
+                <Route
+                  path="raw/invocations/:invId/tests/:testId/artifacts/:artifactId"
+                  element={<RawArtifactPage />}
+                />
                 <Route
                   path="raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
                   element={<RawArtifactPage />}

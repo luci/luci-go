@@ -59,7 +59,7 @@ export function getInvURLPath(invId: string): string {
 }
 
 export function getRawArtifactURLPath(artifactName: string): string {
-  return `/raw-artifact/${artifactName}`;
+  return `/ui/artifact/raw/${artifactName}`;
 }
 
 export function getImageDiffArtifactURLPath(
