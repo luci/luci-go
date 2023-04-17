@@ -17,12 +17,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useStore } from '../../store';
 
+// TODO(weiweilin): add a unit test once jest is set up.
 export function BuildDefaultTab() {
   const { pathname } = useLocation();
   const store = useStore();
   const navigate = useNavigate();
 
-  const newUrl = `${pathname}/${store.userConfig.build.defaultTab}`;
+  // Remove any trailing '/' so the new URL won't contain '//'.
+  const basePath = pathname.replace(/\/*$/, '');
+
+  const newUrl = `${basePath}/${store.userConfig.build.defaultTab}`;
   useEffect(() => navigate(newUrl, { replace: true }));
 
   return <></>;
