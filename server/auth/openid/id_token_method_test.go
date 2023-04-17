@@ -182,6 +182,24 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 			})
 		})
 
+		Convey("Happy path using OAuth2 client ID", func() {
+			user, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
+				Iss:           provider.Issuer,
+				EmailVerified: true,
+				Sub:           "some-sub",
+				Email:         "example@example.gserviceaccount.com",
+				Aud:           "blah.apps.googleusercontent.com",
+				Iat:           clock.Now(ctx).Unix(),
+				Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
+			}))
+			So(err, ShouldBeNil)
+			So(user, ShouldResemble, &auth.User{
+				Identity: "user:example@example.gserviceaccount.com",
+				Email:    "example@example.gserviceaccount.com",
+				ClientID: "blah.apps.googleusercontent.com",
+			})
+		})
+
 		Convey("Unknown audience", func() {
 			_, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
 				Iss:           provider.Issuer,

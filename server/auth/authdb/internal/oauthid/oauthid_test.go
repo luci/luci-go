@@ -23,12 +23,12 @@ import (
 func TestAllowlist(t *testing.T) {
 	Convey("Works", t, func() {
 		l := NewAllowlist("primary-client-id", []string{
+			"", // ignored
 			"additional-client-id-1",
 			"additional-client-id-2",
 		})
 		call := l.IsAllowedOAuthClientID
 
-		So(call("abc@appspot.gserviceaccount.com", "anonymous"), ShouldBeTrue)
 		So(call("dude@example.com", ""), ShouldBeFalse)
 		So(call("dude@example.com", GoogleAPIExplorerClientID), ShouldBeTrue)
 		So(call("dude@example.com", "primary-client-id"), ShouldBeTrue)

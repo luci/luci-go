@@ -16,8 +16,6 @@
 package oauthid
 
 import (
-	"strings"
-
 	"go.chromium.org/luci/common/data/stringset"
 )
 
@@ -47,15 +45,5 @@ func NewAllowlist(primaryID string, additionalIDs []string) Allowlist {
 // IsAllowedOAuthClientID returns true if the given OAuth2 client ID can be used
 // to authorize access from the given email.
 func (l Allowlist) IsAllowedOAuthClientID(email, clientID string) bool {
-	switch {
-	// No need to check client IDs for service accounts, since email address
-	// uniquely identifies credentials used. Note: this is Google specific.
-	case strings.HasSuffix(email, ".gserviceaccount.com"):
-		return true
-	// clientID must be set for non service accounts.
-	case clientID == "":
-		return false
-	default:
-		return l.Has(clientID)
-	}
+	return l.Has(clientID)
 }

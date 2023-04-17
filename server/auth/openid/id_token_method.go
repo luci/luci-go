@@ -36,7 +36,11 @@ import (
 //     stack.
 //   - ID tokens identifying service accounts. They generally can have anything
 //     at all as an audience, but usually have an URL of the service being
-//     called. Their `aud` is checked against Audience list below.
+//     called. Their `aud` is first checked against Audience list and
+//     AudienceCheck callback below. If after these check the audience is still
+//     not recognized, but it looks like a Google OAuth2 Client ID, it is placed
+//     into User.ClientID, to be subjected to the regular check against an
+//     allowlist of OAuth2 Client IDs.
 type GoogleIDTokenAuthMethod struct {
 	// Audience is a list of allowed audiences for tokens that identify Google
 	// service accounts ("*.gserviceaccount.com" emails).
@@ -112,15 +116,16 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r auth.Reque
 	}
 
 	// For tokens identifying end users, populate user.ClientID to let the LUCI
-	// auth stack check it against an allowlist in the AuthDB (same way it does
-	// for OAuth2 access tokens).
+	// auth stack check it against an allowlist of OAuth2 Client IDs in the
+	// AuthDB. Tokens identifying end users always have OAuth2 Client ID as an
+	// audience.
 	if !strings.HasSuffix(user.Email, ".gserviceaccount.com") {
 		user.ClientID = tok.Aud
 		return user, nil, nil
 	}
 
-	// For service accounts we want to check `aud` right here, since it is
-	// generally not an OAuth Client ID and can be anything at all.
+	// For service accounts we want to check `aud` right here first, since it is
+	// generally not an OAuth2 Client ID and can be anything at all.
 	for _, aud := range m.Audience {
 		if tok.Aud == aud {
 			return user, nil, nil
@@ -133,6 +138,14 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r auth.Reque
 		case valid:
 			return user, nil, nil
 		}
+	}
+
+	// If unrecognized `aud` looks like Google OAuth2 Client ID, put it into the
+	// returned `user`. This will trigger a check against an allowlist of OAuth2
+	// client IDs.
+	if strings.HasSuffix(tok.Aud, ".apps.googleusercontent.com") {
+		user.ClientID = tok.Aud
+		return user, nil, nil
 	}
 
 	logging.Errorf(ctx, "openid: token from %s has unrecognized audience %q", user.Email, tok.Aud)

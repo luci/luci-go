@@ -132,7 +132,6 @@ func TestSnapshotDB(t *testing.T) {
 			return res
 		}
 
-		So(call("abc@appspot.gserviceaccount.com", "anonymous"), ShouldBeTrue)
 		So(call("dude@example.com", ""), ShouldBeFalse)
 		So(call("dude@example.com", oauthid.GoogleAPIExplorerClientID), ShouldBeTrue)
 		So(call("dude@example.com", "primary-client-id"), ShouldBeTrue)

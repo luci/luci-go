@@ -176,6 +176,15 @@ func (m *GoogleOAuth2Method) Authenticate(ctx context.Context, r RequestMetadata
 		return nil, nil, ErrBadOAuthToken
 	}
 
+	// OAuth2 access token representing service accounts have essentially
+	// service account's uint64 user ID as an audience. It makes no sense to
+	// check it against OAuth2 client ID allowlist (it will basically require us
+	// to centrally allowlist every service account ever: we already use groups
+	// with service account emails for that).
+	if strings.HasSuffix(outcome.Email, ".gserviceaccount.com") {
+		outcome.ClientID = ""
+	}
+
 	return &User{
 		Identity: identity.Identity("user:" + outcome.Email),
 		Email:    outcome.Email,

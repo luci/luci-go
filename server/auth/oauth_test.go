@@ -100,10 +100,21 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			return u, err
 		}
 
-		Convey("Works", func() {
+		Convey("Works with end users", func() {
 			u, err := call("Bearer access_token")
 			So(err, ShouldBeNil)
 			So(u, ShouldResemble, goodUser)
+		})
+
+		Convey("Works with service accounts", func() {
+			info.Email = "something@example.gserviceaccount.com"
+			info.Audience = "ignored"
+			u, err := call("Bearer access_token")
+			So(err, ShouldBeNil)
+			So(u, ShouldResemble, &User{
+				Identity: "user:something@example.gserviceaccount.com",
+				Email:    "something@example.gserviceaccount.com",
+			})
 		})
 
 		Convey("Valid tokens are cached", func() {
