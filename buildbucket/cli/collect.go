@@ -60,6 +60,15 @@ type collectRun struct {
 	intervalArg time.Duration
 }
 
+func (r *collectRun) checkBuildStatus(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build, error) {
+	getStatusReq := &pb.GetBuildStatusRequest{
+		Id:          req.Id,
+		Builder:     req.Builder,
+		BuildNumber: req.BuildNumber,
+	}
+	return r.buildsClient.GetBuildStatus(ctx, getStatusReq)
+}
+
 func (r *collectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 	// bb collect should retry infinitely on transient or deadline_exceeded errors.
@@ -95,7 +104,7 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 		req.Fields = fields
 
 		for {
-			build, err := r.buildsClient.GetBuild(ctx, req)
+			build, err := r.checkBuildStatus(ctx, req)
 			if err != nil {
 				return nil, err
 			}
@@ -103,7 +112,7 @@ func (r *collectRun) Run(a subcommands.Application, args []string, env subcomman
 				logging.Infof(ctx, "build %d is still %s; sleeping for %s", build.Id, build.Status, inverval)
 				time.Sleep(inverval)
 			} else {
-				return build, nil
+				return r.buildsClient.GetBuild(ctx, req)
 			}
 		}
 	})
