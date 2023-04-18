@@ -28,25 +28,28 @@ type queryIterator struct {
 	order                 []IndexColumn
 	currentQueryResult    *rawQueryResult
 	itemCh                chan *rawQueryResult
-	currentItemOrderCache string // lazy loading (loaded when `CurrentItemOrder()` is call).
+	currentItemOrderCache string          // lazy loading (loaded when `CurrentItemOrder()` is call).
+	finalizedQuery        *FinalizedQuery // For use in determining which cursor callback is being called
 }
 
 // startQueryIterator starts to run the given query and return the iterator for query results.
 func startQueryIterator(ctx context.Context, fq *FinalizedQuery) *queryIterator {
 	qi := &queryIterator{
-		order:  fq.Orders(),
-		itemCh: make(chan *rawQueryResult),
+		order:          fq.Orders(),
+		itemCh:         make(chan *rawQueryResult),
+		finalizedQuery: fq, // Save query for later
 	}
 
 	go func() {
 		defer close(qi.itemCh)
-		err := Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, _ CursorCB) error {
+		err := Raw(ctx).Run(fq, func(k *Key, pm PropertyMap, cursorCB CursorCB) error {
 			select {
 			case <-ctx.Done():
 				return Stop
 			case qi.itemCh <- &rawQueryResult{
-				key:  k,
-				data: pm,
+				key:      k,
+				data:     pm,
+				cursorCB: cursorCB,
 			}:
 				return nil
 			}
@@ -63,11 +66,11 @@ func startQueryIterator(ctx context.Context, fq *FinalizedQuery) *queryIterator 
 }
 
 // CurrentItem returns the current query result.
-func (qi *queryIterator) CurrentItem() (*Key, PropertyMap) {
+func (qi *queryIterator) CurrentItem() (*Key, PropertyMap, CursorCB) {
 	if qi.currentQueryResult == nil {
-		return nil, PropertyMap{}
+		return nil, PropertyMap{}, nil
 	}
-	return qi.currentQueryResult.key, qi.currentQueryResult.data
+	return qi.currentQueryResult.key, qi.currentQueryResult.data, qi.currentQueryResult.cursorCB
 }
 
 // CurrentItemKey returns a serialized current item key.
@@ -76,6 +79,11 @@ func (qi *queryIterator) CurrentItemKey() string {
 		return ""
 	}
 	return string(Serialize.ToBytes(qi.currentQueryResult.key))
+}
+
+// Query returns the query that produced this iterator
+func (qi *queryIterator) FinalizedQuery() *FinalizedQuery {
+	return qi.finalizedQuery
 }
 
 // CurrentItemOrder returns serialized propertied which fields are used in sorting orders.
@@ -124,7 +132,8 @@ func (qi *queryIterator) Next() error {
 
 // rawQueryResult captures the result from raw datastore query snapshot.
 type rawQueryResult struct {
-	key  *Key
-	data PropertyMap
-	err  error
+	key      *Key
+	data     PropertyMap
+	err      error
+	cursorCB CursorCB
 }

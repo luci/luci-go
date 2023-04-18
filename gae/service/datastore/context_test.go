@@ -70,7 +70,7 @@ func TestServices(t *testing.T) {
 			})
 		})
 		Convey("adding zero filters does nothing", func() {
-			So(AddRawFilters(c), ShouldEqual, c)
+			So(AddRawFilters(c), ShouldResemble, c)
 		})
 	})
 }

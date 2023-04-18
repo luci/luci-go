@@ -822,3 +822,205 @@ func (q *Query) getEventualConsistency(ancestor *Key) bool {
 	}
 	return q.eventualConsistency || ancestor == nil
 }
+
+// min returns the minimum of two ints
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
+}
+
+// lessBool returns true if a is false and b is true
+func lessBool(a, b bool) bool {
+	// false < true
+	return !a && b
+}
+
+// Less returns true if a < b. It's just an order, there is nothing particular
+// about this.
+func (a *Query) Less(b *Query) bool {
+	var aStart, bStart, aEnd, bEnd string
+	if a.start != nil {
+		aStart = a.start.String()
+	}
+	if a.end != nil {
+		aEnd = a.end.String()
+	}
+	if b.start != nil {
+		bStart = b.start.String()
+	}
+	if b.end != nil {
+		bEnd = b.end.String()
+	}
+	switch {
+	case b.project != nil || a.project != nil:
+		// If either of the queries have projection
+		if a.project == nil {
+			// if a.project == nil and b.project != nil
+			return true
+		}
+		if b.project == nil {
+			// if b.project == nil and a.project != nil
+			return false
+		}
+		// Compare only unique projections in both
+		common := a.project.Intersect(b.project)
+		aUniq := a.project.Difference(common).ToSortedSlice()
+		bUniq := b.project.Difference(common).ToSortedSlice()
+		// Compare the projections in order
+		for i := 0; i < min(len(aUniq), len(bUniq)); i++ {
+			if aUniq[i] != bUniq[i] { // Should always be true?
+				return aUniq[i] < bUniq[i]
+			}
+		}
+		if len(aUniq) != len(bUniq) {
+			return len(aUniq) < len(bUniq)
+		}
+	case a.distinct != b.distinct:
+		// true only if a.distinct is false and b.distinct is true
+		return lessBool(a.distinct, b.distinct)
+	case a.kind != b.kind:
+		return a.kind < b.kind
+	case a.eqFilts != nil && b.eqFilts != nil:
+		// If both the queries have equality filters. Then compare the
+		// filters in sorted order
+		filtKeys := stringset.New(len(a.eqFilts) + len(b.eqFilts))
+		// Collect keys from a
+		for k := range a.eqFilts {
+			filtKeys.Add(k)
+		}
+		// Collect keys from b
+		for k := range b.eqFilts {
+			filtKeys.Add(k)
+		}
+		// Get them sorted
+		keysSlice := filtKeys.ToSortedSlice()
+		// Now for the comparison
+		for _, k := range keysSlice {
+			aVal, aOk := a.eqFilts[k]
+			bVal, bOk := b.eqFilts[k]
+			if aOk && bOk {
+				// Need to compare the values
+				minCount := min(len(aVal), len(bVal))
+				if minCount == 0 {
+					// This should prob never happen
+					return len(aVal) < len(bVal)
+				}
+				// Sort the values into a new slice, this should
+				// preserve the original order in query. It should
+				// not really matter. But a comparator should
+				// not modify the underlying data
+				aSorted := make([]Property, 0, len(aVal))
+				bSorted := make([]Property, 0, len(bVal))
+				for _, v := range aVal {
+					aSorted = append(aSorted, v)
+				}
+				for _, v := range bVal {
+					bSorted = append(bSorted, v)
+				}
+				sort.Slice(aSorted, func(i, j int) bool {
+					return aSorted[i].Less(&aSorted[j])
+				})
+				sort.Slice(bSorted, func(i, j int) bool {
+					return bSorted[i].Less(&bSorted[j])
+				})
+				// Compare the sorted values
+				for i := 0; i < minCount; i++ {
+					cmp := aSorted[i].Compare(&bSorted[i])
+					if cmp == 0 {
+						// Same val in both
+						continue
+					}
+					return cmp < 0
+				}
+				// If b has more values then return true
+				if len(aVal) != len(bVal) {
+					return len(aVal) < len(bVal)
+				}
+			}
+			if aOk != bOk {
+				// If b has the key and a doesn't, return true
+				return !aOk && bOk
+			}
+		}
+	case (a.eqFilts != nil) != (b.eqFilts != nil):
+		// return true if b has eqFilts but a doesn't
+		return lessBool(a.eqFilts != nil, b.eqFilts != nil)
+	case a.ineqFiltProp != "" && b.ineqFiltProp != "":
+		// If inequality filters are set. Compare them similar to string
+		// property op{<|>|<=|>=} value being compared lexicographicaly.
+		if a.ineqFiltProp == b.ineqFiltProp {
+			// If both were doing a less than ... comparison
+			if a.ineqFiltHighSet && b.ineqFiltHighSet {
+				// If less than ... was the comparison
+				if a.ineqFiltHighIncl == b.ineqFiltHighIncl {
+					// If both were doing same comparison
+					return a.ineqFiltHigh.Less(&b.ineqFiltHigh)
+				} else {
+					// If b was doing less than or equals.
+					return b.ineqFiltHighIncl
+				}
+			}
+			// If both were doing a greater than ... comparison
+			if a.ineqFiltLowSet && b.ineqFiltLowSet {
+				// If greater than ... was the comparison
+				if a.ineqFiltLowIncl == b.ineqFiltLowIncl {
+					// If both were doing same comparison
+					return a.ineqFiltLow.Less(&b.ineqFiltLow)
+				} else {
+					// If b was doing greater than or equals.
+					return b.ineqFiltLowIncl
+				}
+			}
+			// If a was doing a < and b was doing a >
+			return a.ineqFiltHighSet && b.ineqFiltLowSet
+		} else {
+			return a.ineqFiltProp < b.ineqFiltProp
+		}
+	case a.ineqFiltProp != "" || b.ineqFiltProp != "":
+		// If only one of the queries have inequality filters
+		return a.ineqFiltProp == ""
+	case b.order != nil || a.order != nil:
+		// If order is set in one of the queries
+		for i := 0; i < min(len(b.order), len(a.order)); i++ {
+			// compare both in order
+			if a.order[i].Property != b.order[i].Property {
+				return a.order[i].Property < b.order[i].Property
+			}
+			// Also compare descending flag
+			if a.order[i].Descending != b.order[i].Descending {
+				return !a.order[i].Descending && b.order[i].Descending
+			}
+		}
+		// true if b has more indexes
+		return len(a.order) < len(b.order)
+	case a.limit != nil && b.limit != nil && *a.limit != *b.limit:
+		// If limits are set on both a and b, compare limits
+		return *a.limit < *b.limit
+	case a.limit != nil || b.limit != nil:
+		// If only one of the limits is not set
+		return a.limit == nil
+	case a.offset != nil && b.offset != nil && *a.offset != *b.offset:
+		// If offset are set on both a and b, compare offset
+		return *a.offset < *b.offset
+	case a.offset != nil || b.offset != nil:
+		// If only one of the offsets is not set
+		return a.offset == nil
+	case a.firestoreMode != b.firestoreMode:
+		// true only if a.firestoreMode is false and b.firestoreMode is true
+		return lessBool(a.firestoreMode, b.firestoreMode)
+	case a.eventualConsistency != b.eventualConsistency:
+		// true only if a.eventualConsistency is false and b.eventualConsistency is true
+		return lessBool(a.eventualConsistency, b.eventualConsistency)
+	case a.keysOnly != b.keysOnly:
+		// true only if a.keysOnly is false and b.keysOnly is true
+		return lessBool(a.keysOnly, b.keysOnly)
+	// Compare cursors
+	case aEnd != bEnd:
+		return aEnd < bEnd
+	case aStart != bStart:
+		return aStart < bStart
+	}
+	return false
+}

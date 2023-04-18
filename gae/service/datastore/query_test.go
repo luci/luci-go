@@ -62,6 +62,284 @@ func TestDatastoreQueries(t *testing.T) {
 	})
 }
 
+func TestDatastoreQueriesLess(t *testing.T) {
+	Convey("Datastore Query ordering", t, func() {
+		Convey("Compare kind", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo1")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q2 := NewQuery("Foo")
+
+			So(q.Less(q2), ShouldBeFalse)
+			So(q2.Less(q), ShouldBeFalse)
+		})
+		Convey("Compare firestore mode", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").FirestoreMode(true)
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.FirestoreMode(true)
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+		})
+		Convey("Compare eventual consistency", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").EventualConsistency(true)
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.EventualConsistency(true)
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+		})
+		Convey("Compare keys only", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").KeysOnly(true)
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.KeysOnly(true)
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+		})
+		Convey("Compare distinct", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").Distinct(true)
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.Distinct(true)
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+		})
+		Convey("Compare limit", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").Limit(20)
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.Limit(20)
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+		})
+		Convey("Compare offset", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").Offset(20)
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.Offset(20)
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+		})
+		Convey("Compare order", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").Order("conrad")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.Order("turanga")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeTrue)
+
+			q = q.ClearOrder().Order("conrad", "turanga")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeTrue)
+		})
+		Convey("Compare projection", func() {
+			q := NewQuery("Foo")
+			q1 := NewQuery("Foo").Project("conrad")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.Project("turanga")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeTrue)
+
+			q1 = q1.Project("turanga")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			q = q.Project("zoidberg")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeTrue)
+		})
+		Convey("Compare equality", func() {
+			// "... turanga == 10 ..." compare "... turanga == 24 ..."
+			q := NewQuery("Foo").Eq("turanga", "10")
+			q1 := NewQuery("Foo").Eq("turanga", "24")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga == 10 ..." compare "... turanga == 10 ..."
+			q = NewQuery("Foo").Eq("turanga", "10")
+			q1 = NewQuery("Foo").Eq("turanga", "10")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga == 10 ..." compare "... zoidberg == 10 ..."
+			q = NewQuery("Foo").Eq("turanga", "10")
+			q1 = NewQuery("Foo").Eq("zoidberg", "10")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeTrue)
+
+			// "... turanga == 10 && turanga == 20 ..." compare "... turanga == 10 ..."
+			q = NewQuery("Foo").Eq("turanga", "10", "20")
+			q1 = NewQuery("Foo").Eq("turanga", "10")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeTrue)
+
+			// "... turanga == 10 ..." compare "..."
+			q = NewQuery("Foo").Eq("turanga", "10")
+			q1 = NewQuery("Foo")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeTrue)
+		})
+		Convey("Compare inequality", func() {
+			// "... turanga < 10 ..." compare "... turanga < 24 ..."
+			q := NewQuery("Foo").Lt("turanga", "10")
+			q1 := NewQuery("Foo").Lt("turanga", "24")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga < 10 ..." compare "... turanga < 10 ..."
+			q = NewQuery("Foo").Lt("turanga", "10")
+			q1 = NewQuery("Foo").Lt("turanga", "10")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga < 10 ..." compare "... zoidberg < 10 ..."
+			q = NewQuery("Foo").Lt("turanga", "10")
+			q1 = NewQuery("Foo").Lt("zoidberg", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga <= 10 ..." compare "... turanga <= 24 ..."
+			q = NewQuery("Foo").Lte("turanga", "10")
+			q1 = NewQuery("Foo").Lte("turanga", "24")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga <= 10 ..." compare "... turanga <= 10 ..."
+			q = NewQuery("Foo").Lte("turanga", "10")
+			q1 = NewQuery("Foo").Lte("turanga", "10")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga <= 10 ..." compare "... zoidberg <= 10 ..."
+			q = NewQuery("Foo").Lte("turanga", "10")
+			q1 = NewQuery("Foo").Lte("zoidberg", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga < 10 ..." compare "... turanga <= 10 ..."
+			q = NewQuery("Foo").Lt("turanga", "10")
+			q1 = NewQuery("Foo").Lte("turanga", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga < 10 ..." compare "... turanga > 10 ..."
+			q = NewQuery("Foo").Lt("turanga", "10")
+			q1 = NewQuery("Foo").Gt("turanga", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga <= 10 ..." compare "... turanga >= 10 ..."
+			q = NewQuery("Foo").Lte("turanga", "10")
+			q1 = NewQuery("Foo").Gte("turanga", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga > 10 ..." compare "... turanga > 24 ..."
+			q = NewQuery("Foo").Gt("turanga", "10")
+			q1 = NewQuery("Foo").Gt("turanga", "24")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga > 10 ..." compare "... turanga > 10 ..."
+			q = NewQuery("Foo").Gt("turanga", "10")
+			q1 = NewQuery("Foo").Gt("turanga", "10")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga > 10 ..." compare "... zoidberg > 10 ..."
+			q = NewQuery("Foo").Gt("turanga", "10")
+			q1 = NewQuery("Foo").Gt("zoidberg", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga >= 10 ..." compare "... zoidberg >= 24 ..."
+			q = NewQuery("Foo").Gte("turanga", "10")
+			q1 = NewQuery("Foo").Gte("turanga", "24")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga >= 10 ..." compare "... turanga >= 10 ..."
+			q = NewQuery("Foo").Gte("turanga", "10")
+			q1 = NewQuery("Foo").Gte("turanga", "10")
+
+			So(q.Less(q1), ShouldBeFalse)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga >= 10 ..." compare "... zoidberg >= 10 ..."
+			q = NewQuery("Foo").Gte("turanga", "10")
+			q1 = NewQuery("Foo").Gte("zoidberg", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+
+			// "... turanga > 10 ..." compare "... turanga >= 10 ..."
+			q = NewQuery("Foo").Gt("turanga", "10")
+			q1 = NewQuery("Foo").Gte("turanga", "10")
+
+			So(q.Less(q1), ShouldBeTrue)
+			So(q1.Less(q), ShouldBeFalse)
+		})
+
+	})
+}
+
 type queryTest struct {
 	// name is the name of the test case
 	name string

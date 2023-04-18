@@ -82,7 +82,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			})
 
 			Convey("CurrentItem", func() {
-				key, data := qi.CurrentItem()
+				key, data, _ := qi.CurrentItem()
 				expectedPM := PropertyMap{
 					"field1": PropertySlice{
 						MkProperty("1"),
@@ -123,7 +123,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			So(qi.CurrentItemKey(), ShouldEqual, "")
 			itemOrder := qi.CurrentItemOrder()
 			So(itemOrder, ShouldEqual, "")
-			key, data := qi.CurrentItem()
+			key, data, _ := qi.CurrentItem()
 			So(key, ShouldBeNil)
 			So(data, ShouldResemble, PropertyMap{})
 		})

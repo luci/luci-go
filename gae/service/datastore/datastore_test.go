@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
@@ -351,10 +352,10 @@ type plsChan chan Property
 
 var _ PropertyLoadSaver = plsChan(nil)
 
-func (c plsChan) Load(pm PropertyMap) error                { return nil }
-func (c plsChan) Save(withMeta bool) (PropertyMap, error)  { return nil, nil }
-func (c plsChan) SetMeta(key string, val any) bool { return false }
-func (c plsChan) Problem() error                           { return nil }
+func (c plsChan) Load(pm PropertyMap) error               { return nil }
+func (c plsChan) Save(withMeta bool) (PropertyMap, error) { return nil, nil }
+func (c plsChan) SetMeta(key string, val any) bool        { return false }
+func (c plsChan) Problem() error                          { return nil }
 
 func (c plsChan) GetMeta(key string) (any, bool) {
 	switch key {
@@ -2096,6 +2097,11 @@ var (
 	}
 )
 
+func (f *fakeDatastore2) DecodeCursor(s string) (Cursor, error) {
+	v, err := strconv.Atoi(s)
+	return fakeCursor(v), err
+}
+
 func (f *fakeDatastore2) Run(fq *FinalizedQuery, cb RawRunCB) error {
 	if _, ok := fq.eqFilts["@err_single"]; ok {
 		return errors.New("errors in fakeDatastore")
@@ -2105,25 +2111,37 @@ func (f *fakeDatastore2) Run(fq *FinalizedQuery, cb RawRunCB) error {
 		return nil
 	}
 
+	first := int32(0)
+	start, end := fq.Bounds()
+	if start != nil {
+		first = int32(start.(fakeCursor))
+	}
+
 	searchStr := fq.eqFilts["values"][0].Value().(string)
 	keys := make([]*Key, len(keyMap[searchStr]))
 	pms := make([]PropertyMap, len(pmMap[searchStr]))
 	copy(keys, keyMap[searchStr])
 	copy(pms, pmMap[searchStr])
 
+	last := int32(len(keys) - 1)
+	if end != nil {
+		last = int32(end.(fakeCursor))
+	}
+
 	if fq.orders[0].Property == "val" && fq.orders[0].Descending {
 		// reverse
-		for i, j := 0, len(keys)-1; i < j; i, j = i+1, j-1 {
+		for i, j := first, last; i < j; i, j = i+1, j-1 {
 			keys[i], keys[j] = keys[j], keys[i]
 			pms[i], pms[j] = pms[j], pms[i]
 		}
 	}
 
-	dummyCursorCB := func() (Cursor, error) {
-		return nil, errors.New("dummy cursorCB.")
-	}
-	for i := range keys {
-		if err := cb(keys[i], pms[i], dummyCursorCB); err != nil {
+	for i := first; i <= last; i++ {
+		// Cursor starts at the next available item.
+		j := i + 1
+		if err := cb(keys[i], pms[i], func() (Cursor, error) {
+			return fakeCursor(j), nil
+		}); err != nil {
 			return err
 		}
 	}
@@ -2195,6 +2213,135 @@ func TestRunMulti(t *testing.T) {
 				})
 				So(err, ShouldErrLike, nil)
 				So(foos, ShouldBeNil)
+			})
+
+			Convey("default - key ascending, With Cursor", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("values", "aa"),
+					NewQuery("Foo").Eq("values", "cc"),
+				}
+				var foos []*Foo
+				err := RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
+					foos = append(foos, foo)
+					cur, err := cb()
+					if err != nil {
+						return err
+					}
+					if len(foos) == 1 {
+						// Update the queries with the cursor
+						queries, err = ApplyCursors(c, queries, cur)
+						if err != nil {
+							return err
+						}
+						// Stop after reading one entity
+						return Stop
+					}
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(foos, ShouldResemble, []*Foo{foo1})
+				// Get the remaining entity
+				err = RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
+					foos = append(foos, foo)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(foos, ShouldResemble, []*Foo{foo1, foo2, foo3})
+			})
+
+			Convey("Query order - key ascending, With Cursor", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("values", "aa"),
+					NewQuery("Foo").Eq("values", "cc"),
+				}
+				// Order is flipped for the next query
+				queries1 := []*Query{
+					NewQuery("Foo").Eq("values", "cc"),
+					NewQuery("Foo").Eq("values", "aa"),
+				}
+				var foos []*Foo
+				err := RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
+					foos = append(foos, foo)
+					cur, err := cb()
+					if err != nil {
+						return err
+					}
+					if len(foos) == 1 {
+						// Update the queries1 with the cursor
+						queries1, err = ApplyCursors(c, queries1, cur)
+						if err != nil {
+							return err
+						}
+						// Stop after reading one entity
+						return Stop
+					}
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(foos, ShouldResemble, []*Foo{foo1})
+				// Get the remaining entities
+				err = RunMulti(c, queries1, func(foo *Foo, cb CursorCB) error {
+					foos = append(foos, foo)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(foos, ShouldResemble, []*Foo{foo1, foo2, foo3})
+			})
+
+			Convey("Query cardinality - key ascending, With Cursor", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("values", "aa"),
+					NewQuery("Foo").Eq("values", "cc"),
+				}
+				// Only one query in the second one
+				queries1 := []*Query{
+					NewQuery("Foo").Eq("values", "cc"),
+				}
+				var foos []*Foo
+				var cur Cursor
+				var err error
+				err = RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
+					foos = append(foos, foo)
+					cur, err = cb()
+					if err != nil {
+						return err
+					}
+					if len(foos) == 2 {
+						// Stop after reading one entity
+						return Stop
+					}
+					return nil
+				})
+				So(foos, ShouldResemble, []*Foo{foo1, foo2})
+				// Update the queries1 with the cursor
+				_, err = ApplyCursors(c, queries1, cur)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldErrLike, "Length mismatch. Cannot apply this cursor to the queries")
+			})
+
+			Convey("fake cursor fail", func() {
+				queries := []*Query{
+					NewQuery("Foo").Eq("values", "aa"),
+					NewQuery("Foo").Eq("values", "cc"),
+				}
+				// Apply cursor expects a multi cursor format
+				cur := fakeCursor(100)
+				// Update the queries1 with the cursor
+				_, err := ApplyCursors(c, queries, cur)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldErrLike, "Failed to decode cursor")
+			})
+
+			Convey("Query of different kinds", func() {
+				queries := []*Query{
+					NewQuery("Foo"),
+					NewQuery("Foo1"),
+				}
+				err := RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
+					return nil
+				})
+				So(err, ShouldNotBeNil)
+				So(err, ShouldErrLike, "RunMulti doesn't support more than one kind")
 			})
 		})
 

@@ -19,9 +19,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	multicursor "go.chromium.org/luci/gae/service/datastore/internal/protos/multicursor"
 )
 
 type resolvedRunCallback func(reflect.Value, CursorCB) error
@@ -394,17 +396,33 @@ func Run(c context.Context, q *Query, cb any) error {
 // cb is a callback function (please refer to the `Run` function comments for
 // formats and restrictions for `cb` in this file).
 //
-// Note: projection queries and cursors in callback function are not supported,
-// as they are non-trivial in complexity and haven't been needed yet.
+// The cursor that is returned by the callback cannot be used on a single query
+// by doing `query.Start(cursor)` (In some cases it may not even complain when
+// you try to do this. But the results are undefined). Apply the cursor to the
+// same list of queries using ApplyCursors.
+//
+// Note: projection queries are not supported, as they are non-trivial in
+// complexity and haven't been needed yet.
+//
+// Note: The cb is called for every unique entity (by *Key) that is retrieved
+// on the current run. It is possible to get the same entity twice over two
+// calls to RunMulti with different cursors.
 func RunMulti(c context.Context, queries []*Query, cb any) error {
 	c, cancel := context.WithCancel(c)
 	defer cancel()
 
+	kinds := stringset.New(len(queries))
 	// TODO(yuanjunh): validate queries.
-	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
-	if hasCursorCB {
-		return errors.New("datastore: RunMulti doesn't support CursorCB.")
+	// validate that they are all same type
+	for _, query := range queries {
+		kinds.Add(query.kind)
 	}
+	if kinds.Len() > 1 {
+		return fmt.Errorf("RunMulti doesn't support more than one kind. %v", kinds.ToSlice())
+	}
+	rcb, isKey, mat, hasCursorCB := parseRunCallback(cb)
+
+	cursorMap := make(map[*FinalizedQuery]CursorCB)
 
 	iHeap := &iteratorHeap{}
 
@@ -420,30 +438,86 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 		if err := iHeap.addQuery(c, fq); err != nil {
 			return err
 		}
+		if hasCursorCB {
+			// Assign a call back that returns the start cursor of the query
+			cursorMap[fq] = func() (Cursor, error) {
+				start, _ := fq.Bounds()
+				return start, nil
+			}
+		}
+	}
+	var ccb CursorCB
+	if hasCursorCB {
+		// ccb is the cursor callback for RunMulti. This grabs all the cursors for the
+		// queries involved and returns a single cursor. It is only executed if the
+		// user callback invokes it.
+		ccb = func() (Cursor, error) {
+			// Create a list of queries
+			var fqList []*FinalizedQuery
+			for finq := range cursorMap {
+				fqList = append(fqList, finq)
+			}
+			// Sort the list of queries
+			sort.Slice(fqList, func(i, j int) bool {
+				queryI := fqList[i].Original()
+				queryJ := fqList[j].Original()
+				return queryI.Less(queryJ)
+			})
+			// Create the cursor
+			var curs multicursor.Cursors
+			curs.Version = multiCursorVersion
+			for _, finq := range fqList {
+				cb := cursorMap[finq]
+				cur := ""
+				if cb != nil {
+					c, err := cb()
+					if err != nil {
+						return nil, err
+					}
+					if c != nil {
+						cur = c.String()
+					}
+				}
+				curs.Cursors = append(curs.Cursors, cur)
+			}
+			return multiCursor{curs: &curs}, nil
+		}
 	}
 
 	// Merge query results.
 	seenKeys := stringset.New(128)
-	dummyCursorCB := func() (Cursor, error) {
-		return nil, nil
-	}
 	for iHeap.Len() > 0 {
-		pm, key, keyStr, err := iHeap.nextData()
+		pm, key, keyStr, fq, cursorCB, err := iHeap.nextData()
 		if err != nil {
 			return err
+		}
+		if hasCursorCB {
+			cursorMap[fq] = cursorCB
 		}
 		if added := seenKeys.Add(keyStr); !added {
 			continue
 		}
-		if isKey {
-			err = rcb(reflect.ValueOf(key), dummyCursorCB)
-		} else {
+		switch {
+		case isKey && hasCursorCB:
+			err = rcb(reflect.ValueOf(key), ccb)
+		case isKey && !hasCursorCB:
+			err = rcb(reflect.ValueOf(key), nil)
+		case !isKey && hasCursorCB:
 			itm := mat.newElem()
 			if err := mat.setPM(itm, pm); err != nil {
 				return err
 			}
 			mat.setKey(itm, key)
-			err = rcb(itm, dummyCursorCB)
+			err = rcb(itm, ccb)
+		case !isKey && !hasCursorCB:
+			itm := mat.newElem()
+			if err := mat.setPM(itm, pm); err != nil {
+				return err
+			}
+			mat.setKey(itm, key)
+			err = rcb(itm, nil)
+		default:
+			return errors.New("datastore: Unexpected internal error.")
 		}
 		if err != nil {
 			return filterStop(err)
@@ -855,13 +929,14 @@ func (h *iteratorHeap) Pop() any {
 }
 
 // nextData returns data of the peak queryIterator, advances the queryIterator and puts it back
-func (h *iteratorHeap) nextData() (pm PropertyMap, key *Key, keyStr string, err error) {
+func (h *iteratorHeap) nextData() (pm PropertyMap, key *Key, keyStr string, query *FinalizedQuery, cursorCB CursorCB, err error) {
 	if h.Len() == 0 {
 		return
 	}
 	qi := heap.Pop(h).(*queryIterator)
-	key, pm = qi.CurrentItem()
+	key, pm, cursorCB = qi.CurrentItem()
 	keyStr = qi.CurrentItemKey()
+	query = qi.FinalizedQuery()
 
 	if err = qi.Next(); err != nil {
 		err = filterStop(err)

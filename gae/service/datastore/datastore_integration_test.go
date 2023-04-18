@@ -149,18 +149,112 @@ func TestRunMulti(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res, ShouldBeNil)
 			})
+			Convey("cb with cursorCB", func() {
+				queries := []*datastore.Query{
+					datastore.NewQuery("Foo").Eq("single_val", "s1"),
+					datastore.NewQuery("Foo").Eq("single_val", "s2"),
+				}
+				var cur datastore.Cursor
+				var err error
+				var fooses []*Foo
+				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+					fooses = append(fooses, foo)
+					if len(fooses) == 1 {
+						cur, err = c()
+						if err != nil {
+							return err
+						}
+						return datastore.Stop
+					}
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(fooses, ShouldNotBeNil)
+				So(fooses, ShouldResemble, []*Foo{foos[0]})
+				// Apply the cursor to the queries
+				queries, err = datastore.ApplyCursors(ctx, queries, cur)
+				So(err, ShouldBeNil)
+				So(queries, ShouldNotBeNil)
+				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+					fooses = append(fooses, foo)
+					if len(fooses) == 3 {
+						cur, err = c()
+						if err != nil {
+							return err
+						}
+						return datastore.Stop
+					}
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(fooses, ShouldNotBeNil)
+				So(fooses, ShouldResemble, []*Foo{foos[0], foos[1], foos[2]})
+				// Apply the cursor to the queries
+				queries, err = datastore.ApplyCursors(ctx, queries, cur)
+				So(err, ShouldBeNil)
+				So(queries, ShouldNotBeNil)
+				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+					fooses = append(fooses, foo)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(fooses, ShouldNotBeNil)
+				So(fooses, ShouldResemble, []*Foo{foos[0], foos[1], foos[2], foos[3]})
+			})
+			Convey("cb with cursorCB, repeat entities", func() {
+				queries := []*datastore.Query{
+					datastore.NewQuery("Foo").Eq("multi_vals", "m2"),
+					datastore.NewQuery("Foo").Eq("multi_vals", "m3"),
+					datastore.NewQuery("Foo").Eq("multi_vals", "m4"),
+				}
+				var cur datastore.Cursor
+				var err error
+				var fooses []*Foo
+				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+					fooses = append(fooses, foo)
+					if len(fooses) == 2 {
+						cur, err = c()
+						if err != nil {
+							return err
+						}
+						return datastore.Stop
+					}
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(fooses, ShouldNotBeNil)
+				So(fooses, ShouldResemble, []*Foo{foos[0], foos[1]})
+				// Apply the cursor to the queries
+				queries, err = datastore.ApplyCursors(ctx, queries, cur)
+				So(err, ShouldBeNil)
+				So(queries, ShouldNotBeNil)
+				err = datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
+					fooses = append(fooses, foo)
+					return nil
+				})
+				So(err, ShouldBeNil)
+				So(fooses, ShouldNotBeNil)
+				// RunMulti returns only the unique entities for that run. If there q1 and q2 are in q,
+				// which is a slice of query. And if x is a valid response to both. If the callback reads
+				// one of the x and then stops and retrieves the cursor. It is possible to repeat the same
+				// set of queries with the cursor applied and get x again. This happens because RunMulti
+				// doesn't have any knowledge of the previous call and it doesn't see that x has already
+				// been returned in a previous run.
+				So(fooses, ShouldResemble, []*Foo{foos[0], foos[1], foos[1], foos[2], foos[3]})
+			})
 		})
 
 		Convey("bad", func() {
-			Convey("cb with cursorCB", func() {
+			Convey("Queries with more than one kind", func() {
 				queries := []*datastore.Query{
 					datastore.NewQuery("Foo"),
+					datastore.NewQuery("Foo1"),
 				}
 
 				err := datastore.RunMulti(ctx, queries, func(foo *Foo, c datastore.CursorCB) error {
 					return nil
 				})
-				So(err, ShouldErrLike, "datastore: RunMulti doesn't support CursorCB.")
+				So(err, ShouldErrLike, "RunMulti doesn't support more than one kind")
 			})
 		})
 	})
