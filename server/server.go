@@ -201,6 +201,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -225,6 +226,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authdb/dump"
+	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/experiments"
@@ -363,6 +365,9 @@ type Options struct {
 	AuthDBSigner     string             // service account that signs AuthDB dumps
 	FrontendClientID string             // OAuth2 ClientID for frontend (e.g. user sign in)
 
+	OpenIDRPCAuthEnable   bool                // if true, use OIDC identity tokens for RPC authentication
+	OpenIDRPCAuthAudience stringlistflag.Flag // additional allowed OIDC token audiences
+
 	CloudProject string // name of the hosting Google Cloud Project
 	CloudRegion  string // name of the hosting Google Cloud region
 
@@ -476,6 +481,17 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"frontend-client-id",
 		o.FrontendClientID,
 		"OAuth2 clientID for use in frontend, e.g. for user sign in (optional)",
+	)
+	f.BoolVar(
+		&o.OpenIDRPCAuthEnable,
+		"open-id-rpc-auth-enable",
+		o.OpenIDRPCAuthEnable,
+		"If set accept OpenID Connect ID tokens as per-RPC credentials",
+	)
+	f.Var(
+		&o.OpenIDRPCAuthAudience,
+		"open-id-rpc-auth-audience",
+		"Additional accepted value of `aud` claim in OpenID tokens, can be repeated",
 	)
 	f.StringVar(
 		&o.CloudProject,
@@ -627,6 +643,7 @@ func (o *Options) FromGAEEnv() {
 //	-cloud-project <cloud project Cloud Run container is running in>
 //	-cloud-region <cloud region Cloud Run container is running in>
 //	-service-account-json :gce
+//	-open-id-rpc-auth-enable
 //	-ts-mon-service-name <cloud project Cloud Run container is running in>
 //	-ts-mon-job-name ${K_SERVICE}
 //
@@ -663,6 +680,7 @@ func (o *Options) FromCloudRunEnv() error {
 	o.CloudProject = project
 	o.CloudRegion = region
 	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
+	o.OpenIDRPCAuthEnable = true
 	o.TsMonServiceName = project
 	o.TsMonJobName = os.Getenv("K_SERVICE")
 
@@ -1388,7 +1406,8 @@ func (s *Server) ConfigurePRPC(cb func(srv *prpc.Server)) {
 // auth.GoogleOAuth2Method). Requests without `Authorization` header will be
 // considered anonymous.
 //
-// TODO(vadimsh): Recognize ID tokens by default as well. This is important for
+// If OpenIDRPCAuthEnable option is set (matching `-open-id-rpc-auth-enable`
+// flag), the service will recognize ID tokens as well. This is important for
 // e.g. Cloud Run where this is the only authentication method supported
 // natively by the platform. ID tokens are also generally faster to check than
 // access tokens.
@@ -2203,13 +2222,19 @@ func (s *Server) initAuthFinish() error {
 	}
 
 	// Default RPC authentication methods. See also SetRPCAuthMethods.
-	//
-	// TODO(vadimsh): Add openid.GoogleIDTokenAuthMethod.
-	s.rpcAuthMethods = []auth.Method{
-		&auth.GoogleOAuth2Method{
-			Scopes: []string{clientauth.OAuthScopeEmail},
-		},
+	s.rpcAuthMethods = make([]auth.Method, 0, 2)
+	if s.Options.OpenIDRPCAuthEnable {
+		// The preferred authentication method.
+		s.rpcAuthMethods = append(s.rpcAuthMethods, &openid.GoogleIDTokenAuthMethod{
+			AudienceCheck: openid.AudienceMatchesHost,
+			Audience:      s.Options.OpenIDRPCAuthAudience,
+			SkipNonJWT:    true, // pass OAuth2 access tokens through
+		})
 	}
+	// Backward compatibility for the RPC Explorer and old clients.
+	s.rpcAuthMethods = append(s.rpcAuthMethods, &auth.GoogleOAuth2Method{
+		Scopes: []string{clientauth.OAuthScopeEmail},
+	})
 
 	return nil
 }

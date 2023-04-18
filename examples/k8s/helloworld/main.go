@@ -184,7 +184,7 @@ type TestEntity struct {
 type greeterServer struct{}
 
 func (*greeterServer) SayHi(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	logging.Infof(ctx, "Hi")
+	logging.Infof(ctx, "Hi %s", auth.CurrentIdentity(ctx))
 	time.Sleep(100 * time.Millisecond)
 	return &emptypb.Empty{}, nil
 }
