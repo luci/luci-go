@@ -313,7 +313,7 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
 				})
 
-				Convey("Sets verifier to luci analysis if assignee is nil", func() {
+				Convey("Sets verifier and assignee to luci analysis if assignee is nil", func() {
 					fakeStore.Issues[1].Issue.IssueState.Assignee = nil
 					ctx = context.WithValue(ctx, &BuganizerSelfEmailKey, "email@test.com")
 					response, err := bm.Update(ctx, bugsToUpdate)
@@ -321,6 +321,7 @@ func TestBugManager(t *testing.T) {
 					So(response, ShouldResemble, expectedResponse)
 					So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_VERIFIED)
 					So(fakeStore.Issues[1].Issue.IssueState.Verifier.EmailAddress, ShouldEqual, "email@test.com")
+					So(fakeStore.Issues[1].Issue.IssueState.Assignee.EmailAddress, ShouldEqual, "email@test.com")
 				})
 
 				Convey("Update closes bug", func() {

@@ -98,6 +98,11 @@ func (fic *FakeClient) ModifyIssue(ctx context.Context, in *issuetracker.ModifyI
 				issue.IssueState.Verifier = in.Add.Verifier
 				issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
 			}
+		case "assignee":
+			if issue.IssueState.Assignee != in.Add.Assignee {
+				issue.IssueState.Assignee = in.Add.Assignee
+				issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
+			}
 		default:
 			return nil, errors.New(fmt.Sprintf("unsupported issue field: %s", addPath))
 		}

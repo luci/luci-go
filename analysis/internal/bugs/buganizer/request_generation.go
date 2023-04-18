@@ -376,6 +376,10 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 			request.Add.Verifier = &issuetracker.User{
 				EmailAddress: ctx.Value(&BuganizerSelfEmailKey).(string),
 			}
+			request.Add.Assignee = &issuetracker.User{
+				EmailAddress: ctx.Value(&BuganizerSelfEmailKey).(string),
+			}
+			request.AddMask.Paths = append(request.AddMask.Paths, "assignee")
 		}
 		status = issuetracker.Issue_VERIFIED
 		request.AddMask.Paths = append(request.AddMask.Paths, "verifier")
