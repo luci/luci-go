@@ -17,6 +17,7 @@ package ledcmd
 import (
 	"context"
 	"net/http"
+	"sort"
 	"time"
 
 	"google.golang.org/grpc/metadata"
@@ -157,6 +158,15 @@ func LaunchBuild(ctx context.Context, authClient *http.Client, jd *job.Definitio
 	if err != nil {
 		return nil, err
 	}
+
+	// Attach user tag.
+	tags := build.Tags
+	tags = append(tags, &bbpb.StringPair{
+		Key:   "user",
+		Value: opts.UserID,
+	})
+	sort.Slice(tags, func(i, j int) bool { return tags[i].Key < tags[j].Key })
+	build.Tags = tags
 
 	if opts.DryRun {
 		return build, nil
