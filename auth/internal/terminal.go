@@ -17,6 +17,8 @@
 
 package internal
 
+// EnableVirtualTerminal is a dummy function on unix systems that always
+// returns supported=true.
 func EnableVirtualTerminal() (supported bool, done func()) {
 	return true, func() {}
 }
