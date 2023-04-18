@@ -15,3 +15,8 @@
 import { createContextLink } from '../../../libs/context';
 
 export const [provideProject, consumeProject] = createContextLink<string | undefined>();
+
+/**
+ * Test tab URL is used when generating links to a test.
+ */
+export const [provideTestTabUrl, consumeTestTabUrl] = createContextLink<string | undefined>();

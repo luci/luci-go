@@ -31,11 +31,12 @@ import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { attachTags, hasTags } from '../../../libs/tag';
+import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { Cluster } from '../../../services/luci_analysis';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
 import { colorClasses, commonStyles } from '../../../styles/stylesheets';
-import { consumeProject } from './context';
+import { consumeProject, consumeTestTabUrl } from './context';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
@@ -49,6 +50,7 @@ const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite
 export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
   @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeProject() project: string | undefined;
+  @observable.ref @consumeTestTabUrl() testTabUrl: string | undefined;
 
   @observable.ref variant!: TestVariant;
   @observable.ref columnGetters: Array<(v: TestVariant) => unknown> = [];
@@ -163,11 +165,17 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     return uniqueClusters;
   }
 
-  private genTestLink() {
-    const location = window.location;
-    const query = new URLSearchParams(location.search);
-    query.set('q', `ExactID:${this.variant.testId} VHash:${this.variant.variantHash}`);
-    return `${location.protocol}//${location.host}${location.pathname}?${query}`;
+  @computed
+  get selfLink() {
+    if (!this.testTabUrl) {
+      return null;
+    }
+
+    return urlSetSearchQueryParam(
+      this.testTabUrl,
+      'q',
+      `ExactID:${this.variant.testId} VHash:${this.variant.variantHash}`
+    );
   }
 
   @computed
@@ -315,14 +323,16 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
               @click=${(e: Event) => e.stopPropagation()}
               title="copy test name to clipboard"
             ></milo-copy-to-clipboard>
-            <milo-copy-to-clipboard
-              id="link-copy-button"
-              .textToCopy=${() => this.genTestLink()}
-              @click=${(e: Event) => e.stopPropagation()}
-              title="copy link to the test"
-            >
-              <mwc-icon slot="copy-icon">link</mwc-icon>
-            </milo-copy-to-clipboard>
+            ${this.selfLink
+              ? html` <milo-copy-to-clipboard
+                  id="link-copy-button"
+                  .textToCopy=${this.selfLink}
+                  @click=${(e: Event) => e.stopPropagation()}
+                  title="copy link to the test"
+                >
+                  <mwc-icon slot="copy-icon">link</mwc-icon>
+                </milo-copy-to-clipboard>`
+              : ''}
           </div>
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>

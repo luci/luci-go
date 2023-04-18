@@ -23,11 +23,12 @@ import { POTENTIALLY_EXPIRED } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
 import { errorHandler, forwardWithoutMsg, renderErrorInPre } from '../../libs/error_handler';
 import { attachTags, hasTags } from '../../libs/tag';
+import { getBuildURLPath } from '../../libs/url_utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { consumeStore, StoreInstance } from '../../store';
 import { GetBuildError } from '../../store/build_page';
 import { provideInvocationState, QueryInvocationError } from '../../store/invocation_state';
-import { provideProject } from '../test_results_tab/test_variants_table/context';
+import { provideProject, provideTestTabUrl } from '../test_results_tab/test_variants_table/context';
 
 function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildLitEnvProviderElement) {
   let recovered = false;
@@ -107,6 +108,17 @@ export class BuildLitEnvProviderElement extends MiloBaseElement {
     return this.store.buildPage.build?.data.builder.project;
   }
 
+  @provideTestTabUrl({ global: true })
+  @computed
+  get testTabUrl() {
+    if (!this.store.buildPage.builderIdParam || !this.store.buildPage.buildNumOrIdParam) {
+      return undefined;
+    }
+    return (
+      getBuildURLPath(this.store.buildPage.builderIdParam, this.store.buildPage.buildNumOrIdParam) + '/test-results'
+    );
+  }
+
   constructor() {
     super();
     makeObservable(this);
@@ -132,6 +144,17 @@ export class BuildLitEnvProviderElement extends MiloBaseElement {
         (project) => {
           // Emulate @property() update.
           this.updated(new Map([['project', project]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.testTabUrl,
+        (testTabUrl) => {
+          // Emulate @property() update.
+          this.updated(new Map([['testTabUrl', testTabUrl]]));
         },
         { fireImmediately: true }
       )

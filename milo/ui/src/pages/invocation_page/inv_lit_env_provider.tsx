@@ -20,9 +20,10 @@ import { ReactNode } from 'react';
 
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumer, provider } from '../../libs/context';
+import { getInvURLPath } from '../../libs/url_utils';
 import { consumeStore, StoreInstance } from '../../store';
 import { provideInvocationState } from '../../store/invocation_state';
-import { provideProject } from '../test_results_tab/test_variants_table/context';
+import { provideProject, provideTestTabUrl } from '../test_results_tab/test_variants_table/context';
 
 /**
  * Provides context to lit components in an invocation page.
@@ -45,6 +46,15 @@ export class InvLitEnvProviderElement extends MiloBaseElement {
   @computed
   get project() {
     return this.store.invocationPage.invocation.project ?? undefined;
+  }
+
+  @provideTestTabUrl({ global: true })
+  @computed
+  get testTabUrl() {
+    if (!this.store.invocationPage.invocationId) {
+      return undefined;
+    }
+    return getInvURLPath(this.store.invocationPage.invocationId) + '/test-results';
   }
 
   constructor() {
@@ -72,6 +82,17 @@ export class InvLitEnvProviderElement extends MiloBaseElement {
         (project) => {
           // Emulate @property() update.
           this.updated(new Map([['project', project]]));
+        },
+        { fireImmediately: true }
+      )
+    );
+
+    this.addDisposer(
+      reaction(
+        () => this.testTabUrl,
+        (testTabUrl) => {
+          // Emulate @property() update.
+          this.updated(new Map([['testTabUrl', testTabUrl]]));
         },
         { fireImmediately: true }
       )

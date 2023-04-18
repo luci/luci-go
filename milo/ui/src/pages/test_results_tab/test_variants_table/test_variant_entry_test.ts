@@ -28,7 +28,7 @@ import { Cluster } from '../../../services/luci_analysis';
 import { ANONYMOUS_IDENTITY } from '../../../services/milo_internal';
 import { TestResultBundle, TestStatus, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { provideStore, Store, StoreInstance } from '../../../store';
-import { provideProject } from './context';
+import { provideProject, provideTestTabUrl } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
 const clusteringVersion = { algorithmsVersion: '1', rulesVersion: '1', configVersion: '1' };
@@ -88,6 +88,9 @@ class TestVariantEntryTestContextElement extends LitElement {
 
   @provideProject()
   proj = 'proj';
+
+  @provideTestTabUrl()
+  testTabUrl = 'https://test.com/test-results';
 
   protected render() {
     return html`<slot></slot>`;
@@ -209,5 +212,37 @@ describe('test_variant_entry_test', () => {
     await tvEntry.updateComplete;
     expect(tvEntry.shadowRoot!.querySelector<ExpandableEntryElement>(':host>milo-expandable-entry')!.expanded).to.be
       .true;
+  });
+
+  it('should generate test URLs correctly', async () => {
+    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+    after(() => destroy(store));
+
+    const tv: TestVariant = {
+      testId: 'test-id',
+      variantHash: 'vhash',
+      status: TestVariantStatus.UNEXPECTED,
+      results: [
+        {
+          result: {
+            name: 'invocations/inv/tests/test-id/results/result-id',
+            testId: 'test-id',
+            resultId: 'result-id',
+            expected: false,
+            status: TestStatus.Fail,
+            summaryHtml: '',
+            startTime: '2022-01-01',
+          },
+        },
+      ],
+    };
+
+    const ele = await fixture<TestVariantEntryTestContextElement>(html`
+      <milo-test-variant-entry-test-context .store=${store}>
+        <milo-test-variant-entry .variant=${tv}></milo-test-variant-entry>
+      </milo-test-variant-entry-test-context>
+    `);
+    const tvEntry = ele.querySelector<TestVariantEntryElement>('milo-test-variant-entry')!;
+    expect(tvEntry.selfLink).to.eq('https://test.com/test-results?q=ExactID%3Atest-id+VHash%3Avhash');
   });
 });
