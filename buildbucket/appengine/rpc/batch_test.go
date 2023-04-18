@@ -153,6 +153,44 @@ func TestBatch(t *testing.T) {
 			So(res, ShouldResembleProto, expectedRes)
 		})
 
+		Convey("getBuildStatus req", func() {
+			bs := &model.BuildStatus{
+				Build:        datastore.MakeKey(ctx, "Build", 500),
+				BuildAddress: "project/bucket/builder/b500",
+				Status:       pb.Status_SCHEDULED,
+			}
+			So(datastore.Put(ctx, bs), ShouldBeNil)
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_GetBuildStatus{
+						GetBuildStatus: &pb.GetBuildStatusRequest{Id: 1},
+					}},
+					{Request: &pb.BatchRequest_Request_GetBuildStatus{
+						GetBuildStatus: &pb.GetBuildStatusRequest{Id: 500},
+					}},
+				},
+			}
+			res, err := srv.Batch(ctx, req)
+			expectedRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_GetBuildStatus{
+						GetBuildStatus: &pb.Build{
+							Id:     1,
+							Status: pb.Status_STATUS_UNSPECIFIED,
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_GetBuildStatus{
+						GetBuildStatus: &pb.Build{
+							Id:     500,
+							Status: pb.Status_SCHEDULED,
+						},
+					}},
+				},
+			}
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, expectedRes)
+		})
+
 		Convey("getBuild req", func() {
 			req := &pb.BatchRequest{
 				Requests: []*pb.BatchRequest_Request{
@@ -392,14 +430,15 @@ func TestBatch(t *testing.T) {
 			So(res, ShouldResembleProto, expectedRes)
 		})
 
-		Convey("get, schedule, search and cancel in req", func() {
+		Convey("get, schedule, search, cancel and get_build_status in req", func() {
 			req := &pb.BatchRequest{}
 			err := protojson.Unmarshal([]byte(`{
 				"requests": [
 					{"getBuild": {"id": "1"}},
 					{"scheduleBuild": {}},
 					{"searchBuilds": {}},
-					{"cancelBuild": {}}
+					{"cancelBuild": {}},
+					{"getBuildStatus": {"id": "1"}}
 				]}`), req)
 			So(err, ShouldBeNil)
 			expectedPyReq := &pb.BatchRequest{}
@@ -447,6 +486,12 @@ func TestBatch(t *testing.T) {
 						Error: &spb.Status{
 							Code:    3,
 							Message: "bad request: id is required",
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_GetBuildStatus{
+						GetBuildStatus: &pb.Build{
+							Id:     1,
+							Status: pb.Status_STATUS_UNSPECIFIED,
 						},
 					}},
 				},

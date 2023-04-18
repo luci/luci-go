@@ -67,7 +67,7 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 			goIndices = append(goIndices, i)
 			goBatchReq = append(goBatchReq, r)
 			writeReqs++
-		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds:
+		case *pb.BatchRequest_Request_GetBuild, *pb.BatchRequest_Request_SearchBuilds, *pb.BatchRequest_Request_GetBuildStatus:
 			goIndices = append(goIndices, i)
 			goBatchReq = append(goBatchReq, r)
 			readReqs++
@@ -141,6 +141,13 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					response.Response = &pb.BatchResponse_Response_CancelBuild{CancelBuild: ret}
 					err = e
 					method = "CancelBuild"
+				case *pb.BatchRequest_Request_GetBuildStatus:
+					ctx, span = trace.StartSpan(ctx, "Batch.GetBuildStatus")
+					defer span.End(err)
+					ret, e := b.GetBuildStatus(ctx, r.GetGetBuildStatus())
+					response.Response = &pb.BatchResponse_Response_GetBuildStatus{GetBuildStatus: ret}
+					err = e
+					method = "GetBuildStatus"
 				default:
 					panic(fmt.Sprintf("attempted to handle unexpected request type %T", r.Request))
 				}

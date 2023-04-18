@@ -236,6 +236,7 @@ message BatchRequest {
       SearchBuildsRequest search_builds = 2;
       ScheduleBuildRequest schedule_build = 3;
       CancelBuildRequest cancel_build = 4 ;
+      GetBuildStatusRequest get_build_status = 5;
     }
   }
 
@@ -259,6 +260,7 @@ message BatchResponse {
       SearchBuildsResponse search_builds = 2;
       Build schedule_build = 3;
       Build cancel_build = 4;
+      Build get_build_status = 5;
 
       // Error code and details of the unsuccessful RPC.
       google.rpc.Status error = 100;
