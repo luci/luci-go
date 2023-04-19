@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/internal"
 )
 
 // GoogleIDTokenAuthMethod implements auth.Method by checking `Authorization`
@@ -94,11 +95,10 @@ func AudienceMatchesHost(ctx context.Context, r auth.RequestMetadata, aud string
 //   - (nil, nil, nil) if the method is not applicable.
 //   - (nil, nil, error) if the method is applicable, but credentials are bad.
 func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
-	header := r.Header("Authorization")
-	if !strings.HasPrefix(header, "Bearer ") {
+	typ, token := internal.SplitAuthHeader(r.Header("Authorization"))
+	if typ != "bearer" {
 		return nil, nil, nil // this auth method is not applicable
 	}
-	token := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
 
 	// Grab (usually already cached) discovery document.
 	doc, err := m.discoveryDoc(ctx)

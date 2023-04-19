@@ -274,6 +274,15 @@ func TestGetUserCredentials(t *testing.T) {
 		})
 	})
 
+	Convey("Normalizes header", t, func() {
+		tok, err := call("  bearer    abc.def")
+		So(err, ShouldBeNil)
+		So(tok, ShouldResemble, &oauth2.Token{
+			AccessToken: "abc.def",
+			TokenType:   "Bearer",
+		})
+	})
+
 	Convey("Bad headers", t, func() {
 		_, err := call("")
 		So(err, ShouldEqual, ErrBadAuthorizationHeader)

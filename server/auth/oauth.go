@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching/layered"
 )
 
@@ -206,11 +207,11 @@ func (m *GoogleOAuth2Method) GetUserCredentials(ctx context.Context, r RequestMe
 
 // accessTokenFromHeader parses Authorization header.
 func accessTokenFromHeader(header string) (string, error) {
-	chunks := strings.SplitN(header, " ", 2)
-	if len(chunks) != 2 || (chunks[0] != "OAuth" && chunks[0] != "Bearer") {
+	typ, tok := internal.SplitAuthHeader(header)
+	if typ != "bearer" && typ != "oauth" {
 		return "", ErrBadAuthorizationHeader
 	}
-	return chunks[1], nil
+	return tok, nil
 }
 
 // validateAccessToken uses OAuth2 tokeninfo endpoint to validate an access
