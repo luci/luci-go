@@ -177,14 +177,21 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 	if err != nil {
 		return errors.Annotate(err, "error reading exported invocation").Err()
 	}
+	if exportedInv.State != pb.Invocation_FINALIZED {
+		return errors.Reason("%s is not finalized yet", exportedID.Name()).Err()
+	}
 
-	exportInvocationBatch := func(ctx context.Context, reachableInvs graph.ReachableInvocations) error {
+	invs, err := graph.ReachableWithoutLimit(ctx, invocations.NewIDSet(exportedID))
+	if err != nil {
+		return errors.Annotate(err, "querying reachable invocations").Err()
+	}
+	for _, batch := range invs.Batches() {
 		contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
 		if contentTypeRegexp == "" {
 			contentTypeRegexp = "text/.*"
 		}
 		q := artifacts.Query{
-			InvocationIDs:       reachableInvs.IDSet(),
+			InvocationIDs:       batch.IDSet(),
 			TestResultPredicate: bqExport.GetTextArtifacts().GetPredicate().GetTestResultPredicate(),
 			ContentTypeRegexp:   contentTypeRegexp,
 			ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),
@@ -196,7 +203,7 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 			return err
 		}
 
-		return q.Run(ctx, func(a *artifacts.Artifact) error {
+		err = q.Run(ctx, func(a *artifacts.Artifact) error {
 			invID, _, _, _ := artifacts.MustParseName(a.Name)
 			select {
 			case <-ctx.Done():
@@ -205,10 +212,9 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 			}
 			return nil
 		})
-	}
-
-	if err := getInvocationIDSet(ctx, exportedID, exportInvocationBatch); err != nil {
-		return errors.Annotate(err, "invocation id set").Err()
+		if err != nil {
+			return errors.Annotate(err, "exporting batch").Err()
+		}
 	}
 	return nil
 }

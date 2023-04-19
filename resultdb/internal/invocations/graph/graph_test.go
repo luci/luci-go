@@ -15,7 +15,6 @@
 package graph
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -53,26 +52,6 @@ func TestReachable(t *testing.T) {
 			return invs
 		}
 
-		readBatched := func(roots ...invocations.ID) (ReachableInvocations, error) {
-			ctx, cancel := span.ReadOnlyTransaction(ctx)
-			defer cancel()
-			invs := NewReachableInvocations()
-			process := func(ctx context.Context, batch ReachableInvocations) error {
-				invs.Union(batch)
-				return nil
-			}
-			if err := BatchedReachable(ctx, invocations.NewIDSet(roots...), process); err != nil {
-				return ReachableInvocations{}, err
-			}
-			return invs, nil
-		}
-
-		mustReadBatched := func(roots ...invocations.ID) ReachableInvocations {
-			invs, err := readBatched(roots...)
-			So(err, ShouldBeNil)
-			return invs
-		}
-
 		withInheritSources := map[string]any{
 			"InheritSources": true,
 		}
@@ -96,21 +75,13 @@ func TestReachable(t *testing.T) {
 			}
 			Convey(`Root has no sources`, func() {
 				testutil.MustApply(ctx, node("a", nil)...)
-				Convey(`Simple`, func() {
-					So(mustRead("a"), ShouldResembleReachable, expected)
-				})
-				Convey(`Batched`, func() {
-					So(mustReadBatched("a"), ShouldResembleReachable, expected)
-				})
+
+				So(mustRead("a"), ShouldResembleReachable, expected)
 			})
 			Convey(`Root has inherit sources`, func() {
 				testutil.MustApply(ctx, node("a", withInheritSources)...)
-				Convey(`Simple`, func() {
-					So(mustRead("a"), ShouldResembleReachable, expected)
-				})
-				Convey(`Batched`, func() {
-					So(mustReadBatched("a"), ShouldResembleReachable, expected)
-				})
+
+				So(mustRead("a"), ShouldResembleReachable, expected)
 			})
 			Convey(`Root has concrete sources`, func() {
 				testutil.MustApply(ctx, node("a", withSources(1))...)
@@ -121,12 +92,7 @@ func TestReachable(t *testing.T) {
 				}
 				expected.Sources[HashSources(sources(1))] = sources(1)
 
-				Convey(`Simple`, func() {
-					So(mustRead("a"), ShouldResembleReachable, expected)
-				})
-				Convey(`Batched`, func() {
-					So(mustReadBatched("a"), ShouldResembleReachable, expected)
-				})
+				So(mustRead("a"), ShouldResembleReachable, expected)
 			})
 		})
 
@@ -162,12 +128,7 @@ func TestReachable(t *testing.T) {
 				},
 			}
 
-			Convey(`Simple`, func() {
-				So(mustRead("a"), ShouldResembleReachable, expected)
-			})
-			Convey(`Batched`, func() {
-				So(mustReadBatched("a"), ShouldResembleReachable, expected)
-			})
+			So(mustRead("a"), ShouldResembleReachable, expected)
 		})
 
 		Convey(`a -> b -> c`, func() {
@@ -202,12 +163,7 @@ func TestReachable(t *testing.T) {
 				},
 			}
 
-			Convey(`Simple`, func() {
-				So(mustRead("a"), ShouldResembleReachable, expected)
-			})
-			Convey(`Batched`, func() {
-				So(mustReadBatched("a"), ShouldResembleReachable, expected)
-			})
+			So(mustRead("a"), ShouldResembleReachable, expected)
 		})
 
 		Convey(`a -> [b1 -> b2, c, d] -> e`, func() {
@@ -269,12 +225,7 @@ func TestReachable(t *testing.T) {
 				},
 			}
 
-			Convey(`Simple`, func() {
-				So(mustRead("a"), ShouldResembleReachable, expected)
-			})
-			Convey(`Batched`, func() {
-				So(mustReadBatched("a"), ShouldResembleReachable, expected)
-			})
+			So(mustRead("a"), ShouldResembleReachable, expected)
 		})
 		Convey(`a -> b -> a`, func() {
 			// Test a graph with cycles to make sure
@@ -296,12 +247,7 @@ func TestReachable(t *testing.T) {
 				Sources: map[SourceHash]*pb.Sources{},
 			}
 
-			Convey(`Simple`, func() {
-				So(mustRead("a"), ShouldResembleReachable, expected)
-			})
-			Convey(`Batched`, func() {
-				So(mustReadBatched("a"), ShouldResembleReachable, expected)
-			})
+			So(mustRead("a"), ShouldResembleReachable, expected)
 		})
 
 		Convey(`a -> [100 invocations]`, func() {
@@ -329,26 +275,7 @@ func TestReachable(t *testing.T) {
 					Realm:               insert.TestRealm,
 				}
 			}
-			Convey(`Single`, func() {
-				So(mustRead("a"), ShouldResembleReachable, expectedInvs)
-			})
-			Convey(`Batched`, func() {
-				So(mustReadBatched("a"), ShouldResembleReachable, expectedInvs)
-			})
-		})
-		Convey(`errors passed through`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				node("a", nil, "b", "c"),
-				node("b", nil),
-				node("c", nil),
-			)...)
-			ctx, cancel := span.ReadOnlyTransaction(ctx)
-			defer cancel()
-			process := func(ctx context.Context, batch ReachableInvocations) error {
-				return fmt.Errorf("expected error")
-			}
-			err := BatchedReachable(ctx, invocations.NewIDSet("a"), process)
-			So(err, ShouldNotEqual, nil)
+			So(mustRead("a"), ShouldResembleReachable, expectedInvs)
 		})
 	})
 }

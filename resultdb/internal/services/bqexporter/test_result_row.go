@@ -161,11 +161,11 @@ func (b *bqExporter) queryTestResults(
 
 	q := testresults.Query{
 		Predicate:     predicate,
-		InvocationIDs: reachableInvs.IDSet(),
+		InvocationIDs: reachableInvs.WithTestResultsIDSet(),
 		Mask:          testresults.AllFields,
 	}
 
-	invs, err := invocations.ReadBatch(ctx, reachableInvs.IDSet())
+	invs, err := invocations.ReadBatch(ctx, reachableInvs.WithTestResultsIDSet())
 	if err != nil {
 		return err
 	}
@@ -231,13 +231,24 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 	if err != nil {
 		return err
 	}
-	exportInvocationBatch := func(ctx context.Context, invs graph.ReachableInvocations) error {
-		exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invs.IDSet())
-		if err != nil {
-			return errors.Annotate(err, "query exoneration").Err()
-		}
+	if exported.State != pb.Invocation_FINALIZED {
+		return errors.Reason("%s is not finalized yet", invID.Name()).Err()
+	}
 
-		// Query test results and export to BigQuery.
+	invs, err := graph.ReachableWithoutLimit(ctx, invocations.NewIDSet(invID))
+	if err != nil {
+		return errors.Annotate(err, "querying reachable invocations").Err()
+	}
+
+	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, invs.WithExonerationsIDSet())
+	if err != nil {
+		return errors.Annotate(err, "query exoneration").Err()
+	}
+
+	// Query test results in batches of invocations.
+	for _, batch := range invs.Batches() {
+		// Within each batch of invocations, batch the querying of
+		// test results and export to BigQuery.
 		batchC := make(chan []rowInput)
 
 		// Batch exports rows to BigQuery.
@@ -259,14 +270,12 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 		eg.Go(func() error {
 			defer close(batchC)
 			predicate := bqExport.GetTestResults().GetPredicate()
-			return b.queryTestResults(ctx, invs, exported, predicate, exoneratedTestVariants, batchC)
+			return b.queryTestResults(ctx, batch, exported, predicate, exoneratedTestVariants, batchC)
 		})
 
-		return eg.Wait()
-	}
-	// Get the invocation set.
-	if err := getInvocationIDSet(ctx, invID, exportInvocationBatch); err != nil {
-		return errors.Annotate(err, "invocation id set").Err()
+		if err := eg.Wait(); err != nil {
+			return errors.Annotate(err, "exporting batch").Err()
+		}
 	}
 	return nil
 }

@@ -423,6 +423,12 @@ func TestQueryTestResults(t *testing.T) {
 			})
 		})
 
+		Convey(`Empty list of invocations`, func() {
+			q.InvocationIDs = invocations.NewIDSet()
+			actual, _ := mustFetch(q)
+			So(actual, ShouldHaveLength, 0)
+		})
+
 		Convey(`Filter invocations`, func() {
 			testutil.MustApply(ctx,
 				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{

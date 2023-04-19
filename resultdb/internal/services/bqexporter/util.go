@@ -15,18 +15,12 @@
 package bqexporter
 
 import (
-	"context"
-
 	"cloud.google.com/go/bigquery"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google/descutil"
-	"go.chromium.org/luci/resultdb/internal/invocations"
-	"go.chromium.org/luci/resultdb/internal/invocations/graph"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/tq"
 )
 
 func generateSchema(fdset *desc.FileDescriptorSet, message string) (schema bigquery.Schema, err error) {
@@ -42,23 +36,4 @@ func generateSchema(fdset *desc.FileDescriptorSet, message string) (schema bigqu
 	}
 	schema, _, err = conv.Schema(message)
 	return schema, err
-}
-
-func getInvocationIDSet(ctx context.Context, invID invocations.ID, processor func(context.Context, graph.ReachableInvocations) error) error {
-	inv, err := invocations.Read(ctx, invID)
-	if err != nil {
-		return err
-	}
-	if inv.State != pb.Invocation_FINALIZED {
-		return errors.Reason("%s is not finalized yet", invID.Name()).Err()
-	}
-
-	// Get the invocation set.
-	if err := graph.BatchedReachable(ctx, invocations.NewIDSet(invID), processor); err != nil {
-		if graph.TooManyTag.In(err) {
-			err = tq.Fatal.Apply(err)
-		}
-		return err
-	}
-	return nil
 }

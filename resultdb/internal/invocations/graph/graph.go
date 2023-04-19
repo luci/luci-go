@@ -54,37 +54,30 @@ var TooManyTag = errors.BoolTag{
 // edges.  Will return an error if there are more than MaxNodes invocations.
 // May return an appstatus-annotated error.
 func Reachable(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
-	allIDs := NewReachableInvocations()
-	processor := func(ctx context.Context, invs ReachableInvocations) error {
-		allIDs.Union(invs)
-		// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
-		// to run into problems if you try to process all of these in one go (e.g. in a
-		// Spanner query).  If you want more, use the batched call and handle a batch at a time.
-		if len(allIDs.Invocations) > MaxNodes {
-			return errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
-		}
-		return nil
+	invs, err := ReachableWithoutLimit(ctx, roots)
+	if err != nil {
+		return ReachableInvocations{}, err
 	}
-	err := BatchedReachable(ctx, roots, processor)
-	return allIDs, err
+	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// to run into problems if you try to process all of these in one go (e.g. in a
+	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
+	if len(invs.Invocations) > MaxNodes {
+		return ReachableInvocations{}, errors.Reason("more than %d invocations match", MaxNodes).Tag(TooManyTag).Err()
+	}
+	return invs, nil
 }
 
-// BatchedReachable calls the processor for batches of all invocations reachable
-// from roots along the inclusion edges.  Using this function avoids the MaxNodes
-// limitation.
-// If the processor returns an error, no more batches will be processed and the
-// error will be returned immediately.
-func BatchedReachable(ctx context.Context, roots invocations.IDSet, processor func(context.Context, ReachableInvocations) error) error {
-	invs, err := reachable(ctx, roots, true)
+// ReachableWithoutLimit returns all invocations reachable from roots along
+// the inclusion edges. Will not apply artificial limits to the graph returned;
+// the caller should do batching as it may not be possible to query Spanner
+// for all invocations at once.
+// May return an appstatus-annotated error.
+func ReachableWithoutLimit(ctx context.Context, roots invocations.IDSet) (ReachableInvocations, error) {
+	invs, err := reachable(ctx, roots, false)
 	if err != nil {
-		return err
+		return ReachableInvocations{}, err
 	}
-	for _, batch := range invs.Batches() {
-		if err := processor(ctx, batch); err != nil {
-			return err
-		}
-	}
-	return nil
+	return invs, nil
 }
 
 // ReachableSkipRootCache is similar to BatchedReachable, but it ignores cache
