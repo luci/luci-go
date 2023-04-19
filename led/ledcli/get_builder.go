@@ -112,7 +112,7 @@ func parseV1Builder(builderStr string) *builder {
 	}
 
 	// luci.project.bucket:builder
-	v1BucketRe := regexp.MustCompile(`^luci\.(\w*)\.(\w*)$`)
+	v1BucketRe := regexp.MustCompile(`^luci\.([a-z0-9\-_]*)\.([a-z0-9\-_]*)$`)
 	match := v1BucketRe.FindStringSubmatch(bucket)
 	if len(match) == 3 {
 		parsed.project = match[1]
