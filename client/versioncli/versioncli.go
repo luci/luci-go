@@ -22,6 +22,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 // CmdVersion returns a "version" subcommand that prints to stdout the given
@@ -66,6 +67,7 @@ func (c *versionRun) Run(a subcommands.Application, args []string, _ subcommands
 		fmt.Println()
 		fmt.Printf("CIPD package name: %s\n", ver.PackageName)
 		fmt.Printf("CIPD instance ID:  %s\n", ver.InstanceID)
+		fmt.Printf("CIPD URL: %s/p/%s/+/%s\n", chromeinfra.CIPDServiceURL, ver.PackageName, ver.InstanceID)
 	}
 
 	return 0
