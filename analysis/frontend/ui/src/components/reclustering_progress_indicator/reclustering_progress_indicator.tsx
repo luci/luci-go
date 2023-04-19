@@ -26,10 +26,9 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 
+import CircularProgressWithLabel from '@/components/circular_progress_with_label/circular_progress_with_label';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-
 import { prpcRetrier } from '@/services/shared_models';
-
 import {
   fetchProgress,
   noProgressToShow,
@@ -37,8 +36,7 @@ import {
   progressToLatestAlgorithms,
   progressToLatestConfig,
   progressToRulesVersion,
-} from '../../tools/progress_tools';
-import CircularProgressWithLabel from '../circular_progress_with_label/circular_progress_with_label';
+} from '@/tools/progress_tools';
 
 interface Props {
     project: string;

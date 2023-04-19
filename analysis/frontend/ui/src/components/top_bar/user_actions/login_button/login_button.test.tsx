@@ -33,7 +33,7 @@ describe('test UserActions component', () => {
         '/someurl',
     );
 
-    screen.findByText('Log in');
+    await screen.findByText('Log in');
 
     expect(screen.getByTestId('login_button')).toHaveAttribute('href', '/login?r=%2Fsomeurl');
   });

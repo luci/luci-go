@@ -15,6 +15,7 @@
 import '@testing-library/jest-dom';
 
 import {
+  fireEvent,
   render,
   screen,
   waitFor,
@@ -57,13 +58,13 @@ describe('Test ExonerationExplanationSection', () => {
     expect(screen.getByTestId('flaky_criteria_details')).not.toBeVisible();
 
     // Expand the section.
-    screen.getByTestId('flaky_criteria_header').click();
+    fireEvent.click(screen.getByTestId('flaky_criteria_header'));
     await waitFor(() => {
       expect(screen.getByTestId('flaky_criteria_details')).toBeVisible();
     });
 
     // Collapse the section.
-    screen.getByTestId('flaky_criteria_header').click();
+    fireEvent.click(screen.getByTestId('flaky_criteria_header'));
     await waitFor(() => {
       expect(screen.getByTestId('flaky_criteria_details')).not.toBeVisible();
     });
@@ -81,13 +82,13 @@ describe('Test ExonerationExplanationSection', () => {
     expect(screen.getByTestId('failure_criteria_details')).not.toBeVisible();
 
     // Expand the section.
-    screen.getByTestId('failure_criteria_header').click();
+    fireEvent.click(screen.getByTestId('failure_criteria_header'));
     await waitFor(() => {
       expect(screen.getByTestId('failure_criteria_details')).toBeVisible();
     });
 
     // Collapse the section.
-    screen.getByTestId('failure_criteria_header').click();
+    fireEvent.click(screen.getByTestId('failure_criteria_header'));
     await waitFor(() => {
       expect(screen.getByTestId('failure_criteria_details')).not.toBeVisible();
     });
