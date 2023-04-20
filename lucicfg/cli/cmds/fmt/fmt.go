@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/bazelbuild/buildtools/build"
@@ -83,7 +84,13 @@ func (fr *fmtRun) Run(a subcommands.Application, args []string, env subcommands.
 	return fr.Done(fr.run(ctx, args))
 }
 
-func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) {
+func (fr *fmtRun) run(ctx context.Context, inputs []string) (res *fmtResult, err error) {
+	for i, inputPath := range inputs {
+		if inputs[i], err = filepath.Abs(inputPath); err != nil {
+			return nil, errors.Annotate(err, "failed to absolutize path: %q", inputPath).Err()
+		}
+	}
+
 	files, err := base.ExpandDirectories(inputs)
 	if err != nil {
 		return nil, err
@@ -142,7 +149,7 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 	})
 
 	// Preserve the order of files in the output.
-	res := fmtResult{}
+	res = &fmtResult{}
 	for _, p := range files {
 		switch outcome := outcomes[p]; outcome {
 		case outcomeGood:
@@ -164,7 +171,7 @@ func (fr *fmtRun) run(ctx context.Context, inputs []string) (*fmtResult, error) 
 		errs = append(errs, fmt.Errorf("Some files need formatting"))
 	}
 	if len(errs) != 0 {
-		return &res, errs
+		return res, errs
 	}
-	return &res, nil
+	return res, nil
 }

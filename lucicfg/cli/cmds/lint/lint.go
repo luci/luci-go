@@ -19,10 +19,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/lucicfg/buildifier"
@@ -63,7 +65,13 @@ func (lr *lintRun) Run(a subcommands.Application, args []string, env subcommands
 	return lr.Done(lr.run(ctx, args))
 }
 
-func (lr *lintRun) run(ctx context.Context, inputs []string) (*lintResult, error) {
+func (lr *lintRun) run(ctx context.Context, inputs []string) (res *lintResult, err error) {
+	for i, inputPath := range inputs {
+		if inputs[i], err = filepath.Abs(inputPath); err != nil {
+			return nil, errors.Annotate(err, "failed to absolutize path: %q", inputPath).Err()
+		}
+	}
+
 	files, err := base.ExpandDirectories(inputs)
 	if err != nil {
 		return nil, err

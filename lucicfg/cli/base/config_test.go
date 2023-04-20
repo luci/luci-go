@@ -229,7 +229,8 @@ func TestConfigParsing(t *testing.T) {
 				},
 			)
 
-			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter("test.star")
+			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter(
+				filepath.Join(root, "test.star"))
 			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
 			So(rewriterManualAlphanumeric, ShouldResemble, actualRewriterManualAlphanumeric)
 		})
@@ -282,6 +283,10 @@ func TestGetRewriter(t *testing.T) {
 	root := t.TempDir()
 
 	Convey("Testing GetRewriter", t, func() {
+		abs := func(path string) string {
+			return filepath.Join(root, path)
+		}
+
 		// Initialize test Folders/Files
 		layout := map[string]string{
 			"test.star":               "",
@@ -302,7 +307,7 @@ func TestGetRewriter(t *testing.T) {
 					Rules: []*buildifier.LucicfgFmtConfig_Rules{},
 				},
 			)
-			rewriterNoCallsort, _ := rewriterFactoryNoCallSort.GetRewriter("no_rule_match/test.star")
+			rewriterNoCallsort, _ := rewriterFactoryNoCallSort.GetRewriter(abs("no_rule_match/test.star"))
 			var actualRewriterNoCallSort = rewriterFromConfig(nil)
 			So(rewriterNoCallsort, ShouldResemble, actualRewriterNoCallSort)
 		})
@@ -320,7 +325,7 @@ func TestGetRewriter(t *testing.T) {
 					},
 				},
 			)
-			rewriterNoCallSort, _ := rewriterFactoryNoCallSort.GetRewriter("a/b/c/test.star")
+			rewriterNoCallSort, _ := rewriterFactoryNoCallSort.GetRewriter(abs("a/b/c/test.star"))
 			var actualRewriterNoCallSort = rewriterFromConfig(nil)
 			So(rewriterNoCallSort, ShouldResemble, actualRewriterNoCallSort)
 		})
@@ -345,7 +350,7 @@ func TestGetRewriter(t *testing.T) {
 					},
 				},
 			)
-			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter("a/test.star")
+			rewriterManualAlphanumeric, _ := rewriterFactoryManualAlphanumeric.GetRewriter(abs("a/test.star"))
 			var actualRewriterManualAlphanumeric = rewriterFromConfig(convertOrderingToTable(sampleCallSortArgs))
 			So(rewriterManualAlphanumeric, ShouldResemble, actualRewriterManualAlphanumeric)
 		})
@@ -376,7 +381,7 @@ func TestGetRewriter(t *testing.T) {
 					},
 				},
 			)
-			rewriterAlphanumeric, _ := rewriterFactoryAlphanumeric.GetRewriter("a/b/test.star")
+			rewriterAlphanumeric, _ := rewriterFactoryAlphanumeric.GetRewriter(abs("a/b/test.star"))
 			var actualRewriterAlphanumeric = rewriterFromConfig(convertOrderingToTable([]string{}))
 			So(rewriterAlphanumeric, ShouldResemble, actualRewriterAlphanumeric)
 		})

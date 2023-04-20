@@ -228,7 +228,7 @@ func (f *RewriterFactory) GetRewriter(path string) (*build.Rewriter, error) {
 	rules := f.rules
 	// Check if path is abs, if not, fix it
 	if !filepath.IsAbs(path) {
-		path = filepath.Join(f.configFilePath, path)
+		return nil, errors.Reason("GetRewriter got non-absolute path: %q", path).Err()
 	}
 	longestPathMatch := ""
 	var matchingRule *buildifier.LucicfgFmtConfig_Rules

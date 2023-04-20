@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bazelbuild/buildtools/build"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -214,7 +215,10 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		}
 	}
 
-	var entryPath = filepath.Dir(path)
+	entryPath, err := filepath.Abs(filepath.Dir(path))
+	if err != nil {
+		return nil, err
+	}
 
 	if err := base.CheckForBogusConfig(entryPath); err != nil {
 		return nil, err
@@ -233,6 +237,14 @@ func (vr *validateRun) validateGenerated(ctx context.Context, path string) (*val
 		Output:              output,
 		Meta:                meta,
 		ConfigServiceClient: vr.ConfigServiceClient,
-	}, rewriterFactory.GetRewriter)
+	}, func(path string) (*build.Rewriter, error) {
+		// GetRewriter needs to see absolute paths; In Validate the paths are all
+		// relative to the entrypoint (e.g. main.star) becuase they refer to
+		// Starlark module import paths.
+		//
+		// Adjusting state.Visited above will fail because part of Validate's
+		// functionality needs to retain these relative paths.
+		return rewriterFactory.GetRewriter(filepath.Join(entryPath, path))
+	})
 	return result, err
 }
