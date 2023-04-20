@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"sort"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -72,6 +71,10 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 		return nil, errors.Annotate(err, "failed to get builder config").Err()
 	}
 
+	if bktCfg.Proto.GetShadow() != "" && bktCfg.Proto.Shadow != builder.Bucket {
+		applyShadowAdjustment(bldrCfg.Config)
+	}
+
 	bld := buildFromScheduleRequest(ctx, schReq, nil, "", bldrCfg.Config, globalCfg)
 
 	if bktCfg.Proto.GetShadow() != "" && bktCfg.Proto.Shadow != builder.Bucket {
@@ -89,25 +92,6 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 			},
 		}
 		bld.Builder.Bucket = bktCfg.Proto.Shadow
-		if shadowBldrCfg := bldrCfg.Config.GetShadowBuilderAdjustments(); shadowBldrCfg != nil {
-			if shadowBldrCfg.ServiceAccount != "" {
-				bld.Infra.Swarming.TaskServiceAccount = shadowBldrCfg.ServiceAccount
-			}
-			if shadowBldrCfg.Pool != "" {
-				poolIdx := sort.Search(len(bld.Infra.Swarming.TaskDimensions), func(i int) bool {
-					return bld.Infra.Swarming.TaskDimensions[i].Key == "pool"
-				})
-				if poolIdx < len(bld.Infra.Swarming.TaskDimensions) {
-					bld.Infra.Swarming.TaskDimensions[poolIdx].Value = shadowBldrCfg.Pool
-				} else {
-					bld.Infra.Swarming.TaskDimensions = append(bld.Infra.Swarming.TaskDimensions, &pb.RequestedDimension{
-						Key:   "pool",
-						Value: shadowBldrCfg.Pool,
-					})
-				}
-				sortRequestedDimension(bld.Infra.Swarming.TaskDimensions)
-			}
-		}
 	}
 	return bld, nil
 }

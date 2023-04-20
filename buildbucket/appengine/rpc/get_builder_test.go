@@ -107,5 +107,59 @@ func TestGetBuilder(t *testing.T) {
 				Config: &pb.BuilderConfig{Name: "builder"},
 			})
 		})
+
+		Convey(`shadow`, func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket.shadow", bbperms.BuildersGet),
+				),
+			})
+			So(datastore.Put(
+				ctx,
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket",
+					Proto: &pb.Bucket{
+						Shadow: "bucket.shadow",
+					},
+				},
+				&model.Bucket{
+					Parent:  model.ProjectKey(ctx, "project"),
+					ID:      "bucket.shadow",
+					Proto:   &pb.Bucket{},
+					Shadows: []string{"bucket"},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: &pb.BuilderConfig{
+						Name:           "builder",
+						ServiceAccount: "example@example.com",
+						Dimensions:     []string{"os:Linux", "pool:luci.chromium.try"},
+						ShadowBuilderAdjustments: &pb.BuilderConfig_ShadowBuilderAdjustments{
+							ServiceAccount: "shadow@example.com",
+							Pool:           "shadow.pool",
+						},
+					},
+				},
+			), ShouldBeNil)
+
+			shadowBID := &pb.BuilderID{
+				Project: "project",
+				Bucket:  "bucket.shadow",
+				Builder: "builder",
+			}
+			res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: shadowBID})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.BuilderItem{
+				Id: shadowBID,
+				Config: &pb.BuilderConfig{
+					Name:           "builder",
+					ServiceAccount: "shadow@example.com",
+					Dimensions:     []string{"os:Linux", "pool:shadow.pool"},
+				},
+			})
+		})
 	})
 }

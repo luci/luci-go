@@ -759,6 +759,23 @@ func validateBuilderRecipe(ctx *validation.Context, recipe *pb.BuilderConfig_Rec
 	validateProps("properties_j", recipe.PropertiesJ, true)
 }
 
+// ParseDimension parses a dimension string.
+// A dimension supports 2 forms -
+// "<key>:<value>" and "<expiration_secs>:<key>:<value>" .
+func ParseDimension(d string) (exp int64, k string, v string) {
+	k, v = strpair.Parse(d)
+	var err error
+	exp, err = strconv.ParseInt(k, 10, 64)
+	if err == nil {
+		// k was an int64, so v is in <key>:<value> form.
+		k, v = strpair.Parse(v)
+	} else {
+		exp = 0
+		// k was the <key> and v was the <value>.
+	}
+	return
+}
+
 // validateDimensions validates dimensions in project configs.
 // A dimension supports 2 forms -
 // "<key>:<value>" and "<expiration_secs>:<key>:<value>" .
@@ -772,22 +789,12 @@ func validateDimensions(ctx *validation.Context, dimensions []string) {
 			ctx.Exit()
 			continue
 		}
-		key, value := strpair.Parse(dim)
-
-		// For <expiration_secs>:<key>:<value>
-		if expiration, err := strconv.ParseInt(key, 10, 64); err == nil {
-			key, value = strpair.Parse(value)
-			switch {
-			case expiration < 0 || time.Duration(expiration) > maximumExpiration/time.Second:
-				ctx.Errorf("expiration_secs is outside valid range; up to %s", maximumExpiration)
-			case expiration%60 != 0:
-				ctx.Errorf("expiration_secs must be a multiple of 60 seconds")
-			default:
-				expirations[expiration] = true
-			}
-		}
-
+		expiration, key, value := ParseDimension(dim)
 		switch {
+		case expiration < 0 || time.Duration(expiration) > maximumExpiration/time.Second:
+			ctx.Errorf("expiration_secs is outside valid range; up to %s", maximumExpiration)
+		case expiration%60 != 0:
+			ctx.Errorf("expiration_secs must be a multiple of 60 seconds")
 		case key == "":
 			ctx.Errorf("missing key")
 		case key == "caches":
@@ -796,6 +803,8 @@ func validateDimensions(ctx *validation.Context, dimensions []string) {
 			ctx.Errorf("key %q does not match pattern %q", key, dimensionKeyRegex)
 		case value == "":
 			ctx.Errorf("missing value")
+		default:
+			expirations[expiration] = true
 		}
 
 		if len(expirations) >= 6 {

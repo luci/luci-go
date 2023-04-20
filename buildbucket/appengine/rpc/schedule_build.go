@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -551,19 +550,8 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *p
 	// <key>:<value> or <exp>:<key>:<value>, where <exp> is an int64 expiration time, <key> is a
 	// non-empty string which can't be parsed as int64, and <value> is a string which may be empty.
 	// <key>:<value> is shorthand for 0:<key>:<value>. An empty <value> means the dimension should be excluded.
-	// TODO(crbug/1042991): Deduplicate dimension parsing logic with config validation for dimensions.
 	for _, d := range cfg.GetDimensions() {
-		// Split at the first colon and check if it's an int64 or not.
-		// If k is an int64, v is of the form <key>:<value>. Otherwise k is the <key> and v is the <value>.
-		k, v := strpair.Parse(d)
-		exp, err := strconv.ParseInt(k, 10, 64)
-		if err == nil {
-			// k was an int64, so v is in <key>:<value> form.
-			k, v = strpair.Parse(v)
-		} else {
-			exp = 0
-			// k was the <key> and v was the <value>.
-		}
+		exp, k, v := config.ParseDimension(d)
 		if k == "builder" {
 			seenBuilder = true
 		}
