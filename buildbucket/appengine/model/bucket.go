@@ -52,6 +52,9 @@ type Bucket struct {
 	// Schema is this entity's schema version.
 	// TODO(crbug/1042991): Switch to noindex.
 	Schema int32 `gae:"entity_schema_version"`
+	// Shadows is the list of buckets this bucket shadows.
+	// It will be empty if this bucket is not a shadow bucket.
+	Shadows []string `gae:"shadows,noindex"`
 }
 
 // BucketKey returns a datastore key of a bucket.

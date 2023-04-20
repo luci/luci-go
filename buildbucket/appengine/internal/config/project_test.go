@@ -854,6 +854,7 @@ func TestUpdateProject(t *testing.T) {
 			// Add master.tryserver.chromium.mac
 			// Update luci.chromium.try
 			// Delete master.tryserver.chromium.win
+			// Add shadow bucket try.shadow which shadows try
 			chromiumBuildbucketCfg = `
         buckets {
           name: "master.tryserver.chromium.linux"
@@ -877,7 +878,12 @@ func TestUpdateProject(t *testing.T) {
 							}
             }
           }
+					shadow: "try.shadow"
         }
+				buckets {
+					name: "try.shadow"
+					dynamic_builder_template {}
+				}
 			`
 			chromiumRevision = "new!"
 			// Delete the entire v8 cfg
@@ -886,7 +892,7 @@ func TestUpdateProject(t *testing.T) {
 			So(UpdateProjectCfg(ctx), ShouldBeNil)
 			var actualBkts []*model.Bucket
 			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
-			So(len(actualBkts), ShouldEqual, 4)
+			So(len(actualBkts), ShouldEqual, 5)
 			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
 				{
 					Name: "master.tryserver.chromium.linux",
@@ -900,6 +906,11 @@ func TestUpdateProject(t *testing.T) {
 						Builders:                     []*pb.BuilderConfig{},
 						TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
 					},
+					Shadow: "try.shadow",
+				},
+				{
+					Name:                   "try.shadow",
+					DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{},
 				},
 				{
 					Name: "try",
@@ -929,6 +940,14 @@ func TestUpdateProject(t *testing.T) {
 					Bucket:   "try",
 					Schema:   CurrentBucketSchemaVersion,
 					Revision: "new!",
+				},
+				{
+					ID:       "try.shadow",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Bucket:   "try.shadow",
+					Schema:   CurrentBucketSchemaVersion,
+					Revision: "new!",
+					Shadows:  []string{"try"},
 				},
 				{
 					ID:       "try",

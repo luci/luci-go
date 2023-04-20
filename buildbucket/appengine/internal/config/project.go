@@ -45,7 +45,7 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-const CurrentBucketSchemaVersion = 13
+const CurrentBucketSchemaVersion = 14
 
 // maximumExpiration is the maximum allowed expiration_secs for a builder
 // dimensions field.
@@ -181,6 +181,10 @@ func UpdateProjectCfg(ctx context.Context) error {
 			})
 		}
 
+		// shadow bucket id -> bucket ids it shadows
+		shadows := make(map[string][]string)
+		// bucket id -> bucket entity
+		buckets := make(map[string]*model.Bucket)
 		for _, cfgBucket := range pCfg.Buckets {
 			cfgBktName := shortBucketName(cfgBucket.Name)
 			storedBucket := &model.Bucket{
@@ -261,6 +265,14 @@ func UpdateProjectCfg(ctx context.Context) error {
 				Revision: revision,
 				Proto:    cfgBucket,
 			}
+			buckets[cfgBktName] = bucketToUpdate
+
+			if cfgBucket.GetShadow() != "" {
+				// This bucket is shadowed.
+				shadow := cfgBucket.Shadow
+				shadows[shadow] = append(shadows[shadow], cfgBktName)
+			}
+
 			var bldrsToDel []*model.Builder
 			for _, bldr := range bldrMap {
 				bldrsToDel = append(bldrsToDel, &model.Builder{
@@ -288,6 +300,19 @@ func UpdateProjectCfg(ctx context.Context) error {
 			}
 			for _, bldr := range bldrsToDel {
 				changes = append(changes, &changeLog{item: bldr.FullBuilderName(), action: "delete"})
+			}
+		}
+
+		// Update shadow buckets.
+		var shadowBucketsToUpdate []*model.Bucket
+		for shadow, shadowed := range shadows {
+			toUpdate := buckets[shadow]
+			toUpdate.Shadows = shadowed
+			shadowBucketsToUpdate = append(shadowBucketsToUpdate, toUpdate)
+		}
+		if len(shadowBucketsToUpdate) > 0 {
+			if err := datastore.Put(ctx, shadowBucketsToUpdate); err != nil {
+				return errors.Annotate(err, "for shadow buckets in project %s", project).Err()
 			}
 		}
 	}
