@@ -15,7 +15,7 @@
 import styled from '@emotion/styled';
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { useStore } from '../../store';
@@ -58,7 +58,10 @@ const GraphContainer = styled.div({
 export const TestHistoryPage = observer(() => {
   const { realm, testId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialFilterText = searchParams.get('q');
+
+  // Use useState to ensure initialFilterText won't change after search params
+  // are updated.
+  const [initialFilterText] = useState(() => searchParams.get('q') || '');
 
   const store = useStore();
   const pageState = store.testHistoryPage;
@@ -71,17 +74,12 @@ export const TestHistoryPage = observer(() => {
     pageState.setParams(realm, testId);
   }, [pageState, realm, testId]);
 
-  useEffect(
-    () => {
-      if (!initialFilterText) {
-        return;
-      }
-      pageState.setFilterText(initialFilterText);
-    },
-    // Do not declare initialFilterText as a dep because we only want to set it
-    // when the page is being intialized.
-    [pageState]
-  );
+  useEffect(() => {
+    if (!initialFilterText) {
+      return;
+    }
+    pageState.setFilterText(initialFilterText);
+  }, [pageState, initialFilterText]);
 
   // Update the querystring when filters are updated.
   useEffect(() => {
@@ -102,7 +100,7 @@ export const TestHistoryPage = observer(() => {
     <PageContainer>
       <TestIdLabel realm={realm} testId={testId} />
       <LinearProgress value={100} variant="determinate" />
-      <FilterBox css={{ width: 'calc(100% - 10px)', margin: '5px' }} />
+      <FilterBox css={{ width: 'calc(100% - 10px)', margin: '5px' }} initialFilterText={initialFilterText} />
       <GraphConfig />
       <GraphContainer>
         <VariantDefTable css={{ gridArea: 'v-table' }} />

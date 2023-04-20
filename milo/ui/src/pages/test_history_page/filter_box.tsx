@@ -33,6 +33,14 @@ import { consumeStore, StoreInstance } from '../../store';
 @customElement('milo-th-filter-box')
 @consumer
 export class TestHistoryFilterBoxElement extends MobxLitElement {
+  static get properties() {
+    return {
+      initialFilterText: { type: String },
+    };
+  }
+
+  declare initialFilterText: string;
+
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {
     return this.store.testHistoryPage;
@@ -62,7 +70,7 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.uncommittedFilterText = this.pageState.filterText;
+    this.uncommittedFilterText = this.initialFilterText;
   }
 
   protected render() {
@@ -162,6 +170,7 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       'milo-th-filter-box': {
+        initialFilterText: string;
         css?: Interpolation<Theme>;
         class?: string;
       };
@@ -170,6 +179,7 @@ declare global {
 }
 
 export interface FilterBoxProps {
+  readonly initialFilterText: string;
   readonly css?: Interpolation<Theme>;
   readonly className?: string;
 }
