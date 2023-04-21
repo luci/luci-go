@@ -711,8 +711,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					So(fakeStore.Issues[3].Issue.IssueState.Priority, ShouldNotEqual, issuetracker.Issue_P0)
 					originalPriority := fakeStore.Issues[3].Issue.IssueState.Priority
 
-					SetResidualImpact(
-						bugClusters[2], bugs.P0Impact())
+					SetResidualImpact(bugClusters[2], bugs.P0Impact())
 					err = updateBugsForProject(ctx, opts)
 					So(err, ShouldBeNil)
 
@@ -720,7 +719,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					issue := fakeStore.Issues[3].Issue
 					So(issue.IssueId, ShouldEqual, 3)
 					So(issue.IssueState.Priority, ShouldEqual, originalPriority)
-
+					expectedRules[2].IsManagingBugPriority = false
 					expectRules(expectedRules)
 				})
 				Convey("Disabling IsManagingBugPriority prevents priority updates.", func() {

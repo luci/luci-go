@@ -245,6 +245,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 
 	var duplicateBugs []bugs.BugID
 	var ruleIDsToArchive []string
+	var ruleIDsToDisableBugPriorityUpdates []string
 
 	// Perform bug updates.
 	for system, bugsToUpdate := range bugUpdatesBySystem {
@@ -264,6 +265,9 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 			} else if rsp.ShouldArchive {
 				ruleIDsToArchive = append(ruleIDsToArchive, bugsToUpdate[i].RuleID)
 			}
+			if rsp.DisableRulePriorityUpdates {
+				ruleIDsToDisableBugPriorityUpdates = append(ruleIDsToDisableBugPriorityUpdates, bugsToUpdate[i].RuleID)
+			}
 		}
 	}
 
@@ -273,6 +277,11 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 	// -
 	if err := b.archiveRules(ctx, ruleIDsToArchive); err != nil {
 		return errors.Annotate(err, "archive rules").Err()
+	}
+
+	// Disable bug priority updates because the user manually updated the priority.
+	if err := b.disableBugUpdatesForRules(ctx, ruleIDsToDisableBugPriorityUpdates); err != nil {
+		return errors.Annotate(err, "disable bug priority for rules").Err()
 	}
 
 	// Handle bugs marked as duplicate.
@@ -415,6 +424,39 @@ func (b *BugUpdater) archiveRules(ctx context.Context, ruleIDs []string) error {
 			r.IsActive = false
 			if err := rules.Update(ctx, r, rules.UpdateOptions{
 				PredicateUpdated: true,
+			}, rules.LUCIAnalysisSystem); err != nil {
+				// Validation error. Actual save happens upon transaction
+				// commit.
+				return errors.Annotate(err, "update rules").Err()
+			}
+		}
+		return nil
+	}
+	_, err := span.ReadWriteTransaction(ctx, f)
+	return err
+}
+
+// disableBugUpdatesForRules sets the flag IsManagingBugPriority to false for the given rules.
+func (b *BugUpdater) disableBugUpdatesForRules(ctx context.Context, ruleIDs []string) error {
+	if len(ruleIDs) == 0 {
+		return nil
+	}
+	// Limit the number of rules that will be updated at once to stay
+	// well within Spanner mutation limits. The rest will be handled
+	// in the next bug-filing run.
+	if len(ruleIDs) > 100 {
+		ruleIDs = ruleIDs[:100]
+	}
+	f := func(ctx context.Context) error {
+		// Perform atomic read-update of rules.
+		rs, err := rules.ReadMany(ctx, b.project, ruleIDs)
+		if err != nil {
+			return errors.Annotate(err, "read rules to archive").Err()
+		}
+		for _, r := range rs {
+			r.IsManagingBugPriority = false
+			if err := rules.Update(ctx, r, rules.UpdateOptions{
+				IsManagingBugPriorityUpdated: true,
 			}, rules.LUCIAnalysisSystem); err != nil {
 				// Validation error. Actual save happens upon transaction
 				// commit.
