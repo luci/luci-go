@@ -18,7 +18,7 @@ package bayesian
 import (
 	"math"
 
-	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
 type ChangepointPredictor struct {
@@ -48,19 +48,18 @@ type ChangepointPredictor struct {
 	UnexpectedAfterRetryPrior BetaDistribution
 }
 
-// IdentifyChangepoints identifies all changepoint positions for given test
-// history.
+// IdentifyChangepoints identifies all changepoint for given test history.
 //
-// This method requires the provided history to be sorted by
-// commit position (either ascending or descending is fine).
-// It allows multiple verdicts to be specified per
-// commit position, by including those verdicts as adjacent
-// elements in the history slice.
+// This method requires the provided history to be sorted by commit position
+// (either ascending or descending is fine).
+// It allows multiple verdicts to be specified per commit position, by
+// including those verdicts as adjacent elements in the history slice.
 //
-// The semantics of the returned position(s) are as follows:
-// a position p means the history is segmented as
-// history[:p] and history[p:].
-func (a ChangepointPredictor) IdentifyChangepoints(history []changepoints.PositionVerdict) []int {
+// This function returns the indices (in the history slice) of the changepoints
+// identified. If an index i is returned, it means the history is segmented as
+// history[:i] and history[i:].
+// The indices returned are sorted ascendingly (lowest index first).
+func (a ChangepointPredictor) IdentifyChangepoints(history []inputbuffer.PositionVerdict) []int {
 	if len(history) == 0 {
 		panic("test history is empty")
 	}
@@ -113,7 +112,7 @@ func (a ChangepointPredictor) IdentifyChangepoints(history []changepoints.Positi
 // If we are to bias towards the no changepoint case, thresholding
 // should be applied to relativeLikelihood before considering the
 // changepoint real.
-func (a ChangepointPredictor) FindBestChangepoint(history []changepoints.PositionVerdict) (relativeLikelihood float64, position int) {
+func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.PositionVerdict) (relativeLikelihood float64, position int) {
 	length := len(history)
 
 	// Stores the total for the entire history.
@@ -201,7 +200,7 @@ func (a ChangepointPredictor) FindBestChangepoint(history []changepoints.Positio
 // Preconditions:
 // The provided history is in order by commit position (either ascending or
 // descending order is fine).
-func nextPosition(history []changepoints.PositionVerdict, index int) (nextIndex int, pending counts) {
+func nextPosition(history []inputbuffer.PositionVerdict, index int) (nextIndex int, pending counts) {
 	// The commit position for which we are accumulating test runs.
 	commitPosition := history[index].CommitPosition
 

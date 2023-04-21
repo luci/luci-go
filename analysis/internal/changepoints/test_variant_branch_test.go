@@ -21,6 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -56,10 +57,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 					"key2": "val2",
 				},
 			},
-			InputBuffer: &InputBuffer{
+			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
-				HotBuffer: History{
-					Verdicts: []PositionVerdict{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
 						{
 							CommitPosition:   15,
 							IsSimpleExpected: true,
@@ -78,10 +79,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			TestID:           "test_id_3",
 			VariantHash:      "variant_hash_3",
 			GitReferenceHash: []byte("githash3"),
-			InputBuffer: &InputBuffer{
+			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
-				HotBuffer: History{
-					Verdicts: []PositionVerdict{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
 						{
 							CommitPosition:   20,
 							IsSimpleExpected: true,
@@ -109,11 +110,11 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		// After inserting, the record should not be new anymore.
 		tvb1.IsNew = false
 		// After decoding, cold buffer should be empty.
-		tvb1.InputBuffer.ColdBuffer = History{Verdicts: []PositionVerdict{}}
+		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
 		So(tvbs[0], ShouldResemble, tvb1)
 		So(tvbs[1], ShouldBeNil)
 		tvb3.IsNew = false
-		tvb3.InputBuffer.ColdBuffer = History{Verdicts: []PositionVerdict{}}
+		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
 		So(tvbs[2], ShouldResemble, tvb3)
 	})
 
@@ -133,10 +134,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 					"key2": "val2",
 				},
 			},
-			InputBuffer: &InputBuffer{
+			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
-				HotBuffer: History{
-					Verdicts: []PositionVerdict{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
 						{
 							CommitPosition:   15,
 							IsSimpleExpected: true,
@@ -164,10 +165,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 					"key2": "val2",
 				},
 			},
-			InputBuffer: &InputBuffer{
+			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
-				HotBuffer: History{
-					Verdicts: []PositionVerdict{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
 						{
 							CommitPosition:   16,
 							IsSimpleExpected: true,
@@ -176,8 +177,8 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 					},
 				},
 				ColdBufferCapacity: 2000,
-				ColdBuffer: History{
-					Verdicts: []PositionVerdict{
+				ColdBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
 						{
 							CommitPosition:   15,
 							IsSimpleExpected: true,
@@ -208,7 +209,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 func TestInsertToInputBuffer(t *testing.T) {
 	Convey("Insert simple test variant", t, func() {
 		tvb := &TestVariantBranch{
-			InputBuffer: &InputBuffer{
+			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  10,
 				ColdBufferCapacity: 100,
 			},
@@ -230,7 +231,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
 
-		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, PositionVerdict{
+		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
 			CommitPosition:   12,
 			IsSimpleExpected: true,
 			Hour:             tv.Results[0].Result.StartTime.AsTime(),
@@ -239,7 +240,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 
 	Convey("Insert non-simple test variant", t, func() {
 		tvb := &TestVariantBranch{
-			InputBuffer: &InputBuffer{
+			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  10,
 				ColdBufferCapacity: 100,
 			},
@@ -308,13 +309,13 @@ func TestInsertToInputBuffer(t *testing.T) {
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
 
-		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, PositionVerdict{
+		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
 			CommitPosition:   12,
 			IsSimpleExpected: false,
 			Hour:             tv.Results[0].Result.StartTime.AsTime(),
-			Details: VerdictDetails{
+			Details: inputbuffer.VerdictDetails{
 				IsExonerated: false,
-				Runs: []Run{
+				Runs: []inputbuffer.Run{
 					{
 						ExpectedResultCount:   0,
 						UnexpectedResultCount: 1,

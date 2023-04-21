@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package changepoints
+package inputbuffer
 
 import (
 	"testing"
@@ -125,7 +125,7 @@ func TestEncodeAndDecode(t *testing.T) {
 
 func TestInputBuffer(t *testing.T) {
 	Convey(`Add item to input buffer`, t, func() {
-		ib := InputBuffer{
+		ib := Buffer{
 			HotBufferCapacity:  10,
 			ColdBufferCapacity: 100,
 		}
@@ -180,7 +180,7 @@ func TestInputBuffer(t *testing.T) {
 	})
 
 	Convey(`Compaction should maintain order`, t, func() {
-		ib := InputBuffer{
+		ib := Buffer{
 			HotBufferCapacity: 5,
 			HotBuffer: History{
 				Verdicts: []PositionVerdict{
@@ -220,8 +220,8 @@ func TestInputBuffer(t *testing.T) {
 		})
 	})
 
-	Convey(`Cold buffer should discard old verdicts after compaction`, t, func() {
-		ib := InputBuffer{
+	Convey(`Cold buffer should keep old verdicts after compaction`, t, func() {
+		ib := Buffer{
 			HotBufferCapacity: 2,
 			HotBuffer: History{
 				Verdicts: []PositionVerdict{
@@ -243,8 +243,10 @@ func TestInputBuffer(t *testing.T) {
 
 		ib.Compact()
 		So(len(ib.HotBuffer.Verdicts), ShouldEqual, 0)
-		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 5)
+		So(len(ib.ColdBuffer.Verdicts), ShouldEqual, 7)
 		So(ib.ColdBuffer.Verdicts, ShouldResemble, []PositionVerdict{
+			createTestVerdict(2, 1),
+			createTestVerdict(4, 1),
 			createTestVerdict(6, 1),
 			createTestVerdict(7, 1),
 			createTestVerdict(8, 1),

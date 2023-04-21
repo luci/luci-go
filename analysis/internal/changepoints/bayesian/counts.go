@@ -15,7 +15,7 @@
 package bayesian
 
 import (
-	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
 // Stores counts of test run outcomes.
@@ -52,7 +52,7 @@ type counts struct {
 	UnexpectedAfterRetry int
 }
 
-func (h counts) addVerdict(cp changepoints.PositionVerdict) counts {
+func (h counts) addVerdict(cp inputbuffer.PositionVerdict) counts {
 	if cp.IsSimpleExpected {
 		h.Runs += 1
 		return h

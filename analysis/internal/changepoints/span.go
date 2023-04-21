@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
 
@@ -123,17 +124,17 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 	}
 
 	tvb.RecentChangepointCount = recentChangepointCount
-	tvb.InputBuffer = &InputBuffer{
-		HotBufferCapacity:  defaultHotBufferCapacity,
-		ColdBufferCapacity: defaultColdBufferCapacity,
+	tvb.InputBuffer = &inputbuffer.Buffer{
+		HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
+		ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 	}
 
 	var err error
-	tvb.InputBuffer.HotBuffer, err = DecodeHistory(hotBuffer)
+	tvb.InputBuffer.HotBuffer, err = inputbuffer.DecodeHistory(hotBuffer)
 	if err != nil {
 		return nil, errors.Annotate(err, "decode hot history").Err()
 	}
-	tvb.InputBuffer.ColdBuffer, err = DecodeHistory(coldBuffer)
+	tvb.InputBuffer.ColdBuffer, err = inputbuffer.DecodeHistory(coldBuffer)
 	if err != nil {
 		return nil, errors.Annotate(err, "decode cold history").Err()
 	}
@@ -156,13 +157,13 @@ func (tvb *TestVariantBranch) ToMutation() *spanner.Mutation {
 
 	// Based on the flow, we should always update the hot buffer.
 	cols = append(cols, "HotInputBuffer")
-	values = append(values, EncodeHistory(tvb.InputBuffer.HotBuffer))
+	values = append(values, inputbuffer.EncodeHistory(tvb.InputBuffer.HotBuffer))
 
 	// We should only update the cold buffer if it is dirty, or if this is new
 	// record.
 	if tvb.InputBuffer.IsColdBufferDirty || tvb.IsNew {
 		cols = append(cols, "ColdInputBuffer")
-		values = append(values, EncodeHistory(tvb.InputBuffer.ColdBuffer))
+		values = append(values, inputbuffer.EncodeHistory(tvb.InputBuffer.ColdBuffer))
 	}
 
 	// TODO (nqmtuan): Handle the mutation for output buffer.

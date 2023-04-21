@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
 func TestChangePointPositionConfidenceInterval(t *testing.T) {
@@ -38,7 +38,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 1, 1, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 4)
@@ -50,7 +50,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 1, 1, 1, 1}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 6)
@@ -62,7 +62,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{3, 3, 1, 2, 3, 3}
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
 		// There is only 1 possible position for change point
 		So(min, ShouldEqual, 2)
@@ -75,7 +75,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 13)
@@ -87,7 +87,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 13)
@@ -101,7 +101,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			retries              = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
-		vs := verdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 5)
@@ -115,7 +115,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			retries              = []int{3, 3, 3, 1, 3, 3, 3, 3}
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
-		vs := verdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 3)
@@ -137,20 +137,20 @@ func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 		},
 	}
 
-	var vs []changepoints.PositionVerdict
+	var vs []inputbuffer.PositionVerdict
 
 	for i := 0; i <= 1000; i++ {
-		vs = append(vs, changepoints.PositionVerdict{
+		vs = append(vs, inputbuffer.PositionVerdict{
 			CommitPosition:   i,
 			IsSimpleExpected: true,
 		})
 	}
 	for i := 1001; i < 2000; i++ {
-		vs = append(vs, changepoints.PositionVerdict{
+		vs = append(vs, inputbuffer.PositionVerdict{
 			CommitPosition:   i,
 			IsSimpleExpected: false,
-			Details: changepoints.VerdictDetails{
-				Runs: []changepoints.Run{
+			Details: inputbuffer.VerdictDetails{
+				Runs: []inputbuffer.Run{
 					{
 						UnexpectedResultCount: 1,
 					},

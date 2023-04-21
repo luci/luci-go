@@ -17,7 +17,7 @@ package bayesian
 import (
 	"math"
 
-	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
 // ChangepointPositionConfidenceInterval returns the (100% - (2 * tail))
@@ -31,7 +31,7 @@ import (
 // [3, 9], [10, 15], [16, 21].
 // To analyze the confidence interval around change point at position 16, we
 // will run this function with the slice of history between 10 and 21.
-func (a ChangepointPredictor) ChangepointPositionConfidenceInterval(history []changepoints.PositionVerdict, tail float64) (min int, max int) {
+func (a ChangepointPredictor) ChangepointPositionConfidenceInterval(history []inputbuffer.PositionVerdict, tail float64) (min int, max int) {
 	length := len(history)
 	if length == 0 {
 		panic("test history is empty")

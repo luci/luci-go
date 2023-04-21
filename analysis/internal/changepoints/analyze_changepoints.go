@@ -19,6 +19,8 @@ package changepoints
 import (
 	"context"
 
+	"go.chromium.org/luci/analysis/internal/changepoints/bayesian"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
@@ -145,6 +147,29 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	return err
 }
 
+func runChangePointAnalysis(tvb *TestVariantBranch) {
+	a := bayesian.ChangepointPredictor{
+		ChangepointLikelihood: 0.0001,
+		// We are leaning toward consistently passing test results.
+		HasUnexpectedPrior: bayesian.BetaDistribution{
+			Alpha: 0.3,
+			Beta:  0.5,
+		},
+		UnexpectedAfterRetryPrior: bayesian.BetaDistribution{
+			Alpha: 0.5,
+			Beta:  0.5,
+		},
+	}
+	history := tvb.InputBuffer.MergeBuffer()
+	changepoints := a.IdentifyChangepoints(history)
+	sib := tvb.InputBuffer.Segmentize(changepoints)
+	sib.EvictSegments()
+	// TODO (nqmtuan): Combine the evicted segments with the segments from the
+	// output buffers and update the output buffer.
+	// TODO (nqmtuan): Combine the remaining output buffer segments and remaining
+	// segment for BQ exporter.
+}
+
 // insertIntoInputBuffer inserts the new test variant tv into the input buffer
 // of TestVariantBranch tvb.
 // If tvb is nil, it means it is not in spanner. In this case, return a new
@@ -158,7 +183,7 @@ func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payloa
 			VariantHash:      tv.VariantHash,
 			GitReferenceHash: gitReferenceHash(payload),
 			Variant:          pbutil.VariantFromResultDB(tv.Variant),
-			InputBuffer:      &InputBuffer{},
+			InputBuffer:      &inputbuffer.Buffer{},
 		}
 	}
 

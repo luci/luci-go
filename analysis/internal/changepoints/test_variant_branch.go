@@ -15,6 +15,8 @@
 package changepoints
 
 import (
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -31,13 +33,18 @@ type TestVariantBranch struct {
 	VariantHash            string
 	GitReferenceHash       []byte
 	Variant                *pb.Variant
-	InputBuffer            *InputBuffer
+	InputBuffer            *inputbuffer.Buffer
 	RecentChangepointCount int64
-	// TODO (nqmtuan): Add output buffer.
+	// Store the finalizing segment, if any.
+	// The count for the finalizing segment should only include the verdicts
+	// that are not in the input buffer anymore.
+	FinalizingSegment *changepointspb.Segment
+	// Store all the finalized segments for the test variant branch.
+	FinalizedSegments *changepointspb.Segments
 }
 
 // InsertToInputBuffer inserts data of a new test variant into the input
 // buffer.
-func (tvb *TestVariantBranch) InsertToInputBuffer(pv PositionVerdict) {
+func (tvb *TestVariantBranch) InsertToInputBuffer(pv inputbuffer.PositionVerdict) {
 	tvb.InputBuffer.InsertVerdict(pv)
 }

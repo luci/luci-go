@@ -22,11 +22,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
-func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool) (PositionVerdict, error) {
+func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool) (inputbuffer.PositionVerdict, error) {
 	// It may be enough to check the condition status == expected, given that
 	// an expected verdict should have only one expected run.
 	// However, we also check the length of the result just to be certain.
@@ -34,10 +35,10 @@ func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults
 
 	hour, err := hourForTestVariant(tv)
 	if err != nil {
-		return PositionVerdict{}, errors.Annotate(err, "hour for test variant").Err()
+		return inputbuffer.PositionVerdict{}, errors.Annotate(err, "hour for test variant").Err()
 	}
 
-	verdict := PositionVerdict{
+	verdict := inputbuffer.PositionVerdict{
 		CommitPosition:   int(gitilesCommit(payload).GetPosition()),
 		IsSimpleExpected: isSimpleExpected,
 		Hour:             hour,
@@ -47,7 +48,7 @@ func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults
 	if !isSimpleExpected {
 		vd, err := toVerdictDetails(tv, duplicateMap)
 		if err != nil {
-			return PositionVerdict{}, errors.Annotate(err, "to verdict details").Err()
+			return inputbuffer.PositionVerdict{}, errors.Annotate(err, "to verdict details").Err()
 		}
 		verdict.Details = vd
 	}
@@ -59,13 +60,13 @@ func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults
 // - IsDuplicate, in which non-duplicate runs come first, then
 // - UnexpectedCount, descendingly, then
 // - ExpectedCount, descendingly.
-func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (VerdictDetails, error) {
+func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (inputbuffer.VerdictDetails, error) {
 	isExonerated := (tv.Status == rdbpb.TestVariantStatus_EXONERATED)
-	vd := VerdictDetails{
+	vd := inputbuffer.VerdictDetails{
 		IsExonerated: isExonerated,
 	}
 	// runData maps invocation name to run data.
-	runData := map[string]*Run{}
+	runData := map[string]*inputbuffer.Run{}
 	for _, r := range tv.Results {
 		tr := r.GetResult()
 		invocationName, err := resultdb.InvocationFromTestResultName(tr.Name)
@@ -74,7 +75,7 @@ func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (Verd
 		}
 		if _, ok := runData[invocationName]; !ok {
 			_, isDuplicate := duplicateMap[invocationName]
-			runData[invocationName] = &Run{
+			runData[invocationName] = &inputbuffer.Run{
 				IsDuplicate: isDuplicate,
 			}
 		}
@@ -85,7 +86,7 @@ func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (Verd
 		}
 	}
 
-	vd.Runs = make([]Run, len(runData))
+	vd.Runs = make([]inputbuffer.Run, len(runData))
 	i := 0
 	for _, run := range runData {
 		vd.Runs[i] = *run

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
 func TestBayesianAnalysis(t *testing.T) {
@@ -39,7 +39,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 1, 1, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{3})
 	})
@@ -50,7 +50,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 1, 1, 2, 2}
 			hasUnexpected = []int{0, 0, 1, 1, 2, 2}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{2})
 	})
@@ -61,7 +61,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{3, 3, 1, 2, 3, 3}
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{2})
 	})
@@ -72,7 +72,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 3, 2, 3, 1, 1, 2, 2, 3, 2, 3, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 2, 3, 0, 0}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{5, 12})
 	})
@@ -83,7 +83,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{6})
 	})
@@ -94,7 +94,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{6})
 	})
@@ -105,7 +105,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 0, 0}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
@@ -116,7 +116,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
@@ -127,7 +127,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			total         = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			hasUnexpected = []int{1, 0, 1, 0, 0, 1, 0, 2}
 		)
-		vs := verdicts(positions, total, hasUnexpected)
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
@@ -140,7 +140,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			retries              = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
-		vs := verdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{4})
 	})
@@ -153,7 +153,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			retries              = []int{2, 2, 2, 2, 2, 2, 2, 2}
 			unexpectedAfterRetry = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
-		vs := verdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
@@ -167,7 +167,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			retries              = []int{3, 3, 3, 1, 3, 3, 3, 3}
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
-		vs := verdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
+		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
 		changepoints := a.IdentifyChangepoints(vs)
 		So(changepoints, ShouldResemble, []int{3})
 	})
@@ -188,11 +188,11 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 		},
 	}
 
-	var vs []changepoints.PositionVerdict
+	var vs []inputbuffer.PositionVerdict
 
 	// Consistently passing test. This represents ~99% of tests.
 	for i := 0; i < 2000; i++ {
-		vs = append(vs, changepoints.PositionVerdict{
+		vs = append(vs, inputbuffer.PositionVerdict{
 			CommitPosition:   i,
 			IsSimpleExpected: true,
 		})
@@ -220,18 +220,18 @@ func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 		},
 	}
 	// Flaky test.
-	var vs []changepoints.PositionVerdict
+	var vs []inputbuffer.PositionVerdict
 	for i := 0; i < 2000; i++ {
 		if i%2 == 0 {
-			vs = append(vs, changepoints.PositionVerdict{
+			vs = append(vs, inputbuffer.PositionVerdict{
 				CommitPosition:   i,
 				IsSimpleExpected: true,
 			})
 		} else {
-			vs = append(vs, changepoints.PositionVerdict{
+			vs = append(vs, inputbuffer.PositionVerdict{
 				CommitPosition: i,
-				Details: changepoints.VerdictDetails{
-					Runs: []changepoints.Run{
+				Details: inputbuffer.VerdictDetails{
+					Runs: []inputbuffer.Run{
 						{
 							ExpectedResultCount:   1,
 							UnexpectedResultCount: 1,
@@ -247,70 +247,4 @@ func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 			panic("unexpected result")
 		}
 	}
-}
-
-func verdicts(positions, total, hasUnexpected []int) []changepoints.PositionVerdict {
-	retried := make([]int, len(total))
-	unexpectedAfterRetry := make([]int, len(total))
-	return verdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry)
-}
-
-func verdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAfterRetry []int) []changepoints.PositionVerdict {
-	if len(total) != len(hasUnexpected) {
-		panic("length mismatch between total and hasUnexpected")
-	}
-	if len(total) != len(retried) {
-		panic("length mismatch between total and retried")
-	}
-	if len(total) != len(unexpectedAfterRetry) {
-		panic("length mismatch between total and unexpectedAfterRetry")
-	}
-	result := make([]changepoints.PositionVerdict, 0, len(total))
-	for i := range total {
-		// From top to bottom, these are increasingly restrictive.
-		totalCount := total[i]                          // Total number of test runs in this verdict.
-		hasUnexpectedCount := hasUnexpected[i]          // How many of those test runs had at least one unexpected result.
-		retriedCount := retried[i]                      // As above, plus at least two results in total.
-		unexpectedAfterRetry := unexpectedAfterRetry[i] // As above, plus all test runs have only unexpected results.
-
-		verdict := changepoints.PositionVerdict{
-			CommitPosition: positions[i],
-		}
-		if hasUnexpectedCount == 0 && totalCount == 1 {
-			verdict.IsSimpleExpected = true
-		} else {
-			verdict.Details = changepoints.VerdictDetails{
-				Runs: []changepoints.Run{
-					{
-						// Duplicate result, should be ignored.
-						IsDuplicate:           true,
-						ExpectedResultCount:   5,
-						UnexpectedResultCount: 5,
-					},
-				},
-			}
-			for i := 0; i < totalCount; i++ {
-				if i < unexpectedAfterRetry {
-					verdict.Details.Runs = append(verdict.Details.Runs, changepoints.Run{
-						UnexpectedResultCount: 2,
-					})
-				} else if i < retriedCount {
-					verdict.Details.Runs = append(verdict.Details.Runs, changepoints.Run{
-						UnexpectedResultCount: 1,
-						ExpectedResultCount:   1,
-					})
-				} else if i < hasUnexpectedCount {
-					verdict.Details.Runs = append(verdict.Details.Runs, changepoints.Run{
-						UnexpectedResultCount: 1,
-					})
-				} else {
-					verdict.Details.Runs = append(verdict.Details.Runs, changepoints.Run{
-						ExpectedResultCount: 1,
-					})
-				}
-			}
-		}
-		result = append(result, verdict)
-	}
-	return result
 }

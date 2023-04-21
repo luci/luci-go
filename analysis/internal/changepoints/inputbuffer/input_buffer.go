@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package changepoints
+// Package inputbuffer handles the input buffer of changepoint analysis.
+package inputbuffer
 
 import (
 	"bytes"
@@ -26,14 +27,14 @@ import (
 
 const (
 	// The version of the encoding to encode the verdict history.
-	encodingVersion = 1
+	EncodingVersion = 1
 	// Capacity of the hot buffer, i.e. how many verdicts it can hold.
-	defaultHotBufferCapacity = 100
+	DefaultHotBufferCapacity = 100
 	// Capacity of the cold buffer, i.e. how many verdicts it can hold.
-	defaultColdBufferCapacity = 2000
+	DefaultColdBufferCapacity = 2000
 )
 
-type InputBuffer struct {
+type Buffer struct {
 	// Capacity of the hot buffer. If it is full, the content will be written
 	// into the cold buffer.
 	HotBufferCapacity int
@@ -86,7 +87,7 @@ type Run struct {
 // as the result of the insert, then a compaction will occur.
 // If a compaction occurs, the IsColdBufferDirty flag will be set to true,
 // implying that the cold buffer content needs to be written to Spanner.
-func (ib *InputBuffer) InsertVerdict(v PositionVerdict) {
+func (ib *Buffer) InsertVerdict(v PositionVerdict) {
 	// Find the position to insert the verdict.
 	// As the new verdict is likely to have the latest commit position, we
 	// will iterate backwards from the end of the slice.
@@ -108,21 +109,20 @@ func (ib *InputBuffer) InsertVerdict(v PositionVerdict) {
 }
 
 // Compact moves the content from the hot buffer to the cold buffer.
-func (ib *InputBuffer) Compact() {
+// Note: It is possible that the cold buffer overflows after the compaction,
+// i.e., len(ColdBuffer.Verdicts) > ColdBufferCapacity.
+// This needs to be handled separately.
+func (ib *Buffer) Compact() {
 	merged := ib.MergeBuffer()
-	// If the cold verdicts exceeds the capacity, we want to move the
-	// oldest verdicts to the output buffer.
-	// TODO (nqmtuan): Move extra verdicts to output buffer.
-	// For now, just discard them.
-	if len(merged) > ib.ColdBufferCapacity {
-		merged = merged[len(merged)-ib.ColdBufferCapacity:]
-	}
-
 	ib.HotBuffer.Verdicts = []PositionVerdict{}
 	ib.ColdBuffer.Verdicts = merged
 }
 
-func (ib *InputBuffer) MergeBuffer() []PositionVerdict {
+// MergeBuffer merges the verdicts of the hot buffer and the cold buffer, and
+// returns a merged slice.
+// The returned slice will be sorted by commit position (oldest first), and
+// then by result time (oldest first).
+func (ib *Buffer) MergeBuffer() []PositionVerdict {
 	// Because the hot buffer and cold buffer are both sorted, we can simply use
 	// a single merge to merge the 2 buffers.
 	hVerdicts := ib.HotBuffer.Verdicts
@@ -154,6 +154,30 @@ func (ib *InputBuffer) MergeBuffer() []PositionVerdict {
 	return merged
 }
 
+// EvictionRange returns the part that should be evicted from cold buffer, due
+// to overflow.
+// Note: we never evict from the hot buffer due to overflow. Overflow from the
+// hot buffer should cause compaction to the cold buffer instead.
+// Returns:
+// - a boolean (shouldEvict) to indicated if an eviction should occur.
+// - a number (endIndex) for the eviction. The eviction will occur for range
+// [0, endIndex (inclusively)].
+// Note that eviction can only occur after a compaction from hot buffer to cold
+// buffer. It means the hot buffer is empty, and the cold buffer overflows.
+func (ib *Buffer) EvictionRange() (shouldEvict bool, endIndex int) {
+	if len(ib.ColdBuffer.Verdicts) <= ib.ColdBufferCapacity {
+		return false, 0
+	}
+	if len(ib.HotBuffer.Verdicts) > 0 {
+		panic("hot buffer is not empty during eviction")
+	}
+	return true, len(ib.ColdBuffer.Verdicts) - ib.ColdBufferCapacity - 1
+}
+
+func (ib *Buffer) Size() int {
+	return len(ib.ColdBuffer.Verdicts) + len(ib.HotBuffer.Verdicts)
+}
+
 // EncodeHistory uses varint encoding to encode history into a byte array.
 // See go/luci-test-variant-analysis-design for details.
 func EncodeHistory(history History) []byte {
@@ -163,7 +187,7 @@ func EncodeHistory(history History) []byte {
 	// In case 15,000 is not enough, AppendUvarint/AppendVarint will create a
 	// bigger buffer to hold the values.
 	result := make([]byte, 0, 15000)
-	result = binary.AppendUvarint(result, uint64(encodingVersion))
+	result = binary.AppendUvarint(result, uint64(EncodingVersion))
 	result = binary.AppendUvarint(result, uint64(len(history.Verdicts)))
 
 	var lastPosition uint64
@@ -212,8 +236,8 @@ func DecodeHistory(buf []byte) (History, error) {
 	if err != nil {
 		return history, errors.Annotate(err, "read version").Err()
 	}
-	if version != encodingVersion {
-		return history, fmt.Errorf("version mismatched: got version %d, want %d", version, encodingVersion)
+	if version != EncodingVersion {
+		return history, fmt.Errorf("version mismatched: got version %d, want %d", version, EncodingVersion)
 	}
 
 	// Read verdicts.
