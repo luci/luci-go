@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"go.chromium.org/luci/common/errors"
 	"go.starlark.net/starlark"
 )
 
@@ -26,13 +27,18 @@ import (
 //
 // If `paths` is empty, expands `.`.
 //
-// Returns the overall list of discovered files.
+// Returns the overall list of absolute paths to discovered files.
 func ExpandDirectories(paths []string) ([]string, error) {
 	if len(paths) == 0 {
 		paths = []string{"."}
 	}
 	var files []string
 	for _, p := range paths {
+		p, err := filepath.Abs(p)
+		if err != nil {
+			return nil, errors.Annotate(err, "could not absolutize %q", p).Err()
+		}
+
 		switch info, err := os.Stat(p); {
 		case err != nil:
 			return nil, err

@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bazelbuild/buildtools/build"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -151,6 +152,20 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 		}
 	}
 
+	entryPath, err := filepath.Abs(filepath.Dir(inputFile))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := base.CheckForBogusConfig(entryPath); err != nil {
+		return nil, err
+	}
+
+	rewriterFactory, err := base.GetRewriterFactory(filepath.Join(entryPath, base.ConfigName))
+	if err != nil {
+		return nil, err
+	}
+
 	// Optionally validate via RPC and apply linters. This is slow, thus off by
 	// default.
 	if gr.validate {
@@ -160,7 +175,15 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 			Output:              output,
 			Meta:                meta,
 			ConfigServiceClient: gr.ConfigServiceClient,
-		}, nil)
+		}, func(path string) (*build.Rewriter, error) {
+			// GetRewriter needs to see absolute paths; In Validate the paths are all
+			// relative to the entrypoint (e.g. main.star) becuase they refer to
+			// Starlark module import paths.
+			//
+			// Adjusting state.Visited above will fail because part of Validate's
+			// functionality needs to retain these relative paths.
+			return rewriterFactory.GetRewriter(filepath.Join(entryPath, path))
+		})
 	}
 	return result, err
 }
