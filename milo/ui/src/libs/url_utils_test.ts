@@ -14,7 +14,7 @@
 
 import { expect } from 'chai';
 
-import { getBuilderURLPath, getTestHisotryURLPath } from './url_utils';
+import { getBuilderURLPath, getTestHistoryURLPath } from './url_utils';
 
 describe('getBuilderURLPath', () => {
   it('should encode the builder', () => {
@@ -25,7 +25,7 @@ describe('getBuilderURLPath', () => {
 
 describe('getTestHisotryURLPath', () => {
   it('should encode the test ID', () => {
-    const url = getTestHisotryURLPath('testproject', 'test/id');
+    const url = getTestHistoryURLPath('testproject', 'test/id');
     expect(url).to.eq('/ui/test/testproject/test%2Fid');
   });
 });

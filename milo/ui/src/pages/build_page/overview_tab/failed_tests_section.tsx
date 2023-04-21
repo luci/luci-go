@@ -16,7 +16,7 @@ import { observer } from 'mobx-react-lite';
 import { Link } from 'react-router-dom';
 
 import { DotSpinner } from '../../../components/dot_spinner';
-import { getBuildURLPath, getTestHisotryURLPath } from '../../../libs/url_utils';
+import { getBuildURLPath, getTestHistoryURLPath } from '../../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { getPropKeyLabel } from '../../../services/resultdb';
 import { useStore } from '../../../store';
@@ -95,9 +95,9 @@ export const FailedTestSection = observer(() => {
           variant={testVariant}
           columnGetters={invState.columnGetters}
           historyUrl={urlSetSearchQueryParam(
-            getTestHisotryURLPath(store.buildPage.build!.data.builder.project, testVariant.testId),
-            'VHASH',
-            testVariant.variantHash
+            getTestHistoryURLPath(store.buildPage.build!.data.builder.project, testVariant.testId),
+            'q',
+            'VHASH:' + testVariant.variantHash
           )}
         />
       );

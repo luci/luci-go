@@ -28,7 +28,7 @@ import { MiloBaseElement } from '../../../components/milo_base';
 import { VARIANT_STATUS_CLASS_MAP } from '../../../libs/constants';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
-import { getTestHisotryURLPath } from '../../../libs/url_utils';
+import { getTestHistoryURLPath } from '../../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { getPropKeyLabel, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
@@ -166,7 +166,7 @@ export class TestVariantsTableElement extends MiloBaseElement {
             .columnGetters=${this.invState.columnGetters}
             .expanded=${this.invState.testVariantCount === 1}
             .historyUrl=${this.project
-              ? urlSetSearchQueryParam(getTestHisotryURLPath(this.project, v.testId), 'VHASH', v.variantHash)
+              ? urlSetSearchQueryParam(getTestHistoryURLPath(this.project, v.testId), 'q', 'VHASH:' + v.variantHash)
               : ''}
           ></milo-test-variant-entry>
         `
