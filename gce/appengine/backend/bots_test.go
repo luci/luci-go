@@ -277,7 +277,7 @@ func TestManageBot(t *testing.T) {
 					So(datastore.Get(c, v), ShouldBeNil)
 				})
 
-				Convey("drained", func() {
+				Convey("drained & new bots", func() {
 					rt.Handler = func(_ any) (int, any) {
 						return http.StatusNotFound, nil
 					}
@@ -287,12 +287,13 @@ func TestManageBot(t *testing.T) {
 						Drained:  true,
 						Hostname: "name",
 						URL:      "url",
+						Created:  time.Now().Unix() - 100,
 					})
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
 					So(err, ShouldBeNil)
-					// For now, won't destroy a instance if it's set to drained but
+					// For now, won't destroy a instance if it's set to drained or newly created but
 					// hasn't connected to swarming yet
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
 				})
