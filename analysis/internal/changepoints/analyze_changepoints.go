@@ -18,6 +18,7 @@ package changepoints
 
 import (
 	"context"
+	"math"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/bayesian"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -127,6 +128,11 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		}
 
 		for i, tv := range filteredTVs {
+			if isOutOfOrderAndShouldBeDiscarded(tvbs[i], payload) {
+				// TODO(nqmtuan): send metric to tsmon.
+				logging.Debugf(ctx, "Out of order verdict in build %d", payload.Build.Id)
+				continue
+			}
 			// "Insert" the new test variant to input buffer.
 			_, err := insertIntoInputBuffer(tvbs[i], tv, payload, duplicateMap)
 			if err != nil {
@@ -145,6 +151,36 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	})
 
 	return err
+}
+
+// isOutOfOrderAndShouldBeDiscarded returns true if the verdict is out-of-order
+// and should be discarded.
+// This function returns false if the verdict is out-of-order but can still be
+// processed.
+// We only keep out-of-order verdict if either condition occurs:
+//   - The verdict commit position falls within the input buffer
+//     (commit position >= smallest start position), or
+//   - There is no finalizing or finalized segment (i.e. the entire known
+//     test history is inside the input buffer)
+func isOutOfOrderAndShouldBeDiscarded(tvb *TestVariantBranch, payload *taskspb.IngestTestResults) bool {
+	// No test variant branch. Should be ok to proceed.
+	if tvb == nil {
+		return false
+	}
+	if len(tvb.FinalizedSegments.GetSegments()) == 0 && tvb.FinalizingSegment == nil {
+		return false
+	}
+	position := payload.Build.Commit.Position
+	hotVerdicts := tvb.InputBuffer.HotBuffer.Verdicts
+	coldVerdicts := tvb.InputBuffer.ColdBuffer.Verdicts
+	minPos := math.MaxInt
+	if len(hotVerdicts) > 0 && minPos > hotVerdicts[0].CommitPosition {
+		minPos = hotVerdicts[0].CommitPosition
+	}
+	if len(coldVerdicts) > 0 && minPos > coldVerdicts[0].CommitPosition {
+		minPos = coldVerdicts[0].CommitPosition
+	}
+	return position < uint32(minPos)
 }
 
 func runChangePointAnalysis(tvb *TestVariantBranch) {

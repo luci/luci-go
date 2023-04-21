@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -172,6 +174,36 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 	})
 }
 
+func TestOutOfOrderVerdict(t *testing.T) {
+	Convey("Out of order verdict", t, func() {
+		payload := samplePayload(10)
+
+		Convey("No test variant branch", func() {
+			So(isOutOfOrderAndShouldBeDiscarded(nil, payload), ShouldBeFalse)
+		})
+
+		Convey("No finalizing or finalized segment", func() {
+			tvb := &TestVariantBranch{}
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+		})
+
+		Convey("Have finalizing segments", func() {
+			tvb := finalizingTvbWithPositions([]int{1}, []int{})
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			tvb = finalizingTvbWithPositions([]int{}, []int{1})
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			tvb = finalizingTvbWithPositions([]int{8, 13}, []int{7, 9})
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{6, 8})
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{10, 16})
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{12, 16})
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeTrue)
+		})
+	})
+}
+
 func countCheckPoint(ctx context.Context) int {
 	// Check that there is one checkpoint created.
 	st := spanner.NewStatement(`
@@ -212,4 +244,23 @@ func samplePayload(commitPosition int) *taskspb.IngestTestResults {
 			},
 		},
 	}
+}
+
+func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *TestVariantBranch {
+	tvb := &TestVariantBranch{
+		FinalizingSegment: &changepointspb.Segment{},
+		InputBuffer:       &inputbuffer.Buffer{},
+	}
+	for _, pos := range hotPositions {
+		tvb.InputBuffer.HotBuffer.Verdicts = append(tvb.InputBuffer.HotBuffer.Verdicts, inputbuffer.PositionVerdict{
+			CommitPosition: pos,
+		})
+	}
+
+	for _, pos := range coldPositions {
+		tvb.InputBuffer.ColdBuffer.Verdicts = append(tvb.InputBuffer.ColdBuffer.Verdicts, inputbuffer.PositionVerdict{
+			CommitPosition: pos,
+		})
+	}
+	return tvb
 }
