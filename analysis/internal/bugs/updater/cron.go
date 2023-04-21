@@ -16,6 +16,7 @@ package updater
 
 import (
 	"context"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -279,6 +280,7 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 		// Catch panics, to avoid panics in one project from affecting
 		// analysis and bug-filing in another.
 		if err := recover(); err != nil {
+			logging.Errorf(ctx, "Caught panic updating bugs for project %s: \n %s", opts.project, string(debug.Stack()))
 			retErr = errors.Reason("caught panic: %v", err).Err()
 		}
 	}()
