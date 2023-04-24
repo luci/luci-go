@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/services/purger"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/internal/services/resultdb"
+	"go.chromium.org/luci/resultdb/internal/services/testmetadataupdator"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -215,9 +216,16 @@ func (t *testApp) initServers(ctx context.Context) error {
 		ForceCronInterval: 100 * time.Millisecond,
 	})
 
+	// Init update testmetadataupdator server.
+	testMetadataUpdatorServer, _, err := t.serverClientPair(ctx, 8050, 8051)
+	if err != nil {
+		return err
+	}
+	testmetadataupdator.InitServer(testMetadataUpdatorServer)
+
 	t.ResultDB = pb.NewResultDBPRPCClient(resultdbPRPCClient)
 	t.Recorder = pb.NewRecorderPRPCClient(recorderPRPCClient)
-	t.servers = []*server.Server{resultdbServer, recorderServer, finalizerServer, purgerServer, deadlineEnforcerServer}
+	t.servers = []*server.Server{resultdbServer, recorderServer, finalizerServer, purgerServer, deadlineEnforcerServer, testMetadataUpdatorServer}
 	return nil
 }
 

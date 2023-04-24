@@ -157,6 +157,21 @@ func Artifact(invID invocations.ID, parentID, artID string, extraValues map[stri
 	return spanutil.InsertMap("Artifacts", values)
 }
 
+// TestMetadata returns a Spanner mutation to insert an testMetadata.
+func TestMetadata(project, testID, subRealm string, refHash []byte, extraValues map[string]any) *spanner.Mutation {
+	values := map[string]any{
+		"Project":  project,
+		"TestId":   testID,
+		"SubRealm": subRealm,
+		"RefHash":  refHash,
+	}
+	if extraValues["LastUpdated"] == nil {
+		values["LastUpdated"] = spanner.CommitTimestamp
+	}
+	updateDict(values, extraValues)
+	return spanutil.InsertMap("TestMetadata", values)
+}
+
 // MakeTestResults creates test results.
 func MakeTestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))

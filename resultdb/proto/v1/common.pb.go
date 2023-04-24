@@ -538,6 +538,146 @@ func (x *TimeRange) GetLatest() *timestamppb.Timestamp {
 	return nil
 }
 
+// Represents a reference in a source control system.
+type SourceRef struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The source control system used.
+	// Only git is supported at this moment. Other source system such as google
+	// storage bucket will be supported in the future.
+	//
+	// Types that are assignable to System:
+	//
+	//	*SourceRef_Git
+	System isSourceRef_System `protobuf_oneof:"system"`
+}
+
+func (x *SourceRef) Reset() {
+	*x = SourceRef{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SourceRef) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SourceRef) ProtoMessage() {}
+
+func (x *SourceRef) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SourceRef.ProtoReflect.Descriptor instead.
+func (*SourceRef) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{7}
+}
+
+func (m *SourceRef) GetSystem() isSourceRef_System {
+	if m != nil {
+		return m.System
+	}
+	return nil
+}
+
+func (x *SourceRef) GetGit() *GitReference {
+	if x, ok := x.GetSystem().(*SourceRef_Git); ok {
+		return x.Git
+	}
+	return nil
+}
+
+type isSourceRef_System interface {
+	isSourceRef_System()
+}
+
+type SourceRef_Git struct {
+	// The git repository and and git reference.
+	Git *GitReference `protobuf:"bytes,1,opt,name=git,proto3,oneof"`
+}
+
+func (*SourceRef_Git) isSourceRef_System() {}
+
+// Represents a branch in a git repository.
+type GitReference struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The following fields identify a git repository
+	Host    string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+	// Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
+	// Not the branch name, use "refs/heads/branch"
+	Ref string `protobuf:"bytes,3,opt,name=ref,proto3" json:"ref,omitempty"`
+}
+
+func (x *GitReference) Reset() {
+	*x = GitReference{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GitReference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitReference) ProtoMessage() {}
+
+func (x *GitReference) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitReference.ProtoReflect.Descriptor instead.
+func (*GitReference) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GitReference) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *GitReference) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *GitReference) GetRef() string {
+	if x != nil {
+		return x.Ref
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_resultdb_proto_v1_common_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc = []byte{
@@ -597,11 +737,21 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc = []byte{
 	0x70, 0x52, 0x08, 0x65, 0x61, 0x72, 0x6c, 0x69, 0x65, 0x73, 0x74, 0x12, 0x32, 0x0a, 0x06, 0x6c,
 	0x61, 0x74, 0x65, 0x73, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f,
 	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69,
-	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x06, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x42,
-	0x31, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
-	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
-	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x06, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x74, 0x22,
+	0x49, 0x0a, 0x09, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x66, 0x12, 0x32, 0x0a, 0x03,
+	0x67, 0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x69, 0x74,
+	0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x48, 0x00, 0x52, 0x03, 0x67, 0x69, 0x74,
+	0x42, 0x08, 0x0a, 0x06, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x22, 0x4e, 0x0a, 0x0c, 0x47, 0x69,
+	0x74, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f,
+	0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12, 0x18,
+	0x0a, 0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x07, 0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x65, 0x66, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x72, 0x65, 0x66, 0x42, 0x31, 0x5a, 0x2f, 0x67, 0x6f,
+	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
+	0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -616,7 +766,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP() []by
 	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_goTypes = []interface{}{
 	(*Variant)(nil),               // 0: luci.resultdb.v1.Variant
 	(*StringPair)(nil),            // 1: luci.resultdb.v1.StringPair
@@ -625,20 +775,23 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_goTypes = []interfa
 	(*CommitPosition)(nil),        // 4: luci.resultdb.v1.CommitPosition
 	(*CommitPositionRange)(nil),   // 5: luci.resultdb.v1.CommitPositionRange
 	(*TimeRange)(nil),             // 6: luci.resultdb.v1.TimeRange
-	nil,                           // 7: luci.resultdb.v1.Variant.DefEntry
-	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
+	(*SourceRef)(nil),             // 7: luci.resultdb.v1.SourceRef
+	(*GitReference)(nil),          // 8: luci.resultdb.v1.GitReference
+	nil,                           // 9: luci.resultdb.v1.Variant.DefEntry
+	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_depIdxs = []int32{
-	7, // 0: luci.resultdb.v1.Variant.def:type_name -> luci.resultdb.v1.Variant.DefEntry
-	4, // 1: luci.resultdb.v1.CommitPositionRange.earliest:type_name -> luci.resultdb.v1.CommitPosition
-	4, // 2: luci.resultdb.v1.CommitPositionRange.latest:type_name -> luci.resultdb.v1.CommitPosition
-	8, // 3: luci.resultdb.v1.TimeRange.earliest:type_name -> google.protobuf.Timestamp
-	8, // 4: luci.resultdb.v1.TimeRange.latest:type_name -> google.protobuf.Timestamp
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	9,  // 0: luci.resultdb.v1.Variant.def:type_name -> luci.resultdb.v1.Variant.DefEntry
+	4,  // 1: luci.resultdb.v1.CommitPositionRange.earliest:type_name -> luci.resultdb.v1.CommitPosition
+	4,  // 2: luci.resultdb.v1.CommitPositionRange.latest:type_name -> luci.resultdb.v1.CommitPosition
+	10, // 3: luci.resultdb.v1.TimeRange.earliest:type_name -> google.protobuf.Timestamp
+	10, // 4: luci.resultdb.v1.TimeRange.latest:type_name -> google.protobuf.Timestamp
+	8,  // 5: luci.resultdb.v1.SourceRef.git:type_name -> luci.resultdb.v1.GitReference
+	6,  // [6:6] is the sub-list for method output_type
+	6,  // [6:6] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() }
@@ -731,6 +884,33 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SourceRef); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GitReference); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+	}
+	file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes[7].OneofWrappers = []interface{}{
+		(*SourceRef_Git)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -738,7 +918,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

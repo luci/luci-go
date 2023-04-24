@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"regexp"
 	"sort"
@@ -231,4 +232,15 @@ func SortGerritChanges(changes []*pb.GerritChange) {
 		}
 		return changes[i].Patchset < changes[j].Patchset
 	})
+}
+
+// RefHash returns a short hash of the sourceRef.
+func RefHash(sr *pb.SourceRef) []byte {
+	var result [32]byte
+	switch sr.System.(type) {
+	case *pb.SourceRef_Git:
+		git := sr.GetGit()
+		result = sha256.Sum256([]byte("git" + "\n" + git.Host + "\n" + git.Project + "\n" + git.Ref))
+	}
+	return result[:8]
 }

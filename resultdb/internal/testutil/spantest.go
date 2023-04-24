@@ -220,6 +220,7 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 	_, err := client.Apply(ctx, []*spanner.Mutation{
 		// Tables that are not interleaved in Invocations table.
 		spanner.Delete("TQReminders", spanner.AllKeys()),
+		spanner.Delete("TestMetadata", spanner.AllKeys()),
 
 		// All other tables are interleaved in Invocations table.
 		spanner.Delete("Invocations", spanner.AllKeys()),

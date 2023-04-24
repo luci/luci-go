@@ -316,3 +316,42 @@ CREATE TABLE TestResultCounts (
   TestResultCount INT64,
 ) PRIMARY KEY (InvocationId, ShardId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Stores per-test test metadata. See test_metadata_row.proto.
+CREATE TABLE TestMetadata (
+  -- The LUCI project in which the test was observed.
+  Project STRING(40) NOT NULL,
+
+  -- Unique identifier of the test,
+  -- see also TestResult.test_id in test_result.proto.
+  TestId STRING(MAX) NOT NULL,
+
+  -- Hash of the reference which specifies where the code changes come from.
+  -- For example, for git, using the following formula
+  -- ([:8] indicates truncation to 8 bytes).
+  -- SHA256("git" + "\n" +  hostname + "\n" + project + "\n"  + ref)[:8]
+  RefHash BYTES(8) NOT NULL,
+
+  -- The realm of the test result from which the variant was observed, excluding
+  -- project. 62 as ResultDB allows at most 64 characters for the construction
+  -- "<project>:<realm>" and project must be at least one character.
+  SubRealm STRING(62) NOT NULL,
+
+  -- The Spanner commit time the row last last updated.
+  LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+
+  -- Compressed metadata for the test case.
+  -- For example original test name, test location, etc.
+  -- See resultdb.v1.TestMetadata for details.
+  TestMetadata BYTES(MAX),
+
+  -- Compressed source control reference.
+  -- This is used to compute the RefHash.
+  -- See resultdb.v1.SourceRef for details.
+  SourceRef BYTES(MAX),
+
+   -- Commit position of the test result which updated the test metadata last time.
+   -- Position is always positive.
+   Position INT64 NOT NULL,
+) PRIMARY KEY (Project, TestId, RefHash, SubRealm),
+  ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 90 DAY));

@@ -39,3 +39,7 @@ message ExportInvocationArtifactsToBQ {
   string invocation_id = 1;
   luci.resultdb.v1.BigQueryExport bq_export = 2;
 }
+
+message UpdateTestMetadata {
+  string invocation_id = 1;
+}

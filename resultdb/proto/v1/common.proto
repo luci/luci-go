@@ -138,3 +138,26 @@ message TimeRange {
   // Include only timestamps that are strictly older than this.
   google.protobuf.Timestamp latest = 2;
 }
+
+
+// Represents a reference in a source control system.
+message SourceRef {
+  // The source control system used.
+  // Only git is supported at this moment. Other source system such as google
+  // storage bucket will be supported in the future.
+  oneof system {
+    // The git repository and and git reference.
+    GitReference git = 1;
+  }
+}
+
+// Represents a branch in a git repository.
+message GitReference {
+  // The following fields identify a git repository
+  string host = 1;
+  string project = 2;
+
+  // Commit ref, e.g. "refs/heads/main" from which the commit was fetched.
+  // Not the branch name, use "refs/heads/branch"
+  string ref = 3;
+}
