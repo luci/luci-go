@@ -20,7 +20,7 @@ option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
-import "go.chromium.org/luci/analysis/proto/v1/changelist.proto";
+import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
 
 // Provides methods to obtain statistics about test variants.
 service TestVariants {

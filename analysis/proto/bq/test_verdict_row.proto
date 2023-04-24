@@ -1,0 +1,270 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
+import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
+import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+// Represents a test verdict exported to BigQuery.
+//
+// A test verdict summarises the results for a test variant
+// (a way of running a test) in an invocation (a container of test
+// results, such as a build).
+//
+// BigQuery tables using this schema will use the following settings:
+// - Partition by TIMESTAMP_TRUNC(partition_time, DAY),
+//   retain data for 540 days.
+// - Cluster by project, test_id.
+//
+// NextId: 15
+message TestVerdictRow {
+  // The LUCI Project. E.g. "chromium".
+  string project = 1;
+
+  // Is a unique identifier of the test in a LUCI project.
+  // Refer to TestResult.test_id for details.
+  string test_id = 2;
+
+  // Describes one specific way of running the test,
+  // e.g. a specific bucket, builder and a test suite.
+  // Encoded as a JSON blob which contains a set of string
+  // key-value pairs.
+  // The use of JSON here means the query will only be billed
+  // for the variant keys it reads.
+  google.protobuf.Struct variant = 3 [(bqschema.options).bq_type = "JSON"];
+
+  // A hash of the variant, encoded as lowercase hexadecimal characters.
+  // The computation is an implementation detail of ResultDB.
+  string variant_hash = 4;
+
+  message InvocationRecord {
+    // The ID of the invocation.
+    string id = 1;
+
+    // Tags represents Invocation-level string key-value pairs.
+    // A key can be repeated.
+    repeated luci.analysis.v1.StringPair tags = 2;
+
+    // The LUCI Realm the invocation exists under.
+    // For example, "chromium:try".
+    string realm = 3;
+
+    // Arbitrary JSON object that contains structured, domain-specific properties
+    // of the invocation.
+    google.protobuf.Struct properties = 4 [(bqschema.options).bq_type = "JSON"];
+  }
+
+  // Invocation is the ResultDB invocation.
+  //
+  // This the top-level invocation for the test results of the verdict;
+  // individual test results may not have been directly uploaded to
+  // this invocation, but rather its included invocations. For example,
+  // the top-level invocation may be a build, which includes multiple
+  // invocations for swarming tasks within that build. The test results
+  // that form part of this verdict may actually have been uploaded to
+  // the invocations of those swarming tasks.
+  InvocationRecord invocation = 5;
+
+  // Partition_time is used to partition the table.
+  // It is the time when exported invocation was created in Spanner.
+  // Note: it is NOT the time when the row is inserted into BigQuery table.
+  // https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
+  // mentions "The partitioning column must be a top-level field."
+  // So we keep this column here instead of adding the CreateTime to InvocationRecord.
+  google.protobuf.Timestamp partition_time = 6;
+
+  // Status of the test verdict. E.g. EXPECTED, UNEXPECTED, FLAKY,
+  // UNEXPECTEDLY_SKIPPED, EXONERATED.
+  luci.analysis.v1.TestVerdictStatus status = 7;
+
+  message TestResult {
+    // Parent contains info of the result's immediate parent invocation.
+    //
+    // The implementation of this field is deferred until a later date,
+    // as it will require additional plumbing from ResultDB.
+    // InvocationRecord parent = 1;
+    reserved 1;
+
+    // Identifies a test result in a given invocation and test id.
+    string result_id = 2;
+
+    // Expected is a flag indicating whether the result of test case execution is
+    // expected. Refer to TestResult.Expected for details.
+    bool expected = 3;
+
+    // Status of the test result.
+    luci.analysis.v1.TestResultStatus status = 4;
+
+    // A human-readable explanation of the result, in HTML.
+    // MUST be sanitized before rendering in the browser.
+    string summary_html = 5;
+
+    // The point in time when the test case started to execute.
+    google.protobuf.Timestamp start_time = 6;
+
+    // Duration of the test case execution in seconds.
+    google.protobuf.Duration duration = 7;
+
+    // Tags contains metadata for this test result.
+    // It might describe this particular execution or the test case.
+    repeated luci.analysis.v1.StringPair tags = 8;
+
+    // Information about failed tests.
+    // e.g. the assertion failure message.
+    luci.analysis.v1.FailureReason failure_reason = 9;
+
+    // Arbitrary JSON object that contains structured, domain-specific properties
+    // of the test result.
+    google.protobuf.Struct properties = 10 [(bqschema.options).bq_type = "JSON"];
+  }
+
+  // The test results that are part of the verdict. Usually there is
+  // only one test result per verdict, but in case of retries there
+  // may be more.
+  repeated TestResult results = 8;
+
+  message Exoneration {
+    // Reasoning behind exoneration, in HTML.
+    // MUST be sanitized before rendering in the browser.
+    string explanation_html = 1;
+
+    // Reasoning behind the exoneration, in machine-readable form.
+    luci.analysis.v1.ExonerationReason reason = 2;
+  }
+
+  // The exoneration(s) recorded against the verdict.
+  //
+  // To determine if a verdict has an exoneration at all in a query,
+  // use `ARRAY_LENGTH(exonerations) > 0`.
+  repeated Exoneration exonerations = 9;
+
+  message Counts {
+    // The total number of unexpected test results in the verdict.
+    int64 unexpected = 1;
+
+    // The total number of test results in the verdict.
+    int64 total = 2;
+
+    // The total number of unexpected test results in the verdict
+    // that are not skips.
+    int64 unexpected_non_skipped = 3;
+
+    // The total number of unexpected test results in the verdict
+    // that are not skips or passes.
+    int64 unexpected_non_skipped_or_passed = 4;
+
+    // The total number of test results in the verdict that
+    // are not skips.
+    int64 total_non_skipped = 5;
+  }
+
+  // Statistics about the test results that are part of the verdict.
+  Counts counts = 10;
+
+  // Information about the buildbucket build which contained the test result.
+  message BuildbucketBuild {
+    // The identifier of the buildbucket build.
+    int64 id = 1;
+
+    message Builder {
+      // The LUCI Project ID.
+      string project = 1;
+
+      // The build bucket, e.g. "try". Unique within project.
+      string bucket = 2;
+
+      // The builder name, e.g. "linux-rel". Unique within bucket.
+      string builder = 3;
+    }
+
+    // The builder the build belongs to.
+    Builder builder = 2;
+
+    // The status of the build that contained this test result. Can be used
+    // to filter incomplete results (e.g. where build was cancelled or had
+    // an infra failure). Can also be used to filter builds with incomplete
+    // exonerations (e.g. build succeeded but some tests not exonerated).
+    //
+    // Notionally luci.analysis.v1.BuildStatus, but string so that we can chop
+    // off the BUILD_STATUS_ prefix that would otherwise appear on every value.
+    string status = 3;
+
+    // Whether the build was critical to a presubmit run succeeding.
+    // If the build did not relate presubmit run (i.e. because it was a tryjob
+    // for a presubmit run), this is false.
+    // Note that false can mean two things (the build is not critical
+    // or because the build was not part of a presubmit run).
+    // You can identify which of these cases applies by
+    // checking if presubmit_run is populated.
+    bool critical = 4;
+
+    // The gardener rotations which monitor this build.
+    repeated string gardener_rotations = 5;
+  }
+
+  // The buildbucket build the results were collected as part of, if any.
+  BuildbucketBuild buildbucket_build = 11;
+
+  // Information about the LUCI Change Verifier run which the test result
+  // was a part of, if any.
+  message ChangeVerifierRun {
+    // Identity of the change verifier run that contains this test result.
+    // This should be unique per "CQ+1"/"CQ+2" attempt on gerrit.
+    //
+    // All test results for the same presubmit run will have one
+    // partition_time.
+    //
+    // The format of this value is:
+    // "{LUCI_PROJECT}/{LUCI_CV_ID}", e.g.
+    // "infra/8988819463854-1-f94732fe20056fd1".
+    string id = 1;
+
+    // The mode of the presubmit run (if any).
+    // E.g. DRY_RUN, FULL_RUN, QUICK_DRY_RUN.
+    luci.analysis.v1.PresubmitRunMode mode = 2;
+
+    // The presubmit run's ending status.
+    // Notionally luci.analysis.v1.PresubmitRunStatus, but string so that
+    // we can chop off the "PRESUBMIT_RUN_STATUS_" prefix and have
+    // only the status, e.g. SUCCESS, FAILURE, CANCELED.
+    string status = 3;
+  }
+
+  // The original presubmit run the results were collected as part of, if any.
+  ChangeVerifierRun change_verifier_run = 12;
+
+  // The code sources tested. Obtained from one of the verdict's test results.
+  // If the invocation which contained the test result
+  // specified that code sources directly, this is those sources.
+  // If the code sources were marked as are inherited from the including
+  // invocation, this is the resolved code sources (if they could be resolved).
+  // Unset otherwise.
+  luci.analysis.v1.Sources sources = 13;
+
+  // Metadata of the test case,
+  // e.g. the original test name and test location.
+  luci.analysis.v1.TestMetadata test_metadata = 14;
+}
