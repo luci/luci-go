@@ -38,7 +38,7 @@ end
 
 KEYS = {"account_key~account_name", "policy_key"}
 
-cmsgpack = require 'lua-MessagePack/MessagePack'
+cmsgpack = require 'luamsgpack/MessagePack'
 
 PB = loadfile('../../../quotapb/quotapb.lua')()
 

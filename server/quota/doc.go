@@ -429,4 +429,12 @@
 // This encoding form intends to preserve protobuf's backwards compatibility
 // semantics, which (hopefully) will make forward schema migrations easy to
 // implement without requiring total cache eviction.
+//
+// # Implementation notes - Debugging lua code
+//
+// I don't have any great strategy for this, but I did add a `DUMP` global
+// function which is available in both `internal/luatest` as well as
+// `quotatestmonkeypatch`. This will dump (print) all arguments, and will
+// serialize any tables given to it with `cjson.encode`, which is usually good
+// enough for quick debugging.
 package quota
