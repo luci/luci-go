@@ -103,7 +103,7 @@ type LogStreamState struct {
 	// ArchivedTime is the Coordinator's record of when this log stream was
 	// archived. If this is non-zero, it means that the log entry has been
 	// archived.
-	ArchivedTime time.Time
+	ArchivedTime time.Time `gae:",noindex"`
 	// ArchiveLogEntryCount is the number of LogEntry records that were archived
 	// for this log stream.
 	//
