@@ -254,7 +254,7 @@ func (c *cipdSubcommand) writeJSONOutput(result any, err error) error {
 		Error        string           `json:"error,omitempty"`         // human-readable message
 		ErrorCode    cipderr.Code     `json:"error_code,omitempty"`    // error code enum, omitted on success
 		ErrorDetails *cipderr.Details `json:"error_details,omitempty"` // structured error details
-		Result       any      `json:"result,omitempty"`
+		Result       any              `json:"result,omitempty"`
 	}
 	if err != nil {
 		body.Error = err.Error()
@@ -2233,6 +2233,51 @@ func (c *setMetadataRun) Run(a subcommands.Application, args []string, env subco
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'expand-package-name' subcommand.
+
+func cmdExpandPackageName(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "expand-package-name",
+		ShortDesc: "replaces any placeholder variables in the given package name",
+		LongDesc: "Replaces any placeholder variables in the given package " +
+			"name.\n If supplying a name using the feature ${var=possible,values} " +
+			"an error will be returned if the expansion does not match the current" +
+			"variable state.",
+		Advanced: true,
+		CommandRun: func() subcommands.CommandRun {
+			c := &expandPackageNameRun{}
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
+			return c
+		},
+	}
+}
+
+type expandPackageNameRun struct {
+	cipdSubcommand
+	clientOptions
+}
+
+func (c *expandPackageNameRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 1) {
+		return 1
+	}
+
+	if len(args) == 1 {
+		path, err := expandTemplate(args[0])
+		if err != nil {
+			return c.done(nil, err)
+		}
+
+		fmt.Println(path)
+
+		return c.done(path, nil)
+	}
+
+	return c.done("", makeCLIError("one package name must be supplied: %v", args))
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // 'ls' subcommand.
 
 func cmdListPackages(params Parameters) *subcommands.Command {
@@ -3580,6 +3625,7 @@ func GetApplication(params Parameters) *cli.Application {
 
 			// Low level misc commands.
 			{Advanced: true},
+			cmdExpandPackageName(params),
 			cmdPuppetCheckUpdates(params),
 		},
 	}
