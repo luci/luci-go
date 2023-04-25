@@ -28,7 +28,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -85,11 +84,11 @@ func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedClient 
 }
 
 // RunTask Mocks the RunTask RPC.
-func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
 	if taskReq.Target == "fail_me" {
 		return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
 	}
-	return new(emptypb.Empty), nil
+	return &pb.RunTaskResponse{Task: &pb.Task{Id: &pb.TaskID{Id: "1", Target: taskReq.Target}}}, nil
 }
 
 // useTaskBackendClientForTesting specifies that the given test double shall be used

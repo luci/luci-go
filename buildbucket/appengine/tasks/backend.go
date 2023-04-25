@@ -29,7 +29,6 @@ import (
 	grpc "google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -101,7 +100,7 @@ type BackendClient struct {
 }
 
 type TaskBackendClient interface {
-	RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error)
 }
 
 func createRawPrpcClient(ctx context.Context, host, project string) (client *prpc.Client, err error) {
@@ -144,7 +143,7 @@ func NewBackendClient(ctx context.Context, bld *pb.Build, infra *pb.BuildInfra) 
 }
 
 // RunTask returns for the requested task.
-func (c *BackendClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *BackendClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest, opts ...grpc.CallOption) (*pb.RunTaskResponse, error) {
 	return c.client.RunTask(ctx, taskReq)
 }
 

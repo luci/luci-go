@@ -11,7 +11,6 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
-import "google/protobuf/empty.proto";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/launcher.proto";
@@ -32,7 +31,7 @@ service TaskBackend {
   // below).
   //
   // Buildbucket will invoke this RPC with the Project-scoped identity.
-  rpc RunTask(RunTaskRequest) returns (google.protobuf.Empty) {};
+  rpc RunTask(RunTaskRequest) returns (RunTaskResponse) {};
 
   // BB will call FetchTasks when it needs to understand the current
   // status of jobs.
@@ -227,6 +226,11 @@ message RunTaskRequest {
   // See the "RunTask Protocol" section for the full details on how
   // Buildbucket will avoid raciness even in the face of duplicate tasks.
   string request_id = 16;
+}
+
+message RunTaskResponse {
+  // The backend task created by RunTask.
+  Task task = 1;
 }
 
 message FetchTasksRequest {
