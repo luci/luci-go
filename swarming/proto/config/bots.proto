@@ -182,6 +182,11 @@ message BotGroup {
     //
     // Useful to exclude problematic bots from the RBE mode.
     repeated string disable_rbe_on = 3;
+    // If true, check the Swarming scheduler queue before switching to RBE mode.
+    //
+    // This can be used to gracefully "drain" Swarming scheduler queue before
+    // starting consuming tasks from the RBE queue.
+    bool hybrid_mode = 4;
   }
   RBEMigration rbe_migration = 28;
 }

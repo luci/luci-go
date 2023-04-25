@@ -453,11 +453,11 @@ type TasksClient interface {
 	// ListTasks returns full task results based on the filters.
 	// This endpoint is significantly slower than 'count'. Use 'count' when
 	// possible. If you just want the state of tasks, use 'get_states'.
-	ListTasks(ctx context.Context, in *TasksRequest, opts ...grpc.CallOption) (*TaskListResponse, error)
+	ListTasks(ctx context.Context, in *TasksWithPerfRequest, opts ...grpc.CallOption) (*TaskListResponse, error)
 	// ListTaskStates returns task state for a specific set of tasks."""
 	ListTaskStates(ctx context.Context, in *TaskStatesRequest, opts ...grpc.CallOption) (*TaskStates, error)
 	// GetTaskRequests returns the task request corresponding to a task ID.
-	GetTaskRequests(ctx context.Context, in *TasksRequest, opts ...grpc.CallOption) (*TaskRequestsResponse, error)
+	ListTaskRequests(ctx context.Context, in *TasksRequest, opts ...grpc.CallOption) (*TaskRequestsResponse, error)
 	// CancelTasks cancels a subset of pending tasks based on the tags.
 	// Cancellation happens asynchronously, so when this call returns,
 	// cancellations will not have completed yet.
@@ -519,7 +519,7 @@ func (c *tasksClient) NewTask(ctx context.Context, in *NewTaskRequest, opts ...g
 	return out, nil
 }
 
-func (c *tasksClient) ListTasks(ctx context.Context, in *TasksRequest, opts ...grpc.CallOption) (*TaskListResponse, error) {
+func (c *tasksClient) ListTasks(ctx context.Context, in *TasksWithPerfRequest, opts ...grpc.CallOption) (*TaskListResponse, error) {
 	out := new(TaskListResponse)
 	err := c.cc.Invoke(ctx, "/swarming.v2.Tasks/ListTasks", in, out, opts...)
 	if err != nil {
@@ -537,9 +537,9 @@ func (c *tasksClient) ListTaskStates(ctx context.Context, in *TaskStatesRequest,
 	return out, nil
 }
 
-func (c *tasksClient) GetTaskRequests(ctx context.Context, in *TasksRequest, opts ...grpc.CallOption) (*TaskRequestsResponse, error) {
+func (c *tasksClient) ListTaskRequests(ctx context.Context, in *TasksRequest, opts ...grpc.CallOption) (*TaskRequestsResponse, error) {
 	out := new(TaskRequestsResponse)
-	err := c.cc.Invoke(ctx, "/swarming.v2.Tasks/GetTaskRequests", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/swarming.v2.Tasks/ListTaskRequests", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -588,11 +588,11 @@ type TasksServer interface {
 	// ListTasks returns full task results based on the filters.
 	// This endpoint is significantly slower than 'count'. Use 'count' when
 	// possible. If you just want the state of tasks, use 'get_states'.
-	ListTasks(context.Context, *TasksRequest) (*TaskListResponse, error)
+	ListTasks(context.Context, *TasksWithPerfRequest) (*TaskListResponse, error)
 	// ListTaskStates returns task state for a specific set of tasks."""
 	ListTaskStates(context.Context, *TaskStatesRequest) (*TaskStates, error)
 	// GetTaskRequests returns the task request corresponding to a task ID.
-	GetTaskRequests(context.Context, *TasksRequest) (*TaskRequestsResponse, error)
+	ListTaskRequests(context.Context, *TasksRequest) (*TaskRequestsResponse, error)
 	// CancelTasks cancels a subset of pending tasks based on the tags.
 	// Cancellation happens asynchronously, so when this call returns,
 	// cancellations will not have completed yet.
@@ -621,14 +621,14 @@ func (UnimplementedTasksServer) GetStdout(context.Context, *TaskIdWithOffsetRequ
 func (UnimplementedTasksServer) NewTask(context.Context, *NewTaskRequest) (*TaskRequestMetadataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewTask not implemented")
 }
-func (UnimplementedTasksServer) ListTasks(context.Context, *TasksRequest) (*TaskListResponse, error) {
+func (UnimplementedTasksServer) ListTasks(context.Context, *TasksWithPerfRequest) (*TaskListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTasks not implemented")
 }
 func (UnimplementedTasksServer) ListTaskStates(context.Context, *TaskStatesRequest) (*TaskStates, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTaskStates not implemented")
 }
-func (UnimplementedTasksServer) GetTaskRequests(context.Context, *TasksRequest) (*TaskRequestsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTaskRequests not implemented")
+func (UnimplementedTasksServer) ListTaskRequests(context.Context, *TasksRequest) (*TaskRequestsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTaskRequests not implemented")
 }
 func (UnimplementedTasksServer) CancelTasks(context.Context, *TasksCancelRequest) (*TasksCancelResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelTasks not implemented")
@@ -740,7 +740,7 @@ func _Tasks_NewTask_Handler(srv interface{}, ctx context.Context, dec func(inter
 }
 
 func _Tasks_ListTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TasksRequest)
+	in := new(TasksWithPerfRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -752,7 +752,7 @@ func _Tasks_ListTasks_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/swarming.v2.Tasks/ListTasks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TasksServer).ListTasks(ctx, req.(*TasksRequest))
+		return srv.(TasksServer).ListTasks(ctx, req.(*TasksWithPerfRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -775,20 +775,20 @@ func _Tasks_ListTaskStates_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Tasks_GetTaskRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Tasks_ListTaskRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TasksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TasksServer).GetTaskRequests(ctx, in)
+		return srv.(TasksServer).ListTaskRequests(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/swarming.v2.Tasks/GetTaskRequests",
+		FullMethod: "/swarming.v2.Tasks/ListTaskRequests",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TasksServer).GetTaskRequests(ctx, req.(*TasksRequest))
+		return srv.(TasksServer).ListTaskRequests(ctx, req.(*TasksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -865,8 +865,8 @@ var Tasks_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Tasks_ListTaskStates_Handler,
 		},
 		{
-			MethodName: "GetTaskRequests",
-			Handler:    _Tasks_GetTaskRequests_Handler,
+			MethodName: "ListTaskRequests",
+			Handler:    _Tasks_ListTaskRequests_Handler,
 		},
 		{
 			MethodName: "CancelTasks",

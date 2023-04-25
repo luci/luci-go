@@ -80,11 +80,11 @@ service Tasks {
   // ListTasks returns full task results based on the filters.
   // This endpoint is significantly slower than 'count'. Use 'count' when
   // possible. If you just want the state of tasks, use 'get_states'.
-  rpc ListTasks(TasksRequest) returns (TaskListResponse);
+  rpc ListTasks(TasksWithPerfRequest) returns (TaskListResponse);
   // ListTaskStates returns task state for a specific set of tasks."""
   rpc ListTaskStates(TaskStatesRequest) returns (TaskStates);
   // GetTaskRequests returns the task request corresponding to a task ID.
-  rpc GetTaskRequests(TasksRequest) returns (TaskRequestsResponse);
+  rpc ListTaskRequests(TasksRequest) returns (TaskRequestsResponse);
   // CancelTasks cancels a subset of pending tasks based on the tags.
   // Cancellation happens asynchronously, so when this call returns,
   // cancellations will not have completed yet.
@@ -929,7 +929,7 @@ message TaskRequestMetadataResponse {
 message TaskQueue {
   // Must be a list of 'key:value' strings to filter the returned list of bots
   // on.
-  repeated string dimensions = 1;
+  repeated StringPair dimensions = 1;
   google.protobuf.Timestamp valid_until_ts = 2;
 }
 
@@ -1063,7 +1063,7 @@ message BotsRequest {
 }
 
 message BotsCountRequest {
-  repeated string dimensions = 1;
+  repeated StringPair dimensions = 1;
 }
 
 message BotsDimensionsRequest {
@@ -1080,7 +1080,7 @@ message TaskStatesRequest {
   repeated string task_id = 1;
 }
 
-message TasksRequest {
+message TasksWithPerfRequest {
   int32 limit = 1;
   string cursor = 2;
   // These were floats in the legacy protorpc api
@@ -1090,6 +1090,17 @@ message TasksRequest {
   SortQuery sort = 6;
   repeated string tags = 7;
   bool include_performance_stats = 8;
+}
+
+message TasksRequest {
+  int32 limit = 1;
+  string cursor = 2;
+  // These were floats in the legacy protorpc api
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+  StateQuery state = 5;
+  SortQuery sort = 6;
+  repeated string tags = 7;
 }
 
 message TasksCountRequest {
