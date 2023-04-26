@@ -147,7 +147,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(invocations, ShouldResemble, []string{"finalizing1", "finalizing2"})
 		})
 
-		Convey(`Enqueues a finalization notification`, func() {
+		Convey(`Enqueues a finalization notification and update test metadata tasks`, func() {
 			testutil.MustApply(ctx,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]any{
 					"Realm": "myproject:myrealm",
@@ -157,9 +157,12 @@ func TestFinalizeInvocation(t *testing.T) {
 			err := finalizeInvocation(ctx, "x")
 			So(err, ShouldBeNil)
 
+			So(sched.Tasks().Payloads(), ShouldHaveLength, 2)
+			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.UpdateTestMetadata{
+				InvocationId: "x",
+			})
 			// Enqueued pub/sub notification.
-			So(sched.Tasks().Payloads(), ShouldHaveLength, 1)
-			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
+			So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
 				Message: &pb.InvocationFinalizedNotification{
 					Invocation: "invocations/x",
 					Realm:      "myproject:myrealm",

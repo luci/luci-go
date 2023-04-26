@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/services/bqexporter"
+	"go.chromium.org/luci/resultdb/internal/services/testmetadataupdator"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -276,6 +277,11 @@ func finalizeInvocation(ctx context.Context, invID invocations.ID) error {
 					Realm:      realm,
 				}
 				tasks.NotifyInvocationFinalized(ctx, notification)
+
+				// Enqueue update test metadata task transactionally.
+				if err := testmetadataupdator.Schedule(ctx, invID); err != nil {
+					return err
+				}
 
 				// Enqueue BigQuery exports transactionally.
 				return bqexporter.Schedule(ctx, invID)
