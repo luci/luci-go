@@ -57,6 +57,8 @@ func TestHandleBuild(t *testing.T) {
 
 		Convey(`With vanilla build`, func() {
 			Convey(`Vanilla CI Build`, func() {
+				build = build.WithGardenerRotations([]string{"rotation1", "rotation2"})
+
 				// Process build.
 				So(ingestBuild(ctx, build), ShouldBeNil)
 

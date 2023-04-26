@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strings"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -185,6 +186,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 		Id:                   buildID,
 		Host:                 bbHost,
 		Project:              project,
+		Bucket:               build.Builder.Bucket,
 		Builder:              build.Builder.Builder,
 		Status:               buildStatus,
 		Changelists:          changelists,
@@ -192,6 +194,7 @@ func JoinBuild(ctx context.Context, bbHost, project string, buildID int64) (proc
 		HasInvocation:        hasInvocation,
 		ResultdbHost:         build.GetInfra().GetResultdb().Hostname,
 		IsIncludedByAncestor: isIncludedByAncestor,
+		GardenerRotations:    gardenerRotations(build.Input.GetProperties()),
 	}
 	if err := JoinBuildResult(ctx, id, project, isPresubmit, hasInvocation, result); err != nil {
 		return false, errors.Annotate(err, "joining build result").Err()
@@ -322,6 +325,33 @@ func retrieveChangelistOwnerKind(ctx context.Context, luciProject string, change
 		return pb.ChangelistOwnerKind_HUMAN, nil
 	}
 	return pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED, nil
+}
+
+// gardenerRotations extracts the gardener rotations monitoring
+// a buildbucket build. This is obtained from the sheriff_rotations
+// build input property.
+func gardenerRotations(buildInputProperties *structpb.Struct) []string {
+	if buildInputProperties.GetFields() == nil {
+		return nil
+	}
+	field := buildInputProperties.Fields["sheriff_rotations"]
+	if field == nil {
+		return nil
+	}
+	listValue := field.GetListValue()
+	if listValue == nil {
+		return nil
+	}
+	var rotations []string
+	for _, value := range listValue.Values {
+		rotation := value.GetStringValue()
+		if rotation != "" {
+			rotations = append(rotations, rotation)
+		}
+		// Ignore sheriff_rotation entries which are not strings.
+		// This should not happen anyway.
+	}
+	return rotations
 }
 
 // sortChangelists sorts a slice of changelists to be in ascending

@@ -26,6 +26,7 @@ import (
 	cvv0 "go.chromium.org/luci/cv/api/v0"
 	cvv1 "go.chromium.org/luci/cv/api/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/buildbucket"
@@ -117,6 +118,7 @@ type buildBuilder struct {
 	createTime          time.Time
 	ancestorIDs         []int64
 	containedByAncestor bool
+	gardenerRotations   []string
 }
 
 func newBuildBuilder(buildID int64) *buildBuilder {
@@ -151,6 +153,11 @@ func (b *buildBuilder) WithContainedByAncestor(contained bool) *buildBuilder {
 	return b
 }
 
+func (b *buildBuilder) WithGardenerRotations(rotations []string) *buildBuilder {
+	b.gardenerRotations = rotations
+	return b
+}
+
 func (b *buildBuilder) BuildProto() *bbpb.Build {
 	rdb := &bbpb.BuildInfra_ResultDB{}
 	if b.hasInvocation {
@@ -165,6 +172,19 @@ func (b *buildBuilder) BuildProto() *bbpb.Build {
 			Value: vals[1],
 		})
 	}
+	inputProperties := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value),
+	}
+	if len(b.gardenerRotations) > 0 {
+		// Prepare build input properties like:
+		// "sheriff_rotations": ["rotation1", "rotation2"].
+		rotationsField := &structpb.ListValue{}
+		for _, rotation := range b.gardenerRotations {
+			rotationsField.Values = append(rotationsField.Values, structpb.NewStringValue(rotation))
+		}
+		inputProperties.Fields["sheriff_rotations"] = structpb.NewListValue(rotationsField)
+	}
+
 	return &bbpb.Build{
 		Builder: &bbpb.BuilderID{
 			Project: "buildproject",
@@ -247,6 +267,7 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 		Id:           b.buildID,
 		CreationTime: timestamppb.New(b.createTime),
 		Project:      "buildproject",
+		Bucket:       "bucket",
 		Builder:      "builder",
 		Status:       pb.BuildStatus_BUILD_STATUS_SUCCESS,
 		Changelists: []*pb.Changelist{
@@ -279,6 +300,7 @@ func (b *buildBuilder) ExpectedResult() *controlpb.BuildResult {
 		HasInvocation:        b.hasInvocation,
 		ResultdbHost:         rdbHost,
 		IsIncludedByAncestor: b.containedByAncestor,
+		GardenerRotations:    b.gardenerRotations,
 	}
 }
 
