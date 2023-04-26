@@ -162,17 +162,28 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 
 	var responses []bugs.BugUpdateResponse
 
-	for i, request := range requests {
-		issue := issues[i]
-		if issue == nil {
-			// The bug does not exist, or is in a different monorail project
-			// to the monorail project configured for this project. Take
-			// no action.
+	issuesByID := make(map[int64]*issuetracker.Issue)
+
+	for _, fetchedIssue := range issues {
+		issuesByID[fetchedIssue.IssueId] = fetchedIssue
+	}
+
+	for _, request := range requests {
+		id, err := strconv.ParseInt(request.Bug.ID, 10, 64)
+		if err != nil {
+			return nil, errors.Annotate(err, "convert bug id to int").Err()
+		}
+		issue, ok := issuesByID[id]
+		if !ok {
+			// The bug does not exist, or is in a different buganizer project
+			// to the buganizer project configured for this project
+			// or we have no permission to access it.
+			//Take no action.
 			responses = append(responses, bugs.BugUpdateResponse{
 				IsDuplicate:   false,
 				ShouldArchive: false,
 			})
-			logging.Warningf(ctx, "Monorail issue %s not found, skipping.", request.Bug.ID)
+			logging.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it, skipping.", request.Bug.ID)
 			continue
 		}
 		updateResponse := bugs.BugUpdateResponse{

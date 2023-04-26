@@ -105,13 +105,11 @@ func (fis *FakeIssueStore) StoreIssue(ctx context.Context, issue *issuetracker.I
 }
 
 func (fis *FakeIssueStore) BatchGetIssues(issueIds []int64) ([]*issuetracker.Issue, error) {
-	issues := make([]*issuetracker.Issue, 0, len(issueIds))
+	issues := make([]*issuetracker.Issue, 0)
 	for _, id := range issueIds {
 		issueData, ok := fis.Issues[id]
 		if ok {
 			issues = append(issues, issueData.Issue)
-		} else {
-			issues = append(issues, nil)
 		}
 	}
 	return issues, nil

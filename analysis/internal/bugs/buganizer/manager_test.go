@@ -172,6 +172,30 @@ func TestBugManager(t *testing.T) {
 				So(fakeStore.Issues[1].Issue.ModifiedTime, ShouldResemble, oldTime)
 			}
 
+			Convey("If less than expected issues are returned, should not fail", func() {
+				fakeStore.Issues = map[int64]*IssueData{}
+				bugsToUpdate := []bugs.BugUpdateRequest{
+					{
+						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
+						Impact:                           c.Impact,
+						IsManagingBug:                    true,
+						RuleID:                           "123",
+						IsManagingBugPriority:            true,
+						IsManagingBugPriorityLastUpdated: clock.Now(ctx),
+					},
+				}
+				expectedResponse = []bugs.BugUpdateResponse{
+					{
+						IsDuplicate:   false,
+						ShouldArchive: false,
+					},
+				}
+				response, err := bm.Update(ctx, bugsToUpdate)
+				So(err, ShouldBeNil)
+				So(response, ShouldResemble, expectedResponse)
+
+			})
+
 			Convey("If impact unchanged, does nothing", func() {
 				updateDoesNothing()
 			})
