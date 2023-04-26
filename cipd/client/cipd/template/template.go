@@ -153,10 +153,16 @@ func (tp Platform) Expander() Expander {
 	}
 }
 
+// DefaultTemplate returns the default platform template.
+//
+// This has values populated for ${os}, ${arch} and ${platform}.
+func DefaultTemplate() Platform {
+	return Platform{platform.CurrentOS(), platform.CurrentArchitecture()}
+}
+
 // DefaultExpander returns the default template expander.
 //
 // This has values populated for ${os}, ${arch} and ${platform}.
 func DefaultExpander() Expander {
-	p := Platform{platform.CurrentOS(), platform.CurrentArchitecture()}
-	return p.Expander()
+	return DefaultTemplate().Expander()
 }

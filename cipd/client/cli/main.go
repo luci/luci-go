@@ -995,10 +995,11 @@ func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *c
 	}
 
 	if verifying && len(parsedFile.VerifyPlatforms) == 0 {
-		logging.Errorf(ctx,
-			"For this feature to work, verification platforms must be specified in "+
-				"the ensure file using one or more $VerifiedPlatform directives.")
-		return nil, errors.Reason("no verification platforms configured").Tag(cipderr.BadArgument).Err()
+		defaultVerifiedPlatform := template.DefaultTemplate()
+		parsedFile.VerifyPlatforms = append(parsedFile.VerifyPlatforms, defaultVerifiedPlatform)
+
+		logging.Infof(ctx, "$VerifiedPlatform directive required but not included in"+
+			" ensure file, using '$VerifiedPlatform %s' as default.", defaultVerifiedPlatform)
 	}
 
 	if parseVers && parsedFile.ResolvedVersions != "" {
