@@ -79,7 +79,14 @@ func TestUpdateTestMetadata(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		testInvocationID := invocations.ID("inv1")
 
-		Convey(`Invocation have sources inherited`, func() {
+		Convey(`Invocation has no sourceSpec`, func() {
+			testutil.MustApply(ctx, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, nil))
+
+			err := updateTestMetadata(ctx, testInvocationID)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`Invocation has sources inherited`, func() {
 			testutil.MustApply(ctx, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, map[string]any{
 				"InheritSources": true,
 			}))

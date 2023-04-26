@@ -62,6 +62,11 @@ func updateTestMetadata(ctx context.Context, invID invocations.ID) error {
 	if inv.State != pb.Invocation_FINALIZED {
 		return errors.Reason("Invocation is not finalized %s", invID).Err()
 	}
+	if inv.SourceSpec == nil {
+		logging.Infof(ctx, "Skipping metadata ingestion for invocation %s, sourceSpec not available.", inv.Name)
+		return nil
+	}
+
 	source := inv.SourceSpec.Sources
 	if inv.SourceSpec.Inherit {
 		// Invocation with inherited sources will be processed with its including invocation.
