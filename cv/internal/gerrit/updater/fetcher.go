@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -166,27 +165,33 @@ func (f *fetcher) fetchPostChangeInfo(ctx context.Context, ci *gerritpb.ChangeIn
 		reused = true
 		// Re-use past results since CurrentRevision is the same.
 		f.toUpdate.Snapshot.GetGerrit().Files = before.GetFiles()
-		f.toUpdate.Snapshot.GetGerrit().GitDeps = before.GetGitDeps()
 		// NOTE: CQ-Depend deps are fixed per revision. Once soft deps are accepted
 		// via hashtags or topics, the re-use won't be possible.
 		f.toUpdate.Snapshot.GetGerrit().SoftDeps = before.GetSoftDeps()
 	}
 
+	eg, ectx := errgroup.WithContext(ctx)
+	// Always fetch related changes here. It turns out in b/272828859 that
+	// Gerrit GetRelatedChange may return inconsistent response if it is called
+	// immediately after a CL is updated. Therefore, the first CL Update attempt
+	// may incorrectly set the dependencies. By always fetching related changes,
+	// we are hoping any subsequent CL Update attempt would receive up-to-date
+	// related change infos so that the Dep info is correctly populated.
+	eg.Go(func() error { return f.fetchRelated(ectx) })
+
 	if !reused {
-		eg, ectx := errgroup.WithContext(ctx)
 		eg.Go(func() error { return f.fetchFiles(ectx) })
-		eg.Go(func() error { return f.fetchRelated(ectx) })
 		// Meanwhile, compute soft deps. Currently, it's cheap operation.
 		// In the future, it may require sending another RPC to Gerrit,
 		// e.g. to fetch related CLs by topic.
 		if err = f.setSoftDeps(); err != nil {
 			return err
 		}
-		if err = eg.Wait(); err != nil {
-			return err
-		}
 	}
 
+	if err = eg.Wait(); err != nil {
+		return err
+	}
 	// Always run resolveDeps regardless of re-use of GitDeps/SoftDeps.
 	// CV retention policy deletes CLs not modified for a long time,
 	// which in some very rare case may affect a dep of this CL.
