@@ -199,9 +199,8 @@ func runChangePointAnalysis(tvb *TestVariantBranch) {
 	history := tvb.InputBuffer.MergeBuffer()
 	changepoints := a.IdentifyChangepoints(history)
 	sib := tvb.InputBuffer.Segmentize(changepoints)
-	sib.EvictSegments()
-	// TODO (nqmtuan): Combine the evicted segments with the segments from the
-	// output buffers and update the output buffer.
+	evictedSegment := sib.EvictSegments()
+	tvb.UpdateOutputBuffer(evictedSegment)
 	// TODO (nqmtuan): Combine the remaining output buffer segments and remaining
 	// segment for BQ exporter.
 }

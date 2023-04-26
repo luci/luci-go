@@ -19,9 +19,11 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -339,6 +341,270 @@ func TestInsertToInputBuffer(t *testing.T) {
 				},
 			},
 		})
+	})
+}
+
+func TestUpdateOutputBuffer(t *testing.T) {
+	Convey("No existing finalizing segment", t, func() {
+		tvb := TestVariantBranch{}
+		evictedSegments := []*changepointspb.Segment{
+			{
+				State:         changepointspb.SegmentState_FINALIZED,
+				StartPosition: 1,
+				EndPosition:   10,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:  10,
+					TotalRuns:     10,
+					TotalVerdicts: 10,
+				},
+			},
+			{
+				State:         changepointspb.SegmentState_FINALIZING,
+				StartPosition: 11,
+				EndPosition:   30,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:  20,
+					TotalRuns:     20,
+					TotalVerdicts: 20,
+				},
+			},
+		}
+		tvb.UpdateOutputBuffer(evictedSegments)
+		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
+		So(tvb.FinalizingSegment, ShouldNotBeNil)
+		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1])
+		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, evictedSegments[0])
+	})
+
+	Convey("Combine finalizing segment with finalizing segment", t, func() {
+		tvb := TestVariantBranch{
+			FinalizingSegment: &changepointspb.Segment{
+				State:                        changepointspb.SegmentState_FINALIZING,
+				StartPosition:                100,
+				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+				HasStartChangepoint:          true,
+				StartPositionLowerBound_99Th: 90,
+				StartPositionUpperBound_99Th: 110,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:             30,
+					UnexpectedResults:        5,
+					TotalRuns:                20,
+					UnexpectedUnretriedRuns:  2,
+					UnexpectedAfterRetryRuns: 3,
+					FlakyRuns:                4,
+					TotalVerdicts:            10,
+					UnexpectedVerdicts:       1,
+					FlakyVerdicts:            2,
+				},
+				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
+			},
+		}
+		evictedSegments := []*changepointspb.Segment{
+			{
+				State:                        changepointspb.SegmentState_FINALIZING,
+				StartPosition:                200,
+				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
+				HasStartChangepoint:          false,
+				StartPositionLowerBound_99Th: 190,
+				StartPositionUpperBound_99Th: 210,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:             50,
+					UnexpectedResults:        3,
+					TotalRuns:                40,
+					UnexpectedUnretriedRuns:  5,
+					UnexpectedAfterRetryRuns: 6,
+					FlakyRuns:                7,
+					TotalVerdicts:            20,
+					UnexpectedVerdicts:       3,
+					FlakyVerdicts:            2,
+				},
+				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0))},
+		}
+		tvb.UpdateOutputBuffer(evictedSegments)
+		So(tvb.FinalizedSegments, ShouldBeNil)
+		So(tvb.FinalizingSegment, ShouldNotBeNil)
+		expected := &changepointspb.Segment{
+			State:                        changepointspb.SegmentState_FINALIZING,
+			StartPosition:                100,
+			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+			HasStartChangepoint:          true,
+			StartPositionLowerBound_99Th: 90,
+			StartPositionUpperBound_99Th: 110,
+			FinalizedCounts: &changepointspb.Counts{
+				TotalResults:             80,
+				UnexpectedResults:        8,
+				TotalRuns:                60,
+				UnexpectedUnretriedRuns:  7,
+				UnexpectedAfterRetryRuns: 9,
+				FlakyRuns:                11,
+				TotalVerdicts:            30,
+				UnexpectedVerdicts:       4,
+				FlakyVerdicts:            4,
+			},
+			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+		}
+		So(tvb.FinalizingSegment, ShouldResembleProto, expected)
+	})
+
+	Convey("Combine finalizing segment with finalized segment", t, func() {
+		tvb := TestVariantBranch{
+			FinalizingSegment: &changepointspb.Segment{
+				State:                        changepointspb.SegmentState_FINALIZING,
+				StartPosition:                100,
+				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+				HasStartChangepoint:          true,
+				StartPositionLowerBound_99Th: 90,
+				StartPositionUpperBound_99Th: 110,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:             30,
+					UnexpectedResults:        5,
+					TotalRuns:                20,
+					UnexpectedUnretriedRuns:  2,
+					UnexpectedAfterRetryRuns: 3,
+					FlakyRuns:                4,
+					TotalVerdicts:            10,
+					UnexpectedVerdicts:       1,
+					FlakyVerdicts:            2,
+				},
+				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
+			},
+		}
+		evictedSegments := []*changepointspb.Segment{
+			{
+				State:                        changepointspb.SegmentState_FINALIZED,
+				StartPosition:                200,
+				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
+				HasStartChangepoint:          false,
+				StartPositionLowerBound_99Th: 190,
+				StartPositionUpperBound_99Th: 210,
+				EndPosition:                  400,
+				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:             50,
+					UnexpectedResults:        3,
+					TotalRuns:                40,
+					UnexpectedUnretriedRuns:  5,
+					UnexpectedAfterRetryRuns: 6,
+					FlakyRuns:                7,
+					TotalVerdicts:            20,
+					UnexpectedVerdicts:       3,
+					FlakyVerdicts:            2,
+				},
+				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+			},
+			{
+				State:         changepointspb.SegmentState_FINALIZING,
+				StartPosition: 500,
+				EndPosition:   800,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:  20,
+					TotalRuns:     20,
+					TotalVerdicts: 20,
+				},
+			},
+		}
+		tvb.UpdateOutputBuffer(evictedSegments)
+		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
+		So(tvb.FinalizingSegment, ShouldNotBeNil)
+		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1])
+		expected := &changepointspb.Segment{
+			State:                        changepointspb.SegmentState_FINALIZED,
+			StartPosition:                100,
+			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+			HasStartChangepoint:          true,
+			StartPositionLowerBound_99Th: 90,
+			StartPositionUpperBound_99Th: 110,
+			EndPosition:                  400,
+			EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
+			FinalizedCounts: &changepointspb.Counts{
+				TotalResults:             80,
+				UnexpectedResults:        8,
+				TotalRuns:                60,
+				UnexpectedUnretriedRuns:  7,
+				UnexpectedAfterRetryRuns: 9,
+				FlakyRuns:                11,
+				TotalVerdicts:            30,
+				UnexpectedVerdicts:       4,
+				FlakyVerdicts:            4,
+			},
+			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+		}
+		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, expected)
+	})
+
+	Convey("Combine finalizing segment with finalized segment, no more finalizing segment", t, func() {
+		tvb := TestVariantBranch{
+			FinalizingSegment: &changepointspb.Segment{
+				State:                        changepointspb.SegmentState_FINALIZING,
+				StartPosition:                100,
+				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+				HasStartChangepoint:          true,
+				StartPositionLowerBound_99Th: 90,
+				StartPositionUpperBound_99Th: 110,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:             30,
+					UnexpectedResults:        5,
+					TotalRuns:                20,
+					UnexpectedUnretriedRuns:  2,
+					UnexpectedAfterRetryRuns: 3,
+					FlakyRuns:                4,
+					TotalVerdicts:            10,
+					UnexpectedVerdicts:       1,
+					FlakyVerdicts:            2,
+				},
+				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
+			},
+		}
+		evictedSegments := []*changepointspb.Segment{
+			{
+				State:                        changepointspb.SegmentState_FINALIZED,
+				StartPosition:                200,
+				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
+				HasStartChangepoint:          false,
+				StartPositionLowerBound_99Th: 190,
+				StartPositionUpperBound_99Th: 210,
+				EndPosition:                  400,
+				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults:             50,
+					UnexpectedResults:        3,
+					TotalRuns:                40,
+					UnexpectedUnretriedRuns:  5,
+					UnexpectedAfterRetryRuns: 6,
+					FlakyRuns:                7,
+					TotalVerdicts:            20,
+					UnexpectedVerdicts:       3,
+					FlakyVerdicts:            2,
+				},
+				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+			},
+		}
+		tvb.UpdateOutputBuffer(evictedSegments)
+		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
+		So(tvb.FinalizingSegment, ShouldBeNil)
+		expected := &changepointspb.Segment{
+			State:                        changepointspb.SegmentState_FINALIZED,
+			StartPosition:                100,
+			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+			HasStartChangepoint:          true,
+			StartPositionLowerBound_99Th: 90,
+			StartPositionUpperBound_99Th: 110,
+			EndPosition:                  400,
+			EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
+			FinalizedCounts: &changepointspb.Counts{
+				TotalResults:             80,
+				UnexpectedResults:        8,
+				TotalRuns:                60,
+				UnexpectedUnretriedRuns:  7,
+				UnexpectedAfterRetryRuns: 9,
+				FlakyRuns:                11,
+				TotalVerdicts:            30,
+				UnexpectedVerdicts:       4,
+				FlakyVerdicts:            4,
+			},
+			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+		}
+		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, expected)
 	})
 }
 
