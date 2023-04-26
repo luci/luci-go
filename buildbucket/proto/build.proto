@@ -42,7 +42,7 @@ import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 // represents a state of a build at completion time and does not change after
 // that. All fields are included.
 //
-// Next id: 35.
+// Next id: 36.
 message Build {
   // Defines what to build/test.
   //
@@ -361,6 +361,14 @@ message Build {
   repeated int64 ancestor_ids = 31 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (visible_with) = BUILDS_LIST_PERMISSION ];
+
+  // If UNSET, retrying the build is implicitly allowed;
+  // If YES, retrying the build is explicitly allowed;
+  // If NO, retrying the build is explicitly disallowed,
+  //   * any UI displaying the build should remove "retry" button(s),
+  //   * ScheduleBuild using the build as template should fail,
+  //   * but the build can still be synthesized by SynthesizeBuild.
+  Trinary retriable = 35;
 }
 
 message InputDataRef {
