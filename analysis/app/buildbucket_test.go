@@ -16,7 +16,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +23,6 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/router"
@@ -52,103 +50,57 @@ func TestHandleBuild(t *testing.T) {
 			Context: ctx,
 			Writer:  rsp,
 		}
-		Convey(`Buildbucket v1`, func() {
-			pubSubMessage := bbv1.LegacyApiCommonBuildMessage{
-				Project: "buildproject",
-				Bucket:  "bucket",
-				Id:      14141414,
-			}
-			Convey(`Completed build`, func() {
-				pubSubMessage.Status = bbv1.StatusCompleted
-
-				rctx.Request = &http.Request{Body: makeBBV1Req(pubSubMessage, bbHost)}
-				BuildbucketPubSubHandler(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusOK)
-				So(buildCounter.Get(ctx, "buildproject", "success"), ShouldEqual, 1)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-				resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.JoinBuild)
-
-				expectedTask := &taskspb.JoinBuild{
-					Host:    bbHost,
+		pubSubMessage := &buildbucketpb.BuildsV2PubSub{
+			Build: &buildbucketpb.Build{
+				Builder: &buildbucketpb.BuilderID{
 					Project: "buildproject",
-					Id:      14141414,
-				}
-				So(resultsTask, ShouldResembleProto, expectedTask)
-			})
-			Convey(`Uncompleted build`, func() {
-				pubSubMessage.Status = bbv1.StatusStarted
-
-				rctx.Request = &http.Request{Body: makeBBV1Req(pubSubMessage, bbHost)}
-				BuildbucketPubSubHandler(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusNoContent)
-				So(buildCounter.Get(ctx, "buildproject", "ignored"), ShouldEqual, 1)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-			})
-			Convey(`Invalid data`, func() {
-				rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), nil)}
-				BuildbucketPubSubHandler(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusAccepted)
-				So(buildCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-			})
-		})
-		Convey(`Buildbucket v2`, func() {
-			pubSubMessage := &buildbucketpb.BuildsV2PubSub{
-				Build: &buildbucketpb.Build{
-					Builder: &buildbucketpb.BuilderID{
-						Project: "buildproject",
-					},
-					Id: 14141414,
-					Infra: &buildbucketpb.BuildInfra{
-						Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
-							Hostname: bbHost,
-						},
+				},
+				Id: 14141414,
+				Infra: &buildbucketpb.BuildInfra{
+					Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+						Hostname: bbHost,
 					},
 				},
+			},
+		}
+		Convey(`Completed build`, func() {
+			pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
+
+			rctx.Request = &http.Request{Body: makeBBV2Req(pubSubMessage)}
+			BuildbucketPubSubHandler(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusOK)
+			So(buildCounter.Get(ctx, "buildproject", "success"), ShouldEqual, 1)
+
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
+			resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.JoinBuild)
+
+			expectedTask := &taskspb.JoinBuild{
+				Host:    bbHost,
+				Project: "buildproject",
+				Id:      14141414,
 			}
-			Convey(`Completed build`, func() {
-				pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
+			So(resultsTask, ShouldResembleProto, expectedTask)
+		})
+		Convey(`Uncompleted build`, func() {
+			pubSubMessage.Build.Status = buildbucketpb.Status_STARTED
 
-				rctx.Request = &http.Request{Body: makeBBV2Req(pubSubMessage)}
-				BuildbucketPubSubHandler(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusOK)
-				So(buildCounter.Get(ctx, "buildproject", "success"), ShouldEqual, 1)
+			rctx.Request = &http.Request{Body: makeBBV2Req(pubSubMessage)}
+			BuildbucketPubSubHandler(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusNoContent)
+			So(buildCounter.Get(ctx, "buildproject", "ignored"), ShouldEqual, 1)
 
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 1)
-				resultsTask := skdr.Tasks().Payloads()[0].(*taskspb.JoinBuild)
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
+		})
+		Convey(`Invalid data`, func() {
+			attributes := map[string]any{
+				"version": "v2",
+			}
+			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), attributes)}
+			BuildbucketPubSubHandler(rctx)
+			So(rsp.Code, ShouldEqual, http.StatusAccepted)
+			So(buildCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
 
-				expectedTask := &taskspb.JoinBuild{
-					Host:    bbHost,
-					Project: "buildproject",
-					Id:      14141414,
-				}
-				So(resultsTask, ShouldResembleProto, expectedTask)
-			})
-			Convey(`Uncompleted build`, func() {
-				pubSubMessage.Build.Status = buildbucketpb.Status_STARTED
-
-				rctx.Request = &http.Request{Body: makeBBV2Req(pubSubMessage)}
-				BuildbucketPubSubHandler(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusNoContent)
-				So(buildCounter.Get(ctx, "buildproject", "ignored"), ShouldEqual, 1)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-			})
-			Convey(`Invalid data`, func() {
-				attributes := map[string]any{
-					"version": "v2",
-				}
-				rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), attributes)}
-				BuildbucketPubSubHandler(rctx)
-				So(rsp.Code, ShouldEqual, http.StatusAccepted)
-				So(buildCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)
-
-				So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
-			})
-
+			So(len(skdr.Tasks().Payloads()), ShouldEqual, 0)
 		})
 	})
 }
@@ -163,13 +115,4 @@ func makeBBV2Req(message *buildbucketpb.BuildsV2PubSub) io.ReadCloser {
 		"version": "v2",
 	}
 	return makeReq(bm, attributes)
-}
-
-func makeBBV1Req(build bbv1.LegacyApiCommonBuildMessage, hostname string) io.ReadCloser {
-	bmsg := struct {
-		Build    bbv1.LegacyApiCommonBuildMessage `json:"build"`
-		Hostname string                           `json:"hostname"`
-	}{build, hostname}
-	bm, _ := json.Marshal(bmsg)
-	return makeReq(bm, nil)
 }

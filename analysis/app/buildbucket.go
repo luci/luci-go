@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/buildjoiner"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
@@ -79,34 +78,16 @@ func bbPubSubHandlerImpl(ctx context.Context, request *http.Request) (project st
 	if err := json.NewDecoder(request.Body).Decode(&psMsg); err != nil {
 		return "unknown", false, errors.Annotate(err, "could not decode buildbucket pubsub message").Err()
 	}
-	// Handle messages from both topics in parallel for now.
-	// The build join step is resilient to being notified of the
-	// build completion more than once. This ensures we don't
-	// lose data as we are migrating to the new pub/sub topic.
-	if v, ok := psMsg.Message.Attributes["version"].(string); ok && v == "v2" {
-		// Handle message from the builds (v2) topic.
-		msg, err := parseBBV2Message(ctx, psMsg)
-		if err != nil {
-			return "unknown", false, errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
-		}
-		processed, err = processBBV2Message(ctx, msg)
-		if err != nil {
-			return msg.Build.Builder.Project, false, errors.Annotate(err, "process buildbucket v2 build").Err()
-		}
-		return msg.Build.Builder.Project, processed, nil
-	} else {
-		// TODO(b/266640146): Remove this when migration complete.
-		// Handle message from the builds (v1) topic.
-		msg, err := parseBBV1Message(ctx, psMsg)
-		if err != nil {
-			return "unknown", false, errors.Annotate(err, "unmarshal buildbucket v1 pub/sub message").Err()
-		}
-		processed, err = processBBV1Message(ctx, msg)
-		if err != nil {
-			return msg.Build.Project, false, errors.Annotate(err, "process buildbucket v1 build").Err()
-		}
-		return msg.Build.Project, processed, nil
+	// Handle message from the builds (v2) topic.
+	msg, err := parseBBV2Message(ctx, psMsg)
+	if err != nil {
+		return "unknown", false, errors.Annotate(err, "unmarshal buildbucket v2 pub/sub message").Err()
 	}
+	processed, err = processBBV2Message(ctx, msg)
+	if err != nil {
+		return msg.Build.Builder.Project, false, errors.Annotate(err, "process buildbucket v2 build").Err()
+	}
+	return msg.Build.Builder.Project, processed, nil
 }
 
 func parseBBV2Message(ctx context.Context, pbMsg pubsubMessage) (*buildbucketpb.BuildsV2PubSub, error) {
@@ -138,38 +119,6 @@ func processBBV2Message(ctx context.Context, message *buildbucketpb.BuildsV2PubS
 		Project: project,
 		Id:      message.Build.Id,
 		Host:    message.Build.Infra.Buildbucket.Hostname,
-	}
-	err = buildjoiner.Schedule(ctx, task)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-type buildBucketMessage struct {
-	Build    bbv1.LegacyApiCommonBuildMessage
-	Hostname string
-}
-
-func parseBBV1Message(ctx context.Context, psMsg pubsubMessage) (*buildBucketMessage, error) {
-	var bbMsg buildBucketMessage
-	if err := json.Unmarshal(psMsg.Message.Data, &bbMsg); err != nil {
-		return nil, err
-	}
-	return &bbMsg, nil
-}
-
-func processBBV1Message(ctx context.Context, message *buildBucketMessage) (processed bool, err error) {
-	if message.Build.Status != bbv1.StatusCompleted {
-		// Received build that hasn't completed yet, ignore it.
-		return false, nil
-	}
-
-	project := message.Build.Project
-	task := &taskspb.JoinBuild{
-		Project: project,
-		Id:      message.Build.Id,
-		Host:    message.Hostname,
 	}
 	err = buildjoiner.Schedule(ctx, task)
 	if err != nil {
