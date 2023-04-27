@@ -169,17 +169,25 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 
 		isDuplicate := issue.Status.Status == DuplicateStatus
 		shouldArchive := shouldArchiveRule(ctx, issue, req.IsManagingBug)
+		disableRulePriorityUpdates := false
 		if !isDuplicate && !shouldArchive && req.IsManagingBug && req.Impact != nil {
-			if m.generator.NeedsUpdate(req.Impact, issue) {
+			if m.generator.NeedsUpdate(req.Impact, issue, req.IsManagingBugPriority) {
 				comments, err := m.client.ListComments(ctx, issue.Name)
 				if err != nil {
 					return nil, err
 				}
-				updateReq := m.generator.MakeUpdate(req.Impact, issue, comments)
+				mur := m.generator.MakeUpdate(MakeUpdateOptions{
+					impact:                           req.Impact,
+					issue:                            issue,
+					comments:                         comments,
+					IsManagingBugPriority:            req.IsManagingBugPriority,
+					IsManagingBugPriorityLastUpdated: req.IsManagingBugPriorityLastUpdated,
+				})
+				disableRulePriorityUpdates = mur.disableBugPriorityUpdates
 				if m.Simulate {
-					logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(updateReq))
+					logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(mur.request))
 				} else {
-					if err := m.client.ModifyIssues(ctx, updateReq); err != nil {
+					if err := m.client.ModifyIssues(ctx, mur.request); err != nil {
 						return nil, errors.Annotate(err, "failed to update monorail issue %s", req.Bug.ID).Err()
 					}
 					bugs.BugsUpdatedCounter.Add(ctx, 1, m.project, "monorail")
@@ -187,8 +195,9 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 			}
 		}
 		responses = append(responses, bugs.BugUpdateResponse{
-			IsDuplicate:   isDuplicate,
-			ShouldArchive: shouldArchive && !isDuplicate,
+			IsDuplicate:                isDuplicate,
+			ShouldArchive:              shouldArchive && !isDuplicate,
+			DisableRulePriorityUpdates: disableRulePriorityUpdates,
 		})
 	}
 	return responses, nil

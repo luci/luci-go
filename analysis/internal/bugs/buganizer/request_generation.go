@@ -51,7 +51,8 @@ var configPriorityToIssueTrackerPriority = map[configpb.BuganizerPriority]issuet
 // We use this to look for updates to issue priorities.
 const priorityField = "priority"
 
-type makeUpdateResult struct {
+// The result of a MakeUpdate request.
+type MakeUpdateResult struct {
 	// The generated request.
 	request *issuetracker.ModifyIssueRequest
 	// disablePriorityUpdates is set when the user has manually
@@ -249,7 +250,7 @@ type MakeUpdateOptions struct {
 // **Must** ONLY be called if NeedsUpdate(...) returns true.
 func (rg *RequestGenerator) MakeUpdate(
 	ctx context.Context,
-	options MakeUpdateOptions) (makeUpdateResult, error) {
+	options MakeUpdateOptions) (MakeUpdateResult, error) {
 
 	request := &issuetracker.ModifyIssueRequest{
 		IssueId:      options.issue.IssueId,
@@ -261,13 +262,13 @@ func (rg *RequestGenerator) MakeUpdate(
 	}
 
 	var commentary []bugs.Commentary
-	mur := makeUpdateResult{}
+	result := MakeUpdateResult{}
 	issueVerified := options.issue.IssueState.Status == issuetracker.Issue_VERIFIED
 	if !rg.isCompatibleWithVerified(options.impact, issueVerified) {
 		// Verify or reopen the issue.
 		comment, err := rg.prepareBugVerifiedUpdate(ctx, options.impact, options.issue, request)
 		if err != nil {
-			return makeUpdateResult{}, errors.Annotate(err, "prepare bug verified update ").Err()
+			return MakeUpdateResult{}, errors.Annotate(err, "prepare bug verified update ").Err()
 		}
 		commentary = append(commentary, comment)
 		// After the update, whether the issue was verified will have changed.
@@ -276,16 +277,16 @@ func (rg *RequestGenerator) MakeUpdate(
 	if options.IsManagingBugPriority &&
 		!issueVerified &&
 		!rg.isCompatibleWithPriority(options.impact, options.issue.IssueState.Priority) {
-		hasManuallySetPriority, err := rg.hasManuallySetPriority(ctx, options.issue, options)
+		hasManuallySetPriority, err := rg.hasManuallySetPriority(ctx, options)
 		if err != nil {
-			return makeUpdateResult{}, errors.Annotate(err, "create issue update request").Err()
+			return MakeUpdateResult{}, errors.Annotate(err, "create issue update request").Err()
 		}
 		if hasManuallySetPriority {
 			comment := bugs.Commentary{
 				Body: "The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, enable the update priority flag on the rule.",
 			}
 			commentary = append(commentary, comment)
-			mur.disablePriorityUpdates = true
+			result.disablePriorityUpdates = true
 		} else {
 			// We were the last to update the bug priority.
 			// Apply the priority update.
@@ -303,17 +304,16 @@ func (rg *RequestGenerator) MakeUpdate(
 		IssueId: options.issue.IssueId,
 		Comment: bugs.MergeCommentary(commentary...),
 	}
-	mur.request = request
-	return mur, nil
+	result.request = request
+	return result, nil
 }
 
 // hasManuallySetPriority checks whether this issue's priority was last modified by
 // a user.
 func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
-	issue *issuetracker.Issue,
-	managingBugPriorityDetails MakeUpdateOptions) (bool, error) {
+	options MakeUpdateOptions) (bool, error) {
 	request := &issuetracker.ListIssueUpdatesRequest{
-		IssueId: issue.IssueId,
+		IssueId: options.issue.IssueId,
 	}
 
 	it := rg.client.ListIssueUpdates(ctx, request)
@@ -348,7 +348,7 @@ func (rg *RequestGenerator) hasManuallySetPriority(ctx context.Context,
 	// We compare the last time the user modified the priority was after
 	// the last time the rule's priority management property was enabled.
 	if foundUpdate &&
-		priorityUpdateTime.After(managingBugPriorityDetails.IsManagingBugPriorityLastUpdated) {
+		priorityUpdateTime.After(options.IsManagingBugPriorityLastUpdated) {
 		return true, nil
 	}
 	return false, nil

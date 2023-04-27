@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -245,6 +246,7 @@ func (f *fakeIssuesClient) ModifyIssues(ctx context.Context, in *mpb.ModifyIssue
 			Content:    in.CommentContent,
 			Commenter:  f.user,
 			Amendments: amendments,
+			CreateTime: timestamppb.New(clock.Now(ctx).Add(2 * time.Minute)),
 		})
 		if in.NotifyType == mpb.NotifyType_EMAIL {
 			issue.NotifyCount++

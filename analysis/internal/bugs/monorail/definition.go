@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
@@ -28,9 +29,8 @@ import (
 )
 
 const (
-	manualPriorityLabel = "LUCI-Analysis-Manual-Priority"
-	restrictViewLabel   = "Restrict-View-Google"
-	autoFiledLabel      = "LUCI-Analysis-Auto-Filed"
+	restrictViewLabel = "Restrict-View-Google"
+	autoFiledLabel    = "LUCI-Analysis-Auto-Filed"
 )
 
 // priorityRE matches chromium monorail priority values.
@@ -264,12 +264,12 @@ func (g *Generator) priorityFieldName() string {
 }
 
 // NeedsUpdate determines if the bug for the given cluster needs to be updated.
-func (g *Generator) NeedsUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue) bool {
+func (g *Generator) NeedsUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, isManagingBugPriority bool) bool {
 	// Cases that a bug may be updated follow.
 	switch {
 	case !g.isCompatibleWithVerified(impact, issueVerified(issue)):
 		return true
-	case !hasLabel(issue, manualPriorityLabel) &&
+	case isManagingBugPriority &&
 		!issueVerified(issue) &&
 		!g.isCompatibleWithPriority(impact, g.IssuePriority(issue)):
 		// The priority has changed on a cluster which is not verified as fixed
@@ -280,12 +280,37 @@ func (g *Generator) NeedsUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue) bo
 	}
 }
 
+// MakeUpdateOptions are the options for making a bug update.
+type MakeUpdateOptions struct {
+	// The cluster impact for the update.
+	impact *bugs.ClusterImpact
+	// The issue to update.
+	issue *mpb.Issue
+	// Monorail issue comments for the provided issue.
+	comments []*mpb.Comment
+	// Indicates whether the rule is managing bug priority or not.
+	IsManagingBugPriority bool
+	// The time `IsManagingBugPriority` was last updated.
+	IsManagingBugPriorityLastUpdated time.Time
+}
+
+// The result of a MakeUpdate request.
+type MakeUpdateResult struct {
+	// The created request to modify an issue
+	request *mpb.ModifyIssuesRequest
+
+	// Whether isManagingBugPriority should be disabled on the rule.
+	// This is determined by checking if the last time the flag was turned on
+	// was after the last time a user updated the priority manually.
+	disableBugPriorityUpdates bool
+}
+
 // MakeUpdate prepares an updated for the bug associated with a given cluster.
 // Must ONLY be called if NeedsUpdate(...) returns true.
-func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, comments []*mpb.Comment) *mpb.ModifyIssuesRequest {
+func (g *Generator) MakeUpdate(options MakeUpdateOptions) MakeUpdateResult {
 	delta := &mpb.IssueDelta{
 		Issue: &mpb.Issue{
-			Name: issue.Name,
+			Name: options.issue.Name,
 		},
 		UpdateMask: &field_mask.FieldMask{
 			Paths: []string{},
@@ -294,40 +319,40 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 
 	var commentary []bugs.Commentary
 	notify := false
-	issueVerified := issueVerified(issue)
-	if !g.isCompatibleWithVerified(impact, issueVerified) {
+	issueVerified := issueVerified(options.issue)
+	if !g.isCompatibleWithVerified(options.impact, issueVerified) {
 		// Verify or reopen the issue.
-		comment := g.prepareBugVerifiedUpdate(impact, issue, delta)
+		comment := g.prepareBugVerifiedUpdate(options.impact, options.issue, delta)
 		commentary = append(commentary, comment)
 		notify = true
 		// After the update, whether the issue was verified will have changed.
-		issueVerified = g.clusterResolved(impact)
+		issueVerified = g.clusterResolved(options.impact)
 	}
-	if !hasLabel(issue, manualPriorityLabel) &&
+	disablePriorityUpdates := false
+	if options.IsManagingBugPriority &&
 		!issueVerified &&
-		!g.isCompatibleWithPriority(impact, g.IssuePriority(issue)) {
-
-		if hasManuallySetPriority(comments) {
+		!g.isCompatibleWithPriority(options.impact, g.IssuePriority(options.issue)) {
+		if hasManuallySetPriority(options.comments, options.IsManagingBugPriorityLastUpdated) {
 			// We were not the last to update the priority of this issue.
-			// Set the 'manually controlled priority' label to reflect
-			// the state of this bug and avoid further attempts to update.
-			comment := prepareManualPriorityUpdate(issue, delta)
+			// We need to turn the flag isManagingBugPriority off on the rule.
+			comment := prepareManualPriorityUpdate(options.issue, delta)
 			commentary = append(commentary, comment)
+			disablePriorityUpdates = true
 		} else {
 			// We were the last to update the bug priority.
 			// Apply the priority update.
-			comment := g.preparePriorityUpdate(impact, issue, delta)
+			comment := g.preparePriorityUpdate(options.impact, options.issue, delta)
 			commentary = append(commentary, comment)
 			// Notify if new priority is higher than existing priority.
-			notify = notify || g.isHigherPriority(g.clusterPriority(impact), g.IssuePriority(issue))
+			notify = notify || g.isHigherPriority(g.clusterPriority(options.impact), g.IssuePriority(options.issue))
 		}
 	}
 
-	bugName, err := fromMonorailIssueName(issue.Name)
+	bugName, err := fromMonorailIssueName(options.issue.Name)
 	if err != nil {
 		// This should never happen. It would mean monorail is feeding us
 		// invalid data.
-		panic("invalid monorail issue name: " + issue.Name)
+		panic("invalid monorail issue name: " + options.issue.Name)
 	}
 
 	c := bugs.Commentary{
@@ -345,7 +370,10 @@ func (g *Generator) MakeUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, com
 	if notify {
 		update.NotifyType = mpb.NotifyType_EMAIL
 	}
-	return update
+	return MakeUpdateResult{
+		request:                   update,
+		disableBugPriorityUpdates: disablePriorityUpdates,
+	}
 }
 
 func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *mpb.Issue, update *mpb.IssueDelta) bugs.Commentary {
@@ -390,12 +418,8 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 }
 
 func prepareManualPriorityUpdate(issue *mpb.Issue, update *mpb.IssueDelta) bugs.Commentary {
-	update.Issue.Labels = []*mpb.Issue_LabelValue{{
-		Label: manualPriorityLabel,
-	}}
-	update.UpdateMask.Paths = append(update.UpdateMask.Paths, "labels")
 	c := bugs.Commentary{
-		Body: fmt.Sprintf("The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, remove the %s label.", manualPriorityLabel),
+		Body: "The bug priority has been manually set. To re-enable automatic priority updates by LUCI Analysis, enable the update priority flag on the rule.",
 	}
 	return c
 }
@@ -433,8 +457,9 @@ func (g *Generator) preparePriorityUpdate(impact *bugs.ClusterImpact, issue *mpb
 }
 
 // hasManuallySetPriority returns whether the given issue has a manually
-// controlled priority, based on its comments.
-func hasManuallySetPriority(comments []*mpb.Comment) bool {
+// controlled priority, based on its comments and the last time the isManagingBugPrirotiy
+// was last updated on the rule.
+func hasManuallySetPriority(comments []*mpb.Comment, isManagingBugPriorityLastUpdated time.Time) bool {
 	// Example comment showing a user changing priority:
 	// {
 	// 	name: "projects/chromium/issues/915761/comments/1"
@@ -449,32 +474,30 @@ func hasManuallySetPriority(comments []*mpb.Comment) bool {
 	// 	  new_or_delta_value: "Pri-1"
 	// 	}
 	// }
+
+	foundManualPriorityUpdate := false
+	var manualPriorityUpdateTime time.Time
+outer:
 	for i := len(comments) - 1; i >= 0; i-- {
 		c := comments[i]
-
-		isManualPriorityUpdate := false
-		isRevertToAutomaticPriority := false
 		for _, a := range c.Amendments {
 			if a.FieldName == "Labels" {
 				deltaLabels := strings.Split(a.NewOrDeltaValue, " ")
 				for _, lbl := range deltaLabels {
-					if lbl == "-"+manualPriorityLabel {
-						isRevertToAutomaticPriority = true
-					}
-					if priorityRE.MatchString(lbl) {
-						if !isAutomationUser(c.Commenter) {
-							isManualPriorityUpdate = true
-						}
+					if priorityRE.MatchString(lbl) && !isAutomationUser(c.Commenter) {
+						manualPriorityUpdateTime = c.CreateTime.AsTime()
+						foundManualPriorityUpdate = true
+						break outer
 					}
 				}
 			}
 		}
-		if isRevertToAutomaticPriority {
-			return false
-		}
-		if isManualPriorityUpdate {
-			return true
-		}
+	}
+	// If there is a manual priority update
+	// after the managing bug priority was last updated.
+	if foundManualPriorityUpdate &&
+		manualPriorityUpdateTime.After(isManagingBugPriorityLastUpdated) {
+		return true
 	}
 	// No manual changes to priority indicates the bug is still under
 	// automatic control.
@@ -484,16 +507,6 @@ func hasManuallySetPriority(comments []*mpb.Comment) bool {
 func isAutomationUser(user string) bool {
 	for _, u := range AutomationUsers {
 		if u == user {
-			return true
-		}
-	}
-	return false
-}
-
-// hasLabel returns whether the bug the specified label.
-func hasLabel(issue *mpb.Issue, label string) bool {
-	for _, l := range issue.Labels {
-		if l.Label == label {
 			return true
 		}
 	}

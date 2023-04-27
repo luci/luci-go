@@ -191,9 +191,11 @@ func TestManager(t *testing.T) {
 
 			bugsToUpdate := []bugs.BugUpdateRequest{
 				{
-					Bug:           bugs.BugID{System: bugs.MonorailSystem, ID: bug},
-					Impact:        c.Impact,
-					IsManagingBug: true,
+					Bug:                              bugs.BugID{System: bugs.MonorailSystem, ID: bug},
+					Impact:                           c.Impact,
+					IsManagingBug:                    true,
+					IsManagingBugPriority:            true,
+					IsManagingBugPriorityLastUpdated: tc.Now(),
 				},
 			}
 			expectedResponse := []bugs.BugUpdateResponse{
@@ -321,32 +323,28 @@ func TestManager(t *testing.T) {
 					err = usercl.ModifyIssues(ctx, updateReq)
 					So(err, ShouldBeNil)
 					So(ChromiumTestIssuePriority(f.Issues[0].Issue), ShouldEqual, "0")
-
 					// Check the update sets the label.
 					expectedIssue := CopyIssue(f.Issues[0].Issue)
-					expectedIssue.Labels = append(expectedIssue.Labels, &mpb.Issue_LabelValue{
-						Label: manualPriorityLabel,
-					})
 					SortLabels(expectedIssue.Labels)
-
 					So(f.Issues[0].NotifyCount, ShouldEqual, 1)
 					response, err := bm.Update(ctx, bugsToUpdate)
 					So(err, ShouldBeNil)
+					expectedResponse[0].DisableRulePriorityUpdates = true
 					So(response, ShouldResemble, expectedResponse)
 					So(f.Issues[0].Issue, ShouldResembleProto, expectedIssue)
 
 					// Does not notify.
 					So(f.Issues[0].NotifyCount, ShouldEqual, 1)
 
+					// Priority updates should be off, but disabling it should return false as we should not check it anymore.
+					bugsToUpdate[0].IsManagingBugPriority = false
+					expectedResponse[0].DisableRulePriorityUpdates = false
 					// Check repeated update does nothing more.
 					updateDoesNothing()
 
-					Convey("Unless manual priority cleared", func() {
-						updateReq := removeLabelRequest(f.Issues[0].Issue.Name, manualPriorityLabel)
-						err = usercl.ModifyIssues(ctx, updateReq)
-						So(err, ShouldBeNil)
-						So(hasLabel(f.Issues[0].Issue, manualPriorityLabel), ShouldBeFalse)
-
+					Convey("Unless update priority flag is re-enabled", func() {
+						bugsToUpdate[0].IsManagingBugPriority = true
+						bugsToUpdate[0].IsManagingBugPriorityLastUpdated = tc.Now().Add(3 * time.Minute)
 						response, err := bm.Update(ctx, bugsToUpdate)
 						So(response, ShouldResemble, expectedResponse)
 						So(err, ShouldBeNil)
@@ -694,21 +692,6 @@ func updateBugPriorityRequest(name string, priority string) *mpb.ModifyIssuesReq
 				UpdateMask: &field_mask.FieldMask{
 					Paths: []string{"field_values"},
 				},
-			},
-		},
-		CommentContent: "User comment.",
-	}
-}
-
-func removeLabelRequest(name string, label string) *mpb.ModifyIssuesRequest {
-	return &mpb.ModifyIssuesRequest{
-		Deltas: []*mpb.IssueDelta{
-			{
-				Issue: &mpb.Issue{
-					Name: name,
-				},
-				UpdateMask:   &field_mask.FieldMask{},
-				LabelsRemove: []string{label},
 			},
 		},
 		CommentContent: "User comment.",
