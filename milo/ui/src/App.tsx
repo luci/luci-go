@@ -52,6 +52,15 @@ export function App() {
   const [store] = useState(() => Store.create());
 
   useEffect(() => {
+    // Expose `store` in the global namespace to make inspecting/debugging the
+    // store via the browser dev-tool easier.
+    //
+    // The __STORE variable should only be used for debugging purpose. As such,
+    // do not declare __STORE as a global variable explicity so it's less likely
+    // to be misused.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__STORE = store;
+
     store.authState.init();
 
     if (navigator.serviceWorker && ENABLE_UI_SW) {
