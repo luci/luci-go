@@ -22,7 +22,6 @@ import './styles/color_classes.css';
 import './components/tooltip';
 import { LitEnvProvider } from './components/lit_env_provider';
 import { BaseLayout } from './layouts/base';
-import { REFRESH_AUTH_CHANNEL } from './libs/constants';
 import { createStaticTrustedURL } from './libs/utils';
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
@@ -36,7 +35,6 @@ import { RelatedBuildsTab } from './pages/build_page/related_builds_tab';
 import { StepsTab } from './pages/build_page/steps_tab';
 import { TimelineTab } from './pages/build_page/timeline_tab';
 import { BuildersPage } from './pages/builders_page';
-import { AuthChannelClosePage } from './pages/close_page';
 import { InvocationPage } from './pages/invocation_page';
 import { InvocationDefaultTab } from './pages/invocation_page/invocation_default_tab';
 import { InvocationDetailsTab } from './pages/invocation_page/invocation_details_tab';
@@ -80,13 +78,7 @@ export function App() {
       store.setRedirectSw(null);
     }
 
-    const onRefreshAuth = () => store.authState.scheduleUpdate(true);
-    REFRESH_AUTH_CHANNEL.addEventListener('message', onRefreshAuth);
-
-    return () => {
-      REFRESH_AUTH_CHANNEL.removeEventListener('message', onRefreshAuth);
-      destroy(store);
-    };
+    return () => destroy(store);
   }, []);
 
   const router = createBrowserRouter([
@@ -99,7 +91,6 @@ export function App() {
       children: [
         { path: 'login', element: <LoginPage /> },
         { path: 'search', element: <SearchPage /> },
-        { path: 'auth-callback/:channelId', element: <AuthChannelClosePage /> },
         { path: 'p/:project/builders', element: <BuildersPage /> },
         { path: 'p/:project/g/:group/builders', element: <BuildersPage /> },
         { path: 'b/:buildId/*?', element: <BuildPageShortLink /> },

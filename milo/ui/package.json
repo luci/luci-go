@@ -34,7 +34,6 @@
     "@mui/icons-material": "^5.11.0",
     "@mui/material": "^5.11.5",
     "@vaadin/router": "^1.7.4",
-    "broadcast-channel": "^4.20.2",
     "codemirror": "^5.65.11",
     "copy-to-clipboard": "^3.3.3",
     "d3": "^7.8.2",

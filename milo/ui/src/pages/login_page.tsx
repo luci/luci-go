@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Link } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-import { changeUserState } from '../components/signin';
+import { getLoginUrl } from '../libs/url_utils';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { useStore } from '../store';
 
@@ -30,6 +31,7 @@ import { useStore } from '../store';
 export const LoginPage = observer(() => {
   const store = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isLoggedIn = ![undefined, ANONYMOUS_IDENTITY].includes(store.authState.userIdentity);
 
@@ -44,9 +46,12 @@ export const LoginPage = observer(() => {
   return (
     <div css={{ margin: '8px 16px' }}>
       You must{' '}
-      <a onClick={() => changeUserState(true)} css={{ textDecoration: 'underline', cursor: 'pointer' }}>
-        sign in
-      </a>{' '}
+      <Link
+        href={getLoginUrl(location.pathname + location.search + location.hash)}
+        css={{ textDecoration: 'underline', cursor: 'pointer' }}
+      >
+        login
+      </Link>{' '}
       to see anything useful.
     </div>
   );

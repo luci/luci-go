@@ -13,38 +13,10 @@
 // limitations under the License.
 
 import { Box, BoxProps, Link, LinkProps, styled } from '@mui/material';
-import { BroadcastChannel } from 'broadcast-channel';
+import { useLocation } from 'react-router-dom';
 
+import { getLoginUrl, getLogoutUrl } from '../libs/url_utils';
 import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
-
-/**
- * Signs in/out the user.
- *
- * @param signIn pass true to sign in, false to sign out.
- */
-export function changeUserState(signIn: boolean) {
-  const channelId = 'auth-channel-' + Math.random();
-  const redirectUrl = `/ui/auth-callback/${channelId}`;
-  const target = window.open(
-    `/auth/openid/${signIn ? 'login' : 'logout'}?${new URLSearchParams({ r: redirectUrl })}`,
-    '_blank'
-  );
-  if (!target) {
-    return;
-  }
-
-  const channel = new BroadcastChannel(channelId);
-
-  // Close the channel in 1hr to prevent memory leak in case the target never
-  // sent the message.
-  const timeout = window.setTimeout(() => channel.close(), 3600000);
-
-  channel.addEventListener('message', () => {
-    window.clearTimeout(timeout);
-    channel.close();
-    target.close();
-  });
-}
 
 const Container = styled(Box)<BoxProps>(() => ({
   display: 'inline-block',
@@ -65,10 +37,12 @@ export interface SignInProps {
 }
 
 export function SignIn({ identity, email, picture }: SignInProps) {
+  const location = useLocation();
+
   if (!identity || identity === ANONYMOUS_IDENTITY) {
     return (
       <Container>
-        <ActionLink onClick={() => changeUserState(true)}>Login</ActionLink>
+        <ActionLink href={getLoginUrl(location.pathname + location.search + location.hash)}>Login</ActionLink>
       </Container>
     );
   }
@@ -88,7 +62,8 @@ export function SignIn({ identity, email, picture }: SignInProps) {
           verticalAlign: 'top',
         }}
       >
-        {email} | <ActionLink onClick={() => changeUserState(false)}>Logout</ActionLink>
+        {email} |{' '}
+        <ActionLink href={getLogoutUrl(location.pathname + location.search + location.hash)}>Logout</ActionLink>
       </Box>
     </Container>
   );

@@ -82,3 +82,13 @@ export function getTestHistoryURLPath(realm: string, testId: string) {
 }
 
 export const NOT_FOUND_URL = '/ui/not-found';
+
+// TODO(weiweilin): get the URL from `CONFIGS` instead of hardcoding it.
+export function getLoginUrl(redirectTo: string) {
+  return `/auth/openid/login?${new URLSearchParams({ r: redirectTo })}`;
+}
+
+// TODO(weiweilin): get the URL from `CONFIGS` instead of hardcoding it.
+export function getLogoutUrl(redirectTo: string) {
+  return `/auth/openid/logout?${new URLSearchParams({ r: redirectTo })}`;
+}
