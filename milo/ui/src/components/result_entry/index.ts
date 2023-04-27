@@ -144,6 +144,13 @@ export class ResultEntryElement extends MobxLitElement {
   }
 
   @computed private get testhausLogArtifact() {
+    // Check for Testhaus logs at the test result level first.
+    let log = this.resultArtifacts.find((a) => a.artifactId === 'testhaus_logs');
+    if (log) {
+      return log;
+    }
+
+    // Now check at the parent invocation level.
     return this.invArtifacts.find((a) => a.artifactId === 'testhaus_logs');
   }
 
@@ -249,6 +256,13 @@ export class ResultEntryElement extends MobxLitElement {
     `;
   }
 
+  private renderArtifactLink(artifact: Artifact) {
+    if (artifact.contentType === 'text/x-uri') {
+      return html`<milo-link-artifact .artifact=${artifact}></milo-link-artifact>`;
+    }
+    return html`<a href=${getRawArtifactURLPath(artifact.name)} target="_blank">${artifact.artifactId}</a>`;
+  }
+
   private renderInvocationLevelArtifacts() {
     if (this.invArtifacts.length === 0) {
       return html``;
@@ -257,18 +271,13 @@ export class ResultEntryElement extends MobxLitElement {
     return html`
       <div id="inv-artifacts-header">From the parent inv <a href=${getInvURLPath(this.parentInvId)}></a>:</div>
       <ul>
-        ${this.invArtifacts.map((artifact) => {
-          if (artifact.contentType === 'text/x-uri') {
-            return html` <li>
-              <milo-link-artifact .artifact=${artifact}> </milo-link-artifact>
-            </li>`;
-          }
-          return html`
+        ${this.invArtifacts.map(
+          (artifact) => html`
             <li>
-              <a href=${getRawArtifactURLPath(artifact.name)} target="_blank">${artifact.artifactId}</a>
+              ${this.renderArtifactLink(artifact)}
             </li>
-          `;
-        })}
+          `
+        )}
       </ul>
     `;
   }
@@ -287,7 +296,7 @@ export class ResultEntryElement extends MobxLitElement {
             ${this.resultArtifacts.map(
               (artifact) => html`
                 <li>
-                  <a href=${getRawArtifactURLPath(artifact.name)} target="_blank">${artifact.artifactId}</a>
+                  ${this.renderArtifactLink(artifact)}
                 </li>
               `
             )}
