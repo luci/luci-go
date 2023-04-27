@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import styled from '@emotion/styled';
-import { Tab as MuiTab, TabProps, Tabs as MuiTabs } from '@mui/material';
+// import styled from '@emotion/styled';
+import { styled, Tab as MuiTab, TabProps, Tabs as MuiTabs } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 /**
  * A styled <Tabs /> component. With reduced height and added bottom border.
@@ -26,18 +27,15 @@ export const Tabs = styled(MuiTabs)({
 /**
  * A tab component. Should be placed in <Tabs />.
  */
-export function Tab(params: TabProps<'a'>) {
+export function Tab(params: TabProps<typeof Link>) {
   return (
     <MuiTab
       {...params}
-      component="a"
+      component={Link}
       sx={{
         color: 'var(--default-text-color)',
         padding: '0 14px',
         minHeight: '36px',
-      }}
-      onClick={(e) => {
-        e.preventDefault();
       }}
     />
   );

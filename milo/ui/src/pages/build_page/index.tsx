@@ -89,7 +89,6 @@ const delimiter = css({
 export const BuildPage = observer(() => {
   const { project, bucket, builder, buildNumOrId } = useParams();
   const store = useStore();
-  const navigate = useNavigate();
 
   if (!project || !bucket || !builder || !buildNumOrId) {
     throw new Error('invariant violated: project, bucket, builder, buildNumOrId should be set');
@@ -242,13 +241,8 @@ export const BuildPage = observer(() => {
           variant={build ? 'determinate' : 'indeterminate'}
           color={build ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status] : 'primary'}
         />
-        <Tabs
-          value={store.selectedTabId || false}
-          onChange={(_, tabId) => {
-            navigate(`${buildURLPath}/${tabId}`);
-          }}
-        >
-          <Tab label="Overview" value="overview" href={buildURLPath + '/overview'} />
+        <Tabs value={store.selectedTabId || false}>
+          <Tab label="Overview" value="overview" to={buildURLPath + '/overview'} />
           {/* If the tab is visited directly via URL before we know if it could
         exists, display the tab heading so <Tabs /> won't throw no matching tab
         error */}
@@ -257,22 +251,22 @@ export const BuildPage = observer(() => {
             <Tab
               label="Test Results"
               value="test-results"
-              href={buildURLPath + '/test-results'}
+              to={buildURLPath + '/test-results'}
               icon={<CountIndicator />}
               iconPosition="end"
             />
           )}
           {(store.selectedTabId === 'steps' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Steps & Logs" value="steps" href={buildURLPath + '/steps'} />
+            <Tab label="Steps & Logs" value="steps" to={buildURLPath + '/steps'} />
           )}
           {(store.selectedTabId === 'related-builds' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Related Builds" value="related-builds" href={buildURLPath + '/related-builds'} />
+            <Tab label="Related Builds" value="related-builds" to={buildURLPath + '/related-builds'} />
           )}
           {(store.selectedTabId === 'timeline' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Timeline" value="timeline" href={buildURLPath + '/timeline'} />
+            <Tab label="Timeline" value="timeline" to={buildURLPath + '/timeline'} />
           )}
           {(store.selectedTabId === 'blamelist' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Blamelist" value="blamelist" href={buildURLPath + '/blamelist'} />
+            <Tab label="Blamelist" value="blamelist" to={buildURLPath + '/blamelist'} />
           )}
         </Tabs>
         <Outlet />

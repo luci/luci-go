@@ -15,7 +15,7 @@
 import { ThemeProvider } from '@emotion/react';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import './styles/common_style.css';
 import './styles/color_classes.css';
@@ -89,59 +89,84 @@ export function App() {
     };
   }, []);
 
+  const router = createBrowserRouter([
+    {
+      // Use a 'ui' route to enclose all routes instead of setting the basename
+      // to 'ui' so the URLs work the same whether they are consumed by a
+      // component/function imported from 'react-router' or from other modules.
+      path: 'ui',
+      element: <BaseLayout />,
+      children: [
+        { path: 'login', element: <LoginPage /> },
+        { path: 'search', element: <SearchPage /> },
+        { path: 'auth-callback/:channelId', element: <AuthChannelClosePage /> },
+        { path: 'p/:project/builders', element: <BuildersPage /> },
+        { path: 'p/:project/g/:group/builders', element: <BuildersPage /> },
+        { path: 'b/:buildId/*?', element: <BuildPageShortLink /> },
+        {
+          path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
+          element: <BuildPage />,
+          children: [
+            { index: true, element: <BuildDefaultTab /> },
+            { path: 'overview', element: <OverviewTab /> },
+            { path: 'test-results', element: <TestResultsTab /> },
+            {
+              path: 'steps',
+              element: <StepsTab />,
+              children: [
+                // Some old systems generate links to a step by appending suffix
+                // to /steps/ (crbug/1204954).
+                // This allows those links to continue to work.
+                { path: '*' },
+              ],
+            },
+            { path: 'related-builds', element: <RelatedBuildsTab /> },
+            { path: 'timeline', element: <TimelineTab /> },
+            { path: 'blamelist', element: <BlamelistTab /> },
+          ],
+        },
+        {
+          path: 'inv/:invId',
+          element: <InvocationPage />,
+          children: [
+            { index: true, element: <InvocationDefaultTab /> },
+            { path: 'test-results', element: <TestResultsTab /> },
+            { path: 'invocation-details', element: <InvocationDetailsTab /> },
+          ],
+        },
+        {
+          path: 'artifact',
+          element: <ArtifactPageLayout />,
+          children: [
+            { path: 'text-diff/invocations/:invId/artifacts/:artifactId', element: <TextDiffArtifactPage /> },
+            {
+              path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+              element: <TextDiffArtifactPage />,
+            },
+            { path: 'image-diff/invocations/:invId/artifacts/:artifactId', element: <ImageDiffArtifactPage /> },
+            {
+              path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+              element: <ImageDiffArtifactPage />,
+            },
+            { path: 'raw/invocations/:invId/artifacts/:artifactId', element: <RawArtifactPage /> },
+            {
+              path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
+              element: <RawArtifactPage />,
+            },
+          ],
+        },
+        { path: 'test/:realm/:testId', element: <TestHistoryPage /> },
+        { path: '*', element: <NotFoundPage /> },
+      ],
+    },
+  ]);
+
   return (
     <StoreProvider value={store}>
       <ThemeProvider theme={theme}>
         <LitEnvProvider>
           <milo-tooltip />
-          <Routes>
-            <Route path="/ui" element={<BaseLayout />}>
-              <Route path="login" element={<LoginPage />} />
-              <Route path="search" element={<SearchPage />} />
-              <Route path="auth-callback/:channelId" element={<AuthChannelClosePage />} />
-              <Route path="p/:project/builders" element={<BuildersPage />} />
-              <Route path="p/:project/g/:group/builders" element={<BuildersPage />} />
-              <Route path="b/:buildId/*?" element={<BuildPageShortLink />} />
-              <Route path="p/:project/builders/:bucket/:builder/:buildNumOrId" element={<BuildPage />}>
-                <Route index element={<BuildDefaultTab />} />
-                <Route path="overview" element={<OverviewTab />} />
-                <Route path="test-results" element={<TestResultsTab />} />
-                <Route path="steps" element={<StepsTab />}>
-                  {/* Some old systems generate links to a step by appending
-                suffix to /steps/ (crbug/1204954).
-                This allows those links to continue to work. */}
-                  <Route path="*" />
-                </Route>
-                <Route path="related-builds" element={<RelatedBuildsTab />} />
-                <Route path="timeline" element={<TimelineTab />} />
-                <Route path="blamelist" element={<BlamelistTab />} />
-              </Route>
-              <Route path="inv/:invId" element={<InvocationPage />}>
-                <Route index element={<InvocationDefaultTab />} />
-                <Route index path="test-results" element={<TestResultsTab />} />
-                <Route path="invocation-details" element={<InvocationDetailsTab />} />
-              </Route>
-              <Route path="artifact" element={<ArtifactPageLayout />}>
-                <Route path="text-diff/invocations/:invId/artifacts/:artifactId" element={<TextDiffArtifactPage />} />
-                <Route
-                  path="text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
-                  element={<TextDiffArtifactPage />}
-                />
-                <Route path="image-diff/invocations/:invId/artifacts/:artifactId" element={<ImageDiffArtifactPage />} />
-                <Route
-                  path="image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
-                  element={<ImageDiffArtifactPage />}
-                />
-                <Route path="raw/invocations/:invId/artifacts/:artifactId" element={<RawArtifactPage />} />
-                <Route
-                  path="raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId"
-                  element={<RawArtifactPage />}
-                />
-              </Route>
-              <Route path="test/:realm/:testId/*" element={<TestHistoryPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-          </Routes>
+          <RouterProvider router={router} />
         </LitEnvProvider>
       </ThemeProvider>
     </StoreProvider>

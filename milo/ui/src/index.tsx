@@ -14,7 +14,6 @@
 
 import { configure } from 'mobx';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 
 import './stackdriver_errors';
 import { App } from './App';
@@ -32,8 +31,4 @@ navigator.serviceWorker?.addEventListener('controllerchange', () => window.locat
 
 const container = document.getElementById('app-root');
 const root = createRoot(container!);
-root.render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-);
+root.render(<App />);

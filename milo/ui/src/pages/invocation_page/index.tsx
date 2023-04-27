@@ -15,7 +15,7 @@
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
 
 import { Tab, Tabs } from '../../components/tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
@@ -34,7 +34,6 @@ const ALLOWED_SWARMING_HOSTS = [
 export const InvocationPage = observer(() => {
   const { invId } = useParams();
   const store = useStore();
-  const navigate = useNavigate();
 
   if (!invId) {
     throw new Error('invariant violated: invId should be set');
@@ -99,20 +98,15 @@ export const InvocationPage = observer(() => {
         </div>
       </div>
       <LinearProgress value={100} variant={inv ? 'determinate' : 'indeterminate'} />
-      <Tabs
-        value={store.selectedTabId || false}
-        onChange={(_, tabId) => {
-          navigate(`${invUrlPath}/${tabId}`);
-        }}
-      >
+      <Tabs value={store.selectedTabId || false}>
         <Tab
           label="Test Results"
           value="test-results"
-          href={invUrlPath + '/test-results'}
+          to={invUrlPath + '/test-results'}
           icon={<CountIndicator />}
           iconPosition="end"
         />
-        <Tab label="Invocation Details" value="invocation-details" href={invUrlPath + '/invocation-details'} />
+        <Tab label="Invocation Details" value="invocation-details" to={invUrlPath + '/invocation-details'} />
       </Tabs>
       <Outlet />
     </InvLitEnvProvider>
