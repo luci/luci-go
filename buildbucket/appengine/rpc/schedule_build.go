@@ -303,7 +303,7 @@ var templateBuildMask = model.HardcodedBuildMask(
 	"tags",
 )
 
-func scheduleRequestFromBuildID(ctx context.Context, bID int64) (*pb.ScheduleBuildRequest, error) {
+func scheduleRequestFromBuildID(ctx context.Context, bID int64, isRetry bool) (*pb.ScheduleBuildRequest, error) {
 	bld, err := getBuild(ctx, bID)
 	if err != nil {
 		return nil, err
@@ -313,6 +313,11 @@ func scheduleRequestFromBuildID(ctx context.Context, bID int64) (*pb.ScheduleBui
 	}
 
 	b := bld.ToSimpleBuildProto(ctx)
+
+	if isRetry && b.Retriable == pb.Trinary_NO {
+		return nil, appstatus.BadRequest(errors.Reason("build %d is not retriable", bld.ID).Err())
+	}
+
 	if err := model.LoadBuildDetails(ctx, templateBuildMask, nil, b); err != nil {
 		return nil, err
 	}
@@ -345,7 +350,7 @@ func scheduleRequestFromTemplate(ctx context.Context, req *pb.ScheduleBuildReque
 		return req, nil
 	}
 
-	ret, err := scheduleRequestFromBuildID(ctx, req.TemplateBuildId)
+	ret, err := scheduleRequestFromBuildID(ctx, req.TemplateBuildId, true)
 	if err != nil {
 		return nil, err
 	}

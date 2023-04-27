@@ -100,7 +100,7 @@ func synthesizeBuild(ctx context.Context, schReq *pb.ScheduleBuildRequest) (*pb.
 // given template_build_id if there is one. Fields set in the request override
 // fields populated from the template. Does not modify the incoming request.
 func synthesizeBuildFromTemplate(ctx context.Context, req *pb.SynthesizeBuildRequest) (*pb.Build, error) {
-	ret, err := scheduleRequestFromBuildID(ctx, req.TemplateBuildId)
+	ret, err := scheduleRequestFromBuildID(ctx, req.TemplateBuildId, false)
 	if err != nil {
 		return nil, err
 	}

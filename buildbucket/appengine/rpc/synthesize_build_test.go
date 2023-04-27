@@ -179,6 +179,8 @@ func TestSynthesizeBuild(t *testing.T) {
 								},
 							},
 						},
+						// Non-retriable build can still be synthesized.
+						Retriable: pb.Trinary_NO,
 					},
 				}), ShouldBeNil)
 

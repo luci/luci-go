@@ -5589,6 +5589,49 @@ func TestScheduleBuild(t *testing.T) {
 				So(sch.Tasks(), ShouldBeEmpty)
 			})
 
+			Convey("not retriable", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: userID,
+					FakeDB: authtest.NewFakeDB(
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+					),
+				})
+				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+					Name:     "bucket",
+					Swarming: &pb.Swarming{},
+				})
+				So(datastore.Put(ctx, &model.Build{
+					ID: 1000,
+					Proto: &pb.Build{
+						Id: 1000,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Retriable: pb.Trinary_NO,
+					},
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: &pb.BuilderConfig{
+						BuildNumbers: pb.Toggle_YES,
+						Name:         "builder",
+						SwarmingHost: "host",
+					},
+				}), ShouldBeNil)
+				req := &pb.ScheduleBuildRequest{
+					TemplateBuildId: 1000,
+				}
+
+				rsp, err := srv.ScheduleBuild(ctx, req)
+				So(err, ShouldErrLike, "build 1000 is not retriable")
+				So(rsp, ShouldBeNil)
+				So(sch.Tasks(), ShouldBeEmpty)
+			})
+
 			Convey("ok", func() {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: userID,
