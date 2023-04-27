@@ -17,6 +17,8 @@ package buganizer
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -26,8 +28,12 @@ import (
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 )
 
-// An implementation of ClientWrapperInterface that fakes the actions
-// performed using an in-memory store.
+// ComponentWithNoAccess is a componentID for which all access checks to the
+// fake client will return false.
+const ComponentWithNoAccess = 999999
+
+// FakeClient is an implementation of ClientWrapperInterface that fakes the
+// actions performed using an in-memory store.
 type FakeClient struct {
 	FakeStore *FakeIssueStore
 }
@@ -64,6 +70,14 @@ func (fic *FakeClient) GetIssue(ctx context.Context, in *issuetracker.GetIssueRe
 // CreateIssue creates an issue in the in-memory store.
 func (fic *FakeClient) CreateIssue(ctx context.Context, in *issuetracker.CreateIssueRequest) (*issuetracker.Issue, error) {
 	return fic.FakeStore.StoreIssue(ctx, in.Issue), nil
+}
+
+// GetAutomationAccess checks access to a ComponentID. Access is always true
+// except for component ID ComponentWithNoAccess which is false.
+func (fic *FakeClient) GetAutomationAccess(ctx context.Context, in *issuetracker.GetAutomationAccessRequest) (*issuetracker.GetAutomationAccessResponse, error) {
+	return &issuetracker.GetAutomationAccessResponse{
+		HasAccess: !strings.Contains(in.ResourceName, strconv.Itoa(ComponentWithNoAccess)),
+	}, nil
 }
 
 // ModifyIssue modifies and issue in the in-memory store.

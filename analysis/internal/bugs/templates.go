@@ -33,6 +33,8 @@ See failure impact and configure the failure association rule for the canoncial 
 		` merged the failure association rule for that bug into the rule for this bug.`
 
 	LinkTemplate = `See failure impact and configure the failure association rule for this bug at: %s`
+
+	NoPermissionTemplate = `This bug was filed in the fallback component instead of in component %d because LUCI Analysis does not have permissions to that component.`
 )
 
 // whitespaceRE matches blocks of whitespace, including new lines tabs and

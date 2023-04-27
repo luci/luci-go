@@ -20,13 +20,14 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/api/iterator"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
 	"go.chromium.org/luci/analysis/internal/bugs"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
-	"google.golang.org/api/iterator"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // The status which are consider to be closed.
@@ -160,6 +161,25 @@ func (rg *RequestGenerator) PrepareLinkComment(issueId int64) *issuetracker.Crea
 		IssueId: issueId,
 		Comment: &issuetracker.IssueComment{
 			Comment: rg.linkToRuleComment(issueId),
+		},
+	}
+}
+
+// noPermissionComment returns a comment that explains why a bug was filed in
+// the fallback component incorrectly.
+//
+// issueId is the Buganizer issueId.
+func (rg *RequestGenerator) noPermissionComment(componentID int64) string {
+	return fmt.Sprintf(bugs.NoPermissionTemplate, componentID)
+}
+
+// PrepareNoPermissionComment prepares a request that adds links to LUCI Analysis to
+// a Buganizer bug.
+func (rg *RequestGenerator) PrepareNoPermissionComment(issueID, componentID int64) *issuetracker.CreateIssueCommentRequest {
+	return &issuetracker.CreateIssueCommentRequest{
+		IssueId: issueID,
+		Comment: &issuetracker.IssueComment{
+			Comment: rg.noPermissionComment(componentID),
 		},
 	}
 }

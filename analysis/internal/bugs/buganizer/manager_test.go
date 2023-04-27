@@ -16,6 +16,7 @@ package buganizer
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -58,6 +59,7 @@ func TestBugManager(t *testing.T) {
 		bm := NewBugManager(fakeClient, "luci-analysis-test", "chromeos", projectCfg, false)
 		now := time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
+		ctx = context.WithValue(ctx, &BuganizerSelfEmailKey, "email@test.com")
 
 		Convey("Create", func() {
 			createRequest := newCreateRequest()
@@ -140,6 +142,21 @@ func TestBugManager(t *testing.T) {
 				So(len(fakeStore.Issues), ShouldEqual, 1)
 				issue := fakeStore.Issues[1]
 				So(issue.Issue.IssueState.ComponentId, ShouldEqual, 7890)
+			})
+
+			Convey("With provided component id without permission", func() {
+				createRequest.BuganizerComponent = ComponentWithNoAccess
+				// TODO: Mock permission call to fail.
+				bugID, err := bm.Create(ctx, createRequest)
+				So(err, ShouldBeNil)
+				So(bugID, ShouldEqual, "1")
+				So(len(fakeStore.Issues), ShouldEqual, 1)
+				issue := fakeStore.Issues[1]
+				// Should have fallback component ID because no permission to wanted component.
+				So(issue.Issue.IssueState.ComponentId, ShouldEqual, buganizerCfg.DefaultComponent.Id)
+				// No permission to component should appear in comments.
+				So(len(issue.Comments), ShouldEqual, 2)
+				So(issue.Comments[1].Comment, ShouldContainSubstring, strconv.Itoa(ComponentWithNoAccess))
 			})
 		})
 
@@ -265,6 +282,7 @@ func TestBugManager(t *testing.T) {
 					updateDoesNothing()
 				})
 				Convey("Increases priority in response to increased impact (multi-step)", func() {
+					ctx = context.WithValue(ctx, &BuganizerSelfEmailKey, "email@test.com")
 					bugsToUpdate[0].Impact = bugs.P0Impact()
 
 					response, err := bm.Update(ctx, bugsToUpdate)

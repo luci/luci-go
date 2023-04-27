@@ -19,13 +19,14 @@ import (
 	"fmt"
 
 	"github.com/google/s2a-go"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
-	issuetrackerclient "go.chromium.org/luci/third_party/google.golang.org/google/devtools/issuetracker/v1"
 	"google.golang.org/api/option"
 	"google.golang.org/api/option/internaloption"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/oauth"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
+	issuetrackerclient "go.chromium.org/luci/third_party/google.golang.org/google/devtools/issuetracker/v1"
 )
 
 const s2aServerAddr = "metadata.google.internal:80"
@@ -137,4 +138,10 @@ func (w *RPCClient) CreateIssueComment(ctx context.Context, in *issuetracker.Cre
 func (w *RPCClient) ListIssueComments(ctx context.Context, in *issuetracker.ListIssueCommentsRequest) IssueCommentIterator {
 	it := w.Client.ListIssueComments(ctx, in)
 	return it
+}
+
+// GetAutomationAccess delegates a call to Client.GetIssue and returns the access
+// returned or the error that occured.
+func (w *RPCClient) GetAutomationAccess(ctx context.Context, in *issuetracker.GetAutomationAccessRequest) (*issuetracker.GetAutomationAccessResponse, error) {
+	return w.Client.GetAutomationAccess(ctx, in)
 }

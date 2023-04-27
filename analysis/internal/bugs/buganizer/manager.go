@@ -17,6 +17,9 @@ package buganizer
 import (
 	"context"
 	"strconv"
+	"strings"
+
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -24,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
-	"google.golang.org/protobuf/encoding/prototext"
 )
 
 // The maximum number of issues you can get from Buganizer
@@ -57,6 +59,9 @@ type Client interface {
 	// ListIssueComments lists issue comments, it returns a delegate to an IssueCommentIterator.
 	// The iterator can be used to fetch IssueComment one by one.
 	ListIssueComments(ctx context.Context, in *issuetracker.ListIssueCommentsRequest) IssueCommentIterator
+	// GetAutomationAccess checks that automation has permission on a resource.
+	// Does not require any permission on the resource
+	GetAutomationAccess(ctx context.Context, in *issuetracker.GetAutomationAccessRequest) (*issuetracker.GetAutomationAccessResponse, error)
 }
 
 // An interface for an IssueUpdateIterator.
@@ -119,8 +124,15 @@ func NewBugManager(client Client,
 // Create creates an issue in Buganizer and returns the issue ID.
 func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequest) (string, error) {
 	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
-	if createRequest.BuganizerComponent > 0 {
-		componentID = createRequest.BuganizerComponent
+	wantedComponentID := createRequest.BuganizerComponent
+	if wantedComponentID != componentID && wantedComponentID > 0 {
+		permissions, err := bm.checkComponentPermissions(ctx, wantedComponentID)
+		if err != nil {
+			return "", errors.Annotate(err, "check permissions to create Buganizer issue").Err()
+		}
+		if permissions.appender && permissions.issueDefaultsAppender {
+			componentID = createRequest.BuganizerComponent
+		}
 	}
 	createIssueRequest := bm.requestGenerator.PrepareNew(
 		createRequest.Impact,
@@ -142,11 +154,25 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequ
 	issueCommentReq := bm.requestGenerator.PrepareLinkComment(issueId)
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(issueCommentReq))
-		return "", bugs.ErrCreateSimulated
+	} else {
+		if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
+			return "", errors.Annotate(err, "create issue link comment").Err()
+		}
 	}
 
-	if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
-		return "", errors.Annotate(err, "create issue link comment").Err()
+	if wantedComponentID > 0 && wantedComponentID != componentID {
+		issueCommentReq := bm.requestGenerator.PrepareNoPermissionComment(issueId, wantedComponentID)
+		if bm.Simulate {
+			logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(issueCommentReq))
+		} else {
+			if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
+				return "", errors.Annotate(err, "create issue link comment").Err()
+			}
+		}
+	}
+
+	if bm.Simulate {
+		return "", bugs.ErrCreateSimulated
 	}
 
 	bugs.BugsCreatedCounter.Add(ctx, 1, bm.project, "buganizer")
@@ -391,4 +417,56 @@ func (bm *BugManager) UpdateDuplicateDestination(ctx context.Context, destinatio
 		}
 	}
 	return nil
+}
+
+// componentPermissions contains the results of checking the permissions of a
+// Buganizer component.
+type componentPermissions struct {
+	// appender is permission to create issues in this component.
+	appender bool
+	// issueDefaultsAppender is permission to add comments to issues in
+	// this component.
+	issueDefaultsAppender bool
+}
+
+// checkComponentPermissions checks the permissions required to create an issue
+// in the specified component.
+func (bm *BugManager) checkComponentPermissions(ctx context.Context, componentID int64) (componentPermissions, error) {
+	var err error
+	permissions := componentPermissions{}
+	permissions.appender, err = bm.checkSinglePermission(ctx, componentID, false, "appender")
+	if err != nil {
+		return permissions, err
+	}
+	permissions.issueDefaultsAppender, err = bm.checkSinglePermission(ctx, componentID, true, "appender")
+	if err != nil {
+		return permissions, err
+	}
+	return permissions, nil
+}
+
+// checkSinglePermission checks a single permission of a Buganizer component
+// ID.  You should typically use checkComponentPermission instead of this
+// method.
+func (bm *BugManager) checkSinglePermission(ctx context.Context, componentID int64, issueDefaults bool, relation string) (bool, error) {
+	resource := []string{"components", strconv.Itoa(int(componentID))}
+	if issueDefaults {
+		resource = append(resource, "issueDefaults")
+	}
+	automationAccessRequest := &issuetracker.GetAutomationAccessRequest{
+		User:         &issuetracker.User{EmailAddress: ctx.Value(&BuganizerSelfEmailKey).(string)},
+		Relation:     relation,
+		ResourceName: strings.Join(resource, "/"),
+	}
+	if bm.Simulate {
+		logging.Debugf(ctx, "Would check Buganizer component permission: %s", textPBMultiline.Format(automationAccessRequest))
+	} else {
+		access, err := bm.client.GetAutomationAccess(ctx, automationAccessRequest)
+		if err != nil {
+			logging.Errorf(ctx, "error when checking buganizer component permissions with request:\n%s\nerror:%s", textPBMultiline.Format(automationAccessRequest), err)
+			return false, err
+		}
+		return access.HasAccess, nil
+	}
+	return false, nil
 }

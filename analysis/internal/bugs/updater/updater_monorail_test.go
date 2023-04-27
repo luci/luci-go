@@ -132,6 +132,7 @@ func TestMonorailUpdate(t *testing.T) {
 		// Closed (Verified).
 		now := time.Date(2055, time.May, 5, 5, 5, 5, 5, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, now)
+		ctx = context.WithValue(ctx, &buganizer.BuganizerSelfEmailKey, "email@test.com")
 
 		Convey("Configuration used for testing is valid", func() {
 			c := validation.Context{Context: context.Background()}
