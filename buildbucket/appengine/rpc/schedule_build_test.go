@@ -790,7 +790,8 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "static bucket",
 						Builder: "static builder",
 					},
-					Critical: pb.Trinary_UNSET,
+					Critical:  pb.Trinary_UNSET,
+					Retriable: pb.Trinary_UNSET,
 				},
 				{
 					Builder: &pb.BuilderID{
@@ -798,7 +799,8 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "static bucket",
 						Builder: "static builder",
 					},
-					Critical: pb.Trinary_YES,
+					Critical:  pb.Trinary_YES,
+					Retriable: pb.Trinary_YES,
 				},
 				{
 					Builder: &pb.BuilderID{
@@ -806,7 +808,8 @@ func TestScheduleBuild(t *testing.T) {
 						Bucket:  "dynamic bucket",
 						Builder: "dynamic builder",
 					},
-					Critical: pb.Trinary_NO,
+					Critical:  pb.Trinary_NO,
+					Retriable: pb.Trinary_NO,
 				},
 			}
 			testutil.PutBuilder(ctx, "project", "static bucket", "static builder", "")
@@ -902,7 +905,8 @@ func TestScheduleBuild(t *testing.T) {
 					Exe: &pb.Executable{
 						Cmd: []string{"recipes"},
 					},
-					Critical: pb.Trinary_YES,
+					Critical:  pb.Trinary_YES,
+					Retriable: pb.Trinary_YES,
 					ExecutionTimeout: &durationpb.Duration{
 						Seconds: 10800,
 					},
@@ -971,7 +975,8 @@ func TestScheduleBuild(t *testing.T) {
 					Exe: &pb.Executable{
 						Cmd: []string{"recipes"},
 					},
-					Critical: pb.Trinary_NO,
+					Critical:  pb.Trinary_NO,
+					Retriable: pb.Trinary_NO,
 					ExecutionTimeout: &durationpb.Duration{
 						Seconds: 10800,
 					},

@@ -332,6 +332,7 @@ func scheduleRequestFromBuildID(ctx context.Context, bID int64, isRetry bool) (*
 		Tags:          b.Tags,
 		Dimensions:    b.Infra.GetBuildbucket().GetRequestedDimensions(),
 		Priority:      b.Infra.GetSwarming().GetPriority(),
+		Retriable:     b.Retriable,
 	}
 
 	ret.Experiments = make(map[string]bool, len(bld.Experiments))
@@ -1073,6 +1074,7 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 		Builder:         req.Builder,
 		Critical:        cfg.GetCritical(),
 		WaitForCapacity: cfg.GetWaitForCapacity() == pb.Trinary_YES,
+		Retriable:       cfg.GetRetriable(),
 	}
 
 	if cfg.GetDescriptionHtml() != "" {
@@ -1083,6 +1085,10 @@ func buildFromScheduleRequest(ctx context.Context, req *pb.ScheduleBuildRequest,
 
 	if req.Critical != pb.Trinary_UNSET {
 		b.Critical = req.Critical
+	}
+
+	if req.Retriable != pb.Trinary_UNSET {
+		b.Retriable = req.Retriable
 	}
 
 	if len(ancestors) > 0 {
