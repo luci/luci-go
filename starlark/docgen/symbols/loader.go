@@ -51,6 +51,8 @@ import (
 // they are gathered from many internal modules via load(...) statements,
 // assignments and structs.
 type Loader struct {
+	// Normalize normalizes a load() statement relative to the parent.
+	Normalize func(parent, module string) (string, error)
 	// Source loads module's source code.
 	Source func(module string) (src string, err error)
 
@@ -74,6 +76,8 @@ func (l *Loader) init() {
 // Returns a struct with a list of symbols defined in the module.
 //
 // Can be called multiple times with different modules.
+//
+// The module string must be normalized.
 func (l *Loader) Load(module string) (syms *Struct, err error) {
 	defer func() {
 		err = errors.Annotate(err, "in %s", module).Err()
@@ -96,7 +100,9 @@ func (l *Loader) Load(module string) (syms *Struct, err error) {
 		return nil, err
 	}
 	l.sources[module] = src
-	mod, err := ast.ParseModule(module, src)
+	mod, err := ast.ParseModule(module, src, func(s string) (string, error) {
+		return l.Normalize(module, s)
+	})
 	if err != nil {
 		return nil, err
 	}

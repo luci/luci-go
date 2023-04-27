@@ -129,7 +129,10 @@ func TestLoader(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		l := Loader{Source: source(srcs)}
+		l := Loader{
+			Normalize: func(parent, module string) (string, error) { return module, nil },
+			Source:    source(srcs),
+		}
 
 		init, err := l.Load("init.star")
 		So(err, ShouldBeNil)
@@ -148,10 +151,12 @@ func TestLoader(t *testing.T) {
 	})
 
 	Convey("Recursive deps", t, func() {
-		l := Loader{Source: source(map[string]string{
-			"a.star": `load("b.star", "_")`,
-			"b.star": `load("a.star", "_")`,
-		})}
+		l := Loader{
+			Normalize: func(parent, module string) (string, error) { return module, nil },
+			Source: source(map[string]string{
+				"a.star": `load("b.star", "_")`,
+				"b.star": `load("a.star", "_")`,
+			})}
 		_, err := l.Load("a.star")
 		So(err.Error(), ShouldEqual, "in a.star: in b.star: in a.star: recursive dependency")
 	})

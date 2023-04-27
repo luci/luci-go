@@ -124,7 +124,7 @@ func TestParseModule(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		mod, err := ParseModule("mod.star", goodInput)
+		mod, err := ParseModule("mod.star", goodInput, func(s string) (string, error) { return s, nil })
 		So(err, ShouldBeNil)
 		buf := strings.Builder{}
 		dumpTree(mod, &buf, "")

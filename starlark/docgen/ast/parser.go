@@ -20,6 +20,7 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 
 	"go.starlark.net/syntax"
@@ -164,7 +165,7 @@ type ExternalReference struct {
 	base
 
 	ExternalName string // name of the symbol in the loaded module
-	Module       string // path of the loaded module
+	Module       string // normalized path of the loaded module
 }
 
 // Invocation represents `<name> = ns1.ns2.func(arg1=..., arg2=...)` call. Only
@@ -204,7 +205,7 @@ func (n *Module) Doc() string { return n.docstring }
 // ParseModule parses a single Starlark module.
 //
 // Filename is only used when recording position information.
-func ParseModule(filename, body string) (*Module, error) {
+func ParseModule(filename, body string, normalize func(string) (string, error)) (*Module, error) {
 	ast, err := syntax.Parse(filename, body, syntax.RetainComments)
 	if err != nil {
 		return nil, err
@@ -226,10 +227,14 @@ func ParseModule(filename, body string) (*Module, error) {
 		case *syntax.LoadStmt:
 			// A load(...) statement. Each imported symbol ends up in the module's
 			// namespace, so add corresponding ExternalReference nodes.
+			s := st.Module.Value.(string)
+			if s, err = normalize(s); err != nil {
+				return nil, fmt.Errorf("load() statement invalid: %w", err)
+			}
 			for i, nm := range st.To {
 				emit(nm.Name, st, &ExternalReference{
 					ExternalName: st.From[i].Name,
-					Module:       st.Module.Value.(string),
+					Module:       s,
 				})
 			}
 

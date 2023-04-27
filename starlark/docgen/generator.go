@@ -33,7 +33,13 @@ import (
 //
 // The templates use them to inject documentation extracted from Starlark into
 // appropriate places.
+//
+// It is a cache of the current loaded modules, which enables following
+// Render() calls to be much faster.
 type Generator struct {
+	// Normalize normalizes a load() reference relative to the context of the
+	// current starlark file.
+	Normalize func(parent, ref string) (string, error)
 	// Starlark produces Starlark module's source code.
 	//
 	// It is then parsed by the generator to extract documentation from it.
@@ -45,9 +51,12 @@ type Generator struct {
 
 // Render renders the given text template in an environment with access to
 // parsed structured Starlark comments.
+//
+// Loaded modules are kept as a cache in Generator, making the rendering of
+// multiple starlark files faster.
 func (g *Generator) Render(templ string) ([]byte, error) {
 	if g.loader == nil {
-		g.loader = &symbols.Loader{Source: g.Starlark}
+		g.loader = &symbols.Loader{Normalize: g.Normalize, Source: g.Starlark}
 		g.links = map[string]*symbol{}
 	}
 

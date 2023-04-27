@@ -59,7 +59,10 @@ func run(templates, starlark, outDir string) error {
 
 	// Prepare the generator that can load starlark modules to extract docs from
 	// them.
-	gen := docgen.Generator{Starlark: sourceProvider(starlark)}
+	gen := docgen.Generator{
+		Normalize: func(p, s string) (string, error) { return s, nil },
+		Starlark:  sourceProvider(starlark),
+	}
 
 	// For each input template spit out the corresponding generated *.md file.
 	haveErrs := false
