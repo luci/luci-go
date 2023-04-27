@@ -52,7 +52,7 @@ message Acl {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 37.
+// Next tag: 38.
 message BuilderConfig {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -433,6 +433,30 @@ message BuilderConfig {
   //
   // This value can be overridden by ScheduleBuildRequest.retriable
   buildbucket.v2.Trinary retriable = 36;
+
+  message BuilderHealthLinks {
+    // Mapping of username domain to clickable link for documentation on the health
+    // metrics and how they were calculated.
+    //
+    // The empty domain value will be used as a fallback for anonymous users, or
+    // if the user identity domain doesn't have a matching entry in this map.
+    //
+    // If linking an internal google link (say g3doc), use a go-link instead of a
+    // raw url.
+    map<string, string> doc_links = 1;
+    // Mapping of username domain to clickable link for data visualization or
+    // dashboards for the health metrics.
+    //
+    // Similar to doc_links, the empty domain value will be used as a fallback for
+    // anonymous users, or if the user identity domain doesn't have a matching
+    // entry in this map.
+    //
+    // If linking an internal google link (say g3doc), use a go-link instead of a
+    // raw url.
+    map<string, string> data_links = 2;
+  }
+
+  BuilderHealthLinks builder_health_metrics_links = 37;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.

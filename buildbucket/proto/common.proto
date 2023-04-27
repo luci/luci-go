@@ -18,6 +18,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -328,4 +329,66 @@ message CacheEntry {
   // Environment variable with this name will be set to the path to the cache
   // directory.
   string env_var = 4;
+}
+
+message HealthStatus {
+  // A numeric score for a builder's health.
+  // The scores must respect the following:
+  //   - 0: Unknown status
+  //   - 1: The worst possible health
+  //         e.g.
+  //           - all bots are dead.
+  //           - every single build has ended in INFRA_FAILURE in the configured
+  //             time period.
+  //   - 10: Completely healthy.
+  //           e.g. Every single build has ended in SUCCESS or CANCELLED in the
+  //                configured time period.
+  //
+  // Reasoning for scores from 2 to 9 are to be configured by the builder owner.
+  // Since each set of metrics used to calculate the health score can vary, the
+  // builder owners must provide the score and reasoning (using the description
+  // field). This allows for complicated metric calculation while preserving a
+  // binary solution for less complex forms of metric calculation.
+  int64 health_score = 1;
+  // A map of metric label to value. This will allow milo to display the metrics
+  // used to construct the health score. There is no generic set of metrics for
+  // this since each set of metrics can vary from team to team.
+  //
+  // Buildbucket will not use this information to calculate the health score.
+  // These metrics are for display only.
+  map<string, float> health_metrics = 2;
+  // A human readable summary of why the health is the way it is, without
+  // the user having to go to the dashboard to find it themselves.
+  //
+  // E.g.
+  //   "the p90 pending time has been greater than 50 minutes for at least 3
+  //    of the last 7 days"
+  string description = 3;
+  // Mapping of username domain to clickable link for documentation on the health
+  // metrics and how they were calculated.
+  //
+  // The empty domain value will be used as a fallback for anonymous users, or
+  // if the user identity domain doesn't have a matching entry in this map.
+  //
+  // If linking an internal google link (say g3doc), use a go-link instead of a
+  // raw url.
+  map<string, string> doc_links = 4;
+  // Mapping of username domain to clickable link for data visualization or
+  // dashboards for the health metrics.
+  //
+  // Similar to doc_links, the empty domain value will be used as a fallback for
+  // anonymous users, or if the user identity domain doesn't have a matching
+  // entry in this map.
+  //
+  // If linking an internal google link (say g3doc), use a go-link instead of a
+  // raw url.
+  map<string, string> data_links = 5;
+  // Entity that reported the health status, A luci-auth identity.
+  // E.g.
+  //    anonymous:anonymous, user:someuser@example.com, project:chromeos
+  //
+  // Set by Buildbucket. Output only.
+  string reporter = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // Set by Buildbucket. Output only.
+  google.protobuf.Timestamp reported_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

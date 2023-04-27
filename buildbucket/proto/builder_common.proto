@@ -8,6 +8,7 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
 // Identifies a builder.
@@ -25,6 +26,13 @@ message BuilderID {
   string builder = 3;
 }
 
+message BuilderMetadata {
+  // Team that owns the builder
+  string owner = 1;
+  // Builders current health status
+  HealthStatus health = 2;
+}
+
 // A configured builder.
 //
 // It is called BuilderItem and not Builder because
@@ -37,4 +45,7 @@ message BuilderItem {
   // User-supplied configuration after normalization.
   // Does not refer to mixins and has defaults inlined.
   BuilderConfig config = 2;
+
+  // Metadata surrounding the builder.
+  BuilderMetadata metadata = 3;
 }
