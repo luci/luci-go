@@ -238,7 +238,7 @@ message ConfigGroup {
     }
   }
 
-  // PostAction to be performed on a Run completion.
+  // PostActions to be performed on a Run completion.
   //
   // On a Run completion, all the post actions with matching conditions will
   // be executed.
@@ -248,6 +248,42 @@ message ConfigGroup {
       (validate.rules).repeated = {
         items: {message: {required: true}}
       }
+  ];
+
+  // TryjobExperiment is experiment (e.g. Buildbucket Build experiment) that
+  // will be enabled on the Tryjobs of CLs that meet the condition.
+  //
+  // TODO(crbug/1440834): Currently this feature has a caveat that a Run with
+  // this experiment enabled may reuse the Tryjob from previous Run that
+  // doesn't have this experiment enabled. This typically happens to the Run
+  // triggered immediately after the config change.
+  message TryjobExperiment {
+    // Condition describes the condition for this experiment to be enabled.
+    message Condition {
+      // ownerGroupAllowlist is a list of CrIA groups that the owner of the CL
+      // must be a member in any of those groups in order to enable the
+      // experiment.
+      //
+      // If the list is empty, this condition is considered as met.
+      repeated string owner_group_allowlist = 1;
+    }
+    // Name of the experiment.
+    //
+    // See `experiments` field in
+    // https://pkg.go.dev/go.chromium.org/luci/buildbucket/proto#BuilderConfig
+    string name = 1 [(validate.rules).string.min_len = 1];
+    // The condition to meet to enable this experiment.
+    //
+    // The absence of condition means the experiment will be enabled
+    // unconditionally.
+    Condition condition = 2;
+  }
+
+  // TryjobExperiments that will be conditionally enabled for Tryjobs.
+  repeated TryjobExperiment tryjob_experiments = 11 [
+    (validate.rules).repeated = {
+      items: {message: {required: true}}
+    }
   ];
 }
 

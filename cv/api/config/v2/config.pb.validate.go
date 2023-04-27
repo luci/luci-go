@@ -466,6 +466,51 @@ func (m *ConfigGroup) validate(all bool) error {
 
 	}
 
+	for idx, item := range m.GetTryjobExperiments() {
+		_, _ = idx, item
+
+		if item == nil {
+			err := ConfigGroupValidationError{
+				field:  fmt.Sprintf("TryjobExperiments[%v]", idx),
+				reason: "value is required",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigGroupValidationError{
+						field:  fmt.Sprintf("TryjobExperiments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigGroupValidationError{
+						field:  fmt.Sprintf("TryjobExperiments[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigGroupValidationError{
+					field:  fmt.Sprintf("TryjobExperiments[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return ConfigGroupMultiError(errors)
 	}
@@ -1734,6 +1779,149 @@ var _ interface {
 	ErrorName() string
 } = ConfigGroup_PostActionValidationError{}
 
+// Validate checks the field values on ConfigGroup_TryjobExperiment with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ConfigGroup_TryjobExperiment) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ConfigGroup_TryjobExperiment with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ConfigGroup_TryjobExperimentMultiError, or nil if none found.
+func (m *ConfigGroup_TryjobExperiment) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ConfigGroup_TryjobExperiment) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := ConfigGroup_TryjobExperimentValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if all {
+		switch v := interface{}(m.GetCondition()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ConfigGroup_TryjobExperimentValidationError{
+					field:  "Condition",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ConfigGroup_TryjobExperimentValidationError{
+					field:  "Condition",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCondition()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ConfigGroup_TryjobExperimentValidationError{
+				field:  "Condition",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ConfigGroup_TryjobExperimentMultiError(errors)
+	}
+
+	return nil
+}
+
+// ConfigGroup_TryjobExperimentMultiError is an error wrapping multiple
+// validation errors returned by ConfigGroup_TryjobExperiment.ValidateAll() if
+// the designated constraints aren't met.
+type ConfigGroup_TryjobExperimentMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ConfigGroup_TryjobExperimentMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ConfigGroup_TryjobExperimentMultiError) AllErrors() []error { return m }
+
+// ConfigGroup_TryjobExperimentValidationError is the validation error returned
+// by ConfigGroup_TryjobExperiment.Validate if the designated constraints
+// aren't met.
+type ConfigGroup_TryjobExperimentValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ConfigGroup_TryjobExperimentValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ConfigGroup_TryjobExperimentValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ConfigGroup_TryjobExperimentValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ConfigGroup_TryjobExperimentValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ConfigGroup_TryjobExperimentValidationError) ErrorName() string {
+	return "ConfigGroup_TryjobExperimentValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ConfigGroup_TryjobExperimentValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sConfigGroup_TryjobExperiment.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ConfigGroup_TryjobExperimentValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ConfigGroup_TryjobExperimentValidationError{}
+
 // Validate checks the field values on ConfigGroup_Gerrit_Project with the
 // rules defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -2252,6 +2440,112 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ConfigGroup_PostAction_VoteGerritLabels_VoteValidationError{}
+
+// Validate checks the field values on ConfigGroup_TryjobExperiment_Condition
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *ConfigGroup_TryjobExperiment_Condition) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// ConfigGroup_TryjobExperiment_Condition with the rules defined in the proto
+// definition for this message. If any rules are violated, the result is a
+// list of violation errors wrapped in
+// ConfigGroup_TryjobExperiment_ConditionMultiError, or nil if none found.
+func (m *ConfigGroup_TryjobExperiment_Condition) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ConfigGroup_TryjobExperiment_Condition) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ConfigGroup_TryjobExperiment_ConditionMultiError(errors)
+	}
+
+	return nil
+}
+
+// ConfigGroup_TryjobExperiment_ConditionMultiError is an error wrapping
+// multiple validation errors returned by
+// ConfigGroup_TryjobExperiment_Condition.ValidateAll() if the designated
+// constraints aren't met.
+type ConfigGroup_TryjobExperiment_ConditionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ConfigGroup_TryjobExperiment_ConditionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ConfigGroup_TryjobExperiment_ConditionMultiError) AllErrors() []error { return m }
+
+// ConfigGroup_TryjobExperiment_ConditionValidationError is the validation
+// error returned by ConfigGroup_TryjobExperiment_Condition.Validate if the
+// designated constraints aren't met.
+type ConfigGroup_TryjobExperiment_ConditionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ConfigGroup_TryjobExperiment_ConditionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ConfigGroup_TryjobExperiment_ConditionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ConfigGroup_TryjobExperiment_ConditionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ConfigGroup_TryjobExperiment_ConditionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ConfigGroup_TryjobExperiment_ConditionValidationError) ErrorName() string {
+	return "ConfigGroup_TryjobExperiment_ConditionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ConfigGroup_TryjobExperiment_ConditionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sConfigGroup_TryjobExperiment_Condition.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ConfigGroup_TryjobExperiment_ConditionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ConfigGroup_TryjobExperiment_ConditionValidationError{}
 
 // Validate checks the field values on Verifiers_GerritCQAbility with the rules
 // defined in the proto definition for this message. If any rules are
