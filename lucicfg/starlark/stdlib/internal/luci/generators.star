@@ -454,6 +454,7 @@ def _buildbucket_builders(bucket):
             priority = node.props.priority,
             expiration_secs = optional_sec(node.props.expiration_timeout),
             wait_for_capacity = _buildbucket_trinary(node.props.wait_for_capacity),
+            retriable = _buildbucket_trinary(node.props.retriable),
             build_numbers = _buildbucket_toggle(node.props.build_numbers),
             experimental = _buildbucket_toggle(node.props.experimental),
             experiments = combined_experiments,

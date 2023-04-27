@@ -86,6 +86,7 @@ luci.builder(
     priority = 1,
     expiration_timeout = 20 * time.minute,
     wait_for_capacity = True,
+    retriable = False,
     triggering_policy = scheduler.greedy_batching(max_batch_size = 1),
     build_numbers = False,
     experimental = False,
@@ -292,6 +293,7 @@ luci.builder(
 #         key: "luci.recipes.use_python3"
 #         value: 100
 #       }
+#       retriable: NO
 #     }
 #     builders {
 #       name: "b4"

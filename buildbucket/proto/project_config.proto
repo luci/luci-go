@@ -52,7 +52,7 @@ message Acl {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 36.
+// Next tag: 37.
 message BuilderConfig {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -426,6 +426,13 @@ message BuilderConfig {
   }
 
   ShadowBuilderAdjustments shadow_builder_adjustments = 35;
+
+  // This field will set the default value of the "retriable" field of
+  // all the builds of this builder. Please refer to build.proto for
+  // the meaning of this field.
+  //
+  // This value can be overridden by ScheduleBuildRequest.retriable
+  buildbucket.v2.Trinary retriable = 36;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.

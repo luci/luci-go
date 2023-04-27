@@ -52,6 +52,7 @@ def _builder(
         swarming_tags = None,
         expiration_timeout = None,
         wait_for_capacity = None,
+        retriable = None,
 
         # LUCI Scheduler parameters.
         schedule = None,
@@ -186,6 +187,8 @@ def _builder(
         it has never seen a bot whose dimensions are a superset of the requested
         dimensions. This is useful if this builder has bots whose dimensions
         are mutated dynamically. Supports the module-scoped default.
+      retriable: control if the builds on the builder can be retried. Supports
+        the module-scoped default.
 
       schedule: string with a cron schedule that describes when to run this
         builder. See [Defining cron schedules](#schedules-doc) for the expected
@@ -283,6 +286,7 @@ def _builder(
         "swarming_tags": swarming.validate_tags("swarming_tags", swarming_tags),
         "expiration_timeout": validate.duration("expiration_timeout", expiration_timeout, required = False),
         "wait_for_capacity": validate.bool("wait_for_capacity", wait_for_capacity, required = False),
+        "retriable": validate.bool("retriable", retriable, required = False),
         "schedule": validate.string("schedule", schedule, required = False),
         "triggering_policy": schedulerimpl.validate_policy("triggering_policy", triggering_policy, required = False),
         "build_numbers": validate.bool("build_numbers", build_numbers, required = False),
@@ -459,6 +463,7 @@ builder = lucicfg.rule(
         "swarming_tags": swarming.validate_tags,
         "expiration_timeout": validate.duration,
         "wait_for_capacity": validate.bool,
+        "retriable": validate.bool,
         "triggering_policy": schedulerimpl.validate_policy,
         "build_numbers": validate.bool,
         "experimental": validate.bool,
