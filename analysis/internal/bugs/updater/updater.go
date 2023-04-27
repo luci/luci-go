@@ -243,31 +243,43 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 		bugUpdatesBySystem[rule.BugID.System] = bugUpdates
 	}
 
+	// Perform bug updates.
+	var errs []error
+	for system, bugsToUpdate := range bugUpdatesBySystem {
+		err := b.updateBugsForSystem(ctx, system, bugsToUpdate)
+		if err != nil {
+			errs = append(errs, errors.Annotate(err, "updating bugs in %s", system).Err())
+		}
+	}
+	if len(errs) > 0 {
+		return errors.NewMultiError(errs...)
+	}
+	return nil
+}
+
+func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bugsToUpdate []bugs.BugUpdateRequest) error {
 	var duplicateBugs []bugs.BugID
 	var ruleIDsToArchive []string
 	var ruleIDsToDisableBugPriorityUpdates []string
 
-	// Perform bug updates.
-	for system, bugsToUpdate := range bugUpdatesBySystem {
-		manager, ok := b.managers[system]
-		if !ok {
-			logging.Warningf(ctx, "Encountered bug(s) with an unrecognised manager: %q", system)
-			continue
-		}
-		responses, err := manager.Update(ctx, bugsToUpdate)
-		if err != nil {
-			return err
-		}
+	manager, ok := b.managers[system]
+	if !ok {
+		logging.Warningf(ctx, "Encountered bug(s) with an unrecognised manager: %q", system)
+		return nil
+	}
+	responses, err := manager.Update(ctx, bugsToUpdate)
+	if err != nil {
+		return err
+	}
 
-		for i, rsp := range responses {
-			if rsp.IsDuplicate {
-				duplicateBugs = append(duplicateBugs, bugsToUpdate[i].Bug)
-			} else if rsp.ShouldArchive {
-				ruleIDsToArchive = append(ruleIDsToArchive, bugsToUpdate[i].RuleID)
-			}
-			if rsp.DisableRulePriorityUpdates {
-				ruleIDsToDisableBugPriorityUpdates = append(ruleIDsToDisableBugPriorityUpdates, bugsToUpdate[i].RuleID)
-			}
+	for i, rsp := range responses {
+		if rsp.IsDuplicate {
+			duplicateBugs = append(duplicateBugs, bugsToUpdate[i].Bug)
+		} else if rsp.ShouldArchive {
+			ruleIDsToArchive = append(ruleIDsToArchive, bugsToUpdate[i].RuleID)
+		}
+		if rsp.DisableRulePriorityUpdates {
+			ruleIDsToDisableBugPriorityUpdates = append(ruleIDsToDisableBugPriorityUpdates, bugsToUpdate[i].RuleID)
 		}
 	}
 
@@ -307,7 +319,6 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 			return errors.Annotate(err, "handling bug (%s) marked as duplicate", bug).Err()
 		}
 	}
-
 	return nil
 }
 

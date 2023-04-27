@@ -753,6 +753,31 @@ func TestMonorailUpdate(t *testing.T) {
 					So(monorail.ChromiumTestIssuePriority(issue), ShouldEqual, "0")
 
 					expectRules(expectedRules)
+
+					Convey("Buganizer failures do not block monorail bug updates", func() {
+						fakeBuganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(12345678))
+						fakeBuganizerStore.Issues[12345678].ShouldFailUpdates = true
+						expectedRules[2].BugID = bugs.BugID{
+							System: "buganizer", ID: "12345678",
+						}
+						rs[2].BugID = bugs.BugID{
+							System: "buganizer", ID: "12345678",
+						}
+						SetResidualImpact(
+							bugClusters[1], bugs.P2Impact())
+						err = rules.SetRulesForTesting(ctx, rs)
+						So(err, ShouldBeNil)
+
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldNotBeNil)
+
+						So(len(f.Issues), ShouldEqual, 3)
+						issue = f.Issues[1].Issue
+						So(issue.Name, ShouldEqual, "projects/chromium/issues/101")
+						So(monorail.ChromiumTestIssuePriority(issue), ShouldEqual, "2")
+
+						expectRules(expectedRules)
+					})
 				})
 				Convey("Decreasing cluster impact decreases issue priority", func() {
 					issue := f.Issues[2].Issue

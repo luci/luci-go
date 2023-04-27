@@ -178,8 +178,8 @@ func TestBugManager(t *testing.T) {
 					{
 						Bug:                              bugs.BugID{System: bugs.BuganizerSystem, ID: bugID},
 						Impact:                           c.Impact,
-						IsManagingBug:                    true,
 						RuleID:                           "123",
+						IsManagingBug:                    true,
 						IsManagingBugPriority:            true,
 						IsManagingBugPriorityLastUpdated: clock.Now(ctx),
 					},
@@ -304,17 +304,22 @@ func TestBugManager(t *testing.T) {
 					So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P1)
 					expectedResponse[0].DisableRulePriorityUpdates = true
 					So(response[0].DisableRulePriorityUpdates, ShouldBeTrue)
-					// Check repeated update does nothing more.
-					updateDoesNothing()
 
-					Convey("Unless managing bug priority manually updated", func() {
+					// Check repeated update does nothing more.
+					initialComments := len(fakeStore.Issues[1].Comments)
+					expectedResponse[0].DisableRulePriorityUpdates = false
+					bugsToUpdate[0].IsManagingBugPriority = false
+					updateDoesNothing()
+					So(len(fakeStore.Issues[1].Comments), ShouldEqual, initialComments)
+
+					Convey("Unless IsManagingBugPriority manually updated", func() {
+						bugsToUpdate[0].IsManagingBugPriority = true
 						bugsToUpdate[0].IsManagingBugPriorityLastUpdated = clock.Now(ctx).Add(time.Minute * 15)
-						response, err := bm.Update(ctx, bugsToUpdate)
 						expectedResponse[0].DisableRulePriorityUpdates = false
+						response, err := bm.Update(ctx, bugsToUpdate)
 						So(response, ShouldResemble, expectedResponse)
 						So(err, ShouldBeNil)
 						So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P3)
-						So(response[0].DisableRulePriorityUpdates, ShouldBeFalse)
 						// Verify repeated update has no effect.
 						updateDoesNothing()
 					})

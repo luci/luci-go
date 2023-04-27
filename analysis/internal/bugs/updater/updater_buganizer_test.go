@@ -574,10 +574,8 @@ func TestBuganizerUpdate(t *testing.T) {
 			expectRules(expectedRules)
 
 			// Further updates do nothing.
-			// originalIssues := monorail.CopyIssuesStore(fakeStore)
 			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
-			// So(fakeStore, monorail.ShouldResembleIssuesStore, originalIssues)
 			expectRules(expectedRules)
 
 			rs, err := rules.ReadActive(span.Single(ctx), project)
@@ -721,6 +719,19 @@ func TestBuganizerUpdate(t *testing.T) {
 					So(issue.IssueState.Priority, ShouldEqual, originalPriority)
 					expectedRules[2].IsManagingBugPriority = false
 					expectRules(expectedRules)
+
+					Convey("Further updates leave no comments", func() {
+						initialComments := len(fakeStore.Issues[3].Comments)
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+
+						So(len(fakeStore.Issues), ShouldEqual, 3)
+						So(len(fakeStore.Issues[3].Comments), ShouldEqual, initialComments)
+						issue := fakeStore.Issues[3].Issue
+						So(issue.IssueId, ShouldEqual, 3)
+						So(issue.IssueState.Priority, ShouldEqual, originalPriority)
+						expectRules(expectedRules)
+					})
 				})
 				Convey("Disabling IsManagingBugPriority prevents priority updates.", func() {
 

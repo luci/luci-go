@@ -200,7 +200,7 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 				if err != nil {
 					return nil, errors.Annotate(err, "read impact rule").Err()
 				}
-				makeUpdateResult, err := bm.requestGenerator.MakeUpdate(ctx, MakeUpdateOptions{
+				mur, err := bm.requestGenerator.MakeUpdate(ctx, MakeUpdateOptions{
 					impact:                           request.Impact,
 					issue:                            issue,
 					IsManagingBugPriority:            request.IsManagingBugPriority,
@@ -210,14 +210,14 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 					return nil, errors.Annotate(err, "create update request for issue").Err()
 				}
 				if bm.Simulate {
-					logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(makeUpdateResult.request))
+					logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(mur.request))
 				} else {
-					if _, err := bm.client.ModifyIssue(ctx, makeUpdateResult.request); err != nil {
+					if _, err := bm.client.ModifyIssue(ctx, mur.request); err != nil {
 						return nil, errors.Annotate(err, "failed to update Buganizer issue %s", request.Bug.ID).Err()
 					}
 					bugs.BugsUpdatedCounter.Add(ctx, 1, bm.project, "buganizer")
 				}
-				updateResponse.DisableRulePriorityUpdates = makeUpdateResult.disablePriorityUpdates
+				updateResponse.DisableRulePriorityUpdates = mur.disablePriorityUpdates
 			}
 		}
 		responses = append(responses, updateResponse)
