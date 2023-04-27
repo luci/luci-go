@@ -39,6 +39,11 @@
                 "DeleteHotlistEntry"
               ]
             },
+            "GetAutomationAccess": {
+              "methods": [
+                "GetAutomationAccess"
+              ]
+            },
             "GetComponent": {
               "methods": [
                 "GetComponent"
@@ -112,6 +117,11 @@
             "DeleteHotlistEntry": {
               "methods": [
                 "DeleteHotlistEntry"
+              ]
+            },
+            "GetAutomationAccess": {
+              "methods": [
+                "GetAutomationAccess"
               ]
             },
             "GetComponent": {
