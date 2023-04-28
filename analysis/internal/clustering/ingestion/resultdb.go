@@ -123,7 +123,7 @@ func failureFromResult(tv *rdbpb.TestVariant, tr *rdbpb.TestResult, opts Options
 		Tags:                          pbutil.StringPairFromResultDB(tr.Tags),
 		VariantHash:                   tv.VariantHash, // Get from variant, as it is not populated on each result.
 		FailureReason:                 pbutil.FailureReasonFromResultDB(tr.FailureReason),
-		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags, tr.TestMetadata),
+		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags, tv.TestMetadata),
 		StartTime:                     tr.StartTime,
 		Duration:                      tr.Duration,
 		Exonerations:                  exonerations,

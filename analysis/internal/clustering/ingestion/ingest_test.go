@@ -306,7 +306,7 @@ func TestIngest(t *testing.T) {
 
 			Convey(`Failure with bug component metadata`, func() {
 				Convey(`With monorail bug system`, func() {
-					tv.Results[0].Result.TestMetadata.BugComponent = &rdbpb.BugComponent{
+					tv.TestMetadata.BugComponent = &rdbpb.BugComponent{
 						System: &rdbpb.BugComponent_Monorail{
 							Monorail: &rdbpb.MonorailComponent{
 								Project: "chromium",
@@ -322,7 +322,7 @@ func TestIngest(t *testing.T) {
 					So(len(chunkStore.Contents), ShouldEqual, 1)
 				})
 				Convey(`With Buganizer bug system`, func() {
-					tv.Results[0].Result.TestMetadata.BugComponent = &rdbpb.BugComponent{
+					tv.TestMetadata.BugComponent = &rdbpb.BugComponent{
 						System: &rdbpb.BugComponent_IssueTracker{
 							IssueTracker: &rdbpb.IssueTrackerComponent{
 								ComponentId: 12345,
@@ -465,11 +465,13 @@ func newTestVariant(uniqifier, testRunCount, resultsPerTestRun int, bugComponent
 		VariantHash:  "hash",
 		Status:       rdbpb.TestVariantStatus_UNEXPECTED,
 		Exonerations: nil,
-		TestMetadata: &rdbpb.TestMetadata{},
+		TestMetadata: &rdbpb.TestMetadata{
+			BugComponent: bugComponent,
+		},
 	}
 	for i := 0; i < testRunCount; i++ {
 		for j := 0; j < resultsPerTestRun; j++ {
-			tr := newTestResult(uniqifier, i, j, bugComponent)
+			tr := newTestResult(uniqifier, i, j)
 			// Test ID, Variant, VariantHash are not populated on the test
 			// results of a Test Variant as it is present on the parent record.
 			tr.TestId = ""
@@ -481,11 +483,11 @@ func newTestVariant(uniqifier, testRunCount, resultsPerTestRun int, bugComponent
 	return tv
 }
 
-func newTestResult(uniqifier, testRunNum, resultNum int, bugComponent *rdbpb.BugComponent) *rdbpb.TestResult {
-	return newFakeTestResult(uniqifier, testRunNum, resultNum, bugComponent)
+func newTestResult(uniqifier, testRunNum, resultNum int) *rdbpb.TestResult {
+	return newFakeTestResult(uniqifier, testRunNum, resultNum)
 }
 
-func newFakeTestResult(uniqifier, testRunNum, resultNum int, bugComponent *rdbpb.BugComponent) *rdbpb.TestResult {
+func newFakeTestResult(uniqifier, testRunNum, resultNum int) *rdbpb.TestResult {
 	resultID := fmt.Sprintf("result-%v-%v", testRunNum, resultNum)
 	return &rdbpb.TestResult{
 		Name:        fmt.Sprintf("invocations/testrun-%v/tests/test-name-%v/results/%s", testRunNum, uniqifier, resultID),
@@ -500,9 +502,6 @@ func newFakeTestResult(uniqifier, testRunNum, resultNum int, bugComponent *rdbpb
 				Key:   "monorail_component",
 				Value: "Component>MyComponent",
 			},
-		},
-		TestMetadata: &rdbpb.TestMetadata{
-			BugComponent: bugComponent,
 		},
 		FailureReason: &rdbpb.FailureReason{
 			PrimaryErrorMessage: "Failure reason.",
