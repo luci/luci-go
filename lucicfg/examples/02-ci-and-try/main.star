@@ -152,6 +152,15 @@ luci.cq_group(
             },
         ),
     ],
+    tryjob_experiments = [
+        cq.tryjob_experiment(
+            name = "infra.experiment.internal",
+            owner_group_allowlist = ["googler", "bot-accounts"],
+        ),
+        cq.tryjob_experiment(
+            name = "infra.experiment.public",
+        ),
+    ],
 )
 
 # The gitiles poller: a source of commits that trigger CI builders.

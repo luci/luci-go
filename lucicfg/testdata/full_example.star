@@ -536,6 +536,15 @@ luci.cq_group(
         run = cq.run_limits(max_active = 1),
         tryjob = cq.tryjob_limits(max_active = 40),
     ),
+    tryjob_experiments = [
+        cq.tryjob_experiment(
+            name = "infra.experiment.internal",
+            owner_group_allowlist = ["googler", "bot-accounts"],
+        ),
+        cq.tryjob_experiment(
+            name = "infra.experiment.public",
+        ),
+    ],
 )
 
 luci.cq_tryjob_verifier(
@@ -736,6 +745,16 @@ lucicfg.emit(
 #         value: 40
 #       }
 #     }
+#   }
+#   tryjob_experiments {
+#     name: "infra.experiment.internal"
+#     condition {
+#       owner_group_allowlist: "googler"
+#       owner_group_allowlist: "bot-accounts"
+#     }
+#   }
+#   tryjob_experiments {
+#     name: "infra.experiment.public"
 #   }
 # }
 # ===

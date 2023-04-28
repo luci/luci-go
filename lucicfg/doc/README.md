@@ -2306,6 +2306,7 @@ luci.cq_group(
     user_limits = None,
     user_limit_default = None,
     post_actions = None,
+    tryjob_experiments = None,
 )
 ```
 
@@ -2339,6 +2340,7 @@ pub/sub integration is enabled for the Gerrit host.
 * **user_limits**: a list of [cq.user_limit(...)](#cq.user-limit) or None. **WARNING**: Please contact luci-eng@ before setting this param. They specify per-user limits/quotas for given principals. At the time of a Run start, CV looks up and applies the first matching [cq.user_limit(...)](#cq.user-limit) to the Run, and postpones the start if limits were reached already. If none of the user_limit(s) were applicable, `user_limit_default` will be applied instead. Each [cq.user_limit(...)](#cq.user-limit) must specify at least one user or group.
 * **user_limit_default**: [cq.user_limit(...)](#cq.user-limit) or None. **WARNING*:: Please contact luci-eng@ before setting this param. If none of limits in `user_limits` are applicable and `user_limit_default` is not specified, the user is granted unlimited runs and tryjobs. `user_limit_default` must not specify users and groups.
 * **post_actions**: a list of post actions or None. Please refer to cq.post_action_* for all the available post actions. e.g., [cq.post_action_gerrit_label_votes(...)](#cq.post-action-gerrit-label-votes)
+* **tryjob_experiments**: a list of [cq.tryjob_experiment(...)](#cq.tryjob-experiment) or None. The experiments will be enabled when launching Tryjobs if condition is met.
 
 
 
@@ -3538,6 +3540,27 @@ Constructs a post action that votes Gerrit labels.
 * **name**: the name of the post action. Must be unqiue in scope where is is given. e.g., cg_group. Must match regex '^[0-9A-Za-z][0-9A-Za-z\.\-@_+]{0,511}$'. Required.
 * **labels**: a dict of labels to vote. key is the label name in string. value is an int value to vote the label with. Required.
 * **conditions**: a list of [cq.post_action_triggering_condition(...)](#cq.post-action-triggering-condition), of which at least one condition has to be met for the action to be executed. Required.
+
+
+
+
+### cq.tryjob_experiment {#cq.tryjob-experiment}
+
+```python
+cq.tryjob_experiment(name = None, owner_group_allowlist = None)
+```
+
+
+
+Constructs an experiment to enable on the Tryjobs.
+
+The experiment will only be enabled if the owner of the CL is a member of
+any groups specified in `owner_group_allowlist`.
+
+#### Arguments {#cq.tryjob-experiment-args}
+
+* **name**: name of the experiment. Currently supporting Buildbucket Experiment See `experiments` field in [Builder Config](https://pkg.go.dev/go.chromium.org/luci/buildbucket/proto#BuilderConfig)
+* **owner_group_allowlist**: a list of CrIA groups that the owner of the CL must be a member of any group in the list in order to enable the experiment. If None is provided, it means the experiment will always be enabled.
 
 
 

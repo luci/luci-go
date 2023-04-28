@@ -1132,6 +1132,12 @@ def _cq_config_group(cq_group, project):
     post_actions = cq_group.props.post_actions
     if post_actions != None:
         post_actions = [_cq_post_action(pa) for pa in post_actions]
+    tryjob_experiments = cq_group.props.tryjob_experiments
+    if tryjob_experiments != None:
+        tryjob_experiments = [
+            _cq_tryjob_experiment(te)
+            for te in tryjob_experiments
+        ]
 
     return cq_pb.ConfigGroup(
         name = cq_group.key.id,
@@ -1161,6 +1167,7 @@ def _cq_config_group(cq_group, project):
         user_limits = user_limits,
         user_limit_default = user_limit_default,
         post_actions = post_actions,
+        tryjob_experiments = tryjob_experiments,
     )
 
 def _cq_retry_config(retry_config):
@@ -1198,6 +1205,17 @@ def _cq_post_action(post_action):
             ],
         )
 
+    return ret
+
+def _cq_tryjob_experiment(experiment):
+    """Converts a tryjob experiment to cq_pb.ConfigGroup.TryjobExperiment."""
+    ret = cq_pb.ConfigGroup.TryjobExperiment(
+        name = experiment.name,
+    )
+    if experiment.owner_group_allowlist:
+        ret.condition = cq_pb.ConfigGroup.TryjobExperiment.Condition(
+            owner_group_allowlist = experiment.owner_group_allowlist,
+        )
     return ret
 
 def _cq_run_mode(run_mode):

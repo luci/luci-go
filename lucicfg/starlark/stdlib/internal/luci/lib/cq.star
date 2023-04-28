@@ -57,6 +57,9 @@ _post_action_triggering_condition_ctor = __native__.genstruct(
     "cq.post_acttion_triggering_condition",
 )
 
+# A struct returned by cq.tryjob_experiment(...).
+_tryjob_experiment_ctor = __native__.genstruct("cq.tryjob_experiment")
+
 def _refset(repo = None, *, refs = None, refs_exclude = None):
     """Defines a repository and a subset of its refs.
 
@@ -485,6 +488,48 @@ def _validate_post_action_triggering_condition(attr, val, *, default = None, req
         required = required,
     )
 
+def _tryjob_experiment(
+        *,
+        name = None,
+        owner_group_allowlist = None):
+    """Constructs an experiment to enable on the Tryjobs.
+
+    The experiment will only be enabled if the owner of the CL is a member of
+    any groups specified in `owner_group_allowlist`.
+
+    Args:
+      name: name of the experiment. Currently supporting Buildbucket Experiment
+        See `experiments` field in
+        [Builder Config](https://pkg.go.dev/go.chromium.org/luci/buildbucket/proto#BuilderConfig)
+      owner_group_allowlist: a list of CrIA groups that the owner of the CL
+        must be a member of any group in the list in order to enable the
+        experiment. If None is provided, it means the experiment will always
+        be enabled.
+    """
+    return _tryjob_experiment_ctor(
+        name = validate.string(
+            "name",
+            name,
+            required = True,
+            regexp = "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+        ),
+        owner_group_allowlist = validate.list(
+            "owner_group_allowlist",
+            owner_group_allowlist,
+            required = False,
+        ),
+    )
+
+def _validate_tryjob_experiment(attr, val, *, default = None, required = False):
+    """Validates that `val` was constructed via cq._tryjob_experiment(...)."""
+    return validate.struct(
+        attr,
+        val,
+        _tryjob_experiment_ctor,
+        default = default,
+        required = required,
+    )
+
 # CQ module exposes structs and enums useful when defining luci.cq_group(...)
 # entities.
 #
@@ -564,6 +609,7 @@ cq = struct(
     location_filter = _location_filter,
     post_action_triggering_condition = _post_action_triggering_condition,
     post_action_gerrit_label_votes = _post_action_gerrit_label_votes,
+    tryjob_experiment = _tryjob_experiment,
     user_limit = _user_limit,
     run_limits = _run_limits,
     tryjob_limits = _tryjob_limits,
@@ -605,4 +651,5 @@ cqimpl = struct(
     validate_location_filter = _validate_location_filter,
     validate_user_limit = _validate_user_limit,
     validate_post_action = _validate_post_action,
+    validate_tryjob_experiment = _validate_tryjob_experiment,
 )

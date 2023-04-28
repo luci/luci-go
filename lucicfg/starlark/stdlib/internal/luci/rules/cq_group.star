@@ -37,7 +37,8 @@ def _cq_group(
         additional_modes = None,
         user_limits = None,
         user_limit_default = None,
-        post_actions = None):
+        post_actions = None,
+        tryjob_experiments = None):
     """Defines a set of refs to watch and a set of verifier to run.
 
     The CQ will run given verifiers whenever there's a pending approved CL for
@@ -115,6 +116,8 @@ def _cq_group(
       post_actions: a list of post actions or None.
         Please refer to cq.post_action_* for all the available post actions.
         e.g., cq.post_action_gerrit_label_votes(...)
+      tryjob_experiments: a list of cq.tryjob_experiment(...) or None. The
+        experiments will be enabled when launching Tryjobs if condition is met.
     """
     key = keys.cq_group(validate.string("name", name))
 
@@ -164,6 +167,18 @@ def _cq_group(
             fail("post_action[%d]: duplicate post_action name '%s'" % (i, pa.name))
         known_action_names[pa.name] = i
 
+    validate.list("tryjob_experiments", tryjob_experiments, required = False)
+    known_exp_names = dict()
+    for i, te in enumerate(tryjob_experiments or []):
+        cqimpl.validate_tryjob_experiment(
+            "tryjob_experiments[%d]" % i,
+            te,
+            required = True,
+        )
+        if te.name in known_exp_names:
+            fail("tryjob_experiments[%d]: duplicate experiment name '%s'" % (i, te.name))
+        known_exp_names[te.name] = i
+
     # TODO(vadimsh): Convert `acls` to luci.binding(...). Need to figure out
     # what realm to use for them. This probably depends on a design of
     # Realms + CQ which doesn't exist yet.
@@ -193,6 +208,7 @@ def _cq_group(
         "user_limits": user_limits,
         "user_limit_default": user_limit_default,
         "post_actions": post_actions,
+        "tryjob_experiments": tryjob_experiments,
     })
     graph.add_edge(keys.project(), key)
 
