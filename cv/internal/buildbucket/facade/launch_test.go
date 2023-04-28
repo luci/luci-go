@@ -141,7 +141,7 @@ func TestLaunch(t *testing.T) {
 					},
 				},
 			}
-			Convey("NonExperimental", func() {
+			Convey("Not Optional", func() {
 				tj := &tryjob.Tryjob{
 					ID:         65535,
 					Definition: definition,
@@ -205,8 +205,8 @@ func TestLaunch(t *testing.T) {
 				})
 			})
 
-			Convey("Experimental Tryjob", func() {
-				definition.Experimental = true
+			Convey("Optional Tryjob", func() {
+				definition.Optional = true
 				tj := &tryjob.Tryjob{
 					ID:         65535,
 					Definition: definition,
@@ -268,7 +268,7 @@ func TestLaunch(t *testing.T) {
 								},
 							},
 						},
-						Experimental: true,
+						Optional: true,
 					},
 					Status: tryjob.Status_PENDING,
 				},

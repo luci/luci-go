@@ -30,6 +30,8 @@ import "go.chromium.org/luci/cv/api/recipe/v1/cq.proto";
 //
 // It must be sufficient to trigger a new tryjob.
 message Definition {
+  reserved 7; // experimental
+
   oneof backend {
     // For buildbucket, it's just a builder.
     Buildbucket buildbucket = 1;
@@ -62,15 +64,6 @@ message Definition {
   // If true, the Tryjob is deemed critical for the Run to succeed, i.e. the
   // Run will fail unless one of the attempts of this Tryjob is successful.
   bool critical = 5;
-
-  // If true, the Tryjob will be marked as experimental.
-  //
-  // Experimental Tryjobs are generally not critical. However, an experimental
-  // Tryjob could be critical iff it is requested explicitly (i.e. via git
-  // footer).
-  //
-  // Deprecated in favor of `optional`.
-  bool experimental = 7 [deprecated = true];
 
   // If true, the Tryjob will be marked as optional.
   //

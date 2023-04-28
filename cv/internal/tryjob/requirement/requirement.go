@@ -496,7 +496,6 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 	}
 	definition.DisableReuse = dm.builder.GetDisableReuse()
 	definition.Critical = bool(dm.criticality)
-	definition.Experimental = dm.builder.GetExperimentPercentage() > 0
 	definition.Optional = dm.builder.GetExperimentPercentage() > 0
 	definition.ResultVisibility = dm.builder.GetResultVisibility()
 	definition.SkipStaleCheck = dm.skipStaleCheck

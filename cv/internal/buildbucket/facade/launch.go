@@ -146,11 +146,11 @@ func (f *Facade) schedule(ctx context.Context, host string, r *run.Run, cls []*r
 
 func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) (*bbpb.BatchRequest, error) {
 	gcs := makeGerritChanges(cls)
-	nonExpProp, expProp, err := makeProperties(ctx, r.Mode, r.Owner)
+	nonOptProp, optProp, err := makeProperties(ctx, r.Mode, r.Owner)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to make input properties").Err()
 	}
-	nonExpTags, expTags, err := makeTags(r, cls)
+	nonOptTags, optTags, err := makeTags(r, cls)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to make tags").Err()
 	}
@@ -162,14 +162,14 @@ func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.R
 		req := &bbpb.ScheduleBuildRequest{
 			RequestId:     strconv.Itoa(int(tj.ID)),
 			Builder:       def.GetBuildbucket().GetBuilder(),
-			Properties:    nonExpProp,
+			Properties:    nonOptProp,
 			GerritChanges: gcs,
-			Tags:          nonExpTags,
+			Tags:          nonOptTags,
 			Mask:          defaultMask,
 		}
-		if def.GetExperimental() {
-			req.Properties = expProp
-			req.Tags = expTags
+		if def.GetOptional() {
+			req.Properties = optProp
+			req.Tags = optTags
 		}
 		batchReq.Requests[i] = &bbpb.BatchRequest_Request{
 			Request: &bbpb.BatchRequest_Request_ScheduleBuild{
@@ -180,7 +180,7 @@ func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.R
 	return batchReq, nil
 }
 
-func makeProperties(ctx context.Context, mode run.Mode, owner identity.Identity) (nonexp, exp *structpb.Struct, err error) {
+func makeProperties(ctx context.Context, mode run.Mode, owner identity.Identity) (nonOpt, opt *structpb.Struct, err error) {
 	isGoogler, err := auth.GetState(ctx).DB().IsMember(ctx, owner, []string{"googlers"})
 	if err != nil {
 		return nil, nil, err
@@ -192,14 +192,14 @@ func makeProperties(ctx context.Context, mode run.Mode, owner identity.Identity)
 		TopLevel:       true,
 		OwnerIsGoogler: isGoogler,
 	}
-	if nonexp, err = makeCVProperties(in); err != nil {
+	if nonOpt, err = makeCVProperties(in); err != nil {
 		return nil, nil, err
 	}
 	in.Experimental = true
-	if exp, err = makeCVProperties(in); err != nil {
+	if opt, err = makeCVProperties(in); err != nil {
 		return nil, nil, err
 	}
-	return nonexp, exp, nil
+	return nonOpt, opt, nil
 }
 
 func makeCVProperties(in *recipe.Input) (*structpb.Struct, error) {
@@ -231,7 +231,7 @@ func makeGerritChanges(cls []*run.RunCL) []*bbpb.GerritChange {
 	return ret
 }
 
-func makeTags(r *run.Run, cls []*run.RunCL) (nonExp, exp []*bbpb.StringPair, err error) {
+func makeTags(r *run.Run, cls []*run.RunCL) (nonOpt, opt []*bbpb.StringPair, err error) {
 	var commonTags []*bbpb.StringPair
 	addTag := func(key string, values ...string) {
 		for _, v := range values {
@@ -255,11 +255,11 @@ func makeTags(r *run.Run, cls []*run.RunCL) (nonExp, exp []*bbpb.StringPair, err
 	addTag("cq_cl_owner", owners.ToSlice()...)
 	addTag("cq_triggerer", triggerers.ToSlice()...)
 	addTag("cq_cl_tag", r.Options.GetCustomTryjobTags()...)
-	nonExp = append([]*bbpb.StringPair{{Key: "cq_experimental", Value: "false"}}, commonTags...)
-	exp = append([]*bbpb.StringPair{{Key: "cq_experimental", Value: "true"}}, commonTags...)
-	sortTags(nonExp)
-	sortTags(exp)
-	return nonExp, exp, nil
+	nonOpt = append([]*bbpb.StringPair{{Key: "cq_experimental", Value: "false"}}, commonTags...)
+	opt = append([]*bbpb.StringPair{{Key: "cq_experimental", Value: "true"}}, commonTags...)
+	sortTags(nonOpt)
+	sortTags(opt)
+	return nonOpt, opt, nil
 }
 
 func sortTags(tags []*bbpb.StringPair) {

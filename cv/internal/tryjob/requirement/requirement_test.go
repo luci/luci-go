@@ -96,7 +96,6 @@ func TestDefinitionMaker(t *testing.T) {
 				So(def, ShouldResembleProto, &tryjob.Definition{
 					DisableReuse:     true,
 					Critical:         true,
-					Experimental:     true,
 					Optional:         true,
 					ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					Backend: &tryjob.Definition_Buildbucket_{
@@ -566,7 +565,6 @@ func TestCompute(t *testing.T) {
 					So(res.Requirement.GetDefinitions(), ShouldHaveLength, 1)
 					def := res.Requirement.GetDefinitions()[0]
 					So(def.GetCritical(), ShouldBeFalse)
-					So(def.GetExperimental(), ShouldBeTrue)
 					So(def.GetOptional(), ShouldBeTrue)
 					selected++
 				}
@@ -588,7 +586,6 @@ func TestCompute(t *testing.T) {
 				So(res.Requirement.GetDefinitions(), ShouldHaveLength, 1)
 				def := res.Requirement.GetDefinitions()[0]
 				So(def.GetCritical(), ShouldBeTrue)
-				So(def.GetExperimental(), ShouldBeTrue)
 				So(def.GetOptional(), ShouldBeTrue)
 			}
 		})
