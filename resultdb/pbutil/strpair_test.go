@@ -19,12 +19,11 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/data/strpair"
-
-	pb "go.chromium.org/luci/resultdb/proto/v1"
-
 	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/common/data/strpair"
 	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestStringPairs(t *testing.T) {
@@ -86,6 +85,11 @@ func TestValidateStringPair(t *testing.T) {
 		Convey(`long value`, func() {
 			err := ValidateStringPair(StringPair("a", strings.Repeat("a", 1000)))
 			So(err, ShouldErrLike, `value length must be less or equal to 256`)
+		})
+
+		Convey(`multiline value`, func() {
+			err := ValidateStringPair(StringPair("a", "multi\nline\nvalue"))
+			So(err, ShouldBeNil)
 		})
 
 		Convey(`valid`, func() {

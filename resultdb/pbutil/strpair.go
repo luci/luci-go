@@ -21,7 +21,6 @@ import (
 
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -31,7 +30,7 @@ const maxStringPairValueLength = 256
 const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
 
 var stringPairKeyRe = regexpf(`^%s$`, stringPairKeyPattern)
-var stringPairRe = regexpf("^(%s):(.*)$", stringPairKeyPattern)
+var stringPairRe = regexpf("(?m)^(%s):(.*)$", stringPairKeyPattern)
 
 // StringPair creates a pb.StringPair with the given strings as key/value field values.
 func StringPair(k, v string) *pb.StringPair {
