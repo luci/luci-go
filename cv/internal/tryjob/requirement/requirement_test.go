@@ -97,6 +97,7 @@ func TestDefinitionMaker(t *testing.T) {
 					DisableReuse:     true,
 					Critical:         true,
 					Experimental:     true,
+					Optional:         true,
 					ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
@@ -549,9 +550,9 @@ func TestCompute(t *testing.T) {
 
 			})
 		})
-		Convey("experimental", func() {
+		Convey("optional", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{Name: "test-proj/test/expbuilder", ExperimentPercentage: 20}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/optional-builder", ExperimentPercentage: 20}.generate(),
 			})
 
 			selected := 0
@@ -566,17 +567,18 @@ func TestCompute(t *testing.T) {
 					def := res.Requirement.GetDefinitions()[0]
 					So(def.GetCritical(), ShouldBeFalse)
 					So(def.GetExperimental(), ShouldBeTrue)
+					So(def.GetOptional(), ShouldBeTrue)
 					selected++
 				}
 			}
 			So(selected, ShouldBeBetween, 150, 250) // expecting 1000*20%=200
 		})
 
-		Convey("experimental but explicitly included ", func() {
+		Convey("optional but explicitly included ", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{
-				builderConfigGenerator{Name: "test-proj/test/expbuilder", ExperimentPercentage: 0.001}.generate(),
+				builderConfigGenerator{Name: "test-proj/test/optional-builder", ExperimentPercentage: 0.001}.generate(),
 			})
-			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:expbuilder")
+			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:optional-builder")
 
 			baseCLID := int(in.CLs[0].ID)
 			for i := 0; i < 10; i++ { // should include the definition all the time.
@@ -587,6 +589,7 @@ func TestCompute(t *testing.T) {
 				def := res.Requirement.GetDefinitions()[0]
 				So(def.GetCritical(), ShouldBeTrue)
 				So(def.GetExperimental(), ShouldBeTrue)
+				So(def.GetOptional(), ShouldBeTrue)
 			}
 		})
 

@@ -102,6 +102,8 @@ func (m *Definition) validate(all bool) error {
 
 	// no validation rules for Experimental
 
+	// no validation rules for Optional
+
 	// no validation rules for ResultVisibility
 
 	switch v := m.Backend.(type) {

@@ -92,7 +92,7 @@ func parseBuilderStrings(line string) ([]string, ComputationFailure) {
 }
 
 // makeRands makes `n` new pseudo-random generators to be used for the Tryjob
-// Requirement computation's random selections (experiment, equivalentBuilder)
+// Requirement computation's random selections (e.g. equivalentBuilder)
 //
 // The generators are seeded deterministically based on the set of CLs (their
 // IDs, specifically) and their trigger times.

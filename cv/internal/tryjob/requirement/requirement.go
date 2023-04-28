@@ -127,11 +127,11 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 		}
 	}
 
-	// Make 2 independent generators so that e.g. the addition of experimental
+	// Make 2 independent generators so that e.g. the addition of optional
 	// tryjobs during a Run's lifetime does not cause it to change its use of
 	// equivalent builders upon recomputation.
 	rands := makeRands(in, 2)
-	experimentRand, equivalentBuilderRand := rands[0], rands[1]
+	optionalRand, equivalentBuilderRand := rands[0], rands[1]
 	builders := in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders()
 	allOwners := in.allCLOwnersSorted()
 	definitions := make([]*tryjob.Definition, len(builders))
@@ -140,10 +140,10 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	err := parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
 		for i, builder := range builders {
 			i, builder := i, builder
-			var experimentSelected bool
+			var isOptional bool
 			var useEquivalent bool
 			if expPercentage := builder.GetExperimentPercentage(); expPercentage != 0 {
-				experimentSelected = experimentRand.Float32()*100 <= expPercentage
+				isOptional = optionalRand.Float32()*100 <= expPercentage
 			}
 			if equiPercentage := builder.GetEquivalentTo().GetPercentage(); equiPercentage != 0 {
 				useEquivalent = equivalentBuilderRand.Float32()*100 <= equiPercentage
@@ -151,14 +151,14 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 			work <- func() error {
 				dm := &definitionMaker{
 					builder:     builder,
-					criticality: builder.ExperimentPercentage == 0,
+					criticality: builder.GetExperimentPercentage() == 0,
 				}
 				if in.RunOptions.GetAvoidCancellingTryjobs() {
 					dm.skipStaleCheck = true
 				} else {
 					dm.skipStaleCheck = builder.GetCancelStale() == cfgpb.Toggle_NO
 				}
-				switch r, compFail, err := shouldInclude(ctx, in, dm, experimentSelected, useEquivalent, builder, explicitlyIncluded, allOwners); {
+				switch r, compFail, err := shouldInclude(ctx, in, dm, isOptional, useEquivalent, builder, explicitlyIncluded, allOwners); {
 				case err != nil:
 					return err
 				case compFail != nil:
@@ -265,7 +265,7 @@ const (
 
 // shouldInclude decides based on the configuration whether a given builder
 // should be skipped in generating the Requirement.
-func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimentSelected, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
+func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptional, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
 	switch ps := isPresubmit(b); {
 	case in.RunOptions.GetSkipTryjobs() && !ps:
 		return skipBuilder, nil, nil
@@ -308,7 +308,7 @@ func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, experimen
 		return includeBuilder, nil, nil
 	}
 
-	if b.GetExperimentPercentage() != 0 && !experimentSelected {
+	if b.GetExperimentPercentage() != 0 && !isOptional {
 		return skipBuilder, nil, nil
 	}
 
@@ -497,6 +497,7 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 	definition.DisableReuse = dm.builder.GetDisableReuse()
 	definition.Critical = bool(dm.criticality)
 	definition.Experimental = dm.builder.GetExperimentPercentage() > 0
+	definition.Optional = dm.builder.GetExperimentPercentage() > 0
 	definition.ResultVisibility = dm.builder.GetResultVisibility()
 	definition.SkipStaleCheck = dm.skipStaleCheck
 	return definition

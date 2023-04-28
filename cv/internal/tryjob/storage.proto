@@ -68,7 +68,15 @@ message Definition {
   // Experimental Tryjobs are generally not critical. However, an experimental
   // Tryjob could be critical iff it is requested explicitly (i.e. via git
   // footer).
-  bool experimental = 7;
+  //
+  // Deprecated in favor of `optional`.
+  bool experimental = 7 [deprecated = true];
+
+  // If true, the Tryjob will be marked as optional.
+  //
+  // Optional Tryjobs are generally not critical. However, an optional Tryjob
+  // could be critical iff it is requested explicitly (i.e. via git footer).
+  bool optional = 8;
 
   // If set to restricted, CV should only post generic messages such as
   //   "Build failed: https://ci.chromium.org/b/1234"
