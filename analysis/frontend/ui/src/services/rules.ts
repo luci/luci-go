@@ -70,6 +70,7 @@ export interface Rule {
     bug: AssociatedBug;
     isActive: boolean;
     isManagingBug: boolean;
+    isManagingBugPriority: boolean;
     sourceCluster: ClusterId;
     createTime: string; // RFC 3339 encoded date/time.
     createUser: string;
@@ -121,6 +122,7 @@ export interface RuleToUpdate {
     bug?: AssociatedBugToUpdate;
     isActive?: boolean;
     isManagingBug?: boolean;
+    isManagingBugPriority?: boolean;
     sourceCluster?: ClusterId;
 }
 

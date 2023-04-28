@@ -70,6 +70,30 @@ describe('Test BugInfo component', () => {
     await screen.findByText('Status');
     expect(screen.getByText(mockIssue.summary)).toBeInTheDocument();
     expect(screen.getByText(mockIssue.status.status)).toBeInTheDocument();
+    expect(screen.getByText('Update bug priority')).toBeInTheDocument();
+  });
+
+  it('When bug updates are off, then should not display Update bug priority toggle', async () => {
+    fetchMock.post('https://api-dot-crbug.com/prpc/monorail.v3.Issues/GetIssue', {
+      headers: {
+        'X-Prpc-Grpc-Code': '0',
+      },
+      body: ')]}\'' + JSON.stringify(mockIssue),
+    });
+
+    mockRule.isManagingBug = false;
+
+    renderWithRouterAndClient(
+        <BugInfo
+          rule={mockRule}/>,
+    );
+
+    expect(screen.getByText(mockRule.bug.linkText)).toBeInTheDocument();
+
+    await screen.findByText('Status');
+    expect(screen.getByText(mockIssue.summary)).toBeInTheDocument();
+    expect(screen.getByText(mockIssue.status.status)).toBeInTheDocument();
+    expect(screen.queryByText('Update bug priority')).not.toBeInTheDocument();
   });
 
   it('given a rule with buganizer bug, should display bug only', async () => {
@@ -86,6 +110,7 @@ describe('Test BugInfo component', () => {
 
     await waitFor(() => expect(screen.getByText(mockRule.bug.linkText)).toBeInTheDocument());
   });
+
 
   it('when clicking edit, should open dialog, even if bug does not load', async () => {
     // Check we can still edit the bug, even if the bug fails to load.
@@ -107,7 +132,7 @@ describe('Test BugInfo component', () => {
 
     await screen.findByText('Associated Bug');
 
-    fireEvent.click(screen.getByLabelText('edit'));
+    await fireEvent.click(screen.getByLabelText('edit'));
 
     expect(screen.getByText('Change associated bug')).toBeInTheDocument();
   });

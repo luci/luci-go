@@ -79,9 +79,12 @@ const bugStatusColor = (status: string): MuiDefaultColor => {
   }
 };
 
-const bugUpdatesHelpText = 'Whether the priority and verified status of the associated bug should be' +
-    ' automatically updated based on cluster impact. Only one rule may be set to' +
-    ' update a given bug at any one time.';
+const bugUpdatesHelpText = 'Whether the associated bug should be automatically verified (or re-opened)' +
+                          ' based on cluster impact. Only one rule may be set to' +
+                          ' update a given bug at any one time.';
+
+const bugPriorityUpdateHelpText = 'Whether the priority of the associated bug should be' +
+    ' automatically updated based on cluster impact.';
 
 interface Props {
     rule: Rule;
@@ -98,13 +101,11 @@ const BugInfo = ({
   const requestName = rule.bug.system + '/' + rule.bug.id;
   const { isLoading, data: issue, error } = useQuery(['bug', requestName],
       async () => {
-        if (isMonorail) {
-          const fetchBugRequest = createIssueServiceRequest(rule.bug);
-          return await issueService.getIssue(fetchBugRequest);
-        }
-        return null;
+        const fetchBugRequest = createIssueServiceRequest(rule.bug);
+        return await issueService.getIssue(fetchBugRequest);
       }, {
         retry: prpcRetrier,
+        enabled: isMonorail,
       },
   );
 
@@ -117,6 +118,18 @@ const BugInfo = ({
         isManagingBug: !rule.isManagingBug,
       },
       updateMask: 'isManagingBug',
+      etag: rule.etag,
+    };
+    mutateRule.mutate(request);
+  };
+
+  const handleToggleUpdateBugPriority = () => {
+    const request: UpdateRuleRequest = {
+      rule: {
+        name: rule.name,
+        isManagingBugPriority: !rule.isManagingBugPriority,
+      },
+      updateMask: 'isManagingBugPriority',
       etag: rule.etag,
     };
     mutateRule.mutate(request);
@@ -146,12 +159,32 @@ const BugInfo = ({
             {mutateRule.isLoading && (<CircularProgress size="1rem" />)}
             <Switch
               data-testid="update-bug-toggle"
-              aria-label="receive bug status"
+              aria-label="update bug"
               checked={rule.isManagingBug}
               onChange={handleToggleUpdateBug}
               disabled={mutateRule.isLoading}/>
           </Grid>
         </Grid>
+        {
+          // Only display bug prioity update toggle if bug update was enabled.
+          rule.isManagingBug && (
+            <Grid container item xs={12} justifyContent="flex-end">
+              <GridLabel xs={4} lg={3} text="Update bug priority">
+                <HelpTooltip text={bugPriorityUpdateHelpText} />
+              </GridLabel>
+              <Grid container item xs={8} lg={2} alignItems="center">
+                {mutateRule.isLoading && (<CircularProgress size="1rem" />)}
+                <Switch
+                  data-testid="update-bug-priority-toggle"
+                  aria-label="update bug priority"
+                  checked={rule.isManagingBugPriority}
+                  onChange={handleToggleUpdateBugPriority}
+                  disabled={mutateRule.isLoading}/>
+              </Grid>
+            </Grid>
+          )
+        }
+
         <Box sx={{ py: 2 }}>
           <Divider />
         </Box>

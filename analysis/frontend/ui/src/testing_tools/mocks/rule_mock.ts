@@ -31,6 +31,7 @@ export const createDefaultMockRule = (): Rule => {
     },
     isActive: true,
     isManagingBug: true,
+    isManagingBugPriority: true,
     sourceCluster: {
       algorithm: 'testname-v3',
       id: '78ff0812026b30570ca730b1541125ea',
