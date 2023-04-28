@@ -171,6 +171,12 @@ func prepareBatchRequest(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.R
 			req.Properties = optProp
 			req.Tags = optTags
 		}
+		if experiments := tj.Definition.GetExperiments(); len(experiments) > 0 {
+			req.Experiments = make(map[string]bool, len(experiments))
+			for _, exp := range experiments {
+				req.Experiments[exp] = true
+			}
+		}
 		batchReq.Requests[i] = &bbpb.BatchRequest_Request{
 			Request: &bbpb.BatchRequest_Request_ScheduleBuild{
 				ScheduleBuild: req,

@@ -140,6 +140,7 @@ func TestLaunch(t *testing.T) {
 						Builder: builderID,
 					},
 				},
+				Experiments: []string{"infra.experiment.foo", "infra.experiment.bar"},
 			}
 			Convey("Not Optional", func() {
 				tj := &tryjob.Tryjob{
@@ -203,6 +204,7 @@ func TestLaunch(t *testing.T) {
 					{Key: "cq_triggerer", Value: triggerEmail},
 					{Key: "user_agent", Value: "cq"},
 				})
+				So(build.GetInput().GetExperiments(), ShouldResemble, []string{"infra.experiment.bar", "infra.experiment.foo"})
 			})
 
 			Convey("Optional Tryjob", func() {

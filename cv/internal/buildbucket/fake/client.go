@@ -215,6 +215,7 @@ var supportedScheduleArguments = stringset.NewFromSlice(
 	"properties",
 	"gerrit_changes",
 	"tags",
+	"experiments",
 	"mask",
 )
 
@@ -271,6 +272,20 @@ func (c *Client) ScheduleBuild(ctx context.Context, in *bbpb.ScheduleBuildReques
 		},
 		Tags: in.GetTags(),
 	}
+
+	if len(in.GetExperiments()) > 0 {
+		experiments := make(sort.StringSlice, 0, len(in.GetExperiments()))
+		for exp, enabled := range in.GetExperiments() {
+			if enabled {
+				experiments = append(experiments, exp)
+			}
+		}
+		experiments.Sort()
+		if len(experiments) > 0 {
+			build.Input.Experiments = experiments
+		}
+	}
+
 	c.fa.insertBuild(ctx, build, in.GetRequestId())
 	if err := applyMask(build, in.GetMask()); err != nil {
 		return nil, err
