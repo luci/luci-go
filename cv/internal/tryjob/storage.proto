@@ -75,6 +75,9 @@ message Definition {
   //   "Build failed: https://ci.chromium.org/b/1234"
   // and no summary markdown about tryjobs with this definition.
   cv.config.CommentLevel result_visibility = 6;
+
+  // Experiments to enable when launching Tryjob.
+  repeated string experiments = 9;
 }
 
 // Requirement is what has to happen to verify a specific Run.

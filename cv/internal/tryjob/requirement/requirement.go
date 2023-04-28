@@ -134,10 +134,15 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 	optionalRand, equivalentBuilderRand := rands[0], rands[1]
 	builders := in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders()
 	allOwners := in.allCLOwnersSorted()
+	experiments, err := computeEnabledExperiments(ctx, allOwners, in.ConfigGroup.GetTryjobExperiments())
+	if err != nil {
+		return nil, err
+	}
+
 	definitions := make([]*tryjob.Definition, len(builders))
 	var computationFailureHolder atomic.Value
 	// Utilize multiple cores.
-	err := parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
+	err = parallel.WorkPool(min(len(builders), runtime.NumCPU()), func(work chan<- func() error) {
 		for i, builder := range builders {
 			i, builder := i, builder
 			var isOptional bool
@@ -152,6 +157,7 @@ func Compute(ctx context.Context, in Input) (*ComputationResult, error) {
 				dm := &definitionMaker{
 					builder:     builder,
 					criticality: builder.GetExperimentPercentage() == 0,
+					experiments: experiments,
 				}
 				if in.RunOptions.GetAvoidCancellingTryjobs() {
 					dm.skipStaleCheck = true
@@ -204,6 +210,10 @@ func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult,
 	}
 
 	allOwners := in.allCLOwnersSorted()
+	experiments, err := computeEnabledExperiments(ctx, allOwners, in.ConfigGroup.GetTryjobExperiments())
+	if err != nil {
+		return nil, err
+	}
 	ret := &ComputationResult{
 		Requirement: &tryjob.Requirement{
 			RetryConfig: in.ConfigGroup.GetVerifiers().GetTryjob().GetRetryConfig(),
@@ -246,6 +256,7 @@ func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult,
 				criticality:    true,
 				equivalence:    equivalence,
 				skipStaleCheck: b.GetCancelStale() == cfgpb.Toggle_NO,
+				experiments:    experiments,
 			}
 			if in.RunOptions.GetAvoidCancellingTryjobs() {
 				dm.skipStaleCheck = true
@@ -435,6 +446,22 @@ func isEquiBuilderAllowed(ctx context.Context, allOwners []string, b *cfgpb.Veri
 	return true, nil
 }
 
+func computeEnabledExperiments(ctx context.Context, allOwners []string, experiments []*cfgpb.ConfigGroup_TryjobExperiment) ([]string, error) {
+	if len(experiments) == 0 {
+		return nil, nil
+	}
+	ret := make([]string, 0, len(experiments))
+	for _, exp := range experiments {
+		switch disallowedOwners, err := getDisallowedOwners(ctx, allOwners, exp.GetCondition().GetOwnerGroupAllowlist()...); {
+		case err != nil:
+			return nil, err
+		case len(disallowedOwners) == 0:
+			ret = append(ret, exp.GetName())
+		}
+	}
+	return ret, nil
+}
+
 // makeBuildbucketDefinition converts a builder name to a minimal Definition.
 func makeBuildbucketDefinition(builderName string) *tryjob.Definition {
 	if builderName == "" {
@@ -476,6 +503,7 @@ type definitionMaker struct {
 	equivalence    equivalentUsage
 	criticality    criticality
 	skipStaleCheck bool
+	experiments    []string
 }
 
 func (dm *definitionMaker) make() *tryjob.Definition {
@@ -499,6 +527,7 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 	definition.Optional = dm.builder.GetExperimentPercentage() > 0
 	definition.ResultVisibility = dm.builder.GetResultVisibility()
 	definition.SkipStaleCheck = dm.skipStaleCheck
+	definition.Experiments = dm.experiments
 	return definition
 }
 

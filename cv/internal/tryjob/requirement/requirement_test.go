@@ -915,6 +915,55 @@ func TestCompute(t *testing.T) {
 			})
 		})
 
+		Convey("Experiments", func() {
+			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
+			in.ConfigGroup.TryjobExperiments = []*cfgpb.ConfigGroup_TryjobExperiment{
+				{Name: "experiment.a"}, // unconditional
+				{
+					Name: "experiment.b",
+					Condition: &cfgpb.ConfigGroup_TryjobExperiment_Condition{
+						OwnerGroupAllowlist: nil, // empty list
+					},
+				},
+				{
+					Name: "experiment.c",
+					Condition: &cfgpb.ConfigGroup_TryjobExperiment_Condition{
+						OwnerGroupAllowlist: []string{group1}, // CL owner is in group1
+					},
+				},
+				{
+					Name: "experiment.d",
+					Condition: &cfgpb.ConfigGroup_TryjobExperiment_Condition{
+						OwnerGroupAllowlist: []string{group2}, // CL owner is not in group2
+					},
+				},
+			}
+			res, err := Compute(ctx, *in)
+
+			So(err, ShouldBeNil)
+			So(res.ComputationFailure, ShouldBeNil)
+			So(res.Requirement, ShouldResembleProto, &tryjob.Requirement{
+				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
+					SingleQuota: 2,
+					GlobalQuota: 8,
+				},
+				Definitions: []*tryjob.Definition{{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder1",
+							},
+						},
+					},
+					Critical:    true,
+					Experiments: []string{"experiment.a", "experiment.b", "experiment.c"},
+				}},
+			})
+		})
+
 		Convey("override has undefined builder", func() {
 			in := makeInput(ctx, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:unlisted")
