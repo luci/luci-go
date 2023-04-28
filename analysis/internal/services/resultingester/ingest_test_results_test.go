@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
+	"go.chromium.org/luci/server/tq/tqtesting"
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -157,6 +158,10 @@ func createProjectsConfig() map[string]*configpb.ProjectConfig {
 	}
 }
 
+const testInvocation = "invocations/build-87654321"
+const testRealm = "project:ci"
+const testBuildID = int64(87654321)
+
 func TestIngestTestResults(t *testing.T) {
 	resultcollector.RegisterTaskClass()
 	testvariantupdator.RegisterTaskClass()
@@ -206,9 +211,6 @@ func TestIngestTestResults(t *testing.T) {
 			ctx = mbc.Ctx
 
 			bHost := "host"
-			bID := int64(87654321)
-			inv := "invocations/build-87654321"
-			realm := "project:ci"
 			partitionTime := clock.Now(ctx).Add(-1 * time.Hour)
 
 			expectedGitReference := &gitreferences.GitReference{
@@ -247,551 +249,20 @@ func TestIngestTestResults(t *testing.T) {
 				},
 			}
 
-			verifyIngestedInvocation := func(expected *testresults.IngestedInvocation) {
-				var invs []*testresults.IngestedInvocation
-				// Validate IngestedInvocations table is populated.
-				err := testresults.ReadIngestedInvocations(span.Single(ctx), spanner.AllKeys(), func(inv *testresults.IngestedInvocation) error {
-					invs = append(invs, inv)
-					return nil
-				})
-				So(err, ShouldBeNil)
-				if expected != nil {
-					So(invs, ShouldHaveLength, 1)
-					So(invs[0], ShouldResemble, expected)
-				} else {
-					So(invs, ShouldHaveLength, 0)
-				}
-			}
-
-			verifyGitReference := func(expected *gitreferences.GitReference) {
-				refs, err := gitreferences.ReadAll(span.Single(ctx))
-				So(err, ShouldBeNil)
-				if expected != nil {
-					So(refs, ShouldHaveLength, 1)
-					actual := refs[0]
-					// LastIngestionTime is a commit timestamp in the
-					// control of the implementation. We check it is
-					// populated and assert nothing beyond that.
-					So(actual.LastIngestionTime, ShouldNotBeEmpty)
-					actual.LastIngestionTime = time.Time{}
-
-					So(actual, ShouldResemble, expected)
-				} else {
-					So(refs, ShouldHaveLength, 0)
-				}
-			}
-
-			verifyTestResults := func(expectCommitPosition bool) {
-				trBuilder := testresults.NewTestResult().
-					WithProject("project").
-					WithPartitionTime(timestamppb.New(partitionTime).AsTime()).
-					WithIngestedInvocationID("build-87654321").
-					WithSubRealm("ci").
-					WithBuildStatus(pb.BuildStatus_BUILD_STATUS_FAILURE).
-					WithChangelists([]testresults.Changelist{
-						{
-							Host:      "anothergerrit.gerrit.instance",
-							Change:    77788,
-							Patchset:  19,
-							OwnerKind: pb.ChangelistOwnerKind_HUMAN,
-						},
-						{
-							Host:      "mygerrit-review.googlesource.com",
-							Change:    12345,
-							Patchset:  5,
-							OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-						},
-					}).
-					WithPresubmitRun(&testresults.PresubmitRun{
-						Mode: pb.PresubmitRunMode_FULL_RUN,
-					})
-				if expectCommitPosition {
-					trBuilder = trBuilder.WithCommitPosition(expectedInvocation.GitReferenceHash, expectedInvocation.CommitPosition)
-				} else {
-					trBuilder = trBuilder.WithoutCommitPosition()
-				}
-
-				expectedTRs := []*testresults.TestResult{
-					trBuilder.WithTestID("ninja://test_consistent_failure").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_FAIL).
-						WithRunDuration(3*time.Second).
-						WithExonerationReasons(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE).
-						Build(),
-					trBuilder.WithTestID("ninja://test_expected").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(false).
-						WithStatus(pb.TestResultStatus_PASS).
-						WithRunDuration(5 * time.Second).
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_has_unexpected").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_FAIL).
-						WithoutRunDuration().
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_has_unexpected").
-						WithVariantHash("hash").
-						WithRunIndex(1).
-						WithResultIndex(0).
-						WithIsUnexpected(false).
-						WithStatus(pb.TestResultStatus_PASS).
-						WithoutRunDuration().
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_known_flake").
-						WithVariantHash("hash_2").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_FAIL).
-						WithRunDuration(2 * time.Second).
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_new_failure").
-						WithVariantHash("hash_1").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_FAIL).
-						WithRunDuration(1 * time.Second).
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_new_flake").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_FAIL).
-						WithRunDuration(10 * time.Second).
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_new_flake").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(1).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_FAIL).
-						WithRunDuration(11 * time.Second).
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_new_flake").
-						WithVariantHash("hash").
-						WithRunIndex(1).
-						WithResultIndex(0).
-						WithIsUnexpected(false).
-						WithStatus(pb.TestResultStatus_PASS).
-						WithRunDuration(12 * time.Second).
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_no_new_results").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_FAIL).
-						WithRunDuration(4 * time.Second).
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_skip").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_SKIP).
-						WithoutRunDuration().
-						WithoutExoneration().
-						Build(),
-					trBuilder.WithTestID("ninja://test_unexpected_pass").
-						WithVariantHash("hash").
-						WithRunIndex(0).
-						WithResultIndex(0).
-						WithIsUnexpected(true).
-						WithStatus(pb.TestResultStatus_PASS).
-						WithoutRunDuration().
-						WithoutExoneration().
-						Build(),
-				}
-
-				// Validate TestResults table is populated.
-				var actualTRs []*testresults.TestResult
-				err := testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
-					actualTRs = append(actualTRs, tr)
-					return nil
-				})
-				So(err, ShouldBeNil)
-				So(actualTRs, ShouldResemble, expectedTRs)
-
-				// Validate TestVariantRealms table is populated.
-				tvrs := make([]*testresults.TestVariantRealm, 0)
-				err = testresults.ReadTestVariantRealms(span.Single(ctx), spanner.AllKeys(), func(tvr *testresults.TestVariantRealm) error {
-					tvrs = append(tvrs, tvr)
-					return nil
-				})
-				So(err, ShouldBeNil)
-
-				expectedRealms := []*testresults.TestVariantRealm{
-					{
-						Project:     "project",
-						TestID:      "ninja://test_consistent_failure",
-						VariantHash: "hash",
-						SubRealm:    "ci",
-						Variant:     nil,
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_expected",
-						VariantHash: "hash",
-						SubRealm:    "ci",
-						Variant:     nil,
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_has_unexpected",
-						VariantHash: "hash",
-						SubRealm:    "ci",
-						Variant:     nil,
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_known_flake",
-						VariantHash: "hash_2",
-						SubRealm:    "ci",
-						Variant:     pbutil.VariantFromResultDB(rdbpbutil.Variant("k1", "v2")),
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_new_failure",
-						VariantHash: "hash_1",
-						SubRealm:    "ci",
-						Variant:     pbutil.VariantFromResultDB(rdbpbutil.Variant("k1", "v1")),
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_new_flake",
-						VariantHash: "hash",
-						SubRealm:    "ci",
-						Variant:     nil,
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_no_new_results",
-						VariantHash: "hash",
-						SubRealm:    "ci",
-						Variant:     nil,
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_skip",
-						VariantHash: "hash",
-						SubRealm:    "ci",
-						Variant:     nil,
-					},
-					{
-						Project:     "project",
-						TestID:      "ninja://test_unexpected_pass",
-						VariantHash: "hash",
-						SubRealm:    "ci",
-						Variant:     nil,
-					},
-				}
-
-				So(tvrs, ShouldHaveLength, len(expectedRealms))
-				for i, tvr := range tvrs {
-					expectedTVR := expectedRealms[i]
-					So(tvr.LastIngestionTime, ShouldNotBeZeroValue)
-					expectedTVR.LastIngestionTime = tvr.LastIngestionTime
-					So(tvr, ShouldResemble, expectedTVR)
-				}
-
-				// Validate TestRealms table is populated.
-				testRealms := make([]*testresults.TestRealm, 0)
-				err = testresults.ReadTestRealms(span.Single(ctx), spanner.AllKeys(), func(tvr *testresults.TestRealm) error {
-					testRealms = append(testRealms, tvr)
-					return nil
-				})
-				So(err, ShouldBeNil)
-
-				expectedTestRealms := []*testresults.TestRealm{
-					{
-						Project:  "project",
-						TestID:   "ninja://test_consistent_failure",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_expected",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_has_unexpected",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_known_flake",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_new_failure",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_new_flake",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_no_new_results",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_skip",
-						SubRealm: "ci",
-					},
-					{
-						Project:  "project",
-						TestID:   "ninja://test_unexpected_pass",
-						SubRealm: "ci",
-					},
-				}
-
-				So(testRealms, ShouldHaveLength, len(expectedTestRealms))
-				for i, tr := range testRealms {
-					expectedTR := expectedTestRealms[i]
-					So(tr.LastIngestionTime, ShouldNotBeZeroValue)
-					expectedTR.LastIngestionTime = tr.LastIngestionTime
-					So(tr, ShouldResemble, expectedTR)
-				}
-			}
-
-			verifyClustering := func() {
-				// Confirm chunks have been written to GCS.
-				So(len(chunkStore.Contents), ShouldEqual, 1)
-
-				// Confirm clustering has occurred, with each test result in at
-				// least one cluster.
-				actualClusteredFailures := make(map[string]int)
-				for _, f := range clusteredFailures.Insertions {
-					So(f.Project, ShouldEqual, "project")
-					actualClusteredFailures[f.TestId] += 1
-				}
-				expectedClusteredFailures := map[string]int{
-					"ninja://test_new_failure":        1,
-					"ninja://test_known_flake":        1,
-					"ninja://test_consistent_failure": 1,
-					"ninja://test_no_new_results":     1,
-					"ninja://test_new_flake":          2,
-					"ninja://test_has_unexpected":     1,
-				}
-				So(actualClusteredFailures, ShouldResemble, expectedClusteredFailures)
-			}
-
-			verifyAnalyzedTestVariants := func() {
-				// Read rows from Spanner to confirm the analyzed test variants are saved.
-				ctx, cancel := span.ReadOnlyTransaction(ctx)
-				defer cancel()
-
-				exp := map[string]atvpb.Status{
-					"ninja://test_new_failure":        atvpb.Status_HAS_UNEXPECTED_RESULTS,
-					"ninja://test_known_flake":        atvpb.Status_FLAKY,
-					"ninja://test_consistent_failure": atvpb.Status_CONSISTENTLY_UNEXPECTED,
-					"ninja://test_no_new_results":     atvpb.Status_HAS_UNEXPECTED_RESULTS,
-					"ninja://test_new_flake":          atvpb.Status_FLAKY,
-					"ninja://test_has_unexpected":     atvpb.Status_FLAKY,
-				}
-				act := make(map[string]atvpb.Status)
-				expProtos := map[string]*atvpb.AnalyzedTestVariant{
-					"ninja://test_new_failure": {
-						Realm:       realm,
-						TestId:      "ninja://test_new_failure",
-						VariantHash: "hash_1",
-						Status:      atvpb.Status_HAS_UNEXPECTED_RESULTS,
-						Variant:     pbutil.VariantFromResultDB(sampleVar),
-						Tags:        pbutil.StringPairs("monorail_component", "Monorail>Component"),
-						// Mock ResultDB data specifies test metadata for the
-						// new test failure. Make sure it is used.
-						TestMetadata: pbutil.TestMetadataFromResultDB(updatedTmd),
-					},
-					"ninja://test_known_flake": {
-						Realm:       realm,
-						TestId:      "ninja://test_known_flake",
-						VariantHash: "hash_2",
-						Status:      atvpb.Status_FLAKY,
-						Tags:        pbutil.StringPairs("monorail_component", "Monorail>Component", "os", "Mac", "test_name", "test_known_flake"),
-						// Mock ResultDB data specifies test metadata for the
-						// test result. Make sure it is used.
-						TestMetadata: pbutil.TestMetadataFromResultDB(updatedTmd),
-					},
-					"ninja://test_consistent_failure": {
-						Realm:       realm,
-						TestId:      "ninja://test_consistent_failure",
-						VariantHash: "hash",
-						Status:      atvpb.Status_CONSISTENTLY_UNEXPECTED,
-						Tags:        pbutil.StringPairs(),
-						// Mock ResultDB data does not specify test metadata for the
-						// ingested test result. Keep the same test metadata.
-						TestMetadata: pbutil.TestMetadataFromResultDB(originalTmd),
-					},
-				}
-
-				var testIDsWithNextTask []string
-				fields := []string{"Realm", "TestId", "VariantHash", "Status", "Variant", "Tags", "TestMetadata", "NextUpdateTaskEnqueueTime"}
-				actProtos := make(map[string]*atvpb.AnalyzedTestVariant, len(expProtos))
-				var b spanutil.Buffer
-				err := span.Read(ctx, "AnalyzedTestVariants", spanner.AllKeys(), fields).Do(
-					func(row *spanner.Row) error {
-						tv := &atvpb.AnalyzedTestVariant{}
-						var tmd spanutil.Compressed
-						var enqTime spanner.NullTime
-						err := b.FromSpanner(row, &tv.Realm, &tv.TestId, &tv.VariantHash, &tv.Status, &tv.Variant, &tv.Tags, &tmd, &enqTime)
-						So(err, ShouldBeNil)
-						So(tv.Realm, ShouldEqual, realm)
-
-						if len(tmd) > 0 {
-							tv.TestMetadata = &pb.TestMetadata{}
-							err = proto.Unmarshal(tmd, tv.TestMetadata)
-							So(err, ShouldBeNil)
-						}
-
-						act[tv.TestId] = tv.Status
-						if _, ok := expProtos[tv.TestId]; ok {
-							actProtos[tv.TestId] = tv
-						}
-
-						if !enqTime.IsNull() {
-							testIDsWithNextTask = append(testIDsWithNextTask, tv.TestId)
-						}
-						return nil
-					},
-				)
-				So(err, ShouldBeNil)
-				So(act, ShouldResemble, exp)
-				for k, actProto := range actProtos {
-					v, ok := expProtos[k]
-					So(ok, ShouldBeTrue)
-					So(actProto, ShouldResembleProto, v)
-				}
-				sort.Strings(testIDsWithNextTask)
-
-				var actTestIDsWithTasks []string
-				for _, pl := range skdr.Tasks().Payloads() {
-					switch pl.(type) {
-					case *taskspb.UpdateTestVariant:
-						plp := pl.(*taskspb.UpdateTestVariant)
-						actTestIDsWithTasks = append(actTestIDsWithTasks, plp.TestVariantKey.TestId)
-					default:
-					}
-				}
-				sort.Strings(actTestIDsWithTasks)
-				So(len(actTestIDsWithTasks), ShouldEqual, 3)
-				So(actTestIDsWithTasks, ShouldResemble, testIDsWithNextTask)
-			}
-
-			verifyCollectTask := func(expectExists bool) {
-				expColTask := &taskspb.CollectTestResults{
-					Resultdb: &taskspb.ResultDB{
-						Invocation: &rdbpb.Invocation{
-							Name:  inv,
-							Realm: realm,
-						},
-						Host: "results.api.cr.dev",
-					},
-					Builder:                   "builder",
-					Project:                   "project",
-					IsPreSubmit:               true,
-					ContributedToClSubmission: true,
-				}
-				collectTaskCount := 0
-				for _, pl := range skdr.Tasks().Payloads() {
-					switch pl.(type) {
-					case *taskspb.CollectTestResults:
-						plp := pl.(*taskspb.CollectTestResults)
-						So(plp, ShouldResembleProto, expColTask)
-						collectTaskCount++
-					default:
-					}
-				}
-				if expectExists {
-					So(collectTaskCount, ShouldEqual, 1)
-				} else {
-					So(collectTaskCount, ShouldEqual, 0)
-				}
-			}
-
-			verifyContinuationTask := func(expectedContinuation *taskspb.IngestTestResults) {
-				count := 0
-				for _, pl := range skdr.Tasks().Payloads() {
-					switch pl := pl.(type) {
-					case *taskspb.IngestTestResults:
-						So(pl, ShouldResembleProto, expectedContinuation)
-						count++
-					default:
-					}
-				}
-				if expectedContinuation != nil {
-					So(count, ShouldEqual, 1)
-				} else {
-					So(count, ShouldEqual, 0)
-				}
-			}
-
-			verifyIngestionControl := func(expected *control.Entry) {
-				actual, err := control.Read(span.Single(ctx), []string{expected.BuildID})
-				So(err, ShouldBeNil)
-				So(actual, ShouldHaveLength, 1)
-				a := *actual[0]
-				e := *expected
-
-				// Compare protos separately, as they are not compared
-				// correctly by ShouldResemble.
-				So(a.PresubmitResult, ShouldResembleProto, e.PresubmitResult)
-				a.PresubmitResult = nil
-				e.PresubmitResult = nil
-
-				So(a.BuildResult, ShouldResembleProto, e.BuildResult)
-				a.BuildResult = nil
-				e.BuildResult = nil
-
-				So(a.InvocationResult, ShouldResembleProto, e.InvocationResult)
-				a.InvocationResult = nil
-				e.InvocationResult = nil
-
-				// Do not compare last updated time, as it is determined
-				// by commit timestamp.
-				So(a.LastUpdated, ShouldNotBeEmpty)
-				e.LastUpdated = a.LastUpdated
-
-				So(a, ShouldResemble, e)
-			}
-
 			setupGetInvocationMock := func() {
 				invReq := &rdbpb.GetInvocationRequest{
-					Name: inv,
+					Name: testInvocation,
 				}
 				invRes := &rdbpb.Invocation{
-					Name:  inv,
-					Realm: realm,
+					Name:  testInvocation,
+					Realm: testRealm,
 				}
 				mrc.GetInvocation(invReq, invRes)
 			}
 
 			setupQueryTestVariantsMock := func(modifiers ...func(*rdbpb.QueryTestVariantsResponse)) {
 				tvReq := &rdbpb.QueryTestVariantsRequest{
-					Invocations: []string{inv},
+					Invocations: []string{testInvocation},
 					PageSize:    10000,
 					ResultLimit: 100,
 					ReadMask:    testVariantReadMask,
@@ -819,27 +290,28 @@ func TestIngestTestResults(t *testing.T) {
 			tmdBytes, _ := proto.Marshal(originalTmd)
 			ms := []*spanner.Mutation{
 				// Known flake's status should remain unchanged.
-				insert.AnalyzedTestVariant(realm, "ninja://test_known_flake", "hash_2", atvpb.Status_FLAKY, map[string]any{
+				insert.AnalyzedTestVariant(testRealm, "ninja://test_known_flake", "hash_2", atvpb.Status_FLAKY, map[string]any{
 					"Tags":         pbutil.StringPairs("test_name", "test_known_flake", "monorail_component", "Monorail>OldComponent"),
 					"TestMetadata": spanutil.Compressed(tmdBytes),
 				}),
 				// Non-flake test variant's status will change when see a flaky occurrence.
-				insert.AnalyzedTestVariant(realm, "ninja://test_has_unexpected", "hash", atvpb.Status_HAS_UNEXPECTED_RESULTS, nil),
+				insert.AnalyzedTestVariant(testRealm, "ninja://test_has_unexpected", "hash", atvpb.Status_HAS_UNEXPECTED_RESULTS, nil),
 				// Consistently failed test variant.
-				insert.AnalyzedTestVariant(realm, "ninja://test_consistent_failure", "hash", atvpb.Status_CONSISTENTLY_UNEXPECTED, map[string]any{
+				insert.AnalyzedTestVariant(testRealm, "ninja://test_consistent_failure", "hash", atvpb.Status_CONSISTENTLY_UNEXPECTED, map[string]any{
 					"TestMetadata": spanutil.Compressed(tmdBytes),
 				}),
 				// Stale test variant has new failure.
-				insert.AnalyzedTestVariant(realm, "ninja://test_no_new_results", "hash", atvpb.Status_NO_NEW_RESULTS, nil),
+				insert.AnalyzedTestVariant(testRealm, "ninja://test_no_new_results", "hash", atvpb.Status_NO_NEW_RESULTS, nil),
 			}
 			testutil.MustApply(ctx, ms...)
 
 			payload := &taskspb.IngestTestResults{
 				Build: &ctrlpb.BuildResult{
 					Host:         bHost,
-					Id:           bID,
+					Id:           testBuildID,
 					CreationTime: timestamppb.New(time.Date(2020, time.April, 1, 2, 3, 4, 5, time.UTC)),
 					Project:      "project",
+					Bucket:       "bucket",
 					Builder:      "builder",
 					Status:       pb.BuildStatus_BUILD_STATUS_FAILURE,
 					Changelists: []*pb.Changelist{
@@ -866,6 +338,7 @@ func TestIngestTestResults(t *testing.T) {
 					HasInvocation:        true,
 					ResultdbHost:         "results.api.cr.dev",
 					IsIncludedByAncestor: false,
+					GardenerRotations:    []string{"rotation1", "rotation2"},
 				},
 				PartitionTime: timestamppb.New(partitionTime),
 				PresubmitRun: &ctrlpb.PresubmitResult{
@@ -887,7 +360,7 @@ func TestIngestTestResults(t *testing.T) {
 
 			ingestionCtl :=
 				control.NewEntry(0).
-					WithBuildID(control.BuildID(bHost, bID)).
+					WithBuildID(control.BuildID(bHost, testBuildID)).
 					WithBuildResult(proto.Clone(payload.Build).(*ctrlpb.BuildResult)).
 					WithPresubmitResult(proto.Clone(payload.PresubmitRun).(*ctrlpb.PresubmitResult)).
 					WithTaskCount(1).
@@ -905,19 +378,18 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Verify
-				verifyIngestedInvocation(expectedInvocation)
-				verifyGitReference(expectedGitReference)
+				verifyIngestedInvocation(ctx, expectedInvocation)
+				verifyGitReference(ctx, expectedGitReference)
 
 				// Expect a continuation task to be created.
-				verifyContinuationTask(expectedContinuation)
+				verifyContinuationTask(skdr, expectedContinuation)
 				ingestionCtl.TaskCount = ingestionCtl.TaskCount + 1 // Expect to have been incremented.
-				verifyIngestionControl(ingestionCtl)
-				expectCommitPosition := true
-				verifyTestResults(expectCommitPosition)
-				verifyClustering()
-				verifyAnalyzedTestVariants()
+				verifyIngestionControl(ctx, ingestionCtl)
+				verifyTestResults(ctx, expectedInvocation)
+				verifyClustering(chunkStore, clusteredFailures)
+				verifyAnalyzedTestVariants(ctx, skdr)
 				expectCollectTaskExists := false
-				verifyCollectTask(expectCollectTaskExists)
+				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
 			Convey(`Last task`, func() {
 				payload.TaskIndex = 10
@@ -939,21 +411,20 @@ func TestIngestTestResults(t *testing.T) {
 				// Verify
 				// Only the first task should create the ingested
 				// invocation record and git reference record (if any).
-				verifyIngestedInvocation(nil)
-				verifyGitReference(nil)
+				verifyIngestedInvocation(ctx, nil)
+				verifyGitReference(ctx, nil)
 
 				// As this is the last task, do not expect a continuation
 				// task to be created.
-				verifyContinuationTask(nil)
-				verifyIngestionControl(ingestionCtl)
-				expectCommitPosition := true
-				verifyTestResults(expectCommitPosition)
-				verifyClustering()
-				verifyAnalyzedTestVariants()
+				verifyContinuationTask(skdr, nil)
+				verifyIngestionControl(ctx, ingestionCtl)
+				verifyTestResults(ctx, expectedInvocation)
+				verifyClustering(chunkStore, clusteredFailures)
+				verifyAnalyzedTestVariants(ctx, skdr)
 
 				// Expect a collect task to be created.
 				expectCollectTaskExists := true
-				verifyCollectTask(expectCollectTaskExists)
+				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
 			Convey(`Retry task after continuation task already created`, func() {
 				// Scenario: First task fails after it has already scheduled
@@ -972,20 +443,19 @@ func TestIngestTestResults(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				// Verify
-				verifyIngestedInvocation(expectedInvocation)
-				verifyGitReference(expectedGitReference)
+				verifyIngestedInvocation(ctx, expectedInvocation)
+				verifyGitReference(ctx, expectedGitReference)
 
 				// Do not expect a continuation task to be created,
 				// as it was already scheduled.
-				verifyContinuationTask(nil)
-				verifyIngestionControl(ingestionCtl)
-				expectCommitPosition := true
-				verifyTestResults(expectCommitPosition)
-				verifyClustering()
-				verifyAnalyzedTestVariants()
+				verifyContinuationTask(skdr, nil)
+				verifyIngestionControl(ctx, ingestionCtl)
+				verifyTestResults(ctx, expectedInvocation)
+				verifyClustering(chunkStore, clusteredFailures)
+				verifyAnalyzedTestVariants(ctx, skdr)
 
 				expectCollectTaskExists := false
-				verifyCollectTask(expectCollectTaskExists)
+				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
 			Convey(`No commit position`, func() {
 				// Scenario: The build which completed did not include commit
@@ -1009,14 +479,14 @@ func TestIngestTestResults(t *testing.T) {
 				expectedInvocation.CommitHash = ""
 				expectedInvocation.CommitPosition = 0
 				expectedInvocation.GitReferenceHash = nil
-				verifyIngestedInvocation(expectedInvocation)
+				verifyIngestedInvocation(ctx, expectedInvocation)
 
 				// No git reference record should be created.
-				verifyGitReference(nil)
+				verifyGitReference(ctx, nil)
 
-				// Test results should not have a commit position.
-				expectCommitPosition := false
-				verifyTestResults(expectCommitPosition)
+				// Test result commit position infomration should
+				// match that of the ingested invocation.
+				verifyTestResults(ctx, expectedInvocation)
 			})
 			Convey(`No project config`, func() {
 				// If no project config exists, results should be ingested into
@@ -1037,11 +507,10 @@ func TestIngestTestResults(t *testing.T) {
 
 				// Verify
 				// Test results still ingested.
-				expectCommitPosition := true
-				verifyTestResults(expectCommitPosition)
+				verifyTestResults(ctx, expectedInvocation)
 
 				// Cluster has happened.
-				verifyClustering()
+				verifyClustering(chunkStore, clusteredFailures)
 			})
 			Convey(`Build included by ancestor`, func() {
 				payload.Build.IsIncludedByAncestor = true
@@ -1082,4 +551,529 @@ func TestIngestTestResults(t *testing.T) {
 			})
 		})
 	})
+}
+
+func verifyIngestedInvocation(ctx context.Context, expected *testresults.IngestedInvocation) {
+	var invs []*testresults.IngestedInvocation
+	// Validate IngestedInvocations table is populated.
+	err := testresults.ReadIngestedInvocations(span.Single(ctx), spanner.AllKeys(), func(inv *testresults.IngestedInvocation) error {
+		invs = append(invs, inv)
+		return nil
+	})
+	So(err, ShouldBeNil)
+	if expected != nil {
+		So(invs, ShouldHaveLength, 1)
+		So(invs[0], ShouldResemble, expected)
+	} else {
+		So(invs, ShouldHaveLength, 0)
+	}
+}
+
+func verifyGitReference(ctx context.Context, expected *gitreferences.GitReference) {
+	refs, err := gitreferences.ReadAll(span.Single(ctx))
+	So(err, ShouldBeNil)
+	if expected != nil {
+		So(refs, ShouldHaveLength, 1)
+		actual := refs[0]
+		// LastIngestionTime is a commit timestamp in the
+		// control of the implementation. We check it is
+		// populated and assert nothing beyond that.
+		So(actual.LastIngestionTime, ShouldNotBeEmpty)
+		actual.LastIngestionTime = time.Time{}
+
+		So(actual, ShouldResemble, expected)
+	} else {
+		So(refs, ShouldHaveLength, 0)
+	}
+}
+
+func verifyTestResults(ctx context.Context, expectedInvocation *testresults.IngestedInvocation) {
+	trBuilder := testresults.NewTestResult().
+		WithProject("project").
+		WithPartitionTime(expectedInvocation.PartitionTime).
+		WithIngestedInvocationID("build-87654321").
+		WithSubRealm("ci").
+		WithBuildStatus(pb.BuildStatus_BUILD_STATUS_FAILURE).
+		WithChangelists([]testresults.Changelist{
+			{
+				Host:      "anothergerrit.gerrit.instance",
+				Change:    77788,
+				Patchset:  19,
+				OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+			},
+			{
+				Host:      "mygerrit-review.googlesource.com",
+				Change:    12345,
+				Patchset:  5,
+				OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
+			},
+		}).
+		WithPresubmitRun(&testresults.PresubmitRun{
+			Mode: pb.PresubmitRunMode_FULL_RUN,
+		})
+	if expectedInvocation.CommitPosition > 0 {
+		trBuilder = trBuilder.WithCommitPosition(expectedInvocation.GitReferenceHash, expectedInvocation.CommitPosition)
+	} else {
+		trBuilder = trBuilder.WithoutCommitPosition()
+	}
+
+	expectedTRs := []*testresults.TestResult{
+		trBuilder.WithTestID("ninja://test_consistent_failure").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_FAIL).
+			WithRunDuration(3*time.Second).
+			WithExonerationReasons(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE).
+			Build(),
+		trBuilder.WithTestID("ninja://test_expected").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(false).
+			WithStatus(pb.TestResultStatus_PASS).
+			WithRunDuration(5 * time.Second).
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_has_unexpected").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_FAIL).
+			WithoutRunDuration().
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_has_unexpected").
+			WithVariantHash("hash").
+			WithRunIndex(1).
+			WithResultIndex(0).
+			WithIsUnexpected(false).
+			WithStatus(pb.TestResultStatus_PASS).
+			WithoutRunDuration().
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_known_flake").
+			WithVariantHash("hash_2").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_FAIL).
+			WithRunDuration(2 * time.Second).
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_new_failure").
+			WithVariantHash("hash_1").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_FAIL).
+			WithRunDuration(1 * time.Second).
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_new_flake").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_FAIL).
+			WithRunDuration(10 * time.Second).
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_new_flake").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(1).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_FAIL).
+			WithRunDuration(11 * time.Second).
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_new_flake").
+			WithVariantHash("hash").
+			WithRunIndex(1).
+			WithResultIndex(0).
+			WithIsUnexpected(false).
+			WithStatus(pb.TestResultStatus_PASS).
+			WithRunDuration(12 * time.Second).
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_no_new_results").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_FAIL).
+			WithRunDuration(4 * time.Second).
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_skip").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_SKIP).
+			WithoutRunDuration().
+			WithoutExoneration().
+			Build(),
+		trBuilder.WithTestID("ninja://test_unexpected_pass").
+			WithVariantHash("hash").
+			WithRunIndex(0).
+			WithResultIndex(0).
+			WithIsUnexpected(true).
+			WithStatus(pb.TestResultStatus_PASS).
+			WithoutRunDuration().
+			WithoutExoneration().
+			Build(),
+	}
+
+	// Validate TestResults table is populated.
+	var actualTRs []*testresults.TestResult
+	err := testresults.ReadTestResults(span.Single(ctx), spanner.AllKeys(), func(tr *testresults.TestResult) error {
+		actualTRs = append(actualTRs, tr)
+		return nil
+	})
+	So(err, ShouldBeNil)
+	So(actualTRs, ShouldResemble, expectedTRs)
+
+	// Validate TestVariantRealms table is populated.
+	tvrs := make([]*testresults.TestVariantRealm, 0)
+	err = testresults.ReadTestVariantRealms(span.Single(ctx), spanner.AllKeys(), func(tvr *testresults.TestVariantRealm) error {
+		tvrs = append(tvrs, tvr)
+		return nil
+	})
+	So(err, ShouldBeNil)
+
+	expectedRealms := []*testresults.TestVariantRealm{
+		{
+			Project:     "project",
+			TestID:      "ninja://test_consistent_failure",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_expected",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_has_unexpected",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_known_flake",
+			VariantHash: "hash_2",
+			SubRealm:    "ci",
+			Variant:     pbutil.VariantFromResultDB(rdbpbutil.Variant("k1", "v2")),
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_new_failure",
+			VariantHash: "hash_1",
+			SubRealm:    "ci",
+			Variant:     pbutil.VariantFromResultDB(rdbpbutil.Variant("k1", "v1")),
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_new_flake",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_no_new_results",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_skip",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+		{
+			Project:     "project",
+			TestID:      "ninja://test_unexpected_pass",
+			VariantHash: "hash",
+			SubRealm:    "ci",
+			Variant:     nil,
+		},
+	}
+
+	So(tvrs, ShouldHaveLength, len(expectedRealms))
+	for i, tvr := range tvrs {
+		expectedTVR := expectedRealms[i]
+		So(tvr.LastIngestionTime, ShouldNotBeZeroValue)
+		expectedTVR.LastIngestionTime = tvr.LastIngestionTime
+		So(tvr, ShouldResemble, expectedTVR)
+	}
+
+	// Validate TestRealms table is populated.
+	testRealms := make([]*testresults.TestRealm, 0)
+	err = testresults.ReadTestRealms(span.Single(ctx), spanner.AllKeys(), func(tvr *testresults.TestRealm) error {
+		testRealms = append(testRealms, tvr)
+		return nil
+	})
+	So(err, ShouldBeNil)
+
+	expectedTestRealms := []*testresults.TestRealm{
+		{
+			Project:  "project",
+			TestID:   "ninja://test_consistent_failure",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_expected",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_has_unexpected",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_known_flake",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_new_failure",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_new_flake",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_no_new_results",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_skip",
+			SubRealm: "ci",
+		},
+		{
+			Project:  "project",
+			TestID:   "ninja://test_unexpected_pass",
+			SubRealm: "ci",
+		},
+	}
+
+	So(testRealms, ShouldHaveLength, len(expectedTestRealms))
+	for i, tr := range testRealms {
+		expectedTR := expectedTestRealms[i]
+		So(tr.LastIngestionTime, ShouldNotBeZeroValue)
+		expectedTR.LastIngestionTime = tr.LastIngestionTime
+		So(tr, ShouldResemble, expectedTR)
+	}
+}
+
+func verifyClustering(chunkStore *chunkstore.FakeClient, clusteredFailures *clusteredfailures.FakeClient) {
+	// Confirm chunks have been written to GCS.
+	So(len(chunkStore.Contents), ShouldEqual, 1)
+
+	// Confirm clustering has occurred, with each test result in at
+	// least one cluster.
+	actualClusteredFailures := make(map[string]int)
+	for _, f := range clusteredFailures.Insertions {
+		So(f.Project, ShouldEqual, "project")
+		actualClusteredFailures[f.TestId] += 1
+	}
+	expectedClusteredFailures := map[string]int{
+		"ninja://test_new_failure":        1,
+		"ninja://test_known_flake":        1,
+		"ninja://test_consistent_failure": 1,
+		"ninja://test_no_new_results":     1,
+		"ninja://test_new_flake":          2,
+		"ninja://test_has_unexpected":     1,
+	}
+	So(actualClusteredFailures, ShouldResemble, expectedClusteredFailures)
+}
+
+func verifyAnalyzedTestVariants(ctx context.Context, skdr *tqtesting.Scheduler) {
+	// Read rows from Spanner to confirm the analyzed test variants are saved.
+	ctx, cancel := span.ReadOnlyTransaction(ctx)
+	defer cancel()
+
+	exp := map[string]atvpb.Status{
+		"ninja://test_new_failure":        atvpb.Status_HAS_UNEXPECTED_RESULTS,
+		"ninja://test_known_flake":        atvpb.Status_FLAKY,
+		"ninja://test_consistent_failure": atvpb.Status_CONSISTENTLY_UNEXPECTED,
+		"ninja://test_no_new_results":     atvpb.Status_HAS_UNEXPECTED_RESULTS,
+		"ninja://test_new_flake":          atvpb.Status_FLAKY,
+		"ninja://test_has_unexpected":     atvpb.Status_FLAKY,
+	}
+	act := make(map[string]atvpb.Status)
+	expProtos := map[string]*atvpb.AnalyzedTestVariant{
+		"ninja://test_new_failure": {
+			Realm:       testRealm,
+			TestId:      "ninja://test_new_failure",
+			VariantHash: "hash_1",
+			Status:      atvpb.Status_HAS_UNEXPECTED_RESULTS,
+			Variant:     pbutil.VariantFromResultDB(sampleVar),
+			Tags:        pbutil.StringPairs("monorail_component", "Monorail>Component"),
+			// Mock ResultDB data specifies test metadata for the
+			// new test failure. Make sure it is used.
+			TestMetadata: pbutil.TestMetadataFromResultDB(updatedTmd),
+		},
+		"ninja://test_known_flake": {
+			Realm:       testRealm,
+			TestId:      "ninja://test_known_flake",
+			VariantHash: "hash_2",
+			Status:      atvpb.Status_FLAKY,
+			Tags:        pbutil.StringPairs("monorail_component", "Monorail>Component", "os", "Mac", "test_name", "test_known_flake"),
+			// Mock ResultDB data specifies test metadata for the
+			// test result. Make sure it is used.
+			TestMetadata: pbutil.TestMetadataFromResultDB(updatedTmd),
+		},
+		"ninja://test_consistent_failure": {
+			Realm:       testRealm,
+			TestId:      "ninja://test_consistent_failure",
+			VariantHash: "hash",
+			Status:      atvpb.Status_CONSISTENTLY_UNEXPECTED,
+			Tags:        pbutil.StringPairs(),
+			// Mock ResultDB data does not specify test metadata for the
+			// ingested test result. Keep the same test metadata.
+			TestMetadata: pbutil.TestMetadataFromResultDB(originalTmd),
+		},
+	}
+
+	var testIDsWithNextTask []string
+	fields := []string{"Realm", "TestId", "VariantHash", "Status", "Variant", "Tags", "TestMetadata", "NextUpdateTaskEnqueueTime"}
+	actProtos := make(map[string]*atvpb.AnalyzedTestVariant, len(expProtos))
+	var b spanutil.Buffer
+	err := span.Read(ctx, "AnalyzedTestVariants", spanner.AllKeys(), fields).Do(
+		func(row *spanner.Row) error {
+			tv := &atvpb.AnalyzedTestVariant{}
+			var tmd spanutil.Compressed
+			var enqTime spanner.NullTime
+			err := b.FromSpanner(row, &tv.Realm, &tv.TestId, &tv.VariantHash, &tv.Status, &tv.Variant, &tv.Tags, &tmd, &enqTime)
+			So(err, ShouldBeNil)
+			So(tv.Realm, ShouldEqual, testRealm)
+
+			if len(tmd) > 0 {
+				tv.TestMetadata = &pb.TestMetadata{}
+				err = proto.Unmarshal(tmd, tv.TestMetadata)
+				So(err, ShouldBeNil)
+			}
+
+			act[tv.TestId] = tv.Status
+			if _, ok := expProtos[tv.TestId]; ok {
+				actProtos[tv.TestId] = tv
+			}
+
+			if !enqTime.IsNull() {
+				testIDsWithNextTask = append(testIDsWithNextTask, tv.TestId)
+			}
+			return nil
+		},
+	)
+	So(err, ShouldBeNil)
+	So(act, ShouldResemble, exp)
+	for k, actProto := range actProtos {
+		v, ok := expProtos[k]
+		So(ok, ShouldBeTrue)
+		So(actProto, ShouldResembleProto, v)
+	}
+	sort.Strings(testIDsWithNextTask)
+
+	var actTestIDsWithTasks []string
+	for _, pl := range skdr.Tasks().Payloads() {
+		switch pl := pl.(type) {
+		case *taskspb.UpdateTestVariant:
+			actTestIDsWithTasks = append(actTestIDsWithTasks, pl.TestVariantKey.TestId)
+		default:
+		}
+	}
+	sort.Strings(actTestIDsWithTasks)
+	So(len(actTestIDsWithTasks), ShouldEqual, 3)
+	So(actTestIDsWithTasks, ShouldResemble, testIDsWithNextTask)
+}
+
+func verifyCollectTask(skdr *tqtesting.Scheduler, expectExists bool) {
+	expColTask := &taskspb.CollectTestResults{
+		Resultdb: &taskspb.ResultDB{
+			Invocation: &rdbpb.Invocation{
+				Name:  testInvocation,
+				Realm: testRealm,
+			},
+			Host: "results.api.cr.dev",
+		},
+		Builder:                   "builder",
+		Project:                   "project",
+		IsPreSubmit:               true,
+		ContributedToClSubmission: true,
+	}
+	collectTaskCount := 0
+	for _, pl := range skdr.Tasks().Payloads() {
+		if pl, ok := pl.(*taskspb.CollectTestResults); ok {
+			So(pl, ShouldResembleProto, expColTask)
+			collectTaskCount++
+		}
+	}
+	if expectExists {
+		So(collectTaskCount, ShouldEqual, 1)
+	} else {
+		So(collectTaskCount, ShouldEqual, 0)
+	}
+}
+
+func verifyContinuationTask(skdr *tqtesting.Scheduler, expectedContinuation *taskspb.IngestTestResults) {
+	count := 0
+	for _, pl := range skdr.Tasks().Payloads() {
+		if pl, ok := pl.(*taskspb.IngestTestResults); ok {
+			So(pl, ShouldResembleProto, expectedContinuation)
+			count++
+		}
+	}
+	if expectedContinuation != nil {
+		So(count, ShouldEqual, 1)
+	} else {
+		So(count, ShouldEqual, 0)
+	}
+}
+
+func verifyIngestionControl(ctx context.Context, expected *control.Entry) {
+	actual, err := control.Read(span.Single(ctx), []string{expected.BuildID})
+	So(err, ShouldBeNil)
+	So(actual, ShouldHaveLength, 1)
+	a := *actual[0]
+	e := *expected
+
+	// Compare protos separately, as they are not compared
+	// correctly by ShouldResemble.
+	So(a.PresubmitResult, ShouldResembleProto, e.PresubmitResult)
+	a.PresubmitResult = nil
+	e.PresubmitResult = nil
+
+	So(a.BuildResult, ShouldResembleProto, e.BuildResult)
+	a.BuildResult = nil
+	e.BuildResult = nil
+
+	So(a.InvocationResult, ShouldResembleProto, e.InvocationResult)
+	a.InvocationResult = nil
+	e.InvocationResult = nil
+
+	// Do not compare last updated time, as it is determined
+	// by commit timestamp.
+	So(a.LastUpdated, ShouldNotBeEmpty)
+	e.LastUpdated = a.LastUpdated
+
+	So(a, ShouldResemble, e)
 }
