@@ -25,6 +25,7 @@ import (
 	"google.golang.org/api/iterator"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -87,7 +88,7 @@ type TopCount struct {
 // RebuildAnalysis re-builds the cluster summaries analysis from
 // clustered test results for all LUCI projects.
 func (c *Client) RebuildAnalysis(ctx context.Context) error {
-	dataset := c.client.Dataset("internal")
+	dataset := c.client.Dataset(bqutil.InternalDatasetID)
 	return c.rebuildAnalysisForDataset(ctx, dataset, true)
 }
 
@@ -229,7 +230,7 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 // We currently only purge the last 7 days to keep purging costs to a minimum and
 // as this is as far as QueryClusterSummaries looks back.
 func (c *Client) PurgeStaleRows(ctx context.Context) error {
-	dataset := c.client.Dataset("internal")
+	dataset := c.client.Dataset(bqutil.InternalDatasetID)
 	return c.purgeStaleRowsForDataset(ctx, dataset, true)
 }
 
@@ -447,7 +448,7 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 			project = @project
 			AND (` + whereClause + `)`,
 	)
-	q.DefaultDatasetID = "internal"
+	q.DefaultDatasetID = bqutil.InternalDatasetID
 	q.Parameters = append(params, bigquery.QueryParameter{Name: "project", Value: project})
 
 	job, err := q.Run(ctx)

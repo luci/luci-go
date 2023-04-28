@@ -82,7 +82,7 @@ func (s *Client) Insert(ctx context.Context, rows []*bqpb.FailureAssociationRule
 	if err := s.ensureSchema(ctx); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
-	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, datasetID, tableName)
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, bqutil.InternalDatasetID, tableName)
 	writer := bqutil.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
@@ -103,7 +103,7 @@ func (s *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 		SELECT MAX(last_updated) as LastUpdated
 		FROM failure_association_rules_history
 	`)
-	q.DefaultDatasetID = datasetID
+	q.DefaultDatasetID = bqutil.InternalDatasetID
 	job, err := q.Run(ctx)
 	if err != nil {
 		return bigquery.NullTimestamp{}, errors.Annotate(err, "querying max last update").Err()
@@ -126,9 +126,9 @@ func (s *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 
 func (s *Client) ensureSchema(ctx context.Context) error {
 	// Dataset for the project may have to be manually created.
-	table := s.bqClient.Dataset(datasetID).Table(tableName)
+	table := s.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
-		return errors.Annotate(err, "ensuring %s table in dataset %q", tableName, datasetID).Err()
+		return errors.Annotate(err, "ensuring %s table", tableName).Err()
 	}
 	return nil
 }

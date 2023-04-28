@@ -23,6 +23,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+// InternalDatasetID is the name of the BigQuery dataset which is intended
+// for internal service use only.
+const InternalDatasetID = "internal"
+
 // DatasetForProject returns the name of the BigQuery dataset that contains
 // the given project's data, in the LUCI Analysis GCP project.
 func DatasetForProject(luciProject string) (string, error) {

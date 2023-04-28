@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
@@ -125,7 +126,7 @@ func (c *Client) ReadClusterFailures(ctx context.Context, opts ReadClusterFailur
 		ORDER BY r.partition_time DESC
 		LIMIT 2000
 	`)
-	q.DefaultDatasetID = "internal"
+	q.DefaultDatasetID = bqutil.InternalDatasetID
 	q.Parameters = []bigquery.QueryParameter{
 		{Name: "clusterAlgorithm", Value: opts.ClusterID.Algorithm},
 		{Name: "clusterID", Value: opts.ClusterID.ID},

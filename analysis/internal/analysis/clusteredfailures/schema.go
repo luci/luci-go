@@ -32,9 +32,6 @@ import (
 // tableName is the name of the exported BigQuery table.
 const tableName = "clustered_failures"
 
-// datasetID is the name of the exported BigQuery dataset.
-const datasetID = "internal"
-
 // schemaApplyer ensures BQ schema matches the row proto definitions.
 var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 

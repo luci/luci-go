@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -194,7 +195,7 @@ func (c *Client) QueryClusterSummaries(ctx context.Context, luciProject string, 
 
 	sql := constructQueryString(options.IncludeMetricBreakdown, options.Metrics, whereClause, orderByClause)
 	q := c.client.Query(sql)
-	q.DefaultDatasetID = "internal"
+	q.DefaultDatasetID = bqutil.InternalDatasetID
 	q.Parameters = toBigQueryParameters(parameters)
 	q.Parameters = append(q.Parameters,
 		bigquery.QueryParameter{Name: "realms", Value: options.Realms},

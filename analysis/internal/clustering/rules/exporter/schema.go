@@ -30,9 +30,6 @@ import (
 // tableName is the name of the exported BigQuery table.
 const tableName = "failure_association_rules_history"
 
-// datasetID is the id of the destination dataset.
-const datasetID = "internal"
-
 // schemaApplyer ensures BQ schema matches the row proto definitions.
 var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 

@@ -17,6 +17,7 @@ package views
 
 import (
 	"context"
+	"strings"
 
 	"cloud.google.com/go/bigquery"
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -126,44 +127,16 @@ func createViewsForLUCIDataset(ctx context.Context, bqClient *bigquery.Client, d
 		table := bqClient.Dataset(datasetID).Table(tableName)
 		spec := specFunc(luciProject)
 		if err := schemaApplyer.EnsureTable(ctx, table, spec); err != nil {
-			// TODO: Stop skipping this error when migration to centralised cluster table is done.
-			if errors.Is(err, bq.ErrWrongTableKind) {
-				continue
-			}
 			return errors.Annotate(err, "ensure view %s", tableName).Err()
 		}
 	}
 	return nil
 }
 
-// projectDatasets returnes existing datasets that is for LUCI project.
+// projectDatasets returns all project datasets in the GCP Project.
+// E.g. "chromium", "chromeos", ....
 func projectDatasets(ctx context.Context, bqClient *bigquery.Client) ([]string, error) {
-	projectCfg, err := config.Projects(ctx)
-	if err != nil {
-		return nil, errors.Annotate(err, "get project configs").Err()
-	}
-	datasetIDs, err := listDatasetIDs(ctx, bqClient)
-	if err != nil {
-		return nil, errors.Annotate(err, "list gcp datasets").Err()
-	}
-	projectDatasetIDs := []string{}
-	for _, project := range projectCfg.Keys() {
-		datasetID, err := bqutil.DatasetForProject(project)
-		if err != nil {
-			return nil, errors.Annotate(err, "get dataset name for project %s", project).Err()
-		}
-		if _, ok := datasetIDs[datasetID]; !ok {
-			// No dataset provisioned for this LUCI project.
-			continue
-		}
-		projectDatasetIDs = append(projectDatasetIDs, datasetID)
-	}
-	return projectDatasetIDs, nil
-}
-
-// listDatasetIDs returns all dataset ids as keys in a map for a gcp project.
-func listDatasetIDs(ctx context.Context, bqClient *bigquery.Client) (map[string]bool, error) {
-	datasets := map[string]bool{}
+	var datasets []string
 	di := bqClient.Datasets(ctx)
 	for {
 		d, err := di.Next()
@@ -172,7 +145,16 @@ func listDatasetIDs(ctx context.Context, bqClient *bigquery.Client) (map[string]
 		} else if err != nil {
 			return nil, err
 		}
-		datasets[d.DatasetID] = true
+		// The internal dataset is a special dataset that does
+		// not belong to a LUCI project.
+		if strings.EqualFold(d.DatasetID, bqutil.InternalDatasetID) {
+			continue
+		}
+		// Same for the experiments dataset.
+		if strings.EqualFold(d.DatasetID, "experiments") {
+			continue
+		}
+		datasets = append(datasets, d.DatasetID)
 	}
 	return datasets, nil
 }

@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
+	"go.chromium.org/luci/analysis/internal/bqutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/trace"
 )
@@ -128,7 +129,7 @@ func (c *Client) ReadClusterHistory(ctx context.Context, options ReadClusterHist
 		ORDER BY day ASC
 	`
 	q := c.client.Query(sql)
-	q.DefaultDatasetID = "internal"
+	q.DefaultDatasetID = bqutil.InternalDatasetID
 	q.Parameters = toBigQueryParameters(parameters)
 	q.Parameters = append(q.Parameters,
 		bigquery.QueryParameter{Name: "project", Value: options.Project},
