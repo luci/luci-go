@@ -23,6 +23,7 @@ import "google/protobuf/struct.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
 import "go.chromium.org/luci/analysis/proto/v1/sources.proto";
+import "go.chromium.org/luci/analysis/proto/v1/test_metadata.proto";
 import "go.chromium.org/luci/analysis/proto/v1/test_verdict.proto";
 import "go.chromium.org/luci/common/bq/pb/options.proto";
 
@@ -173,8 +174,8 @@ message TestVerdictRow {
     int64 unexpected_non_skipped = 3;
 
     // The total number of unexpected test results in the verdict
-    // that are not skips or passes.
-    int64 unexpected_non_skipped_or_passed = 4;
+    // that are not skips and not passes.
+    int64 unexpected_non_skipped_non_passed = 4;
 
     // The total number of test results in the verdict that
     // are not skips.
@@ -212,17 +213,8 @@ message TestVerdictRow {
     // off the BUILD_STATUS_ prefix that would otherwise appear on every value.
     string status = 3;
 
-    // Whether the build was critical to a presubmit run succeeding.
-    // If the build did not relate presubmit run (i.e. because it was a tryjob
-    // for a presubmit run), this is false.
-    // Note that false can mean two things (the build is not critical
-    // or because the build was not part of a presubmit run).
-    // You can identify which of these cases applies by
-    // checking if presubmit_run is populated.
-    bool critical = 4;
-
     // The gardener rotations which monitor this build.
-    repeated string gardener_rotations = 5;
+    repeated string gardener_rotations = 4;
   }
 
   // The buildbucket build the results were collected as part of, if any.
@@ -249,8 +241,13 @@ message TestVerdictRow {
     // The presubmit run's ending status.
     // Notionally luci.analysis.v1.PresubmitRunStatus, but string so that
     // we can chop off the "PRESUBMIT_RUN_STATUS_" prefix and have
-    // only the status, e.g. SUCCESS, FAILURE, CANCELED.
+    // only the status, e.g. SUCCEEDED, FAILED, CANCELED.
     string status = 3;
+
+    // Whether the build indicated by buildbucket_build was
+    // critical to the presubmit run succeeding. This is
+    // false for experimental tryjobs.
+    bool is_build_critical = 4;
   }
 
   // The original presubmit run the results were collected as part of, if any.

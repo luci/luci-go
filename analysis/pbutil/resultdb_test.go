@@ -66,6 +66,21 @@ func TestResultDB(t *testing.T) {
 			So(status, ShouldNotEqual, pb.TestResultStatus_TEST_RESULT_STATUS_UNSPECIFIED)
 		}
 	})
+	Convey("TestVerdictStatusFromResultDB", t, func() {
+		// Confirm LUCI Analysis handles every test variant status defined by ResultDB.
+		// This test is designed to break if ResultDB extends the set of
+		// allowed values, without a corresponding update to LUCI Analysis.
+		for _, v := range rdbpb.TestVariantStatus_value {
+			rdbStatus := rdbpb.TestVariantStatus(v)
+			if rdbStatus == rdbpb.TestVariantStatus_TEST_VARIANT_STATUS_UNSPECIFIED ||
+				rdbStatus == rdbpb.TestVariantStatus_UNEXPECTED_MASK {
+				continue
+			}
+
+			status := TestVerdictStatusFromResultDB(rdbStatus)
+			So(status, ShouldNotEqual, pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED)
+		}
+	})
 	Convey("ExonerationReasonFromResultDB", t, func() {
 		// Confirm LUCI Analysis handles every exoneration reason defined by
 		// ResultDB.
@@ -111,6 +126,45 @@ func TestResultDB(t *testing.T) {
 
 			So(converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Project, ShouldEqual, "chrome")
 			So(converted.BugComponent.System.(*pb.BugComponent_Monorail).Monorail.Value, ShouldEqual, "Blink>Data")
+		})
+	})
+	Convey("SourcesFromResultDB", t, func() {
+		rdbSources := &rdbpb.Sources{
+			GitilesCommit: &rdbpb.GitilesCommit{
+				Host:       "project.googlesource.com",
+				Project:    "myproject/src",
+				Ref:        "refs/heads/main",
+				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+				Position:   16801,
+			},
+			Changelists: []*rdbpb.GerritChange{
+				{
+					Host:     "project-review.googlesource.com",
+					Project:  "myproject/src2",
+					Change:   9991,
+					Patchset: 82,
+				},
+			},
+			IsDirty: true,
+		}
+		converted := SourcesFromResultDB(rdbSources)
+		So(converted, ShouldResembleProto, &pb.Sources{
+			GitilesCommit: &pb.GitilesCommit{
+				Host:       "project.googlesource.com",
+				Project:    "myproject/src",
+				Ref:        "refs/heads/main",
+				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+				Position:   16801,
+			},
+			Changelists: []*pb.Changelist{
+				{
+					Host:      "project-review.googlesource.com",
+					Change:    9991,
+					Patchset:  82,
+					OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
+				},
+			},
+			IsDirty: true,
 		})
 	})
 }

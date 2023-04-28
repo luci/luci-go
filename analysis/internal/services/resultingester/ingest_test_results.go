@@ -20,17 +20,6 @@ import (
 	"regexp"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
-	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,7 +37,19 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/resultcollector"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testverdicts"
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 )
 
 const (
@@ -88,14 +89,19 @@ var (
 			"status",
 			"variant",
 			"test_metadata",
+			"sources_id",
+			"exonerations.*.explanation_html",
 			"exonerations.*.reason",
 			"results.*.result.name",
+			"results.*.result.result_id",
 			"results.*.result.expected",
 			"results.*.result.status",
+			"results.*.result.summary_html",
 			"results.*.result.start_time",
 			"results.*.result.duration",
 			"results.*.result.tags",
 			"results.*.result.failure_reason",
+			"results.*.result.properties",
 		},
 	}
 
@@ -113,7 +119,10 @@ type Options struct {
 }
 
 type resultIngester struct {
+	// clustering is used to ingest test failures for clustering.
 	clustering *ingestion.Ingester
+	// verdictExporter is used to export test verdictExporter.
+	verdictExporter *testverdicts.Exporter
 }
 
 var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
@@ -143,12 +152,27 @@ func RegisterTaskHandler(srv *server.Server) error {
 		return err
 	}
 	srv.RegisterCleanup(func(context.Context) {
-		cf.Close()
+		err := cf.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up clustered failures client: %s", err)
+		}
+	})
+
+	verdictClient, err := testverdicts.NewClient(ctx, srv.Options.CloudProject)
+	if err != nil {
+		return err
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := verdictClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up test verdicts client: %s", err)
+		}
 	})
 
 	analysis := analysis.NewClusteringHandler(cf)
 	ri := &resultIngester{
-		clustering: ingestion.New(chunkStore, analysis),
+		clustering:      ingestion.New(chunkStore, analysis),
+		verdictExporter: testverdicts.NewExporter(verdictClient),
 	}
 	handler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.IngestTestResults)
@@ -336,7 +360,16 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	if err != nil {
 		// Only log the error for now, we will return error when everything is
 		// working.
-		err = errors.Annotate(err, "ingestForChangePointAnalysis").Err()
+		err = errors.Annotate(err, "changepoint analysis").Err()
+		logging.Errorf(ctx, err.Error())
+		// return err
+	}
+
+	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp, inv, payload)
+	if err != nil {
+		// Only log the error for now, we will return error when we have
+		// confirmed everything is working.
+		err = errors.Annotate(err, "export verdicts").Err()
 		logging.Errorf(ctx, err.Error())
 		// return err
 	}
@@ -490,7 +523,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) error {
 	cfg, err := config.Get(ctx)
 	if err != nil {
-		return errors.Annotate(err, "couldn't read config").Err()
+		return errors.Annotate(err, "read config").Err()
 	}
 	tvaEnabled := cfg.TestVariantAnalysis != nil && cfg.TestVariantAnalysis.Enabled
 	if !tvaEnabled {
@@ -498,7 +531,28 @@ func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant,
 	}
 	err = changepoints.Analyze(ctx, tvs, payload)
 	if err != nil {
-		return errors.Annotate(err, "analyze test variant").Err()
+		return errors.Annotate(err, "analyze test variants").Err()
+	}
+	return nil
+}
+
+func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.Exporter, rsp *rdbpb.QueryTestVariantsResponse, inv *rdbpb.Invocation, payload *taskspb.IngestTestResults) error {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return errors.Annotate(err, "read config").Err()
+	}
+	enabled := cfg.TestVerdictExport != nil && cfg.TestVerdictExport.Enabled
+	if !enabled {
+		return nil
+	}
+	// Export test verdicts.
+	exportOptions := testverdicts.ExportOptions{
+		Payload:    payload,
+		Invocation: inv,
+	}
+	err = verdictExporter.Export(ctx, rsp, exportOptions)
+	if err != nil {
+		return errors.Annotate(err, "export").Err()
 	}
 	return nil
 }

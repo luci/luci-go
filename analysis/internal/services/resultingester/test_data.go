@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -37,7 +38,7 @@ var originalTmd = &rdbpb.TestMetadata{
 		System: &rdbpb.BugComponent_Monorail{
 			Monorail: &rdbpb.MonorailComponent{
 				Project: "chrome",
-				Value: "Blink>Component",
+				Value:   "Blink>Component",
 			},
 		},
 	},
@@ -59,6 +60,13 @@ var updatedTmd = &rdbpb.TestMetadata{
 	},
 }
 
+var testProperties = &structpb.Struct{
+	Fields: map[string]*structpb.Value{
+		"stringkey": structpb.NewStringValue("stringvalue"),
+		"numberkey": structpb.NewNumberValue(123),
+	},
+}
+
 func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 	response := &rdbpb.QueryTestVariantsResponse{
 		TestVariants: []*rdbpb.TestVariant{
@@ -69,10 +77,12 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Exonerations: []*rdbpb.TestExoneration{
 					// Test behaviour in the presence of multiple exoneration reasons.
 					{
-						Reason: rdbpb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+						ExplanationHtml: "LUCI Analysis reported this test as flaky.",
+						Reason:          rdbpb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 					},
 					{
-						Reason: rdbpb.ExonerationReason_NOT_CRITICAL,
+						ExplanationHtml: "Test is marked informational.",
+						Reason:          rdbpb.ExonerationReason_NOT_CRITICAL,
 					},
 					{
 						Reason: rdbpb.ExonerationReason_OCCURS_ON_MAINLINE,
@@ -81,14 +91,21 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_consistent_failure/results/one",
-							StartTime: timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
-							Status:    rdbpb.TestStatus_FAIL,
-							Expected:  false,
-							Duration:  durationpb.New(time.Second * 3),
+							ResultId:    "one",
+							Name:        "invocations/build-1234/tests/ninja%3A%2F%2Ftest_consistent_failure/results/one",
+							Expected:    false,
+							Status:      rdbpb.TestStatus_FAIL,
+							SummaryHtml: "SummaryHTML",
+							StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
+							Duration:    durationpb.New(time.Second * 3),
+							FailureReason: &rdbpb.FailureReason{
+								PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
+							},
+							Properties: testProperties,
 						},
 					},
 				},
+				SourcesId: "sources1",
 			},
 			// Should ignore for test variant analysis.
 			{
@@ -98,6 +115,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "one",
 							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_expected/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_PASS,
@@ -114,6 +132,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "one",
 							Name:      "invocations/invocation-0b/tests/ninja%3A%2F%2Ftest_has_unexpected/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
@@ -122,6 +141,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					},
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "two",
 							Name:      "invocations/invocation-0a/tests/ninja%3A%2F%2Ftest_has_unexpected/results/two",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_PASS,
@@ -139,6 +159,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "one",
 							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_known_flake/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
@@ -158,6 +179,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "one",
 							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_new_failure/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
@@ -175,6 +197,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "two",
 							Name:      "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/two",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
@@ -184,6 +207,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					},
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "one",
 							Name:      "invocations/invocation-1234/tests/ninja%3A%2F%2Ftest_new_flake/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
@@ -193,6 +217,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 					},
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "three",
 							Name:      "invocations/invocation-4567/tests/ninja%3A%2F%2Ftest_new_flake/results/three",
 							StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_PASS,
@@ -209,6 +234,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "one",
 							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_no_new_results/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_FAIL,
@@ -226,6 +252,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId:  "one",
 							Name:      "invocations/build-1234/tests/ninja%3A%2F%2Ftest_skip/results/one",
 							StartTime: timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 							Status:    rdbpb.TestStatus_SKIP,
@@ -241,12 +268,33 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
+							ResultId: "one",
 							Name:     "invocations/build-1234/tests/ninja%3A%2F%2Ftest_unexpected_pass/results/one",
 							Status:   rdbpb.TestStatus_PASS,
 							Expected: false,
 						},
 					},
 				},
+			},
+		},
+		Sources: map[string]*rdbpb.Sources{
+			"sources1": {
+				GitilesCommit: &rdbpb.GitilesCommit{
+					Host:       "project.googlesource.com",
+					Project:    "myproject/src",
+					Ref:        "refs/heads/main",
+					CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+					Position:   16801,
+				},
+				Changelists: []*rdbpb.GerritChange{
+					{
+						Host:     "project-review.googlesource.com",
+						Project:  "myproject/src2",
+						Change:   9991,
+						Patchset: 82,
+					},
+				},
+				IsDirty: true,
 			},
 		},
 	}

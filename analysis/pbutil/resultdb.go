@@ -108,7 +108,7 @@ func TestMetadataFromResultDB(rdbTmd *rdbpb.TestMetadata) *pb.TestMetadata {
 			tmd.BugComponent.System = &pb.BugComponent_Monorail{
 				Monorail: &pb.MonorailComponent{
 					Project: v.Monorail.Project,
-					Value: v.Monorail.Value,
+					Value:   v.Monorail.Value,
 				},
 			}
 		}
@@ -136,6 +136,25 @@ func TestResultStatusFromResultDB(s rdbpb.TestStatus) pb.TestResultStatus {
 	}
 }
 
+// TestVerdictStatusFromResultDB returns the LUCI Analysis test verdict status
+// corresponding to the given ResultDB test variant status.
+func TestVerdictStatusFromResultDB(s rdbpb.TestVariantStatus) pb.TestVerdictStatus {
+	switch s {
+	case rdbpb.TestVariantStatus_EXONERATED:
+		return pb.TestVerdictStatus_EXONERATED
+	case rdbpb.TestVariantStatus_EXPECTED:
+		return pb.TestVerdictStatus_EXPECTED
+	case rdbpb.TestVariantStatus_FLAKY:
+		return pb.TestVerdictStatus_FLAKY
+	case rdbpb.TestVariantStatus_UNEXPECTED:
+		return pb.TestVerdictStatus_UNEXPECTED
+	case rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED:
+		return pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED
+	default:
+		return pb.TestVerdictStatus_TEST_VERDICT_STATUS_UNSPECIFIED
+	}
+}
+
 // ExonerationReasonFromResultDB converts a ResultDB ExonerationReason to a
 // LUCI Analysis ExonerationReason.
 func ExonerationReasonFromResultDB(s rdbpb.ExonerationReason) pb.ExonerationReason {
@@ -151,4 +170,40 @@ func ExonerationReasonFromResultDB(s rdbpb.ExonerationReason) pb.ExonerationReas
 	default:
 		return pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED
 	}
+}
+
+// GitilesCommitFromResultDB returns the LUCI Analysis gitiles commit
+// corresponding to a ResultDB gitiles commit.
+func GitilesCommitFromResultDB(c *rdbpb.GitilesCommit) *pb.GitilesCommit {
+	return &pb.GitilesCommit{
+		Host:       c.Host,
+		Project:    c.Project,
+		Ref:        c.Ref,
+		CommitHash: c.CommitHash,
+		Position:   c.Position,
+	}
+}
+
+// ChangelistFromResultDB returns the LUCI Analysis gerrit changelist
+// corresponding to a ResultDB gerrit changelist.
+func ChangelistFromResultDB(cl *rdbpb.GerritChange) *pb.Changelist {
+	return &pb.Changelist{
+		Host:      cl.Host,
+		Change:    cl.Change,
+		Patchset:  int32(cl.Patchset),
+		OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
+	}
+}
+
+// SourcesFromResultDB returns the LUCI Analysis source description
+// corresponding to a ResultDB source description.
+func SourcesFromResultDB(s *rdbpb.Sources) *pb.Sources {
+	result := &pb.Sources{
+		GitilesCommit: GitilesCommitFromResultDB(s.GitilesCommit),
+		IsDirty:       s.IsDirty,
+	}
+	for _, cl := range s.Changelists {
+		result.Changelists = append(result.Changelists, ChangelistFromResultDB(cl))
+	}
+	return result
 }

@@ -47,6 +47,9 @@ message Config {
 
   // Config related to ingestion.
   Ingestion ingestion = 7;
+
+  // Config to control the test verdict export.
+  TestVerdictExport test_verdict_export = 8;
 }
 
 // TestVariantAnalysis controls how LUCI Analysis run test variant
@@ -68,4 +71,11 @@ message Ingestion {
   // The list of allowlisted LUCI projects, e.g. "chromium", "chromeos".
   // Only used if project_allowlist_enabled is set.
   repeated string project_allowlist = 2;
+}
+
+// TestVerdictExport contains settings to control the test verdict export.
+message TestVerdictExport {
+  // Controls whether test verdicts are exported. Can be used to
+  // contain damage during production incidents.
+  bool enabled = 1;
 }

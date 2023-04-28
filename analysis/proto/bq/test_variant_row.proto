@@ -19,6 +19,7 @@ package luci.analysis.bq;
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/analysis/proto/analyzedtestvariant/analyzed_test_variant.proto";
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/analysis/proto/v1/test_metadata.proto";
 
 option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
 

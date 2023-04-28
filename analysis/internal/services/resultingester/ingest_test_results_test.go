@@ -37,6 +37,7 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
@@ -56,8 +57,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/internal/testutil/insert"
+	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
 	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
+	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -174,9 +177,11 @@ func TestIngestTestResults(t *testing.T) {
 
 		chunkStore := chunkstore.NewFakeClient()
 		clusteredFailures := clusteredfailures.NewFakeClient()
+		testVerdicts := testverdicts.NewFakeClient()
 		analysis := analysis.NewClusteringHandler(clusteredFailures)
 		ri := &resultIngester{
-			clustering: ingestion.New(chunkStore, analysis),
+			clustering:      ingestion.New(chunkStore, analysis),
+			verdictExporter: testverdicts.NewExporter(testVerdicts),
 		}
 
 		Convey(`partition time`, func() {
@@ -278,6 +283,9 @@ func TestIngestTestResults(t *testing.T) {
 
 			cfg := &configpb.Config{
 				TestVariantAnalysis: &configpb.TestVariantAnalysis{
+					Enabled: true,
+				},
+				TestVerdictExport: &configpb.TestVerdictExport{
 					Enabled: true,
 				},
 			}
@@ -388,6 +396,7 @@ func TestIngestTestResults(t *testing.T) {
 				verifyTestResults(ctx, expectedInvocation)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyAnalyzedTestVariants(ctx, skdr)
+				verifyTestVerdicts(testVerdicts, partitionTime)
 				expectCollectTaskExists := false
 				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
@@ -421,6 +430,7 @@ func TestIngestTestResults(t *testing.T) {
 				verifyTestResults(ctx, expectedInvocation)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyAnalyzedTestVariants(ctx, skdr)
+				verifyTestVerdicts(testVerdicts, partitionTime)
 
 				// Expect a collect task to be created.
 				expectCollectTaskExists := true
@@ -453,6 +463,7 @@ func TestIngestTestResults(t *testing.T) {
 				verifyTestResults(ctx, expectedInvocation)
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyAnalyzedTestVariants(ctx, skdr)
+				verifyTestVerdicts(testVerdicts, partitionTime)
 
 				expectCollectTaskExists := false
 				verifyCollectTask(skdr, expectCollectTaskExists)
@@ -487,6 +498,9 @@ func TestIngestTestResults(t *testing.T) {
 				// Test result commit position infomration should
 				// match that of the ingested invocation.
 				verifyTestResults(ctx, expectedInvocation)
+
+				// Test verdicts exported.
+				verifyTestVerdicts(testVerdicts, partitionTime)
 			})
 			Convey(`No project config`, func() {
 				// If no project config exists, results should be ingested into
@@ -511,6 +525,9 @@ func TestIngestTestResults(t *testing.T) {
 
 				// Cluster has happened.
 				verifyClustering(chunkStore, clusteredFailures)
+
+				// Test verdicts exported.
+				verifyTestVerdicts(testVerdicts, partitionTime)
 			})
 			Convey(`Build included by ancestor`, func() {
 				payload.Build.IsIncludedByAncestor = true
@@ -898,7 +915,7 @@ func verifyClustering(chunkStore *chunkstore.FakeClient, clusteredFailures *clus
 	expectedClusteredFailures := map[string]int{
 		"ninja://test_new_failure":        1,
 		"ninja://test_known_flake":        1,
-		"ninja://test_consistent_failure": 1,
+		"ninja://test_consistent_failure": 2, // One failure is in two clusters due it having a failure reason.
 		"ninja://test_no_new_results":     1,
 		"ninja://test_new_flake":          2,
 		"ninja://test_has_unexpected":     1,
@@ -1004,6 +1021,326 @@ func verifyAnalyzedTestVariants(ctx context.Context, skdr *tqtesting.Scheduler) 
 	sort.Strings(actTestIDsWithTasks)
 	So(len(actTestIDsWithTasks), ShouldEqual, 3)
 	So(actTestIDsWithTasks, ShouldResemble, testIDsWithNextTask)
+}
+
+func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime time.Time) {
+	actualRows := client.Insertions
+
+	invocation := &bqpb.TestVerdictRow_InvocationRecord{
+		Id:    "build-87654321",
+		Realm: "project:ci",
+	}
+
+	variant := func(keyValues ...string) *structpb.Struct {
+		if len(keyValues)%2 != 0 {
+			panic("invalid count of keys and values, should be even")
+		}
+		m := make(map[string]interface{})
+		for i := 0; i < len(keyValues); i += 2 {
+			key := keyValues[i]
+			value := keyValues[i+1]
+			m[key] = value
+		}
+		s, err := structpb.NewStruct(m)
+		if err != nil {
+			panic(err)
+		}
+		return s
+	}
+
+	testMetadata := &pb.TestMetadata{
+		Name: "updated_name",
+		Location: &pb.TestLocation{
+			Repo:     "repo",
+			FileName: "file_name",
+			Line:     456,
+		},
+		BugComponent: &pb.BugComponent{
+			System: &pb.BugComponent_IssueTracker{
+				IssueTracker: &pb.IssueTrackerComponent{
+					ComponentId: 12345,
+				},
+			},
+		},
+	}
+
+	buildbucketBuild := &bqpb.TestVerdictRow_BuildbucketBuild{
+		Id: testBuildID,
+		Builder: &bqpb.TestVerdictRow_BuildbucketBuild_Builder{
+			Project: "project",
+			Bucket:  "bucket",
+			Builder: "builder",
+		},
+		Status:            "FAILURE",
+		GardenerRotations: []string{"rotation1", "rotation2"},
+	}
+
+	cvRun := &bqpb.TestVerdictRow_ChangeVerifierRun{
+		Id:              "infra/12345",
+		Mode:            pb.PresubmitRunMode_FULL_RUN,
+		Status:          "SUCCEEDED",
+		IsBuildCritical: false,
+	}
+
+	expectedRows := []*bqpb.TestVerdictRow{
+		{
+			Project:       "project",
+			TestId:        "ninja://test_consistent_failure",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_EXONERATED,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:    "one",
+					Expected:    false,
+					Status:      pb.TestResultStatus_FAIL,
+					SummaryHtml: "SummaryHTML",
+					StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
+					Duration:    durationpb.New(time.Second * 3),
+					FailureReason: &pb.FailureReason{
+						PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
+					},
+					Properties: testProperties,
+				},
+			},
+			Exonerations: []*bqpb.TestVerdictRow_Exoneration{
+				{
+					ExplanationHtml: "LUCI Analysis reported this test as flaky.",
+					Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
+				},
+				{
+					ExplanationHtml: "Test is marked informational.",
+					Reason:          pb.ExonerationReason_NOT_CRITICAL,
+				},
+				{
+					Reason: pb.ExonerationReason_OCCURS_ON_MAINLINE,
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+			Sources: &pb.Sources{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:       "project.googlesource.com",
+					Project:    "myproject/src",
+					Ref:        "refs/heads/main",
+					CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+					Position:   16801,
+				},
+				Changelists: []*pb.Changelist{
+					{
+						Host:      "project-review.googlesource.com",
+						Change:    9991,
+						Patchset:  82,
+						OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
+					},
+				},
+				IsDirty: true,
+			},
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_expected",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_EXPECTED,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:  "one",
+					StartTime: timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
+					Status:    pb.TestResultStatus_PASS,
+					Expected:  true,
+					Duration:  durationpb.New(time.Second * 5),
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 1, Unexpected: 0, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_has_unexpected",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_FLAKY,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:  "one",
+					StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
+					Status:    pb.TestResultStatus_FAIL,
+					Expected:  false,
+				},
+				{
+					ResultId:  "two",
+					StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
+					Status:    pb.TestResultStatus_PASS,
+					Expected:  true,
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 2, TotalNonSkipped: 2, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_known_flake",
+			VariantHash:   "hash_2",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			Variant:       variant("k1", "v2"),
+			TestMetadata:  testMetadata,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:  "one",
+					StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
+					Status:    pb.TestResultStatus_FAIL,
+					Expected:  false,
+					Duration:  durationpb.New(time.Second * 2),
+					Tags:      pbutil.StringPairs("os", "Mac", "monorail_component", "Monorail>Component"),
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_new_failure",
+			VariantHash:   "hash_1",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			Variant:       variant("k1", "v1"),
+			TestMetadata:  testMetadata,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:  "one",
+					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
+					Status:    pb.TestResultStatus_FAIL,
+					Expected:  false,
+					Duration:  durationpb.New(time.Second * 1),
+					Tags:      pbutil.StringPairs("random_tag", "random_tag_value", "monorail_component", "Monorail>Component"),
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_new_flake",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_FLAKY,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:  "two",
+					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
+					Status:    pb.TestResultStatus_FAIL,
+					Expected:  false,
+					Duration:  durationpb.New(time.Second * 11),
+				},
+				{
+					ResultId:  "one",
+					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
+					Status:    pb.TestResultStatus_FAIL,
+					Expected:  false,
+					Duration:  durationpb.New(time.Second * 10),
+				},
+				{
+					ResultId:  "three",
+					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
+					Status:    pb.TestResultStatus_PASS,
+					Expected:  true,
+					Duration:  durationpb.New(time.Second * 12),
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 3, TotalNonSkipped: 3, Unexpected: 2, UnexpectedNonSkipped: 2, UnexpectedNonSkippedNonPassed: 2,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_no_new_results",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:  "one",
+					StartTime: timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
+					Status:    pb.TestResultStatus_FAIL,
+					Expected:  false,
+					Duration:  durationpb.New(time.Second * 4),
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 1,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_skip",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId:  "one",
+					StartTime: timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
+					Status:    pb.TestResultStatus_SKIP,
+					Expected:  false,
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 0, Unexpected: 1, UnexpectedNonSkipped: 0, UnexpectedNonSkippedNonPassed: 0,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+		{
+			Project:       "project",
+			TestId:        "ninja://test_unexpected_pass",
+			VariantHash:   "hash",
+			Invocation:    invocation,
+			PartitionTime: timestamppb.New(expectedPartitionTime),
+			Status:        pb.TestVerdictStatus_UNEXPECTED,
+			Results: []*bqpb.TestVerdictRow_TestResult{
+				{
+					ResultId: "one",
+					Status:   pb.TestResultStatus_PASS,
+					Expected: false,
+				},
+			},
+			Counts: &bqpb.TestVerdictRow_Counts{
+				Total: 1, TotalNonSkipped: 1, Unexpected: 1, UnexpectedNonSkipped: 1, UnexpectedNonSkippedNonPassed: 0,
+			},
+			BuildbucketBuild:  buildbucketBuild,
+			ChangeVerifierRun: cvRun,
+		},
+	}
+	So(actualRows, ShouldResembleProto, expectedRows)
 }
 
 func verifyCollectTask(skdr *tqtesting.Scheduler, expectExists bool) {
