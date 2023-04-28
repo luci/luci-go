@@ -70,7 +70,10 @@ message ProjectConfig {
   // Configuration for how to cluster test results.
   Clustering clustering = 5;
 
-  // Next ID: 9
+  // Configuration for automatic bug management.
+  BugManagement bug_management = 9;
+
+  // Next ID: 10
 }
 
 
@@ -80,6 +83,16 @@ message ProjectMetadata {
   // Indicates the preferred display name for the project in the UI.
   // Deprecated: not used anymore.
   string display_name = 1;
+}
+
+// Settings related to bug management.
+message BugManagement {
+  // Disables creation of comments on bugs when LUCI Analysis successfully
+  // handles duplicate bugs by merging/updating failure association rules.
+  //
+  // This setting does not prevent the creation of comments in response
+  // to errors handling duplicate bugs.
+  bool disable_duplicate_bug_comments = 1;
 }
 
 // ImpactThreshold specifies a condition on a cluster's impact metrics.

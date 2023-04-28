@@ -583,15 +583,18 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 		return err
 	}
 
-	request := bugs.UpdateDuplicateSourceRequest{
-		Bug:               bug,
-		DestinationRuleID: destinationBugRuleID,
-	}
-	if err := b.updateDuplicateSource(ctx, request); err != nil {
-		return errors.Annotate(err, "updating source bug").Err()
-	}
-	if err := b.updateDuplicateDestination(ctx, destBug); err != nil {
-		return errors.Annotate(err, "updating destination bug %s", destBug).Err()
+	if !b.projectCfg.Config.BugManagement.GetDisableDuplicateBugComments() {
+		// Notify that the bugs were successfully merged.
+		request := bugs.UpdateDuplicateSourceRequest{
+			Bug:               bug,
+			DestinationRuleID: destinationBugRuleID,
+		}
+		if err := b.updateDuplicateSource(ctx, request); err != nil {
+			return errors.Annotate(err, "updating source bug").Err()
+		}
+		if err := b.updateDuplicateDestination(ctx, destBug); err != nil {
+			return errors.Annotate(err, "updating destination bug %s", destBug).Err()
+		}
 	}
 
 	return err

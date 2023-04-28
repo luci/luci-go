@@ -815,6 +815,29 @@ func TestBuganizerUpdate(t *testing.T) {
 						So(fakeStore.Issues[3].Comments, ShouldHaveLength, 2)
 						So(fakeStore.Issues[3].Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis has merged the failure association rule for that bug into the rule for this bug.")
 					})
+					Convey("Happy path, with comments for duplicate bugs disabled", func() {
+						// Setup
+						projectCfg.BugManagement = &configpb.BugManagement{
+							DisableDuplicateBugComments: true,
+						}
+						projectsCfg := map[string]*configpb.ProjectConfig{
+							project: projectCfg,
+						}
+						err = config.SetTestProjectConfig(ctx, projectsCfg)
+						So(err, ShouldBeNil)
+
+						// Act
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+
+						// Verify
+						expectedRules[1].IsActive = false
+						expectedRules[2].RuleDefinition = "reason LIKE \"want foo, got bar\" OR\nreason LIKE \"want foofoo, got bar\""
+						expectRules(expectedRules)
+
+						So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
+						So(fakeStore.Issues[2].Comments, ShouldHaveLength, 1)
+					})
 					Convey("Bugs are in a duplicate bug cycle", func() {
 						// Note that this is a simple cycle with only two bugs.
 						// The implementation allows for larger cycles, however.
