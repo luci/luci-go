@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/identity"
+	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	luciconfig "go.chromium.org/luci/config"
@@ -281,6 +282,25 @@ func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, 
 		}
 		vd.ctx.Exit() // action
 		vd.ctx.Exit() // post_actions #i
+	}
+
+	teNames := stringset.New(len(group.GetTryjobExperiments()))
+	for i, te := range group.GetTryjobExperiments() {
+		vd.ctx.Enter("tryjob_experiments #%d", (i + 1))
+		if err := te.ValidateAll(); err != nil {
+			vd.ctx.Errorf("%s", err)
+		}
+
+		vd.ctx.Enter("name")
+		name := te.GetName()
+		if !teNames.Add(te.GetName()) {
+			vd.ctx.Errorf("duplicate name %q", name)
+		}
+		if !bbutil.ExperimentNameRE.MatchString(name) {
+			vd.ctx.Errorf("%q does not match %q", name, bbutil.ExperimentNameRE)
+		}
+		vd.ctx.Exit() // name
+		vd.ctx.Exit() // tryjob_experiments #i
 	}
 
 	if group.Verifiers == nil {

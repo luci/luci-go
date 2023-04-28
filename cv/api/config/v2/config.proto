@@ -265,7 +265,9 @@ message ConfigGroup {
       // experiment.
       //
       // If the list is empty, this condition is considered as met.
-      repeated string owner_group_allowlist = 1;
+      repeated string owner_group_allowlist = 1 [
+        (validate.rules).repeated.items.string.min_len = 1
+      ];
     }
     // Name of the experiment.
     //

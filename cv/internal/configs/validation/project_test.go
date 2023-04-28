@@ -521,6 +521,49 @@ func TestValidateProjectDetailed(t *testing.T) {
 			})
 		})
 
+		Convey("tryjob_experiments", func() {
+			exp := &cfgpb.ConfigGroup_TryjobExperiment{
+				Name: "infra.experiment.foo",
+				Condition: &cfgpb.ConfigGroup_TryjobExperiment_Condition{
+					OwnerGroupAllowlist: []string{"googlers"},
+				},
+			}
+			cfg.ConfigGroups[0].TryjobExperiments = []*cfgpb.ConfigGroup_TryjobExperiment{exp}
+
+			Convey("works", func() {
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+
+			Convey("name", func() {
+				Convey("missing", func() {
+					exp.Name = ""
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "Name: value length must be at least 1")
+				})
+
+				Convey("duplicate", func() {
+					cfg.ConfigGroups[0].TryjobExperiments = []*cfgpb.ConfigGroup_TryjobExperiment{exp, exp}
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, `duplicate name "infra.experiment.foo"`)
+				})
+
+				Convey("invalid name", func() {
+					exp.Name = "^&*()"
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, `"^&*()" does not match`)
+				})
+			})
+
+			Convey("Condition", func() {
+				Convey("owner_group_allowlist has empty string", func() {
+					exp.Condition.OwnerGroupAllowlist = []string{"infra.chromium.foo", ""}
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "OwnerGroupAllowlist[1]: value length must be at least 1 ")
+				})
+			})
+		})
+
 		Convey("Gerrit", func() {
 			g := cfg.ConfigGroups[0].Gerrit[0]
 			Convey("needs valid URL", func() {

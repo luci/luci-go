@@ -76,8 +76,6 @@ var (
 	// cacheNameMaxLength cannot be added into the above cacheNameRegex as Golang
 	// regex expression can only specify a maximum repetition count below 1000.
 	cacheNameMaxLength = 4096
-
-	experimentNameRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
 )
 
 // changeLog is a temporary struct to track all changes in UpdateProjectCfg.
@@ -873,8 +871,8 @@ func validateCacheEntry(ctx *validation.Context, entry *pb.BuilderConfig_CacheEn
 
 func ValidateExperimentName(expName string, wellKnownExperiments stringset.Set) error {
 	switch {
-	case !experimentNameRE.MatchString(expName):
-		return errors.Reason("does not match %q", experimentNameRE).Err()
+	case !protoutil.ExperimentNameRE.MatchString(expName):
+		return errors.Reason("does not match %q", protoutil.ExperimentNameRE).Err()
 	case strings.HasPrefix(expName, "luci.") && !wellKnownExperiments.Has(expName):
 		return errors.New(`unknown experiment has reserved prefix "luci."`)
 	}

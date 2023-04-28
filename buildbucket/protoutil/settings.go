@@ -15,10 +15,16 @@
 package protoutil
 
 import (
+	"regexp"
+
 	"go.chromium.org/luci/common/data/stringset"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+// ExperimentNameRE is the regular expression that a valid Buildbucket
+// experiment name must match.
+var ExperimentNameRE = regexp.MustCompile(`^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*$`)
 
 // WellKnownExperiments computes all known 'global' experiments from the global
 // SettingsCfg.

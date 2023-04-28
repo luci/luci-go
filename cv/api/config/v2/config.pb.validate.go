@@ -2465,6 +2465,22 @@ func (m *ConfigGroup_TryjobExperiment_Condition) validate(all bool) error {
 
 	var errors []error
 
+	for idx, item := range m.GetOwnerGroupAllowlist() {
+		_, _ = idx, item
+
+		if utf8.RuneCountInString(item) < 1 {
+			err := ConfigGroup_TryjobExperiment_ConditionValidationError{
+				field:  fmt.Sprintf("OwnerGroupAllowlist[%v]", idx),
+				reason: "value length must be at least 1 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return ConfigGroup_TryjobExperiment_ConditionMultiError(errors)
 	}
