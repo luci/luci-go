@@ -45,6 +45,12 @@ func TestStringPairs(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "v"})
 		})
+
+		Convey(`when provided multiline value string`, func() {
+			pair, err := StringPairFromString("key/k:multiline\nstring\nvalue")
+			So(err, ShouldBeNil)
+			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "multiline\nstring\nvalue"})
+		})
 	})
 	Convey(`StringPairFromStringUnvalidated`, t, func() {
 		Convey(`valid key:val string`, func() {

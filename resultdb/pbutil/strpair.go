@@ -30,7 +30,7 @@ const maxStringPairValueLength = 256
 const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
 
 var stringPairKeyRe = regexpf(`^%s$`, stringPairKeyPattern)
-var stringPairRe = regexpf("(?m)^(%s):(.*)$", stringPairKeyPattern)
+var stringPairRe = regexpf("(?s)^(%s):(.*)$", stringPairKeyPattern)
 
 // StringPair creates a pb.StringPair with the given strings as key/value field values.
 func StringPair(k, v string) *pb.StringPair {
