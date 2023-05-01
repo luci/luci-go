@@ -15,10 +15,9 @@
 import { reaction } from 'mobx';
 import { addDisposer, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 
-import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
+import { AuthState, getAuthStateCache, queryAuthState, setAuthStateCache } from '../libs/auth_state';
 import { aliveFlow } from '../libs/milo_mobx_utils';
 import { timeout } from '../libs/utils';
-import { AuthState, queryAuthState } from '../services/milo_internal';
 
 export const AuthStateStore = types
   .model('AuthStateStore', {

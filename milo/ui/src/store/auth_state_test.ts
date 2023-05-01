@@ -18,10 +18,9 @@ import chaiSubset from 'chai-subset';
 import { destroy } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
-import { getAuthStateCache, setAuthStateCache } from '../auth_state_cache';
+import { getAuthStateCache, queryAuthState, setAuthStateCache } from '../libs/auth_state';
 import { StubFn, stubFn } from '../libs/test_utils/sinon';
 import { timeout } from '../libs/utils';
-import { queryAuthState } from '../services/milo_internal';
 import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
 
 chai.use(chaiSubset);

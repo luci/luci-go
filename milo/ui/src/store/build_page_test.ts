@@ -17,9 +17,9 @@ import { autorun } from 'mobx';
 import { addDisposer, destroy } from 'mobx-state-tree';
 import sinon from 'sinon';
 
+import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { CacheOption } from '../libs/cached_fn';
 import { Build, GetBuildRequest } from '../services/buildbucket';
-import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { Store, StoreInstance } from '.';
 
 describe('BuildPageStore', () => {

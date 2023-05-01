@@ -14,9 +14,9 @@
 
 import { assert } from 'chai';
 
-import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state_cache';
+import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state';
 
-describe('auth_state_cache', () => {
+describe('auth_state', () => {
   it('support accessing auth state synchronously', () => {
     const state = {
       accessToken: Math.random().toString(),

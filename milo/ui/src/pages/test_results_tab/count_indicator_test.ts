@@ -20,8 +20,8 @@ import { destroy, protect, unprotect } from 'mobx-state-tree';
 import sinon from 'sinon';
 
 import './count_indicator';
+import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
 import { provider } from '../../libs/context';
-import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
 import { TestVariantStatus } from '../../services/resultdb';
 import { Store } from '../../store';
 import { InvocationStateInstance, provideInvocationState } from '../../store/invocation_state';

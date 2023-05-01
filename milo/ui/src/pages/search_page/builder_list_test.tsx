@@ -17,7 +17,7 @@ import { expect } from 'chai';
 import { destroy } from 'mobx-state-tree';
 import * as sinon from 'sinon';
 
-import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
+import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
 import { Store, StoreProvider } from '../../store';
 import { BuilderList } from './builder_list';
 

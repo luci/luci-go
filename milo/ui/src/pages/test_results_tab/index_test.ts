@@ -21,8 +21,8 @@ import { destroy } from 'mobx-state-tree';
 import sinon, { SinonStub } from 'sinon';
 
 import '.';
+import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
 import { provider } from '../../libs/context';
-import { ANONYMOUS_IDENTITY } from '../../services/milo_internal';
 import { ResultDb, TestVariantStatus } from '../../services/resultdb';
 import { provideStore, Store, StoreInstance } from '../../store';
 import { provideInvocationState } from '../../store/invocation_state';

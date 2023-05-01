@@ -167,29 +167,3 @@ export class MiloInternal {
     return (await this.cachedCallFn(cacheOpt, 'BatchCheckPermissions', req)) as BatchCheckPermissionsResponse;
   }
 }
-
-export const ANONYMOUS_IDENTITY = 'anonymous:anonymous';
-
-export interface AuthState {
-  identity: string;
-  email?: string;
-  picture?: string;
-  accessToken?: string;
-  /**
-   * Expiration time (unix timestamp) of the access token.
-   *
-   * If zero/undefined, the access token does not expire.
-   */
-  accessTokenExpiry?: number;
-}
-
-/**
- * Gets the auth state associated with the current section.
- */
-export async function queryAuthState(fetchImpl = fetch): Promise<AuthState> {
-  const res = await fetchImpl('/auth/openid/state');
-  if (!res.ok) {
-    throw new Error('failed to get auth-state:\n' + (await res.text()));
-  }
-  return res.json();
-}

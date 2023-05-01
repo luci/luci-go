@@ -22,10 +22,10 @@ import * as sinon from 'sinon';
 
 import './test_variant_entry';
 import { ExpandableEntryElement } from '../../../components/expandable_entry';
+import { ANONYMOUS_IDENTITY } from '../../../libs/auth_state';
 import { provider } from '../../../libs/context';
 import { Notifier, provideNotifier } from '../../../libs/observer_element';
 import { Cluster } from '../../../services/luci_analysis';
-import { ANONYMOUS_IDENTITY } from '../../../services/milo_internal';
 import { TestResultBundle, TestStatus, TestVariant, TestVariantStatus } from '../../../services/resultdb';
 import { provideStore, Store, StoreInstance } from '../../../store';
 import { provideProject, provideTestTabUrl } from './context';

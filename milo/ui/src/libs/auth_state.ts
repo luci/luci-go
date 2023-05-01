@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,27 @@
 
 import { get as kvGet, set as kvSet } from 'idb-keyval';
 
-import { AuthState } from './services/milo_internal';
+export const ANONYMOUS_IDENTITY = 'anonymous:anonymous';
+
+export interface AuthState {
+  readonly identity: string;
+  readonly email?: string;
+  readonly picture?: string;
+  readonly accessToken?: string;
+  readonly idToken?: string;
+  /**
+   * Expiration time (unix timestamp) of the access token.
+   *
+   * If zero/undefined, the access token does not expire.
+   */
+  readonly accessTokenExpiry?: number;
+  /**
+   * Expiration time (unix timestamp) of the ID token.
+   *
+   * If zero/undefined, the ID token does not expire.
+   */
+  readonly idTokenExpiry?: number;
+}
 
 const AUTH_STATE_KEY = 'auth-state-v2';
 
@@ -32,8 +52,7 @@ export function setAuthStateCache(authState: AuthState | null): Promise<void> {
 /**
  * Gets auth state synchronously. Returns null if
  * 1. the auth state is not cached in memory, or
- * 2. the auth state is not cached in IndexDB, or
- * 3. the auth state has expired.
+ * 2. the auth state has expired.
  */
 export function getAuthStateCacheSync() {
   if (!cachedAuthState?.accessTokenExpiry) {
@@ -50,4 +69,36 @@ export function getAuthStateCacheSync() {
 export async function getAuthStateCache() {
   cachedAuthState = (await kvGet<AuthState | null>(AUTH_STATE_KEY)) || null;
   return getAuthStateCacheSync();
+}
+
+/**
+ * Gets the auth state associated with the current section from the server.
+ *
+ * Also populates the cached auth state up on successfully retrieving the auth
+ * state.
+ */
+export async function queryAuthState(fetchImpl = fetch): Promise<AuthState> {
+  const res = await fetchImpl('/auth/openid/state');
+  if (!res.ok) {
+    throw new Error('failed to get auth state:\n' + (await res.text()));
+  }
+
+  return res.json();
+}
+
+/**
+ * Obtains a current auth state.
+ * Use the cached auth state if it's not expired yet.
+ * Refresh the cached auth state otherwise.
+ */
+export async function obtainAuthState() {
+  let authState = await getAuthStateCache();
+  if (authState) {
+    return authState;
+  }
+
+  authState = await queryAuthState();
+  setAuthStateCache(authState);
+
+  return authState;
 }

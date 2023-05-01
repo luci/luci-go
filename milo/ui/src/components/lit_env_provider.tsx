@@ -18,11 +18,11 @@ import { makeObservable, observable, reaction } from 'mobx';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../common_tags';
+import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { provider } from '../libs/context';
 import { errorHandler, handleLocally } from '../libs/error_handler';
 import { ProgressiveNotifier, provideNotifier } from '../libs/observer_element';
 import { hasTags } from '../libs/tag';
-import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { provideStore, StoreInstance, useStore } from '../store';
 import { MiloBaseElement } from './milo_base';
 

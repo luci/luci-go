@@ -15,8 +15,8 @@
 import { Box, BoxProps, Link, LinkProps, styled } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
+import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { getLoginUrl, getLogoutUrl } from '../libs/url_utils';
-import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 
 const Container = styled(Box)<BoxProps>(() => ({
   display: 'inline-block',

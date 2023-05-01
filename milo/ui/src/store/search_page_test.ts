@@ -17,10 +17,11 @@ import { when } from 'mobx';
 import { destroy, Instance, types } from 'mobx-state-tree';
 import sinon from 'sinon';
 
+import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { CacheOption } from '../libs/cached_fn';
 import { ListBuildersRequest } from '../services/buildbucket';
 import { QueryTestsRequest, QueryTestsResponse } from '../services/luci_analysis';
-import { ANONYMOUS_IDENTITY, ListBuildersResponse } from '../services/milo_internal';
+import { ListBuildersResponse } from '../services/milo_internal';
 import { AuthStateStore } from './auth_state';
 import { SearchPage, SearchTarget } from './search_page';
 import { ServicesStore } from './services';

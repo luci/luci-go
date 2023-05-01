@@ -16,7 +16,7 @@ import { assert } from 'chai';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 import sinon from 'sinon';
 
-import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
+import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { TestVariant, TestVariantStatus } from '../services/resultdb';
 import { Store } from '.';
 

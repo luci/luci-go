@@ -17,8 +17,8 @@ import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { getLoginUrl } from '../libs/url_utils';
-import { ANONYMOUS_IDENTITY } from '../services/milo_internal';
 import { useStore } from '../store';
 
 /**

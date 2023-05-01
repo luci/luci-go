@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from '../auth_state_cache';
+import { getAuthStateCache, getAuthStateCacheSync, queryAuthState, setAuthStateCache } from '../libs/auth_state';
 import { cached } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from '../libs/prpc_utils';
 import { timeout } from '../libs/utils';
 import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from '../services/buildbucket';
-import { queryAuthState } from '../services/milo_internal';
 import {
   constructArtifactName,
   getInvIdFromBuildId,

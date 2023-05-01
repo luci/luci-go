@@ -16,10 +16,9 @@ import { aTimeout } from '@open-wc/testing-helpers';
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 
-import { setAuthStateCache } from '../auth_state_cache';
+import { queryAuthState, setAuthStateCache } from '../libs/auth_state';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { BUILD_FIELD_MASK, BuildsService } from '../services/buildbucket';
-import { queryAuthState } from '../services/milo_internal';
 import { getInvIdFromBuildId, getInvIdFromBuildNum, RESULT_LIMIT, ResultDb } from '../services/resultdb';
 import { Prefetcher } from './prefetch';
 
