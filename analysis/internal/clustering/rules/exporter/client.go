@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -50,13 +51,16 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 	}
 	defer func() {
 		if reterr != nil {
+			// This method failed for some reason, clean up the
+			// BigQuery client. Swallow any error returned by the Close()
+			// call.
 			bqClient.Close()
 		}
 	}()
 
 	mwClient, err := bqutil.NewWriterClient(ctx, projectID)
 	if err != nil {
-		return nil, errors.Annotate(err, "create managed writer client").Err()
+		return nil, errors.Annotate(err, "creating managed writer client").Err()
 	}
 	return &Client{
 		projectID: projectID,
@@ -66,24 +70,25 @@ func NewClient(ctx context.Context, projectID string) (s *Client, reterr error) 
 }
 
 // Close releases resources held by the client.
-func (s *Client) Close() (reterr error) {
-	// Ensure all Close() methods are called, even if one panics or fails.
+func (c *Client) Close() (reterr error) {
+	// Ensure both bqClient and mwClient Close() methods
+	// are called, even if one panics or fails.
 	defer func() {
-		err := s.mwClient.Close()
+		err := c.mwClient.Close()
 		if reterr == nil {
 			reterr = err
 		}
 	}()
-	return s.bqClient.Close()
+	return c.bqClient.Close()
 }
 
 // Insert inserts the given rows in BigQuery.
-func (s *Client) Insert(ctx context.Context, rows []*bqpb.FailureAssociationRulesHistoryRow) error {
-	if err := s.ensureSchema(ctx); err != nil {
+func (c *Client) Insert(ctx context.Context, rows []*bqpb.FailureAssociationRulesHistoryRow) error {
+	if err := c.ensureSchema(ctx); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
-	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, bqutil.InternalDatasetID, tableName)
-	writer := bqutil.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", c.projectID, bqutil.InternalDatasetID, tableName)
+	writer := bqutil.NewWriter(c.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
 		payload[i] = r
@@ -95,11 +100,11 @@ func (s *Client) Insert(ctx context.Context, rows []*bqpb.FailureAssociationRule
 // The last_updated field is synced from the spanner table which is a spanner commit timestamp.
 // This the newest last_updated field indicate newest update of the failureAssociationRules spanner table
 // which has been synced to BigQuery.
-func (s *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp, error) {
-	if err := s.ensureSchema(ctx); err != nil {
+func (c *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp, error) {
+	if err := c.ensureSchema(ctx); err != nil {
 		return bigquery.NullTimestamp{}, errors.Annotate(err, "ensure schema").Err()
 	}
-	q := s.bqClient.Query(`
+	q := c.bqClient.Query(`
 		SELECT MAX(last_updated) as LastUpdated
 		FROM failure_association_rules_history
 	`)
@@ -124,10 +129,13 @@ func (s *Client) NewestLastUpdated(ctx context.Context) (bigquery.NullTimestamp,
 	return lastUpdatedResult.LastUpdated, nil
 }
 
-func (s *Client) ensureSchema(ctx context.Context) error {
+// schemaApplier ensures BQ schema matches the row proto definitions.
+var schemaApplier = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(1))
+
+func (c *Client) ensureSchema(ctx context.Context) error {
 	// Dataset for the project may have to be manually created.
-	table := s.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
-	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
+	table := c.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
+	if err := schemaApplier.EnsureTable(ctx, table, tableMetadata); err != nil {
 		return errors.Annotate(err, "ensuring %s table", tableName).Err()
 	}
 	return nil

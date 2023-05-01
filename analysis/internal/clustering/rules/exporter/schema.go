@@ -19,7 +19,6 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	"github.com/golang/protobuf/descriptor"
 	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"go.chromium.org/luci/common/bq"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/analysis/internal/bqutil"
@@ -29,9 +28,6 @@ import (
 
 // tableName is the name of the exported BigQuery table.
 const tableName = "failure_association_rules_history"
-
-// schemaApplyer ensures BQ schema matches the row proto definitions.
-var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))
 
 const rowMessage = "luci.analysis.bq.FailureAssociationRulesHistoryRow"
 
