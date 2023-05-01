@@ -4,7 +4,7 @@
 
 [Unit]
 Description=Swarming bot startup
-After=network.target
+After=cloud-final.service
 
 [Service]
 Type=simple
@@ -14,4 +14,4 @@ Environment=SWARMING_EXTERNAL_BOT_SETUP=1
 ExecStart= {{.Python}} {{.BotCode}} start_bot
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=cloud-init.target
