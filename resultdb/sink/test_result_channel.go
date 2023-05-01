@@ -102,13 +102,30 @@ func (c *testResultChannel) setTestTags(tr *sinkpb.TestResult) {
 		return
 	}
 	repo, ok := c.cfg.LocationTags.Repos[tr.TestMetadata.Location.Repo]
-	if !ok || len(repo.GetDirs()) == 0 {
+	if !ok || (len(repo.GetDirs()) == 0 && len(repo.GetFiles()) == 0) {
 		return
 	}
-	// fileName must start with "//" and it has been validated.
-	dir := path.Dir(strings.TrimPrefix(tr.TestMetadata.Location.FileName, "//"))
+
 	tagKeySet := stringset.New(0)
 
+	// if a test result has a matching file location by file name, use the metadata
+	// associated with it first. Fill in the rest using directory metadata.
+	// fileName must start with "//" and it has been validated.
+	filePath := strings.TrimPrefix(tr.TestMetadata.Location.FileName, "//")
+	if f, ok := repo.Files[filePath]; ok {
+		for _, ft := range f.Tags {
+			if !tagKeySet.Has(ft.Key) {
+				tr.Tags = append(tr.Tags, ft)
+			}
+		}
+
+		// Fill in keys from file definition so that they are not repeated.
+		for _, ft := range f.Tags {
+			tagKeySet.Add(ft.Key)
+		}
+	}
+
+	dir := path.Dir(filePath)
 	// Start from the directory of the file, then traverse to upper directories.
 	for {
 		if d, ok := repo.Dirs[dir]; ok {

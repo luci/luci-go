@@ -122,7 +122,7 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 				System: &pb.BugComponent_Monorail{
 					Monorail: &pb.MonorailComponent{
 						Project: "chromium",
-						Value: "Component>Value",
+						Value:   "Component>Value",
 					},
 				},
 			},

@@ -285,20 +285,20 @@ func TestReportTestResults(t *testing.T) {
 			checkResults()
 		})
 
+		subTags := pbutil.StringPairs(
+			"feature", "feature2",
+			"feature", "feature3",
+			"monorail_component", "Monorail>Component>Sub",
+		)
+
+		rootTags := pbutil.StringPairs(
+			"feature", "feature1",
+			"monorail_component", "Monorail>Component",
+			"teamEmail", "team_email@chromium.org",
+			"os", "WINDOWS",
+		)
+
 		Convey("with ServerConfig.LocationTags", func() {
-			rootTags := pbutil.StringPairs(
-				"feature", "feature1",
-				"monorail_component", "Monorail>Component",
-				"teamEmail", "team_email@chromium.org",
-				"os", "WINDOWS",
-			)
-
-			subTags := pbutil.StringPairs(
-				"feature", "feature2",
-				"feature", "feature3",
-				"monorail_component", "Monorail>Component>Sub",
-			)
-
 			cfg.LocationTags = &sinkpb.LocationTags{
 				Repos: map[string]*sinkpb.LocationTags_Repo{
 					"https://chromium.googlesource.com/chromium/src": {
@@ -321,6 +321,45 @@ func TestReportTestResults(t *testing.T) {
 				"os", "WINDOWS",
 			)...)
 			pbutil.SortStringPairs(expectedTR.Tags)
+			checkResults()
+		})
+
+		Convey("with ServerConfig.LocationTags file based", func() {
+			overriddenTags := pbutil.StringPairs(
+				"featureX", "featureY",
+				"monorail_component", "Monorail>File>Component",
+			)
+
+			cfg.LocationTags = &sinkpb.LocationTags{
+				Repos: map[string]*sinkpb.LocationTags_Repo{
+					"https://chromium.googlesource.com/chromium/src": {
+						Files: map[string]*sinkpb.LocationTags_File{
+							"artifact_dir/a_test.cc": {
+								Tags: overriddenTags,
+							},
+						},
+						Dirs: map[string]*sinkpb.LocationTags_Dir{
+							".": {
+								Tags: rootTags,
+							},
+							"artifact_dir": {
+								Tags: subTags,
+							},
+						},
+					},
+				},
+			}
+
+			expectedTR.Tags = append(expectedTR.Tags, pbutil.StringPairs(
+				"feature", "feature2",
+				"feature", "feature3",
+				"featureX", "featureY",
+				"monorail_component", "Monorail>File>Component",
+				"teamEmail", "team_email@chromium.org",
+				"os", "WINDOWS",
+			)...)
+			pbutil.SortStringPairs(expectedTR.Tags)
+
 			checkResults()
 		})
 

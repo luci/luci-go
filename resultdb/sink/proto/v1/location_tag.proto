@@ -40,6 +40,14 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 //          }
 //        }
 //      }
+//      "files": {
+//        "./file.txt": {
+//          "tags": {
+//            "monorail_project": "chromium",
+//            "monorail_component": "Monorail>Overridden>Component",
+//          }
+//        }
+//      }
 //    }
 //  }
 //}
@@ -50,6 +58,10 @@ message LocationTags {
     // "" means repo root and represents default for all subdirs.
     // Must use forward slash as a dir separator.
     map<string, Dir> dirs = 1;
+
+    // The key is a relative path to a file.
+    // Same rules apply as dir.
+    map<string, File> files = 2;
   }
 
   // Extra tags to attach to TestResults for a directory.
@@ -57,6 +69,12 @@ message LocationTags {
     // If a key is not defined for subdir, but defined for an ancestor dir, then
     // the value(s) in the ancestor is implied.
     //
+    // A key can be repeated.
+    repeated luci.resultdb.v1.StringPair tags = 1;
+  }
+
+  // Extra tags to attach to TestResults for a file.
+  message File {
     // A key can be repeated.
     repeated luci.resultdb.v1.StringPair tags = 1;
   }
