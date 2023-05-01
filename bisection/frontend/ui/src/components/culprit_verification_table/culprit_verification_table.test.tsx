@@ -58,6 +58,7 @@ function createMockAnalysis(): Analysis {
   return {
     analysisId: '1234',
     status: 'FOUND',
+    runStatus: 'ENDED',
     lastPassedBbid: '0',
     firstFailedBbid: '1234',
     createdTime: '2022-09-06T07:13:16.398865Z',

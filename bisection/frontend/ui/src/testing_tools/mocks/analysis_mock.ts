@@ -20,6 +20,7 @@ export const createMockAnalysis = (id: string): Analysis => {
   return {
     analysisId: id,
     status: 'FOUND',
+    runStatus: 'ENDED',
     lastPassedBbid: '0',
     firstFailedBbid: id,
     createdTime: '2022-09-06T07:13:16.398865Z',

@@ -17,6 +17,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
 
 import { PlainTable } from '../plain_table/plain_table';
 
@@ -160,6 +161,14 @@ export const AnalysisOverview = ({ analysis }: Props) => {
             <TableCell variant='head'>Status</TableCell>
             <TableCell>
               <AnalysisStatusInfo status={analysis.status}></AnalysisStatusInfo>
+              {/* TODO (aredulla): Currently, analyses are only canceled if
+                  a later build is successful. If analyses are canceled for
+                  other reasons, we will need to store the cancelation reason
+                  in the backend and update the UI here to display it.*/}
+              {analysis.runStatus === 'CANCELED' &&
+              <Typography color='var(--greyed-out-text-color)'>
+                (canceled because the builder started passing again)
+              </Typography>}
             </TableCell>
           </TableRow>
           <TableRow>

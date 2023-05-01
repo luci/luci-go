@@ -150,15 +150,19 @@ message UpdateAnalysisProgressResponse {
   buildbucket.v2.GitilesCommit next_revision_to_run = 1;
 }
 
-// Analysis result contains result of an analysis
+// Analysis result contains result of an analysis.
+// Next available tag: 17.
 message Analysis {
   reserved 11, 12;
   // Id to identify this analysis
   int64 analysis_id = 1;
   // The failure associated with the analysis.
   BuildFailure build_failure = 2;
-  // Status of the analysis
+  // Result status of the analysis.
   AnalysisStatus status = 3;
+  // Run status of the analysis.
+  // See https://go.chromium.org/luci/bisection/proto#AnalysisRunStatus
+  AnalysisRunStatus run_status = 16;
   // Buildbucket ID for the last passed build
   int64 last_passed_bbid = 4;
   // Buildbucket ID for the first failed build

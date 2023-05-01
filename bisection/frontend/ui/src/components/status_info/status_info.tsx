@@ -16,24 +16,40 @@ import Typography from '@mui/material/Typography';
 
 import { AnalysisStatus, RerunStatus } from '../../services/luci_bisection';
 
+interface LabelProps {
+  text: string;
+  color: string;
+}
+
+const RERUN_STATUS_LABELS: Record<RerunStatus, LabelProps> = {
+  RERUN_STATUS_UNSPECIFIED: {text: 'Unknown', color: 'var(--default-text-color)'},
+  RERUN_STATUS_PASSED: {text: 'Passed', color: 'var(--success-color)'},
+  RERUN_STATUS_FAILED: {text: 'Failed', color: 'var(--failure-color)'},
+  RERUN_STATUS_IN_PROGRESS: {text: 'In progress', color: 'var(--started-color)'},
+  RERUN_STATUS_INFRA_FAILED: {text: 'Infra failed', color: 'var(--critical-failure-color)'},
+  RERUN_STATUS_CANCELED: {text: 'Canceled', color: 'var(--canceled-color)'},
+}
+
+const ANALYSIS_STATUS_LABELS: Record<AnalysisStatus, LabelProps> = {
+  ANALYSIS_STATUS_UNSPECIFIED: {text: 'Unknown', color: 'var(--default-text-color)'},
+  CREATED: {text: 'Created', color: 'var(--scheduled-color)'},
+  RUNNING: {text: 'Running', color: 'var(--started-color)'},
+  FOUND: {text: 'Culprit found', color: 'var(--success-color)'},
+  NOTFOUND: {text: 'Suspect not found', color: 'var(--failure-color)'},
+  SUSPECTFOUND: {text: 'Suspect found', color: 'var(--suspect-found-color)'},
+  ERROR: {text:'Error', color: 'var(--critical-failure-color)'},
+};
+
 interface RerunStatusProps {
   status: RerunStatus;
 }
 
 export const RerunStatusInfo = ({ status }: RerunStatusProps) => {
-  switch (status) {
-    case 'RERUN_STATUS_PASSED':
-      return <Typography color='var(--success-color)'>Passed</Typography>;
-    case 'RERUN_STATUS_FAILED':
-      return <Typography color='var(--failure-color)'>Failed</Typography>;
-    case 'RERUN_STATUS_IN_PROGRESS':
-      return <Typography color='var(--started-color)'>In progress</Typography>;
-    case 'RERUN_STATUS_INFRA_FAILED':
-      return <Typography color='var(--critical-failure-color)'>Infra failed</Typography>;
-    case 'RERUN_STATUS_CANCELED':
-      return <Typography color='var(--canceled-color)'>Canceled</Typography>;
-  }
-  return <Typography color='var(--default-text-color)'>Unknown</Typography>;
+  const statusLabel = RERUN_STATUS_LABELS[status];
+
+  return <Typography color={statusLabel.color}>
+    {statusLabel.text}
+  </Typography>;
 };
 
 interface AnalysisStatusProps {
@@ -41,19 +57,9 @@ interface AnalysisStatusProps {
 }
 
 export const AnalysisStatusInfo = ({ status }: AnalysisStatusProps) => {
-  switch (status) {
-    case 'CREATED':
-      return <Typography color='var(--scheduled-color)'>Created</Typography>;
-    case 'RUNNING':
-      return <Typography color='var(--started-color)'>Running</Typography>;
-    case 'FOUND':
-      return <Typography color='var(--success-color)'>Culprit found</Typography>;
-    case 'NOTFOUND':
-      return <Typography color='var(--failure-color)'>Suspect not found</Typography>;
-    case 'SUSPECTFOUND':
-      return <Typography color='var(--suspect-found-color)'>Suspect found</Typography>;
-    case 'ERROR':
-      return <Typography color='var(--critical-failure-color)'>Error</Typography>;
-  }
-  return <Typography color='var(--default-text-color)'>Unknown</Typography>;
+  const statusLabel = ANALYSIS_STATUS_LABELS[status];
+
+  return <Typography color={statusLabel.color}>
+    {statusLabel.text}
+  </Typography>;
 };

@@ -63,6 +63,12 @@ export type AnalysisStatus =
   | 'ERROR'
   | 'SUSPECTFOUND';
 
+export type AnalysisRunStatus =
+  | 'ANALYSIS_RUN_STATUS_UNSPECIFIED'
+  | 'STARTED'
+  | 'ENDED'
+  | 'CANCELED';
+
 export type SuspectConfidenceLevel =
   | 'SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED'
   | 'LOW'
@@ -124,6 +130,7 @@ export interface ListAnalysesResponse {
 export interface Analysis {
   analysisId: string;
   status: AnalysisStatus;
+  runStatus: AnalysisRunStatus;
   lastPassedBbid: string;
   firstFailedBbid: string;
   createdTime: string;

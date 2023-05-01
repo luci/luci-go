@@ -125,6 +125,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	result := &pb.Analysis{
 		AnalysisId:      analysis.Id,
 		Status:          analysis.Status,
+		RunStatus:       analysis.RunStatus,
 		CreatedTime:     timestamppb.New(analysis.CreateTime),
 		FirstFailedBbid: analysis.FirstFailedBuildId,
 		LastPassedBbid:  analysis.LastPassedBuildId,
