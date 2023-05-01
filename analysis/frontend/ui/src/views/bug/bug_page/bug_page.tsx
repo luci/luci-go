@@ -41,7 +41,7 @@ const BugPage = () => {
   let bugSystem = '';
   let bugId: string | undefined = '';
 
-  if (bugTracker == 'b') {
+  if (!bugTracker) {
     bugSystem = 'buganizer';
     bugId = id;
   } else {
@@ -67,11 +67,11 @@ const BugPage = () => {
     retry: prpcRetrier,
   });
 
-  if (!bugTracker || !bugId) {
+  if (!bugId) {
     return (
       <ErrorAlert
-        errorTitle="Bug tracker or bug ID not specified"
-        errorText="Bug tracker or bug ID not found in the URL, please check the URL and try again"
+        errorTitle="Bug ID not specified"
+        errorText="Bug ID not found in the URL, please check the URL and try again"
         showError
       />
     );

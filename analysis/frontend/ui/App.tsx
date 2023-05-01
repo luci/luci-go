@@ -56,6 +56,7 @@ const App = () => {
             <Route index element={<HomePage />} />
             <Route path='help' element={<HelpPage />} />
             <Route path='b/:bugTracker/:id' element={<BugPage />} />
+            <Route path='b/:id' element={<BugPage />} />
             <Route path='p/:project'>
               <Route path='rules'>
                 <Route index element={<RulesPage />} />
