@@ -114,7 +114,8 @@ const NewRulePage = () => {
         },
         ruleDefinition: definition,
         isActive: true,
-        isManagingBug: true,
+        isManagingBug: false,
+        isManagingBugPriority: true,
         sourceCluster: sourceCluster,
       },
     };

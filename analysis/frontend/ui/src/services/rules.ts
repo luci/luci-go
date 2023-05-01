@@ -100,6 +100,7 @@ export interface RuleToCreate {
     bug: AssociatedBugToUpdate;
     isActive?: boolean;
     isManagingBug?: boolean;
+    isManagingBugPriority?: boolean;
     sourceCluster?: ClusterId;
 }
 
