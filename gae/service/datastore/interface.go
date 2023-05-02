@@ -465,6 +465,7 @@ func RunMulti(c context.Context, queries []*Query, cb any) error {
 			})
 			// Create the cursor
 			var curs multicursor.Cursors
+			curs.MagicNumber = multiCursorMagic
 			curs.Version = multiCursorVersion
 			for _, finq := range fqList {
 				cb := cursorMap[finq]

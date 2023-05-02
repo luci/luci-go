@@ -2268,7 +2268,7 @@ func TestRunMulti(t *testing.T) {
 					}
 					if len(foos) == 1 {
 						// Update the queries1 with the cursor
-						queries1, err = ApplyCursors(c, queries1, cur)
+						queries1, err = ApplyCursorString(c, queries1, cur.String())
 						if err != nil {
 							return err
 						}
@@ -2313,6 +2313,8 @@ func TestRunMulti(t *testing.T) {
 					return nil
 				})
 				So(foos, ShouldResemble, []*Foo{foo1, foo2})
+				So(IsMultiCursor(cur), ShouldBeTrue)
+				So(IsMultiCursorString(cur.String()), ShouldBeTrue)
 				// Update the queries1 with the cursor
 				_, err = ApplyCursors(c, queries1, cur)
 				So(err, ShouldNotBeNil)
@@ -2330,6 +2332,8 @@ func TestRunMulti(t *testing.T) {
 				_, err := ApplyCursors(c, queries, cur)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldErrLike, "Failed to decode cursor")
+				So(IsMultiCursor(cur), ShouldBeFalse)
+				So(IsMultiCursorString(cur.String()), ShouldBeFalse)
 			})
 
 			Convey("Query of different kinds", func() {

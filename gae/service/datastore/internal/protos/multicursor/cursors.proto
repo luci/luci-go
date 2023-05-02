@@ -23,4 +23,9 @@ option go_package = "go.chromium.org/luci/gae/service/datastore/internal/protos/
 message Cursors{
 	uint64 version = 1; // currently 0
 	repeated string cursors = 2; // list of cursors
+        // magic_number exists to make it easier to determine if this is a
+        // multicursor. There is a small but real chance that a base64 cursor
+        // representation does represent a valid multicursor. This should
+        // increase our chances in such a situation. The value is always 0xA455
+        int64 magic_number = 3;
 }
