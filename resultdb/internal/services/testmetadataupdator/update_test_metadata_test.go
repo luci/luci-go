@@ -111,8 +111,8 @@ func TestUpdateTestMetadata(t *testing.T) {
 				IsDirty: false}
 		}
 		sourceRef := &pb.SourceRef{
-			System: &pb.SourceRef_Git{
-				Git: &pb.GitReference{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
 					Host:    "testHost",
 					Project: "testProject",
 					Ref:     "testRef",

@@ -90,8 +90,8 @@ func (u *testMetadataUpdator) run(ctx context.Context) error {
 
 func (u *testMetadataUpdator) sourceRef() *pb.SourceRef {
 	return &pb.SourceRef{
-		System: &pb.SourceRef_Git{
-			Git: &pb.GitReference{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
 				Host:    u.sources.GitilesCommit.Host,
 				Project: u.sources.GitilesCommit.Project,
 				Ref:     u.sources.GitilesCommit.Ref,

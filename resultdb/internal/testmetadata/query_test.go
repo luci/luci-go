@@ -60,8 +60,8 @@ func TestQueryTestMetadata(t *testing.T) {
 
 		ctx := testutil.SpannerTestContext(t)
 		sourceRef := &pb.SourceRef{
-			System: &pb.SourceRef_Git{
-				Git: &pb.GitReference{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
 					Host:    "testhost",
 					Project: "testproject",
 					Ref:     "testref",

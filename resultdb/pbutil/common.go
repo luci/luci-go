@@ -238,9 +238,9 @@ func SortGerritChanges(changes []*pb.GerritChange) {
 func RefHash(sr *pb.SourceRef) []byte {
 	var result [32]byte
 	switch sr.System.(type) {
-	case *pb.SourceRef_Git:
-		git := sr.GetGit()
-		result = sha256.Sum256([]byte("git" + "\n" + git.Host + "\n" + git.Project + "\n" + git.Ref))
+	case *pb.SourceRef_Gitiles:
+		gitiles := sr.GetGitiles()
+		result = sha256.Sum256([]byte("gitiles" + "\n" + gitiles.Host + "\n" + gitiles.Project + "\n" + gitiles.Ref))
 	}
 	return result[:8]
 }
