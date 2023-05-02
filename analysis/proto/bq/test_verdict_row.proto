@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package luci.analysis.bq;
 
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
@@ -133,7 +132,7 @@ message TestVerdictRow {
     google.protobuf.Timestamp start_time = 6;
 
     // Duration of the test case execution in seconds.
-    google.protobuf.Duration duration = 7;
+    double duration = 7;
 
     // Tags contains metadata for this test result.
     // It might describe this particular execution or the test case.

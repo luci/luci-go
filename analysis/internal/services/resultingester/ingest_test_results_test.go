@@ -640,7 +640,7 @@ func verifyTestResults(ctx context.Context, expectedInvocation *testresults.Inge
 			WithResultIndex(0).
 			WithIsUnexpected(true).
 			WithStatus(pb.TestResultStatus_FAIL).
-			WithRunDuration(3*time.Second).
+			WithRunDuration(3*time.Second+1*time.Microsecond).
 			WithExonerationReasons(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE).
 			Build(),
 		trBuilder.WithTestID("ninja://test_expected").
@@ -1084,7 +1084,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					Status:      pb.TestResultStatus_FAIL,
 					SummaryHtml: "SummaryHTML",
 					StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
-					Duration:    durationpb.New(time.Second * 3),
+					Duration:    3.000001,
 					FailureReason: &pb.FailureReason{
 						PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
 					},
@@ -1141,7 +1141,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					StartTime: timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
 					Status:    pb.TestResultStatus_PASS,
 					Expected:  true,
-					Duration:  durationpb.New(time.Second * 5),
+					Duration:  5.0,
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1192,7 +1192,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
 					Status:    pb.TestResultStatus_FAIL,
 					Expected:  false,
-					Duration:  durationpb.New(time.Second * 2),
+					Duration:  2.0,
 					Tags:      pbutil.StringPairs("os", "Mac", "monorail_component", "Monorail>Component"),
 				},
 			},
@@ -1217,7 +1217,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
 					Status:    pb.TestResultStatus_FAIL,
 					Expected:  false,
-					Duration:  durationpb.New(time.Second * 1),
+					Duration:  1.0,
 					Tags:      pbutil.StringPairs("random_tag", "random_tag_value", "monorail_component", "Monorail>Component"),
 				},
 			},
@@ -1240,21 +1240,21 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
 					Status:    pb.TestResultStatus_FAIL,
 					Expected:  false,
-					Duration:  durationpb.New(time.Second * 11),
+					Duration:  11.0,
 				},
 				{
 					ResultId:  "one",
 					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
 					Status:    pb.TestResultStatus_FAIL,
 					Expected:  false,
-					Duration:  durationpb.New(time.Second * 10),
+					Duration:  10.0,
 				},
 				{
 					ResultId:  "three",
 					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
 					Status:    pb.TestResultStatus_PASS,
 					Expected:  true,
-					Duration:  durationpb.New(time.Second * 12),
+					Duration:  12.0,
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1276,7 +1276,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					StartTime: timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
 					Status:    pb.TestResultStatus_FAIL,
 					Expected:  false,
-					Duration:  durationpb.New(time.Second * 4),
+					Duration:  4.0,
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{

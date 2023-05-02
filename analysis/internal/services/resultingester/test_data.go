@@ -97,7 +97,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 							Status:      rdbpb.TestStatus_FAIL,
 							SummaryHtml: "SummaryHTML",
 							StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
-							Duration:    durationpb.New(time.Second * 3),
+							Duration:    durationpb.New(time.Second*3 + time.Microsecond),
 							FailureReason: &rdbpb.FailureReason{
 								PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
 							},

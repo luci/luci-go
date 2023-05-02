@@ -222,7 +222,7 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 		Status:        pbutil.TestResultStatusFromResultDB(result.Status),
 		SummaryHtml:   result.SummaryHtml,
 		StartTime:     result.StartTime,
-		Duration:      result.Duration,
+		Duration:      result.Duration.AsDuration().Seconds(),
 		Tags:          pbutil.StringPairFromResultDB(result.Tags),
 		FailureReason: pbutil.FailureReasonFromResultDB(result.FailureReason),
 		Properties:    propertiesJSON,
