@@ -17,6 +17,7 @@ package testverdicts
 
 import (
 	"context"
+	"encoding/json"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -59,7 +61,11 @@ type ExportOptions struct {
 func (e *Exporter) Export(ctx context.Context, tvs *rdbpb.QueryTestVariantsResponse, opts ExportOptions) error {
 	rows := make([]*bqpb.TestVerdictRow, 0, len(tvs.TestVariants))
 	for _, tv := range tvs.TestVariants {
-		rows = append(rows, prepareExportRow(tv, tvs.Sources, opts))
+		exportRow, err := prepareExportRow(tv, tvs.Sources, opts)
+		if err != nil {
+			return errors.Annotate(err, "prepare row").Err()
+		}
+		rows = append(rows, exportRow)
 	}
 	err := e.client.Insert(ctx, rows)
 	if err != nil {
@@ -70,15 +76,19 @@ func (e *Exporter) Export(ctx context.Context, tvs *rdbpb.QueryTestVariantsRespo
 
 // prepareExportRow prepares a BigQuery export row for a
 // ResultDB test verdict.
-func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sources, opts ExportOptions) *bqpb.TestVerdictRow {
+func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sources, opts ExportOptions) (*bqpb.TestVerdictRow, error) {
 	project, _, err := perms.SplitRealm(opts.Invocation.Realm)
 	if err != nil {
-		panic(errors.Annotate(err, "invalid realm").Err())
+		return nil, errors.Annotate(err, "invalid realm").Err()
 	}
 
 	results := make([]*bqpb.TestVerdictRow_TestResult, 0, len(tv.Results))
 	for _, r := range tv.Results {
-		results = append(results, result(r.Result))
+		resultEntry, err := result(r.Result)
+		if err != nil {
+			return nil, errors.Annotate(err, "result entry").Err()
+		}
+		results = append(results, resultEntry)
 	}
 
 	exonerations := make([]*bqpb.TestVerdictRow_Exoneration, 0, len(tv.Exonerations))
@@ -106,12 +116,22 @@ func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sourc
 		build = buildbucketBuild(opts.Payload.Build)
 	}
 
+	inv, err := invocation(opts.Invocation)
+	if err != nil {
+		return nil, errors.Annotate(err, "invocation").Err()
+	}
+
+	variant, err := variantJSON(tv.Variant)
+	if err != nil {
+		return nil, errors.Annotate(err, "variant").Err()
+	}
+
 	return &bqpb.TestVerdictRow{
 		Project:           project,
 		TestId:            tv.TestId,
-		Variant:           variantJSON(tv.Variant),
+		Variant:           variant,
 		VariantHash:       tv.VariantHash,
-		Invocation:        invocation(opts.Invocation),
+		Invocation:        inv,
 		PartitionTime:     opts.Payload.PartitionTime,
 		Status:            pbutil.TestVerdictStatusFromResultDB(tv.Status),
 		Results:           results,
@@ -121,21 +141,25 @@ func prepareExportRow(tv *rdbpb.TestVariant, sourcesByID map[string]*rdbpb.Sourc
 		ChangeVerifierRun: cvRun,
 		Sources:           sources,
 		TestMetadata:      metadata,
-	}
+	}, nil
 }
 
-func invocation(invocation *rdbpb.Invocation) *bqpb.TestVerdictRow_InvocationRecord {
+func invocation(invocation *rdbpb.Invocation) (*bqpb.TestVerdictRow_InvocationRecord, error) {
 	invocationID, err := rdbpbutil.ParseInvocationName(invocation.Name)
 	if err != nil {
-		panic(errors.Annotate(err, "invalid invocation name %q", invocationID).Err())
+		return nil, errors.Annotate(err, "invalid invocation name %q", invocationID).Err()
+	}
+	propertiesJSON, err := MarshalStructPB(invocation.Properties)
+	if err != nil {
+		return nil, errors.Annotate(err, "marshal properties").Err()
 	}
 
 	return &bqpb.TestVerdictRow_InvocationRecord{
 		Id:         invocationID,
 		Tags:       pbutil.StringPairFromResultDB(invocation.Tags),
 		Realm:      invocation.Realm,
-		Properties: invocation.Properties,
-	}
+		Properties: propertiesJSON,
+	}, nil
 }
 
 func exoneration(exoneration *rdbpb.TestExoneration) *bqpb.TestVerdictRow_Exoneration {
@@ -187,7 +211,11 @@ func buildbucketBuild(build *controlpb.BuildResult) *bqpb.TestVerdictRow_Buildbu
 	}
 }
 
-func result(result *rdbpb.TestResult) *bqpb.TestVerdictRow_TestResult {
+func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
+	propertiesJSON, err := MarshalStructPB(result.Properties)
+	if err != nil {
+		return nil, errors.Annotate(err, "marshal properties").Err()
+	}
 	return &bqpb.TestVerdictRow_TestResult{
 		ResultId:      result.ResultId,
 		Expected:      result.Expected,
@@ -197,17 +225,39 @@ func result(result *rdbpb.TestResult) *bqpb.TestVerdictRow_TestResult {
 		Duration:      result.Duration,
 		Tags:          pbutil.StringPairFromResultDB(result.Tags),
 		FailureReason: pbutil.FailureReasonFromResultDB(result.FailureReason),
-		Properties:    result.Properties,
-	}
+		Properties:    propertiesJSON,
+	}, nil
 }
 
-func variantJSON(variant *rdbpb.Variant) *structpb.Struct {
+// variantJSON returns the JSON equivalent for a variant.
+// Each key in the variant is mapped to a top-level key in the
+// JSON object.
+// e.g. `{"builder":"linux-rel","os":"Ubuntu-18.04"}`
+func variantJSON(variant *rdbpb.Variant) (string, error) {
 	if variant == nil {
-		return nil
+		return "", nil
 	}
-	fields := make(map[string]*structpb.Value)
+	m := make(map[string]string)
 	for key, value := range variant.Def {
-		fields[key] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: value}}
+		m[key] = value
 	}
-	return &structpb.Struct{Fields: fields}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// MarshalStructPB serialises a structpb.Struct as a JSONPB.
+func MarshalStructPB(s *structpb.Struct) (string, error) {
+	if s == nil {
+		return "", nil
+	}
+	// Structs are persisted as JSONPB strings.
+	// See also https://bit.ly/chromium-bq-struct
+	b, err := (&protojson.MarshalOptions{}).Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

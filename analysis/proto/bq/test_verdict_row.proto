@@ -18,7 +18,6 @@ package luci.analysis.bq;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/struct.proto";
 
 import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 import "go.chromium.org/luci/analysis/proto/v1/failure_reason.proto";
@@ -51,11 +50,16 @@ message TestVerdictRow {
 
   // Describes one specific way of running the test,
   // e.g. a specific bucket, builder and a test suite.
-  // Encoded as a JSON blob which contains a set of string
-  // key-value pairs.
-  // The use of JSON here means the query will only be billed
-  // for the variant keys it reads.
-  google.protobuf.Struct variant = 3 [(bqschema.options).bq_type = "JSON"];
+  //
+  // This will be encoded as a JSON object like
+  // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
+  // to take advantage of BigQuery's JSON support, so that
+  // the query will only be billed for the variant
+  // keys it reads.
+  //
+  // In the protocol buffer, it must be a string as per
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string variant = 3 [(bqschema.options).bq_type = "JSON"];
 
   // A hash of the variant, encoded as lowercase hexadecimal characters.
   // The computation is an implementation detail of ResultDB.
@@ -74,8 +78,10 @@ message TestVerdictRow {
     string realm = 3;
 
     // Arbitrary JSON object that contains structured, domain-specific properties
-    // of the invocation.
-    google.protobuf.Struct properties = 4 [(bqschema.options).bq_type = "JSON"];
+    // of the invocation. Stored here stringified as this is the only protocol
+    // buffer type that maps to the JSON BigQuery type:
+    // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+    string properties = 4 [(bqschema.options).bq_type = "JSON"];
   }
 
   // Invocation is the ResultDB invocation.
@@ -138,8 +144,10 @@ message TestVerdictRow {
     luci.analysis.v1.FailureReason failure_reason = 9;
 
     // Arbitrary JSON object that contains structured, domain-specific properties
-    // of the test result.
-    google.protobuf.Struct properties = 10 [(bqschema.options).bq_type = "JSON"];
+    // of the test result. Stored here stringified as this is the only protocol
+    // buffer type that maps to the JSON BigQuery type:
+    // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+    string properties = 10 [(bqschema.options).bq_type = "JSON"];
   }
 
   // The test results that are part of the verdict. Usually there is

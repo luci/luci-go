@@ -85,7 +85,7 @@ func generateRowSchema() (schema bigquery.Schema, err error) {
 }
 
 func generateRowSchemaDescriptor() (*desc.DescriptorProto, error) {
-	m := &bqpb.ClusteredFailureRow{}
+	m := &bqpb.TestVerdictRow{}
 	descriptorProto, err := adapt.NormalizeDescriptor(m.ProtoReflect().Descriptor())
 	if err != nil {
 		return nil, err

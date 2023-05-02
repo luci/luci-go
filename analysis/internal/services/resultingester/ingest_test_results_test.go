@@ -37,7 +37,6 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
@@ -1031,23 +1030,6 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		Realm: "project:ci",
 	}
 
-	variant := func(keyValues ...string) *structpb.Struct {
-		if len(keyValues)%2 != 0 {
-			panic("invalid count of keys and values, should be even")
-		}
-		m := make(map[string]interface{})
-		for i := 0; i < len(keyValues); i += 2 {
-			key := keyValues[i]
-			value := keyValues[i+1]
-			m[key] = value
-		}
-		s, err := structpb.NewStruct(m)
-		if err != nil {
-			panic(err)
-		}
-		return s
-	}
-
 	testMetadata := &pb.TestMetadata{
 		Name: "updated_name",
 		Location: &pb.TestLocation{
@@ -1082,6 +1064,11 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		IsBuildCritical: false,
 	}
 
+	// Different platforms may use different spacing when serializing
+	// JSONPB. Expect the spacing scheme used by this platform.
+	expectedProperties, err := testverdicts.MarshalStructPB(testProperties)
+	So(err, ShouldBeNil)
+
 	expectedRows := []*bqpb.TestVerdictRow{
 		{
 			Project:       "project",
@@ -1101,7 +1088,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 					FailureReason: &pb.FailureReason{
 						PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
 					},
-					Properties: testProperties,
+					Properties: expectedProperties,
 				},
 			},
 			Exonerations: []*bqpb.TestVerdictRow_Exoneration{
@@ -1197,7 +1184,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
-			Variant:       variant("k1", "v2"),
+			Variant:       `{"k1":"v2"}`,
 			TestMetadata:  testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
@@ -1222,7 +1209,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
-			Variant:       variant("k1", "v1"),
+			Variant:       `{"k1":"v1"}`,
 			TestMetadata:  testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
@@ -1340,7 +1327,10 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			ChangeVerifierRun: cvRun,
 		},
 	}
-	So(actualRows, ShouldResembleProto, expectedRows)
+	So(actualRows, ShouldHaveLength, len(expectedRows))
+	for i, row := range actualRows {
+		So(row, ShouldResembleProto, expectedRows[i])
+	}
 }
 
 func verifyCollectTask(skdr *tqtesting.Scheduler, expectExists bool) {
