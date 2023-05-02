@@ -41,6 +41,12 @@ type TestVariantBranch struct {
 	FinalizingSegment *changepointspb.Segment
 	// Store all the finalized segments for the test variant branch.
 	FinalizedSegments *changepointspb.Segments
+	// If this is true, it means we should trigger a write of FinalizingSegment
+	// to Spanner.
+	IsFinalizingSegmentDirty bool
+	// If this is true, it means we should trigger a write of FinalizedSegments
+	// to Spanner.
+	IsFinalizedSegmentsDirty bool
 }
 
 // InsertToInputBuffer inserts data of a new test variant into the input
@@ -64,6 +70,7 @@ func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *changepointspb.Seg
 		panic("insert older segment to FinalizedSegments")
 	}
 	tvb.FinalizedSegments.Segments = append(tvb.FinalizedSegments.Segments, segment)
+	tvb.IsFinalizedSegmentsDirty = true
 }
 
 // UpdateOutputBuffer updates the output buffer with the evicted segments from
@@ -84,6 +91,7 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*changepoints
 	if tvb.FinalizingSegment != nil {
 		segmentIndex = 1
 		combinedSegment := combineSegment(tvb.FinalizingSegment, evictedSegments[0])
+		tvb.IsFinalizingSegmentDirty = true
 		if combinedSegment.State == changepointspb.SegmentState_FINALIZING {
 			// Replace the finalizing segment.
 			tvb.FinalizingSegment = combinedSegment
@@ -99,6 +107,7 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*changepoints
 			tvb.InsertFinalizedSegment(segment)
 		} else { // Finalizing segment.
 			tvb.FinalizingSegment = segment
+			tvb.IsFinalizingSegmentDirty = true
 		}
 	}
 

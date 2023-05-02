@@ -20,6 +20,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -27,7 +28,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/span"
 )
 
 func TestFetchUpdateTestVariantBranch(t *testing.T) {
@@ -97,8 +97,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			RecentChangepointCount: 0,
 		}
 
-		mutation1 := tvb1.ToMutation()
-		mutation3 := tvb3.ToMutation()
+		mutation1, err := tvb1.ToMutation()
+		So(err, ShouldBeNil)
+		mutation3, err := tvb3.ToMutation()
+		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation1, mutation3)
 
 		tvbks := []TestVariantBranchKey{
@@ -152,7 +154,8 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			RecentChangepointCount: 0,
 		}
 
-		mutation := tvb.ToMutation()
+		mutation, err := tvb.ToMutation()
+		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 
 		// Update the record
@@ -191,9 +194,44 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				IsColdBufferDirty: true,
 			},
 			RecentChangepointCount: 0,
+			FinalizingSegment: &changepointspb.Segment{
+				State:                        changepointspb.SegmentState_FINALIZING,
+				HasStartChangepoint:          true,
+				StartPosition:                50,
+				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+				StartPositionLowerBound_99Th: 45,
+				StartPositionUpperBound_99Th: 55,
+				FinalizedCounts: &changepointspb.Counts{
+					TotalResults: 10,
+					TotalRuns:    10,
+					FlakyRuns:    10,
+				},
+			},
+			FinalizedSegments: &changepointspb.Segments{
+				Segments: []*changepointspb.Segment{
+					{
+						State:                        changepointspb.SegmentState_FINALIZED,
+						HasStartChangepoint:          true,
+						StartPosition:                20,
+						StartHour:                    timestamppb.New(time.Unix(3600, 0)),
+						StartPositionLowerBound_99Th: 10,
+						StartPositionUpperBound_99Th: 30,
+						EndPosition:                  40,
+						EndHour:                      timestamppb.New(time.Unix(3600, 0)),
+						FinalizedCounts: &changepointspb.Counts{
+							TotalResults: 10,
+							TotalRuns:    10,
+							FlakyRuns:    10,
+						},
+					},
+				},
+			},
+			IsFinalizingSegmentDirty: true,
+			IsFinalizedSegmentsDirty: true,
 		}
 
-		mutation = tvb.ToMutation()
+		mutation, err = tvb.ToMutation()
+		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 
 		tvbks := []TestVariantBranchKey{
@@ -202,9 +240,29 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvbs, err := ReadTestVariantBranches(span.Single(ctx), tvbks)
 		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 1)
+
+		// We cannot use ShouldResemble to compare proto messages. We will compare
+		// them separately.
 		tvb.IsNew = false
 		tvb.InputBuffer.IsColdBufferDirty = false
+		tvb.IsFinalizedSegmentsDirty = false
+		tvb.IsFinalizingSegmentDirty = false
+
+		// Captures finalizing segment in separate variables.
+		finalizingSegment1 := tvb.FinalizingSegment
+		finalizingSegment2 := tvbs[0].FinalizingSegment
+		tvb.FinalizingSegment = nil
+		tvbs[0].FinalizingSegment = nil
+
+		// Captures finalized segments in separate variables.
+		finalizedSegments1 := tvb.FinalizedSegments
+		finalizedSegments2 := tvbs[0].FinalizedSegments
+		tvb.FinalizedSegments = nil
+		tvbs[0].FinalizedSegments = nil
+
 		So(tvbs[0], ShouldResemble, tvb)
+		So(finalizingSegment1, ShouldResembleProto, finalizingSegment2)
+		So(finalizedSegments1, ShouldResembleProto, finalizedSegments2)
 	})
 }
 

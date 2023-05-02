@@ -79,7 +79,7 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 		keys[i] = spanner.Key{tvbks[i].Project, tvbks[i].TestID, tvbks[i].VariantHash, []byte(tvbks[i].GitReferenceHash)}
 	}
 	keyset := spanner.KeySetFromKeys(keys...)
-	cols := []string{"Project", "TestId", "VariantHash", "GitReferenceHash", "Variant", "HotInputBuffer", "ColdInputBuffer", "RecentChangepointCount"}
+	cols := []string{"Project", "TestId", "VariantHash", "GitReferenceHash", "Variant", "HotInputBuffer", "ColdInputBuffer", "RecentChangepointCount", "FinalizingSegment", "FinalizedSegments"}
 	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(
 		func(row *spanner.Row) error {
 			tvb, err := spannerRowToTestVariantBranch(row)
@@ -118,8 +118,10 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 	var hotBuffer []byte
 	var coldBuffer []byte
 	var recentChangepointCount int64
+	var finalizingSegment []byte
+	var finalizedSegments []byte
 
-	if err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.GitReferenceHash, &tvb.Variant, &hotBuffer, &coldBuffer, &recentChangepointCount); err != nil {
+	if err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.GitReferenceHash, &tvb.Variant, &hotBuffer, &coldBuffer, &recentChangepointCount, &finalizingSegment, &finalizedSegments); err != nil {
 		return nil, errors.Annotate(err, "read values from spanner").Err()
 	}
 
@@ -139,20 +141,31 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 		return nil, errors.Annotate(err, "decode cold history").Err()
 	}
 
+	// Process output buffer.
+	tvb.FinalizingSegment, err = DecodeSegment(finalizingSegment)
+	if err != nil {
+		return nil, errors.Annotate(err, "decode finalizing segment").Err()
+	}
+
+	tvb.FinalizedSegments, err = DecodeSegments(finalizedSegments)
+	if err != nil {
+		return nil, errors.Annotate(err, "decode finalized segments").Err()
+	}
+
 	return tvb, nil
 }
 
 // ToMutation returns a spanner Mutation to insert a TestVariantBranch to
 // Spanner table.
-func (tvb *TestVariantBranch) ToMutation() *spanner.Mutation {
+func (tvb *TestVariantBranch) ToMutation() (*spanner.Mutation, error) {
 	cols := []string{"Project", "TestId", "VariantHash", "GitReferenceHash", "LastUpdated", "RecentChangepointCount"}
 	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.GitReferenceHash, spanner.CommitTimestamp, tvb.RecentChangepointCount}
 
 	if tvb.IsNew {
 		// Variant needs to be updated only once.
 		// FinalizingSegment and FinalizedSegments are NOT NULL.
-		cols = append(cols, []string{"Variant", "FinalizingSegment", "FinalizedSegments"}...)
-		values = append(values, []interface{}{spanutil.ToSpanner(tvb.Variant), []byte{}, []byte{}}...)
+		cols = append(cols, "Variant")
+		values = append(values, spanutil.ToSpanner(tvb.Variant))
 	}
 
 	// Based on the flow, we should always update the hot buffer.
@@ -166,15 +179,37 @@ func (tvb *TestVariantBranch) ToMutation() *spanner.Mutation {
 		values = append(values, inputbuffer.EncodeHistory(tvb.InputBuffer.ColdBuffer))
 	}
 
-	// TODO (nqmtuan): Handle the mutation for output buffer.
+	// Finalizing segment.
+	// We only write finalizing segment if this is new (because FinalizingSegment
+	// is NOT NULL), or there is an update.
+	if tvb.IsFinalizingSegmentDirty || tvb.IsNew {
+		cols = append(cols, "FinalizingSegment")
+		bytes, err := EncodeSegment(tvb.FinalizingSegment)
+		if err != nil {
+			return nil, errors.Annotate(err, "encode finalizing segment").Err()
+		}
+		values = append(values, bytes)
+	}
+
+	// Finalized segments.
+	// We only write finalized segments if this is new (because FinalizedSegments
+	// is NOT NULL), or there is an update.
+	if tvb.IsFinalizedSegmentsDirty || tvb.IsNew {
+		cols = append(cols, "FinalizedSegments")
+		bytes, err := EncodeSegments(tvb.FinalizedSegments)
+		if err != nil {
+			return nil, errors.Annotate(err, "encode finalized segments").Err()
+		}
+		values = append(values, bytes)
+	}
 
 	// We don't use spanner.InsertOrUpdate here because the mutation need to
 	// follow the constraint of insert (i.e. we need to provide values for all
 	// non-null columns).
 	if tvb.IsNew {
-		return spanner.Insert("TestVariantBranch", cols, values)
+		return spanner.Insert("TestVariantBranch", cols, values), nil
 	}
-	return spanner.Update("TestVariantBranch", cols, values)
+	return spanner.Update("TestVariantBranch", cols, values), nil
 }
 
 // readInvocations reads the Invocations spanner table for invocation IDs.
