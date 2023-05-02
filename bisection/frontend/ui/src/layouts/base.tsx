@@ -48,7 +48,7 @@ function getCurrentLink(linkPatterns: string[]) {
 }
 
 export const BaseLayout = () => {
-  const linkMatcher = getCurrentLink(['/trigger', '/statistics', '/']);
+  const linkMatcher = getCurrentLink(['/']);
 
   var currentTab = '/';
   if (linkMatcher !== null) {
@@ -67,33 +67,13 @@ export const BaseLayout = () => {
               value='/'
               to='/'
             />
-            <Tab
-              className='nav-tab'
-              component={Link}
-              label='New Analysis'
-              value='/trigger'
-              to='/trigger'
-              color='inherit'
-              // TODO: remove below once the New Analysis page is implemented
-              disabled
-            />
-            <Tab
-              className='nav-tab'
-              component={Link}
-              label='Statistics'
-              value='/statistics'
-              to='/statistics'
-              color='inherit'
-              // TODO: remove below once the Statistics page is implemented
-              disabled
-            />
           </Tabs>
           {/* TODO: add login/logout links */}
         </Toolbar>
       </AppBar>
       <Container maxWidth={false} sx={{ marginTop: '2rem' }}>
         <Grid container justifyContent='center'>
-          <Grid item xs={12} xl={9}>
+          <Grid item xs={12} xl={11}>
             <Outlet />
           </Grid>
         </Grid>

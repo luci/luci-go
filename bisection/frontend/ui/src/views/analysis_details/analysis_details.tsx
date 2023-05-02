@@ -32,9 +32,6 @@ import { HeuristicAnalysisTable } from '../../components/heuristic_analysis_tabl
 import { CulpritVerificationTable } from '../../components/culprit_verification_table/culprit_verification_table';
 import { NthSectionAnalysisTable } from '../../components/nthsection_analysis_table/nthsection_analysis_table';
 
-// TODO: uncomment below once revert CL information is added to the analysis response
-// import { RevertCLOverview } from '../../components/revert_cl_overview/revert_cl_overview';
-
 import {
   getLUCIBisectionService,
   QueryAnalysisRequest,
@@ -107,102 +104,90 @@ export const AnalysisDetailsPage = () => {
   // TODO: display alert if the build ID queried is not the first failed build
   //       linked to the failure analysis
 
-  return (
-    <main>
-      {isError && (
+  if (isError) {
+    return <div className='section'>
+      <Alert severity='error'>
+        <AlertTitle>Failed to load analysis details</AlertTitle>
+        {/* TODO: display more error detail for input issues e.g.
+              Build not found, No analysis for that build, etc */}
+        An error occurred when querying for the analysis details using build
+        ID "{bbid}":
+        <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
+      </Alert>
+    </div>;
+  }
+
+  if (isLoading) {
+    return <Box
+      display='flex'
+      justifyContent='center'
+      alignItems='center'
+      height='80vh'
+    >
+      <CircularProgress />
+    </Box>;
+  }
+
+  if (isSuccess) {
+    return <>
+      <div className='section'>
+        <Typography variant='h5' gutterBottom>
+          Analysis Details
+        </Typography>
+        <AnalysisOverview analysis={analysis!} />
+      </div>
+      {analysis!.culprits && analysis!.culprits.length > 0 && (
         <div className='section'>
-          <Alert severity='error'>
-            <AlertTitle>Failed to load analysis details</AlertTitle>
-            {/* TODO: display more error detail for input issues e.g.
-                  Build not found, No analysis for that build, etc */}
-            An error occurred when querying for the analysis details using build
-            ID "{bbid}":
-            <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
-          </Alert>
+          <Typography variant='h5' gutterBottom>
+            Culprit Details
+          </Typography>
+          <CulpritsTable culprits={analysis!.culprits!} />
         </div>
       )}
-      {isLoading && (
-        <Box
-          display='flex'
-          justifyContent='center'
-          alignItems='center'
-          height='80vh'
+      <div className='section'>
+        <Typography variant='h5' gutterBottom>
+          Analysis Components
+        </Typography>
+        <Tabs
+          value={currentTab}
+          onChange={handleTabChange}
+          aria-label='Analysis components tabs'
+          className='rounded-tabs'
         >
-          <CircularProgress />
-        </Box>
-      )}
-      {isSuccess && (
-        <>
-          <div className='section'>
-            <Typography variant='h5' gutterBottom>
-              Analysis Details
-            </Typography>
-            <AnalysisOverview analysis={analysis!} />
-          </div>
-          {analysis!.culprits && analysis!.culprits.length > 0 && (
-            <div className='section'>
-              <Typography variant='h5' gutterBottom>
-                Culprit Details
-              </Typography>
-              <CulpritsTable culprits={analysis!.culprits!} />
-            </div>
-          )}
-          {/* TODO: add revert CL to the analysis
-                    response, then display it below
-          {analysis.revertCL! && (
-            <div className='section'>
-              <Typography variant='h4' gutterBottom>
-                Revert CL
-              </Typography>
-              <RevertCLOverview revertCL={analysis.revertCL} />
-            </div>
-          )}
-          */}
-          <div className='section'>
-            <Typography variant='h5' gutterBottom>
-              Analysis Components
-            </Typography>
-            <Tabs
-              value={currentTab}
-              onChange={handleTabChange}
-              aria-label='Analysis components tabs'
-              className='rounded-tabs'
-            >
-              <Tab
-                className='rounded-tab'
-                value={AnalysisComponentTabs.HEURISTIC}
-                label={AnalysisComponentTabs.HEURISTIC}
-              />
-              <Tab
-                className='rounded-tab'
-                value={AnalysisComponentTabs.NTH_SECTION}
-                label={AnalysisComponentTabs.NTH_SECTION}
-              />
-              <Tab
-                className='rounded-tab'
-                value={AnalysisComponentTabs.CULPRIT_VERIFICATION}
-                label={AnalysisComponentTabs.CULPRIT_VERIFICATION}
-              />
-            </Tabs>
-            <TabPanel value={currentTab} name={AnalysisComponentTabs.HEURISTIC}>
-              {/* TODO: Show alert if there are no heuristic results yet */}
-              <HeuristicAnalysisTable result={analysis!.heuristicResult} />
-            </TabPanel>
-            <TabPanel
-              value={currentTab}
-              name={AnalysisComponentTabs.NTH_SECTION}
-            >
-              <NthSectionAnalysisTable result={analysis!.nthSectionResult} />
-            </TabPanel>
-            <TabPanel
-              value={currentTab}
-              name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
-            >
-              <CulpritVerificationTable result={analysis!} />
-            </TabPanel>
-          </div>
-        </>
-      )}
-    </main>
-  );
+          <Tab
+            className='rounded-tab'
+            value={AnalysisComponentTabs.HEURISTIC}
+            label={AnalysisComponentTabs.HEURISTIC}
+          />
+          <Tab
+            className='rounded-tab'
+            value={AnalysisComponentTabs.NTH_SECTION}
+            label={AnalysisComponentTabs.NTH_SECTION}
+          />
+          <Tab
+            className='rounded-tab'
+            value={AnalysisComponentTabs.CULPRIT_VERIFICATION}
+            label={AnalysisComponentTabs.CULPRIT_VERIFICATION}
+          />
+        </Tabs>
+        <TabPanel value={currentTab} name={AnalysisComponentTabs.HEURISTIC}>
+          <HeuristicAnalysisTable result={analysis!.heuristicResult} />
+        </TabPanel>
+        <TabPanel
+          value={currentTab}
+          name={AnalysisComponentTabs.NTH_SECTION}
+        >
+          <NthSectionAnalysisTable result={analysis!.nthSectionResult} />
+        </TabPanel>
+        <TabPanel
+          value={currentTab}
+          name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
+        >
+          <CulpritVerificationTable result={analysis!} />
+        </TabPanel>
+      </div>
+    </>;
+  }
+
+  return <></>;
 };

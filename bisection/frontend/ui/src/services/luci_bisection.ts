@@ -250,13 +250,6 @@ export interface CL {
   reviewURL: string;
 }
 
-export interface RevertCL {
-  cl: CL;
-  status: string;
-  submitTime: string;
-  commitPosition: string;
-}
-
 export interface PrimeSuspect {
   cl: CL;
   culpritStatus: string;
