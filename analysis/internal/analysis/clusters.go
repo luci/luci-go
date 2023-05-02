@@ -62,9 +62,9 @@ type Cluster struct {
 	// Top Monorail Components indicates the top monorail components failures
 	// in the cluster are associated with by number of failures, up to 5.
 	TopMonorailComponents []TopCount
-	// Top Buganizer Component indicates the top buganizer component for the top failure
-	// in the cluster.
-	TopBuganizerComponent TopCount
+	// Top Buganizer Components indicates the top buganizer components failures
+	// in the cluster are associated with by number of failures, up to 5.
+	TopBuganizerComponents []TopCount
 }
 
 // ExampleTestID returns an example Test ID that is part of the cluster, or
@@ -191,7 +191,7 @@ func (c *Client) rebuildAnalysisForDataset(ctx context.Context, dataset *bigquer
 			ARRAY_AGG(DISTINCT f.realm) as realms,
 			APPROX_TOP_COUNT(f.test_id, 5) as top_test_ids,
 			APPROX_TOP_COUNT(IF(f.bug_tracking_component.system = 'monorail', f.bug_tracking_component.component, NULL), 5) as top_monorail_components,
-			APPROX_TOP_COUNT(IF(f.bug_tracking_component.system = 'buganizer', f.bug_tracking_component.component, NULL), 1) as top_buganizer_components
+			APPROX_TOP_COUNT(IF(f.bug_tracking_component.system = 'buganizer', f.bug_tracking_component.component, NULL), 5) as top_buganizer_components
 		FROM clustered_failures_precompute
 		GROUP BY ` + projectSelection + `cluster_algorithm, cluster_id
 	`)
@@ -504,9 +504,7 @@ func (c *Client) readClustersWhere(ctx context.Context, project, whereClause str
 		row.ExampleFailureReason = rowVals.NullString("example_failure_reason")
 		row.TopTestIDs = rowVals.TopCounts("top_test_ids")
 		row.TopMonorailComponents = rowVals.TopCounts("top_monorail_components")
-		if len(rowVals.TopCounts("top_buganizer_components")) > 0 {
-			row.TopBuganizerComponent = rowVals.TopCounts("top_buganizer_components")[0]
-		}
+		row.TopBuganizerComponents = rowVals.TopCounts("top_buganizer_components")
 		row.Realms = rowVals.Strings("realms")
 
 		if err := rowVals.Error(); err != nil {

@@ -807,12 +807,10 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	}
 
 	if system == bugs.BuganizerSystem {
-		if cs.TopBuganizerComponent.Value != "" {
-			var err error
-			request.BuganizerComponent, err = extractBuganizerComponent(cs)
-			if err != nil {
-				return false, errors.Annotate(err, "extracting buganizer component").Err()
-			}
+		var err error
+		request.BuganizerComponent, err = extractBuganizerComponent(cs)
+		if err != nil {
+			return false, errors.Annotate(err, "extracting buganizer component").Err()
 		}
 	} else {
 		request.MonorailComponents = extractMonorailComponents(cs)
@@ -852,14 +850,12 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 }
 
 func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluster) (string, error) {
-	// If we have no components associated to failures, return the default system.
-	if len(cs.TopMonorailComponents) == 0 && cs.TopBuganizerComponent.Value == "" {
-		return findDefaultBugSystem(projectCfg), nil
-	}
-
 	// The most impactful monorail component.
 	var topMonorailComponent analysis.TopCount
 	for _, tc := range cs.TopMonorailComponents {
+		if tc.Value == "" {
+			continue
+		}
 		// Any monorail component is associated for more than 30% of the
 		// failures in the cluster should be checked for top impact.
 		if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
@@ -869,31 +865,53 @@ func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluste
 		}
 	}
 
-	if cs.TopBuganizerComponent.Value != "" {
-		if topMonorailComponent.Value == "" {
-			return bugs.BuganizerSystem, nil
-		} else {
-			// Return the system corresponding with the highest impact.
-			if topMonorailComponent.Count > cs.TopBuganizerComponent.Count {
-				return bugs.MonorailSystem, nil
-			} else if topMonorailComponent.Count == cs.TopBuganizerComponent.Count {
-				// If top components have equal impact, use the configured default system.
-				return findDefaultBugSystem(projectCfg), nil
-			} else {
-				return bugs.BuganizerSystem, nil
+	// The most impactful buganizer component.
+	var topBuganizerComponent analysis.TopCount
+	for _, tc := range cs.TopBuganizerComponents {
+		if tc.Value == "" {
+			continue
+		}
+		// Any buganizer component is associated for more than 30% of the
+		// failures in the cluster should be checked for top impact.
+		if tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal * 3) / 10) {
+			if tc.Count > topBuganizerComponent.Count || topBuganizerComponent.Value == "" {
+				topBuganizerComponent = tc
 			}
 		}
-	} else {
+	}
+
+	if topMonorailComponent.Value == "" && topBuganizerComponent.Value == "" {
+		return findDefaultBugSystem(projectCfg), nil
+	} else if topMonorailComponent.Value != "" && topBuganizerComponent.Value == "" {
 		return bugs.MonorailSystem, nil
+	} else if topMonorailComponent.Value == "" && topBuganizerComponent.Value != "" {
+		return bugs.BuganizerSystem, nil
+	} else {
+		// Return the system corresponding with the highest impact.
+		if topMonorailComponent.Count > topBuganizerComponent.Count {
+			return bugs.MonorailSystem, nil
+		} else if topMonorailComponent.Count == topBuganizerComponent.Count {
+			// If top components have equal impact, use the configured default system.
+			return findDefaultBugSystem(projectCfg), nil
+		} else {
+			return bugs.BuganizerSystem, nil
+		}
 	}
 }
 
 func extractBuganizerComponent(cs *analysis.Cluster) (int64, error) {
-	componentID, err := strconv.ParseInt(cs.TopBuganizerComponent.Value, 10, 64)
-	if err != nil {
-		return 0, errors.Annotate(err, "parse buganizer component id").Err()
+	for _, tc := range cs.TopBuganizerComponents {
+		// The top buganizer component that is associated for more than 30% of the
+		// failures in the cluster should be on the filed bug.
+		if tc.Value != "" && tc.Count > ((cs.MetricValues[metrics.Failures.ID].SevenDay.Nominal*3)/10) {
+			componentID, err := strconv.ParseInt(tc.Value, 10, 64)
+			if err != nil {
+				return 0, errors.Annotate(err, "parse buganizer component id").Err()
+			}
+			return componentID, nil
+		}
 	}
-	return componentID, nil
+	return 0, nil
 }
 
 func extractMonorailComponents(cs *analysis.Cluster) []string {

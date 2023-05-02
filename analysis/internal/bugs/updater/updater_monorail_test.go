@@ -267,17 +267,21 @@ func TestMonorailUpdate(t *testing.T) {
 					OneDay: metrics.Counts{Residual: 100},
 				}
 				Convey("Buganzier component with lower impact should create monorail issue", func() {
-					suggestedClusters[1].TopBuganizerComponent = analysis.TopCount{
+					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
 						Value: "12345",
 						Count: 39,
-					}
+					}}
 					test()
 				})
 				Convey("Buganizer component with higher impact should create buganizer issue", func() {
-					suggestedClusters[1].TopBuganizerComponent = analysis.TopCount{
+					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
+						// Check that null values are ignored.
+						Value: "",
+						Count: 100,
+					}, {
 						Value: "12345",
 						Count: 41,
-					}
+					}}
 					expectedRule.BugID = bugs.BugID{
 						System: "buganizer",
 						ID:     "1",
@@ -315,10 +319,13 @@ func TestMonorailUpdate(t *testing.T) {
 					So(len(fakeBuganizerStore.Issues), ShouldEqual, 1)
 				})
 				Convey("Buganizer component with equal impact should use default bug system", func() {
-					suggestedClusters[1].TopBuganizerComponent = analysis.TopCount{
+					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
+						Value: "",
+						Count: 55,
+					}, {
 						Value: "12345",
 						Count: 40,
-					}
+					}}
 					test()
 				})
 			})
