@@ -39,7 +39,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 4)
 	})
@@ -51,7 +51,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 6)
 	})
@@ -63,7 +63,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		// There is only 1 possible position for change point
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 2)
@@ -76,7 +76,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 13)
 	})
@@ -88,7 +88,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 13)
 	})
@@ -102,7 +102,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 5)
 	})
@@ -116,7 +116,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 3)
 	})
@@ -160,9 +160,50 @@ func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		min, max := a.ChangepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
 		if min > 1001 || max < 1001 {
 			panic("Invalid result")
 		}
 	}
+}
+
+func TestChangePoints(t *testing.T) {
+	Convey("Confidence Interval For ChangePoints", t, func() {
+		a := ChangepointPredictor{
+			ChangepointLikelihood: 0.0001,
+			HasUnexpectedPrior: BetaDistribution{
+				Alpha: 0.3,
+				Beta:  0.5,
+			},
+			UnexpectedAfterRetryPrior: BetaDistribution{
+				Alpha: 0.5,
+				Beta:  0.5,
+			},
+		}
+		positions := make([]int, 300)
+		total := make([]int, 300)
+		hasUnexpected := make([]int, 300)
+		for i := 0; i < 300; i++ {
+			positions[i] = i + 1
+			total[i] = 1
+			if i >= 100 && i <= 199 {
+				hasUnexpected[i] = 1
+			}
+		}
+
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		cps := a.ChangePoints(vs, ConfidenceIntervalTail)
+		So(cps, ShouldResemble, []inputbuffer.ChangePoint{
+			{
+				NominalIndex:        100,
+				LowerBound99ThIndex: 98,
+				UpperBound99ThIndex: 100,
+			},
+			{
+				NominalIndex:        200,
+				LowerBound99ThIndex: 199,
+				UpperBound99ThIndex: 201,
+			},
+		})
+	})
 }

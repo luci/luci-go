@@ -14,9 +14,7 @@
 
 package bayesian
 
-import (
-	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-)
+import "go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 
 // Stores counts of test run outcomes.
 type counts struct {

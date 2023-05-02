@@ -34,7 +34,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				hasUnexpected = []int{0, 1, 0, 2, 0, 0}
 			)
 			ib := genInputBuffer(10, 200, positions, total, hasUnexpected)
-			cps := []int{}
+			cps := []ChangePoint{}
 			sib := ib.Segmentize(cps)
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 1)
@@ -69,7 +69,23 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				unexpectedAfterRetry = []int{0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0}
 			)
 			ib := genInputbufferWithRetries(10, 200, positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-			cps := []int{3, 6, 9}
+			cps := []ChangePoint{
+				{
+					NominalIndex:        3,
+					LowerBound99ThIndex: 2,
+					UpperBound99ThIndex: 4,
+				},
+				{
+					NominalIndex:        6,
+					LowerBound99ThIndex: 5,
+					UpperBound99ThIndex: 7,
+				},
+				{
+					NominalIndex:        9,
+					LowerBound99ThIndex: 8,
+					UpperBound99ThIndex: 10,
+				},
+			}
 			sib := ib.Segmentize(cps)
 			ibSegments := sib.Segments
 			So(len(ibSegments), ShouldEqual, 4)
@@ -90,13 +106,15 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			So(diff, ShouldEqual, "")
 
 			diff = cmp.Diff(ibSegments[1], &Segment{
-				StartIndex:          3,
-				EndIndex:            5,
-				HasStartChangepoint: true,
-				StartPosition:       4,
-				EndPosition:         6,
-				StartHour:           timestamppb.New(time.Unix(4*3600, 0)),
-				EndHour:             timestamppb.New(time.Unix(6*3600, 0)),
+				StartIndex:                  3,
+				EndIndex:                    5,
+				HasStartChangepoint:         true,
+				StartPosition:               4,
+				StartPositionLowerBound99Th: 3,
+				StartPositionUpperBound99Th: 5,
+				EndPosition:                 6,
+				StartHour:                   timestamppb.New(time.Unix(4*3600, 0)),
+				EndHour:                     timestamppb.New(time.Unix(6*3600, 0)),
 				Counts: &changepointspb.Counts{
 					TotalResults:             12,
 					UnexpectedResults:        12,
@@ -110,13 +128,15 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			So(diff, ShouldEqual, "")
 
 			diff = cmp.Diff(ibSegments[2], &Segment{
-				StartIndex:          6,
-				EndIndex:            8,
-				HasStartChangepoint: true,
-				StartPosition:       7,
-				EndPosition:         9,
-				StartHour:           timestamppb.New(time.Unix(7*3600, 0)),
-				EndHour:             timestamppb.New(time.Unix(9*3600, 0)),
+				StartIndex:                  6,
+				EndIndex:                    8,
+				HasStartChangepoint:         true,
+				StartPosition:               7,
+				StartPositionLowerBound99Th: 6,
+				StartPositionUpperBound99Th: 8,
+				EndPosition:                 9,
+				StartHour:                   timestamppb.New(time.Unix(7*3600, 0)),
+				EndHour:                     timestamppb.New(time.Unix(9*3600, 0)),
 				Counts: &changepointspb.Counts{
 					TotalResults:      12,
 					UnexpectedResults: 6,
@@ -130,13 +150,15 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			So(diff, ShouldEqual, "")
 
 			diff = cmp.Diff(ibSegments[3], &Segment{
-				StartIndex:          9,
-				EndIndex:            11,
-				HasStartChangepoint: true,
-				StartPosition:       10,
-				EndPosition:         12,
-				StartHour:           timestamppb.New(time.Unix(10*3600, 0)),
-				EndHour:             timestamppb.New(time.Unix(12*3600, 0)),
+				StartIndex:                  9,
+				EndIndex:                    11,
+				HasStartChangepoint:         true,
+				StartPosition:               10,
+				StartPositionLowerBound99Th: 9,
+				StartPositionUpperBound99Th: 11,
+				EndPosition:                 12,
+				StartHour:                   timestamppb.New(time.Unix(10*3600, 0)),
+				EndHour:                     timestamppb.New(time.Unix(12*3600, 0)),
 				Counts: &changepointspb.Counts{
 					TotalResults:            3,
 					UnexpectedResults:       3,
@@ -300,11 +322,13 @@ func TestEvictSegments(t *testing.T) {
 					TotalRuns:     40,
 					TotalVerdicts: 40,
 				},
-				HasStartChangepoint: true,
-				StartHour:           timestamppb.New(time.Unix(41*3600, 0)),
-				StartPosition:       41,
-				EndHour:             timestamppb.New(time.Unix(80*3600, 0)),
-				EndPosition:         80,
+				HasStartChangepoint:         true,
+				StartHour:                   timestamppb.New(time.Unix(41*3600, 0)),
+				StartPositionLowerBound99Th: 30,
+				StartPositionUpperBound99Th: 50,
+				StartPosition:               41,
+				EndHour:                     timestamppb.New(time.Unix(80*3600, 0)),
+				EndPosition:                 80,
 			},
 			{
 				StartIndex: 80, // A finalizing segment.
@@ -314,11 +338,13 @@ func TestEvictSegments(t *testing.T) {
 					TotalRuns:     1970,
 					TotalVerdicts: 1970,
 				},
-				HasStartChangepoint: true,
-				StartHour:           timestamppb.New(time.Unix(81*3600, 0)),
-				StartPosition:       81,
-				EndHour:             timestamppb.New(time.Unix(2050*3600, 0)),
-				EndPosition:         2050,
+				HasStartChangepoint:         true,
+				StartHour:                   timestamppb.New(time.Unix(81*3600, 0)),
+				StartPosition:               81,
+				StartPositionLowerBound99Th: 70,
+				StartPositionUpperBound99Th: 90,
+				EndHour:                     timestamppb.New(time.Unix(2050*3600, 0)),
+				EndPosition:                 2050,
 			},
 			{
 				StartIndex: 2050, // An active segment.
@@ -362,12 +388,14 @@ func TestEvictSegments(t *testing.T) {
 		So(diff, ShouldEqual, "")
 
 		diff = cmp.Diff(evicted[1], &changepointspb.Segment{
-			State:               changepointspb.SegmentState_FINALIZED,
-			HasStartChangepoint: true,
-			StartHour:           timestamppb.New(time.Unix(41*3600, 0)),
-			StartPosition:       41,
-			EndHour:             timestamppb.New(time.Unix(80*3600, 0)),
-			EndPosition:         80,
+			State:                        changepointspb.SegmentState_FINALIZED,
+			HasStartChangepoint:          true,
+			StartHour:                    timestamppb.New(time.Unix(41*3600, 0)),
+			StartPosition:                41,
+			StartPositionLowerBound_99Th: 30,
+			StartPositionUpperBound_99Th: 50,
+			EndHour:                      timestamppb.New(time.Unix(80*3600, 0)),
+			EndPosition:                  80,
 			FinalizedCounts: &changepointspb.Counts{
 				TotalResults:  40,
 				TotalRuns:     40,
@@ -377,10 +405,12 @@ func TestEvictSegments(t *testing.T) {
 		So(diff, ShouldEqual, "")
 
 		diff = cmp.Diff(evicted[2], &changepointspb.Segment{
-			State:               changepointspb.SegmentState_FINALIZING,
-			HasStartChangepoint: true,
-			StartHour:           timestamppb.New(time.Unix(81*3600, 0)),
-			StartPosition:       81,
+			State:                        changepointspb.SegmentState_FINALIZING,
+			HasStartChangepoint:          true,
+			StartHour:                    timestamppb.New(time.Unix(81*3600, 0)),
+			StartPosition:                81,
+			StartPositionLowerBound_99Th: 70,
+			StartPositionUpperBound_99Th: 90,
 			FinalizedCounts: &changepointspb.Counts{
 				TotalResults:  20,
 				TotalRuns:     20,

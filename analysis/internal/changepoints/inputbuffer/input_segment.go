@@ -80,35 +80,52 @@ type SegmentedInputBuffer struct {
 	Segments []*Segment
 }
 
+// ChangePoint records the index position of a changepoint, together with its
+// confidence interval.
+type ChangePoint struct {
+	// NominalIndex is nominal index of the change point in history.
+	NominalIndex int
+	// LowerBound99ThIndex and UpperBound99ThIndex are indices (in history) of
+	// the 99% confidence interval of the change point.
+	LowerBound99ThIndex int
+	UpperBound99ThIndex int
+}
+
 // Segmentize generates segments based on the input buffer and
 // the changepoints detected.
-// history contains the input buffer verdicts (merged of hot and cold buffer).
-// It is sorted by commit position (oldest first), then by result time (oldest
-// first).
-// changepointIndices is the indices of the changepoints for history. It is
+// Input buffer verdicts are sorted by commit position (oldest first), then
+// by result time (oldest first).
+// changepoints is the changepoints for history. It is
 // sorted in ascending order (smallest index first).
-func (ib *Buffer) Segmentize(changepointIndices []int) *SegmentedInputBuffer {
+func (ib *Buffer) Segmentize(changepoints []ChangePoint) *SegmentedInputBuffer {
 	history := ib.MergeBuffer()
-	segments := []*Segment{}
-	segmentStartIndex := 0
-	for i, changepointIndex := range changepointIndices {
-		segmentEndIndex := changepointIndex - 1
-		sw := inputBufferSegment(segmentStartIndex, segmentEndIndex, history)
-		if i > 0 {
-			sw.HasStartChangepoint = true
+	// Exit early if we have empty history.
+	if len(history) == 0 {
+		return &SegmentedInputBuffer{
+			InputBuffer: ib,
+			Segments:    []*Segment{},
 		}
+	}
 
-		segments = append(segments, sw)
-		segmentStartIndex = segmentEndIndex + 1
+	segments := make([]*Segment, len(changepoints)+1)
+	// Go from back to front, for easier processing of the confidence interval.
+	segmentEndIndex := len(history) - 1
+	for i := len(changepoints) - 1; i >= 0; i-- {
+		// Add the segment starting from changepoint.
+		changepoint := changepoints[i]
+		segmentStartIndex := changepoint.NominalIndex
+		sw := inputBufferSegment(segmentStartIndex, segmentEndIndex, history)
+		sw.HasStartChangepoint = true
+		sw.StartPositionLowerBound99Th = int64(history[changepoint.LowerBound99ThIndex].CommitPosition)
+		sw.StartPositionUpperBound99Th = int64(history[changepoint.UpperBound99ThIndex].CommitPosition)
+		segments[i+1] = sw
+		segmentEndIndex = segmentStartIndex - 1
 	}
-	// Add the last segment.
-	if segmentStartIndex < len(history) {
-		sw := inputBufferSegment(segmentStartIndex, len(history)-1, history)
-		if len(segments) > 0 {
-			sw.HasStartChangepoint = true
-		}
-		segments = append(segments, sw)
-	}
+
+	// Add the first segment.
+	sw := inputBufferSegment(0, segmentEndIndex, history)
+	segments[0] = sw
+
 	return &SegmentedInputBuffer{
 		InputBuffer: ib,
 		Segments:    segments,
@@ -118,7 +135,9 @@ func (ib *Buffer) Segmentize(changepointIndices []int) *SegmentedInputBuffer {
 // inputBufferSegment returns a Segment from startIndex (inclusively) to
 // endIndex (inclusively).
 func inputBufferSegment(startIndex, endIndex int, history []PositionVerdict) *Segment {
-	// TODO (nqmtuan): Set confidence interval.
+	if startIndex > endIndex {
+		panic("invalid segment index: startIndex > endIndex")
+	}
 	return &Segment{
 		StartIndex:    startIndex,
 		EndIndex:      endIndex,
@@ -126,8 +145,8 @@ func inputBufferSegment(startIndex, endIndex int, history []PositionVerdict) *Se
 		EndPosition:   int64(history[endIndex].CommitPosition),
 		StartHour:     timestamppb.New(history[startIndex].Hour),
 		EndHour:       timestamppb.New(history[endIndex].Hour),
-		Counts:        segmentCounts(startIndex, endIndex, history),
-		MostRecentUnexpectedResultHourAllVerdicts: mostRecentUnexpectedResultHour(startIndex, endIndex, history),
+		Counts:        segmentCounts(history[startIndex : endIndex+1]),
+		MostRecentUnexpectedResultHourAllVerdicts: mostRecentUnexpectedResultHour(history[startIndex : endIndex+1]),
 	}
 }
 
@@ -137,8 +156,17 @@ func inputBufferSegment(startIndex, endIndex int, history []PositionVerdict) *Se
 //  1. It is a finalized segment. In such case, it will be fully evicted.
 //  2. It is a finalizing segment. In such case, it will be partially evicted.
 //
-// Returns the list of evicted segments. All segments will be finalized, except
-// for the last segment, which may be finalizing or finalized.
+// Returns the list of evicted segments.
+//
+// Note that if the last segment evicted is a finalized segment, this function
+// will add an extra finalizing segment to the end of evicted segments. This is
+// to keep track of the confidence interval of the starting commit position of
+// the next segment in the input buffer after eviction. It is because after a
+// finalized segment is evicted, we cannot recalculte the confidence interval
+// of the first segment from the input buffer alone. As a result, the result of
+// this function will contain all finalized segments, except for the last
+// segment, which is finalizing.
+//
 // The remaining segments will be in sib.Segments.
 func (sib *SegmentedInputBuffer) EvictSegments() []*changepointspb.Segment {
 	evictedSegments := []*changepointspb.Segment{}
@@ -186,6 +214,22 @@ func (sib *SegmentedInputBuffer) EvictSegments() []*changepointspb.Segment {
 	}
 
 	sib.Segments = remainingSegments
+
+	// If the last segment is finalized, we also add a finalizing segment
+	// to the end of the evicted segments.
+	l := len(evictedSegments)
+	if l > 0 && evictedSegments[l-1].State == changepointspb.SegmentState_FINALIZED {
+		firstRemainingSeg := remainingSegments[0]
+		evictedSegments = append(evictedSegments, &changepointspb.Segment{
+			State:                        changepointspb.SegmentState_FINALIZING,
+			HasStartChangepoint:          true,
+			StartPosition:                firstRemainingSeg.StartPosition,
+			StartHour:                    firstRemainingSeg.StartHour,
+			StartPositionLowerBound_99Th: firstRemainingSeg.StartPositionLowerBound99Th,
+			StartPositionUpperBound_99Th: firstRemainingSeg.StartPositionUpperBound99Th,
+			FinalizedCounts:              &changepointspb.Counts{},
+		})
+	}
 	return evictedSegments
 }
 
@@ -244,10 +288,10 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) *changepointspb.Segment {
 // overflows).
 // Returns evicted and remaining segments.
 func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *changepointspb.Segment, remaining *Segment) {
-	evictedCount := segmentCounts(0, endPos, ib.ColdBuffer.Verdicts)
-	remainingCount := segmentCounts(endPos+1, seg.EndIndex, ib.ColdBuffer.Verdicts)
-	evictedMostRecentHour := mostRecentUnexpectedResultHour(0, endPos, ib.ColdBuffer.Verdicts)
-	remainingMostRecentHour := mostRecentUnexpectedResultHour(endPos+1, seg.EndIndex, ib.ColdBuffer.Verdicts)
+	evictedCount := segmentCounts(ib.ColdBuffer.Verdicts[:endPos+1])
+	remainingCount := segmentCounts(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
+	evictedMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[:endPos+1])
+	remainingMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
 	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[endPos+1:]
 	ib.IsColdBufferDirty = true
 	// Evicted segment.
@@ -257,6 +301,8 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *cha
 		HasStartChangepoint:            seg.HasStartChangepoint,
 		StartPosition:                  seg.StartPosition,
 		StartHour:                      seg.StartHour,
+		StartPositionLowerBound_99Th:   seg.StartPositionLowerBound99Th,
+		StartPositionUpperBound_99Th:   seg.StartPositionUpperBound99Th,
 		MostRecentUnexpectedResultHour: evictedMostRecentHour,
 	}
 
@@ -273,13 +319,11 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *cha
 	return evicted, remaining
 }
 
-// segmentCount counts the statistics of segment from startIndex to endIndex in
-// the input buffer history.
-func segmentCounts(startIndex int, endIndex int, history []PositionVerdict) *changepointspb.Counts {
+// segmentCount counts the statistics of history.
+func segmentCounts(history []PositionVerdict) *changepointspb.Counts {
 	counts := &changepointspb.Counts{}
-	for i := startIndex; i <= endIndex; i++ {
+	for _, verdict := range history {
 		counts.TotalVerdicts++
-		verdict := history[i]
 		if verdict.IsSimpleExpected {
 			counts.TotalRuns++
 			counts.TotalResults++
@@ -325,19 +369,18 @@ func segmentCounts(startIndex int, endIndex int, history []PositionVerdict) *cha
 
 // mostRecentUnexpectedResultHour return the hours for the most recent
 // verdict that contains unexpected result.
-func mostRecentUnexpectedResultHour(startIndex int, endIndex int, history []PositionVerdict) *timestamppb.Timestamp {
+func mostRecentUnexpectedResultHour(history []PositionVerdict) *timestamppb.Timestamp {
 	latest := time.Unix(0, 0)
 	found := false
 	// history is sorted by commit position, not hour, so we need to do a loop.
-	for index := startIndex; index <= endIndex; index++ {
-		pv := history[index]
-		for _, run := range pv.Details.Runs {
+	for _, verdict := range history {
+		for _, run := range verdict.Details.Runs {
 			if run.IsDuplicate {
 				continue
 			}
 			if run.UnexpectedResultCount > 0 {
-				if pv.Hour.Unix() > latest.Unix() {
-					latest = pv.Hour
+				if verdict.Hour.Unix() > latest.Unix() {
+					latest = verdict.Hour
 					found = true
 				}
 				break

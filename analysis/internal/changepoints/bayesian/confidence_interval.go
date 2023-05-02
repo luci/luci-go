@@ -20,7 +20,13 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 )
 
-// ChangepointPositionConfidenceInterval returns the (100% - (2 * tail))
+const (
+	// Confidence interval tail is the default tail value for confidence analysis.
+	// 0.005 tail gives 99% confidence interval.
+	ConfidenceIntervalTail = 0.005
+)
+
+// changepointPositionConfidenceInterval returns the (100% - (2 * tail))
 // two-tailed confidence interval for a changepoint that occurs in the
 // given slice of history.
 // E.g. tail = 0.005 gives the 99% confidence interval.
@@ -31,7 +37,7 @@ import (
 // [3, 9], [10, 15], [16, 21].
 // To analyze the confidence interval around change point at position 16, we
 // will run this function with the slice of history between 10 and 21.
-func (a ChangepointPredictor) ChangepointPositionConfidenceInterval(history []inputbuffer.PositionVerdict, tail float64) (min int, max int) {
+func (a ChangepointPredictor) changepointPositionConfidenceInterval(history []inputbuffer.PositionVerdict, tail float64) (min int, max int) {
 	length := len(history)
 	if length == 0 {
 		panic("test history is empty")
@@ -122,4 +128,31 @@ func (a ChangepointPredictor) ChangepointPositionConfidenceInterval(history []in
 	}
 
 	return changepointIndices[min], changepointIndices[max]
+}
+
+// ChangePoints runs change point detection and confidence
+// interval analysis for history.
+// history is sorted by commit position ascendingly (oldest commit first).
+func (a ChangepointPredictor) ChangePoints(history []inputbuffer.PositionVerdict, tail float64) []inputbuffer.ChangePoint {
+	changepointIndices := a.identifyChangePoints(history)
+
+	// For simplicity, we add a fake index to the end.
+	ids := make([]int, len(changepointIndices)+1)
+	copy(ids, changepointIndices)
+	ids[len(ids)-1] = len(history)
+
+	result := []inputbuffer.ChangePoint{}
+	startIndex := 0
+	for i := 1; i < len(ids); i++ {
+		vds := history[startIndex:ids[i]]
+		// min and max needs to be offset by startIndex.
+		min, max := a.changepointPositionConfidenceInterval(vds, ConfidenceIntervalTail)
+		result = append(result, inputbuffer.ChangePoint{
+			NominalIndex:        ids[i-1],
+			LowerBound99ThIndex: min + startIndex,
+			UpperBound99ThIndex: max + startIndex,
+		})
+		startIndex = ids[i-1]
+	}
+	return result
 }

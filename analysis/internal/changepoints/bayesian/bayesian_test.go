@@ -40,7 +40,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{3})
 	})
 
@@ -51,7 +51,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 1, 1, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{2})
 	})
 
@@ -62,7 +62,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{2})
 	})
 
@@ -73,7 +73,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 2, 3, 0, 0}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{5, 12})
 	})
 
@@ -84,7 +84,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{6})
 	})
 
@@ -95,7 +95,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{6})
 	})
 
@@ -106,7 +106,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 0, 0}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
 
@@ -117,7 +117,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
 
@@ -128,7 +128,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{1, 0, 1, 0, 0, 1, 0, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
 
@@ -141,7 +141,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{4})
 	})
 
@@ -154,7 +154,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			unexpectedAfterRetry = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(len(changepoints), ShouldEqual, 0)
 	})
 
@@ -168,7 +168,7 @@ func TestBayesianAnalysis(t *testing.T) {
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		changepoints := a.IdentifyChangepoints(vs)
+		changepoints := a.identifyChangePoints(vs)
 		So(changepoints, ShouldResemble, []int{3})
 	})
 }
@@ -198,7 +198,7 @@ func BenchmarkBayesianAnalysisConsistentPass(b *testing.B) {
 		})
 	}
 	for i := 0; i < b.N; i++ {
-		result := a.IdentifyChangepoints(vs)
+		result := a.identifyChangePoints(vs)
 		if len(result) != 0 {
 			panic("unexpected result")
 		}
@@ -242,7 +242,7 @@ func BenchmarkBayesianAnalysisFlaky(b *testing.B) {
 		}
 	}
 	for i := 0; i < b.N; i++ {
-		result := a.IdentifyChangepoints(vs)
+		result := a.identifyChangePoints(vs)
 		if len(result) != 0 {
 			panic("unexpected result")
 		}

@@ -197,7 +197,7 @@ func runChangePointAnalysis(tvb *TestVariantBranch) {
 		},
 	}
 	history := tvb.InputBuffer.MergeBuffer()
-	changepoints := a.IdentifyChangepoints(history)
+	changepoints := a.ChangePoints(history, bayesian.ConfidenceIntervalTail)
 	sib := tvb.InputBuffer.Segmentize(changepoints)
 	evictedSegment := sib.EvictSegments()
 	tvb.UpdateOutputBuffer(evictedSegment)

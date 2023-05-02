@@ -76,7 +76,7 @@ func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *changepointspb.Seg
 // UpdateOutputBuffer updates the output buffer with the evicted segments from
 // the input buffer.
 // evictedSegments contain all finalized segments, except for the last segment,
-// which may be a finalizing or finalized segment.
+// which is a finalizing segment.
 // evictedSegments is sorted in ascending order of commit position (oldest
 // segment first).
 func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*changepointspb.Segment) {
@@ -124,8 +124,8 @@ func verifyEvictedSegments(evictedSegments []*changepointspb.Segment) {
 				panic("evictedSegments should contains all finalized segments, except the last one")
 			}
 		} else {
-			if seg.State != changepointspb.SegmentState_FINALIZED && seg.State != changepointspb.SegmentState_FINALIZING {
-				panic("last segment of evicted segments should be finalizing or finalized")
+			if seg.State != changepointspb.SegmentState_FINALIZING {
+				panic("last segment of evicted segments should be finalizing")
 			}
 		}
 	}

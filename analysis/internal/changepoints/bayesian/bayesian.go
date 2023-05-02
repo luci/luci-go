@@ -48,7 +48,7 @@ type ChangepointPredictor struct {
 	UnexpectedAfterRetryPrior BetaDistribution
 }
 
-// IdentifyChangepoints identifies all changepoint for given test history.
+// identifyChangePoints identifies all changepoint for given test history.
 //
 // This method requires the provided history to be sorted by commit position
 // (either ascending or descending is fine).
@@ -59,7 +59,7 @@ type ChangepointPredictor struct {
 // identified. If an index i is returned, it means the history is segmented as
 // history[:i] and history[i:].
 // The indices returned are sorted ascendingly (lowest index first).
-func (a ChangepointPredictor) IdentifyChangepoints(history []inputbuffer.PositionVerdict) []int {
+func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.PositionVerdict) []int {
 	if len(history) == 0 {
 		panic("test history is empty")
 	}
@@ -70,9 +70,9 @@ func (a ChangepointPredictor) IdentifyChangepoints(history []inputbuffer.Positio
 		return nil
 	}
 	// Identify further split points on the left and right hand sides, recursively.
-	result := a.IdentifyChangepoints(history[:bestChangepoint])
+	result := a.identifyChangePoints(history[:bestChangepoint])
 	result = append(result, bestChangepoint)
-	rightChangepoints := a.IdentifyChangepoints(history[bestChangepoint:])
+	rightChangepoints := a.identifyChangePoints(history[bestChangepoint:])
 	for _, changepoint := range rightChangepoints {
 		// Adjust the offset of splitpoints in the right half,
 		// from being relative to the start of the right half
