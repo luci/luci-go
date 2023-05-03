@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
@@ -32,6 +33,12 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+type Invocation struct {
+	Project              string
+	InvocationID         string
+	IngestedInvocationID string
+}
 
 func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`Can batch result`, t, func() {
@@ -151,6 +158,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				TestId:      "test_1",
 				VariantHash: "hash1",
 				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/abc/tests/xyz",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
 			},
 			{
 				TestId:      "test_2",
@@ -159,7 +174,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:   "invocations/abc/tests/xyz",
+							Name:   "invocations/def/tests/xyz",
 							Status: rdbpb.TestStatus_CRASH,
 						},
 					},
@@ -168,9 +183,23 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 
 		err := analyzeSingleBatch(ctx, tvs, payload)
-		// As we haven't inserted anything in spanner yet, just check that it does
-		// not error out.
 		So(err, ShouldBeNil)
+		So(countCheckPoint(ctx), ShouldEqual, 1)
+
+		// Check invocations
+		invs := fetchInvocations(ctx)
+		So(invs, ShouldResemble, []Invocation{
+			{
+				Project:              "chromium",
+				InvocationID:         "abc",
+				IngestedInvocationID: "build-1234",
+			},
+			{
+				Project:              "chromium",
+				InvocationID:         "def",
+				IngestedInvocationID: "build-1234",
+			},
+		})
 	})
 }
 
@@ -205,7 +234,6 @@ func TestOutOfOrderVerdict(t *testing.T) {
 }
 
 func countCheckPoint(ctx context.Context) int {
-	// Check that there is one checkpoint created.
 	st := spanner.NewStatement(`
 			SELECT *
 			FROM TestVariantBranchCheckPoint
@@ -218,6 +246,28 @@ func countCheckPoint(ctx context.Context) int {
 	})
 	So(err, ShouldBeNil)
 	return count
+}
+
+func fetchInvocations(ctx context.Context) []Invocation {
+	st := spanner.NewStatement(`
+			SELECT Project, InvocationID, IngestedInvocationID
+			FROM Invocations
+			ORDER BY InvocationID
+		`)
+	it := span.Query(span.Single(ctx), st)
+	results := []Invocation{}
+	err := it.Do(func(r *spanner.Row) error {
+		var b spanutil.Buffer
+		inv := Invocation{}
+		err := b.FromSpanner(r, &inv.Project, &inv.InvocationID, &inv.IngestedInvocationID)
+		if err != nil {
+			return err
+		}
+		results = append(results, inv)
+		return nil
+	})
+	So(err, ShouldBeNil)
+	return results
 }
 
 func testVariants(n int) []*rdbpb.TestVariant {

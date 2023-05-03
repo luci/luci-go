@@ -244,3 +244,18 @@ func readInvocations(ctx context.Context, project string, invocationIDs []string
 	}
 	return result, nil
 }
+
+// invocationsToMutations returns the Invocations mutations for invocationIDs.
+func invocationsToMutations(ctx context.Context, project string, invocationIDs []string, ingestedInvocationID string) []*spanner.Mutation {
+	mutations := make([]*spanner.Mutation, len(invocationIDs))
+	for i, invocationID := range invocationIDs {
+		values := map[string]any{
+			"Project":              project,
+			"InvocationID":         invocationID,
+			"IngestedInvocationID": ingestedInvocationID,
+			"CreationTime":         spanner.CommitTimestamp,
+		}
+		mutations[i] = spanutil.InsertMap("Invocations", values)
+	}
+	return mutations
+}

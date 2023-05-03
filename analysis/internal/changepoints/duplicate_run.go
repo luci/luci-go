@@ -18,36 +18,45 @@ import (
 	"context"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// duplicateMap contructs an duplicate map for test variants.
+// readDuplicateInvocations contructs an duplicate map for test variants.
 // It returns a map of (invocationID, bool). If an invocation ID is found in
 // the map keys, then it is from a duplicate run. If not, then the run is not
 // duplicate.
+// It also returns a slice of invocation IDs that are not in Invocations
+// table in Spanner. This is used to insert new Invocations row to Spanner.
 // Note: This function should be called with a transactional context.
-func duplicateMap(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) (map[string]bool, error) {
+func readDuplicateInvocations(ctx context.Context, tvs []*rdbpb.TestVariant, buildResult *controlpb.BuildResult) (map[string]bool, []string, error) {
 	invIDs, err := invocationIDsFromTestVariants(tvs)
 	if err != nil {
-		return nil, errors.Annotate(err, "invocation ids from test variant").Err()
+		return nil, nil, errors.Annotate(err, "invocation ids from test variant").Err()
 	}
-	invMap, err := readInvocations(ctx, payload.Build.Project, invIDs)
+	invMap, err := readInvocations(ctx, buildResult.Project, invIDs)
 	if err != nil {
-		return nil, errors.Annotate(err, "read invocations").Err()
+		return nil, nil, errors.Annotate(err, "read invocations").Err()
 	}
-	result := map[string]bool{}
-	buildInvID := control.BuildInvocationName(payload.Build.Id)
+	dupMap := map[string]bool{}
+	buildInvID := control.BuildInvocationName(buildResult.Id)
 	for invID, ingestedInvID := range invMap {
 		// If the ingested invocation ID stored in Spanner is different from the
 		// current invocation ID, it means this is a duplicate run.
 		if ingestedInvID != buildInvID {
-			result[invID] = true
+			dupMap[invID] = true
 		}
 	}
-	return result, nil
+
+	newInvIDs := []string{}
+	for _, invID := range invIDs {
+		if _, ok := invMap[invID]; !ok {
+			newInvIDs = append(newInvIDs, invID)
+		}
+	}
+	return dupMap, newInvIDs, nil
 }
 
 // invocationIDsFromTestVariants gets all runs' invocation IDs for given test

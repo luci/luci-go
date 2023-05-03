@@ -20,6 +20,7 @@ import (
 	"context"
 	"math"
 
+	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/analysis/internal/changepoints/bayesian"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
@@ -109,7 +110,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			return nil
 		}
 
-		duplicateMap, err := duplicateMap(ctx, tvs, payload)
+		duplicateMap, newInvIDs, err := readDuplicateInvocations(ctx, tvs, payload.Build)
 		if err != nil {
 			return errors.Annotate(err, "duplicate map").Err()
 		}
@@ -127,6 +128,9 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			return errors.Annotate(err, "read test variant branches").Err()
 		}
 
+		// The list of mutations for this transaction.
+		mutations := []*spanner.Mutation{}
+
 		for i, tv := range filteredTVs {
 			if isOutOfOrderAndShouldBeDiscarded(tvbs[i], payload) {
 				// TODO(nqmtuan): send metric to tsmon.
@@ -142,11 +146,14 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			// TODO(nqmtuan): Store test variant branch in spanner.
 		}
 
-		// TODO (nqmtuan): Store non-duplicate runs to Invocations table.
+		// Store new Invocations to Invocations table.
+		ingestedInvID := control.BuildInvocationID(payload.Build.Id)
+		invMuts := invocationsToMutations(ctx, payload.Build.Project, newInvIDs, ingestedInvID)
+		mutations = append(mutations, invMuts...)
 
 		// Store checkpoint in TestVariantBranchCheckpoint table.
-		m := checkPoint.ToMutation()
-		span.BufferWrite(ctx, m)
+		mutations = append(mutations, checkPoint.ToMutation())
+		span.BufferWrite(ctx, mutations...)
 		return nil
 	})
 

@@ -16,11 +16,11 @@ package changepoints
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"cloud.google.com/go/spanner"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
@@ -70,19 +70,19 @@ func TestDuplicateRun(t *testing.T) {
 			},
 		}
 
-		payload := &taskspb.IngestTestResults{
-			Build: &controlpb.BuildResult{
-				Id:      8000,
-				Project: "chromium",
-			},
+		buildResult := &controlpb.BuildResult{
+			Id:      8000,
+			Project: "chromium",
 		}
 
-		m, err := duplicateMap(span.Single(ctx), tvs, payload)
+		m, nonDups, err := readDuplicateInvocations(span.Single(ctx), tvs, buildResult)
 		So(err, ShouldBeNil)
 		So(m, ShouldResemble, map[string]bool{
 			"inv-1": true,
 			"inv-3": true,
 		})
+		sort.Strings(nonDups)
+		So(nonDups, ShouldResemble, []string{"inv-2"})
 	})
 }
 
