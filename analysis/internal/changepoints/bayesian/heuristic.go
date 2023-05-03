@@ -14,12 +14,12 @@
 
 package bayesian
 
-// changepointHeuristic identifies points in a test variant history
+// changePointHeuristic identifies points in a test variant history
 // which have the potential of being the most likely position for a
-// changepoint.
+// change point.
 //
 // This is used to avoid expensive statistical calculations evaluating
-// non-credible changepoint positions.
+// non-credible change point positions.
 //
 // This heuristic is only valid for the bayesian likelihood model
 // used in this file.
@@ -28,11 +28,11 @@ package bayesian
 // it will never eliminate positions which are the most likely position,
 // assuming that:
 //   - the most likely position is also more likely than the null hypothesis,
-//   - each changepoint position (other than the 'no changepoint') is
+//   - each change point position (other than the 'no change point') is
 //     equally likely.
 //
 // It may however identify positions that (upon detailed statistical
-// evaluation) are not a likely changepoint location.
+// evaluation) are not a likely change point location.
 //
 // The heuristic works by identifying points in the history where
 // there is an expected-to-unexpected transition (or vice-versa).
@@ -40,16 +40,16 @@ package bayesian
 // Usage (where positionCounts contains statistics for each commit
 // position, in order of commit position):
 //
-//	var heuristic changepointHeuristic
+//	var heuristic changePointHeuristic
 //	heuristic.AddToHistory(positionCounts[0])
 //
 //	for i := 1; i < len(positionCounts); i++ {
 //		if heuristic.isPossibleChangepoint(positionCounts[i]) {
-//			// Consider a changepoint between i-1 and i in more detail.
+//			// Consider a change point between i-1 and i in more detail.
 //		}
 //		heuristic.addToHistory(positionCounts[i])
 //	}
-type changepointHeuristic struct {
+type changePointHeuristic struct {
 	addedExpectedRuns         bool
 	addedUnexpectedRuns       bool
 	addedExpectedAfterRetry   bool
@@ -59,7 +59,7 @@ type changepointHeuristic struct {
 // addToHistory updates the heuristic state to reflect the given
 // additional history. History should be input one commit position
 // at a time.
-func (h *changepointHeuristic) addToHistory(positionCounts counts) {
+func (h *changePointHeuristic) addToHistory(positionCounts counts) {
 	if positionCounts.Runs > 0 {
 		h.addedUnexpectedRuns = positionCounts.HasUnexpected > 0
 		h.addedExpectedRuns = (positionCounts.Runs - positionCounts.HasUnexpected) > 0
@@ -71,11 +71,11 @@ func (h *changepointHeuristic) addToHistory(positionCounts counts) {
 }
 
 // isChangepointPossibleWithNext returns whether there could be a
-// changepoint between the history consumed so far on the left,
+// change point between the history consumed so far on the left,
 // and the remainder of the history on the right.
 // nextPositionCounts is the counts of the next commit position
 // on the right.
-func (h changepointHeuristic) isChangepointPossibleWithNext(nextPositionCounts counts) bool {
+func (h changePointHeuristic) isChangepointPossibleWithNext(nextPositionCounts counts) bool {
 	consider := false
 	if nextPositionCounts.Runs > 0 {
 		// Detect expected-to-unexpected transition (or vica-versa).

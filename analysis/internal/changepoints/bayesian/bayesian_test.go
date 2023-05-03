@@ -40,8 +40,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{3})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{3})
 	})
 
 	Convey("Pass to fail transition 2", t, func() {
@@ -51,8 +51,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 1, 1, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{2})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{2})
 	})
 
 	Convey("Pass to flake transition", t, func() {
@@ -62,8 +62,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{2})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{2})
 	})
 
 	Convey("Pass to fail to pass transition", t, func() {
@@ -73,8 +73,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 2, 3, 0, 0}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{5, 12})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{5, 12})
 	})
 
 	Convey("Pass to flake transition", t, func() {
@@ -84,8 +84,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{6})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{6})
 	})
 
 	Convey("Flake to fail transition", t, func() {
@@ -95,8 +95,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{6})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{6})
 	})
 
 	Convey("Pass consistently", t, func() {
@@ -106,8 +106,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 0, 0}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(len(changepoints), ShouldEqual, 0)
+		changePoints := a.identifyChangePoints(vs)
+		So(len(changePoints), ShouldEqual, 0)
 	})
 
 	Convey("Fail consistently", t, func() {
@@ -117,8 +117,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(len(changepoints), ShouldEqual, 0)
+		changePoints := a.identifyChangePoints(vs)
+		So(len(changePoints), ShouldEqual, 0)
 	})
 
 	Convey("Flake", t, func() {
@@ -128,8 +128,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			hasUnexpected = []int{1, 0, 1, 0, 0, 1, 0, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		changepoints := a.identifyChangePoints(vs)
-		So(len(changepoints), ShouldEqual, 0)
+		changePoints := a.identifyChangePoints(vs)
+		So(len(changePoints), ShouldEqual, 0)
 	})
 
 	Convey("(Fail, Pass after retry) to (Fail, Fail after retry)", t, func() {
@@ -141,8 +141,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{4})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{4})
 	})
 
 	Convey("(Fail, Fail after retry) consistently", t, func() {
@@ -154,13 +154,13 @@ func TestBayesianAnalysis(t *testing.T) {
 			unexpectedAfterRetry = []int{2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		changepoints := a.identifyChangePoints(vs)
-		So(len(changepoints), ShouldEqual, 0)
+		changePoints := a.identifyChangePoints(vs)
+		So(len(changePoints), ShouldEqual, 0)
 	})
 
 	Convey("(Fail, Fail after retry) to (Fail, Flaky on retry)", t, func() {
 		var (
-			// The changepoint should be detected between commit positions 3 and 5.
+			// The change point should be detected between commit positions 3 and 5.
 			positions            = []int{1, 2, 3, 5, 5, 5, 7, 7}
 			total                = []int{3, 3, 3, 1, 3, 3, 3, 3}
 			hasUnexpected        = []int{3, 3, 3, 1, 3, 3, 3, 3}
@@ -168,8 +168,8 @@ func TestBayesianAnalysis(t *testing.T) {
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		changepoints := a.identifyChangePoints(vs)
-		So(changepoints, ShouldResemble, []int{3})
+		changePoints := a.identifyChangePoints(vs)
+		So(changePoints, ShouldResemble, []int{3})
 	})
 }
 

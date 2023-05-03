@@ -352,7 +352,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		}
 	}
 
-	// Ingest for test variant analysis (changepoint analysis).
+	// Ingest for test variant analysis (change point analysis).
 	// Note that this is different from the ingestForTestVariantAnalysis above
 	// which should eventually be removed.
 	// See go/luci-test-variant-analysis-design for details.
@@ -360,7 +360,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	if err != nil {
 		// Only log the error for now, we will return error when everything is
 		// working.
-		err = errors.Annotate(err, "changepoint analysis").Err()
+		err = errors.Annotate(err, "change point analysis").Err()
 		logging.Errorf(ctx, err.Error())
 		// return err
 	}

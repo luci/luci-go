@@ -39,7 +39,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 1, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 4)
 	})
@@ -51,7 +51,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 6)
 	})
@@ -63,7 +63,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 2, 3, 3}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		// There is only 1 possible position for change point
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 2)
@@ -76,7 +76,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 13)
 	})
@@ -88,7 +88,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			hasUnexpected = []int{1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 13)
 	})
@@ -102,7 +102,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			unexpectedAfterRetry = []int{0, 0, 0, 0, 2, 2, 2, 2}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 2)
 		So(max, ShouldEqual, 5)
 	})
@@ -116,7 +116,7 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 			unexpectedAfterRetry = []int{3, 3, 3, 1, 0, 0, 1, 1}
 		)
 		vs := inputbuffer.VerdictsWithRetries(positions, total, hasUnexpected, retries, unexpectedAfterRetry)
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		So(min, ShouldEqual, 1)
 		So(max, ShouldEqual, 3)
 	})
@@ -160,7 +160,7 @@ func BenchmarkChangePointPositionConfidenceInterval(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		min, max := a.changepointPositionConfidenceInterval(vs, 0.005)
+		min, max := a.changePointPositionConfidenceInterval(vs, 0.005)
 		if min > 1001 || max < 1001 {
 			panic("Invalid result")
 		}

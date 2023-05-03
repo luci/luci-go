@@ -56,12 +56,12 @@ type Segment struct {
 	// The latest hour a verdict with the last commit position in the segment
 	// was recorded.
 	EndHour *timestamppb.Timestamp
-	// The lower bound of the changepoint position at the start of the segment
+	// The lower bound of the change point position at the start of the segment
 	// in a 99% two-tailed confidence interval. Inclusive.
 	// Only set if has_start_changepoint is set. If set, the invariant
 	// previous_segment.start_position <= start_position_lower_bound_99th <= start_position.
 	StartPositionLowerBound99Th int64
-	// The upper bound of the changepoint position at the start of the segment
+	// The upper bound of the change point position at the start of the segment
 	// in a 99% two-tailed confidence interval. Inclusive.
 	// Only set if has_start_changepoint is set. If set, the invariant
 	// start_position <= start_position_upper_bound_99th <= end_position
@@ -80,7 +80,7 @@ type SegmentedInputBuffer struct {
 	Segments []*Segment
 }
 
-// ChangePoint records the index position of a changepoint, together with its
+// ChangePoint records the index position of a change point, together with its
 // confidence interval.
 type ChangePoint struct {
 	// NominalIndex is nominal index of the change point in history.
@@ -92,12 +92,12 @@ type ChangePoint struct {
 }
 
 // Segmentize generates segments based on the input buffer and
-// the changepoints detected.
+// the change points detected.
 // Input buffer verdicts are sorted by commit position (oldest first), then
 // by result time (oldest first).
-// changepoints is the changepoints for history. It is
+// changePoints is the change points for history. It is
 // sorted in ascending order (smallest index first).
-func (ib *Buffer) Segmentize(changepoints []ChangePoint) *SegmentedInputBuffer {
+func (ib *Buffer) Segmentize(changePoints []ChangePoint) *SegmentedInputBuffer {
 	history := ib.MergeBuffer()
 	// Exit early if we have empty history.
 	if len(history) == 0 {
@@ -107,17 +107,17 @@ func (ib *Buffer) Segmentize(changepoints []ChangePoint) *SegmentedInputBuffer {
 		}
 	}
 
-	segments := make([]*Segment, len(changepoints)+1)
+	segments := make([]*Segment, len(changePoints)+1)
 	// Go from back to front, for easier processing of the confidence interval.
 	segmentEndIndex := len(history) - 1
-	for i := len(changepoints) - 1; i >= 0; i-- {
-		// Add the segment starting from changepoint.
-		changepoint := changepoints[i]
-		segmentStartIndex := changepoint.NominalIndex
+	for i := len(changePoints) - 1; i >= 0; i-- {
+		// Add the segment starting from change point.
+		changePoint := changePoints[i]
+		segmentStartIndex := changePoint.NominalIndex
 		sw := inputBufferSegment(segmentStartIndex, segmentEndIndex, history)
 		sw.HasStartChangepoint = true
-		sw.StartPositionLowerBound99Th = int64(history[changepoint.LowerBound99ThIndex].CommitPosition)
-		sw.StartPositionUpperBound99Th = int64(history[changepoint.UpperBound99ThIndex].CommitPosition)
+		sw.StartPositionLowerBound99Th = int64(history[changePoint.LowerBound99ThIndex].CommitPosition)
+		sw.StartPositionUpperBound99Th = int64(history[changePoint.UpperBound99ThIndex].CommitPosition)
 		segments[i+1] = sw
 		segmentEndIndex = segmentStartIndex - 1
 	}

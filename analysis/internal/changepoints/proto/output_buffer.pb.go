@@ -156,7 +156,7 @@ type Segment struct {
 	// The state of the segment.
 	// Only finalizing or finalized segments will be stored in spanner.
 	State SegmentState `protobuf:"varint,1,opt,name=state,proto3,enum=luci.analysis.internal.changepoints.SegmentState" json:"state,omitempty"`
-	// If set, means the start of the segment is as a result of a changepoint
+	// If set, means the start of the segment is as a result of a change point
 	// being identified.
 	// If unset, means the segment started because this was the first result in
 	// the known history of the test.
@@ -171,12 +171,12 @@ type Segment struct {
 	// The latest hour a verdict with the last commit position in the segment
 	// was recorded.
 	EndHour *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=end_hour,json=endHour,proto3" json:"end_hour,omitempty"`
-	// The lower bound of the changepoint position at the start of the segment
+	// The lower bound of the change point position at the start of the segment
 	// in a 99% two-tailed confidence interval. Inclusive.
 	// Only set if has_start_changepoint is set. If set, the invariant
 	// previous_segment.start_position <= start_position_lower_bound_99th <= start_position.
 	StartPositionLowerBound_99Th int64 `protobuf:"varint,7,opt,name=start_position_lower_bound_99th,json=startPositionLowerBound99th,proto3" json:"start_position_lower_bound_99th,omitempty"`
-	// The upper bound of the changepoint position at the start of the segment
+	// The upper bound of the change point position at the start of the segment
 	// in a 99% two-tailed confidence interval. Inclusive.
 	// Only set if has_start_changepoint is set. If set, the invariant
 	// start_position <= start_position_upper_bound_99th <= end_position

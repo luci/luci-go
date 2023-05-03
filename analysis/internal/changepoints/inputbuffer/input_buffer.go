@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package inputbuffer handles the input buffer of changepoint analysis.
+// Package inputbuffer handles the input buffer of change point analysis.
 package inputbuffer
 
 import (

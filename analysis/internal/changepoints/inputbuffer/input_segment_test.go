@@ -27,7 +27,7 @@ import (
 
 func TestSegmentizeInputBuffer(t *testing.T) {
 	Convey("Segmentize input buffer", t, func() {
-		Convey("No changepoint", func() {
+		Convey("No change point", func() {
 			var (
 				positions     = []int{1, 2, 3, 4, 5, 6}
 				total         = []int{1, 2, 1, 2, 1, 2}
@@ -60,7 +60,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 			So(diff, ShouldEqual, "")
 		})
 
-		Convey("With changepoints and retries", func() {
+		Convey("With change points and retries", func() {
 			var (
 				positions            = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 				total                = []int{1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1}

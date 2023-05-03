@@ -788,12 +788,12 @@ CREATE TABLE TestVariantBranch (
   --  the test variant, after those in HotInputBuffer. Verdicts in
   -- HotInputBuffer are pushed here when HotInputBuffer is full.
   ColdInputBuffer BYTES(MAX) NOT NULL,
-  -- The number of changepoints (between active and active, or active and
+  -- The number of change points (between active and active, or active and
   -- finalized segments) that were detected in the last analysis of the input
   --  buffer.
   -- The position of such segments is not specified here (but can be obtained
-  -- by running changepoint analysis on the input buffer).
-  -- Facilitates detecting changes in the number of changepoints detected, to
+  -- by running change point analysis on the input buffer).
+  -- Facilitates detecting changes in the number of change points detected, to
   -- trigger BigQuery exports.
   RecentChangepointCount INT64 NOT NULL,
   -- ZStandard-compressed, serialized Segment proto describing the finalizing
@@ -812,11 +812,11 @@ CREATE TABLE TestVariantBranch (
 
 -- This table is to ensure that the ingestion to the TestVariantBranch table
 -- only happens once, even in the case of task retry.
--- This table will store the batches that have been processed by changepoint
+-- This table will store the batches that have been processed by change point
 -- analysis.
 -- Insertions to this table will happen in the same transaction as
 -- insertions to the TestVariantBranch table.
--- Before processing a batch of test variants in changepoint analysis, we will
+-- Before processing a batch of test variants in change point analysis, we will
 -- first check if the batch exists in this table, if yes, then the batch has
 -- been processed and we should skip it.
 -- The retention is set to 31 days, since it is the maximum time a task can

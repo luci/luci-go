@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bayesian implements bayesian analysis for detecting changepoints.
+// Package bayesian implements bayesian analysis for detecting change points.
 package bayesian
 
 import (
@@ -22,7 +22,7 @@ import (
 )
 
 type ChangepointPredictor struct {
-	// Threshold for creating new changepoints.
+	// Threshold for creating new change points.
 	ChangepointLikelihood float64
 
 	// The prior for the rate at which a test's runs have any
@@ -48,14 +48,14 @@ type ChangepointPredictor struct {
 	UnexpectedAfterRetryPrior BetaDistribution
 }
 
-// identifyChangePoints identifies all changepoint for given test history.
+// identifyChangePoints identifies all change point for given test history.
 //
 // This method requires the provided history to be sorted by commit position
 // (either ascending or descending is fine).
 // It allows multiple verdicts to be specified per commit position, by
 // including those verdicts as adjacent elements in the history slice.
 //
-// This function returns the indices (in the history slice) of the changepoints
+// This function returns the indices (in the history slice) of the change points
 // identified. If an index i is returned, it means the history is segmented as
 // history[:i] and history[i:].
 // The indices returned are sorted ascendingly (lowest index first).
@@ -73,27 +73,27 @@ func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.Positio
 	result := a.identifyChangePoints(history[:bestChangepoint])
 	result = append(result, bestChangepoint)
 	rightChangepoints := a.identifyChangePoints(history[bestChangepoint:])
-	for _, changepoint := range rightChangepoints {
+	for _, changePoint := range rightChangepoints {
 		// Adjust the offset of splitpoints in the right half,
 		// from being relative to the start of the right half
 		// to being relative to the start of the entire history.
-		result = append(result, changepoint+bestChangepoint)
+		result = append(result, changePoint+bestChangepoint)
 	}
 	return result
 }
 
-// FindBestChangepoint finds the changepoint position that maximises
+// FindBestChangepoint finds the change point position that maximises
 // the likelihood of observing the given test history.
 //
-// It returns the position of the changepoint in the history slice,
-// as well as the change in log-likelihood attributable to the changepoint,
-// relative to the `no changepoint` case.
+// It returns the position of the change point in the history slice,
+// as well as the change in log-likelihood attributable to the change point,
+// relative to the `no change point` case.
 //
 // The semantics of the returned position are as follows:
 // a position p means the history is segmented as
 // history[:p] and history[p:].
-// If the returned position is 0, it means no changepoint position was
-// better than the `no changepoint` case.
+// If the returned position is 0, it means no change point position was
+// better than the `no change point` case.
 //
 // This method requires the provided history to be sorted by
 // commit position (either ascending or descending is fine).
@@ -107,11 +107,11 @@ func (a ChangepointPredictor) identifyChangePoints(history []inputbuffer.Positio
 // history[position-1].CommitPosition != history[position].CommitPosition
 // (or position == 0).
 //
-// This method assumes a uniform prior for all changepoint positions,
-// including the no changepoint case.
-// If we are to bias towards the no changepoint case, thresholding
+// This method assumes a uniform prior for all change point positions,
+// including the no change point case.
+// If we are to bias towards the no change point case, thresholding
 // should be applied to relativeLikelihood before considering the
-// changepoint real.
+// change point real.
 func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.PositionVerdict) (relativeLikelihood float64, position int) {
 	length := len(history)
 
@@ -122,16 +122,16 @@ func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Position
 	}
 
 	// Calculate the absolute log-likelihood of observing the
-	// history assuming there is no changepoint.
+	// history assuming there is no change point.
 	firstTrySL := NewSequenceLikelihood(a.HasUnexpectedPrior)
 	retrySL := NewSequenceLikelihood(a.UnexpectedAfterRetryPrior)
 	prioriLogLikelihood := firstTrySL.LogLikelihood(total.HasUnexpected, total.Runs) + retrySL.LogLikelihood(total.UnexpectedAfterRetry, total.Retried)
 
-	// bestChangepoint represents the index of the best changepoint.
-	// The changepoint is said to occur before the corresponding slice
+	// bestChangepoint represents the index of the best change point.
+	// The change point is said to occur before the corresponding slice
 	// element, so that results[:bestChangepoint] and results[bestChangepoint:]
 	// represents the two distinct test history series divided by the
-	// changepoint.
+	// change point.
 	bestChangepoint := 0
 	bestLikelihood := -math.MaxFloat64
 
@@ -142,10 +142,10 @@ func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Position
 
 	// A heuristic for determining which points in the history
 	// are interesting to evaluate.
-	var heuristic changepointHeuristic
+	var heuristic changePointHeuristic
 
 	// The provided history may have multiple verdicts for the same
-	// commit position. As we should only consider changepoints between
+	// commit position. As we should only consider change points between
 	// commit positions (not inside them), we will iterate over the
 	// history using nextPosition().
 
@@ -159,7 +159,7 @@ func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Position
 		// Pending contains the counts from history[i:nextIndex].
 		nextIndex, pending := nextPosition(history, i)
 
-		// Only consider changepoints at positions that
+		// Only consider change points at positions that
 		// are heuristically likely, to save on compute cycles.
 		// The heuristic is designed to be consistent with
 		// the sequence likelihood model, so will not eliminate
@@ -169,7 +169,7 @@ func (a ChangepointPredictor) FindBestChangepoint(history []inputbuffer.Position
 			right := total.subtract(left)
 
 			// Calculate the likelihood of observing sequence
-			// given there is a changepoint at this position.
+			// given there is a change point at this position.
 			leftLikelihood := firstTrySL.LogLikelihood(left.HasUnexpected, left.Runs) + retrySL.LogLikelihood(left.UnexpectedAfterRetry, left.Retried)
 			rightLikelihood := firstTrySL.LogLikelihood(right.HasUnexpected, right.Runs) + retrySL.LogLikelihood(right.UnexpectedAfterRetry, right.Retried)
 			conditionalLikelihood := leftLikelihood + rightLikelihood

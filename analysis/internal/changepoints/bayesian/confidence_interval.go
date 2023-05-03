@@ -26,18 +26,18 @@ const (
 	ConfidenceIntervalTail = 0.005
 )
 
-// changepointPositionConfidenceInterval returns the (100% - (2 * tail))
-// two-tailed confidence interval for a changepoint that occurs in the
+// changePointPositionConfidenceInterval returns the (100% - (2 * tail))
+// two-tailed confidence interval for a change point that occurs in the
 // given slice of history.
 // E.g. tail = 0.005 gives the 99% confidence interval.
 // For details, please see go/bayesian-changepoint-estimation.
-// In practice, after detecting a changepoint, we will run this function for
-// the combination of the left and the right segments of the changepoints.
+// In practice, after detecting a change point, we will run this function for
+// the combination of the left and the right segments of the change points.
 // For example, if there are 3 segments:
 // [3, 9], [10, 15], [16, 21].
 // To analyze the confidence interval around change point at position 16, we
 // will run this function with the slice of history between 10 and 21.
-func (a ChangepointPredictor) changepointPositionConfidenceInterval(history []inputbuffer.PositionVerdict, tail float64) (min int, max int) {
+func (a ChangepointPredictor) changePointPositionConfidenceInterval(history []inputbuffer.PositionVerdict, tail float64) (min int, max int) {
 	length := len(history)
 	if length == 0 {
 		panic("test history is empty")
@@ -49,16 +49,16 @@ func (a ChangepointPredictor) changepointPositionConfidenceInterval(history []in
 		total = total.addVerdict(v)
 	}
 
-	// changepointLogLikelihoods stores the log-likelihood of the observing the
+	// changePointLogLikelihoods stores the log-likelihood of the observing the
 	// given test verdict sequence.
 	// i.e. log(P(Y | C = k)),
-	// where Y is the observations, and "C = k" means there is a changepoint at
+	// where Y is the observations, and "C = k" means there is a change point at
 	// position k.
 	// We only store the loglikelihood of positions that mark the start of a new
 	// commit, positions that are not the start of a new commit will be skipped.
-	// Store changepointIndices so we can map back to the original slice later.
-	changepointIndices := []int{}
-	changepointLogLikelihoods := []float64{}
+	// Store changePointIndices so we can map back to the original slice later.
+	changePointIndices := []int{}
+	changePointLogLikelihoods := []float64{}
 
 	// Create SequenceLikelihood to calculate the likelihood.
 	firstTrySL := NewSequenceLikelihood(a.HasUnexpectedPrior)
@@ -79,8 +79,8 @@ func (a ChangepointPredictor) changepointPositionConfidenceInterval(history []in
 
 		// conditionalLikelihood is log(P(Y | C = i)).
 		conditionalLikelihood := leftLikelihood + rightLikelihood
-		changepointIndices = append(changepointIndices, i)
-		changepointLogLikelihoods = append(changepointLogLikelihoods, conditionalLikelihood)
+		changePointIndices = append(changePointIndices, i)
+		changePointLogLikelihoods = append(changePointLogLikelihoods, conditionalLikelihood)
 
 		// Advance to the next commit position.
 		nextIndex, pending := nextPosition(history, i)
@@ -89,7 +89,7 @@ func (a ChangepointPredictor) changepointPositionConfidenceInterval(history []in
 	}
 
 	// totalLogLikelihood calculates log(P(Y)) - log (1/D).
-	// where D is the length of changepointLogLikelihoods.
+	// where D is the length of changePointLogLikelihoods.
 	// P(Y) = SUM OVER k of P(C = k AND Y)
 	//      = SUM OVER k of ((P(Y | C = k)*P(C = k))
 	//      = SUM OVER k of ((P(Y | C = k)* 1/D)
@@ -99,46 +99,46 @@ func (a ChangepointPredictor) changepointPositionConfidenceInterval(history []in
 	// log(P(Y)) = log(1/D * SUM OVER k of (P(Y | C = k))
 	//           = log(1/D) + log(SUM OVER k of (P(Y | C = k)))
 	//           = log(1/D) + totalLogLikelihood
-	totalLogLikelihood := AddLogLikelihoods(changepointLogLikelihoods)
+	totalLogLikelihood := AddLogLikelihoods(changePointLogLikelihoods)
 
 	// Stores the likelihood of P(C <= t | Y).
 	cumulativeLikelihood := 0.0
 	min = 0
-	max = len(changepointLogLikelihoods) - 1
+	max = len(changePointLogLikelihoods) - 1
 
-	for k := 0; k < len(changepointLogLikelihoods); k++ {
+	for k := 0; k < len(changePointLogLikelihoods); k++ {
 		// Calculates P(C = k | Y).
 		// P (C = k | Y) = P(C = k AND Y) / P(Y)
 		//               = P(Y | C = k) * P(C = k) / P(Y)
 		//               = P(Y | C = k) * (1 / D) / P(Y)
 		//               = exp (log (P(Y | C = k) * (1 / D) / P(Y)))
 		//               = exp (log(P(Y | C = k) + log (1/D) - log (P(Y))
-		//               = exp (changepointLogLikelihoods[k] + log (1/D) - log(P(Y))
-		//               = exp (changepointLogLikelihoods[k] + log (1/D) - (log(1/D) + totalLogLikelihood))
-		//               = exp (changepointLogLikelihoods[k] - totalLogLikelihood)
-		changepointLikelihood := math.Exp(changepointLogLikelihoods[k] - totalLogLikelihood)
-		cumulativeLikelihood += changepointLikelihood
+		//               = exp (changePointLogLikelihoods[k] + log (1/D) - log(P(Y))
+		//               = exp (changePointLogLikelihoods[k] + log (1/D) - (log(1/D) + totalLogLikelihood))
+		//               = exp (changePointLogLikelihoods[k] - totalLogLikelihood)
+		changePointLikelihood := math.Exp(changePointLogLikelihoods[k] - totalLogLikelihood)
+		cumulativeLikelihood += changePointLikelihood
 
 		if cumulativeLikelihood < tail {
 			min = k
 		}
-		if cumulativeLikelihood > (1.0-tail) && max == (len(changepointLogLikelihoods)-1) {
+		if cumulativeLikelihood > (1.0-tail) && max == (len(changePointLogLikelihoods)-1) {
 			max = k
 		}
 	}
 
-	return changepointIndices[min], changepointIndices[max]
+	return changePointIndices[min], changePointIndices[max]
 }
 
 // ChangePoints runs change point detection and confidence
 // interval analysis for history.
 // history is sorted by commit position ascendingly (oldest commit first).
 func (a ChangepointPredictor) ChangePoints(history []inputbuffer.PositionVerdict, tail float64) []inputbuffer.ChangePoint {
-	changepointIndices := a.identifyChangePoints(history)
+	changePointIndices := a.identifyChangePoints(history)
 
 	// For simplicity, we add a fake index to the end.
-	ids := make([]int, len(changepointIndices)+1)
-	copy(ids, changepointIndices)
+	ids := make([]int, len(changePointIndices)+1)
+	copy(ids, changePointIndices)
 	ids[len(ids)-1] = len(history)
 
 	result := []inputbuffer.ChangePoint{}
@@ -146,7 +146,7 @@ func (a ChangepointPredictor) ChangePoints(history []inputbuffer.PositionVerdict
 	for i := 1; i < len(ids); i++ {
 		vds := history[startIndex:ids[i]]
 		// min and max needs to be offset by startIndex.
-		min, max := a.changepointPositionConfidenceInterval(vds, ConfidenceIntervalTail)
+		min, max := a.changePointPositionConfidenceInterval(vds, ConfidenceIntervalTail)
 		result = append(result, inputbuffer.ChangePoint{
 			NominalIndex:        ids[i-1],
 			LowerBound99ThIndex: min + startIndex,

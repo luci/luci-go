@@ -47,13 +47,13 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 
 	// Check if the build has commit data. If not, then skip it.
 	if !hasCommitData(payload) {
-		logging.Debugf(ctx, "Build %d has no commit data, skipping changepoint analysis", payload.GetBuild().GetId())
+		logging.Debugf(ctx, "Build %d has no commit data, skipping change point analysis", payload.GetBuild().GetId())
 		return nil
 	}
 
 	// Check if build is from unsubmitted code.
 	if fromUnsubmittedCode(payload) {
-		logging.Debugf(ctx, "Build %d from unsubmitted code, skipping changepoint analysis", payload.GetBuild().GetId())
+		logging.Debugf(ctx, "Build %d from unsubmitted code, skipping change point analysis", payload.GetBuild().GetId())
 		return nil
 	}
 
@@ -138,7 +138,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
-			// TODO(nqmtuan): Run changepoint analysis on test variant branch.
+			// TODO(nqmtuan): Run change point analysis on test variant branch.
 			// TODO(nqmtuan): Store test variant branch in spanner.
 		}
 
@@ -197,8 +197,8 @@ func runChangePointAnalysis(tvb *TestVariantBranch) {
 		},
 	}
 	history := tvb.InputBuffer.MergeBuffer()
-	changepoints := a.ChangePoints(history, bayesian.ConfidenceIntervalTail)
-	sib := tvb.InputBuffer.Segmentize(changepoints)
+	changePoints := a.ChangePoints(history, bayesian.ConfidenceIntervalTail)
+	sib := tvb.InputBuffer.Segmentize(changePoints)
 	evictedSegment := sib.EvictSegments()
 	tvb.UpdateOutputBuffer(evictedSegment)
 	// TODO (nqmtuan): Combine the remaining output buffer segments and remaining
