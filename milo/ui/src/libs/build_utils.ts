@@ -16,6 +16,7 @@ import Mustache from 'mustache';
 
 import { Link } from '../models/link';
 import { Build, BuildInfraSwarming } from '../services/buildbucket';
+import { getBotUrl } from '../services/swarming';
 import { getBuilderURLPath, getInvURLPath, getSwarmingTaskURL } from './url_utils';
 
 // getBotLink generates a link to a swarming bot.
@@ -24,7 +25,7 @@ export function getBotLink(swarming: BuildInfraSwarming): Link | null {
     if (dim.key === 'id') {
       return {
         label: dim.value || '',
-        url: `https://${swarming.hostname}/bot?id=${dim.value}`,
+        url: getBotUrl(swarming.hostname, dim.value || ''),
         ariaLabel: `swarming bot ${dim.value}`,
       };
     }
