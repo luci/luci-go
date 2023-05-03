@@ -179,6 +179,8 @@ func ValidateGitilesCommit(commit *pb.GitilesCommit) error {
 
 	case commit.Position == 0:
 		return errors.Reason("position: unspecified").Err()
+	case commit.Position < 0:
+		return errors.Reason("position: cannot be negative").Err()
 	}
 	return nil
 }

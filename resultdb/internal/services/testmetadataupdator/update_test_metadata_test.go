@@ -16,6 +16,7 @@ package testmetadataupdator
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -99,7 +100,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 	Convey(`No error`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		invSources := func(position uint64) *pb.Sources {
+		invSources := func(position int64) *pb.Sources {
 			return &pb.Sources{
 				GitilesCommit: &pb.GitilesCommit{
 					Host:       "testHost",
@@ -134,7 +135,6 @@ func TestUpdateTestMetadata(t *testing.T) {
 			row := &testmetadata.TestMetadataRow{}
 			var compressedTestMetadata spanutil.Compressed
 			var compressedSourceRef spanutil.Compressed
-			var position int64
 			key := spanner.Key{expected.Project, expected.TestID, expected.RefHash, expected.SubRealm}
 			testutil.MustReadRow(ctx, "TestMetadata", key, map[string]any{
 				"Project":      &row.Project,
@@ -143,7 +143,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 				"SubRealm":     &row.SubRealm,
 				"TestMetadata": &compressedTestMetadata,
 				"SourceRef":    &compressedSourceRef,
-				"Position":     &position,
+				"Position":     &row.Position,
 			})
 			row.TestMetadata = &pb.TestMetadata{}
 			err := proto.Unmarshal(compressedTestMetadata, row.TestMetadata)
@@ -151,7 +151,6 @@ func TestUpdateTestMetadata(t *testing.T) {
 			row.SourceRef = &pb.SourceRef{}
 			err = proto.Unmarshal(compressedSourceRef, row.SourceRef)
 			So(err, ShouldBeNil)
-			row.Position = uint64(position)
 			// Validate.
 			// ShouldResemble does not work on struct with nested proto buffer.
 			// So we compare each proto field separately.
@@ -262,7 +261,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			existingTestMetadata := baseTestMetadata
 			existingTestMetadata.LastUpdated = time.Now().Add(-1 * time.Hour)
 			existingTestMetadata.TestMetadata = &pb.TestMetadata{Name: "testname"}
-			existingTestMetadata.Position = 18446744073709551615 // Max number of uint64.
+			existingTestMetadata.Position = math.MaxInt64
 			insertTestMetadata(ctx, &existingTestMetadata)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))

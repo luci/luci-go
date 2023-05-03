@@ -91,7 +91,7 @@ message GitilesCommit {
   // Gerrit plugin. Other solutions can be used as well, so long
   // as the same scheme is used consistently for a ref.
   // Mandatory.
-  uint64 position = 5;
+  int64 position = 5;
 }
 
 // A Gerrit patchset.

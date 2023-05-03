@@ -36,7 +36,7 @@ type TestMetadataRow struct {
 	LastUpdated  time.Time
 	TestMetadata *pb.TestMetadata
 	SourceRef    *pb.SourceRef
-	Position     uint64
+	Position     int64
 }
 
 // Query a set of TestMetadataRow for a list of tests
@@ -74,7 +74,6 @@ func (q *Query) Run(ctx context.Context, f func(tmd *TestMetadataRow) error) err
 	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
 		tmd := &TestMetadataRow{}
 		var compressedTestMetadata spanutil.Compressed
-		var position spanner.NullInt64
 		if err := b.FromSpanner(row,
 			&tmd.Project,
 			&tmd.TestID,
@@ -82,14 +81,13 @@ func (q *Query) Run(ctx context.Context, f func(tmd *TestMetadataRow) error) err
 			&tmd.SubRealm,
 			&tmd.LastUpdated,
 			&compressedTestMetadata,
-			&position); err != nil {
+			&tmd.Position); err != nil {
 			return err
 		}
 		tmd.TestMetadata = &pb.TestMetadata{}
 		if err := proto.Unmarshal(compressedTestMetadata, tmd.TestMetadata); err != nil {
 			return err
 		}
-		tmd.Position = uint64(position.Int64)
 		return f(tmd)
 	})
 }

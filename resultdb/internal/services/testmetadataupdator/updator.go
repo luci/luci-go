@@ -232,7 +232,7 @@ func (u *testMetadataUpdator) testMetadataMutation(project, testID, subRealm str
 		spanner.CommitTimestamp,
 		spanutil.Compressed(pbutil.MustMarshal(tm)).ToSpanner(),
 		spanutil.Compressed(pbutil.MustMarshal(u.sourceRef())).ToSpanner(),
-		int64(u.sources.GitilesCommit.Position),
+		u.sources.GitilesCommit.Position,
 	}
 	return spanner.InsertOrUpdate("TestMetadata", saveCols, vals)
 }

@@ -100,6 +100,10 @@ func TestValidate(t *testing.T) {
 				commit.Position = 0
 				So(ValidateGitilesCommit(commit), ShouldErrLike, `position: unspecified`)
 			})
+			Convey(`Negative`, func() {
+				commit.Position = -1
+				So(ValidateGitilesCommit(commit), ShouldErrLike, `position: cannot be negative`)
+			})
 		})
 	})
 	Convey(`ValidateGerritChange`, t, func() {
