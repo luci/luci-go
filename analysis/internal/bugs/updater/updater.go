@@ -21,6 +21,9 @@ import (
 	"sort"
 	"strconv"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -56,6 +59,10 @@ const testnameThresholdInflationPercent = 34
 // merged-into graph when handling a bug marked as duplicate.
 var mergeIntoCycleErr = errors.New("a cycle was detected in the bug merged-into graph")
 
+// mergeIntoPermissionErr is the error returned if we get a permission error while traversing and/or
+// updating duplicate bugs.
+var mergeIntoPermissionErr = errors.New("permission error occured while merging duplicate bugs")
+
 // ruleDefinitionTooLongErr is the error returned if merging two failure
 // association rules results in a rule that is too long.
 var ruleDefinitionTooLongErr = errors.New("the merged rule definition is too long")
@@ -68,6 +75,13 @@ const mergeIntoCycleMessage = "LUCI Analysis cannot merge the failure" +
 	" because a cycle was detected in the bug merged-into graph. Please" +
 	" manually resolve the cycle, or update rules manually and archive the" +
 	" rule for this bug."
+
+const mergeIntoPermissionMessage = "LUCI Analysis cannot merge the association rule" +
+	" for this bug into the rule for the merged-into bug because" +
+	" it doesn't have permission to access the merged-into bug." +
+	" Please make sure that LUCI Analysis has access to all the" +
+	" bugs in the bug duplicate chain, " +
+	" or update rules manually and archive the rule for this bug."
 
 // ruleDefinitionTooLongMessage is the message posted on bugs when
 // LUCI Analysis cannot deal with a bug marked as the duplicate of another
@@ -314,6 +328,14 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 			}
 			if err := b.updateDuplicateSource(ctx, request); err != nil {
 				return errors.Annotate(err, "update source bug after merging rule definition was found too long").Err()
+			}
+		} else if errors.Is(err, mergeIntoPermissionErr) {
+			request := bugs.UpdateDuplicateSourceRequest{
+				Bug:          bug,
+				ErrorMessage: mergeIntoPermissionMessage,
+			}
+			if err := b.updateDuplicateSource(ctx, request); err != nil {
+				return errors.Annotate(err, "update source bug after merging rule definition encountered a permission error").Err()
 			}
 		} else if err != nil {
 			return errors.Annotate(err, "handling bug (%s) marked as duplicate", bug).Err()
@@ -610,7 +632,6 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 		system := mergedIntoBug.System
 		manager, ok := b.managers[system]
 		if !ok {
-			// TODO: Remove once Buganizer integration launched.
 			if mergedIntoBug.System == "buganizer" {
 				// Do not attempt to resolve the canoncial bug within
 				// buganizer if buganizer is not registered. We hit this
@@ -622,7 +643,10 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 			return bugs.BugID{}, fmt.Errorf("encountered unknown bug system: %q", system)
 		}
 		mergedInto, err := manager.GetMergedInto(ctx, mergedIntoBug)
-		if err != nil {
+		if status.Code(err) == codes.PermissionDenied {
+			// We don't have permission to view the issue
+			return bugs.BugID{}, mergeIntoPermissionErr
+		} else if err != nil {
 			return bugs.BugID{}, err
 		}
 		if mergedInto == nil {

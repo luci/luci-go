@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -64,6 +66,9 @@ func (fic *FakeClient) GetIssue(ctx context.Context, in *issuetracker.GetIssueRe
 	if err != nil {
 		return nil, errors.Annotate(err, "fake get issue").Err()
 	}
+	if issueData.ShouldReturnAccessPermissionError {
+		return nil, status.Error(codes.PermissionDenied, "cannot access bug")
+	}
 	return issueData.Issue, nil
 }
 
@@ -91,6 +96,9 @@ func (fic *FakeClient) ModifyIssue(ctx context.Context, in *issuetracker.ModifyI
 	}
 	if issueData.ShouldFailUpdates {
 		return nil, errors.New("issue is set to fail updates")
+	}
+	if issueData.ShouldReturnAccessPermissionError {
+		return nil, status.Error(codes.PermissionDenied, "cannot access bug")
 	}
 	issue := issueData.Issue
 	// The fields in the switch statement are the only

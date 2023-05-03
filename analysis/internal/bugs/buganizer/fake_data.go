@@ -39,6 +39,9 @@ type IssueData struct {
 	// Determines whether the issue should fail update requests.
 	// Use this flag to validate behaviours of failed updates.
 	ShouldFailUpdates bool
+	// Determines whether the issue should return grpc permission
+	// error when accessed or updated.
+	ShouldReturnAccessPermissionError bool
 }
 
 // fakeIssueStore is an in-memory store for issues.

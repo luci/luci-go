@@ -897,7 +897,21 @@ func TestBuganizerUpdate(t *testing.T) {
 						So(fakeStore.Issues[2].Comments, ShouldHaveLength, 2)
 						So(fakeStore.Issues[2].Comments[1].Comment, ShouldContainSubstring, "the merged failure association rule would be too long")
 					})
+					Convey("Bug marked as duplicate of bug we cannot access", func() {
+						fakeStore.Issues[3].ShouldReturnAccessPermissionError = true
+						// Act
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+
+						// Verify
+						// Issue one kicked out of duplicate status.
+						So(issueOne.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
+
+						So(fakeStore.Issues[2].Comments, ShouldHaveLength, 2)
+						So(fakeStore.Issues[2].Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis cannot merge the association rule for this bug into the rule")
+					})
 				})
+
 				Convey("Bug marked as duplicate of bug without a rule in this project", func() {
 					// Setup
 					issueOne := fakeStore.Issues[2].Issue
