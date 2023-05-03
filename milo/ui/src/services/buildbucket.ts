@@ -65,18 +65,19 @@ export interface SearchBuildsRequest {
 }
 
 export interface SearchBuildsResponse {
-  readonly builds: readonly Build[];
+  readonly builds?: readonly Build[];
   readonly nextPageToken?: string;
 }
 
 export interface BuildPredicate {
-  readonly builderId?: BuilderID;
-  readonly status?: BuildStatus;
+  readonly builder?: BuilderID;
+  readonly status?: BuildStatus | BuildStatusMask;
   readonly gerritChanges?: readonly GerritChange[];
   readonly createdBy?: string;
   readonly tags?: readonly StringPair[];
   readonly build?: BuildRange;
   readonly experiments?: readonly string[];
+  readonly includeExperimental?: boolean;
 }
 
 export interface BuildRange {
@@ -126,6 +127,10 @@ export enum BuildStatus {
   Failure = 'FAILURE',
   InfraFailure = 'INFRA_FAILURE',
   Canceled = 'CANCELED',
+}
+
+export enum BuildStatusMask {
+  EndedMask = 'ENDED_MASK',
 }
 
 export interface TestPresentationConfig {
@@ -328,7 +333,7 @@ export interface ScheduleBuildRequest {
 }
 
 export class BuildsService {
-  private static SERVICE = 'buildbucket.v2.Builds';
+  static readonly SERVICE = 'buildbucket.v2.Builds';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
@@ -362,7 +367,9 @@ export interface GetBuilderRequest {
 }
 
 export interface Builder {
-  descriptionHtml?: string;
+  readonly swarmingHost?: string;
+  readonly dimensions?: readonly string[];
+  readonly descriptionHtml?: string;
 }
 
 export interface BuilderItem {
@@ -383,7 +390,7 @@ export interface ListBuildersResponse {
 }
 
 export class BuildersService {
-  private static SERVICE = 'buildbucket.v2.Builders';
+  static readonly SERVICE = 'buildbucket.v2.Builders';
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
@@ -401,4 +408,8 @@ export class BuildersService {
   async listBuilders(req: ListBuildersRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'ListBuilders', req)) as ListBuildersResponse;
   }
+}
+
+export function getAssociatedGitilesCommit(build: Build): GitilesCommit | null {
+  return build.output?.gitilesCommit || build.input?.gitilesCommit || null;
 }

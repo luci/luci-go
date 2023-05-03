@@ -262,7 +262,7 @@ export interface BatchGetTestVariantsResponse {
 export const RESULT_LIMIT = 100;
 
 export class ResultDb {
-  private static SERVICE = 'luci.resultdb.v1.ResultDB';
+  static readonly SERVICE = 'luci.resultdb.v1.ResultDB';
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 

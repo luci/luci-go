@@ -222,7 +222,7 @@ export const BuildPage = types
               fields: SEARCH_BUILD_FIELD_MASK,
               pageSize: 1000,
             })
-            .then((res) => res.builds)
+            .then((res) => res.builds || [])
         );
 
       return fromPromise(

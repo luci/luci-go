@@ -131,7 +131,7 @@ export interface BatchCheckPermissionsResponse {
 }
 
 export class MiloInternal {
-  private static SERVICE = 'luci.milo.v1.MiloInternal';
+  static readonly SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {

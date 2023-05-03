@@ -196,7 +196,7 @@ export interface AssociatedBug {
 }
 
 export class TestHistoryService {
-  private static SERVICE = 'luci.analysis.v1.TestHistory';
+  static readonly SERVICE = 'luci.analysis.v1.TestHistory';
 
   private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
 
@@ -230,7 +230,7 @@ export class TestHistoryService {
 }
 
 export class ClustersService {
-  private static SERVICE = 'luci.analysis.v1.Clusters';
+  static readonly SERVICE = 'luci.analysis.v1.Clusters';
 
   private readonly cachedBatchedCluster: (
     cacheOpt: CacheOption,

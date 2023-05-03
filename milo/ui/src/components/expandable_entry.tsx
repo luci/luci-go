@@ -24,7 +24,7 @@ import { createContext, useContext } from 'react';
 const ExpandedContext = createContext(false);
 
 export interface ExpandableEntryHeaderProps {
-  readonly children: JSX.Element;
+  readonly children: React.ReactNode;
 }
 
 /**
@@ -60,7 +60,7 @@ export interface ExpandableEntryBodyProps {
    * * none: hide the content ruler and don't keep the indentation.
    */
   readonly ruler?: 'visible' | 'invisible' | 'none';
-  readonly children: JSX.Element;
+  readonly children: React.ReactNode;
 }
 
 /**

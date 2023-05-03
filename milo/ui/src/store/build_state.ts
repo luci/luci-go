@@ -21,7 +21,15 @@ import { Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
 import { renderMarkdown } from '../libs/markdown_utils';
 import { keepAliveComputed } from '../libs/milo_mobx_utils';
 import { parseProtoDuration } from '../libs/time_utils';
-import { BLAMELIST_PIN_KEY, Build, BuildStatus, GitilesCommit, Log, Step } from '../services/buildbucket';
+import {
+  BLAMELIST_PIN_KEY,
+  Build,
+  BuildStatus,
+  getAssociatedGitilesCommit,
+  GitilesCommit,
+  Log,
+  Step,
+} from '../services/buildbucket';
 import { StringPair } from '../services/common';
 import { Timestamp, TimestampInstance } from './timestamp';
 import { UserConfig, UserConfigInstance } from './user_config';
@@ -298,7 +306,7 @@ export const BuildState = types
       return self.data.tags?.filter((tag) => tag.key === 'buildset').map((tag) => tag.value || '') || [];
     },
     get associatedGitilesCommit() {
-      return self.data.output?.gitilesCommit || self.data.input?.gitilesCommit;
+      return getAssociatedGitilesCommit(self.data);
     },
     get blamelistPins(): readonly GitilesCommit[] {
       const blamelistPins = self.data.output?.properties?.[BLAMELIST_PIN_KEY] || [];
