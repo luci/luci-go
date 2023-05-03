@@ -28,7 +28,7 @@ func TestVariantJSON(t *testing.T) {
 		Convey(`empty`, func() {
 			result, err := variantJSON(nil)
 			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "")
+			So(result, ShouldEqual, "{}")
 		})
 		Convey(`non-empty`, func() {
 			variant := &resultpb.Variant{
@@ -47,7 +47,7 @@ func TestVariantJSON(t *testing.T) {
 		Convey(`empty`, func() {
 			result, err := MarshalStructPB(nil)
 			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "")
+			So(result, ShouldEqual, "{}")
 		})
 		Convey(`non-empty`, func() {
 			values := make(map[string]interface{})

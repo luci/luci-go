@@ -1026,8 +1026,9 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 	actualRows := client.Insertions
 
 	invocation := &bqpb.TestVerdictRow_InvocationRecord{
-		Id:    "build-87654321",
-		Realm: "project:ci",
+		Id:         "build-87654321",
+		Realm:      "project:ci",
+		Properties: "{}",
 	}
 
 	testMetadata := &pb.TestMetadata{
@@ -1073,6 +1074,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_consistent_failure",
+			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
@@ -1131,17 +1133,19 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_expected",
+			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_EXPECTED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId:  "one",
-					StartTime: timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
-					Status:    pb.TestResultStatus_PASS,
-					Expected:  true,
-					Duration:  5.0,
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
+					Status:     pb.TestResultStatus_PASS,
+					Expected:   true,
+					Duration:   5.0,
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1154,21 +1158,24 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 			Project:       "project",
 			TestId:        "ninja://test_has_unexpected",
 			VariantHash:   "hash",
+			Variant:       "{}",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_FLAKY,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId:  "one",
-					StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
-					Status:    pb.TestResultStatus_FAIL,
-					Expected:  false,
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
+					Status:     pb.TestResultStatus_FAIL,
+					Expected:   false,
+					Properties: "{}",
 				},
 				{
-					ResultId:  "two",
-					StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
-					Status:    pb.TestResultStatus_PASS,
-					Expected:  true,
+					ResultId:   "two",
+					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
+					Status:     pb.TestResultStatus_PASS,
+					Expected:   true,
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1180,20 +1187,21 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_known_flake",
+			Variant:       `{"k1":"v2"}`,
 			VariantHash:   "hash_2",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
-			Variant:       `{"k1":"v2"}`,
 			TestMetadata:  testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId:  "one",
-					StartTime: timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
-					Status:    pb.TestResultStatus_FAIL,
-					Expected:  false,
-					Duration:  2.0,
-					Tags:      pbutil.StringPairs("os", "Mac", "monorail_component", "Monorail>Component"),
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
+					Status:     pb.TestResultStatus_FAIL,
+					Expected:   false,
+					Duration:   2.0,
+					Tags:       pbutil.StringPairs("os", "Mac", "monorail_component", "Monorail>Component"),
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1205,20 +1213,21 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_new_failure",
+			Variant:       `{"k1":"v1"}`,
 			VariantHash:   "hash_1",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
-			Variant:       `{"k1":"v1"}`,
 			TestMetadata:  testMetadata,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId:  "one",
-					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
-					Status:    pb.TestResultStatus_FAIL,
-					Expected:  false,
-					Duration:  1.0,
-					Tags:      pbutil.StringPairs("random_tag", "random_tag_value", "monorail_component", "Monorail>Component"),
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
+					Status:     pb.TestResultStatus_FAIL,
+					Expected:   false,
+					Duration:   1.0,
+					Tags:       pbutil.StringPairs("random_tag", "random_tag_value", "monorail_component", "Monorail>Component"),
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1230,31 +1239,35 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_new_flake",
+			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_FLAKY,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId:  "two",
-					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
-					Status:    pb.TestResultStatus_FAIL,
-					Expected:  false,
-					Duration:  11.0,
+					ResultId:   "two",
+					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
+					Status:     pb.TestResultStatus_FAIL,
+					Expected:   false,
+					Duration:   11.0,
+					Properties: "{}",
 				},
 				{
-					ResultId:  "one",
-					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
-					Status:    pb.TestResultStatus_FAIL,
-					Expected:  false,
-					Duration:  10.0,
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
+					Status:     pb.TestResultStatus_FAIL,
+					Expected:   false,
+					Duration:   10.0,
+					Properties: "{}",
 				},
 				{
-					ResultId:  "three",
-					StartTime: timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
-					Status:    pb.TestResultStatus_PASS,
-					Expected:  true,
-					Duration:  12.0,
+					ResultId:   "three",
+					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
+					Status:     pb.TestResultStatus_PASS,
+					Expected:   true,
+					Duration:   12.0,
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1266,17 +1279,19 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_no_new_results",
+			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId:  "one",
-					StartTime: timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
-					Status:    pb.TestResultStatus_FAIL,
-					Expected:  false,
-					Duration:  4.0,
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
+					Status:     pb.TestResultStatus_FAIL,
+					Expected:   false,
+					Duration:   4.0,
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1288,16 +1303,18 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_skip",
+			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_UNEXPECTEDLY_SKIPPED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId:  "one",
-					StartTime: timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
-					Status:    pb.TestResultStatus_SKIP,
-					Expected:  false,
+					ResultId:   "one",
+					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
+					Status:     pb.TestResultStatus_SKIP,
+					Expected:   false,
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{
@@ -1309,15 +1326,17 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 		{
 			Project:       "project",
 			TestId:        "ninja://test_unexpected_pass",
+			Variant:       "{}",
 			VariantHash:   "hash",
 			Invocation:    invocation,
 			PartitionTime: timestamppb.New(expectedPartitionTime),
 			Status:        pb.TestVerdictStatus_UNEXPECTED,
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
-					ResultId: "one",
-					Status:   pb.TestResultStatus_PASS,
-					Expected: false,
+					ResultId:   "one",
+					Status:     pb.TestResultStatus_PASS,
+					Expected:   false,
+					Properties: "{}",
 				},
 			},
 			Counts: &bqpb.TestVerdictRow_Counts{

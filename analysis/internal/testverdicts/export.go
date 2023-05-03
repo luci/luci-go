@@ -33,6 +33,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// emptyJSON corresponds to a serialized, empty JSON object.
+const emptyJSON = "{}"
+
 // InsertClient defines an interface for inserting rows into BigQuery.
 type InsertClient interface {
 	// Insert inserts the given rows into BigQuery.
@@ -217,11 +220,14 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 		return nil, errors.Annotate(err, "marshal properties").Err()
 	}
 	return &bqpb.TestVerdictRow_TestResult{
-		ResultId:      result.ResultId,
-		Expected:      result.Expected,
-		Status:        pbutil.TestResultStatusFromResultDB(result.Status),
-		SummaryHtml:   result.SummaryHtml,
-		StartTime:     result.StartTime,
+		ResultId:    result.ResultId,
+		Expected:    result.Expected,
+		Status:      pbutil.TestResultStatusFromResultDB(result.Status),
+		SummaryHtml: result.SummaryHtml,
+		StartTime:   result.StartTime,
+		// Null durations are represented as zeroes in the export.
+		// Unfortunately, BigQuery Write API does not offer a way for us
+		// to write NULL to a NULLABLE FLOAT column.
 		Duration:      result.Duration.AsDuration().Seconds(),
 		Tags:          pbutil.StringPairFromResultDB(result.Tags),
 		FailureReason: pbutil.FailureReasonFromResultDB(result.FailureReason),
@@ -235,7 +241,14 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 // e.g. `{"builder":"linux-rel","os":"Ubuntu-18.04"}`
 func variantJSON(variant *rdbpb.Variant) (string, error) {
 	if variant == nil {
-		return "", nil
+		// There is no string value we can send to BigQuery that
+		// BigQuery will interpret as a NULL value for a JSON column:
+		// - "" (empty string) is rejected as invalid JSON.
+		// - "null" is interpreted as the JSON value null, not the
+		//   absence of a value.
+		// Consequently, the next best thing is to return an empty
+		// JSON object.
+		return emptyJSON, nil
 	}
 	m := make(map[string]string)
 	for key, value := range variant.Def {
@@ -251,7 +264,14 @@ func variantJSON(variant *rdbpb.Variant) (string, error) {
 // MarshalStructPB serialises a structpb.Struct as a JSONPB.
 func MarshalStructPB(s *structpb.Struct) (string, error) {
 	if s == nil {
-		return "", nil
+		// There is no string value we can send to BigQuery that will
+		// interpret as a NULL value for a JSON column:
+		// - "" (empty string) is rejected as invalid JSON.
+		// - "null" is interpreted as the JSON value null, not the
+		//   absence of a value.
+		// Consequently, the next best thing is to return an empty
+		// JSON object.
+		return emptyJSON, nil
 	}
 	// Structs are persisted as JSONPB strings.
 	// See also https://bit.ly/chromium-bq-struct
