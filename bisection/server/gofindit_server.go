@@ -260,9 +260,13 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 
 	nthSectionResult, err := getNthSectionResult(c, analysis)
 	if err != nil {
-		return nil, errors.Annotate(err, "getNthSectionResult for analysis %d", analysis.Id).Err()
+		// If fetching nthSection analysis result failed for some reasons, print
+		// out the error, but we still continue.
+		err = errors.Annotate(err, "getNthSectionResult for analysis %d", analysis.Id).Err()
+		logging.Errorf(c, err.Error())
+	} else {
+		result.NthSectionResult = nthSectionResult
 	}
-	result.NthSectionResult = nthSectionResult
 
 	// TODO (aredulla): add culprit actions for:
 	//     * commenting on related bugs
@@ -277,6 +281,9 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 	}
 	if nsa == nil {
 		return nil, nil
+	}
+	if nsa.BlameList == nil {
+		return nil, errors.Annotate(err, "couldn't find blamelist").Err()
 	}
 	result := &pb.NthSectionAnalysisResult{
 		Status:    nsa.Status,

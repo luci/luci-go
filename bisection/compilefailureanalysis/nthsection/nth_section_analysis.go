@@ -37,6 +37,7 @@ import (
 func Analyze(
 	c context.Context,
 	cfa *model.CompileFailureAnalysis) (*model.CompileNthSectionAnalysis, error) {
+	logging.Infof(c, "Starting nthsection analysis.")
 	// Create a new CompileNthSectionAnalysis Entity
 	nsa := &model.CompileNthSectionAnalysis{
 		ParentAnalysis: datastore.KeyForObj(c, cfa),
@@ -55,12 +56,13 @@ func Analyze(
 	changeLogs, err := changelogutil.GetChangeLogs(c, cfa.InitialRegressionRange)
 	if err != nil {
 		setStatusError(c, nsa)
-		logging.Infof(c, "Cannot fetch changelog for analysis %d", cfa.Id)
+		return nil, errors.Annotate(err, "couldn't fetch changelog").Err()
 	}
 
 	err = updateBlameList(c, nsa, changeLogs)
 	if err != nil {
-		return nil, err
+		setStatusError(c, nsa)
+		return nil, errors.Annotate(err, "couldn't update blamelist").Err()
 	}
 
 	err = startAnalysis(c, nsa, cfa)
@@ -73,6 +75,7 @@ func Analyze(
 
 // startAnalysis will based on find next commit(s) for rerun and schedule them
 func startAnalysis(c context.Context, nsa *model.CompileNthSectionAnalysis, cfa *model.CompileFailureAnalysis) error {
+	logging.Infof(c, "Starting nthsection reruns.")
 	snapshot, err := CreateSnapshot(c, nsa)
 	if err != nil {
 		return err
@@ -176,6 +179,7 @@ func getRerunProps(c context.Context, nthSectionAnalysis *model.CompileNthSectio
 }
 
 func updateBlameList(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis, changeLogs []*model.ChangeLog) error {
+	logging.Infof(c, "Update blame list for nthsection. Change logs have %d items.", len(changeLogs))
 	commits := []*pb.BlameListSingleCommit{}
 	for _, cl := range changeLogs {
 		reviewURL, err := cl.GetReviewUrl()
