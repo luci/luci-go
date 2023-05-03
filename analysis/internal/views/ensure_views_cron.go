@@ -53,25 +53,32 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 			panic("invalid LUCI Project")
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT *
-			FROM internal.failure_association_rules
-			WHERE project = "` + luciProject + `"
-		`}
+			ViewQuery: `SELECT * FROM internal.failure_association_rules WHERE project = "` + luciProject + `"`,
+		}
 	},
 	"clustered_failures": func(luciProject string) *bigquery.TableMetadata {
 		if !config.ProjectRe.MatchString(luciProject) {
 			panic("invalid LUCI Project")
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.clustered_failures WHERE project = "` + luciProject + `"
-		`}
+			ViewQuery: `SELECT * FROM internal.clustered_failures WHERE project = "` + luciProject + `"`,
+		}
 	},
 	"cluster_summaries": func(luciProject string) *bigquery.TableMetadata {
 		if !config.ProjectRe.MatchString(luciProject) {
 			panic("invalid LUCI Project")
 		}
 		return &bigquery.TableMetadata{
-			ViewQuery: `SELECT * FROM internal.cluster_summaries WHERE project = "` + luciProject + `"`}
+			ViewQuery: `SELECT * FROM internal.cluster_summaries WHERE project = "` + luciProject + `"`,
+		}
+	},
+	"test_verdicts": func(luciProject string) *bigquery.TableMetadata {
+		if !config.ProjectRe.MatchString(luciProject) {
+			panic("invalid LUCI Project")
+		}
+		return &bigquery.TableMetadata{
+			ViewQuery: `SELECT * FROM internal.test_verdicts WHERE project = "` + luciProject + `"`,
+		}
 	},
 }
 
