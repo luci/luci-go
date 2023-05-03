@@ -12,21 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLoaderData } from 'react-router-dom';
 
+import { AuthStateProvider } from '../components/auth_state_provider';
 import { ErrorBoundary } from '../components/error_boundary';
 import { TopBar } from '../components/top_bar';
+import { AuthState } from '../libs/auth_state';
 
 /**
  * Renders page header, and tooltip.
  */
 export function BaseLayout() {
+  const initialAuthState = useLoaderData() as AuthState;
+
   return (
-    <>
-      <TopBar />
-      <ErrorBoundary>
-        <Outlet />
-      </ErrorBoundary>
-    </>
+    <ErrorBoundary>
+      <AuthStateProvider initialValue={initialAuthState}>
+        <TopBar />
+        {/*
+         * <TopBar /> supports useful actions in case of an error (e.g. file a
+         * bug, log in/out).
+         * Wraps <Outlet /> in a separate <ErrorBoundary /> to ensure the
+         * <TopBar /> is always displayed when possible.
+         *
+         */}
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
+      </AuthStateProvider>
+    </ErrorBoundary>
   );
 }

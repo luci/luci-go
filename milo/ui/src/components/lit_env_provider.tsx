@@ -28,7 +28,7 @@ import { MiloBaseElement } from './milo_base';
 
 function redirectToLogin(err: ErrorEvent, ele: LitEnvProviderElement) {
   if (
-    ele.store.authState.value?.identity === ANONYMOUS_IDENTITY &&
+    ele.store.authState.identity === ANONYMOUS_IDENTITY &&
     hasTags(err.error, MAY_REQUIRE_SIGNIN) &&
     !hasTags(err.error, OPTIONAL_RESOURCE)
   ) {

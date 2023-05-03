@@ -51,37 +51,37 @@ export const ServicesStore = types
 
     return {
       get resultDb() {
-        if (!self.authState?.userIdentity) {
+        if (!self.authState?.identity) {
           return null;
         }
         return new ResultDb(makeClient({ host: CONFIGS.RESULT_DB.HOST }));
       },
       get testHistory() {
-        if (!self.authState?.userIdentity) {
+        if (!self.authState?.identity) {
           return null;
         }
         return new TestHistoryService(makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST }));
       },
       get milo() {
-        if (!self.authState?.userIdentity) {
+        if (!self.authState?.identity) {
           return null;
         }
         return new MiloInternal(makeClient({ host: '', insecure: location.protocol === 'http:' }));
       },
       get builds() {
-        if (!self.authState?.userIdentity) {
+        if (!self.authState?.identity) {
           return null;
         }
         return new BuildsService(makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
       },
       get builders() {
-        if (!self.authState?.userIdentity) {
+        if (!self.authState?.identity) {
           return null;
         }
         return new BuildersService(makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
       },
       get clusters() {
-        if (!self.authState?.userIdentity) {
+        if (!self.authState?.identity) {
           return null;
         }
         return new ClustersService(makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST }));

@@ -13,13 +13,12 @@
 // limitations under the License.
 
 import { Link } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { useAuthState } from '../components/auth_state_provider';
 import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { getLoginUrl } from '../libs/url_utils';
-import { useStore } from '../store';
 
 /**
  * Prompts the user to login.
@@ -28,12 +27,12 @@ import { useStore } from '../store';
  *   - root.
  * in that order.
  */
-export const LoginPage = observer(() => {
-  const store = useStore();
+export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const authState = useAuthState();
 
-  const isLoggedIn = ![undefined, ANONYMOUS_IDENTITY].includes(store.authState.userIdentity);
+  const isLoggedIn = ![undefined, ANONYMOUS_IDENTITY].includes(authState.identity);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -55,4 +54,4 @@ export const LoginPage = observer(() => {
       to see anything useful.
     </div>
   );
-});
+}

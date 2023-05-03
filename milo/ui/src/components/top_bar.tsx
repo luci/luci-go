@@ -14,11 +14,10 @@
 
 import { Feedback, MoreVert } from '@mui/icons-material';
 import { Box, IconButton, Link, LinkProps, styled } from '@mui/material';
-import { observer } from 'mobx-react-lite';
 
 import { genFeedbackUrl } from '../libs/utils';
-import { useStore } from '../store';
 import { AppMenu } from './app_menu';
+import { useAuthState } from './auth_state_provider';
 import { SignIn } from './signin';
 
 const NavLink = styled(Link)<LinkProps>(() => ({
@@ -31,8 +30,8 @@ export interface TopBarProps {
   readonly container?: HTMLElement;
 }
 
-export const TopBar = observer(({ container }: TopBarProps) => {
-  const store = useStore();
+export function TopBar({ container }: TopBarProps) {
+  const authState = useAuthState();
 
   return (
     <Box
@@ -66,16 +65,8 @@ export const TopBar = observer(({ container }: TopBarProps) => {
           flexShrink: 0,
         }}
       >
-        {store.authState.value ? (
-          <SignIn
-            identity={store.authState.value.identity}
-            email={store.authState.value.email}
-            picture={store.authState.value.picture}
-          />
-        ) : (
-          <></>
-        )}
+        <SignIn identity={authState.identity} email={authState.email} picture={authState.picture} />
       </Box>
     </Box>
   );
-});
+}

@@ -22,6 +22,7 @@ import './styles/color_classes.css';
 import './components/tooltip';
 import { LitEnvProvider } from './components/lit_env_provider';
 import { BaseLayout } from './layouts/base';
+import { obtainAuthState } from './libs/auth_state';
 import { createStaticTrustedURL } from './libs/utils';
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
@@ -59,8 +60,6 @@ export function App() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__STORE = store;
 
-    store.authState.init();
-
     if (navigator.serviceWorker && ENABLE_UI_SW) {
       store.workbox.init(createStaticTrustedURL('sw-js-static', '/ui/service-worker.js'));
     }
@@ -88,6 +87,7 @@ export function App() {
       // component/function imported from 'react-router' or from other modules.
       path: 'ui',
       element: <BaseLayout />,
+      loader: async () => obtainAuthState(),
       children: [
         { path: 'login', element: <LoginPage /> },
         { path: 'search', element: <SearchPage /> },

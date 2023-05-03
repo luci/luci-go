@@ -22,16 +22,25 @@ import { timeout } from '../libs/utils';
 export const AuthStateStore = types
   .model('AuthStateStore', {
     id: types.optional(types.identifierNumber, () => Math.random()),
+    /**
+     * `undefined` means the auth state is not yet initialized. (i.e. we don't
+     * know whether the user is signed in or not.)
+     * Once the auth state is initialized, it will remain that way.
+     */
     value: types.maybe(types.frozen<AuthState>()),
   })
+  // The following properties should be used in favor of `value` (e.g.
+  // `value.identity`) to avoid triggering unnecessary updates when auth state
+  // is refreshed.
   .views((self) => ({
-    get userIdentity() {
+    get identity() {
       return self.value?.identity;
     },
-  }))
-  .actions((self) => ({
-    setValue(value: AuthState | null) {
-      self.value = value || undefined;
+    get email() {
+      return self.value?.email;
+    },
+    get picture() {
+      return self.value?.picture;
     },
   }))
   .volatile(() => ({
@@ -45,8 +54,8 @@ export const AuthStateStore = types
     },
   }))
   .actions((self) => {
-    // A unique reference that functions as the ID of the last
-    // scheduleAuthStateUpdate call.
+    // A unique reference that functions as the ID of the last scheduleUpdate
+    // call.
     let lastScheduleId = {};
 
     return {
@@ -55,6 +64,7 @@ export const AuthStateStore = types
        * only the last call is respected.
        *
        * @param forceUpdate when set to true, update the auth state immediately.
+       * This is useful for testing purpose.
        */
       scheduleUpdate: aliveFlow(self, function* (forceUpdate = false) {
         const scheduleId = {};
@@ -82,7 +92,7 @@ export const AuthStateStore = types
         }
 
         self.setAuthStateCache(newAuthState);
-        self.setValue(newAuthState);
+        self.value = newAuthState;
       }),
     };
   })
@@ -91,43 +101,26 @@ export const AuthStateStore = types
      * Initialize the AuthStateStore and make it update its value when it
      * expires.
      */
-    init: aliveFlow(self, function* () {
-      try {
-        const call = self.getAuthStateCache();
-        const newAuthState: Awaited<typeof call> = yield call;
-
-        // If there's an existing value, don't use the cache.
-        // The `if` check after the getAuthStateCache call because there's a
-        // slim chance that a new value is set after getAuthStateCache is called
-        // and before the returned promise resolves.
-        if (!self.value) {
-          self.setValue(newAuthState);
-        }
-      } finally {
-        let firstUpdate = true;
-        addDisposer(
-          self,
-          reaction(
-            () => self.value,
-            () => {
-              // Cookie could be updated when the page was offline. Update the
-              // auth state immediately in the first update schedule.
-              const wasFirstUpdate = firstUpdate;
-              firstUpdate = false;
-              self.scheduleUpdate(wasFirstUpdate);
-            },
-            {
-              fireImmediately: true,
-              // Ensure there are at least 10s between updates. So the backend
-              // returning short-lived tokens won't cause the update action to
-              // fire rapidly.
-              // Note: the delay is not applied to the first call.
-              delay: 10000,
-            }
-          )
-        );
-      }
-    }),
+    init(initialValue: AuthState) {
+      self.value = initialValue;
+      addDisposer(
+        self,
+        reaction(
+          () => self.value,
+          () => {
+            self.scheduleUpdate();
+          },
+          {
+            fireImmediately: true,
+            // Ensure there are at least 10s between updates. So the backend
+            // returning short-lived tokens won't cause the update action to
+            // fire rapidly.
+            // Note: the delay is not applied to the first call.
+            delay: 10000,
+          }
+        )
+      );
+    },
   }));
 
 export type AuthStateStoreInstance = Instance<typeof AuthStateStore>;
