@@ -273,6 +273,18 @@ func TestMonorailUpdate(t *testing.T) {
 					}}
 					test()
 				})
+				Convey("With no buganizer configuration should use default system", func() {
+					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{
+						{
+							Value: "12345",
+							Count: 41,
+						},
+					}
+					projectCfg.Buganizer = nil
+					err = config.SetTestProjectConfig(ctx, projectsCfg)
+					So(err, ShouldBeNil)
+					test()
+				})
 				Convey("Buganizer component with higher impact should create buganizer issue", func() {
 					suggestedClusters[1].TopBuganizerComponents = []analysis.TopCount{{
 						// Check that null values are ignored.

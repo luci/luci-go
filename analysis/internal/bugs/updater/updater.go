@@ -874,6 +874,19 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 }
 
 func routeToBugSystem(projectCfg *compiledcfg.ProjectConfig, cs *analysis.Cluster) (string, error) {
+
+	if projectCfg.Config.Monorail == nil && projectCfg.Config.Buganizer == nil {
+		return "", errors.New("at least one bug filing system need to be configured")
+	}
+
+	if projectCfg.Config.Monorail == nil {
+		return bugs.BuganizerSystem, nil
+	}
+
+	if projectCfg.Config.Buganizer == nil {
+		return bugs.MonorailSystem, nil
+	}
+
 	// The most impactful monorail component.
 	var topMonorailComponent analysis.TopCount
 	for _, tc := range cs.TopMonorailComponents {
