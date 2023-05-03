@@ -56,20 +56,25 @@ export class TextArtifactElement extends MobxLitElement {
   @consumeArtifactsFinalized()
   finalized = false;
 
+  @observable.ref _artifactId!: string;
+  @computed get artifactId() {
+    return this._artifactId;
+  }
   set artifactId(newVal: string) {
     this._artifactId = newVal;
   }
 
+  @observable.ref _invLevel = false;
+  @computed get invLevel() {
+    return this._invLevel;
+  }
   set invLevel(newVal: boolean) {
     this._invLevel = newVal;
   }
 
-  @observable.ref _artifactId!: string;
-  @observable.ref _invLevel = false;
-
   @computed
   private get fetchUrl(): string {
-    const artifact = this.artifacts.get((this._invLevel ? 'inv-level/' : '') + this._artifactId);
+    const artifact = this.artifacts.get((this.invLevel ? 'inv-level/' : '') + this.artifactId);
     // TODO(crbug/1206109): use permanent raw artifact URL.
     return artifact ? artifact.fetchUrl : '';
   }
@@ -98,7 +103,7 @@ export class TextArtifactElement extends MobxLitElement {
     const label = this._invLevel ? 'Inv-level artifact' : 'Artifact';
 
     if (this.finalized && this.fetchUrl === '') {
-      return html`<div>${label}: <i>${this._artifactId}</i> not found.</div>`;
+      return html`<div>${label}: <i>${this.artifactId}</i> not found.</div>`;
     }
 
     if (this.content === null) {
@@ -106,7 +111,7 @@ export class TextArtifactElement extends MobxLitElement {
     }
 
     if (this.content === '') {
-      return html`<div>${label}: <i>${this._artifactId}</i> is empty.</div>`;
+      return html`<div>${label}: <i>${this.artifactId}</i> is empty.</div>`;
     }
 
     return html`<pre>${this.content}</pre>`;

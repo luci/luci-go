@@ -39,7 +39,13 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
     };
   }
 
-  declare initialFilterText: string;
+  private _initialFilterText = '';
+  set initialFilterText(newVal: string) {
+    this._initialFilterText = newVal;
+  }
+  get initialFilterText() {
+    return this._initialFilterText;
+  }
 
   @observable.ref @consumeStore() store!: StoreInstance;
   @computed get pageState() {

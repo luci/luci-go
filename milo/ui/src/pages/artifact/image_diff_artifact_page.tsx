@@ -57,8 +57,21 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
   @consumeArtifactIdent()
   artifactIdent!: ArtifactIdentifier;
 
-  @observable.ref expectedArtifactId!: string;
-  @observable.ref actualArtifactId!: string;
+  @observable.ref _expectedArtifactId!: string;
+  @computed get expectedArtifactId() {
+    return this._expectedArtifactId;
+  }
+  set expectedArtifactId(newVal: string) {
+    this._expectedArtifactId = newVal;
+  }
+
+  @observable.ref _actualArtifactId!: string;
+  @computed get actualArtifactId() {
+    return this._actualArtifactId;
+  }
+  set actualArtifactId(newVal: string) {
+    this._actualArtifactId = newVal;
+  }
 
   @computed private get diffArtifactName() {
     return constructArtifactName({ ...this.artifactIdent });

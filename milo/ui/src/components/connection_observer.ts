@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MobxLitElement } from '@adobe/lit-mobx';
-import { html } from 'lit';
+import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable } from 'mobx';
 
 export interface ConnectionEventDetail<T> {
   data: T;
@@ -31,7 +29,7 @@ export type ConnectionEvent<T> = CustomEvent<ConnectionEventDetail<T>>;
  * event.detail.addDisconnectedEventCB
  */
 @customElement('milo-connection-observer')
-export class ConnectionObserverElement<T> extends MobxLitElement {
+export class ConnectionObserverElement<T> extends LitElement {
   static get properties() {
     return {
       eventType: {
@@ -44,32 +42,32 @@ export class ConnectionObserverElement<T> extends MobxLitElement {
     };
   }
 
+  private _eventType = 'connected';
+  get eventType() {
+    return this._eventType;
+  }
   set eventType(newVal: string) {
     this._eventType = newVal;
   }
 
+  private _data!: T;
+  get data() {
+    return this._data;
+  }
   set data(newVal: T) {
     this._data = newVal;
   }
 
-  @observable.ref _eventType = 'connected';
-  @observable.ref _data!: T;
-
   disconnectedListeners: Array<(data: T) => void> = [];
-
-  constructor() {
-    super();
-    makeObservable(this);
-  }
 
   connectedCallback() {
     super.connectedCallback();
     this.dispatchEvent(
-      new CustomEvent<ConnectionEventDetail<T>>(this._eventType, {
+      new CustomEvent<ConnectionEventDetail<T>>(this.eventType, {
         bubbles: true,
         composed: true,
         detail: {
-          data: this._data,
+          data: this.data,
           addDisconnectedCB: (cb: (data: T) => void) => {
             this.disconnectedListeners.push(cb);
           },
@@ -80,7 +78,7 @@ export class ConnectionObserverElement<T> extends MobxLitElement {
 
   disconnectedCallback() {
     for (const cb of this.disconnectedListeners) {
-      cb(this._data);
+      cb(this.data);
     }
     super.disconnectedCallback();
   }

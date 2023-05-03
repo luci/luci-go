@@ -71,7 +71,7 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import merge from 'lodash-es/merge';
-import { makeObservable, observable } from 'mobx';
+import { action, makeObservable, observable } from 'mobx';
 
 import { consumer, createContextLink } from './context';
 
@@ -197,11 +197,9 @@ const connectedCBCalledSymbol = Symbol('connectedCBCalled');
 export function observer<T extends ObserverElement, C extends Constructor<T>>(cls: C) {
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
-  @consumer
   class EnterViewObserverElement extends (cls as Constructor<MobxLitElement>) {
     [connectedCBCalledSymbol] = false;
 
-    @consumeNotifier()
     set [notifierSymbol](newVal: Notifier) {
       if (this[privateNotifierSymbol] === newVal) {
         return;
@@ -237,8 +235,15 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
       this[notifierSymbol].unsubscribe(this as MobxLitElement as ObserverElement);
     }
   }
-  // Recover the type information that lost in the down-casting above.
-  return EnterViewObserverElement as Constructor<MobxLitElement> as C;
+
+  // Babel doesn't support mixing decorators and properties/methods with
+  // computed names.
+  // Apply the decorators manually instead.
+  consumeNotifier()(EnterViewObserverElement.prototype, notifierSymbol);
+  return consumer(
+    // Recover the type information that lost in the down-casting above.
+    EnterViewObserverElement as Constructor<MobxLitElement> as C
+  );
 }
 
 export interface RenderPlaceHolder extends MobxLitElement {
@@ -256,18 +261,17 @@ const prerenderSymbol = Symbol('prerender');
  * root element. See @fileoverview for examples.
  */
 export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor<T>>(cls: C) {
-  @observer
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
   class LazilyRenderedElement extends (cls as Constructor<RenderPlaceHolder>) {
-    @observable.ref [prerenderSymbol] = true;
+    [prerenderSymbol] = true;
 
     constructor() {
       super();
       makeObservable(this);
     }
 
-    notify() {
+    @action notify() {
       this[prerenderSymbol] = false;
       return true;
     }
@@ -279,6 +283,13 @@ export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor
       return super.render();
     }
   }
-  // Recover the type information that lost in the down-casting above.
-  return LazilyRenderedElement as Constructor<MobxLitElement> as C;
+
+  // Babel doesn't support mixing decorators and properties/methods with
+  // computed names.
+  // Apply the decorators manually instead.
+  observable.ref(LazilyRenderedElement.prototype, prerenderSymbol);
+  return observer(
+    LazilyRenderedElement
+    // Recover the type information that lost in the down-casting above.
+  ) as Constructor<MobxLitElement> as C;
 }
