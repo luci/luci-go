@@ -16,7 +16,40 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/api/field_behavior.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+
+// Information about a test metadata.
+message TestMetadataDetail {
+  // Can be used to refer to a test metadata, e.g. in ResultDB.QueryTestMetadata
+  // RPC.
+  // Format:
+  // "projects/{PROJECT}/refs/{REF_HASH}/tests/{URL_ESCAPED_TEST_ID}".
+  // where URL_ESCAPED_TEST_ID is test_id escaped with
+  // https://golang.org/pkg/net/url/#PathEscape. See also https://aip.dev/122.
+  //
+  // Output only.
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The LUCI project.
+  string project = 2;
+
+  // A unique identifier of a test in a LUCI project.
+  // Refer to TestResult.test_id for details.
+  string test_id = 3;
+
+  // Hexadecimal encoded hash string of the source_ref.
+  // A given source_ref always hashes to the same ref_hash value.
+  string ref_hash = 12;
+
+  // A reference in the source control system where the test metadata comes from.
+  SourceRef source_ref = 4;
+
+  // Test metadata content.
+  TestMetadata testMetadata = 5;
+}
 
 // Information about a test.
 message TestMetadata {

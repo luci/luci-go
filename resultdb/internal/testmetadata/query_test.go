@@ -15,116 +15,126 @@
 package testmetadata
 
 import (
-	"sort"
+	"encoding/hex"
 	"testing"
-	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/resultdb/internal/testutil"
-	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/grpc/codes"
 )
 
 func TestQueryTestMetadata(t *testing.T) {
-
-	sort := func(testMetadataRows []*TestMetadataRow) {
-		combineKey := func(row *TestMetadataRow) string {
-			return row.Project + "\n" + row.TestID + "\n" + string(row.RefHash) + "\n" + row.SubRealm
-		}
-		sort.Slice(testMetadataRows, func(i, j int) bool {
-			return combineKey(testMetadataRows[i]) < combineKey(testMetadataRows[j])
-		})
-	}
-	verify := func(actual, expected []*TestMetadataRow) {
-		So(actual, ShouldHaveLength, len(expected))
-		sort(actual)
-		sort(expected)
-		lastUpdated := time.Now()
-		for i, row := range actual {
-			expectedRow := expected[i]
-			// ShouldResemble does not work on struct with nested proto buffer.
-			// So we compare each proto field separately.
-			So(row.TestMetadata, ShouldResembleProto, expectedRow.TestMetadata)
-			So(row.SourceRef, ShouldResembleProto, expectedRow.SourceRef)
-			row.TestMetadata = nil
-			row.SourceRef = nil
-			expectedRow.TestMetadata = nil
-			expectedRow.SourceRef = nil
-			So(withLastUpdated(row, lastUpdated), ShouldResemble, withLastUpdated(expectedRow, lastUpdated))
-		}
-	}
-	Convey(`QueryTestMetadata`, t, func() {
+	Convey(`Query`, t, func() {
 
 		ctx := testutil.SpannerTestContext(t)
-		sourceRef := &pb.SourceRef{
-			System: &pb.SourceRef_Gitiles{
-				Gitiles: &pb.GitilesRef{
-					Host:    "testhost",
-					Project: "testproject",
-					Ref:     "testref",
-				},
-			}}
 		q := &Query{
 			Project:   "testproject",
-			TestIDs:   []string{"test1", "test2"},
-			SourceRef: sourceRef,
-			SubRealm:  "testrealm",
+			Predicate: &pb.TestMetadataPredicate{TestIds: []string{"test1"}},
+			SubRealms: []string{"testrealm1", "testrealm2"},
+			PageSize:  100,
 		}
-		hash := pbutil.RefHash(sourceRef)
-
-		fetch := func(q *Query) (rows []*TestMetadataRow, err error) {
+		fetch := func(q *Query) (trs []*pb.TestMetadataDetail, token string, err error) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			rows = make([]*TestMetadataRow, 0)
-			err = q.Run(ctx, func(tmd *TestMetadataRow) error {
-				rows = append(rows, tmd)
-				return nil
-			})
-			return rows, err
+			return q.Fetch(ctx)
+		}
+		mustFetch := func(q *Query) (trs []*pb.TestMetadataDetail, token string) {
+			trs, token, err := fetch(q)
+			So(err, ShouldBeNil)
+			return
 		}
 
-		Convey(`Does not fetch test metadata from other test, source ref or realm`, func() {
-			committime := testutil.MustApply(ctx,
-				insert.TestMetadata("testproject", "test1", "testrealm", hash, map[string]any{"Position": 1}),
-				insert.TestMetadata("testproject", "test2", "testrealm", hash, map[string]any{"Position": 1}),
-				insert.TestMetadata("testproject", "test3", "testrealm", hash, map[string]any{"Position": 1}),
-				insert.TestMetadata("testproject", "test1", "othertestrealm", hash, map[string]any{"Position": 1}),
-				insert.TestMetadata("testproject", "test1", "testrealm", []byte("hash2"), map[string]any{"Position": 1}),
-				insert.TestMetadata("otherproject", "test1", "testrealm", hash, map[string]any{"Position": 1}),
-			)
+		Convey(`Returns correct rows`, func() {
+			otherProjectRow := makeTestMetadataRow("otherProject", "test1", "testrealm1", []byte{uint8(1)})
+			otherTestRow := makeTestMetadataRow("testproject", "othertest", "testrealm1", []byte{uint8(2)})
+			noPermRealmRow := makeTestMetadataRow("testproject", "test1", "testrealm3", []byte{uint8(4)})
+			expectedRow1 := makeTestMetadataRow("testproject", "test1", "testrealm1", []byte{uint8(0)})
+			expectedRow2 := makeTestMetadataRow("testproject", "test1", "testrealm2", []byte{uint8(3)})
 
-			actual, err := fetch(q)
-			So(err, ShouldBeNil)
-			So(actual, ShouldHaveLength, 2)
-			verify(actual, []*TestMetadataRow{
-				{
-					Project:      "testproject",
-					TestID:       "test1",
-					RefHash:      hash,
-					SubRealm:     "testrealm",
-					LastUpdated:  committime,
-					TestMetadata: &pb.TestMetadata{},
-					Position:     1,
-				},
-				{
-					Project:      "testproject",
-					TestID:       "test2",
-					RefHash:      hash,
-					SubRealm:     "testrealm",
-					LastUpdated:  committime,
-					TestMetadata: &pb.TestMetadata{},
-					Position:     1,
-				},
+			testutil.MustApply(ctx, insertTestMetadataRows([]*TestMetadataRow{expectedRow1, otherProjectRow, otherTestRow, expectedRow2, noPermRealmRow})...)
+
+			actual, token := mustFetch(q)
+			So(token, ShouldEqual, "")
+			So(actual, ShouldResembleProto, toTestMetadataDetails([]*TestMetadataRow{expectedRow1, expectedRow2}))
+		})
+
+		Convey(`Paging`, func() {
+			makeTestMetadataWithSubRealm := func(subRealm string, size int) []*TestMetadataRow {
+				rows := make([]*TestMetadataRow, size)
+				for i := range rows {
+					rows[i] = makeTestMetadataRow("testproject", "test1", subRealm, []byte{uint8(i)})
+				}
+				return rows
+			}
+			realm1Rows := makeTestMetadataWithSubRealm("testrealm1", 5)
+			realm2Rows := makeTestMetadataWithSubRealm("testrealm2", 7) // 2 more rows with different refHash.
+
+			testutil.MustApply(ctx, insertTestMetadataRows(realm1Rows)...)
+			testutil.MustApply(ctx, insertTestMetadataRows(realm2Rows)...)
+
+			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestMetadataDetail) string {
+				q2 := q
+				q2.PageToken = pageToken
+				q2.PageSize = pageSize
+				actual, token := mustFetch(q2)
+				So(actual, ShouldResembleProto, expected)
+				return token
+			}
+
+			Convey(`All results`, func() {
+				token := mustReadPage("", 8, toTestMetadataDetails(append(realm1Rows, realm2Rows[5:]...)))
+				So(token, ShouldEqual, "")
+			})
+
+			Convey(`With pagination`, func() {
+				token := mustReadPage("", 1, toTestMetadataDetails(realm1Rows[:1])) // From lower subRealm.
+				So(token, ShouldNotEqual, "")
+
+				token = mustReadPage(token, 4, toTestMetadataDetails(realm1Rows[1:5])) // From lower subRealm.
+				So(token, ShouldNotEqual, "")
+
+				token = mustReadPage(token, 2, toTestMetadataDetails(realm2Rows[5:])) // From higher subReam.
+				So(token, ShouldNotEqual, "")
+
+				token = mustReadPage(token, 1, nil)
+				So(token, ShouldEqual, "")
+			})
+
+			Convey(`Bad token`, func() {
+				ctx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+
+				Convey(`From bad position`, func() {
+					q.PageToken = "CgVoZWxsbw=="
+					_, _, err := q.Fetch(ctx)
+					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+				})
+
+				Convey(`From decoding`, func() {
+					q.PageToken = "%%%"
+					_, _, err := q.Fetch(ctx)
+					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+				})
 			})
 
 		})
 	})
 }
 
-func withLastUpdated(testMetadataRow *TestMetadataRow, lastupdated time.Time) *TestMetadataRow {
-	testMetadataRow.LastUpdated = lastupdated
-	return testMetadataRow
+func toTestMetadataDetails(rows []*TestMetadataRow) (tmds []*pb.TestMetadataDetail) {
+	for _, row := range rows {
+		tmds = append(tmds, &pb.TestMetadataDetail{
+			Name:         pbutil.TestMetadataName(row.Project, row.TestID, row.RefHash),
+			Project:      row.Project,
+			TestId:       row.TestID,
+			RefHash:      hex.EncodeToString(row.RefHash),
+			SourceRef:    row.SourceRef,
+			TestMetadata: row.TestMetadata,
+		})
+	}
+	return tmds
 }

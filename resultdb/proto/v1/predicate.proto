@@ -124,3 +124,11 @@ message ArtifactPredicate {
   // the expression is implicitly wrapped with ^ and $.  Defaults to ".*".
   string artifact_id_regexp = 4;
 }
+
+
+// Represents a function TestMetadata -> bool.
+// Empty message matches all test metadata.
+message TestMetadataPredicate {
+  // A test metadata must have the test id in this list.
+  repeated string test_ids = 1;
+}

@@ -354,12 +354,7 @@ func insertInvocationWithTestResults(ctx context.Context, invID string, sources 
 }
 
 func insertTestMetadata(ctx context.Context, tm *testmetadata.TestMetadataRow) {
-	testutil.MustApply(ctx, insert.TestMetadata(tm.Project, tm.TestID, tm.SubRealm, tm.RefHash, map[string]any{
-		"LastUpdated":  tm.LastUpdated,
-		"TestMetadata": spanutil.Compressed(pbutil.MustMarshal(tm.TestMetadata)),
-		"SourceRef":    spanutil.Compressed(pbutil.MustMarshal(tm.SourceRef)),
-		"Position":     int64(tm.Position),
-	}))
+	testutil.MustApply(ctx, insert.TestMetadataRows([]*testmetadata.TestMetadataRow{tm})...)
 }
 
 func fakeFullTestMetadata(testname string) *pb.TestMetadata {

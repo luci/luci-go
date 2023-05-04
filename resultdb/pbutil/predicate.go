@@ -111,3 +111,14 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate) error {
 	}
 	return nil
 }
+
+// ValidateTestMetadataPredicate returns a non-nil error if p is determined to be
+// invalid.
+func ValidateTestMetadataPredicate(p *pb.TestMetadataPredicate) error {
+	for i, testID := range p.GetTestIds() {
+		if err := ValidateTestID(testID); err != nil {
+			return errors.Annotate(err, "test_ids[%v]", i).Err()
+		}
+	}
+	return nil
+}

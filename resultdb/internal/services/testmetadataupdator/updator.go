@@ -163,14 +163,14 @@ func (u *testMetadataUpdator) updateOrCreateRows(ctx context.Context, realm stri
 	f := func(ctx context.Context) error {
 		seen := make(map[string]bool)
 		ms := []*spanner.Mutation{}
-		q := testmetadata.Query{
+		opts := testmetadata.ReadTestMetadataOptions{
 			Project:   project,
 			TestIDs:   testIDs,
 			SourceRef: u.sourceRef(),
 			SubRealm:  subRealm,
 		}
 		// Update existing metadata entries.
-		err := q.Run(ctx, func(tmd *testmetadata.TestMetadataRow) error {
+		err := testmetadata.ReadTestMetadata(ctx, opts, func(tmd *testmetadata.TestMetadataRow) error {
 			seen[tmd.TestID] = true
 			// No update if test result from a lower commit position than existing test metadata.
 			if u.sources.GitilesCommit.Position < tmd.Position {

@@ -234,6 +234,26 @@ func (mr *MockResultDBClientMockRecorder) QueryTestExonerations(ctx, in interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestExonerations", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestExonerations), varargs...)
 }
 
+// QueryTestMetadata mocks base method.
+func (m *MockResultDBClient) QueryTestMetadata(ctx context.Context, in *QueryTestMetadataRequest, opts ...grpc.CallOption) (*QueryTestMetadataResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryTestMetadata", varargs...)
+	ret0, _ := ret[0].(*QueryTestMetadataResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestMetadata indicates an expected call of QueryTestMetadata.
+func (mr *MockResultDBClientMockRecorder) QueryTestMetadata(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestMetadata", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestMetadata), varargs...)
+}
+
 // QueryTestResultStatistics mocks base method.
 func (m *MockResultDBClient) QueryTestResultStatistics(ctx context.Context, in *QueryTestResultStatisticsRequest, opts ...grpc.CallOption) (*QueryTestResultStatisticsResponse, error) {
 	m.ctrl.T.Helper()
@@ -465,6 +485,21 @@ func (m *MockResultDBServer) QueryTestExonerations(arg0 context.Context, arg1 *Q
 func (mr *MockResultDBServerMockRecorder) QueryTestExonerations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestExonerations", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestExonerations), arg0, arg1)
+}
+
+// QueryTestMetadata mocks base method.
+func (m *MockResultDBServer) QueryTestMetadata(arg0 context.Context, arg1 *QueryTestMetadataRequest) (*QueryTestMetadataResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryTestMetadata", arg0, arg1)
+	ret0, _ := ret[0].(*QueryTestMetadataResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestMetadata indicates an expected call of QueryTestMetadata.
+func (mr *MockResultDBServerMockRecorder) QueryTestMetadata(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestMetadata", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestMetadata), arg0, arg1)
 }
 
 // QueryTestResultStatistics mocks base method.

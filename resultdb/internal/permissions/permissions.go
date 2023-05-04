@@ -16,6 +16,7 @@ package permissions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"google.golang.org/grpc/codes"
@@ -104,4 +105,25 @@ func HasPermissionsInRealms(ctx context.Context, realms map[invocations.ID]strin
 		}
 	}
 	return true, "", nil
+}
+
+// QuerySubRealmsNonEmpty returns subRealms that the user has the given permission in the given project.
+// It returns an appstatus annotated error if there is no realm in which the user has the permission.
+func QuerySubRealmsNonEmpty(ctx context.Context, project string, attrs realms.Attrs, permission realms.Permission) ([]string, error) {
+	if project == "" {
+		return nil, errors.New("project must be specified")
+	}
+	allowedRealms, err := auth.QueryRealms(ctx, permission, project, attrs)
+	if err != nil {
+		return nil, err
+	}
+	if len(allowedRealms) == 0 {
+		return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %v in any realm in project %q`, permission, project)
+	}
+	subRealms := make([]string, 0, len(allowedRealms))
+	for _, r := range allowedRealms {
+		_, subRealm := realms.Split(r)
+		subRealms = append(subRealms, subRealm)
+	}
+	return subRealms, nil
 }

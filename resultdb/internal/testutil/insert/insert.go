@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/testmetadata"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -157,19 +158,47 @@ func Artifact(invID invocations.ID, parentID, artID string, extraValues map[stri
 	return spanutil.InsertMap("Artifacts", values)
 }
 
-// TestMetadata returns a Spanner mutation to insert an testMetadata.
-func TestMetadata(project, testID, subRealm string, refHash []byte, extraValues map[string]any) *spanner.Mutation {
-	values := map[string]any{
-		"Project":  project,
-		"TestId":   testID,
-		"SubRealm": subRealm,
-		"RefHash":  refHash,
+func TestMetadataRows(rows []*testmetadata.TestMetadataRow) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, len(rows))
+	for i, row := range rows {
+		mutMap := map[string]any{
+			"Project":      row.Project,
+			"TestId":       row.TestID,
+			"SubRealm":     row.SubRealm,
+			"RefHash":      row.RefHash,
+			"LastUpdated":  row.LastUpdated,
+			"TestMetadata": spanutil.Compressed(pbutil.MustMarshal(row.TestMetadata)),
+			"SourceRef":    spanutil.Compressed(pbutil.MustMarshal(row.SourceRef)),
+			"Position":     int64(row.Position),
+		}
+		ms[i] = spanutil.InsertMap("TestMetadata", mutMap)
 	}
-	if extraValues["LastUpdated"] == nil {
-		values["LastUpdated"] = spanner.CommitTimestamp
+	return ms
+}
+
+func MakeTestMetadataRow(project, testID, subRealm string, refHash []byte) *testmetadata.TestMetadataRow {
+	return &testmetadata.TestMetadataRow{
+		Project:     project,
+		TestID:      testID,
+		RefHash:     refHash,
+		SubRealm:    subRealm,
+		LastUpdated: time.Time{},
+		TestMetadata: &pb.TestMetadata{
+			Name: project + "\n" + testID + "\n" + subRealm + "\n" + string(refHash),
+			Location: &pb.TestLocation{
+				Repo:     "testRepo",
+				FileName: "testFile",
+				Line:     0,
+			},
+			BugComponent: &pb.BugComponent{},
+		},
+		SourceRef: &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{Host: "testHost"},
+			},
+		},
+		Position: 0,
 	}
-	updateDict(values, extraValues)
-	return spanutil.InsertMap("TestMetadata", values)
 }
 
 // MakeTestResults creates test results.

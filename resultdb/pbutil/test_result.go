@@ -40,6 +40,7 @@ const (
 )
 
 var (
+	projectRe        = regexp.MustCompile(`^[a-z0-9\-]{1,40}$`)
 	resultIDRe       = regexpf("^%s$", resultIDPattern)
 	testIDRe         = regexp.MustCompile(`^[[:print:]]{1,512}$`)
 	testResultNameRe = regexpf(
@@ -67,6 +68,11 @@ func (c *checker) isErr(err error, format string, args ...any) bool {
 	}
 	*c.lastCheckedErr = errors.Annotate(err, format, args...).Err()
 	return true
+}
+
+// ValidateProject returns a non-nil error if project is invalid.
+func ValidateProject(project string) error {
+	return validateWithRe(projectRe, project)
 }
 
 // ValidateTestID returns a non-nil error if testID is invalid.

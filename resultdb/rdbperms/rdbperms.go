@@ -29,4 +29,9 @@ var (
 	PermListTestResults             = realms.RegisterPermission("resultdb.testResults.list")
 	PermListLimitedTestResults      = realms.RegisterPermission("resultdb.testResults.listLimited")
 	PermListArtifacts               = realms.RegisterPermission("resultdb.artifacts.list")
+	PermListTestMetadata            = realms.RegisterPermission("resultdb.testMetadata.list")
 )
+
+func init() {
+	PermListTestMetadata.AddFlags(realms.UsedInQueryRealms)
+}

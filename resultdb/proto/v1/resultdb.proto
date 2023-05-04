@@ -23,6 +23,7 @@ import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/predicate.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_variant.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 
@@ -97,6 +98,9 @@ service ResultDB {
   // Retrieves test variants from a single invocation, matching the specified
   // test IDs and hashes.
   rpc BatchGetTestVariants(BatchGetTestVariantsRequest) returns (BatchGetTestVariantsResponse) {};
+
+  // Retrieves test metadata from a LUCI project, matching the predicate.
+  rpc QueryTestMetadata(QueryTestMetadataRequest) returns (QueryTestMetadataResponse) {};
 }
 
 // A request message for GetInvocation RPC.
@@ -487,4 +491,39 @@ message BatchGetTestVariantsResponse {
   // kilobytes and there are usually no more than a handful of different sources
   // tested in an invocation, so deduplicating them here reduces response size.
   map<string, Sources> sources = 2;
+}
+
+
+// A request message for QueryTestMetadata RPC.
+message QueryTestMetadataRequest {
+  // The LUCI Project to query.
+  string project = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Filters to apply to the returned test metadata.
+  TestMetadataPredicate predicate = 2;
+
+  // The maximum number of test metadata entries to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 1000 test metadata entries will be returned.
+  // The maximum value is 100K; values above 100K will be coerced to 100K.
+  int32 page_size = 3;
+
+  // A page token, received from a previous `QueryTestMetadata` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryTestMetadata` MUST
+  // match the call that provided the page token.
+  string page_token = 4;
+}
+
+// A response message for QueryTestMetadata RPC.
+message QueryTestMetadataResponse {
+  // The matched testMetadata.
+  repeated TestMetadataDetail testMetadata = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there were no subsequent pages at the time of
+  // request.
+  string next_page_token = 2;
 }

@@ -17,77 +17,139 @@ package testmetadata
 
 import (
 	"context"
-	"time"
+	"encoding/hex"
+	"text/template"
 
 	"google.golang.org/protobuf/proto"
 
 	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// TestMetadataRow represents a row in the TestMetadata table.
-type TestMetadataRow struct {
-	Project      string
-	TestID       string
-	RefHash      []byte
-	SubRealm     string
-	LastUpdated  time.Time
-	TestMetadata *pb.TestMetadata
-	SourceRef    *pb.SourceRef
-	Position     int64
-}
-
 // Query a set of TestMetadataRow for a list of tests
 // which have the same same subRealm and sourceRef in a LUCI project.
 type Query struct {
 	Project   string
-	TestIDs   []string
-	SourceRef *pb.SourceRef
-	SubRealm  string
+	SubRealms []string
+	Predicate *pb.TestMetadataPredicate
+
+	PageSize  int
+	PageToken string
 }
 
-// Run the query and call f for each test metadata returned from the query.
-func (q *Query) Run(ctx context.Context, f func(tmd *TestMetadataRow) error) error {
-	st := spanner.NewStatement(`
-		SELECT
-		 tm.Project,
-		 tm.TestId,
-		 tm.RefHash,
-		 tm.SubRealm,
-		 tm.LastUpdated,
-		 tm.TestMetadata,
-		 tm.Position,
-		FROM TestMetadata tm
-		WHERE tm.Project = @project
-			AND tm.TestId in UNNEST(@testIDs)
-			AND tm.RefHash = @refHash
-		 	AND tm.SubRealm = @subRealm`)
-	st.Params = spanutil.ToSpannerMap(map[string]any{
-		"project":  q.Project,
-		"testIDs":  q.TestIDs,
-		"refHash":  pbutil.RefHash(q.SourceRef),
-		"subRealm": q.SubRealm,
+// Fetch distinct matching TestMetadataDetails from on the TestMetadata table.
+// The returned TestMetadataDetails are ordered by testID, refHash ascendingly.
+// If the test exists in multiples subRealms, lexicographically minimum subRealm is returned.
+func (q *Query) Fetch(ctx context.Context) (tmr []*pb.TestMetadataDetail, nextPageToken string, err error) {
+	if q.PageSize <= 0 {
+		panic("can't use fetch with non-positive page size")
+	}
+
+	err = q.run(ctx, func(row *pb.TestMetadataDetail) error {
+		tmr = append(tmr, row)
+		return nil
 	})
-	var b spanutil.Buffer
-	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
-		tmd := &TestMetadataRow{}
-		var compressedTestMetadata spanutil.Compressed
-		if err := b.FromSpanner(row,
-			&tmd.Project,
-			&tmd.TestID,
-			&tmd.RefHash,
-			&tmd.SubRealm,
-			&tmd.LastUpdated,
-			&compressedTestMetadata,
-			&tmd.Position); err != nil {
+	if err != nil {
+		return tmr, nextPageToken, err
+	}
+	if len(tmr) == q.PageSize {
+		lastRow := tmr[q.PageSize-1]
+		nextPageToken = pagination.Token(lastRow.TestId, lastRow.RefHash)
+	}
+	return tmr, nextPageToken, err
+}
+
+func parseQueryPageToken(pageToken string) (afterTestID, afterRefHash string, err error) {
+	tokens, err := pagination.ParseToken(pageToken)
+	if err != nil {
+		return "", "", err
+	}
+	if len(tokens) != 2 {
+		return "", "", pagination.InvalidToken(errors.Reason("expected 2 components, got %d", len(tokens)).Err())
+	}
+	return tokens[0], tokens[1], nil
+}
+
+// Run the query and call f for each test metadata detail returned from the query.
+func (q *Query) run(ctx context.Context, f func(tmd *pb.TestMetadataDetail) error) error {
+	st, err := spanutil.GenerateStatement(queryTmpl, map[string]any{
+		"pagination":   len(q.PageToken) > 0,
+		"hasLimit":     q.PageSize > 0,
+		"filterTestID": len(q.Predicate.GetTestIds()) != 0,
+	})
+	if err != nil {
+		return err
+	}
+	params := map[string]any{
+		"project":   q.Project,
+		"testIDs":   q.Predicate.GetTestIds(),
+		"subRealms": q.SubRealms,
+		"limit":     q.PageSize,
+	}
+
+	if q.PageToken != "" {
+		afterTestID, afterRefHash, err := parseQueryPageToken(q.PageToken)
+		if err != nil {
 			return err
 		}
+		params["afterTestID"] = afterTestID
+		params["afterRefHash"], err = hex.DecodeString(afterRefHash)
+		if err != nil {
+			return pagination.InvalidToken(err)
+		}
+	}
+	st.Params = spanutil.ToSpannerMap(params)
+
+	var b spanutil.Buffer
+	return spanutil.Query(ctx, st, func(row *spanner.Row) error {
+		tmd := &pb.TestMetadataDetail{}
+		var compressedTestMetadata spanutil.Compressed
+		var compressedSourceRef spanutil.Compressed
+		var refHash []byte
+		if err := b.FromSpanner(row,
+			&tmd.Project,
+			&tmd.TestId,
+			&refHash,
+			&compressedSourceRef,
+			&compressedTestMetadata); err != nil {
+			return err
+		}
+		tmd.Name = pbutil.TestMetadataName(tmd.Project, tmd.TestId, refHash)
+		tmd.RefHash = hex.EncodeToString(refHash)
 		tmd.TestMetadata = &pb.TestMetadata{}
 		if err := proto.Unmarshal(compressedTestMetadata, tmd.TestMetadata); err != nil {
+			return err
+		}
+		tmd.SourceRef = &pb.SourceRef{}
+		if err := proto.Unmarshal(compressedSourceRef, tmd.SourceRef); err != nil {
 			return err
 		}
 		return f(tmd)
 	})
 }
+
+var queryTmpl = template.Must(template.New("").Parse(`
+		SELECT
+			tm.Project,
+			tm.TestId,
+			tm.RefHash,
+			ANY_VALUE(tm.SourceRef) AS SourceRef,
+			ANY_VALUE(tm.TestMetadata HAVING MIN tm.SubRealm) AS TestMetadata
+		FROM TestMetadata tm
+		WHERE tm.Project = @project
+			{{if .filterTestID}}
+				AND tm.TestId IN UNNEST(@testIDs)
+			{{end}}
+			AND tm.SubRealm IN UNNEST(@subRealms)
+			{{if .pagination}}
+				AND ((tm.TestId > @afterTestID) OR
+					(tm.TestId = @afterTestID AND tm.RefHash > @afterRefHash))
+			{{end}}
+		GROUP BY tm.Project, tm.TestId, tm.RefHash
+		ORDER BY tm.TestId, tm.RefHash
+		{{if .hasLimit}}LIMIT @limit{{end}}
+`))
