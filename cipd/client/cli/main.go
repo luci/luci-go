@@ -2242,8 +2242,8 @@ func cmdExpandPackageName(params Parameters) *subcommands.Command {
 		ShortDesc: "replaces any placeholder variables in the given package name",
 		LongDesc: "Replaces any placeholder variables in the given package " +
 			"name.\n If supplying a name using the feature ${var=possible,values} " +
-			"an error will be returned if the expansion does not match the current" +
-			"variable state.",
+			"an empty string will be returned if the expansion does not match the " +
+			"current variable state.",
 		Advanced: true,
 		CommandRun: func() subcommands.CommandRun {
 			c := &expandPackageNameRun{}
@@ -2265,9 +2265,14 @@ func (c *expandPackageNameRun) Run(a subcommands.Application, args []string, env
 	}
 
 	if len(args) == 1 {
-		path, err := expandTemplate(args[0])
+		path, err := template.DefaultExpander().Expand(args[0])
 		if err != nil {
-			return c.done(nil, err)
+			if !errors.Is(err, template.ErrSkipTemplate) {
+				return c.done(nil, err)
+			}
+			// return an empty string if the variable expansion does not
+			// apply to current system.
+			path = ""
 		}
 
 		fmt.Println(path)
