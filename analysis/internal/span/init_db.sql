@@ -775,12 +775,15 @@ CREATE TABLE TestVariantBranch (
   -- where concatenated_key_value_pairs is the result of concatenating
   -- variant pairs formatted as "<key>:<value>\n" in ascending key order.
   VariantHash STRING(16) NOT NULL,
-  -- The identity of the branch that was tested. Cross-references to
-  -- GitReferences table.
-  GitReferenceHash BYTES(8) NOT NULL,
+  -- The identity of the branch that was tested.
+  RefHash BYTES(8) NOT NULL,
   -- key:value pairs in the test variant. See also Variant on the ResultDB
   -- TestResults table. Only written the first time the row is created.
   Variant ARRAY<STRING(MAX)>,
+  -- ZStandard-compressed, serialized luci.analysis.v1.SourceRef.
+  -- SourceRef represents a reference in a source control system.
+  -- Only written the first time the row is created.
+  SourceRef BYTES(MAX) NOT NULL,
   -- ZStandard-compressed representation of up to 100 recent test verdicts for
   --  the test variant.
   HotInputBuffer BYTES(MAX) NOT NULL,
@@ -807,7 +810,7 @@ CREATE TABLE TestVariantBranch (
   -- The Spanner commit timestamp this row was last updated.
   -- Used as version timestamp for BigQuery export.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
-) PRIMARY KEY(Project, TestId, VariantHash, GitReferenceHash),
+) PRIMARY KEY(Project, TestId, VariantHash, RefHash),
   ROW DELETION POLICY (OLDER_THAN(LastUpdated, INTERVAL 90 DAY));
 
 -- This table is to ensure that the ingestion to the TestVariantBranch table

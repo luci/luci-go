@@ -26,12 +26,12 @@ import (
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-	"go.chromium.org/luci/analysis/internal/testresults/gitreferences"
 	"go.chromium.org/luci/analysis/pbutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 )
@@ -219,13 +219,14 @@ func runChangePointAnalysis(tvb *TestVariantBranch) {
 func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool) (*TestVariantBranch, error) {
 	if tvb == nil {
 		tvb = &TestVariantBranch{
-			IsNew:            true,
-			Project:          payload.GetBuild().GetProject(),
-			TestID:           tv.TestId,
-			VariantHash:      tv.VariantHash,
-			GitReferenceHash: gitReferenceHash(payload),
-			Variant:          pbutil.VariantFromResultDB(tv.Variant),
-			InputBuffer:      &inputbuffer.Buffer{},
+			IsNew:       true,
+			Project:     payload.GetBuild().GetProject(),
+			TestID:      tv.TestId,
+			VariantHash: tv.VariantHash,
+			RefHash:     refHash(payload),
+			Variant:     pbutil.VariantFromResultDB(tv.Variant),
+			SourceRef:   sourceRef(payload),
+			InputBuffer: &inputbuffer.Buffer{},
 		}
 	}
 
@@ -262,10 +263,10 @@ func testVariantBranchKeys(tvs []*rdbpb.TestVariant, payload *taskspb.IngestTest
 	results := make([]TestVariantBranchKey, len(tvs))
 	for i, tv := range tvs {
 		results[i] = TestVariantBranchKey{
-			Project:          payload.Build.Project,
-			TestID:           tv.TestId,
-			VariantHash:      tv.VariantHash,
-			GitReferenceHash: string(gitReferenceHash(payload)),
+			Project:     payload.Build.Project,
+			TestID:      tv.TestId,
+			VariantHash: tv.VariantHash,
+			RefHash:     RefHash(refHash(payload)),
 		}
 	}
 	return results
@@ -295,6 +296,19 @@ func gitilesCommit(payload *taskspb.IngestTestResults) *buildbucketpb.GitilesCom
 	return payload.GetBuild().GetCommit()
 }
 
-func gitReferenceHash(payload *taskspb.IngestTestResults) []byte {
-	return gitreferences.GitReferenceHash(payload.Build.Commit.Host, payload.Build.Commit.Project, payload.Build.Commit.Ref)
+func sourceRef(payload *taskspb.IngestTestResults) *analysispb.SourceRef {
+	return &analysispb.SourceRef{
+		System: &analysispb.SourceRef_Gitiles{
+			Gitiles: &analysispb.GitilesRef{
+				Host:    payload.Build.Commit.Host,
+				Project: payload.Build.Commit.Project,
+				Ref:     payload.Build.Commit.Ref,
+			},
+		},
+	}
+}
+
+func refHash(payload *taskspb.IngestTestResults) []byte {
+	sourceRef := sourceRef(payload)
+	return rdbpbutil.RefHash(pbutil.SourceRefToResultDB(sourceRef))
 }

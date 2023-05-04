@@ -31,8 +31,9 @@ type TestVariantBranch struct {
 	Project                string
 	TestID                 string
 	VariantHash            string
-	GitReferenceHash       []byte
 	Variant                *pb.Variant
+	RefHash                []byte
+	SourceRef              *pb.SourceRef
 	InputBuffer            *inputbuffer.Buffer
 	RecentChangepointCount int64
 	// Store the finalizing segment, if any.

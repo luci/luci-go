@@ -207,3 +207,24 @@ func SourcesFromResultDB(s *rdbpb.Sources) *pb.Sources {
 	}
 	return result
 }
+
+// SourceRefToResultDB returns a ResultDB SourceRef corresponding to the
+// supplied LUCI Analysis SourceRef.
+func SourceRefToResultDB(v *pb.SourceRef) *rdbpb.SourceRef {
+	if v == nil {
+		return nil
+	}
+	// Assert system should be Gitiles
+	if _, ok := v.System.(*pb.SourceRef_Gitiles); !ok {
+		panic("system should be gitiles")
+	}
+	return &rdbpb.SourceRef{
+		System: &rdbpb.SourceRef_Gitiles{
+			Gitiles: &rdbpb.GitilesRef{
+				Host:    v.GetGitiles().Host,
+				Project: v.GetGitiles().Project,
+				Ref:     v.GetGitiles().Ref,
+			},
+		},
+	}
+}

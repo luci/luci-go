@@ -26,6 +26,9 @@ import (
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 )
 
+// RefHash is used for RefHash field in TestVariantBranchKey.
+type RefHash string
+
 // TestVariantBranchKey denotes the primary keys for TestVariantBranch table.
 type TestVariantBranchKey struct {
 	Project     string
@@ -33,7 +36,7 @@ type TestVariantBranchKey struct {
 	VariantHash string
 	// Make this as a string here so it can be used as key in map.
 	// Note that it is a sequence of bytes, not a sequence of characters.
-	GitReferenceHash string
+	RefHash RefHash
 }
 
 // hasCheckPoint returns true if a checkpoint exists in the
@@ -76,10 +79,10 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 	// Create the keyset.
 	keys := make([]spanner.Key, len(tvbks))
 	for i := 0; i < len(tvbks); i++ {
-		keys[i] = spanner.Key{tvbks[i].Project, tvbks[i].TestID, tvbks[i].VariantHash, []byte(tvbks[i].GitReferenceHash)}
+		keys[i] = spanner.Key{tvbks[i].Project, tvbks[i].TestID, tvbks[i].VariantHash, []byte(tvbks[i].RefHash)}
 	}
 	keyset := spanner.KeySetFromKeys(keys...)
-	cols := []string{"Project", "TestId", "VariantHash", "GitReferenceHash", "Variant", "HotInputBuffer", "ColdInputBuffer", "RecentChangepointCount", "FinalizingSegment", "FinalizedSegments"}
+	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef", "HotInputBuffer", "ColdInputBuffer", "RecentChangepointCount", "FinalizingSegment", "FinalizedSegments"}
 	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(
 		func(row *spanner.Row) error {
 			tvb, err := spannerRowToTestVariantBranch(row)
@@ -87,10 +90,10 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 				return errors.Annotate(err, "convert spanner row to test variant branch").Err()
 			}
 			tvbk := TestVariantBranchKey{
-				Project:          tvb.Project,
-				TestID:           tvb.TestID,
-				VariantHash:      tvb.VariantHash,
-				GitReferenceHash: string(tvb.GitReferenceHash),
+				Project:     tvb.Project,
+				TestID:      tvb.TestID,
+				VariantHash: tvb.VariantHash,
+				RefHash:     RefHash(tvb.RefHash),
 			}
 			keyMap[tvbk] = tvb
 			return nil
@@ -115,14 +118,22 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error) {
 	tvb := &TestVariantBranch{}
 	var b spanutil.Buffer
+	var sourceRef []byte
 	var hotBuffer []byte
 	var coldBuffer []byte
 	var recentChangepointCount int64
 	var finalizingSegment []byte
 	var finalizedSegments []byte
 
-	if err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.GitReferenceHash, &tvb.Variant, &hotBuffer, &coldBuffer, &recentChangepointCount, &finalizingSegment, &finalizedSegments); err != nil {
+	if err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.RefHash, &tvb.Variant, &sourceRef, &hotBuffer, &coldBuffer, &recentChangepointCount, &finalizingSegment, &finalizedSegments); err != nil {
 		return nil, errors.Annotate(err, "read values from spanner").Err()
+	}
+
+	// Source ref
+	var err error
+	tvb.SourceRef, err = DecodeSourceRef(sourceRef)
+	if err != nil {
+		return nil, errors.Annotate(err, "decode source ref").Err()
 	}
 
 	tvb.RecentChangepointCount = recentChangepointCount
@@ -131,7 +142,6 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 		ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 	}
 
-	var err error
 	tvb.InputBuffer.HotBuffer, err = inputbuffer.DecodeHistory(hotBuffer)
 	if err != nil {
 		return nil, errors.Annotate(err, "decode hot history").Err()
@@ -158,14 +168,20 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 // ToMutation returns a spanner Mutation to insert a TestVariantBranch to
 // Spanner table.
 func (tvb *TestVariantBranch) ToMutation() (*spanner.Mutation, error) {
-	cols := []string{"Project", "TestId", "VariantHash", "GitReferenceHash", "LastUpdated", "RecentChangepointCount"}
-	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.GitReferenceHash, spanner.CommitTimestamp, tvb.RecentChangepointCount}
+	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "LastUpdated", "RecentChangepointCount"}
+	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.RefHash, spanner.CommitTimestamp, tvb.RecentChangepointCount}
 
 	if tvb.IsNew {
 		// Variant needs to be updated only once.
-		// FinalizingSegment and FinalizedSegments are NOT NULL.
 		cols = append(cols, "Variant")
 		values = append(values, spanutil.ToSpanner(tvb.Variant))
+		// SourceRef needs to be updated only once.
+		cols = append(cols, "SourceRef")
+		bytes, err := EncodeSourceRef(tvb.SourceRef)
+		if err != nil {
+			return nil, errors.Annotate(err, "encode source ref").Err()
+		}
+		values = append(values, bytes)
 	}
 
 	// Based on the flow, we should always update the hot buffer.

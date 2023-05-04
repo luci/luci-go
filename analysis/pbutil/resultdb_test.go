@@ -167,4 +167,25 @@ func TestResultDB(t *testing.T) {
 			IsDirty: true,
 		})
 	})
+	Convey("SourceRef to resultdb", t, func() {
+		sourceRef := &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "host",
+					Project: "proj",
+					Ref:     "ref",
+				},
+			},
+		}
+		sourceRef1 := SourceRefToResultDB(sourceRef)
+		So(sourceRef1, ShouldResembleProto, &rdbpb.SourceRef{
+			System: &rdbpb.SourceRef_Gitiles{
+				Gitiles: &rdbpb.GitilesRef{
+					Host:    "host",
+					Project: "proj",
+					Ref:     "ref",
+				},
+			},
+		})
+	})
 }

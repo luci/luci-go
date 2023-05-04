@@ -34,10 +34,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 	Convey("Fetch not found", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		key := TestVariantBranchKey{
-			Project:          "proj",
-			TestID:           "test_id",
-			VariantHash:      "variant_hash",
-			GitReferenceHash: "git_hash",
+			Project:     "proj",
+			TestID:      "test_id",
+			VariantHash: "variant_hash",
+			RefHash:     "git_hash",
 		}
 		tvbs, err := ReadTestVariantBranches(span.Single(ctx), []TestVariantBranchKey{key})
 		So(err, ShouldBeNil)
@@ -48,15 +48,24 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 	Convey("Insert and fetch", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		tvb1 := &TestVariantBranch{
-			IsNew:            true,
-			Project:          "proj_1",
-			TestID:           "test_id_1",
-			VariantHash:      "variant_hash_1",
-			GitReferenceHash: []byte("githash1"),
+			IsNew:       true,
+			Project:     "proj_1",
+			TestID:      "test_id_1",
+			VariantHash: "variant_hash_1",
+			RefHash:     []byte("refhash1"),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"key1": "val1",
 					"key2": "val2",
+				},
+			},
+			SourceRef: &analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "host_1",
+						Project: "proj_1",
+						Ref:     "ref_1",
+					},
 				},
 			},
 			InputBuffer: &inputbuffer.Buffer{
@@ -76,11 +85,20 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		}
 
 		tvb3 := &TestVariantBranch{
-			IsNew:            true,
-			Project:          "proj_3",
-			TestID:           "test_id_3",
-			VariantHash:      "variant_hash_3",
-			GitReferenceHash: []byte("githash3"),
+			IsNew:       true,
+			Project:     "proj_3",
+			TestID:      "test_id_3",
+			VariantHash: "variant_hash_3",
+			RefHash:     []byte("refhash3"),
+			SourceRef: &analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "host_3",
+						Project: "proj_3",
+						Ref:     "ref_3",
+					},
+				},
+			},
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity: 100,
 				HotBuffer: inputbuffer.History{
@@ -104,9 +122,9 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		testutil.MustApply(ctx, mutation1, mutation3)
 
 		tvbks := []TestVariantBranchKey{
-			makeTestVariantBranchKey("proj_1", "test_id_1", "variant_hash_1", "githash1"),
-			makeTestVariantBranchKey("proj_2", "test_id_2", "variant_hash_2", "githash2"),
-			makeTestVariantBranchKey("proj_3", "test_id_3", "variant_hash_3", "githash3"),
+			makeTestVariantBranchKey("proj_1", "test_id_1", "variant_hash_1", "refhash1"),
+			makeTestVariantBranchKey("proj_2", "test_id_2", "variant_hash_2", "refhash2"),
+			makeTestVariantBranchKey("proj_3", "test_id_3", "variant_hash_3", "refhash3"),
 		}
 		tvbs, err := ReadTestVariantBranches(span.Single(ctx), tvbks)
 		So(err, ShouldBeNil)
@@ -115,11 +133,26 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb1.IsNew = false
 		// After decoding, cold buffer should be empty.
 		tvb1.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
+		// Compare the protobuf separately, as ShouldResemble does not work.
+		sourceRef1 := tvbs[0].SourceRef
+		sourceRef2 := tvb1.SourceRef
+		tvbs[0].SourceRef = nil
+		tvb1.SourceRef = nil
+
 		So(tvbs[0], ShouldResemble, tvb1)
 		So(tvbs[1], ShouldBeNil)
+		So(sourceRef1, ShouldResembleProto, sourceRef2)
+
 		tvb3.IsNew = false
 		tvb3.InputBuffer.ColdBuffer = inputbuffer.History{Verdicts: []inputbuffer.PositionVerdict{}}
+		// Compare the protobuf separately, as ShouldResemble does not work.
+		sourceRef1 = tvbs[2].SourceRef
+		sourceRef2 = tvb3.SourceRef
+		tvbs[2].SourceRef = nil
+		tvb3.SourceRef = nil
+
 		So(tvbs[2], ShouldResemble, tvb3)
+		So(sourceRef1, ShouldResembleProto, sourceRef2)
 	})
 
 	Convey("Insert and update", t, func() {
@@ -127,15 +160,24 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 
 		// Insert a new record.
 		tvb := &TestVariantBranch{
-			IsNew:            true,
-			Project:          "proj_1",
-			TestID:           "test_id_1",
-			VariantHash:      "variant_hash_1",
-			GitReferenceHash: []byte("githash1"),
+			IsNew:       true,
+			Project:     "proj_1",
+			TestID:      "test_id_1",
+			VariantHash: "variant_hash_1",
+			RefHash:     []byte("githash1"),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"key1": "val1",
 					"key2": "val2",
+				},
+			},
+			SourceRef: &analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "host_1",
+						Project: "proj_1",
+						Ref:     "ref_1",
+					},
 				},
 			},
 			InputBuffer: &inputbuffer.Buffer{
@@ -160,14 +202,23 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 
 		// Update the record
 		tvb = &TestVariantBranch{
-			Project:          "proj_1",
-			TestID:           "test_id_1",
-			VariantHash:      "variant_hash_1",
-			GitReferenceHash: []byte("githash1"),
+			Project:     "proj_1",
+			TestID:      "test_id_1",
+			VariantHash: "variant_hash_1",
+			RefHash:     []byte("githash1"),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"key1": "val1",
 					"key2": "val2",
+				},
+			},
+			SourceRef: &analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "host_1",
+						Project: "proj_1",
+						Ref:     "ref_1",
+					},
 				},
 			},
 			InputBuffer: &inputbuffer.Buffer{
@@ -260,9 +311,16 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb.FinalizedSegments = nil
 		tvbs[0].FinalizedSegments = nil
 
+		// Captures finalized segments in separate variables.
+		sourceRef1 := tvb.SourceRef
+		sourceRef2 := tvbs[0].SourceRef
+		tvb.SourceRef = nil
+		tvbs[0].SourceRef = nil
+
 		So(tvbs[0], ShouldResemble, tvb)
 		So(finalizingSegment1, ShouldResembleProto, finalizingSegment2)
 		So(finalizedSegments1, ShouldResembleProto, finalizedSegments2)
+		So(sourceRef1, ShouldResembleProto, sourceRef2)
 	})
 }
 
@@ -727,11 +785,11 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 }
 
-func makeTestVariantBranchKey(proj string, testID string, variantHash string, gitHash string) TestVariantBranchKey {
+func makeTestVariantBranchKey(proj string, testID string, variantHash string, refHash RefHash) TestVariantBranchKey {
 	return TestVariantBranchKey{
-		Project:          proj,
-		TestID:           testID,
-		VariantHash:      variantHash,
-		GitReferenceHash: gitHash,
+		Project:     proj,
+		TestID:      testID,
+		VariantHash: variantHash,
+		RefHash:     refHash,
 	}
 }

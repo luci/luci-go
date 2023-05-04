@@ -17,6 +17,7 @@ package changepoints
 import (
 	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/span"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/proto"
 )
@@ -42,6 +43,13 @@ func EncodeSegments(seg *changepointspb.Segments) ([]byte, error) {
 		return []byte{}, nil
 	}
 	return EncodeProtoMessage(seg)
+}
+
+func EncodeSourceRef(sourceRef *pb.SourceRef) ([]byte, error) {
+	if sourceRef == nil {
+		panic("source ref should not be nil")
+	}
+	return EncodeProtoMessage(sourceRef)
 }
 
 // DecodeProtoMessage decodes a byte slice into a proto message.
@@ -79,4 +87,14 @@ func DecodeSegments(bytes []byte) (*changepointspb.Segments, error) {
 		return nil, err
 	}
 	return seg, nil
+}
+
+// DecodeSourceRef decodes []byte in to SourceRef.
+func DecodeSourceRef(bytes []byte) (*pb.SourceRef, error) {
+	sourceRef := &pb.SourceRef{}
+	err := DecodeProtoMessage(bytes, sourceRef)
+	if err != nil {
+		return nil, err
+	}
+	return sourceRef, nil
 }
