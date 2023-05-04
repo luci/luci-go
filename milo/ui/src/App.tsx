@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { ThemeProvider } from '@emotion/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
@@ -35,6 +36,7 @@ import { OverviewTab } from './pages/build_page/overview_tab';
 import { RelatedBuildsTab } from './pages/build_page/related_builds_tab';
 import { StepsTab } from './pages/build_page/steps_tab';
 import { TimelineTab } from './pages/build_page/timeline_tab';
+import { BuilderPage } from './pages/builder_page';
 import { BuildersPage } from './pages/builders_page';
 import { InvocationPage } from './pages/invocation_page';
 import { InvocationDefaultTab } from './pages/invocation_page/invocation_default_tab';
@@ -49,6 +51,7 @@ import { theme } from './theme';
 
 export function App() {
   const [store] = useState(() => Store.create());
+  const [queryClient] = useState(() => new QueryClient());
 
   useEffect(() => {
     // Expose `store` in the global namespace to make inspecting/debugging the
@@ -93,6 +96,10 @@ export function App() {
         { path: 'search', element: <SearchPage /> },
         { path: 'p/:project/builders', element: <BuildersPage /> },
         { path: 'p/:project/g/:group/builders', element: <BuildersPage /> },
+        {
+          path: 'p/:project/builders/:bucket/:builder',
+          element: <BuilderPage />,
+        },
         { path: 'b/:buildId/*?', element: <BuildPageShortLink /> },
         {
           path: 'p/:project/builders/:bucket/:builder/:buildNumOrId',
@@ -155,10 +162,12 @@ export function App() {
   return (
     <StoreProvider value={store}>
       <ThemeProvider theme={theme}>
-        <LitEnvProvider>
-          <milo-tooltip />
-          <RouterProvider router={router} />
-        </LitEnvProvider>
+        <QueryClientProvider client={queryClient}>
+          <LitEnvProvider>
+            <milo-tooltip />
+            <RouterProvider router={router} />
+          </LitEnvProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </StoreProvider>
   );
