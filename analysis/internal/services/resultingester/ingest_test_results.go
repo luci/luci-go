@@ -520,7 +520,10 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	return nil
 }
 
-func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) error {
+func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) (err error) {
+	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForChangePointAnalysis")
+	defer func() { s.End(err) }()
+
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return errors.Annotate(err, "read config").Err()
@@ -536,7 +539,12 @@ func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant,
 	return nil
 }
 
-func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.Exporter, rsp *rdbpb.QueryTestVariantsResponse, inv *rdbpb.Invocation, payload *taskspb.IngestTestResults) error {
+func ingestForVerdictExport(ctx context.Context, verdictExporter *testverdicts.Exporter,
+	rsp *rdbpb.QueryTestVariantsResponse, inv *rdbpb.Invocation, payload *taskspb.IngestTestResults) (err error) {
+
+	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForVerdictExport")
+	defer func() { s.End(err) }()
+
 	cfg, err := config.Get(ctx)
 	if err != nil {
 		return errors.Annotate(err, "read config").Err()
