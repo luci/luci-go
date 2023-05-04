@@ -249,9 +249,14 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 				ActionTime: timestamppb.New(suspect.CulpritCommentTime),
 			})
 		} else {
-			culpritActions = append(culpritActions, &pb.CulpritAction{
-				ActionType: pb.CulpritActionType_NO_ACTION,
-			})
+			action := &pb.CulpritAction{
+				ActionType:     pb.CulpritActionType_NO_ACTION,
+				InactionReason: suspect.InactionReason,
+			}
+			if suspect.RevertURL != "" {
+				action.RevertClUrl = suspect.RevertURL
+			}
+			culpritActions = append(culpritActions, action)
 		}
 		pbCulprit.CulpritAction = culpritActions
 		culprits[i] = pbCulprit

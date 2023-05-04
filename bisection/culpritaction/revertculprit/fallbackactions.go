@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 
@@ -41,6 +42,7 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 
 	if lbOwned {
 		// Revert is owned by LUCI Bisection - no further action required
+		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_REVERT_OWNED_BY_BISECTION)
 		return nil
 	}
 
@@ -54,6 +56,7 @@ func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Cl
 	if lbCommented {
 		// Revert already has a comment by LUCI Bisection - no further action
 		// required
+		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_REVERT_HAS_COMMENT)
 		return nil
 	}
 
@@ -122,6 +125,7 @@ func commentReasonOnCulprit(ctx context.Context, gerritClient *gerrit.Client,
 	if lbCommented {
 		// Culprit already has a comment by LUCI Bisection - no further action
 		// required
+		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_CULPRIT_HAS_COMMENT)
 		return nil
 	}
 

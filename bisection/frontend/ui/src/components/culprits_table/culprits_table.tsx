@@ -30,6 +30,7 @@ import {
   Culprit,
   CulpritAction,
   CulpritActionType,
+  CulpritInactionReason,
   SuspectVerificationDetails,
 } from '../../services/luci_bisection';
 import { getCommitShortHash } from '../../tools/commit_formatters';
@@ -65,6 +66,24 @@ const CULPRIT_ACTION_DESCRIPTIONS: Record<CulpritActionType, string> = {
     'A comment was added to the code review for an existing revert of this culprit',
 };
 
+const CULPRIT_INACTION_EXPLANATIONS: Record<CulpritInactionReason, string> = {
+  CULPRIT_INACTION_REASON_UNSPECIFIED: '',
+  REVERTED_BY_BISECTION: 'it has been reverted as the culprit of another LUCI Bisection analysis',
+  REVERTED_MANUALLY: 'it has already been reverted',
+  REVERT_OWNED_BY_BISECTION: 'the revert was created by another LUCI Bisection analysis',
+  REVERT_HAS_COMMENT: 'the revert already has a comment from another LUCI Bisection analysis',
+  CULPRIT_HAS_COMMENT: 'the culprit already has a comment from another LUCI Bisection analysis',
+  ANALYSIS_CANCELED: 'the analysis was canceled',
+  ACTIONS_DISABLED: 'actions on culprits are disabled',
+}
+
+const INACTION_REASONS_WITH_REVERT_LINK: CulpritInactionReason[] = [
+  'REVERTED_BY_BISECTION',
+  'REVERTED_MANUALLY',
+  'REVERT_OWNED_BY_BISECTION',
+  'REVERT_HAS_COMMENT'
+];
+
 const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
   if (action == null) {
     return <TableCell></TableCell>;
@@ -83,20 +102,35 @@ const CulpritActionTableCell = ({ action }: CulpritActionTableCellProps) => {
       linkText = 'bug';
       url = action.bugUrl || '';
       break;
+    case 'NO_ACTION':
+      const reason: CulpritInactionReason = action.inactionReason
+      || 'CULPRIT_INACTION_REASON_UNSPECIFIED';
+      if (INACTION_REASONS_WITH_REVERT_LINK.includes(reason)) {
+        linkText = 'revert CL';
+        url = action.revertClUrl || '';
+      }
+      break;
     default:
     // continue
   }
 
+  const description = CULPRIT_ACTION_DESCRIPTIONS[action.actionType];
+  let inactionExplanation = '';
+  if (action.actionType === 'NO_ACTION' && action.inactionReason) {
+    inactionExplanation = ' because ' +
+      CULPRIT_INACTION_EXPLANATIONS[action.inactionReason];
+  }
+
   return (
     <TableCell>
-      {`${CULPRIT_ACTION_DESCRIPTIONS[action.actionType]}${
+      {`${description}${inactionExplanation}${
         linkText && url ? ': ' : ''
       }`}
       {linkText && url && (
         <Link href={url} target='_blank' rel='noreferrer' underline='always'>
           {linkText}
         </Link>
-      )}
+      )}.
     </TableCell>
   );
 };

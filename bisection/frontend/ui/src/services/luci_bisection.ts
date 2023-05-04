@@ -84,6 +84,16 @@ export type CulpritActionType =
   | 'BUG_COMMENTED'
   | 'EXISTING_REVERT_CL_COMMENTED';
 
+export type CulpritInactionReason =
+  | 'CULPRIT_INACTION_REASON_UNSPECIFIED'
+  | 'REVERTED_BY_BISECTION'
+  | 'REVERTED_MANUALLY'
+  | 'REVERT_OWNED_BY_BISECTION'
+  | 'REVERT_HAS_COMMENT'
+  | 'CULPRIT_HAS_COMMENT'
+  | 'ANALYSIS_CANCELED'
+  | 'ACTIONS_DISABLED';
+
 export type BuildFailureType =
   | 'BUILD_FAILURE_TYPE_UNSPECIFIED'
   | 'COMPILE'
@@ -222,6 +232,7 @@ export interface CulpritAction {
   actionType: CulpritActionType;
   revertClUrl?: string;
   bugUrl?: string;
+  inactionReason?: CulpritInactionReason;
 }
 
 export interface SuspectVerificationDetails {

@@ -247,6 +247,9 @@ type ActionDetails struct {
 
 	// Time when LUCI Bisection commented on the culprit
 	CulpritCommentTime time.Time `gae:"culprit_comment_time"`
+
+	// Optional explanation for when processing the culprit results in no action.
+	InactionReason gofinditpb.CulpritInactionReason `gae:"inaction_reason"`
 }
 
 // Suspect is the suspect of heuristic analysis.

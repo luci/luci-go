@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
@@ -84,12 +85,6 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 		return nil
 	}
 
-	// The analysis should be canceled. We should not do any gerrit actions.
-	if cfa.ShouldCancel {
-		logging.Errorf(ctx, "Analysis %d was canceled. No gerrit action required.")
-		return nil
-	}
-
 	var culprit *model.Suspect
 	for _, verifiedCulprit := range cfa.VerifiedCulprits {
 		if verifiedCulprit.IntID() == culpritID {
@@ -108,6 +103,13 @@ func processRevertCulpritTask(ctx context.Context, payload proto.Message) error 
 	if culprit == nil {
 		// culprit is not within the analysis' verified culprits, so no point retrying
 		logging.Errorf(ctx, "failed to find the culprit within the analysis' verified culprits")
+		return nil
+	}
+
+	// The analysis should be canceled. We should not do any gerrit actions.
+	if cfa.ShouldCancel {
+		logging.Infof(ctx, "Analysis %d was canceled. No gerrit action required.", analysisID)
+		saveInactionReason(ctx, culprit, pb.CulpritInactionReason_ANALYSIS_CANCELED)
 		return nil
 	}
 
@@ -164,6 +166,7 @@ func RevertCulprit(ctx context.Context, culpritModel *model.Suspect) error {
 	// Check if Gerrit actions are disabled
 	if !cfg.GerritConfig.ActionsEnabled {
 		logging.Infof(ctx, "Gerrit actions have been disabled")
+		saveInactionReason(ctx, culpritModel, pb.CulpritInactionReason_ACTIONS_DISABLED)
 		return nil
 	}
 
@@ -211,7 +214,25 @@ func RevertCulprit(ctx context.Context, culpritModel *model.Suspect) error {
 
 		switch existingRevert.Status {
 		case gerritpb.ChangeStatus_MERGED:
-			// there is a merged revert - no further action required
+			// There is a merged revert - no further action required.
+
+			// Update the inaction reason based on whether the revert was created by
+			// LUCI Bisection.
+			lbOwned, err := gerrit.IsOwnedByLUCIBisection(ctx, existingRevert)
+			if err != nil {
+				// Not critical - just log the error and skip updating the
+				// inaction reason.
+				err = errors.Annotate(err,
+					"no action required but failed to find owner of existing revert").Err()
+				logging.Errorf(ctx, err.Error())
+			} else {
+				reason := pb.CulpritInactionReason_REVERTED_MANUALLY
+				if lbOwned {
+					reason = pb.CulpritInactionReason_REVERTED_BY_BISECTION
+				}
+				saveInactionReason(ctx, culpritModel, reason)
+			}
+
 			return nil
 		case gerritpb.ChangeStatus_NEW:
 			// add a supporting comment to the first revert
@@ -582,4 +603,25 @@ func saveCommitDetails(ctx context.Context, culpritModel *model.Suspect) error {
 			"couldn't update suspect revert commit details").Err()
 	}
 	return nil
+}
+
+// saveInactionReason updates the inaction reason for the given Suspect.
+func saveInactionReason(ctx context.Context, culpritModel *model.Suspect,
+	reason pb.CulpritInactionReason) {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, culpritModel)
+		if e != nil {
+			return e
+		}
+		// Set the inaction reason
+		culpritModel.InactionReason = reason
+		return datastore.Put(ctx, culpritModel)
+	}, nil)
+
+	if err != nil {
+		// not critical - just log the error
+		err = errors.Annotate(err,
+			"couldn't update suspect inaction reason").Err()
+		logging.Errorf(ctx, err.Error())
+	}
 }

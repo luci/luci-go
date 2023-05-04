@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -298,6 +299,7 @@ func TestRevertCulprit(t *testing.T) {
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
+				InactionReason:          pb.CulpritInactionReason_ACTIONS_DISABLED,
 			})
 		})
 
@@ -390,6 +392,7 @@ func TestRevertCulprit(t *testing.T) {
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
 				HasCulpritComment:       false,
+				InactionReason:          pb.CulpritInactionReason_REVERTED_MANUALLY,
 			})
 		})
 

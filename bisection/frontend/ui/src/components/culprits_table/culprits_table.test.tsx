@@ -114,6 +114,81 @@ describe('Test CulpritsTable component', () => {
     );
   });
 
+  test('if culprit inaction with reason is displayed', async () => {
+    const inaction: CulpritAction = {
+      actionType: 'NO_ACTION',
+      inactionReason: 'REVERTED_BY_BISECTION',
+      revertClUrl:
+        'https://chromium-review.googlesource.com/placeholder/+/123457',
+    };
+    const mockCulprit: Culprit = {
+      commit: {
+        host: 'testHost',
+        project: 'testProject',
+        ref: 'test/ref/dev',
+        id: 'abc123abc123',
+        position: '307',
+      },
+      reviewTitle: 'Added new feature to improve testing',
+      reviewUrl:
+        'https://chromium-review.googlesource.com/placeholder/+/123456',
+      culpritAction: [inaction],
+      verificationDetails: {
+        status: 'Confirmed Culprit',
+      },
+    };
+
+    render(<CulpritsTable culprits={[mockCulprit]} />);
+
+    await screen.findByTestId('culprits-table');
+
+    // Check the description and inaction reason are displayed
+    const inactionLabel = screen.getByText(
+      'No actions have been performed by LUCI Bisection for this culprit',
+      { exact: false }
+    );
+    expect(inactionLabel).toBeInTheDocument();
+    expect(inactionLabel.textContent)
+      .toMatch('it has been reverted as the culprit of another LUCI Bisection analysis');
+    const inactionRevertLink = inactionLabel.firstElementChild;
+    expect(inactionRevertLink).toBeInTheDocument();
+    expect(inactionRevertLink?.textContent).toBe('revert CL');
+    expect(inactionRevertLink?.getAttribute('href')).toBe(inaction.revertClUrl);
+  });
+
+  test('if culprit inaction without reason is displayed', async () => {
+    const inaction: CulpritAction = {
+      actionType: 'NO_ACTION',
+    };
+    const mockCulprit: Culprit = {
+      commit: {
+        host: 'testHost',
+        project: 'testProject',
+        ref: 'test/ref/dev',
+        id: 'abc123abc123',
+        position: '307',
+      },
+      reviewTitle: 'Added new feature to improve testing',
+      reviewUrl:
+        'https://chromium-review.googlesource.com/placeholder/+/123456',
+      culpritAction: [inaction],
+      verificationDetails: {
+        status: 'Confirmed Culprit',
+      },
+    };
+
+    render(<CulpritsTable culprits={[mockCulprit]} />);
+
+    await screen.findByTestId('culprits-table');
+
+    // Check the description and inaction reason are displayed
+    const inactionLabel = screen.getByText(
+      'No actions have been performed by LUCI Bisection for this culprit.',
+      { exact: true }
+    );
+    expect(inactionLabel).toBeInTheDocument();
+  });
+
   test('if culprit verification details are displayed', async () => {
     const mockCulprit: Culprit = {
       commit: {
