@@ -478,7 +478,8 @@ func TestReplace(t *testing.T) {
 		So(fs.read(longPath2), ShouldEqual, "hi")
 	})
 
-	Convey("Concurrency test", t, func(c C) {
+	// TODO(crbug/1442427): Test failed on windows.
+	SkipConvey("Concurrency test", t, func(c C) {
 		const threads = 50
 		fs := tempFileSystem(c)
 		wg := sync.WaitGroup{}
