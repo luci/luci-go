@@ -27,3 +27,8 @@ func Is(e error, target error) bool {
 func As(e error, target any) bool {
 	return errors.As(e, target)
 }
+
+// Join re-exports errors.Join from the standard library.
+func Join(errs ...error) error {
+	return errors.Join(errs...)
+}

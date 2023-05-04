@@ -57,6 +57,18 @@ func TestErrorAs(t *testing.T) {
 	})
 }
 
+// TestErrorJoin tests using the builtin error.Join.
+func TestErrorJoin(t *testing.T) {
+	t.Parallel()
+	Convey("test join", t, func() {
+		errorA := errors.New("a")
+		errorB := errors.New("b")
+		combined := Join(errorA, errorB)
+		So(combined.Error(), ShouldEqual, `a
+b`)
+	})
+}
+
 type fakeError struct{}
 
 func (w *fakeError) Error() string {
