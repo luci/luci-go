@@ -27,15 +27,14 @@ type TestVariantBranch struct {
 	// existed in Spanner.
 	// It is used for reducing the number of mutations. For example, the Variant
 	// field is only inserted once.
-	IsNew                  bool
-	Project                string
-	TestID                 string
-	VariantHash            string
-	Variant                *pb.Variant
-	RefHash                []byte
-	SourceRef              *pb.SourceRef
-	InputBuffer            *inputbuffer.Buffer
-	RecentChangepointCount int64
+	IsNew       bool
+	Project     string
+	TestID      string
+	VariantHash string
+	Variant     *pb.Variant
+	RefHash     []byte
+	SourceRef   *pb.SourceRef
+	InputBuffer *inputbuffer.Buffer
 	// Store the finalizing segment, if any.
 	// The count for the finalizing segment should only include the verdicts
 	// that are not in the input buffer anymore.

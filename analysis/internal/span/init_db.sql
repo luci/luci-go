@@ -791,14 +791,6 @@ CREATE TABLE TestVariantBranch (
   --  the test variant, after those in HotInputBuffer. Verdicts in
   -- HotInputBuffer are pushed here when HotInputBuffer is full.
   ColdInputBuffer BYTES(MAX) NOT NULL,
-  -- The number of change points (between active and active, or active and
-  -- finalized segments) that were detected in the last analysis of the input
-  --  buffer.
-  -- The position of such segments is not specified here (but can be obtained
-  -- by running change point analysis on the input buffer).
-  -- Facilitates detecting changes in the number of change points detected, to
-  -- trigger BigQuery exports.
-  RecentChangepointCount INT64 NOT NULL,
   -- ZStandard-compressed, serialized Segment proto describing the finalizing
   -- segment (if any). When verdicts are evicted from the ColdInputBuffer,
   -- their totals are added to this segment.

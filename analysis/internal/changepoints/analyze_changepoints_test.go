@@ -515,7 +515,7 @@ func fetchInvocations(ctx context.Context) []Invocation {
 
 func fetchTestVariantBranches(ctx context.Context) []*TestVariantBranch {
 	st := spanner.NewStatement(`
-			SELECT Project, TestId, VariantHash, RefHash, Variant, SourceRef, HotInputBuffer, ColdInputBuffer, RecentChangepointCount, FinalizingSegment, FinalizedSegments
+			SELECT Project, TestId, VariantHash, RefHash, Variant, SourceRef, HotInputBuffer, ColdInputBuffer, FinalizingSegment, FinalizedSegments
 			FROM TestVariantBranch
 			ORDER BY TestId
 		`)

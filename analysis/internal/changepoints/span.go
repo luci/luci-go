@@ -82,7 +82,7 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 		keys[i] = spanner.Key{tvbks[i].Project, tvbks[i].TestID, tvbks[i].VariantHash, []byte(tvbks[i].RefHash)}
 	}
 	keyset := spanner.KeySetFromKeys(keys...)
-	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef", "HotInputBuffer", "ColdInputBuffer", "RecentChangepointCount", "FinalizingSegment", "FinalizedSegments"}
+	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef", "HotInputBuffer", "ColdInputBuffer", "FinalizingSegment", "FinalizedSegments"}
 	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(
 		func(row *spanner.Row) error {
 			tvb, err := spannerRowToTestVariantBranch(row)
@@ -121,11 +121,10 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 	var sourceRef []byte
 	var hotBuffer []byte
 	var coldBuffer []byte
-	var recentChangepointCount int64
 	var finalizingSegment []byte
 	var finalizedSegments []byte
 
-	if err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.RefHash, &tvb.Variant, &sourceRef, &hotBuffer, &coldBuffer, &recentChangepointCount, &finalizingSegment, &finalizedSegments); err != nil {
+	if err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.RefHash, &tvb.Variant, &sourceRef, &hotBuffer, &coldBuffer, &finalizingSegment, &finalizedSegments); err != nil {
 		return nil, errors.Annotate(err, "read values from spanner").Err()
 	}
 
@@ -136,7 +135,6 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 		return nil, errors.Annotate(err, "decode source ref").Err()
 	}
 
-	tvb.RecentChangepointCount = recentChangepointCount
 	tvb.InputBuffer = &inputbuffer.Buffer{
 		HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 		ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
@@ -168,8 +166,8 @@ func spannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 // ToMutation returns a spanner Mutation to insert a TestVariantBranch to
 // Spanner table.
 func (tvb *TestVariantBranch) ToMutation() (*spanner.Mutation, error) {
-	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "LastUpdated", "RecentChangepointCount"}
-	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.RefHash, spanner.CommitTimestamp, tvb.RecentChangepointCount}
+	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "LastUpdated"}
+	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.RefHash, spanner.CommitTimestamp}
 
 	if tvb.IsNew {
 		// Variant needs to be updated only once.

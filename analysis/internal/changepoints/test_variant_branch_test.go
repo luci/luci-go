@@ -81,7 +81,6 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				},
 				ColdBufferCapacity: 2000,
 			},
-			RecentChangepointCount: 0,
 		}
 
 		tvb3 := &TestVariantBranch{
@@ -112,7 +111,6 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				},
 				ColdBufferCapacity: 2000,
 			},
-			RecentChangepointCount: 0,
 		}
 
 		mutation1, err := tvb1.ToMutation()
@@ -193,7 +191,6 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				},
 				ColdBufferCapacity: 2000,
 			},
-			RecentChangepointCount: 0,
 		}
 
 		mutation, err := tvb.ToMutation()
@@ -244,7 +241,6 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				},
 				IsColdBufferDirty: true,
 			},
-			RecentChangepointCount: 0,
 			FinalizingSegment: &changepointspb.Segment{
 				State:                        changepointspb.SegmentState_FINALIZING,
 				HasStartChangepoint:          true,
