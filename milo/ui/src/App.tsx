@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { ThemeProvider } from '@emotion/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientConfig, QueryClientProvider } from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
@@ -49,9 +50,33 @@ import { TestResultsTab } from './pages/test_results_tab';
 import { Store, StoreProvider } from './store';
 import { theme } from './theme';
 
+const QUERY_CLIENT_CONFIG: QueryClientConfig = {
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Do not retry when the errors is non transient.
+        if (
+          error instanceof GrpcError &&
+          [
+            RpcCode.INVALID_ARGUMENT,
+            RpcCode.PERMISSION_DENIED,
+            RpcCode.UNAUTHENTICATED,
+            RpcCode.UNIMPLEMENTED,
+          ].includes(error.code)
+        ) {
+          return false;
+        }
+
+        // Keep the default retry behavior otherwise.
+        return failureCount < 3;
+      },
+    },
+  },
+};
+
 export function App() {
   const [store] = useState(() => Store.create());
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(() => new QueryClient(QUERY_CLIENT_CONFIG));
 
   useEffect(() => {
     // Expose `store` in the global namespace to make inspecting/debugging the

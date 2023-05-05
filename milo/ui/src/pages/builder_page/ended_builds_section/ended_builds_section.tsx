@@ -23,7 +23,7 @@ import { EndedBuildsTable } from './ended_builds_table';
 const DEFAULT_PAGE_SIZE = 25;
 const FIELD_MASK =
   'builds.*.status,builds.*.id,builds.*.number,builds.*.createTime,builds.*.endTime,builds.*.startTime,' +
-  'builds.*.output.gitilesCommit,builds.*.input.gitilesCommit,builds.*.summaryMarkdown';
+  'builds.*.output.gitilesCommit,builds.*.input.gitilesCommit,builds.*.input.gerritChanges,builds.*.summaryMarkdown';
 
 export interface EndedBuildsSectionProps {
   readonly builderId: BuilderID;
@@ -59,7 +59,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     return currentPageToken ? [''] : [];
   });
 
-  const { data, error, isError, isLoading } = useBuilds(
+  const { data, error, isError, isLoading, isPreviousData } = useBuilds(
     {
       predicate: { builder: builderId, includeExperimental: true, status: BuildStatusMask.EndedMask },
       pageSize,
@@ -101,7 +101,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
               Previous Page
             </Button>
             <Button
-              disabled={!data.nextPageToken}
+              disabled={isPreviousData || !data.nextPageToken}
               onClick={() => {
                 setCurrentPageToken(data.nextPageToken!);
                 setPrevPageTokens([...prevPageTokens, currentPageToken]);

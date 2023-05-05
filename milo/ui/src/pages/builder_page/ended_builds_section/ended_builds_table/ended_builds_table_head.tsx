@@ -43,6 +43,7 @@ export const EndedBuildsTableHead = observer(({ tableState }: EndedBuildsTableHe
         <TableCell>End Time</TableCell>
         <TableCell>Run Duration</TableCell>
         <TableCell>Commit</TableCell>
+        <TableCell>Changes</TableCell>
       </TableRow>
     </TableHead>
   );

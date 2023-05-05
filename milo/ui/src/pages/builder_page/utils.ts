@@ -25,7 +25,11 @@ export function useBuilds(req: SearchBuildsRequest, opts = { keepPreviousData: f
     queryKey: [identity, BuildsService.SERVICE, 'SearchBuilds', req],
     queryFn: async () => {
       const buildersService = new BuildsService(new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST }, getAccessToken));
-      return buildersService.searchBuilds(req);
+      return buildersService.searchBuilds(
+        req,
+        // Let react-query manage caching.
+        { acceptCache: false, skipUpdate: true }
+      );
     },
     keepPreviousData: opts.keepPreviousData,
   });

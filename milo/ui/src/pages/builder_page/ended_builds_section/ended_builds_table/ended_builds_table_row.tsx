@@ -16,12 +16,13 @@ import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { Box, Collapse, Icon, IconButton, Link, styled, TableCell, TableRow } from '@mui/material';
 import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
+import { Fragment } from 'react';
 
 import { Timestamp } from '../../../../components/timestamp';
 import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../../../libs/constants';
 import { renderMarkdown } from '../../../../libs/markdown_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../../../libs/time_utils';
-import { getBuildURLPathFromBuildId, getGitilesCommitURL } from '../../../../libs/url_utils';
+import { getBuildURLPathFromBuildId, getGerritChangeURL, getGitilesCommitURL } from '../../../../libs/url_utils';
 import { Build, getAssociatedGitilesCommit } from '../../../../services/buildbucket';
 import { ExpandableEntriesStateInstance } from '../../../../store/expandable_entries_state';
 
@@ -52,6 +53,7 @@ export const EndedBuildsTableRow = observer(({ tableState, build }: EndedBuildsT
   const endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
   const runDuration = startTime && endTime ? endTime.diff(startTime) : null;
   const commit = getAssociatedGitilesCommit(build);
+  const changes = build.input?.gerritChanges || [];
 
   return (
     <>
@@ -82,21 +84,29 @@ export const EndedBuildsTableRow = observer(({ tableState, build }: EndedBuildsT
         <TableCell>{endTime ? <Timestamp datetime={endTime} format={NUMERIC_TIME_FORMAT} /> : 'N/A'}</TableCell>
         <TableCell>{runDuration ? displayDuration(runDuration) : 'N/A'}</TableCell>
         <TableCell>{commit ? <Link href={getGitilesCommitURL(commit)}>{commit.id}</Link> : 'N/A'}</TableCell>
+        <TableCell>
+          {changes.map((c, i) => (
+            <Fragment key={c.change}>
+              {i !== 0 && <>, </>}
+              <Link key={c.change} href={getGerritChangeURL(c)}>
+                CL {c.change} (ps #{c.patchset})
+              </Link>
+            </Fragment>
+          ))}
+        </TableCell>
       </TableRow>
-      {build.summaryMarkdown && (
-        // Change the component to `div` so CSS selector can skip this row when
-        // selecting `<tr />`.
-        <TableRow component="div" css={{ display: 'table-row' }}>
-          <TableCell colSpan={7} sx={{ p: 0 }}>
+      <TableRow>
+        <TableCell colSpan={8} sx={{ p: 0 }}>
+          {build.summaryMarkdown && (
             <Collapse in={expanded} timeout="auto">
               <MarkdownContainer
                 className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(build.summaryMarkdown || 'No Summary.') }}
               />
             </Collapse>
-          </TableCell>
-        </TableRow>
-      )}
+          )}
+        </TableCell>
+      </TableRow>
     </>
   );
 });

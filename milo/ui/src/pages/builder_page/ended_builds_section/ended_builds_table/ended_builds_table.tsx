@@ -32,7 +32,12 @@ export function EndedBuildsTable({ endedBuilds }: EndedBuildsTableProps) {
       <EndedBuildsTableHead tableState={tableState} />
       <TableBody
         sx={{
-          '& tr:nth-of-type(odd)': {
+          // Each <EndedBuildsTableRow /> is consist of two <tr />s. The first
+          // <tr /> is the actual row while the second <tr /> contains the
+          // expandable body as the first <tr />.
+          // We only want to select the first <tr /> in every other
+          // <EndedBuildsTableRow />.
+          '& tr:nth-of-type(4n + 1)': {
             backgroundColor: 'var(--block-background-color)',
           },
         }}

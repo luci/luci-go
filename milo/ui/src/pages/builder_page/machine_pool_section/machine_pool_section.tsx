@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CircularProgress, Link } from '@mui/material';
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
+import styled from '@emotion/styled';
+import { Alert, AlertTitle, CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -62,6 +64,11 @@ function useMachinePool(swarmingHost: string, req: BotsRequest) {
   });
 }
 
+const ErrorDisplay = styled.pre({
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'break-word',
+});
+
 export interface MachinePoolSectionProps {
   readonly swarmingHost: string;
   readonly dimensions: readonly StringPair[];
@@ -70,12 +77,16 @@ export interface MachinePoolSectionProps {
 export function MachinePoolSection({ swarmingHost, dimensions }: MachinePoolSectionProps) {
   const [botListExpanded, setBotListExpanded] = useState(false);
 
-  const { data, error, isError, isLoading } = useMachinePool(swarmingHost, {
+  const { data, error, isError, isSuccess, isLoading } = useMachinePool(swarmingHost, {
     limit: PAGE_SIZE,
     dimensions,
   });
 
-  if (isError) {
+  const isPermissionError =
+    isError &&
+    error instanceof GrpcError &&
+    [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED].includes(error.code);
+  if (isError && !isPermissionError) {
     throw error;
   }
 
@@ -83,11 +94,16 @@ export function MachinePoolSection({ swarmingHost, dimensions }: MachinePoolSect
     <>
       <h3>
         <Link href={swarmingHost}>Machine Pool</Link>
-        {!isLoading && <> ({data.hasNextPage ? `first ${PAGE_SIZE} bots` : data.bots.length})</>}
+        {isSuccess && <> ({data.hasNextPage ? `first ${PAGE_SIZE} bots` : data.bots.length})</>}
       </h3>
-      {isLoading ? (
-        <CircularProgress />
-      ) : (
+      {isLoading && <CircularProgress />}
+      {isPermissionError && (
+        <Alert severity="warning">
+          <AlertTitle>You've no permission to view the machine pool</AlertTitle>
+          <ErrorDisplay>{`Original Error:\n${error.message}`}</ErrorDisplay>
+        </Alert>
+      )}
+      {isSuccess && (
         <>
           <BotStatusTable stats={data.stats} totalBots={data.bots.length} />
           <ExpandableEntry expanded={botListExpanded} onToggle={setBotListExpanded}>

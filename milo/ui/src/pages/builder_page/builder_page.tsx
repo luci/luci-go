@@ -34,7 +34,11 @@ function useBuilder(req: GetBuilderRequest) {
       const buildersService = new BuildersService(
         new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST }, getAccessToken)
       );
-      const res = await buildersService.getBuilder(req);
+      const res = await buildersService.getBuilder(
+        req,
+        // Let react-query manage caching.
+        { acceptCache: false, skipUpdate: true }
+      );
       return {
         swarmingHost: res.config.swarmingHost,
         // Convert dimensions to StringPair[] and remove expirations.
