@@ -132,18 +132,23 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		mutations := []*spanner.Mutation{}
 
 		for i, tv := range filteredTVs {
-			if isOutOfOrderAndShouldBeDiscarded(tvbs[i], payload) {
+			tvb := tvbs[i]
+			if isOutOfOrderAndShouldBeDiscarded(tvb, payload) {
 				// TODO(nqmtuan): send metric to tsmon.
 				logging.Debugf(ctx, "Out of order verdict in build %d", payload.Build.Id)
 				continue
 			}
 			// "Insert" the new test variant to input buffer.
-			_, err := insertIntoInputBuffer(tvbs[i], tv, payload, duplicateMap)
+			tvb, err := insertIntoInputBuffer(tvb, tv, payload, duplicateMap)
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
-			// TODO(nqmtuan): Run change point analysis on test variant branch.
-			// TODO(nqmtuan): Store test variant branch in spanner.
+			runChangePointAnalysis(tvb)
+			mut, err := tvb.ToMutation()
+			if err != nil {
+				return errors.Annotate(err, "test variant branch to mutation").Err()
+			}
+			mutations = append(mutations, mut)
 		}
 
 		// Store new Invocations to Invocations table.
@@ -226,7 +231,10 @@ func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payloa
 			RefHash:     refHash(payload),
 			Variant:     pbutil.VariantFromResultDB(tv.Variant),
 			SourceRef:   sourceRef(payload),
-			InputBuffer: &inputbuffer.Buffer{},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
+				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
+			},
 		}
 	}
 

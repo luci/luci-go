@@ -23,6 +23,8 @@ import (
 	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSegmentizeInputBuffer(t *testing.T) {
@@ -446,6 +448,91 @@ func TestEvictSegments(t *testing.T) {
 				TotalVerdicts: 50,
 			},
 		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+	})
+
+	Convey("Evict all hot buffer", t, func() {
+		ib := genSimpleInputBuffer(100, 2000, 2000, 1, []int{})
+		ib.HotBuffer = History{
+			Verdicts: []PositionVerdict{
+				{
+					CommitPosition: 10,
+				},
+			},
+		}
+		segments := []*Segment{
+			{
+				StartIndex: 0, // Finalized segment.
+				EndIndex:   39,
+				Counts: &changepointspb.Counts{
+					TotalResults:  40,
+					TotalRuns:     40,
+					TotalVerdicts: 40,
+				},
+				HasStartChangepoint: false,
+				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				StartPosition:       1,
+				EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
+				EndPosition:         39,
+			},
+			{
+				StartIndex: 40, // A finalizing segment.
+				EndIndex:   2000,
+				Counts: &changepointspb.Counts{
+					TotalResults:  1961,
+					TotalRuns:     1961,
+					TotalVerdicts: 1961,
+				},
+				HasStartChangepoint:         true,
+				StartHour:                   timestamppb.New(time.Unix(40*3600, 0)),
+				StartPosition:               40,
+				StartPositionLowerBound99Th: 30,
+				StartPositionUpperBound99Th: 50,
+				EndHour:                     timestamppb.New(time.Unix(2000*3600, 0)),
+				EndPosition:                 2000,
+			},
+		}
+
+		sib := &SegmentedInputBuffer{
+			InputBuffer: ib,
+			Segments:    segments,
+		}
+		evicted := sib.EvictSegments()
+		remaining := sib.Segments
+		So(len(evicted), ShouldEqual, 2)
+		So(len(remaining), ShouldEqual, 1)
+		So(sib.InputBuffer.IsColdBufferDirty, ShouldBeTrue)
+
+		// Hot bufffer should be empty.
+		So(len(sib.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 0)
+		So(len(sib.InputBuffer.ColdBuffer.Verdicts), ShouldEqual, 1961)
+
+		So(evicted[0], ShouldResembleProto, &changepointspb.Segment{
+			State:               changepointspb.SegmentState_FINALIZED,
+			HasStartChangepoint: false,
+			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+			StartPosition:       1,
+			EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
+			EndPosition:         39,
+			FinalizedCounts: &changepointspb.Counts{
+				TotalResults:  40,
+				TotalRuns:     40,
+				TotalVerdicts: 40,
+			},
+		})
+
+		So(evicted[1], ShouldResembleProto, &changepointspb.Segment{
+			State:                        changepointspb.SegmentState_FINALIZING,
+			HasStartChangepoint:          true,
+			StartHour:                    timestamppb.New(time.Unix(40*3600, 0)),
+			StartPosition:                40,
+			StartPositionLowerBound_99Th: 30,
+			StartPositionUpperBound_99Th: 50,
+			FinalizedCounts:              &changepointspb.Counts{},
+		})
+
+		// Use diff here to compare both protobuf and non-protobuf.
+		diff := cmp.Diff(remaining[0], segments[1], cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 	})
 }

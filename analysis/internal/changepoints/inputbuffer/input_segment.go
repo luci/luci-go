@@ -251,21 +251,32 @@ func (ib *Buffer) isSegmentFinalized(seg *Segment) bool {
 // of the hot and cold buffers.
 // Returns a segment containing the information about the verdicts being evicted.
 func (ib *Buffer) evictFinalizedSegment(seg *Segment) *changepointspb.Segment {
+	// Evict hot buffer.
+	evictEndIndex := -1
 	for i, v := range ib.HotBuffer.Verdicts {
-		if v.CommitPosition > int(seg.EndPosition) {
-			ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[i:]
+		if v.CommitPosition <= int(seg.EndPosition) {
+			evictEndIndex = i
+		} else {
 			break
 		}
 	}
+	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[evictEndIndex+1:]
+
+	// Evict cold buffer.
+	evictEndIndex = -1
 	for i, v := range ib.ColdBuffer.Verdicts {
-		if v.CommitPosition > int(seg.EndPosition) {
-			if i > 0 {
-				ib.IsColdBufferDirty = true
-			}
-			ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[i:]
+		if v.CommitPosition <= int(seg.EndPosition) {
+			evictEndIndex = i
+		} else {
 			break
 		}
 	}
+	if evictEndIndex > -1 {
+		ib.IsColdBufferDirty = true
+		ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[evictEndIndex+1:]
+	}
+
+	// Return evicted segment.
 	result := &changepointspb.Segment{
 		State:                          changepointspb.SegmentState_FINALIZED,
 		FinalizedCounts:                seg.Counts,

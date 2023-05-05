@@ -168,6 +168,7 @@ func TestIngestTestResults(t *testing.T) {
 	resultcollector.RegisterTaskClass()
 	testvariantupdator.RegisterTaskClass()
 
+	// TODO(nqmtuan): Add end-to-end test for changepoint analysis.
 	Convey(`TestIngestTestResults`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For failure association rules cache.

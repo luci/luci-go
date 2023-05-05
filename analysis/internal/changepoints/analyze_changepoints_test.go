@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
@@ -30,7 +31,10 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -149,33 +153,45 @@ func TestAnalyzeChangePoint(t *testing.T) {
 }
 
 func TestAnalyzeSingleBatch(t *testing.T) {
-	Convey(`Analyze batch`, t, func() {
+	Convey(`Analyze batch with empty buffer`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		payload := samplePayload(10)
 
 		tvs := []*rdbpb.TestVariant{
 			{
 				TestId:      "test_1",
-				VariantHash: "hash1",
-				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				VariantHash: "hash_1",
+				Variant: &rdbpb.Variant{
+					Def: map[string]string{
+						"k": "v",
+					},
+				},
+				Status: rdbpb.TestVariantStatus_EXPECTED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:   "invocations/abc/tests/xyz",
-							Status: rdbpb.TestStatus_PASS,
+							Name:      "invocations/abc/tests/xyz",
+							Status:    rdbpb.TestStatus_PASS,
+							StartTime: timestamppb.New(time.Unix(3600, 0)),
 						},
 					},
 				},
 			},
 			{
 				TestId:      "test_2",
-				VariantHash: "hash2",
-				Status:      rdbpb.TestVariantStatus_UNEXPECTED,
+				VariantHash: "hash_2",
+				Variant: &rdbpb.Variant{
+					Def: map[string]string{
+						"k": "v",
+					},
+				},
+				Status: rdbpb.TestVariantStatus_UNEXPECTED,
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:   "invocations/def/tests/xyz",
-							Status: rdbpb.TestStatus_CRASH,
+							Name:      "invocations/def/tests/xyz",
+							Status:    rdbpb.TestStatus_CRASH,
+							StartTime: timestamppb.New(time.Unix(3600, 0)),
 						},
 					},
 				},
@@ -186,7 +202,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 
-		// Check invocations
+		// Check invocations.
 		invs := fetchInvocations(ctx)
 		So(invs, ShouldResemble, []Invocation{
 			{
@@ -200,6 +216,233 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				IngestedInvocationID: "build-1234",
 			},
 		})
+
+		// Check test variant branch.
+		tvbs := fetchTestVariantBranches(ctx)
+		So(len(tvbs), ShouldEqual, 2)
+
+		// Use diff here to compare both protobuf and non-protobuf.
+		diff := cmp.Diff(tvbs[0], &TestVariantBranch{
+			Project:     "chromium",
+			TestID:      "test_1",
+			VariantHash: "hash_1",
+			RefHash:     refHash(payload),
+			Variant: &analysispb.Variant{
+				Def: map[string]string{
+					"k": "v",
+				},
+			},
+			SourceRef: &analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
+						{
+							CommitPosition:   10,
+							IsSimpleExpected: true,
+							Hour:             time.Unix(3600, 0),
+						},
+					},
+				},
+				ColdBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{},
+				},
+				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
+				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
+			},
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+
+		diff = cmp.Diff(tvbs[1], &TestVariantBranch{
+			Project:     "chromium",
+			TestID:      "test_2",
+			VariantHash: "hash_2",
+			RefHash:     refHash(payload),
+			Variant: &analysispb.Variant{
+				Def: map[string]string{
+					"k": "v",
+				},
+			},
+			SourceRef: &analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
+						{
+							CommitPosition:   10,
+							IsSimpleExpected: false,
+							Hour:             time.Unix(3600, 0),
+							Details: inputbuffer.VerdictDetails{
+								IsExonerated: false,
+								Runs: []inputbuffer.Run{
+									{
+										UnexpectedResultCount: 1,
+									},
+								},
+							},
+						},
+					},
+				},
+				ColdBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{},
+				},
+				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
+				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
+			},
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+	})
+
+	Convey(`Analyze batch run analysis got change point`, t, func() {
+		ctx := testutil.IntegrationTestContext(t)
+		// Store some existing data in spanner first.
+		payload := samplePayload(10)
+
+		// Set up the verdicts in spanner.
+		positions := make([]int, 2000)
+		total := make([]int, 2000)
+		hasUnexpected := make([]int, 2000)
+		for i := 0; i < 2000; i++ {
+			positions[i] = i + 1
+			total[i] = 1
+			if i >= 100 {
+				hasUnexpected[i] = 1
+			}
+		}
+		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		tvb := &TestVariantBranch{
+			IsNew:       true,
+			Project:     "chromium",
+			TestID:      "test_1",
+			VariantHash: "hash_1",
+			SourceRef:   sourceRef(payload),
+			RefHash:     refHash(payload),
+			Variant: &analysispb.Variant{
+				Def: map[string]string{
+					"k": "v",
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{},
+				},
+				ColdBuffer: inputbuffer.History{
+					Verdicts: vs,
+				},
+				IsColdBufferDirty: true,
+			},
+		}
+		mutation, err := tvb.ToMutation()
+		So(err, ShouldBeNil)
+		testutil.MustApply(ctx, mutation)
+
+		tvs := []*rdbpb.TestVariant{
+			{
+				TestId:      "test_1",
+				VariantHash: "hash_1",
+				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/abc/tests/xyz",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+			},
+		}
+
+		err = analyzeSingleBatch(ctx, tvs, payload)
+		So(err, ShouldBeNil)
+		So(countCheckPoint(ctx), ShouldEqual, 1)
+
+		// Check invocations.
+		invs := fetchInvocations(ctx)
+		So(invs, ShouldResemble, []Invocation{
+			{
+				Project:              "chromium",
+				InvocationID:         "abc",
+				IngestedInvocationID: "build-1234",
+			},
+		})
+
+		// Check test variant branch.
+		tvbs := fetchTestVariantBranches(ctx)
+		So(len(tvbs), ShouldEqual, 1)
+		tvb = tvbs[0]
+
+		// Use diff here to compare both protobuf and non-protobuf.
+		diff := cmp.Diff(tvb, &TestVariantBranch{
+			Project:     "chromium",
+			TestID:      "test_1",
+			VariantHash: "hash_1",
+			RefHash:     refHash(payload),
+			Variant: &analysispb.Variant{
+				Def: map[string]string{
+					"k": "v",
+				},
+			},
+			SourceRef: &analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{},
+				},
+				ColdBuffer: inputbuffer.History{
+					Verdicts: vs[100:],
+				},
+				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
+				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
+			},
+			FinalizingSegment: &changepointspb.Segment{
+				State:                        changepointspb.SegmentState_FINALIZING,
+				HasStartChangepoint:          true,
+				StartPosition:                101,
+				StartHour:                    timestamppb.New(time.Unix(101*3600, 0)),
+				FinalizedCounts:              &changepointspb.Counts{},
+				StartPositionLowerBound_99Th: 100,
+				StartPositionUpperBound_99Th: 101,
+			},
+			FinalizedSegments: &changepointspb.Segments{
+				Segments: []*changepointspb.Segment{
+					{
+						State:               changepointspb.SegmentState_FINALIZED,
+						HasStartChangepoint: false,
+						StartPosition:       1,
+						StartHour:           timestamppb.New(time.Unix(3600, 0)),
+						EndPosition:         100,
+						EndHour:             timestamppb.New(time.Unix(100*3600, 0)),
+						FinalizedCounts: &changepointspb.Counts{
+							TotalResults:  101,
+							TotalRuns:     101,
+							TotalVerdicts: 101,
+						},
+					},
+				},
+			},
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
 	})
 }
 
@@ -264,6 +507,26 @@ func fetchInvocations(ctx context.Context) []Invocation {
 			return err
 		}
 		results = append(results, inv)
+		return nil
+	})
+	So(err, ShouldBeNil)
+	return results
+}
+
+func fetchTestVariantBranches(ctx context.Context) []*TestVariantBranch {
+	st := spanner.NewStatement(`
+			SELECT Project, TestId, VariantHash, RefHash, Variant, SourceRef, HotInputBuffer, ColdInputBuffer, RecentChangepointCount, FinalizingSegment, FinalizedSegments
+			FROM TestVariantBranch
+			ORDER BY TestId
+		`)
+	it := span.Query(span.Single(ctx), st)
+	results := []*TestVariantBranch{}
+	err := it.Do(func(r *spanner.Row) error {
+		tvb, err := spannerRowToTestVariantBranch(r)
+		if err != nil {
+			return err
+		}
+		results = append(results, tvb)
 		return nil
 	})
 	So(err, ShouldBeNil)
