@@ -32,8 +32,13 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// batchSize is the number of rows to write to BigQuery in one go.
-const batchSize = 1000
+// batchMaxBytes is the maximum number of row bytes to send in one
+// BigQuery Storage Write API - AppendRows request. As at writing, the
+// request size limit for this RPC is 10 MB:
+// https://cloud.google.com/bigquery/quotas#write-api-limits.
+// The maximum size of rows must be less than this as there are
+// some overheads in each request.
+const batchMaxBytes = 9 * 1000 * 1000 // 9 MB
 
 // NewWriterClient returns a new BigQuery managedwriter client for use with the
 // given GCP project, that authenticates as LUCI Analysis itself.
@@ -128,7 +133,10 @@ func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.M
 
 // batchAppendRows chunk rows into batches and append each batch to the provided managedStream.
 func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedStream, rows []proto.Message) error {
-	batches := batch(rows)
+	batches, err := batch(rows)
+	if err != nil {
+		return errors.Annotate(err, "batching rows").Err()
+	}
 	results := make([]*managedwriter.AppendResult, 0, len(batches))
 	for _, batch := range batches {
 		encoded := make([][]byte, 0, len(batch))
@@ -161,18 +169,32 @@ func (s *Writer) batchAppendRows(ctx context.Context, ms *managedwriter.ManagedS
 	return nil
 }
 
-// batch divides the rows to be inserted into batches of at most batchSize.
-func batch(rows []proto.Message) [][]proto.Message {
+// batch divides the rows to be inserted into batches, with each
+// batch having an on-the-wire size not exceeding batchMaxBytes.
+func batch(rows []proto.Message) ([][]proto.Message, error) {
 	var result [][]proto.Message
-	pages := (len(rows) + (batchSize - 1)) / batchSize
-	for p := 0; p < pages; p++ {
-		start := p * batchSize
-		end := start + batchSize
-		if end > len(rows) {
-			end = len(rows)
+
+	batchStartIndex := 0
+	batchSizeInBytes := 0
+	for i, row := range rows {
+		// Assume 16 bytes of overhead per row not captured here.
+		rowSize := proto.Size(row) + 16
+		if (batchSizeInBytes + rowSize) > batchMaxBytes {
+			if rowSize > batchMaxBytes {
+				return nil, errors.Reason("a single row exceeds the maximum BigQuery AppendRows request size of %v bytes", batchMaxBytes).Err()
+			}
+			// Output batch from batchStartIndex (inclusive) to i (exclusive).
+			result = append(result, rows[batchStartIndex:i])
+
+			// The current row becomes part of the next batch.
+			batchStartIndex = i
+			batchSizeInBytes = 0
 		}
-		page := rows[start:end]
-		result = append(result, page)
+		batchSizeInBytes += rowSize
 	}
-	return result
+	lastBatch := rows[batchStartIndex:]
+	if len(lastBatch) > 0 {
+		result = append(result, lastBatch)
+	}
+	return result, nil
 }
