@@ -14,6 +14,9 @@
 
 import { Link as RouterLink } from 'react-router-dom';
 
+import CommentIcon from '@mui/icons-material/Comment';
+import ReplayIcon from '@mui/icons-material/Replay';
+
 import Link from '@mui/material/Link';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
@@ -22,6 +25,7 @@ import {
   Analysis,
   AnalysisStatus,
   Culprit,
+  CulpritActionType,
 } from '../../../services/luci_bisection';
 import { getCommitShortHash } from '../../../tools/commit_formatters';
 import { EMPTY_LINK, linkToBuilder } from '../../../tools/link_constructors';
@@ -29,10 +33,68 @@ import {
   getFormattedDuration,
   getFormattedTimestamp,
 } from '../../../tools/timestamp_formatters';
+import { Typography } from '@mui/material';
 
-interface AnalysisTableProps {
-  analysis: Analysis;
+interface CulpritActionIconProps {
+  actionType: CulpritActionType;
 }
+
+const CulpritActionIcon = ({ actionType }: CulpritActionIconProps) => {
+  switch (actionType) {
+    case 'CULPRIT_AUTO_REVERTED':
+      return <ReplayIcon
+        fontSize='small'
+        sx={{ paddingRight: '0.25rem', color: 'var(--failure-color)' }}
+        data-testid='culprit-action-icon-auto-reverted' />;
+    case 'REVERT_CL_CREATED':
+      return <ReplayIcon
+        fontSize='small'
+        sx={{ paddingRight: '0.25rem', color: 'var(--warning-text-color)' }}
+        data-testid='culprit-action-icon-revert-created' />;
+    case 'CULPRIT_CL_COMMENTED':
+      return <CommentIcon
+        fontSize='small'
+        sx={{ paddingRight: '0.25rem', color: 'var(--light-text-color)' }}
+        data-testid='culprit-action-icon-culprit-commented' />;
+    case 'EXISTING_REVERT_CL_COMMENTED':
+      return <CommentIcon
+        fontSize='small'
+        sx={{ paddingRight: '0.25rem', color: 'var(--warning-text-color)' }}
+        data-testid='culprit-action-icon-revert-commented' />;
+    default:
+      return <></>;
+  }
+};
+
+interface CulpritSpanProps {
+  culprit: Culprit;
+}
+
+const CulpritSpan = ({ culprit }: CulpritSpanProps) => {
+  let description = getCommitShortHash(culprit.commit.id);
+  if (culprit.reviewTitle) {
+    description += `: ${culprit.reviewTitle}`;
+  }
+
+  return <span className='span-link'>
+    <Link
+      data-testid='analysis_table_row_culprit_link'
+      href={culprit.reviewUrl}
+      target='_blank'
+      rel='noreferrer'
+      underline='always'
+    >
+      <Typography display='flex' variant='inherit'>
+        {culprit.culpritAction?.map((action) =>
+          <CulpritActionIcon
+            actionType={action.actionType}
+            key={action.actionType}></CulpritActionIcon>
+        )}
+        {description}
+      </Typography>
+    </Link>
+  </span>;
+};
 
 interface CulpritsTableCellProps {
   culprits: Culprit[] | undefined;
@@ -41,44 +103,23 @@ interface CulpritsTableCellProps {
 
 const CulpritsTableCell = ({ culprits, status }: CulpritsTableCellProps) => {
   if (culprits == null || culprits.length == 0) {
-    return (
-      <TableCell>
-        <span className='data-placeholder'>
-          {status === 'SUSPECTFOUND' && 'Suspect found (not verified)'}
-        </span>
-      </TableCell>
-    );
+    return <TableCell>
+      <span className='data-placeholder'>
+        {status === 'SUSPECTFOUND' && 'Suspect found (not verified)'}
+      </span>
+    </TableCell>;
   }
 
-  const culpritLinks = culprits.map((culprit) => {
-    let description = getCommitShortHash(culprit.commit.id);
-    if (culprit.reviewTitle) {
-      description += `: ${culprit.reviewTitle}`;
-    }
-    return {
-      linkText: description,
-      url: culprit.reviewUrl,
-    };
-  });
-
-  return (
-    <TableCell>
-      {culpritLinks.map((culpritLink) => (
-        <span className='span-link' key={culpritLink.url}>
-          <Link
-            data-testid='analysis_table_row_culprit_link'
-            href={culpritLink.url}
-            target='_blank'
-            rel='noreferrer'
-            underline='always'
-          >
-            {culpritLink.linkText}
-          </Link>
-        </span>
-      ))}
-    </TableCell>
-  );
+  return <TableCell>
+    {culprits.map((culprit) =>
+      <CulpritSpan culprit={culprit} key={culprit.reviewUrl}></CulpritSpan>
+    )}
+  </TableCell>;
 };
+
+interface AnalysisTableProps {
+  analysis: Analysis;
+}
 
 export const AnalysisTableRow = ({ analysis }: AnalysisTableProps) => {
   let builderLink = EMPTY_LINK;

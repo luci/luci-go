@@ -117,6 +117,12 @@ describe('Test AnalysisTableRow component', () => {
         verificationDetails: {
           status: 'Confirmed Culprit',
         },
+        culpritAction: [
+          {
+            actionType: 'CULPRIT_AUTO_REVERTED',
+            revertClUrl: 'https://chromium-review.googlesource.com/placeholder/+/123457'
+          }
+        ]
       },
       {
         commit: {
@@ -149,5 +155,10 @@ describe('Test AnalysisTableRow component', () => {
     expect(
       screen.queryAllByTestId('analysis_table_row_culprit_link')
     ).toHaveLength(mockAnalysis.culprits.length);
+
+    // Check there is an icon for the auto-revert action.
+    expect(
+      screen.getByTestId('culprit-action-icon-auto-reverted')
+    ).toBeInTheDocument();
   });
 });
