@@ -367,11 +367,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 
 	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp, inv, payload)
 	if err != nil {
-		// Only log the error for now, we will return error when we have
-		// confirmed everything is working.
-		err = errors.Annotate(err, "export verdicts").Err()
-		logging.Errorf(ctx, err.Error())
-		// return err
+		return errors.Annotate(err, "export verdicts").Err()
 	}
 
 	if nextPageToken == "" {
