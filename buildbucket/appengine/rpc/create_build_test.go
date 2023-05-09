@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket"
@@ -695,6 +697,14 @@ func TestCreateBuild(t *testing.T) {
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(0)))
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx, sch := tq.TestingContext(ctx, nil)
+		store := &testsecrets.Store{
+			Secrets: map[string]secrets.Secret{
+				"key": {Active: []byte("stuff")},
+			},
+		}
+		ctx = secrets.Use(ctx, store)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -720,7 +730,9 @@ func TestCreateBuild(t *testing.T) {
 
 		Convey("with parent", func() {
 			Convey("parent ended", func() {
-				pTok, _ := buildtoken.GenerateToken(ctx, 97654321, pb.TokenBody_BUILD)
+				pTok, err := buildtoken.GenerateToken(ctx, 97654321, pb.TokenBody_BUILD)
+				So(err, ShouldBeNil)
+
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, pTok))
 
 				ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -749,7 +761,7 @@ func TestCreateBuild(t *testing.T) {
 					},
 					UpdateToken: pTok,
 				}), ShouldBeNil)
-				_, err := srv.CreateBuild(ctx, req)
+				_, err = srv.CreateBuild(ctx, req)
 				So(err, ShouldErrLike, `build parent: 97654321 has ended, cannot add child to it`)
 			})
 

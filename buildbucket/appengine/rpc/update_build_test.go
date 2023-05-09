@@ -596,6 +596,8 @@ func TestUpdateBuild(t *testing.T) {
 		}
 		ctx := auth.WithState(memory.Use(context.Background()), s)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
+		ctx = installTestSecret(ctx)
+
 		tk, ctx := updateContextForNewBuildToken(ctx, 1)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)

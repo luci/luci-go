@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
@@ -88,6 +90,14 @@ func TestValidateRegisterBuildTaskRequest(t *testing.T) {
 func TestRegisterBuildTask(t *testing.T) {
 	srv := &Builds{}
 	ctx := memory.Use(context.Background())
+	store := &testsecrets.Store{
+		Secrets: map[string]secrets.Secret{
+			"key": {Active: []byte("stuff")},
+		},
+	}
+	ctx = secrets.Use(ctx, store)
+	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+
 	req := validRegisterBuildTaskRequest()
 	Convey("validate token", t, func() {
 		Convey("token missing", func() {

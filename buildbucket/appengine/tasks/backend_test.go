@@ -40,6 +40,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -157,6 +159,13 @@ func TestBackendTaskClient(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
+		store := &testsecrets.Store{
+			Secrets: map[string]secrets.Secret{
+				"key": {Active: []byte("stuff")},
+			},
+		}
+		ctx = secrets.Use(ctx, store)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 		build := &pb.Build{
 			Builder: &pb.BuilderID{
@@ -310,6 +319,14 @@ func TestCreateBackendTask(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
+		store := &testsecrets.Store{
+			Secrets: map[string]secrets.Secret{
+				"key": {Active: []byte("stuff")},
+			},
+		}
+		ctx = secrets.Use(ctx, store)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+
 		backendSetting := []*pb.BackendSetting{}
 		backendSetting = append(backendSetting, &pb.BackendSetting{
 			Target:   "swarming://mytarget",
@@ -475,6 +492,14 @@ func TestCreateBackendTask(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tq.TestingContext(ctx, nil)
+		store := &testsecrets.Store{
+			Secrets: map[string]secrets.Secret{
+				"key": {Active: []byte("stuff")},
+			},
+		}
+		ctx = secrets.Use(ctx, store)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+
 		backendSetting := []*pb.BackendSetting{}
 		backendSetting = append(backendSetting, &pb.BackendSetting{
 			Target:   "fail_me",

@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -82,6 +84,14 @@ func TestValidateStartBuildRequest(t *testing.T) {
 func TestStartBuild(t *testing.T) {
 	srv := &Builds{}
 	ctx := memory.Use(context.Background())
+	store := &testsecrets.Store{
+		Secrets: map[string]secrets.Secret{
+			"key": {Active: []byte("stuff")},
+		},
+	}
+	ctx = secrets.Use(ctx, store)
+	ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
+
 	req := validStartBuildRequest()
 	Convey("validate token", t, func() {
 		Convey("token missing", func() {
@@ -90,9 +100,10 @@ func TestStartBuild(t *testing.T) {
 		})
 
 		Convey("wrong purpose", func() {
-			tk, _ := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_TASK)
+			tk, err := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_TASK)
+			So(err, ShouldBeNil)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
-			_, err := srv.StartBuild(ctx, req)
+			_, err = srv.StartBuild(ctx, req)
 			So(err, ShouldErrLike, `token is for purpose TASK`)
 		})
 

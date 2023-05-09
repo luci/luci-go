@@ -46,7 +46,7 @@ func TestBuildToken(t *testing.T) {
 
 		Convey("success (plaintext)", func() {
 			bID := int64(123)
-			token, err := GenerateToken(ctx, bID, pb.TokenBody_BUILD)
+			token, err := generatePlaintextToken(bID, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
 			tBody, err := ParseToTokenBody(ctx, token, 123, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
@@ -57,7 +57,7 @@ func TestBuildToken(t *testing.T) {
 
 		Convey("success (encrypted)", func() {
 			bID := int64(123)
-			token, err := generateEncryptedToken(ctx, bID, pb.TokenBody_BUILD)
+			token, err := GenerateToken(ctx, bID, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
 			tBody, err := ParseToTokenBody(ctx, token, 123, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)

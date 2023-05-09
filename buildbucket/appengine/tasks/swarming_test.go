@@ -38,6 +38,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
@@ -332,6 +334,13 @@ func TestSyncBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, sch := tq.TestingContext(ctx, nil)
+		store := &testsecrets.Store{
+			Secrets: map[string]secrets.Secret{
+				"key": {Active: []byte("stuff")},
+			},
+		}
+		ctx = secrets.Use(ctx, store)
+		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
 		b := &model.Build{
 			ID: 123,

@@ -28,8 +28,6 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/secrets"
-	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -46,7 +44,7 @@ func TestValidateBuildTask(t *testing.T) {
 
 	Convey("ValidateBuildTask", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = secrets.Use(ctx, &testsecrets.Store{})
+		ctx = installTestSecret(ctx)
 
 		tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
 		So(err, ShouldBeNil)
@@ -364,7 +362,7 @@ func TestUpdateBuildTask(t *testing.T) {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		ctx = secrets.Use(ctx, &testsecrets.Store{})
+		ctx = installTestSecret(ctx)
 
 		tk, ctx := updateContextForNewBuildToken(ctx, 1)
 		datastore.GetTestable(ctx).AutoIndex(true)
@@ -446,7 +444,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 	t.Parallel()
 	Convey("UpdateTaskEntity", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = secrets.Use(ctx, &testsecrets.Store{})
+		ctx = installTestSecret(ctx)
 
 		tk, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
 		t0 := testclock.TestRecentTimeUTC

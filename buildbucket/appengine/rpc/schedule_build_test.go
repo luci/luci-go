@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"encoding/base64"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -27,7 +26,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	grpcStatus "google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -53,6 +51,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
@@ -372,6 +371,7 @@ func TestScheduleBuild(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		ctx = installTestSecret(ctx)
 
 		store := tsmon.Store(ctx)
 		globalCfg := &pb.SettingsCfg{
@@ -1287,20 +1287,8 @@ func TestScheduleBuild(t *testing.T) {
 		})
 
 		Convey("one with parent", func() {
-			tkBody := &pb.TokenBody{
-				BuildId: 1,
-				State:   []byte("random"),
-				Purpose: pb.TokenBody_BUILD,
-			}
-			tkBytes, err := proto.Marshal(tkBody)
+			tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
-			tkEnvelop := &pb.TokenEnvelope{
-				Version: pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE,
-				Payload: tkBytes,
-			}
-			tkeBytes, err := proto.Marshal(tkEnvelop)
-			So(err, ShouldBeNil)
-			tk := base64.RawURLEncoding.EncodeToString(tkeBytes)
 
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
 			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
@@ -6198,6 +6186,8 @@ func TestScheduleBuild(t *testing.T) {
 
 	Convey("validateSchedule", t, func() {
 		ctx := memory.Use(context.Background())
+		ctx = installTestSecret(ctx)
+
 		Convey("nil", func() {
 			err := validateSchedule(ctx, nil, nil, nil)
 			So(err, ShouldErrLike, "builder or template_build_id is required")
@@ -6426,20 +6416,8 @@ func TestScheduleBuild(t *testing.T) {
 					So(err, ShouldBeNil)
 				})
 
-				tkBody := &pb.TokenBody{
-					BuildId: 1,
-					State:   []byte("random"),
-					Purpose: pb.TokenBody_BUILD,
-				}
-				tkBytes, err := proto.Marshal(tkBody)
+				tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
 				So(err, ShouldBeNil)
-				tkEnvelop := &pb.TokenEnvelope{
-					Version: pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE,
-					Payload: tkBytes,
-				}
-				tkeBytes, err := proto.Marshal(tkEnvelop)
-				So(err, ShouldBeNil)
-				tk := base64.RawURLEncoding.EncodeToString(tkeBytes)
 				Convey("ended parent", func() {
 					testutil.PutBucket(ctx, "project", "bucket", nil)
 

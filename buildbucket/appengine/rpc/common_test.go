@@ -41,6 +41,16 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func installTestSecret(ctx context.Context) context.Context {
+	store := &testsecrets.Store{
+		Secrets: map[string]secrets.Secret{
+			"key": {Active: []byte("stuff")},
+		},
+	}
+	ctx = secrets.Use(ctx, store)
+	return secrets.GeneratePrimaryTinkAEADForTest(ctx)
+}
+
 func TestLogToBQ(t *testing.T) {
 	t.Parallel()
 
@@ -279,7 +289,7 @@ func TestValidateBuildToken(t *testing.T) {
 	Convey("validateBuildToken", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
-		ctx = secrets.Use(ctx, &testsecrets.Store{})
+		ctx = installTestSecret(ctx)
 
 		tk1, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_BUILD)
 		tk2, _ := buildtoken.GenerateToken(ctx, 2, pb.TokenBody_BUILD)
@@ -330,6 +340,8 @@ func TestValidateBuildTaskToken(t *testing.T) {
 	Convey("validateBuildTaskToken", t, func() {
 		ctx := memory.Use(context.Background())
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1444945245, 0))
+		ctx = installTestSecret(ctx)
+
 		tk1, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
 		So(err, ShouldBeNil)
 		tk2, err := buildtoken.GenerateToken(ctx, 2, pb.TokenBody_TASK)
