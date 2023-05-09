@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -659,6 +660,12 @@ func validateBuilderCfg(ctx *validation.Context, b *pb.BuilderConfig, wellKnownE
 	// resultdb
 	if b.Resultdb.GetHistoryOptions().GetCommit() != nil {
 		ctx.Errorf("resultdb.history_options.commit must be unset")
+	}
+
+	for i, bqExport := range b.Resultdb.GetBqExports() {
+		if err := rdbpbutil.ValidateBigQueryExport(bqExport); err != nil {
+			ctx.Errorf("error validating resultdb.bq_exports[%d]: %s", i, err)
+		}
 	}
 
 	validateCaches(ctx, b.Caches)

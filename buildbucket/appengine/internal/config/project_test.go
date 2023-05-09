@@ -297,13 +297,21 @@ func TestValidateProject(t *testing.T) {
 								position: 123
 							}
 						}
+						bq_exports {
+							project: "project"
+							dataset: "dataset"
+							table: "table"
+							test_results {}
+						}
+						bq_exports {
+						}
 					}
 				}
 			`
 			validateProjectSwarming(vctx, toBBSwarmingCfg(content), wellKnownExperiments)
 			ve, ok := vctx.Finalize().(*validation.Error)
 			So(ok, ShouldEqual, true)
-			So(len(ve.Errors), ShouldEqual, 9)
+			So(len(ve.Errors), ShouldEqual, 10)
 			So(ve.Errors[0].Error(), ShouldContainSubstring, "(swarming / builders #0 - both): exactly one of exe or recipe must be specified")
 			So(ve.Errors[1].Error(), ShouldContainSubstring, "(swarming / builders #1 - bad exe): exe.cipd_package: unspecified")
 			So(ve.Errors[2].Error(), ShouldContainSubstring, "(swarming / builders #2 - non json properties): properties is not a JSON object")
@@ -313,6 +321,7 @@ func TestValidateProject(t *testing.T) {
 			So(ve.Errors[6].Error(), ShouldContainSubstring, "(swarming / builders #5 - recipe and properties): recipe and properties cannot be set together")
 			So(ve.Errors[7].Error(), ShouldContainSubstring, "name must match ^[a-zA-Z0-9\\-_.\\(\\) ]{1,128}$")
 			So(ve.Errors[8].Error(), ShouldContainSubstring, "(swarming / builders #7 - bad resultdb): resultdb.history_options.commit must be unset")
+			So(ve.Errors[9].Error(), ShouldContainSubstring, "(swarming / builders #7 - bad resultdb): error validating resultdb.bq_exports[1]")
 		})
 
 		Convey("bad builders cfg 2", func() {
