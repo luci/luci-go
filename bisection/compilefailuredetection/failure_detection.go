@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package failure_detection analyses a failed build and determines if it needs
-// to trigger a new analysis for it
+// Package compilefailuredetection analyses a failed build and determines if it
+// needs to trigger a new analysis for it.
 package compilefailuredetection
 
 import (
@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"

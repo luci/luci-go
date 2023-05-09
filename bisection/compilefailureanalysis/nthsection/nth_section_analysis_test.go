@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 )
 
@@ -71,7 +71,7 @@ func TestAnalyze(t *testing.T) {
 		Builder: &bbpb.BuilderID{
 			Project: "chromium",
 			Bucket:  "findit",
-			Builder: "gofindit-single-revision",
+			Builder: "single-revision",
 		},
 		Input: &bbpb.Build_Input{
 			GitilesCommit: &bbpb.GitilesCommit{

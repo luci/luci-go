@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package server implements the server to handle pRPC requests.
 package server
 
 import (
@@ -23,7 +22,7 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
@@ -39,12 +38,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// GoFinditBotServer implements the proto service GoFinditBotService.
-type GoFinditBotServer struct{}
+// BotUpdatesServer implements the LUCI Bisection proto service for BotUpdates.
+type BotUpdatesServer struct{}
 
 // UpdateAnalysisProgress is an RPC endpoints used by the recipes to update
 // analysis progress.
-func (server *GoFinditBotServer) UpdateAnalysisProgress(c context.Context, req *pb.UpdateAnalysisProgressRequest) (*pb.UpdateAnalysisProgressResponse, error) {
+func (server *BotUpdatesServer) UpdateAnalysisProgress(c context.Context, req *pb.UpdateAnalysisProgressRequest) (*pb.UpdateAnalysisProgressResponse, error) {
 	err := verifyUpdateAnalysisProgressRequest(c, req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request: %s", err)

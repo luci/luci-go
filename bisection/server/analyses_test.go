@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package server implements the server to handle pRPC requests.
 package server
 
 import (
@@ -20,7 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 
 	"github.com/google/go-cmp/cmp"
@@ -38,7 +37,7 @@ import (
 
 func TestQueryAnalysis(t *testing.T) {
 	t.Parallel()
-	server := &GoFinditServer{}
+	server := &AnalysesServer{}
 	c := memory.Use(context.Background())
 	testutil.UpdateIndices(c)
 	datastore.GetTestable(c).AutoIndex(true)
@@ -185,7 +184,7 @@ func TestQueryAnalysis(t *testing.T) {
 				BuildId:    8877665544332211,
 				Project:    "chromium",
 				Bucket:     "findit",
-				Builder:    "gofindit-single-revision",
+				Builder:    "luci-bisection-single-revision",
 				CreateTime: (&timestamppb.Timestamp{Seconds: 100}).AsTime(),
 				StartTime:  (&timestamppb.Timestamp{Seconds: 101}).AsTime(),
 				EndTime:    (&timestamppb.Timestamp{Seconds: 102}).AsTime(),
@@ -228,7 +227,7 @@ func TestQueryAnalysis(t *testing.T) {
 				BuildId:    7766554433221100,
 				Project:    "chromium",
 				Bucket:     "findit",
-				Builder:    "gofindit-single-revision",
+				Builder:    "luci-bisection-single-revision",
 				CreateTime: (&timestamppb.Timestamp{Seconds: 200}).AsTime(),
 				StartTime:  (&timestamppb.Timestamp{Seconds: 201}).AsTime(),
 				EndTime:    (&timestamppb.Timestamp{Seconds: 202}).AsTime(),
@@ -565,7 +564,7 @@ func TestQueryAnalysis(t *testing.T) {
 
 func TestListAnalyses(t *testing.T) {
 	t.Parallel()
-	server := &GoFinditServer{}
+	server := &AnalysesServer{}
 
 	Convey("List existing analyses", t, func() {
 		// Set up context and AEAD so that page tokens can be generated

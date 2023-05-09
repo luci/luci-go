@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
 // GetChangeLogs queries Gitiles for changelogs in the regression range

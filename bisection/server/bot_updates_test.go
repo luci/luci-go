@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/server/tq"
@@ -158,7 +158,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 			BotId: "abc",
 		}
 
-		server := &GoFinditBotServer{}
+		server := &BotUpdatesServer{}
 		_, err := server.UpdateAnalysisProgress(c, req1)
 		So(err, ShouldBeNil)
 		datastore.Get(c, singleRerun1)
@@ -210,7 +210,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				Builder: &bbpb.BuilderID{
 					Project: "chromium",
 					Bucket:  "findit",
-					Builder: "gofindit-single-revision",
+					Builder: "luci-bisection-single-revision",
 				},
 				Input: &bbpb.Build_Input{
 					GitilesCommit: &bbpb.GitilesCommit{
@@ -288,7 +288,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 				BotId: "abc",
 			}
 
-			server := &GoFinditBotServer{}
+			server := &BotUpdatesServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			datastore.GetTestable(c).CatchupIndexes()
 			So(err, ShouldBeNil)
@@ -384,7 +384,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 			// We do not expect any calls to ScheduleBuild
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
-			server := &GoFinditBotServer{}
+			server := &BotUpdatesServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			So(err, ShouldBeNil)
 			So(datastore.Get(c, singleRerun1), ShouldBeNil)
@@ -508,7 +508,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 			// We do not expect any calls to ScheduleBuild
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
-			server := &GoFinditBotServer{}
+			server := &BotUpdatesServer{}
 			res, err := server.UpdateAnalysisProgress(c, req)
 			So(err, ShouldBeNil)
 			So(datastore.Get(c, singleRerun3), ShouldBeNil)
@@ -600,7 +600,7 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 
 			// We do not expect any calls to ScheduleBuild
 			mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&bbpb.Build{}, nil).Times(0)
-			server := &GoFinditBotServer{}
+			server := &BotUpdatesServer{}
 			_, err := server.UpdateAnalysisProgress(c, req)
 			So(err, ShouldNotBeNil)
 			So(datastore.Get(c, singleRerun2), ShouldBeNil)

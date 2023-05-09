@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gofindit contains the original proto definitions for LUCI Bisection,
-// (formerly called GoFindit). These protos will soon be deprecated and
-// replaced by the protos defined in the package luci.bisection.v1.
-package gofindit
+// Package bisectionpb contains the proto definitions for LUCI Bisection.
+package bisectionpb
 
 //go:generate cproto
-//go:generate svcdec -type GoFinditServiceServer -type GoFinditBotServiceServer
+//go:generate svcdec -type AnalysesServer
+//go:generate svcdec -type BotUpdatesServer

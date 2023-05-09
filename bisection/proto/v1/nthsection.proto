@@ -1,0 +1,85 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.bisection.v1;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/bisection/proto/v1/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
+
+message NthSectionAnalysisResult {
+  // The status of the nth-section analysis.
+  luci.bisection.v1.AnalysisStatus status = 1;
+  // Timestamp for the start time of the nth-section analysis.
+  google.protobuf.Timestamp start_time = 2;
+  // Timestamp for the last updated time of the nth-section analysis.
+  google.protobuf.Timestamp last_updated_time = 3;
+  // Timestamp for the end time of the nth-section analysis.
+  google.protobuf.Timestamp end_time = 4;
+  // Optional, when status = FOUND. Whether the culprit has been verified.
+  bool verified = 5;
+  // Optional, when status = RUNNING. This is the possible commit range of the
+  // culprit. This will be updated as the nth-section progress.
+  RegressionRange remaining_nth_section_range = 6;
+  // Optional, when status = ERROR. The error message.
+  string error_message = 7;
+  // List of the reruns that have been run so far for the nth-section analysis.
+  // This is useful to analyse the nth-section progress.
+  // The runs are sorted by the start timestamp.
+  repeated luci.bisection.v1.SingleRerun reruns = 8;
+  // The blame list of commits to run the nth-section analysis on.
+  // The commits are sorted by recency, with the most recent commit first.
+  BlameList blameList = 9;
+  // Optional, when nth-section has found a suspect.
+  NthSectionSuspect suspect = 10;
+}
+
+message BlameList {
+  // The commits in the blame list.
+  repeated BlameListSingleCommit commits = 1;
+}
+
+message BlameListSingleCommit {
+  // The commit ID.
+  string commit = 1;
+  // Review URL for the commit.
+  string reviewUrl = 2;
+  // Title of the review for the commit.
+  string reviewTitle = 3;
+}
+
+message NthSectionSuspect {
+  // A suspect revision of nth-section analysis.
+  buildbucket.v2.GitilesCommit gitiles_commit = 1;
+  // Review URL for the commit.
+  string reviewUrl = 2;
+  // Title of the review for the commit.
+  string reviewTitle = 3;
+  // The details of suspect verification for the suspect.
+  luci.bisection.v1.SuspectVerificationDetails verification_details = 4;
+}
+
+message RegressionRange {
+  // The commit that is the latest known to pass.
+  buildbucket.v2.GitilesCommit last_passed = 1;
+  // The commit that is the earliest known to fail.
+  buildbucket.v2.GitilesCommit first_failed = 2;
+  // How many revisions between last passed (exclusively) and first failed
+  // (inclusively).
+  int32 number_of_revisions = 3;
+}

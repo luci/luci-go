@@ -28,9 +28,11 @@ import (
 	"go.chromium.org/luci/bisection/frontend/handlers"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/metrics"
-	pb "go.chromium.org/luci/bisection/proto"
+	gfipb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/pubsub"
 	"go.chromium.org/luci/bisection/server"
+	gfiserver "go.chromium.org/luci/bisection/server/gofindit"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/auth/identity"
@@ -177,14 +179,32 @@ func main() {
 		})
 
 		// Installs gRPC service.
-		pb.RegisterGoFinditServiceServer(srv, &pb.DecoratedGoFinditService{
-			Service: &server.GoFinditServer{},
+		pb.RegisterAnalysesServer(srv, &pb.DecoratedAnalyses{
+			Service: &server.AnalysesServer{},
 			Prelude: checkAPIAccess,
 		})
 
 		// Installs gRPC service to communicate with recipes
-		pb.RegisterGoFinditBotServiceServer(srv, &pb.DecoratedGoFinditBotService{
-			Service: &server.GoFinditBotServer{},
+		pb.RegisterBotUpdatesServer(srv, &pb.DecoratedBotUpdates{
+			Service: &server.BotUpdatesServer{},
+			Prelude: checkBotAPIAccess,
+		})
+
+		// Installs soon-to-be deprecated GoFindit gRPC service.
+		// TODO (aredulla): remove this once all references to the GoFindit gRPC
+		// service have been updated to use the LUCI Bisection Analyses service.
+		gfipb.RegisterGoFinditServiceServer(srv, &gfipb.DecoratedGoFinditService{
+			Service: &gfiserver.GoFinditServer{},
+			Prelude: checkAPIAccess,
+		})
+
+		// Installs soon-to-be deprecated GoFindit gRPC service to communicate
+		// with recipes.
+		// TODO (aredulla): remove this once all references to the GoFindit gRPC
+		// bot service have been updated to use the LUCI Bisection Bot Updates
+		// service.
+		gfipb.RegisterGoFinditBotServiceServer(srv, &gfipb.DecoratedGoFinditBotService{
+			Service: &gfiserver.GoFinditBotServer{},
 			Prelude: checkBotAPIAccess,
 		})
 

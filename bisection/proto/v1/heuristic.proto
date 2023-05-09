@@ -1,0 +1,66 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.bisection.v1;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/bisection/proto/v1/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
+
+enum SuspectConfidenceLevel {
+  SUSPECT_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+}
+
+message HeuristicAnalysisResult {
+  // The status of the heuristic analysis.
+  luci.bisection.v1.AnalysisStatus status = 1;
+  // One or more suspects of the heuristic analysis.
+  // This field exists only when status = FINISHED.
+  repeated HeuristicSuspect suspects = 2;
+  // Start time of heuristic analysis.
+  google.protobuf.Timestamp start_time = 3;
+  // End time of heuristic analysis.
+  google.protobuf.Timestamp end_time = 4;
+}
+
+message HeuristicSuspect {
+  // A suspect revision of heuristic analysis.
+  buildbucket.v2.GitilesCommit gitiles_commit = 1;
+  // Review URL for the suspect commit.
+  string reviewUrl = 2;
+  // Score is an integer representing the how confident we believe the suspect
+  // is indeed the culprit.
+  // A higher score means a stronger signal that the suspect is responsible for
+  // a failure.
+  int32 score = 3;
+  // The reason why heuristic analysis thinks the suspect caused a build
+  // failure.
+  string justification = 4;
+  // Whether the suspect has been verified by the culprit verification
+  // component.
+  bool verified = 5;
+  // The level of confidence we have for the suspect.
+  SuspectConfidenceLevel confidence_level = 6;
+  // Title of the review for the suspect commit.
+  string reviewTitle = 7;
+  // The details of suspect verification for the suspect.
+  luci.bisection.v1.SuspectVerificationDetails verification_details = 8;
+}

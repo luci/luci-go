@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package culpritverification verifies if a suspect is a culprit.
 package culpritverification
 
 import (
@@ -33,7 +32,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
-	gofindit "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 )
 
@@ -53,7 +52,7 @@ func TestVerifySuspect(t *testing.T) {
 		Builder: &bbpb.BuilderID{
 			Project: "chromium",
 			Bucket:  "findit",
-			Builder: "gofindit-single-revision",
+			Builder: "single-revision",
 		},
 		Input: &bbpb.Build_Input{
 			GitilesCommit: &bbpb.GitilesCommit{
@@ -74,7 +73,7 @@ func TestVerifySuspect(t *testing.T) {
 		Builder: &bbpb.BuilderID{
 			Project: "chromium",
 			Bucket:  "findit",
-			Builder: "gofindit-single-revision",
+			Builder: "single-revision",
 		},
 		Input: &bbpb.Build_Input{
 			GitilesCommit: &bbpb.GitilesCommit{
@@ -157,14 +156,19 @@ func TestVerifySuspect(t *testing.T) {
 		So(rerun1, ShouldResemble, &model.CompileRerunBuild{
 			Id: 123,
 			LuciBuild: model.LuciBuild{
-				BuildId:       123,
-				Project:       "chromium",
-				Bucket:        "findit",
-				Builder:       "gofindit-single-revision",
-				Status:        bbpb.Status_STARTED,
-				GitilesCommit: *res1.Input.GitilesCommit,
-				CreateTime:    res1.CreateTime.AsTime(),
-				StartTime:     res1.StartTime.AsTime(),
+				BuildId: 123,
+				Project: "chromium",
+				Bucket:  "findit",
+				Builder: "single-revision",
+				Status:  bbpb.Status_STARTED,
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    res1.Input.GitilesCommit.Host,
+					Project: res1.Input.GitilesCommit.Project,
+					Id:      res1.Input.GitilesCommit.Id,
+					Ref:     res1.Input.GitilesCommit.Ref,
+				},
+				CreateTime: res1.CreateTime.AsTime(),
+				StartTime:  res1.StartTime.AsTime(),
 			},
 		})
 
@@ -176,14 +180,19 @@ func TestVerifySuspect(t *testing.T) {
 		So(rerun2, ShouldResemble, &model.CompileRerunBuild{
 			Id: 456,
 			LuciBuild: model.LuciBuild{
-				BuildId:       456,
-				Project:       "chromium",
-				Bucket:        "findit",
-				Builder:       "gofindit-single-revision",
-				Status:        bbpb.Status_STARTED,
-				GitilesCommit: *res2.Input.GitilesCommit,
-				CreateTime:    res2.CreateTime.AsTime(),
-				StartTime:     res2.StartTime.AsTime(),
+				BuildId: 456,
+				Project: "chromium",
+				Bucket:  "findit",
+				Builder: "single-revision",
+				Status:  bbpb.Status_STARTED,
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    res2.Input.GitilesCommit.Host,
+					Project: res2.Input.GitilesCommit.Project,
+					Id:      res2.Input.GitilesCommit.Id,
+					Ref:     res2.Input.GitilesCommit.Ref,
+				},
+				CreateTime: res2.CreateTime.AsTime(),
+				StartTime:  res2.StartTime.AsTime(),
 			},
 		})
 
@@ -229,14 +238,14 @@ func TestVerifySuspect(t *testing.T) {
 
 	Convey("Verify Suspect should also update analysis status", t, func() {
 		_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, 8001, "chromium", 666)
-		cfa.Status = gofindit.AnalysisStatus_SUSPECTFOUND
-		cfa.RunStatus = gofindit.AnalysisRunStatus_STARTED
+		cfa.Status = pb.AnalysisStatus_SUSPECTFOUND
+		cfa.RunStatus = pb.AnalysisRunStatus_STARTED
 		So(datastore.Put(c, cfa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		nsa := testutil.CreateNthSectionAnalysis(c, cfa)
-		nsa.Status = gofindit.AnalysisStatus_SUSPECTFOUND
-		nsa.RunStatus = gofindit.AnalysisRunStatus_ENDED
+		nsa.Status = pb.AnalysisStatus_SUSPECTFOUND
+		nsa.RunStatus = pb.AnalysisRunStatus_ENDED
 		So(datastore.Put(c, nsa), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
@@ -281,8 +290,8 @@ func TestVerifySuspect(t *testing.T) {
 
 		// Verify the status is updated
 		So(datastore.Get(c, cfa), ShouldBeNil)
-		So(cfa.Status, ShouldEqual, gofindit.AnalysisStatus_SUSPECTFOUND)
-		So(cfa.RunStatus, ShouldEqual, gofindit.AnalysisRunStatus_ENDED)
+		So(cfa.Status, ShouldEqual, pb.AnalysisStatus_SUSPECTFOUND)
+		So(cfa.RunStatus, ShouldEqual, pb.AnalysisRunStatus_ENDED)
 	})
 
 }

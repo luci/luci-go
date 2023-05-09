@@ -1,0 +1,91 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.bisection.v1;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/bisection/proto/v1/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
+
+message Culprit {
+  // The gitiles commit for the culprit.
+  buildbucket.v2.GitilesCommit commit = 1;
+  // The review URL for the culprit.
+  string review_url = 2;
+  // The review title for the culprit.
+  string review_title = 3;
+  // Actions we have taken with the culprit.
+  // More than one action may be taken, for example, reverting the culprit and
+  // commenting on the bug.
+  repeated CulpritAction culprit_action = 4;
+  // The details of suspect verification for the culprit.
+  luci.bisection.v1.SuspectVerificationDetails verification_details = 5;
+}
+
+enum CulpritActionType {
+  CULPRIT_ACTION_TYPE_UNSPECIFIED = 0;
+  // No action has been taken with the culprit.
+  NO_ACTION = 1;
+  // The culprit was auto-reverted by LUCI Bisection.
+  CULPRIT_AUTO_REVERTED = 2;
+  // The revert CL for the culprit was created.
+  // Maybe waiting for a human to review or for the verification process
+  // to finish.
+  REVERT_CL_CREATED = 3;
+  // LUCI Bisection commented on the culprit CL.
+  CULPRIT_CL_COMMENTED = 4;
+  // LUCI Bisection commented on the bug for the failure.
+  BUG_COMMENTED = 5;
+  // LUCI Bisection commented on an existing revert CL for the culprit CL.
+  EXISTING_REVERT_CL_COMMENTED = 6;
+}
+
+// CulpritInactionReason encapsulates common reasons for why culprits found by
+// LUCI Bisection may not have resulted in any perceivable actions.
+enum CulpritInactionReason {
+  CULPRIT_INACTION_REASON_UNSPECIFIED = 0;
+  // The culprit has been reverted by LUCI Bisection.
+  REVERTED_BY_BISECTION = 1;
+  // The culprit has been reverted, but not by LUCI Bisection.
+  REVERTED_MANUALLY = 2;
+  // The culprit has an existing revert, yet to be merged, created by
+  // LUCI Bisection.
+  REVERT_OWNED_BY_BISECTION = 3;
+  // The culprit's existing revert already has a comment from LUCI Bisection.
+  REVERT_HAS_COMMENT = 4;
+  // The culprit already has a comment from LUCI Bisection.
+  CULPRIT_HAS_COMMENT = 5;
+  // The analysis that resulted in the culprit has been canceled.
+  ANALYSIS_CANCELED = 6;
+  // Culprit actions have been disabled via configs.
+  ACTIONS_DISABLED = 7;
+}
+
+// An action that LUCI Bisection has taken with the culprit.
+message CulpritAction {
+  CulpritActionType action_type = 1;
+  // URL to the revert CL for the culprit.
+  string revert_cl_url = 2;
+  // URL to the bug, if action_type = BUG_COMMENTED.
+  string bug_url = 3;
+  // Timestamp of when the culprit action was executed.
+  google.protobuf.Timestamp action_time = 4;
+  // Optional reason for why no action was taken with the culprit, if
+  // action_type = NO_ACTION.
+  CulpritInactionReason inaction_reason = 5;
+}

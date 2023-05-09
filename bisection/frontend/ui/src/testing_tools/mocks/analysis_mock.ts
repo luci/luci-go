@@ -73,7 +73,7 @@ const createMockQueryAnalysisResponse = (
 
 export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
   fetchMock.post(
-    'http://localhost/prpc/gofindit.GoFinditService/QueryAnalysis',
+    'http://localhost/prpc/luci.bisection.v1.Analyses/QueryAnalysis',
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
@@ -87,7 +87,7 @@ export const mockQueryAnalysis = (mockAnalyses: Analysis[]) => {
 
 export const mockErrorQueryingAnalysis = () => {
   fetchMock.post(
-    'http://localhost/prpc/gofindit.GoFinditService/QueryAnalysis',
+    'http://localhost/prpc/luci.bisection.v1.Analyses/QueryAnalysis',
     {
       headers: {
         'X-Prpc-Grpc-Code': '2',

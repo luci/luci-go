@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package handlers contains the data structures and functions used for serving
-// GoFindit HTTP routes, such as the GoFindit frontend
+// Package handlers contains the data structures and functions used for serving
+// LUCI Bisection HTTP routes, such as the LUCI Bisection frontend
 package handlers
 
 import (

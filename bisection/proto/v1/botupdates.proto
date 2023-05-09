@@ -1,0 +1,54 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.bisection.v1;
+
+import "go.chromium.org/luci/bisection/proto/v1/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
+
+// BotUpdates service contains APIs called from bots, used to update
+// the progress on an analysis.
+service BotUpdates {
+  // RPC called from bots to update the analysis progress.
+  rpc UpdateAnalysisProgress(UpdateAnalysisProgressRequest)
+      returns (UpdateAnalysisProgressResponse);
+}
+
+// RPC called from bots to update the analysis progress.
+message UpdateAnalysisProgressRequest {
+  // The analysis that the bot ran.
+  int64 analysis_id = 1;
+  // Bot ID.
+  string bot_id = 2;
+  // BuildbucketID of the rerun build.
+  // We use this to determine which rerun build to map back.
+  int64 bbid = 3;
+  // The revision that the bot ran.
+  buildbucket.v2.GitilesCommit gitiles_commit = 4;
+  // Result of the rerun.
+  luci.bisection.v1.RerunResult rerun_result = 5;
+}
+
+message UpdateAnalysisProgressResponse {
+  // The next revision for the bot to run.
+  // This is because we can compile faster when the same bot runs
+  // multiple revisions.
+  // If this is not set, then there is no further revision to run.
+  // The bot can finish and be released.
+  buildbucket.v2.GitilesCommit next_revision_to_run = 1;
+}

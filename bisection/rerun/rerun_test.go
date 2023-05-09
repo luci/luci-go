@@ -157,7 +157,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 		Builder: &bbpb.BuilderID{
 			Project: "chromium",
 			Bucket:  "findit",
-			Builder: "gofindit-single-revision",
+			Builder: "luci-bisection-single-revision",
 		},
 		Input: &bbpb.Build_Input{
 			GitilesCommit: &bbpb.GitilesCommit{
@@ -230,7 +230,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 					BuildId: 123,
 					Project: "chromium",
 					Bucket:  "findit",
-					Builder: "gofindit-single-revision",
+					Builder: "luci-bisection-single-revision",
 					Status:  bbpb.Status_STARTED,
 					GitilesCommit: bbpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
@@ -265,7 +265,7 @@ func TestCreateRerunBuildModel(t *testing.T) {
 					BuildId: 124,
 					Project: "chromium",
 					Bucket:  "findit",
-					Builder: "gofindit-single-revision",
+					Builder: "luci-bisection-single-revision",
 					Status:  bbpb.Status_STARTED,
 					GitilesCommit: bbpb.GitilesCommit{
 						Host:    "chromium.googlesource.com",
@@ -306,7 +306,7 @@ func TestUpdateRerunStartTime(t *testing.T) {
 		Builder: &bbpb.BuilderID{
 			Project: "chromium",
 			Bucket:  "findit",
-			Builder: "gofindit-single-revision",
+			Builder: "luci-bisection-single-revision",
 		},
 		Status:    bbpb.Status_STARTED,
 		StartTime: &timestamppb.Timestamp{Seconds: 100},

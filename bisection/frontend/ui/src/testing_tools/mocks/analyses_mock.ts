@@ -31,7 +31,7 @@ export const mockFetchAnalyses = (
   nextPageToken: string
 ) => {
   fetchMock.post(
-    'http://localhost/prpc/gofindit.GoFinditService/ListAnalyses',
+    'http://localhost/prpc/luci.bisection.v1.Analyses/ListAnalyses',
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
@@ -48,7 +48,7 @@ export const mockFetchAnalyses = (
 
 export const mockErrorFetchingAnalyses = () => {
   fetchMock.post(
-    'http://localhost/prpc/gofindit.GoFinditService/ListAnalyses',
+    'http://localhost/prpc/luci.bisection.v1.Analyses/ListAnalyses',
     {
       headers: {
         'X-Prpc-Grpc-Code': '2',

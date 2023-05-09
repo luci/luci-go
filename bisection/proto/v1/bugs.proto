@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gofindit contains the original proto definitions for LUCI Bisection,
-// (formerly called GoFindit). These protos will soon be deprecated and
-// replaced by the protos defined in the package luci.bisection.v1.
-package gofindit
+syntax = "proto3";
 
-//go:generate cproto
-//go:generate svcdec -type GoFinditServiceServer -type GoFinditBotServiceServer
+package luci.bisection.v1;
+
+option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
+
+// Information about a bug associated with a failure.
+message BugInfo {
+  oneof bug {
+    MonorailBugInfo monorail_bug_info = 1;
+    BuganizerBugInfo buganizer_bug_info = 2;
+  }
+}
+
+message MonorailBugInfo {
+  // The project of the bug, e.g. "chromium".
+  string project = 1;
+  // Monorail bug ID.
+  int32 bug_id = 2;
+}
+
+message BuganizerBugInfo {
+  // Buganizer bug ID.
+  int64 bug_id = 1;
+}

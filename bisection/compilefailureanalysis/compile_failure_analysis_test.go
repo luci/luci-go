@@ -35,8 +35,8 @@ import (
 	"go.chromium.org/luci/bisection/internal/logdog"
 	"go.chromium.org/luci/bisection/internal/lucinotify"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
 	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 	lnpb "go.chromium.org/luci/luci_notify/api/service/v1"
 )

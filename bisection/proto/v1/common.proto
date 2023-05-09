@@ -1,0 +1,95 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.bisection.v1;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
+option go_package = "go.chromium.org/luci/bisection/proto/v1;bisectionpb";
+
+// AnalysisStatus represents the result status of an analysis.
+enum AnalysisStatus {
+  ANALYSIS_STATUS_UNSPECIFIED = 0;
+  // The analysis has been created, but not yet started.
+  // We don't have this status in code. It's here for backward-compatability.
+  CREATED = 1;
+  // The analysis is running, but results have not been finalised.
+  RUNNING = 2;
+  // The analysis has finished and found (and verified) the culprit.
+  FOUND = 3;
+  // The analysis has finished but no culprit/suspect has been found.
+  NOTFOUND = 4;
+  // The analysis resulted in an error.
+  ERROR = 5;
+  // The analysis found some suspects, either from heuristic or nth-section.
+  SUSPECTFOUND = 6;
+}
+
+enum RerunStatus {
+  RERUN_STATUS_UNSPECIFIED = 0;
+  RERUN_STATUS_IN_PROGRESS = 1;
+  RERUN_STATUS_PASSED = 2;
+  RERUN_STATUS_FAILED = 3;
+  RERUN_STATUS_INFRA_FAILED = 4;
+  RERUN_STATUS_CANCELED = 5;
+}
+
+// RerunResult contains the result of one rerun.
+// It is for the bots to update result back to LUCI Bisection.
+message RerunResult {
+  // Status of the rerun.
+  RerunStatus rerun_status = 1;
+  // Error message, in case of FAILED or INFRA_FAILED status.
+  string error_message = 2;
+}
+
+// SingleRerun contains information about a single rerun.
+// The same bot may be reused for multiple rerun (to speed up compilation time).
+message SingleRerun {
+  // Timestamp for the created time of the rerun.
+  google.protobuf.Timestamp start_time = 1;
+  // Timestamp for the last updated time of the rerun.
+  google.protobuf.Timestamp last_updated_time = 2;
+  // Timestamp for the end time of the rerun.
+  google.protobuf.Timestamp end_time = 3;
+  // Buildbucket ID of the rerun build.
+  int64 bbid = 4;
+  // Task ID of the rerun.
+  string task_id = 5;
+  // ID of the bot.
+  string bot_id = 6;
+  // Result of the rerun.
+  RerunResult rerun_result = 7;
+  // Gitiles commit to do the rerun with.
+  buildbucket.v2.GitilesCommit commit = 8;
+  // Index of the commit to rerun within the blamelist, if this is an
+  // nth-section rerun. We need to use a string instead of an int here because
+  // 0 is a possible valid value but would get lost due to the "omitempty" flag
+  // in the generated proto.
+  string index = 9;
+  // Type of rerun: either "Culprit Verification" or "NthSection".
+  string type = 10;
+}
+
+message SuspectVerificationDetails {
+  // The status of the suspect verification.
+  string status = 1;
+  // The verification rerun build for the suspect commit.
+  SingleRerun suspect_rerun = 2;
+  // The verification rerun build for the parent commit of the suspect.
+  SingleRerun parent_rerun = 3;
+}

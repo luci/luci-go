@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package model contains the datastore model for GoFindit.
+// Package model contains the datastore model for LUCI Bisection.
 package model
 
 import (
 	"time"
 
-	gofinditpb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -90,7 +90,7 @@ type LuciFailedBuild struct {
 	// Obsolete field - specify BuildFailureType instead
 	FailureType string `gae:"failure_type"`
 	// Failure type for the build
-	BuildFailureType gofinditpb.BuildFailureType `gae:"build_failure_type"`
+	BuildFailureType pb.BuildFailureType `gae:"build_failure_type"`
 	// The platform of the failure
 	Platform Platform `gae:"platform"`
 }
@@ -140,16 +140,16 @@ type CompileFailureAnalysis struct {
 	// Time when the analysis ends, or canceled.
 	EndTime time.Time `gae:"end_time"`
 	// Status of the analysis
-	Status gofinditpb.AnalysisStatus `gae:"status"`
+	Status pb.AnalysisStatus `gae:"status"`
 	// Run status of the analysis
-	RunStatus gofinditpb.AnalysisRunStatus `gae:"run_status"`
+	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
 	// Id of the build in which the compile failures occurred the first time in
 	// a sequence of consecutive failed builds.
 	FirstFailedBuildId int64 `gae:"first_failed_build_id"`
 	// Id of the latest build in which the failures did not happen.
 	LastPassedBuildId int64 `gae:"last_passed_build_id"`
 	// Initial regression range to find the culprit
-	InitialRegressionRange *gofinditpb.RegressionRange `gae:"initial_regression_range"`
+	InitialRegressionRange *pb.RegressionRange `gae:"initial_regression_range"`
 	// Key to the heuristic suspects that was verified by Culprit verification
 	// In some rare cases, there are more than 1 culprit for the regression range.
 	VerifiedCulprits []*datastore.Key `gae:"verified_culprits"`
@@ -206,7 +206,7 @@ type SingleRerun struct {
 	// Time when the rerun ends.
 	EndTime time.Time `gae:"end_time"`
 	// Status of the rerun
-	Status gofinditpb.RerunStatus
+	Status pb.RerunStatus
 	// Key to the Suspect, if this is for culprit verification
 	// Note: We have the keys to suspect and nthsection here instead of CompileRerunBuild
 	// because in theory, we can mix culprit verification and nthsection runs
@@ -249,7 +249,7 @@ type ActionDetails struct {
 	CulpritCommentTime time.Time `gae:"culprit_comment_time"`
 
 	// Optional explanation for when processing the culprit results in no action.
-	InactionReason gofinditpb.CulpritInactionReason `gae:"inaction_reason"`
+	InactionReason pb.CulpritInactionReason `gae:"inaction_reason"`
 }
 
 // Suspect is the suspect of heuristic analysis.
@@ -311,9 +311,9 @@ type CompileHeuristicAnalysis struct {
 	// Time when the analysis ends, or canceled
 	EndTime time.Time `gae:"end_time"`
 	// Status of the analysis
-	Status gofinditpb.AnalysisStatus `gae:"status"`
+	Status pb.AnalysisStatus `gae:"status"`
 	// Run status of the analysis
-	RunStatus gofinditpb.AnalysisRunStatus `gae:"run_status"`
+	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
 }
 
 // CompileNthSectionAnalysis is nth-section analysis for compile failures.
@@ -326,15 +326,15 @@ type CompileNthSectionAnalysis struct {
 	// Time when the analysis ends, or canceled
 	EndTime time.Time `gae:"end_time"`
 	// Status of the analysis
-	Status gofinditpb.AnalysisStatus `gae:"status"`
+	Status pb.AnalysisStatus `gae:"status"`
 	// Run status of the analysis
-	RunStatus gofinditpb.AnalysisRunStatus `gae:"run_status"`
+	RunStatus pb.AnalysisRunStatus `gae:"run_status"`
 
 	// When storing protobuf message, datastore will compress the data if it is big
 	// https://source.corp.google.com/chops_infra_internal/infra/go/src/go.chromium.org/luci/gae/service/datastore/protos.go;l=88
 	// We can also declare zstd compression here, but there seems to be a bug where
 	// the message size is 0
-	BlameList *gofinditpb.BlameList `gae:"blame_list"`
+	BlameList *pb.BlameList `gae:"blame_list"`
 
 	// Suspect is the result of nthsection analysis.
 	// Note: We call it "suspect" because it has not been verified (by culprit verification component)
@@ -342,17 +342,17 @@ type CompileNthSectionAnalysis struct {
 }
 
 func (cfa *CompileFailureAnalysis) HasEnded() bool {
-	return cfa.RunStatus == gofinditpb.AnalysisRunStatus_ENDED || cfa.RunStatus == gofinditpb.AnalysisRunStatus_CANCELED
+	return cfa.RunStatus == pb.AnalysisRunStatus_ENDED || cfa.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
 
 func (ha *CompileHeuristicAnalysis) HasEnded() bool {
-	return ha.RunStatus == gofinditpb.AnalysisRunStatus_ENDED || ha.RunStatus == gofinditpb.AnalysisRunStatus_CANCELED
+	return ha.RunStatus == pb.AnalysisRunStatus_ENDED || ha.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
 
 func (nsa *CompileNthSectionAnalysis) HasEnded() bool {
-	return nsa.RunStatus == gofinditpb.AnalysisRunStatus_ENDED || nsa.RunStatus == gofinditpb.AnalysisRunStatus_CANCELED
+	return nsa.RunStatus == pb.AnalysisRunStatus_ENDED || nsa.RunStatus == pb.AnalysisRunStatus_CANCELED
 }
 
 func (rerun *SingleRerun) HasEnded() bool {
-	return rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == gofinditpb.RerunStatus_RERUN_STATUS_CANCELED
+	return rerun.Status == pb.RerunStatus_RERUN_STATUS_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_PASSED || rerun.Status == pb.RerunStatus_RERUN_STATUS_INFRA_FAILED || rerun.Status == pb.RerunStatus_RERUN_STATUS_CANCELED
 }

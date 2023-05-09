@@ -17,7 +17,7 @@ package model
 import (
 	"testing"
 
-	gofinditpb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -49,7 +49,7 @@ func TestDatastoreModel(t *testing.T) {
 					EndTime:     cl.Now(),
 					CreateTime:  cl.Now(),
 				},
-				BuildFailureType: gofinditpb.BuildFailureType_COMPILE,
+				BuildFailureType: pb.BuildFailureType_COMPILE,
 			}
 			So(datastore.Put(c, failed_build), ShouldBeNil)
 
@@ -66,10 +66,10 @@ func TestDatastoreModel(t *testing.T) {
 				CreateTime:         cl.Now(),
 				StartTime:          cl.Now(),
 				EndTime:            cl.Now(),
-				Status:             gofinditpb.AnalysisStatus_FOUND,
+				Status:             pb.AnalysisStatus_FOUND,
 				FirstFailedBuildId: 88000998778,
 				LastPassedBuildId:  873929392903,
-				InitialRegressionRange: &gofinditpb.RegressionRange{
+				InitialRegressionRange: &pb.RegressionRange{
 					LastPassed: &buildbucketpb.GitilesCommit{
 						Host:    "host",
 						Project: "proj",
@@ -91,7 +91,7 @@ func TestDatastoreModel(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
 				StartTime:      cl.Now(),
 				EndTime:        cl.Now(),
-				Status:         gofinditpb.AnalysisStatus_CREATED,
+				Status:         pb.AnalysisStatus_CREATED,
 			}
 			So(datastore.Put(c, heuristic_analysis), ShouldBeNil)
 
@@ -99,9 +99,9 @@ func TestDatastoreModel(t *testing.T) {
 				ParentAnalysis: datastore.KeyForObj(c, compile_failure_analysis),
 				StartTime:      cl.Now(),
 				EndTime:        cl.Now(),
-				Status:         gofinditpb.AnalysisStatus_CREATED,
-				BlameList: &gofinditpb.BlameList{
-					Commits: []*gofinditpb.BlameListSingleCommit{
+				Status:         pb.AnalysisStatus_CREATED,
+				BlameList: &pb.BlameList{
+					Commits: []*pb.BlameListSingleCommit{
 						{
 							Commit:      "12345",
 							ReviewUrl:   "https://this/is/review/url/1",

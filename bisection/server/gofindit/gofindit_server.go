@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package server implements the server to handle pRPC requests.
-package server
+// Package gofindit implements the soon-to-be deprecated GoFindit server to
+// handle pRPC requests.
+package gofindit
 
 import (
 	"context"
@@ -23,7 +24,9 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/heuristic"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
+	gfipb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/server"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 
@@ -43,7 +46,7 @@ var listAnalysesPageTokenVault = dscursor.NewVault([]byte("LUCIBisection.v1.List
 
 // Max and default page sizes for ListAnalyses - the proto should be updated
 // to reflect any changes to these values
-var listAnalysesPageSizeLimiter = PageSizeLimiter{
+var listAnalysesPageSizeLimiter = server.PageSizeLimiter{
 	Max:     200,
 	Default: 50,
 }
@@ -52,7 +55,7 @@ var listAnalysesPageSizeLimiter = PageSizeLimiter{
 type GoFinditServer struct{}
 
 // GetAnalysis returns the analysis given the analysis id
-func (server *GoFinditServer) GetAnalysis(c context.Context, req *pb.GetAnalysisRequest) (*pb.Analysis, error) {
+func (server *GoFinditServer) GetAnalysis(c context.Context, req *gfipb.GetAnalysisRequest) (*gfipb.Analysis, error) {
 	c = loggingutil.SetAnalysisID(c, req.AnalysisId)
 	analysis := &model.CompileFailureAnalysis{
 		Id: req.AnalysisId,
@@ -73,7 +76,7 @@ func (server *GoFinditServer) GetAnalysis(c context.Context, req *pb.GetAnalysis
 }
 
 // QueryAnalysis returns the analysis given a query
-func (server *GoFinditServer) QueryAnalysis(c context.Context, req *pb.QueryAnalysisRequest) (*pb.QueryAnalysisResponse, error) {
+func (server *GoFinditServer) QueryAnalysis(c context.Context, req *gfipb.QueryAnalysisRequest) (*gfipb.QueryAnalysisResponse, error) {
 	if err := validateQueryAnalysisRequest(req); err != nil {
 		return nil, err
 	}
@@ -100,14 +103,14 @@ func (server *GoFinditServer) QueryAnalysis(c context.Context, req *pb.QueryAnal
 		return nil, status.Errorf(codes.Internal, "failed to get analysis data %s", err)
 	}
 
-	res := &pb.QueryAnalysisResponse{
-		Analyses: []*pb.Analysis{analysispb},
+	res := &gfipb.QueryAnalysisResponse{
+		Analyses: []*gfipb.Analysis{analysispb},
 	}
 	return res, nil
 }
 
 // TriggerAnalysis triggers an analysis for a failure
-func (server *GoFinditServer) TriggerAnalysis(c context.Context, req *pb.TriggerAnalysisRequest) (*pb.TriggerAnalysisResponse, error) {
+func (server *GoFinditServer) TriggerAnalysis(c context.Context, req *gfipb.TriggerAnalysisRequest) (*gfipb.TriggerAnalysisResponse, error) {
 	// TODO(nqmtuan): Implement this
 	return nil, nil
 }
@@ -115,17 +118,17 @@ func (server *GoFinditServer) TriggerAnalysis(c context.Context, req *pb.Trigger
 // UpdateAnalysis updates the information of an analysis.
 // At the mean time, it is only used for update the bugs associated with an
 // analysis.
-func (server *GoFinditServer) UpdateAnalysis(c context.Context, req *pb.UpdateAnalysisRequest) (*pb.Analysis, error) {
+func (server *GoFinditServer) UpdateAnalysis(c context.Context, req *gfipb.UpdateAnalysisRequest) (*gfipb.Analysis, error) {
 	// TODO(nqmtuan): Implement this
 	return nil, nil
 }
 
 // GetAnalysisResult returns an analysis for pRPC from CompileFailureAnalysis
-func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis) (*pb.Analysis, error) {
-	result := &pb.Analysis{
+func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis) (*gfipb.Analysis, error) {
+	result := &gfipb.Analysis{
 		AnalysisId:      analysis.Id,
-		Status:          analysis.Status,
-		RunStatus:       analysis.RunStatus,
+		Status:          gfipb.AnalysisStatus(analysis.Status),
+		RunStatus:       gfipb.AnalysisRunStatus(analysis.RunStatus),
 		CreatedTime:     timestamppb.New(analysis.CreateTime),
 		FirstFailedBbid: analysis.FirstFailedBuildId,
 		LastPassedBbid:  analysis.LastPassedBuildId,
@@ -148,7 +151,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 				Bucket:  failedBuild.Bucket,
 				Builder: failedBuild.Builder,
 			}
-			result.BuildFailureType = failedBuild.BuildFailureType
+			result.BuildFailureType = gfipb.BuildFailureType(failedBuild.BuildFailureType)
 		}
 	}
 
@@ -162,14 +165,14 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 			return nil, err
 		}
 
-		pbSuspects := make([]*pb.HeuristicSuspect, len(suspects))
+		pbSuspects := make([]*gfipb.HeuristicSuspect, len(suspects))
 		for i, suspect := range suspects {
-			pbSuspects[i] = &pb.HeuristicSuspect{
+			pbSuspects[i] = &gfipb.HeuristicSuspect{
 				GitilesCommit:   &suspect.GitilesCommit,
 				ReviewUrl:       suspect.ReviewUrl,
 				Score:           int32(suspect.Score),
 				Justification:   suspect.Justification,
-				ConfidenceLevel: heuristic.GetConfidenceLevel(suspect.Score),
+				ConfidenceLevel: gfipb.SuspectConfidenceLevel(heuristic.GetConfidenceLevel(suspect.Score)),
 			}
 
 			verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
@@ -183,8 +186,8 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 			//       should already be restricted to internal users only.
 			pbSuspects[i].ReviewTitle = suspect.ReviewTitle
 		}
-		heuristicResult := &pb.HeuristicAnalysisResult{
-			Status:    heuristicAnalysis.Status,
+		heuristicResult := &gfipb.HeuristicAnalysisResult{
+			Status:    gfipb.AnalysisStatus(heuristicAnalysis.Status),
 			StartTime: timestamppb.New(heuristicAnalysis.StartTime),
 			Suspects:  pbSuspects,
 		}
@@ -196,7 +199,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	}
 
 	// Get culprits
-	culprits := make([]*pb.Culprit, len(analysis.VerifiedCulprits))
+	culprits := make([]*gfipb.Culprit, len(analysis.VerifiedCulprits))
 	for i, culprit := range analysis.VerifiedCulprits {
 		suspect := &model.Suspect{
 			Id:             culprit.IntID(),
@@ -207,7 +210,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 			return nil, err
 		}
 
-		pbCulprit := &pb.Culprit{
+		pbCulprit := &gfipb.Culprit{
 			Commit:      &suspect.GitilesCommit,
 			ReviewUrl:   suspect.ReviewUrl,
 			ReviewTitle: suspect.ReviewTitle,
@@ -220,38 +223,38 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		}
 		pbCulprit.VerificationDetails = verificationDetails
 
-		culpritActions := []*pb.CulpritAction{}
+		culpritActions := []*gfipb.CulpritAction{}
 		if suspect.IsRevertCommitted {
 			// culprit action for auto-committing a revert
-			culpritActions = append(culpritActions, &pb.CulpritAction{
-				ActionType:  pb.CulpritActionType_CULPRIT_AUTO_REVERTED,
+			culpritActions = append(culpritActions, &gfipb.CulpritAction{
+				ActionType:  gfipb.CulpritActionType_CULPRIT_AUTO_REVERTED,
 				RevertClUrl: suspect.RevertURL,
 				ActionTime:  timestamppb.New(suspect.RevertCommitTime),
 			})
 		} else if suspect.IsRevertCreated {
 			// culprit action for creating a revert
-			culpritActions = append(culpritActions, &pb.CulpritAction{
-				ActionType:  pb.CulpritActionType_REVERT_CL_CREATED,
+			culpritActions = append(culpritActions, &gfipb.CulpritAction{
+				ActionType:  gfipb.CulpritActionType_REVERT_CL_CREATED,
 				RevertClUrl: suspect.RevertURL,
 				ActionTime:  timestamppb.New(suspect.RevertCreateTime),
 			})
 		} else if suspect.HasSupportRevertComment {
 			// culprit action for commenting on an existing revert
-			culpritActions = append(culpritActions, &pb.CulpritAction{
-				ActionType:  pb.CulpritActionType_EXISTING_REVERT_CL_COMMENTED,
+			culpritActions = append(culpritActions, &gfipb.CulpritAction{
+				ActionType:  gfipb.CulpritActionType_EXISTING_REVERT_CL_COMMENTED,
 				RevertClUrl: suspect.RevertURL,
 				ActionTime:  timestamppb.New(suspect.SupportRevertCommentTime),
 			})
 		} else if suspect.HasCulpritComment {
 			// culprit action for commenting on the culprit
-			culpritActions = append(culpritActions, &pb.CulpritAction{
-				ActionType: pb.CulpritActionType_CULPRIT_CL_COMMENTED,
+			culpritActions = append(culpritActions, &gfipb.CulpritAction{
+				ActionType: gfipb.CulpritActionType_CULPRIT_CL_COMMENTED,
 				ActionTime: timestamppb.New(suspect.CulpritCommentTime),
 			})
 		} else {
-			action := &pb.CulpritAction{
-				ActionType:     pb.CulpritActionType_NO_ACTION,
-				InactionReason: suspect.InactionReason,
+			action := &gfipb.CulpritAction{
+				ActionType:     gfipb.CulpritActionType_NO_ACTION,
+				InactionReason: gfipb.CulpritInactionReason(suspect.InactionReason),
 			}
 			if suspect.RevertURL != "" {
 				action.RevertClUrl = suspect.RevertURL
@@ -279,7 +282,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	return result, nil
 }
 
-func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (*pb.NthSectionAnalysisResult, error) {
+func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (*gfipb.NthSectionAnalysisResult, error) {
 	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting nthsection analysis").Err()
@@ -290,10 +293,20 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 	if nsa.BlameList == nil {
 		return nil, errors.Annotate(err, "couldn't find blamelist").Err()
 	}
-	result := &pb.NthSectionAnalysisResult{
-		Status:    nsa.Status,
+	blameListCommits := []*gfipb.BlameListSingleCommit{}
+	for _, commit := range nsa.BlameList.Commits {
+		blameListCommits = append(blameListCommits, &gfipb.BlameListSingleCommit{
+			Commit:      commit.Commit,
+			ReviewUrl:   commit.ReviewUrl,
+			ReviewTitle: commit.ReviewTitle,
+		})
+	}
+	result := &gfipb.NthSectionAnalysisResult{
+		Status:    gfipb.AnalysisStatus(nsa.Status),
 		StartTime: timestamppb.New(nsa.StartTime),
-		BlameList: nsa.BlameList,
+		BlameList: &gfipb.BlameList{
+			Commits: blameListCommits,
+		},
 	}
 	if nsa.HasEnded() {
 		result.EndTime = timestamppb.New(nsa.EndTime)
@@ -307,10 +320,10 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 	}
 
 	for _, rerun := range reruns {
-		rerunResult := &pb.SingleRerun{
+		rerunResult := &gfipb.SingleRerun{
 			StartTime: timestamppb.New(rerun.StartTime),
-			RerunResult: &pb.RerunResult{
-				RerunStatus: rerun.Status,
+			RerunResult: &gfipb.RerunResult{
+				RerunStatus: gfipb.RerunStatus(rerun.Status),
 			},
 			Bbid:   rerun.RerunBuild.IntID(),
 			Commit: &rerun.GitilesCommit,
@@ -347,7 +360,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 		// Log as Debugf because it is not exactly an error, but just a state of the analysis
 		logging.Debugf(c, err.Error())
 	} else {
-		result.RemainingNthSectionRange = &pb.RegressionRange{
+		result.RemainingNthSectionRange = &gfipb.RegressionRange{
 			FirstFailed: getCommitFromIndex(ff, nsa.BlameList, cfa),
 			LastPassed:  getCommitFromIndex(lp, nsa.BlameList, cfa),
 		}
@@ -359,7 +372,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 		return nil, err
 	}
 	if suspect != nil {
-		pbSuspect := &pb.NthSectionSuspect{
+		pbSuspect := &gfipb.NthSectionSuspect{
 			GitilesCommit: &suspect.GitilesCommit,
 			ReviewUrl:     suspect.ReviewUrl,
 			ReviewTitle:   suspect.ReviewTitle,
@@ -394,9 +407,9 @@ func getCommitFromIndex(index int, blamelist *pb.BlameList, cfa *model.CompileFa
 	}
 }
 
-// constructSingleRerun constructs a pb.SingleRerun using the details from the
+// constructSingleRerun constructs a gfipb.SingleRerun using the details from the
 // rerun build and latest single rerun
-func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, error) {
+func constructSingleRerun(c context.Context, rerunBBID int64) (*gfipb.SingleRerun, error) {
 	rerunBuild := &model.CompileRerunBuild{
 		Id: rerunBBID,
 	}
@@ -410,11 +423,11 @@ func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, 
 		return nil, errors.Annotate(err, "failed getting single rerun").Err()
 	}
 
-	result := &pb.SingleRerun{
+	result := &gfipb.SingleRerun{
 		StartTime: timestamppb.New(singleRerun.StartTime),
 		Bbid:      rerunBBID,
-		RerunResult: &pb.RerunResult{
-			RerunStatus: singleRerun.Status,
+		RerunResult: &gfipb.RerunResult{
+			RerunStatus: gfipb.RerunStatus(singleRerun.Status),
 		},
 		Commit: &singleRerun.GitilesCommit,
 	}
@@ -424,10 +437,10 @@ func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, 
 	return result, nil
 }
 
-// constructSuspectVerificationDetails constructs a pb.SuspectVerificationDetails for the given suspect
-func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspect) (*pb.SuspectVerificationDetails, error) {
+// constructSuspectVerificationDetails constructs a gfipb.SuspectVerificationDetails for the given suspect
+func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspect) (*gfipb.SuspectVerificationDetails, error) {
 	// Add the current verification status
-	verificationDetails := &pb.SuspectVerificationDetails{
+	verificationDetails := &gfipb.SuspectVerificationDetails{
 		Status: string(suspect.VerificationStatus),
 	}
 
@@ -453,7 +466,7 @@ func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspe
 }
 
 // validateQueryAnalysisRequest checks if the request is valid.
-func validateQueryAnalysisRequest(req *pb.QueryAnalysisRequest) error {
+func validateQueryAnalysisRequest(req *gfipb.QueryAnalysisRequest) error {
 	if req.BuildFailure == nil {
 		return status.Errorf(codes.InvalidArgument, "BuildFailure must not be empty")
 	}
@@ -464,7 +477,7 @@ func validateQueryAnalysisRequest(req *pb.QueryAnalysisRequest) error {
 }
 
 // ListAnalyses returns existing analyses
-func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalysesRequest) (*pb.ListAnalysesResponse, error) {
+func (server *GoFinditServer) ListAnalyses(c context.Context, req *gfipb.ListAnalysesRequest) (*gfipb.ListAnalysesResponse, error) {
 	// Validate the request
 	if err := validateListAnalysesRequest(req); err != nil {
 		return nil, err
@@ -514,7 +527,7 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 	}
 
 	// Get the result for each compile failure analysis
-	analyses := make([]*pb.Analysis, len(compileFailureAnalyses))
+	analyses := make([]*gfipb.Analysis, len(compileFailureAnalyses))
 	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for i, compileFailureAnalysis := range compileFailureAnalyses {
 			i := i
@@ -535,14 +548,14 @@ func (server *GoFinditServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return &pb.ListAnalysesResponse{
+	return &gfipb.ListAnalysesResponse{
 		Analyses:      analyses,
 		NextPageToken: nextPageToken,
 	}, nil
 }
 
 // validateListAnalysesRequest checks if the request is valid.
-func validateListAnalysesRequest(req *pb.ListAnalysesRequest) error {
+func validateListAnalysesRequest(req *gfipb.ListAnalysesRequest) error {
 	if req.PageSize < 0 {
 		return status.Errorf(codes.InvalidArgument, "Page size can't be negative")
 	}

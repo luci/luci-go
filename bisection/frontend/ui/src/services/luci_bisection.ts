@@ -23,9 +23,7 @@ export const getLUCIBisectionService = () => {
 // A service to handle LUCI Bisection-related pRPC requests.
 export class LUCIBisectionService {
   // The name of the pRPC service to connect to.
-  // TODO: update this once the pRPC service is renamed
-  //       from GoFindit to LUCI Bisection
-  private static SERVICE = 'gofindit.GoFinditService';
+  private static SERVICE = 'luci.bisection.v1.Analyses';
 
   client: AuthorizedPrpcClient;
 

@@ -26,7 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
 )
 
