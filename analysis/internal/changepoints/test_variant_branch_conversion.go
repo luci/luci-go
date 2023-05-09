@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
-func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool) (inputbuffer.PositionVerdict, error) {
+func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sources *rdbpb.Sources) (inputbuffer.PositionVerdict, error) {
 	// It may be enough to check the condition status == expected, given that
 	// an expected verdict should have only one expected run.
 	// However, we also check the length of the result just to be certain.
@@ -39,7 +39,7 @@ func toPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults
 	}
 
 	verdict := inputbuffer.PositionVerdict{
-		CommitPosition:   int(gitilesCommit(payload).GetPosition()),
+		CommitPosition:   sourcesCommitPosition(sources),
 		IsSimpleExpected: isSimpleExpected,
 		Hour:             hour,
 	}

@@ -356,7 +356,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	// Note that this is different from the ingestForTestVariantAnalysis above
 	// which should eventually be removed.
 	// See go/luci-test-variant-analysis-design for details.
-	err = ingestForChangePointAnalysis(ctx, rsp.TestVariants, payload)
+	err = ingestForChangePointAnalysis(ctx, rsp, payload)
 	if err != nil {
 		// Only log the error for now, we will return error when everything is
 		// working.
@@ -516,7 +516,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	return nil
 }
 
-func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) (err error) {
+func ingestForChangePointAnalysis(ctx context.Context, rsp *rdbpb.QueryTestVariantsResponse, payload *taskspb.IngestTestResults) (err error) {
 	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForChangePointAnalysis")
 	defer func() { s.End(err) }()
 
@@ -528,7 +528,7 @@ func ingestForChangePointAnalysis(ctx context.Context, tvs []*rdbpb.TestVariant,
 	if !tvaEnabled {
 		return nil
 	}
-	err = changepoints.Analyze(ctx, tvs, payload)
+	err = changepoints.Analyze(ctx, rsp.TestVariants, payload, rsp.Sources)
 	if err != nil {
 		return errors.Annotate(err, "analyze test variants").Err()
 	}

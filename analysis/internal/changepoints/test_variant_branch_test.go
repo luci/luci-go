@@ -328,7 +328,8 @@ func TestInsertToInputBuffer(t *testing.T) {
 				ColdBufferCapacity: 100,
 			},
 		}
-		payload := samplePayload(12)
+		payload := samplePayload()
+		sourcesMap := sampleSourcesMap(12)
 		tv := &rdbpb.TestVariant{
 			Status: rdbpb.TestVariantStatus_EXPECTED,
 			Results: []*rdbpb.TestResultBundle{
@@ -339,8 +340,9 @@ func TestInsertToInputBuffer(t *testing.T) {
 					},
 				},
 			},
+			SourcesId: "sources_id",
 		}
-		pv, err := toPositionVerdict(tv, payload, map[string]bool{})
+		pv, err := toPositionVerdict(tv, payload, map[string]bool{}, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
@@ -359,9 +361,11 @@ func TestInsertToInputBuffer(t *testing.T) {
 				ColdBufferCapacity: 100,
 			},
 		}
-		payload := samplePayload(12)
+		payload := samplePayload()
+		sourcesMap := sampleSourcesMap(12)
 		tv := &rdbpb.TestVariant{
-			Status: rdbpb.TestVariantStatus_FLAKY,
+			Status:    rdbpb.TestVariantStatus_FLAKY,
+			SourcesId: "sources_id",
 			Results: []*rdbpb.TestResultBundle{
 				{
 					Result: &rdbpb.TestResult{
@@ -418,7 +422,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			"run-1": true,
 			"run-3": true,
 		}
-		pv, err := toPositionVerdict(tv, payload, duplicateMap)
+		pv, err := toPositionVerdict(tv, payload, duplicateMap, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)

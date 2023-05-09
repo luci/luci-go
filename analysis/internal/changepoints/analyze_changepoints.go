@@ -24,11 +24,11 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/bayesian"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
+	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/pbutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
@@ -43,18 +43,16 @@ type CheckPoint struct {
 	StartingVariantHash string
 }
 
-func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) error {
+// Analyze performs change point analyses based on incoming test verdicts.
+// sourcesMap contains the information about the source code being tested.
+func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources) error {
 	logging.Debugf(ctx, "Analyzing %d test variants for build %d", len(tvs), payload.Build.Id)
 
-	// Check if the build has commit data. If not, then skip it.
-	if !hasCommitData(payload) {
-		logging.Debugf(ctx, "Build %d has no commit data, skipping change point analysis", payload.GetBuild().GetId())
-		return nil
-	}
-
-	// Check if build is from unsubmitted code.
-	if fromUnsubmittedCode(payload) {
-		logging.Debugf(ctx, "Build %d from unsubmitted code, skipping change point analysis", payload.GetBuild().GetId())
+	// Check that sourcesMap is not empty and has commit position data.
+	// This is for fast termination, as there should be only few items in
+	// sourcesMap to check.
+	if !sourcesMapHasCommitData(sourcesMap) {
+		logging.Debugf(ctx, "Sourcemap has no commit data, skipping change point analysis")
 		return nil
 	}
 
@@ -75,7 +73,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 			endIndex = len(tvs)
 		}
 		batchTVs := tvs[startIndex:endIndex]
-		err := analyzeSingleBatch(ctx, batchTVs, payload)
+		err := analyzeSingleBatch(ctx, batchTVs, payload, sourcesMap)
 		if err != nil {
 			return errors.Annotate(err, "analyzeSingleBatch").Err()
 		}
@@ -85,7 +83,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 	return nil
 }
 
-func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) error {
+func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources) error {
 	// Nothing to analyze.
 	if len(tvs) == 0 {
 		return nil
@@ -115,14 +113,14 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			return errors.Annotate(err, "duplicate map").Err()
 		}
 
-		// Only keep "relevant" test variants.
-		filteredTVs, err := filterTestVariants(tvs, duplicateMap)
+		// Only keep "relevant" test variants, and test variant with commit information.
+		filteredTVs, err := filterTestVariants(tvs, payload.PresubmitRun, duplicateMap, sourcesMap)
 		if err != nil {
 			return errors.Annotate(err, "filter test variants").Err()
 		}
 
 		// Query TestVariantBranch from spanner.
-		tvbks := testVariantBranchKeys(filteredTVs, payload)
+		tvbks := testVariantBranchKeys(filteredTVs, payload.Build.Project, sourcesMap)
 		tvbs, err := ReadTestVariantBranches(ctx, tvbks)
 		if err != nil {
 			return errors.Annotate(err, "read test variant branches").Err()
@@ -133,13 +131,13 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 		for i, tv := range filteredTVs {
 			tvb := tvbs[i]
-			if isOutOfOrderAndShouldBeDiscarded(tvb, payload) {
+			if isOutOfOrderAndShouldBeDiscarded(tvb, sourcesMap[tv.SourcesId]) {
 				// TODO(nqmtuan): send metric to tsmon.
 				logging.Debugf(ctx, "Out of order verdict in build %d", payload.Build.Id)
 				continue
 			}
 			// "Insert" the new test variant to input buffer.
-			tvb, err := insertIntoInputBuffer(tvb, tv, payload, duplicateMap)
+			tvb, err := insertIntoInputBuffer(tvb, tv, payload, duplicateMap, sourcesMap)
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
@@ -174,7 +172,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 //     (commit position >= smallest start position), or
 //   - There is no finalizing or finalized segment (i.e. the entire known
 //     test history is inside the input buffer)
-func isOutOfOrderAndShouldBeDiscarded(tvb *TestVariantBranch, payload *taskspb.IngestTestResults) bool {
+func isOutOfOrderAndShouldBeDiscarded(tvb *TestVariantBranch, sources *rdbpb.Sources) bool {
 	// No test variant branch. Should be ok to proceed.
 	if tvb == nil {
 		return false
@@ -182,7 +180,7 @@ func isOutOfOrderAndShouldBeDiscarded(tvb *TestVariantBranch, payload *taskspb.I
 	if len(tvb.FinalizedSegments.GetSegments()) == 0 && tvb.FinalizingSegment == nil {
 		return false
 	}
-	position := payload.Build.Commit.Position
+	position := sourcesCommitPosition(sources)
 	hotVerdicts := tvb.InputBuffer.HotBuffer.Verdicts
 	coldVerdicts := tvb.InputBuffer.ColdBuffer.Verdicts
 	minPos := math.MaxInt
@@ -192,7 +190,7 @@ func isOutOfOrderAndShouldBeDiscarded(tvb *TestVariantBranch, payload *taskspb.I
 	if len(coldVerdicts) > 0 && minPos > coldVerdicts[0].CommitPosition {
 		minPos = coldVerdicts[0].CommitPosition
 	}
-	return position < uint32(minPos)
+	return position < minPos
 }
 
 func runChangePointAnalysis(tvb *TestVariantBranch) {
@@ -221,16 +219,17 @@ func runChangePointAnalysis(tvb *TestVariantBranch) {
 // of TestVariantBranch tvb.
 // If tvb is nil, it means it is not in spanner. In this case, return a new
 // TestVariantBranch object with a single element in the input buffer.
-func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool) (*TestVariantBranch, error) {
+func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) (*TestVariantBranch, error) {
+	sources := sourcesMap[tv.SourcesId]
 	if tvb == nil {
 		tvb = &TestVariantBranch{
 			IsNew:       true,
 			Project:     payload.GetBuild().GetProject(),
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
-			RefHash:     refHash(payload),
+			RefHash:     refHash(sources),
 			Variant:     pbutil.VariantFromResultDB(tv.Variant),
-			SourceRef:   sourceRef(payload),
+			SourceRef:   sourceRef(sources),
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
@@ -238,7 +237,7 @@ func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payloa
 		}
 	}
 
-	pv, err := toPositionVerdict(tv, payload, duplicateMap)
+	pv, err := toPositionVerdict(tv, payload, duplicateMap, sources)
 	if err != nil {
 		return nil, err
 	}
@@ -246,12 +245,28 @@ func insertIntoInputBuffer(tvb *TestVariantBranch, tv *rdbpb.TestVariant, payloa
 	return tvb, nil
 }
 
-// filterTestVariants only keeps test variants that have at least 1 non-duplicate
-// and non-skipped test result (the test result needs to be both non-duplicate
-// and non-skipped).
-func filterTestVariants(tvs []*rdbpb.TestVariant, duplicateMap map[string]bool) ([]*rdbpb.TestVariant, error) {
+// filterTestVariants only keeps test variants that satisfy all following
+// conditions:
+//   - Have commit position information.
+//   - Have at least 1 non-duplicate and non-skipped test result (the test
+//     result needs to be both non-duplicate and non-skipped).
+//   - Not from unsubmitted code (i.e. try run that did not result in submitted code)
+func filterTestVariants(tvs []*rdbpb.TestVariant, presubmit *controlpb.PresubmitResult, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) ([]*rdbpb.TestVariant, error) {
 	results := []*rdbpb.TestVariant{}
 	for _, tv := range tvs {
+		// Checks source map.
+		sources, ok := sourcesMap[tv.SourcesId]
+		if !ok {
+			continue
+		}
+		if !sourcesHasCommitData(sources) {
+			continue
+		}
+		// Checks unsubmitted code.
+		if fromUnsubmittedCode(sources, presubmit) {
+			continue
+		}
+		// Checks skips and duplicates.
 		for _, r := range tv.Results {
 			invID, err := resultdb.InvocationFromTestResultName(r.Result.Name)
 			if err != nil {
@@ -267,56 +282,69 @@ func filterTestVariants(tvs []*rdbpb.TestVariant, duplicateMap map[string]bool) 
 	return results, nil
 }
 
-func testVariantBranchKeys(tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults) []TestVariantBranchKey {
+func testVariantBranchKeys(tvs []*rdbpb.TestVariant, project string, sourcesMap map[string]*rdbpb.Sources) []TestVariantBranchKey {
 	results := make([]TestVariantBranchKey, len(tvs))
 	for i, tv := range tvs {
+		sources := sourcesMap[tv.SourcesId]
 		results[i] = TestVariantBranchKey{
-			Project:     payload.Build.Project,
+			Project:     project,
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
-			RefHash:     RefHash(refHash(payload)),
+			RefHash:     RefHash(refHash(sources)),
 		}
 	}
 	return results
 }
 
-// Return true if the build is from unsubmitted code, i.e.
+// Return true if sources is from unsubmitted code, i.e.
 // from try run that did not result in submitted code.
-func fromUnsubmittedCode(payload *taskspb.IngestTestResults) bool {
-	hasCL := len(payload.GetBuild().GetChangelists()) > 0
-	submittedPresubmit := payload.PresubmitRun != nil &&
-		payload.PresubmitRun.Status == analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED &&
-		payload.PresubmitRun.Mode == analysispb.PresubmitRunMode_FULL_RUN
+func fromUnsubmittedCode(sources *rdbpb.Sources, presubmit *controlpb.PresubmitResult) bool {
+	hasCL := len(sources.GetChangelists()) > 0
+	submittedPresubmit := presubmit != nil &&
+		presubmit.Status == analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_SUCCEEDED &&
+		presubmit.Mode == analysispb.PresubmitRunMode_FULL_RUN
 	return hasCL && !submittedPresubmit
 }
 
-// hasCommitData checks if the build has commit data. It checks for
-// branch information and commit position data.
-func hasCommitData(payload *taskspb.IngestTestResults) bool {
-	commit := gitilesCommit(payload)
-	return commit != nil && commit.GetHost() != "" && commit.GetProject() != "" && commit.GetRef() != "" && commit.GetPosition() != 0
+// hasCommitData checks if sourcesMap has commit data.
+// It returns true if at least one sources in the map has commit position data.
+func sourcesMapHasCommitData(sourcesMap map[string]*rdbpb.Sources) bool {
+	for _, sources := range sourcesMap {
+		if sourcesHasCommitData(sources) {
+			return true
+		}
+	}
+	return false
 }
 
-// gitilesCommit returns the commit for the payload.
-func gitilesCommit(payload *taskspb.IngestTestResults) *buildbucketpb.GitilesCommit {
-	// TODO (nqmtuan): Support projects like ChromeOS, where commit data may not
-	// be in GetBuild().GetCommit().
-	return payload.GetBuild().GetCommit()
+func sourcesHasCommitData(sources *rdbpb.Sources) bool {
+	if sources.IsDirty {
+		return false
+	}
+	commit := sources.GitilesCommit
+	if commit == nil {
+		return false
+	}
+	return commit.GetHost() != "" && commit.GetProject() != "" && commit.GetRef() != "" && commit.GetPosition() != 0
 }
 
-func sourceRef(payload *taskspb.IngestTestResults) *analysispb.SourceRef {
+func sourcesCommitPosition(sources *rdbpb.Sources) int {
+	return int(sources.GitilesCommit.Position)
+}
+
+func sourceRef(sources *rdbpb.Sources) *analysispb.SourceRef {
 	return &analysispb.SourceRef{
 		System: &analysispb.SourceRef_Gitiles{
 			Gitiles: &analysispb.GitilesRef{
-				Host:    payload.Build.Commit.Host,
-				Project: payload.Build.Commit.Project,
-				Ref:     payload.Build.Commit.Ref,
+				Host:    sources.GitilesCommit.Host,
+				Project: sources.GitilesCommit.Project,
+				Ref:     sources.GitilesCommit.Ref,
 			},
 		},
 	}
 }
 
-func refHash(payload *taskspb.IngestTestResults) []byte {
-	sourceRef := sourceRef(payload)
+func refHash(sources *rdbpb.Sources) []byte {
+	sourceRef := sourceRef(sources)
 	return rdbpbutil.RefHash(pbutil.SourceRefToResultDB(sourceRef))
 }

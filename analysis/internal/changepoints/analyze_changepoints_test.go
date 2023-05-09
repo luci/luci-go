@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/proto"
@@ -47,10 +46,11 @@ type Invocation struct {
 func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`Can batch result`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload(10)
+		payload := samplePayload()
+		sourcesMap := sampleSourcesMap(10)
 		// 900 test variants should result in 5 batches (1000 each, last one has 500).
 		tvs := testVariants(4500)
-		err := Analyze(ctx, tvs, payload)
+		err := Analyze(ctx, tvs, payload, sourcesMap)
 		So(err, ShouldBeNil)
 
 		// Check that there are 5 checkpoints created.
@@ -59,48 +59,57 @@ func TestAnalyzeChangePoint(t *testing.T) {
 
 	Convey(`Can skip batch`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload(10)
+		payload := samplePayload()
+		sourcesMap := sampleSourcesMap(10)
 		tvs := testVariants(100)
-		err := analyzeSingleBatch(ctx, tvs, payload)
+		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 
 		// Analyze the batch again should not throw an error.
-		err = analyzeSingleBatch(ctx, tvs, payload)
+		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 	})
 
 	Convey(`No commit position should skip`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		// Commit position = 0
-		payload := samplePayload(0)
-		tvs := testVariants(100)
-		err := Analyze(ctx, tvs, payload)
-		So(err, ShouldBeNil)
-		So(countCheckPoint(ctx), ShouldEqual, 0)
-	})
-
-	Convey(`Unsubmitted code should skip`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload(10)
-		payload.Build.Changelists = []*analysispb.Changelist{
-			{
-				Host:     "host",
-				Change:   123,
-				Patchset: 1,
+		payload := samplePayload()
+		sourcesMap := map[string]*rdbpb.Sources{
+			"sources_id": {
+				GitilesCommit: &rdbpb.GitilesCommit{
+					Host:    "host",
+					Project: "proj",
+					Ref:     "ref",
+				},
 			},
 		}
-		payload.PresubmitRun = &controlpb.PresubmitResult{
-			Status: analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
-		}
 		tvs := testVariants(100)
-		err := Analyze(ctx, tvs, payload)
+		err := Analyze(ctx, tvs, payload, sourcesMap)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 0)
 	})
 
 	Convey(`Filter test variant`, t, func() {
+		sourcesMap := map[string]*rdbpb.Sources{
+			"sources_id": {
+				GitilesCommit: &rdbpb.GitilesCommit{
+					Host:     "host",
+					Project:  "proj",
+					Ref:      "ref",
+					Position: 10,
+				},
+			},
+			"sources_id_2": {
+				GitilesCommit: &rdbpb.GitilesCommit{
+					Host:     "host_2",
+					Project:  "proj_2",
+					Ref:      "ref_2",
+					Position: 10,
+				},
+				IsDirty: true,
+			},
+		}
 		tvs := []*rdbpb.TestVariant{
 			{
 				TestId: "1",
@@ -112,6 +121,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 						},
 					},
 				},
+				SourcesId: "sources_id",
 			},
 			{
 				TestId: "2",
@@ -129,6 +139,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 						},
 					},
 				},
+				SourcesId: "sources_id",
 			},
 			{
 				TestId: "3",
@@ -140,23 +151,82 @@ func TestAnalyzeChangePoint(t *testing.T) {
 						},
 					},
 				},
+				SourcesId: "sources_id",
+			},
+			{
+				TestId: "4",
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/inv-4/tests/abc",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+				SourcesId: "sources_id_1",
+			},
+			{
+				TestId: "5",
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/inv-5/tests/abc",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+				SourcesId: "sources_id_2",
 			},
 		}
-		recycleMap := map[string]bool{
+		duplicateMap := map[string]bool{
 			"inv-2": true,
 		}
-		tvs, err := filterTestVariants(tvs, recycleMap)
+		tvs, err := filterTestVariants(tvs, nil, duplicateMap, sourcesMap)
 		So(err, ShouldBeNil)
 		So(len(tvs), ShouldEqual, 1)
 		So(tvs[0].TestId, ShouldEqual, "3")
+	})
+
+	Convey(`Filter test variant with failed presubmit`, t, func() {
+		presubmit := &controlpb.PresubmitResult{
+			Status: analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
+			Mode:   analysispb.PresubmitRunMode_FULL_RUN,
+		}
+		sourcesMap := sampleSourcesMap(10)
+		sourcesMap["sources_id"].Changelists = []*rdbpb.GerritChange{
+			{
+				Host:     "host",
+				Project:  "proj",
+				Patchset: 1,
+				Change:   12345,
+			},
+		}
+		tvs := []*rdbpb.TestVariant{
+			{
+				TestId: "1",
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/inv-1/tests/abc",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+				SourcesId: "sources_id",
+			},
+		}
+		duplicateMap := map[string]bool{}
+		tvs, err := filterTestVariants(tvs, presubmit, duplicateMap, sourcesMap)
+		So(err, ShouldBeNil)
+		So(len(tvs), ShouldEqual, 0)
 	})
 }
 
 func TestAnalyzeSingleBatch(t *testing.T) {
 	Convey(`Analyze batch with empty buffer`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload(10)
-
+		payload := samplePayload()
+		sourcesMap := sampleSourcesMap(10)
 		tvs := []*rdbpb.TestVariant{
 			{
 				TestId:      "test_1",
@@ -176,6 +246,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						},
 					},
 				},
+				SourcesId: "sources_id",
 			},
 			{
 				TestId:      "test_2",
@@ -195,10 +266,11 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						},
 					},
 				},
+				SourcesId: "sources_id",
 			},
 		}
 
-		err := analyzeSingleBatch(ctx, tvs, payload)
+		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 
@@ -226,7 +298,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     refHash(payload),
+			RefHash:     refHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -264,7 +336,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
-			RefHash:     refHash(payload),
+			RefHash:     refHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -310,7 +382,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 	Convey(`Analyze batch run analysis got change point`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		// Store some existing data in spanner first.
-		payload := samplePayload(10)
+		payload := samplePayload()
+		sourcesMap := sampleSourcesMap(10)
 
 		// Set up the verdicts in spanner.
 		positions := make([]int, 2000)
@@ -329,8 +402,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			SourceRef:   sourceRef(payload),
-			RefHash:     refHash(payload),
+			SourceRef:   sourceRef(sourcesMap["sources_id"]),
+			RefHash:     refHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -363,10 +436,11 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						},
 					},
 				},
+				SourcesId: "sources_id",
 			},
 		}
 
-		err = analyzeSingleBatch(ctx, tvs, payload)
+		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 
@@ -390,7 +464,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     refHash(payload),
+			RefHash:     refHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -448,30 +522,30 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 func TestOutOfOrderVerdict(t *testing.T) {
 	Convey("Out of order verdict", t, func() {
-		payload := samplePayload(10)
-
+		sourcesMap := sampleSourcesMap(10)
+		sources := sourcesMap["sources_id"]
 		Convey("No test variant branch", func() {
-			So(isOutOfOrderAndShouldBeDiscarded(nil, payload), ShouldBeFalse)
+			So(isOutOfOrderAndShouldBeDiscarded(nil, sources), ShouldBeFalse)
 		})
 
 		Convey("No finalizing or finalized segment", func() {
 			tvb := &TestVariantBranch{}
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 		})
 
 		Convey("Have finalizing segments", func() {
 			tvb := finalizingTvbWithPositions([]int{1}, []int{})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 			tvb = finalizingTvbWithPositions([]int{}, []int{1})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 			tvb = finalizingTvbWithPositions([]int{8, 13}, []int{7, 9})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{6, 8})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{10, 16})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeFalse)
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 			tvb = finalizingTvbWithPositions([]int{11, 15}, []int{12, 16})
-			So(isOutOfOrderAndShouldBeDiscarded(tvb, payload), ShouldBeTrue)
+			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeTrue)
 		})
 	})
 }
@@ -539,21 +613,29 @@ func testVariants(n int) []*rdbpb.TestVariant {
 		tvs[i] = &rdbpb.TestVariant{
 			TestId:      fmt.Sprintf("test_%d", i),
 			VariantHash: fmt.Sprintf("hash_%d", i),
+			SourcesId:   "sources_id",
 		}
 	}
 	return tvs
 }
 
-func samplePayload(commitPosition int) *taskspb.IngestTestResults {
+func samplePayload() *taskspb.IngestTestResults {
 	return &taskspb.IngestTestResults{
 		Build: &controlpb.BuildResult{
 			Id:      1234,
 			Project: "chromium",
-			Commit: &buildbucketpb.GitilesCommit{
+		},
+	}
+}
+
+func sampleSourcesMap(commitPosition int) map[string]*rdbpb.Sources {
+	return map[string]*rdbpb.Sources{
+		"sources_id": {
+			GitilesCommit: &rdbpb.GitilesCommit{
 				Host:     "host",
 				Project:  "proj",
 				Ref:      "ref",
-				Position: uint32(commitPosition),
+				Position: int64(commitPosition),
 			},
 		},
 	}
