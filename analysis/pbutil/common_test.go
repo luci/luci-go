@@ -15,13 +15,15 @@
 package pbutil
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/cv/api/bigquery/v1"
-	cvv0 "go.chromium.org/luci/cv/api/v0"
 
 	pb "go.chromium.org/luci/analysis/proto/v1"
+	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/cv/api/bigquery/v1"
+	cvv0 "go.chromium.org/luci/cv/api/v0"
 )
 
 func TestCommon(t *testing.T) {
@@ -66,5 +68,40 @@ func TestCommon(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(status, ShouldNotEqual, pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_UNSPECIFIED)
 		}
+	})
+}
+
+func TestValidateStringPair(t *testing.T) {
+	t.Parallel()
+	Convey(`TestValidateStringPairs`, t, func() {
+		Convey(`empty`, func() {
+			err := ValidateStringPair(StringPair("", ""))
+			So(err, ShouldErrLike, `key: unspecified`)
+		})
+
+		Convey(`invalid key`, func() {
+			err := ValidateStringPair(StringPair("1", ""))
+			So(err, ShouldErrLike, `key: does not match`)
+		})
+
+		Convey(`long key`, func() {
+			err := ValidateStringPair(StringPair(strings.Repeat("a", 1000), ""))
+			So(err, ShouldErrLike, `key length must be less or equal to 64`)
+		})
+
+		Convey(`long value`, func() {
+			err := ValidateStringPair(StringPair("a", strings.Repeat("a", 1000)))
+			So(err, ShouldErrLike, `value length must be less or equal to 256`)
+		})
+
+		Convey(`multiline value`, func() {
+			err := ValidateStringPair(StringPair("a", "multi\nline\nvalue"))
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`valid`, func() {
+			err := ValidateStringPair(StringPair("a", "b"))
+			So(err, ShouldBeNil)
+		})
 	})
 }
