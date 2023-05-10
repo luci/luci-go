@@ -48,7 +48,7 @@ func TriggerRerun(c context.Context, commit *buildbucketpb.GitilesCommit, failed
 		Builder: &buildbucketpb.BuilderID{
 			Project: "chromium",
 			Bucket:  "findit",
-			Builder: "luci-bisection-culprit-verification",
+			Builder: "gofindit-culprit-verification",
 		},
 		Properties:    properties,
 		Dimensions:    dimensions,
