@@ -99,8 +99,11 @@ func (r *rpcRun) rpc(ctx context.Context) error {
 	}
 
 	if r.includeUpdateToken {
+		if r.resultdbCtx == nil {
+			return errors.Reason("update token not found, resultdb section of LUCI_CONTEXT missing").Err()
+		}
 		if r.resultdbCtx.CurrentInvocation.UpdateToken == "" {
-			return errors.Reason("update token is not available").Err()
+			return errors.Reason("update token not found, missing from LUCI_CONTEXT").Err()
 		}
 		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("update-token", r.resultdbCtx.CurrentInvocation.UpdateToken))
 	}
