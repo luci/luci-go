@@ -13,22 +13,20 @@
 // limitations under the License.
 
 import { EditorConfiguration, ModeSpec } from 'codemirror';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useLatest } from 'react-use';
 
-import './connection_observer';
 import { PropertyViewerConfigInstance } from '../store/user_config';
 import { CodeMirrorEditor } from './code_mirror_editor';
-import { ConnectionEvent, ConnectionObserverElement } from './connection_observer';
-
-const LEFT_RIGHT_ARROW = '\u2194';
 
 export interface PropertyViewerProps {
   readonly properties: { readonly [key: string]: unknown };
   readonly config: PropertyViewerConfigInstance;
+  readonly onInit?: (editor: CodeMirror.Editor) => void;
 }
 
-export function PropertyViewer({ properties, config }: PropertyViewerProps) {
+export function PropertyViewer({ properties, config, onInit }: PropertyViewerProps) {
+  const configRef = useLatest(config);
   const formattedValue = JSON.stringify(properties, undefined, 2);
 
   // Ensure the callbacks always refer to the latest values.
@@ -43,67 +41,37 @@ export function PropertyViewer({ properties, config }: PropertyViewerProps) {
     // Ensures all nodes are rendered therefore searchable.
     viewportMargin: Infinity,
     gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-    foldOptions: {
-      widget: (from) => {
-        const line = formattedValueLines.current[from.line];
-        // Not a root level property, ignore.
-        if (!line.startsWith('  "')) {
-          return LEFT_RIGHT_ARROW;
-        }
-
-        // Use <milo-connection-observer> to observer fold/unfold events.
-        // We can't use a regular element with an onclick event handler because
-        // code mirror clones the element and all event handlers are dropped.
-        // We can't use the 'gutterClick' event because clicking on the widget
-        // unfolds the region but doesn't trigger the 'gutterClick' event.
-        const connectionObserver = document.createElement(
-          'milo-connection-observer'
-        ) as ConnectionObserverElement<string>;
-        connectionObserver.setAttribute('event-type', 'folded-root-lvl-prop');
-        connectionObserver.setAttribute('data', JSON.stringify(line));
-        connectionObserver.innerHTML = `<span class="CodeMirror-foldmarker">${LEFT_RIGHT_ARROW}<span>`;
-        return connectionObserver;
-      },
-    },
   });
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!containerRef.current) {
+  function setFolded(lineNum: number, folded: boolean) {
+    const line = formattedValueLines.current[lineNum];
+    // Not a root-level key, ignore.
+    if (!line.startsWith('  "')) {
       return;
     }
-
-    const cb = (event: Event) => {
-      const e = event as ConnectionEvent<string>;
-      config.setFolded(e.detail.data, true);
-
-      e.detail.addDisconnectedCB((data) => {
-        config.setFolded(data, false);
-      });
-    };
-
-    containerRef.current.addEventListener('folded-root-lvl-prop', cb);
-
-    return () => {
-      containerRef.current?.removeEventListener('folded-root-lvl-prop', cb);
-    };
-  }, []);
-
-  const onChangeHandler = (editor: CodeMirror.Editor) => {
-    formattedValueLines.current.forEach((line, lineIndex) => {
-      if (config.isFolded(line)) {
-        // This triggers folded-root-lvl-prop then this.toggleFold which
-        // updates the timestamp in this.propLineFoldTime[line].
-        // As a result, recently accessed this.propLineFoldTime[line] is
-        // kept fresh.
-        editor.foldCode(lineIndex);
-      }
-    });
-  };
+    configRef.current.setFolded(line, folded);
+  }
 
   return (
-    <div ref={containerRef} css={{ minWidth: '600px', maxWidth: '1000px' }}>
-      <CodeMirrorEditor value={formattedValue} initOptions={editorOptions.current} onChange={onChangeHandler} />
-    </div>
+    <CodeMirrorEditor
+      value={formattedValue}
+      initOptions={editorOptions.current}
+      onInit={(editor: CodeMirror.Editor) => {
+        editor.on('fold', (_, from) => setFolded(from.line, true));
+        editor.on('unfold', (_, from) => setFolded(from.line, false));
+
+        editor.on('changes', () => {
+          formattedValueLines.current.forEach((line, lineIndex) => {
+            if (configRef.current.isFolded(line)) {
+              // This also triggers the fold event listener above. This helps
+              // keeping the keys fresh.
+              editor.foldCode(lineIndex, undefined, 'fold');
+            }
+          });
+        });
+        onInit?.(editor);
+      }}
+      css={{ minWidth: '400px', maxWidth: '1000px', minHeight: '100px', maxHeight: '600px' }}
+    />
   );
 }

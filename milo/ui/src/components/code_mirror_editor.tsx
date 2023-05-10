@@ -19,7 +19,8 @@ import 'codemirror/addon/fold/brace-fold';
 import 'codemirror/addon/fold/foldcode';
 import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/mode/javascript/javascript';
-import styled from '@emotion/styled';
+import { Theme } from '@emotion/react';
+import styled, { Interpolation } from '@emotion/styled';
 import * as CodeMirror from 'codemirror';
 import { useEffect, useRef } from 'react';
 
@@ -27,7 +28,7 @@ const Container = styled.div`
   display: block;
   border-radius: 4px;
   border: 1px solid var(--divider-color);
-  overflow: hidden;
+  overflow: auto;
 
   & .CodeMirror {
     height: auto;
@@ -52,10 +53,19 @@ export interface CodeMirrorEditorProps {
    * editor. Updates are not applied.
    */
   readonly initOptions?: CodeMirror.EditorConfiguration;
-  readonly onChange?: (editor: CodeMirror.Editor) => void;
+  readonly onInit?: (editor: CodeMirror.Editor) => void;
+  readonly css?: Interpolation<Theme>;
+  readonly className?: string;
 }
 
-export function CodeMirrorEditor({ value, initOptions, onChange }: CodeMirrorEditorProps) {
+// We cannot use @uiw/react-codemirror@4 because it uses codemirror v6, which
+// no longer supports viewportMargin: Infinity, which is required to support
+// searching content hidden behind a scrollbar.
+// We cannot use @uiw/react-codemirror@3 because it yields various react-dom
+// validation errors with the current version of React.
+// And neither version offers a good way to attach fold/unfold event listeners
+// BEFORE any content is rendered.
+export function CodeMirrorEditor({ value, initOptions, onInit, css, className }: CodeMirrorEditorProps) {
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const editorRef = useRef<CodeMirror.EditorFromTextArea | null>(null);
 
@@ -71,6 +81,7 @@ export function CodeMirrorEditor({ value, initOptions, onChange }: CodeMirrorEdi
 
     const editor = CodeMirror.fromTextArea(textAreaRef.current, initOptions);
     editorRef.current = editor;
+    onInit?.(editorRef.current);
   }, []);
 
   useEffect(() => {
@@ -80,11 +91,10 @@ export function CodeMirrorEditor({ value, initOptions, onChange }: CodeMirrorEdi
     }
 
     editorRef.current.setValue(value);
-    onChange?.(editorRef.current);
   }, [value]);
 
   return (
-    <Container>
+    <Container className={className} css={css}>
       <textarea ref={textAreaRef} />
     </Container>
   );
