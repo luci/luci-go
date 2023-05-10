@@ -31,6 +31,7 @@ import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { attachTags, hasTags } from '../../../libs/tag';
+import { getCodeSourceUrl } from '../../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { Cluster } from '../../../services/luci_analysis';
 import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
@@ -180,16 +181,8 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed
   private get sourceUrl() {
-    const testLocation = this.variant.testMetadata?.location;
-    if (!testLocation) {
-      return null;
-    }
-    return (
-      testLocation.repo +
-      '/+/HEAD' +
-      testLocation.fileName.slice(1) +
-      (testLocation.line ? '#' + testLocation.line : '')
-    );
+    const testLocation = this.variant?.testMetadata?.location;
+    return testLocation ? getCodeSourceUrl(testLocation) : null;
   }
 
   @computed

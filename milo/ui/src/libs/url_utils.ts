@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Build, BuilderID, GerritChange, GitilesCommit } from '../services/buildbucket';
+import { TestLocation } from '../services/resultdb';
 
 export function getBuildURLPathFromBuildData(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
   return getBuildURLPath(build.builder, build.number ? build.number.toString() : `b${build.id}`);
@@ -91,4 +92,14 @@ export function getLoginUrl(redirectTo: string) {
 // TODO(weiweilin): get the URL from `CONFIGS` instead of hardcoding it.
 export function getLogoutUrl(redirectTo: string) {
   return `/auth/openid/logout?${new URLSearchParams({ r: redirectTo })}`;
+}
+
+export function getCodeSourceUrl(testLocation: TestLocation, branch = 'HEAD') {
+  return (
+    testLocation.repo +
+    '/+/' +
+    branch +
+    testLocation.fileName.slice(1) +
+    (testLocation.line ? '#' + testLocation.line : '')
+  );
 }

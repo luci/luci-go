@@ -145,7 +145,7 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed private get testhausLogArtifact() {
     // Check for Testhaus logs at the test result level first.
-    let log = this.resultArtifacts.find((a) => a.artifactId === 'testhaus_logs');
+    const log = this.resultArtifacts.find((a) => a.artifactId === 'testhaus_logs');
     if (log) {
       return log;
     }
@@ -271,13 +271,7 @@ export class ResultEntryElement extends MobxLitElement {
     return html`
       <div id="inv-artifacts-header">From the parent inv <a href=${getInvURLPath(this.parentInvId)}></a>:</div>
       <ul>
-        ${this.invArtifacts.map(
-          (artifact) => html`
-            <li>
-              ${this.renderArtifactLink(artifact)}
-            </li>
-          `
-        )}
+        ${this.invArtifacts.map((artifact) => html` <li>${this.renderArtifactLink(artifact)}</li> `)}
       </ul>
     `;
   }
@@ -293,13 +287,7 @@ export class ResultEntryElement extends MobxLitElement {
         <span slot="header"> Artifacts: <span class="greyed-out">${artifactCount}</span> </span>
         <div slot="content">
           <ul>
-            ${this.resultArtifacts.map(
-              (artifact) => html`
-                <li>
-                  ${this.renderArtifactLink(artifact)}
-                </li>
-              `
-            )}
+            ${this.resultArtifacts.map((artifact) => html` <li>${this.renderArtifactLink(artifact)}</li> `)}
           </ul>
           ${this.renderInvocationLevelArtifacts()}
         </div>

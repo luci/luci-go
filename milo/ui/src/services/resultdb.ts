@@ -257,6 +257,38 @@ export interface BatchGetTestVariantsResponse {
   readonly testVariants?: readonly TestVariant[];
 }
 
+export interface QueryTestMetadataRequest {
+  readonly project: string;
+  readonly predicate?: TestMetadataPredicate;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface TestMetadataPredicate {
+  readonly testIds?: string[];
+}
+
+export interface QueryTestMetadataResponse {
+  readonly testMetadata?: TestMetadataDetail[];
+  readonly nextPageToken?: string;
+}
+
+export interface TestMetadataDetail {
+  readonly name: string;
+  readonly project: string;
+  readonly testId: string;
+  readonly refHash: string;
+  readonly sourceRef: SourceRef;
+  readonly testMetadata?: TestMetadata;
+}
+
+export type SourceRef = { readonly gitiles?: GitilesRef };
+export interface GitilesRef {
+  readonly host: string;
+  readonly project: string;
+  readonly ref: string;
+}
+
 // The maximum number of results that can be included in a test variant returned
 // from the RPC.
 export const RESULT_LIMIT = 100;
@@ -302,6 +334,10 @@ export class ResultDb {
 
   async batchGetTestVariants(req: BatchGetTestVariantsRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'BatchGetTestVariants', req)) as BatchGetTestVariantsResponse;
+  }
+
+  async queryTestMetadata(req: QueryTestMetadataRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(cacheOpt, 'QueryTestMetadata', req)) as QueryTestMetadataResponse;
   }
 }
 

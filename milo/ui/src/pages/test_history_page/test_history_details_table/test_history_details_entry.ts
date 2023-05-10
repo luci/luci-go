@@ -29,7 +29,7 @@ import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP, VERDICT_VARIANT_STAT
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
 import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
-import { getBuildURLPathFromBuildId, getInvURLPath } from '../../../libs/url_utils';
+import { getBuildURLPathFromBuildId, getCodeSourceUrl, getInvURLPath } from '../../../libs/url_utils';
 import { TestVerdictBundle } from '../../../services/luci_analysis';
 import { RESULT_LIMIT } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
@@ -92,15 +92,7 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
   @computed
   private get sourceUrl() {
     const testLocation = this.testVariant?.testMetadata?.location;
-    if (!testLocation) {
-      return null;
-    }
-    return (
-      testLocation.repo +
-      '/+/HEAD' +
-      testLocation.fileName.slice(1) +
-      (testLocation.line ? '#' + testLocation.line : '')
-    );
+    return testLocation ? getCodeSourceUrl(testLocation) : null;
   }
 
   @computed
