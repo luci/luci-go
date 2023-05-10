@@ -49,12 +49,12 @@ func AnalyzeFailure(
 	lastPassedBuildID int64,
 ) (*model.CompileFailureAnalysis, error) {
 	logging.Infof(c, "AnalyzeFailure firstFailed = %d", firstFailedBuildID)
-	regression_range, e := findRegressionRange(c, firstFailedBuildID, lastPassedBuildID)
+	regressionRange, e := findRegressionRange(c, firstFailedBuildID, lastPassedBuildID)
 	if e != nil {
 		return nil, e
 	}
 
-	logging.Infof(c, "Regression range: %v", regression_range)
+	logging.Infof(c, "Regression range: %v", regressionRange)
 
 	// Get failed targets
 	compileLogs, e := compilelog.GetCompileLogs(c, firstFailedBuildID)
@@ -84,7 +84,7 @@ func AnalyzeFailure(
 		RunStatus:              pb.AnalysisRunStatus_STARTED,
 		FirstFailedBuildId:     firstFailedBuildID,
 		LastPassedBuildId:      lastPassedBuildID,
-		InitialRegressionRange: regression_range,
+		InitialRegressionRange: regressionRange,
 	}
 
 	e = datastore.Put(c, analysis)
@@ -102,10 +102,10 @@ func AnalyzeFailure(
 	}
 
 	// Heuristic analysis
-	heuristicResult, e := heuristic.Analyze(c, analysis, regression_range, compileLogs)
+	heuristicResult, e := heuristic.Analyze(c, analysis, regressionRange, compileLogs)
 	if e != nil {
 		// As this is only heuristic analysis, we log the error and continue with nthsection analysis
-		logging.Errorf(c, "Error during heuristic analysis for build %d: %v", e)
+		logging.Errorf(c, "Error during heuristic analysis for build %d: %v", firstFailedBuildID, e)
 	}
 
 	// If heuristic analysis does not return error, we proceed to verify its results (if any)
