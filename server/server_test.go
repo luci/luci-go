@@ -545,6 +545,18 @@ func TestRPCServers(t *testing.T) {
 					So(err, ShouldBeNil)
 				})
 
+				Convey("Non-nil OK errors", func() {
+					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
+						return nil, malformedGrpcError{}
+					}
+
+					srv.ServeInBackground()
+					defer srv.StopBackgroundServing()
+
+					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
+					So(err, ShouldHaveGRPCStatus, codes.Internal)
+				})
+
 				Convey("Panic catcher is installed", func() {
 					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
 						panic("BOOM")
@@ -1231,6 +1243,11 @@ func (r *logsRecorder) Last(n int) []sdlogger.LogEntry {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+type malformedGrpcError struct{}
+
+func (malformedGrpcError) Error() string              { return "boom" }
+func (malformedGrpcError) GRPCStatus() *status.Status { return nil }
 
 type testRPCServer struct {
 	testpb.UnimplementedTestServer
