@@ -29,7 +29,8 @@ const (
 
 // Bucket is a representation of a bucket in the datastore.
 type Bucket struct {
-	_kind string `gae:"$kind,BucketV2"`
+	_     datastore.PropertyMap `gae:"-,extra"`
+	_kind string                `gae:"$kind,BucketV2"`
 	// ID is the bucket in v2 format.
 	// e.g. try (never luci.chromium.try).
 	ID     string         `gae:"$id"`

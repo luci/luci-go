@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -196,6 +197,15 @@ func UpdateProjectCfg(ctx context.Context) error {
 			}
 
 			if storedBucket.Schema == CurrentBucketSchemaVersion && storedBucket.Revision == revision {
+				// Keep the stored buckets for now, so that in the case that a newly
+				// added bucket reuses an existing bucket as its shadow bucket, the shadow
+				// bucket gets updated later with the list of buckets it shadows.
+				buckets[cfgBktName] = storedBucket
+				if storedBucket.Proto.GetShadow() != "" {
+					// This bucket is shadowed.
+					shadow := storedBucket.Proto.Shadow
+					shadows[shadow] = append(shadows[shadow], cfgBktName)
+				}
 				continue
 			}
 
@@ -303,10 +313,31 @@ func UpdateProjectCfg(ctx context.Context) error {
 		}
 
 		// Update shadow buckets.
+		stringSliceEqual := func(a, b []string) bool {
+			if len(a) != len(b) {
+				return false
+			}
+			sort.Strings(a)
+			sort.Strings(b)
+			for i, item := range a {
+				if item != b[i] {
+					return false
+				}
+			}
+			return true
+		}
 		var shadowBucketsToUpdate []*model.Bucket
 		for shadow, shadowed := range shadows {
-			toUpdate := buckets[shadow]
-			toUpdate.Shadows = shadowed
+			shadowed = stringset.NewFromSlice(shadowed...).ToSlice() // Deduplicate
+			toUpdate, ok := buckets[shadow]
+			if !ok {
+				logging.Infof(ctx, "cannot find config for shadow bucket %s in project %s", shadow, project)
+				continue
+			}
+			sort.Strings(shadowed)
+			if !stringSliceEqual(toUpdate.Shadows, shadowed) {
+				toUpdate.Shadows = shadowed
+			}
 			shadowBucketsToUpdate = append(shadowBucketsToUpdate, toUpdate)
 		}
 		if len(shadowBucketsToUpdate) > 0 {

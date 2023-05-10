@@ -1007,6 +1007,134 @@ func TestUpdateProject(t *testing.T) {
 			})
 		})
 
+		Convey("test shadow", func() {
+			defer restoreCfgVars()
+
+			// Add shadow bucket try.shadow which shadows try
+			chromiumBuildbucketCfg = `
+			 buckets {
+			   name: "try"
+			   swarming {
+			     task_template_canary_percentage { value: 10 }
+			     builders {
+			       name: "linux"
+			       swarming_host: "swarming.updated.example.com"
+			       task_template_canary_percentage { value: 10 }
+			       dimensions: "os:Linux"
+							exe {
+								cipd_version: "refs/heads/main"
+								cipd_package: "infra/recipe_bundle"
+								cmd: ["luciexe"]
+							}
+			     }
+			   }
+					shadow: "try.shadow"
+			 }
+				buckets {
+					name: "try.shadow"
+					dynamic_builder_template {}
+				}
+			`
+			chromiumRevision = "new!"
+			// Delete the entire v8 cfg
+			v8BuildbucketCfg = ""
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+
+			// Add a new bucket also shadowed by try.shadow
+			chromiumBuildbucketCfg = `
+        buckets {
+          name: "try"
+          swarming {
+            task_template_canary_percentage { value: 10 }
+            builders {
+              name: "linux"
+              swarming_host: "swarming.updated.example.com"
+              task_template_canary_percentage { value: 10 }
+              dimensions: "os:Linux"
+							exe {
+								cipd_version: "refs/heads/main"
+								cipd_package: "infra/recipe_bundle"
+								cmd: ["luciexe"]
+							}
+            }
+          }
+					shadow: "try.shadow"
+        }
+				buckets {
+					name: "try.shadow"
+					dynamic_builder_template {}
+				}
+				buckets {
+          name: "another"
+					shadow: "try.shadow"
+        }
+			`
+			// Delete the entire v8 cfg
+			v8BuildbucketCfg = ""
+
+			So(UpdateProjectCfg(ctx), ShouldBeNil)
+			var actualBkts []*model.Bucket
+			So(datastore.GetAll(ctx, datastore.NewQuery(model.BucketKind), &actualBkts), ShouldBeNil)
+			So(len(actualBkts), ShouldEqual, 4)
+			So(stripBucketProtos(actualBkts), ShouldResembleProto, []*pb.Bucket{
+				{
+					Name:   "another",
+					Shadow: "try.shadow",
+				},
+				{
+					Name: "try",
+					Swarming: &pb.Swarming{
+						Builders:                     []*pb.BuilderConfig{},
+						TaskTemplateCanaryPercentage: &wrapperspb.UInt32Value{Value: uint32(10)},
+					},
+					Shadow: "try.shadow",
+				},
+				{
+					Name:                   "try.shadow",
+					DynamicBuilderTemplate: &pb.Bucket_DynamicBuilderTemplate{},
+				},
+				{
+					Name: "try",
+					Swarming: &pb.Swarming{
+						Builders: []*pb.BuilderConfig{},
+					},
+				},
+			})
+			So(actualBkts, ShouldResemble, []*model.Bucket{
+				{
+					ID:       "another",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Bucket:   "another",
+					Schema:   CurrentBucketSchemaVersion,
+					Revision: "new!",
+				},
+				{
+					ID:       "try",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Bucket:   "try",
+					Schema:   CurrentBucketSchemaVersion,
+					Revision: "new!",
+				},
+				{
+					ID:       "try.shadow",
+					Parent:   model.ProjectKey(ctx, "chromium"),
+					Bucket:   "try.shadow",
+					Schema:   CurrentBucketSchemaVersion,
+					Revision: "new!",
+					Shadows:  []string{"another", "try"},
+				},
+				{
+					ID:       "try",
+					Parent:   model.ProjectKey(ctx, "dart"),
+					Bucket:   "try",
+					Schema:   CurrentBucketSchemaVersion,
+					Revision: "deadbeef",
+				},
+			})
+
+		})
+
 		Convey("with broken configs", func() {
 			defer restoreCfgVars()
 
