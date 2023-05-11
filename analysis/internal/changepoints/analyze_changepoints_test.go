@@ -23,11 +23,15 @@ import (
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
+	"go.chromium.org/luci/analysis/internal/changepoints/sources"
+	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
+	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/config"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
-	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/protobuf/proto"
@@ -45,9 +49,9 @@ type Invocation struct {
 
 func TestAnalyzeChangePoint(t *testing.T) {
 	Convey(`Can batch result`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload()
-		sourcesMap := sampleSourcesMap(10)
+		ctx := newContext(t)
+		payload := tu.SamplePayload()
+		sourcesMap := tu.SampleSourcesMap(10)
 		// 900 test variants should result in 5 batches (1000 each, last one has 500).
 		tvs := testVariants(4500)
 		err := Analyze(ctx, tvs, payload, sourcesMap)
@@ -58,9 +62,9 @@ func TestAnalyzeChangePoint(t *testing.T) {
 	})
 
 	Convey(`Can skip batch`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload()
-		sourcesMap := sampleSourcesMap(10)
+		ctx := newContext(t)
+		payload := tu.SamplePayload()
+		sourcesMap := tu.SampleSourcesMap(10)
 		tvs := testVariants(100)
 		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
 		So(err, ShouldBeNil)
@@ -73,8 +77,8 @@ func TestAnalyzeChangePoint(t *testing.T) {
 	})
 
 	Convey(`No commit position should skip`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload()
+		ctx := newContext(t)
+		payload := tu.SamplePayload()
 		sourcesMap := map[string]*rdbpb.Sources{
 			"sources_id": {
 				GitilesCommit: &rdbpb.GitilesCommit{
@@ -192,7 +196,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 			Status: analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
 			Mode:   analysispb.PresubmitRunMode_FULL_RUN,
 		}
-		sourcesMap := sampleSourcesMap(10)
+		sourcesMap := tu.SampleSourcesMap(10)
 		sourcesMap["sources_id"].Changelists = []*rdbpb.GerritChange{
 			{
 				Host:     "host",
@@ -224,9 +228,9 @@ func TestAnalyzeChangePoint(t *testing.T) {
 
 func TestAnalyzeSingleBatch(t *testing.T) {
 	Convey(`Analyze batch with empty buffer`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
-		payload := samplePayload()
-		sourcesMap := sampleSourcesMap(10)
+		ctx := newContext(t)
+		payload := tu.SamplePayload()
+		sourcesMap := tu.SampleSourcesMap(10)
 		tvs := []*rdbpb.TestVariant{
 			{
 				TestId:      "test_1",
@@ -294,11 +298,11 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(len(tvbs), ShouldEqual, 2)
 
 		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvbs[0], &TestVariantBranch{
+		diff := cmp.Diff(tvbs[0], &tvbr.TestVariantBranch{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     refHash(sourcesMap["sources_id"]),
+			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -332,11 +336,11 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
-		diff = cmp.Diff(tvbs[1], &TestVariantBranch{
+		diff = cmp.Diff(tvbs[1], &tvbr.TestVariantBranch{
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
-			RefHash:     refHash(sourcesMap["sources_id"]),
+			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -380,10 +384,10 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 	})
 
 	Convey(`Analyze batch run analysis got change point`, t, func() {
-		ctx := testutil.IntegrationTestContext(t)
+		ctx := newContext(t)
 		// Store some existing data in spanner first.
-		payload := samplePayload()
-		sourcesMap := sampleSourcesMap(10)
+		payload := tu.SamplePayload()
+		sourcesMap := tu.SampleSourcesMap(10)
 
 		// Set up the verdicts in spanner.
 		positions := make([]int, 2000)
@@ -397,13 +401,13 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			}
 		}
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
-		tvb := &TestVariantBranch{
+		tvb := &tvbr.TestVariantBranch{
 			IsNew:       true,
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			SourceRef:   sourceRef(sourcesMap["sources_id"]),
-			RefHash:     refHash(sourcesMap["sources_id"]),
+			SourceRef:   sources.SourceRef(sourcesMap["sources_id"]),
+			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -460,11 +464,11 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		tvb = tvbs[0]
 
 		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvb, &TestVariantBranch{
+		diff := cmp.Diff(tvb, &tvbr.TestVariantBranch{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     refHash(sourcesMap["sources_id"]),
+			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
 			Variant: &analysispb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -522,14 +526,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 
 func TestOutOfOrderVerdict(t *testing.T) {
 	Convey("Out of order verdict", t, func() {
-		sourcesMap := sampleSourcesMap(10)
+		sourcesMap := tu.SampleSourcesMap(10)
 		sources := sourcesMap["sources_id"]
 		Convey("No test variant branch", func() {
 			So(isOutOfOrderAndShouldBeDiscarded(nil, sources), ShouldBeFalse)
 		})
 
 		Convey("No finalizing or finalized segment", func() {
-			tvb := &TestVariantBranch{}
+			tvb := &tvbr.TestVariantBranch{}
 			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 		})
 
@@ -587,16 +591,16 @@ func fetchInvocations(ctx context.Context) []Invocation {
 	return results
 }
 
-func fetchTestVariantBranches(ctx context.Context) []*TestVariantBranch {
+func fetchTestVariantBranches(ctx context.Context) []*tvbr.TestVariantBranch {
 	st := spanner.NewStatement(`
 			SELECT Project, TestId, VariantHash, RefHash, Variant, SourceRef, HotInputBuffer, ColdInputBuffer, FinalizingSegment, FinalizedSegments
 			FROM TestVariantBranch
 			ORDER BY TestId
 		`)
 	it := span.Query(span.Single(ctx), st)
-	results := []*TestVariantBranch{}
+	results := []*tvbr.TestVariantBranch{}
 	err := it.Do(func(r *spanner.Row) error {
-		tvb, err := spannerRowToTestVariantBranch(r)
+		tvb, err := tvbr.SpannerRowToTestVariantBranch(r)
 		if err != nil {
 			return err
 		}
@@ -619,30 +623,8 @@ func testVariants(n int) []*rdbpb.TestVariant {
 	return tvs
 }
 
-func samplePayload() *taskspb.IngestTestResults {
-	return &taskspb.IngestTestResults{
-		Build: &controlpb.BuildResult{
-			Id:      1234,
-			Project: "chromium",
-		},
-	}
-}
-
-func sampleSourcesMap(commitPosition int) map[string]*rdbpb.Sources {
-	return map[string]*rdbpb.Sources{
-		"sources_id": {
-			GitilesCommit: &rdbpb.GitilesCommit{
-				Host:     "host",
-				Project:  "proj",
-				Ref:      "ref",
-				Position: int64(commitPosition),
-			},
-		},
-	}
-}
-
-func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *TestVariantBranch {
-	tvb := &TestVariantBranch{
+func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *tvbr.TestVariantBranch {
+	tvb := &tvbr.TestVariantBranch{
 		FinalizingSegment: &changepointspb.Segment{},
 		InputBuffer:       &inputbuffer.Buffer{},
 	}
@@ -658,4 +640,10 @@ func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *TestVa
 		})
 	}
 	return tvb
+}
+
+func newContext(t *testing.T) context.Context {
+	ctx := memory.Use(testutil.IntegrationTestContext(t))
+	So(config.SetTestConfig(ctx, tu.TestConfig()), ShouldBeNil)
+	return ctx
 }

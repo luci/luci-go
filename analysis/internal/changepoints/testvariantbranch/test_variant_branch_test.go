@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package changepoints
+package testvariantbranch
 
 import (
 	"testing"
@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
+	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -328,8 +329,8 @@ func TestInsertToInputBuffer(t *testing.T) {
 				ColdBufferCapacity: 100,
 			},
 		}
-		payload := samplePayload()
-		sourcesMap := sampleSourcesMap(12)
+		payload := tu.SamplePayload()
+		sourcesMap := tu.SampleSourcesMap(12)
 		tv := &rdbpb.TestVariant{
 			Status: rdbpb.TestVariantStatus_EXPECTED,
 			Results: []*rdbpb.TestResultBundle{
@@ -361,8 +362,8 @@ func TestInsertToInputBuffer(t *testing.T) {
 				ColdBufferCapacity: 100,
 			},
 		}
-		payload := samplePayload()
-		sourcesMap := sampleSourcesMap(12)
+		payload := tu.SamplePayload()
+		sourcesMap := tu.SampleSourcesMap(12)
 		tv := &rdbpb.TestVariant{
 			Status:    rdbpb.TestVariantStatus_FLAKY,
 			SourcesId: "sources_id",

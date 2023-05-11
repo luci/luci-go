@@ -60,6 +60,9 @@ message TestVariantAnalysis {
   // It should be only enabled on dev at the beginning, before we are confident
   // enough to turn it on for prod.
   bool enabled = 1;
+  // Controls whether we should export test variant analysis result to
+  // BigQuery. To turn this on, the "enabled" flag should also be turned on.
+  bool bigquery_export_enabled = 2;
 }
 
 // Settings to control ingestion.

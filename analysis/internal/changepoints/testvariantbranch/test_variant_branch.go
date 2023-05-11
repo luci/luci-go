@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package changepoints
+// Package testvariantbranch handles test variant branch of change point analysis.
+package testvariantbranch
 
 import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
