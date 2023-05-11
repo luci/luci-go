@@ -98,7 +98,6 @@ func cmdAdd(p Params) *subcommands.Command {
 				  * `+bb.ExperimentBBAgent+`
 					* `+bb.ExperimentBBAgentDownloadCipd+`
 				  * `+bb.ExperimentBBAgentGetBuild+`
-				  * `+bb.ExperimentRecipePY3+`
 			`))
 			r.Flags.Var(PropertiesFlag(&r.properties), "p", doc(`
 				Input properties for the build.

@@ -707,14 +707,9 @@ func mainImpl() int {
 			CacheDir: cache,
 			Env:      environ.System(),
 		}
-		experiments := stringset.NewFromSlice(bbclientInput.input.Build.Input.Experiments...)
-		nopy2 := experiments.Has(buildbucket.ExperimentOmitPython2)
-		if nopy2 {
-			invokeOpts.Env.Set("LUCI_OMIT_PYTHON2", "true")
-		}
-		if nopy2 || experiments.Has(buildbucket.ExperimentRecipePY3) {
-			invokeOpts.Env.Set("RECIPES_USE_PY3", "true")
-		}
+		// TODO(crbug.com/1441784) - Ensure nothing depends on this environment
+		// variable.
+		invokeOpts.Env.Set("LUCI_OMIT_PYTHON2", "true")
 
 		go func() {
 			select {

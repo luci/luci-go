@@ -102,7 +102,6 @@ func cmdLS(p Params) *subcommands.Command {
 				  * `+bb.ExperimentBBAgent+`
 					* `+bb.ExperimentBBAgentDownloadCipd+`
 				  * `+bb.ExperimentBBAgentGetBuild+`
-				  * `+bb.ExperimentRecipePY3+`
 			`))
 			r.Flags.Var(StatusFlag(&r.status), "status",
 				fmt.Sprintf("Build status. Valid values: %s.\n"+
