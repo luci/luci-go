@@ -636,7 +636,8 @@ func (o *Options) FromGAEEnv() {
 // Equivalent to passing the following flags:
 //
 //	-prod
-//	-http-addr 0.0.0.0:${PORT}
+//	-http-addr -
+//	-grpc-addr -
 //	-admin-addr -
 //	-allow-h2c
 //	-shutdown-delay 1s
@@ -646,6 +647,10 @@ func (o *Options) FromGAEEnv() {
 //	-open-id-rpc-auth-enable
 //	-ts-mon-service-name <cloud project Cloud Run container is running in>
 //	-ts-mon-job-name ${K_SERVICE}
+//
+// Flags passed via the actual command line in the Cloud Run manifest override
+// these prefilled defaults. In particular pass either `-http-addr` or
+// `-grpc-addr` (or both) to enable corresponding ports.
 //
 // Additionally the hostname (used in metric and trace fields) is derived from
 // environment to be semantically similar to what it looks like in the GKE
@@ -672,7 +677,7 @@ func (o *Options) FromCloudRunEnv() error {
 	o.Serverless = module.CloudRun
 	o.Prod = true
 	o.Hostname = uniqueServerlessHostname(os.Getenv("K_REVISION"), instance)
-	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
+	o.HTTPAddr = "-"
 	o.GRPCAddr = "-"
 	o.AdminAddr = "-"
 	o.AllowH2C = true // to allow using HTTP2 end-to-end with `--use-http2` deployment flag
@@ -1033,13 +1038,6 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	case module.CloudRun:
 		logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
 		logging.Infof(srv.Context, "Revision is %q", os.Getenv("K_REVISION"))
-		// Cloud Run environment can currently expose at most one port. If both gRPC
-		// and HTTP ports are declared, give preference to the gRPC one.
-		configured := func(addr string) bool { return addr != "" && addr != "-" }
-		if configured(srv.Options.GRPCAddr) && configured(srv.Options.HTTPAddr) {
-			logging.Infof(srv.Context, "Ignoring -http-addr since -grpc-addr is also set")
-			srv.Options.HTTPAddr = "-"
-		}
 	default:
 		// On k8s log pod IPs too, this is useful when debugging k8s routing.
 		logging.Infof(srv.Context, "Running on %s (%s)", srv.Options.Hostname, networkAddrsForLog())
