@@ -1,0 +1,175 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.bq;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
+import "go.chromium.org/luci/common/bq/pb/options.proto";
+
+option go_package = "go.chromium.org/luci/analysis/proto/bq;bqpb";
+
+// Represents analysis for a test variant on a source branch at a point in time.
+message TestVariantBranchRow {
+  // The LUCI Project. E.g. "chromium".
+  string project = 1;
+
+  // The identity of the test.
+  string test_id = 2;
+
+  // Hash of the variant, as 16 lowercase hexadecimal characters.
+  // E.g. "96c68dc946ab4068".
+  string variant_hash = 3;
+
+  // Hash of the source branch, as 16 lowercase hexadecimal characters.
+  string ref_hash = 4;
+
+  // Describes one specific way of running the test, e.g. a specific bucket,
+  // builder and a test suite.
+  //
+  // This will be encoded as a JSON object like
+  // {"builder":"linux-rel","os":"Ubuntu-18.04",...}
+  // to take advantage of BigQuery's JSON support, so that the query will only
+  // be billed for the variant keys it reads.
+  //
+  // In the protocol buffer, it must be a string as per
+  // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
+  string variant = 5 [(bqschema.options).bq_type = "JSON"];
+
+  // The branch in source control.
+  luci.analysis.v1.SourceRef ref = 6;
+
+  // The test history represented as a set of [start commit position,
+  // end commit position] segments, where segments have statistically
+  // different failure and/or flake rates. The segments are ordered so that
+  // the most recent segment appears first.
+  // If a client is only interested in the current failure/flake rate, they
+  // can just query the first segment.
+  repeated Segment segments = 7;
+
+  // This field has value = 1 if the test variant has any unexpected
+  // test results in the last 90 days (excluding presubmit runs that do not
+  // results  in CL submission). It has value = 0 otherwise.
+  // It is int value instead of bool because we use it as partitioning key
+  // (BigQuery does not support bool as partitioning key).
+  int32 has_recent_unexpected_results = 8;
+
+  // The Spanner commit timestamp that reflects the version of data that was
+  // exported. Rows with later timestamps are strictly newer.
+  // In the test_variant_segments table, only one version of analysis
+  // will be present for a given (project, test_id, variant_hash, ref_hash).
+  google.protobuf.Timestamp version = 9;
+}
+
+// Represents a period in history where the test had a consistent failure and
+// flake rate. Segments are separated by changepoints. Each segment captures
+// information about the changepoint which started it.
+message Segment {
+  // If set, means the segment commenced with a changepoint.
+  // If unset, means the segment began with the beginning of recorded
+  // history for the segment. (All recorded history for a test variant branch
+  // is deleted after 90 days of no results, so this means there were
+  // no results for at least 90 days before the segment.)
+  bool has_starting_changepoint = 1;
+
+  // The nominal commit position at which the segment starts (inclusive).
+  // Guaranteed to be strictly greater than the end_position of the
+  // chronologically previous segment (if any).
+  // If this segment has a starting changepoint, this is the nominal position
+  // of the changepoint (when the new test behaviour started).
+  // If this segment does not have a starting changepoint, this is the
+  // simply the first commit position in the known history of the test.
+  int64 start_position = 2;
+
+  // The lower bound of the starting changepoint position in a 99% two-tailed
+  // confidence interval. Inclusive.
+  // Only set if has_starting_changepoint is set.
+  int64 start_position_lower_bound_99th = 3;
+
+  // The upper bound of the starting changepoint position in a 99% two-tailed
+  // confidence interval. Inclusive.
+  // Only set if has_starting_changepoint is set.
+  // When has_starting_changepoint is set, the following invariant holds:
+  // previous_segment.start_position <= start_position_lower_bound_99th <= start_position <= start_position_upper_bound_99th
+  // where previous_segment refers to the chronologically previous segment.
+  int64 start_position_upper_bound_99th = 4;
+
+  // The earliest hour a test verdict at the indicated start_position
+  // was recorded. Gives an approximate upper bound on the timestamp the
+  // changepoint occurred, for systems which need to filter by date.
+  google.protobuf.Timestamp start_hour = 5;
+
+  // The nominal commit position at which the segment ends (inclusive).
+  // This is either the last recorded commit position in the test history
+  // (for this test variant branch), or the position of the last verdict
+  // seen before the next detected changepoint.
+  int64 end_position = 6;
+
+  // The earliest hour a test verdict at the indicated end_position
+  // was recorded. Gives an approximate lower bound on the  timestamp
+  // the changepoint occurred, for systems which need to filter by date.
+  google.protobuf.Timestamp end_hour = 7;
+
+  // Counts of test results, runs and verdicts over a time period. Includes only
+  // test results for submitted code changes. This is defined as:
+  // (1) where the code under test was already submitted when the test ran
+  //       (e.g. postsubmit builders)
+  // (2) where the code under test was not submitted at the time the test ran,
+  //     but was submitted immediately after (e.g. because the tests ran as part
+  //     of a tryjob, the presubmit run the tryjob was triggered by succeeded,
+  //     and submitted code as a result).
+  //     Currently, when test results lead to CL submission via recycled CQ runs,
+  //     they are not counted.
+  message Counts {
+    // All the following statistics exclude the effect of exonerations,
+    // and skipped test results.
+    // For runs and test results, duplicate (recycled) runs are not counted.
+    // Verdicts with only skipped/duplicate results are not counted.
+
+    // The number of unexpected non-skipped test results.
+    int64 unexpected_results = 1;
+
+    // The total number of non-skipped test results.
+    int64 total_results = 2;
+
+    // The number of test runs which had an unexpected test result but were
+    // not retried.
+    int64 unexpected_unretried_runs = 3;
+
+    // The number of test run which had an unexpected test result, were
+    // retried, and still contained only unexpected test results.
+    int64 unexpected_after_retry_runs = 4;
+
+    // The number of test runs which had an unexpected test result, were
+    // retried, and eventually recorded an expected test result.
+    int64 flaky_runs = 5;
+
+    // The total number of test runs.
+    int64 total_runs = 6;
+
+    // The number of verdicts with only unexpected test results.
+    int64 unexpected_verdicts = 7;
+
+    // The number of verdicts with a mix of expected and unexpected test results.
+    int64 flaky_verdicts = 8;
+
+    // The total number of verdicts.
+    int64 total_verdicts = 9;
+  }
+
+  // Total number of test results/runs/verdicts in the segment.
+  Counts counts = 8;
+}
