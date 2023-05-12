@@ -25,6 +25,7 @@ import (
 
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/cas"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
+	"github.com/bazelbuild/remote-apis-sdks/go/pkg/contextmd"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -204,14 +205,14 @@ func Options(creds credentials.PerRPCCredentials) []client.Opt {
 // ContextWithMetadata attaches RBE related metadata with tool name to the
 // given context.
 func ContextWithMetadata(ctx context.Context, toolName string) (context.Context, error) {
-	ctx, err := client.ContextWithMetadata(ctx, &client.ContextMetadata{
+	ctx, err := contextmd.WithMetadata(ctx, &contextmd.Metadata{
 		ToolName: toolName,
 	})
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to attach metadata").Err()
 	}
 
-	m, err := client.GetContextMetadata(ctx)
+	m, err := contextmd.ExtractMetadata(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to extract metadata").Err()
 	}

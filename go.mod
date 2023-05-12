@@ -23,8 +23,8 @@ require (
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/bazelbuild/buildtools v0.0.0-20221004120235-7186f635531b
-	github.com/bazelbuild/remote-apis v0.0.0-20220510175640-3b4b64021035
-	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230303145537-3a73c5ed0419
+	github.com/bazelbuild/remote-apis v0.0.0-20230411132548-35aee1c4a425
+	github.com/bazelbuild/remote-apis-sdks v0.0.0-20230511173731-022d76cc3978
 	github.com/danjacques/gofslock v0.0.0-20220131014315-6e321f4509c8
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1
@@ -59,11 +59,11 @@ require (
 	go.opencensus.io v0.24.0
 	go.starlark.net v0.0.0-20230122040757-066229b0515d
 	golang.org/x/crypto v0.5.0
-	golang.org/x/net v0.5.0
+	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.4.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/sys v0.4.0
-	golang.org/x/term v0.4.0
+	golang.org/x/sys v0.5.0
+	golang.org/x/term v0.5.0
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.5.0
 	gonum.org/v1/gonum v0.12.0
@@ -117,6 +117,6 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 )
