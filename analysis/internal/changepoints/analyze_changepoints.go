@@ -276,7 +276,7 @@ func insertIntoInputBuffer(tvb *tvbr.TestVariantBranch, tv *rdbpb.TestVariant, p
 		}
 	}
 
-	pv, err := toPositionVerdict(tv, payload, duplicateMap, src)
+	pv, err := tvbr.ToPositionVerdict(tv, payload, duplicateMap, src)
 	if err != nil {
 		return nil, err
 	}

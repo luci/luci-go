@@ -343,7 +343,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			},
 			SourcesId: "sources_id",
 		}
-		pv, err := toPositionVerdict(tv, payload, map[string]bool{}, sourcesMap["sources_id"])
+		pv, err := ToPositionVerdict(tv, payload, map[string]bool{}, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
@@ -423,7 +423,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			"run-1": true,
 			"run-3": true,
 		}
-		pv, err := toPositionVerdict(tv, payload, duplicateMap, sourcesMap["sources_id"])
+		pv, err := ToPositionVerdict(tv, payload, duplicateMap, sourcesMap["sources_id"])
 		So(err, ShouldBeNil)
 		tvb.InsertToInputBuffer(pv)
 		So(len(tvb.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 1)
