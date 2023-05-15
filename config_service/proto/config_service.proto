@@ -1,0 +1,67 @@
+// Copyright 2023 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config.service.v2;
+
+option go_package = "go.chromium.org/luci/config_service/proto;configpb";
+
+// Allow to generate *_pb2.py files.
+option py_generic_services = true;
+
+import "google/protobuf/field_mask.proto";
+
+// Configs Service.
+service Configs {
+  // Get one configuration.
+  rpc GetConfig(GetConfigRequest) returns (Config) {};
+}
+
+// A request message for GetConfig rpc.
+message GetConfigRequest {
+  // Requires path. Mutually exclusive with content_hash.
+  string config_set = 1;
+
+  // Requires config_set. Mutually exclusive with content_hash.
+  string path = 2;
+
+  // Mutually exclusive with config_set and path.
+  string content_hash = 3;
+
+  // Fields of the Config proto to include.
+  //
+  // By default, all fields are included.
+  google.protobuf.FieldMask fields = 4;
+}
+
+// A single config.
+message Config {
+  // Name of the config set.
+  // For a service config set, "services/<service_id>".
+  // For a project config set, "projects/<project_id>".
+  string config_set = 1;
+
+  // Path of the config file relative to the config directory.
+  string path = 2;
+
+  // Content of the config.
+  oneof content {
+    // For small content, raw content will be included directly.
+    bytes raw_content = 3;
+
+    // For large content, a sign_url which points
+    // the actual config content will be provided.
+    string signed_url = 4;
+  }
+
+  // Content hash.
+  string content_hash = 5;
+
+  // Git revision
+  string revision = 6;
+
+  // Original config file url on Git repo.
+  string url = 7;
+}
