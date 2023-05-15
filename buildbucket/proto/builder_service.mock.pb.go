@@ -11,6 +11,41 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
+// MockisSetBuilderHealthResponse_Response_Response is a mock of isSetBuilderHealthResponse_Response_Response interface.
+type MockisSetBuilderHealthResponse_Response_Response struct {
+	ctrl     *gomock.Controller
+	recorder *MockisSetBuilderHealthResponse_Response_ResponseMockRecorder
+}
+
+// MockisSetBuilderHealthResponse_Response_ResponseMockRecorder is the mock recorder for MockisSetBuilderHealthResponse_Response_Response.
+type MockisSetBuilderHealthResponse_Response_ResponseMockRecorder struct {
+	mock *MockisSetBuilderHealthResponse_Response_Response
+}
+
+// NewMockisSetBuilderHealthResponse_Response_Response creates a new mock instance.
+func NewMockisSetBuilderHealthResponse_Response_Response(ctrl *gomock.Controller) *MockisSetBuilderHealthResponse_Response_Response {
+	mock := &MockisSetBuilderHealthResponse_Response_Response{ctrl: ctrl}
+	mock.recorder = &MockisSetBuilderHealthResponse_Response_ResponseMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockisSetBuilderHealthResponse_Response_Response) EXPECT() *MockisSetBuilderHealthResponse_Response_ResponseMockRecorder {
+	return m.recorder
+}
+
+// isSetBuilderHealthResponse_Response_Response mocks base method.
+func (m *MockisSetBuilderHealthResponse_Response_Response) isSetBuilderHealthResponse_Response_Response() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "isSetBuilderHealthResponse_Response_Response")
+}
+
+// isSetBuilderHealthResponse_Response_Response indicates an expected call of isSetBuilderHealthResponse_Response_Response.
+func (mr *MockisSetBuilderHealthResponse_Response_ResponseMockRecorder) isSetBuilderHealthResponse_Response_Response() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isSetBuilderHealthResponse_Response_Response", reflect.TypeOf((*MockisSetBuilderHealthResponse_Response_Response)(nil).isSetBuilderHealthResponse_Response_Response))
+}
+
 // MockBuildersClient is a mock of BuildersClient interface.
 type MockBuildersClient struct {
 	ctrl     *gomock.Controller
@@ -74,6 +109,26 @@ func (mr *MockBuildersClientMockRecorder) ListBuilders(ctx, in interface{}, opts
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBuilders", reflect.TypeOf((*MockBuildersClient)(nil).ListBuilders), varargs...)
 }
 
+// SetBuilderHealth mocks base method.
+func (m *MockBuildersClient) SetBuilderHealth(ctx context.Context, in *SetBuilderHealthRequest, opts ...grpc.CallOption) (*SetBuilderHealthResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetBuilderHealth", varargs...)
+	ret0, _ := ret[0].(*SetBuilderHealthResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetBuilderHealth indicates an expected call of SetBuilderHealth.
+func (mr *MockBuildersClientMockRecorder) SetBuilderHealth(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBuilderHealth", reflect.TypeOf((*MockBuildersClient)(nil).SetBuilderHealth), varargs...)
+}
+
 // MockBuildersServer is a mock of BuildersServer interface.
 type MockBuildersServer struct {
 	ctrl     *gomock.Controller
@@ -125,4 +180,19 @@ func (m *MockBuildersServer) ListBuilders(arg0 context.Context, arg1 *ListBuilde
 func (mr *MockBuildersServerMockRecorder) ListBuilders(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBuilders", reflect.TypeOf((*MockBuildersServer)(nil).ListBuilders), arg0, arg1)
+}
+
+// SetBuilderHealth mocks base method.
+func (m *MockBuildersServer) SetBuilderHealth(arg0 context.Context, arg1 *SetBuilderHealthRequest) (*SetBuilderHealthResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetBuilderHealth", arg0, arg1)
+	ret0, _ := ret[0].(*SetBuilderHealthResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetBuilderHealth indicates an expected call of SetBuilderHealth.
+func (mr *MockBuildersServerMockRecorder) SetBuilderHealth(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBuilderHealth", reflect.TypeOf((*MockBuildersServer)(nil).SetBuilderHealth), arg0, arg1)
 }

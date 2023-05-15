@@ -8,7 +8,11 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+import "google/rpc/status.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
 // Provides preconfigured builders.
 service Builders {
@@ -17,6 +21,9 @@ service Builders {
 
   // Lists all builders of a project or a bucket.
   rpc ListBuilders(ListBuildersRequest) returns (ListBuildersResponse) {};
+
+  // SetBuilderHealth allows a Builder's health to be set.
+  rpc SetBuilderHealth(SetBuilderHealthRequest) returns (SetBuilderHealthResponse) {};
 }
 
 // A request message for GetBuilder rpc.
@@ -62,4 +69,35 @@ message ListBuildersResponse {
   // request.
   // If the invocation is not finalized, more results may appear later.
   string next_page_token = 2;
+}
+
+// A request message for SetBuilderHealth RPC.
+message SetBuilderHealthRequest {
+  // BuilderHealth needs BuilderID so that SetBuilderHealth RPC can properly update
+  // the Builder datastore entity with the updated HealthStatus.
+  message BuilderHealth {
+    // Required. Builder to set the health score for.
+    // You must have the 'buildbucket.builders.set_health' permission for
+    // each of them.
+    BuilderID id = 1 [(google.api.field_behavior) = REQUIRED];
+
+    // Required. Health status of the builder.
+    HealthStatus health = 2 [(google.api.field_behavior) = REQUIRED];
+  }
+
+  repeated BuilderHealth health = 1;
+}
+
+// A response message for SetBuilderHealth RPC.
+message SetBuilderHealthResponse {
+  message Response {
+    oneof response {
+      google.protobuf.Empty result = 1;
+      google.rpc.Status error = 100;
+    }
+  }
+
+  // Responses should be empty protos or errors. They will map
+  // directly with the repeated health fields from SetBuilderHealthRequest.
+  repeated Response responses = 1;
 }

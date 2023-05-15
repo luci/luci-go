@@ -9,6 +9,7 @@ package buildbucket.v2;
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/field_option.proto";
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
 // Identifies a builder.
@@ -16,14 +17,14 @@ import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 message BuilderID {
   // Project ID, e.g. "chromium". Unique within a LUCI deployment.
   // Regex: ^[a-z0-9\-_]+$
-  string project = 1;
+  string project = 1 [ (buildbucket.v2.required_by_rpc) = "SetBuilderHealth" ];
   // Bucket name, e.g. "try". Unique within the project.
   // Regex: ^[a-z0-9\-_.]{1,100}$
   // Together with project, defines an ACL.
-  string bucket = 2;
+  string bucket = 2 [ (buildbucket.v2.required_by_rpc) = "SetBuilderHealth" ];
   // Builder name, e.g. "linux-rel". Unique within the bucket.
   // Regex: ^[a-zA-Z0-9\-_.\(\) ]{1,128}$
-  string builder = 3;
+  string builder = 3 [ (buildbucket.v2.required_by_rpc) = "SetBuilderHealth" ];
 }
 
 message BuilderMetadata {

@@ -32,4 +32,8 @@ message RegisterBuildTaskFieldOption {
 extend google.protobuf.FieldOptions {
   CreateBuildFieldOption create_build_field_option = 54321;
   RegisterBuildTaskFieldOption register_build_task_field_option = 54322;
+  // Custom repeatable field option that allows user to require some fields for
+  // a specific rpc. Set this value equal to RPC when using protowalk Field
+  // Processor.
+  repeated string required_by_rpc = 54323;
 }

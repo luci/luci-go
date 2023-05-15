@@ -56,3 +56,20 @@ func (s *DecoratedBuilders) ListBuilders(ctx context.Context, req *ListBuildersR
 	}
 	return
 }
+
+func (s *DecoratedBuilders) SetBuilderHealth(ctx context.Context, req *SetBuilderHealthRequest) (rsp *SetBuilderHealthResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "SetBuilderHealth", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.SetBuilderHealth(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "SetBuilderHealth", rsp, err)
+	}
+	return
+}

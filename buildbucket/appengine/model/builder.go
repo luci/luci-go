@@ -64,6 +64,9 @@ type Builder struct {
 
 	// ConfigHash is used for fast deduplication of configs.
 	ConfigHash string `gae:"config_hash"`
+
+	// Metadata is the builder owner and health information.
+	Metadata *pb.BuilderMetadata `gae:"builder_metadata,legacy"`
 }
 
 // FullBuilderName return the builder name in the format of "<project>.<bucket>.<builder>".
