@@ -400,8 +400,18 @@ func TestSetBuilderHealth(t *testing.T) {
 			_, err := srv.SetBuilderHealth(ctx, req)
 			So(err, ShouldBeNil)
 			expectedBuilder1 := &model.Builder{ID: "amd-cq", Parent: bktKey}
-			So(datastore.Get(ctx, expectedBuilder1), ShouldBeNil)
+			expectedBuilder2 := &model.Builder{ID: "amd-cq-2", Parent: bktKey}
+			expectedBuilder3 := &model.Builder{ID: "amd-cq-3", Parent: bktKey}
+			So(datastore.Get(ctx, expectedBuilder1, expectedBuilder2, expectedBuilder3), ShouldBeNil)
 			So(expectedBuilder1.Metadata.Health.HealthScore, ShouldEqual, 9)
+			So(expectedBuilder1.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
+			So(expectedBuilder1.Metadata.Health.ReportedTime, ShouldNotBeNil)
+			So(expectedBuilder2.Metadata.Health.HealthScore, ShouldEqual, 8)
+			So(expectedBuilder2.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
+			So(expectedBuilder2.Metadata.Health.ReportedTime, ShouldNotBeNil)
+			So(expectedBuilder3.Metadata.Health.HealthScore, ShouldEqual, 2)
+			So(expectedBuilder3.Metadata.Health.Reporter, ShouldEqual, "someone@example.com")
+			So(expectedBuilder3.Metadata.Health.ReportedTime, ShouldNotBeNil)
 		})
 
 		Convey("one builder does not exist", func() {
@@ -499,6 +509,68 @@ func TestSetBuilderHealth(t *testing.T) {
 			}
 			_, err := srv.SetBuilderHealth(ctx, req)
 			So(err.Error(), ShouldContainSubstring, "The following builder has multiple entries: chrome/cq/amd-cq")
+		})
+	})
+
+	Convey("links", t, func() {
+		ctx := memory.UseWithAppID(context.Background(), "fake-cr-buildbucket")
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
+		ctx = txndefer.FilterRDS(ctx)
+		srv := &Builders{}
+		testutil.PutBucket(ctx, "chrome", "cq", nil)
+		bktKey := model.BucketKey(ctx, "chrome", "cq")
+		So(datastore.Put(ctx, &model.Builder{
+			ID:     "amd-cq",
+			Parent: bktKey,
+			Config: &pb.BuilderConfig{
+				BuilderHealthMetricsLinks: &pb.BuilderConfig_BuilderHealthLinks{
+					DataLinks: map[string]string{
+						"google.com":   "go/somelink",
+						"chromium.org": "some_public_link.com",
+					},
+					DocLinks: map[string]string{
+						"google.com":   "go/some_doc_link",
+						"chromium.org": "some_public_doc_link.com",
+					},
+				},
+			},
+		}), ShouldBeNil)
+
+		Convey("links from cfg", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@google.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chrome:cq", Permission: bbperms.BuildersSetHealth},
+					{Realm: "builder:amd-cq", Permission: bbperms.BuildersSetHealth},
+				},
+			})
+			req := &pb.SetBuilderHealthRequest{
+				Health: []*pb.SetBuilderHealthRequest_BuilderHealth{
+					{
+						Id: &pb.BuilderID{
+							Project: "chrome",
+							Bucket:  "cq",
+							Builder: "amd-cq",
+						},
+						Health: &pb.HealthStatus{
+							HealthScore: 9,
+						},
+					},
+				},
+			}
+			_, err := srv.SetBuilderHealth(ctx, req)
+			So(err, ShouldBeNil)
+			expectedBuilder := &model.Builder{ID: "amd-cq", Parent: bktKey}
+			So(datastore.Get(ctx, expectedBuilder), ShouldBeNil)
+			So(expectedBuilder.Metadata.Health.DataLinks, ShouldResemble, map[string]string{
+				"google.com":   "go/somelink",
+				"chromium.org": "some_public_link.com",
+			})
+			So(expectedBuilder.Metadata.Health.DocLinks, ShouldResemble, map[string]string{
+				"google.com":   "go/some_doc_link",
+				"chromium.org": "some_public_doc_link.com",
+			})
 		})
 	})
 }

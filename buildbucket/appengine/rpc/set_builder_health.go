@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -119,6 +121,10 @@ func updateBuilderEntityWithHealth(ctx context.Context, bldr *pb.SetBuilderHealt
 			}
 			return appstatus.Errorf(codes.Internal, "failed to get builder %s: %s", bldr.Id.Builder, err)
 		}
+		bldr.Health.DataLinks = builder.Config.GetBuilderHealthMetricsLinks().GetDataLinks()
+		bldr.Health.DocLinks = builder.Config.GetBuilderHealthMetricsLinks().GetDocLinks()
+		bldr.Health.ReportedTime = timestamppb.Now()
+		bldr.Health.Reporter = auth.CurrentIdentity(ctx).Value()
 		if builder.Metadata != nil {
 			builder.Metadata.Health = bldr.Health
 		} else {
