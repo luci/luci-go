@@ -65,7 +65,7 @@ message TestVariantBranchRow {
   // results  in CL submission). It has value = 0 otherwise.
   // It is int value instead of bool because we use it as partitioning key
   // (BigQuery does not support bool as partitioning key).
-  int32 has_recent_unexpected_results = 8;
+  int64 has_recent_unexpected_results = 8;
 
   // The Spanner commit timestamp that reflects the version of data that was
   // exported. Rows with later timestamps are strictly newer.
