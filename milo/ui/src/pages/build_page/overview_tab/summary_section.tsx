@@ -27,13 +27,13 @@ export const SummarySection = observer(() => {
     return <></>;
   }
 
-  const scheduledCancelTime = build.cancelTime
-    // We have gracePeriod since Feb 2021. It's safe to use ! since all new
-    // (not-terminated) builds should have gracePeriod defined.
-    ?.plus(build.gracePeriod!)
-    // Add min_update_interval (currently always 30s).
-    // TODO(crbug/1299302): read min_update_interval from buildbucket.
-    .plus({ seconds: 30 });
+  const scheduledCancelTime =
+    build.gracePeriod &&
+    build.cancelTime
+      ?.plus(build.gracePeriod)
+      // Add min_update_interval (currently always 30s).
+      // TODO(crbug/1299302): read min_update_interval from buildbucket.
+      .plus({ seconds: 30 });
 
   return (
     <>
