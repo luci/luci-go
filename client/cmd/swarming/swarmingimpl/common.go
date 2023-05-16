@@ -214,7 +214,11 @@ func (s *swarmingServiceImpl) ListBots(ctx context.Context, dimensions []string,
 	if len(fields) > 0 {
 		fields = append(fields, "cursor")
 	}
-	call := s.service.Bots.List().Context(ctx).Dimensions(dimensions...).Fields(fields...)
+	// TODO: Allow increasing the Limit past 1000. Ideally the server should treat
+	// a missing Limit as "as much as will fit within the RPC response" (e.g.
+	// 32MB). At the time of adding this Limit(1000) parameter, the server has
+	// a hard-coded maximum page size of 1000, and a default Limit of 200.
+	call := s.service.Bots.List().Limit(1000).Context(ctx).Dimensions(dimensions...).Fields(fields...)
 	// Keep calling as long as there's a cursor indicating more bots to list.
 	for {
 		var res *swarming.SwarmingRpcsBotList
