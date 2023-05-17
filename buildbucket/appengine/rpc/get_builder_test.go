@@ -108,6 +108,158 @@ func TestGetBuilder(t *testing.T) {
 			})
 		})
 
+		Convey(`metadata`, func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
+				),
+			})
+			So(datastore.Put(
+				ctx,
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket",
+					Proto:  &pb.Bucket{},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: &pb.BuilderConfig{Name: "builder"},
+					Metadata: &pb.BuilderMetadata{
+						Owner: "owner",
+						Health: &pb.HealthStatus{
+							HealthScore: 9,
+						},
+					},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder2",
+					Config: &pb.BuilderConfig{Name: "builder2"},
+				},
+			), ShouldBeNil)
+			res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
+				Id: bid,
+				Mask: &pb.BuilderMask{
+					Type: pb.BuilderMask_ALL,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.BuilderItem{
+				Id:     bid,
+				Config: &pb.BuilderConfig{Name: "builder"},
+				Metadata: &pb.BuilderMetadata{
+					Owner: "owner",
+					Health: &pb.HealthStatus{
+						HealthScore: 9,
+					},
+				},
+			})
+			bid.Builder = "builder2"
+			res, err = srv.GetBuilder(ctx, &pb.GetBuilderRequest{
+				Id: bid,
+				Mask: &pb.BuilderMask{
+					Type: pb.BuilderMask_ALL,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &pb.BuilderItem{
+				Id:     bid,
+				Config: &pb.BuilderConfig{Name: "builder2"},
+			})
+		})
+
+		Convey(`mask`, func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: userID,
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockPermission(userID, "project:bucket", bbperms.BuildersGet),
+				),
+			})
+			So(datastore.Put(
+				ctx,
+				&model.Bucket{
+					Parent: model.ProjectKey(ctx, "project"),
+					ID:     "bucket",
+					Proto:  &pb.Bucket{},
+				},
+				&model.Builder{
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					ID:     "builder",
+					Config: &pb.BuilderConfig{Name: "builder"},
+					Metadata: &pb.BuilderMetadata{
+						Owner: "owner",
+						Health: &pb.HealthStatus{
+							HealthScore: 9,
+						},
+					},
+				},
+			), ShouldBeNil)
+
+			Convey(`default mask`, func() {
+				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &pb.BuilderItem{
+					Id:     bid,
+					Config: &pb.BuilderConfig{Name: "builder"},
+				})
+			})
+
+			Convey(`config only`, func() {
+				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
+					Id: bid,
+					Mask: &pb.BuilderMask{
+						Type: pb.BuilderMask_CONFIG_ONLY,
+					},
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &pb.BuilderItem{
+					Id:     bid,
+					Config: &pb.BuilderConfig{Name: "builder"},
+				})
+			})
+
+			Convey(`metadata only`, func() {
+				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
+					Id: bid,
+					Mask: &pb.BuilderMask{
+						Type: pb.BuilderMask_METADATA_ONLY,
+					},
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &pb.BuilderItem{
+					Id: bid,
+					Metadata: &pb.BuilderMetadata{
+						Owner: "owner",
+						Health: &pb.HealthStatus{
+							HealthScore: 9,
+						},
+					},
+				})
+			})
+
+			Convey(`all`, func() {
+				res, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{
+					Id: bid,
+					Mask: &pb.BuilderMask{
+						Type: pb.BuilderMask_ALL,
+					},
+				})
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &pb.BuilderItem{
+					Id:     bid,
+					Config: &pb.BuilderConfig{Name: "builder"},
+					Metadata: &pb.BuilderMetadata{
+						Owner: "owner",
+						Health: &pb.HealthStatus{
+							HealthScore: 9,
+						},
+					},
+				})
+			})
+		})
+
 		Convey(`shadow`, func() {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,

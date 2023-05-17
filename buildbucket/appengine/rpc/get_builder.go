@@ -125,8 +125,21 @@ func (*Builders) GetBuilder(ctx context.Context, req *pb.GetBuilderRequest) (*pb
 		return nil, err
 	}
 
-	return &pb.BuilderItem{
-		Id:     req.Id,
-		Config: builder.Config,
-	}, nil
+	if req.Mask == nil {
+		req.Mask = &pb.BuilderMask{Type: pb.BuilderMask_CONFIG_ONLY}
+	}
+
+	response := &pb.BuilderItem{Id: req.Id}
+
+	switch req.Mask.Type {
+	case pb.BuilderMask_ALL:
+		response.Config = builder.Config
+		response.Metadata = builder.Metadata
+	case pb.BuilderMask_CONFIG_ONLY:
+		response.Config = builder.Config
+	case pb.BuilderMask_METADATA_ONLY:
+		response.Metadata = builder.Metadata
+	}
+
+	return response, nil
 }
