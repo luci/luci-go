@@ -39,14 +39,11 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -588,13 +585,7 @@ func TestUpdateBuild(t *testing.T) {
 
 	Convey("UpdateBuild", t, func() {
 		srv := &Builds{}
-		s := &authtest.FakeState{
-			Identity: "user:user",
-			FakeDB: authtest.NewFakeDB(
-				authtest.MockMembership("user:user", perm.UpdateBuildAllowedUsers),
-			),
-		}
-		ctx := auth.WithState(memory.Use(context.Background()), s)
+		ctx := memory.Use(context.Background())
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = installTestSecret(ctx)
 
@@ -656,11 +647,6 @@ func TestUpdateBuild(t *testing.T) {
 				"build.summary_markdown",
 			}},
 		}
-
-		Convey("permission denied, if sender is not in updater group", func() {
-			s.Identity = "anonymous:anonymous"
-			So(updateBuild(ctx, req), ShouldHaveRPCCode, codes.PermissionDenied)
-		})
 
 		Convey("open mask, empty request", func() {
 			validMasks := []struct {

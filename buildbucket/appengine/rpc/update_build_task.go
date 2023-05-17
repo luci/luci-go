@@ -23,6 +23,7 @@ import (
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -119,16 +120,21 @@ func updateTaskEntity(ctx context.Context, req *pb.UpdateBuildTaskRequest, build
 }
 
 func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest) (*pb.Task, error) {
-	if err := validateUpdateBuildTaskRequest(ctx, req); err != nil {
-		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
-	}
-
 	buildID, err := strconv.ParseInt(req.GetBuildId(), 10, 64)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "bad build id").Err())
 	}
+	_, err = validateToken(ctx, buildID, pb.TokenBody_TASK)
+	if err != nil {
+		return nil, err
+	}
 
-	_, bld, err := validateToken(ctx, buildID, pb.TokenBody_TASK)
+	if err := validateUpdateBuildTaskRequest(ctx, req); err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
+	}
+	logging.Infof(ctx, "Received an UpdateBuildTask request for build %q", req.BuildId)
+
+	bld, err := getBuild(ctx, buildID)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid build").Err())
 	}

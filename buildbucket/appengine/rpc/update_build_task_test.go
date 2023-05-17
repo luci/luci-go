@@ -434,7 +434,7 @@ func TestUpdateBuildTask(t *testing.T) {
 						},
 					},
 				}
-				So(updateBuildTask(ctx, req), ShouldBeRPCUnknown)
+				So(updateBuildTask(ctx, req), ShouldBeRPCUnauthenticated)
 			})
 		})
 	})

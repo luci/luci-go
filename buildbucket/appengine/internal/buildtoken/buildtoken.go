@@ -41,8 +41,6 @@ const (
 // package.
 var additionalData = []byte("buildtoken")
 
-var WrongPurpose = errors.BoolTag{Key: errors.NewTagKey("wrong_purpose_token")}
-
 // GenerateToken generates base64 encoded byte string token for a build.
 func GenerateToken(ctx context.Context, buildID int64, purpose pb.TokenBody_Purpose) (string, error) {
 	return generateEncryptedToken(ctx, buildID, purpose)
@@ -75,34 +73,32 @@ func generateEncryptedToken(ctx context.Context, buildID int64, purpose pb.Token
 	return token, nil
 }
 
-func generatePlaintextToken(buildID int64, purpose pb.TokenBody_Purpose) (string, error) {
-	tkBody := &pb.TokenBody{
-		BuildId: buildID,
-		Purpose: purpose,
-		State:   random.GetRandomBytes(16),
-	}
-
-	tkBytes, err := proto.Marshal(tkBody)
-	if err != nil {
-		return "", err
-	}
-	tkEnvelop := &pb.TokenEnvelope{
-		Version: pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE,
-		Payload: tkBytes,
-	}
-	tkeBytes, err := proto.Marshal(tkEnvelop)
-	if err != nil {
-		return "", err
-	}
-	token := base64.RawURLEncoding.EncodeToString(tkeBytes)
-	return token, nil
-}
+// ErrBadToken is the only error returned by ParseToTokenBody.
+//
+// This includes a codes.Unauthenticated tag.
+var ErrBadToken = errors.New("invalid token", grpcutil.UnauthenticatedTag)
 
 // ParseToTokenBody deserializes the build token and returns the token body.
 //
-// buildID and purpose will be asserted to match the token's contents.
+// buildID will be asserted to match the token's contents.
 // If buildID is 0, this will skip the buildID check.
-func ParseToTokenBody(ctx context.Context, bldTok string, buildID int64, purpose pb.TokenBody_Purpose) (*pb.TokenBody, error) {
+//
+// Additionally, the token contents must match one of the values provided in
+// `purposes`. If `purposes` is empty, a token of any purpose will be returned
+// without error.
+//
+// All parsing errors are logged and this function returns ErrBadToken which is
+// tagged with codes.Unauthenticated.
+func ParseToTokenBody(ctx context.Context, bldTok string, buildID int64, purposes ...pb.TokenBody_Purpose) (*pb.TokenBody, error) {
+	tok, err := parseToTokenBodyImpl(ctx, bldTok, buildID, purposes...)
+	if err != nil {
+		logging.Warningf(ctx, "ParseToTokenBody ERROR: %s", err)
+		return nil, ErrBadToken
+	}
+	return tok, nil
+}
+
+func parseToTokenBodyImpl(ctx context.Context, bldTok string, buildID int64, purposes ...pb.TokenBody_Purpose) (*pb.TokenBody, error) {
 	if len(bldTok) > buildTokenMaxLength {
 		return nil, errors.Reason("build token is too long: %d > %d", len(bldTok), buildTokenMaxLength).Err()
 	}
@@ -119,14 +115,9 @@ func ParseToTokenBody(ctx context.Context, bldTok string, buildID int64, purpose
 	var payload []byte
 
 	switch msg.Version {
-	case pb.TokenEnvelope_UNENCRYPTED_PASSWORD_LIKE:
-		logging.Infof(ctx, "buildtoken: unencrypted")
-		payload = msg.Payload
-
 	case pb.TokenEnvelope_ENCRYPTED:
-		logging.Infof(ctx, "buildtoken: encrypted")
 		if payload, err = secrets.Decrypt(ctx, msg.Payload, additionalData); err != nil {
-			return nil, errors.Annotate(err, "error decrypting token").Tag(grpcutil.PermissionDeniedTag).Err()
+			return nil, errors.Annotate(err, "error decrypting token").Err()
 		}
 
 	default:
@@ -142,8 +133,17 @@ func ParseToTokenBody(ctx context.Context, bldTok string, buildID int64, purpose
 		return nil, errors.Reason("token is for build %d, but expected %d", tb.BuildId, buildID).Err()
 	}
 
-	if purpose != tb.Purpose {
-		return nil, errors.Reason("token is for purpose %s, but expected %s", tb.Purpose, purpose).Tag(WrongPurpose).Err()
+	if len(purposes) > 0 {
+		ok := false
+		for _, purpose := range purposes {
+			if purpose == tb.Purpose {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return nil, errors.Reason("token is for purpose %s, but expected %s", tb.Purpose, purposes).Err()
+		}
 	}
 
 	return tb, nil

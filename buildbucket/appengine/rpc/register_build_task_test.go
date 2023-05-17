@@ -102,21 +102,21 @@ func TestRegisterBuildTask(t *testing.T) {
 	Convey("validate token", t, func() {
 		Convey("token missing", func() {
 			_, err := srv.RegisterBuildTask(ctx, req)
-			So(err, ShouldErrLike, `token is missing`)
+			So(err, ShouldErrLike, errBadTokenAuth)
 		})
 
 		Convey("wrong purpose", func() {
 			tk, _ := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_TASK)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 			_, err := srv.RegisterBuildTask(ctx, req)
-			So(err, ShouldErrLike, `token is for purpose TASK, but expected REGISTER_TASK`)
+			So(err, ShouldErrLike, errBadTokenAuth)
 		})
 
 		Convey("wrong build id", func() {
 			tk, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_REGISTER_TASK)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 			_, err := srv.RegisterBuildTask(ctx, req)
-			So(err, ShouldErrLike, `token is for build 1, but expected 87654321`)
+			So(err, ShouldErrLike, errBadTokenAuth)
 		})
 	})
 

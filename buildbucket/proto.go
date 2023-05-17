@@ -26,22 +26,19 @@ import (
 // This file contains helper functions for pb package.
 // TODO(nodir): move existing helpers from pb to this file.
 
-// BuildTokenHeader is the name of gRPC metadata header indicating the build
-// token (see BuildSecrets.BuildToken).
-// It is required in UpdateBuild RPC.
-// Defined in
-// https://chromium.googlesource.com/infra/infra/+/c189064/appengine/cr-buildbucket/v2/api.py#35
+// BuildbucketTokenHeader is the name of gRPC metadata header indicating a
+// buildbucket token.
 //
-// BuildbucketTokenHeader is the new name of gRPC metadata header indicating a
-// buildbucket token. Since tokens include an authenticatable purpose field, we
-// only need one header for all incoming RPCs.
+// Tokens include an authenticatable purpose field, we only need one header for
+// all incoming RPCs.
+const BuildbucketTokenHeader = "x-buildbucket-token"
+
+// BuildTokenHeader is the old name of the gRPC metadata header indicating the build
+// token (see BuildSecrets.BuildToken). It is still used by `kitchen`, but is
+// otherwise deprecated in favor of BuildbucketTokenHeader for all uses.
 //
-// Currently it's used by ScheduleBuild (and batch request for ScheduleBuild) RPC.
-// TODO(crbug.com/1031205) Replace BuildTokenHeader with this.
-const (
-	BuildTokenHeader       = "x-build-token"
-	BuildbucketTokenHeader = "x-buildbucket-token"
-)
+// DEPRECATED
+const BuildTokenHeader = "x-build-token"
 
 // DummyBuildbucketToken is the dummy token for led builds.
 const DummyBuildbucketToken = "dummy token"

@@ -40,9 +40,11 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
 
 	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -233,19 +235,38 @@ func validateProperties(p *structpb.Struct) error {
 	return nil
 }
 
-// validateParent validates the given parent build.
+// validateParent validates the given parent build, if the request contains
+// a BUILD token.
+//
+// If there is no token present in `ctx`, returns (nil, nil).
+// Incorrect tokens, broken tokens, non-BUILD tokens, missing builds, etc.
+// all return errors.
 func validateParent(ctx context.Context) (*model.Build, error) {
-	_, pBld, err := validateToken(ctx, 0, pb.TokenBody_BUILD)
-	switch {
-	case err == errMissingToken:
+	buildTok, err := getBuildbucketToken(ctx, false)
+	if err == errBadTokenAuth {
 		return nil, nil
-	case err != nil:
-		return nil, err
-	case protoutil.IsEnded(pBld.Proto.Status):
-		return nil, errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err()
-	default:
-		return pBld, nil
 	}
+
+	// NOTE: We pass buildid == 0 here because we are relying on the token itself
+	// to tell us what the parent build ID is. Do not do this in other locations
+	// or they will be suceptible to accepting tokens generated for other builds.
+	tok, err := buildtoken.ParseToTokenBody(ctx, buildTok, 0, pb.TokenBody_BUILD)
+	if err != nil {
+		// We don't return `err` here because it will include the Unauthenticated
+		// gRPC tag, which isn't accurate.
+		return nil, errors.New("invalid parent buildbucket token", grpcutil.InvalidArgumentTag)
+	}
+
+	pBld, err := getBuild(ctx, tok.BuildId)
+	if err != nil {
+		return nil, err
+	}
+
+	if protoutil.IsEnded(pBld.Proto.Status) {
+		return nil, errors.Reason("%d has ended, cannot add child to it", pBld.ID).Err()
+	}
+
+	return pBld, nil
 }
 
 // validateSchedule validates the given request.
@@ -1379,8 +1400,8 @@ func scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, reqs ...*pb.
 	validReq, idxMapBlds := getValidReqs(reqs, merr)
 	blds := make([]*model.Build, len(validReq))
 
-	_, pBld, err := validateToken(ctx, 0, pb.TokenBody_BUILD)
-	if err != nil && err != errMissingToken {
+	pBld, err := validateParent(ctx)
+	if err != nil {
 		return nil, err
 	}
 

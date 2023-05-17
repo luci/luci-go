@@ -44,10 +44,6 @@ import (
 )
 
 const (
-	// UpdateBuildAllowedUsers is a group of users allowed to update builds.
-	// They are expected to be robots.
-	UpdateBuildAllowedUsers = "buildbucket-update-build-users"
-
 	// Administrators is a group of users that have all permissions in all
 	// buckets.
 	Administrators = "administrators"
@@ -230,11 +226,6 @@ func BucketsByPerm(ctx context.Context, p realms.Permission, project string) (bu
 	})
 	sort.Strings(buckets)
 	return
-}
-
-// CanUpdateBuild returns whether the caller has a permission to update builds.
-func CanUpdateBuild(ctx context.Context) (bool, error) {
-	return auth.IsMember(ctx, UpdateBuildAllowedUsers)
 }
 
 // hasInBuilderBoolean is a wrapper around HasInBuilder that handles denied/not-found errors

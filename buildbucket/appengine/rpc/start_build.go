@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -74,20 +75,12 @@ func getBuildInfraStatus(ctx context.Context, id int64) (*model.Build, *model.Bu
 // For builds on Swarming, the swarming task id and update_token have been
 // saved in datastore during task creation.
 func startBuildOnSwarming(ctx context.Context, req *pb.StartBuildRequest) (*model.Build, bool, error) {
-	_, _, err := validateToken(ctx, req.BuildId, pb.TokenBody_BUILD)
-	if err != nil {
-		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
-			return nil, false, err
-		} else {
-			return nil, false, appstatus.BadRequest(errors.Annotate(err, "invalid token for starting build %d", req.BuildId).Err())
-		}
-	}
-
 	var b *model.Build
 	buildStatusChanged := false
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		var infra *model.BuildInfra
 		var bs *model.BuildStatus
+		var err error
 		b, infra, bs, err = getBuildInfraStatus(ctx, req.BuildId)
 		if err != nil {
 			return errors.Annotate(err, "failed to get build %d", req.BuildId).Err()
@@ -251,15 +244,26 @@ func (*Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.S
 	var b *model.Build
 	var buildStatusChanged bool
 	var err error
-	_, _, err = validateToken(ctx, req.BuildId, pb.TokenBody_START_BUILD)
 
-	switch {
-	case buildtoken.WrongPurpose.In(err):
+	// a token is required
+	rawToken, err := getBuildbucketToken(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// token can either be BUILD or START_BUILD
+	tok, err := buildtoken.ParseToTokenBody(ctx, rawToken, req.BuildId, pb.TokenBody_START_BUILD, pb.TokenBody_BUILD)
+	if err != nil {
+		return nil, err
+	}
+
+	switch tok.Purpose {
+	case pb.TokenBody_BUILD:
 		b, buildStatusChanged, err = startBuildOnSwarming(ctx, req)
-	case err != nil:
-		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid token for starting build %d", req.BuildId).Err())
-	default:
+	case pb.TokenBody_START_BUILD:
 		b, buildStatusChanged, err = startBuildOnBackend(ctx, req)
+	default:
+		panic(fmt.Sprintf("impossible: invalid token purpose: %s", tok.Purpose))
 	}
 	if err != nil {
 		return nil, err

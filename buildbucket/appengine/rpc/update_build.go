@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
-	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
@@ -591,13 +590,11 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 
 // UpdateBuild handles a request to update a build. Implements pb.UpdateBuild.
 func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb.Build, error) {
-	switch can, err := perm.CanUpdateBuild(ctx); {
-	case err != nil:
-		return nil, appstatus.Errorf(codes.Internal, "failed to check membership of the updater group: %s", err)
-	case !can:
-		return nil, appstatus.Errorf(codes.PermissionDenied, "%q not permitted to update build", auth.CurrentIdentity(ctx))
+	_, err := validateToken(ctx, req.Build.Id, pb.TokenBody_BUILD)
+	if err != nil {
+		return nil, err
 	}
-	logging.Infof(ctx, "Received an UpdateBuild request for build-%d", req.GetBuild().GetId())
+	logging.Infof(ctx, "Received an UpdateBuild request for build %d", req.GetBuild().GetId())
 
 	var bs model.BuildSteps
 	if err := validateUpdate(ctx, req, &bs); err != nil {
@@ -614,9 +611,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
 	}
 
-	// TODO(crbug.com/1286550) - Move this up to the top, and remove
-	// CanUpdateBuild once all update tokens are encrypted.
-	_, build, err := validateToken(ctx, req.Build.Id, pb.TokenBody_BUILD)
+	build, err := getBuild(ctx, req.Build.Id)
 	if err != nil {
 		return nil, err
 	}

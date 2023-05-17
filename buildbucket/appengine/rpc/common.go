@@ -16,7 +16,6 @@ package rpc
 
 import (
 	"context"
-	"crypto/subtle"
 	"regexp"
 	"strings"
 	"time"
@@ -297,102 +296,49 @@ func validateCommit(cm *pb.GitilesCommit) error {
 // Returned from validateToken if no token is found; Some uses of validateToken
 // allow a missing token (such as establishing parent->child relationship during
 // ScheduleBuild).
-var errMissingToken = errors.New("token is missing", grpcutil.UnauthenticatedTag)
+var errBadTokenAuth = errors.New("expected buildID and exactly one buildbucket token", grpcutil.UnauthenticatedTag)
 
-// Maps token purpose to the series of headers to check.
-var tokenHeaders = map[pb.TokenBody_Purpose][]string{
-	pb.TokenBody_TASK: {buildbucket.BuildbucketTokenHeader},
-	pb.TokenBody_BUILD: {
-		buildbucket.BuildbucketTokenHeader,
-		// TODO(crbug.com/1031205): remove buildbucket.BuildTokenHeader.
-		buildbucket.BuildTokenHeader,
-	},
-	pb.TokenBody_REGISTER_TASK: {buildbucket.BuildbucketTokenHeader},
-	pb.TokenBody_START_BUILD:   {buildbucket.BuildbucketTokenHeader},
+// getBuildbucketToken extracts a singlar encoded build token from the current
+// gRPC Metadata in `ctx`.
+//
+// Does not parse or validate the token in anyway (see validateToken for typical
+// usage, or buildtoken.ParseToTokenBody for more specialized usage).
+//
+// `kitchenFallback` should only be supplied in cases where we need to fall back
+// to kitchen's deprecated BuildTokenHeader.
+//
+// Returns errBadTokenAuth if the token is missing, or there is more than one.
+func getBuildbucketToken(ctx context.Context, kitchenFallback bool) (string, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	tokens := md.Get(buildbucket.BuildbucketTokenHeader)
+	if len(tokens) == 0 && kitchenFallback {
+		// TODO: Remove this when kitchen is removed.
+		tokens = md.Get(buildbucket.BuildTokenHeader)
+	}
+	if len(tokens) == 1 {
+		return tokens[0], nil
+	}
+
+	return "", errBadTokenAuth
 }
 
-// validateToken validates the update token from the header.
+// validateToken validates the build token from the header.
 //
-// `bID` is used to retrieve the build with the old build token for validation,
-// if known (i.e. in UpdateBuild, `bID` can be retrieved from the request). If
-// it is 0, we are only rely on the build token contents to be self-validating
-// (i.e. when scheduling a child build).
+// The `purpose` and `bID` must match the purpose and build ID listed in the token.
 //
-// If no token is found, this returns `errMissingToken`, which is tagged as
-// Unauthenticated.
-//
-// If the token is encrypted, this will early exit if the token encryption is
-// wrong, a non-zero bID doesn't match the token body, or if the token's purpose
-// doesn't match the expected `purpose`. Once all tokens are ecnrypted,
-// validateToken should move to the top of handler functions whcih require
-// a token.
-//
-// Finally, this compares the raw token in the header against the token recorded
-// in the Build entity, to ensure that Buildbucket didn't hand out two (or more)
-// tokens for this Build.
-// BUG(crbug.com/1401174) This raw token comparison only applies to
-// BUILD-purposed tokens.
-func validateToken(ctx context.Context, bID int64, purpose pb.TokenBody_Purpose) (*pb.TokenBody, *model.Build, error) {
-	md, _ := metadata.FromIncomingContext(ctx)
-
-	var buildTok string
-	for _, header := range tokenHeaders[purpose] {
-		buildToks := md.Get(header)
-		if len(buildToks) == 1 {
-			buildTok = buildToks[0]
-			if header == buildbucket.BuildTokenHeader {
-				logging.Infof(ctx, "BUG(crbug.com/1031205): got build-token for %d", bID)
-			}
-			break
-		} else if len(buildToks) > 1 {
-			return nil, nil, errors.Reason("multiple build tokens are provided").Err()
-		}
+// All errors that this would return are errBadTokenAuth.
+// Details about token parsing are logged.
+func validateToken(ctx context.Context, bID int64, purpose pb.TokenBody_Purpose) (*pb.TokenBody, error) {
+	if bID <= 0 {
+		return nil, errBadTokenAuth
 	}
-	if buildTok == "" {
-		return nil, nil, errMissingToken
-	}
-
-	tokBody, err := buildtoken.ParseToTokenBody(ctx, buildTok, bID, purpose)
+	buildTok, err := getBuildbucketToken(ctx, purpose == pb.TokenBody_BUILD)
 	if err != nil {
-		// There's something wrong with the build token itself.
-		//
-		// Note that if the token was encrypted, we bail out here.
-		// ParseToTokenBody has also checked the build id and purpose of the token, if
-		// it did successfully decrypt.
-		return nil, nil, err
+		return nil, err
 	}
-
-	if tokBody != nil && bID == 0 {
-		bID = tokBody.BuildId
-	}
-
-	if bID == 0 {
-		return nil, nil, errors.Reason("failed to get build id to validate the build token").Err()
-	}
-
-	// REGISTER_TASK and START_BUILD tokens are not saved in datastore.
-	if purpose == pb.TokenBody_REGISTER_TASK || purpose == pb.TokenBody_START_BUILD {
-		return tokBody, nil, nil
-	}
-
-	bld, err := getBuild(ctx, bID)
+	tok, err := buildtoken.ParseToTokenBody(ctx, buildTok, bID, purpose)
 	if err != nil {
-		return nil, nil, err
+		return nil, errBadTokenAuth
 	}
-
-	// Validate it against the token stored in the build entity.
-	//
-	// This can catch cases where buildbucket issued two tasks, both with valid
-	// tokens for this build, but only one of them will be saved in datastore.
-	//
-	// BUG(crbug.com/1401174) - We only do this check for UpdateBuild calls
-	// currently. Really this whole protocol needs to be reworked.
-	if purpose == pb.TokenBody_BUILD {
-		if subtle.ConstantTimeCompare([]byte(buildTok), []byte(bld.UpdateToken)) == 1 {
-			return tokBody, bld, nil
-		}
-		return nil, nil, perm.NotFoundErr(ctx)
-	}
-
-	return tokBody, bld, nil
+	return tok, nil
 }

@@ -310,24 +310,18 @@ func TestValidateBuildToken(t *testing.T) {
 
 		Convey("Works", func() {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
-			_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
-		})
-
-		Convey("BuildTokenHeader", func() {
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, tk1))
-			_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
+			_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Fails", func() {
 			Convey("if unmatched", func() {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk2))
-				_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
+				_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 				So(err, ShouldNotBeNil)
 			})
 			Convey("if missing", func() {
-				_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
+				_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 				So(err, ShouldNotBeNil)
 			})
 		})
@@ -363,22 +357,22 @@ func TestValidateBuildTaskToken(t *testing.T) {
 
 		Convey("Works", func() {
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk1))
-			_, _, err := validateToken(ctx, 1, pb.TokenBody_TASK)
+			_, err := validateToken(ctx, 1, pb.TokenBody_TASK)
 			So(err, ShouldBeNil)
 		})
 
 		Convey("Fails", func() {
 			Convey("if unmatched", func() {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk2))
-				_, _, err := validateToken(ctx, 1, pb.TokenBody_TASK)
+				_, err := validateToken(ctx, 1, pb.TokenBody_TASK)
 				So(err, ShouldNotBeNil)
 			})
 			Convey("if missing", func() {
-				_, _, err := validateToken(ctx, 1, pb.TokenBody_TASK)
+				_, err := validateToken(ctx, 1, pb.TokenBody_TASK)
 				So(err, ShouldNotBeNil)
 			})
 			Convey("if wrong purpose", func() {
-				_, _, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
+				_, err := validateToken(ctx, 1, pb.TokenBody_BUILD)
 				So(err, ShouldNotBeNil)
 			})
 		})

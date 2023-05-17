@@ -203,32 +203,3 @@ func TestBucketsByPerm(t *testing.T) {
 		So(buckets4, ShouldBeNil)
 	})
 }
-
-func TestCanUpdateBuild(t *testing.T) {
-	t.Parallel()
-
-	Convey("With mocked auth DB", t, func() {
-		member := identity.Identity("user:member@example.com")
-		notMember := identity.Identity("user:not-member@example.com")
-		s := &authtest.FakeState{
-			FakeDB: authtest.NewFakeDB(
-				authtest.MockMembership(member, UpdateBuildAllowedUsers),
-			),
-		}
-		ctx := auth.WithState(testingContext(), s)
-
-		Convey("With a member of the updater group", func() {
-			s.Identity = member
-			can, err := CanUpdateBuild(ctx)
-			So(err, ShouldBeNil)
-			So(can, ShouldBeTrue)
-		})
-
-		Convey("With a non-member of the updater group", func() {
-			s.Identity = notMember
-			can, err := CanUpdateBuild(ctx)
-			So(err, ShouldBeNil)
-			So(can, ShouldBeFalse)
-		})
-	})
-}

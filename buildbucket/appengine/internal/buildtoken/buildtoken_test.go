@@ -32,6 +32,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func mkToken(ctx context.Context, buildID int64, purpose pb.TokenBody_Purpose) string {
+	token, err := GenerateToken(ctx, buildID, purpose)
+	So(err, ShouldBeNil)
+	return token
+}
+
 func TestBuildToken(t *testing.T) {
 	t.Parallel()
 
@@ -44,22 +50,10 @@ func TestBuildToken(t *testing.T) {
 		ctx := secrets.Use(context.Background(), secretStore)
 		ctx = secrets.GeneratePrimaryTinkAEADForTest(ctx)
 
-		Convey("success (plaintext)", func() {
-			bID := int64(123)
-			token, err := generatePlaintextToken(bID, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
-			tBody, err := ParseToTokenBody(ctx, token, 123, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
-			So(tBody.BuildId, ShouldEqual, bID)
-			So(tBody.Purpose, ShouldEqual, pb.TokenBody_BUILD)
-			So(len(tBody.State), ShouldNotEqual, 0)
-		})
-
 		Convey("success (encrypted)", func() {
 			bID := int64(123)
-			token, err := GenerateToken(ctx, bID, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
-			tBody, err := ParseToTokenBody(ctx, token, 123, pb.TokenBody_BUILD)
+			token := mkToken(ctx, bID, pb.TokenBody_BUILD)
+			tBody, err := parseToTokenBodyImpl(ctx, token, 123, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
 			So(tBody.BuildId, ShouldEqual, bID)
 			So(tBody.Purpose, ShouldEqual, pb.TokenBody_BUILD)
@@ -68,36 +62,59 @@ func TestBuildToken(t *testing.T) {
 
 		Convey("wrong build", func() {
 			bID := int64(123)
-			token, err := generateEncryptedToken(ctx, bID, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
-			_, err = ParseToTokenBody(ctx, token, 321, pb.TokenBody_BUILD)
+			token := mkToken(ctx, bID, pb.TokenBody_BUILD)
+			_, err := parseToTokenBodyImpl(ctx, token, 321, pb.TokenBody_BUILD)
 			So(err, ShouldErrLike, "token is for build 123")
 		})
 
 		Convey("skip build check", func() {
 			bID := int64(123)
-			token, err := generateEncryptedToken(ctx, bID, pb.TokenBody_BUILD)
+			token := mkToken(ctx, bID, pb.TokenBody_BUILD)
+			tBody, err := parseToTokenBodyImpl(ctx, token, 0, pb.TokenBody_BUILD)
 			So(err, ShouldBeNil)
-			tBody, err := ParseToTokenBody(ctx, token, 0, pb.TokenBody_BUILD)
+			So(tBody, ShouldNotBeNil)
+		})
+
+		Convey("skip purpose check", func() {
+			bID := int64(123)
+			tBody, err := parseToTokenBodyImpl(ctx, mkToken(ctx, bID, pb.TokenBody_BUILD), bID)
+			So(err, ShouldBeNil)
+			So(tBody, ShouldNotBeNil)
+
+			tBody, err = parseToTokenBodyImpl(ctx, mkToken(ctx, bID, pb.TokenBody_TASK), bID)
+			So(err, ShouldBeNil)
+			So(tBody, ShouldNotBeNil)
+		})
+
+		Convey("multi purpose check", func() {
+			bID := int64(123)
+			token := mkToken(ctx, bID, pb.TokenBody_BUILD)
+			tBody, err := parseToTokenBodyImpl(ctx, token, bID, pb.TokenBody_TASK, pb.TokenBody_BUILD)
+			So(err, ShouldBeNil)
+			So(tBody, ShouldNotBeNil)
+
+			tBody, err = parseToTokenBodyImpl(ctx, token, bID, pb.TokenBody_BUILD, pb.TokenBody_TASK)
 			So(err, ShouldBeNil)
 			So(tBody, ShouldNotBeNil)
 		})
 
 		Convey("wrong purpose", func() {
 			bID := int64(123)
-			token, err := generateEncryptedToken(ctx, bID, pb.TokenBody_BUILD)
-			So(err, ShouldBeNil)
-			_, err = ParseToTokenBody(ctx, token, 123, pb.TokenBody_TASK)
+			token := mkToken(ctx, bID, pb.TokenBody_BUILD)
+			_, err := parseToTokenBodyImpl(ctx, token, 123, pb.TokenBody_TASK)
+			So(err, ShouldErrLike, "token is for purpose BUILD")
+
+			_, err = parseToTokenBodyImpl(ctx, token, 123, pb.TokenBody_START_BUILD, pb.TokenBody_TASK)
 			So(err, ShouldErrLike, "token is for purpose BUILD")
 		})
 
 		Convey("not base64 encoded token", func() {
-			_, err := ParseToTokenBody(ctx, "invalid token", 123, pb.TokenBody_BUILD)
+			_, err := parseToTokenBodyImpl(ctx, "invalid token", 123, pb.TokenBody_BUILD)
 			So(err, ShouldErrLike, "error decoding token")
 		})
 
 		Convey("bad base64 encoded token", func() {
-			_, err := ParseToTokenBody(ctx, "abckish", 123, pb.TokenBody_BUILD)
+			_, err := parseToTokenBodyImpl(ctx, "abckish", 123, pb.TokenBody_BUILD)
 			So(err, ShouldErrLike, "error unmarshalling token")
 		})
 
@@ -114,7 +131,7 @@ func TestBuildToken(t *testing.T) {
 			}
 			tkeBytes, err := proto.Marshal(tkEnvelop)
 			So(err, ShouldBeNil)
-			_, err = ParseToTokenBody(ctx, base64.RawURLEncoding.EncodeToString(tkeBytes), 123, pb.TokenBody_BUILD)
+			_, err = parseToTokenBodyImpl(ctx, base64.RawURLEncoding.EncodeToString(tkeBytes), 123, pb.TokenBody_BUILD)
 			So(err, ShouldErrLike, "token with version 0 is not supported")
 		})
 	})

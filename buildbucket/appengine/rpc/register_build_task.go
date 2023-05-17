@@ -115,7 +115,7 @@ func (*Builds) RegisterBuildTask(ctx context.Context, req *pb.RegisterBuildTaskR
 		return nil, appstatus.BadRequest(err)
 	}
 
-	_, _, err := validateToken(ctx, req.BuildId, pb.TokenBody_REGISTER_TASK)
+	_, err := validateToken(ctx, req.BuildId, pb.TokenBody_REGISTER_TASK)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid register build task token").Err())
 	}

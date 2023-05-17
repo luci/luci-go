@@ -96,7 +96,7 @@ func TestStartBuild(t *testing.T) {
 	Convey("validate token", t, func() {
 		Convey("token missing", func() {
 			_, err := srv.StartBuild(ctx, req)
-			So(err, ShouldErrLike, `token is missing`)
+			So(err, ShouldErrLike, errBadTokenAuth)
 		})
 
 		Convey("wrong purpose", func() {
@@ -104,14 +104,14 @@ func TestStartBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 			_, err = srv.StartBuild(ctx, req)
-			So(err, ShouldErrLike, `token is for purpose TASK`)
+			So(err, ShouldErrLike, buildtoken.ErrBadToken)
 		})
 
 		Convey("wrong build id", func() {
 			tk, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_START_BUILD)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 			_, err := srv.StartBuild(ctx, req)
-			So(err, ShouldErrLike, `token is for build 1, but expected 87654321`)
+			So(err, ShouldErrLike, buildtoken.ErrBadToken)
 		})
 	})
 
@@ -346,22 +346,25 @@ func TestStartBuild(t *testing.T) {
 		})
 
 		Convey("build on swarming", func() {
-			tk, _ := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_BUILD)
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
-
 			Convey("build token missing", func() {
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, "I am a potato"))
 				_, err := srv.StartBuild(ctx, req)
-				So(err, ShouldErrLike, `not found`)
+				So(err, ShouldErrLike, buildtoken.ErrBadToken)
 			})
 
 			Convey("build token mismatch", func() {
-				build.UpdateToken = "different"
-				So(datastore.Put(ctx, build), ShouldBeNil)
-				_, err := srv.StartBuild(ctx, req)
-				So(err, ShouldErrLike, `not found`)
+				tk, err := buildtoken.GenerateToken(ctx, 123456, pb.TokenBody_BUILD)
+				So(err, ShouldBeNil)
+				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
+
+				_, err = srv.StartBuild(ctx, req)
+				So(err, ShouldErrLike, buildtoken.ErrBadToken)
 			})
 
 			Convey("StartBuild", func() {
+				tk, err := buildtoken.GenerateToken(ctx, 87654321, pb.TokenBody_BUILD)
+				So(err, ShouldBeNil)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
 				build.UpdateToken = tk
 				bs := &model.BuildStatus{
 					Build:  datastore.KeyForObj(ctx, build),
