@@ -89,6 +89,8 @@ export const FailedTestSection = observer(() => {
     }
 
     for (const testVariant of group) {
+      const q = Object.entries(testVariant.variant?.def || {}).map(([dimension, value]) =>
+          `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`).join(' ');
       lists.push(
         <TestVariantEntry
           key={testVariant.testId + '|' + testVariant.variantHash}
@@ -97,7 +99,7 @@ export const FailedTestSection = observer(() => {
           historyUrl={urlSetSearchQueryParam(
             getTestHistoryURLPath(store.buildPage.build!.data.builder.project, testVariant.testId),
             'q',
-            'VHASH:' + testVariant.variantHash
+            q
           )}
         />
       );

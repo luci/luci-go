@@ -160,16 +160,19 @@ export class TestVariantsTableElement extends MiloBaseElement {
       ${repeat(
         expanded ? group.variants : [],
         (v) => `${v.testId} ${v.variantHash}`,
-        (v) => html`
+        (v: TestVariant) => {
+          const q = Object.entries(v.variant?.def || {}).map(([dimension, value]) =>
+              `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`).join(' ');
+          return html`
           <milo-test-variant-entry
             .variant=${v}
             .columnGetters=${this.invState.columnGetters}
             .expanded=${this.invState.testVariantCount === 1}
             .historyUrl=${this.project
-              ? urlSetSearchQueryParam(getTestHistoryURLPath(this.project, v.testId), 'q', 'VHASH:' + v.variantHash)
+              ? urlSetSearchQueryParam(getTestHistoryURLPath(this.project, v.testId), 'q', q)
               : ''}
           ></milo-test-variant-entry>
-        `
+        `;}
       )}
     `;
   }
