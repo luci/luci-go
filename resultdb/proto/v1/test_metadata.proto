@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/protobuf/struct.proto";
 import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
@@ -63,6 +64,22 @@ message TestMetadata {
   // The issue tracker component associated with the test, if any.
   // Bugs related to the test may be filed here.
   BugComponent bug_component = 3;
+
+  // Identifies the schema of the JSON object in the properties field.
+  // Use the fully-qualified name of the source protocol buffer.
+  // eg. chromiumos.test.api.TestCaseInfo
+  // ResultDB will *not* validate the properties field with respect to this
+  // schema. Downstream systems may however use this field to inform how the
+  // properties field is interpreted.
+  string properties_schema = 4;
+
+  // Arbitrary JSON object that contains structured, domain-specific properties
+  // of the test.
+  //
+  // The serialized size must be <= 4096 bytes.
+  //
+  // If this field is specified, properties_schema must also be specified.
+  google.protobuf.Struct properties = 5;
 }
 
 // Location of the test definition.

@@ -427,6 +427,44 @@ func TestValidateTestResult(t *testing.T) {
 				}
 				So(validate(msg), ShouldErrLike, "issue_tracker.component_id: is invalid")
 			})
+			Convey("with too big properties", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					PropertiesSchema: "package.message",
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeProperties)),
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "properties: exceeds the maximum size")
+			})
+			Convey("no properties_schema with non-empty properties", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key": structpb.NewStringValue("1"),
+						},
+					},
+				}
+				So(validate(msg), ShouldErrLike, "properties_schema must be specified with non-empty properties")
+			})
+			Convey("invalid properties_schema", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					PropertiesSchema: "package",
+				}
+				So(validate(msg), ShouldErrLike, "properties_schema: does not match")
+			})
+			Convey("valid properties_schema and non-empty properties", func() {
+				msg.TestMetadata = &pb.TestMetadata{
+					PropertiesSchema: "package.message",
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"key": structpb.NewStringValue("1"),
+						},
+					},
+				}
+				So(validate(msg), ShouldBeNil)
+			})
 		})
 
 		Convey("with too big properties", func() {

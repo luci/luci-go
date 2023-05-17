@@ -35,6 +35,7 @@ const (
 	resultIDPattern           = `[a-z0-9\-_.]{1,32}`
 	maxLenSummaryHTML         = 4 * 1024
 	maxLenPrimaryErrorMessage = 1024
+	maxLenPropertiesSchema    = 256
 	// clockSkew is the maxmium amount of time that clocks could have been out of sync for.
 	clockSkew = 10 * time.Minute
 )
@@ -52,6 +53,7 @@ var (
 var (
 	monorailProjectRe   = regexp.MustCompile(`[a-z0-9]*[a-z]+[a-z0-9]*`)
 	monorailComponentRe = regexp.MustCompile(`^[a-zA-Z]([-_]?[a-zA-Z0-9])+(\>[a-zA-Z]([-_]?[a-zA-Z0-9])+)*$`)
+	propertiesSchemaRe  = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$`)
 )
 
 type checker struct {
@@ -167,7 +169,28 @@ func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 			return errors.Annotate(err, "location").Err()
 		}
 	}
+	if tmd.PropertiesSchema != "" {
+		if err := ValidatePropertiesSchema(tmd.PropertiesSchema); err != nil {
+			return errors.Annotate(err, "properties_schema").Err()
+		}
+	}
+	if tmd.Properties != nil {
+		if tmd.PropertiesSchema == "" {
+			return errors.New("properties_schema must be specified with non-empty properties")
+		}
+		if err := ValidateProperties(tmd.Properties); err != nil {
+			return errors.Annotate(err, "properties").Err()
+		}
+	}
 	return nil
+}
+
+// ValidatePropertiesSchema returns a non-nil error if properties schema is invalid.
+func ValidatePropertiesSchema(propertiesSchema string) error {
+	if len(propertiesSchema) > maxLenPropertiesSchema {
+		return errors.Reason("exceeds the maximum size of %d bytes", maxLenPropertiesSchema).Err()
+	}
+	return validateWithRe(propertiesSchemaRe, propertiesSchema)
 }
 
 // ValidateBugComponent returns a non-nil error if bug component is invalid.
