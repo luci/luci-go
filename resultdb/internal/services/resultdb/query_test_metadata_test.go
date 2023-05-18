@@ -74,6 +74,18 @@ func TestQueryTestMetadata(t *testing.T) {
 		})
 
 		Convey(`Invalid request`, func() {
+			Convey("Invalid project name", func() {
+				res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{
+					Project: "testproject:testrealm1",
+					Predicate: &pb.TestMetadataPredicate{
+						TestIds: []string{"test"},
+					},
+				})
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument)
+				So(err, ShouldErrLike, "project")
+				So(res, ShouldBeNil)
+			})
+
 			Convey("Invalid page size", func() {
 				res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{
 					Project: "testproject",

@@ -44,6 +44,10 @@ func validateQueryTestMetadataRequest(req *pb.QueryTestMetadataRequest) error {
 // QueryTestMetadata implements pb.ResultDBServer.
 // It returns a collection of test metadata that matches the request.
 func (s *resultDBServer) QueryTestMetadata(ctx context.Context, in *pb.QueryTestMetadataRequest) (*pb.QueryTestMetadataResponse, error) {
+	// Validate project before using it to check permission.
+	if err := pbutil.ValidateProject(in.Project); err != nil {
+		return nil, appstatus.BadRequest(errors.Annotate(err, "project").Err())
+	}
 	subRealms, err := permissions.QuerySubRealmsNonEmpty(ctx, in.Project, nil, rdbperms.PermListTestMetadata)
 	if err != nil {
 		return nil, err
