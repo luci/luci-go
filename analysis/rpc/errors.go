@@ -29,7 +29,7 @@ func invalidArgumentError(err error) error {
 	return appstatus.Attachf(err, codes.InvalidArgument, "%s", err)
 }
 
-// failedPreconditionError annotates err as failing a predondition for the
+// failedPreconditionError annotates err as failing a precondition for the
 // operation. The error message is shared with the requester as is.
 //
 // See codes.FailedPrecondition for more context about when this

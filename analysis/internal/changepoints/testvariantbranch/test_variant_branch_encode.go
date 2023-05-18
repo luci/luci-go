@@ -15,7 +15,6 @@
 package testvariantbranch
 
 import (
-	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/span"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
@@ -31,14 +30,14 @@ func EncodeProtoMessage(m proto.Message) ([]byte, error) {
 	return span.Compress(bytes), nil
 }
 
-func EncodeSegment(seg *changepointspb.Segment) ([]byte, error) {
+func EncodeSegment(seg *pb.Segment) ([]byte, error) {
 	if seg == nil {
 		return []byte{}, nil
 	}
 	return EncodeProtoMessage(seg)
 }
 
-func EncodeSegments(seg *changepointspb.Segments) ([]byte, error) {
+func EncodeSegments(seg *pb.Segments) ([]byte, error) {
 	if seg == nil {
 		return []byte{}, nil
 	}
@@ -64,11 +63,11 @@ func DecodeProtoMessage(bytes []byte, m proto.Message) error {
 }
 
 // DecodeSegment decodes []byte in to Segment.
-func DecodeSegment(bytes []byte) (*changepointspb.Segment, error) {
+func DecodeSegment(bytes []byte) (*pb.Segment, error) {
 	if len(bytes) == 0 {
 		return nil, nil
 	}
-	seg := &changepointspb.Segment{}
+	seg := &pb.Segment{}
 	err := DecodeProtoMessage(bytes, seg)
 	if err != nil {
 		return nil, err
@@ -77,11 +76,11 @@ func DecodeSegment(bytes []byte) (*changepointspb.Segment, error) {
 }
 
 // DecodeSegments decodes []byte in to Segments.
-func DecodeSegments(bytes []byte) (*changepointspb.Segments, error) {
+func DecodeSegments(bytes []byte) (*pb.Segments, error) {
 	if len(bytes) == 0 {
 		return nil, nil
 	}
-	seg := &changepointspb.Segments{}
+	seg := &pb.Segments{}
 	err := DecodeProtoMessage(bytes, seg)
 	if err != nil {
 		return nil, err

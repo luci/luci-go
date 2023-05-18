@@ -22,7 +22,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
@@ -30,7 +29,7 @@ import (
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testutil"
-	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
@@ -193,8 +192,8 @@ func TestAnalyzeChangePoint(t *testing.T) {
 
 	Convey(`Filter test variant with failed presubmit`, t, func() {
 		presubmit := &controlpb.PresubmitResult{
-			Status: analysispb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
-			Mode:   analysispb.PresubmitRunMode_FULL_RUN,
+			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
+			Mode:   pb.PresubmitRunMode_FULL_RUN,
 		}
 		sourcesMap := tu.SampleSourcesMap(10)
 		sourcesMap["sources_id"].Changelists = []*rdbpb.GerritChange{
@@ -303,14 +302,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			TestID:      "test_1",
 			VariantHash: "hash_1",
 			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
-			Variant: &analysispb.Variant{
+			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
 				},
 			},
-			SourceRef: &analysispb.SourceRef{
-				System: &analysispb.SourceRef_Gitiles{
-					Gitiles: &analysispb.GitilesRef{
+			SourceRef: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
 						Host:    "host",
 						Project: "proj",
 						Ref:     "ref",
@@ -341,14 +340,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			TestID:      "test_2",
 			VariantHash: "hash_2",
 			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
-			Variant: &analysispb.Variant{
+			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
 				},
 			},
-			SourceRef: &analysispb.SourceRef{
-				System: &analysispb.SourceRef_Gitiles{
-					Gitiles: &analysispb.GitilesRef{
+			SourceRef: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
 						Host:    "host",
 						Project: "proj",
 						Ref:     "ref",
@@ -408,7 +407,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			VariantHash: "hash_1",
 			SourceRef:   sources.SourceRef(sourcesMap["sources_id"]),
 			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
-			Variant: &analysispb.Variant{
+			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
 				},
@@ -469,14 +468,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			TestID:      "test_1",
 			VariantHash: "hash_1",
 			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
-			Variant: &analysispb.Variant{
+			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
 				},
 			},
-			SourceRef: &analysispb.SourceRef{
-				System: &analysispb.SourceRef_Gitiles{
-					Gitiles: &analysispb.GitilesRef{
+			SourceRef: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
 						Host:    "host",
 						Project: "proj",
 						Ref:     "ref",
@@ -493,25 +492,25 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 			},
-			FinalizingSegment: &changepointspb.Segment{
-				State:                        changepointspb.SegmentState_FINALIZING,
+			FinalizingSegment: &pb.Segment{
+				State:                        pb.SegmentState_FINALIZING,
 				HasStartChangepoint:          true,
 				StartPosition:                101,
 				StartHour:                    timestamppb.New(time.Unix(101*3600, 0)),
-				FinalizedCounts:              &changepointspb.Counts{},
+				FinalizedCounts:              &pb.Counts{},
 				StartPositionLowerBound_99Th: 100,
 				StartPositionUpperBound_99Th: 101,
 			},
-			FinalizedSegments: &changepointspb.Segments{
-				Segments: []*changepointspb.Segment{
+			FinalizedSegments: &pb.Segments{
+				Segments: []*pb.Segment{
 					{
-						State:               changepointspb.SegmentState_FINALIZED,
+						State:               pb.SegmentState_FINALIZED,
 						HasStartChangepoint: false,
 						StartPosition:       1,
 						StartHour:           timestamppb.New(time.Unix(3600, 0)),
 						EndPosition:         100,
 						EndHour:             timestamppb.New(time.Unix(100*3600, 0)),
-						FinalizedCounts: &changepointspb.Counts{
+						FinalizedCounts: &pb.Counts{
 							TotalResults:  101,
 							TotalRuns:     101,
 							TotalVerdicts: 101,
@@ -625,7 +624,7 @@ func testVariants(n int) []*rdbpb.TestVariant {
 
 func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *tvbr.TestVariantBranch {
 	tvb := &tvbr.TestVariantBranch{
-		FinalizingSegment: &changepointspb.Segment{},
+		FinalizingSegment: &pb.Segment{},
 		InputBuffer:       &inputbuffer.Buffer{},
 	}
 	for _, pos := range hotPositions {

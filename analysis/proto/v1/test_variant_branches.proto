@@ -14,16 +14,115 @@
 
 syntax = "proto3";
 
-package luci.analysis.internal.changepoints;
+package luci.analysis.v1;
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/analysis/proto/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/analysis/internal/changepoints/proto;changepointspb";
+option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
+
+// For reading test variant branch analyses from Spanner.
+// At the moment, this enables us to inspect the state of a test variant branch
+// analysis in Spanner (which cannot easily inspected using SQL queries,
+// because the data is encoded).
+// This is currently only for LUCI Analysis admin users.
+// In the future, it may be used for displaying the test variant branch
+// analyses in the UI, etc..
+service TestVariantBranches {
+  // Retrieves the current state of test variant branch analysis.
+  rpc Get(GetTestVariantBranchRequest) returns (
+    TestVariantBranch) {};
+}
+
+// A request message for `TestVariantBranches.Get` RPC.
+message GetTestVariantBranchRequest {
+  // The name of the test variant branch.
+  // It MUST be of the form project/{PROJECT}/test/{TEST_ID}/variant/{VARIANT_HASH}/ref/{REF_HASH}
+  // where:
+  // PROJECT is the LUCI Project of the test variant branch analysis.
+  // TEST_ID is the test ID of the test variant branch analysis.
+  // VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
+  // REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
+  string name = 1
+    [(google.api.field_behavior) = REQUIRED];
+}
+
+// Represents changepoint analysis for a particular (project, test, variant, ref).
+message TestVariantBranch {
+  // The LUCI Project. E.g. "chromium".
+  string project = 1;
+
+  // The identity of the test.
+  string test_id = 2;
+
+  // Hash of the variant, as 16 lowercase hexadecimal characters.
+  // E.g. "96c68dc946ab4068".
+  string variant_hash = 3;
+
+  // Hash of the source branch, as 16 lowercase hexadecimal characters.
+  string ref_hash = 4;
+
+  // Describes one specific way of running the test, e.g. a specific bucket,
+  // builder and a test suite.
+  luci.analysis.v1.Variant variant = 5;
+
+  // The branch in source control.
+  luci.analysis.v1.SourceRef ref = 6;
+
+  // The finalized segments in the output buffer.
+  repeated Segment finalized_segments = 7;
+
+  // The finalizing segment in the output buffer.
+  Segment finalizing_segment = 8;
+
+  // The hot input buffer.
+  InputBuffer hot_buffer = 9;
+
+  // The cold input buffer.
+  InputBuffer cold_buffer = 10;
+
+  // Additionally we may want to return the segmentize input buffer as well
+  // (maybe to show in the UI), but we will do it when we need it.
+}
+
+// InputBuffer contains the verdict history of the test variant branch.
+// It is used for both the hot buffer and the cold buffer.
+message InputBuffer {
+  // The number of test verdicts in the input buffer.
+  int64 length = 1;
+
+  // Verdicts, sorted by commit position (oldest first), and
+  // then result time (oldest first).
+  repeated PositionVerdict verdicts = 2;
+}
+
+// PositionVerdict represents a test verdict at a commit position.
+message PositionVerdict {
+  // The commit position for the verdict.
+  int64 commitPosition = 1;
+
+  // The time that this verdict is produced, truncated to the nearest hour.
+  google.protobuf.Timestamp hour = 2;
+
+  // Whether the verdict is exonerated or not.
+  bool is_exonerated = 3;
+
+  message Run {
+    // Number of non-skipped expected results in the run.
+    int64 expected_result_count = 1;
+    // Number of non-skipped unexpected results in the run.
+    int64 unexpected_result_count = 2;
+    // Whether this run is a duplicate run.
+    bool is_duplicate = 3;
+  }
+  repeated Run runs = 4;
+}
 
 // Segments is used to store the finalized segments in Spanner.
 message Segments {
-	// Segments, in ascending commit position order (oldest segment first).
-	repeated Segment segments = 1;
+  // Segments, in ascending commit position order (oldest segment first).
+  repeated Segment segments = 1;
 }
 
 // Segment stores the finalized parts of finalizing and finalized segments
@@ -75,17 +174,17 @@ message Segment {
 }
 
 enum SegmentState {
-	SEGMENT_STATE_UNSPECIFIED = 0;
-	// Both the start and end commit positions of the segment are the result
-	// of analysis on the current input buffer.
-	ACTIVE = 1;
-	// The end commit position of the segment is the result of analysis on the
-	// current input buffer, but the start commit position is the result of
-	// past analysis.
-	FINALIZING = 2;
-	// Both the start and end commit positions of the segment are the result
-	// of past analysis.
-	FINALIZED = 3;
+  SEGMENT_STATE_UNSPECIFIED = 0;
+  // Both the start and end commit positions of the segment are the result
+  // of analysis on the current input buffer.
+  ACTIVE = 1;
+  // The end commit position of the segment is the result of analysis on the
+  // current input buffer, but the start commit position is the result of
+  // past analysis.
+  FINALIZING = 2;
+  // Both the start and end commit positions of the segment are the result
+  // of past analysis.
+  FINALIZED = 3;
 }
 
 // All exclude the effect of skipped test results.

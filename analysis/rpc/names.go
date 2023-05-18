@@ -47,6 +47,7 @@ var (
 	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/config$`)
 	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/reclusteringProgress$`)
 	RuleNameRe                          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
+	TestVariantBranchNameRe             = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/tests/(` + config.TestIDRePattern + `)/variants/(` + config.VariantHashRePattern + `)/refs/(` + config.RefHashRePattern + `)$`)
 )
 
 // parseMetricName parses a metric resource name into a metric ID.
@@ -146,6 +147,16 @@ func parseClusterExoneratedTestVariantsName(name string) (project string, cluste
 		return "", clustering.ClusterID{}, errors.Annotate(err, "invalid cluster identity").Err()
 	}
 	return match[1], cID, nil
+}
+
+// parseTestVariantBranchName parses the resource name into project, test_id,
+// variant hash and ref hash.
+func parseTestVariantBranchName(name string) (project string, testID string, variantHash string, refHash string, err error) {
+	matches := TestVariantBranchNameRe.FindStringSubmatch(name)
+	if matches == nil || len(matches) != 5 {
+		return "", "", "", "", errors.Reason("name must be of format projects/{PROJECT}/tests/{TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}").Err()
+	}
+	return matches[1], matches[2], matches[3], matches[4], nil
 }
 
 func ruleName(project, ruleID string) string {

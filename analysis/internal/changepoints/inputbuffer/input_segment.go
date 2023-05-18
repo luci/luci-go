@@ -17,7 +17,7 @@ package inputbuffer
 import (
 	"time"
 
-	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
+	pb "go.chromium.org/luci/analysis/proto/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -35,7 +35,7 @@ type Segment struct {
 	// Counts the statistics of the segment.
 	// Note that this includes all verdicts, as opposed to Segment.FinalizedCount
 	// which only includes finalized verdicts.
-	Counts *changepointspb.Counts
+	Counts *pb.Counts
 	// The hour the most recent verdict with an unexpected test result
 	// was produced.
 	// Note that this includes all verdicts, as opposed to Segment.FinalizedCount
@@ -168,8 +168,8 @@ func inputBufferSegment(startIndex, endIndex int, history []PositionVerdict) *Se
 // segment, which is finalizing.
 //
 // The remaining segments will be in sib.Segments.
-func (sib *SegmentedInputBuffer) EvictSegments() []*changepointspb.Segment {
-	evictedSegments := []*changepointspb.Segment{}
+func (sib *SegmentedInputBuffer) EvictSegments() []*pb.Segment {
+	evictedSegments := []*pb.Segment{}
 	remainingSegments := []*Segment{}
 
 	// Evict finalized segments.
@@ -218,16 +218,16 @@ func (sib *SegmentedInputBuffer) EvictSegments() []*changepointspb.Segment {
 	// If the last segment is finalized, we also add a finalizing segment
 	// to the end of the evicted segments.
 	l := len(evictedSegments)
-	if l > 0 && evictedSegments[l-1].State == changepointspb.SegmentState_FINALIZED {
+	if l > 0 && evictedSegments[l-1].State == pb.SegmentState_FINALIZED {
 		firstRemainingSeg := remainingSegments[0]
-		evictedSegments = append(evictedSegments, &changepointspb.Segment{
-			State:                        changepointspb.SegmentState_FINALIZING,
+		evictedSegments = append(evictedSegments, &pb.Segment{
+			State:                        pb.SegmentState_FINALIZING,
 			HasStartChangepoint:          true,
 			StartPosition:                firstRemainingSeg.StartPosition,
 			StartHour:                    firstRemainingSeg.StartHour,
 			StartPositionLowerBound_99Th: firstRemainingSeg.StartPositionLowerBound99Th,
 			StartPositionUpperBound_99Th: firstRemainingSeg.StartPositionUpperBound99Th,
-			FinalizedCounts:              &changepointspb.Counts{},
+			FinalizedCounts:              &pb.Counts{},
 		})
 	}
 	return evictedSegments
@@ -250,7 +250,7 @@ func (ib *Buffer) isSegmentFinalized(seg *Segment) bool {
 // This has an assumption that the segment verdicts are at the beginning
 // of the hot and cold buffers.
 // Returns a segment containing the information about the verdicts being evicted.
-func (ib *Buffer) evictFinalizedSegment(seg *Segment) *changepointspb.Segment {
+func (ib *Buffer) evictFinalizedSegment(seg *Segment) *pb.Segment {
 	// Evict hot buffer.
 	evictEndIndex := -1
 	for i, v := range ib.HotBuffer.Verdicts {
@@ -277,8 +277,8 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) *changepointspb.Segment {
 	}
 
 	// Return evicted segment.
-	result := &changepointspb.Segment{
-		State:                          changepointspb.SegmentState_FINALIZED,
+	result := &pb.Segment{
+		State:                          pb.SegmentState_FINALIZED,
 		FinalizedCounts:                seg.Counts,
 		HasStartChangepoint:            seg.HasStartChangepoint,
 		StartPosition:                  seg.StartPosition,
@@ -298,7 +298,7 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) *changepointspb.Segment {
 // to the cold buffer (i.e. the hot buffer is empty and the cold buffer
 // overflows).
 // Returns evicted and remaining segments.
-func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *changepointspb.Segment, remaining *Segment) {
+func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *pb.Segment, remaining *Segment) {
 	evictedCount := segmentCounts(ib.ColdBuffer.Verdicts[:endPos+1])
 	remainingCount := segmentCounts(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
 	evictedMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[:endPos+1])
@@ -306,8 +306,8 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *cha
 	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[endPos+1:]
 	ib.IsColdBufferDirty = true
 	// Evicted segment.
-	evicted = &changepointspb.Segment{
-		State:                          changepointspb.SegmentState_FINALIZING,
+	evicted = &pb.Segment{
+		State:                          pb.SegmentState_FINALIZING,
 		FinalizedCounts:                evictedCount,
 		HasStartChangepoint:            seg.HasStartChangepoint,
 		StartPosition:                  seg.StartPosition,
@@ -331,8 +331,8 @@ func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *cha
 }
 
 // segmentCount counts the statistics of history.
-func segmentCounts(history []PositionVerdict) *changepointspb.Counts {
-	counts := &changepointspb.Counts{}
+func segmentCounts(history []PositionVerdict) *pb.Counts {
+	counts := &pb.Counts{}
 	for _, verdict := range history {
 		counts.TotalVerdicts++
 		if verdict.IsSimpleExpected {

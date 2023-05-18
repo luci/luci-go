@@ -25,3 +25,15 @@ const ProjectRePattern = `[a-z0-9\-]{1,40}`
 
 // ProjectRe matches validly formed LUCI Project names.
 var ProjectRe = regexp.MustCompile(`^` + ProjectRePattern + `$`)
+
+// TestIDRePattern is the regular expression pattern that matches
+// validly formed TestID.
+const TestIDRePattern = `[[:print:]]{1,512}`
+
+// VariantHashRePattern is the regular expression pattern that matches
+// validly formed Variant Hash.
+const VariantHashRePattern = `[0-9a-f]{16}`
+
+// RefHashRePattern is the regular expression pattern that matches
+// validly formed Ref Hash.
+const RefHashRePattern = `[0-9a-f]{16}`
