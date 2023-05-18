@@ -197,6 +197,36 @@ func TestBotHandler(t *testing.T) {
 			So(seenReq.PollState, ShouldResembleProto, pollStateInPollToken)
 		})
 
+		Convey("Happy path with session token and expired poll token", func() {
+			pollStateInPollToken := makePollState("in-poll-token")
+			pollStateInPollToken.Expiry = timestamppb.New(now.Add(-5 * time.Minute))
+
+			pollStateInSessionToken := makePollState("in-session-token")
+
+			req := testRequest{
+				Dimensions: map[string][]string{
+					"id":   {"bot-id"},
+					"pool": {"pool"},
+				},
+				PollToken: genToken(pollStateInPollToken, []byte("also-secret")),
+				SessionToken: genToken(&internalspb.BotSession{
+					RbeBotSessionId: "bot-session-id",
+					PollState:       pollStateInSessionToken,
+					Expiry:          timestamppb.New(now.Add(5 * time.Minute)),
+				}, []byte("also-secret")),
+			}
+
+			body, seenReq, status, resp := call(req, "some-response", nil)
+			So(status, ShouldEqual, http.StatusOK)
+			So(resp, ShouldEqual, "\"some-response\"\n")
+			So(body, ShouldResemble, &req)
+			So(seenReq.BotID, ShouldEqual, "bot-id")
+			So(seenReq.SessionID, ShouldEqual, "bot-session-id")
+
+			// Used the session token.
+			So(seenReq.PollState, ShouldResembleProto, pollStateInSessionToken)
+		})
+
 		Convey("Wrong bot credentials", func() {
 			pollState := &internalspb.PollState{
 				Id:          "poll-state-id",
@@ -275,7 +305,7 @@ func TestBotHandler(t *testing.T) {
 			_, seenReq, status, resp := call(req, "some-response", nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "poll token expired 5m0s ago")
+			So(resp, ShouldContainSubstring, "no valid poll or state token")
 		})
 
 		Convey("Expired session token", func() {
@@ -289,7 +319,25 @@ func TestBotHandler(t *testing.T) {
 			_, seenReq, status, resp := call(req, "some-response", nil)
 			So(seenReq, ShouldBeNil)
 			So(status, ShouldEqual, http.StatusUnauthorized)
-			So(resp, ShouldContainSubstring, "session token expired 5m0s ago")
+			So(resp, ShouldContainSubstring, "no valid poll or state token")
+		})
+
+		Convey("Expired session and poll tokens", func() {
+			req := testRequest{
+				PollToken: genToken(&internalspb.PollState{
+					Id:     "poll-state-id",
+					Expiry: timestamppb.New(now.Add(-5 * time.Minute)),
+				}, []byte("also-secret")),
+				SessionToken: genToken(&internalspb.BotSession{
+					RbeBotSessionId: "session-id",
+					Expiry:          timestamppb.New(now.Add(-5 * time.Minute)),
+					PollState:       makePollState("poll-state-id"),
+				}, []byte("also-secret")),
+			}
+			_, seenReq, status, resp := call(req, "some-response", nil)
+			So(seenReq, ShouldBeNil)
+			So(status, ShouldEqual, http.StatusUnauthorized)
+			So(resp, ShouldContainSubstring, "no valid poll or state token")
 		})
 
 		Convey("Session token with no session ID", func() {

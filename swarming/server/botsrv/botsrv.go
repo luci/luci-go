@@ -26,6 +26,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -119,6 +121,9 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		req := c.Request
 		wrt := c.Writer
 
+		logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
+		logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
+
 		// Deserialize JSON request body.
 		if ct := req.Header.Get("Content-Type"); strings.ToLower(ct) != "application/json; charset=utf-8" {
 			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "bad content type %q", ct))
@@ -130,22 +135,23 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			return
 		}
 
-		// To authenticate the bot we need either a poll token, a session token or
-		// both (in which case the poll token is preferred, since it should be
-		// more recently produced in this case). If we have a poll token, we
-		// validate it to directly get PollState. If we have a session token, we
-		// validate it and grab PollState from within it. This PollState is then
-		// used to check bot credentials.
+		// To authenticate the bot we need either a non-expired poll token, a
+		// non-expired session token or both (in which case the poll token is
+		// preferred, since it should be more recently produced in this case). If we
+		// have a poll token, we validate it to directly get PollState. If we have
+		// a session token, we validate it and grab PollState from within it. This
+		// PollState is then used to check bot credentials.
 		//
 		// This scheme is necessary because poll tokens can be produced only by
 		// Python Swarming server when bot calls "/bot/poll" endpoint. When the bot
 		// is running a task, it isn't polling Python Swarming server and its poll
-		// token expires. For that reason when running a task, we use the session
+		// token expires. For that reason when running a task (or making other
+		// post-task calls that happen before the next poll), we use the session
 		// token instead, which has the most recently validated PollState stored in
 		// it in a "frozen" state.
 		//
 		// When the bot is polling for tasks, it sends both poll token and session
-		// token to us, which is allows us to put up-to-date PollState into the
+		// token to us, which allows us to put up-to-date PollState into the
 		// session token. This happens in UpdateBotSession handler.
 
 		var pollTokenState *internalspb.PollState
@@ -158,6 +164,10 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
 				return
 			}
+			if exp := clock.Now(ctx).Sub(pollTokenState.Expiry.AsTime()); exp > 0 {
+				logging.Warningf(ctx, "Ignoring poll token (expired %s ago):\n%s", exp, prettyProto(pollTokenState))
+				pollTokenState = nil
+			}
 		}
 		// If have a session token, validate and deserialize it as well.
 		if sessionToken := RB(body).ExtractSessionToken(); len(sessionToken) != 0 {
@@ -166,10 +176,21 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "failed to verify session token: %s", err))
 				return
 			}
+			if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
+				logging.Warningf(ctx, "Ignoring session token (expired %s ago):\n%s", exp, prettyProto(sessionState))
+				sessionState = nil
+			}
+		}
+
+		// Need at least one valid and fresh token.
+		if pollTokenState == nil && sessionState == nil {
+			writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "no valid poll or state token"))
+			return
 		}
 
 		// Prefer the state from the poll token. It is fresher. Fallback to the
-		// state stored in the session token if there's no poll token.
+		// state stored in the session token if there's no poll token or it has
+		// expired.
 		pollState := pollTokenState
 		if pollState == nil {
 			pollState = sessionState.GetPollState()
@@ -184,8 +205,6 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 
 		// Log some information about the request.
 		logging.Infof(ctx, "Bot ID: %s", botID)
-		logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
-		logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
 		logging.Infof(ctx, "Poll token ID: %s", pollState.Id)
 		logging.Infof(ctx, "RBE: %s", pollState.RbeInstance)
 		if pollState.DebugInfo != nil {
@@ -193,40 +212,6 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		}
 		if sessionState != nil {
 			logging.Infof(ctx, "Session ID: %s", sessionState.RbeBotSessionId)
-		}
-
-		// Any explicitly passed tokens must be non-expired.
-		//
-		// We do these checks here (instead of right after getting the tokens), to
-		// have some information logged already for debugging expired tokens.
-		//
-		// Note that it is normal for the PollState stored *inside* BotSession to
-		// be expired (as long as BotSession itself is not expired). It just means
-		// the bot didn't call "/bot/poll" (to get a new poll token) for a long time
-		// when running a task. For that reason we don't check expiry of
-		// `pollState` (which could come from BotSession), only `pollTokenState`
-		// (which is always what is passed explicitly in the handler).
-		if pollTokenState != nil {
-			if exp := clock.Now(ctx).Sub(pollTokenState.Expiry.AsTime()); exp > 0 {
-				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "poll token expired %s ago", exp))
-				return
-			}
-		}
-		if sessionState != nil {
-			if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
-				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "session token expired %s ago", exp))
-				return
-			}
-		}
-
-		// Verify bot credentials match what's recorded in the validated poll state.
-		if err := checkCredentials(ctx, pollState); err != nil {
-			if transient.Tag.In(err) {
-				writeErr(ctx, wrt, status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
-			} else {
-				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
-			}
-			return
 		}
 
 		// Bot ID must be present.
@@ -237,6 +222,16 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 		// Session ID must be present if there's a session token.
 		if sessionState != nil && sessionState.RbeBotSessionId == "" {
 			writeErr(ctx, wrt, status.Errorf(codes.InvalidArgument, "no session ID"))
+			return
+		}
+
+		// Verify bot credentials match what's recorded in the validated poll state.
+		if err := checkCredentials(ctx, pollState); err != nil {
+			if transient.Tag.In(err) {
+				writeErr(ctx, wrt, status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
+			} else {
+				writeErr(ctx, wrt, status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
+			}
 			return
 		}
 
@@ -284,6 +279,18 @@ func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string,
 			logging.Errorf(ctx, "Error writing the response: %s", werr)
 		}
 	})
+}
+
+// prettyProto formats a proto message for logs.
+func prettyProto(msg proto.Message) string {
+	blob, err := prototext.MarshalOptions{
+		Multiline: true,
+		Indent:    "  ",
+	}.Marshal(msg)
+	if err != nil {
+		return fmt.Sprintf("<error: %s>", err)
+	}
+	return string(blob)
 }
 
 // checkCredentials checks the bot credentials in the context match what is
