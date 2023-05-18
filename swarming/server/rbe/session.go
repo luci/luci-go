@@ -190,6 +190,10 @@ type UpdateBotSessionRequest struct {
 	//   * INITIALIZING
 	Status string `json:"status"`
 
+	// Nonblocking is true if the bot doesn't want to block waiting for new
+	// leases to appear.
+	Nonblocking bool `json:"nonblocking"`
+
 	// The lease the bot is currently working or have just finished working on.
 	//
 	// Allowed lease states here are:
@@ -290,23 +294,36 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	}
 
 	// If there are no pending leases, RBE seems to block for `<rpc deadline>-10s`
-	// (not doing anything at all if the RPC deadline is less than 10s). Since we
-	// are running on GAE, we are limited by 1m total. Tell RBE we have ~50s, it
-	// will block for ~40s, giving us ~20s of spare time.
-	//
-	// Randomize this timeout a bit to avoid freshly restarted bots call us
-	// in synchronized "waves".
-	//
-	// TODO(vadimsh): This needs more tuning, in particular in combination with
-	// GAE's `max_concurrent_requests` parameter.
-	started := clock.Now(ctx)
-	rpcCtx, cancel := context.WithTimeout(ctx, randomDuration(45*time.Second, 55*time.Second))
+	// (not doing anything at all if the RPC deadline is less than 10s).
+	var timeout time.Duration
+	if body.Nonblocking {
+		// RPCs with timeout of less that 10s are treated by RBE as non-blocking.
+		// Note the timeout is propagated via gRPC metadata headers, it is like an
+		// implicit RPC parameters. This should be pretty deterministic.
+		timeout = 9 * time.Second
+	} else {
+		// Since we are running on GAE, we are limited by 1m total. Tell RBE we
+		// have ~50s, it will block for ~40s, giving us ~20s of spare time.
+		//
+		// Randomize this timeout a bit to avoid freshly restarted bots call us
+		// in synchronized "waves".
+		//
+		// TODO(vadimsh): This needs more tuning, in particular in combination with
+		// GAE's `max_concurrent_requests` parameter.
+		timeout = randomDuration(45*time.Second, 55*time.Second)
+	}
+
+	logging.Infof(ctx, "RPC timeout is %s", timeout)
+	rpcCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	started := clock.Now(ctx)
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
 		Name:       r.SessionID,
 		BotSession: rbeBotSession(r.SessionID, botStatus, r.Dimensions, leaseIn),
 	})
 	logging.Infof(ctx, "UpdateBotSession took %s", clock.Now(ctx).Sub(started))
+
 	if err != nil {
 		// If the bot was just polling for new work, treat DEADLINE_EXCEEDED as
 		// "no work available". Otherwise we may end up replying with a lot of
