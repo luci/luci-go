@@ -178,7 +178,7 @@ export function App() {
             },
           ],
         },
-        { path: 'test/:realm/:testId', element: <TestHistoryPage /> },
+        { path: 'test/:projectOrRealm/:testId', element: <TestHistoryPage /> },
         { path: '*', element: <NotFoundPage /> },
       ],
     },

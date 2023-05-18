@@ -74,7 +74,7 @@ describe('TestIDLabel', () => {
           <AuthStateProvider
             initialValue={{ identity: 'identity-1', idToken: 'id-token-1', accessToken: 'access-token-1' }}
           >
-            <TestIdLabel realm="testrealm" testId="testid" />
+            <TestIdLabel projectOrRealm="testrealm" testId="testid" />
           </AuthStateProvider>
         </StoreProvider>
       </QueryClientProvider>

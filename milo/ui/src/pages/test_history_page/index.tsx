@@ -56,7 +56,7 @@ const GraphContainer = styled.div({
 });
 
 export const TestHistoryPage = observer(() => {
-  const { realm, testId } = useParams();
+  const { projectOrRealm, testId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Use useState to ensure initialFilterText won't change after search params
@@ -66,13 +66,13 @@ export const TestHistoryPage = observer(() => {
   const store = useStore();
   const pageState = store.testHistoryPage;
 
-  if (!realm || !testId) {
+  if (!projectOrRealm || !testId) {
     throw new Error('invariant violated: realm and testId should be set');
   }
 
   useEffect(() => {
-    pageState.setParams(realm, testId);
-  }, [pageState, realm, testId]);
+    pageState.setParams(projectOrRealm, testId);
+  }, [pageState, projectOrRealm, testId]);
 
   useEffect(() => {
     if (!initialFilterText) {
@@ -98,7 +98,7 @@ export const TestHistoryPage = observer(() => {
 
   return (
     <PageContainer>
-      <TestIdLabel realm={realm} testId={testId} />
+      <TestIdLabel projectOrRealm={projectOrRealm} testId={testId} />
       <LinearProgress value={100} variant="determinate" />
       <FilterBox css={{ width: 'calc(100% - 10px)', margin: '5px' }} initialFilterText={initialFilterText} />
       <GraphConfig />

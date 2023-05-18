@@ -240,8 +240,8 @@ export const TestHistoryPage = types
     setDependencies(deps: Pick<typeof self, 'refreshTime' | 'services'>) {
       Object.assign(self, deps);
     },
-    setParams(realm: string, testId: string) {
-      [self.project, self.subRealm] = realm.split(':', 2);
+    setParams(projectOrRealm: string, testId: string) {
+      [self.project, self.subRealm] = projectOrRealm.split(':', 2);
       self.testId = testId;
     },
     setFilterText(filterText: string) {

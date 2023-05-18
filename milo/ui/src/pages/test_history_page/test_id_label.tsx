@@ -19,9 +19,10 @@ import { useAuthState, useGetAccessToken } from '../../components/auth_state_pro
 import { PrpcClientExt } from '../../libs/prpc_client_ext';
 import { getCodeSourceUrl } from '../../libs/url_utils';
 import { QueryTestMetadataRequest, ResultDb } from '../../services/resultdb';
+import { extractProject } from '../../libs/utils';
 
 export interface TestIdLabelProps {
-  readonly realm: string;
+  readonly projectOrRealm: string; // A project name or a realm name.
   readonly testId: string;
 }
 
@@ -50,8 +51,9 @@ function useTestMetadata(req: QueryTestMetadataRequest) {
   });
 }
 
-export function TestIdLabel({ realm, testId }: TestIdLabelProps) {
-  const { data, isSuccess, isLoading } = useTestMetadata({ project: realm, predicate: { testIds: [testId] } });
+export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
+  const project = extractProject(projectOrRealm)
+  const { data, isSuccess, isLoading } = useTestMetadata({ project, predicate: { testIds: [testId] } });
   return (
     <table
       css={{
@@ -73,7 +75,7 @@ export function TestIdLabel({ realm, testId }: TestIdLabelProps) {
           >
             Project
           </td>
-          <td>{realm}</td>
+          <td>{project}</td>
         </tr>
         <tr>
           <td css={{ color: 'var(--light-text-color)' }}>ID</td>

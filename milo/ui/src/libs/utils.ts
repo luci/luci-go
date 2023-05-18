@@ -185,3 +185,13 @@ export function createStaticTrustedURL<T extends string>(
     self.trustedTypes?.createPolicy(policy, { createScriptURL: (_) => staticUrl }).createScriptURL('') || staticUrl
   );
 }
+
+/**
+ * Extract project from a string which can be a realm or a project.
+ *
+ * @param projectOrRealm a LUCI project name or a realm
+ * @returns a LUCI project name
+ */
+export function extractProject(projectOrRealm:string): string {
+  return projectOrRealm.split(":",2)[0]
+}
