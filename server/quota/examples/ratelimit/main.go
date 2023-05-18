@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,7 +84,8 @@ func main() {
 				{
 					AccountId:  account,
 					PolicyId:   policy,
-					RelativeTo: quotapb.Op_CURRENT_BALANCE, Delta: -1,
+					RelativeTo: quotapb.Op_CURRENT_BALANCE,
+					Delta:      -1,
 				},
 			})
 			dur := time.Now().Sub(now)
@@ -107,7 +108,7 @@ func main() {
 				{
 					AccountId:  account,
 					PolicyId:   policy,
-					RelativeTo: quotapb.Op_DEFAULT,
+					RelativeTo: quotapb.Op_LIMIT,
 				},
 			})
 			switch err {
