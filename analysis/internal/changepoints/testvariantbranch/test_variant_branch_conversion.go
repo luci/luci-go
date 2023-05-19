@@ -15,9 +15,7 @@
 package testvariantbranch
 
 import (
-	"fmt"
 	"sort"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -34,15 +32,10 @@ func ToPositionVerdict(tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults
 	// However, we also check the length of the result just to be certain.
 	isSimpleExpected := (tv.Status == rdbpb.TestVariantStatus_EXPECTED && len(tv.Results) == 1)
 
-	hour, err := hourForTestVariant(tv)
-	if err != nil {
-		return inputbuffer.PositionVerdict{}, errors.Annotate(err, "hour for test variant").Err()
-	}
-
 	verdict := inputbuffer.PositionVerdict{
 		CommitPosition:   sources.CommitPosition(src),
 		IsSimpleExpected: isSimpleExpected,
-		Hour:             hour,
+		Hour:             payload.PartitionTime.AsTime(),
 	}
 
 	// Add verdict details only if verdict is not simple.
@@ -112,14 +105,4 @@ func toVerdictDetails(tv *rdbpb.TestVariant, duplicateMap map[string]bool) (inpu
 		return vd.Runs[i].ExpectedResultCount > vd.Runs[j].ExpectedResultCount
 	})
 	return vd, nil
-}
-
-// hourForTestVariant approximates the time when the test variant was produced.
-// We just take the start time of the first result.
-func hourForTestVariant(tv *rdbpb.TestVariant) (time.Time, error) {
-	// This should not happen, as we already filter TestVariant.
-	if len(tv.Results) == 0 {
-		return time.Unix(0, 0), fmt.Errorf("no result in test variant")
-	}
-	return tv.Results[0].GetResult().StartTime.AsTime(), nil
 }

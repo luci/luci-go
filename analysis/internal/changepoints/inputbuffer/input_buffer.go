@@ -59,7 +59,7 @@ type PositionVerdict struct {
 	// Denotes whether this verdict is a simple expected verdict or not.
 	// A simple expected verdict has only one test result, which is expected.
 	IsSimpleExpected bool
-	// The time that this verdict is produced.
+	// The partition time that this PositionVerdict was ingested.
 	// When stored, it is truncated to the nearest hour.
 	Hour time.Time
 	// The details of the verdict.

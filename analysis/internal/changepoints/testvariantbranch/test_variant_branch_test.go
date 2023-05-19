@@ -335,8 +335,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 			Results: []*rdbpb.TestResultBundle{
 				{
 					Result: &rdbpb.TestResult{
-						Expected:  true,
-						StartTime: timestamppb.New(time.Unix(3600*10, 0)),
+						Expected: true,
 					},
 				},
 			},
@@ -350,7 +349,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
 			CommitPosition:   12,
 			IsSimpleExpected: true,
-			Hour:             tv.Results[0].Result.StartTime.AsTime(),
+			Hour:             payload.PartitionTime.AsTime(),
 		})
 	})
 
@@ -369,51 +368,44 @@ func TestInsertToInputBuffer(t *testing.T) {
 			Results: []*rdbpb.TestResultBundle{
 				{
 					Result: &rdbpb.TestResult{
-						Name:      "invocations/run-1/tests/abc",
-						Expected:  false,
-						StartTime: timestamppb.New(time.Unix(3600*10, 0)),
+						Name:     "invocations/run-1/tests/abc",
+						Expected: false,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
-						Name:      "invocations/run-1/tests/abc",
-						Expected:  false,
-						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+						Name:     "invocations/run-1/tests/abc",
+						Expected: false,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
-						Name:      "invocations/run-1/tests/abc",
-						Expected:  true,
-						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+						Name:     "invocations/run-1/tests/abc",
+						Expected: true,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
-						Name:      "invocations/run-2/tests/abc",
-						Expected:  false,
-						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+						Name:     "invocations/run-2/tests/abc",
+						Expected: false,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
-						Name:      "invocations/run-3/tests/abc",
-						Expected:  true,
-						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+						Name:     "invocations/run-3/tests/abc",
+						Expected: true,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
-						Name:      "invocations/run-3/tests/abc",
-						Expected:  true,
-						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+						Name:     "invocations/run-3/tests/abc",
+						Expected: true,
 					},
 				},
 				{
 					Result: &rdbpb.TestResult{
-						Name:      "invocations/run-4/tests/abc",
-						Expected:  true,
-						StartTime: timestamppb.New(time.Unix(3600*11, 0)),
+						Name:     "invocations/run-4/tests/abc",
+						Expected: true,
 					},
 				},
 			},
@@ -430,7 +422,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 		So(tvb.InputBuffer.HotBuffer.Verdicts[0], ShouldResemble, inputbuffer.PositionVerdict{
 			CommitPosition:   12,
 			IsSimpleExpected: false,
-			Hour:             tv.Results[0].Result.StartTime.AsTime(),
+			Hour:             payload.PartitionTime.AsTime(),
 			Details: inputbuffer.VerdictDetails{
 				IsExonerated: false,
 				Runs: []inputbuffer.Run{

@@ -243,9 +243,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:      "invocations/abc/tests/xyz",
-							Status:    rdbpb.TestStatus_PASS,
-							StartTime: timestamppb.New(time.Unix(3600, 0)),
+							Name:   "invocations/abc/tests/xyz",
+							Status: rdbpb.TestStatus_PASS,
 						},
 					},
 				},
@@ -263,9 +262,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				Results: []*rdbpb.TestResultBundle{
 					{
 						Result: &rdbpb.TestResult{
-							Name:      "invocations/def/tests/xyz",
-							Status:    rdbpb.TestStatus_CRASH,
-							StartTime: timestamppb.New(time.Unix(3600, 0)),
+							Name:   "invocations/def/tests/xyz",
+							Status: rdbpb.TestStatus_CRASH,
 						},
 					},
 				},
@@ -322,7 +320,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						{
 							CommitPosition:   10,
 							IsSimpleExpected: true,
-							Hour:             time.Unix(3600, 0),
+							Hour:             payload.PartitionTime.AsTime(),
 						},
 					},
 				},
@@ -360,7 +358,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						{
 							CommitPosition:   10,
 							IsSimpleExpected: false,
-							Hour:             time.Unix(3600, 0),
+							Hour:             payload.PartitionTime.AsTime(),
 							Details: inputbuffer.VerdictDetails{
 								IsExonerated: false,
 								Runs: []inputbuffer.Run{

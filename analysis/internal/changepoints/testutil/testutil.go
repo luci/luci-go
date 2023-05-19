@@ -16,10 +16,13 @@
 package testutil
 
 import (
+	"time"
+
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func SamplePayload() *taskspb.IngestTestResults {
@@ -28,6 +31,7 @@ func SamplePayload() *taskspb.IngestTestResults {
 			Id:      1234,
 			Project: "chromium",
 		},
+		PartitionTime: timestamppb.New(time.Unix(3600*10, 0)),
 	}
 }
 
