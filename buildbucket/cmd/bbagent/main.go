@@ -707,9 +707,6 @@ func mainImpl() int {
 			CacheDir: cache,
 			Env:      environ.System(),
 		}
-		// TODO(crbug.com/1441784) - Ensure nothing depends on this environment
-		// variable.
-		invokeOpts.Env.Set("LUCI_OMIT_PYTHON2", "true")
 
 		go func() {
 			select {
