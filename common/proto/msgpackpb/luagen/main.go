@@ -806,7 +806,7 @@ func generate(outFile string, msgs []protoreflect.MessageDescriptor, enums []pro
 				suite(func() {
 					cond(`k[0] ~= "$"`)(func() {
 						cond(`not codec.keys[k]`)(func() {
-							pl(`error("invalid property name: "..k)`)
+							pl(`error("invalid property name '"..k.."' for "..messageName)`)
 						})
 						pl(`ret[k] = v`)
 					})

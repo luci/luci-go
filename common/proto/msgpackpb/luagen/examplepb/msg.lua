@@ -631,7 +631,7 @@ function PB.new(messageName, defaults)
     for k, v in next, defaults do
       if k[0] ~= "$" then
         if not codec.keys[k] then
-          error("invalid property name: "..k)
+          error("invalid property name '"..k.."' for "..messageName)
         end
         ret[k] = v
       end
