@@ -24,17 +24,19 @@ import { createContext, useContext } from 'react';
 const ExpandedContext = createContext(false);
 
 export interface ExpandableEntryHeaderProps {
+  readonly onToggle: (expand: boolean) => void;
   readonly children: React.ReactNode;
 }
 
 /**
  * Renders the header of an <ExpandableEntry />.
  */
-export function ExpandableEntryHeader({ children }: ExpandableEntryHeaderProps) {
+export function ExpandableEntryHeader({ onToggle, children }: ExpandableEntryHeaderProps) {
   const expanded = useContext(ExpandedContext);
 
   return (
     <Box
+      onClick={() => onToggle(!expanded)}
       sx={{
         display: 'grid',
         gridTemplateColumns: '24px 1fr',
@@ -95,7 +97,6 @@ export function ExpandableEntryBody({ ruler, children }: ExpandableEntryBodyProp
 
 export interface ExpandableEntryProps {
   readonly expanded: boolean;
-  readonly onToggle: (expand: boolean) => void;
   /**
    * The first child should be an <ExpandableEntryHeader />.
    * The second child should be an <ExpandableEntryBody />.
@@ -106,9 +107,9 @@ export interface ExpandableEntryProps {
 /**
  * Renders an expandable entry.
  */
-export function ExpandableEntry({ expanded, onToggle, children }: ExpandableEntryProps) {
+export function ExpandableEntry({ expanded, children }: ExpandableEntryProps) {
   return (
-    <Box onClick={() => onToggle(!expanded)}>
+    <Box>
       <ExpandedContext.Provider value={expanded}>{children}</ExpandedContext.Provider>
     </Box>
   );

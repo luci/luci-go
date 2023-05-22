@@ -32,8 +32,8 @@ export function TagsEntry({ tags }: TagsEntryProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <ExpandableEntry expanded={expanded} onToggle={setExpanded}>
-      <ExpandableEntryHeader>
+    <ExpandableEntry expanded={expanded}>
+      <ExpandableEntryHeader onToggle={setExpanded}>
         <span css={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
           Tags:
           {!expanded && (
@@ -49,7 +49,8 @@ export function TagsEntry({ tags }: TagsEntryProps) {
         </span>
       </ExpandableEntryHeader>
       <ExpandableEntryBody ruler="invisible">
-        <table css={{ width: 'fit-content', overflow: 'hidden' }}>
+        <table
+          css={{ width: 'fit-content', overflow: 'hidden' }}>
           <tbody>
             {tags.map((tag, i) => (
               <tr key={i}>

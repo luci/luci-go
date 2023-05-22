@@ -21,8 +21,8 @@ import { ExpandableEntry, ExpandableEntryBody, ExpandableEntryHeader } from './e
 describe('ExpandableEntry', () => {
   it('collapsed', () => {
     render(
-      <ExpandableEntry expanded={false} onToggle={() => {}}>
-        <ExpandableEntryHeader>
+      <ExpandableEntry expanded={false}>
+        <ExpandableEntryHeader onToggle={() => { }}>
           <span>Header</span>
         </ExpandableEntryHeader>
         <ExpandableEntryBody>
@@ -38,8 +38,8 @@ describe('ExpandableEntry', () => {
 
   it('expanded', () => {
     render(
-      <ExpandableEntry expanded={true} onToggle={() => {}}>
-        <ExpandableEntryHeader>
+      <ExpandableEntry expanded={true}>
+        <ExpandableEntryHeader onToggle={() => { }}>
           <span>Header</span>
         </ExpandableEntryHeader>
         <ExpandableEntryBody>
@@ -56,8 +56,8 @@ describe('ExpandableEntry', () => {
   it('onToggle should be fired when the header is clicked', () => {
     const onToggleStub = sinon.stub();
     const { rerender } = render(
-      <ExpandableEntry expanded={false} onToggle={onToggleStub}>
-        <ExpandableEntryHeader>
+      <ExpandableEntry expanded={false}>
+        <ExpandableEntryHeader onToggle={onToggleStub}>
           <span>Header</span>
         </ExpandableEntryHeader>
         <ExpandableEntryBody>
@@ -86,8 +86,8 @@ describe('ExpandableEntry', () => {
     expect(onToggleStub.getCall(2).args).to.deep.eq([true]);
 
     rerender(
-      <ExpandableEntry expanded={true} onToggle={onToggleStub}>
-        <ExpandableEntryHeader>
+      <ExpandableEntry expanded={true}>
+        <ExpandableEntryHeader onToggle={onToggleStub}>
           <span>Header</span>
         </ExpandableEntryHeader>
         <ExpandableEntryBody>

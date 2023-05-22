@@ -106,8 +106,8 @@ export function MachinePoolSection({ swarmingHost, dimensions }: MachinePoolSect
       {isSuccess && (
         <>
           <BotStatusTable stats={data.stats} totalBots={data.bots.length} />
-          <ExpandableEntry expanded={botListExpanded} onToggle={setBotListExpanded}>
-            <ExpandableEntryHeader>
+          <ExpandableEntry expanded={botListExpanded}>
+            <ExpandableEntryHeader onToggle={setBotListExpanded}>
               Bots: {data.hasNextPage ? `first ${PAGE_SIZE} bots` : data.bots.length}
             </ExpandableEntryHeader>
             <ExpandableEntryBody ruler="none">
