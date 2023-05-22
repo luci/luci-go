@@ -97,9 +97,25 @@ func validateRequestedDimension(dim *pb.RequestedDimension) error {
 
 // validateRequestedDimensions validates the requested dimensions.
 func validateRequestedDimensions(dims []*pb.RequestedDimension) error {
+	// A dim.key set which contains non-empty dim.value
+	nonEmpty := stringset.New(len(dims))
+	// A dim.key set which contains empty dim.value
+	empty := stringset.New(len(dims))
 	for i, dim := range dims {
 		if err := validateRequestedDimension(dim); err != nil {
 			return errors.Annotate(err, "[%d]", i).Err()
+		}
+
+		if dim.GetValue() == "" {
+			if nonEmpty.Has(dim.Key) {
+				return errors.Reason("contain both empty and non-empty value for the same key - %q", dim.Key).Err()
+			}
+			empty.Add(dim.Key)
+		} else {
+			if empty.Has(dim.Key) {
+				return errors.Reason("contain both empty and non-empty value for the same key - %q", dim.Key).Err()
+			}
+			nonEmpty.Add(dim.Key)
 		}
 	}
 	return nil
@@ -559,13 +575,20 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *p
 	// Requested dimensions override dimensions specified in the builder config by wiping out all
 	// same-key dimensions (regardless of expiration time) in the builder config.
 	//
-	// For example if:
+	// For example:
+	// Case 1:
 	// Request contains: ("key", "value 1", 60), ("key", "value 2", 120)
 	// Config contains: ("key", "value 3", 180), ("key", "value 2", 240)
 	//
 	// Then the result is:
 	// ("key", "value 1", 60), ("key", "value 2", 120)
 	// Even though the expiration times didn't conflict and theoretically could have been merged.
+	//
+	// Case 2:
+	// Request contains: ("key", "")
+	// Config contains: ("key", "value 3", 180), ("key", "value 2", 240)
+	//
+	// Then all dimensions(Key == "key") are excluded.
 
 	// If the config contains any reference to the builder dimension, ignore its auto builder dimension setting.
 	seenBuilder := false
@@ -610,6 +633,12 @@ func setDimensions(req *pb.ScheduleBuildRequest, cfg *pb.BuilderConfig, build *p
 	// key -> slice of dimensions (key, value, expiration) with matching keys.
 	reqDims := make(map[string][]*pb.RequestedDimension, len(cfg.GetDimensions()))
 	for _, d := range req.GetDimensions() {
+		if d.GetValue() == "" {
+			// Exclude same-key dimensions in the builder config if the dimension
+			// value in the request is empty.
+			delete(dims, d.Key)
+			continue
+		}
 		reqDims[d.Key] = append(reqDims[d.Key], d)
 	}
 	for k, d := range reqDims {

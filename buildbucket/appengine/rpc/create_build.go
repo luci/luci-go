@@ -271,8 +271,6 @@ func validateDimension(dim *pb.RequestedDimension) error {
 		return errors.Annotate(err, "expiration").Err()
 	case dim.GetKey() == "":
 		return errors.Reason("key must be specified").Err()
-	case dim.Value == "":
-		return errors.Reason("value must be specified").Err()
 	default:
 		return nil
 	}
@@ -281,8 +279,11 @@ func validateDimension(dim *pb.RequestedDimension) error {
 // validateDimensions validates the task dimensions.
 func validateDimensions(dims []*pb.RequestedDimension) error {
 	for i, dim := range dims {
-		if err := validateDimension(dim); err != nil {
+		switch err := validateDimension(dim); {
+		case err != nil:
 			return errors.Annotate(err, "[%d]", i).Err()
+		case dim.Value == "":
+			return errors.Reason("[%d]: value must be specified", i).Err()
 		}
 	}
 	return nil

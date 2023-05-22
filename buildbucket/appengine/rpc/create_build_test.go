@@ -498,7 +498,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						So(err, ShouldErrLike, `build: infra: swarming: priority must be in [0, 255]`)
 					})
 					Convey("task_dimensions", func() {
-						Convey("key", func() {
+						Convey("empty key", func() {
 							req.Build.Infra.Swarming.TaskDimensions = []*pb.RequestedDimension{
 								{
 									Key: "",
@@ -507,7 +507,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 							_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 							So(err, ShouldErrLike, `build: infra: swarming: task_dimensions: [0]: key must be specified`)
 						})
-						Convey("value", func() {
+						Convey("empty value", func() {
 							req.Build.Infra.Swarming.TaskDimensions = []*pb.RequestedDimension{
 								{
 									Key:   "key",

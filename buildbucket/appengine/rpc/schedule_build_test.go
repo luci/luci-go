@@ -2777,6 +2777,10 @@ func TestScheduleBuild(t *testing.T) {
 						Key:   "key",
 						Value: "req value",
 					},
+					{
+						Key:   "key_to_exclude",
+						Value: "",
+					},
 				},
 			}
 			cfg := &pb.BuilderConfig{
@@ -2786,6 +2790,7 @@ func TestScheduleBuild(t *testing.T) {
 					"cfg only:cfg value",
 					"cfg only:",
 					"1:key:cfg value",
+					"1:key_to_exclude:cfg value",
 				},
 				Name: "auto builder",
 			}
@@ -6364,25 +6369,15 @@ func TestScheduleBuild(t *testing.T) {
 								Key:   "key",
 								Value: "value",
 							},
+							{
+								Key: "key1",
+							},
 						},
 						TemplateBuildId: 1,
 					}
 					err := validateSchedule(ctx, req, nil, nil)
 					So(err, ShouldBeNil)
 				})
-			})
-
-			Convey("value", func() {
-				req := &pb.ScheduleBuildRequest{
-					Dimensions: []*pb.RequestedDimension{
-						{
-							Key: "key",
-						},
-					},
-					TemplateBuildId: 1,
-				}
-				err := validateSchedule(ctx, req, nil, nil)
-				So(err, ShouldErrLike, "value must be specified")
 			})
 
 			Convey("parent", func() {
@@ -6473,6 +6468,23 @@ func TestScheduleBuild(t *testing.T) {
 				}
 				err := validateSchedule(ctx, req, nil, nil)
 				So(err, ShouldBeNil)
+			})
+
+			Convey("empty value & non-value", func() {
+				req := &pb.ScheduleBuildRequest{
+					Dimensions: []*pb.RequestedDimension{
+						{
+							Key:   "req_key",
+							Value: "value",
+						},
+						{
+							Key: "req_key",
+						},
+					},
+					TemplateBuildId: 1,
+				}
+				err := validateSchedule(ctx, req, nil, nil)
+				So(err, ShouldErrLike, `dimensions: contain both empty and non-empty value for the same key - "req_key"`)
 			})
 		})
 
