@@ -38,6 +38,8 @@ const ComponentWithNoAccess = 999999
 // actions performed using an in-memory store.
 type FakeClient struct {
 	FakeStore *FakeIssueStore
+	// Whether or not it should fail to update issue comments.
+	ShouldFailIssueCommenUpdates bool
 }
 
 func NewFakeClient() *FakeClient {
@@ -155,6 +157,24 @@ func (fic *FakeClient) CreateIssueComment(ctx context.Context, in *issuetracker.
 	in.Comment.IssueId = in.IssueId
 	issueData.Comments = append(issueData.Comments, in.Comment)
 	return in.Comment, nil
+}
+
+func (fic *FakeClient) UpdateIssueComment(ctx context.Context, in *issuetracker.UpdateIssueCommentRequest) (*issuetracker.IssueComment, error) {
+	issueData, err := fic.FakeStore.GetIssue(in.IssueId)
+	if fic.ShouldFailIssueCommenUpdates {
+		return nil, status.Errorf(codes.PermissionDenied, "Modification not allowed")
+	}
+	if err != nil {
+		return nil, errors.Annotate(err, "fake update issue comment").Err()
+	}
+	if in.CommentNumber < 1 || int(in.CommentNumber) > len(issueData.Comments) {
+		return nil, errors.New("comment number is out of bounds")
+	}
+	comment := issueData.Comments[in.CommentNumber-1]
+	comment.Comment = in.Comment.Comment
+	issueData.Issue.Description = comment
+	issueData.Issue.IssueComment = comment
+	return comment, nil
 }
 
 func (fic *FakeClient) ListIssueComments(ctx context.Context, in *issuetracker.ListIssueCommentsRequest) IssueCommentIterator {

@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -56,6 +58,8 @@ type Client interface {
 	ListIssueUpdates(ctx context.Context, in *issuetracker.ListIssueUpdatesRequest) IssueUpdateIterator
 	// CreateIssueComment creates an issue comment using the data provided.
 	CreateIssueComment(ctx context.Context, in *issuetracker.CreateIssueCommentRequest) (*issuetracker.IssueComment, error)
+	// UpdateIssueComment updates an issue comment and returns the updated comment.
+	UpdateIssueComment(ctx context.Context, in *issuetracker.UpdateIssueCommentRequest) (*issuetracker.IssueComment, error)
 	// ListIssueComments lists issue comments, it returns a delegate to an IssueCommentIterator.
 	// The iterator can be used to fetch IssueComment one by one.
 	ListIssueComments(ctx context.Context, in *issuetracker.ListIssueCommentsRequest) IssueCommentIterator
@@ -139,24 +143,35 @@ func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequ
 		createRequest.Description,
 		componentID,
 	)
+	var issue *issuetracker.Issue
 	var issueId int64
+	var err error
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would create Buganizer issue: %s", textPBMultiline.Format(createIssueRequest))
 		issueId = 123456
 	} else {
-		issue, err := bm.client.CreateIssue(ctx, createIssueRequest)
+		issue, err = bm.client.CreateIssue(ctx, createIssueRequest)
 		if err != nil {
 			return "", errors.Annotate(err, "create Buganizer issue").Err()
 		}
 		issueId = issue.IssueId
 	}
 
-	issueCommentReq := bm.requestGenerator.PrepareLinkComment(issueId)
 	if bm.Simulate {
-		logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(issueCommentReq))
+		logging.Debugf(ctx, "Would update Buganizer issue and add issue link to description")
 	} else {
-		if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
-			return "", errors.Annotate(err, "create issue link comment").Err()
+		issueCommentReq := bm.requestGenerator.PrepareLinkIssueCommentUpdate(issue)
+		if _, err := bm.client.UpdateIssueComment(ctx, issueCommentReq); err != nil {
+			if statusError, ok := status.FromError(err); ok && statusError.Code() == codes.PermissionDenied {
+				// If we fail to update the issue comment, then we add a comment with the issue link.
+				logging.Warningf(ctx, "Failed to update issue comment: %v", statusError)
+				issueCommentReq := bm.requestGenerator.PrepareLinkComment(issueId)
+				if _, err := bm.client.CreateIssueComment(ctx, issueCommentReq); err != nil {
+					return "", errors.Annotate(err, "create issue link comment").Err()
+				}
+			} else {
+				return "", errors.Annotate(err, "add issue link to issue comment").Err()
+			}
 		}
 	}
 

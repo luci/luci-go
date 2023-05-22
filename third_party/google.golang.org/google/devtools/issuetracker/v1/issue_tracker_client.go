@@ -33,13 +33,13 @@ import (
 	"google.golang.org/api/option/internaloption"
 	gtransport "google.golang.org/api/transport/grpc"
 	httptransport "google.golang.org/api/transport/http"
+	issuetrackerpb "go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	issuetrackerpb "go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 )
 
 var newClientHook clientHook
@@ -57,6 +57,7 @@ type CallOptions struct {
 	ListIssueUpdates        []gax.CallOption
 	CreateIssueComment      []gax.CallOption
 	ListIssueComments       []gax.CallOption
+	UpdateIssueComment      []gax.CallOption
 	ListAttachments         []gax.CallOption
 	CreateHotlistEntry      []gax.CallOption
 	DeleteHotlistEntry      []gax.CallOption
@@ -138,6 +139,7 @@ func defaultCallOptions() *CallOptions {
 				})
 			}),
 		},
+		UpdateIssueComment: []gax.CallOption{},
 		ListAttachments: []gax.CallOption{
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnCodes([]codes.Code{
@@ -213,6 +215,7 @@ func defaultRESTCallOptions() *CallOptions {
 					http.StatusServiceUnavailable)
 			}),
 		},
+		UpdateIssueComment: []gax.CallOption{},
 		ListAttachments: []gax.CallOption{
 			gax.WithRetry(func() gax.Retryer {
 				return gax.OnHTTPCodes(gax.Backoff{
@@ -245,6 +248,7 @@ type internalClient interface {
 	ListIssueUpdates(context.Context, *issuetrackerpb.ListIssueUpdatesRequest, ...gax.CallOption) *IssueUpdateIterator
 	CreateIssueComment(context.Context, *issuetrackerpb.CreateIssueCommentRequest, ...gax.CallOption) (*issuetrackerpb.IssueComment, error)
 	ListIssueComments(context.Context, *issuetrackerpb.ListIssueCommentsRequest, ...gax.CallOption) *IssueCommentIterator
+	UpdateIssueComment(context.Context, *issuetrackerpb.UpdateIssueCommentRequest, ...gax.CallOption) (*issuetrackerpb.IssueComment, error)
 	ListAttachments(context.Context, *issuetrackerpb.ListAttachmentsRequest, ...gax.CallOption) (*issuetrackerpb.ListAttachmentsResponse, error)
 	CreateHotlistEntry(context.Context, *issuetrackerpb.CreateHotlistEntryRequest, ...gax.CallOption) (*issuetrackerpb.HotlistEntry, error)
 	DeleteHotlistEntry(context.Context, *issuetrackerpb.DeleteHotlistEntryRequest, ...gax.CallOption) error
@@ -351,6 +355,13 @@ func (c *Client) CreateIssueComment(ctx context.Context, req *issuetrackerpb.Cre
 // ListIssueComments fetches a list of IssueComment objects.
 func (c *Client) ListIssueComments(ctx context.Context, req *issuetrackerpb.ListIssueCommentsRequest, opts ...gax.CallOption) *IssueCommentIterator {
 	return c.internalClient.ListIssueComments(ctx, req, opts...)
+}
+
+// UpdateIssueComment nB: The comment manipulation methods does not use the attachment field in
+// IssueComment.
+// Updates an issue comment
+func (c *Client) UpdateIssueComment(ctx context.Context, req *issuetrackerpb.UpdateIssueCommentRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueComment, error) {
+	return c.internalClient.UpdateIssueComment(ctx, req, opts...)
 }
 
 // ListAttachments list attachments that belong to an issue. Only returns attachment metadata.
@@ -820,6 +831,23 @@ func (c *gRPCClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 	it.pageInfo.Token = req.GetPageToken()
 
 	return it
+}
+
+func (c *gRPCClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb.UpdateIssueCommentRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueComment, error) {
+	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "issue_id", req.GetIssueId(), "comment_number", req.GetCommentNumber()))
+
+	ctx = insertMetadata(ctx, c.xGoogMetadata, md)
+	opts = append((*c.CallOptions).UpdateIssueComment[0:len((*c.CallOptions).UpdateIssueComment):len((*c.CallOptions).UpdateIssueComment)], opts...)
+	var resp *issuetrackerpb.IssueComment
+	err := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
+		var err error
+		resp, err = c.client.UpdateIssueComment(ctx, req, settings.GRPC...)
+		return err
+	}, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func (c *gRPCClient) ListAttachments(ctx context.Context, req *issuetrackerpb.ListAttachmentsRequest, opts ...gax.CallOption) (*issuetrackerpb.ListAttachmentsResponse, error) {
@@ -1374,6 +1402,9 @@ func (c *restClient) ListIssueRelationships(ctx context.Context, req *issuetrack
 	baseUrl.Path += fmt.Sprintf("/v1/issues/%v/relationships", req.GetIssueId())
 
 	params := url.Values{}
+	if req.GetIssueDescriptionView() != 0 {
+		params.Add("issueDescriptionView", fmt.Sprintf("%v", req.GetIssueDescriptionView()))
+	}
 	if req.GetQuery() != "" {
 		params.Add("query", fmt.Sprintf("%v", req.GetQuery()))
 	}
@@ -1676,6 +1707,68 @@ func (c *restClient) ListIssueComments(ctx context.Context, req *issuetrackerpb.
 	it.pageInfo.Token = req.GetPageToken()
 
 	return it
+}
+
+// UpdateIssueComment nB: The comment manipulation methods does not use the attachment field in
+// IssueComment.
+// Updates an issue comment
+func (c *restClient) UpdateIssueComment(ctx context.Context, req *issuetrackerpb.UpdateIssueCommentRequest, opts ...gax.CallOption) (*issuetrackerpb.IssueComment, error) {
+	m := protojson.MarshalOptions{AllowPartial: true, UseEnumNumbers: true}
+	body := req.GetComment()
+	jsonReq, err := m.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	baseUrl, err := url.Parse(c.endpoint)
+	if err != nil {
+		return nil, err
+	}
+	baseUrl.Path += fmt.Sprintf("/v1/issues/%v/comments/%v", req.GetIssueId(), req.GetCommentNumber())
+
+	// Build HTTP headers from client and context metadata.
+	md := metadata.Pairs("x-goog-request-params", fmt.Sprintf("%s=%v&%s=%v", "issue_id", req.GetIssueId(), "comment_number", req.GetCommentNumber()))
+
+	headers := buildHeaders(ctx, c.xGoogMetadata, md, metadata.Pairs("Content-Type", "application/json"))
+	opts = append((*c.CallOptions).UpdateIssueComment[0:len((*c.CallOptions).UpdateIssueComment):len((*c.CallOptions).UpdateIssueComment)], opts...)
+	unm := protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}
+	resp := &issuetrackerpb.IssueComment{}
+	e := gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
+		if settings.Path != "" {
+			baseUrl.Path = settings.Path
+		}
+		httpReq, err := http.NewRequest("PUT", baseUrl.String(), bytes.NewReader(jsonReq))
+		if err != nil {
+			return err
+		}
+		httpReq = httpReq.WithContext(ctx)
+		httpReq.Header = headers
+
+		httpRsp, err := c.httpClient.Do(httpReq)
+		if err != nil {
+			return err
+		}
+		defer httpRsp.Body.Close()
+
+		if err = googleapi.CheckResponse(httpRsp); err != nil {
+			return err
+		}
+
+		buf, err := ioutil.ReadAll(httpRsp.Body)
+		if err != nil {
+			return err
+		}
+
+		if err := unm.Unmarshal(buf, resp); err != nil {
+			return maybeUnknownEnum(err)
+		}
+
+		return nil
+	}, opts...)
+	if e != nil {
+		return nil, e
+	}
+	return resp, nil
 }
 
 // ListAttachments list attachments that belong to an issue. Only returns attachment metadata.

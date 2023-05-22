@@ -83,6 +83,11 @@
               "methods": [
                 "ModifyIssue"
               ]
+            },
+            "UpdateIssueComment": {
+              "methods": [
+                "UpdateIssueComment"
+              ]
             }
           }
         },
@@ -162,6 +167,11 @@
             "ModifyIssue": {
               "methods": [
                 "ModifyIssue"
+              ]
+            },
+            "UpdateIssueComment": {
+              "methods": [
+                "UpdateIssueComment"
               ]
             }
           }

@@ -91,6 +91,10 @@ func (fis *FakeIssueStore) StoreIssue(ctx context.Context, issue *issuetracker.I
 			id := fis.lastID
 			issue.IssueId = id
 			issue.IssueComment.IssueId = id
+			issue.Description = &issuetracker.IssueComment{
+				CommentNumber: 1,
+				Comment: issue.IssueComment.Comment,
+			}
 			issue.CreatedTime = timestamppb.New(clock.Now(ctx))
 		} else {
 			if issue.IssueId > fis.lastID {
@@ -98,9 +102,14 @@ func (fis *FakeIssueStore) StoreIssue(ctx context.Context, issue *issuetracker.I
 			}
 		}
 		issue.ModifiedTime = timestamppb.New(clock.Now(ctx))
+		comments := make([]*issuetracker.IssueComment, 0)
+		comments = append(comments, &issuetracker.IssueComment{
+			CommentNumber: 1,
+			Comment:       issue.IssueComment.Comment,
+		})
 		fis.Issues[issue.IssueId] = &IssueData{
 			Issue:        issue,
-			Comments:     make([]*issuetracker.IssueComment, 0),
+			Comments:     comments,
 			IssueUpdates: make([]*issuetracker.IssueUpdate, 0),
 		}
 		return issue

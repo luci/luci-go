@@ -133,6 +133,12 @@ func (w *RPCClient) CreateIssueComment(ctx context.Context, in *issuetracker.Cre
 	return w.Client.CreateIssueComment(ctx, in)
 }
 
+// UpdateIssueComment delegates a call to Client.UpdateIssueComment and returns
+// the updated comment or the error that occured.
+func (w *RPCClient) UpdateIssueComment(ctx context.Context, in *issuetracker.UpdateIssueCommentRequest) (*issuetracker.IssueComment, error) {
+	return w.Client.UpdateIssueComment(ctx, in)
+}
+
 // ListIssueComments delegates a call to Client.ListIssueComments and returns
 // the issue comment iterator delegate.
 func (w *RPCClient) ListIssueComments(ctx context.Context, in *issuetracker.ListIssueCommentsRequest) IssueCommentIterator {

@@ -93,27 +93,52 @@ func TestBugManager(t *testing.T) {
 				issueData := fakeStore.Issues[1]
 
 				expectedIssue.IssueComment = &issuetracker.IssueComment{
-					IssueId: 1,
+					CommentNumber: 1,
 					Comment: "A cluster of failures has been found with reason: Expected equality " +
 						"of these values:\n\t\t\t\t\t\"Expected_Value\"\n\t\t\t\t\tmy_expr.evaluate(123)\n\t\t\t\t\t\t" +
 						"Which is: \"Unexpected_Value\"" +
-						commonIssueCommentPart,
+						commonIssueCommentPart +
+						"\nSee failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1",
 				}
+
+				expectedIssue.Description = expectedIssue.IssueComment
 
 				So(issueData.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issueData.Comments), ShouldEqual, 1)
 				// Link to cluster page should appear in output.
 				So(issueData.Comments[0].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+
+			})
+			Convey("When failing to update issue comment, should append link comment", func() {
+				reason := `Expected equality of these values:
+				"Expected_Value"
+				my_expr.evaluate(123)
+					Which is: "Unexpected_Value"`
+				createRequest.Description.Title = reason
+				createRequest.Description.Description = "A cluster of failures has been found with reason: " + reason
+				fakeClient.ShouldFailIssueCommenUpdates = true
+				bugID, err := bm.Create(ctx, createRequest)
+
+				So(err, ShouldBeNil)
+				So(bugID, ShouldEqual, "1")
+				So(len(fakeStore.Issues), ShouldEqual, 1)
+				issueData := fakeStore.Issues[1]
+				So(len(issueData.Comments), ShouldEqual, 2)
+				So(issueData.Issue.IssueComment.Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				So(issueData.Comments[0].Comment, ShouldNotContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
+				So(issueData.Comments[1].Comment, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/b/1")
 			})
 
 			Convey("With test name failure cluster", func() {
 				createRequest.Description.Title = "ninja://:blink_web_tests/media/my-suite/my-test.html"
 				createRequest.Description.Description = "A test is failing " + createRequest.Description.Title
 				expectedIssue.IssueComment = &issuetracker.IssueComment{
-					IssueId: 1,
+					CommentNumber: 1,
 					Comment: "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html" +
-						commonIssueCommentPart,
+						commonIssueCommentPart +
+						"\nSee failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1",
 				}
+				expectedIssue.Description = expectedIssue.IssueComment
 				expectedIssue.IssueState.Title = "Tests are failing: ninja://:blink_web_tests/media/my-suite/my-test.html"
 
 				bugID, err := bm.Create(ctx, createRequest)

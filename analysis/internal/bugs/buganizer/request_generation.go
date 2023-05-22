@@ -165,6 +165,19 @@ func (rg *RequestGenerator) PrepareLinkComment(issueId int64) *issuetracker.Crea
 	}
 }
 
+// PrepareLinkIssueCommentUpdate prepares a request that adds links to LUCI Analysis to
+// a Buganizer bug by updating the issue description.
+func (rg *RequestGenerator) PrepareLinkIssueCommentUpdate(issue *issuetracker.Issue) *issuetracker.UpdateIssueCommentRequest {
+	linkComment := issue.Description.Comment + "\n" + rg.linkToRuleComment(issue.IssueId)
+	return &issuetracker.UpdateIssueCommentRequest{
+		IssueId:       issue.IssueId,
+		CommentNumber: 1,
+		Comment: &issuetracker.IssueComment{
+			Comment: linkComment,
+		},
+	}
+}
+
 // noPermissionComment returns a comment that explains why a bug was filed in
 // the fallback component incorrectly.
 //
