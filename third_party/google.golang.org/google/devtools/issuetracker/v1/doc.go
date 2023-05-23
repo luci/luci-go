@@ -78,7 +78,7 @@
 // Individual methods on the client use the ctx given to them.
 //
 // To close the open connection, use the Close() method.
-package issuetracker // import "google.golang.org/google/devtools/issuetracker/v1"
+package issuetracker
 
 import (
 	"context"
