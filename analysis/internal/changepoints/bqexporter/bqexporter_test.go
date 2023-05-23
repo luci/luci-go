@@ -25,7 +25,6 @@ import (
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/clock/testclock"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -33,7 +32,6 @@ import (
 func TestBQExporter(t *testing.T) {
 	Convey(`Export test variant branches`, t, func() {
 		ctx := context.Background()
-		ctx, _ = testclock.UseTime(ctx, time.Unix(10000*3600, 0))
 		client := NewFakeClient()
 		exporter := NewExporter(client)
 
@@ -216,7 +214,10 @@ func TestBQExporter(t *testing.T) {
 			},
 		}
 
-		ris := []*RowInput{row1, row2, row3}
+		ris := &RowInputs{
+			Rows:            []*RowInput{row1, row2, row3},
+			CommitTimestamp: time.Unix(10000*3600, 0),
+		}
 		err := exporter.ExportTestVariantBranches(ctx, ris)
 		So(err, ShouldBeNil)
 		rows := client.Insertions

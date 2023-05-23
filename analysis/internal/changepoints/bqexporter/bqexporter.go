@@ -19,13 +19,13 @@ package bqexporter
 import (
 	"context"
 	"encoding/hex"
+	"time"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -64,11 +64,18 @@ type RowInput struct {
 	InputBufferSegments []*inputbuffer.Segment
 }
 
+// RowInputs is the contains the rows to be exported to BigQuery, together with
+// the Spanner commit timestamp.
+type RowInputs struct {
+	Rows            []*RowInput
+	CommitTimestamp time.Time
+}
+
 // ExportTestVariantBranches exports test variant branches to BigQuery.
-func (e *Exporter) ExportTestVariantBranches(ctx context.Context, rowInputs []*RowInput) error {
-	rows := make([]*bqpb.TestVariantBranchRow, len(rowInputs))
-	for i, ri := range rowInputs {
-		row, err := ToBigQueryRow(ctx, ri)
+func (e *Exporter) ExportTestVariantBranches(ctx context.Context, rowInputs *RowInputs) error {
+	rows := make([]*bqpb.TestVariantBranchRow, len(rowInputs.Rows))
+	for i, ri := range rowInputs.Rows {
+		row, err := ToBigQueryRow(ctx, ri, rowInputs.CommitTimestamp)
 		if err != nil {
 			return errors.Annotate(err, "to bigquery row").Err()
 		}
@@ -81,7 +88,10 @@ func (e *Exporter) ExportTestVariantBranches(ctx context.Context, rowInputs []*R
 	return nil
 }
 
-func ToBigQueryRow(ctx context.Context, ri *RowInput) (*bqpb.TestVariantBranchRow, error) {
+// ToBigQueryRow converts a RowInput to a BigQuery TestVariantBranchRow.
+// commitTimestamp is the latest spanner commit timestamp of the
+// TestVariantBranch of the RowInput.
+func ToBigQueryRow(ctx context.Context, ri *RowInput, commitTimestamp time.Time) (*bqpb.TestVariantBranchRow, error) {
 	tvb := ri.TestVariantBranch
 	row := &bqpb.TestVariantBranchRow{
 		Project:     tvb.Project,
@@ -99,7 +109,7 @@ func ToBigQueryRow(ctx context.Context, ri *RowInput) (*bqpb.TestVariantBranchRo
 	row.Variant = variant
 
 	// Has recent unexpected result.
-	if hasRecentUnexpectedResult(ctx, ri) {
+	if hasRecentUnexpectedResult(ctx, ri, commitTimestamp) {
 		row.HasRecentUnexpectedResults = 1
 	}
 
@@ -110,7 +120,7 @@ func ToBigQueryRow(ctx context.Context, ri *RowInput) (*bqpb.TestVariantBranchRo
 	// the test variant branch.
 	// For now, set it to be the current time, which may be a bit different
 	// from the Spanner commit time.
-	row.Version = timestamppb.New(clock.Now(ctx))
+	row.Version = timestamppb.New(commitTimestamp)
 	return row, nil
 }
 
@@ -214,24 +224,24 @@ func countsToBQCounts(counts *pb.Counts) *bqpb.Segment_Counts {
 // hasRecentUnexpectedResult returns true if ri has any unexpected result
 // in the last 90 days.
 // It is used for partitioning.
-func hasRecentUnexpectedResult(ctx context.Context, ri *RowInput) bool {
+func hasRecentUnexpectedResult(ctx context.Context, ri *RowInput, commitTimestamp time.Time) bool {
 	// Check input segments.
 	for _, inputSegment := range ri.InputBufferSegments {
-		if inputSegmentHasRecentUnexpectedResult(ctx, inputSegment) {
+		if inputSegmentHasRecentUnexpectedResult(ctx, inputSegment, commitTimestamp) {
 			return true
 		}
 	}
 
 	tvb := ri.TestVariantBranch
 	// Check finalizing segment.
-	if segmentHasRecentUnexpectedResult(ctx, tvb.FinalizingSegment) {
+	if segmentHasRecentUnexpectedResult(ctx, tvb.FinalizingSegment, commitTimestamp) {
 		return true
 	}
 
 	// Check finalized segments.
 	if tvb.FinalizedSegments != nil {
 		for _, segment := range tvb.FinalizedSegments.Segments {
-			if segmentHasRecentUnexpectedResult(ctx, segment) {
+			if segmentHasRecentUnexpectedResult(ctx, segment, commitTimestamp) {
 				return true
 			}
 		}
@@ -240,26 +250,24 @@ func hasRecentUnexpectedResult(ctx context.Context, ri *RowInput) bool {
 	return false
 }
 
-func segmentHasRecentUnexpectedResult(ctx context.Context, segment *pb.Segment) bool {
+func segmentHasRecentUnexpectedResult(ctx context.Context, segment *pb.Segment, commitTimestamp time.Time) bool {
 	if segment == nil {
 		return false
 	}
 	if segment.MostRecentUnexpectedResultHour == nil {
 		return false
 	}
-	now := clock.Now(ctx)
 	unexpectedTime := segment.MostRecentUnexpectedResultHour.AsTime()
-	return now.Sub(unexpectedTime).Hours() <= recentUnexpectedResultThresholdHours
+	return commitTimestamp.Sub(unexpectedTime).Hours() <= recentUnexpectedResultThresholdHours
 }
 
-func inputSegmentHasRecentUnexpectedResult(ctx context.Context, inputSegment *inputbuffer.Segment) bool {
+func inputSegmentHasRecentUnexpectedResult(ctx context.Context, inputSegment *inputbuffer.Segment, commitTimestamp time.Time) bool {
 	if inputSegment == nil {
 		return false
 	}
 	if inputSegment.MostRecentUnexpectedResultHourAllVerdicts == nil {
 		return false
 	}
-	now := clock.Now(ctx)
 	unexpectedTime := inputSegment.MostRecentUnexpectedResultHourAllVerdicts.AsTime()
-	return now.Sub(unexpectedTime).Hours() <= recentUnexpectedResultThresholdHours
+	return commitTimestamp.Sub(unexpectedTime).Hours() <= recentUnexpectedResultThresholdHours
 }
