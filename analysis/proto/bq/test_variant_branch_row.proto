@@ -83,7 +83,7 @@ message Segment {
   // history for the segment. (All recorded history for a test variant branch
   // is deleted after 90 days of no results, so this means there were
   // no results for at least 90 days before the segment.)
-  bool has_starting_changepoint = 1;
+  bool has_start_changepoint = 1;
 
   // The nominal commit position at which the segment starts (inclusive).
   // Guaranteed to be strictly greater than the end_position of the
@@ -96,13 +96,13 @@ message Segment {
 
   // The lower bound of the starting changepoint position in a 99% two-tailed
   // confidence interval. Inclusive.
-  // Only set if has_starting_changepoint is set.
+  // Only set if has_start_changepoint is set.
   int64 start_position_lower_bound_99th = 3;
 
   // The upper bound of the starting changepoint position in a 99% two-tailed
   // confidence interval. Inclusive.
-  // Only set if has_starting_changepoint is set.
-  // When has_starting_changepoint is set, the following invariant holds:
+  // Only set if has_start_changepoint is set.
+  // When has_start_changepoint is set, the following invariant holds:
   // previous_segment.start_position <= start_position_lower_bound_99th <= start_position <= start_position_upper_bound_99th
   // where previous_segment refers to the chronologically previous segment.
   int64 start_position_upper_bound_99th = 4;

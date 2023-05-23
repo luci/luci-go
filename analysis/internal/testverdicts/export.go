@@ -17,7 +17,6 @@ package testverdicts
 
 import (
 	"context"
-	"encoding/json"
 
 	"go.chromium.org/luci/analysis/internal/analysis"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
@@ -32,9 +31,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
-
-// emptyJSON corresponds to a serialized, empty JSON object.
-const emptyJSON = "{}"
 
 // InsertClient defines an interface for inserting rows into BigQuery.
 type InsertClient interface {
@@ -240,25 +236,7 @@ func result(result *rdbpb.TestResult) (*bqpb.TestVerdictRow_TestResult, error) {
 // JSON object.
 // e.g. `{"builder":"linux-rel","os":"Ubuntu-18.04"}`
 func variantJSON(variant *rdbpb.Variant) (string, error) {
-	if variant == nil {
-		// There is no string value we can send to BigQuery that
-		// BigQuery will interpret as a NULL value for a JSON column:
-		// - "" (empty string) is rejected as invalid JSON.
-		// - "null" is interpreted as the JSON value null, not the
-		//   absence of a value.
-		// Consequently, the next best thing is to return an empty
-		// JSON object.
-		return emptyJSON, nil
-	}
-	m := make(map[string]string)
-	for key, value := range variant.Def {
-		m[key] = value
-	}
-	b, err := json.Marshal(m)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
+	return pbutil.VariantToJSON(pbutil.VariantFromResultDB(variant))
 }
 
 // MarshalStructPB serialises a structpb.Struct as a JSONPB.
@@ -271,7 +249,7 @@ func MarshalStructPB(s *structpb.Struct) (string, error) {
 		//   absence of a value.
 		// Consequently, the next best thing is to return an empty
 		// JSON object.
-		return emptyJSON, nil
+		return pbutil.EmptyJSON, nil
 	}
 	// Structs are persisted as JSONPB strings.
 	// See also https://bit.ly/chromium-bq-struct

@@ -145,7 +145,7 @@ func (tvb *TestVariantBranch) verifyOutputBuffer() {
 	}
 }
 
-// combineSegment combine the finalizing segment from the output buffer with
+// combineSegment combines the finalizing segment from the output buffer with
 // a segment evicted from the input buffer.
 func combineSegment(finalizingSegment, evictedSegment *pb.Segment) *pb.Segment {
 	result := &pb.Segment{
@@ -157,7 +157,7 @@ func combineSegment(finalizingSegment, evictedSegment *pb.Segment) *pb.Segment {
 		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
 		EndPosition:                  evictedSegment.EndPosition,
 		EndHour:                      evictedSegment.EndHour,
-		FinalizedCounts:              addCounts(finalizingSegment.FinalizedCounts, evictedSegment.FinalizedCounts),
+		FinalizedCounts:              AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.FinalizedCounts),
 	}
 	result.MostRecentUnexpectedResultHour = finalizingSegment.MostRecentUnexpectedResultHour
 	if result.MostRecentUnexpectedResultHour.GetSeconds() < evictedSegment.MostRecentUnexpectedResultHour.GetSeconds() {
@@ -166,8 +166,8 @@ func combineSegment(finalizingSegment, evictedSegment *pb.Segment) *pb.Segment {
 	return result
 }
 
-// addCounts returns the sum of 2 statistics counts.
-func addCounts(count1 *pb.Counts, count2 *pb.Counts) *pb.Counts {
+// AddCounts returns the sum of 2 statistics counts.
+func AddCounts(count1 *pb.Counts, count2 *pb.Counts) *pb.Counts {
 	return &pb.Counts{
 		TotalResults:             count1.TotalResults + count2.TotalResults,
 		UnexpectedResults:        count1.UnexpectedResults + count2.UnexpectedResults,

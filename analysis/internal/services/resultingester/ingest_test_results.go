@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
 	"go.chromium.org/luci/analysis/internal/changepoints"
+	tvbexporter "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -123,6 +124,8 @@ type resultIngester struct {
 	clustering *ingestion.Ingester
 	// verdictExporter is used to export test verdictExporter.
 	verdictExporter *testverdicts.Exporter
+	// testVariantBranchExporter is use to export change point analysis results.
+	testVariantBranchExporter *tvbexporter.Exporter
 }
 
 var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
@@ -169,10 +172,22 @@ func RegisterTaskHandler(srv *server.Server) error {
 		}
 	})
 
+	tvbBQClient, err := tvbexporter.NewClient(ctx, srv.Options.CloudProject)
+	if err != nil {
+		return err
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := tvbBQClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up test variant branch BQExporter client: %s", err)
+		}
+	})
+
 	analysis := analysis.NewClusteringHandler(cf)
 	ri := &resultIngester{
-		clustering:      ingestion.New(chunkStore, analysis),
-		verdictExporter: testverdicts.NewExporter(verdictClient),
+		clustering:                ingestion.New(chunkStore, analysis),
+		verdictExporter:           testverdicts.NewExporter(verdictClient),
+		testVariantBranchExporter: tvbexporter.NewExporter(tvbBQClient),
 	}
 	handler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.IngestTestResults)
@@ -356,7 +371,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	// Note that this is different from the ingestForTestVariantAnalysis above
 	// which should eventually be removed.
 	// See go/luci-test-variant-analysis-design for details.
-	err = ingestForChangePointAnalysis(ctx, rsp, payload)
+	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp, payload)
 	if err != nil {
 		// Only log the error for now, we will return error when everything is
 		// working.
@@ -516,7 +531,7 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	return nil
 }
 
-func ingestForChangePointAnalysis(ctx context.Context, rsp *rdbpb.QueryTestVariantsResponse, payload *taskspb.IngestTestResults) (err error) {
+func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, rsp *rdbpb.QueryTestVariantsResponse, payload *taskspb.IngestTestResults) (err error) {
 	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForChangePointAnalysis")
 	defer func() { s.End(err) }()
 
@@ -528,7 +543,7 @@ func ingestForChangePointAnalysis(ctx context.Context, rsp *rdbpb.QueryTestVaria
 	if !tvaEnabled {
 		return nil
 	}
-	err = changepoints.Analyze(ctx, rsp.TestVariants, payload, rsp.Sources)
+	err = changepoints.Analyze(ctx, rsp.TestVariants, payload, rsp.Sources, exporter)
 	if err != nil {
 		return errors.Annotate(err, "analyze test variants").Err()
 	}

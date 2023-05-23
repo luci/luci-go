@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
@@ -47,13 +48,14 @@ type Invocation struct {
 }
 
 func TestAnalyzeChangePoint(t *testing.T) {
+	exporter, _ := fakeExporter()
 	Convey(`Can batch result`, t, func() {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
 		sourcesMap := tu.SampleSourcesMap(10)
 		// 900 test variants should result in 5 batches (1000 each, last one has 500).
 		tvs := testVariants(4500)
-		err := Analyze(ctx, tvs, payload, sourcesMap)
+		err := Analyze(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
 
 		// Check that there are 5 checkpoints created.
@@ -65,12 +67,12 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		payload := tu.SamplePayload()
 		sourcesMap := tu.SampleSourcesMap(10)
 		tvs := testVariants(100)
-		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
+		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 
 		// Analyze the batch again should not throw an error.
-		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
+		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 	})
@@ -88,7 +90,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 			},
 		}
 		tvs := testVariants(100)
-		err := Analyze(ctx, tvs, payload, sourcesMap)
+		err := Analyze(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 0)
 	})
@@ -226,6 +228,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 }
 
 func TestAnalyzeSingleBatch(t *testing.T) {
+	exporter, client := fakeExporter()
 	Convey(`Analyze batch with empty buffer`, t, func() {
 		ctx := newContext(t)
 		payload := tu.SamplePayload()
@@ -271,7 +274,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 		}
 
-		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
+		err := analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 
@@ -378,10 +381,13 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
+
+		So(len(client.Insertions), ShouldEqual, 2)
 	})
 
 	Convey(`Analyze batch run analysis got change point`, t, func() {
 		ctx := newContext(t)
+		exporter, client := fakeExporter()
 		// Store some existing data in spanner first.
 		payload := tu.SamplePayload()
 		sourcesMap := tu.SampleSourcesMap(10)
@@ -441,7 +447,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 		}
 
-		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap)
+		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 1)
 
@@ -518,6 +524,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			},
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
+		So(len(client.Insertions), ShouldEqual, 1)
 	})
 }
 
@@ -643,4 +650,10 @@ func newContext(t *testing.T) context.Context {
 	ctx := memory.Use(testutil.IntegrationTestContext(t))
 	So(config.SetTestConfig(ctx, tu.TestConfig()), ShouldBeNil)
 	return ctx
+}
+
+func fakeExporter() (*bqexporter.Exporter, *bqexporter.FakeClient) {
+	client := bqexporter.NewFakeClient()
+	exporter := bqexporter.NewExporter(client)
+	return exporter, client
 }

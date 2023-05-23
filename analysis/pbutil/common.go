@@ -16,6 +16,7 @@
 package pbutil
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"sort"
@@ -28,6 +29,8 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
+// EmptyJSON corresponds to a serialized, empty JSON object.
+const EmptyJSON = "{}"
 const maxStringPairKeyLength = 64
 const maxStringPairValueLength = 256
 const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
@@ -182,6 +185,32 @@ func VariantToStringPairs(vr *pb.Variant) []*pb.StringPair {
 		sp[i] = StringPair(k, defMap[k])
 	}
 	return sp
+}
+
+// VariantToJSON returns the JSON equivalent for a variant.
+// Each key in the variant is mapped to a top-level key in the
+// JSON object.
+// e.g. `{"builder":"linux-rel","os":"Ubuntu-18.04"}`
+func VariantToJSON(variant *pb.Variant) (string, error) {
+	if variant == nil {
+		// There is no string value we can send to BigQuery that
+		// BigQuery will interpret as a NULL value for a JSON column:
+		// - "" (empty string) is rejected as invalid JSON.
+		// - "null" is interpreted as the JSON value null, not the
+		//   absence of a value.
+		// Consequently, the next best thing is to return an empty
+		// JSON object.
+		return EmptyJSON, nil
+	}
+	m := make(map[string]string)
+	for key, value := range variant.Def {
+		m[key] = value
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 // PresubmitRunModeFromString returns a pb.PresubmitRunMode corresponding

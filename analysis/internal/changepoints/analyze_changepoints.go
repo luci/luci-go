@@ -47,7 +47,7 @@ type CheckPoint struct {
 
 // Analyze performs change point analyses based on incoming test verdicts.
 // sourcesMap contains the information about the source code being tested.
-func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources) error {
+func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources, exporter *bqexporter.Exporter) error {
 	logging.Debugf(ctx, "Analyzing %d test variants for build %d", len(tvs), payload.Build.Id)
 
 	// Check that sourcesMap is not empty and has commit position data.
@@ -75,7 +75,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 			endIndex = len(tvs)
 		}
 		batchTVs := tvs[startIndex:endIndex]
-		err := analyzeSingleBatch(ctx, batchTVs, payload, sourcesMap)
+		err := analyzeSingleBatch(ctx, batchTVs, payload, sourcesMap, exporter)
 		if err != nil {
 			return errors.Annotate(err, "analyzeSingleBatch").Err()
 		}
@@ -85,7 +85,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 	return nil
 }
 
-func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources) error {
+func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, sourcesMap map[string]*rdbpb.Sources, exporter *bqexporter.Exporter) error {
 	// Nothing to analyze.
 	if len(tvs) == 0 {
 		return nil
@@ -99,7 +99,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	}
 
 	// Contains the test variant branches to be written to BigQuery.
-	bqtvbs := []*tvbr.TestVariantBranch{}
+	bqExporterInput := []*bqexporter.RowInput{}
 
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		// Check the TestVariantBranch table for the existence of the batch.
@@ -146,13 +146,16 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 			if err != nil {
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
-			runChangePointAnalysis(tvb)
+			inputSegments := runChangePointAnalysis(tvb)
 			mut, err := tvb.ToMutation()
 			if err != nil {
 				return errors.Annotate(err, "test variant branch to mutation").Err()
 			}
 			mutations = append(mutations, mut)
-			bqtvbs = append(bqtvbs, tvb)
+			bqExporterInput = append(bqExporterInput, &bqexporter.RowInput{
+				TestVariantBranch:   tvb,
+				InputBufferSegments: inputSegments,
+			})
 		}
 
 		// Store new Invocations to Invocations table.
@@ -175,15 +178,15 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	// the data will not be exported.
 	// This should not be a concern, since the export will happen again when the
 	// next test verdict comes, but it may result in some delay.
-	err = exportToBigQuery(ctx, bqtvbs)
+	err = exportToBigQuery(ctx, exporter, bqExporterInput)
 	if err != nil {
 		return errors.Annotate(err, "export to big query").Err()
 	}
 	return nil
 }
 
-func exportToBigQuery(ctx context.Context, tvbs []*tvbr.TestVariantBranch) error {
-	if len(tvbs) == 0 {
+func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, bqRows []*bqexporter.RowInput) error {
+	if len(bqRows) == 0 {
 		return nil
 	}
 	cfg, err := config.Get(ctx)
@@ -193,11 +196,10 @@ func exportToBigQuery(ctx context.Context, tvbs []*tvbr.TestVariantBranch) error
 	if !cfg.GetTestVariantAnalysis().GetBigqueryExportEnabled() {
 		return nil
 	}
-	for _, tvb := range tvbs {
-		err = bqexporter.ExportTestVariantBranch(ctx, tvb)
-		if err != nil {
-			return errors.Annotate(err, "export test variant branch").Err()
-		}
+
+	err = exporter.ExportTestVariantBranches(ctx, bqRows)
+	if err != nil {
+		return errors.Annotate(err, "export test variant branches").Err()
 	}
 	return nil
 }
@@ -232,7 +234,9 @@ func isOutOfOrderAndShouldBeDiscarded(tvb *tvbr.TestVariantBranch, src *rdbpb.So
 	return position < minPos
 }
 
-func runChangePointAnalysis(tvb *tvbr.TestVariantBranch) {
+// runChangePointAnalysis runs change point analysis and returns the
+// remaining segment in the input buffer after eviction.
+func runChangePointAnalysis(tvb *tvbr.TestVariantBranch) []*inputbuffer.Segment {
 	a := bayesian.ChangepointPredictor{
 		ChangepointLikelihood: 0.0001,
 		// We are leaning toward consistently passing test results.
@@ -250,8 +254,7 @@ func runChangePointAnalysis(tvb *tvbr.TestVariantBranch) {
 	sib := tvb.InputBuffer.Segmentize(changePoints)
 	evictedSegment := sib.EvictSegments()
 	tvb.UpdateOutputBuffer(evictedSegment)
-	// TODO (nqmtuan): Combine the remaining output buffer segments and remaining
-	// segment for BQ exporter.
+	return sib.Segments
 }
 
 // insertIntoInputBuffer inserts the new test variant tv into the input buffer
