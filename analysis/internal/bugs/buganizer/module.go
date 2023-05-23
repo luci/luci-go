@@ -58,6 +58,9 @@ type ModuleOptions struct {
 
 	// The email used by LUCI Analysis to file bugs.
 	BuganizerSelfEmail string
+
+	// Whether Buganizer is being used in a test environment.
+	BuganizerTestMode bool
 }
 
 // Register registers the command line flags.
@@ -94,6 +97,13 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"buganizer-self-email",
 		o.BuganizerSelfEmail,
 		"The email that LUCI Analysis uses to file bugs. Used to distinguish actions taken by LUCI Analysis from user actions.",
+	)
+
+	f.BoolVar(
+		&o.BuganizerTestMode,
+		"buganizer-test-mode",
+		o.BuganizerTestMode,
+		"Indicates whether Buganizer is used in test mode.",
 	)
 }
 
@@ -153,6 +163,9 @@ var BuganizerTestComponentIdKey = "go.chromium.org/luci/analysis/internal/bugs/b
 // LUCI Analysis uses to file bugs in Buganizer.
 var BuganizerSelfEmailKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:luciAnalysisBuganizerEmailKey"
 
+// BuganizerTestModeKey the context key to get whether Buganizer is in test mode.
+var BuganizerTestModeKey = "go.chromium.org/luci/analysis/internal/bugs/buganizer:buganizerTestModeKey"
+
 // Initialize is part of module.Module interface.
 func (m *buganizerModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	ctx = context.WithValue(ctx, &BuganizerClientModeKey, m.opts.BuganizerClientMode)
@@ -160,5 +173,6 @@ func (m *buganizerModule) Initialize(ctx context.Context, host module.Host, opts
 	ctx = context.WithValue(ctx, &BuganizerEndpointOAuthScopeKey, m.opts.BuganizerEndpointOAuthScope)
 	ctx = context.WithValue(ctx, &BuganizerTestComponentIdKey, m.opts.BuganizerTestComponentId)
 	ctx = context.WithValue(ctx, &BuganizerSelfEmailKey, m.opts.BuganizerSelfEmail)
+	ctx = context.WithValue(ctx, &BuganizerTestModeKey, m.opts.BuganizerTestMode)
 	return ctx, nil
 }

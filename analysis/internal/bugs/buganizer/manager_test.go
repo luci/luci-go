@@ -183,6 +183,19 @@ func TestBugManager(t *testing.T) {
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[1].Comment, ShouldContainSubstring, strconv.Itoa(ComponentWithNoAccess))
 			})
+
+			Convey("With Buganizer test mode", func() {
+				createRequest.BuganizerComponent = 1234
+				// TODO: Mock permission call to fail.
+				ctx = context.WithValue(ctx, &BuganizerTestModeKey, true)
+				bugID, err := bm.Create(ctx, createRequest)
+				So(err, ShouldBeNil)
+				So(bugID, ShouldEqual, "1")
+				So(len(fakeStore.Issues), ShouldEqual, 1)
+				issue := fakeStore.Issues[1]
+				// Should have fallback component ID because no permission to wanted component.
+				So(issue.Issue.IssueState.ComponentId, ShouldEqual, buganizerCfg.DefaultComponent.Id)
+			})
 		})
 
 		Convey("Update", func() {

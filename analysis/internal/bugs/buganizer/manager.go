@@ -128,16 +128,21 @@ func NewBugManager(client Client,
 // Create creates an issue in Buganizer and returns the issue ID.
 func (bm *BugManager) Create(ctx context.Context, createRequest *bugs.CreateRequest) (string, error) {
 	componentID := bm.projectCfg.Buganizer.DefaultComponent.Id
+	buganizerTestMode := ctx.Value(&BuganizerTestModeKey)
 	wantedComponentID := createRequest.BuganizerComponent
-	if wantedComponentID != componentID && wantedComponentID > 0 {
-		permissions, err := bm.checkComponentPermissions(ctx, wantedComponentID)
-		if err != nil {
-			return "", errors.Annotate(err, "check permissions to create Buganizer issue").Err()
-		}
-		if permissions.appender && permissions.issueDefaultsAppender {
-			componentID = createRequest.BuganizerComponent
+	// Use wanted component if not in test mode.
+	if buganizerTestMode == nil || !buganizerTestMode.(bool) {
+		if wantedComponentID != componentID && wantedComponentID > 0 {
+			permissions, err := bm.checkComponentPermissions(ctx, wantedComponentID)
+			if err != nil {
+				return "", errors.Annotate(err, "check permissions to create Buganizer issue").Err()
+			}
+			if permissions.appender && permissions.issueDefaultsAppender {
+				componentID = createRequest.BuganizerComponent
+			}
 		}
 	}
+
 	createIssueRequest := bm.requestGenerator.PrepareNew(
 		createRequest.Impact,
 		createRequest.Description,
