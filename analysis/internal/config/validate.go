@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname/rules"
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -211,6 +212,9 @@ func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig)
 	if cfg.BugFilingThreshold != nil || cfg.BugSystem != configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED {
 		validateImpactThreshold(ctx, cfg.BugFilingThreshold, "bug_filing_threshold")
 	}
+	if cfg.BugFilingThresholds != nil {
+		validateImpactMetricThresholds(ctx, cfg.BugFilingThresholds, "bug_filing_thresholds")
+	}
 	for _, rCfg := range cfg.Realms {
 		validateRealmConfig(ctx, rCfg)
 	}
@@ -284,6 +288,7 @@ func validateBuganizerPriorityMapping(ctx *validation.Context, index int, mappin
 	defer ctx.Exit()
 	validateBuganizerPriority(ctx, mapping.Priority)
 	validateImpactThreshold(ctx, mapping.Threshold, "threshold")
+	validateImpactMetricThresholds(ctx, mapping.Thresholds, "thresholds")
 }
 
 func validateBuganizerPriority(ctx *validation.Context, priority configpb.BuganizerPriority) {
@@ -358,6 +363,7 @@ func validateMonorailPriorities(ctx *validation.Context, ps []*configpb.Monorail
 func validateMonorailPriority(ctx *validation.Context, p *configpb.MonorailPriority) {
 	validatePriorityValue(ctx, p.Priority)
 	validateImpactThreshold(ctx, p.Threshold, "threshold")
+	validateImpactMetricThresholds(ctx, p.Thresholds, "thresholds")
 }
 
 func validatePrioritySatisfiedByBugFilingThreshold(ctx *validation.Context, priorityThreshold, bugFilingThres *configpb.ImpactThreshold) {
@@ -399,6 +405,26 @@ func validateImpactThreshold(ctx *validation.Context, t *configpb.ImpactThreshol
 	validateMetricThreshold(ctx, t.TestResultsFailed, "test_results_failed")
 	validateMetricThreshold(ctx, t.TestRunsFailed, "test_runs_failed")
 	validateMetricThreshold(ctx, t.PresubmitRunsFailed, "presubmit_runs_failed")
+}
+
+// TODO(beining): Fail the validation on empty impact metric thresholds
+func validateImpactMetricThresholds(ctx *validation.Context, ts []*configpb.ImpactMetricThreshold, fieldName string) {
+	ctx.Enter(fieldName)
+	defer ctx.Exit()
+
+	seen := map[string]bool{}
+	for i, t := range ts {
+		ctx.Enter("[%v]", i)
+		if _, err := metrics.ByID(metrics.ID(t.MetricId)); err != nil {
+			ctx.Error(err)
+		}
+		if _, ok := seen[t.MetricId]; ok {
+			ctx.Errorf("same metric can't have more than one thresholds")
+		}
+		seen[t.MetricId] = true
+		validateMetricThreshold(ctx, t.Threshold, "threshold")
+		ctx.Exit()
+	}
 }
 
 func validateMetricThreshold(ctx *validation.Context, t *configpb.MetricThreshold, fieldName string) {

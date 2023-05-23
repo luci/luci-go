@@ -73,7 +73,25 @@ message ProjectConfig {
   // Configuration for automatic bug management.
   BugManagement bug_management = 9;
 
-  // Next ID: 10
+  // The threshold at which to file bugs.
+  // If a reason cluster's impact exceeds the given threshold,
+  // a bug will be filed for it.
+  // Alternatively, if a test name cluster's impact exceeds 134% of the given
+  // threshold, a bug will also be filed for it.
+  //
+  // LUCI Analysis's bias towards reason clusters reflects the fact that bugs
+  // filed for reasons should be better scoped and more actionable
+  // (focus on one problem).
+  //
+  // The thresholds are considered satisfied if any of the individual impact metric
+  // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+  // are combined using an OR-semantic). If no threshold is set on any individual
+  // metric, the threshold as a whole is unsatisfiable.
+  //
+  // TODO(beining): Still WIP, this field is planned to replace bug_filing_threshold.
+  repeated ImpactMetricThreshold bug_filing_thresholds = 10;
+
+  // Next ID: 11
 }
 
 
@@ -129,6 +147,28 @@ message ImpactThreshold {
   // Deprecated. No longer has any effect. Retained for textproto
   // compatibility only.
   optional int64 unexpected_failures_7d = 3;
+}
+
+// ImpactMetricThreshold specifies a condition on a cluster's impact metric.
+message ImpactMetricThreshold {
+  // The id of the impact metric.
+  // eg.
+  // human-cls-failed-presubmit: The number of presubmit runs that failed.
+  // critical-failures-exonerated: The number of test failures on critical builders that were exonerated
+  //                               with an exoneration reason other than NOT_CRITICAL.
+  // test-runs-failed: The number of test runs that failed.
+  //                   A test run (also known as a 'shard' (chromium) or 'task' (Chrome OS))
+  //                   is considered failed if all tries of test(s) in it unexpectedly failed.
+  //                   The failed test run is attributed to the last failure of each of the
+  //                   test(s) that failed on all tries.
+  // failures: The number of test results that were unexpected failures.
+  //
+  // Full list of available metrics here:
+  // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/analysis/metrics/metrics.go
+  string metric_id = 1;
+
+  // The thresholds against a metric.
+  MetricThreshold threshold = 2;
 }
 
 // MetricThreshold specifies thresholds for a particular metric.
@@ -243,6 +283,14 @@ message MonorailPriority {
 
   // The threshold at which to apply the priority.
   ImpactThreshold threshold = 2;
+
+  // The threshold at which to apply the priority.
+  // The thresholds are considered satisfied if any of the individual impact metric
+  // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+  // are combined using an OR-semantic).
+  //
+  // TODO(beining): Still WIP, this field is planned to replace MonorailPriority.threshold.
+  repeated ImpactMetricThreshold thresholds = 3;
 }
 
 // Configurations per realm.
@@ -420,6 +468,14 @@ message BuganizerProject {
 
     // The threshold at which to apply the priority.
     ImpactThreshold threshold = 2;
+
+    // The threshold at which to apply the priority.
+    // The thresholds are considered satisfied if any of the individual impact metric
+    // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+    // are combined using an OR-semantic).
+    //
+    // TODO(beining): Still WIP, this field is planned to replace PriorityMapping.threshold.
+    repeated ImpactMetricThreshold thresholds = 3;
   }
 
   // A list of priority mappings that will be used to determine the

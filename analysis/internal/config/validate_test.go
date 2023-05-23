@@ -434,6 +434,71 @@ func TestProjectConfigValidator(t *testing.T) {
 		}))
 	})
 
+	Convey("bug filing thresholds", t, func() {
+		Convey("not specified with no bug system", func() {
+			cfg := CreateMonorailPlaceholderProjectConfig()
+			cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
+			cfg.BugFilingThresholds = nil
+			So(validate(cfg), ShouldBeNil)
+		})
+		Convey("with both configs", WithBothProjectConfigs(func(cfg *configpb.ProjectConfig, name string) {
+			Convey(fmt.Sprintf("%s - not specified", name), func() {
+				cfg.BugFilingThresholds = nil
+				So(validate(cfg), ShouldBeNil)
+			})
+			Convey(fmt.Sprintf("%s - unspecified metric", name), func() {
+				cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
+					{
+						MetricId: "invalid-metric-id",
+					},
+				}
+				So(validate(cfg), ShouldErrLike, "no metric with ID")
+			})
+			Convey(fmt.Sprintf("%s - same metric with two thresholds", name), func() {
+				cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
+					{
+						MetricId:  "failures",
+						Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1)},
+					},
+					{
+						MetricId:  "failures",
+						Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(2)},
+					},
+				}
+				So(validate(cfg), ShouldErrLike, "same metric can't have more than one thresholds")
+			})
+			Convey(fmt.Sprintf("%s - metric values are not negative", name), func() {
+				Convey("one day", func() {
+					cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
+						{
+							MetricId:  "failures",
+							Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(-1)},
+						},
+					}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
+				Convey("three days", func() {
+					cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
+						{
+							MetricId:  "failures",
+							Threshold: &configpb.MetricThreshold{ThreeDay: proto.Int64(-1)},
+						},
+					}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
+				Convey("seven days", func() {
+					cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
+						{
+							MetricId:  "failures",
+							Threshold: &configpb.MetricThreshold{SevenDay: proto.Int64(-1)},
+						},
+					}
+					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+				})
+			})
+		}))
+	})
+
 	Convey("realm config", t, func() {
 		cfg := CreateConfigWithBothBuganizerAndMonorail(configpb.ProjectConfig_MONORAIL)
 
