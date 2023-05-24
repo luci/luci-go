@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const CONFIGS = {
+self.CONFIGS = Object.freeze({
   RESULT_DB: {
     HOST: "{{.ResultDB.Host}}",
   },
@@ -22,4 +22,4 @@ const CONFIGS = {
   LUCI_ANALYSIS: {
     HOST: "{{.LuciAnalysis.Host}}",
   },
-};
+});

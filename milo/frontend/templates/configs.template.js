@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-var CONFIGS = Object.freeze({
-  RESULT_DB: Object.freeze({
+self.CONFIGS = Object.freeze({
+  RESULT_DB: {
     HOST: "{{.ResultDB.Host}}",
-  }),
-  BUILDBUCKET: Object.freeze({
+  },
+  BUILDBUCKET: {
     HOST: "{{.Buildbucket.Host}}",
-  }),
-  LUCI_ANALYSIS: Object.freeze({
+  },
+  LUCI_ANALYSIS: {
     HOST: "{{.LuciAnalysis.Host}}",
-  }),
+  },
 });
