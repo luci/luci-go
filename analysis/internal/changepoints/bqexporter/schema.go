@@ -27,8 +27,12 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// We stream test variant branch update to this table.
-const tableName = "test_variant_segment_updates"
+// We stream test variant branch updates to this table.
+const updatesTableName = "test_variant_segment_updates"
+
+// This is the main table for the test variant branches.
+// Periodically we merge from the test_variant_segment_updates to this table.
+const stableTableName = "test_variant_segments"
 
 // schemaApplyer ensures BQ schema matches the row proto definitions.
 var schemaApplyer = bq.NewSchemaApplyer(bq.RegisterSchemaApplyerCache(50))

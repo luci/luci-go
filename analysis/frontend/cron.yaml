@@ -51,3 +51,6 @@ cron:
 - description: "Update or create views in datasets."
   url: /internal/cron/ensure-views
   schedule: every 10 minutes synchronized
+- description: "Merge Bigquery data from test_variant_segment_updates table to test_variant_segments table."
+  url: /internal/cron/merge-test-variant-branches
+  schedule: every 10 minutes synchronized

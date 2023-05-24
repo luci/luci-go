@@ -80,7 +80,7 @@ type Client struct {
 }
 
 func (s *Client) ensureSchema(ctx context.Context) error {
-	table := s.bqClient.Dataset(bqutil.InternalDatasetID).Table(tableName)
+	table := s.bqClient.Dataset(bqutil.InternalDatasetID).Table(updatesTableName)
 	if err := schemaApplyer.EnsureTable(ctx, table, tableMetadata); err != nil {
 		return errors.Annotate(err, "ensuring test_variant_segment_updates table").Err()
 	}
@@ -92,7 +92,7 @@ func (s *Client) Insert(ctx context.Context, rows []*bqpb.TestVariantBranchRow) 
 	if err := s.ensureSchema(ctx); err != nil {
 		return errors.Annotate(err, "ensure schema").Err()
 	}
-	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, bqutil.InternalDatasetID, tableName)
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", s.projectID, bqutil.InternalDatasetID, updatesTableName)
 	writer := bqutil.NewWriter(s.mwClient, tableName, tableSchemaDescriptor)
 	payload := make([]proto.Message, len(rows))
 	for i, r := range rows {
