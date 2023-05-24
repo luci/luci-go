@@ -90,6 +90,55 @@ func (Commit_TreeDiff_ChangeType) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_git_commit_proto_rawDescGZIP(), []int{0, 1, 0}
 }
 
+type File_Type int32
+
+const (
+	File_UNKNOWN File_Type = 0
+	File_TREE    File_Type = 1
+	File_BLOB    File_Type = 2
+)
+
+// Enum value maps for File_Type.
+var (
+	File_Type_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "TREE",
+		2: "BLOB",
+	}
+	File_Type_value = map[string]int32{
+		"UNKNOWN": 0,
+		"TREE":    1,
+		"BLOB":    2,
+	}
+)
+
+func (x File_Type) Enum() *File_Type {
+	p := new(File_Type)
+	*p = x
+	return p
+}
+
+func (x File_Type) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (File_Type) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_common_proto_git_commit_proto_enumTypes[1].Descriptor()
+}
+
+func (File_Type) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_common_proto_git_commit_proto_enumTypes[1]
+}
+
+func (x File_Type) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use File_Type.Descriptor instead.
+func (File_Type) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_common_proto_git_commit_proto_rawDescGZIP(), []int{1, 0}
+}
+
 // Commit is a single parsed commit as represented in a git log or git show
 // expression.
 type Commit struct {
@@ -202,7 +251,9 @@ type File struct {
 	// Path is the path to file, without leading "/".
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// Mode is file mode, e.g. 0100644 (octal, often shows up 33188 in decimal).
-	Mode uint32 `protobuf:"varint,3,opt,name=mode,proto3" json:"mode,omitempty"` // TODO: add type, perhaps as a enum if needed.
+	Mode uint32 `protobuf:"varint,3,opt,name=mode,proto3" json:"mode,omitempty"`
+	// Type is the file type.
+	Type File_Type `protobuf:"varint,4,opt,name=type,proto3,enum=git.File_Type" json:"type,omitempty"`
 }
 
 func (x *File) Reset() {
@@ -256,6 +307,13 @@ func (x *File) GetMode() uint32 {
 		return x.Mode
 	}
 	return 0
+}
+
+func (x *File) GetType() File_Type {
+	if x != nil {
+		return x.Type
+	}
+	return File_UNKNOWN
 }
 
 // User represents the (name, email, timestamp) Commit header for author and/or
@@ -484,14 +542,19 @@ var file_go_chromium_org_luci_common_proto_git_commit_proto_rawDesc = []byte{
 	0x67, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x07, 0x0a, 0x03, 0x41, 0x44, 0x44, 0x10, 0x00, 0x12,
 	0x08, 0x0a, 0x04, 0x43, 0x4f, 0x50, 0x59, 0x10, 0x01, 0x12, 0x0a, 0x0a, 0x06, 0x44, 0x45, 0x4c,
 	0x45, 0x54, 0x45, 0x10, 0x02, 0x12, 0x0a, 0x0a, 0x06, 0x4d, 0x4f, 0x44, 0x49, 0x46, 0x59, 0x10,
-	0x03, 0x12, 0x0a, 0x0a, 0x06, 0x52, 0x45, 0x4e, 0x41, 0x4d, 0x45, 0x10, 0x04, 0x22, 0x3e, 0x0a,
-	0x04, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x6d, 0x6f, 0x64,
-	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x42, 0x27, 0x5a,
-	0x25, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67,
-	0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x67, 0x69, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x03, 0x12, 0x0a, 0x0a, 0x06, 0x52, 0x45, 0x4e, 0x41, 0x4d, 0x45, 0x10, 0x04, 0x22, 0x8b, 0x01,
+	0x0a, 0x04, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x6d, 0x6f,
+	0x64, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x6d, 0x6f, 0x64, 0x65, 0x12, 0x22,
+	0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0e, 0x2e, 0x67,
+	0x69, 0x74, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79,
+	0x70, 0x65, 0x22, 0x27, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e,
+	0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x54, 0x52, 0x45, 0x45, 0x10,
+	0x01, 0x12, 0x08, 0x0a, 0x04, 0x42, 0x4c, 0x4f, 0x42, 0x10, 0x02, 0x42, 0x27, 0x5a, 0x25, 0x67,
+	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
+	0x75, 0x63, 0x69, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x2f, 0x67, 0x69, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -506,27 +569,29 @@ func file_go_chromium_org_luci_common_proto_git_commit_proto_rawDescGZIP() []byt
 	return file_go_chromium_org_luci_common_proto_git_commit_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_common_proto_git_commit_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_go_chromium_org_luci_common_proto_git_commit_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_go_chromium_org_luci_common_proto_git_commit_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_go_chromium_org_luci_common_proto_git_commit_proto_goTypes = []interface{}{
 	(Commit_TreeDiff_ChangeType)(0), // 0: git.Commit.TreeDiff.ChangeType
-	(*Commit)(nil),                  // 1: git.Commit
-	(*File)(nil),                    // 2: git.File
-	(*Commit_User)(nil),             // 3: git.Commit.User
-	(*Commit_TreeDiff)(nil),         // 4: git.Commit.TreeDiff
-	(*timestamppb.Timestamp)(nil),   // 5: google.protobuf.Timestamp
+	(File_Type)(0),                  // 1: git.File.Type
+	(*Commit)(nil),                  // 2: git.Commit
+	(*File)(nil),                    // 3: git.File
+	(*Commit_User)(nil),             // 4: git.Commit.User
+	(*Commit_TreeDiff)(nil),         // 5: git.Commit.TreeDiff
+	(*timestamppb.Timestamp)(nil),   // 6: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_common_proto_git_commit_proto_depIdxs = []int32{
-	3, // 0: git.Commit.author:type_name -> git.Commit.User
-	3, // 1: git.Commit.committer:type_name -> git.Commit.User
-	4, // 2: git.Commit.tree_diff:type_name -> git.Commit.TreeDiff
-	5, // 3: git.Commit.User.time:type_name -> google.protobuf.Timestamp
-	0, // 4: git.Commit.TreeDiff.type:type_name -> git.Commit.TreeDiff.ChangeType
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4, // 0: git.Commit.author:type_name -> git.Commit.User
+	4, // 1: git.Commit.committer:type_name -> git.Commit.User
+	5, // 2: git.Commit.tree_diff:type_name -> git.Commit.TreeDiff
+	1, // 3: git.File.type:type_name -> git.File.Type
+	6, // 4: git.Commit.User.time:type_name -> google.protobuf.Timestamp
+	0, // 5: git.Commit.TreeDiff.type:type_name -> git.Commit.TreeDiff.ChangeType
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_common_proto_git_commit_proto_init() }
@@ -589,7 +654,7 @@ func file_go_chromium_org_luci_common_proto_git_commit_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_common_proto_git_commit_proto_rawDesc,
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,

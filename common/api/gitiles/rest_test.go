@@ -201,6 +201,18 @@ func TestList(t *testing.T) {
 						"type": "blob",
 						"id": "a07e845539145d1fb697c20b75689b25e266d6d6",
 						"name": "bar.txt"
+					},
+					{
+						"mode": 33188,
+						"type": "tree",
+						"id": "b90e845539145d1fb697c20b75689b25e266d6c3",
+						"name": "directory"
+					},
+					{
+						"mode": 33188,
+						"type": "random type",
+						"id": "k93b845539145d1fb697c20b75689b25e266d6q1",
+						"name": "new"
 					}
 					]
 				}
@@ -219,11 +231,25 @@ func TestList(t *testing.T) {
 				Mode: 33188,
 				Id:   "7e5b457d492b50762386611fc7f1302f23b313cf",
 				Path: "foo.txt",
+				Type: git.File_BLOB,
 			},
 			{
 				Mode: 33188,
 				Id:   "a07e845539145d1fb697c20b75689b25e266d6d6",
 				Path: "bar.txt",
+				Type: git.File_BLOB,
+			},
+			{
+				Mode: 33188,
+				Id:   "b90e845539145d1fb697c20b75689b25e266d6c3",
+				Path: "directory",
+				Type: git.File_TREE,
+			},
+			{
+				Mode: 33188,
+				Id:   "k93b845539145d1fb697c20b75689b25e266d6q1",
+				Path: "new",
+				Type: git.File_UNKNOWN,
 			},
 		})
 	})

@@ -259,6 +259,7 @@ func (c *client) ListFiles(ctx context.Context, req *gitiles.ListFilesRequest, o
 		Mode uint32 `json:"mode"`
 		ID   string `json:"id"`
 		Name string `json:"name"`
+		Type string `json:"type"`
 	}
 	var data struct {
 		Files []file `json:"entries"`
@@ -270,11 +271,13 @@ func (c *client) ListFiles(ctx context.Context, req *gitiles.ListFilesRequest, o
 	resp := &gitiles.ListFilesResponse{
 		Files: make([]*git.File, len(data.Files)),
 	}
+
 	for i, f := range data.Files {
 		resp.Files[i] = &git.File{
 			Mode: f.Mode,
 			Id:   f.ID,
 			Path: f.Name,
+			Type: git.File_Type(git.File_Type_value[strings.ToUpper(f.Type)]),
 		}
 	}
 
@@ -309,7 +312,6 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 	if err != nil {
 		return http.Header{}, nil, status.Errorf(codes.Unknown, "%s", err)
 	}
-
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
