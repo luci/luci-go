@@ -26,11 +26,48 @@ export const createMockProjectConfig = (): ProjectConfig => {
   };
 };
 
-export const mockFetchProjectConfig = () => {
+export const createMockProjectConfigWithThresholds = (): ProjectConfig => {
+  return {
+    name: 'projects/chromium/config',
+    monorail: {
+      project: 'chromium',
+      displayPrefix: 'crbug.com',
+      priorities: [
+        {
+          priority: 'P0',
+          thresholds: [
+            {
+              metricId: 'human-cls-failed-presubmit',
+              threshold: {
+                oneDay: '20',
+              },
+            },
+          ],
+        },
+        {
+          priority: 'P1',
+          thresholds: [
+            {
+              metricId: 'human-cls-failed-presubmit',
+              threshold: {
+                oneDay: '10',
+              },
+            },
+          ],
+        },
+      ],
+    },
+  };
+};
+
+export const mockFetchProjectConfig = (projectConfig?: ProjectConfig) => {
+  if (projectConfig === undefined) {
+    projectConfig = createMockProjectConfig();
+  }
   fetchMock.post('http://localhost/prpc/luci.analysis.v1.Projects/GetConfig', {
     headers: {
       'X-Prpc-Grpc-Code': '0',
     },
-    body: ')]}\'' + JSON.stringify(createMockProjectConfig()),
+    body: ')]}\'' + JSON.stringify(projectConfig),
   });
 };

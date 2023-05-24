@@ -93,7 +93,7 @@ func (fis *FakeIssueStore) StoreIssue(ctx context.Context, issue *issuetracker.I
 			issue.IssueComment.IssueId = id
 			issue.Description = &issuetracker.IssueComment{
 				CommentNumber: 1,
-				Comment: issue.IssueComment.Comment,
+				Comment:       issue.IssueComment.Comment,
 			}
 			issue.CreatedTime = timestamppb.New(clock.Now(ctx))
 		} else {

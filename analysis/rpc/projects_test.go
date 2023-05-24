@@ -27,7 +27,9 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"google.golang.org/grpc/codes"
 	grpcStatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/perms"
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -112,10 +114,35 @@ func TestProjects(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(response, ShouldResembleProto, &pb.ProjectConfig{
 					Name: "projects/testprojectmonorail/config",
-					Monorail: &pb.ProjectConfig_Monorail{
+					Monorail: &pb.MonorailProject{
 						Project:       "monorailproject",
 						DisplayPrefix: "displayprefix.com",
+						Priorities: []*pb.MonorailPriority{
+							{
+								Priority: "0",
+								Thresholds: []*pb.ImpactMetricThreshold{
+									{
+										MetricId: metrics.Failures.ID.String(),
+										Threshold: &pb.MetricThreshold{
+											OneDay: proto.Int64(1500),
+										},
+									},
+								},
+							},
+							{
+								Priority: "1",
+								Thresholds: []*pb.ImpactMetricThreshold{
+									{
+										MetricId: metrics.Failures.ID.String(),
+										Threshold: &pb.MetricThreshold{
+											OneDay: proto.Int64(500),
+										},
+									},
+								},
+							},
+						},
 					},
+					BugSystem: pb.ProjectConfig_MONORAIL,
 				})
 			})
 			Convey("Valid request buganizer", func() {
@@ -123,6 +150,33 @@ func TestProjects(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(response, ShouldResembleProto, &pb.ProjectConfig{
 					Name: "projects/testprojectbuganizer/config",
+					Buganizer: &pb.BuganizerProject{
+						PriorityMappings: []*pb.BuganizerProject_PriorityMapping{
+							{
+								Priority: pb.BuganizerPriority_P0,
+								Thresholds: []*pb.ImpactMetricThreshold{
+									{
+										MetricId: metrics.Failures.ID.String(),
+										Threshold: &pb.MetricThreshold{
+											OneDay: proto.Int64(1500),
+										},
+									},
+								},
+							},
+							{
+								Priority: pb.BuganizerPriority_P1,
+								Thresholds: []*pb.ImpactMetricThreshold{
+									{
+										MetricId: metrics.Failures.ID.String(),
+										Threshold: &pb.MetricThreshold{
+											OneDay: proto.Int64(500),
+										},
+									},
+								},
+							},
+						},
+					},
+					BugSystem: pb.ProjectConfig_BUGANIZER,
 				})
 			})
 			Convey("With project not configured", func() {

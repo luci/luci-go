@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/analysis/internal/perms"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -56,15 +57,62 @@ func (*projectServer) GetConfig(ctx context.Context, req *pb.GetProjectConfigReq
 	}
 
 	response := &pb.ProjectConfig{
-		Name: fmt.Sprintf("projects/%s/config", project),
+		Name:      fmt.Sprintf("projects/%s/config", project),
+		BugSystem: pb.ProjectConfig_BugSystem(cfg.Config.BugSystem),
 	}
 	if cfg.Config.Monorail != nil {
-		response.Monorail = &pb.ProjectConfig_Monorail{
+		response.Monorail = &pb.MonorailProject{
 			Project:       cfg.Config.Monorail.Project,
 			DisplayPrefix: cfg.Config.Monorail.DisplayPrefix,
 		}
+
+		thresholds := []*pb.MonorailPriority{}
+		for _, monorailPriorityThreshold := range cfg.Config.Monorail.GetPriorities() {
+			priorityThreshold := &pb.MonorailPriority{
+				Priority: monorailPriorityThreshold.GetPriority(),
+				Thresholds: convertImpactMetricThresholds(
+					monorailPriorityThreshold.GetThresholds(),
+				),
+			}
+			thresholds = append(thresholds, priorityThreshold)
+		}
+		response.Monorail.Priorities = thresholds
 	}
+
+	if cfg.Config.Buganizer != nil {
+		thresholds := []*pb.BuganizerProject_PriorityMapping{}
+		buganizerPriorities := cfg.Config.Buganizer.GetPriorityMappings()
+		for _, buganizerPriorityThreshold := range buganizerPriorities {
+			priorityThreshold := &pb.BuganizerProject_PriorityMapping{
+				Priority: pb.BuganizerPriority(buganizerPriorityThreshold.GetPriority()),
+				Thresholds: convertImpactMetricThresholds(
+					buganizerPriorityThreshold.GetThresholds(),
+				),
+			}
+			thresholds = append(thresholds, priorityThreshold)
+		}
+		response.Buganizer = &pb.BuganizerProject{
+			PriorityMappings: thresholds,
+		}
+	}
+
 	return response, nil
+}
+
+func convertImpactMetricThresholds(impactThresholds []*configpb.ImpactMetricThreshold) []*pb.ImpactMetricThreshold {
+	result := make([]*pb.ImpactMetricThreshold, len(impactThresholds))
+	for i, impactThreshold := range impactThresholds {
+		result[i] = &pb.ImpactMetricThreshold{
+			MetricId: impactThreshold.MetricId,
+			Threshold: &pb.MetricThreshold{
+				OneDay:   impactThreshold.Threshold.OneDay,
+				ThreeDay: impactThreshold.Threshold.ThreeDay,
+				SevenDay: impactThreshold.Threshold.SevenDay,
+			},
+		}
+	}
+
+	return result
 }
 
 func (*projectServer) List(ctx context.Context, request *pb.ListProjectsRequest) (*pb.ListProjectsResponse, error) {

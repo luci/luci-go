@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	atvpb "go.chromium.org/luci/analysis/proto/analyzedtestvariant"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
@@ -38,12 +39,28 @@ func createPlaceholderMonorailProject() *configpb.MonorailProject {
 						OneDay: proto.Int64(1500),
 					},
 				},
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{
+						MetricId: metrics.Failures.ID.String(),
+						Threshold: &configpb.MetricThreshold{
+							OneDay: proto.Int64(1500),
+						},
+					},
+				},
 			},
 			{
 				Priority: "1",
 				Threshold: &configpb.ImpactThreshold{
 					TestResultsFailed: &configpb.MetricThreshold{
 						OneDay: proto.Int64(500),
+					},
+				},
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{
+						MetricId: metrics.Failures.ID.String(),
+						Threshold: &configpb.MetricThreshold{
+							OneDay: proto.Int64(500),
+						},
 					},
 				},
 			},
@@ -65,12 +82,28 @@ func createBuganizerPlaceholderProject() *configpb.BuganizerProject {
 						OneDay: proto.Int64(1500),
 					},
 				},
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{
+						MetricId: metrics.Failures.ID.String(),
+						Threshold: &configpb.MetricThreshold{
+							OneDay: proto.Int64(1500),
+						},
+					},
+				},
 			},
 			{
 				Priority: configpb.BuganizerPriority_P1,
 				Threshold: &configpb.ImpactThreshold{
 					TestResultsFailed: &configpb.MetricThreshold{
 						OneDay: proto.Int64(500),
+					},
+				},
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{
+						MetricId: metrics.Failures.ID.String(),
+						Threshold: &configpb.MetricThreshold{
+							OneDay: proto.Int64(500),
+						},
 					},
 				},
 			},

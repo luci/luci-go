@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,27 +16,19 @@ import '@testing-library/jest-dom';
 
 import fetchMock from 'fetch-mock-jest';
 
-import {
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
 import { ClusterContextProvider } from '@/components/cluster/cluster_context';
 import { QueryClusterHistoryResponse } from '@/services/cluster';
-import { renderTabWithRouterAndClient } from '@/testing_tools/libs/render_tab';
+import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
+import { mockQueryHistory } from '@/testing_tools/mocks/cluster_mock';
 import {
-  getMockCluster,
-  mockGetCluster,
-  mockQueryHistory,
-} from '@/testing_tools/mocks/cluster_mock';
-import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
-import {
-  createMockProjectConfigWithThresholds,
-  mockFetchProjectConfig,
-} from '@/testing_tools/mocks/projects_mock';
+  getMockMetricsList,
+  mockFetchMetrics,
+} from '@/testing_tools/mocks/metrics_mock';
 
-import OverviewTab from './overview_tab';
+import { HistoryCharts } from './history_charts';
 
 // Mock the window.ResizeObserver that is needed by recharts.
 class ResizeObserver {
@@ -49,7 +41,7 @@ class ResizeObserver {
 }
 window.ResizeObserver = ResizeObserver;
 
-describe('Test OverviewTab component', () => {
+describe('test HistoryCharts component', () => {
   beforeEach(() => {
     mockFetchAuthState();
     mockFetchMetrics();
@@ -60,16 +52,7 @@ describe('Test OverviewTab component', () => {
     fetchMock.reset();
   });
 
-  it('given a project and cluster ID, should recommend priority and show cluster history for that cluster', async () => {
-    const project = 'chrome';
-    const algorithm = 'rules'
-    const id = '123456';
-    const mockCluster = getMockCluster(id, project, algorithm);
-
-    mockGetCluster(project, algorithm, id, mockCluster);
-    const mockConfig = createMockProjectConfigWithThresholds();
-    mockFetchProjectConfig(mockConfig);
-
+  it('given a project and cluster ID, should fetch cluster history for that cluster', async () => {
     const history: QueryClusterHistoryResponse = {
       days: [{
         date: '2023-02-16',
@@ -82,18 +65,24 @@ describe('Test OverviewTab component', () => {
     };
     mockQueryHistory(history);
 
-    renderTabWithRouterAndClient(
-      <ClusterContextProvider
-        project={project}
-        clusterAlgorithm={algorithm}
-        clusterId={id}>
-        <OverviewTab value='test' />
+    renderWithRouterAndClient(
+      <ClusterContextProvider project='chrome' clusterAlgorithm='rules' clusterId='123456'>
+        <HistoryCharts />
       </ClusterContextProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId('recommended-priority-summary')).toBeInTheDocument();
-      expect(screen.getByTestId('history-chart')).toBeInTheDocument();
+    await screen.findAllByTestId('history-chart');
+
+    expect(screen.getByTestId('history-chart')).toBeInTheDocument();
+
+    // Expect charts only for the default metrics.
+    const metrics = getMockMetricsList();
+    metrics.forEach((m) => {
+      if (m.isDefault) {
+        expect(screen.getByTestId('chart-' + m.metricId)).toBeInTheDocument();
+      } else {
+        expect(screen.queryByTestId('chart-' + m.metricId)).toBeNull();
+      }
     });
   });
 });

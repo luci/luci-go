@@ -14,6 +14,20 @@
 
 import { AuthorizedPrpcClient } from '@/clients/authorized_client';
 
+// An enum that represents the bug filing system that the project uses.
+export type BugSystem =
+  | "BUG_SYSTEM_UNSPECIFIED"
+  | "MONORAIL"
+  | "BUGANIZER";
+
+export type BuganizerPriority =
+  | "BUGANIZER_PRIORITY_UNSPECIFIED"
+  | "P0"
+  | "P1"
+  | "P2"
+  | "P3"
+  | "P4";
+
 export const getProjectsService = () => {
   const client = new AuthorizedPrpcClient();
   return new ProjectService(client);
@@ -57,14 +71,67 @@ export interface GetProjectConfigRequest {
   name: string;
 }
 
+// MetricThreshold specifies thresholds for a particular metric.
+// The threshold is considered satisfied if any of the individual metric
+// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+// are combined using an OR-semantic). If no threshold is set, the threshold
+// as a whole is unsatisfiable.
+export interface MetricThreshold {
+  // The threshold for one day.
+  oneDay?: string;
+
+  // The threshold for three days.
+  threeDay?: string;
+
+  // The threshold for seven days.
+  sevenDay?: string;
+}
+
+export interface ImpactMetricThreshold {
+  metricId: string
+  threshold: MetricThreshold;
+}
+
+export interface BuganizerProjectPriorityMapping {
+  // The priority value.
+  priority: BuganizerPriority;
+
+  // The thresholds at which to apply the priority.
+  // The thresholds are considered satisfied if any of the individual impact
+  // metric thresholds is met or exceeded (i.e. if multiple thresholds are set,
+  // they are combined using an OR-semantic).
+  thresholds: ImpactMetricThreshold[];
+}
+
+export interface BuganizerProject {
+  priorityMappings?: BuganizerProjectPriorityMapping[];
+}
+
+export interface MonorailPriority {
+  // The priority value.
+  priority: string;
+
+  // The thresholds at which to apply the priority.
+  // The thresholds are considered satisfied if any of the individual impact
+  // metric thresholds is met or exceeded (i.e. if multiple thresholds are set,
+  // they are combined using an OR-semantic).
+  thresholds: ImpactMetricThreshold[];
+}
+
 // See luci.analysis.v1.Projects.GetProjectConfigResponse.Monorail for documentation.
-export interface Monorail {
+export interface MonorailProject {
   // The monorail project used for this LUCI project.
   project: string;
 
   // The shortlink format used for this bug tracker.
   // For example, "crbug.com".
   displayPrefix: string;
+
+  // The possible bug priorities and their associated impact thresholds.
+  // Priorities must be listed from highest (i.e. P0) to lowest (i.e. P3).
+  // Higher priorities can only be reached if the thresholds for all lower
+  // priorities are also met.
+  priorities?: MonorailPriority[];
 }
 
 // See luci.analysis.v1.Projects.ProjectConfig for documentation.
@@ -72,6 +139,12 @@ export interface ProjectConfig {
   // The format is: `projects/{project}/config`.
   name: string;
 
+  // The bug system to use for filing bugs.
+  bugSystem?: BugSystem;
+
   // Details about the monorail project used for this LUCI project.
-  monorail: Monorail;
+  monorail: MonorailProject;
+
+  // Details about the Buganizer configuration used for this LUCI Project.
+  buganizer?: BuganizerProject;
 }

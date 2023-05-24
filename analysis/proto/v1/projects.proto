@@ -20,7 +20,6 @@ option go_package = "go.chromium.org/luci/analysis/proto/v1;analysispb";
 
 import "go.chromium.org/luci/analysis/proto/v1/project.proto";
 
-
 // Provides methods to access the projects which are using LUCI Analysis.
 service Projects {
   // Gets LUCI Analysis configuration for a LUCI Project.
@@ -54,13 +53,17 @@ message GetProjectConfigRequest {
 }
 
 message ProjectConfig {
-  message Monorail {
-    // The monorail project used for this LUCI project.
-    string project = 1;
+  reserved 2;
 
-    // The shortlink format used for this bug tracker.
-    // For example, "crbug.com".
-    string display_prefix = 2;
+  // An enum that represents the bug filing system that the project uses.
+  enum BugSystem {
+    // An unspecified bug system, Do not use, this will
+    // break LUCI Analysis bug filing functionality.
+    BUG_SYSTEM_UNSPECIFIED = 0;
+    // Use Monorail to file bugs.
+    MONORAIL = 1;
+    // Use Buganizer to file bugs.
+    BUGANIZER = 2;
   }
 
   // Resource name of the project configuration.
@@ -68,6 +71,132 @@ message ProjectConfig {
   // See also https://google.aip.dev/122.
   string name = 1;
 
+  // The bug system to use for filing bugs.
+  BugSystem bug_system = 3;
+
   // Details about the monorail project used for this LUCI project.
-  Monorail monorail = 2;
+  MonorailProject monorail = 4;
+
+  // Details about the Buganizer configuration used for this LUCI Project.
+  BuganizerProject buganizer = 5;
+}
+
+// This enum represents the Buganizer priorities.
+// It is equivalent to the one in Buganizer API.
+enum BuganizerPriority {
+  // Priority unspecified; do not use this value.
+  BUGANIZER_PRIORITY_UNSPECIFIED = 0;
+  // P0, Highest priority.
+  P0 = 1;
+  P1 = 2;
+  P2 = 3;
+  P3 = 4;
+  P4 = 5;
+}
+
+// The Buganizer configuration, this should only be
+// used when the bug tracking system ins Buganizer.
+message BuganizerProject {
+  // A mapping between a Buganizer priority to an Impact Threshold.
+  // We use this to determine that which priority to set for a bug.
+  message PriorityMapping {
+    // The Buganizer priority that will be mapped to a threshold.
+    BuganizerPriority priority = 1;
+
+    // The threshold at which to apply the priority.
+    // The thresholds are considered satisfied if any of the individual impact metric
+    // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+    // are combined using an OR-semantic).
+    repeated ImpactMetricThreshold thresholds = 2;
+  }
+
+  // A list of priority mappings that will be used to determine the
+  // priority of the bug based on the threshold.
+  // The priorities must be the ones in BuganizerPriority.
+  // They must be in descending order of highest to lowset priority
+  // and without duplicates.
+  // In order to meet a higher priority, the impact must match all lower
+  // priorities' criteria first.
+  repeated PriorityMapping priority_mappings = 1;
+}
+
+// MonorailProject describes the configuration to use when filing bugs
+// into a given monorail project.
+message MonorailProject {
+  // The monorail project being described.
+  // E.g. "chromium".
+  string project = 1;
+
+  // The prefix that should appear when displaying bugs from the
+  // given bug tracking system. E.g. "crbug.com" or "fxbug.dev".
+  // If no prefix is specified, only the bug number will appear.
+  // Otherwise, the supplifed prefix will appear, followed by a
+  // forward slash ("/"), followed by the bug number.
+  // Valid prefixes match `^[a-z0-9\-.]{0,64}$`.
+  string display_prefix = 2;
+
+  // The possible bug priorities and their associated impact thresholds.
+  // Priorities must be listed from highest (i.e. P0) to lowest (i.e. P3).
+  // Higher priorities can only be reached if the thresholds for all lower
+  // priorities are also met.
+  // The impact thresholds for setting the lowest priority implicitly
+  // identifies the bug closure threshold -- if no priority can be
+  // matched, the bug is closed. Satisfying the threshold for filing bugs MUST
+  // at least imply the threshold for the lowest priority, and MAY imply
+  // the thresholds of higher priorities.
+  repeated MonorailPriority priorities = 3;
+}
+
+// MonorailPriority represents configuration for when to use a given
+// priority value for a Monorail bug.
+message MonorailPriority {
+  // The Monorail priority value. For example, "0". This depends on the
+  // valid priority field values you have defined in your Monorail project.
+  string priority = 1;
+
+  // The thresholds at which to apply the priority.
+  // The thresholds are considered satisfied if any of the individual impact
+  // metric thresholds is met or exceeded (i.e. if multiple thresholds are set,
+  // they are combined using an OR-semantic).
+  repeated ImpactMetricThreshold thresholds = 2;
+}
+
+// ImpactMetricThreshold specifies a condition on a cluster's impact metric.
+message ImpactMetricThreshold {
+  // The id of the impact metric.
+  // e.g.
+  // human-cls-failed-presubmit: The number of presubmit runs that failed.
+  // critical-failures-exonerated: The number of test failures on critical
+  //                               builders that were exonerated with an
+  //                               exoneration reason other than NOT_CRITICAL.
+  // test-runs-failed: The number of test runs that failed.
+  //                   A test run (also known as a 'shard' (chromium) or
+  //                   'task' (Chrome OS)) is considered failed if all tries of
+  //                   test(s) in it unexpectedly failed. The failed test run is
+  //                   attributed to the last failure of each of the test(s)
+  //                   that failed on all tries.
+  // failures: The number of test results that were unexpected failures.
+  //
+  // Full list of available metrics here:
+  // https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/analysis/metrics/metrics.go
+  string metric_id = 1;
+
+  // The thresholds against a metric.
+  MetricThreshold threshold = 2;
+}
+
+// MetricThreshold specifies thresholds for a particular metric.
+// The threshold is considered satisfied if any of the individual metric
+// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+// are combined using an OR-semantic). If no threshold is set, the threshold
+// as a whole is unsatisfiable.
+message MetricThreshold {
+  // The threshold for one day.
+  optional int64 one_day = 1;
+
+  // The threshold for three day.
+  optional int64 three_day = 2;
+
+  // The threshold for seven days.
+  optional int64 seven_day = 3;
 }

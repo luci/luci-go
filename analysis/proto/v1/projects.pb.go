@@ -40,6 +40,122 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// This enum represents the Buganizer priorities.
+// It is equivalent to the one in Buganizer API.
+type BuganizerPriority int32
+
+const (
+	// Priority unspecified; do not use this value.
+	BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED BuganizerPriority = 0
+	// P0, Highest priority.
+	BuganizerPriority_P0 BuganizerPriority = 1
+	BuganizerPriority_P1 BuganizerPriority = 2
+	BuganizerPriority_P2 BuganizerPriority = 3
+	BuganizerPriority_P3 BuganizerPriority = 4
+	BuganizerPriority_P4 BuganizerPriority = 5
+)
+
+// Enum value maps for BuganizerPriority.
+var (
+	BuganizerPriority_name = map[int32]string{
+		0: "BUGANIZER_PRIORITY_UNSPECIFIED",
+		1: "P0",
+		2: "P1",
+		3: "P2",
+		4: "P3",
+		5: "P4",
+	}
+	BuganizerPriority_value = map[string]int32{
+		"BUGANIZER_PRIORITY_UNSPECIFIED": 0,
+		"P0":                             1,
+		"P1":                             2,
+		"P2":                             3,
+		"P3":                             4,
+		"P4":                             5,
+	}
+)
+
+func (x BuganizerPriority) Enum() *BuganizerPriority {
+	p := new(BuganizerPriority)
+	*p = x
+	return p
+}
+
+func (x BuganizerPriority) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BuganizerPriority) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_enumTypes[0].Descriptor()
+}
+
+func (BuganizerPriority) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_enumTypes[0]
+}
+
+func (x BuganizerPriority) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BuganizerPriority.Descriptor instead.
+func (BuganizerPriority) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{0}
+}
+
+// An enum that represents the bug filing system that the project uses.
+type ProjectConfig_BugSystem int32
+
+const (
+	// An unspecified bug system, Do not use, this will
+	// break LUCI Analysis bug filing functionality.
+	ProjectConfig_BUG_SYSTEM_UNSPECIFIED ProjectConfig_BugSystem = 0
+	// Use Monorail to file bugs.
+	ProjectConfig_MONORAIL ProjectConfig_BugSystem = 1
+	// Use Buganizer to file bugs.
+	ProjectConfig_BUGANIZER ProjectConfig_BugSystem = 2
+)
+
+// Enum value maps for ProjectConfig_BugSystem.
+var (
+	ProjectConfig_BugSystem_name = map[int32]string{
+		0: "BUG_SYSTEM_UNSPECIFIED",
+		1: "MONORAIL",
+		2: "BUGANIZER",
+	}
+	ProjectConfig_BugSystem_value = map[string]int32{
+		"BUG_SYSTEM_UNSPECIFIED": 0,
+		"MONORAIL":               1,
+		"BUGANIZER":              2,
+	}
+)
+
+func (x ProjectConfig_BugSystem) Enum() *ProjectConfig_BugSystem {
+	p := new(ProjectConfig_BugSystem)
+	*p = x
+	return p
+}
+
+func (x ProjectConfig_BugSystem) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ProjectConfig_BugSystem) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_enumTypes[1].Descriptor()
+}
+
+func (ProjectConfig_BugSystem) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_enumTypes[1]
+}
+
+func (x ProjectConfig_BugSystem) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ProjectConfig_BugSystem.Descriptor instead.
+func (ProjectConfig_BugSystem) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{3, 0}
+}
+
 // A request object with data to fetch the list of projects configured
 // in LUCI Analysis.
 type ListProjectsRequest struct {
@@ -188,8 +304,12 @@ type ProjectConfig struct {
 	// Format: projects/{project}/config.
 	// See also https://google.aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The bug system to use for filing bugs.
+	BugSystem ProjectConfig_BugSystem `protobuf:"varint,3,opt,name=bug_system,json=bugSystem,proto3,enum=luci.analysis.v1.ProjectConfig_BugSystem" json:"bug_system,omitempty"`
 	// Details about the monorail project used for this LUCI project.
-	Monorail *ProjectConfig_Monorail `protobuf:"bytes,2,opt,name=monorail,proto3" json:"monorail,omitempty"`
+	Monorail *MonorailProject `protobuf:"bytes,4,opt,name=monorail,proto3" json:"monorail,omitempty"`
+	// Details about the Buganizer configuration used for this LUCI Project.
+	Buganizer *BuganizerProject `protobuf:"bytes,5,opt,name=buganizer,proto3" json:"buganizer,omitempty"`
 }
 
 func (x *ProjectConfig) Reset() {
@@ -231,27 +351,46 @@ func (x *ProjectConfig) GetName() string {
 	return ""
 }
 
-func (x *ProjectConfig) GetMonorail() *ProjectConfig_Monorail {
+func (x *ProjectConfig) GetBugSystem() ProjectConfig_BugSystem {
+	if x != nil {
+		return x.BugSystem
+	}
+	return ProjectConfig_BUG_SYSTEM_UNSPECIFIED
+}
+
+func (x *ProjectConfig) GetMonorail() *MonorailProject {
 	if x != nil {
 		return x.Monorail
 	}
 	return nil
 }
 
-type ProjectConfig_Monorail struct {
+func (x *ProjectConfig) GetBuganizer() *BuganizerProject {
+	if x != nil {
+		return x.Buganizer
+	}
+	return nil
+}
+
+// The Buganizer configuration, this should only be
+// used when the bug tracking system ins Buganizer.
+type BuganizerProject struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The monorail project used for this LUCI project.
-	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	// The shortlink format used for this bug tracker.
-	// For example, "crbug.com".
-	DisplayPrefix string `protobuf:"bytes,2,opt,name=display_prefix,json=displayPrefix,proto3" json:"display_prefix,omitempty"`
+	// A list of priority mappings that will be used to determine the
+	// priority of the bug based on the threshold.
+	// The priorities must be the ones in BuganizerPriority.
+	// They must be in descending order of highest to lowset priority
+	// and without duplicates.
+	// In order to meet a higher priority, the impact must match all lower
+	// priorities' criteria first.
+	PriorityMappings []*BuganizerProject_PriorityMapping `protobuf:"bytes,1,rep,name=priority_mappings,json=priorityMappings,proto3" json:"priority_mappings,omitempty"`
 }
 
-func (x *ProjectConfig_Monorail) Reset() {
-	*x = ProjectConfig_Monorail{}
+func (x *BuganizerProject) Reset() {
+	*x = BuganizerProject{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -259,13 +398,13 @@ func (x *ProjectConfig_Monorail) Reset() {
 	}
 }
 
-func (x *ProjectConfig_Monorail) String() string {
+func (x *BuganizerProject) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ProjectConfig_Monorail) ProtoMessage() {}
+func (*BuganizerProject) ProtoMessage() {}
 
-func (x *ProjectConfig_Monorail) ProtoReflect() protoreflect.Message {
+func (x *BuganizerProject) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -277,23 +416,371 @@ func (x *ProjectConfig_Monorail) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ProjectConfig_Monorail.ProtoReflect.Descriptor instead.
-func (*ProjectConfig_Monorail) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{3, 0}
+// Deprecated: Use BuganizerProject.ProtoReflect.Descriptor instead.
+func (*BuganizerProject) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ProjectConfig_Monorail) GetProject() string {
+func (x *BuganizerProject) GetPriorityMappings() []*BuganizerProject_PriorityMapping {
+	if x != nil {
+		return x.PriorityMappings
+	}
+	return nil
+}
+
+// MonorailProject describes the configuration to use when filing bugs
+// into a given monorail project.
+type MonorailProject struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The monorail project being described.
+	// E.g. "chromium".
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// The prefix that should appear when displaying bugs from the
+	// given bug tracking system. E.g. "crbug.com" or "fxbug.dev".
+	// If no prefix is specified, only the bug number will appear.
+	// Otherwise, the supplifed prefix will appear, followed by a
+	// forward slash ("/"), followed by the bug number.
+	// Valid prefixes match `^[a-z0-9\-.]{0,64}$`.
+	DisplayPrefix string `protobuf:"bytes,2,opt,name=display_prefix,json=displayPrefix,proto3" json:"display_prefix,omitempty"`
+	// The possible bug priorities and their associated impact thresholds.
+	// Priorities must be listed from highest (i.e. P0) to lowest (i.e. P3).
+	// Higher priorities can only be reached if the thresholds for all lower
+	// priorities are also met.
+	// The impact thresholds for setting the lowest priority implicitly
+	// identifies the bug closure threshold -- if no priority can be
+	// matched, the bug is closed. Satisfying the threshold for filing bugs MUST
+	// at least imply the threshold for the lowest priority, and MAY imply
+	// the thresholds of higher priorities.
+	Priorities []*MonorailPriority `protobuf:"bytes,3,rep,name=priorities,proto3" json:"priorities,omitempty"`
+}
+
+func (x *MonorailProject) Reset() {
+	*x = MonorailProject{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MonorailProject) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MonorailProject) ProtoMessage() {}
+
+func (x *MonorailProject) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MonorailProject.ProtoReflect.Descriptor instead.
+func (*MonorailProject) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *MonorailProject) GetProject() string {
 	if x != nil {
 		return x.Project
 	}
 	return ""
 }
 
-func (x *ProjectConfig_Monorail) GetDisplayPrefix() string {
+func (x *MonorailProject) GetDisplayPrefix() string {
 	if x != nil {
 		return x.DisplayPrefix
 	}
 	return ""
+}
+
+func (x *MonorailProject) GetPriorities() []*MonorailPriority {
+	if x != nil {
+		return x.Priorities
+	}
+	return nil
+}
+
+// MonorailPriority represents configuration for when to use a given
+// priority value for a Monorail bug.
+type MonorailPriority struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The Monorail priority value. For example, "0". This depends on the
+	// valid priority field values you have defined in your Monorail project.
+	Priority string `protobuf:"bytes,1,opt,name=priority,proto3" json:"priority,omitempty"`
+	// The thresholds at which to apply the priority.
+	// The thresholds are considered satisfied if any of the individual impact
+	// metric thresholds is met or exceeded (i.e. if multiple thresholds are set,
+	// they are combined using an OR-semantic).
+	Thresholds []*ImpactMetricThreshold `protobuf:"bytes,2,rep,name=thresholds,proto3" json:"thresholds,omitempty"`
+}
+
+func (x *MonorailPriority) Reset() {
+	*x = MonorailPriority{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MonorailPriority) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MonorailPriority) ProtoMessage() {}
+
+func (x *MonorailPriority) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MonorailPriority.ProtoReflect.Descriptor instead.
+func (*MonorailPriority) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MonorailPriority) GetPriority() string {
+	if x != nil {
+		return x.Priority
+	}
+	return ""
+}
+
+func (x *MonorailPriority) GetThresholds() []*ImpactMetricThreshold {
+	if x != nil {
+		return x.Thresholds
+	}
+	return nil
+}
+
+// ImpactMetricThreshold specifies a condition on a cluster's impact metric.
+type ImpactMetricThreshold struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The id of the impact metric.
+	// e.g.
+	// human-cls-failed-presubmit: The number of presubmit runs that failed.
+	// critical-failures-exonerated: The number of test failures on critical
+	//
+	//	builders that were exonerated with an
+	//	exoneration reason other than NOT_CRITICAL.
+	//
+	// test-runs-failed: The number of test runs that failed.
+	//
+	//	A test run (also known as a 'shard' (chromium) or
+	//	'task' (Chrome OS)) is considered failed if all tries of
+	//	test(s) in it unexpectedly failed. The failed test run is
+	//	attributed to the last failure of each of the test(s)
+	//	that failed on all tries.
+	//
+	// failures: The number of test results that were unexpected failures.
+	//
+	// Full list of available metrics here:
+	// https://source.chromium.org/chromium/infra/infra/+/main:go/src/go.chromium.org/luci/analysis/internal/analysis/metrics/metrics.go
+	MetricId string `protobuf:"bytes,1,opt,name=metric_id,json=metricId,proto3" json:"metric_id,omitempty"`
+	// The thresholds against a metric.
+	Threshold *MetricThreshold `protobuf:"bytes,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
+}
+
+func (x *ImpactMetricThreshold) Reset() {
+	*x = ImpactMetricThreshold{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ImpactMetricThreshold) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImpactMetricThreshold) ProtoMessage() {}
+
+func (x *ImpactMetricThreshold) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImpactMetricThreshold.ProtoReflect.Descriptor instead.
+func (*ImpactMetricThreshold) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ImpactMetricThreshold) GetMetricId() string {
+	if x != nil {
+		return x.MetricId
+	}
+	return ""
+}
+
+func (x *ImpactMetricThreshold) GetThreshold() *MetricThreshold {
+	if x != nil {
+		return x.Threshold
+	}
+	return nil
+}
+
+// MetricThreshold specifies thresholds for a particular metric.
+// The threshold is considered satisfied if any of the individual metric
+// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+// are combined using an OR-semantic). If no threshold is set, the threshold
+// as a whole is unsatisfiable.
+type MetricThreshold struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The threshold for one day.
+	OneDay *int64 `protobuf:"varint,1,opt,name=one_day,json=oneDay,proto3,oneof" json:"one_day,omitempty"`
+	// The threshold for three day.
+	ThreeDay *int64 `protobuf:"varint,2,opt,name=three_day,json=threeDay,proto3,oneof" json:"three_day,omitempty"`
+	// The threshold for seven days.
+	SevenDay *int64 `protobuf:"varint,3,opt,name=seven_day,json=sevenDay,proto3,oneof" json:"seven_day,omitempty"`
+}
+
+func (x *MetricThreshold) Reset() {
+	*x = MetricThreshold{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MetricThreshold) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MetricThreshold) ProtoMessage() {}
+
+func (x *MetricThreshold) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MetricThreshold.ProtoReflect.Descriptor instead.
+func (*MetricThreshold) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MetricThreshold) GetOneDay() int64 {
+	if x != nil && x.OneDay != nil {
+		return *x.OneDay
+	}
+	return 0
+}
+
+func (x *MetricThreshold) GetThreeDay() int64 {
+	if x != nil && x.ThreeDay != nil {
+		return *x.ThreeDay
+	}
+	return 0
+}
+
+func (x *MetricThreshold) GetSevenDay() int64 {
+	if x != nil && x.SevenDay != nil {
+		return *x.SevenDay
+	}
+	return 0
+}
+
+// A mapping between a Buganizer priority to an Impact Threshold.
+// We use this to determine that which priority to set for a bug.
+type BuganizerProject_PriorityMapping struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The Buganizer priority that will be mapped to a threshold.
+	Priority BuganizerPriority `protobuf:"varint,1,opt,name=priority,proto3,enum=luci.analysis.v1.BuganizerPriority" json:"priority,omitempty"`
+	// The threshold at which to apply the priority.
+	// The thresholds are considered satisfied if any of the individual impact metric
+	// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
+	// are combined using an OR-semantic).
+	Thresholds []*ImpactMetricThreshold `protobuf:"bytes,2,rep,name=thresholds,proto3" json:"thresholds,omitempty"`
+}
+
+func (x *BuganizerProject_PriorityMapping) Reset() {
+	*x = BuganizerProject_PriorityMapping{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuganizerProject_PriorityMapping) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuganizerProject_PriorityMapping) ProtoMessage() {}
+
+func (x *BuganizerProject_PriorityMapping) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuganizerProject_PriorityMapping.ProtoReflect.Descriptor instead.
+func (*BuganizerProject_PriorityMapping) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *BuganizerProject_PriorityMapping) GetPriority() BuganizerPriority {
+	if x != nil {
+		return x.Priority
+	}
+	return BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED
+}
+
+func (x *BuganizerProject_PriorityMapping) GetThresholds() []*ImpactMetricThreshold {
+	if x != nil {
+		return x.Thresholds
+	}
+	return nil
 }
 
 var File_go_chromium_org_luci_analysis_proto_v1_projects_proto protoreflect.FileDescriptor
@@ -316,18 +803,84 @@ var file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDesc = []byte{
 	0x6a, 0x65, 0x63, 0x74, 0x73, 0x22, 0x2d, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x6a,
 	0x65, 0x63, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
-	0x6e, 0x61, 0x6d, 0x65, 0x22, 0xb6, 0x01, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
+	0x6e, 0x61, 0x6d, 0x65, 0x22, 0xba, 0x02, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74,
 	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x44, 0x0a, 0x08, 0x6d, 0x6f,
-	0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x6c,
-	0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e,
-	0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x4d, 0x6f,
-	0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x52, 0x08, 0x6d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c,
-	0x1a, 0x4b, 0x0a, 0x08, 0x4d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x12, 0x18, 0x0a, 0x07,
-	0x70, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70,
-	0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x25, 0x0a, 0x0e, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61,
-	0x79, 0x5f, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d,
-	0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x32, 0xbe, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x48, 0x0a, 0x0a, 0x62, 0x75,
+	0x67, 0x5f, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x29,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e,
+	0x42, 0x75, 0x67, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6d, 0x52, 0x09, 0x62, 0x75, 0x67, 0x53, 0x79,
+	0x73, 0x74, 0x65, 0x6d, 0x12, 0x3d, 0x0a, 0x08, 0x6d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x6f, 0x72, 0x61,
+	0x69, 0x6c, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x08, 0x6d, 0x6f, 0x6e, 0x6f, 0x72,
+	0x61, 0x69, 0x6c, 0x12, 0x40, 0x0a, 0x09, 0x62, 0x75, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x65, 0x72,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e,
+	0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x75, 0x67, 0x61, 0x6e, 0x69,
+	0x7a, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x52, 0x09, 0x62, 0x75, 0x67, 0x61,
+	0x6e, 0x69, 0x7a, 0x65, 0x72, 0x22, 0x44, 0x0a, 0x09, 0x42, 0x75, 0x67, 0x53, 0x79, 0x73, 0x74,
+	0x65, 0x6d, 0x12, 0x1a, 0x0a, 0x16, 0x42, 0x55, 0x47, 0x5f, 0x53, 0x59, 0x53, 0x54, 0x45, 0x4d,
+	0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0c,
+	0x0a, 0x08, 0x4d, 0x4f, 0x4e, 0x4f, 0x52, 0x41, 0x49, 0x4c, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09,
+	0x42, 0x55, 0x47, 0x41, 0x4e, 0x49, 0x5a, 0x45, 0x52, 0x10, 0x02, 0x4a, 0x04, 0x08, 0x02, 0x10,
+	0x03, 0x22, 0x91, 0x02, 0x0a, 0x10, 0x42, 0x75, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x65, 0x72, 0x50,
+	0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x5f, 0x0a, 0x11, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x5f, 0x6d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x32, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69,
+	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x75, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x65, 0x72, 0x50, 0x72,
+	0x6f, 0x6a, 0x65, 0x63, 0x74, 0x2e, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x4d, 0x61,
+	0x70, 0x70, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x4d,
+	0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x73, 0x1a, 0x9b, 0x01, 0x0a, 0x0f, 0x50, 0x72, 0x69, 0x6f,
+	0x72, 0x69, 0x74, 0x79, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x12, 0x3f, 0x0a, 0x08, 0x70,
+	0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x23, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31,
+	0x2e, 0x42, 0x75, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x65, 0x72, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x52, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x47, 0x0a, 0x0a,
+	0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6d, 0x70, 0x61, 0x63, 0x74, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63,
+	0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x52, 0x0a, 0x74, 0x68, 0x72, 0x65, 0x73,
+	0x68, 0x6f, 0x6c, 0x64, 0x73, 0x22, 0x96, 0x01, 0x0a, 0x0f, 0x4d, 0x6f, 0x6e, 0x6f, 0x72, 0x61,
+	0x69, 0x6c, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f,
+	0x6a, 0x65, 0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x6a,
+	0x65, 0x63, 0x74, 0x12, 0x25, 0x0a, 0x0e, 0x64, 0x69, 0x73, 0x70, 0x6c, 0x61, 0x79, 0x5f, 0x70,
+	0x72, 0x65, 0x66, 0x69, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x64, 0x69, 0x73,
+	0x70, 0x6c, 0x61, 0x79, 0x50, 0x72, 0x65, 0x66, 0x69, 0x78, 0x12, 0x42, 0x0a, 0x0a, 0x70, 0x72,
+	0x69, 0x6f, 0x72, 0x69, 0x74, 0x69, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x52, 0x0a, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x69, 0x65, 0x73, 0x22, 0x77,
+	0x0a, 0x10, 0x4d, 0x6f, 0x6e, 0x6f, 0x72, 0x61, 0x69, 0x6c, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x47,
+	0x0a, 0x0a, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73,
+	0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6d, 0x70, 0x61, 0x63, 0x74, 0x4d, 0x65, 0x74, 0x72,
+	0x69, 0x63, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x52, 0x0a, 0x74, 0x68, 0x72,
+	0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x73, 0x22, 0x75, 0x0a, 0x15, 0x49, 0x6d, 0x70, 0x61, 0x63,
+	0x74, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64,
+	0x12, 0x1b, 0x0a, 0x09, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x08, 0x6d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x49, 0x64, 0x12, 0x3f, 0x0a,
+	0x09, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x21, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68,
+	0x6f, 0x6c, 0x64, 0x52, 0x09, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x22, 0x9b,
+	0x01, 0x0a, 0x0f, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f,
+	0x6c, 0x64, 0x12, 0x1c, 0x0a, 0x07, 0x6f, 0x6e, 0x65, 0x5f, 0x64, 0x61, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x03, 0x48, 0x00, 0x52, 0x06, 0x6f, 0x6e, 0x65, 0x44, 0x61, 0x79, 0x88, 0x01, 0x01,
+	0x12, 0x20, 0x0a, 0x09, 0x74, 0x68, 0x72, 0x65, 0x65, 0x5f, 0x64, 0x61, 0x79, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x03, 0x48, 0x01, 0x52, 0x08, 0x74, 0x68, 0x72, 0x65, 0x65, 0x44, 0x61, 0x79, 0x88,
+	0x01, 0x01, 0x12, 0x20, 0x0a, 0x09, 0x73, 0x65, 0x76, 0x65, 0x6e, 0x5f, 0x64, 0x61, 0x79, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x03, 0x48, 0x02, 0x52, 0x08, 0x73, 0x65, 0x76, 0x65, 0x6e, 0x44, 0x61,
+	0x79, 0x88, 0x01, 0x01, 0x42, 0x0a, 0x0a, 0x08, 0x5f, 0x6f, 0x6e, 0x65, 0x5f, 0x64, 0x61, 0x79,
+	0x42, 0x0c, 0x0a, 0x0a, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x65, 0x5f, 0x64, 0x61, 0x79, 0x42, 0x0c,
+	0x0a, 0x0a, 0x5f, 0x73, 0x65, 0x76, 0x65, 0x6e, 0x5f, 0x64, 0x61, 0x79, 0x2a, 0x5f, 0x0a, 0x11,
+	0x42, 0x75, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x65, 0x72, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74,
+	0x79, 0x12, 0x22, 0x0a, 0x1e, 0x42, 0x55, 0x47, 0x41, 0x4e, 0x49, 0x5a, 0x45, 0x52, 0x5f, 0x50,
+	0x52, 0x49, 0x4f, 0x52, 0x49, 0x54, 0x59, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46,
+	0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x06, 0x0a, 0x02, 0x50, 0x30, 0x10, 0x01, 0x12, 0x06, 0x0a,
+	0x02, 0x50, 0x31, 0x10, 0x02, 0x12, 0x06, 0x0a, 0x02, 0x50, 0x32, 0x10, 0x03, 0x12, 0x06, 0x0a,
+	0x02, 0x50, 0x33, 0x10, 0x04, 0x12, 0x06, 0x0a, 0x02, 0x50, 0x34, 0x10, 0x05, 0x32, 0xbe, 0x01,
 	0x0a, 0x08, 0x50, 0x72, 0x6f, 0x6a, 0x65, 0x63, 0x74, 0x73, 0x12, 0x59, 0x0a, 0x09, 0x47, 0x65,
 	0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x29, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61,
 	0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72,
@@ -358,27 +911,43 @@ func file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescGZIP() []
 	return file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_go_chromium_org_luci_analysis_proto_v1_projects_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_go_chromium_org_luci_analysis_proto_v1_projects_proto_goTypes = []interface{}{
-	(*ListProjectsRequest)(nil),     // 0: luci.analysis.v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),    // 1: luci.analysis.v1.ListProjectsResponse
-	(*GetProjectConfigRequest)(nil), // 2: luci.analysis.v1.GetProjectConfigRequest
-	(*ProjectConfig)(nil),           // 3: luci.analysis.v1.ProjectConfig
-	(*ProjectConfig_Monorail)(nil),  // 4: luci.analysis.v1.ProjectConfig.Monorail
-	(*Project)(nil),                 // 5: luci.analysis.v1.Project
+	(BuganizerPriority)(0),                   // 0: luci.analysis.v1.BuganizerPriority
+	(ProjectConfig_BugSystem)(0),             // 1: luci.analysis.v1.ProjectConfig.BugSystem
+	(*ListProjectsRequest)(nil),              // 2: luci.analysis.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),             // 3: luci.analysis.v1.ListProjectsResponse
+	(*GetProjectConfigRequest)(nil),          // 4: luci.analysis.v1.GetProjectConfigRequest
+	(*ProjectConfig)(nil),                    // 5: luci.analysis.v1.ProjectConfig
+	(*BuganizerProject)(nil),                 // 6: luci.analysis.v1.BuganizerProject
+	(*MonorailProject)(nil),                  // 7: luci.analysis.v1.MonorailProject
+	(*MonorailPriority)(nil),                 // 8: luci.analysis.v1.MonorailPriority
+	(*ImpactMetricThreshold)(nil),            // 9: luci.analysis.v1.ImpactMetricThreshold
+	(*MetricThreshold)(nil),                  // 10: luci.analysis.v1.MetricThreshold
+	(*BuganizerProject_PriorityMapping)(nil), // 11: luci.analysis.v1.BuganizerProject.PriorityMapping
+	(*Project)(nil),                          // 12: luci.analysis.v1.Project
 }
 var file_go_chromium_org_luci_analysis_proto_v1_projects_proto_depIdxs = []int32{
-	5, // 0: luci.analysis.v1.ListProjectsResponse.projects:type_name -> luci.analysis.v1.Project
-	4, // 1: luci.analysis.v1.ProjectConfig.monorail:type_name -> luci.analysis.v1.ProjectConfig.Monorail
-	2, // 2: luci.analysis.v1.Projects.GetConfig:input_type -> luci.analysis.v1.GetProjectConfigRequest
-	0, // 3: luci.analysis.v1.Projects.List:input_type -> luci.analysis.v1.ListProjectsRequest
-	3, // 4: luci.analysis.v1.Projects.GetConfig:output_type -> luci.analysis.v1.ProjectConfig
-	1, // 5: luci.analysis.v1.Projects.List:output_type -> luci.analysis.v1.ListProjectsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	12, // 0: luci.analysis.v1.ListProjectsResponse.projects:type_name -> luci.analysis.v1.Project
+	1,  // 1: luci.analysis.v1.ProjectConfig.bug_system:type_name -> luci.analysis.v1.ProjectConfig.BugSystem
+	7,  // 2: luci.analysis.v1.ProjectConfig.monorail:type_name -> luci.analysis.v1.MonorailProject
+	6,  // 3: luci.analysis.v1.ProjectConfig.buganizer:type_name -> luci.analysis.v1.BuganizerProject
+	11, // 4: luci.analysis.v1.BuganizerProject.priority_mappings:type_name -> luci.analysis.v1.BuganizerProject.PriorityMapping
+	8,  // 5: luci.analysis.v1.MonorailProject.priorities:type_name -> luci.analysis.v1.MonorailPriority
+	9,  // 6: luci.analysis.v1.MonorailPriority.thresholds:type_name -> luci.analysis.v1.ImpactMetricThreshold
+	10, // 7: luci.analysis.v1.ImpactMetricThreshold.threshold:type_name -> luci.analysis.v1.MetricThreshold
+	0,  // 8: luci.analysis.v1.BuganizerProject.PriorityMapping.priority:type_name -> luci.analysis.v1.BuganizerPriority
+	9,  // 9: luci.analysis.v1.BuganizerProject.PriorityMapping.thresholds:type_name -> luci.analysis.v1.ImpactMetricThreshold
+	4,  // 10: luci.analysis.v1.Projects.GetConfig:input_type -> luci.analysis.v1.GetProjectConfigRequest
+	2,  // 11: luci.analysis.v1.Projects.List:input_type -> luci.analysis.v1.ListProjectsRequest
+	5,  // 12: luci.analysis.v1.Projects.GetConfig:output_type -> luci.analysis.v1.ProjectConfig
+	3,  // 13: luci.analysis.v1.Projects.List:output_type -> luci.analysis.v1.ListProjectsResponse
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_projects_proto_init() }
@@ -437,7 +1006,67 @@ func file_go_chromium_org_luci_analysis_proto_v1_projects_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProjectConfig_Monorail); i {
+			switch v := v.(*BuganizerProject); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MonorailProject); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MonorailPriority); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ImpactMetricThreshold); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MetricThreshold); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BuganizerProject_PriorityMapping); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -449,18 +1078,20 @@ func file_go_chromium_org_luci_analysis_proto_v1_projects_proto_init() {
 			}
 		}
 	}
+	file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes[8].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_proto_v1_projects_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   5,
+			NumEnums:      2,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_go_chromium_org_luci_analysis_proto_v1_projects_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_analysis_proto_v1_projects_proto_depIdxs,
+		EnumInfos:         file_go_chromium_org_luci_analysis_proto_v1_projects_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_analysis_proto_v1_projects_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_analysis_proto_v1_projects_proto = out.File

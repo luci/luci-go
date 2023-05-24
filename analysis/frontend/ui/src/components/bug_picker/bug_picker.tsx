@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { ChangeEvent } from 'react';
-import { useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
 
 import CircularProgress from '@mui/material/CircularProgress';
@@ -26,11 +25,7 @@ import TextField from '@mui/material/TextField';
 
 import ErrorAlert from '@/components/error_alert/error_alert';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import {
-  GetProjectConfigRequest,
-  getProjectsService,
-} from '@/services/project';
-import { prpcRetrier } from '@/services/shared_models';
+import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
 
 interface Props {
     bugSystem: string;
@@ -105,19 +100,7 @@ const BugPicker = ({
     isLoading,
     data: projectConfig,
     error,
-  } = useQuery(['projectconfig', project], async () => {
-    if (!project) {
-      throw new Error('invariant violated: project should be set');
-    }
-    const projectService = getProjectsService();
-    const request: GetProjectConfigRequest = {
-      name: `projects/${encodeURIComponent(project)}/config`,
-    };
-    return await projectService.getConfig(request);
-  }, {
-    enabled: !!project,
-    retry: prpcRetrier,
-  });
+  } = useFetchProjectConfig(project || '');
 
   if (!project) {
     return (
