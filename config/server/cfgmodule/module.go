@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
@@ -169,9 +170,17 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		)
 	}
 
-	// Install the validation endpoint.
+	// Install the validation endpoint that will be called by the legacy
+	// LUCI Config.
+	// TODO(yiwzhang): Remove after all apps using LUCI Server Framework is
+	// redeployed and the legacy LUCI Config service has been turned down.
 	InstallHandlers(host.Routes(), middleware, m.opts.Rules)
 
+	// Register the prpc `config.Consumer` service that handles configs
+	// validation.
+	config.RegisterConsumerServer(host, &consumerServer{
+		rules: m.opts.Rules,
+	})
 	return ctx, nil
 }
 

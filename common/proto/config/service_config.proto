@@ -6,14 +6,17 @@
 //
 // In this file, "string pattern" is an exact string (can't have a colon) or a
 // string that starts with "regex:", followed by a regular expression. In case
-// of regex, the pattern must match an entire string, as if it was sorrounded by
+// of regex, the pattern must match an entire string, as if it was surrounded by
 // ^ and $.
 
 syntax = "proto3";
 
+package config;
+
+import "google/protobuf/empty.proto";
+
 option go_package = "go.chromium.org/luci/common/proto/config";
 
-package config;
 
 // Use to specify configuration stored in Git repository importable via Gitiles
 // API.
@@ -209,6 +212,10 @@ message Service {
   repeated string owners = 2;
   // An HTTPS endpoint that returns JSON-encoded ServiceDynamicMetadata in body.
   string metadata_url = 4;
+  // TODO(yiwzhang): add `service_url` so that the new LUCI Config service can
+  // call the Consumer prpc service to get the service metadata and perform
+  // validation. The metadata_url will be deprecated in favor of the new field.
+
   // A list of identities that have access to this service's configs.
   // of:
   // * "group:<group>", where group is defined on auth server.
@@ -394,3 +401,79 @@ message ValidationResponseMessage {
   // If at least one error is found, the config is considered invalid.
   repeated Message messages = 1;
 }
+
+
+/******************************************************************************/
+/* Service                                                                    */
+/******************************************************************************/
+
+// Consumer can be implemented by the registered service that consumes config.
+//
+// The service should be registered in `ServicesCfg`. It is currently for a
+// service declaring configs of interest and validate those configs.
+service Consumer {
+  // GetMetadata returns the service metadata.
+  rpc GetMetadata(google.protobuf.Empty) returns(ServiceMetadata) {}
+  // ValidateConfig validates the provided configs within a config set.
+  rpc ValidateConfig(ValidateConfigRequest) returns (ValidateConfigResponse) {};
+}
+
+// ServiceMetadata describes the metadata of a service.
+message ServiceMetadata {
+  // Patterns of config files that the service is "interested in".
+  //
+  // Interested means the service can validate config files on config files
+  // changes.
+  repeated ConfigPattern config_patterns = 1;
+}
+
+// ValidateConfigRequest is the request to ValidateConfig rpc.
+message ValidateConfigRequest {
+  message Files {
+    repeated File files = 1;
+  }
+  // File represents a config file to validate.
+  message File {
+    // path of the config file relative to root config directory.
+    string path = 1;
+    oneof content {
+      // RawContent is the raw byte content of the config file.
+      bytes raw_content = 2;
+      // SignedURL is a GCS singed url to download full config content.
+      //
+      // Expired in 10 minutes.
+      string signed_url = 3;
+    }
+  }
+  // Config set of the config files to validate.
+  string config_set = 1;
+  // Files to validate.
+  Files files = 2;
+}
+
+
+// ValidateConfigResponse is the response to ValidateConfig rpc.
+message ValidateConfigResponse {
+  // Severity of a validation response message.
+  enum Severity {
+    UNKNOWN = 0;
+    DEBUG = 10;
+    INFO = 20;
+    WARNING = 30;
+    ERROR = 40;
+    CRITICAL = 50;
+  }
+  // A message that explains why a config is valid or not.
+  message Message {
+    // Path of the config file that has an error.
+    string path = 1;
+    // If an error, a config is considered invalid. Defaults to INFO.
+    Severity severity = 2;
+    // Textual representation of the message.
+    string text = 3;
+  }
+  // Errors, warnings and other information found during validation.
+  // If at least one error is found, the config is considered invalid.
+  repeated Message messages = 1;
+}
+

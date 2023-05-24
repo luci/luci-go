@@ -40,13 +40,24 @@ const (
 	metaDataFormatVersion = "1.0"
 )
 
+// consumerServer implements `config.Consumer` interface that will be called
+// by LUCI Config.
+type consumerServer struct {
+	config.UnimplementedConsumerServer
+
+	// Rules is a rule set to use for the config validation.
+	rules *validation.RuleSet
+}
+
 // InstallHandlers installs the metadata and validation handlers that use
 // the given validation rules.
 //
 // It does not implement any authentication checks, thus the passed in
 // router.MiddlewareChain should implement any necessary authentication checks.
 //
-// TODO(vadimsh): Move this to serverModule.Initialize once it is the only user.
+// Deprecated: The handlers are called by the legacy LUCI Config service. The
+// new LUCI Config service will make request to `config.Consumer` prpc service
+// instead. See `consumerServer`.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain, rules *validation.RuleSet) {
 	r.GET(metadataPath, base, metadataRequestHandler(rules))
 	r.POST(validationPath, base, validationRequestHandler(rules))
