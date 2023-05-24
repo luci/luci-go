@@ -50,13 +50,13 @@ type Promise struct {
 // the value returned by the supplied generator function.
 //
 // The generator will be invoked immediately in its own goroutine.
-func New(c context.Context, gen Generator) *Promise {
+func New(ctx context.Context, gen Generator) *Promise {
 	p := Promise{
 		signalC: make(chan struct{}),
 	}
 
 	// Execute our generator function in a separate goroutine.
-	go p.runGen(c, gen)
+	go p.runGen(ctx, gen)
 	return &p
 }
 
@@ -73,15 +73,15 @@ func NewDeferred(gen Generator) *Promise {
 	p := Promise{
 		signalC: make(chan struct{}),
 	}
-	p.onGet = func(c context.Context) {
-		startOnce.Do(func() { p.runGen(c, gen) })
+	p.onGet = func(ctx context.Context) {
+		startOnce.Do(func() { p.runGen(ctx, gen) })
 	}
 	return &p
 }
 
-func (p *Promise) runGen(c context.Context, gen Generator) {
+func (p *Promise) runGen(ctx context.Context, gen Generator) {
 	defer close(p.signalC)
-	p.data, p.err = gen(c)
+	p.data, p.err = gen(ctx)
 }
 
 // Get returns the promise's value. If the value isn't set, Get will block until
@@ -90,10 +90,10 @@ func (p *Promise) runGen(c context.Context, gen Generator) {
 // If the value is available, it will be returned with its error status. If the
 // context times out or is cancelled, the appropriate context error will be
 // returned.
-func (p *Promise) Get(c context.Context) (any, error) {
+func (p *Promise) Get(ctx context.Context) (any, error) {
 	// If we have an onGet function, run it (deferred case).
 	if p.onGet != nil {
-		p.onGet(c)
+		p.onGet(ctx)
 	}
 
 	// Block until at least one of these conditions is satisfied. If both are,
@@ -102,14 +102,14 @@ func (p *Promise) Get(c context.Context) (any, error) {
 	case <-p.signalC:
 		return p.data, p.err
 
-	case <-c.Done():
+	case <-ctx.Done():
 		// Make sure we don't actually have data.
 		select {
 		case <-p.signalC:
 			return p.data, p.err
 
 		default:
-			return nil, c.Err()
+			return nil, ctx.Err()
 		}
 	}
 }

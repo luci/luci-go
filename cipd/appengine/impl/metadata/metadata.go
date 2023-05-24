@@ -59,7 +59,7 @@ type Storage interface {
 	//
 	// Returns a fatal error if the prefix is malformed, all other errors are
 	// transient.
-	GetMetadata(c context.Context, prefix string) ([]*api.PrefixMetadata, error)
+	GetMetadata(ctx context.Context, prefix string) ([]*api.PrefixMetadata, error)
 
 	// VisitMetadata enumerates the metadata in depth-first order.
 	//
@@ -75,7 +75,7 @@ type Storage interface {
 	//
 	// Returns either a transient error if fetching failed, or whatever error the
 	// callback returned.
-	VisitMetadata(c context.Context, prefix string, cb Visitor) error
+	VisitMetadata(ctx context.Context, prefix string, cb Visitor) error
 
 	// UpdateMetadata transactionally (with XG transaction) updates or creates
 	// metadata of some prefix and returns it.
@@ -100,7 +100,7 @@ type Storage interface {
 	//
 	// If the callback returns an error, it will be returned as is. If the
 	// transaction itself fails, returns a transient error.
-	UpdateMetadata(c context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error)
+	UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error)
 }
 
 // GetStorage returns production implementation of the metadata storage.

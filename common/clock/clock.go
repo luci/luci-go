@@ -40,5 +40,5 @@ type Clock interface {
 	// Creates a new Timer instance, bound to this Clock.
 	//
 	// If the supplied Context is canceled, the timer will expire immediately.
-	NewTimer(c context.Context) Timer
+	NewTimer(ctx context.Context) Timer
 }

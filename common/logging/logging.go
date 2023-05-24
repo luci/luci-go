@@ -75,13 +75,13 @@ const (
 // SetFactory sets the Logger factory for this context.
 //
 // The factory will be called each time Get(context) is used.
-func SetFactory(c context.Context, f Factory) context.Context {
-	return context.WithValue(c, loggerKey, f)
+func SetFactory(ctx context.Context, f Factory) context.Context {
+	return context.WithValue(ctx, loggerKey, f)
 }
 
 // GetFactory returns the currently-configured logging factory (or nil).
-func GetFactory(c context.Context) Factory {
-	if f, ok := c.Value(loggerKey).(Factory); ok {
+func GetFactory(ctx context.Context) Factory {
+	if f, ok := ctx.Value(loggerKey).(Factory); ok {
 		return f
 	}
 	return nil
@@ -89,9 +89,9 @@ func GetFactory(c context.Context) Factory {
 
 // Get the current Logger, or a logger that ignores all messages if none
 // is defined.
-func Get(c context.Context) Logger {
-	if f := GetFactory(c); f != nil {
-		return f(c)
+func Get(ctx context.Context) Logger {
+	if f := GetFactory(ctx); f != nil {
+		return f(ctx)
 	}
 	return Null
 }

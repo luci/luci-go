@@ -33,27 +33,27 @@ import (
 // Store returns the global metric store that contains all the metric values for
 // this process.  Applications shouldn't need to access this directly - instead
 // use the metric objects which provide type-safe accessors.
-func Store(c context.Context) store.Store {
-	return GetState(c).Store()
+func Store(ctx context.Context) store.Store {
+	return GetState(ctx).Store()
 }
 
 // Monitor returns the global monitor that sends metrics to monitoring
 // endpoints.  Defaults to a nil monitor, but changed by InitializeFromFlags.
-func Monitor(c context.Context) monitor.Monitor {
-	return GetState(c).Monitor()
+func Monitor(ctx context.Context) monitor.Monitor {
+	return GetState(ctx).Monitor()
 }
 
 // SetStore changes the global metric store.  All metrics that were registered
 // with the old store will be re-registered on the new store.
-func SetStore(c context.Context, s store.Store) {
-	GetState(c).SetStore(s)
+func SetStore(ctx context.Context, s store.Store) {
+	GetState(ctx).SetStore(s)
 }
 
 // InitializeFromFlags configures the tsmon library from flag values.
 //
 // This will set a Target (information about what's reporting metrics) and a
 // Monitor (where to send the metrics to).
-func InitializeFromFlags(c context.Context, fl *Flags) error {
+func InitializeFromFlags(ctx context.Context, fl *Flags) error {
 	// Load the config file, and override its values with flags.
 	cfg, err := loadConfig(fl.ConfigFile)
 	if err != nil {
@@ -70,7 +70,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		cfg.ActAs = fl.ActAs
 	}
 
-	mon, err := initMonitor(c, cfg)
+	mon, err := initMonitor(ctx, cfg)
 	switch {
 	case err != nil:
 		return errors.Annotate(err, "failed to initialize monitor").Err()
@@ -105,26 +105,26 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 		return errors.Annotate(err, "failed to configure target from flags").Err()
 	}
 
-	Initialize(c, mon, store.NewInMemory(t))
+	Initialize(ctx, mon, store.NewInMemory(t))
 
-	state := GetState(c)
+	state := GetState(ctx)
 	if state.flusher != nil {
-		logging.Infof(c, "Canceling previous tsmon auto flush")
+		logging.Infof(ctx, "Canceling previous tsmon auto flush")
 		state.flusher.stop()
 		state.flusher = nil
 	}
 
 	if fl.Flush == FlushAuto {
 		state.flusher = &autoFlusher{}
-		state.flusher.start(c, fl.FlushInterval)
+		state.flusher.start(ctx, fl.FlushInterval)
 	}
 
 	return nil
 }
 
 // Initialize configures the tsmon library with the given monitor and store.
-func Initialize(c context.Context, m monitor.Monitor, s store.Store) {
-	state := GetState(c)
+func Initialize(ctx context.Context, m monitor.Monitor, s store.Store) {
+	state := GetState(ctx)
 	state.SetMonitor(m)
 	state.SetStore(s)
 }
@@ -135,40 +135,40 @@ func Initialize(c context.Context, m monitor.Monitor, s store.Store) {
 // It resets Monitor and Store.
 //
 // Logs error to standard logger. Does nothing if tsmon wasn't initialized.
-func Shutdown(c context.Context) {
-	state := GetState(c)
+func Shutdown(ctx context.Context) {
+	state := GetState(ctx)
 	if store.IsNilStore(state.Store()) {
 		return
 	}
 
 	if state.flusher != nil {
-		logging.Debugf(c, "Stopping tsmon auto flush")
+		logging.Debugf(ctx, "Stopping tsmon auto flush")
 		state.flusher.stop()
 		state.flusher = nil
 	}
 
 	// Flush logs errors inside.
-	Flush(c)
+	Flush(ctx)
 
 	// Reset the state as if 'InitializeFromFlags' was never called.
-	Initialize(c, monitor.NewNilMonitor(), store.NewNilStore())
+	Initialize(ctx, monitor.NewNilMonitor(), store.NewNilStore())
 }
 
 // ResetCumulativeMetrics resets only cumulative metrics.
-func ResetCumulativeMetrics(c context.Context) {
-	GetState(c).ResetCumulativeMetrics(c)
+func ResetCumulativeMetrics(ctx context.Context) {
+	GetState(ctx).ResetCumulativeMetrics(ctx)
 }
 
 // initMonitor examines flags and config and initializes a monitor.
 //
 // It returns (nil, nil) if tsmon should be disabled.
-func initMonitor(c context.Context, cfg config) (monitor.Monitor, error) {
+func initMonitor(ctx context.Context, cfg config) (monitor.Monitor, error) {
 	if cfg.Endpoint == "" {
-		logging.Infof(c, "tsmon is disabled because no endpoint is configured")
+		logging.Infof(ctx, "tsmon is disabled because no endpoint is configured")
 		return nil, nil
 	}
 	if strings.ToLower(cfg.Endpoint) == "none" {
-		logging.Infof(c, "tsmon is explicitly disabled")
+		logging.Infof(ctx, "tsmon is explicitly disabled")
 		return nil, nil
 	}
 
@@ -181,12 +181,12 @@ func initMonitor(c context.Context, cfg config) (monitor.Monitor, error) {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
 	case "http", "https":
-		client, err := newAuthenticator(c, cfg.Credentials, cfg.ActAs, monitor.ProdxmonScopes).Client()
+		client, err := newAuthenticator(ctx, cfg.Credentials, cfg.ActAs, monitor.ProdxmonScopes).Client()
 		if err != nil {
 			return nil, err
 		}
 
-		return monitor.NewHTTPMonitor(c, client, endpointURL)
+		return monitor.NewHTTPMonitor(ctx, client, endpointURL)
 	default:
 		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", cfg.Endpoint)
 	}

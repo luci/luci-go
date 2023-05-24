@@ -100,23 +100,23 @@ func (f Fields) String() string {
 }
 
 // Debugf is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Debugf(c context.Context, fmt string, args ...any) {
-	Get(SetFields(c, f)).LogCall(Debug, 1, fmt, args)
+func (f Fields) Debugf(ctx context.Context, fmt string, args ...any) {
+	Get(SetFields(ctx, f)).LogCall(Debug, 1, fmt, args)
 }
 
 // Infof is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Infof(c context.Context, fmt string, args ...any) {
-	Get(SetFields(c, f)).LogCall(Info, 1, fmt, args)
+func (f Fields) Infof(ctx context.Context, fmt string, args ...any) {
+	Get(SetFields(ctx, f)).LogCall(Info, 1, fmt, args)
 }
 
 // Warningf is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Warningf(c context.Context, fmt string, args ...any) {
-	Get(SetFields(c, f)).LogCall(Warning, 1, fmt, args)
+func (f Fields) Warningf(ctx context.Context, fmt string, args ...any) {
+	Get(SetFields(ctx, f)).LogCall(Warning, 1, fmt, args)
 }
 
 // Errorf is a shorthand method to call the current logger's Errorf method.
-func (f Fields) Errorf(c context.Context, fmt string, args ...any) {
-	Get(SetFields(c, f)).LogCall(Error, 1, fmt, args)
+func (f Fields) Errorf(ctx context.Context, fmt string, args ...any) {
+	Get(SetFields(ctx, f)).LogCall(Error, 1, fmt, args)
 }
 
 // FieldEntry is a static representation of a single key/value entry in a
@@ -176,22 +176,22 @@ func (s fieldEntrySlice) Len() int {
 // new context will contain the combination of its current Fields, updated with
 // the new ones (see Fields.Copy). Specifying the new fields as nil will
 // clear the currently set fields.
-func SetFields(c context.Context, fields Fields) context.Context {
-	return context.WithValue(c, fieldsKey, GetFields(c).Copy(fields))
+func SetFields(ctx context.Context, fields Fields) context.Context {
+	return context.WithValue(ctx, fieldsKey, GetFields(ctx).Copy(fields))
 }
 
 // SetField is a convenience method for SetFields for a single key/value
 // pair.
-func SetField(c context.Context, key string, value any) context.Context {
-	return SetFields(c, Fields{key: value})
+func SetField(ctx context.Context, key string, value any) context.Context {
+	return SetFields(ctx, Fields{key: value})
 }
 
 // GetFields returns the current Fields.
 //
 // This method is used for logger implementations with the understanding that
 // the returned fields must not be mutated.
-func GetFields(c context.Context) Fields {
-	if ret, ok := c.Value(fieldsKey).(Fields); ok {
+func GetFields(ctx context.Context) Fields {
+	if ret, ok := ctx.Value(fieldsKey).(Fields); ok {
 		return ret
 	}
 	return nil

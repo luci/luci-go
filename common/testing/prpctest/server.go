@@ -53,7 +53,7 @@ func setContext(c context.Context) router.MiddlewareChain {
 
 // Start starts the server. Any currently-registered services will be installed
 // into the pRPC Server.
-func (s *Server) Start(c context.Context) {
+func (s *Server) Start(ctx context.Context) {
 	// Clean up any active server.
 	s.Close()
 
@@ -63,7 +63,7 @@ func (s *Server) Start(c context.Context) {
 	}
 
 	r := router.New()
-	s.InstallHandlers(r, base(c))
+	s.InstallHandlers(r, base(ctx))
 	s.HTTP = httptest.NewServer(r)
 
 	u, err := url.Parse(s.HTTP.URL)

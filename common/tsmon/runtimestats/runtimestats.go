@@ -60,27 +60,27 @@ var (
 //
 // Call it periodically (ideally right before flushing the metrics) to gather
 // runtime stats metrics.
-func Report(c context.Context) {
+func Report(ctx context.Context) {
 	var stats runtime.MemStats
 	runtime.ReadMemStats(&stats)
 
-	MemAlloc.Set(c, int64(stats.Alloc))
-	MemTotalAlloc.Set(c, int64(stats.TotalAlloc))
-	MemMallocs.Set(c, int64(stats.Mallocs))
-	MemFrees.Set(c, int64(stats.Frees))
-	MemNextGC.Set(c, int64(stats.NextGC))
-	MemNumGC.Set(c, int64(stats.NumGC))
-	MemPauseTotal.Set(c, int64(stats.PauseTotalNs/1000))
-	MemHeapSys.Set(c, int64(stats.HeapSys))
-	MemHeapIdle.Set(c, int64(stats.HeapIdle))
-	MemHeapInuse.Set(c, int64(stats.HeapInuse))
-	MemHeapObjects.Set(c, int64(stats.HeapObjects))
-	MemStackInuse.Set(c, int64(stats.StackInuse))
-	MemStackSys.Set(c, int64(stats.StackSys))
-	MemMSpanInuse.Set(c, int64(stats.MSpanInuse))
-	MemMSpanSys.Set(c, int64(stats.MSpanSys))
-	MemMCacheInuse.Set(c, int64(stats.MCacheInuse))
-	MemMCacheSys.Set(c, int64(stats.MCacheSys))
+	MemAlloc.Set(ctx, int64(stats.Alloc))
+	MemTotalAlloc.Set(ctx, int64(stats.TotalAlloc))
+	MemMallocs.Set(ctx, int64(stats.Mallocs))
+	MemFrees.Set(ctx, int64(stats.Frees))
+	MemNextGC.Set(ctx, int64(stats.NextGC))
+	MemNumGC.Set(ctx, int64(stats.NumGC))
+	MemPauseTotal.Set(ctx, int64(stats.PauseTotalNs/1000))
+	MemHeapSys.Set(ctx, int64(stats.HeapSys))
+	MemHeapIdle.Set(ctx, int64(stats.HeapIdle))
+	MemHeapInuse.Set(ctx, int64(stats.HeapInuse))
+	MemHeapObjects.Set(ctx, int64(stats.HeapObjects))
+	MemStackInuse.Set(ctx, int64(stats.StackInuse))
+	MemStackSys.Set(ctx, int64(stats.StackSys))
+	MemMSpanInuse.Set(ctx, int64(stats.MSpanInuse))
+	MemMSpanSys.Set(ctx, int64(stats.MSpanSys))
+	MemMCacheInuse.Set(ctx, int64(stats.MCacheInuse))
+	MemMCacheSys.Set(ctx, int64(stats.MCacheSys))
 
-	GoroutineNum.Set(c, int64(runtime.NumGoroutine()))
+	GoroutineNum.Set(ctx, int64(runtime.NumGoroutine()))
 }

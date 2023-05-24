@@ -70,8 +70,8 @@ func roleSet(roles ...api.Role) map[api.Role]struct{} {
 // used now, but it may change in the future.
 //
 // Returns only transient errors.
-func hasRole(c context.Context, metas []*api.PrefixMetadata, role api.Role) (bool, error) {
-	caller := string(auth.CurrentIdentity(c)) // e.g. "user:abc@example.com"
+func hasRole(ctx context.Context, metas []*api.PrefixMetadata, role api.Role) (bool, error) {
+	caller := string(auth.CurrentIdentity(ctx)) // e.g. "user:abc@example.com"
 
 	// E.g. if 'role' is READER, 'roles' will be {READER, WRITER, OWNER}.
 	roles := impliedRolesRev[role]
@@ -102,7 +102,7 @@ func hasRole(c context.Context, metas []*api.PrefixMetadata, role api.Role) (boo
 		}
 	}
 
-	yes, err := auth.IsMember(c, groups.ToSlice()...)
+	yes, err := auth.IsMember(ctx, groups.ToSlice()...)
 	if err != nil {
 		return false, errors.Annotate(err, "failed to check group memberships when checking ACLs for role %s", role).Err()
 	}
@@ -115,14 +115,14 @@ func hasRole(c context.Context, metas []*api.PrefixMetadata, role api.Role) (boo
 // It understands the role inheritance defined by impliedRoles map.
 //
 // Returns only transient errors.
-func rolesInPrefix(c context.Context, metas []*api.PrefixMetadata) ([]api.Role, error) {
+func rolesInPrefix(ctx context.Context, metas []*api.PrefixMetadata) ([]api.Role, error) {
 	roles := roleSet()
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
 			if _, ok := roles[acl.Role]; ok {
 				continue // seen this role already
 			}
-			switch yes, err := isInACL(c, acl); {
+			switch yes, err := isInACL(ctx, acl); {
 			case err != nil:
 				return nil, err
 			case yes:
@@ -145,8 +145,8 @@ func rolesInPrefix(c context.Context, metas []*api.PrefixMetadata) ([]api.Role, 
 }
 
 // isInACL is true if the caller is in the given access control list.
-func isInACL(c context.Context, acl *api.PrefixMetadata_ACL) (bool, error) {
-	caller := string(auth.CurrentIdentity(c)) // e.g. "user:abc@example.com"
+func isInACL(ctx context.Context, acl *api.PrefixMetadata_ACL) (bool, error) {
+	caller := string(auth.CurrentIdentity(ctx)) // e.g. "user:abc@example.com"
 
 	var groups []string
 	for _, p := range acl.Principals {
@@ -158,7 +158,7 @@ func isInACL(c context.Context, acl *api.PrefixMetadata_ACL) (bool, error) {
 		}
 	}
 
-	yes, err := auth.IsMember(c, groups...)
+	yes, err := auth.IsMember(ctx, groups...)
 	if err != nil {
 		return false, errors.Annotate(err, "failed to check group memberships when checking ACLs").Err()
 	}

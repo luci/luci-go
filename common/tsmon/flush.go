@@ -23,8 +23,8 @@ import (
 )
 
 // Flush sends all the metrics that are registered in the application.
-func Flush(c context.Context) error {
-	return GetState(c).Flush(c, nil)
+func Flush(ctx context.Context) error {
+	return GetState(ctx).Flush(ctx, nil)
 }
 
 // autoFlusher knows how to periodically call 'Flush'.
@@ -35,7 +35,7 @@ type autoFlusher struct {
 	flush func(context.Context) error // mocked in unit tests
 }
 
-func (f *autoFlusher) start(c context.Context, interval time.Duration) {
+func (f *autoFlusher) start(ctx context.Context, interval time.Duration) {
 	flush := f.flush
 	if flush == nil {
 		flush = Flush
@@ -45,16 +45,16 @@ func (f *autoFlusher) start(c context.Context, interval time.Duration) {
 	killed := make(chan struct{})
 	f.killed = killed
 
-	c, f.cancel = context.WithCancel(c)
+	ctx, f.cancel = context.WithCancel(ctx)
 	go func() {
 		defer close(killed)
 
 		for {
-			if tr := <-clock.After(c, interval); tr.Incomplete() {
+			if tr := <-clock.After(ctx, interval); tr.Incomplete() {
 				return
 			}
-			if err := flush(c); err != nil && err != context.Canceled {
-				logging.Warningf(c, "Failed to flush tsmon metrics: %v", err)
+			if err := flush(ctx); err != nil && err != context.Canceled {
+				logging.Warningf(ctx, "Failed to flush tsmon metrics: %v", err)
 			}
 		}
 	}()

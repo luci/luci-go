@@ -44,14 +44,14 @@ type Store interface {
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
-	Get(c context.Context, m types.Metric, resetTime time.Time, fieldVals []any) any
-	Set(c context.Context, m types.Metric, resetTime time.Time, fieldVals []any, value any)
-	Del(c context.Context, m types.Metric, fieldVals []any)
-	Incr(c context.Context, m types.Metric, resetTime time.Time, fieldVals []any, delta any)
+	Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any) any
+	Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, value any)
+	Del(ctx context.Context, m types.Metric, fieldVals []any)
+	Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, delta any)
 
-	GetAll(c context.Context) []types.Cell
+	GetAll(ctx context.Context) []types.Cell
 
-	Reset(c context.Context, m types.Metric)
+	Reset(ctx context.Context, m types.Metric)
 }
 
 // TestOptions contains options for RunStoreImplementationTests.

@@ -124,7 +124,7 @@ func TestSystemProbe(t *testing.T) {
 		probe := Probe{
 			Target: "git",
 
-			CheckWrapper: func(c context.Context, path string, env environ.Env) (bool, error) {
+			CheckWrapper: func(ctx context.Context, path string, env environ.Env) (bool, error) {
 				wrapperChecks++
 				switch filepath.Dir(path) {
 				case wrapperDir, selfDir:

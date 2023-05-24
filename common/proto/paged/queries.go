@@ -59,7 +59,7 @@ var returnedStop = reflect.ValueOf(func() error { return datastore.Stop }).Call(
 // nil halts the query, and if the error is not datastore.Stop, causes this
 // function to return an error as well. See datastore.Run for more information.
 // No maximum page size is imposed, use datastore.Stop to enforce one.
-func Query(c context.Context, lim int32, tok string, rsp Response, q *datastore.Query, cb any) error {
+func Query(ctx context.Context, lim int32, tok string, rsp Response, q *datastore.Query, cb any) error {
 	// Validate as much about the callback as this function relies on.
 	// The rest is validated by datastore.Run.
 	v := reflect.ValueOf(cb)
@@ -76,7 +76,7 @@ func Query(c context.Context, lim int32, tok string, rsp Response, q *datastore.
 
 	// Modify the query with the request parameters.
 	if tok != "" {
-		cur, err := datastore.DecodeCursor(c, tok)
+		cur, err := datastore.DecodeCursor(ctx, tok)
 		if err != nil {
 			return status.Errorf(codes.InvalidArgument, "invalid page token %q", tok)
 		}
@@ -131,7 +131,7 @@ func Query(c context.Context, lim int32, tok string, rsp Response, q *datastore.
 		return ret
 	}).Interface()
 
-	if err := datastore.Run(c, q, curCB); err != nil {
+	if err := datastore.Run(ctx, q, curCB); err != nil {
 		return errors.Annotate(err, "failed to fetch entities").Err()
 	}
 	return nil

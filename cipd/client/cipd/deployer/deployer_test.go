@@ -57,8 +57,8 @@ func withMemLogger() context.Context {
 	return memlogger.Use(context.Background())
 }
 
-func loggerWarnings(c context.Context) (out []string) {
-	for _, m := range logging.Get(c).(*memlogger.MemLogger).Messages() {
+func loggerWarnings(ctx context.Context) (out []string) {
+	for _, m := range logging.Get(ctx).(*memlogger.MemLogger).Messages() {
 		if m.Level >= logging.Warning {
 			out = append(out, m.Msg)
 		}

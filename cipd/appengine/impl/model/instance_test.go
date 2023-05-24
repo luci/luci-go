@@ -69,7 +69,7 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		Convey("New package and instance", func() {
-			reg, out, err := RegisterInstance(ctx, inst, func(c context.Context, inst *Instance) error {
+			reg, out, err := RegisterInstance(ctx, inst, func(ctx context.Context, inst *Instance) error {
 				inst.ProcessorsPending = []string{"a"}
 				return nil
 			})
@@ -117,7 +117,7 @@ func TestRegisterInstance(t *testing.T) {
 			So(datastore.Put(ctx, pkg), ShouldBeNil)
 
 			inst.RegisteredBy = "user:someoneelse@example.com"
-			reg, out, err := RegisterInstance(ctx, inst, func(c context.Context, inst *Instance) error {
+			reg, out, err := RegisterInstance(ctx, inst, func(ctx context.Context, inst *Instance) error {
 				inst.ProcessorsPending = []string{"a"}
 				return nil
 			})
@@ -152,7 +152,7 @@ func TestRegisterInstance(t *testing.T) {
 
 			modified := *inst
 			modified.RegisteredBy = "user:someoneelse@example.com"
-			reg, out, err := RegisterInstance(ctx, &modified, func(c context.Context, inst *Instance) error {
+			reg, out, err := RegisterInstance(ctx, &modified, func(ctx context.Context, inst *Instance) error {
 				panic("must not be called")
 			})
 			So(err, ShouldBeNil)

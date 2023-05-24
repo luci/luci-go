@@ -32,13 +32,13 @@ type Callback func(error, time.Duration)
 
 // LogCallback builds a Callback which logs a Warning with the opname, error
 // and delay.
-func LogCallback(c context.Context, opname string) Callback {
+func LogCallback(ctx context.Context, opname string) Callback {
 	return func(err error, delay time.Duration) {
 		logging.Fields{
 			logging.ErrorKey: err,
 			"opname":         opname,
 			"delay":          delay,
-		}.Warningf(c, "operation failed transiently")
+		}.Warningf(ctx, "operation failed transiently")
 	}
 }
 

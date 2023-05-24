@@ -171,35 +171,35 @@ func (m *MemLogger) Dump(w io.Writer) (n int, err error) {
 // Use adds a memory backed Logger to Context, with concrete type
 // *MemLogger. Casting to the concrete type can be used to inspect the
 // log output after running a test case, for example.
-func Use(c context.Context) context.Context {
+func Use(ctx context.Context) context.Context {
 	lock := sync.Mutex{}
 	data := []LogEntry{}
-	return logging.SetFactory(c, func(ic context.Context) logging.Logger {
-		return &MemLogger{&lock, &data, logging.GetFields(ic)}
+	return logging.SetFactory(ctx, func(ctx context.Context) logging.Logger {
+		return &MemLogger{&lock, &data, logging.GetFields(ctx)}
 	})
 }
 
 // Reset is a convenience function to reset the current memory logger.
 //
 // This will panic if the current logger is not a memory logger.
-func Reset(c context.Context) {
-	logging.Get(c).(*MemLogger).Reset()
+func Reset(ctx context.Context) {
+	logging.Get(ctx).(*MemLogger).Reset()
 }
 
 // Dump is a convenience function to dump the current contents of the memory
 // logger to the writer.
 //
 // This will panic if the current logger is not a memory logger.
-func Dump(c context.Context, w io.Writer) (n int, err error) {
-	return logging.Get(c).(*MemLogger).Dump(w)
+func Dump(ctx context.Context, w io.Writer) (n int, err error) {
+	return logging.Get(ctx).(*MemLogger).Dump(w)
 }
 
 // MustDumpStdout is a convenience function to dump the current contents of the
 // memory logger to stdout.
 //
 // This will panic if the current logger is not a memory logger.
-func MustDumpStdout(c context.Context) {
-	_, err := logging.Get(c).(*MemLogger).Dump(os.Stdout)
+func MustDumpStdout(ctx context.Context) {
+	_, err := logging.Get(ctx).(*MemLogger).Dump(os.Stdout)
 	if err != nil {
 		panic(err)
 	}

@@ -35,7 +35,7 @@ import (
 // canceled, new work dispatch will be inhibited. Any methods added to the
 // work channel will not be executed, and RunMulti will treat them as if they
 // ran and immediately returned the Context's Err() value.
-func RunMulti(c context.Context, workers int, fn func(MultiRunner) error) error {
+func RunMulti(ctx context.Context, workers int, fn func(MultiRunner) error) error {
 	// Create a Runner to manage our goroutines. We will not set its Maximum,
 	// since we will be metering that internally using our own semaphore.
 	r := Runner{
@@ -44,7 +44,7 @@ func RunMulti(c context.Context, workers int, fn func(MultiRunner) error) error 
 	defer r.Close()
 
 	nrc := nestedRunnerContext{
-		ctx:   c,
+		ctx:   ctx,
 		workC: r.WorkC(),
 	}
 	if workers > 0 {

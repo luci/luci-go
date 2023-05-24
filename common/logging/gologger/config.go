@@ -90,7 +90,7 @@ type LoggerConfig struct {
 //
 // All loggers produced by LoggerConfig share single underlying go-logging
 // Logger instance.
-func (lc *LoggerConfig) NewLogger(c context.Context) logging.Logger {
+func (lc *LoggerConfig) NewLogger(ctx context.Context) logging.Logger {
 	lc.initOnce.Do(func() {
 		logger := lc.Logger
 		if logger == nil {
@@ -110,9 +110,9 @@ func (lc *LoggerConfig) NewLogger(c context.Context) logging.Logger {
 		lc.w = &goLoggerWrapper{l: logger}
 	})
 	ret := &loggerImpl{goLoggerWrapper: lc.w}
-	if c != nil {
-		ret.level = logging.GetLevel(c)
-		if fields := logging.GetFields(c); len(fields) > 0 {
+	if ctx != nil {
+		ret.level = logging.GetLevel(ctx)
+		if fields := logging.GetFields(ctx); len(fields) > 0 {
 			ret.fields = fields.String()
 		}
 	}
@@ -120,6 +120,6 @@ func (lc *LoggerConfig) NewLogger(c context.Context) logging.Logger {
 }
 
 // Use registers go-logging based logger as default logger of the context.
-func (lc *LoggerConfig) Use(c context.Context) context.Context {
-	return logging.SetFactory(c, lc.NewLogger)
+func (lc *LoggerConfig) Use(ctx context.Context) context.Context {
+	return logging.SetFactory(ctx, lc.NewLogger)
 }

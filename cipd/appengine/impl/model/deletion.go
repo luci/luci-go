@@ -39,15 +39,15 @@ import (
 //
 // Returns grpc-tagged errors (in particular NotFound if there's no such
 // package).
-func DeletePackage(c context.Context, pkg string) error {
-	if err := CheckPackageExists(c, pkg); err != nil {
+func DeletePackage(ctx context.Context, pkg string) error {
+	if err := CheckPackageExists(ctx, pkg); err != nil {
 		return err
 	}
 
 	// Note that to maintain data model consistency during the deletion, we delete
 	// various metadata first, and PackageInstance entities second (to make sure
 	// we don't have metadata with dangling pointers to deleted instances).
-	err := deleteEntityKinds(c, pkg, []string{
+	err := deleteEntityKinds(ctx, pkg, []string{
 		"InstanceMetadata",
 		"InstanceTag",
 		"PackageRef",
@@ -56,15 +56,15 @@ func DeletePackage(c context.Context, pkg string) error {
 	if err != nil {
 		return err
 	}
-	if err := deleteEntityKinds(c, pkg, []string{"PackageInstance"}); err != nil {
+	if err := deleteEntityKinds(ctx, pkg, []string{"PackageInstance"}); err != nil {
 		return nil
 	}
 
 	// Cleanup whatever remains. It contains entities that were created while we
 	// were deleting stuff above. There should be very few (usually 0) such
 	// entities, so it's OK to delete them transactionally.
-	return Txn(c, "DeletePackage", func(c context.Context) error {
-		err := deleteEntityKinds(c, pkg, []string{
+	return Txn(ctx, "DeletePackage", func(ctx context.Context) error {
+		err := deleteEntityKinds(ctx, pkg, []string{
 			"InstanceMetadata",
 			"InstanceTag",
 			"PackageRef",
@@ -74,10 +74,10 @@ func DeletePackage(c context.Context, pkg string) error {
 		if err != nil {
 			return err
 		}
-		if err := datastore.Delete(c, PackageKey(c, pkg)); err != nil {
+		if err := datastore.Delete(ctx, PackageKey(ctx, pkg)); err != nil {
 			return transient.Tag.Apply(err)
 		}
-		return EmitEvent(c, &api.Event{
+		return EmitEvent(ctx, &api.Event{
 			Kind:    api.EventKind_PACKAGE_DELETED,
 			Package: pkg,
 		})
@@ -90,8 +90,8 @@ var (
 )
 
 // deleteEntityKinds deletes all entities of given kinds under given root.
-func deleteEntityKinds(c context.Context, pkg string, kindsToDelete []string) error {
-	logging.Infof(c, "Deleting %s...", strings.Join(kindsToDelete, ", "))
+func deleteEntityKinds(ctx context.Context, pkg string, kindsToDelete []string) error {
+	logging.Infof(ctx, "Deleting %s...", strings.Join(kindsToDelete, ", "))
 	return transient.Tag.Apply(parallel.WorkPool(len(kindsToDelete)+1, func(tasks chan<- func() error) {
 		// A channel that receives keys to delete. Set some arbitrary buffer size to
 		// parallelize work a bit better.
@@ -103,11 +103,11 @@ func deleteEntityKinds(c context.Context, pkg string, kindsToDelete []string) er
 			kind := kind
 			tasks <- func() error {
 				q := datastore.NewQuery(kind).
-					Ancestor(PackageKey(c, pkg)).
+					Ancestor(PackageKey(ctx, pkg)).
 					KeysOnly(true)
 
 				count := 0
-				err := datastore.Run(c, q, func(k *datastore.Key, _ datastore.CursorCB) error {
+				err := datastore.Run(ctx, q, func(k *datastore.Key, _ datastore.CursorCB) error {
 					count++
 					keys <- k
 					return nil
@@ -115,9 +115,9 @@ func deleteEntityKinds(c context.Context, pkg string, kindsToDelete []string) er
 
 				keys <- nil // put "we are done" signal
 				if err == nil {
-					logging.Infof(c, "Found %d %q entities to be deleted", count, kind)
+					logging.Infof(ctx, "Found %d %q entities to be deleted", count, kind)
 				} else {
-					logging.WithError(err).Errorf(c, "Found %d %q entities and then failed", count, kind)
+					logging.WithError(err).Errorf(ctx, "Found %d %q entities and then failed", count, kind)
 				}
 				return err
 			}
@@ -132,9 +132,9 @@ func deleteEntityKinds(c context.Context, pkg string, kindsToDelete []string) er
 
 			// flush deletes all keys recorded in 'batch'.
 			flush := func() {
-				logging.Infof(c, "Deleting %d entities...", len(batch))
-				if err := datastore.Delete(c, batch); err != nil {
-					logging.WithError(err).Errorf(c, "Failed to delete %d entities", len(batch))
+				logging.Infof(ctx, "Deleting %d entities...", len(batch))
+				if err := datastore.Delete(ctx, batch); err != nil {
+					logging.WithError(err).Errorf(ctx, "Failed to delete %d entities", len(batch))
 					errs = append(errs, err)
 				}
 				batch = batch[:0]

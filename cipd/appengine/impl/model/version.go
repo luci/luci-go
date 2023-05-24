@@ -33,7 +33,7 @@ import (
 //	InvalidArgument if the version string format is invalid.
 //	NotFound if there's no such package or such version.
 //	FailedPrecondition if the tag resolves to multiple instances.
-func ResolveVersion(c context.Context, pkg, version string) (*Instance, error) {
+func ResolveVersion(ctx context.Context, pkg, version string) (*Instance, error) {
 	// Pick a resolution method based on the format of the version string.
 	var iid string
 	var err error
@@ -42,11 +42,11 @@ func ResolveVersion(c context.Context, pkg, version string) (*Instance, error) {
 		iid = version
 	case common.ValidatePackageRef(version) == nil:
 		var ref *Ref
-		if ref, err = GetRef(c, pkg, version); err == nil {
+		if ref, err = GetRef(ctx, pkg, version); err == nil {
 			iid = ref.InstanceID
 		}
 	case common.ValidateInstanceTag(version) == nil:
-		iid, err = ResolveTag(c, pkg, common.MustParseInstanceTag(version))
+		iid, err = ResolveTag(ctx, pkg, common.MustParseInstanceTag(version))
 	default:
 		return nil, errors.Reason("not a valid version identifier").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
@@ -54,7 +54,7 @@ func ResolveVersion(c context.Context, pkg, version string) (*Instance, error) {
 	if err != nil {
 		// If there's no such ref or tag, maybe the package is missing completely.
 		if grpcutil.Code(err) == codes.NotFound {
-			if pkgErr := CheckPackageExists(c, pkg); pkgErr != nil {
+			if pkgErr := CheckPackageExists(ctx, pkg); pkgErr != nil {
 				return nil, pkgErr
 			}
 		}
@@ -67,9 +67,9 @@ func ResolveVersion(c context.Context, pkg, version string) (*Instance, error) {
 	// and AttachTags, but being defensive here doesn't hurt.
 	inst := &Instance{
 		InstanceID: iid,
-		Package:    PackageKey(c, pkg),
+		Package:    PackageKey(ctx, pkg),
 	}
-	if err := CheckInstanceExists(c, inst); err != nil {
+	if err := CheckInstanceExists(ctx, inst); err != nil {
 		return nil, err
 	}
 	return inst, nil

@@ -29,7 +29,7 @@ import (
 //
 // A Publisher should be Closed when finished with it.
 type Publisher interface {
-	Publish(c context.Context, msgs ...*pubsub.Message) ([]string, error)
+	Publish(ctx context.Context, msgs ...*pubsub.Message) ([]string, error)
 	Close() error
 }
 
@@ -73,7 +73,7 @@ var _ Publisher = (*UnbufferedPublisher)(nil)
 // Publish publishes a message immediately, blocking until it completes.
 //
 // "c" must be an AppEngine context.
-func (up *UnbufferedPublisher) Publish(c context.Context, msgs ...*pubsub.Message) ([]string, error) {
+func (up *UnbufferedPublisher) Publish(ctx context.Context, msgs ...*pubsub.Message) ([]string, error) {
 	if len(msgs) == 0 {
 		return nil, nil
 	}
@@ -91,14 +91,14 @@ func (up *UnbufferedPublisher) Publish(c context.Context, msgs ...*pubsub.Messag
 		return nil, err
 	}
 
-	resp, err := client.Publish(c, &pb.PublishRequest{
+	resp, err := client.Publish(ctx, &pb.PublishRequest{
 		Topic:    string(up.Topic),
 		Messages: messages,
 	}, up.CallOpts...)
 	if err != nil {
 		// Optimistically recreate the client.
 		up.ClientFactory.RecreateClient()
-		logging.Debugf(c, "Recreating a new PubSub client due to error")
+		logging.Debugf(ctx, "Recreating a new PubSub client due to error")
 		return nil, err
 	}
 	return resp.MessageIds, nil

@@ -66,10 +66,10 @@ func Register(component, version string) {
 
 // Report populates 'luci/components/version' metric with versions of all
 // registered components.
-func Report(c context.Context) {
+func Report(ctx context.Context) {
 	registry.m.RLock()
 	defer registry.m.RUnlock()
 	for component := range registry.r {
-		versionMetric.Set(c, registry.r[component], component)
+		versionMetric.Set(ctx, registry.r[component], component)
 	}
 }

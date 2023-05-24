@@ -76,8 +76,8 @@ type Slot struct {
 // RetryDelay is 5 sec by default.
 //
 // The passed context is used for logging and for getting time.
-func (s *Slot) Get(c context.Context, fetcher Fetcher) (value any, err error) {
-	now := clock.Now(c)
+func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) {
+	now := clock.Now(ctx)
 
 	// Fast path. Checks a cached value exists and it is still fresh or some
 	// goroutine is already updating it (in that case we return a stale copy).
@@ -93,7 +93,7 @@ func (s *Slot) Get(c context.Context, fetcher Fetcher) (value any, err error) {
 	}
 
 	// Slow path. Attempt to start the fetch if no one beat us to it.
-	shouldFetch, value, err := s.initiateFetch(c, fetcher, now)
+	shouldFetch, value, err := s.initiateFetch(ctx, fetcher, now)
 	if !shouldFetch {
 		// Either someone did the fetch already, or the initial fetch failed. In
 		// either case 'value' and 'err' are already set, so just return them.
@@ -109,7 +109,7 @@ func (s *Slot) Get(c context.Context, fetcher Fetcher) (value any, err error) {
 	// the value. Do it, but be cautious to fix the state in case of a panic.
 	var completed bool
 	var exp time.Duration
-	defer func() { s.finishFetch(completed, value, setExpiry(c, exp)) }()
+	defer func() { s.finishFetch(completed, value, setExpiry(ctx, exp)) }()
 
 	value, exp, err = fetcher(prevValue)
 	completed = true // we didn't panic!
@@ -117,7 +117,7 @@ func (s *Slot) Get(c context.Context, fetcher Fetcher) (value any, err error) {
 	// Log the error and return the previous value, bumping its expiration time by
 	// retryDelay to trigger a retry at some later time.
 	if err != nil {
-		logging.WithError(err).Errorf(c, "lazyslot: failed to update instance of %T", prevValue)
+		logging.WithError(err).Errorf(ctx, "lazyslot: failed to update instance of %T", prevValue)
 		value = prevValue
 		exp = s.retryDelay()
 		err = nil
@@ -133,7 +133,7 @@ func (s *Slot) Get(c context.Context, fetcher Fetcher) (value any, err error) {
 //   - (true, known value, nil) if the current goroutine should refetch.
 //   - (false, known value, nil) if the fetch is no longer necessary.
 //   - (false, nil, err) if the initial fetch failed.
-func (s *Slot) initiateFetch(c context.Context, fetcher Fetcher, now time.Time) (bool, any, error) {
+func (s *Slot) initiateFetch(ctx context.Context, fetcher Fetcher, now time.Time) (bool, any, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -153,7 +153,7 @@ func (s *Slot) initiateFetch(c context.Context, fetcher Fetcher, now time.Time) 
 		}
 		s.initialized = true
 		s.current = result
-		s.exp = setExpiry(c, exp)
+		s.exp = setExpiry(ctx, exp)
 		return false, s.current, nil
 	}
 
@@ -195,12 +195,12 @@ func isFresh(exp, now time.Time) bool {
 	return exp.IsZero() || now.Before(exp)
 }
 
-func setExpiry(c context.Context, exp time.Duration) time.Time {
+func setExpiry(ctx context.Context, exp time.Duration) time.Time {
 	switch {
 	case exp == 0:
 		return time.Time{}
 	case exp < 0: // including ExpiresImmediately
-		return clock.Now(c) // this would make isFresh return false
+		return clock.Now(ctx) // this would make isFresh return false
 	}
-	return clock.Now(c).Add(exp)
+	return clock.Now(ctx).Add(exp)
 }

@@ -34,7 +34,7 @@ import (
 
 // CheckWrapperFunc is an optional function that can be implemented for a
 // Prober to check if a candidate path is a wrapper.
-type CheckWrapperFunc func(c context.Context, path string, env environ.Env) (isWrapper bool, err error)
+type CheckWrapperFunc func(ctx context.Context, path string, env environ.Env) (isWrapper bool, err error)
 
 // Probe can Locate a Target executable by probing the local system PATH.
 //
@@ -125,7 +125,7 @@ func (p *Probe) ResolveSelf() error {
 //
 // env is the environment to operate with, and will not be modified during
 // execution.
-func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (string, error) {
+func (p *Probe) Locate(ctx context.Context, cached string, env environ.Env) (string, error) {
 	// If we have a cached path, check that it exists and is executable and use it
 	// if it is.
 	if cached != "" {
@@ -134,10 +134,10 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 			// Use the cached path. First, pass it through a sanity check to ensure
 			// that it is not self.
 			if p.SelfStat == nil || !os.SameFile(p.SelfStat, cachedStat) {
-				logging.Debugf(c, "Using cached value: %s", cached)
+				logging.Debugf(ctx, "Using cached value: %s", cached)
 				return cached, nil
 			}
-			logging.Debugf(c, "Cached value [%s] is this wrapper [%s]; ignoring.", cached, p.Self)
+			logging.Debugf(ctx, "Cached value [%s] is this wrapper [%s]; ignoring.", cached, p.Self)
 
 		case os.IsNotExist(err):
 			// Our cached path doesn't exist, so we will have to look for a new one.
@@ -145,7 +145,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 		case err != nil:
 			// We couldn't check our cached path, so we will have to look for a new
 			// one. This is an unexpected error, though, so emit it.
-			logging.Debugf(c, "Failed to stat cached [%s]: %s", cached, err)
+			logging.Debugf(ctx, "Failed to stat cached [%s]: %s", cached, err)
 		}
 	}
 
@@ -158,7 +158,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 
 		var err error
 		if selfDirStat, err = os.Stat(selfDir); err != nil {
-			logging.Debugf(c, "Failed to stat self directory [%s]: %s", selfDir, err)
+			logging.Debugf(ctx, "Failed to stat self directory [%s]: %s", selfDir, err)
 		}
 	}
 
@@ -187,7 +187,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 		}
 		checked[dir] = struct{}{}
 
-		path := p.checkDir(c, dir, selfDirStat, env)
+		path := p.checkDir(ctx, dir, selfDirStat, env)
 		if path != "" {
 			return path, nil
 		}
@@ -200,7 +200,7 @@ func (p *Probe) Locate(c context.Context, cached string, env environ.Env) (strin
 // checkDir checks "checkDir" for our Target executable. It ignores
 // executables whose target is the same file or shares the same parent directory
 // as "self".
-func (p *Probe) checkDir(c context.Context, dir string, selfDir os.FileInfo, env environ.Env) string {
+func (p *Probe) checkDir(ctx context.Context, dir string, selfDir os.FileInfo, env environ.Env) string {
 	// If we have a self directory defined, ensure that "dir" isn't the same
 	// directory. If it is, we will ignore this option, since we are looking for
 	// something outside of the wrapper directory.
@@ -209,16 +209,16 @@ func (p *Probe) checkDir(c context.Context, dir string, selfDir os.FileInfo, env
 		case err == nil:
 			// "dir" exists; if it is the same as "selfDir", we can ignore it.
 			if os.SameFile(selfDir, checkDirStat) {
-				logging.Debugf(c, "Candidate shares wrapper directory [%s]; skipping...", dir)
+				logging.Debugf(ctx, "Candidate shares wrapper directory [%s]; skipping...", dir)
 				return ""
 			}
 
 		case os.IsNotExist(err):
-			logging.Debugf(c, "Candidate directory does not exist [%s]; skipping...", dir)
+			logging.Debugf(ctx, "Candidate directory does not exist [%s]; skipping...", dir)
 			return ""
 
 		default:
-			logging.Debugf(c, "Failed to stat candidate directory [%s]: %s", dir, err)
+			logging.Debugf(ctx, "Failed to stat candidate directory [%s]: %s", dir, err)
 			return ""
 		}
 	}
@@ -233,7 +233,7 @@ func (p *Probe) checkDir(c context.Context, dir string, selfDir os.FileInfo, env
 		switch st, err := os.Stat(t); {
 		case err == nil:
 			if os.SameFile(p.SelfStat, st) {
-				logging.Debugf(c, "Candidate [%s] is same file as wrapper; skipping...", t)
+				logging.Debugf(ctx, "Candidate [%s] is same file as wrapper; skipping...", t)
 				return ""
 			}
 
@@ -242,25 +242,25 @@ func (p *Probe) checkDir(c context.Context, dir string, selfDir os.FileInfo, env
 			return ""
 
 		default:
-			logging.Debugf(c, "Failed to stat candidate path [%s]: %s", t, err)
+			logging.Debugf(ctx, "Failed to stat candidate path [%s]: %s", t, err)
 			return ""
 		}
 	}
 
 	if err := filesystem.AbsPath(&t); err != nil {
-		logging.Debugf(c, "Failed to normalize candidate path [%s]: %s", t, err)
+		logging.Debugf(ctx, "Failed to normalize candidate path [%s]: %s", t, err)
 		return ""
 	}
 
 	// Try running the candidate command and confirm that it is not a wrapper.
 	if p.CheckWrapper != nil {
-		switch isWrapper, err := p.CheckWrapper(c, t, env); {
+		switch isWrapper, err := p.CheckWrapper(ctx, t, env); {
 		case err != nil:
-			logging.Debugf(c, "Failed to check if [%s] is a wrapper: %s", t, err)
+			logging.Debugf(ctx, "Failed to check if [%s] is a wrapper: %s", t, err)
 			return ""
 
 		case isWrapper:
-			logging.Debugf(c, "Candidate is a wrapper: %s", t)
+			logging.Debugf(ctx, "Candidate is a wrapper: %s", t)
 			return ""
 		}
 	}

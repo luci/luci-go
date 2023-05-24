@@ -32,8 +32,8 @@ var key = "holds crypto.Reader for cryptorand"
 //
 // Usually this returns crypto/rand.Reader, but unit tests may replace it with
 // a mock by using 'MockForTest' function.
-func Get(c context.Context) io.Reader {
-	if r, _ := c.Value(&key).(io.Reader); r != nil {
+func Get(ctx context.Context) io.Reader {
+	if r, _ := ctx.Value(&key).(io.Reader); r != nil {
 		return r
 	}
 	return crypto.Reader
@@ -42,15 +42,15 @@ func Get(c context.Context) io.Reader {
 // Read is a helper that reads bytes from random source using io.ReadFull.
 //
 // On return, n == len(b) if and only if err == nil.
-func Read(c context.Context, b []byte) (n int, err error) {
-	return io.ReadFull(Get(c), b)
+func Read(ctx context.Context, b []byte) (n int, err error) {
+	return io.ReadFull(Get(ctx), b)
 }
 
 // MockForTest installs deterministic source of 'randomness' in the context.
 //
 // Must not be used outside of tests.
-func MockForTest(c context.Context, seed int64) context.Context {
-	return context.WithValue(c, &key, &notRandom{r: math.New(math.NewSource(seed))})
+func MockForTest(ctx context.Context, seed int64) context.Context {
+	return context.WithValue(ctx, &key, &notRandom{r: math.New(math.NewSource(seed))})
 }
 
 // notRandom is io.Reader that uses math/rand generator.

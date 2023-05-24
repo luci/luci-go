@@ -31,7 +31,7 @@ type Map struct {
 
 // Get either returns an existing promise for the given key or creates and
 // immediately launches a new promise.
-func (pm *Map) Get(c context.Context, key any, gen Generator) *Promise {
+func (pm *Map) Get(ctx context.Context, key any, gen Generator) *Promise {
 	pm.mu.RLock()
 	p := pm.m[key]
 	pm.mu.RUnlock()
@@ -44,7 +44,7 @@ func (pm *Map) Get(c context.Context, key any, gen Generator) *Promise {
 	defer pm.mu.Unlock()
 
 	if p = pm.m[key]; p == nil {
-		p = New(c, gen)
+		p = New(ctx, gen)
 		if pm.m == nil {
 			pm.m = make(map[any]*Promise, 1)
 		}

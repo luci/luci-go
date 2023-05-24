@@ -17,8 +17,8 @@ package logging
 import "context"
 
 // SetError returns a context with its error field set.
-func SetError(c context.Context, err error) context.Context {
-	return SetField(c, ErrorKey, err)
+func SetError(ctx context.Context, err error) context.Context {
+	return SetField(ctx, ErrorKey, err)
 }
 
 // IsLogging tests whether the context is configured to log at the specified
@@ -26,32 +26,32 @@ func SetError(c context.Context, err error) context.Context {
 //
 // Individual Logger implementations are supposed to call this function when
 // deciding whether to log the message.
-func IsLogging(c context.Context, l Level) bool {
-	return l >= GetLevel(c)
+func IsLogging(ctx context.Context, l Level) bool {
+	return l >= GetLevel(ctx)
 }
 
 // Debugf is a shorthand method to call the current logger's Errorf method.
-func Debugf(c context.Context, fmt string, args ...any) {
-	Get(c).LogCall(Debug, 1, fmt, args)
+func Debugf(ctx context.Context, fmt string, args ...any) {
+	Get(ctx).LogCall(Debug, 1, fmt, args)
 }
 
 // Infof is a shorthand method to call the current logger's Errorf method.
-func Infof(c context.Context, fmt string, args ...any) {
-	Get(c).LogCall(Info, 1, fmt, args)
+func Infof(ctx context.Context, fmt string, args ...any) {
+	Get(ctx).LogCall(Info, 1, fmt, args)
 }
 
 // Warningf is a shorthand method to call the current logger's Errorf method.
-func Warningf(c context.Context, fmt string, args ...any) {
-	Get(c).LogCall(Warning, 1, fmt, args)
+func Warningf(ctx context.Context, fmt string, args ...any) {
+	Get(ctx).LogCall(Warning, 1, fmt, args)
 }
 
 // Errorf is a shorthand method to call the current logger's Errorf method.
-func Errorf(c context.Context, fmt string, args ...any) {
-	Get(c).LogCall(Error, 1, fmt, args)
+func Errorf(ctx context.Context, fmt string, args ...any) {
+	Get(ctx).LogCall(Error, 1, fmt, args)
 }
 
 // Logf is a shorthand method to call the current logger's logging method which
 // corresponds to the supplied log level.
-func Logf(c context.Context, l Level, fmt string, args ...any) {
-	Get(c).LogCall(l, 1, fmt, args)
+func Logf(ctx context.Context, l Level, fmt string, args ...any) {
+	Get(ctx).LogCall(l, 1, fmt, args)
 }

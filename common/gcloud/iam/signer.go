@@ -31,6 +31,6 @@ type Signer struct {
 // using the currently active signing key.
 //
 // Returns the signature and name of the key used.
-func (s *Signer) SignBytes(c context.Context, blob []byte) (string, []byte, error) {
-	return s.Client.SignBlob(c, s.ServiceAccount, blob)
+func (s *Signer) SignBytes(ctx context.Context, blob []byte) (string, []byte, error) {
+	return s.Client.SignBlob(ctx, s.ServiceAccount, blob)
 }

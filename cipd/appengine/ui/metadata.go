@@ -57,22 +57,22 @@ type metadataACL struct {
 //
 // It recognizes PermissionDenied errors and falls back to only displaying what
 // roles the caller has instead of the full metadata.
-func fetchPrefixMetadata(c context.Context, pfx string) (*prefixMetadataBlock, error) {
-	meta, err := state(c).services.PublicRepo.GetInheritedPrefixMetadata(c, &api.PrefixRequest{
+func fetchPrefixMetadata(ctx context.Context, pfx string) (*prefixMetadataBlock, error) {
+	meta, err := state(ctx).services.PublicRepo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
 		Prefix: pfx,
 	})
 	switch status.Code(err) {
 	case codes.OK:
 		break // handled below
 	case codes.PermissionDenied:
-		return fetchCallerRoles(c, pfx)
+		return fetchCallerRoles(ctx, pfx)
 	default:
 		return nil, err
 	}
 
 	// Grab URL of an auth server with the groups, if available.
 	groupsURL := ""
-	if url, err := auth.GetState(c).DB().GetAuthServiceURL(c); err == nil {
+	if url, err := auth.GetState(ctx).DB().GetAuthServiceURL(ctx); err == nil {
 		groupsURL = url + "/auth/groups/"
 	}
 
@@ -126,8 +126,8 @@ func fetchPrefixMetadata(c context.Context, pfx string) (*prefixMetadataBlock, e
 	return out, nil
 }
 
-func fetchCallerRoles(c context.Context, pfx string) (*prefixMetadataBlock, error) {
-	roles, err := state(c).services.PublicRepo.GetRolesInPrefix(c, &api.PrefixRequest{
+func fetchCallerRoles(ctx context.Context, pfx string) (*prefixMetadataBlock, error) {
+	roles, err := state(ctx).services.PublicRepo.GetRolesInPrefix(ctx, &api.PrefixRequest{
 		Prefix: pfx,
 	})
 	if err != nil {

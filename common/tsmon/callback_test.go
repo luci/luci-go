@@ -40,7 +40,7 @@ func TestCallbacks(t *testing.T) {
 		Convey("Callback is run on Flush", func() {
 			c, s, m := WithFakes(c)
 
-			RegisterCallbackIn(c, func(c context.Context) {
+			RegisterCallbackIn(c, func(ctx context.Context) {
 				s.Cells = append(s.Cells, types.Cell{
 					types.MetricInfo{
 						Name:      "foo",

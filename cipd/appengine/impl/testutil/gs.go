@@ -33,7 +33,7 @@ type NoopGoogleStorage struct {
 var _ gs.GoogleStorage = NoopGoogleStorage{}
 
 // Size is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) Size(c context.Context, path string) (size uint64, exists bool, err error) {
+func (n NoopGoogleStorage) Size(ctx context.Context, path string) (size uint64, exists bool, err error) {
 	if n.Err == nil {
 		panic("must not be called")
 	}
@@ -41,7 +41,7 @@ func (n NoopGoogleStorage) Size(c context.Context, path string) (size uint64, ex
 }
 
 // Exists is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) Exists(c context.Context, path string) (exists bool, err error) {
+func (n NoopGoogleStorage) Exists(ctx context.Context, path string) (exists bool, err error) {
 	if n.Err == nil {
 		panic("must not be called")
 	}
@@ -49,7 +49,7 @@ func (n NoopGoogleStorage) Exists(c context.Context, path string) (exists bool, 
 }
 
 // Copy is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) Copy(c context.Context, dst string, dstGen int64, src string, srcGen int64) error {
+func (n NoopGoogleStorage) Copy(ctx context.Context, dst string, dstGen int64, src string, srcGen int64) error {
 	if n.Err == nil {
 		panic("must not be called")
 	}
@@ -57,7 +57,7 @@ func (n NoopGoogleStorage) Copy(c context.Context, dst string, dstGen int64, src
 }
 
 // Delete is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) Delete(c context.Context, path string) error {
+func (n NoopGoogleStorage) Delete(ctx context.Context, path string) error {
 	if n.Err == nil {
 		panic("must not be called")
 	}
@@ -65,7 +65,7 @@ func (n NoopGoogleStorage) Delete(c context.Context, path string) error {
 }
 
 // Publish is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) Publish(c context.Context, dst, src string, srcGen int64) error {
+func (n NoopGoogleStorage) Publish(ctx context.Context, dst, src string, srcGen int64) error {
 	if n.Err == nil {
 		panic("must not be called")
 	}
@@ -73,7 +73,7 @@ func (n NoopGoogleStorage) Publish(c context.Context, dst, src string, srcGen in
 }
 
 // StartUpload is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) StartUpload(c context.Context, path string) (uploadURL string, err error) {
+func (n NoopGoogleStorage) StartUpload(ctx context.Context, path string) (uploadURL string, err error) {
 	if n.Err == nil {
 		panic("must not be called")
 	}
@@ -81,7 +81,7 @@ func (n NoopGoogleStorage) StartUpload(c context.Context, path string) (uploadUR
 }
 
 // CancelUpload is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) CancelUpload(c context.Context, uploadURL string) error {
+func (n NoopGoogleStorage) CancelUpload(ctx context.Context, uploadURL string) error {
 	if n.Err == nil {
 		panic("must not be called")
 	}
@@ -89,7 +89,7 @@ func (n NoopGoogleStorage) CancelUpload(c context.Context, uploadURL string) err
 }
 
 // Reader is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) Reader(c context.Context, path string, gen int64) (gs.Reader, error) {
+func (n NoopGoogleStorage) Reader(ctx context.Context, path string, gen int64) (gs.Reader, error) {
 	if n.Err == nil {
 		panic("must not be called")
 	}

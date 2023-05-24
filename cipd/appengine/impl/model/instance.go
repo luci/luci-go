@@ -77,9 +77,9 @@ func (e *Instance) Proto() *api.Instance {
 // Returns the entity itself for easier chaining.
 //
 // Doesn't touch output-only fields at all.
-func (e *Instance) FromProto(c context.Context, p *api.Instance) *Instance {
+func (e *Instance) FromProto(ctx context.Context, p *api.Instance) *Instance {
 	e.InstanceID = common.ObjectRefToInstanceID(p.Instance)
-	e.Package = PackageKey(c, p.Package)
+	e.Package = PackageKey(ctx, p.Package)
 	return e
 }
 
@@ -110,8 +110,8 @@ func (e *Instance) CheckReady() error {
 //
 // In either case, it returns the entity that is stored now in the datastore.
 // It is either the new instance, or something that existed there before.
-func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context, *Instance) error) (reg bool, out *Instance, err error) {
-	err = Txn(c, "RegisterInstance", func(c context.Context) error {
+func RegisterInstance(ctx context.Context, inst *Instance, cb func(context.Context, *Instance) error) (reg bool, out *Instance, err error) {
+	err = Txn(ctx, "RegisterInstance", func(ctx context.Context) error {
 		// Reset the state in case of a txn retry.
 		reg = false
 		out = nil
@@ -122,7 +122,7 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 			InstanceID: inst.InstanceID,
 			Package:    inst.Package,
 		}
-		switch err := datastore.Get(c, &existing); {
+		switch err := datastore.Get(ctx, &existing); {
 		case err == nil:
 			out = &existing
 			return nil
@@ -131,11 +131,11 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 		}
 
 		// Register the package entity too, if missing.
-		switch res, err := datastore.Exists(c, inst.Package); {
+		switch res, err := datastore.Exists(ctx, inst.Package); {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch the package entity existence").Tag(transient.Tag).Err()
 		case !res.Any():
-			err := datastore.Put(c, &Package{
+			err := datastore.Put(ctx, &Package{
 				Name:         inst.Package.StringID(),
 				RegisteredBy: inst.RegisteredBy,
 				RegisteredTs: inst.RegisteredTs,
@@ -152,13 +152,13 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 		// Let the caller do more stuff inside this txn, e.g. start TQ tasks.
 		toPut := *inst
 		if cb != nil {
-			if err := cb(c, &toPut); err != nil {
+			if err := cb(ctx, &toPut); err != nil {
 				return errors.Annotate(err, "instance registration callback error").Err()
 			}
 		}
 
 		// Finally register the package instance entity.
-		if err := datastore.Put(c, &toPut); err != nil {
+		if err := datastore.Put(ctx, &toPut); err != nil {
 			return errors.Annotate(err, "failed to create the package instance entity").Tag(transient.Tag).Err()
 		}
 		events.Emit(&api.Event{
@@ -169,7 +169,7 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 
 		reg = true
 		out = &toPut
-		return events.Flush(c)
+		return events.Flush(ctx)
 	})
 	return
 }
@@ -179,20 +179,20 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 // Only does a query over Instances entities. Doesn't check whether the Package
 // entity exists. Returns up to pageSize entities, plus non-nil cursor (if
 // there are more results). pageSize must be positive.
-func ListInstances(c context.Context, pkg string, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
+func ListInstances(ctx context.Context, pkg string, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
 	if pageSize <= 0 {
 		panic("pageSize must be positive")
 	}
 
 	q := datastore.NewQuery("PackageInstance").
-		Ancestor(PackageKey(c, pkg)).
+		Ancestor(PackageKey(ctx, pkg)).
 		Order("-registered_ts").
 		Limit(pageSize)
 	if cursor != nil {
 		q = q.Start(cursor)
 	}
 
-	err = datastore.Run(c, q, func(ent *Instance, cb datastore.CursorCB) error {
+	err = datastore.Run(ctx, q, func(ent *Instance, cb datastore.CursorCB) error {
 		out = append(out, ent)
 		if len(out) >= int(pageSize) {
 			if nextCur, err = cb(); err != nil {
@@ -213,11 +213,11 @@ func ListInstances(c context.Context, pkg string, pageSize int32, cursor datasto
 // Can be called as part of a transaction. Updates 'inst' in place.
 //
 // Returns gRPC-tagged NotFound error if there's no such instance or package.
-func CheckInstanceExists(c context.Context, inst *Instance) error {
-	switch err := datastore.Get(c, inst); {
+func CheckInstanceExists(ctx context.Context, inst *Instance) error {
+	switch err := datastore.Get(ctx, inst); {
 	case err == datastore.ErrNoSuchEntity:
 		// Maybe the package is missing completely?
-		if err := CheckPackageExists(c, inst.Package.StringID()); err != nil {
+		if err := CheckPackageExists(ctx, inst.Package.StringID()); err != nil {
 			return err
 		}
 		return errors.Reason("no such instance").Tag(grpcutil.NotFoundTag).Err()
@@ -238,8 +238,8 @@ func CheckInstanceExists(c context.Context, inst *Instance) error {
 //	NotFound if there's no such instance or package.
 //	FailedPrecondition if some processors are still running.
 //	Aborted if some processors have failed.
-func CheckInstanceReady(c context.Context, inst *Instance) error {
-	if err := CheckInstanceExists(c, inst); err != nil {
+func CheckInstanceReady(ctx context.Context, inst *Instance) error {
+	if err := CheckInstanceExists(ctx, inst); err != nil {
 		return err
 	}
 	return inst.CheckReady()
@@ -247,7 +247,7 @@ func CheckInstanceReady(c context.Context, inst *Instance) error {
 
 // FetchProcessors fetches results of all processors assigned to the instance
 // and returns them as cipd.Processor proto messages (sorted by processor ID).
-func FetchProcessors(c context.Context, inst *Instance) ([]*api.Processor, error) {
+func FetchProcessors(ctx context.Context, inst *Instance) ([]*api.Processor, error) {
 	count := len(inst.ProcessorsPending) +
 		len(inst.ProcessorsSuccess) +
 		len(inst.ProcessorsFailure)
@@ -255,7 +255,7 @@ func FetchProcessors(c context.Context, inst *Instance) ([]*api.Processor, error
 		return nil, nil
 	}
 
-	key := datastore.KeyForObj(c, inst)
+	key := datastore.KeyForObj(ctx, inst)
 
 	// Fetch results of all finished processors. All entities should exist, since
 	// ProcessorsSuccess/ProcessorsFailure is updated transactionally when
@@ -267,7 +267,7 @@ func FetchProcessors(c context.Context, inst *Instance) ([]*api.Processor, error
 	for _, p := range inst.ProcessorsFailure {
 		finished = append(finished, &ProcessingResult{ProcID: p, Instance: key})
 	}
-	if err := datastore.Get(c, finished); err != nil {
+	if err := datastore.Get(ctx, finished); err != nil {
 		return nil, errors.Annotate(err, "failed to fetch finished processors").Tag(transient.Tag).Err()
 	}
 

@@ -71,9 +71,9 @@ func (e *Ref) Proto() *api.Ref {
 //	NotFound if there's no such instance or package.
 //	FailedPrecondition if some processors are still running.
 //	Aborted if some processors have failed.
-func SetRef(c context.Context, ref string, inst *Instance) error {
-	return Txn(c, "SetRef", func(c context.Context) error {
-		if err := CheckInstanceReady(c, inst); err != nil {
+func SetRef(ctx context.Context, ref string, inst *Instance) error {
+	return Txn(ctx, "SetRef", func(ctx context.Context) error {
+		if err := CheckInstanceReady(ctx, inst); err != nil {
 			return err
 		}
 
@@ -82,7 +82,7 @@ func SetRef(c context.Context, ref string, inst *Instance) error {
 		// Do not touch the ref's ModifiedBy/ModifiedTs if it already points to the
 		// requested instance. Need to fetch the ref to check this.
 		r := Ref{Name: ref, Package: inst.Package}
-		switch err := datastore.Get(c, &r); {
+		switch err := datastore.Get(ctx, &r); {
 		case err == datastore.ErrNoSuchEntity:
 			break // need to create the new ref
 		case err != nil:
@@ -105,26 +105,26 @@ func SetRef(c context.Context, ref string, inst *Instance) error {
 			Ref:      ref,
 		})
 
-		err := datastore.Put(c, &Ref{
+		err := datastore.Put(ctx, &Ref{
 			Name:       ref,
 			Package:    inst.Package,
 			InstanceID: inst.InstanceID,
-			ModifiedBy: string(auth.CurrentIdentity(c)),
-			ModifiedTs: clock.Now(c).UTC(),
+			ModifiedBy: string(auth.CurrentIdentity(ctx)),
+			ModifiedTs: clock.Now(ctx).UTC(),
 		})
 		if err != nil {
 			return transient.Tag.Apply(err)
 		}
-		return events.Flush(c)
+		return events.Flush(ctx)
 	})
 }
 
 // GetRef fetches the given ref.
 //
 // Returns gRPC-tagged NotFound error if there's no such ref.
-func GetRef(c context.Context, pkg, ref string) (*Ref, error) {
-	r := &Ref{Name: ref, Package: PackageKey(c, pkg)}
-	switch err := datastore.Get(c, r); {
+func GetRef(ctx context.Context, pkg, ref string) (*Ref, error) {
+	r := &Ref{Name: ref, Package: PackageKey(ctx, pkg)}
+	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, errors.Reason("no such ref").Tag(grpcutil.NotFoundTag).Err()
 	case err != nil:
@@ -136,9 +136,9 @@ func GetRef(c context.Context, pkg, ref string) (*Ref, error) {
 // DeleteRef removes the ref if it exists.
 //
 // Does nothing if there's no such ref or package.
-func DeleteRef(c context.Context, pkg, ref string) error {
-	return Txn(c, "DeleteRef", func(c context.Context) error {
-		r, err := GetRef(c, pkg, ref)
+func DeleteRef(ctx context.Context, pkg, ref string) error {
+	return Txn(ctx, "DeleteRef", func(ctx context.Context) error {
+		r, err := GetRef(ctx, pkg, ref)
 		switch {
 		case grpcutil.Code(err) == codes.NotFound:
 			return nil
@@ -146,15 +146,15 @@ func DeleteRef(c context.Context, pkg, ref string) error {
 			return err // transient
 		}
 
-		err = datastore.Delete(c, &Ref{
+		err = datastore.Delete(ctx, &Ref{
 			Name:    ref,
-			Package: PackageKey(c, pkg),
+			Package: PackageKey(ctx, pkg),
 		})
 		if err != nil {
 			return transient.Tag.Apply(err)
 		}
 
-		return EmitEvent(c, &api.Event{
+		return EmitEvent(ctx, &api.Event{
 			Kind:     api.EventKind_INSTANCE_REF_UNSET,
 			Package:  pkg,
 			Instance: r.InstanceID,
@@ -166,11 +166,11 @@ func DeleteRef(c context.Context, pkg, ref string) error {
 // ListPackageRefs returns all refs in a package, most recently modified first.
 //
 // Returns an empty list if there's no such package at all.
-func ListPackageRefs(c context.Context, pkg string) (out []*Ref, err error) {
+func ListPackageRefs(ctx context.Context, pkg string) (out []*Ref, err error) {
 	q := datastore.NewQuery("PackageRef").
-		Ancestor(PackageKey(c, pkg)).
+		Ancestor(PackageKey(ctx, pkg)).
 		Order("-modified_ts")
-	if err := datastore.GetAll(c, q, &out); err != nil {
+	if err := datastore.GetAll(ctx, q, &out); err != nil {
 		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
 	}
 	return
@@ -185,7 +185,7 @@ func ListPackageRefs(c context.Context, pkg string) (out []*Ref, err error) {
 // Assumes 'inst' is a valid Instance, panics otherwise.
 //
 // Returns an empty list if there's no such instance at all.
-func ListInstanceRefs(c context.Context, inst *Instance) (out []*Ref, err error) {
+func ListInstanceRefs(ctx context.Context, inst *Instance) (out []*Ref, err error) {
 	if inst.Package == nil {
 		panic("bad Instance")
 	}
@@ -193,7 +193,7 @@ func ListInstanceRefs(c context.Context, inst *Instance) (out []*Ref, err error)
 		Ancestor(inst.Package).
 		Eq("instance_id", inst.InstanceID).
 		Order("-modified_ts")
-	if err := datastore.GetAll(c, q, &out); err != nil {
+	if err := datastore.GetAll(ctx, q, &out); err != nil {
 		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
 	}
 	return

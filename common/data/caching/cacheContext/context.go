@@ -38,11 +38,11 @@ type cacheContext struct {
 // Wrap wraps the supplied Context in a caching Context. All Value lookups will
 // be cached at this level, avoiding the expense of future Context traversals
 // for that same key.
-func Wrap(c context.Context) context.Context {
-	if _, ok := c.(*cacheContext); ok {
-		return c
+func Wrap(ctx context.Context) context.Context {
+	if _, ok := ctx.(*cacheContext); ok {
+		return ctx
 	}
-	return &cacheContext{Context: c}
+	return &cacheContext{Context: ctx}
 }
 
 func (c *cacheContext) Value(key any) any {

@@ -280,9 +280,9 @@ func cleanupStack(s []byte) []byte {
 //
 // Such factory can be installed in the context via logging.SetFactory.
 func Factory(w LogEntryWriter, prototype LogEntry, mut LogEntryMutator) func(context.Context) logging.Logger {
-	return func(c context.Context) logging.Logger {
+	return func(ctx context.Context) logging.Logger {
 		return &jsonLogger{
-			ctx:       c,
+			ctx:       ctx,
 			w:         w,
 			prototype: prototype,
 			mut:       mut,

@@ -71,7 +71,7 @@ type TokenInfo struct {
 // other HTTP-level errors (e.g. HTTP 500) returns transient-wrapped
 // *googleapi.Error. On network-level errors returns them in a transient
 // wrapper.
-func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error) {
+func GetTokenInfo(ctx context.Context, params TokenInfoParams) (*TokenInfo, error) {
 	if params.Client == nil {
 		params.Client = http.DefaultClient
 	}
@@ -86,7 +86,7 @@ func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error)
 	} else {
 		v.Add("access_token", params.AccessToken)
 	}
-	resp, err := ctxhttp.Get(c, params.Client, params.Endpoint+"?"+v.Encode())
+	resp, err := ctxhttp.Get(ctx, params.Client, params.Endpoint+"?"+v.Encode())
 	if err != nil {
 		return nil, transient.Tag.Apply(err)
 	}
@@ -102,7 +102,7 @@ func GetTokenInfo(c context.Context, params TokenInfoParams) (*TokenInfo, error)
 	if err := json.NewDecoder(resp.Body).Decode(info); err != nil {
 		// This should never happen. If it does, the token endpoint has gone mad,
 		// and maybe it will recover soon. So mark the error as transient.
-		logging.WithError(err).Errorf(c, "Bad token info endpoint response")
+		logging.WithError(err).Errorf(ctx, "Bad token info endpoint response")
 		return nil, transient.Tag.Apply(err)
 	}
 

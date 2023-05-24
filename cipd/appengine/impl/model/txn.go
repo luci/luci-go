@@ -27,18 +27,18 @@ import (
 // transient tag.
 //
 // The given name will be used for logging and error messages.
-func Txn(c context.Context, name string, cb func(context.Context) error) error {
-	c = logging.SetField(c, "txn", name)
+func Txn(ctx context.Context, name string, cb func(context.Context) error) error {
+	ctx = logging.SetField(ctx, "txn", name)
 
 	var attempt int
 	var innerErr error
 
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		attempt++
 		if attempt != 1 {
-			logging.Warningf(c, "Retrying the transaction: failed to commit")
+			logging.Warningf(ctx, "Retrying the transaction: failed to commit")
 		}
-		innerErr = cb(c)
+		innerErr = cb(ctx)
 		return innerErr
 	}, nil)
 

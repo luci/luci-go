@@ -70,7 +70,7 @@ func (s *MetadataStore) Purge(prefix string) {
 
 // GetMetadata fetches metadata associated with the given prefix and all
 // parent prefixes.
-func (s *MetadataStore) GetMetadata(c context.Context, prefix string) ([]*api.PrefixMetadata, error) {
+func (s *MetadataStore) GetMetadata(ctx context.Context, prefix string) ([]*api.PrefixMetadata, error) {
 	prefix, err := normPrefix(prefix)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *MetadataStore) GetMetadata(c context.Context, prefix string) ([]*api.Pr
 }
 
 // VisitMetadata performs depth-first enumeration of the metadata graph.
-func (s *MetadataStore) VisitMetadata(c context.Context, prefix string, cb metadata.Visitor) error {
+func (s *MetadataStore) VisitMetadata(ctx context.Context, prefix string, cb metadata.Visitor) error {
 	prefix, err := normPrefix(prefix)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func (s *MetadataStore) VisitMetadata(c context.Context, prefix string, cb metad
 		clean := strings.Trim(n.path, "/")
 
 		// Grab full metadata for it (including inherited one).
-		md, err := s.GetMetadata(c, clean)
+		md, err := s.GetMetadata(ctx, clean)
 		if err != nil {
 			return false, err
 		}
@@ -123,7 +123,7 @@ func (s *MetadataStore) VisitMetadata(c context.Context, prefix string, cb metad
 
 // UpdateMetadata transactionally updates or creates metadata of some
 // prefix.
-func (s *MetadataStore) UpdateMetadata(c context.Context, prefix string, cb func(c context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
+func (s *MetadataStore) UpdateMetadata(ctx context.Context, prefix string, cb func(ctx context.Context, m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func (s *MetadataStore) UpdateMetadata(c context.Context, prefix string, cb func
 
 	// Don't let the callback modify or retain the internal data.
 	meta := cloneMetadata(before)
-	if err := cb(c, meta); err != nil {
+	if err := cb(ctx, meta); err != nil {
 		return nil, err
 	}
 

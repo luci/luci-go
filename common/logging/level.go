@@ -75,14 +75,14 @@ func (l Level) String() string {
 // SetLevel returns a new context with the given logging level.
 //
 // It can be retrieved with GetLevel(context).
-func SetLevel(c context.Context, l Level) context.Context {
-	return context.WithValue(c, levelKey, l)
+func SetLevel(ctx context.Context, l Level) context.Context {
+	return context.WithValue(ctx, levelKey, l)
 }
 
 // GetLevel returns the Level for this context. It will return DefaultLevel if
 // none is defined.
-func GetLevel(c context.Context) Level {
-	if l, ok := c.Value(levelKey).(Level); ok {
+func GetLevel(ctx context.Context) Level {
+	if l, ok := ctx.Value(levelKey).(Level); ok {
 		return l
 	}
 	return DefaultLevel

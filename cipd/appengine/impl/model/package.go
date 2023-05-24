@@ -58,8 +58,8 @@ type Package struct {
 }
 
 // PackageKey returns a datastore key of some package, given its name.
-func PackageKey(c context.Context, pkg string) *datastore.Key {
-	return datastore.NewKey(c, "Package", pkg, 0, nil)
+func PackageKey(ctx context.Context, pkg string) *datastore.Key {
+	return datastore.NewKey(ctx, "Package", pkg, 0, nil)
 }
 
 // ListPackages returns a list of names of packages under the given prefix.
@@ -68,7 +68,7 @@ func PackageKey(c context.Context, pkg string) *datastore.Key {
 // NOT included in the result. Only packaged under the prefix are included.
 //
 // The result is sorted by the package name. Returns only transient errors.
-func ListPackages(c context.Context, prefix string, includeHidden bool) (out []string, err error) {
+func ListPackages(ctx context.Context, prefix string, includeHidden bool) (out []string, err error) {
 	if prefix, err = common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
@@ -76,11 +76,11 @@ func ListPackages(c context.Context, prefix string, includeHidden bool) (out []s
 	// Note: __key__ queries are already ordered by key.
 	q := datastore.NewQuery("Package")
 	if prefix != "" {
-		q = q.Gt("__key__", PackageKey(c, prefix+"/ "))
-		q = q.Lt("__key__", PackageKey(c, prefix+"/~"))
+		q = q.Gt("__key__", PackageKey(ctx, prefix+"/ "))
+		q = q.Lt("__key__", PackageKey(ctx, prefix+"/~"))
 	}
 
-	err = datastore.Run(c, q, func(p *Package) error {
+	err = datastore.Run(ctx, q, func(p *Package) error {
 		// We filter by Hidden manually since not all entities in the datastore have
 		// it set, so filtering using Eq("Hidden", false) actually skips all
 		// entities that don't have Hidden field at all.
@@ -101,7 +101,7 @@ func ListPackages(c context.Context, prefix string, includeHidden bool) (out []s
 // If includeHidden is false, omits hidden packages from the result.
 //
 // Returns only transient errors.
-func CheckPackages(c context.Context, names []string, includeHidden bool) ([]string, error) {
+func CheckPackages(ctx context.Context, names []string, includeHidden bool) ([]string, error) {
 	if len(names) == 0 {
 		return nil, nil
 	}
@@ -111,7 +111,7 @@ func CheckPackages(c context.Context, names []string, includeHidden bool) ([]str
 		pkgs[i] = &Package{Name: n}
 	}
 
-	if err := datastore.Get(c, pkgs); err != nil {
+	if err := datastore.Get(ctx, pkgs); err != nil {
 		merr, ok := err.(errors.MultiError)
 		if !ok {
 			return nil, transient.Tag.Apply(err)
@@ -140,8 +140,8 @@ func CheckPackages(c context.Context, names []string, includeHidden bool) ([]str
 // CheckPackageExists verifies the package exists.
 //
 // Returns gRPC-tagged NotFound error if there's no such package.
-func CheckPackageExists(c context.Context, pkg string) error {
-	switch res, err := CheckPackages(c, []string{pkg}, true); {
+func CheckPackageExists(ctx context.Context, pkg string) error {
+	switch res, err := CheckPackages(ctx, []string{pkg}, true); {
 	case err != nil:
 		return errors.Annotate(err, "failed to check the package presence").Err()
 	case len(res) == 0:
@@ -155,10 +155,10 @@ func CheckPackageExists(c context.Context, pkg string) error {
 //
 // If the package is missing returns datastore.ErrNoSuchEntity. All other errors
 // are transient.
-func SetPackageHidden(c context.Context, pkg string, hidden bool) error {
-	return Txn(c, "SetPackageHidden", func(c context.Context) error {
+func SetPackageHidden(ctx context.Context, pkg string, hidden bool) error {
+	return Txn(ctx, "SetPackageHidden", func(ctx context.Context) error {
 		p := &Package{Name: pkg}
-		switch err := datastore.Get(c, p); {
+		switch err := datastore.Get(ctx, p); {
 		case err == datastore.ErrNoSuchEntity:
 			return err
 		case err != nil:
@@ -168,7 +168,7 @@ func SetPackageHidden(c context.Context, pkg string, hidden bool) error {
 		}
 
 		p.Hidden = hidden
-		if err := datastore.Put(c, p); err != nil {
+		if err := datastore.Put(ctx, p); err != nil {
 			return transient.Tag.Apply(err)
 		}
 
@@ -176,6 +176,6 @@ func SetPackageHidden(c context.Context, pkg string, hidden bool) error {
 		if !hidden {
 			ev = api.EventKind_PACKAGE_UNHIDDEN
 		}
-		return EmitEvent(c, &api.Event{Kind: ev, Package: pkg})
+		return EmitEvent(ctx, &api.Event{Kind: ev, Package: pkg})
 	})
 }

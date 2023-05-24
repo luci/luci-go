@@ -35,56 +35,56 @@ type MockCAS struct {
 }
 
 // GetReader implements the corresponding method of cas.StorageServer interface.
-func (m *MockCAS) GetReader(c context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+func (m *MockCAS) GetReader(ctx context.Context, ref *api.ObjectRef) (gs.Reader, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	if m.GetReaderImpl == nil {
 		panic("must not be called")
 	}
-	return m.GetReaderImpl(c, ref)
+	return m.GetReaderImpl(ctx, ref)
 }
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) GetObjectURL(c context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+func (m *MockCAS) GetObjectURL(ctx context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	if m.GetObjectURLImpl == nil {
 		panic("must not be called")
 	}
-	return m.GetObjectURLImpl(c, r)
+	return m.GetObjectURLImpl(ctx, r)
 }
 
 // BeginUpload implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) BeginUpload(c context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
+func (m *MockCAS) BeginUpload(ctx context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	if m.BeginUploadImpl == nil {
 		panic("must not be called")
 	}
-	return m.BeginUploadImpl(c, r)
+	return m.BeginUploadImpl(ctx, r)
 }
 
 // FinishUpload implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) FinishUpload(c context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
+func (m *MockCAS) FinishUpload(ctx context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	if m.FinishUploadImpl == nil {
 		panic("must not be called")
 	}
-	return m.FinishUploadImpl(c, r)
+	return m.FinishUploadImpl(ctx, r)
 }
 
 // CancelUpload implements the corresponding RPC method, see the proto doc.
-func (m *MockCAS) CancelUpload(c context.Context, r *api.CancelUploadRequest) (*api.UploadOperation, error) {
+func (m *MockCAS) CancelUpload(ctx context.Context, r *api.CancelUploadRequest) (*api.UploadOperation, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
 	if m.CancelUploadImpl == nil {
 		panic("must not be called")
 	}
-	return m.CancelUploadImpl(c, r)
+	return m.CancelUploadImpl(ctx, r)
 }

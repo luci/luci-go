@@ -31,7 +31,7 @@ import (
 // Only does a query over Instances entities. Doesn't check whether the Package
 // entity exists. Returns up to pageSize entities, plus non-nil cursor (if
 // there are more results). 'pageSize' must be positive.
-func SearchInstances(c context.Context, pkg string, tags []*api.Tag, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
+func SearchInstances(ctx context.Context, pkg string, tags []*api.Tag, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
 	switch {
 	case len(tags) == 0:
 		panic("tags must not be empty")
@@ -64,7 +64,7 @@ func SearchInstances(c context.Context, pkg string, tags []*api.Tag, pageSize in
 		// Iterate over query on mainTag. This returns keys of instances that have
 		// mainTag attached.
 		var page []*datastore.Key
-		page, cursor, err = queryByTag(c, pkg, mainTag, cursor, pageSize-int32(len(out)))
+		page, cursor, err = queryByTag(ctx, pkg, mainTag, cursor, pageSize-int32(len(out)))
 		if err != nil {
 			return nil, nil, err
 		}
@@ -98,7 +98,7 @@ func SearchInstances(c context.Context, pkg string, tags []*api.Tag, pageSize in
 			if len(page) == 0 {
 				break
 			}
-			page, err = filterByTag(c, page, tag)
+			page, err = filterByTag(ctx, page, tag)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -107,7 +107,7 @@ func SearchInstances(c context.Context, pkg string, tags []*api.Tag, pageSize in
 		// Fetch actual instance bodies. It is possible (though highly improbable),
 		// that some instances are gone already, so len(instances) may be less than
 		// len(page).
-		instances, err := fetchExistingInstances(c, page)
+		instances, err := fetchExistingInstances(ctx, page)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -126,7 +126,7 @@ func SearchInstances(c context.Context, pkg string, tags []*api.Tag, pageSize in
 //
 // Returns up to 'pageSize' of results, along with a cursor to continue the
 // query or nil if it was the end of it.
-func queryByTag(c context.Context, pkg, tag string, cursor datastore.Cursor, pageSize int32) (
+func queryByTag(ctx context.Context, pkg, tag string, cursor datastore.Cursor, pageSize int32) (
 	out []*datastore.Key,
 	next datastore.Cursor,
 	err error) {
@@ -139,7 +139,7 @@ func queryByTag(c context.Context, pkg, tag string, cursor datastore.Cursor, pag
 	// TODO(vadimsh): Should we exclude unprocessed instances from the result?
 
 	q := datastore.NewQuery("InstanceTag").
-		Ancestor(PackageKey(c, pkg)).
+		Ancestor(PackageKey(ctx, pkg)).
 		Eq("tag", tag).
 		Order("-registered_ts").
 		Limit(pageSize).
@@ -148,7 +148,7 @@ func queryByTag(c context.Context, pkg, tag string, cursor datastore.Cursor, pag
 		q = q.Start(cursor)
 	}
 
-	err = datastore.Run(c, q, func(k *datastore.Key, cb datastore.CursorCB) error {
+	err = datastore.Run(ctx, q, func(k *datastore.Key, cb datastore.CursorCB) error {
 		out = append(out, k.Parent())
 		if len(out) >= int(pageSize) {
 			if next, err = cb(); err != nil {
@@ -169,7 +169,7 @@ func queryByTag(c context.Context, pkg, tag string, cursor datastore.Cursor, pag
 //
 // Fetches the tags to verify their Tag fields really match 'tag' as a safeguard
 // against malicious SHA1 collision on TagID.
-func filterByTag(c context.Context, page []*datastore.Key, tag *api.Tag) ([]*datastore.Key, error) {
+func filterByTag(ctx context.Context, page []*datastore.Key, tag *api.Tag) ([]*datastore.Key, error) {
 	tagID := TagID(tag)
 	tagEnts := make([]*Tag, len(page))
 	for i, inst := range page {
@@ -178,7 +178,7 @@ func filterByTag(c context.Context, page []*datastore.Key, tag *api.Tag) ([]*dat
 			Instance: inst,
 		}
 	}
-	existing, _, err := fetchTags(c, tagEnts, func(int) *api.Tag { return tag })
+	existing, _, err := fetchTags(ctx, tagEnts, func(int) *api.Tag { return tag })
 	if err != nil {
 		return nil, errors.Annotate(err, "failed by filter by tag %q", common.JoinInstanceTag(tag)).Err()
 	}
@@ -192,7 +192,7 @@ func filterByTag(c context.Context, page []*datastore.Key, tag *api.Tag) ([]*dat
 // fetchExistingInstances fetches Instance entities given their keys.
 //
 // Skips missing ones.
-func fetchExistingInstances(c context.Context, keys []*datastore.Key) ([]*Instance, error) {
+func fetchExistingInstances(ctx context.Context, keys []*datastore.Key) ([]*Instance, error) {
 	instances := make([]*Instance, len(keys))
 	for i, k := range keys {
 		instances[i] = &Instance{
@@ -201,7 +201,7 @@ func fetchExistingInstances(c context.Context, keys []*datastore.Key) ([]*Instan
 		}
 	}
 
-	err := datastore.Get(c, instances)
+	err := datastore.Get(ctx, instances)
 	if err == nil {
 		return instances, nil
 	}

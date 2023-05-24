@@ -107,20 +107,20 @@ func TagID(t *api.Tag) string {
 //	FailedPrecondition if some processors are still running.
 //	Aborted if some processors have failed.
 //	Internal on tag ID collision.
-func AttachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
-	return Txn(c, "AttachTags", func(c context.Context) error {
-		if err := CheckInstanceReady(c, inst); err != nil {
+func AttachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
+	return Txn(ctx, "AttachTags", func(ctx context.Context) error {
+		if err := CheckInstanceReady(ctx, inst); err != nil {
 			return err
 		}
 
-		_, missing, err := checkExistingTags(c, inst, tags)
+		_, missing, err := checkExistingTags(ctx, inst, tags)
 		if err != nil {
 			return err
 		}
 
 		events := Events{}
-		now := clock.Now(c).UTC()
-		who := string(auth.CurrentIdentity(c))
+		now := clock.Now(ctx).UTC()
+		who := string(auth.CurrentIdentity(ctx))
 		for _, t := range missing {
 			t.RegisteredBy = who
 			t.RegisteredTs = now
@@ -134,10 +134,10 @@ func AttachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 			})
 		}
 
-		if err := datastore.Put(c, missing); err != nil {
+		if err := datastore.Put(ctx, missing); err != nil {
 			return transient.Tag.Apply(err)
 		}
-		return events.Flush(c)
+		return events.Flush(ctx)
 	})
 }
 
@@ -147,14 +147,14 @@ func AttachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 // can't be a part of a transaction itself).
 //
 // 'inst' is used only for its key.
-func DetachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
-	return Txn(c, "DetachTags", func(c context.Context) error {
-		existing, _, err := checkExistingTags(c, inst, tags)
+func DetachTags(ctx context.Context, inst *Instance, tags []*api.Tag) error {
+	return Txn(ctx, "DetachTags", func(ctx context.Context) error {
+		existing, _, err := checkExistingTags(ctx, inst, tags)
 		if err != nil {
 			return err
 		}
 
-		if err := datastore.Delete(c, existing); err != nil {
+		if err := datastore.Delete(ctx, existing); err != nil {
 			return transient.Tag.Apply(err)
 		}
 
@@ -167,7 +167,7 @@ func DetachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 				Tag:      t.Tag,
 			})
 		}
-		return events.Flush(c)
+		return events.Flush(ctx)
 	})
 }
 
@@ -181,19 +181,19 @@ func DetachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 //
 //	NotFound if there's no such tag at all.
 //	FailedPrecondition if the tag resolves to multiple instances.
-func ResolveTag(c context.Context, pkg string, tag *api.Tag) (string, error) {
+func ResolveTag(ctx context.Context, pkg string, tag *api.Tag) (string, error) {
 	// TODO(vadimsh): Cache the result of the resolution. This is generally not
 	// trivial to do right without race conditions, preserving the consistency
 	// guarantees of the API. This will become simpler once we have a notion of
 	// unique tags.
 	q := datastore.NewQuery("InstanceTag").
-		Ancestor(PackageKey(c, pkg)).
+		Ancestor(PackageKey(ctx, pkg)).
 		Eq("tag", common.JoinInstanceTag(tag)).
 		KeysOnly(true).
 		Limit(2)
 
 	var tags []*Tag
-	switch err := datastore.GetAll(c, q, &tags); {
+	switch err := datastore.GetAll(ctx, q, &tags); {
 	case err != nil:
 		return "", errors.Annotate(err, "failed to query tags").Tag(transient.Tag).Err()
 	case len(tags) == 0:
@@ -209,15 +209,15 @@ func ResolveTag(c context.Context, pkg string, tag *api.Tag) (string, error) {
 // the tag key first, and then by the timestamp (most recent first).
 //
 // Returns an empty list if there's no such instance at all.
-func ListInstanceTags(c context.Context, inst *Instance) (out []*Tag, err error) {
+func ListInstanceTags(ctx context.Context, inst *Instance) (out []*Tag, err error) {
 	// TODO(vadimsh): Sorting by tag key requires adding the key as a field in the
 	// entity and setting up a composite index (key, -registered_ts). This change
 	// requires a migration of existing entities. We punt on this for now and sort
 	// in memory instead (just like we did on the client before). The most heavily
 	// tagged instances in our datastore have few hundred tags at most, so this is
 	// bearable.
-	q := datastore.NewQuery("InstanceTag").Ancestor(datastore.KeyForObj(c, inst))
-	if datastore.GetAll(c, q, &out); err != nil {
+	q := datastore.NewQuery("InstanceTag").Ancestor(datastore.KeyForObj(ctx, inst))
+	if datastore.GetAll(ctx, q, &out); err != nil {
 		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
 	}
 	sort.Slice(out, func(i, j int) bool {
@@ -254,8 +254,8 @@ func tagKey(kv string) string {
 //
 // Tags in 'miss' list have only their key and 'Tag' fields set and nothing
 // more.
-func checkExistingTags(c context.Context, inst *Instance, tags []*api.Tag) (exist, miss []*Tag, err error) {
-	instKey := datastore.KeyForObj(c, inst)
+func checkExistingTags(ctx context.Context, inst *Instance, tags []*api.Tag) (exist, miss []*Tag, err error) {
+	instKey := datastore.KeyForObj(ctx, inst)
 	tagEnts := make([]*Tag, len(tags))
 	for i, tag := range tags {
 		tagEnts[i] = &Tag{
@@ -263,7 +263,7 @@ func checkExistingTags(c context.Context, inst *Instance, tags []*api.Tag) (exis
 			Instance: instKey,
 		}
 	}
-	return fetchTags(c, tagEnts, func(i int) *api.Tag { return tags[i] })
+	return fetchTags(ctx, tagEnts, func(i int) *api.Tag { return tags[i] })
 }
 
 // fetchTags fetches given tag entities and categorized them into existing and
@@ -274,11 +274,11 @@ func checkExistingTags(c context.Context, inst *Instance, tags []*api.Tag) (exis
 // Checks 'Tag' field on existing tags (by comparing it to what 'expectedTag'
 // callback returns for the corresponding index), thus safeguarding against
 // malicious SHA1 collisions in TagID().
-func fetchTags(c context.Context, tagEnts []*Tag, expectedTag func(idx int) *api.Tag) (exist, miss []*Tag, err error) {
+func fetchTags(ctx context.Context, tagEnts []*Tag, expectedTag func(idx int) *api.Tag) (exist, miss []*Tag, err error) {
 	// Try to grab all entities and bail on unexpected errors.
 	existCount := 0
 	missCount := 0
-	if err := datastore.Get(c, tagEnts); err != nil {
+	if err := datastore.Get(ctx, tagEnts); err != nil {
 		merr, ok := err.(errors.MultiError)
 		if !ok {
 			return nil, nil, errors.Annotate(err, "failed to fetch tags").Tag(transient.Tag).Err()

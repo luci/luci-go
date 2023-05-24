@@ -226,9 +226,9 @@ func TestEmitMetadataEvents(t *testing.T) {
 // ordering them by timestamp (most recent first).
 //
 // Calls datastore.GetTestable(ctx).CatchupIndexes() inside.
-func GetEvents(c context.Context) []*api.Event {
-	datastore.GetTestable(c).CatchupIndexes()
-	ev, err := QueryEvents(c, NewEventsQuery())
+func GetEvents(ctx context.Context) []*api.Event {
+	datastore.GetTestable(ctx).CatchupIndexes()
+	ev, err := QueryEvents(ctx, NewEventsQuery())
 	if err != nil {
 		panic(err)
 	}

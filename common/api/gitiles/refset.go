@@ -109,14 +109,14 @@ func (w RefSet) Has(ref string) bool {
 // Returns map from individual ref to its SHA1 hash and a list of original refs,
 // incl. regular expressions, which either don't exist or are not visible to the
 // requester.
-func (w RefSet) Resolve(c context.Context, client gitiles.GitilesClient, project string) (refTips map[string]string, missingRefs []string, err error) {
+func (w RefSet) Resolve(ctx context.Context, client gitiles.GitilesClient, project string) (refTips map[string]string, missingRefs []string, err error) {
 	lock := sync.Mutex{} // for concurrent writes to the map
 	refTips = map[string]string{}
 	err = parallel.FanOutIn(func(work chan<- func() error) {
 		for prefix := range w.byPrefix {
 			prefix := prefix
 			work <- func() error {
-				resp, err := client.Refs(c, &gitiles.RefsRequest{Project: project, RefsPath: prefix})
+				resp, err := client.Refs(ctx, &gitiles.RefsRequest{Project: project, RefsPath: prefix})
 				if err != nil {
 					return err
 				}

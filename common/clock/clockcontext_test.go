@@ -36,9 +36,9 @@ func (mc *manualClock) Now() time.Time {
 	return mc.now
 }
 
-func (mc *manualClock) NewTimer(c context.Context) Timer {
+func (mc *manualClock) NewTimer(ctx context.Context) Timer {
 	return &manualTimer{
-		ctx:     c,
+		ctx:     ctx,
 		mc:      mc,
 		resultC: make(chan TimerResult),
 	}
@@ -92,9 +92,9 @@ func (mt *manualTimer) Stop() bool {
 	return true
 }
 
-func wait(c context.Context) error {
-	<-c.Done()
-	return c.Err()
+func wait(ctx context.Context) error {
+	<-ctx.Done()
+	return ctx.Err()
 }
 
 func TestClockContext(t *testing.T) {

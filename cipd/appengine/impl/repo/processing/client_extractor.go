@@ -247,12 +247,12 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 //	(nil, datastore.ErrNoSuchEntity) if results are not available.
 //	(nil, transient-tagged error) on retrieval errors.
 //	(nil, non-transient-tagged error) if the client extractor failed.
-func GetClientExtractorResult(c context.Context, inst *api.Instance) (*ClientExtractorResult, error) {
+func GetClientExtractorResult(ctx context.Context, inst *api.Instance) (*ClientExtractorResult, error) {
 	r := &model.ProcessingResult{
 		ProcID:   ClientExtractorProcID,
-		Instance: datastore.KeyForObj(c, (&model.Instance{}).FromProto(c, inst)),
+		Instance: datastore.KeyForObj(ctx, (&model.Instance{}).FromProto(ctx, inst)),
 	}
-	switch err := datastore.Get(c, r); {
+	switch err := datastore.Get(ctx, r); {
 	case err == datastore.ErrNoSuchEntity:
 		return nil, err
 	case err != nil:
