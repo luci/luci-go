@@ -76,6 +76,15 @@ message IdentityConfig {
   string service_account_email = 1;
 }
 
+// Location is the source repo location where the configuration stores.
+// Currently, it only supports Gitiles repos.
+// TODO(crbug.com/1446839): replace Project.gitiles_location field later.
+message Location {
+  oneof location {
+    GitilesLocation gitiles_location = 1;
+  }
+}
+
 /******************************************************************************/
 /* Projects                                                                   */
 /******************************************************************************/
