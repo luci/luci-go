@@ -214,7 +214,7 @@ func DetachMetadata(ctx context.Context, inst *Instance, md []*api.InstanceMetad
 	}
 	md = filtered
 
-	return Txn(ctx, "DetachMetadata", func(c context.Context) error {
+	return Txn(ctx, "DetachMetadata", func(ctx context.Context) error {
 		// Prepare to fetch everything from the datastore to figure out what entries
 		// actually exist, for the event log.
 		instKey := datastore.KeyForObj(ctx, inst)
