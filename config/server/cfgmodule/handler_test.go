@@ -16,17 +16,25 @@ package cfgmodule
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInstallHandlers(t *testing.T) {
@@ -133,6 +141,70 @@ func TestInstallHandlers(t *testing.T) {
 			valCall("dead", "", "")
 			So(rr.Code, ShouldEqual, http.StatusBadRequest)
 			So(rr.Body.String(), ShouldEqual, "Must specify the path of the file to validate")
+		})
+	})
+}
+
+func TestConsumerServer(t *testing.T) {
+	t.Parallel()
+
+	Convey("ConsumerServer", t, func() {
+		const configSA = "luci-config-service@luci-config.iam.gserviceaccount.com"
+		authState := &authtest.FakeState{
+			Identity: "user:" + configSA,
+		}
+		ctx := auth.WithState(context.Background(), authState)
+		rules := validation.NewRuleSet()
+		srv := consumerServer{
+			rules: rules,
+			getConfigServiceAccountFn: func(ctx context.Context) (string, error) {
+				return configSA, nil
+			},
+		}
+
+		Convey("Check caller", func() {
+			Convey("Allow LUCI Config service account", func() {
+				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
+				So(err, ShouldBeNil)
+			})
+			Convey("Allow Admin group", func() {
+				authState := &authtest.FakeState{
+					Identity:       "user:someone@example.com",
+					IdentityGroups: []string{adminGroup},
+				}
+				ctx = auth.WithState(context.Background(), authState)
+				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
+				So(err, ShouldBeNil)
+			})
+			Convey("Disallow", func() {
+				Convey("Non-admin users", func() {
+					authState = &authtest.FakeState{
+						Identity: "user:someone@example.com",
+					}
+				})
+				Convey("Anonymous", func() {
+					authState = &authtest.FakeState{
+						Identity: identity.AnonymousIdentity,
+					}
+				})
+				ctx = auth.WithState(context.Background(), authState)
+				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
+				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			})
+		})
+
+		Convey("GetMetadata", func() {
+			rules.Add("configSet", "path", nil)
+			res, err := srv.GetMetadata(ctx, &emptypb.Empty{})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &config.ServiceMetadata{
+				ConfigPatterns: []*config.ConfigPattern{
+					{
+						ConfigSet: "exact:configSet",
+						Path:      "exact:path",
+					},
+				},
+			})
 		})
 	})
 }

@@ -62,7 +62,21 @@ func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*c
 	if err := srv.checkCaller(ctx); err != nil {
 		return nil, err
 	}
-	return nil, status.Errorf(codes.Unimplemented, "method GetMetadata not implemented")
+	patterns, err := srv.rules.ConfigPatterns(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to collect the list of validation patterns: %s", err)
+	}
+	ret := &config.ServiceMetadata{}
+	if len(patterns) > 0 {
+		ret.ConfigPatterns = make([]*config.ConfigPattern, len(patterns))
+		for i, pattern := range patterns {
+			ret.ConfigPatterns[i] = &config.ConfigPattern{
+				ConfigSet: pattern.ConfigSet.String(),
+				Path:      pattern.Path.String(),
+			}
+		}
+	}
+	return ret, nil
 }
 
 // ValidateConfig implements config.Consumer.ValidateConfig.
