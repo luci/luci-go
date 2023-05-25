@@ -71,7 +71,9 @@ export function PropertyViewer({ properties, config, onInit }: PropertyViewerPro
         });
         onInit?.(editor);
       }}
-      css={{ minWidth: '400px', maxWidth: '1000px', minHeight: '100px', maxHeight: '600px' }}
+      css={{
+        '& .CodeMirror-scroll': { minWidth: '400px', maxWidth: '1000px', minHeight: '100px', maxHeight: '600px' },
+      }}
     />
   );
 }

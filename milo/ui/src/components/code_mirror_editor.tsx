@@ -32,11 +32,7 @@ const Container = styled.div`
 
   & .CodeMirror {
     height: auto;
-    max-height: 1000px;
     font-size: 12px;
-  }
-  & .CodeMirror-scroll {
-    max-height: 1000px;
   }
   & .cm-property.cm-string {
     color: #318495;
