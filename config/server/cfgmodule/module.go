@@ -180,6 +180,14 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	// validation.
 	config.RegisterConsumerServer(host, &consumerServer{
 		rules: m.opts.Rules,
+		getConfigServiceAccountFn: func(ctx context.Context) (string, error) {
+			// Grab the expected service account ID of the LUCI Config service we use.
+			info, err := m.configServiceInfo(ctx)
+			if err != nil {
+				return "", err
+			}
+			return info.ServiceAccountName, nil
+		},
 	})
 	return ctx, nil
 }

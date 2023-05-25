@@ -22,11 +22,16 @@ import (
 	"net/http"
 
 	"github.com/klauspost/compress/gzip"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -38,6 +43,7 @@ const (
 	// Taken from
 	// https://chromium.googlesource.com/infra/luci/luci-py/+/3efc60daef6bf6669f9211f63e799db47a0478c0/appengine/components/components/config/endpoint.py
 	metaDataFormatVersion = "1.0"
+	adminGroup            = "administrators"
 )
 
 // consumerServer implements `config.Consumer` interface that will be called
@@ -47,6 +53,45 @@ type consumerServer struct {
 
 	// Rules is a rule set to use for the config validation.
 	rules *validation.RuleSet
+
+	getConfigServiceAccountFn func(context.Context) (string, error)
+}
+
+// GetMetadata implements config.Consumer.GetMetadata.
+func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*config.ServiceMetadata, error) {
+	if err := srv.checkCaller(ctx); err != nil {
+		return nil, err
+	}
+	return nil, status.Errorf(codes.Unimplemented, "method GetMetadata not implemented")
+}
+
+// ValidateConfig implements config.Consumer.ValidateConfig.
+func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.ValidateConfigRequest) (*config.ValidateConfigResponse, error) {
+	if err := srv.checkCaller(ctx); err != nil {
+		return nil, err
+	}
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfig not implemented")
+}
+
+// only LUCI Config and identity in admin group is allowed to call.
+func (srv consumerServer) checkCaller(ctx context.Context) error {
+	configServiceAccount, err := srv.getConfigServiceAccountFn(ctx)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to get LUCI Config service account: %s", err)
+		return status.Errorf(codes.Internal, "failed to get LUCI Config service account")
+	}
+	caller := auth.CurrentIdentity(ctx)
+	if caller.Kind() == identity.User && caller.Value() == configServiceAccount {
+		return nil
+	}
+	switch admin, err := auth.IsMember(ctx, adminGroup); {
+	case err != nil:
+		logging.Errorf(ctx, "Failed to check ACL: %s", err)
+		return status.Errorf(codes.Internal, "failed to check ACL")
+	case admin:
+		return nil
+	}
+	return status.Errorf(codes.PermissionDenied, "%q is not authorized", caller)
 }
 
 // InstallHandlers installs the metadata and validation handlers that use
