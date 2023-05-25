@@ -42,11 +42,11 @@ type Server struct {
 	Host string
 }
 
-func setContext(c context.Context) router.MiddlewareChain {
+func setContext(ctx context.Context) router.MiddlewareChain {
 	return router.NewMiddlewareChain(
-		func(ctx *router.Context, next router.Handler) {
-			ctx.Context = c
-			next(ctx)
+		func(rctx *router.Context, next router.Handler) {
+			rctx.Context = ctx
+			next(rctx)
 		},
 	)
 }
