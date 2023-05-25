@@ -910,6 +910,22 @@ func TestBuganizerUpdate(t *testing.T) {
 						So(fakeStore.Issues[2].Comments, ShouldHaveLength, 2)
 						So(fakeStore.Issues[2].Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis cannot merge the association rule for this bug into the rule")
 					})
+					Convey("Bug marked as dupliacte of bug with an assignee", func() {
+						fakeStore.Issues[3].ShouldReturnAccessPermissionError = true
+						issueOne.IssueState.Assignee = &issuetracker.User{
+							EmailAddress: "user@google.com",
+						}
+						// Act
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+
+						// Verify
+						// Issue one kicked out of duplicate status.
+						So(issueOne.IssueState.Status, ShouldEqual, issuetracker.Issue_ASSIGNED)
+
+						So(fakeStore.Issues[2].Comments, ShouldHaveLength, 2)
+						So(fakeStore.Issues[2].Comments[1].Comment, ShouldContainSubstring, "LUCI Analysis cannot merge the association rule for this bug into the rule")
+					})
 				})
 
 				Convey("Bug marked as duplicate of bug without a rule in this project", func() {

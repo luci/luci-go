@@ -161,6 +161,7 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 			// no action.
 			responses = append(responses, bugs.BugUpdateResponse{
 				IsDuplicate:   false,
+				IsAssigned:    false,
 				ShouldArchive: false,
 			})
 			logging.Warningf(ctx, "Monorail issue %s not found, skipping.", req.Bug.ID)
@@ -169,6 +170,7 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 
 		isDuplicate := issue.Status.Status == DuplicateStatus
 		shouldArchive := shouldArchiveRule(ctx, issue, req.IsManagingBug)
+		isAssigned := issue.Owner.GetUser() != ""
 		disableRulePriorityUpdates := false
 		if !isDuplicate && !shouldArchive && req.IsManagingBug && req.Impact != nil {
 			if m.generator.NeedsUpdate(req.Impact, issue, req.IsManagingBugPriority) {
@@ -196,6 +198,7 @@ func (m *BugManager) Update(ctx context.Context, request []bugs.BugUpdateRequest
 		}
 		responses = append(responses, bugs.BugUpdateResponse{
 			IsDuplicate:                isDuplicate,
+			IsAssigned:                 isAssigned,
 			ShouldArchive:              shouldArchive && !isDuplicate,
 			DisableRulePriorityUpdates: disableRulePriorityUpdates,
 		})
@@ -251,11 +254,11 @@ func (m *BugManager) GetMergedInto(ctx context.Context, bug bugs.BugID) (*bugs.B
 // Unduplicate updates the given bug to no longer be marked as duplicating
 // another bug, posting the given message on the bug.
 func (m *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.UpdateDuplicateSourceRequest) error {
-	if request.Bug.System != bugs.MonorailSystem {
+	if request.BugDetails.Bug.System != bugs.MonorailSystem {
 		// Indicates an implementation error with the caller.
 		panic("monorail bug manager can only deal with monorail bugs")
 	}
-	req, err := m.generator.UpdateDuplicateSource(request.Bug.ID, request.ErrorMessage, request.DestinationRuleID)
+	req, err := m.generator.UpdateDuplicateSource(request.BugDetails.Bug.ID, request.ErrorMessage, request.DestinationRuleID)
 	if err != nil {
 		return errors.Annotate(err, "mark issue as available").Err()
 	}
@@ -263,7 +266,7 @@ func (m *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.Upd
 		logging.Debugf(ctx, "Would update Monorail issue: %s", textPBMultiline.Format(req))
 	} else {
 		if err := m.client.ModifyIssues(ctx, req); err != nil {
-			return errors.Annotate(err, "failed to update duplicate source monorail issue %s", request.Bug.ID).Err()
+			return errors.Annotate(err, "failed to update duplicate source monorail issue %s", request.BugDetails.Bug.ID).Err()
 		}
 	}
 	return nil

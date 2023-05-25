@@ -49,6 +49,9 @@ type BugUpdateResponse struct {
 	// IsDuplicate is set if the bug is a duplicate of another.
 	IsDuplicate bool
 
+	// IsAssigned is set if the bug is assigned to a user.
+	IsAssigned bool
+
 	// ShouldArchive indicates if the rule for this bug should be archived.
 	// This should be set if:
 	// - The bug is managed by LUCI Analysis (IsManagingBug = true) and it has
@@ -64,13 +67,23 @@ type BugUpdateResponse struct {
 	DisableRulePriorityUpdates bool
 }
 
+// BugDetails holds the data of a duplicate bug, this includes it's bug id,
+// and whether or not it is assigned to a user.
+type BugDetails struct {
+	// Bug is the source bug that was merged-into another bug.
+	Bug BugID
+	// IsAssigned indicated whether this bug is assigned or not.
+	IsAssigned bool
+}
+
 // UpdateDuplicateSourceRequest represents a request to update the source
 // bug of a duplicate bug (source bug, destination bug) pair, after
 // LUCI Analysis has attempted to merge the failure association rule
 // of the source to the destination.
 type UpdateDuplicateSourceRequest struct {
-	// Bug is the source bug that was merged-into another bug.
-	Bug BugID
+	// BugDetails are details of the bug to be updated.
+	// This includes the bug ID and whether or not it is assigned.
+	BugDetails BugDetails
 	// ErrorMessage is the error that occured handling the duplicate bug.
 	// If this is set, it will be posted to the bug and bug will marked as
 	// no longer a duplicate to avoid repeately triggering the same error.

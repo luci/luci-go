@@ -200,7 +200,7 @@ func (rg *RequestGenerator) PrepareNoPermissionComment(issueID, componentID int6
 // UpdateDuplicateSource updates the source bug of a (source, destination)
 // duplicate bug pair, after LUCI Analysis has attempted to merge their
 // failure association rules.
-func (rg *RequestGenerator) UpdateDuplicateSource(issueId int64, errorMessage, destinationRuleID string) *issuetracker.ModifyIssueRequest {
+func (rg *RequestGenerator) UpdateDuplicateSource(issueId int64, errorMessage, destinationRuleID string, isAssigned bool) *issuetracker.ModifyIssueRequest {
 	updateRequest := &issuetracker.ModifyIssueRequest{
 		IssueId: issueId,
 		AddMask: &fieldmaskpb.FieldMask{
@@ -213,7 +213,11 @@ func (rg *RequestGenerator) UpdateDuplicateSource(issueId int64, errorMessage, d
 		Remove: &issuetracker.IssueState{},
 	}
 	if errorMessage != "" {
-		updateRequest.Add.Status = issuetracker.Issue_NEW
+		if isAssigned {
+			updateRequest.Add.Status = issuetracker.Issue_ASSIGNED
+		} else {
+			updateRequest.Add.Status = issuetracker.Issue_NEW
+		}
 		updateRequest.AddMask.Paths = append(updateRequest.AddMask.Paths, "status")
 		updateRequest.IssueComment = &issuetracker.IssueComment{
 			Comment: strings.Join([]string{errorMessage, rg.linkToRuleComment(issueId)}, "\n\n"),

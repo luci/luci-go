@@ -227,6 +227,7 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 			//Take no action.
 			responses = append(responses, bugs.BugUpdateResponse{
 				IsDuplicate:   false,
+				IsAssigned:    false,
 				ShouldArchive: false,
 			})
 			logging.Warningf(ctx, "Buganizer issue %s not found or we don't have permission to access it, skipping.", request.Bug.ID)
@@ -234,6 +235,7 @@ func (bm *BugManager) Update(ctx context.Context, requests []bugs.BugUpdateReque
 		}
 		updateResponse := bugs.BugUpdateResponse{
 			IsDuplicate:                issue.IssueState.Status == issuetracker.Issue_DUPLICATE,
+			IsAssigned:                 issue.IssueState.Assignee != nil,
 			ShouldArchive:              shouldArchiveRule(ctx, issue, request.IsManagingBug),
 			DisableRulePriorityUpdates: false,
 		}
@@ -391,20 +393,20 @@ func mergedIntoBug(issue *issuetracker.Issue) (*bugs.BugID, error) {
 // duplicate bug could not be handled and marks the bug no
 // longer a duplicate to break the cycle.
 func (bm *BugManager) UpdateDuplicateSource(ctx context.Context, request bugs.UpdateDuplicateSourceRequest) error {
-	if request.Bug.System != bugs.BuganizerSystem {
+	if request.BugDetails.Bug.System != bugs.BuganizerSystem {
 		// Indicates an implementation error with the caller.
 		panic("Buganizer bug manager can only deal with Buganizer bugs")
 	}
-	issueId, err := strconv.Atoi(request.Bug.ID)
+	issueId, err := strconv.Atoi(request.BugDetails.Bug.ID)
 	if err != nil {
 		return errors.Annotate(err, "update duplicate source").Err()
 	}
-	req := bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID)
+	req := bm.requestGenerator.UpdateDuplicateSource(int64(issueId), request.ErrorMessage, request.DestinationRuleID, request.BugDetails.IsAssigned)
 	if bm.Simulate {
 		logging.Debugf(ctx, "Would update Buganizer issue: %s", textPBMultiline.Format(req))
 	} else {
 		if _, err := bm.client.ModifyIssue(ctx, req); err != nil {
-			return errors.Annotate(err, "failed to update duplicate source Buganizer issue %s", request.Bug.ID).Err()
+			return errors.Annotate(err, "failed to update duplicate source Buganizer issue %s", request.BugDetails.Bug.ID).Err()
 		}
 	}
 	return nil

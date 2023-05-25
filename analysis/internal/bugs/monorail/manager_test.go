@@ -422,6 +422,7 @@ func TestManager(t *testing.T) {
 							err = usercl.ModifyIssues(ctx, updateReq)
 							So(err, ShouldBeNil)
 							So(f.Issues[0].Issue.Owner.GetUser(), ShouldEqual, "users/100")
+							expectedResponse[0].IsAssigned = true
 
 							// Issue should return to "Assigned" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
@@ -608,7 +609,9 @@ func TestManager(t *testing.T) {
 
 			Convey("With ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					Bug:          bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+					BugDetails: bugs.BugDetails{
+						Bug: bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+					},
 					ErrorMessage: "Some error.",
 				}
 				err = bm.UpdateDuplicateSource(ctx, request)
@@ -622,7 +625,9 @@ func TestManager(t *testing.T) {
 			})
 			Convey("Without ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					Bug:               bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+					BugDetails: bugs.BugDetails{
+						Bug: bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
+					},
 					DestinationRuleID: "12345abcdef",
 				}
 				err = bm.UpdateDuplicateSource(ctx, request)

@@ -272,7 +272,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 }
 
 func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bugsToUpdate []bugs.BugUpdateRequest) error {
-	var duplicateBugs []bugs.BugID
+	var duplicateBugs []bugs.BugDetails
 	var ruleIDsToArchive []string
 	var ruleIDsToDisableBugPriorityUpdates []string
 
@@ -288,7 +288,10 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 
 	for i, rsp := range responses {
 		if rsp.IsDuplicate {
-			duplicateBugs = append(duplicateBugs, bugsToUpdate[i].Bug)
+			duplicateBugs = append(duplicateBugs, bugs.BugDetails{
+				Bug:        bugsToUpdate[i].Bug,
+				IsAssigned: rsp.IsAssigned,
+			})
 		} else if rsp.ShouldArchive {
 			ruleIDsToArchive = append(ruleIDsToArchive, bugsToUpdate[i].RuleID)
 		}
@@ -311,11 +314,11 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 	}
 
 	// Handle bugs marked as duplicate.
-	for _, bug := range duplicateBugs {
-		err := b.handleDuplicateBug(ctx, bug)
+	for _, duplicateDetails := range duplicateBugs {
+		err := b.handleDuplicateBug(ctx, duplicateDetails)
 		if errors.Is(err, mergeIntoCycleErr) {
 			request := bugs.UpdateDuplicateSourceRequest{
-				Bug:          bug,
+				BugDetails:   duplicateDetails,
 				ErrorMessage: mergeIntoCycleMessage,
 			}
 			if err := b.updateDuplicateSource(ctx, request); err != nil {
@@ -323,7 +326,7 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 			}
 		} else if errors.Is(err, ruleDefinitionTooLongErr) {
 			request := bugs.UpdateDuplicateSourceRequest{
-				Bug:          bug,
+				BugDetails:   duplicateDetails,
 				ErrorMessage: ruleDefinitionTooLongMessage,
 			}
 			if err := b.updateDuplicateSource(ctx, request); err != nil {
@@ -331,14 +334,14 @@ func (b *BugUpdater) updateBugsForSystem(ctx context.Context, system string, bug
 			}
 		} else if errors.Is(err, mergeIntoPermissionErr) {
 			request := bugs.UpdateDuplicateSourceRequest{
-				Bug:          bug,
+				BugDetails:   duplicateDetails,
 				ErrorMessage: mergeIntoPermissionMessage,
 			}
 			if err := b.updateDuplicateSource(ctx, request); err != nil {
 				return errors.Annotate(err, "update source bug after merging rule definition encountered a permission error").Err()
 			}
 		} else if err != nil {
-			return errors.Annotate(err, "handling bug (%s) marked as duplicate", bug).Err()
+			return errors.Annotate(err, "handling bug (%s) marked as duplicate", duplicateDetails.Bug).Err()
 		}
 	}
 	return nil
@@ -505,10 +508,10 @@ func (b *BugUpdater) disableBugUpdatesForRules(ctx context.Context, ruleIDs []st
 // handleDuplicateBug handles a duplicate bug, merging its failure association
 // rule with the bug it is ultimately merged into (creating the rule if it does
 // not exist). The original rule is archived.
-func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) error {
+func (b *BugUpdater) handleDuplicateBug(ctx context.Context, duplicateDetails bugs.BugDetails) error {
 	// Chase the bug merged-into graph until we find the sink of the graph.
 	// (The canonical bug of the chain of duplicate bugs.)
-	destBug, err := b.resolveMergedIntoBug(ctx, bug)
+	destBug, err := b.resolveMergedIntoBug(ctx, duplicateDetails.Bug)
 	if err != nil {
 		// May return mergeIntoCycleErr.
 		return err
@@ -517,7 +520,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 	var destinationBugRuleID string
 
 	f := func(ctx context.Context) error {
-		sourceRule, _, err := readRuleForBugAndProject(ctx, bug, b.project)
+		sourceRule, _, err := readRuleForBugAndProject(ctx, duplicateDetails.Bug, b.project)
 		if err != nil {
 			return errors.Annotate(err, "reading rule for source bug").Err()
 		}
@@ -608,7 +611,7 @@ func (b *BugUpdater) handleDuplicateBug(ctx context.Context, bug bugs.BugID) err
 	if !b.projectCfg.Config.BugManagement.GetDisableDuplicateBugComments() {
 		// Notify that the bugs were successfully merged.
 		request := bugs.UpdateDuplicateSourceRequest{
-			Bug:               bug,
+			BugDetails:        duplicateDetails,
 			DestinationRuleID: destinationBugRuleID,
 		}
 		if err := b.updateDuplicateSource(ctx, request); err != nil {
@@ -679,9 +682,9 @@ func (b *BugUpdater) resolveMergedIntoBug(ctx context.Context, bug bugs.BugID) (
 // marks the bug no longer a duplicate (to avoid repeated attempts to
 // handle the problematic duplicate bug).
 func (b *BugUpdater) updateDuplicateSource(ctx context.Context, request bugs.UpdateDuplicateSourceRequest) error {
-	manager, ok := b.managers[request.Bug.System]
+	manager, ok := b.managers[request.BugDetails.Bug.System]
 	if !ok {
-		return fmt.Errorf("encountered unknown bug system: %q", request.Bug.System)
+		return fmt.Errorf("encountered unknown bug system: %q", request.BugDetails.Bug.System)
 	}
 	err := manager.UpdateDuplicateSource(ctx, request)
 	if err != nil {

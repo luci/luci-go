@@ -413,6 +413,7 @@ func TestBugManager(t *testing.T) {
 					fakeStore.Issues[1].Issue.IssueState.Assignee = &issuetracker.User{
 						EmailAddress: "user@google.com",
 					}
+					expectedResponse[0].IsAssigned = true
 					response, err := bm.Update(ctx, bugsToUpdate)
 					So(err, ShouldBeNil)
 					So(response, ShouldResemble, expectedResponse)
@@ -444,6 +445,7 @@ func TestBugManager(t *testing.T) {
 						expectedResponse := []bugs.BugUpdateResponse{
 							{
 								ShouldArchive: true,
+								IsAssigned:    true,
 							},
 						}
 						tc.Add(time.Minute * 2)
@@ -492,6 +494,7 @@ func TestBugManager(t *testing.T) {
 							// Issue should return to "Untriaged" status.
 							response, err := bm.Update(ctx, bugsToUpdate)
 							So(err, ShouldBeNil)
+							expectedResponse[0].IsAssigned = false
 							So(response, ShouldResemble, expectedResponse)
 							So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_ACCEPTED)
 							So(fakeStore.Issues[1].Issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P3)
@@ -626,13 +629,32 @@ func TestBugManager(t *testing.T) {
 
 			Convey("With ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					Bug:          bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+					BugDetails: bugs.BugDetails{
+						Bug: bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+					},
 					ErrorMessage: "Some error.",
 				}
 				err = bm.UpdateDuplicateSource(ctx, request)
 				So(err, ShouldBeNil)
 
-				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldNotEqual, issuetracker.Issue_DUPLICATE)
+				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_NEW)
+				So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
+				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring, "Some error.")
+				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
+					"https://luci-analysis-test.appspot.com/b/1")
+			})
+			Convey("With ErrorMessage ans IsAssigned is true", func() {
+				request := bugs.UpdateDuplicateSourceRequest{
+					BugDetails: bugs.BugDetails{
+						Bug:        bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+						IsAssigned: true,
+					},
+					ErrorMessage: "Some error.",
+				}
+				err = bm.UpdateDuplicateSource(ctx, request)
+				So(err, ShouldBeNil)
+
+				So(fakeStore.Issues[1].Issue.IssueState.Status, ShouldEqual, issuetracker.Issue_ASSIGNED)
 				So(fakeStore.Issues[1].Comments, ShouldHaveLength, 2)
 				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring, "Some error.")
 				So(fakeStore.Issues[1].Comments[1].Comment, ShouldContainSubstring,
@@ -640,7 +662,9 @@ func TestBugManager(t *testing.T) {
 			})
 			Convey("Without ErrorMessage", func() {
 				request := bugs.UpdateDuplicateSourceRequest{
-					Bug:               bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+					BugDetails: bugs.BugDetails{
+						Bug: bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
+					},
 					DestinationRuleID: "12345abcdef",
 				}
 				err = bm.UpdateDuplicateSource(ctx, request)
