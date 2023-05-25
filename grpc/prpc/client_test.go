@@ -325,10 +325,10 @@ func TestClient(t *testing.T) {
 				// All of our HTTP requests should terminate >= timeout. Synchronize
 				// around this to ensure that our Context is always the functional
 				// client error.
-				client.testPostHTTP = func(c context.Context, err error) error {
+				client.testPostHTTP = func(ctx context.Context, err error) error {
 					calls++
-					<-c.Done()
-					return c.Err()
+					<-ctx.Done()
+					return ctx.Err()
 				}
 
 				client.Options.PerRPCTimeout = time.Second

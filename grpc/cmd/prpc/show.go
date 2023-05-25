@@ -80,8 +80,8 @@ func (r *showRun) Run(a subcommands.Application, args []string, env subcommands.
 }
 
 // show prints a definition of an object referenced by name in proto3 style.
-func show(c context.Context, client *prpc.Client, name string) error {
-	desc, err := loadDescription(c, client)
+func show(ctx context.Context, client *prpc.Client, name string) error {
+	desc, err := loadDescription(ctx, client)
 	if err != nil {
 		return fmt.Errorf("could not load server description: %s", err)
 	}

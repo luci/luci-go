@@ -135,7 +135,7 @@ type request struct {
 }
 
 // call makes an RPC and writes response to out.
-func call(c context.Context, client *prpc.Client, req *request, out io.Writer) (hmd metadata.MD, err error) {
+func call(ctx context.Context, client *prpc.Client, req *request, out io.Writer) (hmd metadata.MD, err error) {
 	var inf, outf prpc.Format
 	var message []byte
 	switch req.format {
@@ -151,7 +151,7 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) (
 	}
 
 	// Send the request.
-	res, err := client.CallWithFormats(c, req.service, req.method, message, inf, outf, grpc.Header(&hmd))
+	res, err := client.CallWithFormats(ctx, req.service, req.method, message, inf, outf, grpc.Header(&hmd))
 	if err != nil {
 		return nil, &exitCode{err, int(status.Code(err))}
 	}

@@ -58,7 +58,7 @@ type service struct {
 	description *descriptorpb.FileDescriptorSet // their combined descriptor set
 }
 
-func (s *service) Describe(c context.Context, _ *Void) (*DescribeResponse, error) {
+func (s *service) Describe(ctx context.Context, _ *Void) (*DescribeResponse, error) {
 	services := s.exposed()
 
 	s.m.Lock()

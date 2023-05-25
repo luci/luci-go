@@ -26,9 +26,9 @@ type serverDescription struct {
 	*discovery.DescribeResponse
 }
 
-func loadDescription(c context.Context, client *prpc.Client) (*serverDescription, error) {
+func loadDescription(ctx context.Context, client *prpc.Client) (*serverDescription, error) {
 	dc := discovery.NewDiscoveryPRPCClient(client)
-	res, err := dc.Describe(c, &discovery.Void{})
+	res, err := dc.Describe(ctx, &discovery.Void{})
 	if err != nil {
 		return nil, fmt.Errorf("could not load server description: %s", err)
 	}

@@ -188,10 +188,10 @@ func TestDecoding(t *testing.T) {
 		})
 
 		Convey("Unrecognized headers", func() {
-			test := func(c context.Context, header http.Header, expectedMetadata metadata.MD) {
-				c, _, err := parseHeader(c, header, "")
+			test := func(ctx context.Context, header http.Header, expectedMetadata metadata.MD) {
+				ctx, _, err := parseHeader(ctx, header, "")
 				So(err, ShouldBeNil)
-				md, ok := metadata.FromIncomingContext(c)
+				md, ok := metadata.FromIncomingContext(ctx)
 				So(ok, ShouldBeTrue)
 				So(md, ShouldResemble, expectedMetadata)
 			}

@@ -73,9 +73,9 @@ func (p *parser) parsePackage(fileNames []string) error {
 	return nil
 }
 
-func (p *parser) resolveServices(c context.Context) error {
+func (p *parser) resolveServices(ctx context.Context) error {
 	for _, t := range p.types {
-		svc, err := p.resolveService(c, t)
+		svc, err := p.resolveService(ctx, t)
 		if err != nil {
 			return err
 		}
@@ -121,7 +121,7 @@ func (p *parser) recordImport(f *ast.File, typ ast.Expr) error {
 	return nil
 }
 
-func (p *parser) resolveService(c context.Context, typeName string) (*Service, error) {
+func (p *parser) resolveService(ctx context.Context, typeName string) (*Service, error) {
 	file, typeSpec := p.findType(typeName)
 	if typeSpec == nil {
 		return nil, fmt.Errorf("type %s not found", typeName)
@@ -156,25 +156,25 @@ func (p *parser) resolveService(c context.Context, typeName string) (*Service, e
 
 		name := m.Names[0].Name
 		if signature.Params == nil {
-			logging.Warningf(c, "%s.%s: no params", typeName, name)
+			logging.Warningf(ctx, "%s.%s: no params", typeName, name)
 			continue
 		}
 		params := signature.Params.List
 		if len(params) != 2 {
 			logging.Warningf(
-				c,
+				ctx,
 				"%s.%s: param count is %d; expected 2",
 				typeName, name, len(params))
 			continue
 		}
 		if signature.Results == nil {
-			logging.Warningf(c, "%s.%s: returns nothing", typeName, name)
+			logging.Warningf(ctx, "%s.%s: returns nothing", typeName, name)
 			continue
 		}
 		results := signature.Results.List
 		if len(results) != 2 {
 			logging.Warningf(
-				c,
+				ctx,
 				"%s.%s: return value count is %d; expected 2",
 				typeName, name, len(results))
 			continue

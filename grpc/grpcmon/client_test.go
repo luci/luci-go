@@ -69,7 +69,7 @@ type echoService struct {
 	err error
 }
 
-func (s *echoService) Say(c context.Context, req *SayRequest) (*SayResponse, error) {
+func (s *echoService) Say(ctx context.Context, req *SayRequest) (*SayResponse, error) {
 	return &SayResponse{Msg: req.GetMsg()}, s.err
 }
 

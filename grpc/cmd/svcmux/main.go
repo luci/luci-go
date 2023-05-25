@@ -31,7 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/svcmux"
 )
 
-func generate(c context.Context, a *svctool.GeneratorArgs) error {
+func generate(ctx context.Context, a *svctool.GeneratorArgs) error {
 	args := templateArgs{
 		PackageName:        a.PackageName,
 		VersionMetadataKey: svcmux.VersionMetadataKey,

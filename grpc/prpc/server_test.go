@@ -38,7 +38,7 @@ type greeterService struct {
 	errDetails []proto.Message
 }
 
-func (s *greeterService) SayHello(c context.Context, req *HelloRequest) (*HelloReply, error) {
+func (s *greeterService) SayHello(ctx context.Context, req *HelloRequest) (*HelloReply, error) {
 	if req.Name == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Name unspecified")
 	}
@@ -52,7 +52,7 @@ func (s *greeterService) SayHello(c context.Context, req *HelloRequest) (*HelloR
 	}
 
 	if s.headerMD != nil {
-		SetHeader(c, s.headerMD)
+		SetHeader(ctx, s.headerMD)
 	}
 
 	return &HelloReply{
@@ -62,7 +62,7 @@ func (s *greeterService) SayHello(c context.Context, req *HelloRequest) (*HelloR
 
 type calcService struct{}
 
-func (s *calcService) Multiply(c context.Context, req *MultiplyRequest) (*MultiplyResponse, error) {
+func (s *calcService) Multiply(ctx context.Context, req *MultiplyRequest) (*MultiplyResponse, error) {
 	return &MultiplyResponse{
 		Z: req.X & req.Y,
 	}, nil
@@ -173,7 +173,7 @@ func TestServer(t *testing.T) {
 			})
 
 			Convey(`When access control is enabled without credentials`, func() {
-				server.AccessControl = func(c context.Context, origin string) AccessControlDecision {
+				server.AccessControl = func(ctx context.Context, origin string) AccessControlDecision {
 					return AccessControlDecision{
 						AllowCrossOriginRequests: true,
 						AllowCredentials:         false,
@@ -194,7 +194,7 @@ func TestServer(t *testing.T) {
 					AllowCrossOriginRequests: true,
 					AllowCredentials:         true,
 				}
-				server.AccessControl = func(c context.Context, origin string) AccessControlDecision {
+				server.AccessControl = func(ctx context.Context, origin string) AccessControlDecision {
 					if origin == "http://example.com" {
 						return decision
 					}

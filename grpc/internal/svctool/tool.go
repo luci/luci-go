@@ -141,7 +141,7 @@ type GeneratorArgs struct {
 	ExtraImports []Import
 	Out          io.Writer
 }
-type Generator func(c context.Context, a *GeneratorArgs) error
+type Generator func(ctx context.Context, a *GeneratorArgs) error
 
 // importSorted converts a map name -> path to []Import sorted by name.
 func importSorted(imports map[string]string) []Import {
@@ -158,7 +158,7 @@ func importSorted(imports map[string]string) []Import {
 }
 
 // Run parses Go files and generates a new file using f.
-func (t *Tool) Run(c context.Context, f Generator) error {
+func (t *Tool) Run(ctx context.Context, f Generator) error {
 	// Validate arguments.
 	if len(t.FileNames) == 0 {
 		return fmt.Errorf("files not specified")
@@ -185,7 +185,7 @@ func (t *Tool) Run(c context.Context, f Generator) error {
 	if err := p.parsePackage(t.FileNames); err != nil {
 		return fmt.Errorf("could not parse .go files: %s", err)
 	}
-	if err := p.resolveServices(c); err != nil {
+	if err := p.resolveServices(ctx); err != nil {
 		return err
 	}
 
@@ -197,7 +197,7 @@ func (t *Tool) Run(c context.Context, f Generator) error {
 		ExtraImports: importSorted(p.extraImports),
 		Out:          &buf,
 	}
-	if err := f(c, genArgs); err != nil {
+	if err := f(ctx, genArgs); err != nil {
 		return err
 	}
 
