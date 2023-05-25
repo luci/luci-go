@@ -253,6 +253,8 @@ message ExecutionState {
   // FailureReason provides a user-readable explanation of the
   // failure.
   string failure_reason = 4;
+  // The time when the executions end with a terminal status
+  google.protobuf.Timestamp end_time = 6;
 }
 
 // ExecutionLogEntries contains a list of log entries ordered by time.

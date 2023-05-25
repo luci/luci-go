@@ -102,6 +102,14 @@ func (e *Executor) Do(ctx context.Context, r *run.Run, payload *tryjob.ExecuteTr
 		}
 	}
 
+	// Record the execution end time.
+	if execState.GetEndTime() == nil {
+		switch execState.Status {
+		case tryjob.ExecutionState_SUCCEEDED, tryjob.ExecutionState_FAILED:
+			execState.EndTime = timestamppb.New(clock.Now(ctx).UTC())
+		}
+	}
+
 	// TODO(yiwzhang): optimize the code to save the state when it is changed or
 	// has new log entries. However, most of the time, the state will be changed.
 	// Therefore, the cost is trivial to always save the state.
