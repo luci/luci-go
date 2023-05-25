@@ -12,38 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { destroy, Instance, protect, unprotect } from 'mobx-state-tree';
-import * as sinon from 'sinon';
+import { act } from 'react-dom/test-utils';
 
 import { Store, StoreProvider } from '../../../store';
-import { BuildPageInstance } from '../../../store/build_page';
 import { CancelBuildDialog } from './cancel_build_dialog';
 
 describe('CancelBuildDialog', () => {
-  let timer: sinon.SinonFakeTimers;
   let store: Instance<typeof Store>;
-  let cancelBuildStub: sinon.SinonStub<
-    Parameters<BuildPageInstance['cancelBuild']>,
-    ReturnType<BuildPageInstance['cancelBuild']>
-  >;
+  let cancelBuildStub: jest.SpiedFunction<(reason: string) => Promise<void>>;
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
     store = Store.create();
     unprotect(store);
-    cancelBuildStub = sinon.stub(store.buildPage!, 'cancelBuild');
+    cancelBuildStub = jest.spyOn(store.buildPage!, 'cancelBuild');
     protect(store);
-    cancelBuildStub.resolves();
+    cancelBuildStub.mockResolvedValue();
   });
 
   afterEach(() => {
-    timer.restore();
+    cleanup();
     destroy(store);
+    jest.useRealTimers();
   });
 
   it('should not trigger cancel request when reason is not provided', async () => {
-    const onCloseSpy = sinon.spy();
+    const onCloseSpy = jest.fn();
 
     render(
       <StoreProvider value={store}>
@@ -52,14 +48,16 @@ describe('CancelBuildDialog', () => {
     );
 
     fireEvent.click(screen.getByText('Confirm'));
-    await timer.runToLastAsync();
-    expect(onCloseSpy.callCount).to.eq(0);
-    expect(cancelBuildStub.callCount).to.eq(0);
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
+    expect(onCloseSpy.mock.calls.length).toStrictEqual(0);
+    expect(cancelBuildStub.mock.calls.length).toStrictEqual(0);
     screen.getByText('Reason is required');
   });
 
   it('should trigger cancel request when reason is provided', async () => {
-    const onCloseSpy = sinon.spy();
+    const onCloseSpy = jest.fn();
 
     render(
       <StoreProvider value={store}>
@@ -69,10 +67,12 @@ describe('CancelBuildDialog', () => {
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'need to stop build' } });
     fireEvent.click(screen.getByText('Confirm'));
-    await timer.runToLastAsync();
-    expect(onCloseSpy.callCount).to.eq(1);
-    expect(screen.queryByText('Reason is required')).to.be.null;
-    expect(cancelBuildStub.callCount).to.eq(1);
-    expect(cancelBuildStub.getCall(0).args[0]).to.eq('need to stop build');
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
+    expect(onCloseSpy.mock.calls.length).toStrictEqual(1);
+    expect(screen.queryByText('Reason is required')).toBeNull();
+    expect(cancelBuildStub.mock.calls.length).toStrictEqual(1);
+    expect(cancelBuildStub.mock.lastCall?.[0]).toStrictEqual('need to stop build');
   });
 });

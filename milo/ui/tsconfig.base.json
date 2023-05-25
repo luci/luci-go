@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "lib": ["es2019", "dom", "dom.iterable", "webworker"],
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react",
+    "sourceMap": true,
+    "outDir": "out/",
+    "noEmit": true,
+    "isolatedModules": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmitOnError": true,
+    "module": "ESNext",
+    "resolveJsonModule": true,
+    "types": ["vite/client", "@types/google.analytics"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    // This is required by mobx@6 [1]. But it will break lit-element reactive
+    // properties [2]. We need to enable this since
+    // 1. This will be the default moving forward [3], and
+    // 2. mobx@6 is required to support react@17, and
+    // 3. react@17 is required to support react-in-lit event dispatching [4].
+    //
+    // As a result, we need to
+    // 1. stop relying on lit-element reactive properties, and
+    // 2. use mobx reactive properties instead, and
+    // 3. use LitElement.updated to emulate property update if necessary.
+    // 4. use `static get properties() { return {...} }` to define attributes if needed.
+    //
+    // [1]: https://mobx.js.org/migrating-from-4-or-5.html#getting-started
+    // [2]: https://lit.dev/docs/components/properties/#avoiding-issues-with-class-fields
+    // [3]: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier
+    // [4]: https://reactjs.org/blog/2020/10/20/react-v17.html#changes-to-event-delegation
+    "useDefineForClassFields": true
+  },
+  "exclude": ["node_modules"]
+}

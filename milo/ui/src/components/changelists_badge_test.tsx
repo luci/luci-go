@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect, jest } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 
 import { Changelist, ChangelistOwnerKind } from '../services/luci_analysis';
 import { ChangelistsBadge } from './changelists_badge';
@@ -27,48 +26,46 @@ const changelists: Changelist[] = [
 ];
 
 describe('ChangelistsBadge', () => {
-  let timer: sinon.SinonFakeTimers;
-  let dispatchEventSpy: sinon.SinonSpy<[event: Event], boolean>;
   const dispatchEvent = window.dispatchEvent;
-
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
-    dispatchEventSpy = sinon.spy(window.dispatchEvent);
-    window.dispatchEvent = dispatchEventSpy;
+    jest.useFakeTimers();
   });
   afterEach(() => {
     window.dispatchEvent = dispatchEvent;
-    timer.restore();
+    jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
   it('single changelist', async () => {
+    const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists.slice(0, 1)} />);
 
     const anchorElement = screen.getByRole<HTMLAnchorElement>('link', { exact: false });
-    expect(anchorElement.href).to.eq('https://www.example.com/c/1234/1');
-    expect(anchorElement.textContent).to.eq('c/1234/1');
+    expect(anchorElement.href).toStrictEqual('https://www.example.com/c/1234/1');
+    expect(anchorElement.textContent).toStrictEqual('c/1234/1');
 
     fireEvent.mouseOver(anchorElement);
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
-    expect(dispatchEventSpy.callCount).to.eq(0);
+    expect(dispatchEventSpy.mock.calls.length).toStrictEqual(0);
   });
 
   it('multiple changelists', async () => {
+    const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists} />);
 
     const anchorElement = screen.getByRole<HTMLAnchorElement>('link', { exact: false });
-    expect(anchorElement.href).to.eq('https://www.example.com/c/1234/1');
-    expect(anchorElement.textContent).to.eq('c/1234/1, ...');
+    expect(anchorElement.href).toStrictEqual('https://www.example.com/c/1234/1');
+    expect(anchorElement.textContent).toStrictEqual('c/1234/1, ...');
 
     fireEvent.mouseOver(anchorElement);
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
-    expect(dispatchEventSpy.callCount).to.eq(1);
-    const event = dispatchEventSpy.getCall(0).args[0] as CustomEvent<ShowTooltipEventDetail>;
-    expect(event.type).to.eq('show-tooltip');
+    expect(dispatchEventSpy.mock.calls.length).toStrictEqual(1);
+    const event = dispatchEventSpy.mock.lastCall![0] as CustomEvent<ShowTooltipEventDetail>;
+    expect(event.type).toStrictEqual('show-tooltip');
     const tooltip = event.detail.tooltip.getElementsByTagName('milo-changelists-tooltip');
-    expect(tooltip.length).to.eq(1);
-    expect((tooltip[0] as ChangelistsTooltipElement).changelists).to.deep.eq(changelists);
+    expect(tooltip.length).toStrictEqual(1);
+    expect((tooltip[0] as ChangelistsTooltipElement).changelists).toEqual(changelists);
   });
 });

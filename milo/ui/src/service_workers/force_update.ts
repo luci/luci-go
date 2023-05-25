@@ -28,25 +28,24 @@
 
 import { get as kvGet, set as kvSet } from 'idb-keyval';
 
-// TSC isn't able to determine the scope properly.
-// Perform manual casting to fix typing.
-const _self = self as unknown as ServiceWorkerGlobalScope;
+// Tell TSC that this is a ServiceWorker script.
+declare const self: ServiceWorkerGlobalScope;
 
-const FORCE_UPDATE_TOKEN_KEY = 'force-update-token-' + _self.registration.scope;
+const FORCE_UPDATE_TOKEN_KEY = 'force-update-token-' + self.registration.scope;
 
 // Update this value to ensure older versions are removed from the cache.
 const FORCE_UPDATE_TOKEN_VALUE = 'v11';
 
-_self.addEventListener('install', (e) => {
+self.addEventListener('install', (e) => {
   e.waitUntil(
     kvGet(FORCE_UPDATE_TOKEN_KEY).then((token) => {
       if (token !== FORCE_UPDATE_TOKEN_VALUE) {
-        _self.skipWaiting();
+        self.skipWaiting();
       }
     })
   );
 });
 
-_self.addEventListener('activate', (e) => {
+self.addEventListener('activate', (e) => {
   e.waitUntil(kvSet(FORCE_UPDATE_TOKEN_KEY, FORCE_UPDATE_TOKEN_VALUE));
 });

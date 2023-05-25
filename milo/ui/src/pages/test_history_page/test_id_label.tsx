@@ -18,8 +18,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthState, useGetAccessToken } from '../../components/auth_state_provider';
 import { PrpcClientExt } from '../../libs/prpc_client_ext';
 import { getCodeSourceUrl } from '../../libs/url_utils';
-import { QueryTestMetadataRequest, ResultDb } from '../../services/resultdb';
 import { extractProject } from '../../libs/utils';
+import { QueryTestMetadataRequest, ResultDb } from '../../services/resultdb';
 
 export interface TestIdLabelProps {
   readonly projectOrRealm: string; // A project name or a realm name.
@@ -52,7 +52,7 @@ function useTestMetadata(req: QueryTestMetadataRequest) {
 }
 
 export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
-  const project = extractProject(projectOrRealm)
+  const project = extractProject(projectOrRealm);
   const { data, isSuccess, isLoading } = useTestMetadata({ project, predicate: { testIds: [testId] } });
   return (
     <table

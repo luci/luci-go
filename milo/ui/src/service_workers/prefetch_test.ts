@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { beforeEach, expect, jest } from '@jest/globals';
 import { aTimeout } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
-import * as sinon from 'sinon';
 
 import { queryAuthState, setAuthStateCache } from '../libs/auth_state';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
@@ -22,26 +21,30 @@ import { BUILD_FIELD_MASK, BuildsService } from '../services/buildbucket';
 import { getInvIdFromBuildId, getInvIdFromBuildNum, RESULT_LIMIT, ResultDb } from '../services/resultdb';
 import { Prefetcher } from './prefetch';
 
-describe('prefetch', () => {
-  let fetchStub: sinon.SinonStub<Parameters<typeof fetch>, ReturnType<typeof fetch>>;
-  let respondWithStub: sinon.SinonStub<[Response | ReturnType<typeof fetch>], void>;
+describe('Prefetcher', () => {
+  let fetchStub: jest.Mock<{
+    (input: RequestInfo | URL, init?: RequestInit | undefined): Promise<Response>;
+  }>;
+  let respondWithStub: jest.Mock<(_res: Response | ReturnType<typeof fetch>) => void>;
   let prefetcher: Prefetcher;
 
   // Helps generate fetch requests that are identical to the ones generated
   // by the pRPC Clients.
-  let fetchInterceptor: sinon.SinonStub<Parameters<typeof fetch>, ReturnType<typeof fetch>>;
+  let fetchInterceptor: jest.Mock<{
+    (input: RequestInfo | URL, init?: RequestInit | undefined): Promise<Response>;
+  }>;
   let buildsService: BuildsService;
   let resultdb: ResultDb;
 
   beforeEach(async () => {
     await setAuthStateCache({ accessToken: 'access-token', identity: 'user:user-id' });
 
-    fetchStub = sinon.stub<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
-    respondWithStub = sinon.stub<[Response | ReturnType<typeof fetch>], void>();
+    fetchStub = jest.fn(fetch);
+    respondWithStub = jest.fn((_res: Response | ReturnType<typeof fetch>) => {});
     prefetcher = new Prefetcher(CONFIGS, fetchStub);
 
-    fetchInterceptor = sinon.stub<Parameters<typeof fetch>, ReturnType<typeof fetch>>();
-    fetchInterceptor.resolves(new Response(''));
+    fetchInterceptor = jest.fn(fetch);
+    fetchInterceptor.mockResolvedValue(new Response(''));
     buildsService = new BuildsService(
       new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST, fetchImpl: fetchInterceptor }, () => 'access-token')
     );
@@ -51,15 +54,15 @@ describe('prefetch', () => {
   });
 
   it('prefetches build page resources', async () => {
-    const authResponse = new Response(JSON.stringify({}));
+    const authResponse = new Response(JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }));
     const buildResponse = new Response(JSON.stringify({}));
     const invResponse = new Response(JSON.stringify({}));
     const testVariantsResponse = new Response(JSON.stringify({}));
 
-    fetchStub.onCall(0).resolves(authResponse);
-    fetchStub.onCall(1).resolves(buildResponse);
-    fetchStub.onCall(2).resolves(invResponse);
-    fetchStub.onCall(3).resolves(testVariantsResponse);
+    fetchStub.mockResolvedValueOnce(authResponse);
+    fetchStub.mockResolvedValueOnce(buildResponse);
+    fetchStub.mockResolvedValueOnce(invResponse);
+    fetchStub.mockResolvedValueOnce(testVariantsResponse);
 
     const invName =
       'invocations/' +
@@ -78,82 +81,90 @@ describe('prefetch', () => {
 
     await aTimeout(100);
 
-    const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
-    assert.strictEqual(requestedUrls.length, 4);
-    assert.includeMembers(requestedUrls, [
-      `${self.location.origin}/auth/openid/state`,
-      `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
-      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
-    ]);
+    const requestedUrls = fetchStub.mock.calls.map((c) => new Request(...c).url);
+    expect(requestedUrls.length).toStrictEqual(4);
+    expect(requestedUrls).toEqual(
+      expect.arrayContaining([
+        '/auth/openid/state',
+        `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
+        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
+      ])
+    );
 
-    // Check whether the auth state was prefetched.
+    // Generate a fetch request.
     await queryAuthState(fetchInterceptor).catch((_e) => {});
     let cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(0).args),
+      request: new Request(...fetchInterceptor.mock.calls[0]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    assert.isTrue(cacheHit);
-    let cachedRes = await respondWithStub.getCall(0).args[0];
+    // Check whether the auth state was prefetched.
+    expect(cacheHit).toBeTruthy();
+    let cachedRes = await respondWithStub.mock.calls[0][0];
 
-    assert.strictEqual(cachedRes, authResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cachedRes).toStrictEqual(authResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
+    // Generate a fetch request.
+    buildsService
+      .getBuild({
+        builder: {
+          project: 'chromium',
+          bucket: 'ci',
+          builder: 'Win7 Tests (1)',
+        },
+        buildNumber: 116372,
+        fields: BUILD_FIELD_MASK,
+      })
+      .catch((_e) => {});
     // Check whether the build was prefetched.
-    buildsService.getBuild({
-      builder: {
-        project: 'chromium',
-        bucket: 'ci',
-        builder: 'Win7 Tests (1)',
-      },
-      buildNumber: 116372,
-      fields: BUILD_FIELD_MASK,
-    });
     cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(1).args),
+      request: new Request(...fetchInterceptor.mock.calls[1]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    cachedRes = await respondWithStub.getCall(1).args[0];
+    cachedRes = await respondWithStub.mock.calls[1][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, buildResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(buildResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
+    // Generate a fetch request.
+    resultdb.getInvocation({ name: invName }).catch((_e) => {});
     // Check whether the invocation was prefetched.
-    resultdb.getInvocation({ name: invName });
     cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(2).args),
+      request: new Request(...fetchInterceptor.mock.calls[2]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    cachedRes = await respondWithStub.getCall(2).args[0];
+    cachedRes = await respondWithStub.mock.calls[2][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, invResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(invResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
+    // Generate a fetch request.
+    resultdb.queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT }).catch((_e) => {});
     // Check whether the test variants was prefetched.
-    resultdb.queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT });
     cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(3).args),
+      request: new Request(...fetchInterceptor.mock.calls[3]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    cachedRes = await respondWithStub.getCall(3).args[0];
+    cachedRes = await respondWithStub.mock.calls[3][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, testVariantsResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(testVariantsResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
   });
 
   it('prefetches build page resources when visiting a short build page url', async () => {
-    const authResponse = new Response(JSON.stringify({}));
+    const authResponse = new Response(JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }));
     const buildResponse = new Response(JSON.stringify({}));
     const invResponse = new Response(JSON.stringify({}));
     const testVariantsResponse = new Response(JSON.stringify({}));
 
-    fetchStub.onCall(0).resolves(authResponse);
-    fetchStub.onCall(1).resolves(buildResponse);
-    fetchStub.onCall(2).resolves(invResponse);
-    fetchStub.onCall(3).resolves(testVariantsResponse);
+    fetchStub.mockResolvedValueOnce(authResponse);
+    fetchStub.mockResolvedValueOnce(buildResponse);
+    fetchStub.mockResolvedValueOnce(invResponse);
+    fetchStub.mockResolvedValueOnce(testVariantsResponse);
 
     const invName = 'invocations/' + getInvIdFromBuildId('123456789');
 
@@ -161,69 +172,77 @@ describe('prefetch', () => {
 
     await aTimeout(100);
 
-    const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
-    assert.strictEqual(requestedUrls.length, 4);
-    assert.includeMembers(requestedUrls, [
-      `${self.location.origin}/auth/openid/state`,
-      `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
-      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
-      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
-    ]);
+    const requestedUrls = fetchStub.mock.calls.map((c) => new Request(...c).url);
+    expect(requestedUrls.length).toStrictEqual(4);
+    expect(requestedUrls).toEqual(
+      expect.arrayContaining([
+        '/auth/openid/state',
+        `https://${CONFIGS.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,
+        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetInvocation`,
+        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/QueryTestVariants`,
+      ])
+    );
 
-    // Check whether the auth state was prefetched.
+    // Generate a fetch request.
     await queryAuthState(fetchInterceptor).catch((_e) => {});
+    // Check whether the auth state was prefetched.
     let cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(0).args),
+      request: new Request(...fetchInterceptor.mock.calls[0]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    let cachedRes = await respondWithStub.getCall(0).args[0];
+    let cachedRes = await respondWithStub.mock.calls[0][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, authResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(authResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
+    // Generate a fetch request.
+    buildsService
+      .getBuild({
+        id: '123456789',
+        fields: BUILD_FIELD_MASK,
+      })
+      .catch((_e) => {});
     // Check whether the build was prefetched.
-    buildsService.getBuild({
-      id: '123456789',
-      fields: BUILD_FIELD_MASK,
-    });
     cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(1).args),
+      request: new Request(...fetchInterceptor.mock.calls[1]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    cachedRes = await respondWithStub.getCall(1).args[0];
+    cachedRes = await respondWithStub.mock.calls[1][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, buildResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(buildResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
+    // Generate a fetch request.
+    resultdb.getInvocation({ name: invName }).catch((_e) => {});
     // Check whether the invocation was prefetched.
-    resultdb.getInvocation({ name: invName });
     cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(2).args),
+      request: new Request(...fetchInterceptor.mock.calls[2]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    cachedRes = await respondWithStub.getCall(2).args[0];
+    cachedRes = await respondWithStub.mock.calls[2][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, invResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(invResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
 
+    // Generate a fetch request.
+    resultdb.queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT }).catch((_e) => {});
     // Check whether the test variants was prefetched.
-    resultdb.queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT });
     cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(3).args),
+      request: new Request(...fetchInterceptor.mock.calls[3]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    cachedRes = await respondWithStub.getCall(3).args[0];
+    cachedRes = await respondWithStub.mock.calls[3][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, testVariantsResponse);
-    assert.strictEqual(fetchStub.callCount, 4);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(testVariantsResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(4);
   });
 
   it('prefetches artifact page resources', async () => {
-    const authResponse = new Response(JSON.stringify({}));
+    const authResponse = new Response(JSON.stringify({ accessToken: 'access-token', identity: 'user:user-id' }));
     const artifactResponse = new Response(
       JSON.stringify({
         name: 'invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id',
@@ -231,8 +250,8 @@ describe('prefetch', () => {
       })
     );
 
-    fetchStub.onCall(0).resolves(authResponse);
-    fetchStub.onCall(1).resolves(artifactResponse);
+    fetchStub.mockResolvedValueOnce(authResponse);
+    fetchStub.mockResolvedValueOnce(artifactResponse);
 
     await prefetcher.prefetchResources(
       new URL(
@@ -243,37 +262,43 @@ describe('prefetch', () => {
 
     await aTimeout(100);
 
-    const requestedUrls = fetchStub.getCalls().map((c) => new Request(...c.args).url);
-    assert.strictEqual(requestedUrls.length, 2);
-    assert.includeMembers(requestedUrls, [
-      `${self.location.origin}/auth/openid/state`,
-      `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
-    ]);
+    const requestedUrls = fetchStub.mock.calls.map((c) => new Request(...c).url);
+    expect(requestedUrls.length).toStrictEqual(2);
+    expect(requestedUrls).toEqual(
+      expect.arrayContaining([
+        '/auth/openid/state',
+        `https://${CONFIGS.RESULT_DB.HOST}/prpc/luci.resultdb.v1.ResultDB/GetArtifact`,
+      ])
+    );
 
-    // Check whether the auth state was prefetched.
+    // Generate a fetch request.
     await queryAuthState(fetchInterceptor).catch((_e) => {});
+    // Check whether the auth state was prefetched.
     let cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(0).args),
+      request: new Request(...fetchInterceptor.mock.calls[0]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    let cachedRes = await respondWithStub.getCall(0).args[0];
+    let cachedRes = await respondWithStub.mock.calls[0][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(cachedRes, authResponse);
-    assert.strictEqual(fetchStub.callCount, 2);
+    expect(cacheHit).toBeTruthy();
+    expect(cachedRes).toStrictEqual(authResponse);
+    expect(fetchStub.mock.calls.length).toStrictEqual(2);
 
+    // Generate a fetch request.
+    resultdb
+      .getArtifact({
+        name: 'invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id',
+      })
+      .catch((_e) => {});
     // Check whether the artifact was prefetched.
-    resultdb.getArtifact({
-      name: 'invocations/inv-id/tests/test-id/results/result-id/artifacts/artifact-id',
-    });
     cacheHit = prefetcher.respondWithPrefetched({
-      request: new Request(...fetchInterceptor.getCall(1).args),
+      request: new Request(...fetchInterceptor.mock.calls[1]),
       respondWith: respondWithStub,
     } as Partial<FetchEvent> as FetchEvent);
-    cachedRes = await respondWithStub.getCall(1).args[0];
+    cachedRes = await respondWithStub.mock.calls[1][0];
 
-    assert.isTrue(cacheHit);
-    assert.strictEqual(fetchStub.callCount, 2);
-    assert.strictEqual(cachedRes, artifactResponse);
+    expect(cacheHit).toBeTruthy();
+    expect(fetchStub.mock.calls.length).toStrictEqual(2);
+    expect(cachedRes).toStrictEqual(artifactResponse);
   });
 });

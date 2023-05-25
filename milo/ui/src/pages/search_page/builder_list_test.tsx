@@ -12,27 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render } from '@testing-library/react';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { cleanup, render } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
 import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
-import { Store, StoreProvider } from '../../store';
+import { Store, StoreInstance, StoreProvider } from '../../store';
 import { BuilderList } from './builder_list';
 
 describe('BuilderList', () => {
-  let timer: sinon.SinonFakeTimers;
+  let store: StoreInstance;
+
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
+    store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
   });
-  afterEach(() => timer.restore());
+  afterEach(() => {
+    cleanup();
+    destroy(store);
+    jest.useRealTimers();
+  });
 
   it('should start loading all builders', () => {
-    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
-    after(() => destroy(store));
-    timer.runAll();
-    const loadRemainingPagesStub = sinon.stub(store.searchPage.builderLoader!, 'loadRemainingPages');
+    const loadRemainingPagesStub = jest.spyOn(store.searchPage.builderLoader!, 'loadRemainingPages');
+    loadRemainingPagesStub.mockImplementation(() => Promise.resolve());
 
     render(
       <StoreProvider value={store}>
@@ -40,8 +43,8 @@ describe('BuilderList', () => {
       </StoreProvider>
     );
 
-    timer.runAll();
+    jest.runOnlyPendingTimers();
 
-    expect(loadRemainingPagesStub.callCount).to.eq(1);
+    expect(loadRemainingPagesStub.mock.calls.length).toEqual(1);
   });
 });

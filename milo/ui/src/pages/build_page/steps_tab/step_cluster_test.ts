@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture, html } from '@open-wc/testing-helpers';
-import { expect } from 'chai';
 
 import './step_cluster';
 import { BuildStatus } from '../../../services/buildbucket';
@@ -40,7 +40,7 @@ const step1 = createStep(0, '2022-01-01T00:00:00Z', '2022-01-01T00:02:00Z');
 const step2 = createStep(0, '2022-01-01T00:01:00Z', '2022-01-01T00:03:00Z');
 const step3 = createStep(0, '2022-01-01T00:02:00Z', '2022-01-01T00:04:00Z');
 
-describe('bp_step_cluster', () => {
+describe('StepCluster', () => {
   it('should calculate duration based on start & end time', async () => {
     const ele = await fixture<BuildPageStepClusterElement>(html`
       <milo-bp-step-cluster .store=${Store.create()} .steps=${[step1, step2, step3]}></milo-bp-step-cluster>
@@ -48,6 +48,6 @@ describe('bp_step_cluster', () => {
 
     // The duration should equals endTime - startTime. Not a sum of all
     // durations. Because steps can run in parallel.
-    expect(ele.duration?.toMillis()).to.eq(240000);
+    expect(ele.duration?.toMillis()).toStrictEqual(240000);
   });
 });

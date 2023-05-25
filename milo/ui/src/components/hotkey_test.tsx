@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, RenderResult, screen } from '@testing-library/react';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { render, screen } from '@testing-library/react';
+import { HotkeysEvent } from 'hotkeys-js';
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import sinon from 'sinon';
 
 import './hotkey';
 import { Hotkey } from './hotkey';
@@ -58,12 +58,10 @@ declare global {
   }
 }
 
-describe('hotkey_test', () => {
-  let timer: sinon.SinonFakeTimers;
-  let handlerSpy: ReturnType<typeof sinon.spy>;
-  let handlerSpy2: ReturnType<typeof sinon.spy>;
-
-  let ele: RenderResult<typeof import('@testing-library/dom/types/queries'), HTMLElement, HTMLElement>;
+describe('Hotkey', () => {
+  let handlerSpy: jest.Mock<(_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => void>;
+  let handlerSpy2: jest.Mock<(_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => void>;
+  let ele: ReturnType<typeof render>;
   let childEle: Element;
   let inputEle: HTMLInputElement;
   let selectEle: HTMLSelectElement;
@@ -73,9 +71,9 @@ describe('hotkey_test', () => {
   let wrappedTextareaEle: HTMLTextAreaElement;
 
   beforeEach(async () => {
-    timer = sinon.useFakeTimers();
-    handlerSpy = sinon.spy();
-    handlerSpy2 = sinon.spy();
+    jest.useFakeTimers();
+    handlerSpy = jest.fn((_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {});
+    handlerSpy2 = jest.fn((_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {});
 
     ele = render(
       <Hotkey hotkey="a" handler={handlerSpy}>
@@ -86,7 +84,7 @@ describe('hotkey_test', () => {
         <milo-hotkey-test-wrapper data-testid="wrapped"></milo-hotkey-test-wrapper>
       </Hotkey>
     );
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
     childEle = screen.getByTestId('child');
     inputEle = screen.getByTestId('input');
@@ -100,17 +98,17 @@ describe('hotkey_test', () => {
   });
 
   afterEach(() => {
-    timer.restore();
+    jest.useRealTimers();
   });
 
   it('should react to key press on the child element', () => {
     simulateKeyStroke(childEle, 'a');
-    expect(handlerSpy.callCount).to.eq(1);
+    expect(handlerSpy.mock.calls.length).toStrictEqual(1);
   });
 
   it('should react to key press outside of the child element', () => {
     simulateKeyStroke(document, 'a');
-    expect(handlerSpy.callCount).to.eq(1);
+    expect(handlerSpy.mock.calls.length).toStrictEqual(1);
   });
 
   it('should react to the new key press event when the key is updated', async () => {
@@ -123,13 +121,13 @@ describe('hotkey_test', () => {
         <milo-hotkey-test-wrapper data-testid="wrapped"></milo-hotkey-test-wrapper>
       </Hotkey>
     );
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
     simulateKeyStroke(document, 'a');
-    expect(handlerSpy.callCount).to.eq(0);
+    expect(handlerSpy.mock.calls.length).toStrictEqual(0);
 
     simulateKeyStroke(document, 'b');
-    expect(handlerSpy.callCount).to.eq(1);
+    expect(handlerSpy.mock.calls.length).toStrictEqual(1);
   });
 
   it('should trigger the new handler when the handler is updated', async () => {
@@ -142,32 +140,32 @@ describe('hotkey_test', () => {
         <milo-hotkey-test-wrapper data-testid="wrapped"></milo-hotkey-test-wrapper>
       </Hotkey>
     );
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
     simulateKeyStroke(document, 'b');
-    expect(handlerSpy.callCount).to.eq(0);
-    expect(handlerSpy2.callCount).to.eq(1);
+    expect(handlerSpy.mock.calls.length).toStrictEqual(0);
+    expect(handlerSpy2.mock.calls.length).toStrictEqual(1);
   });
 
   it('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA', () => {
     simulateKeyStroke(inputEle, 'b');
     simulateKeyStroke(selectEle, 'b');
     simulateKeyStroke(textareaEle, 'b');
-    expect(handlerSpy2.callCount).to.eq(0);
+    expect(handlerSpy2.mock.calls.length).toStrictEqual(0);
   });
 
   it('should not trigger the handler when the target element is INPUT/SELECT/TEXTAREA in a web component', () => {
     simulateKeyStroke(wrappedInputEle, 'b');
     simulateKeyStroke(wrappedSelectEle, 'b');
     simulateKeyStroke(wrappedTextareaEle, 'b');
-    expect(handlerSpy2.callCount).to.eq(0);
+    expect(handlerSpy2.mock.calls.length).toStrictEqual(0);
   });
 
   it('should not trigger the handler when the component is disconnected', async () => {
     ele.unmount();
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
     simulateKeyStroke(document, 'b');
-    expect(handlerSpy2.callCount).to.eq(0);
+    expect(handlerSpy2.mock.calls.length).toStrictEqual(0);
   });
 });

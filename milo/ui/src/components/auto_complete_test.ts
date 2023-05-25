@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { beforeAll, expect, jest } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import { html } from 'lit';
-import sinon, { SinonSpy } from 'sinon';
 
 import './auto_complete';
 import { AutoCompleteElement, Suggestion, SuggestionEntry } from './auto_complete';
@@ -35,12 +34,13 @@ const suggestions: Suggestion[] = [
   { isHeader: true, display: 'header' },
 ];
 
-describe('auto_complete_test', () => {
+describe('AuthComplete', () => {
   let autoSuggestionEle: AutoCompleteElement;
   let inputEle: HTMLInputElement;
-  let suggestionSpy: SinonSpy<[SuggestionEntry], void>;
-  let completeSpy: SinonSpy<[], void>;
-  before(async () => {
+  let suggestionSpy: jest.SpiedFunction<(_suggestion: SuggestionEntry) => void>;
+  let completeSpy: jest.SpiedFunction<() => void>;
+
+  beforeAll(async () => {
     autoSuggestionEle = await fixture<AutoCompleteElement>(html`
       <milo-auto-complete
         .value=${'search text'}
@@ -50,31 +50,33 @@ describe('auto_complete_test', () => {
       </milo-auto-complete>
     `);
     inputEle = autoSuggestionEle.shadowRoot!.querySelector('input')!;
-    suggestionSpy = sinon.spy(autoSuggestionEle, 'onSuggestionSelected');
-    completeSpy = sinon.spy(autoSuggestionEle, 'onComplete');
+    suggestionSpy = jest.spyOn(autoSuggestionEle, 'onSuggestionSelected');
+    completeSpy = jest.spyOn(autoSuggestionEle, 'onComplete');
   });
 
   it('should be able to select suggestion with key strokes', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
-    assert.strictEqual(suggestionSpy.getCall(0).args[0], suggestions[1]);
-    assert.strictEqual(completeSpy.callCount, 0);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(suggestions[1]);
+    expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
   it('should reset suggestion selection when suggestions are updated', () => {
+    const suggestionSpy = jest.spyOn(autoSuggestionEle, 'onSuggestionSelected');
+    const completeSpy = jest.spyOn(autoSuggestionEle, 'onComplete');
     autoSuggestionEle.suggestions = suggestions.slice(0, 2);
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
-    assert.strictEqual(suggestionSpy.getCall(1).args[0], suggestions[1]);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(suggestions[1]);
 
     autoSuggestionEle.suggestions = suggestions.slice(0);
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
-    assert.strictEqual(suggestionSpy.getCall(2).args[0], suggestions[0]);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(suggestions[0]);
 
-    assert.strictEqual(completeSpy.callCount, 0);
+    expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
   it('should skip suggestion headers when selecting with key strokes', () => {
@@ -84,7 +86,7 @@ describe('auto_complete_test', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'Enter');
-    assert.strictEqual(suggestionSpy.getCall(3).args[0], suggestions[4]);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(suggestions[4]);
 
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowDown');
@@ -92,9 +94,9 @@ describe('auto_complete_test', () => {
     simulateKeyStroke(inputEle, 'ArrowDown');
     simulateKeyStroke(inputEle, 'ArrowUp');
     simulateKeyStroke(inputEle, 'Enter');
-    assert.strictEqual(suggestionSpy.getCall(4).args[0], suggestions[2]);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(suggestions[2]);
 
-    assert.strictEqual(completeSpy.callCount, 0);
+    expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
   it('should not navigate beyond boundary', () => {
@@ -107,7 +109,7 @@ describe('auto_complete_test', () => {
       .slice()
       .reverse()
       .find((s) => !s.isHeader);
-    assert.strictEqual(suggestionSpy.getCall(5).args[0], lastSelectableSuggestion);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(lastSelectableSuggestion);
 
     const firstSelectableSuggestion = suggestions.find((s) => !s.isHeader);
     simulateKeyStroke(inputEle, 'ArrowDown');
@@ -115,14 +117,14 @@ describe('auto_complete_test', () => {
       simulateKeyStroke(inputEle, 'ArrowUp');
     }
     simulateKeyStroke(inputEle, 'Enter');
-    assert.strictEqual(suggestionSpy.getCall(6).args[0], firstSelectableSuggestion);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(firstSelectableSuggestion);
 
-    assert.strictEqual(completeSpy.callCount, 0);
+    expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });
 
   it('should call onComplete when user hit enter with completed query', () => {
     autoSuggestionEle.value = 'search text ';
     simulateKeyStroke(inputEle, 'Enter');
-    assert.strictEqual(completeSpy.callCount, 1);
+    expect(completeSpy.mock.calls.length).toStrictEqual(1);
   });
 });

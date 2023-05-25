@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed } from 'mobx';
 import { destroy } from 'mobx-state-tree';
-import sinon, { SinonStub } from 'sinon';
 
 import '.';
 import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
+import { CacheOption } from '../../libs/cached_fn';
 import { provider } from '../../libs/context';
-import { ResultDb, TestVariantStatus } from '../../services/resultdb';
+import { timeout } from '../../libs/utils';
+import { QueryTestVariantsRequest, QueryTestVariantsResponse, TestVariantStatus } from '../../services/resultdb';
 import { provideStore, Store, StoreInstance } from '../../store';
 import { provideInvocationState } from '../../store/invocation_state';
 import { TestResultsTabElement } from '.';
@@ -76,22 +77,28 @@ class ContextProvider extends LitElement {
   }
 }
 
-describe('Test Results Tab', () => {
+describe('TestResultsTab', () => {
+  let store: StoreInstance;
+
+  afterEach(() => {
+    fixtureCleanup();
+    destroy(store);
+  });
+
   it('should load the first page of test variants when connected', async () => {
-    const store = Store.create({
+    store = Store.create({
       authState: { value: { identity: ANONYMOUS_IDENTITY } },
       invocationPage: { invocationId: 'invocation-id' },
     });
-    const queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
-    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
-    queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
-    const getInvocationStub = sinon.stub(store.services.resultDb!, 'getInvocation');
-    getInvocationStub.returns(Promise.race([]));
-
-    after(() => {
-      fixtureCleanup();
-      destroy(store);
+    const queryTestVariantsStub = jest.spyOn(store.services.resultDb!, 'queryTestVariants');
+    queryTestVariantsStub.mockResolvedValueOnce({
+      testVariants: [variant1, variant2, variant3],
+      nextPageToken: 'next',
     });
+    queryTestVariantsStub.mockResolvedValueOnce({ testVariants: [variant4, variant5] });
+    const getInvocationStub = jest.spyOn(store.services.resultDb!, 'getInvocation');
+    getInvocationStub.mockReturnValue(Promise.race([]));
+
     const provider = await fixture<ContextProvider>(html`
       <milo-test-context-provider .store=${store}>
         <milo-test-results-tab></milo-test-results-tab>
@@ -99,74 +106,78 @@ describe('Test Results Tab', () => {
     `);
     const tab = provider.querySelector<TestResultsTabElement>('milo-test-results-tab')!;
 
-    assert.strictEqual(queryTestVariantsStub.callCount, 1);
+    expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
 
     tab.disconnectedCallback();
     tab.connectedCallback();
 
     await aTimeout(0);
-    assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
-    assert.strictEqual(queryTestVariantsStub.callCount, 1);
+    expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(false);
+    expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
+  });
+});
+
+describe('loadNextTestVariants', () => {
+  let queryTestVariantsStub: jest.SpiedFunction<
+    (req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>
+  >;
+  let store: StoreInstance;
+  let tab: TestResultsTabElement;
+
+  beforeEach(async () => {
+    jest.useFakeTimers();
+    store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+      invocationPage: { invocationId: 'invocation-id' },
+    });
+
+    queryTestVariantsStub = jest.spyOn(store.services.resultDb!, 'queryTestVariants');
+    queryTestVariantsStub.mockImplementationOnce(async () => {
+      await timeout(100);
+      return { testVariants: [variant1], nextPageToken: 'next0' };
+    });
+    queryTestVariantsStub.mockImplementationOnce(async () => {
+      await timeout(100);
+      return { testVariants: [variant2], nextPageToken: 'next1' };
+    });
+
+    const getInvocationStub = jest.spyOn(store.services.resultDb!, 'getInvocation');
+    getInvocationStub.mockReturnValue(Promise.race([]));
+
+    const provider = await fixture<ContextProvider>(html`
+      <milo-test-context-provider .store=${store}>
+        <milo-test-results-tab></milo-test-results-tab>
+      </milo-test-context-provider>
+    `);
+    tab = provider.querySelector<TestResultsTabElement>('milo-test-results-tab')!;
   });
 
-  describe('loadNextTestVariants', () => {
-    let queryTestVariantsStub: SinonStub<
-      Parameters<ResultDb['queryTestVariants']>,
-      ReturnType<ResultDb['queryTestVariants']>
-    >;
-    let store: StoreInstance;
-    let tab: TestResultsTabElement;
+  afterEach(() => {
+    fixtureCleanup();
+    destroy(store);
+    const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+    window.history.replaceState(null, '', url);
+    jest.useRealTimers();
+  });
 
-    beforeEach(async () => {
-      store = Store.create({
-        authState: { value: { identity: ANONYMOUS_IDENTITY } },
-        invocationPage: { invocationId: 'invocation-id' },
-      });
+  it('should trigger automatic loading when visiting the tab for the first time', async () => {
+    expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(true);
+    expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
 
-      queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
-      queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1], nextPageToken: 'next0' });
-      queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant2], nextPageToken: 'next1' });
-      queryTestVariantsStub.onCall(2).resolves({ testVariants: [variant3], nextPageToken: 'next2' });
-      queryTestVariantsStub.onCall(3).resolves({ testVariants: [variant4], nextPageToken: 'next3' });
-      queryTestVariantsStub.onCall(4).resolves({ testVariants: [variant5] });
+    await jest.runOnlyPendingTimersAsync();
+    expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(false);
+    expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
 
-      const getInvocationStub = sinon.stub(store.services.resultDb!, 'getInvocation');
-      getInvocationStub.returns(Promise.race([]));
+    // Disconnect, then reload the tab.
+    tab.disconnectedCallback();
+    await fixture<ContextProvider>(html`
+      <milo-test-context-provider .store=${store}>
+        <milo-test-results-tab></milo-test-results-tab>
+      </milo-test-context-provider>
+    `);
 
-      const provider = await fixture<ContextProvider>(html`
-        <milo-test-context-provider .store=${store}>
-          <milo-test-results-tab></milo-test-results-tab>
-        </milo-test-context-provider>
-      `);
-      tab = provider.querySelector<TestResultsTabElement>('milo-test-results-tab')!;
-    });
-
-    afterEach(() => {
-      fixtureCleanup();
-      destroy(store);
-      const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
-      window.history.replaceState(null, '', url);
-    });
-
-    it('should trigger automatic loading when visiting the tab for the first time', async () => {
-      assert.isTrue(store.invocationPage.invocation.testLoader?.isLoading);
-      assert.strictEqual(queryTestVariantsStub.callCount, 1);
-
-      await aTimeout(0);
-      assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
-      assert.strictEqual(queryTestVariantsStub.callCount, 1);
-
-      // Disconnect, then reload the tab.
-      tab.disconnectedCallback();
-      await fixture<ContextProvider>(html`
-        <milo-test-context-provider .store=${store}>
-          <milo-test-results-tab></milo-test-results-tab>
-        </milo-test-context-provider>
-      `);
-
-      // Should not trigger loading agin.
-      assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
-      assert.strictEqual(queryTestVariantsStub.callCount, 1);
-    });
+    // Should not trigger loading agin.
+    expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(false);
+    expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
   });
 });

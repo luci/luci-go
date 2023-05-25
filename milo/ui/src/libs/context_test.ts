@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
@@ -308,137 +308,136 @@ export class ContextConsumerWrapper extends LitElement {
 
 // TODO(weiweilin): test what happens when ContextProvider is disconnected from
 // DOM then reconnected to DOM.
+
 describe('context', () => {
-  describe('ContextProvider', () => {
-    it('should provide context to descendent context consumers', async () => {
-      const outerProvider = await fixture<OuterContextProvider>(html`
+  it('should provide context to descendent context consumers', async () => {
+    const outerProvider = await fixture<OuterContextProvider>(html`
+      <milo-outer-context-provider-test>
+        <milo-inner-context-provider-test>
+          <milo-context-consumer-test id="inner-consumer"> </milo-context-consumer-test>
+        </milo-inner-context-provider-test>
+        <milo-context-consumer-test id="outer-consumer"> </milo-context-consumer-test>
+        <milo-outer-context-provider> </milo-outer-context-provider
+      ></milo-outer-context-provider-test>
+    `);
+
+    const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!
+      .host as InnerContextProvider;
+    const outerConsumer = outerProvider.querySelector('#outer-consumer')!.shadowRoot!.host as ContextConsumer;
+    const innerConsumer = outerProvider.querySelector('#inner-consumer')!.shadowRoot!.host as ContextConsumer;
+
+    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
+    expect(outerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val0');
+    expect(outerConsumer.providerKey).toStrictEqual('outer_provider-provider-val0');
+    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual('outer_provider-provider-val0');
+    expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
+    expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
+    expect(outerConsumer.selfProvided2).toStrictEqual('local-self_provided');
+    expect(outerConsumer.setterCallCount).toStrictEqual(1);
+
+    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
+    expect(innerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val0');
+    expect(innerConsumer.providerKey).toStrictEqual('inner_provider-provider-val0');
+    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual('inner_provider-provider-val0');
+    expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
+    expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
+    expect(innerConsumer.setterCallCount).toStrictEqual(1);
+
+    // Update outer provider.
+    outerProvider.outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val1';
+    outerProvider.outerProviderKey = 'outer_provider-outer_provider-val1';
+    outerProvider.providerKey = 'outer_provider-provider-val1';
+    outerProvider.outerUnobservedKey = 'outer_provider-unobserved_val1';
+    outerProvider.unprovidedKey = 'outer_provider-local_val1';
+    await outerProvider.updateComplete;
+
+    // outerConsumer updated.
+    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
+    expect(outerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
+    expect(outerConsumer.providerKey).toStrictEqual('outer_provider-provider-val1');
+    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual('outer_provider-provider-val1');
+    expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
+    expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
+    expect(outerConsumer.setterCallCount).toStrictEqual(2);
+
+    // innerConsumer.providerKey unchanged, other properties updated.
+    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
+    expect(innerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
+    expect(innerConsumer.providerKey).toStrictEqual('inner_provider-provider-val0');
+    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual('inner_provider-provider-val0');
+    expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
+    expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
+    expect(innerConsumer.setterCallCount).toStrictEqual(1);
+
+    // Update inner provider.
+    innerProvider.providerKey = 'inner_provider-provider-val1';
+    await innerProvider.updateComplete;
+
+    // outerConsumer unchanged.
+    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
+    expect(outerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
+    expect(outerConsumer.providerKey).toStrictEqual('outer_provider-provider-val1');
+    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual('outer_provider-provider-val1');
+    expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
+    expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
+    expect(outerConsumer.setterCallCount).toStrictEqual(2);
+
+    // innerConsumer.providerKey updated, other properties unchanged.
+    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
+    expect(innerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
+    expect(innerConsumer.providerKey).toStrictEqual('inner_provider-provider-val1');
+    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual('inner_provider-provider-val1');
+    expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
+    expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
+    expect(innerConsumer.setterCallCount).toStrictEqual(2);
+  });
+
+  it('should provide context to any context consumers if global is set to true', async () => {
+    const rootEle = await fixture<HTMLDivElement>(html`
+      <div>
+        <milo-outer-context-provider-test></milo-outer-context-provider-test>
+        <milo-global-context-provider-test></milo-global-context-provider-test>
+        <milo-context-consumer-wrapper-test></milo-context-consumer-wrapper-test>
+      </div>
+    `);
+    const globalProvider = rootEle.querySelector('milo-global-context-provider-test')!.shadowRoot!
+      .host as GlobalContextProvider;
+    const consumer = rootEle
+      .querySelector('milo-context-consumer-wrapper-test')!
+      .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
+
+    expect(consumer.providerKey).toStrictEqual('global_provider-provider-val0');
+
+    // Update global provider.
+    globalProvider.providerKey = 'global_provider-provider-val1';
+    await globalProvider.updateComplete;
+
+    // consumer.providerKey updated
+    expect(consumer.providerKey).toStrictEqual('global_provider-provider-val1');
+  });
+
+  it('global context should not override local context', async () => {
+    const rootEle = await fixture<HTMLDivElement>(html`
+      <div>
+        <milo-global-context-provider-test></milo-global-context-provider-test>
         <milo-outer-context-provider-test>
-          <milo-inner-context-provider-test>
-            <milo-context-consumer-test id="inner-consumer"> </milo-context-consumer-test>
-          </milo-inner-context-provider-test>
-          <milo-context-consumer-test id="outer-consumer"> </milo-context-consumer-test>
-          <milo-outer-context-provider> </milo-outer-context-provider
-        ></milo-outer-context-provider-test>
-      `);
-
-      const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!
-        .host as InnerContextProvider;
-      const outerConsumer = outerProvider.querySelector('#outer-consumer')!.shadowRoot!.host as ContextConsumer;
-      const innerConsumer = outerProvider.querySelector('#inner-consumer')!.shadowRoot!.host as ContextConsumer;
-
-      assert.strictEqual(outerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
-      assert.strictEqual(outerConsumer.outerProviderKey, 'outer_provider-outer_provider-val0');
-      assert.strictEqual(outerConsumer.providerKey, 'outer_provider-provider-val0');
-      assert.strictEqual(outerConsumer.providerKeyWithAnotherName, 'outer_provider-provider-val0');
-      assert.strictEqual(outerConsumer.outerUnobservedKey, 'local-unobserved');
-      assert.strictEqual(outerConsumer.unprovidedKey, 'local-unprovided');
-      assert.strictEqual(outerConsumer.selfProvided2, 'local-self_provided');
-      assert.strictEqual(outerConsumer.setterCallCount, 1);
-
-      assert.strictEqual(innerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
-      assert.strictEqual(innerConsumer.outerProviderKey, 'outer_provider-outer_provider-val0');
-      assert.strictEqual(innerConsumer.providerKey, 'inner_provider-provider-val0');
-      assert.strictEqual(innerConsumer.providerKeyWithAnotherName, 'inner_provider-provider-val0');
-      assert.strictEqual(innerConsumer.outerUnobservedKey, 'local-unobserved');
-      assert.strictEqual(innerConsumer.unprovidedKey, 'local-unprovided');
-      assert.strictEqual(innerConsumer.setterCallCount, 1);
-
-      // Update outer provider.
-      outerProvider.outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val1';
-      outerProvider.outerProviderKey = 'outer_provider-outer_provider-val1';
-      outerProvider.providerKey = 'outer_provider-provider-val1';
-      outerProvider.outerUnobservedKey = 'outer_provider-unobserved_val1';
-      outerProvider.unprovidedKey = 'outer_provider-local_val1';
-      await outerProvider.updateComplete;
-
-      // outerConsumer updated.
-      assert.strictEqual(outerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
-      assert.strictEqual(outerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
-      assert.strictEqual(outerConsumer.providerKey, 'outer_provider-provider-val1');
-      assert.strictEqual(outerConsumer.providerKeyWithAnotherName, 'outer_provider-provider-val1');
-      assert.strictEqual(outerConsumer.outerUnobservedKey, 'local-unobserved');
-      assert.strictEqual(outerConsumer.unprovidedKey, 'local-unprovided');
-      assert.strictEqual(outerConsumer.setterCallCount, 2);
-
-      // innerConsumer.providerKey unchanged, other properties updated.
-      assert.strictEqual(innerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
-      assert.strictEqual(innerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
-      assert.strictEqual(innerConsumer.providerKey, 'inner_provider-provider-val0');
-      assert.strictEqual(innerConsumer.providerKeyWithAnotherName, 'inner_provider-provider-val0');
-      assert.strictEqual(innerConsumer.unprovidedKey, 'local-unprovided');
-      assert.strictEqual(innerConsumer.outerUnobservedKey, 'local-unobserved');
-      assert.strictEqual(innerConsumer.setterCallCount, 1);
-
-      // Update inner provider.
-      innerProvider.providerKey = 'inner_provider-provider-val1';
-      await innerProvider.updateComplete;
-
-      // outerConsumer unchanged.
-      assert.strictEqual(outerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
-      assert.strictEqual(outerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
-      assert.strictEqual(outerConsumer.providerKey, 'outer_provider-provider-val1');
-      assert.strictEqual(outerConsumer.providerKeyWithAnotherName, 'outer_provider-provider-val1');
-      assert.strictEqual(outerConsumer.outerUnobservedKey, 'local-unobserved');
-      assert.strictEqual(outerConsumer.unprovidedKey, 'local-unprovided');
-      assert.strictEqual(outerConsumer.setterCallCount, 2);
-
-      // innerConsumer.providerKey updated, other properties unchanged.
-      assert.strictEqual(innerConsumer.outerProviderInactiveKey, 'outer_provider-outer_provider_inactive-val0');
-      assert.strictEqual(innerConsumer.outerProviderKey, 'outer_provider-outer_provider-val1');
-      assert.strictEqual(innerConsumer.providerKey, 'inner_provider-provider-val1');
-      assert.strictEqual(innerConsumer.providerKeyWithAnotherName, 'inner_provider-provider-val1');
-      assert.strictEqual(innerConsumer.outerUnobservedKey, 'local-unobserved');
-      assert.strictEqual(innerConsumer.unprovidedKey, 'local-unprovided');
-      assert.strictEqual(innerConsumer.setterCallCount, 2);
-    });
-
-    it('should provide context to any context consumers if global is set to true', async () => {
-      const rootEle = await fixture<HTMLDivElement>(html`
-        <div>
-          <milo-outer-context-provider-test></milo-outer-context-provider-test>
-          <milo-global-context-provider-test></milo-global-context-provider-test>
           <milo-context-consumer-wrapper-test></milo-context-consumer-wrapper-test>
-        </div>
-      `);
-      const globalProvider = rootEle.querySelector('milo-global-context-provider-test')!.shadowRoot!
-        .host as GlobalContextProvider;
-      const consumer = rootEle
-        .querySelector('milo-context-consumer-wrapper-test')!
-        .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
+        </milo-outer-context-provider-test>
+      </div>
+    `);
+    const globalProvider = rootEle.querySelector('milo-global-context-provider-test')!.shadowRoot!
+      .host as GlobalContextProvider;
+    const consumer = rootEle
+      .querySelector('milo-context-consumer-wrapper-test')!
+      .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
 
-      assert.strictEqual(consumer.providerKey, 'global_provider-provider-val0');
+    expect(consumer.providerKey).toStrictEqual('outer_provider-provider-val0');
 
-      // Update global provider.
-      globalProvider.providerKey = 'global_provider-provider-val1';
-      await globalProvider.updateComplete;
+    // Update global provider.
+    globalProvider.providerKey = 'global_provider-provider-val1';
+    await globalProvider.updateComplete;
 
-      // consumer.providerKey updated
-      assert.strictEqual(consumer.providerKey, 'global_provider-provider-val1');
-    });
-
-    it('global context should not override local context', async () => {
-      const rootEle = await fixture<HTMLDivElement>(html`
-        <div>
-          <milo-global-context-provider-test></milo-global-context-provider-test>
-          <milo-outer-context-provider-test>
-            <milo-context-consumer-wrapper-test></milo-context-consumer-wrapper-test>
-          </milo-outer-context-provider-test>
-        </div>
-      `);
-      const globalProvider = rootEle.querySelector('milo-global-context-provider-test')!.shadowRoot!
-        .host as GlobalContextProvider;
-      const consumer = rootEle
-        .querySelector('milo-context-consumer-wrapper-test')!
-        .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
-
-      assert.strictEqual(consumer.providerKey, 'outer_provider-provider-val0');
-
-      // Update global provider.
-      globalProvider.providerKey = 'global_provider-provider-val1';
-      await globalProvider.updateComplete;
-
-      // consumer.providerKey not updated.
-      assert.strictEqual(consumer.providerKey, 'outer_provider-provider-val0');
-    });
+    // consumer.providerKey not updated.
+    expect(consumer.providerKey).toStrictEqual('outer_provider-provider-val0');
   });
 });

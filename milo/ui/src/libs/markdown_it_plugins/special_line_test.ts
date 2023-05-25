@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 import Token from 'markdown-it/lib/token';
 
@@ -31,6 +31,6 @@ describe('special_line', () => {
     const md = MarkdownIt('zero', { breaks: true, linkify: true }).use(lookaheadLine);
 
     const ele = await fixture(md.render('abc=content'));
-    assert.equal(ele.textContent, 'special');
+    expect(ele.textContent).toStrictEqual('special');
   });
 });

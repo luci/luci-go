@@ -26,10 +26,6 @@ import {
   ResultDb,
 } from '../services/resultdb';
 
-// TSC isn't able to determine the scope properly.
-// Perform manual casting to fix typing.
-const _self = self as unknown as ServiceWorkerGlobalScope;
-
 const PRPC_CACHE_KEY_PREFIX = 'prpc-cache-key';
 const AUTH_STATE_CACHE_KEY = Math.random().toString();
 
@@ -53,7 +49,7 @@ const CACHE_DURATION = 5000;
 const CACHE_OPTION = { acceptCache: false, skipUpdate: true };
 
 export class Prefetcher {
-  private readonly authStateUrl = `${_self.location.origin}/auth/openid/state`;
+  private readonly authStateUrl = '/auth/openid/state';
   private readonly cachedUrls: readonly string[] = [
     this.authStateUrl,
     `https://${this.configs.BUILDBUCKET.HOST}/prpc/buildbucket.v2.Builds/GetBuild`,

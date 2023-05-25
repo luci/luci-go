@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
 import { bugLine } from './bug_line';
@@ -29,21 +29,21 @@ describe('bug_line', () => {
     const ele = await fixture(md.render(singleBugLine));
 
     const anchors = ele.querySelectorAll('a');
-    assert.equal(anchors.length, 3);
+    expect(anchors.length).toStrictEqual(3);
 
     const anchor1 = anchors.item(0);
-    assert.equal(anchor1.href, 'https://crbug.com/123');
-    assert.equal(anchor1.text, '123');
+    expect(anchor1.href).toStrictEqual('https://crbug.com/123');
+    expect(anchor1.text).toStrictEqual('123');
 
     const anchor2 = anchors.item(1);
-    assert.equal(anchor2.href, 'https://crbug.com/234');
-    assert.equal(anchor2.text, '234');
+    expect(anchor2.href).toStrictEqual('https://crbug.com/234');
+    expect(anchor2.text).toStrictEqual('234');
 
     const anchor3 = anchors.item(2);
-    assert.equal(anchor3.href, 'https://crbug.com/proj-1/345');
-    assert.equal(anchor3.text, 'proj-1:345');
+    expect(anchor3.href).toStrictEqual('https://crbug.com/proj-1/345');
+    expect(anchor3.text).toStrictEqual('proj-1:345');
 
-    assert.equal(ele.childNodes[4].textContent, ', not a project, ');
+    expect(ele.childNodes[4].textContent).toStrictEqual(', not a project, ');
   });
 
   describe('When breaks is set to true', () => {
@@ -53,30 +53,30 @@ describe('bug_line', () => {
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'https://crbug.com/123');
-      assert.equal(anchor1.text, '123');
+      expect(anchor1.href).toStrictEqual('https://crbug.com/123');
+      expect(anchor1.text).toStrictEqual('123');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'https://crbug.com/234');
-      assert.equal(anchor2.text, '234');
+      expect(anchor2.href).toStrictEqual('https://crbug.com/234');
+      expect(anchor2.text).toStrictEqual('234');
     });
 
     it('can renders multiple bug lines with hard break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'https://crbug.com/123');
-      assert.equal(anchor1.text, '123');
+      expect(anchor1.href).toStrictEqual('https://crbug.com/123');
+      expect(anchor1.text).toStrictEqual('123');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'https://crbug.com/234');
-      assert.equal(anchor2.text, '234');
+      expect(anchor2.href).toStrictEqual('https://crbug.com/234');
+      expect(anchor2.text).toStrictEqual('234');
     });
   });
 
@@ -87,30 +87,30 @@ describe('bug_line', () => {
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'https://crbug.com/123');
-      assert.equal(anchor1.text, '123');
+      expect(anchor1.href).toStrictEqual('https://crbug.com/123');
+      expect(anchor1.text).toStrictEqual('123');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'https://crbug.com/BUG/234');
-      assert.equal(anchor2.text, 'BUG:234');
+      expect(anchor2.href).toStrictEqual('https://crbug.com/BUG/234');
+      expect(anchor2.text).toStrictEqual('BUG:234');
     });
 
     it('can renders multiple bug lines with hard break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'https://crbug.com/123');
-      assert.equal(anchor1.text, '123');
+      expect(anchor1.href).toStrictEqual('https://crbug.com/123');
+      expect(anchor1.text).toStrictEqual('123');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'https://crbug.com/234');
-      assert.equal(anchor2.text, '234');
+      expect(anchor2.href).toStrictEqual('https://crbug.com/234');
+      expect(anchor2.text).toStrictEqual('234');
     });
   });
 });

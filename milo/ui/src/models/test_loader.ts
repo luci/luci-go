@@ -182,6 +182,7 @@ export class TestLoader {
   /**
    * Load at least one test variant unless the last page is reached.
    */
+  @action
   loadNextTestVariants(pageSize = 10000) {
     if (this.stage === LoadingStage.Done) {
       return this.loadPromise;
@@ -190,9 +191,11 @@ export class TestLoader {
     this.loadingReqCount++;
     this.loadPromise = this.loadPromise
       .then(() => this.loadNextTestVariantsInternal(pageSize))
-      .then(() => {
-        this.loadingReqCount--;
-      });
+      .then(
+        action(() => {
+          this.loadingReqCount--;
+        })
+      );
     if (!this.firstLoadPromise) {
       this.firstLoadPromise = this.loadPromise;
     }
@@ -239,7 +242,7 @@ export class TestLoader {
     const testVariants = res.testVariants || [];
     this.processTestVariants(testVariants);
     if (this.nextPageToken === undefined) {
-      this._stage = LoadingStage.Done;
+      action(() => (this._stage = LoadingStage.Done))();
       return;
     }
     if (testVariants.length < (this.req.pageSize || 1000)) {
@@ -247,7 +250,7 @@ export class TestLoader {
       // undefined, the following pages must be expected test variants.
       // Without this special case, the UI may incorrectly indicate that not all
       // variants have been loaded for statuses worse than Expected.
-      this._stage = LoadingStage.LoadingExpected;
+      action(() => (this._stage = LoadingStage.LoadingExpected))();
       return;
     }
   }

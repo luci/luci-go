@@ -19,6 +19,16 @@ import './stackdriver_errors';
 import { App } from './App';
 import { initDefaultTrustedTypesPolicy } from './libs/sanitize_html';
 
+/**
+ * Whether the UI service worker should be enabled.
+ */
+declare const ENABLE_UI_SW: boolean;
+/**
+ * Whether GA tracking should be enabled.
+ */
+declare const ENABLE_GA: boolean;
+window.ENABLE_GA = ENABLE_GA;
+
 initDefaultTrustedTypesPolicy();
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
@@ -31,4 +41,4 @@ navigator.serviceWorker?.addEventListener('controllerchange', () => window.locat
 
 const container = document.getElementById('app-root');
 const root = createRoot(container!);
-root.render(<App />);
+root.render(<App isDevEnv={import.meta.env.DEV} enableUiSW={ENABLE_UI_SW} />);

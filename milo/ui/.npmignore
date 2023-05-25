@@ -1,5 +1,7 @@
 *_test.ts
 *_test.tsx
-webpack.*.ts
-karma.conf.ts
-cypress
+
+*.test.ts
+*.test.tsx
+
+src/testing_tools/

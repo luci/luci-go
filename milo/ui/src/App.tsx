@@ -74,8 +74,13 @@ const QUERY_CLIENT_CONFIG: QueryClientConfig = {
   },
 };
 
-export function App() {
-  const [store] = useState(() => Store.create());
+export interface AppProps {
+  readonly isDevEnv: boolean;
+  readonly enableUiSW: boolean;
+}
+
+export function App({ isDevEnv, enableUiSW }: AppProps) {
+  const [store] = useState(() => Store.create({}, { isDevEnv }));
   const [queryClient] = useState(() => new QueryClient(QUERY_CLIENT_CONFIG));
 
   useEffect(() => {
@@ -88,15 +93,23 @@ export function App() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__STORE = store;
 
-    if (navigator.serviceWorker && ENABLE_UI_SW) {
-      store.workbox.init(createStaticTrustedURL('sw-js-static', '/ui/service-worker.js'));
+    if (navigator.serviceWorker && enableUiSW) {
+      const swUrl = createStaticTrustedURL(
+        'sw-js-static',
+        // vite-plugin-pwa hosts the service worker in a different route in dev
+        // mode.
+        // See https://vite-pwa-org.netlify.app/guide/development.html#injectmanifest-strategy
+        isDevEnv ? '/ui/dev-sw.js?dev-sw' : '/ui/ui_sw.js'
+      );
+      store.workbox.init(swUrl);
     }
     if (navigator.serviceWorker && !document.cookie.includes('showNewBuildPage=false')) {
       navigator.serviceWorker
         .register(
           // cast to string because TypeScript doesn't allow us to use
           // TrustedScriptURL here
-          createStaticTrustedURL('root-sw-js-static', '/root-sw.js') as string
+          createStaticTrustedURL('root-sw-js-static', '/root_sw.js') as string,
+          { type: isDevEnv ? 'module' : 'classic' }
         )
         .then((registration) => {
           store.setRedirectSw(registration);

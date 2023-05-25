@@ -12,20 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
-import { Store, StoreProvider } from '../store';
+import { Store, StoreInstance, StoreProvider } from '../store';
 import { AppMenu } from './app_menu';
 
 describe('AppMenu', () => {
-  it('has pending update', () => {
-    const store = Store.create({});
-    after(() => destroy(store));
+  let store: StoreInstance;
+  beforeEach(() => {
+    store = Store.create({});
+  });
+  afterEach(() => {
+    cleanup();
     unprotect(store);
-    sinon.stub(store.workbox, 'hasPendingUpdate').get(() => true);
+    jest.restoreAllMocks();
+    protect(store);
+    destroy(store);
+  });
+
+  it('has pending update', () => {
+    unprotect(store);
+    jest.spyOn(store.workbox, 'hasPendingUpdate', 'get').mockImplementation(() => true);
     protect(store);
 
     render(
@@ -35,19 +44,19 @@ describe('AppMenu', () => {
     );
 
     const menuButton = screen.getByTestId('menu-button');
-    expect(menuButton.querySelector('[data-testid="UpgradeIcon"]')).to.not.be.null;
+    expect(menuButton.querySelector('[data-testid="UpgradeIcon"]')).not.toBeNull();
 
     fireEvent.click(menuButton);
     const menu = screen.getByRole('menuitem', { name: 'update website' });
-    expect(menu.ariaDisabled).to.not.eq('true');
+    expect(menu.getAttribute('aria-disabled')).not.toStrictEqual('true');
   });
 
   it('no pending update', () => {
-    const store = Store.create({});
-    after(() => destroy(store));
     unprotect(store);
-    sinon.stub(store.workbox, 'hasPendingUpdate').get(() => false);
+    jest.spyOn(store.workbox, 'hasPendingUpdate', 'get').mockImplementation(() => false);
     protect(store);
+
+    expect(store.workbox.hasPendingUpdate).toStrictEqual(false);
 
     render(
       <StoreProvider value={store}>
@@ -56,10 +65,10 @@ describe('AppMenu', () => {
     );
 
     const menuButton = screen.getByTestId('menu-button');
-    expect(menuButton.querySelector('[data-testid="UpgradeIcon"]')).to.be.null;
+    expect(menuButton.querySelector('[data-testid="UpgradeIcon"]')).toBeNull();
 
     fireEvent.click(menuButton);
     const menu = screen.getByRole('menuitem', { name: 'update website' });
-    expect(menu.ariaDisabled).to.eq('true');
+    expect(menu.getAttribute('aria-disabled')).toStrictEqual('true');
   });
 });

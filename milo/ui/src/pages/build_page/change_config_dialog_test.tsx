@@ -12,29 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { destroy, Instance, protect, unprotect } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
 import { Store, StoreProvider } from '../../store';
 import { ChangeConfigDialog } from './change_config_dialog';
 
 describe('ChangeConfigDialog', () => {
-  let timer: sinon.SinonFakeTimers;
   let store: Instance<typeof Store>;
-  let setDefaultTabSpy: sinon.SinonSpy<[string], void>;
+  let setDefaultTabSpy: jest.SpiedFunction<(tab: string) => void>;
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
     store = Store.create();
     unprotect(store);
-    setDefaultTabSpy = sinon.spy(store.userConfig.build, 'setDefaultTab');
+    setDefaultTabSpy = jest.spyOn(store.userConfig.build, 'setDefaultTab');
     protect(store);
   });
 
   afterEach(() => {
-    timer.restore();
+    cleanup();
     destroy(store);
+    jest.useRealTimers();
   });
 
   it('should sync local state when opening the dialog', async () => {
@@ -45,15 +44,17 @@ describe('ChangeConfigDialog', () => {
       </StoreProvider>
     );
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).to.not.be.null;
-    expect(screen.queryByRole('button', { name: 'Timeline' })).to.be.null;
+    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
-    store.userConfig.build.setDefaultTab('timeline');
-    await timer.runToLastAsync();
+    await act(async () => {
+      store.userConfig.build.setDefaultTab('timeline');
+      await jest.runOnlyPendingTimersAsync();
+    });
 
     // Updating the config while the dialog is still open has no effect.
-    expect(screen.queryByRole('button', { name: 'Test Results' })).to.not.be.null;
-    expect(screen.queryByRole('button', { name: 'Timeline' })).to.be.null;
+    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
     rerender(
       <StoreProvider value={store}>
@@ -66,13 +67,13 @@ describe('ChangeConfigDialog', () => {
       </StoreProvider>
     );
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).to.be.null;
-    expect(screen.queryByRole('button', { name: 'Timeline' })).to.not.be.null;
+    expect(screen.queryByRole('button', { name: 'Test Results' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Timeline' })).not.toBeNull();
   });
 
   it('should update global config when confirmed', async () => {
     store.userConfig.build.setDefaultTab('test-results');
-    const onCloseSpy = sinon.spy();
+    const onCloseSpy = jest.fn();
 
     render(
       <StoreProvider value={store}>
@@ -80,31 +81,37 @@ describe('ChangeConfigDialog', () => {
       </StoreProvider>
     );
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).to.not.be.null;
-    expect(screen.queryByRole('button', { name: 'Timeline' })).to.be.null;
-
+    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Test Results' }));
-    await timer.runToLastAsync();
+
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
     fireEvent.click(screen.getByText('Timeline'));
-    await timer.runToLastAsync();
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).to.be.null;
-    expect(screen.queryByRole('button', { name: 'Timeline' })).to.not.be.null;
+    expect(screen.queryByRole('button', { name: 'Test Results' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Timeline' })).not.toBeNull();
 
-    expect(onCloseSpy.callCount).to.eq(0);
-    expect(setDefaultTabSpy.callCount).to.eq(1);
+    expect(onCloseSpy.mock.calls.length).toStrictEqual(0);
+    expect(setDefaultTabSpy.mock.calls.length).toStrictEqual(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await timer.runToLastAsync();
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
 
-    expect(onCloseSpy.callCount).to.eq(1);
-    expect(setDefaultTabSpy.callCount).to.eq(2);
-    expect(store.userConfig.build.defaultTab).to.eq('timeline');
+    expect(onCloseSpy.mock.calls.length).toStrictEqual(1);
+    expect(setDefaultTabSpy.mock.calls.length).toStrictEqual(2);
+    expect(store.userConfig.build.defaultTab).toStrictEqual('timeline');
   });
 
   it('should not update global config when dismissed', async () => {
     store.userConfig.build.setDefaultTab('test-results');
-    const onCloseSpy = sinon.spy();
+    const onCloseSpy = jest.fn();
 
     render(
       <StoreProvider value={store}>
@@ -112,25 +119,31 @@ describe('ChangeConfigDialog', () => {
       </StoreProvider>
     );
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).to.not.be.null;
-    expect(screen.queryByRole('button', { name: 'Timeline' })).to.be.null;
+    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Test Results' }));
-    await timer.runToLastAsync();
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
     fireEvent.click(screen.getByText('Timeline'));
-    await timer.runToLastAsync();
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).to.be.null;
-    expect(screen.queryByRole('button', { name: 'Timeline' })).to.not.be.null;
+    expect(screen.queryByRole('button', { name: 'Test Results' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Timeline' })).not.toBeNull();
 
-    expect(onCloseSpy.callCount).to.eq(0);
-    expect(setDefaultTabSpy.callCount).to.eq(1);
+    expect(onCloseSpy.mock.calls.length).toStrictEqual(0);
+    expect(setDefaultTabSpy.mock.calls.length).toStrictEqual(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-    await timer.runToLastAsync();
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
 
-    expect(onCloseSpy.callCount).to.eq(1);
-    expect(setDefaultTabSpy.callCount).to.eq(1);
-    expect(store.userConfig.build.defaultTab).to.eq('test-results');
+    expect(onCloseSpy.mock.calls.length).toStrictEqual(1);
+    expect(setDefaultTabSpy.mock.calls.length).toStrictEqual(1);
+    expect(store.userConfig.build.defaultTab).toStrictEqual('test-results');
   });
 });

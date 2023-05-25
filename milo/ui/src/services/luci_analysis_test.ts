@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
-import sinon from 'sinon';
+import { expect, jest } from '@jest/globals';
 
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { ClusterRequest, ClusterResponse, ClustersService } from './luci_analysis';
@@ -22,8 +21,9 @@ const clusteringVersion = { algorithmsVersion: '1', rulesVersion: '1', configVer
 
 describe('ClustersService', () => {
   it('should batch requests from the same project together', async () => {
-    const prpcStub = sinon.stub(new PrpcClientExt({}, () => ''));
-    const clustersService = new ClustersService(prpcStub);
+    const prpc = new PrpcClientExt({}, () => '');
+    const callStub = jest.spyOn(prpc, 'call');
+    const clustersService = new ClustersService(prpc);
     const mockedRes: ClusterResponse = {
       clusteringVersion,
       clusteredTestResults: [
@@ -31,15 +31,15 @@ describe('ClustersService', () => {
         { clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] },
       ],
     };
-    prpcStub.call.onFirstCall().resolves(mockedRes);
+    callStub.mockResolvedValueOnce(mockedRes);
 
     const call1 = clustersService.cluster({ project: 'proj1', testResults: [{ testId: 'test1' }] });
     const call2 = clustersService.cluster({ project: 'proj1', testResults: [{ testId: 'test2' }] });
     const res1 = await call1;
     const res2 = await call2;
 
-    expect(prpcStub.call.callCount).to.equal(1);
-    expect(prpcStub.call.getCall(0).args).to.deep.equal([
+    expect(callStub.mock.calls.length).toStrictEqual(1);
+    expect(callStub.mock.calls[0]).toEqual([
       'luci.analysis.v1.Clusters',
       'Cluster',
       {
@@ -47,19 +47,20 @@ describe('ClustersService', () => {
         testResults: [{ testId: 'test1' }, { testId: 'test2' }],
       },
     ]);
-    expect(res1).to.deep.equal({
+    expect(res1).toEqual({
       clusteringVersion,
       clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] }],
     });
-    expect(res2).to.deep.equal({
+    expect(res2).toEqual({
       clusteringVersion,
       clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] }],
     });
   });
 
   it('should not batch requests from different projects together', async () => {
-    const prpcStub = sinon.stub(new PrpcClientExt({}, () => ''));
-    const clustersService = new ClustersService(prpcStub);
+    const prpc = new PrpcClientExt({}, () => '');
+    const callStub = jest.spyOn(prpc, 'call');
+    const clustersService = new ClustersService(prpc);
     const mockedRes1: ClusterResponse = {
       clusteringVersion,
       clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] }],
@@ -68,16 +69,16 @@ describe('ClustersService', () => {
       clusteringVersion,
       clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] }],
     };
-    prpcStub.call.onFirstCall().resolves(mockedRes1);
-    prpcStub.call.onSecondCall().resolves(mockedRes2);
+    callStub.mockResolvedValueOnce(mockedRes1);
+    callStub.mockResolvedValueOnce(mockedRes2);
 
     const call1 = clustersService.cluster({ project: 'proj1', testResults: [{ testId: 'test1' }] });
     const call2 = clustersService.cluster({ project: 'proj2', testResults: [{ testId: 'test2' }] });
     const res1 = await call1;
     const res2 = await call2;
 
-    expect(prpcStub.call.callCount).to.equal(2);
-    expect(prpcStub.call.getCall(0).args).to.deep.equal([
+    expect(callStub.mock.calls.length).toStrictEqual(2);
+    expect(callStub.mock.calls[0]).toEqual([
       'luci.analysis.v1.Clusters',
       'Cluster',
       {
@@ -85,7 +86,7 @@ describe('ClustersService', () => {
         testResults: [{ testId: 'test1' }],
       },
     ]);
-    expect(prpcStub.call.getCall(1).args).to.deep.equal([
+    expect(callStub.mock.calls[1]).toEqual([
       'luci.analysis.v1.Clusters',
       'Cluster',
       {
@@ -93,19 +94,20 @@ describe('ClustersService', () => {
         testResults: [{ testId: 'test2' }],
       },
     ]);
-    expect(res1).to.deep.equal({
+    expect(res1).toEqual({
       clusteringVersion,
       clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] }],
     });
-    expect(res2).to.deep.equal({
+    expect(res2).toEqual({
       clusteringVersion,
       clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] }],
     });
   });
 
   it('should not batch more than 1000 requests together', async () => {
-    const prpcStub = sinon.stub(new PrpcClientExt({}, () => ''));
-    const clustersService = new ClustersService(prpcStub);
+    const prpc = new PrpcClientExt({}, () => '');
+    const callStub = jest.spyOn(prpc, 'call');
+    const clustersService = new ClustersService(prpc);
 
     function makeRes(startIndex: number, count: number) {
       const res: DeepMutable<ClusterResponse> = {
@@ -131,8 +133,8 @@ describe('ClustersService', () => {
 
     const mockedRes1 = makeRes(0, 800);
     const mockedRes2 = makeRes(800, 400);
-    prpcStub.call.onFirstCall().resolves(mockedRes1);
-    prpcStub.call.onSecondCall().resolves(mockedRes2);
+    callStub.mockResolvedValueOnce(mockedRes1);
+    callStub.mockResolvedValueOnce(mockedRes2);
 
     const call1 = clustersService.cluster(makeReq(0, 400));
     const call2 = clustersService.cluster(makeReq(400, 400));
@@ -141,11 +143,11 @@ describe('ClustersService', () => {
     const res2 = await call2;
     const res3 = await call3;
 
-    expect(prpcStub.call.callCount).to.equal(2);
-    expect(prpcStub.call.getCall(0).args).to.deep.equal(['luci.analysis.v1.Clusters', 'Cluster', makeReq(0, 800)]);
-    expect(prpcStub.call.getCall(1).args).to.deep.equal(['luci.analysis.v1.Clusters', 'Cluster', makeReq(800, 400)]);
-    expect(res1).to.deep.equal(makeRes(0, 400));
-    expect(res2).to.deep.equal(makeRes(400, 400));
-    expect(res3).to.deep.equal(makeRes(800, 400));
+    expect(callStub.mock.calls.length).toStrictEqual(2);
+    expect(callStub.mock.calls[0]).toEqual(['luci.analysis.v1.Clusters', 'Cluster', makeReq(0, 800)]);
+    expect(callStub.mock.calls[1]).toEqual(['luci.analysis.v1.Clusters', 'Cluster', makeReq(800, 400)]);
+    expect(res1).toEqual(makeRes(0, 400));
+    expect(res2).toEqual(makeRes(400, 400));
+    expect(res3).toEqual(makeRes(800, 400));
   });
 });

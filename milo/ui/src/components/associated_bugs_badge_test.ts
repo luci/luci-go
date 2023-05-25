@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture, oneEvent } from '@open-wc/testing-helpers';
-import { expect } from 'chai';
 import { html } from 'lit';
 
 import './associated_bugs_badge';
@@ -61,14 +61,14 @@ const cluster3: Cluster = {
   },
 };
 
-describe('associated_bugs_badge_test', () => {
+describe('AssociatedBugsBadge', () => {
   it('should remove duplicated bugs', async () => {
     const ele = await fixture<AssociatedBugsBadgeElement>(html`
       <milo-associated-bugs-badge .clusters=${[cluster1, cluster2, cluster3, cluster1]}></milo-associated-bugs-badge>
     `);
 
-    expect(ele.shadowRoot!.textContent).to.contain('crbug.com/1234');
-    expect(ele.shadowRoot!.textContent).to.not.match(/crbug\.com\/1234(.*)crbug\.com\/1234/);
+    expect(ele.shadowRoot!.textContent).toContain('crbug.com/1234');
+    expect(ele.shadowRoot!.textContent).not.toMatch(/crbug\.com\/1234(.*)crbug\.com\/1234/);
   });
 
   it('should render a list on hover', async () => {
@@ -82,6 +82,6 @@ describe('associated_bugs_badge_test', () => {
 
     const tooltip = event.detail.tooltip.querySelector('milo-associated-bugs-tooltip')! as AssociatedBugsTooltipElement;
 
-    expect(tooltip.clusters).to.deep.equal([cluster1, cluster2, cluster3]);
+    expect(tooltip.clusters).toEqual([cluster1, cluster2, cluster3]);
   });
 });

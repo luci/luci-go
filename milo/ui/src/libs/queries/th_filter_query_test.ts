@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert } from 'chai';
+import { expect } from '@jest/globals';
 
 import { Variant } from '../../services/luci_analysis';
 import { parseVariantFilter, parseVariantPredicate, suggestTestHistoryFilterQuery } from './th_filter_query';
@@ -62,7 +62,7 @@ describe('parseVariantFilter', () => {
       .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    assert.deepEqual(filtered, [entry1.variant]);
+    expect(filtered).toEqual([entry1.variant]);
   });
 
   it("should support variant value with '=' in it", () => {
@@ -72,7 +72,7 @@ describe('parseVariantFilter', () => {
       .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    assert.deepEqual(filtered, [entry7.variant]);
+    expect(filtered).toEqual([entry7.variant]);
   });
 
   it('should support filter with only variant key', () => {
@@ -82,7 +82,7 @@ describe('parseVariantFilter', () => {
       .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    assert.deepEqual(filtered, [entry5.variant, entry6.variant, entry7.variant]);
+    expect(filtered).toEqual([entry5.variant, entry6.variant, entry7.variant]);
   });
 
   it('should work with negation', () => {
@@ -92,7 +92,7 @@ describe('parseVariantFilter', () => {
       .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    assert.deepEqual(filtered, [
+    expect(filtered).toEqual([
       entry2.variant,
       entry3.variant,
       entry4.variant,
@@ -109,7 +109,7 @@ describe('parseVariantFilter', () => {
       .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    assert.deepEqual(filtered, [entry2.variant, entry4.variant, entry5.variant, entry6.variant, entry7.variant]);
+    expect(filtered).toEqual([entry2.variant, entry4.variant, entry5.variant, entry6.variant, entry7.variant]);
   });
 
   it('should work with variant hash filter', () => {
@@ -119,7 +119,7 @@ describe('parseVariantFilter', () => {
       .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    assert.deepEqual(filtered, [entry2.variant, entry4.variant]);
+    expect(filtered).toEqual([entry2.variant, entry4.variant]);
   });
 
   it('should work with negated variant hash filter', () => {
@@ -129,51 +129,51 @@ describe('parseVariantFilter', () => {
       .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    assert.deepEqual(filtered, [entry1.variant, entry3.variant, entry5.variant, entry6.variant, entry7.variant]);
+    expect(filtered).toEqual([entry1.variant, entry3.variant, entry5.variant, entry6.variant, entry7.variant]);
   });
 });
 
 describe('suggestTestHistoryFilterQuery', () => {
   it('should give user some suggestions when the query is empty', () => {
     const suggestions1 = suggestTestHistoryFilterQuery('');
-    assert.notStrictEqual(suggestions1.length, 0);
+    expect(suggestions1.length).not.toStrictEqual(0);
   });
 
   it('should not give suggestions when the sub-query is empty', () => {
     const suggestions1 = suggestTestHistoryFilterQuery('VHash:abcd ');
-    assert.strictEqual(suggestions1.length, 0);
+    expect(suggestions1.length).toStrictEqual(0);
   });
 
   it('should suggest V query when the query prefix is V:', () => {
     const suggestions1 = suggestTestHistoryFilterQuery('V:test_suite');
-    assert.isDefined(suggestions1.find((s) => s.value === 'V:test_suite'));
-    assert.isDefined(suggestions1.find((s) => s.value === '-V:test_suite'));
+    expect(suggestions1.find((s) => s.value === 'V:test_suite')).toBeDefined();
+    expect(suggestions1.find((s) => s.value === '-V:test_suite')).toBeDefined();
 
     const suggestions2 = suggestTestHistoryFilterQuery('-V:test_suite');
     // When user explicitly typed negative query, don't suggest positive query.
-    assert.isUndefined(suggestions2.find((s) => s.value === 'V:test_suite'));
-    assert.isDefined(suggestions2.find((s) => s.value === '-V:test_suite'));
+    expect(suggestions2.find((s) => s.value === 'V:test_suite')).toBeUndefined();
+    expect(suggestions2.find((s) => s.value === '-V:test_suite')).toBeDefined();
   });
 });
 
 describe('parseVariantPredicate', () => {
   it('should work with multiple variant key-value filters', () => {
     const predicate = parseVariantPredicate('v:key1=val1 v:key2=val2');
-    assert.deepEqual(predicate, { contains: { def: { key1: 'val1', key2: 'val2' } } });
+    expect(predicate).toEqual({ contains: { def: { key1: 'val1', key2: 'val2' } } });
   });
 
   it('should ignore negative filters', () => {
     const predicate = parseVariantPredicate('v:key1=val1 -v:key2=val2 -vhash:902690735d13f8bd');
-    assert.deepEqual(predicate, { contains: { def: { key1: 'val1' } } });
+    expect(predicate).toEqual({ contains: { def: { key1: 'val1' } } });
   });
 
   it('should prioritize variant hash filter', () => {
     const predicate = parseVariantPredicate('v:key1=val1 vhash:0123456789AbCdEf');
-    assert.deepEqual(predicate, { hashEquals: '0123456789abcdef' });
+    expect(predicate).toEqual({ hashEquals: '0123456789abcdef' });
   });
 
   it('should ignore invalid filters', () => {
     const predicate = parseVariantPredicate('v:key1=val1 vhash:invalidhash other:hash');
-    assert.deepEqual(predicate, { contains: { def: { key1: 'val1' } } });
+    expect(predicate).toEqual({ contains: { def: { key1: 'val1' } } });
   });
 });

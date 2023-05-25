@@ -18,12 +18,14 @@
  * This is 200-400ms faster than redirecting on the server side.
  */
 
-// TSC isn't able to determine the scope properly.
-// Perform manual casting to fix typing.
-const _self = self as unknown as ServiceWorkerGlobalScope;
+// Tell TSC that this is a ServiceWorker script.
+declare const self: ServiceWorkerGlobalScope;
+// Add a dummy export so signal this file a module.
+// Otherwise TSC won't allow us to re-declare `self`.
+export {};
 
 // TODO(crbug/1108198): we don't need this after removing the /ui prefix.
-_self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   const isResultUI =
@@ -50,5 +52,5 @@ _self.addEventListener('fetch', (event) => {
 // Ensures that the redirection logic takes effect immediately so users won't be
 // redirected to broken pages (e.g. when app is rolled back to a previous
 // version).
-_self.addEventListener('install', () => _self.skipWaiting());
-_self.addEventListener('activate', (e) => e.waitUntil(_self.clients.claim()));
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));

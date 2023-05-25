@@ -12,38 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert } from 'chai';
+import { expect } from '@jest/globals';
 
 import { parseKeyValue } from './utils';
 
 describe('parseKeyValue', () => {
   it('should parse key-value pair', () => {
     const [key, value] = parseKeyValue('key=value');
-    assert.strictEqual(key, 'key');
-    assert.strictEqual(value, 'value');
+    expect(key).toStrictEqual('key');
+    expect(value).toStrictEqual('value');
   });
 
   it("should work when there's no value", () => {
     const [key, value] = parseKeyValue('key');
-    assert.strictEqual(key, 'key');
-    assert.strictEqual(value, null);
+    expect(key).toStrictEqual('key');
+    expect(value).toStrictEqual(null);
   });
 
   it('should work when the value is empty', () => {
     const [key, value] = parseKeyValue('key=');
-    assert.strictEqual(key, 'key');
-    assert.strictEqual(value, '');
+    expect(key).toStrictEqual('key');
+    expect(value).toStrictEqual('');
   });
 
   it('should work when the key and value contain encoded characters', () => {
     const [key, value] = parseKeyValue('%25key%20=value+');
-    assert.strictEqual(key, '%key ');
-    assert.strictEqual(value, 'value ');
+    expect(key).toStrictEqual('%key ');
+    expect(value).toStrictEqual('value ');
   });
 
   it('should work when the key and value contain special characters', () => {
     const [key, value] = parseKeyValue('key=valuekey=real&value');
-    assert.strictEqual(key, 'key');
-    assert.strictEqual(value, 'valuekey=real&value');
+    expect(key).toStrictEqual('key');
+    expect(value).toStrictEqual('valuekey=real&value');
   });
 });

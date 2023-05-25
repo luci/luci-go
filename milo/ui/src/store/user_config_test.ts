@@ -12,62 +12,99 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { Duration } from 'luxon';
-import { destroy, types } from 'mobx-state-tree';
-import sinon, { SinonFakeTimers } from 'sinon';
+import { destroy, Instance, isAlive, types } from 'mobx-state-tree';
 
 import { FakeStorage } from '../libs/test_utils/fake_storage';
-import { BuildStepsConfig, UserConfig, V1_CACHE_KEY, V2_CACHE_KEY } from './user_config';
+import {
+  BuildStepsConfig,
+  BuildStepsConfigInstance,
+  UserConfig,
+  UserConfigInstance,
+  V1_CACHE_KEY,
+  V2_CACHE_KEY,
+} from './user_config';
 
 describe('BuildStepsConfig', () => {
-  it('should set pins recursively', async () => {
-    const store = BuildStepsConfig.create({});
-    after(() => destroy(store));
+  let store: BuildStepsConfigInstance;
 
+  beforeEach(() => {
+    store = BuildStepsConfig.create({});
+  });
+  afterEach(() => {
+    destroy(store);
+  });
+
+  it('should set pins recursively', async () => {
     // When pinned is true, set pins for all ancestors.
     store.setStepPin('parent|step|child', true);
-    expect(store.stepIsPinned('parent')).to.be.true;
-    expect(store.stepIsPinned('parent|step')).to.be.true;
-    expect(store.stepIsPinned('parent|step|child')).to.be.true;
-    expect(store.stepIsPinned('parent|step|child2')).to.be.false;
-    expect(store.stepIsPinned('parent|step2')).to.be.false;
-    expect(store.stepIsPinned('parent|step2|child1')).to.be.false;
+    expect(store.stepIsPinned('parent')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step|child')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step|child2')).toBeFalsy();
+    expect(store.stepIsPinned('parent|step2')).toBeFalsy();
+    expect(store.stepIsPinned('parent|step2|child1')).toBeFalsy();
 
     store.setStepPin('parent|step|child2', true);
-    expect(store.stepIsPinned('parent')).to.be.true;
-    expect(store.stepIsPinned('parent|step')).to.be.true;
-    expect(store.stepIsPinned('parent|step|child')).to.be.true;
-    expect(store.stepIsPinned('parent|step|child2')).to.be.true;
-    expect(store.stepIsPinned('parent|step2')).to.be.false;
-    expect(store.stepIsPinned('parent|step2|child1')).to.be.false;
+    expect(store.stepIsPinned('parent')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step|child')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step|child2')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step2')).toBeFalsy();
+    expect(store.stepIsPinned('parent|step2|child1')).toBeFalsy();
 
     store.setStepPin('parent|step2|child', true);
-    expect(store.stepIsPinned('parent')).to.be.true;
-    expect(store.stepIsPinned('parent|step')).to.be.true;
-    expect(store.stepIsPinned('parent|step|child')).to.be.true;
-    expect(store.stepIsPinned('parent|step|child2')).to.be.true;
-    expect(store.stepIsPinned('parent|step2')).to.be.true;
-    expect(store.stepIsPinned('parent|step2|child')).to.be.true;
+    expect(store.stepIsPinned('parent')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step|child')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step|child2')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step2')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step2|child')).toBeTruthy();
 
     // When pinned is false, remove pins for all descendants.
     store.setStepPin('parent|step', false);
-    expect(store.stepIsPinned('parent')).to.be.true;
-    expect(store.stepIsPinned('parent|step')).to.be.false;
-    expect(store.stepIsPinned('parent|step|child')).to.be.false;
-    expect(store.stepIsPinned('parent|step|child2')).to.be.false;
-    expect(store.stepIsPinned('parent|step2')).to.be.true;
-    expect(store.stepIsPinned('parent|step2|child')).to.be.true;
+    expect(store.stepIsPinned('parent')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step')).toBeFalsy();
+    expect(store.stepIsPinned('parent|step|child')).toBeFalsy();
+    expect(store.stepIsPinned('parent|step|child2')).toBeFalsy();
+    expect(store.stepIsPinned('parent|step2')).toBeTruthy();
+    expect(store.stepIsPinned('parent|step2|child')).toBeTruthy();
   });
 });
 
 describe('UserConfig', () => {
-  let timer: SinonFakeTimers;
+  const RootStore = types
+    .model({
+      userConfig: types.optional(UserConfig, {}),
+    })
+    .actions((self) => ({
+      modifyDefaultBuildTabNameFromParent(tab: string) {
+        self.userConfig.build.setDefaultTab(tab);
+      },
+      afterCreate() {
+        self.userConfig.enableCaching();
+      },
+    }));
+
+  let store1: UserConfigInstance | null = null;
+  let store2: UserConfigInstance | null = null;
+  let rootStore: Instance<typeof RootStore> | null = null;
+
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
   });
   afterEach(() => {
-    timer.restore();
+    jest.useRealTimers();
+    if (store1 && isAlive(store1)) {
+      destroy(store1);
+    }
+    if (store2 && isAlive(store2)) {
+      destroy(store2);
+    }
+    if (rootStore && isAlive(rootStore)) {
+      destroy(rootStore);
+    }
   });
 
   it('should recover from config v1 cache', () => {
@@ -102,40 +139,38 @@ describe('UserConfig', () => {
       })
     );
     const transientKeysTTL = Duration.fromObject({ hour: 1 }).toMillis();
-    const store1 = UserConfig.create({}, { storage, transientKeysTTL });
+    store1 = UserConfig.create({}, { storage, transientKeysTTL });
     store1.enableCaching();
-    after(() => destroy(store1));
 
-    expect(store1.build.defaultTab).to.eq('build-test-results');
-    expect(store1.build.inputProperties.isFolded('inputKey1')).to.be.true;
-    expect(store1.build.inputProperties.isFolded('inputKey2')).to.be.false;
-    expect(store1.build.outputProperties.isFolded('outputKey1')).to.be.true;
-    expect(store1.build.outputProperties.isFolded('outputKey2')).to.be.false;
-    expect(store1.build.steps.showDebugLogs).to.be.false;
-    expect(store1.build.steps.stepIsPinned('parent')).to.be.true;
-    expect(store1.build.steps.stepIsPinned('parent|child')).to.be.false;
-    expect(store1.tests.columnWidths).to.deep.eq({
+    expect(store1.build.defaultTab).toStrictEqual('build-test-results');
+    expect(store1.build.inputProperties.isFolded('inputKey1')).toBeTruthy();
+    expect(store1.build.inputProperties.isFolded('inputKey2')).toBeFalsy();
+    expect(store1.build.outputProperties.isFolded('outputKey1')).toBeTruthy();
+    expect(store1.build.outputProperties.isFolded('outputKey2')).toBeFalsy();
+    expect(store1.build.steps.showDebugLogs).toBeFalsy();
+    expect(store1.build.steps.stepIsPinned('parent')).toBeTruthy();
+    expect(store1.build.steps.stepIsPinned('parent|child')).toBeFalsy();
+    expect(store1.tests.columnWidths).toEqual({
       'v.test_suite': 350, // coming from the default V1 configuration.
       'v.column1': 300,
       'v.column2': 400,
     });
-    expect(storage.getItem(V1_CACHE_KEY)).to.be.null;
+    expect(storage.getItem(V1_CACHE_KEY)).toBeNull();
 
     // Should store the config to the new cache location even when there's no
     // user initiated action.
-    expect(storage.getItem(V2_CACHE_KEY)).to.not.be.null;
-    const store2 = UserConfig.create({}, { storage, transientKeysTTL });
+    expect(storage.getItem(V2_CACHE_KEY)).not.toBeNull();
+    store2 = UserConfig.create({}, { storage, transientKeysTTL });
     store2.enableCaching();
-    after(() => destroy(store2));
-    expect(store2.build.defaultTab).to.eq('build-test-results');
-    expect(store2.build.inputProperties.isFolded('inputKey1')).to.be.true;
-    expect(store2.build.inputProperties.isFolded('inputKey2')).to.be.false;
-    expect(store2.build.outputProperties.isFolded('outputKey1')).to.be.true;
-    expect(store2.build.outputProperties.isFolded('outputKey2')).to.be.false;
-    expect(store2.build.steps.showDebugLogs).to.be.false;
-    expect(store2.build.steps.stepIsPinned('parent')).to.be.true;
-    expect(store2.build.steps.stepIsPinned('parent|child')).to.be.false;
-    expect(store2.tests.columnWidths).to.deep.eq({
+    expect(store2.build.defaultTab).toStrictEqual('build-test-results');
+    expect(store2.build.inputProperties.isFolded('inputKey1')).toBeTruthy();
+    expect(store2.build.inputProperties.isFolded('inputKey2')).toBeFalsy();
+    expect(store2.build.outputProperties.isFolded('outputKey1')).toBeTruthy();
+    expect(store2.build.outputProperties.isFolded('outputKey2')).toBeFalsy();
+    expect(store2.build.steps.showDebugLogs).toBeFalsy();
+    expect(store2.build.steps.stepIsPinned('parent')).toBeTruthy();
+    expect(store2.build.steps.stepIsPinned('parent|child')).toBeFalsy();
+    expect(store2.tests.columnWidths).toEqual({
       'v.test_suite': 350, // coming from the default V1 configuration.
       'v.column1': 300,
       'v.column2': 400,
@@ -144,11 +179,10 @@ describe('UserConfig', () => {
 
   it('should persist config to storage correctly', () => {
     const storage = new FakeStorage();
-    const setItemSpy = sinon.spy(storage, 'setItem');
+    const setItemSpy = jest.spyOn(storage, 'setItem');
     const transientKeysTTL = Duration.fromObject({ hour: 2 }).toMillis();
-    const store1 = UserConfig.create({}, { storage, transientKeysTTL });
+    store1 = UserConfig.create({}, { storage, transientKeysTTL });
     store1.enableCaching();
-    after(() => destroy(store1));
 
     store1.build.steps.setStepPin('parent|child', true);
     store1.build.steps.setStepPin('parent|child2', true);
@@ -157,9 +191,9 @@ describe('UserConfig', () => {
     store1.build.outputProperties.setFolded('outputKey1', true);
     store1.build.outputProperties.setFolded('outputKey2', true);
 
-    timer.runAll();
-    timer.tick(Duration.fromObject({ hour: 1 }).toMillis());
-    expect(setItemSpy.callCount).to.eq(1); // Writes should be batched together.
+    jest.runAllTimers();
+    jest.advanceTimersByTime(Duration.fromObject({ hour: 1 }).toMillis());
+    expect(setItemSpy.mock.calls.length).toStrictEqual(1); // Writes should be batched together.
 
     store1.build.steps.setStepPin('parent|child2', true);
     store1.build.inputProperties.setFolded('inputKey2', true);
@@ -167,54 +201,38 @@ describe('UserConfig', () => {
     store1.build.outputProperties.setFolded('outputKey2', true);
     store1.build.outputProperties.setFolded('outputKey3', true);
 
-    timer.runAll();
-    timer.tick(Duration.fromObject({ hour: 1 }).toMillis());
-    expect(setItemSpy.callCount).to.eq(2); // Writes should be batched together.
+    jest.runAllTimers();
+    jest.advanceTimersByTime(Duration.fromObject({ hour: 1 }).toMillis());
+    expect(setItemSpy.mock.calls.length).toStrictEqual(2); // Writes should be batched together.
 
-    const store2 = UserConfig.create({}, { storage, transientKeysTTL });
+    store2 = UserConfig.create({}, { storage, transientKeysTTL });
     store2.enableCaching();
-    after(() => destroy(store2));
 
     // Keys that were stale.
-    expect(store2.build.steps.stepIsPinned('parent|child')).to.be.false;
-    expect(store2.build.inputProperties.isFolded('inputKey1')).to.be.false;
-    expect(store2.build.outputProperties.isFolded('outputKey1')).to.be.false;
+    expect(store2.build.steps.stepIsPinned('parent|child')).toBeFalsy();
+    expect(store2.build.inputProperties.isFolded('inputKey1')).toBeFalsy();
+    expect(store2.build.outputProperties.isFolded('outputKey1')).toBeFalsy();
 
     // Keys that were recently created/updated.
-    expect(store2.build.steps.stepIsPinned('parent|child2')).to.be.true;
-    expect(store2.build.inputProperties.isFolded('inputKey2')).to.be.true;
-    expect(store2.build.inputProperties.isFolded('inputKey3')).to.be.true;
-    expect(store2.build.outputProperties.isFolded('outputKey2')).to.be.true;
-    expect(store2.build.outputProperties.isFolded('outputKey3')).to.be.true;
+    expect(store2.build.steps.stepIsPinned('parent|child2')).toBeTruthy();
+    expect(store2.build.inputProperties.isFolded('inputKey2')).toBeTruthy();
+    expect(store2.build.inputProperties.isFolded('inputKey3')).toBeTruthy();
+    expect(store2.build.outputProperties.isFolded('outputKey2')).toBeTruthy();
+    expect(store2.build.outputProperties.isFolded('outputKey3')).toBeTruthy();
   });
 
   it('should persist config to storage correctly when attached to another store', () => {
-    const RootStore = types
-      .model({
-        userConfig: types.optional(UserConfig, {}),
-      })
-      .actions((self) => ({
-        modifyDefaultBuildTabNameFromParent(tab: string) {
-          self.userConfig.build.setDefaultTab(tab);
-        },
-        afterCreate() {
-          self.userConfig.enableCaching();
-        },
-      }));
-
     const storage = new FakeStorage();
-    const store1 = RootStore.create({}, { storage });
-    after(() => destroy(store1));
+    rootStore = RootStore.create({}, { storage });
 
-    store1.modifyDefaultBuildTabNameFromParent('new tab name');
-    expect(store1.userConfig.build.defaultTab).to.eq('new tab name');
+    rootStore.modifyDefaultBuildTabNameFromParent('new tab name');
+    expect(rootStore.userConfig.build.defaultTab).toStrictEqual('new tab name');
 
-    timer.runAll();
-    timer.tick(Duration.fromObject({ hour: 1 }).toMillis());
+    jest.runAllTimers();
+    jest.advanceTimersByTime(Duration.fromObject({ hour: 1 }).toMillis());
 
-    const store2 = UserConfig.create({}, { storage });
+    store2 = UserConfig.create({}, { storage });
     store2.enableCaching();
-    after(() => destroy(store2));
-    expect(store2.build.defaultTab).to.eq('new tab name');
+    expect(store2.build.defaultTab).toStrictEqual('new tab name');
   });
 });

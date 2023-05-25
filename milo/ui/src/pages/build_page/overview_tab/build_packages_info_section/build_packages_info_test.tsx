@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { expect } from 'chai';
 
 import {
   Build,
@@ -45,24 +45,24 @@ describe('BuildPackagesInfo', () => {
     } as Partial<Build> as Build;
 
     render(<BuildPackagesInfo build={buildWithoutOutput} />);
-    expect(screen.getByText<HTMLButtonElement>('Resolved').disabled).to.be.true;
-    expect(screen.getByText('Requested').ariaPressed).to.not.eq('true');
-    expect(screen.queryByText('input-pkg')).to.be.null;
+    expect(screen.getByText<HTMLButtonElement>('Resolved').disabled).toBeTruthy();
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).toBeNull();
 
     // Display requested.
     fireEvent.click(screen.getByText('Requested'));
-    expect(screen.getByText('Requested').ariaPressed).to.eq('true');
-    expect(screen.queryByText('input-pkg')).to.not.be.null;
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).not.toBeNull();
 
     // Click resolved, but it's disabled.
     fireEvent.click(screen.getByText('Resolved'));
-    expect(screen.getByText('Requested').ariaPressed).to.eq('true');
-    expect(screen.queryByText('input-pkg')).to.not.be.null;
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).not.toBeNull();
 
     // Hide requested.
     fireEvent.click(screen.getByText('Requested'));
-    expect(screen.getByText('Requested').ariaPressed).to.not.eq('true');
-    expect(screen.queryByText('input-pkg')).to.be.null;
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).toBeNull();
   });
 
   it('build with resolved packages', async () => {
@@ -91,31 +91,31 @@ describe('BuildPackagesInfo', () => {
     } as Partial<Build> as Build;
 
     render(<BuildPackagesInfo build={buildWithoutOutput} />);
-    expect(screen.getByText<HTMLButtonElement>('Resolved').disabled).to.be.false;
-    expect(screen.getByText('Requested').ariaPressed).to.not.eq('true');
-    expect(screen.getByText('Resolved').ariaPressed).to.not.eq('true');
-    expect(screen.queryByText('input-pkg')).to.be.null;
-    expect(screen.queryByText('output-pkg')).to.be.null;
+    expect(screen.getByText<HTMLButtonElement>('Resolved').disabled).toBeFalsy();
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.getByText('Resolved').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).toBeNull();
+    expect(screen.queryByText('output-pkg')).toBeNull();
 
     // Display requested.
     fireEvent.click(screen.getByText('Requested'));
-    expect(screen.getByText('Requested').ariaPressed).to.eq('true');
-    expect(screen.getByText('Resolved').ariaPressed).to.not.eq('true');
-    expect(screen.queryByText('input-pkg')).to.not.be.null;
-    expect(screen.queryByText('output-pkg')).to.be.null;
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).toStrictEqual('true');
+    expect(screen.getByText('Resolved').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).not.toBeNull();
+    expect(screen.queryByText('output-pkg')).toBeNull();
 
     // Display resolved.
     fireEvent.click(screen.getByText('Resolved'));
-    expect(screen.getByText('Resolved').ariaPressed).to.eq('true');
-    expect(screen.getByText('Requested').ariaPressed).to.not.eq('true');
-    expect(screen.queryByText('input-pkg')).to.be.null;
-    expect(screen.queryByText('output-pkg')).to.not.be.null;
+    expect(screen.getByText('Resolved').getAttribute('aria-pressed')).toStrictEqual('true');
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).toBeNull();
+    expect(screen.queryByText('output-pkg')).not.toBeNull();
 
     // Hide resolved.
     fireEvent.click(screen.getByText('Resolved'));
-    expect(screen.getByText('Requested').ariaPressed).to.not.eq('true');
-    expect(screen.getByText('Resolved').ariaPressed).to.not.eq('true');
-    expect(screen.queryByText('input-pkg')).to.be.null;
-    expect(screen.queryByText('output-pkg')).to.be.null;
+    expect(screen.getByText('Requested').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.getByText('Resolved').getAttribute('aria-pressed')).not.toStrictEqual('true');
+    expect(screen.queryByText('input-pkg')).toBeNull();
+    expect(screen.queryByText('output-pkg')).toBeNull();
   });
 });

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
 import { crbugLink } from './crbug_link';
@@ -30,22 +30,22 @@ describe('crbug_link', () => {
     const ele = await fixture(md.render(crbugLinks));
 
     const anchors = ele.querySelectorAll('a');
-    assert.equal(anchors.length, 4);
+    expect(anchors.length).toStrictEqual(4);
 
     const anchor1 = anchors.item(0);
-    assert.equal(anchor1.href, 'https://crbug.com/123');
-    assert.equal(anchor1.text, 'crbug/123');
+    expect(anchor1.href).toStrictEqual('https://crbug.com/123');
+    expect(anchor1.text).toStrictEqual('crbug/123');
 
     const anchor2 = anchors.item(1);
-    assert.equal(anchor2.href, 'https://crbug.com/234');
-    assert.equal(anchor2.text, 'crbug.com/234');
+    expect(anchor2.href).toStrictEqual('https://crbug.com/234');
+    expect(anchor2.text).toStrictEqual('crbug.com/234');
 
     const anchor3 = anchors.item(2);
-    assert.equal(anchor3.href, 'https://crbug.com/345');
-    assert.equal(anchor3.text, 'CRBUG.COM/345');
+    expect(anchor3.href).toStrictEqual('https://crbug.com/345');
+    expect(anchor3.text).toStrictEqual('CRBUG.COM/345');
 
     const anchor4 = anchors.item(3);
-    assert.equal(anchor4.href, 'https://crbug.com/proj/456');
-    assert.equal(anchor4.text, 'crbug/proj/456');
+    expect(anchor4.href).toStrictEqual('https://crbug.com/proj/456');
+    expect(anchor4.text).toStrictEqual('crbug/proj/456');
   });
 });

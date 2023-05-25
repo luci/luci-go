@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { aTimeout, fixture } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
+import { beforeEach, expect, jest } from '@jest/globals';
+import { aTimeout, fixture, fixtureCleanup } from '@open-wc/testing-helpers';
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
-import sinon from 'sinon';
 
 import './count_indicator';
 import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
 import { provider } from '../../libs/context';
 import { TestVariantStatus } from '../../services/resultdb';
-import { Store } from '../../store';
+import { Store, StoreInstance } from '../../store';
 import { InvocationStateInstance, provideInvocationState } from '../../store/invocation_state';
 import { TestResultsTabCountIndicatorElement } from './count_indicator';
 
@@ -69,19 +68,30 @@ class ContextProvider extends LitElement {
   invocationState!: InvocationStateInstance;
 }
 
-describe('Test Count Indicator', () => {
-  it('should load the first page of test variants when connected', async () => {
-    const store = Store.create({
+describe('CountIndicator', () => {
+  let store: StoreInstance;
+
+  beforeEach(() => {
+    store = Store.create({
       authState: { value: { identity: ANONYMOUS_IDENTITY } },
       invocationPage: { invocationId: 'invocation-id' },
     });
-    after(() => destroy(store));
+  });
+  afterEach(() => {
+    fixtureCleanup();
+    destroy(store);
+  });
+
+  it('should load the first page of test variants when connected', async () => {
     unprotect(store);
-    const queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
+    const queryTestVariantsStub = jest.spyOn(store.services.resultDb!, 'queryTestVariants');
     protect(store);
 
-    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3], nextPageToken: 'next' });
-    queryTestVariantsStub.onCall(1).resolves({ testVariants: [variant4, variant5] });
+    queryTestVariantsStub.mockResolvedValueOnce({
+      testVariants: [variant1, variant2, variant3],
+      nextPageToken: 'next',
+    });
+    queryTestVariantsStub.mockResolvedValueOnce({ testVariants: [variant4, variant5] });
 
     const provider = await fixture<ContextProvider>(html`
       <milo-trt-count-indicator-context-provider .invocationState=${store.invocationPage.invocation}>
@@ -90,13 +100,13 @@ describe('Test Count Indicator', () => {
     `);
     const indicator = provider.querySelector<TestResultsTabCountIndicatorElement>('milo-trt-count-indicator')!;
 
-    assert.strictEqual(queryTestVariantsStub.callCount, 1);
+    expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
 
     indicator.disconnectedCallback();
     indicator.connectedCallback();
 
     await aTimeout(0);
-    assert.isFalse(store.invocationPage.invocation.testLoader?.isLoading);
-    assert.strictEqual(queryTestVariantsStub.callCount, 1);
+    expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(false);
+    expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
   });
 });

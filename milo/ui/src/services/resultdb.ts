@@ -199,7 +199,7 @@ export interface QueryTestVariantsRequest {
 }
 
 export interface QueryTestVariantsResponse {
-  readonly testVariants: readonly TestVariant[];
+  readonly testVariants?: readonly TestVariant[];
   readonly nextPageToken?: string;
 }
 

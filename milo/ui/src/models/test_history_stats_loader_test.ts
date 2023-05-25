@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert, expect } from 'chai';
-import chaiSubset from 'chai-subset';
+import { expect, jest } from '@jest/globals';
 import { DateTime } from 'luxon';
-import sinon from 'sinon';
 
 import { CacheOption } from '../libs/cached_fn';
 import {
@@ -25,8 +23,6 @@ import {
   TestHistoryService,
 } from '../services/luci_analysis';
 import { TestHistoryStatsLoader } from './test_history_stats_loader';
-
-chai.use(chaiSubset);
 
 function createGroup(timestamp: string, variantHash: string): QueryTestHistoryStatsResponseGroup {
   return {
@@ -46,10 +42,11 @@ const group5 = createGroup('2021-11-03T00:00:00Z', 'key1:val1');
 describe('TestHistoryStatsLoader', () => {
   it('loadUntil should work correctly', async () => {
     // Set up.
-    const stub = sinon.stub<[QueryTestHistoryStatsRequest, CacheOption], Promise<QueryTestHistoryStatsResponse>>();
-    stub.onCall(0).resolves({ groups: [group1, group2], nextPageToken: 'page2' });
-    stub.onCall(1).resolves({ groups: [group3, group4], nextPageToken: 'page3' });
-    stub.onCall(2).resolves({ groups: [group5] });
+    const stub =
+      jest.fn<(req: QueryTestHistoryStatsRequest, cacheOpt?: CacheOption) => Promise<QueryTestHistoryStatsResponse>>();
+    stub.mockResolvedValueOnce({ groups: [group1, group2], nextPageToken: 'page2' });
+    stub.mockResolvedValueOnce({ groups: [group3, group4], nextPageToken: 'page3' });
+    stub.mockResolvedValueOnce({ groups: [group5] });
     const statsLoader = new TestHistoryStatsLoader(
       'project',
       'realm',
@@ -62,26 +59,26 @@ describe('TestHistoryStatsLoader', () => {
     );
 
     // Before loading.
-    assert.strictEqual(statsLoader.getStats('key1:val1', 0, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val2', 0, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val1', 1, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val2', 1, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val1', 2, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val2', 2, true), null);
+    expect(statsLoader.getStats('key1:val1', 0, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val2', 0, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val1', 1, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val2', 1, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val1', 2, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val2', 2, true)).toBeNull();
 
     // Load all entries created on or after 2021-11-05.
     await statsLoader.loadUntil(0);
     // The loader should get the 2nd page because it's unclear that all the
     // entries from 2021-11-05 had been loaded after getting the first page.
-    assert.deepEqual(stub.getCalls().length, 2);
-    expect(stub.getCall(0).args[0]).containSubset({
+    expect(stub.mock.calls.length).toStrictEqual(2);
+    expect(stub.mock.calls[0][0]).toMatchObject({
       project: 'project',
       testId: 'test-id',
       predicate: {
         subRealm: 'realm',
       },
     });
-    expect(stub.getCall(1).args[0]).containSubset({
+    expect(stub.mock.calls[1][0]).toMatchObject({
       project: 'project',
       testId: 'test-id',
       predicate: {
@@ -91,23 +88,23 @@ describe('TestHistoryStatsLoader', () => {
     });
 
     // After loading.
-    assert.deepEqual(statsLoader.getStats('key1:val1', 0, true), group1);
-    assert.deepEqual(statsLoader.getStats('key1:val2', 0, true), group2);
+    expect(statsLoader.getStats('key1:val1', 0, true)).toEqual(group1);
+    expect(statsLoader.getStats('key1:val2', 0, true)).toEqual(group2);
     // Not all entries from '2021-11-04' has been loaded. Treat them as unloaded.
-    assert.strictEqual(statsLoader.getStats('key1:val1', 1, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val2', 1, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val1', 2, true), null);
-    assert.strictEqual(statsLoader.getStats('key1:val2', 2, true), null);
+    expect(statsLoader.getStats('key1:val1', 1, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val2', 1, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val1', 2, true)).toBeNull();
+    expect(statsLoader.getStats('key1:val2', 2, true)).toBeNull();
 
     // Load again with the same date index.
     await statsLoader.loadUntil(0);
     // The loader should not load the next date.
-    assert.deepEqual(stub.getCalls().length, 2);
+    expect(stub.mock.calls.length).toStrictEqual(2);
 
     // Load all entries created on or after 2021-11-04.
     await statsLoader.loadUntil(1);
-    assert.deepEqual(stub.getCalls().length, 3);
-    expect(stub.getCall(2).args[0]).containSubset({
+    expect(stub.mock.calls.length).toStrictEqual(3);
+    expect(stub.mock.calls[2][0]).toMatchObject({
       project: 'project',
       testId: 'test-id',
       predicate: {
@@ -116,12 +113,12 @@ describe('TestHistoryStatsLoader', () => {
       pageToken: 'page3',
     });
 
-    assert.deepEqual(statsLoader.getStats('key1:val1', 0, true), group1);
-    assert.deepEqual(statsLoader.getStats('key1:val2', 0, true), group2);
-    assert.deepEqual(statsLoader.getStats('key1:val1', 1, true), group3);
-    assert.deepEqual(statsLoader.getStats('key1:val2', 1, true), group4);
-    assert.deepEqual(statsLoader.getStats('key1:val1', 2, true), group5);
-    assert.deepEqual(statsLoader.getStats('key1:val2', 2, true), {
+    expect(statsLoader.getStats('key1:val1', 0, true)).toEqual(group1);
+    expect(statsLoader.getStats('key1:val2', 0, true)).toEqual(group2);
+    expect(statsLoader.getStats('key1:val1', 1, true)).toEqual(group3);
+    expect(statsLoader.getStats('key1:val2', 1, true)).toEqual(group4);
+    expect(statsLoader.getStats('key1:val1', 2, true)).toEqual(group5);
+    expect(statsLoader.getStats('key1:val2', 2, true)).toEqual({
       partitionTime: '2021-11-03T00:00:00.000Z',
       variantHash: 'key1:val2',
     });

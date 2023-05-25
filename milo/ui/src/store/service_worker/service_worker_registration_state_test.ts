@@ -12,53 +12,68 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
+import { beforeEach, expect, jest } from '@jest/globals';
 import { destroy } from 'mobx-state-tree';
-import sinon from 'sinon';
 
 import { FakeServiceWorker } from '../../libs/test_utils/fake_service_worker';
 import { FakeServiceWorkerRegistration } from '../../libs/test_utils/fake_service_worker_registration';
-import { ServiceWorkerRegistrationState } from './service_worker_registration_state';
+import {
+  ServiceWorkerRegistrationState,
+  ServiceWorkerRegistrationStateInstance,
+} from './service_worker_registration_state';
 
 describe('ServiceWorkerRegistrationState', () => {
+  let fakeRegistration: FakeServiceWorkerRegistration;
+  let state: ServiceWorkerRegistrationStateInstance;
+  let addEventListenerStub: jest.SpiedFunction<typeof FakeServiceWorkerRegistration.prototype.addEventListener>;
+
+  beforeEach(() => {
+    fakeRegistration = new FakeServiceWorkerRegistration('/scope');
+    addEventListenerStub = jest.spyOn(fakeRegistration, 'addEventListener');
+    const removeEventListenerStub = jest.spyOn(fakeRegistration, 'removeEventListener');
+    addEventListenerStub.mockImplementation(() => {});
+    removeEventListenerStub.mockImplementation(() => {});
+    state = ServiceWorkerRegistrationState.create();
+  });
+  afterEach(() => {
+    destroy(state);
+  });
+
   it('should sync properties correctly', () => {
-    const state = ServiceWorkerRegistrationState.create();
-    after(() => destroy(state));
+    state.init(fakeRegistration);
+    expect(state.waiting).toBeUndefined();
+    expect(state.installing?.serviceWorker).toBeUndefined();
+    expect(addEventListenerStub.mock.calls.length).toStrictEqual(1);
 
-    const stubbedRegistration = sinon.stub(new FakeServiceWorkerRegistration('/scope'));
-
-    state.init(stubbedRegistration);
-    expect(state.waiting).to.be.undefined;
-    expect(state.installing?.serviceWorker).to.be.undefined;
-    expect(stubbedRegistration.addEventListener.callCount).to.eq(1);
-
-    const [event, listener] = stubbedRegistration.addEventListener.getCall(0).args;
-    expect(event).to.eq('updatefound');
+    const [event, listener] = addEventListenerStub.mock.calls[0];
+    expect(event).toStrictEqual('updatefound');
 
     // Discovered a new installing service worker.
-    const stubbedSW = sinon.stub(new FakeServiceWorker('installing', 'sw.js'));
-    stubbedRegistration.installing = stubbedSW;
+    const fakeSW = new FakeServiceWorker('installing', 'sw.js');
+    jest.spyOn(fakeSW, 'addEventListener').mockImplementation(() => {});
+    jest.spyOn(fakeSW, 'removeEventListener').mockImplementation(() => {});
+    fakeRegistration.installing = fakeSW;
     if ('handleEvent' in listener) {
       listener.handleEvent(new Event('updatefound'));
     } else {
       listener(new Event('updatefound'));
     }
 
-    expect(state.waiting).to.be.undefined;
-    expect(state.installing?.serviceWorker).to.eq(stubbedSW);
+    expect(state.waiting).toBeUndefined();
+    expect(state.installing?.serviceWorker).toStrictEqual(fakeSW);
 
     // The installing service worker becomes installed.
-    stubbedSW.state = 'installed';
+    fakeSW.state = 'installed';
     state.installing?._setState('installed');
 
-    expect(state.waiting?.serviceWorker).to.eq(stubbedSW);
-    expect(state.installing?.serviceWorker).to.be.undefined;
+    expect(state.waiting?.serviceWorker).toStrictEqual(fakeSW);
+    expect(state.installing?.serviceWorker).toBeUndefined();
 
     // The installed service worker becomes activated.
-    stubbedSW.state = 'activated';
+    fakeSW.state = 'activated';
     state.waiting?._setState('activated');
 
-    expect(state.waiting).to.be.undefined;
-    expect(state.installing?.serviceWorker).to.be.undefined;
+    expect(state.waiting).toBeUndefined();
+    expect(state.installing?.serviceWorker).toBeUndefined();
   });
 });

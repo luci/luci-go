@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import MarkdownIt from 'markdown-it';
 
 import { reviewerLine } from './reviewer_line';
@@ -29,10 +29,10 @@ describe('reviewer_line', () => {
     const ele = await fixture(md.render(singleReviewerLine));
 
     const anchors = ele.querySelectorAll('a');
-    assert.equal(anchors.length, 1);
+    expect(anchors.length).toStrictEqual(1);
     const anchor1 = anchors.item(0);
-    assert.equal(anchor1.href, 'mailto:user@google.com');
-    assert.equal(anchor1.text, 'user@google.com');
+    expect(anchor1.href).toStrictEqual('mailto:user@google.com');
+    expect(anchor1.text).toStrictEqual('user@google.com');
   });
 
   describe('When breaks is set to true', () => {
@@ -42,30 +42,30 @@ describe('reviewer_line', () => {
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'mailto:user@google.com');
-      assert.equal(anchor1.text, 'user@google.com');
+      expect(anchor1.href).toStrictEqual('mailto:user@google.com');
+      expect(anchor1.text).toStrictEqual('user@google.com');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'mailto:user2@google.com');
-      assert.equal(anchor2.text, 'user2@google.com');
+      expect(anchor2.href).toStrictEqual('mailto:user2@google.com');
+      expect(anchor2.text).toStrictEqual('user2@google.com');
     });
 
     it('can renders multiple reviewer lines with hard break correctly', async () => {
       const ele = await fixture(md.render(multipleReviewerLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'mailto:user@google.com');
-      assert.equal(anchor1.text, 'user@google.com');
+      expect(anchor1.href).toStrictEqual('mailto:user@google.com');
+      expect(anchor1.text).toStrictEqual('user@google.com');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'mailto:user2@google.com');
-      assert.equal(anchor2.text, 'user2@google.com');
+      expect(anchor2.href).toStrictEqual('mailto:user2@google.com');
+      expect(anchor2.text).toStrictEqual('user2@google.com');
     });
   });
 
@@ -76,30 +76,30 @@ describe('reviewer_line', () => {
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'mailto:user@google.com');
-      assert.equal(anchor1.text, 'user@google.com');
+      expect(anchor1.href).toStrictEqual('mailto:user@google.com');
+      expect(anchor1.text).toStrictEqual('user@google.com');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'mailto:R=user2@google.com');
-      assert.equal(anchor2.text, 'R=user2@google.com');
+      expect(anchor2.href).toStrictEqual('mailto:R=user2@google.com');
+      expect(anchor2.text).toStrictEqual('R=user2@google.com');
     });
 
     it('can renders multiple reviewer lines with hard break correctly', async () => {
       const ele = await fixture(md.render(multipleReviewerLinesWithHardBreak));
 
       const anchors = ele.querySelectorAll('a');
-      assert.equal(anchors.length, 2);
+      expect(anchors.length).toStrictEqual(2);
 
       const anchor1 = anchors.item(0);
-      assert.equal(anchor1.href, 'mailto:user@google.com');
-      assert.equal(anchor1.text, 'user@google.com');
+      expect(anchor1.href).toStrictEqual('mailto:user@google.com');
+      expect(anchor1.text).toStrictEqual('user@google.com');
 
       const anchor2 = anchors.item(1);
-      assert.equal(anchor2.href, 'mailto:user2@google.com');
-      assert.equal(anchor2.text, 'user2@google.com');
+      expect(anchor2.href).toStrictEqual('mailto:user2@google.com');
+      expect(anchor2.text).toStrictEqual('user2@google.com');
     });
   });
 });

@@ -42,7 +42,7 @@ class NotifierProviderElement extends LitElement {
   `;
 }
 
-describe('bp_step_entry', () => {
+describe('StepEntry', () => {
   it('can render a step without start time', async () => {
     const step = new StepExt({
       step: {

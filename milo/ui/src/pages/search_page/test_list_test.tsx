@@ -12,29 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render } from '@testing-library/react';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { cleanup, render } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
 import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
-import { Store, StoreProvider } from '../../store';
+import { Store, StoreInstance, StoreProvider } from '../../store';
 import { SearchTarget } from '../../store/search_page';
 import { TestList } from './test_list';
 
 describe('TestList', () => {
-  let timer: sinon.SinonFakeTimers;
+  let store: StoreInstance;
+
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
+    store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
   });
-  afterEach(() => timer.restore());
+  afterEach(() => {
+    cleanup();
+    destroy(store);
+    jest.useRealTimers();
+  });
 
   it('should load the first page of test', () => {
-    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
     store.searchPage.setSearchQuery('test-id');
     store.searchPage.setSearchTarget(SearchTarget.Tests);
-    after(() => destroy(store));
-    const loadFirstPagesStub = sinon.stub(store.searchPage.testLoader!, 'loadFirstPage');
+    const loadFirstPagesStub = jest.spyOn(store.searchPage.testLoader!, 'loadFirstPage');
 
     render(
       <StoreProvider value={store}>
@@ -42,8 +45,8 @@ describe('TestList', () => {
       </StoreProvider>
     );
 
-    timer.runAll();
+    jest.runOnlyPendingTimers();
 
-    expect(loadFirstPagesStub.callCount).to.eq(1);
+    expect(loadFirstPagesStub.mock.calls.length).toStrictEqual(1);
   });
 });

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { reaction } from 'mobx';
-import { addDisposer, types } from 'mobx-state-tree';
+import { addDisposer, Instance, types } from 'mobx-state-tree';
 
 import { ServiceWorkerState } from './service_worker_state';
 
@@ -93,3 +93,5 @@ export const ServiceWorkerRegistrationState = types
       );
     },
   }));
+
+export type ServiceWorkerRegistrationStateInstance = Instance<typeof ServiceWorkerRegistrationState>;

@@ -1,4 +1,4 @@
-// Copyright 2021 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-self.CONFIGS = Object.freeze({
-  RESULT_DB: {
-    HOST: "{{.ResultDB.Host}}",
-  },
-  BUILDBUCKET: {
-    HOST: "{{.Buildbucket.Host}}",
-  },
-  LUCI_ANALYSIS: {
-    HOST: "{{.LuciAnalysis.Host}}",
-  },
-});
+import { getEnv as mstGetEnv, IAnyStateTreeNode } from 'mobx-state-tree';
+
+export interface StoreEnvironment {
+  readonly isDevEnv?: boolean;
+}
+
+export const getEnv = (node: IAnyStateTreeNode) => mstGetEnv<StoreEnvironment>(node);

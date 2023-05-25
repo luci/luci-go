@@ -1,19 +1,10 @@
 <!DOCTYPE html>
 <head>
-  <script>
-    // Fallback to Date.now() if timeOrigin is not supported.
-    const TIME_ORIGIN = window.performance.timeOrigin || Date.now();
-  </script>
-
   <meta charset="utf-8">
-  <%/* trusted-types won't work with webpack-dev-server because webpack-dev-server uses `eval` */%>
-  <% if (!webpackConfig.devServer) { %>
-    <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script';">
-  <% } %>
 
   <title>LUCI Milo</title>
   <link id="favicon" href="/static/common/favicon/milo-32.png" rel="icon">
-  <link href="/ui/styles/style.css" rel="stylesheet">
+  <link href="/src/styles/style.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 
   <!-- Google Analytics -->
@@ -34,11 +25,7 @@
     ga('send', 'pageview');
   </script>
   <!-- End Google Analytics -->
-
-  <script src="/configs.js"></script>
-  <script>
-    const VISIT_ID = Math.random().toString();
-  </script>
+  <script type="module" src="/src/index.tsx" defer></script>
 </head>
 <body>
   <div id="app-root"></div>

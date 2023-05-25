@@ -16,6 +16,7 @@ import { types } from 'mobx-state-tree';
 import { Workbox } from 'workbox-window';
 
 import { aliveFlow } from '../../libs/milo_mobx_utils';
+import { getEnv } from '../env';
 import { ServiceWorkerRegistrationState } from './service_worker_registration_state';
 
 /**
@@ -43,7 +44,7 @@ export const WorkboxState = types
         if (self.workbox) {
           throw new Error('already initialized');
         }
-        self.workbox = new Workbox(url);
+        self.workbox = new Workbox(url, { type: getEnv(self).isDevEnv ? 'module' : 'classic' });
         const call = self.workbox.register();
 
         // .register() always resolves a ServiceWorkerRegistration on the first

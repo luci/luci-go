@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
+import { expect } from '@jest/globals';
 
 import { getBuilderURLPath, getTestHistoryURLPath } from './url_utils';
 
 describe('getBuilderURLPath', () => {
   it('should encode the builder', () => {
     const url = getBuilderURLPath({ project: 'testproject', bucket: 'testbucket', builder: 'test builder' });
-    expect(url).to.eq('/p/testproject/builders/testbucket/test%20builder');
+    expect(url).toStrictEqual('/p/testproject/builders/testbucket/test%20builder');
   });
 });
 
 describe('getTestHisotryURLPath', () => {
   it('should encode the test ID', () => {
     const url = getTestHistoryURLPath('testproject', 'test/id');
-    expect(url).to.eq('/ui/test/testproject/test%2Fid');
+    expect(url).toStrictEqual('/ui/test/testproject/test%2Fid');
   });
 });

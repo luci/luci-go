@@ -20,6 +20,7 @@ import { DateTime } from 'luxon';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import './step_entry';
+import checkCircleStacked from '../../../assets/svgs/check_circle_stacked_24dp.svg';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
 import { consumer } from '../../../libs/context';
@@ -123,7 +124,7 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
       <div id="elided-steps" @click=${() => this.setExpanded(true)}>
         <mwc-icon>more_horiz</mwc-icon>
         <svg width="24" height="24">
-          <image xlink:href="/ui/immutable/svgs/check_circle_stacked_24dp.svg" width="24" height="24" />
+          <image xlink:href=${checkCircleStacked} width="24" height="24" />
         </svg>
         ${this.renderDuration()}
         <div id="elided-steps-description">Step ${firstStepLabel} ~ ${lastStepLabel} succeeded.</div>

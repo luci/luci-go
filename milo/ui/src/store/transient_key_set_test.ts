@@ -12,66 +12,65 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { destroy } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
-import { TransientKeySet } from './transient_key_set';
+import { TransientKeySet, TransientKeySetInstance } from './transient_key_set';
 
 describe('TransientKeySet', () => {
-  let timer: sinon.SinonFakeTimers;
+  let keySet: TransientKeySetInstance;
 
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
+    keySet = TransientKeySet.create();
   });
 
   afterEach(() => {
-    timer.restore();
+    destroy(keySet);
+    jest.useRealTimers();
   });
 
   it('e2e', async () => {
-    const keySet = TransientKeySet.create();
-    after(() => destroy(keySet));
-    const timestamp0 = timer.now;
+    const timestamp0 = jest.now();
     keySet.add('key0');
-    expect(keySet.has('key0')).to.be.true;
-    expect(keySet.has('key1')).to.be.false;
-    expect(keySet.has('key2')).to.be.false;
+    expect(keySet.has('key0')).toBeTruthy();
+    expect(keySet.has('key1')).toBeFalsy();
+    expect(keySet.has('key2')).toBeFalsy();
 
-    timer.tick(1000);
-    const timestamp1 = timer.now;
+    jest.advanceTimersByTime(1000);
+    const timestamp1 = jest.now();
     keySet.add('key1');
     keySet.add('key2');
-    expect(keySet.has('key0')).to.be.true;
-    expect(keySet.has('key1')).to.be.true;
-    expect(keySet.has('key2')).to.be.true;
+    expect(keySet.has('key0')).toBeTruthy();
+    expect(keySet.has('key1')).toBeTruthy();
+    expect(keySet.has('key2')).toBeTruthy();
 
-    timer.tick(1000);
-    const timestamp2 = timer.now;
+    jest.advanceTimersByTime(1000);
+    const timestamp2 = jest.now();
     keySet.add('key1'); // refresh key1
 
-    timer.tick(1000);
-    const timestamp3 = timer.now;
+    jest.advanceTimersByTime(1000);
+    const timestamp3 = jest.now();
 
     // timestamp is exclusive.
     keySet.deleteStaleKeys(new Date(timestamp0));
-    expect(keySet.has('key0')).to.be.true;
-    expect(keySet.has('key1')).to.be.true;
-    expect(keySet.has('key2')).to.be.true;
+    expect(keySet.has('key0')).toBeTruthy();
+    expect(keySet.has('key1')).toBeTruthy();
+    expect(keySet.has('key2')).toBeTruthy();
 
     keySet.deleteStaleKeys(new Date(timestamp1));
-    expect(keySet.has('key0')).to.be.false;
-    expect(keySet.has('key1')).to.be.true;
-    expect(keySet.has('key2')).to.be.true;
+    expect(keySet.has('key0')).toBeFalsy();
+    expect(keySet.has('key1')).toBeTruthy();
+    expect(keySet.has('key2')).toBeTruthy();
 
     keySet.deleteStaleKeys(new Date(timestamp2));
-    expect(keySet.has('key0')).to.be.false;
-    expect(keySet.has('key1')).to.be.true; // key1 was refreshed.
-    expect(keySet.has('key2')).to.be.false;
+    expect(keySet.has('key0')).toBeFalsy();
+    expect(keySet.has('key1')).toBeTruthy(); // key1 was refreshed.
+    expect(keySet.has('key2')).toBeFalsy();
 
     keySet.deleteStaleKeys(new Date(timestamp3));
-    expect(keySet.has('key0')).to.be.false;
-    expect(keySet.has('key1')).to.be.false;
-    expect(keySet.has('key2')).to.be.false;
+    expect(keySet.has('key0')).toBeFalsy();
+    expect(keySet.has('key1')).toBeFalsy();
+    expect(keySet.has('key2')).toBeFalsy();
   });
 });

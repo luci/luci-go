@@ -148,6 +148,11 @@ export const SearchPage = observer(() => {
             variant="outlined"
             size="small"
             InputProps={{
+              componentsProps: {
+                input: {
+                  'data-testid': 'filter-input',
+                } as React.InputHTMLAttributes<HTMLInputElement>,
+              },
               startAdornment: (
                 <InputAdornment position="start">
                   <Search />

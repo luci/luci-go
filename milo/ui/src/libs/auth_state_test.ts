@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert } from 'chai';
+import { expect } from '@jest/globals';
 
 import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state';
 
@@ -24,7 +24,7 @@ describe('auth_state', () => {
       accessTokenExpiry: Date.now() / 1000 + 1000,
     };
     setAuthStateCache(state);
-    assert.deepEqual(getAuthStateCacheSync(), state);
+    expect(getAuthStateCacheSync()).toEqual(state);
   });
 
   it('support accessing auth state asynchronously', async () => {
@@ -34,7 +34,7 @@ describe('auth_state', () => {
       accessTokenExpiry: Date.now() / 1000 + 1000,
     };
     setAuthStateCache(state);
-    assert.deepEqual(await getAuthStateCache(), state);
+    expect(await getAuthStateCache()).toEqual(state);
   });
 
   it('clear expired auth state when accessing synchronously', () => {
@@ -44,7 +44,7 @@ describe('auth_state', () => {
       accessTokenExpiry: Date.now() / 1000 - 1000,
     };
     setAuthStateCache(state);
-    assert.deepEqual(getAuthStateCacheSync(), null);
+    expect(getAuthStateCacheSync()).toBeNull();
   });
 
   it('clear expired auth state when accessing asynchronously', async () => {
@@ -54,6 +54,6 @@ describe('auth_state', () => {
       accessTokenExpiry: Date.now() / 1000 - 1000,
     };
     setAuthStateCache(state);
-    assert.deepEqual(await getAuthStateCache(), null);
+    expect(await getAuthStateCache()).toBeNull();
   });
 });

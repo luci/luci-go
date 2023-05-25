@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { addDisposer, types } from 'mobx-state-tree';
+import { addDisposer, Instance, types } from 'mobx-state-tree';
 
 /**
  * A utility type that makes some ServiceWorker properties observable.
@@ -41,3 +41,5 @@ export const ServiceWorkerState = types
       serviceWorker.addEventListener('statechange', onStateChange);
     },
   }));
+
+export type ServiceWorkerStateInstance = Instance<typeof ServiceWorkerState>;

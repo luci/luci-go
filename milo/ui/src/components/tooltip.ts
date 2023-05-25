@@ -15,7 +15,7 @@
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { makeObservable, observable } from 'mobx';
+import { action, makeObservable, observable } from 'mobx';
 
 export interface ShowTooltipEventDetail {
   tooltip: HTMLElement;
@@ -55,7 +55,7 @@ export class TooltipElement extends MobxLitElement {
 
   private hideTooltipTimeout = 0;
 
-  private onShowTooltip = (event: Event) => {
+  private onShowTooltip = action((event: Event) => {
     window.clearTimeout(this.hideTooltipTimeout);
 
     const e = event as CustomEvent<ShowTooltipEventDetail>;
@@ -71,7 +71,7 @@ export class TooltipElement extends MobxLitElement {
     // Reset the position so it's easier to calculate the new position.
     this.style.left = '0';
     this.style.top = '0';
-  };
+  });
 
   private onHideTooltip = (event: Event) => {
     window.clearTimeout(this.hideTooltipTimeout);
@@ -80,12 +80,12 @@ export class TooltipElement extends MobxLitElement {
     this.hideTooltipTimeout = window.setTimeout(this.hideTooltip, e.detail.delay || 0);
   };
 
-  private hideTooltip = () => {
+  private hideTooltip = action(() => {
     this.style.display = 'none';
     this.tooltip = undefined;
     this.targetRect = undefined;
     this.gapSize = undefined;
-  };
+  });
 
   constructor() {
     super();

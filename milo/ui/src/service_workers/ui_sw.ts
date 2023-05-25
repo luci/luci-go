@@ -14,18 +14,40 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
+import 'virtual:configs.js';
+import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
+import { NavigationRoute, registerRoute } from 'workbox-routing';
+
 import './force_update';
 import { Prefetcher } from './prefetch';
 
-importScripts('/configs.js');
+// Tell TSC that this is a ServiceWorker script.
+declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
 
-// TSC isn't able to determine the scope properly.
-// Perform manual casting to fix typing.
-const _self = self as unknown as ServiceWorkerGlobalScope;
+cleanupOutdatedCaches();
+precacheAndRoute(self.__WB_MANIFEST);
 
-const prefetcher = new Prefetcher(CONFIGS, _self.fetch.bind(_self));
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
-_self.addEventListener('fetch', async (e) => {
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), { allowlist: [/^\/ui\//] }));
+
+/**
+ * Whether the UI service worker should skip waiting.
+ * Injected by Vite.
+ */
+declare const UI_SW_SKIP_WAITING: boolean;
+
+if (UI_SW_SKIP_WAITING) {
+  self.skipWaiting();
+}
+
+const prefetcher = new Prefetcher(self.CONFIGS, self.fetch.bind(self));
+
+self.addEventListener('fetch', async (e) => {
   if (prefetcher.respondWithPrefetched(e)) {
     return;
   }
@@ -34,7 +56,7 @@ _self.addEventListener('fetch', async (e) => {
 
   // Ensure all clients served by this service worker use the same config.
   if (url.pathname === '/configs.js') {
-    const res = new Response(`const CONFIGS=${JSON.stringify(CONFIGS)};`);
+    const res = new Response(`self.CONFIGS=Object.freeze(${JSON.stringify(CONFIGS)});`);
     res.headers.set('content-type', 'application/javascript');
     e.respondWith(res);
     return;

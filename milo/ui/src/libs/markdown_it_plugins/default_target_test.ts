@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { beforeAll, expect } from '@jest/globals';
 import { fixture, html } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import MarkdownIt from 'markdown-it';
 
@@ -42,40 +42,40 @@ const md = MarkdownIt('zero', { linkify: true, html: true })
 
 describe('default_target', () => {
   let anchors: NodeListOf<HTMLAnchorElement>;
-  before(async () => {
+  beforeAll(async () => {
     const ele = await fixture(html`<div>${unsafeHTML(md.render(links))}</div>`);
     anchors = ele.querySelectorAll('a');
   });
 
   it('can set default target', () => {
     const anchor1 = anchors.item(0);
-    assert.equal(anchor1.target, '_blank');
-    assert.equal(anchor1.href, 'http://www.a.com/');
+    expect(anchor1.target).toStrictEqual('_blank');
+    expect(anchor1.href).toStrictEqual('http://www.a.com/');
 
     const anchor2 = anchors.item(1);
-    assert.equal(anchor2.target, '_blank');
-    assert.equal(anchor2.href, 'http://www.b.com/');
+    expect(anchor2.target).toStrictEqual('_blank');
+    expect(anchor2.href).toStrictEqual('http://www.b.com/');
 
     const anchor3 = anchors.item(2);
-    assert.equal(anchor3.target, '_blank');
-    assert.equal(anchor3.href, 'http://www.c.com/');
+    expect(anchor3.target).toStrictEqual('_blank');
+    expect(anchor3.href).toStrictEqual('http://www.c.com/');
 
     const anchor4 = anchors.item(3);
-    assert.equal(anchor4.target, '_blank');
-    assert.equal(anchor4.href, 'http://www.d.com/');
+    expect(anchor4.target).toStrictEqual('_blank');
+    expect(anchor4.href).toStrictEqual('http://www.d.com/');
 
     const anchor5 = anchors.item(5);
-    assert.equal(anchor5.target, '_blank');
-    assert.equal(anchor5.href, 'http://www.f.com/');
+    expect(anchor5.target).toStrictEqual('_blank');
+    expect(anchor5.href).toStrictEqual('http://www.f.com/');
   });
 
   it('does not override target', () => {
     const anchor4 = anchors.item(4);
-    assert.equal(anchor4.target, '_parent');
-    assert.equal(anchor4.href, 'http://www.e.com/');
+    expect(anchor4.target).toStrictEqual('_parent');
+    expect(anchor4.href).toStrictEqual('http://www.e.com/');
 
     const anchor5 = anchors.item(6);
-    assert.equal(anchor5.target, '_self');
-    assert.equal(anchor5.href, 'http://www.g.com/');
+    expect(anchor5.target).toStrictEqual('_self');
+    expect(anchor5.href).toStrictEqual('http://www.g.com/');
   });
 });

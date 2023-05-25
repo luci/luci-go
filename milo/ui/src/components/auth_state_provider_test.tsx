@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render } from '@testing-library/react';
-import { expect } from 'chai';
+import { expect, jest } from '@jest/globals';
+import { act, cleanup, render } from '@testing-library/react';
 import { applySnapshot, destroy } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
 import { Store, StoreInstance, StoreProvider } from '../store';
 import { AuthStateProvider, useAuthState, useGetAccessToken, useGetIdToken } from './auth_state_provider';
@@ -48,21 +47,22 @@ function IdentityConsumer({ renderCallback }: IdentityConsumerProps) {
 
 describe('AuthStateProvider', () => {
   let store: StoreInstance;
-  let timer: sinon.SinonFakeTimers;
+
   beforeEach(() => {
     store = Store.create({});
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
   });
   afterEach(() => {
-    timer.restore();
+    cleanup();
     destroy(store);
+    jest.useRealTimers();
   });
 
   it('e2e', async () => {
-    const tokenConsumerCBSpy = sinon.spy(
+    const tokenConsumerCBSpy = jest.fn(
       (_getIdToken: ReturnType<typeof useGetIdToken>, _getAccessToken: ReturnType<typeof useGetAccessToken>) => {}
     );
-    const identityConsumerCBSpy = sinon.spy((_identity: string) => {});
+    const identityConsumerCBSpy = jest.fn((_identity: string) => {});
 
     render(
       <StoreProvider value={store}>
@@ -75,41 +75,45 @@ describe('AuthStateProvider', () => {
       </StoreProvider>
     );
 
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
-    expect(identityConsumerCBSpy.callCount).to.eq(1);
-    expect(identityConsumerCBSpy.lastCall.args[0]).to.eq('identity-1');
-    expect(tokenConsumerCBSpy.callCount).to.eq(1);
-    expect(tokenConsumerCBSpy.lastCall.args[0]()).to.eq('id-token-1');
-    expect(tokenConsumerCBSpy.lastCall.args[1]()).to.eq('access-token-1');
+    expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(1);
+    expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual('identity-1');
+    expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(1);
+    expect(tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual('id-token-1');
+    expect(tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual('access-token-1');
 
     // Update tokens but not identity.
-    applySnapshot(store.authState, {
-      id: store.authState.id,
-      value: { identity: 'identity-1', idToken: 'id-token-2', accessToken: 'access-token-2' },
+    act(() => {
+      applySnapshot(store.authState, {
+        id: store.authState.id,
+        value: { identity: 'identity-1', idToken: 'id-token-2', accessToken: 'access-token-2' },
+      });
     });
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
     // Update tokens should not trigger context updates.
-    expect(identityConsumerCBSpy.callCount).to.eq(1);
-    expect(identityConsumerCBSpy.lastCall.args[0]).to.eq('identity-1');
-    expect(tokenConsumerCBSpy.callCount).to.eq(1);
+    expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(1);
+    expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual('identity-1');
+    expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(1);
     // The token getters can still return the latest tokens.
-    expect(tokenConsumerCBSpy.lastCall.args[0]()).to.eq('id-token-2');
-    expect(tokenConsumerCBSpy.lastCall.args[1]()).to.eq('access-token-2');
+    expect(tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual('id-token-2');
+    expect(tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual('access-token-2');
 
     // Update identity and tokens.
-    applySnapshot(store.authState, {
-      id: store.authState.id,
-      value: { identity: 'identity-2', idToken: 'id-token-3', accessToken: 'access-token-3' },
+    act(() => {
+      applySnapshot(store.authState, {
+        id: store.authState.id,
+        value: { identity: 'identity-2', idToken: 'id-token-3', accessToken: 'access-token-3' },
+      });
     });
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
 
     // Update identity should trigger context updates.
-    expect(identityConsumerCBSpy.callCount).to.eq(2);
-    expect(identityConsumerCBSpy.lastCall.args[0]).to.eq('identity-2');
-    expect(tokenConsumerCBSpy.callCount).to.eq(2);
-    expect(tokenConsumerCBSpy.lastCall.args[0]()).to.eq('id-token-3');
-    expect(tokenConsumerCBSpy.lastCall.args[1]()).to.eq('access-token-3');
+    expect(identityConsumerCBSpy.mock.calls.length).toStrictEqual(2);
+    expect(identityConsumerCBSpy.mock.lastCall?.[0]).toStrictEqual('identity-2');
+    expect(tokenConsumerCBSpy.mock.calls.length).toStrictEqual(2);
+    expect(tokenConsumerCBSpy.mock.lastCall?.[0]()).toStrictEqual('id-token-3');
+    expect(tokenConsumerCBSpy.mock.lastCall?.[1]()).toStrictEqual('access-token-3');
   });
 });

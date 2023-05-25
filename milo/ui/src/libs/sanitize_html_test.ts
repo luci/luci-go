@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { beforeAll, expect } from '@jest/globals';
 import { fixture, html } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 import { initDefaultTrustedTypesPolicy, sanitizeHTML } from './sanitize_html';
@@ -35,41 +35,41 @@ const DIRTY_HTML = `
 describe('sanitize_html', () => {
   let root: Element;
   let anchors: NodeListOf<HTMLAnchorElement>;
-  before(async () => {
+  beforeAll(async () => {
     root = await fixture(html`${unsafeHTML(sanitizeHTML(DIRTY_HTML))}`);
     anchors = root.querySelectorAll('a');
   });
 
   it('should set rel="noopener" when target attribute is set to _blank', () => {
     const anchor = anchors.item(0);
-    assert.equal(anchor.getAttribute('rel'), 'noopener');
+    expect(anchor.getAttribute('rel')).toStrictEqual('noopener');
   });
 
   it('should set rel="noopener" when target attribute is not set', () => {
     const anchor = anchors.item(1);
-    assert.equal(anchor.getAttribute('rel'), 'noopener');
+    expect(anchor.getAttribute('rel')).toStrictEqual('noopener');
   });
 
   it('should not set rel="noopener" when target attribute is set but not _blank', () => {
     const anchor = anchors.item(2);
-    assert.equal(anchor.getAttribute('rel'), null);
+    expect(anchor.getAttribute('rel')).toBeNull();
   });
 
   it('should append to the existing rel attribute', () => {
     const anchor = anchors.item(3);
-    assert.equal(anchor.getAttribute('rel'), 'nofollow noopener');
+    expect(anchor.getAttribute('rel')).toStrictEqual('nofollow noopener');
   });
 
   it('should not set rel="noopener" when it is already present', () => {
     const anchor = anchors.item(4);
-    assert.equal(anchor.getAttribute('rel'), 'noopener nofollow');
+    expect(anchor.getAttribute('rel')).toStrictEqual('noopener nofollow');
   });
 
   it('should set rel="noopener" on <form> and <area> as well', () => {
     const form = root.querySelector('form')!;
-    assert.equal(form.getAttribute('rel'), 'noopener');
+    expect(form.getAttribute('rel')).toStrictEqual('noopener');
 
     const area = root.querySelector('area')!;
-    assert.equal(area.getAttribute('rel'), 'noopener');
+    expect(area.getAttribute('rel')).toStrictEqual('noopener');
   });
 });

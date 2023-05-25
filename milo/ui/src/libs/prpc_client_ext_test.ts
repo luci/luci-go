@@ -13,38 +13,37 @@
 // limitations under the License.
 
 import { RpcCode } from '@chopsui/prpc-client';
-import { assert } from 'chai';
-import * as sinon from 'sinon';
+import { expect, jest } from '@jest/globals';
 
 import { PrpcClientExt } from './prpc_client_ext';
 
 describe('PrpcClientExt', () => {
   it('should grab access token from getAccessToken', async () => {
     let accessToken = '1';
-    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
-    fetchStub.onCall(0).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
-    fetchStub.onCall(1).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
+    const fetchStub = jest.fn((_url: URL | RequestInfo, _req: RequestInit | undefined) => {
+      return Promise.resolve(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
+    });
 
     const client = new PrpcClientExt({ fetchImpl: fetchStub }, () => accessToken);
     await client.call('service', 'method', {});
-    const req1 = new Request(...fetchStub.getCall(0).args);
-    assert.strictEqual(req1.headers.get('Authorization'), 'Bearer 1');
+    const req1 = new Request(...fetchStub.mock.lastCall!);
+    expect(req1.headers.get('Authorization')).toStrictEqual('Bearer 1');
 
     accessToken = '2';
     await client.call('service', 'method', {});
-    const req2 = new Request(...fetchStub.getCall(1).args);
-    assert.strictEqual(req2.headers.get('Authorization'), 'Bearer 2');
+    const req2 = new Request(...fetchStub.mock.lastCall!);
+    expect(req2.headers.get('Authorization')).toStrictEqual('Bearer 2');
   });
 
   it('should not override additional header', async () => {
     const accessToken = '1';
-    const fetchStub = sinon.stub<[URL | RequestInfo, RequestInit | undefined], Promise<Response>>();
-    fetchStub.onCall(0).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
-    fetchStub.onCall(1).resolves(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
+    const fetchStub = jest.fn((_url: URL | RequestInfo, _req: RequestInit | undefined) => {
+      return Promise.resolve(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
+    });
 
     const client = new PrpcClientExt({ fetchImpl: fetchStub }, () => accessToken);
     await client.call('service', 'method', {}, { Authorization: 'additional-header' });
-    const req1 = new Request(...fetchStub.getCall(0).args);
-    assert.strictEqual(req1.headers.get('Authorization'), 'additional-header');
+    const req1 = new Request(...fetchStub.mock.lastCall!);
+    expect(req1.headers.get('Authorization')).toStrictEqual('additional-header');
   });
 });

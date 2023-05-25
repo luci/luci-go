@@ -12,35 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { destroy } from 'mobx-state-tree';
-import sinon from 'sinon';
 
 import { FakeServiceWorker } from '../../libs/test_utils/fake_service_worker';
-import { ServiceWorkerState } from './service_worker_state';
+import { ServiceWorkerState, ServiceWorkerStateInstance } from './service_worker_state';
 
 describe('ServiceWorkerState', () => {
+  let state: ServiceWorkerStateInstance;
+
+  beforeEach(() => {
+    state = ServiceWorkerState.create();
+  });
+  afterEach(() => {
+    destroy(state);
+  });
+
   it('should sync properties correctly', () => {
-    const state = ServiceWorkerState.create();
-    after(() => destroy(state));
+    const fakeSW = new FakeServiceWorker('installing', 'sw.js');
+    const addEventListenerStub = jest.spyOn(fakeSW, 'addEventListener');
+    const removeEventListenerStub = jest.spyOn(fakeSW, 'removeEventListener');
+    addEventListenerStub.mockImplementation(() => {});
+    removeEventListenerStub.mockImplementation(() => {});
 
-    const stubbedServiceWorker = sinon.stub(new FakeServiceWorker('installing', 'sw.js'));
+    state.init(fakeSW);
+    expect(state.serviceWorker).toStrictEqual(fakeSW);
+    expect(state.state).toStrictEqual('installing');
+    expect(addEventListenerStub.mock.calls.length).toStrictEqual(1);
 
-    state.init(stubbedServiceWorker);
-    expect(state.serviceWorker).to.eq(stubbedServiceWorker);
-    expect(state.state).to.eq('installing');
-    expect(stubbedServiceWorker.addEventListener.callCount).to.eq(1);
+    const [event, listener] = addEventListenerStub.mock.calls[0];
+    expect(event).toStrictEqual('statechange');
 
-    const [event, listener] = stubbedServiceWorker.addEventListener.getCall(0).args;
-    expect(event).to.eq('statechange');
-
-    stubbedServiceWorker.state = 'installed';
+    fakeSW.state = 'installed';
     if ('handleEvent' in listener) {
       listener.handleEvent(new Event('statechange'));
     } else {
       listener(new Event('statechange'));
     }
 
-    expect(state.state).to.eq('installed');
+    expect(state.state).toStrictEqual('installed');
   });
 });

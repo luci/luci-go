@@ -178,6 +178,8 @@ export const BuildStepsConfig = types
     },
   }));
 
+export type BuildStepsConfigInstance = Instance<typeof BuildStepsConfig>;
+
 export const PropertyViewerConfig = types
   .model('PropertyViewerConfig', {
     /**

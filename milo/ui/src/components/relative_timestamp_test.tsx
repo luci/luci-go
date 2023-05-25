@@ -12,23 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { act, render, screen } from '@testing-library/react';
 import { DateTime, Duration } from 'luxon';
-import * as sinon from 'sinon';
 
 import './relative_timestamp';
 import { RelativeTimestamp } from './relative_timestamp';
 
-describe('relative_timestamp_test', () => {
-  let timer: sinon.SinonFakeTimers;
-
+describe('RelativeTimestamp', () => {
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
-    timer.restore();
+    jest.useRealTimers();
   });
 
   it('should display timestamp in the past correctly', async () => {
@@ -36,7 +33,7 @@ describe('relative_timestamp_test', () => {
 
     render(<RelativeTimestamp timestamp={timestamp} />);
 
-    expect(screen.queryByText('20 secs ago')).to.not.be.null;
+    expect(screen.queryByText('20 secs ago')).not.toBeNull();
   });
 
   it('should display timestamp in the future correctly', async () => {
@@ -44,7 +41,7 @@ describe('relative_timestamp_test', () => {
 
     render(<RelativeTimestamp timestamp={timestamp} />);
 
-    expect(screen.queryByText('in 20 secs')).to.not.be.null;
+    expect(screen.queryByText('in 20 secs')).not.toBeNull();
   });
 
   it('should update timestamp correctly', async () => {
@@ -52,10 +49,12 @@ describe('relative_timestamp_test', () => {
 
     render(<RelativeTimestamp timestamp={timestamp} />);
 
-    expect(screen.queryByText('in 2 secs')).to.not.be.null;
+    expect(screen.queryByText('in 2 secs')).not.toBeNull();
 
-    await timer.tickAsync('00:05');
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(5 * 1000);
+    });
 
-    expect(screen.queryByText('2 secs ago')).to.not.be.null;
+    expect(screen.queryByText('2 secs ago')).not.toBeNull();
   });
 });

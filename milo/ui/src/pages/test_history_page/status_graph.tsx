@@ -20,6 +20,8 @@ import { computed, makeObservable, observable } from 'mobx';
 import '../../components/status_bar';
 import '../../components/dot_spinner';
 import './graph_config';
+import checkCircle from '../../assets/svgs/check_circle_24dp.svg';
+import checkCircleStacked from '../../assets/svgs/check_circle_stacked_24dp.svg';
 import { MiloBaseElement } from '../../components/milo_base';
 import { VARIANT_STATUS_CLASS_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
@@ -121,10 +123,7 @@ Click to view test details.</title>`;
     let previousHeight = 0;
 
     if (counts[TestVariantStatus.EXPECTED] === totalCount) {
-      const img =
-        totalCount > 1
-          ? '/ui/immutable/svgs/check_circle_stacked_24dp.svg'
-          : '/ui/immutable/svgs/check_circle_24dp.svg';
+      const img = totalCount > 1 ? checkCircleStacked : checkCircle;
       return svg`
         <image
           href=${img}

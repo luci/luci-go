@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert } from 'chai';
-import Sinon, * as sinon from 'sinon';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 
 import { batched, BatchOption } from './batched_fn';
 
@@ -24,11 +23,10 @@ interface Item {
 
 describe('batched_fn', () => {
   let batchedRpc: (opt: BatchOption, ns: string, itemKeys: number[], shouldErr?: boolean) => Promise<Item[]>;
-  let rpcSpy: Sinon.SinonSpy<[string, number[], boolean?], Promise<Item[]>>;
-  let timer: sinon.SinonFakeTimers;
+  let rpcSpy: jest.Mock<(ns: string, itemKeys: number[], shouldErr?: boolean) => Promise<Item[]>>;
 
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
     /**
      * A function that represents an RPC.
      *
@@ -44,7 +42,7 @@ describe('batched_fn', () => {
       return Promise.resolve(itemKeys.map((key) => ({ key, value: `${ns}-${key}` })));
     }
 
-    rpcSpy = sinon.spy(getItemsFromServer);
+    rpcSpy = jest.fn(getItemsFromServer);
     batchedRpc = batched({
       fn: rpcSpy,
       combineParamSets: ([ns1, itemKeys1, shouldErr1], [ns2, itemKeys2, shouldErr2]) => {
@@ -76,28 +74,30 @@ describe('batched_fn', () => {
   });
 
   afterEach(() => {
-    timer.restore();
+    jest.useRealTimers();
   });
 
   it('should batch calls together', async () => {
     const prom1 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [1, 2]);
     const prom2 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [3, 4, 5]);
-    assert.strictEqual(rpcSpy.callCount, 0);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
     // Should process the pending batch at 10ms.
-    assert.strictEqual(timer.runAll(), 10);
-    assert.strictEqual(rpcSpy.callCount, 1);
-    assert.strictEqual(rpcSpy.getCall(0).args[0], 'ns1');
-    assert.deepEqual(rpcSpy.getCall(0).args[1], [1, 2, 3, 4, 5]);
+    const start = jest.now();
+    jest.runOnlyPendingTimers();
+    expect(jest.now() - start).toStrictEqual(10);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(1);
+    expect(rpcSpy.mock.lastCall?.[0]).toStrictEqual('ns1');
+    expect(rpcSpy.mock.lastCall?.[1]).toEqual([1, 2, 3, 4, 5]);
 
     // Check returns.
     const ret1 = await prom1;
     const ret2 = await prom2;
-    assert.deepEqual(ret1, [
+    expect(ret1).toEqual([
       { key: 1, value: 'ns1-1' },
       { key: 2, value: 'ns1-2' },
     ]);
-    assert.deepEqual(ret2, [
+    expect(ret2).toEqual([
       { key: 3, value: 'ns1-3' },
       { key: 4, value: 'ns1-4' },
       { key: 5, value: 'ns1-5' },
@@ -106,52 +106,53 @@ describe('batched_fn', () => {
     // Start a new batch.
     const prom3 = batchedRpc({ maxPendingMs: 20 }, 'ns1', [6, 7]);
     const prom4 = batchedRpc({ maxPendingMs: 20 }, 'ns1', [8]);
-    assert.strictEqual(rpcSpy.callCount, 1);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(1);
 
     // Should process the pending batch at 30ms.
-    assert.strictEqual(timer.runAll(), 30);
-    assert.strictEqual(rpcSpy.callCount, 2);
-    assert.strictEqual(rpcSpy.getCall(1).args[0], 'ns1');
-    assert.deepEqual(rpcSpy.getCall(1).args[1], [6, 7, 8]);
+    jest.runOnlyPendingTimers();
+    expect(jest.now() - start).toStrictEqual(30);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(2);
+    expect(rpcSpy.mock.lastCall?.[0]).toStrictEqual('ns1');
+    expect(rpcSpy.mock.lastCall?.[1]).toEqual([6, 7, 8]);
 
     // Check returns.
     const ret3 = await prom3;
     const ret4 = await prom4;
-    assert.deepEqual(ret3, [
+    expect(ret3).toEqual([
       { key: 6, value: 'ns1-6' },
       { key: 7, value: 'ns1-7' },
     ]);
-    assert.deepEqual(ret4, [{ key: 8, value: 'ns1-8' }]);
+    expect(ret4).toEqual([{ key: 8, value: 'ns1-8' }]);
   });
 
   it('should process calls within maxPendingMs', async () => {
     // Make the first call with a high maximum pending duration.
     const prom1 = batchedRpc({ maxPendingMs: 100 }, 'ns1', [1, 2]);
-    assert.strictEqual(rpcSpy.callCount, 0);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
-    timer.tick(10);
+    jest.advanceTimersByTime(10);
     // The first call hasn't reached its maximum pending duration yet.
-    assert.strictEqual(rpcSpy.callCount, 0);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
     // Make the second call with a lower maximum pending duration.
     const prom2 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [3, 4, 5]);
-    assert.strictEqual(rpcSpy.callCount, 0);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
-    timer.tick(10);
+    jest.advanceTimersByTime(10);
     // The second call reached its maximum pending duration.
     // The call should've been resolved.
-    assert.strictEqual(rpcSpy.callCount, 1);
-    assert.strictEqual(rpcSpy.getCall(0).args[0], 'ns1');
-    assert.deepEqual(rpcSpy.getCall(0).args[1], [1, 2, 3, 4, 5]);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(1);
+    expect(rpcSpy.mock.lastCall?.[0]).toStrictEqual('ns1');
+    expect(rpcSpy.mock.lastCall?.[1]).toEqual([1, 2, 3, 4, 5]);
     const ret1 = await prom1;
-    assert.deepEqual(ret1, [
+    expect(ret1).toEqual([
       { key: 1, value: 'ns1-1' },
       { key: 2, value: 'ns1-2' },
     ]);
 
     // The first call should've been resolved with the second call.
     const ret2 = await prom2;
-    assert.deepEqual(ret2, [
+    expect(ret2).toEqual([
       { key: 3, value: 'ns1-3' },
       { key: 4, value: 'ns1-4' },
       { key: 5, value: 'ns1-5' },
@@ -160,33 +161,35 @@ describe('batched_fn', () => {
 
   it('should start a new batch when the calls cannot be batched together', async () => {
     const prom1 = batchedRpc({ maxPendingMs: 100 }, 'ns1', [1, 2]);
-    assert.strictEqual(rpcSpy.callCount, 0);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
-    timer.tick(10);
+    const start = jest.now();
+    jest.advanceTimersByTime(10);
     // The first call hasn't reached its maximum pending duration yet.
-    assert.strictEqual(rpcSpy.callCount, 0);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
     // Schedule a second call that cannot be combined with the first call.
     const prom2 = batchedRpc({ maxPendingMs: 100 }, 'ns2', [3, 4, 5]);
 
     // The first call should be processed immediately, since a new batch is
     // forced to start.
-    assert.strictEqual(rpcSpy.callCount, 1);
-    assert.strictEqual(rpcSpy.getCall(0).args[0], 'ns1');
-    assert.deepEqual(rpcSpy.getCall(0).args[1], [1, 2]);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(1);
+    expect(rpcSpy.mock.lastCall?.[0]).toStrictEqual('ns1');
+    expect(rpcSpy.mock.lastCall?.[1]).toEqual([1, 2]);
     const ret1 = await prom1;
-    assert.deepEqual(ret1, [
+    expect(ret1).toEqual([
       { key: 1, value: 'ns1-1' },
       { key: 2, value: 'ns1-2' },
     ]);
 
     // Should be processed the second batch at 110ms.
-    assert.strictEqual(timer.runAll(), 110);
-    assert.strictEqual(rpcSpy.callCount, 2);
-    assert.strictEqual(rpcSpy.getCall(1).args[0], 'ns2');
-    assert.deepEqual(rpcSpy.getCall(1).args[1], [3, 4, 5]);
+    jest.runOnlyPendingTimers();
+    expect(jest.now() - start).toStrictEqual(110);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(2);
+    expect(rpcSpy.mock.lastCall?.[0]).toStrictEqual('ns2');
+    expect(rpcSpy.mock.lastCall?.[1]).toEqual([3, 4, 5]);
     const ret2 = await prom2;
-    assert.deepEqual(ret2, [
+    expect(ret2).toEqual([
       { key: 3, value: 'ns2-3' },
       { key: 4, value: 'ns2-4' },
       { key: 5, value: 'ns2-5' },
@@ -196,46 +199,49 @@ describe('batched_fn', () => {
   it('should forward error to all batched calls', async () => {
     const prom1 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [1, 2]);
     const prom2 = batchedRpc({ maxPendingMs: 10 }, 'ns1', [3, 4, 5], true);
-    assert.strictEqual(rpcSpy.callCount, 0);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(0);
 
     // Should process the pending batch at 10ms.
-    assert.strictEqual(timer.runAll(), 10);
-    assert.strictEqual(rpcSpy.callCount, 1);
-    assert.strictEqual(rpcSpy.getCall(0).args[0], 'ns1');
-    assert.deepEqual(rpcSpy.getCall(0).args[1], [1, 2, 3, 4, 5]);
+    const start = jest.now();
+    jest.runOnlyPendingTimers();
+    expect(jest.now() - start).toStrictEqual(10);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(1);
+    expect(rpcSpy.mock.lastCall?.[0]).toStrictEqual('ns1');
+    expect(rpcSpy.mock.lastCall?.[1]).toEqual([1, 2, 3, 4, 5]);
 
     // Check returns.
     try {
       await prom1;
-      assert.fail("should've thrown an error");
+      expect("should've thrown an error").toBeNull();
     } catch (e) {
-      assert.equal(e, 'RPC err');
+      expect(e).toStrictEqual('RPC err');
     }
     try {
       await prom2;
-      assert.fail("should've thrown an err");
+      expect("should've thrown an err").toBeNull();
     } catch (e) {
-      assert.equal(e, 'RPC err');
+      expect(e).toStrictEqual('RPC err');
     }
 
     // Start a new batch.
     const prom3 = batchedRpc({ maxPendingMs: 20 }, 'ns1', [6, 7]);
     const prom4 = batchedRpc({ maxPendingMs: 20 }, 'ns1', [8]);
-    assert.strictEqual(rpcSpy.callCount, 1);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(1);
 
     // The new batch should work just fine.
-    assert.strictEqual(timer.runAll(), 30);
-    assert.strictEqual(rpcSpy.callCount, 2);
-    assert.strictEqual(rpcSpy.getCall(1).args[0], 'ns1');
-    assert.deepEqual(rpcSpy.getCall(1).args[1], [6, 7, 8]);
+    jest.runOnlyPendingTimers();
+    expect(jest.now() - start).toStrictEqual(30);
+    expect(rpcSpy.mock.calls.length).toStrictEqual(2);
+    expect(rpcSpy.mock.lastCall?.[0]).toStrictEqual('ns1');
+    expect(rpcSpy.mock.lastCall?.[1]).toEqual([6, 7, 8]);
 
     // Check returns.
     const ret3 = await prom3;
     const ret4 = await prom4;
-    assert.deepEqual(ret3, [
+    expect(ret3).toEqual([
       { key: 6, value: 'ns1-6' },
       { key: 7, value: 'ns1-7' },
     ]);
-    assert.deepEqual(ret4, [{ key: 8, value: 'ns1-8' }]);
+    expect(ret4).toEqual([{ key: 8, value: 'ns1-8' }]);
   });
 });

@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { destroy, getSnapshot, Instance, types } from 'mobx-state-tree';
 import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
-import * as sinon from 'sinon';
 
 import { aliveFlow } from './milo_mobx_utils';
 import { deferred } from './utils';
@@ -33,16 +32,15 @@ const TestStore = types
   }));
 
 describe('aliveFlow', () => {
-  let timer: sinon.SinonFakeTimers;
   let store: Instance<typeof TestStore>;
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
     store = TestStore.create({});
   });
 
   afterEach(() => {
-    timer.restore();
     destroy(store);
+    jest.useRealTimers();
   });
 
   it('when the store is not destroyed', async () => {
@@ -52,21 +50,22 @@ describe('aliveFlow', () => {
 
     const actionPromise = fromPromise(store.aliveAction([promise1, promise2, promise3]));
 
-    expect(store.prop).to.eq(0);
+    expect(store.prop).toStrictEqual(0);
 
     resolve1(1);
-    await timer.runAllAsync();
-    expect(store.prop).to.eq(1);
+    await jest.runAllTimersAsync();
+    expect(store.prop).toStrictEqual(1);
 
     resolve2(2);
-    await timer.runAllAsync();
-    expect(store.prop).to.eq(2);
+    await jest.runAllTimersAsync();
+    expect(store.prop).toStrictEqual(2);
 
     resolve3(3);
-    await timer.runAllAsync();
-    expect(store.prop).to.eq(3);
+    await jest.runAllTimersAsync();
+    expect(store.prop).toStrictEqual(3);
 
-    expect(actionPromise.state).to.eq(FULFILLED);
+    await jest.advanceTimersByTimeAsync(100);
+    expect(actionPromise.state).toStrictEqual(FULFILLED);
   });
 
   it('when the store is destroyed while running the action', async () => {
@@ -76,24 +75,25 @@ describe('aliveFlow', () => {
 
     const actionPromise = fromPromise(store.aliveAction([promise1, promise2, promise3]));
 
-    expect(store.prop).to.eq(0);
+    expect(store.prop).toStrictEqual(0);
 
     resolve1(1);
-    await timer.runAllAsync();
-    expect(store.prop).to.eq(1);
+    await jest.runAllTimersAsync();
+    expect(store.prop).toStrictEqual(1);
 
     destroy(store);
 
     resolve2(2);
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
     // Use getSnapshot to avoid triggering "reading from dead tree" warning.
-    expect(getSnapshot(store).prop).to.eq(1);
+    expect(getSnapshot(store).prop).toStrictEqual(1);
 
     resolve3(3);
-    await timer.runAllAsync();
+    await jest.runAllTimersAsync();
     // Use getSnapshot to avoid triggering "reading from dead tree" warning.
-    expect(getSnapshot(store).prop).to.eq(1);
+    expect(getSnapshot(store).prop).toStrictEqual(1);
 
-    expect(actionPromise.state).to.eq(PENDING);
+    await jest.advanceTimersByTimeAsync(100);
+    expect(actionPromise.state).toStrictEqual(PENDING);
   });
 });

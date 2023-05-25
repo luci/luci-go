@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const StackdriverErrorReporter = require('stackdriver-errors-js');
+import StackdriverErrorReporter from 'stackdriver-errors-js';
 
 const errorHandler = new StackdriverErrorReporter();
 if (['luci-milo.appspot.com', 'ci.chromium.org'].includes(window.location.hostname)) {

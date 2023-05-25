@@ -11,7 +11,7 @@ build: node_deps
 	npm run build
 
 release:
-	npm ci && ENABLE_GA=true npm run build
+	npm ci && npm run build
 
 test: node_deps
 	npm run test

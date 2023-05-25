@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 
 import './tooltip';
 import { HideTooltipEventDetail, ShowTooltipEventDetail, TooltipElement } from './tooltip';
 
-describe('instant tooltip', () => {
+describe('Tooltip', () => {
   it('should only display one tooltip at a time', async () => {
     const tooltipContainer = await fixture<TooltipElement>(html`<milo-tooltip></milo-tooltip>`);
 
@@ -32,8 +32,8 @@ describe('instant tooltip', () => {
     );
 
     await aTimeout(0);
-    assert.isTrue(tooltip1.isConnected);
-    assert.isFalse(tooltip2.isConnected);
+    expect(tooltip1.isConnected).toBeTruthy();
+    expect(tooltip2.isConnected).toBeFalsy();
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
@@ -42,8 +42,8 @@ describe('instant tooltip', () => {
     );
 
     await aTimeout(0);
-    assert.isFalse(tooltip1.isConnected);
-    assert.isTrue(tooltip2.isConnected);
+    expect(tooltip1.isConnected).toBeFalsy();
+    expect(tooltip2.isConnected).toBeTruthy();
   });
 
   it('should hide tooltip after specified delay', async () => {
@@ -58,7 +58,7 @@ describe('instant tooltip', () => {
     );
 
     await aTimeout(0);
-    assert.isTrue(tooltip.isConnected);
+    expect(tooltip.isConnected).toBeTruthy();
 
     window.dispatchEvent(
       new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
@@ -67,10 +67,10 @@ describe('instant tooltip', () => {
     );
 
     await aTimeout(5);
-    assert.isTrue(tooltip.isConnected);
+    expect(tooltip.isConnected).toBeTruthy();
 
     await aTimeout(5);
-    assert.isFalse(tooltip.isConnected);
+    expect(tooltip.isConnected).toBeFalsy();
   });
 
   it('should handle race condition correctly', async () => {
@@ -86,7 +86,7 @@ describe('instant tooltip', () => {
     );
 
     await aTimeout(0);
-    assert.isTrue(tooltip1.isConnected);
+    expect(tooltip1.isConnected).toBeTruthy();
 
     window.dispatchEvent(
       new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
@@ -95,7 +95,7 @@ describe('instant tooltip', () => {
     );
 
     await aTimeout(0);
-    assert.isTrue(tooltip1.isConnected);
+    expect(tooltip1.isConnected).toBeTruthy();
 
     // Show another tooltip before the first one is dismissed.
     window.dispatchEvent(
@@ -105,7 +105,7 @@ describe('instant tooltip', () => {
     );
 
     await aTimeout(10);
-    assert.isFalse(tooltip1.isConnected);
-    assert.isTrue(tooltip2.isConnected);
+    expect(tooltip1.isConnected).toBeFalsy();
+    expect(tooltip2.isConnected).toBeTruthy();
   });
 });

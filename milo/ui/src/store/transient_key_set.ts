@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { types } from 'mobx-state-tree';
+import { Instance, types } from 'mobx-state-tree';
 
 /**
  * An utility model that provide utility methods to delete keys created before
@@ -49,3 +49,5 @@ export const TransientKeySet = types
       return self._values.keys();
     },
   }));
+
+export type TransientKeySetInstance = Instance<typeof TransientKeySet>;

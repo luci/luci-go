@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert } from 'chai';
+import { afterAll, beforeAll, expect, jest } from '@jest/globals';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
-import sinon from 'sinon';
 
 import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
-import { TestVariant, TestVariantStatus } from '../services/resultdb';
-import { Store } from '.';
+import { CacheOption } from '../libs/cached_fn';
+import {
+  QueryTestVariantsRequest,
+  QueryTestVariantsResponse,
+  TestVariant,
+  TestVariantStatus,
+} from '../services/resultdb';
+import { Store, StoreInstance } from '.';
 
 const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',
@@ -57,44 +62,50 @@ const variant5: TestVariant = {
 
 describe('InvocationState', () => {
   describe('filterVariant', () => {
-    const store = Store.create({
-      authState: { value: { identity: ANONYMOUS_IDENTITY } },
-      invocationPage: { invocationId: 'invocation-id' },
+    let store: StoreInstance;
+    let queryTestVariantsStub: jest.SpiedFunction<
+      (req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>
+    >;
+    beforeAll(async () => {
+      store = Store.create({
+        authState: { value: { identity: ANONYMOUS_IDENTITY } },
+        invocationPage: { invocationId: 'invocation-id' },
+      });
+      unprotect(store);
+      queryTestVariantsStub = jest.spyOn(store.services.resultDb!, 'queryTestVariants');
+      queryTestVariantsStub.mockResolvedValueOnce({ testVariants: [variant1, variant2, variant3, variant4, variant5] });
+      protect(store);
+      await store.invocationPage.invocation.testLoader!.loadNextTestVariants();
     });
-    after(() => destroy(store));
-    unprotect(store);
-    const queryTestVariantsStub = sinon.stub(store.services.resultDb!, 'queryTestVariants');
-    protect(store);
-
-    queryTestVariantsStub.onCall(0).resolves({ testVariants: [variant1, variant2, variant3, variant4, variant5] });
-
-    before(async () => await store.invocationPage.invocation.testLoader!.loadNextTestVariants());
+    afterAll(() => {
+      destroy(store);
+    });
 
     it('should not filter out anything when search text is empty', () => {
       store.invocationPage.invocation.setSearchText('');
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, [variant1, variant2]);
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
+      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([variant1, variant2]);
+      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
     });
 
     it("should filter out variants whose test ID doesn't match the search text", () => {
       store.invocationPage.invocation.setSearchText('test-suite-a');
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, [variant1, variant2]);
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, []);
+      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([variant1, variant2]);
+      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([]);
     });
 
     it('search text should be case insensitive', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
+      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([]);
+      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
     });
 
     it('should preserve the last known valid filter', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
+      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([]);
+      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
       store.invocationPage.invocation.setSearchText('invalid:filter');
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.unexpectedTestVariants, []);
-      assert.deepEqual(store.invocationPage.invocation.testLoader!.expectedTestVariants, [variant5]);
+      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([]);
+      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
     });
   });
 });

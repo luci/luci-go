@@ -84,7 +84,10 @@ export function cached<T extends unknown[], V>(
         };
         // Also invalidates the cache when the promise is rejected to prevent
         // unexpected cache build up.
-        config.expire?.(params, value).finally(deleteCache);
+        config
+          .expire?.(params, value)
+          .catch((_e) => {})
+          .finally(deleteCache);
 
         // Set the cache after config.expire call so there's no memory leak when
         // config.expire throws.

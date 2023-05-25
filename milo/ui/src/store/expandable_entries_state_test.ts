@@ -12,51 +12,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect } from '@jest/globals';
 import { destroy } from 'mobx-state-tree';
 
-import { ExpandableEntriesState } from './expandable_entries_state';
+import { ExpandableEntriesState, ExpandableEntriesStateInstance } from './expandable_entries_state';
 
 describe('ExpandableEntriesState', () => {
-  it('e2e', () => {
-    const state = ExpandableEntriesState.create();
-    after(() => destroy(state));
+  let state: ExpandableEntriesStateInstance;
 
+  beforeEach(() => {
+    state = ExpandableEntriesState.create();
+  });
+  afterEach(() => {
+    destroy(state);
+  });
+
+  it('e2e', () => {
     // Toggle all to false.
     state.toggleAll(false);
-    expect(state.defaultExpanded).to.be.false;
-    expect(state.isExpanded('entry1')).to.be.false;
-    expect(state.isExpanded('entry2')).to.be.false;
-    expect(state.isExpanded('entry3')).to.be.false;
+    expect(state.defaultExpanded).toBeFalsy();
+    expect(state.isExpanded('entry1')).toBeFalsy();
+    expect(state.isExpanded('entry2')).toBeFalsy();
+    expect(state.isExpanded('entry3')).toBeFalsy();
 
     // Toggle some entries.
     state.toggle('entry1', true);
     state.toggle('entry2', true);
-    expect(state.defaultExpanded).to.be.false;
-    expect(state.isExpanded('entry1')).to.be.true;
-    expect(state.isExpanded('entry2')).to.be.true;
-    expect(state.isExpanded('entry3')).to.be.false;
+    expect(state.defaultExpanded).toBeFalsy();
+    expect(state.isExpanded('entry1')).toBeTruthy();
+    expect(state.isExpanded('entry2')).toBeTruthy();
+    expect(state.isExpanded('entry3')).toBeFalsy();
 
     // Toggle all entries when some entries are toggled.
     state.toggleAll(false);
-    expect(state.defaultExpanded).to.be.false;
-    expect(state.isExpanded('entry1')).to.be.false;
-    expect(state.isExpanded('entry2')).to.be.false;
-    expect(state.isExpanded('entry3')).to.be.false;
+    expect(state.defaultExpanded).toBeFalsy();
+    expect(state.isExpanded('entry1')).toBeFalsy();
+    expect(state.isExpanded('entry2')).toBeFalsy();
+    expect(state.isExpanded('entry3')).toBeFalsy();
 
     // Toggle all to true.
     state.toggleAll(true);
-    expect(state.defaultExpanded).to.be.true;
-    expect(state.isExpanded('entry1')).to.be.true;
-    expect(state.isExpanded('entry2')).to.be.true;
-    expect(state.isExpanded('entry3')).to.be.true;
+    expect(state.defaultExpanded).toBeTruthy();
+    expect(state.isExpanded('entry1')).toBeTruthy();
+    expect(state.isExpanded('entry2')).toBeTruthy();
+    expect(state.isExpanded('entry3')).toBeTruthy();
 
     // Toggle some entries.
     state.toggle('entry1', false);
     state.toggle('entry3', false);
-    expect(state.defaultExpanded).to.be.true;
-    expect(state.isExpanded('entry1')).to.be.false;
-    expect(state.isExpanded('entry2')).to.be.true;
-    expect(state.isExpanded('entry3')).to.be.false;
+    expect(state.defaultExpanded).toBeTruthy();
+    expect(state.isExpanded('entry1')).toBeFalsy();
+    expect(state.isExpanded('entry2')).toBeTruthy();
+    expect(state.isExpanded('entry3')).toBeFalsy();
   });
 });

@@ -13,12 +13,11 @@
 // limitations under the License.
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
-import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
-import { expect } from 'chai';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
+import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing-helpers';
 import { LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { destroy } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
 import './test_variant_entry';
 import { ExpandableEntryElement } from '../../../components/expandable_entry';
@@ -97,12 +96,19 @@ class TestVariantEntryTestContextElement extends LitElement {
   }
 }
 
-describe('test_variant_entry_test', () => {
+describe('TestVariantEntry', () => {
+  let store: StoreInstance;
+  beforeEach(() => {
+    store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+  });
+  afterEach(() => {
+    fixtureCleanup();
+    destroy(store);
+  });
+
   it('should only query the necessary clusters', async () => {
-    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
-    after(() => destroy(store));
-    const clusterStub = sinon.stub(store.services.clusters!, 'cluster');
-    clusterStub.onCall(0).resolves({
+    const clusterStub = jest.spyOn(store.services.clusters!, 'cluster');
+    clusterStub.mockResolvedValueOnce({
       clusteringVersion,
       clusteredTestResults: [
         { clusters: [cluster1, cluster2, cluster3] },
@@ -152,8 +158,8 @@ describe('test_variant_entry_test', () => {
       </milo-test-variant-entry-test-context>
     `);
 
-    expect(clusterStub.callCount).to.eq(1);
-    expect(clusterStub.getCall(0).args).to.deep.eq([
+    expect(clusterStub.mock.calls.length).toStrictEqual(1);
+    expect(clusterStub.mock.lastCall).toEqual([
       {
         project: 'proj',
         testResults: [
@@ -166,10 +172,8 @@ describe('test_variant_entry_test', () => {
   });
 
   it('should work properly if failed to query clusters from luci-analysis', async () => {
-    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
-    after(() => destroy(store));
-    const clusterStub = sinon.stub(store.services.clusters!, 'cluster');
-    clusterStub.onCall(0).rejects(new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed'));
+    const clusterStub = jest.spyOn(store.services.clusters!, 'cluster');
+    clusterStub.mockRejectedValueOnce(new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed'));
 
     const tv: TestVariant = {
       testId: 'test-id',
@@ -198,8 +202,8 @@ describe('test_variant_entry_test', () => {
     const tvEntry = ele.querySelector<TestVariantEntryElement>('milo-test-variant-entry')!;
     await aTimeout(0);
 
-    expect(clusterStub.callCount).to.eq(1);
-    expect(clusterStub.getCall(0).args).to.deep.eq([
+    expect(clusterStub.mock.calls.length).toStrictEqual(1);
+    expect(clusterStub.mock.lastCall).toEqual([
       {
         project: 'proj',
         testResults: [{ testId: 'test-id', failureReason: undefined }],
@@ -210,14 +214,10 @@ describe('test_variant_entry_test', () => {
     // New interactions are still handled.
     tvEntry.expanded = true;
     await tvEntry.updateComplete;
-    expect(tvEntry.shadowRoot!.querySelector<ExpandableEntryElement>(':host>milo-expandable-entry')!.expanded).to.be
-      .true;
+    expect(tvEntry.shadowRoot!.querySelector<ExpandableEntryElement>('milo-expandable-entry')!.expanded).toBeTruthy();
   });
 
   it('should generate test URLs correctly', async () => {
-    const store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
-    after(() => destroy(store));
-
     const tv: TestVariant = {
       testId: 'test-id',
       variantHash: 'vhash',
@@ -243,6 +243,6 @@ describe('test_variant_entry_test', () => {
       </milo-test-variant-entry-test-context>
     `);
     const tvEntry = ele.querySelector<TestVariantEntryElement>('milo-test-variant-entry')!;
-    expect(tvEntry.selfLink).to.eq('https://test.com/test-results?q=ExactID%3Atest-id+VHash%3Avhash');
+    expect(tvEntry.selfLink).toStrictEqual('https://test.com/test-results?q=ExactID%3Atest-id+VHash%3Avhash');
   });
 });

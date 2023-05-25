@@ -12,31 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as chai from 'chai';
-import { expect } from 'chai';
-import chaiSubset from 'chai-subset';
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { applySnapshot, destroy } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
-import { getAuthStateCache, queryAuthState, setAuthStateCache } from '../libs/auth_state';
-import { StubFn, stubFn } from '../libs/test_utils/sinon';
+import { AuthState, getAuthStateCache, queryAuthState, setAuthStateCache } from '../libs/auth_state';
 import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
-
-chai.use(chaiSubset);
 
 describe('AuthStateStore', () => {
   let store: AuthStateStoreInstance;
-  let timer: sinon.SinonFakeTimers;
-  let getAuthStateCacheStub: StubFn<typeof getAuthStateCache>;
-  let setAuthStateCacheStub: StubFn<typeof setAuthStateCache>;
-  let queryAuthStateStub: StubFn<typeof queryAuthState>;
+  let getAuthStateCacheStub: jest.Mock<() => Promise<AuthState | null>>;
+  let setAuthStateCacheStub: jest.Mock<(authState: AuthState | null) => Promise<void>>;
+  let queryAuthStateStub: jest.Mock<() => Promise<AuthState>>;
 
   beforeEach(() => {
-    timer = sinon.useFakeTimers();
+    jest.useFakeTimers();
     store = AuthStateStore.create({});
-    getAuthStateCacheStub = stubFn<typeof getAuthStateCache>();
-    setAuthStateCacheStub = stubFn<typeof setAuthStateCache>();
-    queryAuthStateStub = stubFn<typeof queryAuthState>();
+    getAuthStateCacheStub = jest.fn(getAuthStateCache);
+    setAuthStateCacheStub = jest.fn(setAuthStateCache);
+    queryAuthStateStub = jest.fn(queryAuthState);
     store.setDependencies({
       getAuthStateCache: getAuthStateCacheStub,
       setAuthStateCache: setAuthStateCacheStub,
@@ -46,7 +39,7 @@ describe('AuthStateStore', () => {
 
   afterEach(() => {
     destroy(store);
-    timer.restore();
+    jest.useRealTimers();
   });
 
   describe('scheduleUpdate', () => {
@@ -56,17 +49,18 @@ describe('AuthStateStore', () => {
         email: 'user@google.com',
         accessToken: 'token',
         // 1 hour from now.
-        accessTokenExpiry: timer.now / 1000 + 3600,
+        accessTokenExpiry: jest.now() / 1000 + 3600,
       };
-      queryAuthStateStub.onFirstCall().resolves(authState);
+      queryAuthStateStub.mockResolvedValueOnce(authState);
 
-      const startTime = timer.now;
+      const startTime = jest.now();
       store.scheduleUpdate(false);
 
-      expect(await timer.runAllAsync()).to.eq(startTime);
-      expect(queryAuthStateStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.getCall(0).args).to.deep.eq([authState]);
+      await jest.runAllTimersAsync();
+      expect(jest.now()).toStrictEqual(startTime);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls[0]).toEqual([authState]);
     });
 
     it("when forceUpdate is false and there's an existing value", async () => {
@@ -75,30 +69,31 @@ describe('AuthStateStore', () => {
         email: 'user@google.com',
         accessToken: 'token',
         // 30 mins from now.
-        accessTokenExpiry: timer.now / 1000 + 1800,
+        accessTokenExpiry: jest.now() / 1000 + 1800,
       };
       applySnapshot(store, { id: store.id, value: authState });
 
-      const startTime = timer.now;
+      const startTime = jest.now();
       store.scheduleUpdate(false);
 
       // Advance the timer by 15 min.
-      await timer.tickAsync(600000);
-      expect(queryAuthStateStub.callCount).to.eq(0);
-      expect(setAuthStateCacheStub.callCount).to.eq(0);
+      await jest.advanceTimersByTimeAsync(600000);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(0);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(0);
 
       const refreshedAuthState = {
         ...authState,
         accessToken: 'token2',
         // 1 hour from now.
-        accessTokenExpiry: timer.now / 1000 + 3600,
+        accessTokenExpiry: jest.now() / 1000 + 3600,
       };
-      queryAuthStateStub.onFirstCall().resolves(refreshedAuthState);
+      queryAuthStateStub.mockResolvedValueOnce(refreshedAuthState);
 
-      expect(await timer.runAllAsync()).to.lt(startTime + 1800000);
-      expect(queryAuthStateStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.getCall(0).args).to.deep.eq([refreshedAuthState]);
+      await jest.runAllTimersAsync();
+      expect(jest.now()).toBeLessThan(startTime + 1800000);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls[0]).toEqual([refreshedAuthState]);
     });
 
     it("when forceUpdate is true and there's no existing value", async () => {
@@ -107,17 +102,18 @@ describe('AuthStateStore', () => {
         email: 'user@google.com',
         accessToken: 'token',
         // 1 hour from now.
-        accessTokenExpiry: timer.now / 1000 + 3600,
+        accessTokenExpiry: jest.now() / 1000 + 3600,
       };
-      queryAuthStateStub.onFirstCall().resolves(authState);
+      queryAuthStateStub.mockResolvedValueOnce(authState);
 
-      const startTime = timer.now;
+      const startTime = jest.now();
       store.scheduleUpdate(true);
 
-      expect(await timer.runAllAsync()).to.eq(startTime);
-      expect(queryAuthStateStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.getCall(0).args).to.deep.eq([authState]);
+      await jest.runAllTimersAsync();
+      expect(jest.now()).toStrictEqual(startTime);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls[0]).toEqual([authState]);
     });
 
     it("when forceUpdate is true and there's an existing value", async () => {
@@ -126,7 +122,7 @@ describe('AuthStateStore', () => {
         email: 'user@google.com',
         accessToken: 'token',
         // 30 mins from now.
-        accessTokenExpiry: timer.now / 1000 + 1800,
+        accessTokenExpiry: jest.now() / 1000 + 1800,
       };
       applySnapshot(store, { id: store.id, value: authState });
 
@@ -134,31 +130,32 @@ describe('AuthStateStore', () => {
         ...authState,
         accessToken: 'token2',
         // 1 hour from now.
-        accessTokenExpiry: timer.now / 1000 + 3600,
+        accessTokenExpiry: jest.now() / 1000 + 3600,
       };
-      queryAuthStateStub.onFirstCall().resolves(refreshedAuthState);
+      queryAuthStateStub.mockResolvedValueOnce(refreshedAuthState);
 
-      const startTime = timer.now;
+      const startTime = jest.now();
       store.scheduleUpdate(true);
 
-      expect(await timer.runAllAsync()).to.eq(startTime);
-      expect(queryAuthStateStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.getCall(0).args).to.deep.eq([refreshedAuthState]);
+      await jest.runAllTimersAsync();
+      expect(jest.now()).toStrictEqual(startTime);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls[0]).toEqual([refreshedAuthState]);
     });
   });
 
   describe('init', () => {
     it('when getAuthState always return short-lived token', async () => {
-      getAuthStateCacheStub.onFirstCall().resolves(null);
+      getAuthStateCacheStub.mockResolvedValueOnce(null);
 
-      const startTime = timer.now;
+      const startTime = jest.now();
       store.init({
         identity: 'user:user@google.com',
         email: 'user@google.com',
         accessToken: 'cached-token',
         // 1 second from now.
-        accessTokenExpiry: timer.now / 1000 + 1,
+        accessTokenExpiry: jest.now() / 1000 + 1,
       });
 
       let refreshedAuthState = {
@@ -166,54 +163,55 @@ describe('AuthStateStore', () => {
         email: 'user@google.com',
         accessToken: 'token',
         // 2 second from now.
-        accessTokenExpiry: timer.now / 1000 + 2,
+        accessTokenExpiry: jest.now() / 1000 + 2,
       };
-      queryAuthStateStub.onFirstCall().resolves(refreshedAuthState);
+      queryAuthStateStub.mockResolvedValueOnce(refreshedAuthState);
 
-      expect(await timer.runToLastAsync()).to.eq(startTime);
-      expect(queryAuthStateStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.callCount).to.eq(1);
-      expect(store.value).to.deep.include(refreshedAuthState);
+      await jest.runOnlyPendingTimersAsync();
+      expect(jest.now()).toStrictEqual(startTime);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(1);
+      expect(store.value).toMatchObject(refreshedAuthState);
 
       // Nothing should refresh within the next 7s.
-      await timer.tickAsync(7000);
-      expect(queryAuthStateStub.callCount).to.eq(1);
-      expect(setAuthStateCacheStub.callCount).to.eq(1);
-      expect(store.value).to.deep.include(refreshedAuthState);
+      await jest.advanceTimersByTimeAsync(7000);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(1);
+      expect(store.value).toMatchObject(refreshedAuthState);
 
       refreshedAuthState = {
         ...refreshedAuthState,
         accessToken: 'token2',
         // 1 second from now.
-        accessTokenExpiry: timer.now / 1000 + 1,
+        accessTokenExpiry: jest.now() / 1000 + 1,
       };
-      queryAuthStateStub.onSecondCall().resolves(refreshedAuthState);
+      queryAuthStateStub.mockResolvedValueOnce(refreshedAuthState);
 
       // Should refresh within the next 5s
-      await timer.tickAsync(5000);
-      expect(queryAuthStateStub.callCount).to.eq(2);
-      expect(setAuthStateCacheStub.callCount).to.eq(2);
-      expect(store.value).to.deep.include(refreshedAuthState);
+      await jest.advanceTimersByTimeAsync(5000);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(2);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(2);
+      expect(store.value).toMatchObject(refreshedAuthState);
 
       // Nothing should refresh within the next 5s.
-      await timer.tickAsync(5000);
-      expect(queryAuthStateStub.callCount).to.eq(2);
-      expect(setAuthStateCacheStub.callCount).to.eq(2);
-      expect(store.value).to.deep.include(refreshedAuthState);
+      await jest.advanceTimersByTimeAsync(5000);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(2);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(2);
+      expect(store.value).toMatchObject(refreshedAuthState);
 
       refreshedAuthState = {
         ...refreshedAuthState,
         accessToken: 'token3',
         // 1 second from now.
-        accessTokenExpiry: timer.now / 1000 + 1,
+        accessTokenExpiry: jest.now() / 1000 + 1,
       };
-      queryAuthStateStub.onThirdCall().resolves(refreshedAuthState);
+      queryAuthStateStub.mockResolvedValueOnce(refreshedAuthState);
 
       // Should refresh within 5s.
-      await timer.tickAsync(5000);
-      expect(queryAuthStateStub.callCount).to.eq(3);
-      expect(setAuthStateCacheStub.callCount).to.eq(3);
-      expect(store.value).to.deep.include(refreshedAuthState);
+      await jest.advanceTimersByTimeAsync(5000);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(3);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(3);
+      expect(store.value).toMatchObject(refreshedAuthState);
     });
   });
 });

@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import { expect } from 'chai';
+import { cleanup, render, screen } from '@testing-library/react';
 import { destroy, Instance } from 'mobx-state-tree';
-import * as sinon from 'sinon';
 
 import { AuthStateProvider } from '../../components/auth_state_provider';
 import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
@@ -24,7 +23,7 @@ import { QueryTestMetadataResponse, ResultDb } from '../../services/resultdb';
 import { Store, StoreProvider } from '../../store';
 import { TestIdLabel } from './test_id_label';
 
-describe('TestIDLabel', () => {
+describe('TestIdLabel', () => {
   let store: Instance<typeof Store>;
   let client: QueryClient;
   beforeEach(() => {
@@ -37,7 +36,10 @@ describe('TestIDLabel', () => {
     });
     store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
   });
-  afterEach(() => destroy(store));
+  afterEach(() => {
+    cleanup();
+    destroy(store);
+  });
 
   it('should load test source', async () => {
     const tm: QueryTestMetadataResponse = {
@@ -65,8 +67,8 @@ describe('TestIDLabel', () => {
         },
       ],
     };
-    const testMetadataStub = sinon.stub(ResultDb.prototype, 'queryTestMetadata');
-    testMetadataStub.onCall(0).resolves(tm);
+    const testMetadataStub = jest.spyOn(ResultDb.prototype, 'queryTestMetadata');
+    testMetadataStub.mockResolvedValueOnce(tm);
 
     render(
       <QueryClientProvider client={client}>
@@ -79,11 +81,11 @@ describe('TestIDLabel', () => {
         </StoreProvider>
       </QueryClientProvider>
     );
-    expect(screen.queryByText('testrealm')).to.not.be.null;
-    expect(screen.queryByText('testid')).to.not.be.null;
-    expect(testMetadataStub.callCount).to.eq(1);
-    expect(await screen.findByText('fakename')).to.not.be.null;
+    expect(screen.queryByText('testrealm')).not.toBeNull();
+    expect(screen.queryByText('testid')).not.toBeNull();
+    expect(testMetadataStub.mock.calls.length).toStrictEqual(1);
+    expect(await screen.findByText('fakename')).not.toBeNull();
     const expectedSource = 'https://chromium.googlesource.com/chromium/src/+/refs/heads/main/testfile#440';
-    expect((await screen.findByText('fakename')).getAttribute('href')).to.eq(expectedSource);
+    expect((await screen.findByText('fakename')).getAttribute('href')).toStrictEqual(expectedSource);
   });
 });

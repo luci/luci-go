@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // The following settings are needed because Jest runs in the node
+    // environnement.
+    "moduleResolution": "node",
+  }
+}

@@ -39,8 +39,17 @@ export enum GA_ACTIONS {
   VISITED_NEW = 'Visited New',
 }
 
+declare global {
+  interface Window {
+    /**
+     * Whether GA tracking should be enabled.
+     */
+    ENABLE_GA?: boolean;
+  }
+}
+
 export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
-  if (!ENABLE_GA) {
+  if (!window.ENABLE_GA) {
     return;
   }
 

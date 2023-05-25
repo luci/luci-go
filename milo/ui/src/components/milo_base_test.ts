@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fixture, html } from '@open-wc/testing-helpers';
-import { assert } from 'chai';
 import { customElement } from 'lit/decorators.js';
 
 import { MiloBaseElement } from './milo_base';
 
-describe('milo_base', () => {
+describe('MiloBase', () => {
   it('should call disposers on disconnect in the correct order', async () => {
     let records: number[] = [];
     let count = 0;
@@ -41,15 +41,15 @@ describe('milo_base', () => {
 
     const testBaseElement = await fixture<TestBaseElement>(html`<milo-test-base></milo-test-base>`);
 
-    assert.deepEqual(records, []);
+    expect(records).toEqual([]);
     testBaseElement.disconnectedCallback();
-    assert.deepEqual(records, [2, 1, 0]);
+    expect(records).toEqual([2, 1, 0]);
 
     records = [];
     testBaseElement.connectedCallback();
     testBaseElement.disconnectedCallback();
     // Only disposers should've been cleared.
-    assert.notDeepEqual(records, [5, 4, 3, 2, 1, 0]);
-    assert.deepEqual(records, [5, 4, 3]);
+    expect(records).not.toEqual([5, 4, 3, 2, 1, 0]);
+    expect(records).toEqual([5, 4, 3]);
   });
 });

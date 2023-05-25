@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { assert } from 'chai';
+import { expect } from '@jest/globals';
 
 import { attachTags, hasTags, TAG_SOURCE } from './tag';
 
@@ -26,11 +26,11 @@ describe('tag', () => {
     attachTags(obj1, TAG_1);
     attachTags(obj2, TAG_2);
 
-    assert.isTrue(hasTags(obj1, TAG_1));
-    assert.isTrue(hasTags(obj2, TAG_2));
+    expect(hasTags(obj1, TAG_1)).toBeTruthy();
+    expect(hasTags(obj2, TAG_2)).toBeTruthy();
 
-    assert.isFalse(hasTags(obj1, TAG_2));
-    assert.isFalse(hasTags(obj2, TAG_1));
+    expect(hasTags(obj1, TAG_2)).toBeFalsy();
+    expect(hasTags(obj2, TAG_1)).toBeFalsy();
   });
 
   it('can attach multiple tags to an object', () => {
@@ -38,7 +38,7 @@ describe('tag', () => {
 
     attachTags(obj, TAG_1, TAG_2);
 
-    assert.isTrue(hasTags(obj, TAG_1, TAG_2));
+    expect(hasTags(obj, TAG_1, TAG_2)).toBeTruthy();
   });
 
   it('can detect tag attached to [TAG_SOURCE]', () => {
@@ -50,13 +50,13 @@ describe('tag', () => {
     attachTags(innerObj, TAG_1);
     attachTags(outerObj, TAG_2);
 
-    assert.isTrue(hasTags(innerObj, TAG_1));
-    assert.isFalse(hasTags(innerObj, TAG_2));
-    assert.isFalse(hasTags(innerObj, TAG_1, TAG_2));
+    expect(hasTags(innerObj, TAG_1)).toBeTruthy();
+    expect(hasTags(innerObj, TAG_2)).toBeFalsy();
+    expect(hasTags(innerObj, TAG_1, TAG_2)).toBeFalsy();
 
-    assert.isTrue(hasTags(outerObj, TAG_1));
-    assert.isTrue(hasTags(outerObj, TAG_2));
-    assert.isTrue(hasTags(outerObj, TAG_1, TAG_2));
+    expect(hasTags(outerObj, TAG_1)).toBeTruthy();
+    expect(hasTags(outerObj, TAG_2)).toBeTruthy();
+    expect(hasTags(outerObj, TAG_1, TAG_2)).toBeTruthy();
   });
 
   it('calling attachTags multiple times should not override previous calls', () => {
@@ -65,6 +65,6 @@ describe('tag', () => {
     attachTags(obj, TAG_1);
     attachTags(obj, TAG_2);
 
-    assert.isTrue(hasTags(obj, TAG_1, TAG_2));
+    expect(hasTags(obj, TAG_1, TAG_2)).toBeTruthy();
   });
 });

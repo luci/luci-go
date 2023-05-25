@@ -16,7 +16,7 @@ import { css, html, TemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
-import { computed, makeObservable, observable, reaction } from 'mobx';
+import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import { MiloBaseElement } from './milo_base';
 
@@ -108,7 +108,7 @@ export class AutoCompleteElement extends MiloBaseElement {
         () => {
           this.selectedIndex = -1;
           if (this.value !== '') {
-            this.showSuggestions = true;
+            action(() => (this.showSuggestions = true))();
           }
         }
       )
@@ -122,7 +122,7 @@ export class AutoCompleteElement extends MiloBaseElement {
     super.disconnectedCallback();
   }
 
-  private clearSuggestion() {
+  @action private clearSuggestion() {
     this.showSuggestions = false;
     this.selectedIndex = -1;
   }
@@ -177,7 +177,7 @@ export class AutoCompleteElement extends MiloBaseElement {
                 // Select the next suggestion entry.
                 for (let nextIndex = this.selectedIndex + 1; nextIndex < this.suggestions.length; ++nextIndex) {
                   if (!this.suggestions[nextIndex].isHeader) {
-                    this.selectedIndex = nextIndex;
+                    action(() => (this.selectedIndex = nextIndex))();
                     break;
                   }
                 }
@@ -186,7 +186,7 @@ export class AutoCompleteElement extends MiloBaseElement {
                 // Select the previous suggestion entry.
                 for (let nextIndex = this.selectedIndex - 1; nextIndex >= 0; --nextIndex) {
                   if (!this.suggestions[nextIndex].isHeader) {
-                    this.selectedIndex = nextIndex;
+                    action(() => (this.selectedIndex = nextIndex))();
                     break;
                   }
                 }

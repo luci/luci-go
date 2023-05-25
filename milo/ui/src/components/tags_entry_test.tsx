@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { expect } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { expect } from 'chai';
 
 import { TagsEntry } from './tags_entry';
 
@@ -28,29 +28,26 @@ describe('TagsEntry', () => {
 
     const tagsEle = screen.getByText<HTMLSpanElement>('tags:', { exact: false });
 
-    expect(tagsEle.textContent).to.eq(
-      'Tags: key1: val1, key2: https://www.example.com',
-      'tags not displayed in header when the entry is collapsed'
-    );
-    expect(screen.queryByRole('table')).to.be.null;
+    // Tags not displayed in header when the entry is collapsed.
+    expect(tagsEle.textContent).toStrictEqual('Tags: key1: val1, key2: https://www.example.com');
+    expect(screen.queryByRole('table')).toBeNull();
 
     // Expand the tags entry.
     fireEvent.click(tagsEle);
     rerender(<TagsEntry tags={tags} />);
 
-    expect(tagsEle.textContent).to.eq('Tags:', 'tags displayed in header when the entry is expanded');
-    expect(screen.queryByRole('table')).to.not.be.null;
-    expect(screen.getByText<HTMLElement>('val1').tagName).to.not.eq('A');
-    expect(screen.getByText<HTMLElement>('https://www.example.com').tagName).to.eq('A');
+    // Tags displayed in header when the entry is expanded.
+    expect(tagsEle.textContent).toStrictEqual('Tags:');
+    expect(screen.queryByRole('table')).not.toBeNull();
+    expect(screen.getByText<HTMLElement>('val1').tagName).not.toStrictEqual('A');
+    expect(screen.getByText<HTMLElement>('https://www.example.com').tagName).toStrictEqual('A');
 
     // Collapse the tags entry.
     fireEvent.click(tagsEle);
     rerender(<TagsEntry tags={tags} />);
 
-    expect(tagsEle.textContent).to.eq(
-      'Tags: key1: val1, key2: https://www.example.com',
-      'tags not displayed in header when the entry is collapsed'
-    );
-    expect(screen.queryByRole('table')).to.be.null;
+    // Tags not displayed in header when the entry is collapsed.
+    expect(tagsEle.textContent).toStrictEqual('Tags: key1: val1, key2: https://www.example.com');
+    expect(screen.queryByRole('table')).toBeNull();
   });
 });
