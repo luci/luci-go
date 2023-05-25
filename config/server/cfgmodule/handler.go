@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/klauspost/compress/gzip"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -84,7 +85,36 @@ func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.Valida
 	if err := srv.checkCaller(ctx); err != nil {
 		return nil, err
 	}
-	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfig not implemented")
+	if err := checkValidateInput(req); err != nil {
+		return nil, err
+	}
+
+	result := make([][]*config.ValidateConfigResponse_Message, len(req.GetFiles().GetFiles()))
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(8)
+	for i, file := range req.GetFiles().GetFiles() {
+		i, file := i, file
+		eg.Go(func() error {
+			content := file.GetRawContent()
+			if len(content) == 0 {
+				// TODO(yiwzhang): implement download from gcs.
+				panic("unimplemented")
+			}
+			var err error
+			result[i], err = srv.validateOneFile(ectx, req.GetConfigSet(), file.GetPath(), content)
+			return err
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
+	}
+
+	ret := &config.ValidateConfigResponse{}
+	for _, msgs := range result {
+		ret.Messages = append(ret.Messages, msgs...)
+	}
+	return ret, nil
 }
 
 // only LUCI Config and identity in admin group is allowed to call.
@@ -106,6 +136,64 @@ func (srv consumerServer) checkCaller(ctx context.Context) error {
 		return nil
 	}
 	return status.Errorf(codes.PermissionDenied, "%q is not authorized", caller)
+}
+
+func checkValidateInput(req *config.ValidateConfigRequest) error {
+	switch {
+	case req.GetConfigSet() == "":
+		return status.Errorf(codes.InvalidArgument, "must specify the config_set of the file to validate")
+	case len(req.GetFiles().GetFiles()) == 0:
+		return status.Errorf(codes.InvalidArgument, "must provide at least 1 file to validate")
+	}
+	for i, file := range req.GetFiles().GetFiles() {
+		if file.GetPath() == "" {
+			return status.Errorf(codes.InvalidArgument, "must specify path for file[%d]", i)
+		}
+		if file.GetRawContent() == nil && file.GetSignedUrl() == "" {
+			return status.Errorf(codes.InvalidArgument, "must either provide raw_content or signed_url for file %q", file.GetPath())
+		}
+	}
+	return nil
+}
+
+func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*config.ValidateConfigResponse_Message, error) {
+	vc := &validation.Context{Context: ctx}
+	vc.SetFile(path)
+	if err := srv.rules.ValidateConfig(vc, configSet, path, content); err != nil {
+		return nil, err
+	}
+
+	var ret []*config.ValidateConfigResponse_Message
+	verdict := vc.Finalize()
+	switch verr, ok := verdict.(*validation.Error); {
+	case verdict == nil:
+	case !ok:
+		ret = append(ret, &config.ValidateConfigResponse_Message{
+			Path:     path,
+			Severity: config.ValidateConfigResponse_ERROR,
+			Text:     verdict.Error(),
+		})
+	case verr != nil && len(verr.Errors) > 0:
+		for _, err := range verr.Errors {
+			// validation.Context supports just 2 severities now,
+			// but defensively default to ERROR level in unexpected cases.
+			msgSeverity := config.ValidateConfigResponse_ERROR
+			switch severity, ok := validation.SeverityTag.In(err); {
+			case !ok:
+				logging.Errorf(ctx, "unset validation.Severity in %s", err)
+			case severity == validation.Warning:
+				msgSeverity = config.ValidateConfigResponse_WARNING
+			case severity != validation.Blocking:
+				logging.Errorf(ctx, "unrecognized validation.Severity %d in %s", severity, err)
+			}
+			ret = append(ret, &config.ValidateConfigResponse_Message{
+				Path:     path,
+				Severity: msgSeverity,
+				Text:     err.Error(),
+			})
+		}
+	}
+	return ret, nil
 }
 
 // InstallHandlers installs the metadata and validation handlers that use

@@ -206,5 +206,155 @@ func TestConsumerServer(t *testing.T) {
 				},
 			})
 		})
+
+		Convey("ValidateConfig", func() {
+			const configSet = "project/xyz"
+			addRule := func(path string) {
+				rules.Add(configSet, path, func(ctx *validation.Context, configSet, path string, content []byte) error {
+					if bytes.Contains(content, []byte("good")) {
+						return nil
+					}
+					if bytes.Contains(content, []byte("error")) {
+						ctx.Errorf("blocking error")
+					}
+					if bytes.Contains(content, []byte("warning")) {
+						ctx.Warningf("diagnostic warning")
+					}
+					return nil
+				})
+			}
+
+			Convey("Single file", func() {
+				const path = "some_file.cfg"
+				addRule(path)
+				file := &config.ValidateConfigRequest_File{
+					Path: path,
+				}
+				req := &config.ValidateConfigRequest{
+					ConfigSet: configSet,
+					Files: &config.ValidateConfigRequest_Files{
+						Files: []*config.ValidateConfigRequest_File{
+							file,
+						},
+					},
+				}
+				Convey("Pass validation", func() {
+					file.Content = &config.ValidateConfigRequest_File_RawContent{
+						RawContent: []byte("good config"),
+					}
+					res, err := srv.ValidateConfig(ctx, req)
+					So(err, ShouldBeNil)
+					So(res.GetMessages(), ShouldBeEmpty)
+				})
+				Convey("With error", func() {
+					file.Content = &config.ValidateConfigRequest_File_RawContent{
+						RawContent: []byte("config with error"),
+					}
+					res, err := srv.ValidateConfig(ctx, req)
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
+						Messages: []*config.ValidateConfigResponse_Message{
+							{
+								Path:     path,
+								Text:     "in \"some_file.cfg\": blocking error",
+								Severity: config.ValidateConfigResponse_ERROR,
+							},
+						},
+					})
+				})
+				Convey("With warning", func() {
+					file.Content = &config.ValidateConfigRequest_File_RawContent{
+						RawContent: []byte("config with warning"),
+					}
+					res, err := srv.ValidateConfig(ctx, req)
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
+						Messages: []*config.ValidateConfigResponse_Message{
+							{
+								Path:     path,
+								Text:     "in \"some_file.cfg\": diagnostic warning",
+								Severity: config.ValidateConfigResponse_WARNING,
+							},
+						},
+					})
+				})
+				Convey("With both", func() {
+					file.Content = &config.ValidateConfigRequest_File_RawContent{
+						RawContent: []byte("config with error and warning"),
+					}
+					res, err := srv.ValidateConfig(ctx, req)
+					So(err, ShouldBeNil)
+					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
+						Messages: []*config.ValidateConfigResponse_Message{
+							{
+								Path:     path,
+								Text:     "in \"some_file.cfg\": blocking error",
+								Severity: config.ValidateConfigResponse_ERROR,
+							},
+							{
+								Path:     path,
+								Text:     "in \"some_file.cfg\": diagnostic warning",
+								Severity: config.ValidateConfigResponse_WARNING,
+							},
+						},
+					})
+				})
+			})
+
+			Convey("Multiple files", func() {
+				addRule("foo.cfg")
+				addRule("bar.cfg")
+				addRule("baz.cfg")
+				fileFoo := &config.ValidateConfigRequest_File{
+					Path: "foo.cfg",
+					Content: &config.ValidateConfigRequest_File_RawContent{
+						RawContent: []byte("error"),
+					},
+				}
+				fileBar := &config.ValidateConfigRequest_File{
+					Path: "bar.cfg",
+					Content: &config.ValidateConfigRequest_File_RawContent{
+						RawContent: []byte("good config"),
+					},
+				}
+				fileBaz := &config.ValidateConfigRequest_File{
+					Path: "baz.cfg",
+					Content: &config.ValidateConfigRequest_File_RawContent{
+						RawContent: []byte("warning and error"),
+					},
+				}
+
+				req := &config.ValidateConfigRequest{
+					ConfigSet: configSet,
+					Files: &config.ValidateConfigRequest_Files{
+						Files: []*config.ValidateConfigRequest_File{
+							fileFoo, fileBar, fileBaz,
+						},
+					},
+				}
+
+				res, err := srv.ValidateConfig(ctx, req)
+				So(err, ShouldBeNil)
+				So(res, ShouldResembleProto, &config.ValidateConfigResponse{
+					Messages: []*config.ValidateConfigResponse_Message{
+						{
+							Path:     "foo.cfg",
+							Text:     "in \"foo.cfg\": blocking error",
+							Severity: config.ValidateConfigResponse_ERROR,
+						},
+						{
+							Path:     "baz.cfg",
+							Text:     "in \"baz.cfg\": blocking error",
+							Severity: config.ValidateConfigResponse_ERROR,
+						},
+						{
+							Path:     "baz.cfg",
+							Text:     "in \"baz.cfg\": diagnostic warning",
+							Severity: config.ValidateConfigResponse_WARNING,
+						},
+					},
+				})
+			})
+		})
 	})
 }
