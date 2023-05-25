@@ -51,7 +51,7 @@ export const SummarySection = observer(() => {
             padding: '5px',
           }}
         >
-          This build was scheduled to be canceled by {build.data.canceledBy || 'unknown'}
+          This build was scheduled to be canceled by {build.data.canceledBy || 'unknown'}{' '}
           <RelativeTimestamp timestamp={scheduledCancelTime} />
         </div>
       )}
