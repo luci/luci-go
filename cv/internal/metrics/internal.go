@@ -32,6 +32,7 @@ var Internal = struct {
 	CLIngestionLatency             metric.CumulativeDistribution
 	CLIngestionLatencyWithoutFetch metric.CumulativeDistribution
 	BigQueryExportDelay            metric.CumulativeDistribution
+	RunTryjobResultReportDelay     metric.CumulativeDistribution
 }{
 	BuildbucketRPCCount: metric.NewCounter(
 		"cv/internal/buildbucket_rpc/count",
@@ -110,6 +111,19 @@ var Internal = struct {
 		"cv/internal/runs/bq_export_delay",
 		"Distribution of the time elapsed from the time a Run ends to the "+
 			"time CV exports this Run to BigQuery",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		// Bucketer for 1ms...8h range.
+		distribution.GeometricBucketer(
+			math.Pow(float64(8*time.Hour/time.Millisecond), 1.0/nBuckets), nBuckets,
+		),
+		field.String("project"),
+		field.String("config_group"),
+		field.String("mode"),
+	),
+	RunTryjobResultReportDelay: metric.NewCumulativeDistribution(
+		"cv/internal/runs/tryjob_result_report_delay",
+		"Distribution of the time elapsed from the time Run Tryjob execution has "+
+			"completed to the time LUCI CV successfully reports the result to the CL",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		// Bucketer for 1ms...8h range.
 		distribution.GeometricBucketer(

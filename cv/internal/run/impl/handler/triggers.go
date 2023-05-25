@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -58,6 +59,11 @@ func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunSta
 			switch result.GetDetail().(type) {
 			case *eventpb.LongOpCompleted_ResetTriggers_Result_SuccessInfo:
 				rs.LogInfofAt(result.GetSuccessInfo().GetResetAt().AsTime(), logEntryLabelResetTriggers, "successfully reset the trigger of change %s", changeURL)
+				if tjEndTime := rs.Tryjobs.GetState().GetEndTime(); tjEndTime != nil {
+					delay := result.GetSuccessInfo().GetResetAt().AsTime().Sub(tjEndTime.AsTime())
+					metrics.Internal.RunTryjobResultReportDelay.Add(ctx, float64(delay.Milliseconds()),
+						rs.ID.LUCIProject(), rs.ConfigGroupID.Name(), string(rs.Mode))
+				}
 			case *eventpb.LongOpCompleted_ResetTriggers_Result_FailureInfo:
 				rs.LogInfof(ctx, logEntryLabelResetTriggers, "failed to reset the trigger of change %s. Reason: %s", changeURL, result.GetFailureInfo().GetFailureMessage())
 			default:
