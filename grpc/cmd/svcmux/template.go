@@ -47,7 +47,7 @@ type {{$StructName}} struct {
 
 {{range .Methods}}
 func (s *{{$StructName}}) {{.Name}}(c context.Context, req {{.InputType}}) ({{.OutputType}}, error) {
-	ver := svcmux.GetServiceVersion(c, s.Default)
+	ver := svcmux.ServiceVersion(c, s.Default)
 	impl := s.Impls[ver]
 	if impl == nil {
 		return nil, svcmux.NoImplementation(ver)

@@ -20,7 +20,7 @@ type VersionedS1 struct {
 }
 
 func (s *VersionedS1) M(c context.Context, req *M1) (*M2, error) {
-	ver := svcmux.GetServiceVersion(c, s.Default)
+	ver := svcmux.ServiceVersion(c, s.Default)
 	impl := s.Impls[ver]
 	if impl == nil {
 		return nil, svcmux.NoImplementation(ver)
@@ -37,7 +37,7 @@ type VersionedS2 struct {
 }
 
 func (s *VersionedS2) Get(c context.Context, req *Void) (*M1, error) {
-	ver := svcmux.GetServiceVersion(c, s.Default)
+	ver := svcmux.ServiceVersion(c, s.Default)
 	impl := s.Impls[ver]
 	if impl == nil {
 		return nil, svcmux.NoImplementation(ver)
@@ -46,7 +46,7 @@ func (s *VersionedS2) Get(c context.Context, req *Void) (*M1, error) {
 }
 
 func (s *VersionedS2) Set(c context.Context, req *M1) (*Void, error) {
-	ver := svcmux.GetServiceVersion(c, s.Default)
+	ver := svcmux.ServiceVersion(c, s.Default)
 	impl := s.Impls[ver]
 	if impl == nil {
 		return nil, svcmux.NoImplementation(ver)
@@ -55,7 +55,7 @@ func (s *VersionedS2) Set(c context.Context, req *M1) (*Void, error) {
 }
 
 func (s *VersionedS2) Imp(c context.Context, req *sub.Sub) (*emptypb.Empty, error) {
-	ver := svcmux.GetServiceVersion(c, s.Default)
+	ver := svcmux.ServiceVersion(c, s.Default)
 	impl := s.Impls[ver]
 	if impl == nil {
 		return nil, svcmux.NoImplementation(ver)

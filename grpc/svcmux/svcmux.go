@@ -29,8 +29,8 @@ import (
 // service version.
 const VersionMetadataKey = "X-Luci-Service-Version"
 
-// GetServiceVersion extracts requested service version from metadata in c.
-func GetServiceVersion(ctx context.Context, defaultVer string) string {
+// ServiceVersion extracts requested service version from metadata in ctx.
+func ServiceVersion(ctx context.Context, defaultVer string) string {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		values := md[VersionMetadataKey]
 		if len(values) != 0 {
