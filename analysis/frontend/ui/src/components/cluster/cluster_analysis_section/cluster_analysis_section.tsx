@@ -44,7 +44,7 @@ const ClusterAnalysisSection = () => {
     navigate({ hash: '#' + newValue }, { replace: true });
   };
 
-  const exonerationsAvailable = project == 'chromium' || project == 'chrome';
+  const exonerationsAvailable = project == 'chromium' || project == 'chrome' || project == 'chromeos';
 
   let value = location.hash;
   if (value.length > 0) {

@@ -22,27 +22,30 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Typography from '@mui/material/Typography';
 
 import {
+  ExoneratedTestVariant,
+  ExonerationCriteria,
   isFailureCriteriaAlmostMet,
   isFailureCriteriaMet,
   isFlakyCriteriaAlmostMet,
   isFlakyCriteriaMet,
-  ExoneratedTestVariant,
 } from '../model/model';
 import FlakyCriteriaSection from './flaky_criteria_section/flaky_criteria_section';
 import FailureCriteriaSection from './failure_criteria_section/failure_criteria_section';
 
 interface Props {
+  criteria: ExonerationCriteria;
   project: string;
   testVariant: ExoneratedTestVariant;
 }
 
 const ExonerationExplanationSection = ({
+  criteria,
   testVariant,
 }: Props) => {
   const defaultExpanded = (): string => {
-    if (isFlakyCriteriaMet(testVariant) || isFlakyCriteriaAlmostMet(testVariant)) {
+    if (isFlakyCriteriaMet(criteria, testVariant) || isFlakyCriteriaAlmostMet(criteria, testVariant)) {
       return 'flaky';
-    } else if (isFailureCriteriaAlmostMet(testVariant) || isFailureCriteriaMet(testVariant)) {
+    } else if (isFailureCriteriaAlmostMet(criteria, testVariant) || isFailureCriteriaMet(criteria, testVariant)) {
       return 'failure';
     }
     return '';
@@ -56,36 +59,36 @@ const ExonerationExplanationSection = ({
     setExpanded(isExpanded ? 'failure' : '');
   };
   const flakyCriteriaMetLabel = (): string => {
-    if (isFlakyCriteriaMet(testVariant)) {
+    if (isFlakyCriteriaMet(criteria, testVariant)) {
       return 'Met';
-    } else if (isFlakyCriteriaAlmostMet(testVariant)) {
+    } else if (isFlakyCriteriaAlmostMet(criteria, testVariant)) {
       return 'Almost met';
     } else {
       return 'Not met';
     }
   };
   const flakyCriteriaMetColor = () => {
-    if (isFlakyCriteriaMet(testVariant)) {
+    if (isFlakyCriteriaMet(criteria, testVariant)) {
       return 'success';
-    } else if (isFlakyCriteriaAlmostMet(testVariant)) {
+    } else if (isFlakyCriteriaAlmostMet(criteria, testVariant)) {
       return 'warning';
     } else {
       return 'default';
     }
   };
   const failureCriteriaMetLabel = (): string => {
-    if (isFailureCriteriaMet(testVariant)) {
+    if (isFailureCriteriaMet(criteria, testVariant)) {
       return 'Met';
-    } else if (isFailureCriteriaAlmostMet(testVariant)) {
+    } else if (isFailureCriteriaAlmostMet(criteria, testVariant)) {
       return 'Almost met';
     } else {
       return 'Not met';
     }
   };
   const failureCriteriaMetColor = () => {
-    if (isFailureCriteriaMet(testVariant)) {
+    if (isFailureCriteriaMet(criteria, testVariant)) {
       return 'success';
-    } else if (isFailureCriteriaAlmostMet(testVariant)) {
+    } else if (isFailureCriteriaAlmostMet(criteria, testVariant)) {
       return 'warning';
     } else {
       return 'default';
@@ -109,7 +112,7 @@ const ExonerationExplanationSection = ({
           </Typography>
         </AccordionSummary>
         <AccordionDetails data-testid='flaky_criteria_details'>
-          <FlakyCriteriaSection testVariant={testVariant} />
+          <FlakyCriteriaSection testVariant={testVariant} criteria={criteria} />
         </AccordionDetails>
       </Accordion>
       <Accordion expanded={expanded == 'failure'} onChange={handleFailureExpandedChange}>
@@ -127,7 +130,7 @@ const ExonerationExplanationSection = ({
           </Typography>
         </AccordionSummary>
         <AccordionDetails data-testid='failure_criteria_details'>
-          <FailureCriteriaSection testVariant={testVariant} />
+          <FailureCriteriaSection testVariant={testVariant} criteria={criteria} />
         </AccordionDetails>
       </Accordion>
     </>

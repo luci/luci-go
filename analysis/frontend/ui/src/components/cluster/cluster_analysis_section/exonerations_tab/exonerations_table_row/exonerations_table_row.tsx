@@ -30,11 +30,12 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 
 import {
+  ExoneratedTestVariant,
+  ExonerationCriteria,
   isFailureCriteriaAlmostMet,
   isFailureCriteriaMet,
   isFlakyCriteriaAlmostMet,
   isFlakyCriteriaMet,
-  ExoneratedTestVariant,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import {
   testHistoryLink,
@@ -45,11 +46,13 @@ import {
 import ExonerationExplanationSection from '../exoneration_explanation_section/exoneration_explanation_section';
 
 interface Props {
+  criteria: ExonerationCriteria;
   project: string;
   testVariant: ExoneratedTestVariant;
 }
 
 const ExonerationsTableRow = ({
+  criteria,
   project,
   testVariant,
 }: Props) => {
@@ -64,9 +67,9 @@ const ExonerationsTableRow = ({
   };
   const dialogTitle = (): string => {
     let variation: string;
-    if (isFlakyCriteriaMet(testVariant) || isFailureCriteriaMet(testVariant)) {
+    if (isFlakyCriteriaMet(criteria, testVariant) || isFailureCriteriaMet(criteria, testVariant)) {
       variation = '';
-    } else if (isFlakyCriteriaAlmostMet(testVariant) || isFailureCriteriaAlmostMet(testVariant)) {
+    } else if (isFlakyCriteriaAlmostMet(criteria, testVariant) || isFailureCriteriaAlmostMet(criteria, testVariant)) {
       variation = ' close to';
     } else {
       variation = ' not';
@@ -88,12 +91,12 @@ const ExonerationsTableRow = ({
           aria-label='Test history link'
           href={testHistoryLink(project, testVariant.testId, testVariant.variant)}
           target="_blank">
-            View
+          View
         </Link>
       </TableCell>
       <TableCell>
-        {(isFlakyCriteriaMet(testVariant) || isFailureCriteriaMet(testVariant)) ? 'Yes ' :
-           ((isFlakyCriteriaAlmostMet(testVariant) || isFailureCriteriaAlmostMet(testVariant)) ? 'No, but close to ' :
+        {(isFlakyCriteriaMet(criteria, testVariant) || isFailureCriteriaMet(criteria, testVariant)) ? 'Yes ' :
+          ((isFlakyCriteriaAlmostMet(criteria, testVariant) || isFailureCriteriaAlmostMet(criteria, testVariant)) ? 'No, but close to ' :
             'No ')}
         <Link onClick={handleClickOpen} href='#'>Why?</Link>
         <Dialog open={open} onClose={handleClose} maxWidth='lg' fullWidth>
@@ -112,7 +115,7 @@ const ExonerationsTableRow = ({
             </IconButton>
           </DialogTitle>
           <DialogContent>
-            <ExonerationExplanationSection project={project} testVariant={testVariant} />
+            <ExonerationExplanationSection criteria={criteria} project={project} testVariant={testVariant} />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>

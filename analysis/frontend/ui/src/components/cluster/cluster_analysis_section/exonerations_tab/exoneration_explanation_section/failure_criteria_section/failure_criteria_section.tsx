@@ -15,8 +15,6 @@
 import dayjs from 'dayjs';
 
 import Chip from '@mui/material/Chip';
-import CloseIcon from '@mui/icons-material/Close';
-import DoneIcon from '@mui/icons-material/Done';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import Table from '@mui/material/Table';
@@ -27,6 +25,7 @@ import TableRow from '@mui/material/TableRow';
 
 import {
   ExoneratedTestVariant,
+  ExonerationCriteria,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import {
   invocationName,
@@ -36,12 +35,15 @@ import {
   TestVariantFailureRateAnalysisRecentVerdict,
 } from '@/services/test_variants';
 import CLList from '@/components/cl_list/cl_list';
+import ExplanationChip from '../explanation_chip/explanation_chip';
 
 interface Props {
+  criteria: ExonerationCriteria;
   testVariant: ExoneratedTestVariant;
 }
 
 const FailureCriteriaSection = ({
+  criteria,
   testVariant,
 }: Props) => {
   return (
@@ -56,14 +58,8 @@ const FailureCriteriaSection = ({
         Definition
       </Typography>
       <Typography component='div' paragraph>
-        <Chip
-          variant='outlined'
-          color={testVariant.recentVerdictsWithUnexpectedRuns >= 7 ? 'success' : 'default'}
-          icon={testVariant.recentVerdictsWithUnexpectedRuns >= 7 ? (<DoneIcon/>) : (<CloseIcon/>)}
-          label={
-            <>Recent verdicts with unexpected runs <strong data-testid='unexpected_verdict_count'>(current value: {testVariant.recentVerdictsWithUnexpectedRuns})</strong> &gt;= 7</>
-          }
-        />&nbsp;.
+        <ExplanationChip value={testVariant.recentVerdictsWithUnexpectedRuns} threshold={criteria.recentVerdictsWithUnexpectedRuns} text="Recent verdicts with unexpected runs" testId="unexpected_verdict_count"></ExplanationChip>
+        &nbsp;.
       </Typography>
       <Typography component='div'>
         Where:
@@ -90,7 +86,7 @@ const FailureCriteriaSection = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {testVariant.recentVerdicts.map((verdict :TestVariantFailureRateAnalysisRecentVerdict, i: number) => {
+          {testVariant.recentVerdicts.map((verdict: TestVariantFailureRateAnalysisRecentVerdict, i: number) => {
             return (
               <TableRow key={i.toString()}>
                 <TableCell>
@@ -105,7 +101,7 @@ const FailureCriteriaSection = ({
                 </TableCell>
                 <TableCell>
                   <Chip
-                    color={verdict.hasUnexpectedRuns ? 'error' : 'success' }
+                    color={verdict.hasUnexpectedRuns ? 'error' : 'success'}
                     variant='outlined'
                     size='small'
                     label={verdict.hasUnexpectedRuns ? 'Has unexpected run' : 'No unexpected run'}

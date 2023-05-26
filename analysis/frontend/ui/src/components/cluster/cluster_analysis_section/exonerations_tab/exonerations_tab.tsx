@@ -42,6 +42,9 @@ import {
   ExoneratedTestVariant,
   testVariantFromAnalysis,
   sortTestVariants,
+  ExonerationCriteria,
+  ChromeOSCriteria,
+  ChromiumCriteria,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 
 import { ClusterContext } from '../../cluster_context';
@@ -66,6 +69,7 @@ const ExonerationsTab = ({
 
   const [sortField, setCurrentSortField] = useState<SortableField>('lastExoneration');
   const [isAscending, setIsAscending] = useState(false);
+  const [criteria] = useState<ExonerationCriteria>(project == 'chromeos' ? ChromeOSCriteria : ChromiumCriteria);
 
   const {
     isLoading,
@@ -106,7 +110,7 @@ const ExonerationsTab = ({
 
   useEffect(() => {
     if (unsortedTestVariants) {
-      setTestVariants(sortTestVariants(unsortedTestVariants, sortField, isAscending));
+      setTestVariants(sortTestVariants(criteria, unsortedTestVariants, sortField, isAscending));
     }
   }, [unsortedTestVariants, sortField, isAscending]);
 
@@ -147,6 +151,7 @@ const ExonerationsTab = ({
               {
                 testVariants.map((tv) => (
                   <ExonerationsTableRow
+                    criteria={criteria}
                     project={project}
                     testVariant={tv}
                     key={tv.key}/>

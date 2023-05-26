@@ -30,6 +30,7 @@ export class ExoneratedTestVariantBuilder {
       criticalFailuresExonerated: 100001,
       runFlakyVerdicts1wd: 0,
       runFlakyVerdicts5wd: 1,
+      runFlakyPercentage1wd: 2,
       recentVerdictsWithUnexpectedRuns: 2,
       runFlakyVerdictExamples: [{
         partitionTime: '2040-01-02T03:04:05.678901234Z',

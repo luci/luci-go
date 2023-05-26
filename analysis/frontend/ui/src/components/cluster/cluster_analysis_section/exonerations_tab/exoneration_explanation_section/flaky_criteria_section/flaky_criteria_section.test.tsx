@@ -21,13 +21,15 @@ import {
 
 import { ExoneratedTestVariantBuilder } from '../../model/mocks';
 import FlakyCriteriaSection from './flaky_criteria_section';
+import { ChromiumCriteria } from '../../model/model';
 
 describe('Test FlakyCriteriaSection', () => {
   it('shows statistics related to the criteria', async () => {
     const testVariant = new ExoneratedTestVariantBuilder().build();
     render(
         <FlakyCriteriaSection
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     expect(screen.getByTestId('flaky_verdicts_1wd')).toHaveTextContent('(current value: 0)');

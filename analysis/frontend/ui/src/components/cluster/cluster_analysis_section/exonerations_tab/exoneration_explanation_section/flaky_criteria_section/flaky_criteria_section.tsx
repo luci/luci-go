@@ -13,10 +13,8 @@
 // limitations under the License.
 
 import dayjs from 'dayjs';
+import { Fragment } from 'react';
 
-import Chip from '@mui/material/Chip';
-import CloseIcon from '@mui/icons-material/Close';
-import DoneIcon from '@mui/icons-material/Done';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
 import Table from '@mui/material/Table';
@@ -27,6 +25,7 @@ import TableRow from '@mui/material/TableRow';
 
 import {
   ExoneratedTestVariant,
+  ExonerationCriteria,
 } from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import {
   invocationName,
@@ -36,14 +35,27 @@ import {
   TestVariantFailureRateAnalysisVerdictExample,
 } from '@/services/test_variants';
 import CLList from '@/components/cl_list/cl_list';
+import ExplanationChip from '../explanation_chip/explanation_chip';
 
 interface Props {
+  criteria: ExonerationCriteria;
   testVariant: ExoneratedTestVariant;
 }
 
 const FlakyCriteriaSection = ({
+  criteria,
   testVariant,
 }: Props) => {
+  const chips = [];
+  if (criteria.runFlakyVerdicts1wd > 0) {
+    chips.push(<ExplanationChip value={testVariant.runFlakyVerdicts1wd} threshold={criteria.runFlakyVerdicts1wd} text="Run-flaky verdicts in the last weekday" testId="flaky_verdicts_1wd" />);
+  }
+  if (criteria.runFlakyVerdicts5wd > 0) {
+    chips.push(<ExplanationChip value={testVariant.runFlakyVerdicts5wd} threshold={criteria.runFlakyVerdicts5wd} text="Run-flaky verdicts in the last five weekdays" testId="flaky_verdicts_5wd" />);
+  }
+  if (criteria.runFlakyPercentage1wd > 0) {
+    chips.push(<ExplanationChip value={testVariant.runFlakyPercentage1wd} threshold={criteria.runFlakyPercentage1wd} text="Flaky rate percentage last weekday" testId="flaky_percentage_1wd" />);
+  }
   return (
     <>
       <Typography variant="h6">
@@ -56,22 +68,10 @@ const FlakyCriteriaSection = ({
         Definition
       </Typography>
       <Typography component='div' paragraph>
-        <Chip
-          variant='outlined'
-          color={testVariant.runFlakyVerdicts1wd >= 1 ? 'success' : 'default'}
-          icon={testVariant.runFlakyVerdicts1wd >= 1 ? (<DoneIcon/>) : (<CloseIcon/>)}
-          label={
-            <>Run-flaky verdicts in the last weekday <strong data-testid='flaky_verdicts_1wd'>(current value: {testVariant.runFlakyVerdicts1wd})</strong> &gt;= 1</>
-          }
-        />&nbsp;AND&nbsp;
-        <Chip
-          variant='outlined'
-          color={testVariant.runFlakyVerdicts5wd >= 3 ? 'success' : 'default'}
-          icon={testVariant.runFlakyVerdicts5wd >= 3 ? (<DoneIcon/>) : (<CloseIcon/>)}
-          label={
-            <>Run-flaky verdicts in the last five weekdays <strong data-testid='flaky_verdicts_5wd'>(current value: {testVariant.runFlakyVerdicts5wd})</strong> &gt;= 3</>
-          }
-        />&nbsp;.
+        {chips.map((chip, i) => {
+          return <Fragment key={i}>{i > 0 ? <>&nbsp;AND&nbsp;</> : null}{chip}</Fragment>
+        })}
+        &nbsp;.
       </Typography>
       <Typography component='div'>
         Where:
@@ -102,7 +102,7 @@ const FlakyCriteriaSection = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {testVariant.runFlakyVerdictExamples.map((verdict :TestVariantFailureRateAnalysisVerdictExample, i: number) => {
+          {testVariant.runFlakyVerdictExamples.map((verdict: TestVariantFailureRateAnalysisVerdictExample, i: number) => {
             return (
               <TableRow key={i.toString()}>
                 <TableCell>

@@ -23,6 +23,7 @@ import {
 
 import { ExoneratedTestVariantBuilder } from '../model/mocks';
 import ExonerationExplanationSection from './exoneration_explanation_section';
+import { ChromiumCriteria } from '../model/model';
 
 describe('Test ExonerationExplanationSection', () => {
   it('shows statistics related to test flakiness', async () => {
@@ -30,7 +31,8 @@ describe('Test ExonerationExplanationSection', () => {
     render(
         <ExonerationExplanationSection
           project='testproject'
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     // Flaky criteria section.
@@ -51,7 +53,8 @@ describe('Test ExonerationExplanationSection', () => {
     render(
         <ExonerationExplanationSection
           project='testproject'
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     // As the criteria was not met, it should not have been auto-expanded by default.
@@ -75,7 +78,8 @@ describe('Test ExonerationExplanationSection', () => {
     render(
         <ExonerationExplanationSection
           project='testproject'
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     // As the criteria was not met, it should not have been auto-expanded by default.
@@ -100,7 +104,8 @@ describe('Test ExonerationExplanationSection', () => {
     render(
         <ExonerationExplanationSection
           project='testproject'
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     expect(await screen.findByTestId('flaky_criteria_met_chip')).toHaveTextContent('Almost met');
@@ -115,7 +120,8 @@ describe('Test ExonerationExplanationSection', () => {
     render(
         <ExonerationExplanationSection
           project='testproject'
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     expect(await screen.findByTestId('flaky_criteria_met_chip')).toHaveTextContent('Met');
@@ -130,7 +136,8 @@ describe('Test ExonerationExplanationSection', () => {
     render(
         <ExonerationExplanationSection
           project='testproject'
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     expect(await screen.findByTestId('failure_criteria_met_chip')).toHaveTextContent('Almost met');
@@ -145,7 +152,8 @@ describe('Test ExonerationExplanationSection', () => {
     render(
         <ExonerationExplanationSection
           project='testproject'
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     expect(await screen.findByTestId('failure_criteria_met_chip')).toHaveTextContent('Met');

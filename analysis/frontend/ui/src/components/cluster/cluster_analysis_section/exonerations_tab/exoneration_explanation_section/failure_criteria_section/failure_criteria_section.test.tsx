@@ -21,13 +21,15 @@ import {
 
 import { ExoneratedTestVariantBuilder } from '../../model/mocks';
 import FailureCriteriaSection from './failure_criteria_section';
+import { ChromiumCriteria } from '../../model/model';
 
 describe('Test FailureCriteriaSection', () => {
   it('shows statistics related to the criteria', async () => {
     const testVariant = new ExoneratedTestVariantBuilder().build();
     render(
         <FailureCriteriaSection
-          testVariant={testVariant}/>,
+          testVariant={testVariant}
+          criteria={ChromiumCriteria}/>,
     );
 
     expect(screen.getByTestId('unexpected_verdict_count')).toHaveTextContent('(current value: 2)');

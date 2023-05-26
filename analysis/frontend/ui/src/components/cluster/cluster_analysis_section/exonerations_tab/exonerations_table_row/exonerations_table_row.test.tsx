@@ -24,6 +24,7 @@ import {
 import { ExoneratedTestVariantBuilder } from '../model/mocks';
 
 import ExonerationsTableRow from './exonerations_table_row';
+import { ChromiumCriteria } from '../model/model';
 
 describe('Test ExonerationsTableRows component', () => {
   it('displays test variant statistics', async () => {
@@ -34,7 +35,8 @@ describe('Test ExonerationsTableRows component', () => {
           <tbody>
             <ExonerationsTableRow
               project='testproject'
-              testVariant={testVariant}/>
+              testVariant={testVariant}
+              criteria={ChromiumCriteria}/>
           </tbody>
         </table>,
     );
@@ -53,7 +55,8 @@ describe('Test ExonerationsTableRows component', () => {
           <tbody>
             <ExonerationsTableRow
               project='testproject'
-              testVariant={testVariant}/>
+              testVariant={testVariant}
+              criteria={ChromiumCriteria}/>
           </tbody>
         </table>,
     );
