@@ -15,14 +15,7 @@
 module.exports = {
   preset: 'ts-jest/presets/js-with-babel',
   testEnvironment: 'jsdom',
-  testMatch: [
-    '**/__tests__/**/*.[jt]s?(x)',
-    // Use the old test filename pattern (e.g. *_test.ts) to reduce git diff
-    // during migration.
-    // TODO(weiweilin): rename all unit test files and use the standard pattern
-    // (e.g. *.test.ts).
-    '**/?(*_test).[jt]s?(x)',
-  ],
+  testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(test).[jt]s?(x)'],
   transform: {
     '^.+\\.jsx?$': 'babel-jest',
     '^.+\\.[tj]sx?$': [

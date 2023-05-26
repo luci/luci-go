@@ -15,7 +15,7 @@
 import { expect } from '@jest/globals';
 import { Duration } from 'luxon';
 
-import { displayCompactDuration, displayDuration } from '../../src/libs/time_utils';
+import { displayCompactDuration, displayDuration } from './time_utils';
 
 describe('displayDuration', () => {
   it('should display correct duration in days and hours', async () => {
