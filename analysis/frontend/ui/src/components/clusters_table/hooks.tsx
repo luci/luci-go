@@ -124,7 +124,6 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
 
   const selectedMetrics = metrics.filter((metric) => selectedMetricsIds.indexOf(metric.metricId) > -1);
 
-
   function updateSelectedMetricsParam(selectedMetrics: Metric[], replace = false) {
     const params: ParamKeyValuePair[] = [];
 
@@ -134,13 +133,17 @@ export function useSelectedMetricsParam(metrics: Metric[]): [Metric[], (selected
     const orderByParam = searchParams.get('orderBy');
     let addedOrderBy = false;
     if (selectedMetrics.findIndex((m) => m.metricId === orderByParam) < 0) {
-      let highestMetric = selectedMetrics[0];
-      selectedMetrics.forEach((m) => {
-        if (m.sortPriority > highestMetric.sortPriority) {
-          highestMetric = m;
-        }
-      });
-      params.push(['orderBy', highestMetric.metricId]);
+      let orderByValue = '';
+      if (selectedMetrics.length > 0) {
+        let highestMetric = selectedMetrics[0];
+        selectedMetrics.forEach((m) => {
+          if (m.sortPriority > highestMetric.sortPriority) {
+            highestMetric = m;
+          }
+        });
+        orderByValue = highestMetric.metricId;
+      }
+      params.push(['orderBy', orderByValue]);
       params.push(['orderDir', 'desc']);
       addedOrderBy = true;
     }

@@ -48,9 +48,13 @@ const ClustersTableMetricSelection = () => {
     const {
       target: { value },
     } = event;
-      // On autofill we get a stringified value.
+    // On autofill we get a stringified value.
     const selectedMetricsValue = typeof value === 'string' ? value.split(',') : value;
-    updateSelectedMetricsParam(metrics.filter((m) => selectedMetricsValue.indexOf(m.metricId) > -1));
+
+    // Only update if at least one metric has been selected.
+    if (selectedMetricsValue.length > 0) {
+      updateSelectedMetricsParam(metrics.filter((m) => selectedMetricsValue.indexOf(m.metricId) > -1));
+    }
   }
 
   function renderValue(selected: string[]) {
