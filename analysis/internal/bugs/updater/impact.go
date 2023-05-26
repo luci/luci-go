@@ -25,12 +25,11 @@ import (
 // is the impact of the cluster after failures that are already
 // part of a bug cluster are removed.
 func ExtractResidualImpact(c *analysis.Cluster) *bugs.ClusterImpact {
-	return &bugs.ClusterImpact{
-		CriticalFailuresExonerated: extractMetricImpact(c.MetricValues[metrics.CriticalFailuresExonerated.ID]),
-		TestResultsFailed:          extractMetricImpact(c.MetricValues[metrics.Failures.ID]),
-		TestRunsFailed:             extractMetricImpact(c.MetricValues[metrics.TestRunsFailed.ID]),
-		PresubmitRunsFailed:        extractMetricImpact(c.MetricValues[metrics.HumanClsFailedPresubmit.ID]),
+	residualImpact := bugs.ClusterImpact{}
+	for id, counts := range c.MetricValues {
+		residualImpact[id] = extractMetricImpact(counts)
 	}
+	return &residualImpact
 }
 
 func extractMetricImpact(counts metrics.TimewiseCounts) bugs.MetricImpact {
@@ -43,17 +42,9 @@ func extractMetricImpact(counts metrics.TimewiseCounts) bugs.MetricImpact {
 
 // SetResidualImpact sets the residual impact on a cluster summary.
 func SetResidualImpact(cs *analysis.Cluster, impact *bugs.ClusterImpact) {
-	cs.MetricValues[metrics.CriticalFailuresExonerated.ID] = replaceResidualImpact(
-		cs.MetricValues[metrics.CriticalFailuresExonerated.ID], impact.CriticalFailuresExonerated)
-
-	cs.MetricValues[metrics.Failures.ID] = replaceResidualImpact(
-		cs.MetricValues[metrics.Failures.ID], impact.TestResultsFailed)
-
-	cs.MetricValues[metrics.TestRunsFailed.ID] = replaceResidualImpact(
-		cs.MetricValues[metrics.TestRunsFailed.ID], impact.TestRunsFailed)
-
-	cs.MetricValues[metrics.HumanClsFailedPresubmit.ID] = replaceResidualImpact(
-		cs.MetricValues[metrics.HumanClsFailedPresubmit.ID], impact.PresubmitRunsFailed)
+	for k, v := range *impact {
+		cs.MetricValues[k] = replaceResidualImpact(cs.MetricValues[k], v)
+	}
 }
 
 func replaceResidualImpact(counts metrics.TimewiseCounts, impact bugs.MetricImpact) metrics.TimewiseCounts {

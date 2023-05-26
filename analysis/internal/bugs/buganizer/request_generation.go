@@ -76,7 +76,7 @@ type RequestGenerator struct {
 	buganizerCfg *configpb.BuganizerProject
 	// The threshold at which bugs are filed. Used here as the threshold
 	// at which to re-open verified bugs.
-	bugFilingThreshold *configpb.ImpactThreshold
+	bugFilingThresholds []*configpb.ImpactMetricThreshold
 }
 
 // Initializes and returns a new buganizer request generator.
@@ -85,11 +85,11 @@ func NewRequestGenerator(
 	appID, project string,
 	projectCfg *configpb.ProjectConfig) *RequestGenerator {
 	return &RequestGenerator{
-		client:             client,
-		appID:              appID,
-		project:            project,
-		buganizerCfg:       projectCfg.Buganizer,
-		bugFilingThreshold: projectCfg.BugFilingThreshold,
+		client:              client,
+		appID:               appID,
+		project:             project,
+		buganizerCfg:        projectCfg.Buganizer,
+		bugFilingThresholds: projectCfg.BugFilingThresholds,
 	}
 }
 
@@ -134,7 +134,7 @@ func (rg *RequestGenerator) clusterPriorityWithInflatedThresholds(impact *bugs.C
 	priorityMapping := mappings[len(mappings)-1]
 	for i := len(mappings) - 2; i >= 0; i-- {
 		p := mappings[i]
-		adjustedThreshold := bugs.InflateThreshold(p.Threshold, inflationPercent)
+		adjustedThreshold := bugs.InflateThreshold(p.Thresholds, inflationPercent)
 		if !impact.MeetsThreshold(adjustedThreshold) {
 			// A cluster cannot reach a higher priority unless it has
 			// met the thresholds for all lower priorities.
@@ -439,7 +439,7 @@ func (rg *RequestGenerator) prepareBugVerifiedUpdate(ctx context.Context,
 		}
 
 		body.WriteString("Because:\n")
-		body.WriteString(bugs.ExplainThresholdsMet(impact, rg.bugFilingThreshold))
+		body.WriteString(bugs.ExplainThresholdsMet(impact, rg.bugFilingThresholds))
 		body.WriteString("LUCI Analysis has re-opened the bug.")
 
 		trailer = fmt.Sprintf("Why issues are re-opened: https://%s.appspot.com/help#bug-reopened", rg.appID)
@@ -503,9 +503,9 @@ func (rg *RequestGenerator) priorityIncreaseJustification(impact *bugs.ClusterIm
 	hysteresisPerc := rg.buganizerCfg.PriorityHysteresisPercent
 
 	// Visit priorities in increasing priority order.
-	var thresholdsMet []*configpb.ImpactThreshold
+	var thresholdsMet [][]*configpb.ImpactMetricThreshold
 	for i := oldPriorityIndex - 1; i >= newPriorityIndex; i-- {
-		metThreshold := rg.buganizerCfg.PriorityMappings[i].Threshold
+		metThreshold := rg.buganizerCfg.PriorityMappings[i].Thresholds
 		if i == oldPriorityIndex-1 {
 			// For the first priority step up, we must have also exceeded
 			// hysteresis.
@@ -543,7 +543,7 @@ func (rg *RequestGenerator) priorityDecreaseJustification(oldPriorityIndex, newP
 	hysteresisPerc := rg.buganizerCfg.PriorityHysteresisPercent
 
 	// The next-higher priority level that we failed to meet.
-	failedToMeetThreshold := rg.buganizerCfg.PriorityMappings[newPriorityIndex-1].Threshold
+	failedToMeetThreshold := rg.buganizerCfg.PriorityMappings[newPriorityIndex-1].Thresholds
 	if newPriorityIndex == oldPriorityIndex+1 {
 		// We only dropped one priority level. That means we failed to meet the
 		// old threshold, even after applying hysteresis.
@@ -563,11 +563,11 @@ func (rg *RequestGenerator) isCompatibleWithVerified(impact *bugs.ClusterImpact,
 		// The issue is verified. Only reopen if we satisfied the bug-filing
 		// criteria. Bug-filing criteria is guaranteed to imply the criteria
 		// of the lowest priority level.
-		return !impact.MeetsThreshold(rg.bugFilingThreshold)
+		return !impact.MeetsThreshold(rg.bugFilingThresholds)
 	} else {
 		// The issue is not verified. Only close if the impact falls
 		// below the threshold with hysteresis.
-		deflatedThreshold := bugs.InflateThreshold(lowestPriority.Threshold, -hysteresisPerc)
+		deflatedThreshold := bugs.InflateThreshold(lowestPriority.Thresholds, -hysteresisPerc)
 		return impact.MeetsThreshold(deflatedThreshold)
 	}
 }
@@ -606,7 +606,7 @@ func (rg *RequestGenerator) isCompatibleWithPriority(impact *bugs.ClusterImpact,
 // verified, if no hysteresis has been applied.
 func (rg *RequestGenerator) clusterResolved(impact *bugs.ClusterImpact) bool {
 	lowestPriority := rg.buganizerCfg.PriorityMappings[len(rg.buganizerCfg.PriorityMappings)-1]
-	return !impact.MeetsThreshold(lowestPriority.Threshold)
+	return !impact.MeetsThreshold(lowestPriority.Thresholds)
 }
 
 func (rg *RequestGenerator) indexOfPriority(priority issuetracker.Issue_Priority) int {

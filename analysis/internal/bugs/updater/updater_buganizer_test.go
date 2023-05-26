@@ -53,20 +53,23 @@ func TestBuganizerUpdate(t *testing.T) {
 
 		const project = "chromeos"
 		buganizerCfg := buganizer.ChromeOSTestConfig()
-		thres := &configpb.ImpactThreshold{
-			// Should be more onerous than the "keep-open" thresholds
-			// configured for each individual bug manager.
-			TestResultsFailed: &configpb.MetricThreshold{
-				OneDay:   proto.Int64(100),
-				ThreeDay: proto.Int64(300),
-				SevenDay: proto.Int64(700),
+		thres := []*configpb.ImpactMetricThreshold{
+			{
+				MetricId: "failures",
+				// Should be more onerous than the "keep-open" thresholds
+				// configured for each individual bug manager.
+				Threshold: &configpb.MetricThreshold{
+					OneDay:   proto.Int64(100),
+					ThreeDay: proto.Int64(300),
+					SevenDay: proto.Int64(700),
+				},
 			},
 		}
 		projectCfg := &configpb.ProjectConfig{
-			BugSystem:          configpb.ProjectConfig_BUGANIZER,
-			Buganizer:          buganizerCfg,
-			BugFilingThreshold: thres,
-			LastUpdated:        timestamppb.New(clock.Now(ctx)),
+			BugSystem:           configpb.ProjectConfig_BUGANIZER,
+			Buganizer:           buganizerCfg,
+			BugFilingThresholds: thres,
+			LastUpdated:         timestamppb.New(clock.Now(ctx)),
 		}
 		projectsCfg := map[string]*configpb.ProjectConfig{
 			project: projectCfg,

@@ -66,21 +66,24 @@ func TestMonorailUpdate(t *testing.T) {
 
 		const project = "chromium"
 		monorailCfg := monorail.ChromiumTestConfig()
-		thres := &configpb.ImpactThreshold{
-			// Should be more onerous than the "keep-open" thresholds
-			// configured for each individual bug manager.
-			TestResultsFailed: &configpb.MetricThreshold{
-				OneDay:   proto.Int64(100),
-				ThreeDay: proto.Int64(300),
-				SevenDay: proto.Int64(700),
+		thres := []*configpb.ImpactMetricThreshold{
+			{
+				MetricId: "failures",
+				// Should be more onerous than the "keep-open" thresholds
+				// configured for each individual bug manager.
+				Threshold: &configpb.MetricThreshold{
+					OneDay:   proto.Int64(100),
+					ThreeDay: proto.Int64(300),
+					SevenDay: proto.Int64(700),
+				},
 			},
 		}
 		projectCfg := &configpb.ProjectConfig{
-			BugSystem:          configpb.ProjectConfig_MONORAIL,
-			Monorail:           monorailCfg,
-			Buganizer:          buganizer.ChromeOSTestConfig(),
-			BugFilingThreshold: thres,
-			LastUpdated:        timestamppb.New(time.Date(2030, time.July, 1, 0, 0, 0, 0, time.UTC)),
+			BugSystem:           configpb.ProjectConfig_MONORAIL,
+			Monorail:            monorailCfg,
+			Buganizer:           buganizer.ChromeOSTestConfig(),
+			BugFilingThresholds: thres,
+			LastUpdated:         timestamppb.New(time.Date(2030, time.July, 1, 0, 0, 0, 0, time.UTC)),
 		}
 		projectsCfg := map[string]*configpb.ProjectConfig{
 			project: projectCfg,

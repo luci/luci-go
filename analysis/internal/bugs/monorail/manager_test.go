@@ -64,11 +64,11 @@ func TestManager(t *testing.T) {
 		cl, err := NewClient(UseFakeIssuesClient(ctx, f, user), "myhost")
 		So(err, ShouldBeNil)
 		monorailCfgs := ChromiumTestConfig()
-		bugFilingThreshold := bugs.TestBugFilingThreshold()
+		bugFilingThreshold := bugs.TestBugFilingThresholds()
 		projectCfg := &configpb.ProjectConfig{
-			Monorail:           monorailCfgs,
-			BugFilingThreshold: bugFilingThreshold,
-			BugSystem:          configpb.ProjectConfig_MONORAIL,
+			Monorail:            monorailCfgs,
+			BugFilingThresholds: bugFilingThreshold,
+			BugSystem:           configpb.ProjectConfig_MONORAIL,
 		}
 		bm, err := NewBugManager(cl, "luci-analysis-test", "luciproject", projectCfg)
 		So(err, ShouldBeNil)

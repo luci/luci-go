@@ -17,6 +17,7 @@ package monorail
 import (
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	mpb "go.chromium.org/luci/analysis/internal/bugs/monorail/api_proto"
 
 	configpb "go.chromium.org/luci/analysis/proto/config"
@@ -45,35 +46,22 @@ func ChromiumTestConfig() *configpb.MonorailProject {
 		Priorities: []*configpb.MonorailPriority{
 			{
 				Priority: "0",
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(1000),
-					},
-					TestRunsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(100),
-					},
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1000)}},
+					{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(100)}},
 				},
 			},
 			{
 				Priority: "1",
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(500),
-					},
-					TestRunsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(50),
-					},
-				},
-			},
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(500)}},
+					{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(50)}},
+				}},
 			{
 				Priority: "2",
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(100),
-					},
-					TestRunsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(10),
-					},
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(10)}},
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(100)}},
 				},
 			},
 			{
@@ -81,13 +69,12 @@ func ChromiumTestConfig() *configpb.MonorailProject {
 				// Should be less onerous than the bug-filing thresholds
 				// used in BugUpdater tests, to avoid bugs that were filed
 				// from being immediately closed.
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
+				Thresholds: []*configpb.ImpactMetricThreshold{
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{
 						OneDay:   proto.Int64(50),
 						ThreeDay: proto.Int64(300),
 						SevenDay: proto.Int64(1), // Set to 1 so that we check hysteresis never rounds down to 0 and prevents bugs from closing.
-					},
-				},
+					}}},
 			},
 		},
 		PriorityHysteresisPercent: 10,

@@ -184,7 +184,7 @@ func (b *BugUpdater) Run(ctx context.Context, progress *runs.ReclusteringProgres
 		//    back all suggested clusters).
 		clusters, err := b.analysisClient.ReadImpactfulClusters(ctx, analysis.ImpactfulClusterReadOptions{
 			Project:                  b.project,
-			Thresholds:               b.projectCfg.Config.BugFilingThreshold,
+			Thresholds:               b.projectCfg.Config.BugFilingThresholds,
 			AlwaysIncludeBugClusters: true,
 		})
 		if err != nil {
@@ -406,15 +406,15 @@ func (b *BugUpdater) fileNewBugs(ctx context.Context, clusters []*analysis.Clust
 
 		// Only file a bug if the residual impact exceeds the threshold.
 		impact := ExtractResidualImpact(cluster)
-		bugFilingThreshold := b.projectCfg.Config.BugFilingThreshold
+		bugFilingThresholds := b.projectCfg.Config.BugFilingThresholds
 		if cluster.ClusterID.IsTestNameCluster() {
 			// Use an inflated threshold for test name clusters to bias
 			// bug creation towards failure reason clusters.
-			bugFilingThreshold =
-				bugs.InflateThreshold(b.projectCfg.Config.BugFilingThreshold,
+			bugFilingThresholds =
+				bugs.InflateThreshold(b.projectCfg.Config.BugFilingThresholds,
 					testnameThresholdInflationPercent)
 		}
-		if !impact.MeetsThreshold(bugFilingThreshold) {
+		if !impact.MeetsThreshold(bugFilingThresholds) {
 			continue
 		}
 

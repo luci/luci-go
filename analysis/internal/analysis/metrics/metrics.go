@@ -89,7 +89,7 @@ var (
 	// will be an unexpected fail/crash/abort.
 	Failures = metricBuilder{
 		ID:                "failures",
-		HumanReadableName: "Total Failures",
+		HumanReadableName: "Test Results Failed",
 		Description:       "The total number of test results in this cluster. LUCI Analysis only clusters test results which are unexpected and have a status of crash, abort or fail.",
 		SortPriority:      10,
 		IsDefault:         true,
@@ -108,6 +108,16 @@ func ByID(id ID) (Definition, error) {
 		}
 	}
 	return Definition{}, errors.Reason("no metric with ID %q", id.String()).Err()
+}
+
+// MustByID returns the metric with the given ID and panic if no metric with the id exists.
+func MustByID(id ID) Definition {
+	for _, metric := range ComputedMetrics {
+		if metric.ID == id {
+			return metric
+		}
+	}
+	panic(fmt.Sprintf("no metric with ID %q", id.String()))
 }
 
 // metricBuilder provides a way of building a new metric definition.

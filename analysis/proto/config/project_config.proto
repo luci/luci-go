@@ -48,15 +48,8 @@ message ProjectConfig {
   // The Buganzier configuration to use when filing bugs.
   BuganizerProject buganizer = 8;
 
-  // The threshold at which to file bugs.
-  // If reason cluster's impact exceeds the given threshold,
-  // a bug will be filed for it.
-  // Alternatively, if test name cluster's impact exceeds 134% of the given
-  // threshold, a bug will also be filed for it.
-  //
-  // LUCI Analysis's bias towards reason clusters reflects the fact that bugs
-  // filed for reasons should be better scoped and more actionable
-  // (focus on one problem).
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use bug_filing_thresholds instead.
   ImpactThreshold bug_filing_threshold = 2;
 
   // Per realm configurations.
@@ -87,8 +80,6 @@ message ProjectConfig {
   // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
   // are combined using an OR-semantic). If no threshold is set on any individual
   // metric, the threshold as a whole is unsatisfiable.
-  //
-  // TODO(beining): Still WIP, this field is planned to replace bug_filing_threshold.
   repeated ImpactMetricThreshold bug_filing_thresholds = 10;
 
   // Next ID: 11
@@ -281,15 +272,14 @@ message MonorailPriority {
   // valid priority field values you have defined in your monorail project.
   string priority = 1;
 
-  // The threshold at which to apply the priority.
+  // Deprecated. No longer has any effect. Retained for textproto
+  // compatibility only. Use thresholds instead.
   ImpactThreshold threshold = 2;
 
   // The threshold at which to apply the priority.
   // The thresholds are considered satisfied if any of the individual impact metric
   // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
   // are combined using an OR-semantic).
-  //
-  // TODO(beining): Still WIP, this field is planned to replace MonorailPriority.threshold.
   repeated ImpactMetricThreshold thresholds = 3;
 }
 
@@ -466,15 +456,14 @@ message BuganizerProject {
     // The Buganizer priority that will be mapped to a threshold.
     BuganizerPriority priority = 1;
 
-    // The threshold at which to apply the priority.
+    // Deprecated. No longer has any effect. Retained for textproto
+    // compatibility only. Use thresholds instead.
     ImpactThreshold threshold = 2;
 
     // The threshold at which to apply the priority.
     // The thresholds are considered satisfied if any of the individual impact metric
     // thresholds is met or exceeded (i.e. if multiple thresholds are set, they
     // are combined using an OR-semantic).
-    //
-    // TODO(beining): Still WIP, this field is planned to replace PriorityMapping.threshold.
     repeated ImpactMetricThreshold thresholds = 3;
   }
 

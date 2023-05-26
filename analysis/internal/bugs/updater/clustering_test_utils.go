@@ -147,17 +147,12 @@ func (f *fakeAnalysisClient) ReadImpactfulClusters(ctx context.Context, opts ana
 	var results []*analysis.Cluster
 	for _, c := range f.clusters {
 		include := opts.AlwaysIncludeBugClusters && c.ClusterID.IsBugCluster()
-		if opts.Thresholds.CriticalFailuresExonerated != nil {
-			include = include || meetsMetricThreshold(c.MetricValues[metrics.CriticalFailuresExonerated.ID], opts.Thresholds.CriticalFailuresExonerated)
-		}
-		if opts.Thresholds.TestResultsFailed != nil {
-			include = include || meetsMetricThreshold(c.MetricValues[metrics.Failures.ID], opts.Thresholds.TestResultsFailed)
-		}
-		if opts.Thresholds.TestRunsFailed != nil {
-			include = include || meetsMetricThreshold(c.MetricValues[metrics.TestRunsFailed.ID], opts.Thresholds.TestRunsFailed)
-		}
-		if opts.Thresholds.PresubmitRunsFailed != nil {
-			include = include || meetsMetricThreshold(c.MetricValues[metrics.HumanClsFailedPresubmit.ID], opts.Thresholds.PresubmitRunsFailed)
+		for _, t := range opts.Thresholds {
+			counts, ok := c.MetricValues[metrics.ID(t.MetricId)]
+			if !ok {
+				continue
+			}
+			include = include || meetsMetricThreshold(counts, t.Threshold)
 		}
 		if include {
 			results = append(results, c)

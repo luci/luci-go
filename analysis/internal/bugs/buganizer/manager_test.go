@@ -49,11 +49,11 @@ func TestBugManager(t *testing.T) {
 		fakeStore := fakeClient.FakeStore
 		buganizerCfg := ChromeOSTestConfig()
 
-		bugFilingThreshold := bugs.TestBugFilingThreshold()
+		bugFilingThreshold := bugs.TestBugFilingThresholds()
 		projectCfg := &configpb.ProjectConfig{
-			Buganizer:          buganizerCfg,
-			BugFilingThreshold: bugFilingThreshold,
-			BugSystem:          configpb.ProjectConfig_BUGANIZER,
+			Buganizer:           buganizerCfg,
+			BugFilingThresholds: bugFilingThreshold,
+			BugSystem:           configpb.ProjectConfig_BUGANIZER,
 		}
 
 		bm := NewBugManager(fakeClient, "luci-analysis-test", "chromeos", projectCfg, false)

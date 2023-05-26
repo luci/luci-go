@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
@@ -111,10 +112,8 @@ func createProjectsConfig() map[string]*configpb.ProjectConfig {
 			},
 		},
 		"project_no_realms": {
-			BugFilingThreshold: &configpb.ImpactThreshold{
-				TestResultsFailed: &configpb.MetricThreshold{
-					OneDay: proto.Int64(1000),
-				},
+			BugFilingThresholds: []*configpb.ImpactMetricThreshold{
+				{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1000)}},
 			},
 		},
 		"project_no_bq": {

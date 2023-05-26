@@ -362,7 +362,7 @@ type ImpactfulClusterReadOptions struct {
 	// or exceeded, should result in the cluster being returned.
 	// Thresholds are applied based on the residual actual
 	// cluster impact.
-	Thresholds *configpb.ImpactThreshold
+	Thresholds []*configpb.ImpactMetricThreshold
 	// AlwaysIncludeBugClusters controls whether to include analysis for all
 	// bug clusters.
 	AlwaysIncludeBugClusters bool
@@ -378,15 +378,8 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 	if opts.Thresholds == nil {
 		return nil, errors.New("thresholds must be specified")
 	}
-
-	whereCriticalFailuresExonerated, cfeParams := whereThresholdsMet(metrics.CriticalFailuresExonerated, opts.Thresholds.CriticalFailuresExonerated)
-	whereFailures, failuresParams := whereThresholdsMet(metrics.Failures, opts.Thresholds.TestResultsFailed)
-	wherePresubmits, presubmitParams := whereThresholdsMet(metrics.HumanClsFailedPresubmit, opts.Thresholds.PresubmitRunsFailed)
-
-	whereClause := `(` + whereCriticalFailuresExonerated + `) OR (` + whereFailures + `)
-		    OR (` + wherePresubmits + `)
-		    OR (@alwaysIncludeBugClusters AND cluster_algorithm = @ruleAlgorithmName)`
-	params := []bigquery.QueryParameter{
+	whereClauses := []string{"(@alwaysIncludeBugClusters AND cluster_algorithm = @ruleAlgorithmName)"}
+	queryParams := []bigquery.QueryParameter{
 		{
 			Name:  "ruleAlgorithmName",
 			Value: rulesalgorithm.AlgorithmName,
@@ -396,10 +389,17 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 			Value: opts.AlwaysIncludeBugClusters,
 		},
 	}
-	params = append(params, cfeParams...)
-	params = append(params, failuresParams...)
-	params = append(params, presubmitParams...)
-	return c.readClustersWhere(ctx, opts.Project, whereClause, params)
+	for _, metricThreshold := range opts.Thresholds {
+		metricDefinition, err := metrics.ByID(metrics.ID(metricThreshold.MetricId))
+		if err != nil {
+			return nil, err
+		}
+		where, params := whereThresholdsMet(metricDefinition, metricThreshold.Threshold)
+		whereClauses = append(whereClauses, `(`+where+`)`)
+		queryParams = append(queryParams, params...)
+	}
+	whereClause := strings.Join(whereClauses, " OR ")
+	return c.readClustersWhere(ctx, opts.Project, whereClause, queryParams)
 }
 
 // metricExpression returns a SQL expression for the given metric

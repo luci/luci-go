@@ -17,6 +17,7 @@ package bugs
 import (
 	"time"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/common/errors"
 )
@@ -113,12 +114,7 @@ type CreateRequest struct {
 
 // ClusterImpact captures details of a cluster's impact, as needed
 // to control the priority and verified status of bugs.
-type ClusterImpact struct {
-	CriticalFailuresExonerated MetricImpact
-	TestResultsFailed          MetricImpact
-	TestRunsFailed             MetricImpact
-	PresubmitRunsFailed        MetricImpact
-}
+type ClusterImpact map[metrics.ID]MetricImpact
 
 // MetricImpact captures impact measurements for one metric, over
 // different timescales.

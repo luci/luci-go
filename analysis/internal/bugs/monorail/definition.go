@@ -95,7 +95,7 @@ type Generator struct {
 	monorailCfg *configpb.MonorailProject
 	// The threshold at which bugs are filed. Used here as the threshold
 	// at which to re-open verified bugs.
-	bugFilingThreshold *configpb.ImpactThreshold
+	bugFilingThresholds []*configpb.ImpactMetricThreshold
 }
 
 // NewGenerator initialises a new Generator.
@@ -104,10 +104,10 @@ func NewGenerator(appID, project string, projectCfg *configpb.ProjectConfig) (*G
 		return nil, fmt.Errorf("invalid configuration for monorail project %q; no monorail priorities configured", projectCfg.Monorail.Project)
 	}
 	return &Generator{
-		appID:              appID,
-		project:            project,
-		monorailCfg:        projectCfg.Monorail,
-		bugFilingThreshold: projectCfg.BugFilingThreshold,
+		appID:               appID,
+		project:             project,
+		monorailCfg:         projectCfg.Monorail,
+		bugFilingThresholds: projectCfg.BugFilingThresholds,
 	}, nil
 }
 
@@ -402,7 +402,7 @@ func (g *Generator) prepareBugVerifiedUpdate(impact *bugs.ClusterImpact, issue *
 		}
 
 		body.WriteString("Because:\n")
-		body.WriteString(bugs.ExplainThresholdsMet(impact, g.bugFilingThreshold))
+		body.WriteString(bugs.ExplainThresholdsMet(impact, g.bugFilingThresholds))
 		body.WriteString("LUCI Analysis has re-opened the bug.")
 
 		trailer = fmt.Sprintf("Why issues are re-opened: https://%s.appspot.com/help#bug-reopened", g.appID)
@@ -561,11 +561,11 @@ func (g *Generator) isCompatibleWithVerified(impact *bugs.ClusterImpact, verifie
 		// The issue is verified. Only reopen if we satisfied the bug-filing
 		// criteria. Bug-filing criteria is guaranteed to imply the criteria
 		// of the lowest priority level.
-		return !impact.MeetsThreshold(g.bugFilingThreshold)
+		return !impact.MeetsThreshold(g.bugFilingThresholds)
 	} else {
 		// The issue is not verified. Only close if the impact falls
 		// below the threshold with hysteresis.
-		deflatedThreshold := bugs.InflateThreshold(lowestPriority.Threshold, -hysteresisPerc)
+		deflatedThreshold := bugs.InflateThreshold(lowestPriority.Thresholds, -hysteresisPerc)
 		return impact.MeetsThreshold(deflatedThreshold)
 	}
 }
@@ -622,7 +622,7 @@ func (g *Generator) priorityDecreaseJustification(oldPriorityIndex, newPriorityI
 	hysteresisPerc := g.monorailCfg.PriorityHysteresisPercent
 
 	// The next-higher priority level that we failed to meet.
-	failedToMeetThreshold := g.monorailCfg.Priorities[newPriorityIndex-1].Threshold
+	failedToMeetThreshold := g.monorailCfg.Priorities[newPriorityIndex-1].Thresholds
 	if newPriorityIndex == oldPriorityIndex+1 {
 		// We only dropped one priority level. That means we failed to meet the
 		// old threshold, even after applying hysteresis.
@@ -658,9 +658,9 @@ func (g *Generator) priorityIncreaseJustification(impact *bugs.ClusterImpact, ol
 	hysteresisPerc := g.monorailCfg.PriorityHysteresisPercent
 
 	// Visit priorities in increasing priority order.
-	var thresholdsMet []*configpb.ImpactThreshold
+	var thresholdsMet [][]*configpb.ImpactMetricThreshold
 	for i := oldPriorityIndex - 1; i >= newPriorityIndex; i-- {
-		metThreshold := g.monorailCfg.Priorities[i].Threshold
+		metThreshold := g.monorailCfg.Priorities[i].Thresholds
 		if i == oldPriorityIndex-1 {
 			// For the first priority step up, we must have also exceeded
 			// hysteresis.
@@ -686,7 +686,7 @@ func (g *Generator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterIm
 	priority := g.monorailCfg.Priorities[len(g.monorailCfg.Priorities)-1]
 	for i := len(g.monorailCfg.Priorities) - 2; i >= 0; i-- {
 		p := g.monorailCfg.Priorities[i]
-		adjustedThreshold := bugs.InflateThreshold(p.Threshold, inflationPercent)
+		adjustedThreshold := bugs.InflateThreshold(p.Thresholds, inflationPercent)
 		if !impact.MeetsThreshold(adjustedThreshold) {
 			// A cluster cannot reach a higher priority unless it has
 			// met the thresholds for all lower priorities.
@@ -701,5 +701,5 @@ func (g *Generator) clusterPriorityWithInflatedThresholds(impact *bugs.ClusterIm
 // verified, if no hysteresis has been applied.
 func (g *Generator) clusterResolved(impact *bugs.ClusterImpact) bool {
 	lowestPriority := g.monorailCfg.Priorities[len(g.monorailCfg.Priorities)-1]
-	return !impact.MeetsThreshold(lowestPriority.Threshold)
+	return !impact.MeetsThreshold(lowestPriority.Thresholds)
 }

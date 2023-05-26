@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
@@ -31,13 +32,15 @@ import (
 // threshold that is 50% of the original.
 // To avoid unintended effects such as 1 being inflated down to 0, inflation
 // can never make a zero number non-zero or a non-zero number zero.
-func InflateThreshold(t *configpb.ImpactThreshold, inflationPercent int64) *configpb.ImpactThreshold {
-	return &configpb.ImpactThreshold{
-		CriticalFailuresExonerated: inflateMetricThreshold(t.CriticalFailuresExonerated, inflationPercent),
-		PresubmitRunsFailed:        inflateMetricThreshold(t.PresubmitRunsFailed, inflationPercent),
-		TestResultsFailed:          inflateMetricThreshold(t.TestResultsFailed, inflationPercent),
-		TestRunsFailed:             inflateMetricThreshold(t.TestRunsFailed, inflationPercent),
+func InflateThreshold(t []*configpb.ImpactMetricThreshold, inflationPercent int64) []*configpb.ImpactMetricThreshold {
+	inflated := make([]*configpb.ImpactMetricThreshold, 0, len(t))
+	for _, m := range t {
+		inflated = append(inflated, &configpb.ImpactMetricThreshold{
+			MetricId:  m.MetricId,
+			Threshold: inflateMetricThreshold(m.Threshold, inflationPercent),
+		})
 	}
+	return inflated
 }
 
 func inflateMetricThreshold(t *configpb.MetricThreshold, inflationPercent int64) *configpb.MetricThreshold {
@@ -80,18 +83,12 @@ func inflateSingleThreshold(threshold *int64, inflationPercent int64) *int64 {
 
 // MeetsThreshold returns whether the nominal impact of the cluster meets
 // or exceeds the specified threshold.
-func (c *ClusterImpact) MeetsThreshold(t *configpb.ImpactThreshold) bool {
-	if c.CriticalFailuresExonerated.meetsThreshold(t.CriticalFailuresExonerated) {
-		return true
-	}
-	if c.TestResultsFailed.meetsThreshold(t.TestResultsFailed) {
-		return true
-	}
-	if c.TestRunsFailed.meetsThreshold(t.TestRunsFailed) {
-		return true
-	}
-	if c.PresubmitRunsFailed.meetsThreshold(t.PresubmitRunsFailed) {
-		return true
+func (c *ClusterImpact) MeetsThreshold(ts []*configpb.ImpactMetricThreshold) bool {
+	for _, t := range ts {
+		impact, ok := (*c)[metrics.ID(t.MetricId)]
+		if ok && impact.meetsThreshold(t.Threshold) {
+			return true
+		}
 	}
 	return false
 }
@@ -138,12 +135,12 @@ type ThresholdExplanation struct {
 // not have met the given priority threshold. As the overall threshold is an
 // 'OR' combination of its underlying thresholds, this returns a list of all
 // thresholds which would not have been met by the cluster's impact.
-func ExplainThresholdNotMet(threshold *configpb.ImpactThreshold) []ThresholdExplanation {
+func ExplainThresholdNotMet(threshold []*configpb.ImpactMetricThreshold) []ThresholdExplanation {
 	var results []ThresholdExplanation
-	results = append(results, explainMetricCriteriaNotMet("Presubmit-Blocking Failures Exonerated", threshold.CriticalFailuresExonerated)...)
-	results = append(results, explainMetricCriteriaNotMet("Presubmit Runs Failed", threshold.PresubmitRunsFailed)...)
-	results = append(results, explainMetricCriteriaNotMet("Test Runs Failed", threshold.TestRunsFailed)...)
-	results = append(results, explainMetricCriteriaNotMet("Test Results Failed", threshold.TestResultsFailed)...)
+	for _, t := range threshold {
+		def := metrics.MustByID(metrics.ID(t.MetricId))
+		results = append(results, explainMetricCriteriaNotMet(def.HumanReadableName, t.Threshold)...)
+	}
 	return results
 }
 
@@ -180,22 +177,17 @@ func explainMetricCriteriaNotMet(metric string, threshold *configpb.MetricThresh
 // met the given priority threshold. As the overall threshold is an 'OR' combination of
 // its underlying thresholds, this returns an example of a threshold which a metric
 // value exceeded.
-func (c *ClusterImpact) ExplainThresholdMet(threshold *configpb.ImpactThreshold) ThresholdExplanation {
-	explanation := explainMetricThresholdMet("Presubmit-Blocking Failures Exonerated", c.CriticalFailuresExonerated, threshold.CriticalFailuresExonerated)
-	if explanation != nil {
-		return *explanation
-	}
-	explanation = explainMetricThresholdMet("Presubmit Runs Failed", c.PresubmitRunsFailed, threshold.PresubmitRunsFailed)
-	if explanation != nil {
-		return *explanation
-	}
-	explanation = explainMetricThresholdMet("Test Runs Failed", c.TestRunsFailed, threshold.TestRunsFailed)
-	if explanation != nil {
-		return *explanation
-	}
-	explanation = explainMetricThresholdMet("Test Results Failed", c.TestResultsFailed, threshold.TestResultsFailed)
-	if explanation != nil {
-		return *explanation
+func (c *ClusterImpact) ExplainThresholdMet(thresholds []*configpb.ImpactMetricThreshold) ThresholdExplanation {
+	for _, t := range thresholds {
+		def := metrics.MustByID(metrics.ID(t.MetricId))
+		impact, ok := (*c)[metrics.ID(t.MetricId)]
+		if !ok {
+			continue
+		}
+		explanation := explainMetricThresholdMet(def.HumanReadableName, impact, t.Threshold)
+		if explanation != nil {
+			return *explanation
+		}
 	}
 	// This should not occur, unless the threshold was not met.
 	return ThresholdExplanation{}
@@ -257,7 +249,7 @@ func MergeThresholdMetExplanations(explanations []ThresholdExplanation) []Thresh
 // was not met.
 //
 // It combines the reasons of multiple threshold and why we didn't meet them.
-func ExplainThresholdNotMetMessage(thresoldNotMet *configpb.ImpactThreshold) string {
+func ExplainThresholdNotMetMessage(thresoldNotMet []*configpb.ImpactMetricThreshold) string {
 	explanation := ExplainThresholdNotMet(thresoldNotMet)
 
 	var message strings.Builder
@@ -277,7 +269,7 @@ func ExplainThresholdNotMetMessage(thresoldNotMet *configpb.ImpactThreshold) str
 
 // ExplainThresholdsMet creates a threshold explanation of how the cluster's impact met
 // the threshold of a priority.
-func ExplainThresholdsMet(impact *ClusterImpact, thresholds ...*configpb.ImpactThreshold) string {
+func ExplainThresholdsMet(impact *ClusterImpact, thresholds ...[]*configpb.ImpactMetricThreshold) string {
 	var explanations []ThresholdExplanation
 	for _, t := range thresholds {
 		// There may be multiple ways in which we could have met the

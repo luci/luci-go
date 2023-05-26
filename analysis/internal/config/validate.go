@@ -203,16 +203,13 @@ func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig)
 	}
 
 	if cfg.Monorail != nil {
-		validateMonorail(ctx, cfg.Monorail, cfg.BugFilingThreshold)
+		validateMonorail(ctx, cfg.Monorail, cfg.BugFilingThresholds)
 	}
 	if cfg.Buganizer != nil {
-		validateBuganizer(ctx, cfg.Buganizer, cfg.BugFilingThreshold)
+		validateBuganizer(ctx, cfg.Buganizer, cfg.BugFilingThresholds)
 	}
 	// Validate BugFilingThreshold when it is not nil or there is a bug system specified.
-	if cfg.BugFilingThreshold != nil || cfg.BugSystem != configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED {
-		validateImpactThreshold(ctx, cfg.BugFilingThreshold, "bug_filing_threshold")
-	}
-	if cfg.BugFilingThresholds != nil {
+	if cfg.BugFilingThresholds != nil || cfg.BugSystem != configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED {
 		validateImpactMetricThresholds(ctx, cfg.BugFilingThresholds, "bug_filing_thresholds")
 	}
 	for _, rCfg := range cfg.Realms {
@@ -221,7 +218,7 @@ func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig)
 	validateClustering(ctx, cfg.Clustering)
 }
 
-func validateBuganizer(ctx *validation.Context, cfg *configpb.BuganizerProject, bugFilingThres *configpb.ImpactThreshold) {
+func validateBuganizer(ctx *validation.Context, cfg *configpb.BuganizerProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("buganizer")
 
 	defer ctx.Exit()
@@ -247,7 +244,7 @@ func validateBuganizerDefaultComponent(ctx *validation.Context, component *confi
 	}
 }
 
-func validateBuganizerPriorityMappings(ctx *validation.Context, mappings []*configpb.BuganizerProject_PriorityMapping, bugFilingThres *configpb.ImpactThreshold) {
+func validateBuganizerPriorityMappings(ctx *validation.Context, mappings []*configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("priority_mappings")
 	defer ctx.Exit()
 	if mappings == nil {
@@ -264,7 +261,7 @@ func validateBuganizerPriorityMappings(ctx *validation.Context, mappings []*conf
 			// The lowest priority threshold must be satisfied by
 			// the bug-filing threshold. This ensures that bugs meeting the
 			// bug-filing threshold meet the bug keep-open threshold.
-			validatePrioritySatisfiedByBugFilingThreshold(ctx, mapping.Threshold, bugFilingThres)
+			validatePrioritySatisfiedByBugFilingThreshold(ctx, mapping.Thresholds, bugFilingThres)
 		}
 	}
 
@@ -283,11 +280,10 @@ func validateBuganizerPriorityMappings(ctx *validation.Context, mappings []*conf
 	}
 }
 
-func validateBuganizerPriorityMapping(ctx *validation.Context, index int, mapping *configpb.BuganizerProject_PriorityMapping, bugFilingThres *configpb.ImpactThreshold) {
+func validateBuganizerPriorityMapping(ctx *validation.Context, index int, mapping *configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("[%v]", index)
 	defer ctx.Exit()
 	validateBuganizerPriority(ctx, mapping.Priority)
-	validateImpactThreshold(ctx, mapping.Threshold, "threshold")
 	validateImpactMetricThresholds(ctx, mapping.Thresholds, "thresholds")
 }
 
@@ -300,7 +296,7 @@ func validateBuganizerPriority(ctx *validation.Context, priority configpb.Bugani
 	}
 }
 
-func validateMonorail(ctx *validation.Context, cfg *configpb.MonorailProject, bugFilingThres *configpb.ImpactThreshold) {
+func validateMonorail(ctx *validation.Context, cfg *configpb.MonorailProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("monorail")
 	defer ctx.Exit()
 
@@ -341,7 +337,7 @@ func validateFieldValue(ctx *validation.Context, fv *configpb.MonorailFieldValue
 	// No validation applies to field value.
 }
 
-func validateMonorailPriorities(ctx *validation.Context, ps []*configpb.MonorailPriority, bugFilingThres *configpb.ImpactThreshold) {
+func validateMonorailPriorities(ctx *validation.Context, ps []*configpb.MonorailPriority, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("priorities")
 	if len(ps) == 0 {
 		ctx.Errorf("at least one monorail priority must be specified")
@@ -353,7 +349,7 @@ func validateMonorailPriorities(ctx *validation.Context, ps []*configpb.Monorail
 			// The lowest priority threshold must be satisfied by
 			// the bug-filing threshold. This ensures that bugs meeting the
 			// bug-filing threshold meet the bug keep-open threshold.
-			validatePrioritySatisfiedByBugFilingThreshold(ctx, priority.Threshold, bugFilingThres)
+			validatePrioritySatisfiedByBugFilingThreshold(ctx, priority.Thresholds, bugFilingThres)
 		}
 		ctx.Exit()
 	}
@@ -362,22 +358,23 @@ func validateMonorailPriorities(ctx *validation.Context, ps []*configpb.Monorail
 
 func validateMonorailPriority(ctx *validation.Context, p *configpb.MonorailPriority) {
 	validatePriorityValue(ctx, p.Priority)
-	validateImpactThreshold(ctx, p.Threshold, "threshold")
 	validateImpactMetricThresholds(ctx, p.Thresholds, "thresholds")
 }
 
-func validatePrioritySatisfiedByBugFilingThreshold(ctx *validation.Context, priorityThreshold, bugFilingThres *configpb.ImpactThreshold) {
+func validatePrioritySatisfiedByBugFilingThreshold(ctx *validation.Context, priorityThreshold, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("threshold")
 	defer ctx.Exit()
-	if priorityThreshold == nil || bugFilingThres == nil {
+	if len(priorityThreshold) == 0 || len(bugFilingThres) == 0 {
 		// Priority without threshold and no bug filing threshold specified
 		// are already reported as errors elsewhere.
 		return
 	}
-	validateBugFilingThresholdSatisfiesMetricThresold(ctx, priorityThreshold.CriticalFailuresExonerated, bugFilingThres.CriticalFailuresExonerated, "critical_failures_exonerated")
-	validateBugFilingThresholdSatisfiesMetricThresold(ctx, priorityThreshold.TestResultsFailed, bugFilingThres.TestResultsFailed, "test_results_failed")
-	validateBugFilingThresholdSatisfiesMetricThresold(ctx, priorityThreshold.TestRunsFailed, bugFilingThres.TestRunsFailed, "test_runs_failed")
-	validateBugFilingThresholdSatisfiesMetricThresold(ctx, priorityThreshold.PresubmitRunsFailed, bugFilingThres.PresubmitRunsFailed, "presubmit_runs_failed")
+	// Check if all condition in the bug filing threshold satisfy the priority threshold.
+	for i, t := range bugFilingThres {
+		ctx.Enter("[%v]", i)
+		validateBugFilingThresholdSatisfiesMetricThresold(ctx, pbutil.MetricThresholdByID(t.MetricId, priorityThreshold), t.Threshold, t.MetricId)
+		ctx.Exit()
+	}
 }
 
 func validatePriorityValue(ctx *validation.Context, value string) {
@@ -392,26 +389,13 @@ func validatePriorityValue(ctx *validation.Context, value string) {
 	ctx.Exit()
 }
 
-func validateImpactThreshold(ctx *validation.Context, t *configpb.ImpactThreshold, fieldName string) {
-	ctx.Enter(fieldName)
-	defer ctx.Exit()
-
-	if t == nil {
-		ctx.Errorf("impact thresholds must be specified")
-		return
-	}
-
-	validateMetricThreshold(ctx, t.CriticalFailuresExonerated, "critical_failures_exonerated")
-	validateMetricThreshold(ctx, t.TestResultsFailed, "test_results_failed")
-	validateMetricThreshold(ctx, t.TestRunsFailed, "test_runs_failed")
-	validateMetricThreshold(ctx, t.PresubmitRunsFailed, "presubmit_runs_failed")
-}
-
-// TODO(beining): Fail the validation on empty impact metric thresholds
 func validateImpactMetricThresholds(ctx *validation.Context, ts []*configpb.ImpactMetricThreshold, fieldName string) {
 	ctx.Enter(fieldName)
 	defer ctx.Exit()
 
+	if len(ts) == 0 {
+		ctx.Errorf("impact thresholds must be specified")
+	}
 	seen := map[string]bool{}
 	for i, t := range ts {
 		ctx.Enter("[%v]", i)
@@ -419,7 +403,7 @@ func validateImpactMetricThresholds(ctx *validation.Context, ts []*configpb.Impa
 			ctx.Error(err)
 		}
 		if _, ok := seen[t.MetricId]; ok {
-			ctx.Errorf("same metric can't have more than one thresholds")
+			ctx.Errorf("same metric can't have more than one threshold")
 		}
 		seen[t.MetricId] = true
 		validateMetricThreshold(ctx, t.Threshold, "threshold")
@@ -475,7 +459,6 @@ func validateBugFilingThresholdSatisfiesMetricThresold(ctx *validation.Context, 
 		// based on this metric will stay open.
 		return
 	}
-
 	// If the bug-filing threshold is:
 	//  - Presubmit Runs Failed (1-day) > 3
 	// And the keep-open threshold is:

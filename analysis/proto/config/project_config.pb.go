@@ -199,8 +199,6 @@ type ProjectConfig struct {
 	// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
 	// are combined using an OR-semantic). If no threshold is set on any individual
 	// metric, the threshold as a whole is unsatisfiable.
-	//
-	// TODO(beining): Still WIP, this field is planned to replace bug_filing_threshold.
 	BugFilingThresholds []*ImpactMetricThreshold `protobuf:"bytes,10,rep,name=bug_filing_thresholds,json=bugFilingThresholds,proto3" json:"bug_filing_thresholds,omitempty"`
 }
 

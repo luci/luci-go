@@ -21,6 +21,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
@@ -29,187 +30,136 @@ func TestThresholding(t *testing.T) {
 
 	Convey("With Cluster", t, func() {
 		cl := &ClusterImpact{
-			CriticalFailuresExonerated: MetricImpact{
+			metrics.CriticalFailuresExonerated.ID: MetricImpact{
 				OneDay:   60,
 				ThreeDay: 180,
 				SevenDay: 420,
 			},
-			TestResultsFailed: MetricImpact{
+			metrics.Failures.ID: MetricImpact{
 				OneDay:   100,
 				ThreeDay: 300,
 				SevenDay: 700,
 			},
-			TestRunsFailed: MetricImpact{
-				OneDay:   30,
-				ThreeDay: 90,
-				SevenDay: 210,
-			},
-			PresubmitRunsFailed: MetricImpact{
-				OneDay:   3,
-				ThreeDay: 9,
-				SevenDay: 21,
-			},
 		}
 		Convey("MeetsThreshold", func() {
-			t := &configpb.ImpactThreshold{}
 			Convey("No cluster meets empty threshold", func() {
+				t := []*configpb.ImpactMetricThreshold{}
 				So(cl.MeetsThreshold(t), ShouldBeFalse)
 			})
 			Convey("Critical failures exonerated thresholding", func() {
-				t.CriticalFailuresExonerated = &configpb.MetricThreshold{OneDay: proto.Int64(60)}
+				t := setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(60)})
 				So(cl.MeetsThreshold(t), ShouldBeTrue)
 
-				t.CriticalFailuresExonerated = &configpb.MetricThreshold{OneDay: proto.Int64(61)}
+				t = setThresholdByID(metrics.CriticalFailuresExonerated.ID, &configpb.MetricThreshold{OneDay: proto.Int64(61)})
 				So(cl.MeetsThreshold(t), ShouldBeFalse)
 			})
 			Convey("Test results failed thresholding", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(100)}
+				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
 				So(cl.MeetsThreshold(t), ShouldBeTrue)
 
-				t.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(101)}
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
-			})
-			Convey("Test runs failed thresholding", func() {
-				t.TestRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(30)}
-				So(cl.MeetsThreshold(t), ShouldBeTrue)
-
-				t.TestRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(31)}
-				So(cl.MeetsThreshold(t), ShouldBeFalse)
-			})
-			Convey("Presubmit runs failed thresholding", func() {
-				t.PresubmitRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(3)}
-				So(cl.MeetsThreshold(t), ShouldBeTrue)
-
-				t.PresubmitRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(4)}
+				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
 				So(cl.MeetsThreshold(t), ShouldBeFalse)
 			})
 			Convey("One day threshold", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(100)}
+				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
 				So(cl.MeetsThreshold(t), ShouldBeTrue)
 
-				t.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(101)}
+				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(101)})
 				So(cl.MeetsThreshold(t), ShouldBeFalse)
 			})
 			Convey("Three day threshold", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{ThreeDay: proto.Int64(300)}
+				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(300)})
 				So(cl.MeetsThreshold(t), ShouldBeTrue)
 
-				t.TestResultsFailed = &configpb.MetricThreshold{ThreeDay: proto.Int64(301)}
+				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(301)})
 				So(cl.MeetsThreshold(t), ShouldBeFalse)
 			})
 			Convey("Seven day threshold", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{SevenDay: proto.Int64(700)}
+				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(700)})
 				So(cl.MeetsThreshold(t), ShouldBeTrue)
 
-				t.TestResultsFailed = &configpb.MetricThreshold{SevenDay: proto.Int64(701)}
+				t = setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(701)})
 				So(cl.MeetsThreshold(t), ShouldBeFalse)
 			})
 		})
 		Convey("InflateThreshold", func() {
-			t := &configpb.ImpactThreshold{}
 			Convey("Empty threshold", func() {
+				t := []*configpb.ImpactMetricThreshold{}
 				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{})
-			})
-			Convey("Critical test failures exonerated", func() {
-				t.CriticalFailuresExonerated = &configpb.MetricThreshold{OneDay: proto.Int64(100)}
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{
-					CriticalFailuresExonerated: &configpb.MetricThreshold{OneDay: proto.Int64(115)},
-				})
-			})
-			Convey("Test results failed", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(100)}
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{OneDay: proto.Int64(115)},
-				})
-			})
-			Convey("Test runs failed", func() {
-				t.TestRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(100)}
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{
-					TestRunsFailed: &configpb.MetricThreshold{OneDay: proto.Int64(115)},
-				})
-			})
-			Convey("Presubmit runs failed", func() {
-				t.PresubmitRunsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(100)}
-				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{
-					PresubmitRunsFailed: &configpb.MetricThreshold{OneDay: proto.Int64(115)},
-				})
+				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{})
 			})
 			Convey("One day threshold", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{OneDay: proto.Int64(100)}
+				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{OneDay: proto.Int64(100)})
 				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{OneDay: proto.Int64(115)},
+				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{
+					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(115)}},
 				})
 			})
 			Convey("Three day threshold", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{ThreeDay: proto.Int64(100)}
+				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{ThreeDay: proto.Int64(100)})
 				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{ThreeDay: proto.Int64(115)},
+				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{
+					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{ThreeDay: proto.Int64(115)}},
 				})
 			})
 			Convey("Seven day threshold", func() {
-				t.TestResultsFailed = &configpb.MetricThreshold{SevenDay: proto.Int64(100)}
+				t := setThresholdByID(metrics.Failures.ID, &configpb.MetricThreshold{SevenDay: proto.Int64(100)})
 				result := InflateThreshold(t, 15)
-				So(result, ShouldResembleProto, &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{SevenDay: proto.Int64(115)},
+				So(result, ShouldResembleProto, []*configpb.ImpactMetricThreshold{
+					{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{SevenDay: proto.Int64(115)}},
 				})
 			})
 		})
 		Convey("ExplainThresholdMet", func() {
-			t := &configpb.ImpactThreshold{
-				TestResultsFailed: &configpb.MetricThreshold{
+			t := &configpb.ImpactMetricThreshold{
+				MetricId: string(metrics.Failures.ID),
+				Threshold: &configpb.MetricThreshold{
 					OneDay:   proto.Int64(101), // Not met.
 					ThreeDay: proto.Int64(299), // Met.
 					SevenDay: proto.Int64(699), // Met.
 				},
 			}
-			explanation := cl.ExplainThresholdMet(t)
+			explanation := cl.ExplainThresholdMet([]*configpb.ImpactMetricThreshold{t})
 			So(explanation, ShouldResemble, ThresholdExplanation{
-				Metric:        "Test Results Failed",
+				Metric:        metrics.Failures.HumanReadableName,
 				TimescaleDays: 3,
 				Threshold:     299,
 			})
 		})
 		Convey("ExplainThresholdNotMet", func() {
-			t := &configpb.ImpactThreshold{
-				CriticalFailuresExonerated: &configpb.MetricThreshold{
+			t := []*configpb.ImpactMetricThreshold{
+				{MetricId: metrics.CriticalFailuresExonerated.ID.String(), Threshold: &configpb.MetricThreshold{
 					OneDay: proto.Int64(61), // Not met.
-				},
-				TestResultsFailed: &configpb.MetricThreshold{
-					OneDay: proto.Int64(101), // Not met.
-				},
-				TestRunsFailed: &configpb.MetricThreshold{
-					ThreeDay: proto.Int64(301), // Not met.
-				},
-				PresubmitRunsFailed: &configpb.MetricThreshold{
+				}},
+				{MetricId: metrics.HumanClsFailedPresubmit.ID.String(), Threshold: &configpb.MetricThreshold{
 					SevenDay: proto.Int64(701), // Not met.
-				},
+				}},
+				{MetricId: metrics.TestRunsFailed.ID.String(), Threshold: &configpb.MetricThreshold{
+					ThreeDay: proto.Int64(301), // Not met.
+				}},
+				{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{
+					OneDay: proto.Int64(101), // Not met.
+				}},
 			}
 			explanation := ExplainThresholdNotMet(t)
 			So(explanation, ShouldResemble, []ThresholdExplanation{
 				{
-					Metric:        "Presubmit-Blocking Failures Exonerated",
+					Metric:        metrics.CriticalFailuresExonerated.HumanReadableName,
 					TimescaleDays: 1,
 					Threshold:     61,
 				},
 				{
-					Metric:        "Presubmit Runs Failed",
+					Metric:        metrics.HumanClsFailedPresubmit.HumanReadableName,
 					TimescaleDays: 7,
 					Threshold:     701,
 				},
 				{
-					Metric:        "Test Runs Failed",
+					Metric:        metrics.TestRunsFailed.HumanReadableName,
 					TimescaleDays: 3,
 					Threshold:     301,
 				},
 				{
-					Metric:        "Test Results Failed",
+					Metric:        metrics.Failures.HumanReadableName,
 					TimescaleDays: 1,
 					Threshold:     101,
 				},
@@ -218,27 +168,27 @@ func TestThresholding(t *testing.T) {
 		Convey("MergeThresholdMetExplanations", func() {
 			input := []ThresholdExplanation{
 				{
-					Metric:        "Presubmit Runs Failed",
+					Metric:        metrics.HumanClsFailedPresubmit.HumanReadableName,
 					TimescaleDays: 7,
 					Threshold:     20,
 				},
 				{
-					Metric:        "Test Runs Failed",
+					Metric:        metrics.TestRunsFailed.HumanReadableName,
 					TimescaleDays: 3,
 					Threshold:     100,
 				},
 				{
-					Metric:        "Presubmit Runs Failed",
+					Metric:        metrics.HumanClsFailedPresubmit.HumanReadableName,
 					TimescaleDays: 7,
 					Threshold:     10,
 				},
 				{
-					Metric:        "Test Runs Failed",
+					Metric:        metrics.TestRunsFailed.HumanReadableName,
 					TimescaleDays: 3,
 					Threshold:     200,
 				},
 				{
-					Metric:        "Test Runs Failed",
+					Metric:        metrics.TestRunsFailed.HumanReadableName,
 					TimescaleDays: 7,
 					Threshold:     700,
 				},
@@ -246,17 +196,17 @@ func TestThresholding(t *testing.T) {
 			result := MergeThresholdMetExplanations(input)
 			So(result, ShouldResemble, []ThresholdExplanation{
 				{
-					Metric:        "Presubmit Runs Failed",
+					Metric:        metrics.HumanClsFailedPresubmit.HumanReadableName,
 					TimescaleDays: 7,
 					Threshold:     20,
 				},
 				{
-					Metric:        "Test Runs Failed",
+					Metric:        metrics.TestRunsFailed.HumanReadableName,
 					TimescaleDays: 3,
 					Threshold:     200,
 				},
 				{
-					Metric:        "Test Runs Failed",
+					Metric:        metrics.TestRunsFailed.HumanReadableName,
 					TimescaleDays: 7,
 					Threshold:     700,
 				},
@@ -275,4 +225,10 @@ func TestThresholding(t *testing.T) {
 		So(output, ShouldNotBeNil)
 		So(*output, ShouldNotEqual, 0)
 	})
+}
+
+func setThresholdByID(metricID metrics.ID, t *configpb.MetricThreshold) []*configpb.ImpactMetricThreshold {
+	return []*configpb.ImpactMetricThreshold{
+		{MetricId: metricID.String(), Threshold: t},
+	}
 }

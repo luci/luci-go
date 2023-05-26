@@ -34,34 +34,14 @@ func createPlaceholderMonorailProject() *configpb.MonorailProject {
 		Priorities: []*configpb.MonorailPriority{
 			{
 				Priority: "0",
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(1500),
-					},
-				},
 				Thresholds: []*configpb.ImpactMetricThreshold{
-					{
-						MetricId: metrics.Failures.ID.String(),
-						Threshold: &configpb.MetricThreshold{
-							OneDay: proto.Int64(1500),
-						},
-					},
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1500)}},
 				},
 			},
 			{
 				Priority: "1",
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(500),
-					},
-				},
 				Thresholds: []*configpb.ImpactMetricThreshold{
-					{
-						MetricId: metrics.Failures.ID.String(),
-						Threshold: &configpb.MetricThreshold{
-							OneDay: proto.Int64(500),
-						},
-					},
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(500)}},
 				},
 			},
 		},
@@ -77,46 +57,24 @@ func createBuganizerPlaceholderProject() *configpb.BuganizerProject {
 		PriorityMappings: []*configpb.BuganizerProject_PriorityMapping{
 			{
 				Priority: configpb.BuganizerPriority_P0,
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(1500),
-					},
-				},
 				Thresholds: []*configpb.ImpactMetricThreshold{
-					{
-						MetricId: metrics.Failures.ID.String(),
-						Threshold: &configpb.MetricThreshold{
-							OneDay: proto.Int64(1500),
-						},
-					},
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1500)}},
 				},
 			},
 			{
 				Priority: configpb.BuganizerPriority_P1,
-				Threshold: &configpb.ImpactThreshold{
-					TestResultsFailed: &configpb.MetricThreshold{
-						OneDay: proto.Int64(500),
-					},
-				},
 				Thresholds: []*configpb.ImpactMetricThreshold{
-					{
-						MetricId: metrics.Failures.ID.String(),
-						Threshold: &configpb.MetricThreshold{
-							OneDay: proto.Int64(500),
-						},
-					},
+					{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(500)}},
 				},
 			},
 		},
 	}
 }
 
-// Creates a placeholder impact threshold config
-func CreatePlaceholderImpactThreshold() *configpb.ImpactThreshold {
-	return &configpb.ImpactThreshold{
-		TestResultsFailed: &configpb.MetricThreshold{
-			OneDay: proto.Int64(1000),
-		},
+// CreatePlaceholderImpactThreshold creates a placeholder impact threshold config
+func CreatePlaceholderImpactThreshold() []*configpb.ImpactMetricThreshold {
+	return []*configpb.ImpactMetricThreshold{
+		{MetricId: metrics.Failures.ID.String(), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(1000)}},
 	}
 }
 
@@ -166,31 +124,31 @@ func createPlaceholderRealms() []*configpb.RealmConfig {
 // Creates a placeholder project config with key "chromium".
 func CreateMonorailPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		Monorail:           createPlaceholderMonorailProject(),
-		BugSystem:          configpb.ProjectConfig_MONORAIL,
-		BugFilingThreshold: CreatePlaceholderImpactThreshold(),
-		Realms:             createPlaceholderRealms(),
-		Clustering:         createPlaceholderClustering(),
+		Monorail:            createPlaceholderMonorailProject(),
+		BugSystem:           configpb.ProjectConfig_MONORAIL,
+		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
+		Realms:              createPlaceholderRealms(),
+		Clustering:          createPlaceholderClustering(),
 	}
 }
 
 func CreateBuganizerPlaceholderProjectConfig() *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		Buganizer:          createBuganizerPlaceholderProject(),
-		BugSystem:          configpb.ProjectConfig_BUGANIZER,
-		BugFilingThreshold: CreatePlaceholderImpactThreshold(),
-		Realms:             createPlaceholderRealms(),
-		Clustering:         createPlaceholderClustering(),
+		Buganizer:           createBuganizerPlaceholderProject(),
+		BugSystem:           configpb.ProjectConfig_BUGANIZER,
+		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
+		Realms:              createPlaceholderRealms(),
+		Clustering:          createPlaceholderClustering(),
 	}
 }
 
 func CreateConfigWithBothBuganizerAndMonorail(bugSystem configpb.ProjectConfig_BugSystem) *configpb.ProjectConfig {
 	return &configpb.ProjectConfig{
-		Monorail:           createPlaceholderMonorailProject(),
-		Buganizer:          createBuganizerPlaceholderProject(),
-		BugSystem:          bugSystem,
-		BugFilingThreshold: CreatePlaceholderImpactThreshold(),
-		Realms:             createPlaceholderRealms(),
-		Clustering:         createPlaceholderClustering(),
+		Monorail:            createPlaceholderMonorailProject(),
+		Buganizer:           createBuganizerPlaceholderProject(),
+		BugSystem:           bugSystem,
+		BugFilingThresholds: CreatePlaceholderImpactThreshold(),
+		Realms:              createPlaceholderRealms(),
+		Clustering:          createPlaceholderClustering(),
 	}
 }
