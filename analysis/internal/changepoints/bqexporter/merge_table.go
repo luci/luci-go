@@ -66,7 +66,6 @@ func MergeTables(ctx context.Context, gcpProject string) (retErr error) {
 // test_variant_segments table.
 func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 	q := client.Query(`
-		BEGIN TRANSACTION;
 		MERGE test_variant_segments T
 			USING (
 				SELECT
@@ -84,15 +83,12 @@ func runDMLMerge(ctx context.Context, client *bigquery.Client) error {
 		-- Delete rows from target older than 90 days that are not being updated.
 		WHEN NOT MATCHED BY SOURCE AND T.version < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY) THEN
 			DELETE;
-
-		-- This should delete exactly the rows considered in the DML merge above, but
-		-- not rows that were streamed later.
-		-- This is because in transactions a consistent table snapshot is used for
-		-- all statements:
-		-- https://cloud.google.com/bigquery/docs/reference/standard-sql/transactions
+		-- If the merge is successful, delete data from test_variant_segment_updates table.
+		-- We are conservative and only delete the data older than 20 minutes ago.
+		-- It may result in some duplication among merges, but it should not affect
+		-- the correctness of data.
 		DELETE FROM test_variant_segment_updates
-			WHERE TRUE;
-		COMMIT TRANSACTION;
+			WHERE version < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 20 MINUTE);
 	`)
 	q.DefaultDatasetID = bqutil.InternalDatasetID
 
