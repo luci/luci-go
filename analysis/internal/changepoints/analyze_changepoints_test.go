@@ -294,7 +294,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		})
 
 		// Check test variant branch.
-		tvbs := fetchTestVariantBranches(ctx)
+		tvbs, err := FetchTestVariantBranches(ctx)
+		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 2)
 
 		// Use diff here to compare both protobuf and non-protobuf.
@@ -462,7 +463,8 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		})
 
 		// Check test variant branch.
-		tvbs := fetchTestVariantBranches(ctx)
+		tvbs, err := FetchTestVariantBranches(ctx)
+		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 1)
 		tvb = tvbs[0]
 
@@ -589,26 +591,6 @@ func fetchInvocations(ctx context.Context) []Invocation {
 			return err
 		}
 		results = append(results, inv)
-		return nil
-	})
-	So(err, ShouldBeNil)
-	return results
-}
-
-func fetchTestVariantBranches(ctx context.Context) []*tvbr.TestVariantBranch {
-	st := spanner.NewStatement(`
-			SELECT Project, TestId, VariantHash, RefHash, Variant, SourceRef, HotInputBuffer, ColdInputBuffer, FinalizingSegment, FinalizedSegments
-			FROM TestVariantBranch
-			ORDER BY TestId
-		`)
-	it := span.Query(span.Single(ctx), st)
-	results := []*tvbr.TestVariantBranch{}
-	err := it.Do(func(r *spanner.Row) error {
-		tvb, err := tvbr.SpannerRowToTestVariantBranch(r)
-		if err != nil {
-			return err
-		}
-		results = append(results, tvb)
 		return nil
 	})
 	So(err, ShouldBeNil)

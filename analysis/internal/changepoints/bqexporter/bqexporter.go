@@ -116,10 +116,6 @@ func ToBigQueryRow(ctx context.Context, ri *RowInput, commitTimestamp time.Time)
 	// Segments.
 	row.Segments = toSegments(ri)
 
-	// TODO (nqmtuan): Set the version to be the Spanner commit timestamp of
-	// the test variant branch.
-	// For now, set it to be the current time, which may be a bit different
-	// from the Spanner commit time.
 	row.Version = timestamppb.New(commitTimestamp)
 	return row, nil
 }

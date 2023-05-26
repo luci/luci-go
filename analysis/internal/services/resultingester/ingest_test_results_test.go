@@ -23,6 +23,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/mock/gomock"
+	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
@@ -42,6 +43,10 @@ import (
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/clusteredfailures"
 	"go.chromium.org/luci/analysis/internal/buildbucket"
+	"go.chromium.org/luci/analysis/internal/changepoints"
+	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
+	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -168,7 +173,6 @@ func TestIngestTestResults(t *testing.T) {
 	resultcollector.RegisterTaskClass()
 	testvariantupdator.RegisterTaskClass()
 
-	// TODO(nqmtuan): Add end-to-end test for changepoint analysis.
 	Convey(`TestIngestTestResults`, t, func() {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For failure association rules cache.
@@ -178,10 +182,12 @@ func TestIngestTestResults(t *testing.T) {
 		chunkStore := chunkstore.NewFakeClient()
 		clusteredFailures := clusteredfailures.NewFakeClient()
 		testVerdicts := testverdicts.NewFakeClient()
+		tvBQExporterClient := bqexporter.NewFakeClient()
 		analysis := analysis.NewClusteringHandler(clusteredFailures)
 		ri := &resultIngester{
-			clustering:      ingestion.New(chunkStore, analysis),
-			verdictExporter: testverdicts.NewExporter(testVerdicts),
+			clustering:                ingestion.New(chunkStore, analysis),
+			verdictExporter:           testverdicts.NewExporter(testVerdicts),
+			testVariantBranchExporter: bqexporter.NewExporter(tvBQExporterClient),
 		}
 
 		Convey(`partition time`, func() {
@@ -283,7 +289,8 @@ func TestIngestTestResults(t *testing.T) {
 
 			cfg := &configpb.Config{
 				TestVariantAnalysis: &configpb.TestVariantAnalysis{
-					Enabled: true,
+					Enabled:               true,
+					BigqueryExportEnabled: true,
 				},
 				TestVerdictExport: &configpb.TestVerdictExport{
 					Enabled: true,
@@ -397,6 +404,7 @@ func TestIngestTestResults(t *testing.T) {
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyAnalyzedTestVariants(ctx, skdr)
 				verifyTestVerdicts(testVerdicts, partitionTime)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 				expectCollectTaskExists := false
 				verifyCollectTask(skdr, expectCollectTaskExists)
 			})
@@ -431,6 +439,7 @@ func TestIngestTestResults(t *testing.T) {
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyAnalyzedTestVariants(ctx, skdr)
 				verifyTestVerdicts(testVerdicts, partitionTime)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 
 				// Expect a collect task to be created.
 				expectCollectTaskExists := true
@@ -464,6 +473,7 @@ func TestIngestTestResults(t *testing.T) {
 				verifyClustering(chunkStore, clusteredFailures)
 				verifyAnalyzedTestVariants(ctx, skdr)
 				verifyTestVerdicts(testVerdicts, partitionTime)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 
 				expectCollectTaskExists := false
 				verifyCollectTask(skdr, expectCollectTaskExists)
@@ -501,6 +511,7 @@ func TestIngestTestResults(t *testing.T) {
 
 				// Test verdicts exported.
 				verifyTestVerdicts(testVerdicts, partitionTime)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 			})
 			Convey(`No project config`, func() {
 				// If no project config exists, results should be ingested into
@@ -528,6 +539,7 @@ func TestIngestTestResults(t *testing.T) {
 
 				// Test verdicts exported.
 				verifyTestVerdicts(testVerdicts, partitionTime)
+				verifyTestVariantAnalysis(ctx, partitionTime, tvBQExporterClient)
 			})
 			Convey(`Build included by ancestor`, func() {
 				payload.Build.IsIncludedByAncestor = true
@@ -568,6 +580,57 @@ func TestIngestTestResults(t *testing.T) {
 			})
 		})
 	})
+}
+
+func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, client *bqexporter.FakeClient) {
+	tvbs, err := changepoints.FetchTestVariantBranches(ctx)
+	So(err, ShouldBeNil)
+	So(len(tvbs), ShouldEqual, 1)
+	sr := &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    "project.googlesource.com",
+				Project: "myproject/src",
+				Ref:     "refs/heads/main",
+			},
+		},
+	}
+	// Truncated to nearest hour.
+	hour := time.Unix(partitionTime.Unix()/3600*3600, 0)
+	// Use diff here to compare both protobuf and non-protobuf.
+	diff := cmp.Diff(tvbs[0], &tvbr.TestVariantBranch{
+		Project:     "project",
+		TestID:      "ninja://test_consistent_failure",
+		VariantHash: "hash",
+		SourceRef:   sr,
+		RefHash:     rdbpbutil.RefHash(pbutil.SourceRefToResultDB(sr)),
+		InputBuffer: &inputbuffer.Buffer{
+			HotBufferCapacity:  100,
+			ColdBufferCapacity: 2000,
+			HotBuffer: inputbuffer.History{
+				Verdicts: []inputbuffer.PositionVerdict{
+					{
+						CommitPosition: 16801,
+						Hour:           hour,
+						Details: inputbuffer.VerdictDetails{
+							IsExonerated: true,
+							Runs: []inputbuffer.Run{
+								{
+									UnexpectedResultCount: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+			ColdBuffer: inputbuffer.History{
+				Verdicts: []inputbuffer.PositionVerdict{},
+			},
+		},
+	}, cmp.Comparer(proto.Equal))
+	So(diff, ShouldEqual, "")
+
+	So(len(client.Insertions), ShouldEqual, 1)
 }
 
 func verifyIngestedInvocation(ctx context.Context, expected *testresults.IngestedInvocation) {
@@ -1128,7 +1191,7 @@ func verifyTestVerdicts(client *testverdicts.FakeClient, expectedPartitionTime t
 						OwnerKind: pb.ChangelistOwnerKind_CHANGELIST_OWNER_UNSPECIFIED,
 					},
 				},
-				IsDirty: true,
+				IsDirty: false,
 			},
 		},
 		{

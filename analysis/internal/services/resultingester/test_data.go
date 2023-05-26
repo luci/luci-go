@@ -294,7 +294,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 						Patchset: 82,
 					},
 				},
-				IsDirty: true,
+				IsDirty: false,
 			},
 		},
 	}
