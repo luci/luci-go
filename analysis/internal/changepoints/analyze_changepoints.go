@@ -28,14 +28,38 @@ import (
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
-	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/pbutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/span"
+)
+
+var (
+	verdictCounter = metric.NewCounter(
+		"analysis/changepoints/analyze/verdicts",
+		"The number of verdicts processed by analysis, classified by project and status.",
+		nil,
+		// The LUCI Project.
+		field.String("project"),
+		// Possible values:
+		// - "ingested": The verdict was ingested.
+		// - "skipped_no_source": The verdict was skipped because it has no source
+		//   data.
+		// - "skipped_no_commit_data": The verdict was skipped because its source
+		//   does not have enough commit data (e.g. commit position).
+		// - "skipped_out_of_order": The verdict was skipped because it was too
+		//   out of order.
+		// - "skipped_unsubmitted_code": The verdict was skipped because is was
+		//   from unsubmitted code.
+		// - "skipped_all_skipped_or_duplicate":  The verdict was skipped because
+		//   it contains only skipped or duplicate results.
+		field.String("status"),
+	)
 )
 
 // CheckPoint represents a single row in the TestVariantBranchCheckpoint table.
@@ -54,6 +78,7 @@ func Analyze(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.Ing
 	// This is for fast termination, as there should be only few items in
 	// sourcesMap to check.
 	if !sources.SourcesMapHasCommitData(sourcesMap) {
+		verdictCounter.Add(ctx, int64(len(tvs)), payload.Build.Project, "skipped_no_commit_data")
 		logging.Debugf(ctx, "Sourcemap has no commit data, skipping change point analysis")
 		return nil
 	}
@@ -119,7 +144,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		}
 
 		// Only keep "relevant" test variants, and test variant with commit information.
-		filteredTVs, err := filterTestVariants(tvs, payload.PresubmitRun, duplicateMap, sourcesMap)
+		filteredTVs, err := filterTestVariants(ctx, tvs, payload, duplicateMap, sourcesMap)
 		if err != nil {
 			return errors.Annotate(err, "filter test variants").Err()
 		}
@@ -133,11 +158,10 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 		// The list of mutations for this transaction.
 		mutations := []*spanner.Mutation{}
-
 		for i, tv := range filteredTVs {
 			tvb := tvbs[i]
 			if isOutOfOrderAndShouldBeDiscarded(tvb, sourcesMap[tv.SourcesId]) {
-				// TODO(nqmtuan): send metric to tsmon.
+				verdictCounter.Add(ctx, 1, payload.Build.Project, "skipped_out_of_order")
 				logging.Debugf(ctx, "Out of order verdict in build %d", payload.Build.Id)
 				continue
 			}
@@ -157,6 +181,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 				InputBufferSegments: inputSegments,
 			})
 		}
+		ingestedVerdictCount := len(mutations)
 
 		// Store new Invocations to Invocations table.
 		ingestedInvID := control.BuildInvocationID(payload.Build.Id)
@@ -166,6 +191,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 		// Store checkpoint in TestVariantBranchCheckpoint table.
 		mutations = append(mutations, checkPoint.ToMutation())
 		span.BufferWrite(ctx, mutations...)
+		verdictCounter.Add(ctx, int64(ingestedVerdictCount), payload.Build.Project, "ingested")
 		return nil
 	})
 
@@ -300,22 +326,28 @@ func insertIntoInputBuffer(tvb *tvbr.TestVariantBranch, tv *rdbpb.TestVariant, p
 //   - Have at least 1 non-duplicate and non-skipped test result (the test
 //     result needs to be both non-duplicate and non-skipped).
 //   - Not from unsubmitted code (i.e. try run that did not result in submitted code)
-func filterTestVariants(tvs []*rdbpb.TestVariant, presubmit *controlpb.PresubmitResult, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) ([]*rdbpb.TestVariant, error) {
+func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) ([]*rdbpb.TestVariant, error) {
 	results := []*rdbpb.TestVariant{}
+	presubmit := payload.PresubmitRun
+	project := payload.Build.Project
 	for _, tv := range tvs {
 		// Checks source map.
 		src, ok := sourcesMap[tv.SourcesId]
 		if !ok {
+			verdictCounter.Add(ctx, 1, project, "skipped_no_source")
 			continue
 		}
 		if !sources.HasCommitData(src) {
+			verdictCounter.Add(ctx, 1, project, "skipped_no_commit_data")
 			continue
 		}
 		// Checks unsubmitted code.
 		if sources.FromUnsubmittedCode(src, presubmit) {
+			verdictCounter.Add(ctx, 1, project, "skipped_unsubmitted_code")
 			continue
 		}
 		// Checks skips and duplicates.
+		allSkippedAndDuplicate := true
 		for _, r := range tv.Results {
 			invID, err := resultdb.InvocationFromTestResultName(r.Result.Name)
 			if err != nil {
@@ -324,8 +356,12 @@ func filterTestVariants(tvs []*rdbpb.TestVariant, presubmit *controlpb.Presubmit
 			_, isDuplicate := duplicateMap[invID]
 			if r.Result.Status != rdbpb.TestStatus_SKIP && !isDuplicate {
 				results = append(results, tv)
+				allSkippedAndDuplicate = false
 				break
 			}
+		}
+		if allSkippedAndDuplicate {
+			verdictCounter.Add(ctx, 1, project, "skipped_all_skipped_or_duplicate")
 		}
 	}
 	return results, nil

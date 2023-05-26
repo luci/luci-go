@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/config"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -93,9 +94,17 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		err := Analyze(ctx, tvs, payload, sourcesMap, exporter)
 		So(err, ShouldBeNil)
 		So(countCheckPoint(ctx), ShouldEqual, 0)
+		So(verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), ShouldEqual, 100)
 	})
 
 	Convey(`Filter test variant`, t, func() {
+		ctx := newContext(t)
+		payload := &taskspb.IngestTestResults{
+			Build: &controlpb.BuildResult{
+				Project: "chromium",
+			},
+		}
+
 		sourcesMap := map[string]*rdbpb.Sources{
 			"sources_id": {
 				GitilesCommit: &rdbpb.GitilesCommit{
@@ -117,6 +126,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		}
 		tvs := []*rdbpb.TestVariant{
 			{
+				// All skip.
 				TestId: "1",
 				Results: []*rdbpb.TestResultBundle{
 					{
@@ -129,6 +139,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				SourcesId: "sources_id",
 			},
 			{
+				// Duplicate.
 				TestId: "2",
 				Results: []*rdbpb.TestResultBundle{
 					{
@@ -147,6 +158,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				SourcesId: "sources_id",
 			},
 			{
+				// OK.
 				TestId: "3",
 				Results: []*rdbpb.TestResultBundle{
 					{
@@ -159,6 +171,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				SourcesId: "sources_id",
 			},
 			{
+				// No source ID.
 				TestId: "4",
 				Results: []*rdbpb.TestResultBundle{
 					{
@@ -171,6 +184,7 @@ func TestAnalyzeChangePoint(t *testing.T) {
 				SourcesId: "sources_id_1",
 			},
 			{
+				// Source is dirty.
 				TestId: "5",
 				Results: []*rdbpb.TestResultBundle{
 					{
@@ -186,17 +200,27 @@ func TestAnalyzeChangePoint(t *testing.T) {
 		duplicateMap := map[string]bool{
 			"inv-2": true,
 		}
-		tvs, err := filterTestVariants(tvs, nil, duplicateMap, sourcesMap)
+		tvs, err := filterTestVariants(ctx, tvs, payload, duplicateMap, sourcesMap)
 		So(err, ShouldBeNil)
 		So(len(tvs), ShouldEqual, 1)
 		So(tvs[0].TestId, ShouldEqual, "3")
+		So(verdictCounter.Get(ctx, "chromium", "skipped_no_source"), ShouldEqual, 1)
+		So(verdictCounter.Get(ctx, "chromium", "skipped_no_commit_data"), ShouldEqual, 1)
+		So(verdictCounter.Get(ctx, "chromium", "skipped_all_skipped_or_duplicate"), ShouldEqual, 2)
 	})
 
 	Convey(`Filter test variant with failed presubmit`, t, func() {
-		presubmit := &controlpb.PresubmitResult{
-			Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
-			Mode:   pb.PresubmitRunMode_FULL_RUN,
+		ctx := newContext(t)
+		payload := &taskspb.IngestTestResults{
+			Build: &controlpb.BuildResult{
+				Project: "chromium",
+			},
+			PresubmitRun: &controlpb.PresubmitResult{
+				Status: pb.PresubmitRunStatus_PRESUBMIT_RUN_STATUS_FAILED,
+				Mode:   pb.PresubmitRunMode_FULL_RUN,
+			},
 		}
+
 		sourcesMap := tu.SampleSourcesMap(10)
 		sourcesMap["sources_id"].Changelists = []*rdbpb.GerritChange{
 			{
@@ -221,9 +245,10 @@ func TestAnalyzeChangePoint(t *testing.T) {
 			},
 		}
 		duplicateMap := map[string]bool{}
-		tvs, err := filterTestVariants(tvs, presubmit, duplicateMap, sourcesMap)
+		tvs, err := filterTestVariants(ctx, tvs, payload, duplicateMap, sourcesMap)
 		So(err, ShouldBeNil)
 		So(len(tvs), ShouldEqual, 0)
+		So(verdictCounter.Get(ctx, "chromium", "skipped_unsubmitted_code"), ShouldEqual, 1)
 	})
 }
 
@@ -384,6 +409,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(diff, ShouldEqual, "")
 
 		So(len(client.Insertions), ShouldEqual, 2)
+		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 2)
 	})
 
 	Convey(`Analyze batch run analysis got change point`, t, func() {
@@ -527,6 +553,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 		So(len(client.Insertions), ShouldEqual, 1)
+		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 1)
 	})
 }
 
