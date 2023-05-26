@@ -56,6 +56,24 @@ import (
 
 var cacheEnabled = stringset.NewFromSlice("Project", "BuildStatus")
 
+func handlePubSubMessage(ctx *router.Context, identity identity.Identity) {
+	if got := auth.CurrentIdentity(ctx.Context); got != identity {
+		logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", identity, got)
+		ctx.Writer.WriteHeader(403)
+	} else {
+		switch err := tasks.SubNotify(ctx.Context, ctx.Request.Body); {
+		case err == nil:
+			ctx.Writer.WriteHeader(200)
+		case transient.Tag.In(err):
+			logging.Warningf(ctx.Context, "Encounter transient error when processing pubsub msg: %s", err)
+			ctx.Writer.WriteHeader(500) // PubSub will resend this msg.
+		default:
+			logging.Errorf(ctx.Context, "Encounter non-transient error when processing pubsub msg: %s", err)
+			ctx.Writer.WriteHeader(202)
+		}
+	}
+}
+
 func main() {
 	mods := []module.Module{
 		bqlog.NewModuleFromFlags(),
@@ -129,24 +147,17 @@ func main() {
 			}),
 		)
 		// swarming-go-pubsub@ is a part of the PubSub Push subscription config.
-		pusherID := identity.Identity(fmt.Sprintf("user:swarming-go-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
+		swarmingPusherID := identity.Identity(fmt.Sprintf("user:swarming-go-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
 		srv.Routes.POST("/push-handlers/swarming-go/notify", oidcMW, func(ctx *router.Context) {
-			if got := auth.CurrentIdentity(ctx.Context); got != pusherID {
-				logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
-				ctx.Writer.WriteHeader(403)
-			} else {
-				switch err := tasks.SubNotify(ctx.Context, ctx.Request.Body); {
-				case err == nil:
-					ctx.Writer.WriteHeader(200)
-				case transient.Tag.In(err):
-					logging.Warningf(ctx.Context, "Encounter transient error when processing pubsub msg: %s", err)
-					ctx.Writer.WriteHeader(500) // PubSub will resend this msg.
-				default:
-					logging.Errorf(ctx.Context, "Encounter non-transient error when processing pubsub msg: %s", err)
-					ctx.Writer.WriteHeader(202)
-				}
-			}
+			handlePubSubMessage(ctx, swarmingPusherID)
 		})
+
+		// task-backend-update-task-push@ is a part of the PubSub Push subscription config.
+		taskBackendPusherID := identity.Identity(fmt.Sprintf("user:task-backend-update-task-push@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
+		srv.Routes.POST("/internal/pubsub/update-build-task", oidcMW, func(ctx *router.Context) {
+			handlePubSubMessage(ctx, taskBackendPusherID)
+		})
+
 		return nil
 	})
 }
