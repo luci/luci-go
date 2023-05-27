@@ -441,7 +441,7 @@ func (jd *Definition) FlattenToSwarming(ctx context.Context, uid, parentTaskId s
 		Value: expEnvValue,
 	}
 
-	if caches := bb.BbagentArgs.Build.Infra.Swarming.Caches; len(caches) > 0 {
+	if caches := bb.BbagentArgs.Build.Infra.Swarming.GetCaches(); len(caches) > 0 {
 		baseProperties.NamedCaches = make([]*swarmingpb.NamedCacheEntry, len(caches))
 		for i, cache := range caches {
 			baseProperties.NamedCaches[i] = &swarmingpb.NamedCacheEntry{

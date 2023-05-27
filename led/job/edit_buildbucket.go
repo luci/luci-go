@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
@@ -359,7 +360,12 @@ func (bbe *buildbucketEditor) Priority(priority int32) {
 			return errors.Reason("negative Priority argument: %d", priority).Err()
 		}
 
-		bbe.bb.BbagentArgs.Build.Infra.Swarming.Priority = priority
+		infra := bbe.bb.BbagentArgs.Build.Infra
+		if infra.Swarming != nil {
+			infra.Swarming.Priority = priority
+		} else {
+			infra.Backend.Config.Fields["priority"] = structpb.NewNumberValue(float64(priority))
+		}
 		return nil
 	})
 }

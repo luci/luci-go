@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -57,13 +58,23 @@ func detectMode(r *swarming.SwarmingRpcsNewTaskRequest) string {
 //
 // The priority for buildbucket type tasks is between 20 to 255.
 func setPriority(build *bbpb.Build, priorityDiff int) {
-	switch priority := build.Infra.Swarming.Priority + int32(priorityDiff); {
-	case priority < 20:
-		build.Infra.Swarming.Priority = 20
-	case priority > 255:
-		build.Infra.Swarming.Priority = 255
-	default:
-		build.Infra.Swarming.Priority = priority
+	calPriority := func(originalPriority int32) int32 {
+		switch priority := originalPriority + int32(priorityDiff); {
+		case priority < 20:
+			return 20
+		case priority > 255:
+			return 255
+		default:
+			return priority
+		}
+	}
+
+	if build.Infra.Swarming != nil {
+		build.Infra.Swarming.Priority = calPriority(build.Infra.Swarming.Priority)
+	} else {
+		config := build.Infra.Backend.GetConfig().AsMap()
+		newPriority := calPriority(int32(config["priority"].(float64)))
+		build.Infra.Backend.Config.Fields["priority"] = structpb.NewNumberValue(float64(newPriority))
 	}
 }
 

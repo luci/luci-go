@@ -81,8 +81,8 @@ func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (
 
 	logging.Infof(ctx, "getting build definition: done")
 
-	swarmingTaskID := answer.Infra.Swarming.TaskId
-	swarmingHostname := answer.Infra.Swarming.Hostname
+	swarmingTaskID := answer.Infra.Swarming.GetTaskId()
+	swarmingHostname := answer.Infra.Swarming.GetHostname()
 
 	if swarmingTaskID == "" {
 		return nil, errors.New("unable to find swarming task ID on buildbucket task")

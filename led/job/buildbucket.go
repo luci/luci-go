@@ -44,9 +44,11 @@ func (b *Buildbucket) WriteProperties(inputs map[string]any) {
 //	b.BbagentArgs.Build.Infra
 //	b.BbagentArgs.Build.Infra.Buildbucket
 //	b.BbagentArgs.Build.Infra.Logdog
-//	b.BbagentArgs.Build.Infra.Swarming
 //	b.BbagentArgs.Build.Input
 //	b.BbagentArgs.Build.Input.Properties
+//
+// b.BbagentArgs.Build.Infra.Swarming is also ensured in the case that
+// b.BbagentArgs.Build.Infra.Backend is nil.
 func (b *Buildbucket) EnsureBasics() {
 	proto.Merge(b, &Buildbucket{BbagentArgs: &bbpb.BBAgentArgs{Build: &bbpb.Build{
 		Exe: &bbpb.Executable{},
@@ -55,10 +57,13 @@ func (b *Buildbucket) EnsureBasics() {
 		},
 		Infra: &bbpb.BuildInfra{
 			Buildbucket: &bbpb.BuildInfra_Buildbucket{},
-			Swarming:    &bbpb.BuildInfra_Swarming{},
 			Logdog:      &bbpb.BuildInfra_LogDog{},
 		},
 	}}})
+
+	if b.BbagentArgs.Build.Infra.Swarming == nil && b.BbagentArgs.Build.Infra.Backend == nil {
+		b.BbagentArgs.Build.Infra.Swarming = &bbpb.BuildInfra_Swarming{}
+	}
 }
 
 // UpdateBuildbucketAgent updates or populates b.BbagentArgs.Build.Infra.Buildbucket.Agent.
