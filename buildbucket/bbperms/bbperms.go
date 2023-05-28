@@ -42,5 +42,5 @@ var (
 	// BuildersList allows to list and search builders (but not builds).
 	BuildersList = realms.RegisterPermission("buildbucket.builders.list")
 	// BuildersSetHealth allows to set the health of a builder.
-	BuildersSetHealth = realms.RegisterPermission("buildbucket.builders.set_health")
+	BuildersSetHealth = realms.RegisterPermission("buildbucket.builders.setHealth")
 )
