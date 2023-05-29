@@ -19,37 +19,33 @@ import {
 } from 'react';
 import { useQuery } from 'react-query';
 
-import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
+import TabPanel from '@mui/lab/TabPanel';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
-import TabPanel from '@mui/lab/TabPanel';
 
-import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import {
-  getClustersService,
-} from '@/services/cluster';
+  ChromeOSCriteria,
+  ChromiumCriteria,
+  ExoneratedTestVariant,
+  ExonerationCriteria,
+  SortableField,
+  sortTestVariants,
+  testVariantFromAnalysis,
+} from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+import { getClustersService } from '@/services/cluster';
+import { prpcRetrier } from '@/services/shared_models';
 import {
   getTestVariantsService,
   QueryTestVariantFailureRateRequest,
 } from '@/services/test_variants';
-import { prpcRetrier } from '@/services/shared_models';
-
-import {
-  SortableField,
-  ExoneratedTestVariant,
-  testVariantFromAnalysis,
-  sortTestVariants,
-  ExonerationCriteria,
-  ChromeOSCriteria,
-  ChromiumCriteria,
-} from '@/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 
 import { ClusterContext } from '../../cluster_context';
-import ExonerationsTableRow from './exonerations_table_row/exonerations_table_row';
 import ExonerationsTableHead from './exonerations_table_head/exonerations_table_head';
+import ExonerationsTableRow from './exonerations_table_row/exonerations_table_row';
 
 interface Props {
   // The name of the tab.
@@ -135,9 +131,7 @@ const ExonerationsTab = ({
       }
       {
         isLoading && (
-          <Grid container item alignItems="center" justifyContent="center">
-            <CircularProgress />
-          </Grid>
+          <CentralizedProgress />
         )
       }
       {

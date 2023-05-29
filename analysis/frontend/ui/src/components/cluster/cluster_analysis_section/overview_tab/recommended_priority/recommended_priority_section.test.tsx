@@ -25,7 +25,7 @@ import {
   getMockCluster,
   mockGetCluster,
 } from '@/testing_tools/mocks/cluster_mock';
-import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
+import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 import {
   createMockProjectConfig,
   createMockProjectConfigWithThresholds,
@@ -33,12 +33,12 @@ import {
 } from '@/testing_tools/mocks/projects_mock';
 
 import { ClusterContextProvider } from '../../../cluster_context';
+import { OverviewTabContextProvider } from '../overview_tab_context';
 import { RecommendedPrioritySection } from './recommended_priority_section';
 
 describe('test RecommendedPrioritySection component', () => {
   beforeEach(() => {
     mockFetchAuthState();
-    mockFetchMetrics();
   });
 
   afterEach(() => {
@@ -46,6 +46,7 @@ describe('test RecommendedPrioritySection component', () => {
     fetchMock.reset();
   });
 
+  const metrics = getMockMetricsList();
   const project = 'chrome';
   const algorithm = 'rules'
   const id = '123456';
@@ -62,7 +63,9 @@ describe('test RecommendedPrioritySection component', () => {
         project={project}
         clusterAlgorithm={algorithm}
         clusterId={id} >
-        <RecommendedPrioritySection />
+        <OverviewTabContextProvider metrics={metrics} >
+          <RecommendedPrioritySection />
+        </OverviewTabContextProvider>
       </ClusterContextProvider>
     );
 
@@ -84,7 +87,9 @@ describe('test RecommendedPrioritySection component', () => {
         project={project}
         clusterAlgorithm={algorithm}
         clusterId={id} >
-        <RecommendedPrioritySection />
+        <OverviewTabContextProvider metrics={metrics} >
+          <RecommendedPrioritySection />
+        </OverviewTabContextProvider>
       </ClusterContextProvider>
     );
 

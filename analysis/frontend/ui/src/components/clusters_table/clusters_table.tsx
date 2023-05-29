@@ -14,12 +14,12 @@
 
 import { useEffect } from 'react';
 
-import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
 
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchMetrics from '@/hooks/use_fetch_metrics';
 
+import CentralizedProgress from '../centralized_progress/centralized_progress';
 import ClustersTableContent from './clusters_table_content/clusters_table_content';
 import { ClusterTableContextWrapper } from './clusters_table_context';
 import ClustersTableForm from './clusters_table_form/clusters_table_form';
@@ -79,9 +79,7 @@ const ClustersTable = ({
         }
         {
           isLoading && (
-            <Grid container item alignItems="center" justifyContent="center">
-              <CircularProgress />
-            </Grid>
+            <CentralizedProgress />
           )
         }
         {

@@ -12,23 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  useContext,
-} from 'react';
-import {
-  Link,
-} from 'react-router-dom';
+import { useContext } from 'react';
+import { Link } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 
+import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import CodeBlock from '@/components/codeblock/codeblock';
-import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import PanelHeading from '@/components/headings/panel_heading/panel_heading';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import useFetchCluster from '@/hooks/use_fetch_cluster';
 import { Cluster } from '@/services/cluster';
 
@@ -108,9 +104,7 @@ const ClusterInfo = () => {
         </PanelHeading>
         {
           isLoading && (
-            <Grid container item alignItems="center" justifyContent="center">
-              <CircularProgress />
-            </Grid>
+            <CentralizedProgress />
           )
         }
         {

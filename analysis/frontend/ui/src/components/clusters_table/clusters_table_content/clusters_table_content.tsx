@@ -14,11 +14,11 @@
 
 import { useContext } from 'react';
 
-import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 
+import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import {
   ClustersFetchOptions,
@@ -77,9 +77,7 @@ const ClustersTableContent = ({
 
   if (isBasicSummariesLoading && !isBasicSummariesSuccess) {
     return (
-      <Grid container item alignItems="center" justifyContent="center">
-        <CircularProgress />
-      </Grid>
+      <CentralizedProgress />
     );
   }
 

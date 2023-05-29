@@ -16,7 +16,12 @@ import TabPanel from '@mui/lab/TabPanel';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 
-import { HistoryCharts } from './history_charts/history_charts';
+import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
+import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
+import useFetchMetrics from '@/hooks/use_fetch_metrics';
+
+import { HistoryChartsSection } from './history_charts/history_charts_section';
+import { OverviewTabContextProvider } from './overview_tab_context';
 import { RecommendedPrioritySection } from './recommended_priority/recommended_priority_section';
 
 interface Props {
@@ -25,14 +30,40 @@ interface Props {
 }
 
 const OverviewTab = ({ value }: Props) => {
+  const {
+    isLoading,
+    isSuccess,
+    data: metrics,
+    error,
+  } = useFetchMetrics();
+
   return (
-    <TabPanel value={value}>
-      <Stack direction="column" spacing={4}>
-        <RecommendedPrioritySection />
-        <Divider />
-        <HistoryCharts />
-      </Stack>
-    </TabPanel>
+    <OverviewTabContextProvider metrics={metrics} >
+      <TabPanel value={value}>
+        {
+          error && (
+            <LoadErrorAlert
+              entityName="metrics"
+              error={error}
+            />
+          )
+        }
+        {
+          isLoading && (
+            <CentralizedProgress />
+          )
+        }
+        {
+          isSuccess && metrics !== undefined && (
+            <Stack direction="column" spacing={4}>
+              <RecommendedPrioritySection />
+              <Divider />
+              <HistoryChartsSection />
+            </Stack>
+          )
+        }
+      </TabPanel>
+    </OverviewTabContextProvider>
   );
 };
 

@@ -20,19 +20,19 @@ import {
 import { useQuery } from 'react-query';
 import { useUpdateEffect } from 'react-use';
 
-import CircularProgress from '@mui/material/CircularProgress';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import Grid from '@mui/material/Grid';
+import TabPanel from '@mui/lab/TabPanel';
 import { SelectChangeEvent } from '@mui/material/Select';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TabPanel from '@mui/lab/TabPanel';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
+import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
 import { getClustersService } from '@/services/cluster';
+import { prpcRetrier } from '@/services/shared_models';
 import {
   countAndSortFailures,
   countDistictVariantValues,
@@ -48,7 +48,6 @@ import {
   sortFailureGroups,
   VariantGroup,
 } from '@/tools/failures_tools';
-import { prpcRetrier } from '@/services/shared_models';
 
 import { ClusterContext } from '../../cluster_context';
 import FailuresTableFilter from './failures_table_filter/failures_table_filter';
@@ -171,9 +170,7 @@ const FailuresTable = ({
       }
       {
         (isLoading) && (
-          <Grid container item alignItems="center" justifyContent="center">
-            <CircularProgress />
-          </Grid>
+          <CentralizedProgress />
         )
       }
       {

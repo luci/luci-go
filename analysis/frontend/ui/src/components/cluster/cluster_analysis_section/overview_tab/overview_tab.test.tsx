@@ -93,7 +93,7 @@ describe('Test OverviewTab component', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('recommended-priority-summary')).toBeInTheDocument();
-      expect(screen.getByTestId('history-chart')).toBeInTheDocument();
+      expect(screen.getByTestId('history-charts-container')).toBeInTheDocument();
     });
   });
 });

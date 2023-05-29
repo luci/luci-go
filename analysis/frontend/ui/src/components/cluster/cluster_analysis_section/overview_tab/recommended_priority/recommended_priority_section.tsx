@@ -21,25 +21,25 @@ import CloseIcon from '@mui/icons-material/Close';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import CentralizedProgress from '@/components/centralized_progress/centralized_progress';
 import { ClusterContext } from '@/components/cluster/cluster_context';
 import PanelHeading from '@/components/headings/panel_heading/panel_heading';
 import HelpTooltip from '@/components/help_tooltip/help_tooltip';
 import LoadErrorAlert from '@/components/load_error_alert/load_error_alert';
-import useFetchClusterAndMetrics from '@/hooks/use_fetch_cluster_and_metrics';
+import useFetchCluster from '@/hooks/use_fetch_cluster';
 import { useFetchProjectConfig } from '@/hooks/use_fetch_project_config';
 import { ClusterMetrics } from '@/services/cluster';
 import { Metric } from '@/services/metrics';
 import { ProjectConfig } from '@/services/project';
 
+import { OverviewTabContextData } from '../overview_tab_context';
 import {
   constructCriteriumLabel,
   PriorityExplanationSection,
@@ -53,6 +53,7 @@ const priorityTooltipText = "The priority with which LUCI Analysis recommends ac
 
 export const RecommendedPrioritySection = () => {
   const clusterId = useContext(ClusterContext);
+  const { metrics } = useContext(OverviewTabContextData);
 
   const {
     isLoading: isConfigLoading,
@@ -61,12 +62,10 @@ export const RecommendedPrioritySection = () => {
   } = useFetchProjectConfig(clusterId.project);
 
   const {
-    isLoading: isClusterOrMetricsLoading,
-    clusterError,
-    metricsError,
-    cluster,
-    metrics
-  } = useFetchClusterAndMetrics(clusterId.project, clusterId.algorithm, clusterId.id);
+    isLoading: isClusterLoading,
+    error: clusterError,
+    data: cluster,
+  } = useFetchCluster(clusterId.project, clusterId.algorithm, clusterId.id);
 
   return (
     <Box>
@@ -79,15 +78,11 @@ export const RecommendedPrioritySection = () => {
       {!configError && clusterError && (
         <LoadErrorAlert entityName="cluster" error={clusterError} />
       )}
-      {!configError && !clusterError && metricsError && (
-        <LoadErrorAlert entityName="metrics" error={metricsError} />
-      )}
-      {!(configError || clusterError || metricsError) &&
-        (isConfigLoading || isClusterOrMetricsLoading) && (
-        <Grid container item alignItems="center" justifyContent="center">
-            <CircularProgress />
-        </Grid>
-        )}
+      {!(configError || clusterError) &&
+        (isConfigLoading || isClusterLoading) && (
+          <CentralizedProgress />
+        )
+      }
       {projectConfig && cluster && metrics && (
         <RecommendedPrioritySummary
           metricValues={cluster?.metrics || {}}
