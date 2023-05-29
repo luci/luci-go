@@ -220,7 +220,7 @@ function ensurePriorityPrefix(priorities: PriorityThreshold[], prefix: string = 
 
 function getPriorityThresholds(projectConfig: ProjectConfig): PriorityThreshold[] {
   const buganizerPriorities = projectConfig.buganizer?.priorityMappings;
-  const monorailPriorities = projectConfig.monorail.priorities;
+  const monorailPriorities = projectConfig.monorail?.priorities;
 
   // Return the priority criteria for the specified bug system,
   // if it is available in the project config.
