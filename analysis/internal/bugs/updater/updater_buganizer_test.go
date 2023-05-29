@@ -641,6 +641,26 @@ func TestBuganizerUpdate(t *testing.T) {
 				So(err, ShouldBeNil)
 				opts.reclusteringProgress = progress
 
+				Convey("no bug filing thresholds, but still update existing bug priority", func() {
+					projectCfg.BugFilingThresholds = nil
+					err = config.SetTestProjectConfig(ctx, projectsCfg)
+					So(err, ShouldBeNil)
+					issue := fakeStore.Issues[3].Issue
+					So(issue.IssueState.Priority, ShouldNotEqual, issuetracker.Issue_P0)
+
+					SetResidualImpact(
+						bugClusters[2], bugs.P0Impact())
+					err = updateBugsForProject(ctx, opts)
+					So(err, ShouldBeNil)
+
+					So(len(fakeStore.Issues), ShouldEqual, 3)
+					issue = fakeStore.Issues[3].Issue
+					So(issue.IssueId, ShouldEqual, 3)
+					So(issue.IssueState.Priority, ShouldEqual, issuetracker.Issue_P0)
+
+					expectRules(expectedRules)
+				})
+
 				Convey("Cluster impact does not change if bug not managed by rule", func() {
 					// Set IsManagingBug to false on one rule.
 					rs[2].IsManagingBug = false

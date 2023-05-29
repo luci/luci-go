@@ -777,6 +777,24 @@ func TestMonorailUpdate(t *testing.T) {
 
 					expectRules(expectedRules)
 
+					Convey("no bug filing thresholds, but still update existing bug priority", func() {
+						projectCfg.BugFilingThresholds = nil
+						err = config.SetTestProjectConfig(ctx, projectsCfg)
+						So(err, ShouldBeNil)
+						issue := f.Issues[2].Issue
+						So(issue.Name, ShouldEqual, "projects/chromium/issues/102")
+						So(monorail.ChromiumTestIssuePriority(issue), ShouldNotEqual, "2")
+
+						SetResidualImpact(
+							bugClusters[2], bugs.P2Impact())
+						err = updateBugsForProject(ctx, opts)
+						So(err, ShouldBeNil)
+
+						So(len(f.Issues), ShouldEqual, 3)
+						issue = f.Issues[2].Issue
+						So(issue.Name, ShouldEqual, "projects/chromium/issues/102")
+						So(monorail.ChromiumTestIssuePriority(issue), ShouldEqual, "2")
+					})
 					Convey("Buganizer failures do not block monorail bug updates", func() {
 						fakeBuganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(12345678))
 						fakeBuganizerStore.Issues[12345678].ShouldFailUpdates = true

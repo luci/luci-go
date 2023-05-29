@@ -375,9 +375,6 @@ func (c *Client) ReadImpactfulClusters(ctx context.Context, opts ImpactfulCluste
 	s.Attribute("project", opts.Project)
 	defer func() { s.End(err) }()
 
-	if opts.Thresholds == nil {
-		return nil, errors.New("thresholds must be specified")
-	}
 	whereClauses := []string{"(@alwaysIncludeBugClusters AND cluster_algorithm = @ruleAlgorithmName)"}
 	queryParams := []bigquery.QueryParameter{
 		{

@@ -364,9 +364,8 @@ func validateMonorailPriority(ctx *validation.Context, project string, p *config
 func validatePrioritySatisfiedByBugFilingThreshold(ctx *validation.Context, priorityThreshold, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("threshold")
 	defer ctx.Exit()
-	if len(priorityThreshold) == 0 || len(bugFilingThres) == 0 {
-		// Priority without threshold and no bug filing threshold specified
-		// are already reported as errors elsewhere.
+	if len(priorityThreshold) == 0 {
+		// Priority without threshold is already reported as errors elsewhere.
 		return
 	}
 	// Check if all condition in the bug filing threshold satisfy the priority threshold.
