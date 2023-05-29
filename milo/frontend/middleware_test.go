@@ -117,7 +117,7 @@ func TestFuncs(t *testing.T) {
 			ctx := &router.Context{
 				Context: c,
 				Writer:  r,
-				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)),
+				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)).WithContext(c),
 				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
 			}
 			projectACLMiddleware(ctx, nil)
@@ -147,7 +147,7 @@ func TestFuncs(t *testing.T) {
 			ctx := &router.Context{
 				Context: c,
 				Writer:  r,
-				Request: httptest.NewRequest("GET", "/p/public", bytes.NewReader(nil)),
+				Request: httptest.NewRequest("GET", "/p/public", bytes.NewReader(nil)).WithContext(c),
 				Params:  httprouter.Params{{Key: "project", Value: "public"}},
 			}
 			nextCalled := false
@@ -181,7 +181,7 @@ func TestFuncs(t *testing.T) {
 			ctx := &router.Context{
 				Context: c,
 				Writer:  r,
-				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)),
+				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)).WithContext(c),
 				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
 			}
 			nextCalled := false

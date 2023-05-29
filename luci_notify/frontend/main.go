@@ -87,6 +87,7 @@ func main() {
 				ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
 				defer cancel()
 				c.Context = ctx
+				c.Request = c.Request.WithContext(ctx)
 
 				status := ""
 				switch err := notify.BuildbucketPubSubHandler(c); {

@@ -111,7 +111,7 @@ func TestServeContent(t *testing.T) {
 			rec := httptest.NewRecorder()
 			s.handleGET(&router.Context{
 				Context: ctx,
-				Request: req,
+				Request: req.WithContext(ctx),
 				Writer:  rec,
 			})
 			res = rec.Result()

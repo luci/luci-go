@@ -40,7 +40,7 @@ func TestMiddleware(t *testing.T) {
 	runMiddlware := func(c context.Context, state *State, cb func(*router.Context)) {
 		rec := httptest.NewRecorder()
 		router.RunMiddleware(
-			&router.Context{Context: c, Writer: rec, Request: &http.Request{}},
+			&router.Context{Context: c, Writer: rec, Request: (&http.Request{}).WithContext(c)},
 			router.NewMiddlewareChain(state.Middleware),
 			cb,
 		)

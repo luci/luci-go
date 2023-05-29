@@ -36,6 +36,7 @@ func withSigner(s signing.Signer) router.MiddlewareChain {
 				cfg.Signer = s
 				return cfg
 			})
+			c.Request = c.Request.WithContext(c.Context)
 			next(c)
 		},
 	)
@@ -120,6 +121,7 @@ func TestClientIDHandler(t *testing.T) {
 					}
 					return cfg
 				})
+				c.Request = c.Request.WithContext(c.Context)
 				next(c)
 			},
 		)

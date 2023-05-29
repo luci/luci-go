@@ -66,7 +66,7 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`Completed build`, func() {
 			pubSubMessage.Build.Status = buildbucketpb.Status_SUCCESS
 
-			rctx.Request = &http.Request{Body: makeBBV2Req(pubSubMessage)}
+			rctx.Request = (&http.Request{Body: makeBBV2Req(pubSubMessage)}).WithContext(ctx)
 			BuildbucketPubSubHandler(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusOK)
 			So(buildCounter.Get(ctx, "buildproject", "success"), ShouldEqual, 1)
@@ -84,7 +84,7 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`Uncompleted build`, func() {
 			pubSubMessage.Build.Status = buildbucketpb.Status_STARTED
 
-			rctx.Request = &http.Request{Body: makeBBV2Req(pubSubMessage)}
+			rctx.Request = (&http.Request{Body: makeBBV2Req(pubSubMessage)}).WithContext(ctx)
 			BuildbucketPubSubHandler(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusNoContent)
 			So(buildCounter.Get(ctx, "buildproject", "ignored"), ShouldEqual, 1)
@@ -95,7 +95,7 @@ func TestHandleBuild(t *testing.T) {
 			attributes := map[string]any{
 				"version": "v2",
 			}
-			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), attributes)}
+			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), attributes)}).WithContext(ctx)
 			BuildbucketPubSubHandler(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)
 			So(buildCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)

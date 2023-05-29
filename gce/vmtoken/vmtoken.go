@@ -253,6 +253,7 @@ func Middleware(c *router.Context, next router.Handler) {
 		default:
 			logging.Debugf(c.Context, "received VM token from %q in %q in %q for: %s", p.Instance, p.Zone, p.Project, p.Audience)
 			c.Context = withPayload(c.Context, p)
+			c.Request = c.Request.WithContext(c.Context)
 		}
 	}
 	next(c)

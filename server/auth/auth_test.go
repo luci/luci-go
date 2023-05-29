@@ -245,12 +245,13 @@ func TestMiddleware(t *testing.T) {
 		req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
+		ctx := injectTestDB(context.Background(), &fakeDB{
+			allowedClientID: "some_client_id",
+		})
 		router.RunMiddleware(&router.Context{
-			Context: injectTestDB(context.Background(), &fakeDB{
-				allowedClientID: "some_client_id",
-			}),
+			Context: ctx,
 			Writer:  w,
-			Request: req,
+			Request: req.WithContext(ctx),
 		}, router.NewMiddlewareChain(a.GetMiddleware()), handler)
 		return w
 	}

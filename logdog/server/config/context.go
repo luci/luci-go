@@ -96,6 +96,7 @@ func WithStore(ctx context.Context, s *Store) context.Context {
 func Middleware(s *Store) router.Middleware {
 	return func(ctx *router.Context, next router.Handler) {
 		ctx.Context = WithStore(ctx.Context, s)
+		ctx.Request = ctx.Request.WithContext(ctx.Context)
 		next(ctx)
 	}
 }

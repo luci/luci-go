@@ -156,6 +156,7 @@ func (d adminBypassDB) install(c *router.Context, next router.Handler) {
 		}
 		return cfg
 	})
+	c.Request = c.Request.WithContext(c.Context)
 	next(c)
 }
 

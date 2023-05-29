@@ -28,6 +28,7 @@ func WithContextTimeout(timeout time.Duration) router.Middleware {
 		var cancel context.CancelFunc
 		c.Context, cancel = clock.WithTimeout(c.Context, timeout)
 		defer cancel()
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 	}
 }

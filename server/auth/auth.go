@@ -274,6 +274,7 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 			replyError(c.Context, c.Writer, grpcutil.CodeStatus(code), err)
 		} else {
 			c.Context = ctx
+			c.Request = c.Request.WithContext(ctx)
 			next(c)
 		}
 	}

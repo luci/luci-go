@@ -82,11 +82,11 @@ func TestAuthDBServing(t *testing.T) {
 		}
 		rctx := &router.Context{
 			Context: ctx,
-			Request: &http.Request{
+			Request: (&http.Request{
 				URL: &url.URL{
 					RawQuery: fmt.Sprintf("skip_body=%s", sb),
 				},
-			},
+			}).WithContext(ctx),
 			Params: []httprouter.Param{
 				{Key: "revID", Value: revIDStr},
 			},

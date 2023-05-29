@@ -59,7 +59,7 @@ func TestXsrf(t *testing.T) {
 
 		// Has token -> works.
 		rec := httptest.NewRecorder()
-		req := makeRequest(tok)
+		req := makeRequest(c, tok)
 		router.RunMiddleware(&router.Context{
 			Context: c,
 			Writer:  rec,
@@ -69,7 +69,7 @@ func TestXsrf(t *testing.T) {
 
 		// No token.
 		rec = httptest.NewRecorder()
-		req = makeRequest("")
+		req = makeRequest(c, "")
 		router.RunMiddleware(&router.Context{
 			Context: c,
 			Writer:  rec,
@@ -79,7 +79,7 @@ func TestXsrf(t *testing.T) {
 
 		// Bad token.
 		rec = httptest.NewRecorder()
-		req = makeRequest("blah")
+		req = makeRequest(c, "blah")
 		router.RunMiddleware(&router.Context{
 			Context: c,
 			Writer:  rec,
@@ -95,12 +95,12 @@ func makeContext() context.Context {
 	return c
 }
 
-func makeRequest(tok string) *http.Request {
+func makeRequest(ctx context.Context, tok string) *http.Request {
 	body := url.Values{}
 	if tok != "" {
 		body.Add("xsrf_token", tok)
 	}
-	req, _ := http.NewRequest("POST", "https://example.com", strings.NewReader(body.Encode()))
+	req, _ := http.NewRequestWithContext(ctx, "POST", "https://example.com", strings.NewReader(body.Encode()))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	return req
 }

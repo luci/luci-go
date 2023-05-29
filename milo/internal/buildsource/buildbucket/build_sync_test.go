@@ -168,7 +168,7 @@ func TestPubSub(t *testing.T) {
 			PubSubHandler(&router.Context{
 				Context: c,
 				Writer:  h,
-				Request: r,
+				Request: r.WithContext(c),
 			})
 			So(h.Code, ShouldEqual, 200)
 			datastore.GetTestable(c).CatchupIndexes()
@@ -233,7 +233,7 @@ func TestPubSub(t *testing.T) {
 			PubSubHandler(&router.Context{
 				Context: c,
 				Writer:  h,
-				Request: r,
+				Request: r.WithContext(c),
 			})
 			So(h.Code, ShouldEqual, 200)
 
@@ -279,7 +279,7 @@ func TestPubSub(t *testing.T) {
 				PubSubHandler(&router.Context{
 					Context: c,
 					Writer:  h,
-					Request: r,
+					Request: r.WithContext(c),
 				})
 				So(h.Code, ShouldEqual, 200)
 

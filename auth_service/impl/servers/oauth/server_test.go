@@ -18,6 +18,7 @@ package oauth
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -77,6 +78,7 @@ func TestOAuthServing(t *testing.T) {
 		rctx := &router.Context{
 			Context: ctx,
 			Writer:  rw,
+			Request: (&http.Request{}).WithContext(ctx),
 		}
 
 		if err := HandleLegacyOAuthEndpoint(rctx); err != nil {

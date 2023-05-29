@@ -45,7 +45,7 @@ func TestRequireCron(t *testing.T) {
 			c := &router.Context{
 				Context: gaetesting.TestingContext(),
 				Writer:  rec,
-				Request: &http.Request{},
+				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireCron), f)
 			So(hit, ShouldBeFalse)
@@ -58,11 +58,11 @@ func TestRequireCron(t *testing.T) {
 			c := &router.Context{
 				Context: gaetesting.TestingContext(),
 				Writer:  rec,
-				Request: &http.Request{
+				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-cron"): []string{"true"},
 					},
-				},
+				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireCron), f)
 			So(hit, ShouldBeTrue)
@@ -87,7 +87,7 @@ func TestRequireTQ(t *testing.T) {
 			c := &router.Context{
 				Context: gaetesting.TestingContext(),
 				Writer:  rec,
-				Request: &http.Request{},
+				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeFalse)
@@ -100,7 +100,7 @@ func TestRequireTQ(t *testing.T) {
 			c := &router.Context{
 				Context: gaetesting.TestingContext(),
 				Writer:  rec,
-				Request: &http.Request{},
+				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("")), f)
 			So(hit, ShouldBeFalse)
@@ -113,11 +113,11 @@ func TestRequireTQ(t *testing.T) {
 			c := &router.Context{
 				Context: gaetesting.TestingContext(),
 				Writer:  rec,
-				Request: &http.Request{
+				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"else"},
 					},
-				},
+				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeFalse)
@@ -130,11 +130,11 @@ func TestRequireTQ(t *testing.T) {
 			c := &router.Context{
 				Context: gaetesting.TestingContext(),
 				Writer:  rec,
-				Request: &http.Request{
+				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
 					},
-				},
+				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("wat")), f)
 			So(hit, ShouldBeTrue)
@@ -147,11 +147,11 @@ func TestRequireTQ(t *testing.T) {
 			c := &router.Context{
 				Context: gaetesting.TestingContext(),
 				Writer:  rec,
-				Request: &http.Request{
+				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
 					},
-				},
+				}).WithContext(gaetesting.TestingContext()),
 			}
 			router.RunMiddleware(c, router.NewMiddlewareChain(RequireTaskQueue("")), f)
 			So(hit, ShouldBeTrue)

@@ -516,12 +516,14 @@ func getTemplateBundle(templatePath string, appVersionID string, prod bool) *tem
 // withBuildbucketBuildsClient is a middleware that installs a production buildbucket builds RPC client into the context.
 func withBuildbucketBuildsClient(c *router.Context, next router.Handler) {
 	c.Context = buildbucket.WithBuildsClientFactory(c.Context, buildbucket.ProdBuildsClientFactory)
+	c.Request = c.Request.WithContext(c.Context)
 	next(c)
 }
 
 // withBuildbucketBuildersClient is a middleware that installs a production buildbucket builders RPC client into the context.
 func withBuildbucketBuildersClient(c *router.Context, next router.Handler) {
 	c.Context = buildbucket.WithBuildersClientFactory(c.Context, buildbucket.ProdBuildersClientFactory)
+	c.Request = c.Request.WithContext(c.Context)
 	next(c)
 }
 
@@ -537,6 +539,7 @@ func withGitMiddleware(c *router.Context, next router.Handler) {
 		return
 	}
 	c.Context = git.UseACLs(c.Context, acls)
+	c.Request = c.Request.WithContext(c.Context)
 	next(c)
 }
 
@@ -553,6 +556,7 @@ func buildProjectACLMiddleware(optional bool) router.Middleware {
 			ErrorHandler(c, err)
 		case allowed:
 			c.Context = git.WithProject(c.Context, luciProject)
+			c.Request = c.Request.WithContext(c.Context)
 			next(c)
 		case !allowed && optional:
 			next(c)

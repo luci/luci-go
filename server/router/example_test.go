@@ -42,6 +42,7 @@ func AuthCheck(c *router.Context, next router.Handler) {
 
 func GenerateSecret(c *router.Context, next router.Handler) {
 	c.Context = context.WithValue(c.Context, "secret", rand.Int())
+	c.Request = c.Request.WithContext(c.Context)
 	next(c)
 }
 

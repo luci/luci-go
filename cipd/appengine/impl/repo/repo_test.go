@@ -2558,7 +2558,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 				rr := httptest.NewRecorder()
 				adaptGrpcErr(impl.handlePackageDownload)(&router.Context{
 					Context: ctx,
-					Request: &http.Request{},
+					Request: (&http.Request{}).WithContext(ctx),
 					Params: httprouter.Params{
 						{Key: "path", Value: path},
 					},
@@ -3095,7 +3095,7 @@ func TestClientBootstrap(t *testing.T) {
 				rr := httptest.NewRecorder()
 				adaptGrpcErr(impl.handleClientBootstrap)(&router.Context{
 					Context: ctx,
-					Request: &http.Request{Form: form},
+					Request: (&http.Request{Form: form}).WithContext(ctx),
 					Writer:  rr,
 				})
 				return rr
@@ -3263,10 +3263,10 @@ func TestClientBootstrap(t *testing.T) {
 				rr := httptest.NewRecorder()
 				adaptGrpcErr(impl.handleLegacyClientInfo)(&router.Context{
 					Context: ctx,
-					Request: &http.Request{Form: url.Values{
+					Request: (&http.Request{Form: url.Values{
 						"package_name": {pkg},
 						"instance_id":  {iid},
-					}},
+					}}).WithContext(ctx),
 					Writer: rr,
 				})
 				expCT := "text/plain; charset=utf-8"
@@ -3406,7 +3406,7 @@ func TestLegacyHandlers(t *testing.T) {
 			rr := httptest.NewRecorder()
 			h(&router.Context{
 				Context: ctx,
-				Request: &http.Request{Form: f},
+				Request: (&http.Request{Form: f}).WithContext(ctx),
 				Writer:  rr,
 			})
 			expCT := "text/plain; charset=utf-8"

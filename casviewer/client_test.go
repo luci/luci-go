@@ -16,6 +16,7 @@ package casviewer
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -79,6 +80,7 @@ func newContext() *router.Context {
 	ctx = authtest.MockAuthConfig(ctx)
 	c := &router.Context{
 		Context: ctx,
+		Request: (&http.Request{}).WithContext(ctx),
 	}
 	withClientCacheMW(cc)(c, func(_ *router.Context) {})
 	return c

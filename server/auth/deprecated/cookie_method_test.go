@@ -123,7 +123,7 @@ func TestFullFlow(t *testing.T) {
 			So(loginURL, ShouldEqual, "/auth/openid/login?r=%2Fdestination")
 
 			// "Visit" login URL.
-			req, err := http.NewRequest("GET", "http://fake"+loginURL, nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", "http://fake"+loginURL, nil)
 			So(err, ShouldBeNil)
 			rec := httptest.NewRecorder()
 			method.loginHandler(&router.Context{
@@ -157,7 +157,7 @@ func TestFullFlow(t *testing.T) {
 			callbackParams := url.Values{}
 			callbackParams.Set("code", "omg_auth_code")
 			callbackParams.Set("state", parsed.Query().Get("state"))
-			req, err = http.NewRequest("GET", "http://fake/redirect?"+callbackParams.Encode(), nil)
+			req, err = http.NewRequestWithContext(ctx, "GET", "http://fake/redirect?"+callbackParams.Encode(), nil)
 			So(err, ShouldBeNil)
 			rec = httptest.NewRecorder()
 			method.callbackHandler(&router.Context{
@@ -192,7 +192,7 @@ func TestFullFlow(t *testing.T) {
 			logoutURL, err := method.LogoutURL(ctx, "/another_destination")
 			So(err, ShouldBeNil)
 			So(logoutURL, ShouldEqual, "/auth/openid/logout?r=%2Fanother_destination")
-			req, err = http.NewRequest("GET", "http://fake"+logoutURL, nil)
+			req, err = http.NewRequestWithContext(ctx, "GET", "http://fake"+logoutURL, nil)
 			So(err, ShouldBeNil)
 			req.Header.Add("Cookie", expectedCookie)
 			rec = httptest.NewRecorder()
@@ -225,7 +225,7 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 			for k, v := range query {
 				q.Add(k, v)
 			}
-			req, err := http.NewRequest("GET", "/auth/openid/callback?"+q.Encode(), nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", "/auth/openid/callback?"+q.Encode(), nil)
 			c.So(err, ShouldBeNil)
 			req.Host = "fake.com"
 			rec := httptest.NewRecorder()

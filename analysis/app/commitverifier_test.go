@@ -65,7 +65,7 @@ func TestCVRunHandler(t *testing.T) {
 			Convey(`Processed`, func() {
 				processed = true
 
-				rctx.Request = &http.Request{Body: makeCVRunReq(message)}
+				rctx.Request = (&http.Request{Body: makeCVRunReq(message)}).WithContext(ctx)
 				h.Handle(rctx)
 				So(rsp.Code, ShouldEqual, http.StatusOK)
 				So(cvRunCounter.Get(ctx, "cvproject", "success"), ShouldEqual, 1)
@@ -73,7 +73,7 @@ func TestCVRunHandler(t *testing.T) {
 			Convey(`Not processed`, func() {
 				processed = false
 
-				rctx.Request = &http.Request{Body: makeCVRunReq(message)}
+				rctx.Request = (&http.Request{Body: makeCVRunReq(message)}).WithContext(ctx)
 				h.Handle(rctx)
 				So(rsp.Code, ShouldEqual, http.StatusNoContent)
 				So(cvRunCounter.Get(ctx, "cvproject", "ignored"), ShouldEqual, 1)
@@ -84,7 +84,7 @@ func TestCVRunHandler(t *testing.T) {
 				panic("Should not be reached.")
 			}
 
-			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), nil)}
+			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), nil)}).WithContext(ctx)
 			h.Handle(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)
 			So(cvRunCounter.Get(ctx, "unknown", "permanent-failure"), ShouldEqual, 1)

@@ -46,6 +46,7 @@ func InstallHandlers(srv *server.Server) {
 	m := router.NewMiddlewareChain(
 		func(c *router.Context, next router.Handler) {
 			c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
+			c.Request = c.Request.WithContext(c.Context)
 			next(c)
 		},
 		templates.WithTemplates(prepareTemplates(&srv.Options, "templates")),

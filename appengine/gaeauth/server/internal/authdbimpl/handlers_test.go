@@ -35,7 +35,7 @@ func TestPubSubHandlers(t *testing.T) {
 		pubSubPush(&router.Context{
 			Context: c,
 			Writer:  rec,
-			Request: makePostRequest(),
+			Request: makePostRequest(c),
 		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "Auth Service URL is not configured, skipping the message")
@@ -47,7 +47,7 @@ func TestPubSubHandlers(t *testing.T) {
 		pubSubPush(&router.Context{
 			Context: c,
 			Writer:  rec,
-			Request: makePostRequest(),
+			Request: makePostRequest(c),
 		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "No new valid AuthDB change notifications")
@@ -60,7 +60,7 @@ func TestPubSubHandlers(t *testing.T) {
 		pubSubPush(&router.Context{
 			Context: c,
 			Writer:  rec,
-			Request: makePostRequest(),
+			Request: makePostRequest(c),
 		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "Processed PubSub notification for rev 122: 123 -> 123")
@@ -74,7 +74,7 @@ func TestPubSubHandlers(t *testing.T) {
 		pubSubPush(&router.Context{
 			Context: c,
 			Writer:  rec,
-			Request: makePostRequest(),
+			Request: makePostRequest(c),
 		})
 		So(rec.Code, ShouldEqual, 200)
 		So(rec.Body.String(), ShouldEqual, "Processed PubSub notification for rev 124: 123 -> 130")
@@ -88,7 +88,7 @@ func setupCtx() (context.Context, *fakeAuthService) {
 	return c, srv
 }
 
-func makePostRequest() *http.Request {
-	req, _ := http.NewRequest("POST", "/doesntmatter", bytes.NewReader(nil))
+func makePostRequest(ctx context.Context) *http.Request {
+	req, _ := http.NewRequestWithContext(ctx, "POST", "/doesntmatter", bytes.NewReader(nil))
 	return req
 }

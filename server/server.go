@@ -2649,6 +2649,7 @@ func (s *Server) initAdminPort() error {
 	store := secrets.NewDerivedStore(secrets.Secret{Active: secret})
 	withAdminSecret := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
 		c.Context = secrets.Use(c.Context, store)
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 	})
 

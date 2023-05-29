@@ -49,6 +49,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 	m := base.Extend(func(c *router.Context, next router.Handler) {
 		c.Context = context.WithValue(c.Context, configContextKey(0), &cfg)
 		c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 	})
 	m = m.Extend(

@@ -327,6 +327,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		// Install the services.
 		c.Context = withProjServer(c.Context, &rpc.Projects{})
 		c.Context = withVMsServer(c.Context, &rpc.Config{})
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 	})
 	r.GET("/internal/cron/import-config", mw, importHandler)

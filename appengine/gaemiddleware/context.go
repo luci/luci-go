@@ -238,7 +238,7 @@ func (e *Environment) Base() router.MiddlewareChain {
 
 		// Apply production settings.
 		c.Context = e.With(c.Context, c.Request)
-
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 	}
 

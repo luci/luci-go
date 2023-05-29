@@ -39,25 +39,32 @@ func TestRouter(t *testing.T) {
 	}
 	a := func(c *Context, next Handler) {
 		c.Context = appendValue(c.Context, outputKey, "a:before")
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 		c.Context = appendValue(c.Context, outputKey, "a:after")
+		c.Request = c.Request.WithContext(c.Context)
 	}
 	b := func(c *Context, next Handler) {
 		c.Context = appendValue(c.Context, outputKey, "b:before")
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 		c.Context = appendValue(c.Context, outputKey, "b:after")
+		c.Request = c.Request.WithContext(c.Context)
 	}
 	c := func(c *Context, next Handler) {
 		c.Context = appendValue(c.Context, outputKey, "c")
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 	}
 	d := func(c *Context, next Handler) {
 		next(c)
 		c.Context = appendValue(c.Context, outputKey, "d")
+		c.Request = c.Request.WithContext(c.Context)
 	}
 	stop := func(_ *Context, _ Handler) {}
 	handler := func(c *Context) {
 		c.Context = appendValue(c.Context, outputKey, "handler")
+		c.Request = c.Request.WithContext(c.Context)
 	}
 
 	Convey("Router", t, func() {
@@ -104,7 +111,7 @@ func TestRouter(t *testing.T) {
 		})
 
 		Convey("run", func() {
-			ctx := &Context{Context: context.Background()}
+			ctx := &Context{Context: context.Background(), Request: &http.Request{}}
 
 			Convey("Should execute handler when using nil middlewares", func() {
 				run(ctx, nil, nil, handler)
@@ -150,8 +157,10 @@ func TestRouter(t *testing.T) {
 			ts := httptest.NewServer(r)
 			a := func(c *Context, next Handler) {
 				c.Context = appendValue(c.Context, outputKey, "a:before")
+				c.Request = c.Request.WithContext(c.Context)
 				next(c)
 				c.Context = appendValue(c.Context, outputKey, "a:after")
+				c.Request = c.Request.WithContext(c.Context)
 				io.WriteString(c.Writer, strings.Join(c.Context.Value(outputKey).([]string), ","))
 			}
 

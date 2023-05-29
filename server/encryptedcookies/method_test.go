@@ -111,11 +111,11 @@ func TestMethod(t *testing.T) {
 			rw := httptest.NewRecorder()
 			h(&router.Context{
 				Context: ctx,
-				Request: &http.Request{
+				Request: (&http.Request{
 					URL:    url,
 					Host:   host,
 					Header: header,
-				},
+				}).WithContext(ctx),
 				Writer: rw,
 			})
 			return rw.Result()
@@ -404,6 +404,7 @@ func TestMethod(t *testing.T) {
 			r.Use(router.MiddlewareChain{
 				func(rc *router.Context, next router.Handler) {
 					rc.Context = ctx
+					rc.Request = rc.Request.WithContext(ctx)
 					next(rc)
 				},
 			})

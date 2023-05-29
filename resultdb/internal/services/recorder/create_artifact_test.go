@@ -113,11 +113,11 @@ func TestCreateArtifact(t *testing.T) {
 
 			c := &router.Context{
 				Context: ctx,
-				Request: &http.Request{
+				Request: (&http.Request{
 					Header: http.Header{},
 					URL:    u,
 					Body:   io.NopCloser(strings.NewReader(content)),
-				},
+				}).WithContext(ctx),
 				Writer: rec,
 			}
 			if hash != "" {

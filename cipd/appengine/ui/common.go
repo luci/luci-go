@@ -55,6 +55,7 @@ func InstallHandlers(srv *server.Server, svc *impl.Services, templatesPath strin
 				startTime: clock.Now(c.Context),
 				services:  svc,
 			})
+			c.Request = c.Request.WithContext(c.Context)
 			next(c)
 		},
 		templates.WithTemplates(prepareTemplates(&srv.Options, templatesPath)),

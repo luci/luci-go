@@ -121,6 +121,7 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		c.Context = withDispatcher(c.Context, dsp)
 		c.Context = withCompute(c.Context, newCompute(c.Context))
 		c.Context = withSwarming(c.Context, newSwarming(c.Context))
+		c.Request = c.Request.WithContext(c.Context)
 		next(c)
 	})
 	dsp.InstallRoutes(r, mw)

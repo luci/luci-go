@@ -91,6 +91,7 @@ func TestServer(t *testing.T) {
 			server.InstallHandlers(r, router.NewMiddlewareChain(
 				func(ctx *router.Context, next router.Handler) {
 					ctx.Context = c
+					ctx.Request = ctx.Request.WithContext(c)
 					next(ctx)
 				},
 			))

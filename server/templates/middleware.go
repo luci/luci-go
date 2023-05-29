@@ -33,6 +33,7 @@ func WithTemplates(b *Bundle) router.Middleware {
 			Request: c.Request,
 			Params:  c.Params,
 		})
+		c.Request = c.Request.WithContext(c.Context)
 		if b.err != nil {
 			http.Error(c.Writer, fmt.Sprintf("Can't load HTML templates.\n%s", b.err), http.StatusInternalServerError)
 			return

@@ -93,6 +93,7 @@ func (cc *ClientCache) Clear() {
 func withClientCacheMW(cc *ClientCache) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		c.Context = context.WithValue(c.Context, ccKey, cc)
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ccKey, cc))
 		next(c)
 	}
 }

@@ -57,7 +57,7 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 			}
 
 			// Process invocation finalization.
-			rctx.Request = &http.Request{Body: makeInvocationFinalizedReq(6363636363, "invproject:realm")}
+			rctx.Request = (&http.Request{Body: makeInvocationFinalizedReq(6363636363, "invproject:realm")}).WithContext(ctx)
 
 			Convey(`Processed`, func() {
 				processed = true
@@ -81,7 +81,7 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 				panic("Should not be reached.")
 			}
 
-			rctx.Request = &http.Request{Body: makeReq([]byte("Hello"), nil)}
+			rctx.Request = (&http.Request{Body: makeReq([]byte("Hello"), nil)}).WithContext(ctx)
 
 			h.Handle(rctx)
 			So(rsp.Code, ShouldEqual, http.StatusAccepted)

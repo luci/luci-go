@@ -50,10 +50,10 @@ func TestIngestTarball(t *testing.T) {
 		rctx := &router.Context{
 			Context: ctx,
 			Writer:  rw,
-			Request: &http.Request{
+			Request: (&http.Request{
 				Method: "PUT",
 				Body:   body,
-			},
+			}).WithContext(ctx),
 			Params: []httprouter.Param{
 				{
 					Key:   "tarballName",
