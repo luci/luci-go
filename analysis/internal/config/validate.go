@@ -181,17 +181,17 @@ func validateRealmConfig(ctx *validation.Context, rCfg *configpb.RealmConfig) {
 
 // validateProjectConfigRaw deserializes the project-level config message
 // and passes it through the validator.
-func validateProjectConfigRaw(ctx *validation.Context, content string) *configpb.ProjectConfig {
+func validateProjectConfigRaw(ctx *validation.Context, project, content string) *configpb.ProjectConfig {
 	msg := &configpb.ProjectConfig{}
 	if err := luciproto.UnmarshalTextML(content, msg); err != nil {
 		ctx.Errorf("failed to unmarshal as text proto: %s", err)
 		return nil
 	}
-	ValidateProjectConfig(ctx, msg)
+	ValidateProjectConfig(ctx, project, msg)
 	return msg
 }
 
-func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig) {
+func ValidateProjectConfig(ctx *validation.Context, project string, cfg *configpb.ProjectConfig) {
 	if cfg.BugSystem == configpb.ProjectConfig_MONORAIL && cfg.Monorail == nil {
 		ctx.Errorf("monorail configuration is required when the configured bug system is Monorail")
 		return
@@ -203,14 +203,14 @@ func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig)
 	}
 
 	if cfg.Monorail != nil {
-		validateMonorail(ctx, cfg.Monorail, cfg.BugFilingThresholds)
+		validateMonorail(ctx, project, cfg.Monorail, cfg.BugFilingThresholds)
 	}
 	if cfg.Buganizer != nil {
-		validateBuganizer(ctx, cfg.Buganizer, cfg.BugFilingThresholds)
+		validateBuganizer(ctx, project, cfg.Buganizer, cfg.BugFilingThresholds)
 	}
 	// Validate BugFilingThreshold when it is not nil or there is a bug system specified.
 	if cfg.BugFilingThresholds != nil || cfg.BugSystem != configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED {
-		validateImpactMetricThresholds(ctx, cfg.BugFilingThresholds, "bug_filing_thresholds")
+		validateImpactMetricThresholds(ctx, project, cfg.BugFilingThresholds, "bug_filing_thresholds")
 	}
 	for _, rCfg := range cfg.Realms {
 		validateRealmConfig(ctx, rCfg)
@@ -218,7 +218,7 @@ func ValidateProjectConfig(ctx *validation.Context, cfg *configpb.ProjectConfig)
 	validateClustering(ctx, cfg.Clustering)
 }
 
-func validateBuganizer(ctx *validation.Context, cfg *configpb.BuganizerProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
+func validateBuganizer(ctx *validation.Context, project string, cfg *configpb.BuganizerProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("buganizer")
 
 	defer ctx.Exit()
@@ -229,7 +229,7 @@ func validateBuganizer(ctx *validation.Context, cfg *configpb.BuganizerProject, 
 	}
 	validateBuganizerDefaultComponent(ctx, cfg.DefaultComponent)
 	validatePriorityHysteresisPercent(ctx, cfg.PriorityHysteresisPercent)
-	validateBuganizerPriorityMappings(ctx, cfg.PriorityMappings, bugFilingThres)
+	validateBuganizerPriorityMappings(ctx, project, cfg.PriorityMappings, bugFilingThres)
 }
 
 func validateBuganizerDefaultComponent(ctx *validation.Context, component *configpb.BuganizerComponent) {
@@ -244,7 +244,7 @@ func validateBuganizerDefaultComponent(ctx *validation.Context, component *confi
 	}
 }
 
-func validateBuganizerPriorityMappings(ctx *validation.Context, mappings []*configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
+func validateBuganizerPriorityMappings(ctx *validation.Context, project string, mappings []*configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("priority_mappings")
 	defer ctx.Exit()
 	if mappings == nil {
@@ -256,13 +256,15 @@ func validateBuganizerPriorityMappings(ctx *validation.Context, mappings []*conf
 	}
 
 	for i, mapping := range mappings {
-		validateBuganizerPriorityMapping(ctx, i, mapping, bugFilingThres)
+		ctx.Enter("[%v]", i)
+		validateBuganizerPriorityMapping(ctx, project, mapping, bugFilingThres)
 		if i == len(mappings)-1 {
 			// The lowest priority threshold must be satisfied by
 			// the bug-filing threshold. This ensures that bugs meeting the
 			// bug-filing threshold meet the bug keep-open threshold.
 			validatePrioritySatisfiedByBugFilingThreshold(ctx, mapping.Thresholds, bugFilingThres)
 		}
+		ctx.Exit()
 	}
 
 	// Validate priorites are in decending order
@@ -280,11 +282,9 @@ func validateBuganizerPriorityMappings(ctx *validation.Context, mappings []*conf
 	}
 }
 
-func validateBuganizerPriorityMapping(ctx *validation.Context, index int, mapping *configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
-	ctx.Enter("[%v]", index)
-	defer ctx.Exit()
+func validateBuganizerPriorityMapping(ctx *validation.Context, project string, mapping *configpb.BuganizerProject_PriorityMapping, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	validateBuganizerPriority(ctx, mapping.Priority)
-	validateImpactMetricThresholds(ctx, mapping.Thresholds, "thresholds")
+	validateImpactMetricThresholds(ctx, project, mapping.Thresholds, "thresholds")
 }
 
 func validateBuganizerPriority(ctx *validation.Context, priority configpb.BuganizerPriority) {
@@ -296,7 +296,7 @@ func validateBuganizerPriority(ctx *validation.Context, priority configpb.Bugani
 	}
 }
 
-func validateMonorail(ctx *validation.Context, cfg *configpb.MonorailProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
+func validateMonorail(ctx *validation.Context, project string, cfg *configpb.MonorailProject, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("monorail")
 	defer ctx.Exit()
 
@@ -308,7 +308,7 @@ func validateMonorail(ctx *validation.Context, cfg *configpb.MonorailProject, bu
 	validateStringConfig(ctx, "project", cfg.Project, monorailProjectRE)
 	validateDefaultFieldValues(ctx, cfg.DefaultFieldValues)
 	validateFieldID(ctx, cfg.PriorityFieldId, "priority_field_id")
-	validateMonorailPriorities(ctx, cfg.Priorities, bugFilingThres)
+	validateMonorailPriorities(ctx, project, cfg.Priorities, bugFilingThres)
 	validatePriorityHysteresisPercent(ctx, cfg.PriorityHysteresisPercent)
 	validateDisplayPrefix(ctx, cfg.DisplayPrefix)
 	validateHostname(ctx, "monorail_hostname", cfg.MonorailHostname, true /*optional*/)
@@ -337,14 +337,14 @@ func validateFieldValue(ctx *validation.Context, fv *configpb.MonorailFieldValue
 	// No validation applies to field value.
 }
 
-func validateMonorailPriorities(ctx *validation.Context, ps []*configpb.MonorailPriority, bugFilingThres []*configpb.ImpactMetricThreshold) {
+func validateMonorailPriorities(ctx *validation.Context, project string, ps []*configpb.MonorailPriority, bugFilingThres []*configpb.ImpactMetricThreshold) {
 	ctx.Enter("priorities")
 	if len(ps) == 0 {
 		ctx.Errorf("at least one monorail priority must be specified")
 	}
 	for i, priority := range ps {
 		ctx.Enter("[%v]", i)
-		validateMonorailPriority(ctx, priority)
+		validateMonorailPriority(ctx, project, priority)
 		if i == len(ps)-1 {
 			// The lowest priority threshold must be satisfied by
 			// the bug-filing threshold. This ensures that bugs meeting the
@@ -356,9 +356,9 @@ func validateMonorailPriorities(ctx *validation.Context, ps []*configpb.Monorail
 	ctx.Exit()
 }
 
-func validateMonorailPriority(ctx *validation.Context, p *configpb.MonorailPriority) {
+func validateMonorailPriority(ctx *validation.Context, project string, p *configpb.MonorailPriority) {
 	validatePriorityValue(ctx, p.Priority)
-	validateImpactMetricThresholds(ctx, p.Thresholds, "thresholds")
+	validateImpactMetricThresholds(ctx, project, p.Thresholds, "thresholds")
 }
 
 func validatePrioritySatisfiedByBugFilingThreshold(ctx *validation.Context, priorityThreshold, bugFilingThres []*configpb.ImpactMetricThreshold) {
@@ -389,11 +389,12 @@ func validatePriorityValue(ctx *validation.Context, value string) {
 	ctx.Exit()
 }
 
-func validateImpactMetricThresholds(ctx *validation.Context, ts []*configpb.ImpactMetricThreshold, fieldName string) {
+func validateImpactMetricThresholds(ctx *validation.Context, project string, ts []*configpb.ImpactMetricThreshold, fieldName string) {
 	ctx.Enter(fieldName)
 	defer ctx.Exit()
 
-	if len(ts) == 0 {
+	// Must have the impact metric tresholds unless it is a chromium milestone projects.
+	if len(ts) == 0 && !ChromiumMilestoneProjectRe.MatchString(project) {
 		ctx.Errorf("impact thresholds must be specified")
 	}
 	seen := map[string]bool{}

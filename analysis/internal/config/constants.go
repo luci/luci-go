@@ -37,3 +37,6 @@ const VariantHashRePattern = `[0-9a-f]{16}`
 // RefHashRePattern is the regular expression pattern that matches
 // validly formed Ref Hash.
 const RefHashRePattern = `[0-9a-f]{16}`
+
+// ChromiumMilestoneProjectRe is the chromium milestone projects, e.g. chromium-m100.
+var ChromiumMilestoneProjectRe = regexp.MustCompile(`^(chrome|chromium)-m[0-9]+$`)

@@ -32,6 +32,9 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
+const project = "fakeproject"
+const chromiumMilestoneProject = "chrome-m101"
+
 func TestServiceConfigValidator(t *testing.T) {
 	t.Parallel()
 
@@ -118,9 +121,9 @@ func TestServiceConfigValidator(t *testing.T) {
 func TestProjectConfigValidator(t *testing.T) {
 	t.Parallel()
 
-	validate := func(cfg *configpb.ProjectConfig) error {
+	validate := func(project string, cfg *configpb.ProjectConfig) error {
 		c := validation.Context{Context: context.Background()}
-		ValidateProjectConfig(&c, cfg)
+		ValidateProjectConfig(&c, project, cfg)
 		return c.Finalize()
 	}
 
@@ -131,23 +134,23 @@ func TestProjectConfigValidator(t *testing.T) {
 		So(err, ShouldBeNil)
 		cfg := &configpb.ProjectConfig{}
 		So(prototext.Unmarshal(content, cfg), ShouldBeNil)
-		So(validate(cfg), ShouldBeNil)
+		So(validate(project, cfg), ShouldBeNil)
 	})
 
 	Convey("valid monorail config is valid", t, func() {
 		cfg := CreateMonorailPlaceholderProjectConfig()
-		So(validate(cfg), ShouldBeNil)
+		So(validate(project, cfg), ShouldBeNil)
 	})
 
 	Convey("valid buganizer config is valid", t, func() {
 		cfg := CreateBuganizerPlaceholderProjectConfig()
-		So(validate(cfg), ShouldBeNil)
+		So(validate(project, cfg), ShouldBeNil)
 	})
 
 	Convey("unspecified bug system defaults to monorail", t, func() {
 		cfg := CreateMonorailPlaceholderProjectConfig()
 		cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
-		So(validate(cfg), ShouldBeNil)
+		So(validate(project, cfg), ShouldBeNil)
 	})
 
 	Convey("no bug system specified", t, func() {
@@ -155,7 +158,7 @@ func TestProjectConfigValidator(t *testing.T) {
 		cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
 		cfg.Monorail = nil
 		cfg.Buganizer = nil
-		So(validate(cfg), ShouldBeNil)
+		So(validate(project, cfg), ShouldBeNil)
 	})
 
 	Convey("monorail", t, func() {
@@ -163,18 +166,18 @@ func TestProjectConfigValidator(t *testing.T) {
 
 		Convey("project must be specified", func() {
 			cfg.Monorail.Project = ""
-			So(validate(cfg), ShouldErrLike, "empty project is not allowed")
+			So(validate(project, cfg), ShouldErrLike, "empty project is not allowed")
 		})
 
 		Convey("illegal monorail project", func() {
 			// Project does not satisfy regex.
 			cfg.Monorail.Project = "-my-project"
-			So(validate(cfg), ShouldErrLike, `invalid project: "-my-project"`)
+			So(validate(project, cfg), ShouldErrLike, `invalid project: "-my-project"`)
 		})
 
 		Convey("negative priority field ID", func() {
 			cfg.Monorail.PriorityFieldId = -1
-			So(validate(cfg), ShouldErrLike, "value must be non-negative")
+			So(validate(project, cfg), ShouldErrLike, "value must be non-negative")
 		})
 
 		Convey("field value with negative field ID", func() {
@@ -184,24 +187,29 @@ func TestProjectConfigValidator(t *testing.T) {
 					Value:   "",
 				},
 			}
-			So(validate(cfg), ShouldErrLike, "value must be non-negative")
+			So(validate(project, cfg), ShouldErrLike, "value must be non-negative")
 		})
 
 		Convey("priorities", func() {
 			priorities := cfg.Monorail.Priorities
 			Convey("at least one must be specified", func() {
 				cfg.Monorail.Priorities = nil
-				So(validate(cfg), ShouldErrLike, "at least one monorail priority must be specified")
+				So(validate(project, cfg), ShouldErrLike, "at least one monorail priority must be specified")
 			})
 
 			Convey("priority value is empty", func() {
 				priorities[0].Priority = ""
-				So(validate(cfg), ShouldErrLike, "empty value is not allowed")
+				So(validate(project, cfg), ShouldErrLike, "empty value is not allowed")
 			})
 
 			Convey("threshold is not specified", func() {
 				priorities[0].Thresholds = nil
-				So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
+				So(validate(project, cfg), ShouldErrLike, "impact thresholds must be specified")
+			})
+
+			Convey("threshold is not specified chromium milestone project", func() {
+				priorities[0].Thresholds = nil
+				So(validate(chromiumMilestoneProject, cfg), ShouldBeNil)
 			})
 
 			Convey("last priority thresholds must be satisfied by the bug-filing threshold", func() {
@@ -216,7 +224,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(101)}},
 					}
-					So(validate(cfg), ShouldErrLike, "/ one_day): value must be at most 100")
+					So(validate(project, cfg), ShouldErrLike, "/ one_day): value must be at most 100")
 				})
 
 				Convey("three day threshold", func() {
@@ -226,7 +234,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{ThreeDay: proto.Int64(301)}},
 					}
-					So(validate(cfg), ShouldErrLike, "/ three_day): value must be at most 300")
+					So(validate(project, cfg), ShouldErrLike, "/ three_day): value must be at most 300")
 				})
 
 				Convey("seven day threshold", func() {
@@ -236,7 +244,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{SevenDay: proto.Int64(701)}},
 					}
-					So(validate(cfg), ShouldErrLike, "/ seven_day): value must be at most 700")
+					So(validate(project, cfg), ShouldErrLike, "/ seven_day): value must be at most 700")
 				})
 
 				Convey("one day-filing threshold implies seven-day keep open threshold", func() {
@@ -247,7 +255,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{SevenDay: proto.Int64(100)}},
 					}
-					So(validate(cfg), ShouldBeNil)
+					So(validate(project, cfg), ShouldBeNil)
 				})
 
 				Convey("seven day-filing threshold does not imply one-day keep open threshold", func() {
@@ -258,7 +266,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(700)}},
 					}
-					So(validate(cfg), ShouldErrLike, "/ seven_day): seven_day threshold must be set, with a value of at most 700")
+					So(validate(project, cfg), ShouldErrLike, "/ seven_day): seven_day threshold must be set, with a value of at most 700")
 				})
 
 				Convey("metric threshold nil", func() {
@@ -268,7 +276,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: string(metrics.Failures.ID), Threshold: nil},
 					}
-					So(validate(cfg), ShouldErrLike, "/ one_day): one_day threshold must be set, with a value of at most 100")
+					So(validate(project, cfg), ShouldErrLike, "/ one_day): one_day threshold must be set, with a value of at most 100")
 				})
 
 				Convey("metric threshold not set", func() {
@@ -278,7 +286,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: string(metrics.Failures.ID), Threshold: &configpb.MetricThreshold{}},
 					}
-					So(validate(cfg), ShouldErrLike, "/ one_day): one_day threshold must be set, with a value of at most 100")
+					So(validate(project, cfg), ShouldErrLike, "/ one_day): one_day threshold must be set, with a value of at most 100")
 				})
 			})
 			// Other thresholding validation cases tested under bug-filing threshold and are
@@ -288,24 +296,24 @@ func TestProjectConfigValidator(t *testing.T) {
 		Convey("priority hysteresis", func() {
 			Convey("value too high", func() {
 				cfg.Monorail.PriorityHysteresisPercent = 1001
-				So(validate(cfg), ShouldErrLike, "value must not exceed 1000 percent")
+				So(validate(project, cfg), ShouldErrLike, "value must not exceed 1000 percent")
 			})
 			Convey("value is negative", func() {
 				cfg.Monorail.PriorityHysteresisPercent = -1
-				So(validate(cfg), ShouldErrLike, "value must not be negative")
+				So(validate(project, cfg), ShouldErrLike, "value must not be negative")
 			})
 		})
 
 		Convey("monorail hostname", func() {
 			// Only the domain name should be supplied, not the protocol.
 			cfg.Monorail.MonorailHostname = "http://bugs.chromium.org"
-			So(validate(cfg), ShouldErrLike, "invalid hostname")
+			So(validate(project, cfg), ShouldErrLike, "invalid hostname")
 		})
 
 		Convey("display prefix", func() {
 			// ";" is not allowed to appear in the prefix.
 			cfg.Monorail.DisplayPrefix = "chromium:"
-			So(validate(cfg), ShouldErrLike, "invalid display prefix")
+			So(validate(project, cfg), ShouldErrLike, "invalid display prefix")
 		})
 	})
 
@@ -314,34 +322,39 @@ func TestProjectConfigValidator(t *testing.T) {
 
 		Convey("default component must be specified", func() {
 			cfg.Buganizer.DefaultComponent = nil
-			So(validate(cfg), ShouldErrLike, "default component must be specified")
+			So(validate(project, cfg), ShouldErrLike, "default component must be specified")
 		})
 
 		Convey("invalid default component", func() {
 			cfg.Buganizer.DefaultComponent.Id = 0
-			So(validate(cfg), ShouldErrLike, "invalid buganizer default component id: 0")
+			So(validate(project, cfg), ShouldErrLike, "invalid buganizer default component id: 0")
 		})
 
 		Convey("priorities", func() {
 			priorityMappings := cfg.Buganizer.PriorityMappings
 			Convey("priority_mappings not specified", func() {
 				cfg.Buganizer.PriorityMappings = nil
-				So(validate(cfg), ShouldErrLike, "priority_mappings must be specified")
+				So(validate(project, cfg), ShouldErrLike, "priority_mappings must be specified")
 			})
 
 			Convey("priority_mappings are zero length", func() {
 				cfg.Buganizer.PriorityMappings = []*configpb.BuganizerProject_PriorityMapping{}
-				So(validate(cfg), ShouldErrLike, "at least one buganizer priority mapping must be specified")
+				So(validate(project, cfg), ShouldErrLike, "at least one buganizer priority mapping must be specified")
 			})
 
 			Convey("priority value is empty", func() {
 				priorityMappings[0].Priority = -1
-				So(validate(cfg), ShouldErrLike, "invalid priority: -1")
+				So(validate(project, cfg), ShouldErrLike, "invalid priority: -1")
 			})
 
 			Convey("threshold is not specified", func() {
 				priorityMappings[0].Thresholds = nil
-				So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
+				So(validate(project, cfg), ShouldErrLike, "impact thresholds must be specified")
+			})
+
+			Convey("threshold is not specified chromium milestone project", func() {
+				priorityMappings[0].Thresholds = nil
+				So(validate(chromiumMilestoneProject, cfg), ShouldBeNil)
 			})
 
 			Convey("last priority thresholds must be satisfied by the bug-filing threshold", func() {
@@ -354,7 +367,7 @@ func TestProjectConfigValidator(t *testing.T) {
 					lastPriority.Thresholds = []*configpb.ImpactMetricThreshold{
 						{MetricId: "critical-failures-exonerated", Threshold: nil},
 					}
-					So(validate(cfg), ShouldErrLike, "/ one_day): one_day threshold must be set, with a value of at most 70")
+					So(validate(project, cfg), ShouldErrLike, "/ one_day): one_day threshold must be set, with a value of at most 70")
 				})
 			})
 			// Other thresholding validation cases tested under bug-filing threshold and are
@@ -364,11 +377,11 @@ func TestProjectConfigValidator(t *testing.T) {
 		Convey("priority hysteresis", func() {
 			Convey("value too high", func() {
 				cfg.Buganizer.PriorityHysteresisPercent = 1001
-				So(validate(cfg), ShouldErrLike, "value must not exceed 1000 percent")
+				So(validate(project, cfg), ShouldErrLike, "value must not exceed 1000 percent")
 			})
 			Convey("value is negative", func() {
 				cfg.Buganizer.PriorityHysteresisPercent = -1
-				So(validate(cfg), ShouldErrLike, "value must not be negative")
+				So(validate(project, cfg), ShouldErrLike, "value must not be negative")
 			})
 		})
 	})
@@ -378,12 +391,16 @@ func TestProjectConfigValidator(t *testing.T) {
 			cfg := CreateMonorailPlaceholderProjectConfig()
 			cfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
 			cfg.BugFilingThresholds = nil
-			So(validate(cfg), ShouldBeNil)
+			So(validate(project, cfg), ShouldBeNil)
 		})
 		Convey("with both configs", WithBothProjectConfigs(func(cfg *configpb.ProjectConfig, name string) {
 			Convey(fmt.Sprintf("%s - not specified", name), func() {
 				cfg.BugFilingThresholds = nil
-				So(validate(cfg), ShouldErrLike, "impact thresholds must be specified")
+				So(validate(project, cfg), ShouldErrLike, "impact thresholds must be specified")
+			})
+			Convey(fmt.Sprintf("%s - not specified chromium milestone project", name), func() {
+				cfg.BugFilingThresholds = nil
+				So(validate(chromiumMilestoneProject, cfg), ShouldBeNil)
 			})
 			Convey(fmt.Sprintf("%s - unspecified metric", name), func() {
 				cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
@@ -391,7 +408,7 @@ func TestProjectConfigValidator(t *testing.T) {
 						MetricId: "invalid-metric-id",
 					},
 				}
-				So(validate(cfg), ShouldErrLike, "no metric with ID")
+				So(validate(project, cfg), ShouldErrLike, "no metric with ID")
 			})
 			Convey(fmt.Sprintf("%s - same metric with two thresholds", name), func() {
 				cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
@@ -404,7 +421,7 @@ func TestProjectConfigValidator(t *testing.T) {
 						Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(502)},
 					},
 				}
-				So(validate(cfg), ShouldErrLike, "same metric can't have more than one threshold")
+				So(validate(project, cfg), ShouldErrLike, "same metric can't have more than one threshold")
 			})
 			Convey(fmt.Sprintf("%s - metric values are not negative", name), func() {
 				Convey("one day", func() {
@@ -414,7 +431,7 @@ func TestProjectConfigValidator(t *testing.T) {
 							Threshold: &configpb.MetricThreshold{OneDay: proto.Int64(-1)},
 						},
 					}
-					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+					So(validate(project, cfg), ShouldErrLike, "value must be non-negative")
 				})
 				Convey("three days", func() {
 					cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
@@ -423,7 +440,7 @@ func TestProjectConfigValidator(t *testing.T) {
 							Threshold: &configpb.MetricThreshold{ThreeDay: proto.Int64(-1)},
 						},
 					}
-					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+					So(validate(project, cfg), ShouldErrLike, "value must be non-negative")
 				})
 				Convey("seven days", func() {
 					cfg.BugFilingThresholds = []*configpb.ImpactMetricThreshold{
@@ -432,7 +449,7 @@ func TestProjectConfigValidator(t *testing.T) {
 							Threshold: &configpb.MetricThreshold{SevenDay: proto.Int64(-1)},
 						},
 					}
-					So(validate(cfg), ShouldErrLike, "value must be non-negative")
+					So(validate(project, cfg), ShouldErrLike, "value must be non-negative")
 				})
 			})
 		}))
@@ -447,15 +464,15 @@ func TestProjectConfigValidator(t *testing.T) {
 		Convey("realm name", func() {
 			Convey("must be specified", func() {
 				realm.Name = ""
-				So(validate(cfg), ShouldErrLike, "empty realm_name is not allowed")
+				So(validate(project, cfg), ShouldErrLike, "empty realm_name is not allowed")
 			})
 			Convey("invalid", func() {
 				realm.Name = "chromium:ci"
-				So(validate(cfg), ShouldErrLike, `invalid realm_name: "chromium:ci"`)
+				So(validate(project, cfg), ShouldErrLike, `invalid realm_name: "chromium:ci"`)
 			})
 			Convey("valid", func() {
 				realm.Name = "ci"
-				So(validate(cfg), ShouldBeNil)
+				So(validate(project, cfg), ShouldBeNil)
 			})
 		})
 
@@ -468,22 +485,22 @@ func TestProjectConfigValidator(t *testing.T) {
 				Convey("interval", func() {
 					Convey("empty not allowed", func() {
 						utCfg.UpdateTestVariantTaskInterval = nil
-						So(validate(cfg), ShouldErrLike, `empty interval is not allowed`)
+						So(validate(project, cfg), ShouldErrLike, `empty interval is not allowed`)
 					})
 					Convey("must be greater than 0", func() {
 						utCfg.UpdateTestVariantTaskInterval = durationpb.New(-time.Hour)
-						So(validate(cfg), ShouldErrLike, `interval is less than 0`)
+						So(validate(project, cfg), ShouldErrLike, `interval is less than 0`)
 					})
 				})
 
 				Convey("duration", func() {
 					Convey("empty not allowed", func() {
 						utCfg.TestVariantStatusUpdateDuration = nil
-						So(validate(cfg), ShouldErrLike, `empty duration is not allowed`)
+						So(validate(project, cfg), ShouldErrLike, `empty duration is not allowed`)
 					})
 					Convey("must be greater than 0", func() {
 						utCfg.TestVariantStatusUpdateDuration = durationpb.New(-time.Hour)
-						So(validate(cfg), ShouldErrLike, `duration is less than 0`)
+						So(validate(project, cfg), ShouldErrLike, `duration is less than 0`)
 					})
 				})
 			})
@@ -499,41 +516,41 @@ func TestProjectConfigValidator(t *testing.T) {
 					Convey("cloud project", func() {
 						Convey("should npt be empty", func() {
 							table.CloudProject = ""
-							So(validate(cfg), ShouldErrLike, "empty cloud_project is not allowed")
+							So(validate(project, cfg), ShouldErrLike, "empty cloud_project is not allowed")
 						})
 						Convey("not end with hyphen", func() {
 							table.CloudProject = "project-"
-							So(validate(cfg), ShouldErrLike, `invalid cloud_project: "project-"`)
+							So(validate(project, cfg), ShouldErrLike, `invalid cloud_project: "project-"`)
 						})
 						Convey("not too short", func() {
 							table.CloudProject = "p"
-							So(validate(cfg), ShouldErrLike, `invalid cloud_project: "p"`)
+							So(validate(project, cfg), ShouldErrLike, `invalid cloud_project: "p"`)
 						})
 						Convey("must start with letter", func() {
 							table.CloudProject = "0project"
-							So(validate(cfg), ShouldErrLike, `invalid cloud_project: "0project"`)
+							So(validate(project, cfg), ShouldErrLike, `invalid cloud_project: "0project"`)
 						})
 					})
 
 					Convey("dataset", func() {
 						Convey("should not be empty", func() {
 							table.Dataset = ""
-							So(validate(cfg), ShouldErrLike, "empty dataset is not allowed")
+							So(validate(project, cfg), ShouldErrLike, "empty dataset is not allowed")
 						})
 						Convey("should be valid", func() {
 							table.Dataset = "data-set"
-							So(validate(cfg), ShouldErrLike, `invalid dataset: "data-set"`)
+							So(validate(project, cfg), ShouldErrLike, `invalid dataset: "data-set"`)
 						})
 					})
 
 					Convey("table", func() {
 						Convey("should not be empty", func() {
 							table.Table = ""
-							So(validate(cfg), ShouldErrLike, "empty table_name is not allowed")
+							So(validate(project, cfg), ShouldErrLike, "empty table_name is not allowed")
 						})
 						Convey("should be valid", func() {
 							table.Table = "table/name"
-							So(validate(cfg), ShouldErrLike, `invalid table_name: "table/name"`)
+							So(validate(project, cfg), ShouldErrLike, `invalid table_name: "table/name"`)
 						})
 					})
 				})
@@ -548,36 +565,36 @@ func TestProjectConfigValidator(t *testing.T) {
 
 		Convey(" may not be specified", func() {
 			cfg.Clustering = nil
-			So(validate(cfg), ShouldBeNil)
+			So(validate(project, cfg), ShouldBeNil)
 		})
 		Convey("rules must be valid", func() {
 			rule := clustering.TestNameRules[0]
 			Convey("name is not specified", func() {
 				rule.Name = ""
-				So(validate(cfg), ShouldErrLike, "empty name is not allowed")
+				So(validate(project, cfg), ShouldErrLike, "empty name is not allowed")
 			})
 			Convey("name is invalid", func() {
 				rule.Name = "<script>evil()</script>"
-				So(validate(cfg), ShouldErrLike, "invalid name")
+				So(validate(project, cfg), ShouldErrLike, "invalid name")
 			})
 			Convey("pattern is not specified", func() {
 				rule.Pattern = ""
 				// Make sure the like template does not refer to capture
 				// groups in the pattern, to avoid other errors in this test.
 				rule.LikeTemplate = "%blah%"
-				So(validate(cfg), ShouldErrLike, "empty pattern is not allowed")
+				So(validate(project, cfg), ShouldErrLike, "empty pattern is not allowed")
 			})
 			Convey("pattern is invalid", func() {
 				rule.Pattern = "["
-				So(validate(cfg), ShouldErrLike, `error parsing regexp: missing closing ]`)
+				So(validate(project, cfg), ShouldErrLike, `error parsing regexp: missing closing ]`)
 			})
 			Convey("like template is not specified", func() {
 				rule.LikeTemplate = ""
-				So(validate(cfg), ShouldErrLike, "empty like_template is not allowed")
+				So(validate(project, cfg), ShouldErrLike, "empty like_template is not allowed")
 			})
 			Convey("like template is invalid", func() {
 				rule.LikeTemplate = "blah${broken"
-				So(validate(cfg), ShouldErrLike, `invalid use of the $ operator at position 4 in "blah${broken"`)
+				So(validate(project, cfg), ShouldErrLike, `invalid use of the $ operator at position 4 in "blah${broken"`)
 			})
 		})
 	})

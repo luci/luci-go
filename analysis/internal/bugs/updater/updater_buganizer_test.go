@@ -126,7 +126,7 @@ func TestBuganizerUpdate(t *testing.T) {
 		Convey("Configuration used for testing is valid", func() {
 			c := validation.Context{Context: context.Background()}
 
-			config.ValidateProjectConfig(&c, projectCfg)
+			config.ValidateProjectConfig(&c, project, projectCfg)
 			So(c.Finalize(), ShouldBeNil)
 		})
 		Convey("With context paramteter set", func() {

@@ -75,8 +75,9 @@ type cachedProjectConfig struct {
 func init() {
 	// Registers validation of the given configuration paths with cfgmodule.
 	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", func(ctx *validation.Context, configSet, path string, content []byte) error {
+		project := config.Set(configSet).Project()
 		// Discard the returned deserialized message.
-		validateProjectConfigRaw(ctx, string(content))
+		validateProjectConfigRaw(ctx, project, string(content))
 		return nil
 	})
 }
@@ -95,7 +96,7 @@ func updateProjects(ctx context.Context) error {
 	for project, fetch := range fetchedConfigs {
 		valCtx := validation.Context{Context: ctx}
 		valCtx.SetFile(fetch.Path)
-		msg := validateProjectConfigRaw(&valCtx, fetch.Content)
+		msg := validateProjectConfigRaw(&valCtx, project, fetch.Content)
 		if err := valCtx.Finalize(); err != nil {
 			blocking := err.(*validation.Error).WithSeverity(validation.Blocking)
 			if blocking != nil {

@@ -140,12 +140,12 @@ func TestMonorailUpdate(t *testing.T) {
 		Convey("Configuration used for testing is valid", func() {
 			c := validation.Context{Context: context.Background()}
 
-			config.ValidateProjectConfig(&c, projectCfg)
+			config.ValidateProjectConfig(&c, project, projectCfg)
 			So(c.Finalize(), ShouldBeNil)
 
 			Convey("Unspecified bug system in config defaults to monorail", func() {
 				projectCfg.BugSystem = configpb.ProjectConfig_BUG_SYSTEM_UNSPECIFIED
-				config.ValidateProjectConfig(&c, projectCfg)
+				config.ValidateProjectConfig(&c, project, projectCfg)
 				So(c.Finalize(), ShouldBeNil)
 			})
 		})

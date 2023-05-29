@@ -17,7 +17,6 @@ package resultingester
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"time"
 
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -109,10 +108,6 @@ var (
 	buildReadMask = &field_mask.FieldMask{
 		Paths: []string{"builder", "infra.resultdb", "status", "input", "output", "ancestor_ids"},
 	}
-
-	// chromiumMilestoneProjectPrefix is the LUCI project prefix
-	// of chromium milestone projects, e.g. chromium-m100.
-	chromiumMilestoneProjectRE = regexp.MustCompile(`^(chrome|chromium)-m[0-9]+$`)
 )
 
 // Options configures test result ingestion.
@@ -315,7 +310,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 
 	// Clustering and test variant analysis currently don't support chromium
 	// milestone projects.
-	if chromiumMilestoneProjectRE.MatchString(payload.Build.Project) {
+	if config.ChromiumMilestoneProjectRe.MatchString(payload.Build.Project) {
 		return nil
 	}
 

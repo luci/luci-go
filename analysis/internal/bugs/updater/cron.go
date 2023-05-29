@@ -285,6 +285,11 @@ func updateBugsForProject(ctx context.Context, opts updateOptions) (retErr error
 		}
 	}()
 
+	// Bug filing currently don't support chromium milestone projects.
+	// Because the bug filing thresholds and priority thresholds are optional in these projects' config.
+	if config.ChromiumMilestoneProjectRe.MatchString(opts.project) {
+		return nil
+	}
 	projectCfg, err := compiledcfg.Project(ctx, opts.project, opts.reclusteringProgress.Next.ConfigVersion)
 	if err != nil {
 		return errors.Annotate(err, "read project config").Err()
