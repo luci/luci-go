@@ -16,8 +16,12 @@ import '@testing-library/jest-dom';
 
 import fetchMock from 'fetch-mock-jest';
 
-import { screen } from '@testing-library/react';
+import {
+  fireEvent,
+  screen,
+} from '@testing-library/react';
 
+import { ProjectConfig } from '@/services/project';
 import { identityFunction } from '@/testing_tools/functions';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
@@ -28,7 +32,6 @@ import BugPicker from './bug_picker';
 describe('Test BugPicker component', () => {
   beforeEach(() => {
     mockFetchAuthState();
-    mockFetchProjectConfig();
   });
 
   afterEach(() => {
@@ -37,6 +40,8 @@ describe('Test BugPicker component', () => {
   });
 
   it('given a bug and a project, should display select and a text box for writing the bug id', async () => {
+    mockFetchProjectConfig();
+
     renderWithRouterAndClient(
         <BugPicker
           bugId="chromium/123456"
@@ -49,6 +54,8 @@ describe('Test BugPicker component', () => {
   });
 
   it('given a buganizer bug, should select the bug system correctly', async () => {
+    mockFetchProjectConfig();
+
     renderWithRouterAndClient(
         <BugPicker
           bugId="123456"
@@ -58,5 +65,27 @@ describe('Test BugPicker component', () => {
     await screen.findByText('Bug tracker');
     expect(screen.getByTestId('bug-system')).toHaveValue('buganizer');
     expect(screen.getByTestId('bug-number')).toHaveValue('123456');
+  });
+
+  it('handles project config missing monorail details', async () => {
+    const bareProjectConfig: ProjectConfig = {
+      name: 'projects/chromium/config',
+    };
+    mockFetchProjectConfig(bareProjectConfig);
+
+    renderWithRouterAndClient(
+      <BugPicker
+        bugId="123456"
+        bugSystem="buganizer"
+        handleBugSystemChanged={identityFunction}
+        handleBugIdChanged={identityFunction} />, '/p/chromium', '/p/:project');
+    await screen.findByText('Bug tracker');
+    expect(screen.getByTestId('bug-system')).toHaveValue('buganizer');
+    expect(screen.getByTestId('bug-number')).toHaveValue('123456');
+
+    await fireEvent.mouseDown(screen.getByRole('button'));
+    const monorailOption = screen.getByText('monorail');
+    expect(monorailOption).toBeInTheDocument();
+    expect(monorailOption).toHaveAttribute('aria-disabled');
   });
 });

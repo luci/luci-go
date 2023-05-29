@@ -143,8 +143,8 @@ export interface ProjectConfig {
   bugSystem?: BugSystem;
 
   // Details about the monorail project used for this LUCI project.
-  monorail: MonorailProject;
+  monorail?: MonorailProject;
 
-  // Details about the Buganizer configuration used for this LUCI Project.
+  // Details about the Buganizer configuration used for this LUCI project.
   buganizer?: BuganizerProject;
 }

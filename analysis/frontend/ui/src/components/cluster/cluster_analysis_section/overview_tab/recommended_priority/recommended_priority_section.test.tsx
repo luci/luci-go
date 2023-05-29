@@ -18,6 +18,7 @@ import fetchMock from 'fetch-mock-jest';
 
 import { screen } from '@testing-library/react';
 
+import { ProjectConfig } from '@/services/project';
 import { renderWithRouterAndClient } from '@/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 import {
@@ -76,6 +77,29 @@ describe('test RecommendedPrioritySection component', () => {
     mockGetCluster(project, algorithm, id, mockCluster);
 
     const mockConfig = createMockProjectConfig();
+    mockFetchProjectConfig(mockConfig);
+
+    renderWithRouterAndClient(
+      <ClusterContextProvider
+        project={project}
+        clusterAlgorithm={algorithm}
+        clusterId={id} >
+        <RecommendedPrioritySection />
+      </ClusterContextProvider>
+    );
+
+    await screen.findAllByTestId('recommended-priority-summary');
+
+    expect(screen.getByText('N/A')).toBeInTheDocument();
+    expect(screen.getByText('more info')).toBeInTheDocument();
+  });
+
+  it('handles project config without monorail details', async () => {
+    mockGetCluster(project, algorithm, id, mockCluster);
+
+    const mockConfig: ProjectConfig = {
+      name: 'projects/chromium/config',
+    };
     mockFetchProjectConfig(mockConfig);
 
     renderWithRouterAndClient(

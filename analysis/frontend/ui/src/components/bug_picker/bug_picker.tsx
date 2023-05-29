@@ -83,7 +83,7 @@ const getStaticBugSystem = (bugSystem: string): string => {
       return BugSystems.BUGANIZER;
     }
     default: {
-      throw new Error('Unnkown bug system.');
+      throw new Error('Unknown bug system.');
     }
   }
 };
@@ -135,7 +135,11 @@ const BugPicker = ({
 
     // When the bug system changes, we also need to update the Bug ID.
     if (e.target.value == 'monorail') {
-      handleBugIdChanged(`${projectConfig.monorail.project}/${getBugNumber(bugId)}`);
+      // Switching to monorail is disabled if the project config does not have
+      // monorail details, so we can assume it exists.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const monorailConfig = projectConfig.monorail!;
+      handleBugIdChanged(`${monorailConfig.project}/${getBugNumber(bugId)}`);
     } else if (e.target.value == 'buganizer') {
       handleBugIdChanged(getBugNumber(bugId));
     }
