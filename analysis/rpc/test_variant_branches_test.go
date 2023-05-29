@@ -83,6 +83,17 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			So(res, ShouldBeNil)
 		})
 
+		Convey("invalid test id", func() {
+			ctx = adminContext(ctx)
+			req := &pb.GetTestVariantBranchRequest{
+				Name: "projects/project/tests/this//is/a%test/variants/0123456789abcdef/refs/7265665f68617368",
+			}
+			res, err := server.Get(ctx, req)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			So(res, ShouldBeNil)
+		})
+
 		Convey("ok", func() {
 			ctx = adminContext(ctx)
 			// Insert test variant branch to Spanner.

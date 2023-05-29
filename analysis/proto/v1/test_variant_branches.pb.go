@@ -108,10 +108,11 @@ type GetTestVariantBranchRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The name of the test variant branch.
-	// It MUST be of the form project/{PROJECT}/test/{TEST_ID}/variant/{VARIANT_HASH}/ref/{REF_HASH}
+	// It MUST be of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
 	// where:
 	// PROJECT is the LUCI Project of the test variant branch analysis.
-	// TEST_ID is the test ID of the test variant branch analysis.
+	// URL_ESCAPED_TEST_ID is the test ID, escaped with
+	// https://golang.org/pkg/net/url/#PathEscape. See also https://aip.dev/122.
 	// VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
 	// REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`

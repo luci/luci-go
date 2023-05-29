@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
@@ -156,7 +157,12 @@ func parseTestVariantBranchName(name string) (project string, testID string, var
 	if matches == nil || len(matches) != 5 {
 		return "", "", "", "", errors.Reason("name must be of format projects/{PROJECT}/tests/{TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}").Err()
 	}
-	return matches[1], matches[2], matches[3], matches[4], nil
+	// Unescape test_id.
+	testID, err = url.PathUnescape(matches[2])
+	if err != nil {
+		return "", "", "", "", errors.Annotate(err, "malformed test id %q", testID).Err()
+	}
+	return matches[1], testID, matches[3], matches[4], nil
 }
 
 func ruleName(project, ruleID string) string {
