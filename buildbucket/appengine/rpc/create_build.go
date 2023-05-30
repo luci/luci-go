@@ -26,6 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	cipdCommon "go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
@@ -239,7 +240,20 @@ func validateInfraBuildbucket(ctx context.Context, ib *pb.BuildInfra_Buildbucket
 	return nil
 }
 
-func validateCaches(caches []*pb.BuildInfra_Swarming_CacheEntry) error {
+func convertSwarmingCaches(swarmingCaches []*pb.BuildInfra_Swarming_CacheEntry) []*pb.CacheEntry {
+	caches := make([]*pb.CacheEntry, len(swarmingCaches))
+	for i, c := range swarmingCaches {
+		caches[i] = &pb.CacheEntry{
+			Name:             c.Name,
+			Path:             c.Path,
+			WaitForWarmCache: c.WaitForWarmCache,
+			EnvVar:           c.EnvVar,
+		}
+	}
+	return caches
+}
+
+func validateCaches(caches []*pb.CacheEntry) error {
 	names := stringset.New(len(caches))
 	paths := stringset.New(len(caches))
 	for i, cache := range caches {
@@ -289,15 +303,48 @@ func validateDimensions(dims []*pb.RequestedDimension) error {
 	return nil
 }
 
+func validateBackendConfig(config *structpb.Struct) error {
+	if config == nil {
+		return nil
+	}
+
+	var priority float64
+	if p := config.GetFields()["priority"]; p != nil {
+		if _, ok := p.GetKind().(*structpb.Value_NumberValue); !ok {
+			return errors.Reason("priority must be a number").Err()
+		}
+		priority = p.GetNumberValue()
+	}
+	// Currently apply the same rule as swarming priority rule for backend priority.
+	// This may change when we have other backends in the future.
+	if priority < 0 || priority > 255 {
+		return errors.Reason("priority must be in [0, 255]").Err()
+	}
+	return nil
+}
+
 func validateInfraBackend(ctx context.Context, ib *pb.BuildInfra_Backend) error {
+	if ib == nil {
+		return nil
+	}
+
 	globalCfg, err := config.GetSettingsCfg(ctx)
 	if err != nil {
 		return errors.Annotate(err, "error fetching service config").Err()
 	}
-	if ib == nil {
+
+	switch {
+	case teeErr(config.ValidateTaskBackendTarget(globalCfg, ib.GetTask().GetId().GetTarget()), &err) != nil:
+		return err
+	case teeErr(validateBackendConfig(ib.GetConfig()), &err) != nil:
+		return errors.Annotate(err, "config").Err()
+	case teeErr(validateDimensions(ib.GetTaskDimensions()), &err) != nil:
+		return errors.Annotate(err, "task_dimensions").Err()
+	case teeErr(validateCaches(ib.GetCaches()), &err) != nil:
+		return errors.Annotate(err, "caches").Err()
+	default:
 		return nil
 	}
-	return config.ValidateTaskBackendTarget(globalCfg, ib.GetTask().GetId().GetTarget())
 }
 
 func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {
@@ -312,7 +359,7 @@ func validateInfraSwarming(is *pb.BuildInfra_Swarming) error {
 		return errors.Reason("priority must be in [0, 255]").Err()
 	case teeErr(validateDimensions(is.GetTaskDimensions()), &err) != nil:
 		return errors.Annotate(err, "task_dimensions").Err()
-	case teeErr(validateCaches(is.GetCaches()), &err) != nil:
+	case teeErr(validateCaches(convertSwarmingCaches(is.GetCaches())), &err) != nil:
 		return errors.Annotate(err, "caches").Err()
 	default:
 		return nil

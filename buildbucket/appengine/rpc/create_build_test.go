@@ -584,6 +584,81 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 						So(err, ShouldErrLike, `build: infra: backend: provided backend target was not in global config`)
 					})
+					Convey("task_dimensions", func() {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarm",
+								},
+							},
+							TaskDimensions: []*pb.RequestedDimension{
+								{
+									Key: "",
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: infra: backend: task_dimensions: [0]: key must be specified`)
+					})
+					Convey("caches", func() {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarm",
+								},
+							},
+							Caches: []*pb.CacheEntry{
+								{
+									Path: "builder",
+									WaitForWarmCache: &durationpb.Duration{
+										Seconds: 240,
+									},
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: infra: backend: caches: 0th cache: name unspecified`)
+					})
+					Convey("priority too large", func() {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarm",
+								},
+							},
+							Config: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"priority": {
+										Kind: &structpb.Value_NumberValue{NumberValue: 500},
+									},
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: infra: backend: config: priority must be in [0, 255]`)
+					})
+					Convey("priority not number", func() {
+						req.Build.Infra.Swarming = nil
+						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+							Task: &pb.Task{
+								Id: &pb.TaskID{
+									Target: "swarming://chromium-swarm",
+								},
+							},
+							Config: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"priority": {
+										Kind: &structpb.Value_StringValue{StringValue: "a"},
+									},
+								},
+							},
+						}
+						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+						So(err, ShouldErrLike, `build: infra: backend: config: priority must be a number`)
+					})
 				})
 			})
 
