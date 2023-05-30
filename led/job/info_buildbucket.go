@@ -54,7 +54,13 @@ func (b bbInfo) CurrentIsolated() (*swarmingpb.CASReference, error) {
 
 func (b bbInfo) Dimensions() (ExpiringDimensions, error) {
 	ldims := logicalDimensions{}
-	for _, reqDim := range b.BbagentArgs.Build.Infra.Swarming.TaskDimensions {
+	var dimensions []*bbpb.RequestedDimension
+	if b.BbagentArgs.Build.Infra.Swarming != nil {
+		dimensions = b.BbagentArgs.Build.Infra.Swarming.TaskDimensions
+	} else {
+		dimensions = b.BbagentArgs.Build.Infra.Backend.GetTaskDimensions()
+	}
+	for _, reqDim := range dimensions {
 		exp := reqDim.Expiration
 		if exp == nil {
 			exp = b.BbagentArgs.Build.SchedulingTimeout

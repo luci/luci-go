@@ -276,7 +276,13 @@ func (bbe *buildbucketEditor) ClearCurrentIsolated() {
 
 func (bbe *buildbucketEditor) ClearDimensions() {
 	bbe.tweak(func() error {
-		bbe.bb.BbagentArgs.Build.Infra.Swarming.TaskDimensions = nil
+		infra := bbe.bb.BbagentArgs.Build.Infra
+		if infra.Swarming != nil {
+			bbe.bb.BbagentArgs.Build.Infra.Swarming.TaskDimensions = nil
+		} else {
+			bbe.bb.BbagentArgs.Build.Infra.Backend.TaskDimensions = nil
+		}
+
 		return nil
 	})
 }
@@ -312,10 +318,14 @@ func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
 			}
 			curTimeout = build.SchedulingTimeout.AsDuration()
 		}
-		sw := build.Infra.Swarming
 		var maxExp time.Duration
-		newDims := make([]*bbpb.RequestedDimension, 0,
-			len(sw.TaskDimensions)+len(dimEdits))
+		var newDimLen int
+		if build.Infra.Swarming != nil {
+			newDimLen = len(build.Infra.Swarming.TaskDimensions) + len(dimEdits)
+		} else {
+			newDimLen = len(build.Infra.Backend.TaskDimensions) + len(dimEdits)
+		}
+		newDims := make([]*bbpb.RequestedDimension, 0, newDimLen)
 		for _, key := range keysOf(dimMap) {
 			valueExp := dimMap[key]
 			for _, value := range keysOf(valueExp) {
@@ -334,7 +344,11 @@ func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
 				newDims = append(newDims, toAdd)
 			}
 		}
-		sw.TaskDimensions = newDims
+		if build.Infra.Swarming != nil {
+			build.Infra.Swarming.TaskDimensions = newDims
+		} else {
+			build.Infra.Backend.TaskDimensions = newDims
+		}
 
 		if maxExp > curTimeout {
 			build.SchedulingTimeout = durationpb.New(maxExp)

@@ -72,8 +72,8 @@ func setPriority(build *bbpb.Build, priorityDiff int) {
 	if build.Infra.Swarming != nil {
 		build.Infra.Swarming.Priority = calPriority(build.Infra.Swarming.Priority)
 	} else {
-		config := build.Infra.Backend.GetConfig().AsMap()
-		newPriority := calPriority(int32(config["priority"].(float64)))
+		config := build.Infra.Backend.GetConfig().GetFields()
+		newPriority := calPriority(int32(config["priority"].GetNumberValue()))
 		build.Infra.Backend.Config.Fields["priority"] = structpb.NewNumberValue(float64(newPriority))
 	}
 }
