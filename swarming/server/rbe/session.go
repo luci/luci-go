@@ -64,12 +64,17 @@ type CreateBotSessionRequest struct {
 	// Swarming server.
 	PollToken []byte `json:"poll_token"`
 
+	// SessionToken is a session token of a previous session if recreating it.
+	//
+	// Optional. See the corresponding field in UpdateBotSessionRequest.
+	SessionToken []byte `json:"session_token,omitempty"`
+
 	// Dimensions is dimensions reported by the bot. Required.
 	Dimensions map[string][]string `json:"dimensions"`
 }
 
 func (r *CreateBotSessionRequest) ExtractPollToken() []byte               { return r.PollToken }
-func (r *CreateBotSessionRequest) ExtractSessionToken() []byte            { return nil }
+func (r *CreateBotSessionRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *CreateBotSessionRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
 
 // CreateBotSessionResponse is a body of `/bot/rbe/session/create` response.
