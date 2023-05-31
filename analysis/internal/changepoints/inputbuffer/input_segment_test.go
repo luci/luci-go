@@ -20,7 +20,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
-	pb "go.chromium.org/luci/analysis/proto/v1"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -48,7 +48,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndPosition:         6,
 				StartHour:           timestamppb.New(time.Unix(3600, 0)),
 				EndHour:             timestamppb.New(time.Unix(6*3600, 0)),
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:            9,
 					UnexpectedResults:       3,
 					TotalRuns:               9,
@@ -99,7 +99,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndPosition:         3,
 				StartHour:           timestamppb.New(time.Unix(3600, 0)),
 				EndHour:             timestamppb.New(time.Unix(3*3600, 0)),
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  3,
 					TotalRuns:     3,
 					TotalVerdicts: 3,
@@ -117,7 +117,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndPosition:                 6,
 				StartHour:                   timestamppb.New(time.Unix(4*3600, 0)),
 				EndHour:                     timestamppb.New(time.Unix(6*3600, 0)),
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:             12,
 					UnexpectedResults:        12,
 					TotalRuns:                6,
@@ -139,7 +139,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndPosition:                 9,
 				StartHour:                   timestamppb.New(time.Unix(7*3600, 0)),
 				EndHour:                     timestamppb.New(time.Unix(9*3600, 0)),
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:      12,
 					UnexpectedResults: 6,
 					TotalRuns:         6,
@@ -161,7 +161,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				EndPosition:                 12,
 				StartHour:                   timestamppb.New(time.Unix(10*3600, 0)),
 				EndHour:                     timestamppb.New(time.Unix(12*3600, 0)),
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:            3,
 					UnexpectedResults:       3,
 					TotalRuns:               3,
@@ -183,7 +183,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 0,
 				EndIndex:   99,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  100,
 					TotalRuns:     100,
 					TotalVerdicts: 100,
@@ -211,7 +211,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 0,
 				EndIndex:   2049,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  2050,
 					TotalRuns:     2050,
 					TotalVerdicts: 2050,
@@ -225,7 +225,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 2050,
 				EndIndex:   2099,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  50,
 					TotalRuns:     50,
 					TotalVerdicts: 50,
@@ -248,12 +248,12 @@ func TestEvictSegments(t *testing.T) {
 		So(len(remaining), ShouldEqual, 2)
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
-		diff := cmp.Diff(evicted[0], &pb.Segment{
-			State:               pb.SegmentState_FINALIZING,
+		diff := cmp.Diff(evicted[0], &cpb.Segment{
+			State:               cpb.SegmentState_FINALIZING,
 			HasStartChangepoint: false,
 			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
 			StartPosition:       1,
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:            100,
 				UnexpectedResults:       1,
 				TotalRuns:               100,
@@ -270,7 +270,7 @@ func TestEvictSegments(t *testing.T) {
 			EndIndex:    1949,
 			EndPosition: 2050,
 			EndHour:     timestamppb.New(time.Unix(2050*3600, 0)),
-			Counts: &pb.Counts{
+			Counts: &cpb.Counts{
 				TotalResults:            1950,
 				UnexpectedResults:       1,
 				TotalRuns:               1950,
@@ -290,7 +290,7 @@ func TestEvictSegments(t *testing.T) {
 			StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
 			EndPosition:         2100,
 			EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
-			Counts: &pb.Counts{
+			Counts: &cpb.Counts{
 				TotalResults:  50,
 				TotalRuns:     50,
 				TotalVerdicts: 50,
@@ -305,7 +305,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 0, // Finalized segment.
 				EndIndex:   39,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  40,
 					TotalRuns:     40,
 					TotalVerdicts: 40,
@@ -319,7 +319,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 40, // Finalized segment.
 				EndIndex:   79,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  40,
 					TotalRuns:     40,
 					TotalVerdicts: 40,
@@ -335,7 +335,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 80, // A finalizing segment.
 				EndIndex:   2049,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  1970,
 					TotalRuns:     1970,
 					TotalVerdicts: 1970,
@@ -351,7 +351,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 2050, // An active segment.
 				EndIndex:   2099,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  50,
 					TotalRuns:     50,
 					TotalVerdicts: 50,
@@ -374,14 +374,14 @@ func TestEvictSegments(t *testing.T) {
 		So(len(remaining), ShouldEqual, 2)
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
-		diff := cmp.Diff(evicted[0], &pb.Segment{
-			State:               pb.SegmentState_FINALIZED,
+		diff := cmp.Diff(evicted[0], &cpb.Segment{
+			State:               cpb.SegmentState_FINALIZED,
 			HasStartChangepoint: false,
 			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
 			StartPosition:       1,
 			EndHour:             timestamppb.New(time.Unix(40*3600, 0)),
 			EndPosition:         40,
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:  40,
 				TotalRuns:     40,
 				TotalVerdicts: 40,
@@ -389,8 +389,8 @@ func TestEvictSegments(t *testing.T) {
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
-		diff = cmp.Diff(evicted[1], &pb.Segment{
-			State:                        pb.SegmentState_FINALIZED,
+		diff = cmp.Diff(evicted[1], &cpb.Segment{
+			State:                        cpb.SegmentState_FINALIZED,
 			HasStartChangepoint:          true,
 			StartHour:                    timestamppb.New(time.Unix(41*3600, 0)),
 			StartPosition:                41,
@@ -398,7 +398,7 @@ func TestEvictSegments(t *testing.T) {
 			StartPositionUpperBound_99Th: 50,
 			EndHour:                      timestamppb.New(time.Unix(80*3600, 0)),
 			EndPosition:                  80,
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:  40,
 				TotalRuns:     40,
 				TotalVerdicts: 40,
@@ -406,14 +406,14 @@ func TestEvictSegments(t *testing.T) {
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
-		diff = cmp.Diff(evicted[2], &pb.Segment{
-			State:                        pb.SegmentState_FINALIZING,
+		diff = cmp.Diff(evicted[2], &cpb.Segment{
+			State:                        cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:          true,
 			StartHour:                    timestamppb.New(time.Unix(81*3600, 0)),
 			StartPosition:                81,
 			StartPositionLowerBound_99Th: 70,
 			StartPositionUpperBound_99Th: 90,
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:  20,
 				TotalRuns:     20,
 				TotalVerdicts: 20,
@@ -426,7 +426,7 @@ func TestEvictSegments(t *testing.T) {
 			EndIndex:    1949,
 			EndPosition: 2050,
 			EndHour:     timestamppb.New(time.Unix(2050*3600, 0)),
-			Counts: &pb.Counts{
+			Counts: &cpb.Counts{
 				TotalResults:  1950,
 				TotalRuns:     1950,
 				TotalVerdicts: 1950,
@@ -442,7 +442,7 @@ func TestEvictSegments(t *testing.T) {
 			StartHour:           timestamppb.New(time.Unix(2051*3600, 0)),
 			EndPosition:         2100,
 			EndHour:             timestamppb.New(time.Unix(2100*3600, 0)),
-			Counts: &pb.Counts{
+			Counts: &cpb.Counts{
 				TotalResults:  50,
 				TotalRuns:     50,
 				TotalVerdicts: 50,
@@ -464,7 +464,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 0, // Finalized segment.
 				EndIndex:   39,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  40,
 					TotalRuns:     40,
 					TotalVerdicts: 40,
@@ -478,7 +478,7 @@ func TestEvictSegments(t *testing.T) {
 			{
 				StartIndex: 40, // A finalizing segment.
 				EndIndex:   2000,
-				Counts: &pb.Counts{
+				Counts: &cpb.Counts{
 					TotalResults:  1961,
 					TotalRuns:     1961,
 					TotalVerdicts: 1961,
@@ -507,28 +507,28 @@ func TestEvictSegments(t *testing.T) {
 		So(len(sib.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 0)
 		So(len(sib.InputBuffer.ColdBuffer.Verdicts), ShouldEqual, 1961)
 
-		So(evicted[0], ShouldResembleProto, &pb.Segment{
-			State:               pb.SegmentState_FINALIZED,
+		So(evicted[0], ShouldResembleProto, &cpb.Segment{
+			State:               cpb.SegmentState_FINALIZED,
 			HasStartChangepoint: false,
 			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
 			StartPosition:       1,
 			EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
 			EndPosition:         39,
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:  40,
 				TotalRuns:     40,
 				TotalVerdicts: 40,
 			},
 		})
 
-		So(evicted[1], ShouldResembleProto, &pb.Segment{
-			State:                        pb.SegmentState_FINALIZING,
+		So(evicted[1], ShouldResembleProto, &cpb.Segment{
+			State:                        cpb.SegmentState_FINALIZING,
 			HasStartChangepoint:          true,
 			StartHour:                    timestamppb.New(time.Unix(40*3600, 0)),
 			StartPosition:                40,
 			StartPositionLowerBound_99Th: 30,
 			StartPositionUpperBound_99Th: 50,
-			FinalizedCounts:              &pb.Counts{},
+			FinalizedCounts:              &cpb.Counts{},
 		})
 
 		// Use diff here to compare both protobuf and non-protobuf.

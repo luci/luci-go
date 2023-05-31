@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -47,11 +48,36 @@ func GetTestVariantBranch(ctx context.Context, tvbk tvbr.TestVariantBranchKey) (
 		return nil, appstatus.Error(codes.NotFound, "analysis not found")
 	}
 	// Convert to proto.
-	analysis := testVariantBranchToProto(tvbs[0])
+	analysis, err := testVariantBranchToProto(tvbs[0])
+	if err != nil {
+		return nil, errors.Annotate(err, "build proto").Err()
+	}
 	return analysis, nil
 }
 
-func testVariantBranchToProto(tvb *tvbr.TestVariantBranch) *pb.TestVariantBranch {
+func testVariantBranchToProto(tvb *tvbr.TestVariantBranch) (*pb.TestVariantBranch, error) {
+	var finalizedSegments *anypb.Any
+	var finalizingSegment *anypb.Any
+
+	// Hide the internal Spanner proto from our clients, as they
+	// must not depend on it. If this API is used for anything
+	// other than debug purposes in future, we will need to define
+	// a wire proto and use it instead.
+	if tvb.FinalizedSegments.GetSegments() != nil {
+		var err error
+		finalizedSegments, err = anypb.New(tvb.FinalizedSegments)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if tvb.FinalizingSegment != nil {
+		var err error
+		finalizingSegment, err = anypb.New(tvb.FinalizingSegment)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	result := &pb.TestVariantBranch{
 		Project:           tvb.Project,
 		TestId:            tvb.TestID,
@@ -59,12 +85,12 @@ func testVariantBranchToProto(tvb *tvbr.TestVariantBranch) *pb.TestVariantBranch
 		RefHash:           hex.EncodeToString(tvb.RefHash),
 		Variant:           tvb.Variant,
 		Ref:               tvb.SourceRef,
-		FinalizedSegments: tvb.FinalizedSegments.GetSegments(),
-		FinalizingSegment: tvb.FinalizingSegment,
+		FinalizedSegments: finalizedSegments,
+		FinalizingSegment: finalizingSegment,
 		HotBuffer:         toProtoBuffer(tvb.InputBuffer.HotBuffer),
 		ColdBuffer:        toProtoBuffer(tvb.InputBuffer.ColdBuffer),
 	}
-	return result
+	return result, nil
 }
 
 func toProtoBuffer(history inputbuffer.History) *pb.InputBuffer {

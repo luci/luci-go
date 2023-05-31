@@ -22,6 +22,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -71,7 +72,7 @@ func TestBQExporter(t *testing.T) {
 					EndPosition:                 6,
 					StartHour:                   timestamppb.New(time.Unix(3600, 0)),
 					EndHour:                     timestamppb.New(time.Unix(6*3600, 0)),
-					Counts: &pb.Counts{
+					Counts: &cpb.Counts{
 						TotalResults: 9,
 					},
 				},
@@ -87,10 +88,10 @@ func TestBQExporter(t *testing.T) {
 				Variant:     variant,
 				SourceRef:   sourceRef,
 				InputBuffer: &inputbuffer.Buffer{},
-				FinalizedSegments: &pb.Segments{
-					Segments: []*pb.Segment{
+				FinalizedSegments: &cpb.Segments{
+					Segments: []*cpb.Segment{
 						{
-							State:               pb.SegmentState_FINALIZED,
+							State:               cpb.SegmentState_FINALIZED,
 							HasStartChangepoint: false,
 							StartPosition:       1,
 							StartHour:           timestamppb.New(time.Unix(7000*3600, 0)),
@@ -98,7 +99,7 @@ func TestBQExporter(t *testing.T) {
 							EndHour:             timestamppb.New(time.Unix(8000*3600, 0)),
 							// Less than 90 days ago
 							MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(9000*3600, 0)),
-							FinalizedCounts: &pb.Counts{
+							FinalizedCounts: &cpb.Counts{
 								TotalVerdicts:            3,
 								UnexpectedVerdicts:       2,
 								FlakyVerdicts:            1,
@@ -111,7 +112,7 @@ func TestBQExporter(t *testing.T) {
 							},
 						},
 						{
-							State:                        pb.SegmentState_FINALIZED,
+							State:                        cpb.SegmentState_FINALIZED,
 							HasStartChangepoint:          true,
 							StartPosition:                11,
 							StartHour:                    timestamppb.New(time.Unix(7000*3600, 0)),
@@ -119,14 +120,14 @@ func TestBQExporter(t *testing.T) {
 							StartPositionUpperBound_99Th: 13,
 							EndPosition:                  20,
 							EndHour:                      timestamppb.New(time.Unix(8000*3600, 0)),
-							FinalizedCounts: &pb.Counts{
+							FinalizedCounts: &cpb.Counts{
 								TotalVerdicts: 5,
 							},
 						},
 					},
 				},
-				FinalizingSegment: &pb.Segment{
-					State:                          pb.SegmentState_FINALIZING,
+				FinalizingSegment: &cpb.Segment{
+					State:                          cpb.SegmentState_FINALIZING,
 					HasStartChangepoint:            true,
 					StartPosition:                  21,
 					EndPosition:                    30,
@@ -135,7 +136,7 @@ func TestBQExporter(t *testing.T) {
 					StartPositionUpperBound_99Th:   23,
 					EndHour:                        timestamppb.New(time.Unix(8000*3600, 0)),
 					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(9000*3600, 0)),
-					FinalizedCounts: &pb.Counts{
+					FinalizedCounts: &cpb.Counts{
 						TotalVerdicts:            4,
 						UnexpectedVerdicts:       3,
 						FlakyVerdicts:            1,
@@ -158,7 +159,7 @@ func TestBQExporter(t *testing.T) {
 					StartHour:                   timestamppb.New(time.Unix(3600, 0)),
 					EndHour:                     timestamppb.New(time.Unix(6*3600, 0)),
 					MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(9000*3600, 0)),
-					Counts: &pb.Counts{
+					Counts: &cpb.Counts{
 						TotalVerdicts:            5,
 						UnexpectedVerdicts:       1,
 						FlakyVerdicts:            1,
@@ -178,7 +179,7 @@ func TestBQExporter(t *testing.T) {
 					EndPosition:                 40,
 					StartHour:                   timestamppb.New(time.Unix(3600, 0)),
 					EndHour:                     timestamppb.New(time.Unix(6*3600, 0)),
-					Counts: &pb.Counts{
+					Counts: &cpb.Counts{
 						TotalVerdicts: 6,
 					},
 				},
@@ -206,7 +207,7 @@ func TestBQExporter(t *testing.T) {
 					EndHour:                     timestamppb.New(time.Unix(6*3600, 0)),
 					// More than 90 days ago.
 					MostRecentUnexpectedResultHourAllVerdicts: timestamppb.New(time.Unix(7000*3600, 0)),
-					Counts: &pb.Counts{
+					Counts: &cpb.Counts{
 						TotalResults:      9,
 						UnexpectedResults: 4,
 					},

@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -150,26 +152,26 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 						},
 					},
 				},
-				FinalizingSegment: &pb.Segment{
-					State:                        pb.SegmentState_FINALIZING,
+				FinalizingSegment: &cpb.Segment{
+					State:                        cpb.SegmentState_FINALIZING,
 					HasStartChangepoint:          true,
 					StartPosition:                100,
 					StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 					StartPositionLowerBound_99Th: 95,
 					StartPositionUpperBound_99Th: 105,
-					FinalizedCounts: &pb.Counts{
+					FinalizedCounts: &cpb.Counts{
 						UnexpectedResults: 1,
 					},
 				},
-				FinalizedSegments: &pb.Segments{
-					Segments: []*pb.Segment{
+				FinalizedSegments: &cpb.Segments{
+					Segments: []*cpb.Segment{
 						{
-							State:                        pb.SegmentState_FINALIZED,
+							State:                        cpb.SegmentState_FINALIZED,
 							StartPosition:                50,
 							StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 							StartPositionLowerBound_99Th: 45,
 							StartPositionUpperBound_99Th: 55,
-							FinalizedCounts: &pb.Counts{
+							FinalizedCounts: &cpb.Counts{
 								UnexpectedResults: 2,
 							},
 						},
@@ -186,6 +188,13 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			}
 			res, err := server.Get(ctx, req)
 			So(err, ShouldBeNil)
+
+			expectedFinalizingSegment, err := anypb.New(tvb.FinalizingSegment)
+			So(err, ShouldBeNil)
+
+			expectedFinalizedSegments, err := anypb.New(tvb.FinalizedSegments)
+			So(err, ShouldBeNil)
+
 			diff := cmp.Diff(res, &pb.TestVariantBranch{
 				Project:           "project",
 				TestId:            "this//is/a/test",
@@ -193,8 +202,8 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 				RefHash:           hexStr,
 				Variant:           tvb.Variant,
 				Ref:               tvb.SourceRef,
-				FinalizingSegment: tvb.FinalizingSegment,
-				FinalizedSegments: tvb.FinalizedSegments.Segments,
+				FinalizingSegment: expectedFinalizingSegment,
+				FinalizedSegments: expectedFinalizedSegments,
 				HotBuffer: &pb.InputBuffer{
 					Length: 1,
 					Verdicts: []*pb.PositionVerdict{

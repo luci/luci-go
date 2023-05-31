@@ -1,0 +1,118 @@
+// Copyright 2023 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.analysis.internal.changepoints;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/analysis/internal/changepoints/proto;changepointspb";
+
+// Segments is used to store the finalized segments in Spanner.
+message Segments {
+  // Segments, in ascending commit position order (oldest segment first).
+  repeated Segment segments = 1;
+}
+
+// Segment stores the finalized parts of finalizing and finalized segments
+// in Spanner.
+// Finalized segments will be stored in full.
+// Only the finalized part of a finalizing segment will be stored.
+// The unfinalized parts of segments can be computed from the input buffer.
+message Segment {
+  // The state of the segment.
+  // Only finalizing or finalized segments will be stored in spanner.
+  SegmentState state = 1;
+  // If set, means the start of the segment is as a result of a change point
+  // being identified.
+  // If unset, means the segment started because this was the first result in
+  // the known history of the test.
+  bool has_start_changepoint = 2;
+  // The earliest commit position included in the segment.
+  int64 start_position = 3;
+  // The earliest hour a verdict with the given start_position was recorded.
+  google.protobuf.Timestamp start_hour = 4;
+  // The end commit position of the segment.
+  // If set, the invariant end_position >= start_position holds.
+  int64 end_position = 5;
+  // The latest hour a verdict with the last commit position in the segment
+  // was recorded.
+  google.protobuf.Timestamp end_hour = 6;
+  // The lower bound of the change point position at the start of the segment
+  // in a 99% two-tailed confidence interval. Inclusive.
+  // Only set if has_start_changepoint is set. If set, the invariant
+  // previous_segment.start_position <= start_position_lower_bound_99th <= start_position.
+  int64 start_position_lower_bound_99th = 7;
+  // The upper bound of the change point position at the start of the segment
+  // in a 99% two-tailed confidence interval. Inclusive.
+  // Only set if has_start_changepoint is set. If set, the invariant
+  // start_position <= start_position_upper_bound_99th <= end_position
+  // holds.
+  int64 start_position_upper_bound_99th = 8;
+  // The hour the most recent verdict with an unexpected test result
+  // was produced. *Only* captures the most recent hour for verdicts
+  // that are no longer in the input buffer. Used to set
+  // has_recent_unexpected_results on the output.
+  google.protobuf.Timestamp most_recent_unexpected_result_hour = 9;
+  // Finalized counts for the segment. Note that this should
+  // *only* capture counts for verdicts that are no longer in
+  // the input buffer.
+  // Counts for verdicts in the input buffer can be obtained from the input
+  // buffer.
+  Counts finalized_counts = 10;
+}
+
+enum SegmentState {
+  SEGMENT_STATE_UNSPECIFIED = 0;
+  // Both the start and end commit positions of the segment are the result
+  // of analysis on the current input buffer.
+  ACTIVE = 1;
+  // The end commit position of the segment is the result of analysis on the
+  // current input buffer, but the start commit position is the result of
+  // past analysis.
+  FINALIZING = 2;
+  // Both the start and end commit positions of the segment are the result
+  // of past analysis.
+  FINALIZED = 3;
+}
+
+// All exclude the effect of skipped test results.
+message Counts {
+  // The number of unexpected non-skipped test results.
+  int64 unexpected_results = 1;
+  // The total number of non-skipped test results.
+  int64 total_results = 2;
+  // The number of test runs which had an unexpected test result but were
+  // not retried.
+  int64 unexpected_unretried_runs = 3;
+  // The number of test run which had an unexpected test result, were
+  // retried, and still contained only unexpected test results.
+  int64 unexpected_after_retry_runs = 4;
+  // The number of test runs which had an unexpected test result, were
+  // retried, and eventually recorded an expected test result.
+  int64 flaky_runs = 5;
+  // The total number of test runs.
+  int64 total_runs = 6;
+
+  // The following verdict statistics exclude the effect of exonerations,
+  // and skipped test results. Verdicts with only skipped results are not counted
+  // at all.
+  // The number of verdicts with only unexpected test results.
+  int64 unexpected_verdicts = 7;
+  // The number of verdicts with a mix of expected and unexpected test results.
+  int64 flaky_verdicts = 8;
+  // The total number of verdicts.
+  int64 total_verdicts = 9;
+}

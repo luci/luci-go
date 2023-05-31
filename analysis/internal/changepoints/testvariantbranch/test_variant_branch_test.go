@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
@@ -241,23 +242,23 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 				},
 				IsColdBufferDirty: true,
 			},
-			FinalizingSegment: &pb.Segment{
-				State:                        pb.SegmentState_FINALIZING,
+			FinalizingSegment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
 				HasStartChangepoint:          true,
 				StartPosition:                50,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				StartPositionLowerBound_99Th: 45,
 				StartPositionUpperBound_99Th: 55,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults: 10,
 					TotalRuns:    10,
 					FlakyRuns:    10,
 				},
 			},
-			FinalizedSegments: &pb.Segments{
-				Segments: []*pb.Segment{
+			FinalizedSegments: &cpb.Segments{
+				Segments: []*cpb.Segment{
 					{
-						State:                        pb.SegmentState_FINALIZED,
+						State:                        cpb.SegmentState_FINALIZED,
 						HasStartChangepoint:          true,
 						StartPosition:                20,
 						StartHour:                    timestamppb.New(time.Unix(3600, 0)),
@@ -265,7 +266,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 						StartPositionUpperBound_99Th: 30,
 						EndPosition:                  40,
 						EndHour:                      timestamppb.New(time.Unix(3600, 0)),
-						FinalizedCounts: &pb.Counts{
+						FinalizedCounts: &cpb.Counts{
 							TotalResults: 10,
 							TotalRuns:    10,
 							FlakyRuns:    10,
@@ -455,22 +456,22 @@ func TestInsertToInputBuffer(t *testing.T) {
 func TestUpdateOutputBuffer(t *testing.T) {
 	Convey("No existing finalizing segment", t, func() {
 		tvb := TestVariantBranch{}
-		evictedSegments := []*pb.Segment{
+		evictedSegments := []*cpb.Segment{
 			{
-				State:         pb.SegmentState_FINALIZED,
+				State:         cpb.SegmentState_FINALIZED,
 				StartPosition: 1,
 				EndPosition:   10,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:  10,
 					TotalRuns:     10,
 					TotalVerdicts: 10,
 				},
 			},
 			{
-				State:         pb.SegmentState_FINALIZING,
+				State:         cpb.SegmentState_FINALIZING,
 				StartPosition: 11,
 				EndPosition:   30,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:  20,
 					TotalRuns:     20,
 					TotalVerdicts: 20,
@@ -486,14 +487,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 
 	Convey("Combine finalizing segment with finalizing segment", t, func() {
 		tvb := TestVariantBranch{
-			FinalizingSegment: &pb.Segment{
-				State:                        pb.SegmentState_FINALIZING,
+			FinalizingSegment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             30,
 					UnexpectedResults:        5,
 					TotalRuns:                20,
@@ -507,15 +508,15 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*pb.Segment{
+		evictedSegments := []*cpb.Segment{
 			{
-				State:                        pb.SegmentState_FINALIZING,
+				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                200,
 				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
 				HasStartChangepoint:          false,
 				StartPositionLowerBound_99Th: 190,
 				StartPositionUpperBound_99Th: 210,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             50,
 					UnexpectedResults:        3,
 					TotalRuns:                40,
@@ -531,14 +532,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		tvb.UpdateOutputBuffer(evictedSegments)
 		So(tvb.FinalizedSegments, ShouldBeNil)
 		So(tvb.FinalizingSegment, ShouldNotBeNil)
-		expected := &pb.Segment{
-			State:                        pb.SegmentState_FINALIZING,
+		expected := &cpb.Segment{
+			State:                        cpb.SegmentState_FINALIZING,
 			StartPosition:                100,
 			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 			HasStartChangepoint:          true,
 			StartPositionLowerBound_99Th: 90,
 			StartPositionUpperBound_99Th: 110,
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:             80,
 				UnexpectedResults:        8,
 				TotalRuns:                60,
@@ -556,14 +557,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 
 	Convey("Combine finalizing segment with finalized segment", t, func() {
 		tvb := TestVariantBranch{
-			FinalizingSegment: &pb.Segment{
-				State:                        pb.SegmentState_FINALIZING,
+			FinalizingSegment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             30,
 					UnexpectedResults:        5,
 					TotalRuns:                20,
@@ -577,9 +578,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*pb.Segment{
+		evictedSegments := []*cpb.Segment{
 			{
-				State:                        pb.SegmentState_FINALIZED,
+				State:                        cpb.SegmentState_FINALIZED,
 				StartPosition:                200,
 				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
 				HasStartChangepoint:          false,
@@ -587,7 +588,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionUpperBound_99Th: 210,
 				EndPosition:                  400,
 				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             50,
 					UnexpectedResults:        3,
 					TotalRuns:                40,
@@ -601,10 +602,10 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 			},
 			{
-				State:         pb.SegmentState_FINALIZING,
+				State:         cpb.SegmentState_FINALIZING,
 				StartPosition: 500,
 				EndPosition:   800,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:  20,
 					TotalRuns:     20,
 					TotalVerdicts: 20,
@@ -615,8 +616,8 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
 		So(tvb.FinalizingSegment, ShouldNotBeNil)
 		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1])
-		expected := &pb.Segment{
-			State:                        pb.SegmentState_FINALIZED,
+		expected := &cpb.Segment{
+			State:                        cpb.SegmentState_FINALIZED,
 			StartPosition:                100,
 			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 			HasStartChangepoint:          true,
@@ -624,7 +625,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			StartPositionUpperBound_99Th: 110,
 			EndPosition:                  400,
 			EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:             80,
 				UnexpectedResults:        8,
 				TotalRuns:                60,
@@ -642,14 +643,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 
 	Convey("Combine finalizing segment with finalized segment, with a token of finalizing segment in input buffer", t, func() {
 		tvb := TestVariantBranch{
-			FinalizingSegment: &pb.Segment{
-				State:                        pb.SegmentState_FINALIZING,
+			FinalizingSegment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             30,
 					UnexpectedResults:        5,
 					TotalRuns:                20,
@@ -663,9 +664,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*pb.Segment{
+		evictedSegments := []*cpb.Segment{
 			{
-				State:                        pb.SegmentState_FINALIZED,
+				State:                        cpb.SegmentState_FINALIZED,
 				StartPosition:                200,
 				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
 				HasStartChangepoint:          false,
@@ -673,7 +674,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionUpperBound_99Th: 210,
 				EndPosition:                  400,
 				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             50,
 					UnexpectedResults:        3,
 					TotalRuns:                40,
@@ -687,20 +688,20 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 			},
 			{
-				State:                        pb.SegmentState_FINALIZING,
+				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                500,
 				StartHour:                    timestamppb.New(time.Unix(500*3600, 0)),
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 490,
 				StartPositionUpperBound_99Th: 510,
-				FinalizedCounts:              &pb.Counts{},
+				FinalizedCounts:              &cpb.Counts{},
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
 		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
 		So(tvb.FinalizingSegment, ShouldNotBeNil)
-		expected := &pb.Segment{
-			State:                        pb.SegmentState_FINALIZED,
+		expected := &cpb.Segment{
+			State:                        cpb.SegmentState_FINALIZED,
 			StartPosition:                100,
 			StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 			HasStartChangepoint:          true,
@@ -708,7 +709,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			StartPositionUpperBound_99Th: 110,
 			EndPosition:                  400,
 			EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-			FinalizedCounts: &pb.Counts{
+			FinalizedCounts: &cpb.Counts{
 				TotalResults:             80,
 				UnexpectedResults:        8,
 				TotalRuns:                60,
@@ -727,14 +728,14 @@ func TestUpdateOutputBuffer(t *testing.T) {
 
 	Convey("Should panic if no finalizing segment in evicted segments", t, func() {
 		tvb := TestVariantBranch{
-			FinalizingSegment: &pb.Segment{
-				State:                        pb.SegmentState_FINALIZING,
+			FinalizingSegment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
 				StartHour:                    timestamppb.New(time.Unix(3600, 0)),
 				HasStartChangepoint:          true,
 				StartPositionLowerBound_99Th: 90,
 				StartPositionUpperBound_99Th: 110,
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             30,
 					UnexpectedResults:        5,
 					TotalRuns:                20,
@@ -748,9 +749,9 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*pb.Segment{
+		evictedSegments := []*cpb.Segment{
 			{
-				State:                        pb.SegmentState_FINALIZED,
+				State:                        cpb.SegmentState_FINALIZED,
 				StartPosition:                200,
 				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
 				HasStartChangepoint:          false,
@@ -758,7 +759,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				StartPositionUpperBound_99Th: 210,
 				EndPosition:                  400,
 				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-				FinalizedCounts: &pb.Counts{
+				FinalizedCounts: &cpb.Counts{
 					TotalResults:             50,
 					UnexpectedResults:        3,
 					TotalRuns:                40,

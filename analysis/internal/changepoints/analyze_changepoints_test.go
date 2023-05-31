@@ -23,6 +23,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
@@ -524,25 +525,25 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
 			},
-			FinalizingSegment: &pb.Segment{
-				State:                        pb.SegmentState_FINALIZING,
+			FinalizingSegment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
 				HasStartChangepoint:          true,
 				StartPosition:                101,
 				StartHour:                    timestamppb.New(time.Unix(101*3600, 0)),
-				FinalizedCounts:              &pb.Counts{},
+				FinalizedCounts:              &cpb.Counts{},
 				StartPositionLowerBound_99Th: 100,
 				StartPositionUpperBound_99Th: 101,
 			},
-			FinalizedSegments: &pb.Segments{
-				Segments: []*pb.Segment{
+			FinalizedSegments: &cpb.Segments{
+				Segments: []*cpb.Segment{
 					{
-						State:               pb.SegmentState_FINALIZED,
+						State:               cpb.SegmentState_FINALIZED,
 						HasStartChangepoint: false,
 						StartPosition:       1,
 						StartHour:           timestamppb.New(time.Unix(3600, 0)),
 						EndPosition:         100,
 						EndHour:             timestamppb.New(time.Unix(100*3600, 0)),
-						FinalizedCounts: &pb.Counts{
+						FinalizedCounts: &cpb.Counts{
 							TotalResults:  101,
 							TotalRuns:     101,
 							TotalVerdicts: 101,
@@ -638,7 +639,7 @@ func testVariants(n int) []*rdbpb.TestVariant {
 
 func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *tvbr.TestVariantBranch {
 	tvb := &tvbr.TestVariantBranch{
-		FinalizingSegment: &pb.Segment{},
+		FinalizingSegment: &cpb.Segment{},
 		InputBuffer:       &inputbuffer.Buffer{},
 	}
 	for _, pos := range hotPositions {

@@ -16,6 +16,7 @@ package testvariantbranch
 
 import (
 	"go.chromium.org/luci/analysis/internal/span"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/proto"
@@ -30,14 +31,14 @@ func EncodeProtoMessage(m proto.Message) ([]byte, error) {
 	return span.Compress(bytes), nil
 }
 
-func EncodeSegment(seg *pb.Segment) ([]byte, error) {
+func EncodeSegment(seg *cpb.Segment) ([]byte, error) {
 	if seg == nil {
 		return []byte{}, nil
 	}
 	return EncodeProtoMessage(seg)
 }
 
-func EncodeSegments(seg *pb.Segments) ([]byte, error) {
+func EncodeSegments(seg *cpb.Segments) ([]byte, error) {
 	if seg == nil {
 		return []byte{}, nil
 	}
@@ -63,11 +64,11 @@ func DecodeProtoMessage(bytes []byte, m proto.Message) error {
 }
 
 // DecodeSegment decodes []byte in to Segment.
-func DecodeSegment(bytes []byte) (*pb.Segment, error) {
+func DecodeSegment(bytes []byte) (*cpb.Segment, error) {
 	if len(bytes) == 0 {
 		return nil, nil
 	}
-	seg := &pb.Segment{}
+	seg := &cpb.Segment{}
 	err := DecodeProtoMessage(bytes, seg)
 	if err != nil {
 		return nil, err
@@ -76,11 +77,11 @@ func DecodeSegment(bytes []byte) (*pb.Segment, error) {
 }
 
 // DecodeSegments decodes []byte in to Segments.
-func DecodeSegments(bytes []byte) (*pb.Segments, error) {
+func DecodeSegments(bytes []byte) (*cpb.Segments, error) {
 	if len(bytes) == 0 {
 		return nil, nil
 	}
-	seg := &pb.Segments{}
+	seg := &cpb.Segments{}
 	err := DecodeProtoMessage(bytes, seg)
 	if err != nil {
 		return nil, err

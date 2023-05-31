@@ -17,6 +17,7 @@ package testvariantbranch
 
 import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
@@ -38,9 +39,9 @@ type TestVariantBranch struct {
 	// Store the finalizing segment, if any.
 	// The count for the finalizing segment should only include the verdicts
 	// that are not in the input buffer anymore.
-	FinalizingSegment *pb.Segment
+	FinalizingSegment *cpb.Segment
 	// Store all the finalized segments for the test variant branch.
-	FinalizedSegments *pb.Segments
+	FinalizedSegments *cpb.Segments
 	// If this is true, it means we should trigger a write of FinalizingSegment
 	// to Spanner.
 	IsFinalizingSegmentDirty bool
@@ -56,12 +57,12 @@ func (tvb *TestVariantBranch) InsertToInputBuffer(pv inputbuffer.PositionVerdict
 }
 
 // InsertFinalizedSegment inserts a segment to the end of finalized segments.
-func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *pb.Segment) {
+func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *cpb.Segment) {
 	if tvb.FinalizedSegments == nil {
-		tvb.FinalizedSegments = &pb.Segments{}
+		tvb.FinalizedSegments = &cpb.Segments{}
 	}
 	// Assert that segment is finalized.
-	if segment.State != pb.SegmentState_FINALIZED {
+	if segment.State != cpb.SegmentState_FINALIZED {
 		panic("insert non-finalized segment to FinalizedSegments")
 	}
 	// Assert that inserted segment is later than existing segments.
@@ -79,7 +80,7 @@ func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *pb.Segment) {
 // which is a finalizing segment.
 // evictedSegments is sorted in ascending order of commit position (oldest
 // segment first).
-func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*pb.Segment) {
+func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*cpb.Segment) {
 	// Nothing to update.
 	if len(evictedSegments) == 0 {
 		return
@@ -92,7 +93,7 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*pb.Segment) 
 		segmentIndex = 1
 		combinedSegment := combineSegment(tvb.FinalizingSegment, evictedSegments[0])
 		tvb.IsFinalizingSegmentDirty = true
-		if combinedSegment.State == pb.SegmentState_FINALIZING {
+		if combinedSegment.State == cpb.SegmentState_FINALIZING {
 			// Replace the finalizing segment.
 			tvb.FinalizingSegment = combinedSegment
 		} else { // Finalized state.
@@ -103,7 +104,7 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*pb.Segment) 
 
 	for ; segmentIndex < len(evictedSegments); segmentIndex++ {
 		segment := evictedSegments[segmentIndex]
-		if segment.State == pb.SegmentState_FINALIZED {
+		if segment.State == cpb.SegmentState_FINALIZED {
 			tvb.InsertFinalizedSegment(segment)
 		} else { // Finalizing segment.
 			tvb.FinalizingSegment = segment
@@ -115,16 +116,16 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*pb.Segment) 
 	tvb.verifyOutputBuffer()
 }
 
-func verifyEvictedSegments(evictedSegments []*pb.Segment) {
+func verifyEvictedSegments(evictedSegments []*cpb.Segment) {
 	// Verify that evictedSegments contain all FINALIZED segment, except for
 	// the last segment.
 	for i, seg := range evictedSegments {
 		if i != len(evictedSegments)-1 {
-			if seg.State != pb.SegmentState_FINALIZED {
+			if seg.State != cpb.SegmentState_FINALIZED {
 				panic("evictedSegments should contains all finalized segments, except the last one")
 			}
 		} else {
-			if seg.State != pb.SegmentState_FINALIZING {
+			if seg.State != cpb.SegmentState_FINALIZING {
 				panic("last segment of evicted segments should be finalizing")
 			}
 		}
@@ -147,8 +148,8 @@ func (tvb *TestVariantBranch) verifyOutputBuffer() {
 
 // combineSegment combines the finalizing segment from the output buffer with
 // a segment evicted from the input buffer.
-func combineSegment(finalizingSegment, evictedSegment *pb.Segment) *pb.Segment {
-	result := &pb.Segment{
+func combineSegment(finalizingSegment, evictedSegment *cpb.Segment) *cpb.Segment {
+	result := &cpb.Segment{
 		State:                        evictedSegment.State,
 		HasStartChangepoint:          finalizingSegment.HasStartChangepoint,
 		StartPosition:                finalizingSegment.StartPosition,
@@ -167,8 +168,8 @@ func combineSegment(finalizingSegment, evictedSegment *pb.Segment) *pb.Segment {
 }
 
 // AddCounts returns the sum of 2 statistics counts.
-func AddCounts(count1 *pb.Counts, count2 *pb.Counts) *pb.Counts {
-	return &pb.Counts{
+func AddCounts(count1 *cpb.Counts, count2 *cpb.Counts) *cpb.Counts {
+	return &cpb.Counts{
 		TotalResults:             count1.TotalResults + count2.TotalResults,
 		UnexpectedResults:        count1.UnexpectedResults + count2.UnexpectedResults,
 		TotalRuns:                count1.TotalRuns + count2.TotalRuns,

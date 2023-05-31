@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
-	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -164,7 +164,7 @@ func toSegments(ri *RowInput) []*bqpb.Segment {
 
 // combineSegment constructs a finalizing segment from its finalized part in
 // the output buffer and its unfinalized part in the input buffer.
-func combineSegment(finalizingSegment *pb.Segment, inputSegment *inputbuffer.Segment) *bqpb.Segment {
+func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Segment) *bqpb.Segment {
 	return &bqpb.Segment{
 		HasStartChangepoint:          finalizingSegment.HasStartChangepoint,
 		StartPosition:                finalizingSegment.StartPosition,
@@ -190,7 +190,7 @@ func inputSegmentToBQSegment(segment *inputbuffer.Segment) *bqpb.Segment {
 	}
 }
 
-func segmentToBQSegment(segment *pb.Segment) *bqpb.Segment {
+func segmentToBQSegment(segment *cpb.Segment) *bqpb.Segment {
 	return &bqpb.Segment{
 		HasStartChangepoint:          segment.HasStartChangepoint,
 		StartPosition:                segment.StartPosition,
@@ -203,7 +203,7 @@ func segmentToBQSegment(segment *pb.Segment) *bqpb.Segment {
 	}
 }
 
-func countsToBQCounts(counts *pb.Counts) *bqpb.Segment_Counts {
+func countsToBQCounts(counts *cpb.Counts) *bqpb.Segment_Counts {
 	return &bqpb.Segment_Counts{
 		TotalVerdicts:            counts.TotalVerdicts,
 		UnexpectedVerdicts:       counts.UnexpectedVerdicts,
@@ -246,7 +246,7 @@ func hasRecentUnexpectedResult(ctx context.Context, ri *RowInput, commitTimestam
 	return false
 }
 
-func segmentHasRecentUnexpectedResult(ctx context.Context, segment *pb.Segment, commitTimestamp time.Time) bool {
+func segmentHasRecentUnexpectedResult(ctx context.Context, segment *cpb.Segment, commitTimestamp time.Time) bool {
 	if segment == nil {
 		return false
 	}
