@@ -44,7 +44,7 @@ func recentsPage(c *router.Context) {
 		return
 	}
 
-	runs, prev, next, err := searchRuns(c.Context, project, params)
+	runs, prev, next, err := searchRuns(c.Request.Context(), project, params)
 	if err != nil {
 		errPage(c, err)
 		return
@@ -58,20 +58,20 @@ func recentsPage(c *router.Context) {
 		}
 		runs = filteredRuns
 	}
-	runsWithCLs, err := resolveRunsCLs(c.Context, runs)
+	runsWithCLs, err := resolveRunsCLs(c.Request.Context(), runs)
 	if err != nil {
 		errPage(c, err)
 		return
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/recent_runs.html", map[string]any{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/recent_runs.html", map[string]any{
 		"Runs":         runsWithCLs,
 		"Project":      project,
 		"PrevPage":     prev,
 		"NextPage":     next,
 		"FilterStatus": params.statusString(),
 		"FilterMode":   params.modeString(),
-		"Now":          startTime(c.Context),
+		"Now":          startTime(c.Request.Context()),
 	})
 }
 

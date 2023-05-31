@@ -45,8 +45,7 @@ type startTimeContextKey int
 func InstallHandlers(srv *server.Server) {
 	m := router.NewMiddlewareChain(
 		func(c *router.Context, next router.Handler) {
-			c.Context = context.WithValue(c.Context, startTimeContextKey(0), clock.Now(c.Context))
-			c.Request = c.Request.WithContext(c.Context)
+			c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), startTimeContextKey(0), clock.Now(c.Request.Context())))
 			next(c)
 		},
 		templates.WithTemplates(prepareTemplates(&srv.Options, "templates")),
@@ -145,7 +144,7 @@ func errPage(c *router.Context, err error) {
 	err = errors.Unwrap(err)
 	code := grpcutil.CodeStatus(status.Code(err))
 	c.Writer.WriteHeader(code)
-	templates.MustRender(c.Context, c.Writer, "pages/error.html", map[string]any{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/error.html", map[string]any{
 		"Error": err,
 		"Code":  code,
 	})

@@ -36,7 +36,7 @@ import (
 )
 
 func runDetails(c *router.Context) {
-	ctx := c.Context
+	ctx := c.Request.Context()
 
 	rID := fmt.Sprintf("%s/%s", c.Params.ByName("Project"), c.Params.ByName("Run"))
 
