@@ -17,6 +17,7 @@ package monorail
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -114,6 +115,7 @@ func NewGenerator(appID, project string, projectCfg *configpb.ProjectConfig) (*G
 // PrepareNew prepares a new bug from the given cluster. Title and description
 // are the cluster-specific bug title and description.
 func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clustering.ClusterDescription, components []string) *mpb.MakeIssueRequest {
+	issuePriority := g.clusterPriority(impact)
 	issue := &mpb.Issue{
 		Summary: bugs.GenerateBugSummary(description.Title),
 		State:   mpb.IssueContentState_ACTIVE,
@@ -121,7 +123,7 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 		FieldValues: []*mpb.FieldValue{
 			{
 				Field: g.priorityFieldName(),
-				Value: g.clusterPriority(impact),
+				Value: issuePriority,
 			},
 		},
 		Labels: []*mpb.Issue_LabelValue{{
@@ -152,11 +154,15 @@ func (g *Generator) PrepareNew(impact *bugs.ClusterImpact, description *clusteri
 		})
 	}
 
+	// Justify the priority for the bug.
+	thresholdComment := g.priorityComment(impact, issuePriority)
+
 	return &mpb.MakeIssueRequest{
-		Parent:      fmt.Sprintf("projects/%s", g.monorailCfg.Project),
-		Issue:       issue,
-		Description: bugs.GenerateInitialIssueDescription(description, g.appID),
-		NotifyType:  mpb.NotifyType_EMAIL,
+		Parent: fmt.Sprintf("projects/%s", g.monorailCfg.Project),
+		Issue:  issue,
+		Description: bugs.GenerateInitialIssueDescription(
+			description, g.appID, thresholdComment),
+		NotifyType: mpb.NotifyType_EMAIL,
 	}
 }
 
@@ -593,6 +599,39 @@ func (g *Generator) isCompatibleWithPriority(impact *bugs.ClusterImpact, issuePr
 	// priority (e.g. P0 <-> index 0, P1 <-> index 1, etc.)
 	return g.indexOfPriority(lowestAllowedPriority) >= index &&
 		index >= g.indexOfPriority(highestAllowedPriority)
+}
+
+// priorityComment outputs a human-readable justification
+// explaining why the impact should be given the specified issue priority. It
+// is intended to be used when bugs are initially filed.
+//
+// Example output:
+// "The priority was set to P0 because:
+// - Test Results Failed (1-day) >= 500"
+func (g *Generator) priorityComment(impact *bugs.ClusterImpact, issuePriority string) string {
+	priorityIndex := g.indexOfPriority(issuePriority)
+	if priorityIndex >= len(g.monorailCfg.Priorities) {
+		// Unknown priority - it should be one of the configured priorities.
+		return ""
+	}
+
+	thresholdsMet := g.monorailCfg.Priorities[priorityIndex].Thresholds
+	justification := bugs.ExplainThresholdsMet(impact, thresholdsMet)
+	if justification == "" {
+		return ""
+	}
+
+	priorityPrefix := ""
+	if _, err := strconv.Atoi(issuePriority); err == nil {
+		// The priority is a bare integer (e.g. "1"), so let's use a prefix to
+		// denote it is a priority.
+		priorityPrefix = "P"
+	}
+
+	comment := fmt.Sprintf(
+		"The priority was set to %s%s because:\n%s",
+		priorityPrefix, strings.TrimSpace(issuePriority), justification)
+	return strings.TrimSpace(comment)
 }
 
 // priorityDecreaseJustification outputs a human-readable justification

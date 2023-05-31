@@ -110,7 +110,7 @@ const RecommendedPrioritySummary = ({ metricValues, metrics, projectConfig }: Pr
     setOpen(false);
   };
 
-  const priorities: PriorityThreshold[] = ensurePriorityPrefix(
+  const priorities: PriorityThreshold[] = tidyPriorityLabels(
     getPriorityThresholds(projectConfig),
   );
   const recommendation = createPriorityRecommendation(
@@ -195,22 +195,27 @@ const RecommendedPrioritySummary = ({ metricValues, metrics, projectConfig }: Pr
   );
 }
 
-function ensurePriorityPrefix(priorities: PriorityThreshold[], prefix: string = "P"): PriorityThreshold[] {
-  const upperPrefix = prefix.toUpperCase();
+function tidyPriorityLabels(priorities: PriorityThreshold[], prefix: string = "P"): PriorityThreshold[] {
+  const isOnlyDigits = new RegExp('^\d+$');
 
-  let prefixedPriorities: PriorityThreshold[] = [];
+  let tidiedPriorities: PriorityThreshold[] = [];
   priorities.forEach(priorityThreshold => {
-    let priorityName = priorityThreshold.priority.trim().toUpperCase();
-    if (!priorityName.startsWith(upperPrefix)) {
-      priorityName = upperPrefix + priorityName;
+    // Remove leading and trailing whitespace in priorities.
+    let priorityName = priorityThreshold.priority.trim();
+
+    // To help users easily identify values as priorities, priority labels that
+    // consist only of digits have the prefix added.
+    if (isOnlyDigits.test(priorityName)) {
+      priorityName = prefix + priorityName;
     }
-    prefixedPriorities.push({
+
+    tidiedPriorities.push({
       priority: priorityName,
       thresholds: priorityThreshold.thresholds,
     });
   });
 
-  return prefixedPriorities;
+  return tidiedPriorities;
 }
 
 function getPriorityThresholds(projectConfig: ProjectConfig): PriorityThreshold[] {

@@ -130,6 +130,9 @@ func TestManager(t *testing.T) {
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, reason)
 				So(issue.Comments[0].Content, ShouldNotContainSubstring, "ClusterIDShouldNotAppearInOutput")
+				// Priority justification should appear in the issue description.
+				So(issue.Comments[0].Content, ShouldContainSubstring,
+					"The priority was set to P1 because:\n- Test Results Failed (1-day) >= 500")
 				// Links to help should appear in the issue description.
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")
@@ -151,6 +154,9 @@ func TestManager(t *testing.T) {
 				So(issue.Issue, ShouldResembleProto, expectedIssue)
 				So(len(issue.Comments), ShouldEqual, 2)
 				So(issue.Comments[0].Content, ShouldContainSubstring, "ninja://:blink_web_tests/media/my-suite/my-test.html")
+				// Priority justification should appear in the issue description.
+				So(issue.Comments[0].Content, ShouldContainSubstring,
+					"The priority was set to P1 because:\n- Test Results Failed (1-day) >= 500")
 				// Links to help should appear in the issue description.
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#new-bug-filed")
 				So(issue.Comments[0].Content, ShouldContainSubstring, "https://luci-analysis-test.appspot.com/help#feedback")

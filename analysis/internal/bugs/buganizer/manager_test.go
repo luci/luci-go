@@ -32,13 +32,16 @@ import (
 	"go.chromium.org/luci/third_party/google.golang.org/genproto/googleapis/devtools/issuetracker/v1"
 )
 
-// This is the common issue comment part of all the
-// issues that we create, it is basically a static part
-// that is attached to the end of every issue comment.
-const commonIssueCommentPart = "\n\nThis bug has been automatically filed by LUCI Analysis in response " +
-	"to a cluster of test failures.\n\nHow to action this bug: https://luci-analysis-test.appspot.com/help#new-bug-filed\nProvide " +
-	"feedback: https://luci-analysis-test.appspot.com/help#feedback\nWas this bug filed in the " +
-	"wrong component? See:https://luci-analysis-test.appspot.com/help#component-selection"
+// These are the common issue comment parts of all the
+// issues that we create; they are basically static parts
+// that are included in every issue comment.
+const commonIssueCommentBody = "This bug has been automatically filed by " +
+	"LUCI Analysis in response to a cluster of test failures."
+const commonIssueCommentFooter = "How to action this bug: " +
+	"https://luci-analysis-test.appspot.com/help#new-bug-filed\n" +
+	"Provide feedback: https://luci-analysis-test.appspot.com/help#feedback\n" +
+	"Was this bug filed in the wrong component? See: " +
+	"https://luci-analysis-test.appspot.com/help#component-selection"
 
 func TestBugManager(t *testing.T) {
 	t.Parallel()
@@ -97,7 +100,9 @@ func TestBugManager(t *testing.T) {
 					Comment: "A cluster of failures has been found with reason: Expected equality " +
 						"of these values:\n\t\t\t\t\t\"Expected_Value\"\n\t\t\t\t\tmy_expr.evaluate(123)\n\t\t\t\t\t\t" +
 						"Which is: \"Unexpected_Value\"" +
-						commonIssueCommentPart +
+						"\n\n" + commonIssueCommentBody +
+						"\n\nThe priority was set to P1 because:\n- Test Results Failed (1-day) >= 500" +
+						"\n\n" + commonIssueCommentFooter +
 						"\nSee failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1",
 				}
 
@@ -135,7 +140,9 @@ func TestBugManager(t *testing.T) {
 				expectedIssue.IssueComment = &issuetracker.IssueComment{
 					CommentNumber: 1,
 					Comment: "A test is failing ninja://:blink_web_tests/media/my-suite/my-test.html" +
-						commonIssueCommentPart +
+						"\n\n" + commonIssueCommentBody +
+						"\n\nThe priority was set to P1 because:\n- Test Results Failed (1-day) >= 500" +
+						"\n\n" + commonIssueCommentFooter +
 						"\nSee failure impact and configure the failure association rule for this bug at: https://luci-analysis-test.appspot.com/b/1",
 				}
 				expectedIssue.Description = expectedIssue.IssueComment

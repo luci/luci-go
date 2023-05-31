@@ -59,19 +59,26 @@ func MergeCommentary(cs ...Commentary) string {
 
 // GenerateInitialIssueDescription generates the description that should
 // be used when the issue is first created.
+// It includes the given threshold comment, which can justify:
+// * why the bug has its initial priority; or
+// * why the bug was automatically filed.
 // It adds information about actioning the bug and what to do
 // if the component is not correct.
-func GenerateInitialIssueDescription(description *clustering.ClusterDescription, appID string) string {
+func GenerateInitialIssueDescription(description *clustering.ClusterDescription, appID string, thresholdComment string) string {
 	commentary := Commentary{
 		Body: fmt.Sprintf(DescriptionTemplate, description.Description),
 		Footer: fmt.Sprintf("How to action this bug: https://%s.appspot.com/help#new-bug-filed\n"+
 			"Provide feedback: https://%s.appspot.com/help#feedback", appID, appID),
 	}
 
+	thresholdCommentary := Commentary{
+		Body: thresholdComment,
+	}
+
 	componentSelectionCommentary := Commentary{
-		Footer: fmt.Sprintf("Was this bug filed in the wrong component? See:"+
+		Footer: fmt.Sprintf("Was this bug filed in the wrong component? See: "+
 			"https://%s.appspot.com/help#component-selection", appID),
 	}
 
-	return MergeCommentary(commentary, componentSelectionCommentary)
+	return MergeCommentary(commentary, thresholdCommentary, componentSelectionCommentary)
 }

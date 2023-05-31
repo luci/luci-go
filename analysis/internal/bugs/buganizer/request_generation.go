@@ -99,17 +99,23 @@ func (rg *RequestGenerator) PrepareNew(impact *bugs.ClusterImpact,
 	description *clustering.ClusterDescription,
 	componentId int64) *issuetracker.CreateIssueRequest {
 
+	issuePriority := rg.clusterPriority(impact)
+
+	// Justify the priority for the bug.
+	thresholdComment := rg.priorityComment(impact, issuePriority)
+
 	issue := &issuetracker.Issue{
 		IssueState: &issuetracker.IssueState{
 			ComponentId: componentId,
 			Type:        issuetracker.Issue_BUG,
 			Status:      issuetracker.Issue_NEW,
-			Priority:    rg.clusterPriority(impact),
+			Priority:    issuePriority,
 			Severity:    issuetracker.Issue_S2,
 			Title:       bugs.GenerateBugSummary(description.Title),
 		},
 		IssueComment: &issuetracker.IssueComment{
-			Comment: bugs.GenerateInitialIssueDescription(description, rg.appID),
+			Comment: bugs.GenerateInitialIssueDescription(
+				description, rg.appID, thresholdComment),
 		},
 	}
 
@@ -477,6 +483,31 @@ func (rg *RequestGenerator) preparePriorityUpdate(impact *bugs.ClusterImpact, is
 		Footer: fmt.Sprintf("Why priority is updated: https://%s.appspot.com/help#priority-updated", rg.appID),
 	}
 	return c
+}
+
+// priorityComment outputs a human-readable justification
+// explaining why the impact should be given the specified issue priority. It
+// is intended to be used when bugs are initially filed.
+//
+// Example output:
+// "The priority was set to P0 because:
+// - Presubmit Runs Failed (1-day) >= 15"
+func (rg *RequestGenerator) priorityComment(impact *bugs.ClusterImpact, issuePriority issuetracker.Issue_Priority) string {
+	priorityIndex := rg.indexOfPriority(issuePriority)
+	if priorityIndex >= len(rg.buganizerCfg.PriorityMappings) {
+		// Unknown priority - it should be one of the configured priorities.
+		return ""
+	}
+
+	thresholdsMet := rg.buganizerCfg.PriorityMappings[priorityIndex].Thresholds
+	justification := bugs.ExplainThresholdsMet(impact, thresholdsMet)
+	if justification == "" {
+		return ""
+	}
+
+	comment := fmt.Sprintf("The priority was set to %s because:\n%s",
+		issuePriority, justification)
+	return strings.TrimSpace(comment)
 }
 
 // priorityIncreaseJustification outputs a human-readable justification
