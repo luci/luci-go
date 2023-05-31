@@ -17,9 +17,8 @@ package handler
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
-	"sync"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -27,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -37,7 +35,6 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
-	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/rpc/versioning"
 	"go.chromium.org/luci/cv/internal/run"
@@ -168,68 +165,6 @@ type reviewInputMeta struct {
 	reason string
 }
 
-func (impl *Impl) resetCLTriggers(ctx context.Context, runID common.RunID, toReset []*run.RunCL, cg *prjcfg.ConfigGroup, meta reviewInputMeta) error {
-	clids := make(common.CLIDs, len(toReset))
-	for i, runCL := range toReset {
-		clids[i] = runCL.ID
-	}
-
-	cls, err := changelist.LoadCLsByIDs(ctx, clids)
-	if err != nil {
-		return err
-	}
-
-	luciProject := runID.LUCIProject()
-	var forceRefresh []*changelist.CL
-	var lock sync.Mutex
-	err = parallel.WorkPool(min(len(toReset), 10), func(work chan<- func() error) {
-		for i := range cls {
-			i := i
-			work <- func() error {
-				err := trigger.Reset(ctx, trigger.ResetInput{
-					CL:                cls[i],
-					Triggers:          (&run.Triggers{}).WithTrigger(toReset[i].Trigger),
-					LUCIProject:       luciProject,
-					Message:           meta.message,
-					Requester:         "Run Manager",
-					Notify:            meta.notify,
-					LeaseDuration:     time.Minute,
-					ConfigGroups:      []*prjcfg.ConfigGroup{cg},
-					AddToAttentionSet: meta.addToAttention,
-					AttentionReason:   meta.reason,
-					GFactory:          impl.GFactory,
-					CLMutator:         impl.CLMutator,
-				})
-				switch {
-				case err == nil:
-					return nil
-				case trigger.ErrResetPreconditionFailedTag.In(err) || trigger.ErrResetPermanentTag.In(err):
-					lock.Lock()
-					forceRefresh = append(forceRefresh, cls[i])
-					lock.Unlock()
-					fallthrough
-				default:
-					return errors.Annotate(err, "failed to reset triggers for cl %d", cls[i].ID).Err()
-				}
-			}
-		}
-	})
-	if len(forceRefresh) != 0 {
-		if ferr := impl.CLUpdater.ScheduleBatch(ctx, runID.LUCIProject(), forceRefresh, changelist.UpdateCLTask_RESET_CL_TRIGGER); ferr != nil {
-			logging.Warningf(ctx, "Failed to schedule best-effort force refresh of %d CLs: %s", len(forceRefresh), ferr)
-		}
-	}
-	if err != nil {
-		switch merr, ok := err.(errors.MultiError); {
-		case !ok:
-			return err
-		default:
-			return common.MostSevereError(merr)
-		}
-	}
-	return nil
-}
-
 // scheduleTriggersReset enqueues a ResetTriggers long op for a given Run.
 //
 // No-op if trigger reset is already ongoing.
@@ -250,6 +185,7 @@ func scheduleTriggersReset(ctx context.Context, rs *state.RunState, metas map[co
 			AddToAttentionReason: meta.reason,
 		})
 	}
+	sort.Slice(reqs, func(i, j int) bool { return reqs[i].Clid < reqs[j].Clid })
 	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
 		Deadline: timestamppb.New(clock.Now(ctx).Add(maxResetTriggersDuration)),
 		Work: &run.OngoingLongOps_Op_ResetTriggers_{

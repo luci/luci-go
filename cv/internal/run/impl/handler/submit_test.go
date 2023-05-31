@@ -548,28 +548,50 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					So(waitlisted, ShouldBeFalse)
 					return err
 				}, nil), ShouldBeNil)
+				runAndVerify := func(expectedMsgs []struct {
+					clid int64
+					msg  string
+				}) {
+					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+					So(err, ShouldBeNil)
+					So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+					for i, f := range sc.GetClFailures().GetFailures() {
+						So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+					}
+					So(res.SideEffectFn, ShouldBeNil)
+					So(res.PreserveEvents, ShouldBeFalse)
+					So(res.PostProcessFn, ShouldBeNil)
+					So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+					for i, f := range sc.GetClFailures().GetFailures() {
+						So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+					}
+					for _, op := range res.State.OngoingLongOps.GetOps() {
+						So(op.GetResetTriggers(), ShouldNotBeNil)
+						expectedRequests := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(expectedMsgs))
+						for i, expectedMsg := range expectedMsgs {
+							expectedRequests[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
+								Clid:    expectedMsg.clid,
+								Message: expectedMsg.msg,
+								Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+									run.OngoingLongOps_Op_ResetTriggers_OWNER,
+									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+								},
+								AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+									run.OngoingLongOps_Op_ResetTriggers_OWNER,
+									run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+								},
+								AddToAttentionReason: submissionFailureAttentionReason,
+							}
+						}
+						So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, expectedRequests)
+						So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+					}
+					So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
+				}
 
 				Convey("Single CL Run", func() {
 					rs.Submission.Cls = []int64{2}
 					Convey("Not submitted", func() {
-						runAndVerify := func(verifyMsgFn func(lastMsg string)) {
-							res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-							So(err, ShouldBeNil)
-							So(res.State.Status, ShouldEqual, run.Status_FAILED)
-							So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
-							for i, f := range sc.GetClFailures().GetFailures() {
-								So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
-							}
-							So(res.SideEffectFn, ShouldNotBeNil)
-							So(res.PreserveEvents, ShouldBeFalse)
-							So(res.PostProcessFn, ShouldBeNil)
-							ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
-							verifyMsgFn(gf.LastMessage(ci).GetMessage())
-							for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-								So(vote.GetValue(), ShouldEqual, 0)
-							}
-							So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
-						}
 						Convey("CL failure", func() {
 							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 								ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
@@ -578,20 +600,25 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								},
 							}
-							runAndVerify(func(lastMsg string) {
-								So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
-								So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run has been submitted")
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 2,
+									msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.",
+								},
 							})
-							reqs := selfSetReviewRequests()
-							So(reqs, ShouldHaveLength, 1)
-							So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
-							assertNotify(reqs[0], 99, 100, 101)
-							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
-							runAndVerify(func(lastMsg string) {
-								So(lastMsg, ShouldContainSubstring, timeoutMsg)
-								So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 2,
+									msg:  timeoutMsg,
+								},
 							})
 						})
 					})
@@ -601,6 +628,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(res.State.Status, ShouldEqual, run.Status_SUCCEEDED)
 						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
+						So(res.State.OngoingLongOps.GetOps(), ShouldBeEmpty)
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
@@ -611,29 +639,6 @@ func TestOnSubmissionCompleted(t *testing.T) {
 
 				Convey("Multi CLs Run", func() {
 					rs.Submission.Cls = []int64{2, 1}
-					runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
-						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-						So(err, ShouldBeNil)
-						So(res.State.Status, ShouldEqual, run.Status_FAILED)
-						So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
-						for i, f := range sc.GetClFailures().GetFailures() {
-							So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
-						}
-						So(res.SideEffectFn, ShouldNotBeNil)
-						So(res.PreserveEvents, ShouldBeFalse)
-						So(res.PostProcessFn, ShouldBeNil)
-						for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {
-							ci := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
-							verifyMsgFn(ci.GetNumber(), gf.LastMessage(ci).GetMessage())
-							if ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info.GetStatus() != gerritpb.ChangeStatus_MERGED {
-								for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-									So(vote.GetValue(), ShouldEqual, 0)
-								}
-							}
-						}
-						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
-					}
-
 					Convey("None of the CLs are submitted", func() {
 						Convey("CL failure", func() {
 							sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
@@ -643,32 +648,33 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								},
 							}
-							runAndVerify(func(changeNum int64, lastMsg string) {
-								switch changeNum {
-								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222")
-								case ci2.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
-								default:
-									panic(fmt.Errorf("unknown change: %d", changeNum))
-								}
-								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
-								So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+								{
+									clid: 2,
+									msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
 							})
-							reqs := selfSetReviewRequests()
-							So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
-							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
-							assertNotify(reqs[0], 99, 100, 101)
-							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
-							So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
-							assertNotify(reqs[0], 99, 100, 101)
-							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 						})
 						Convey("Unclassified failure", func() {
-							runAndVerify(func(_ int64, lastMsg string) {
-								So(lastMsg, ShouldContainSubstring, timeoutMsg)
-								So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
-								So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  timeoutMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
+								{
+									clid: 2,
+									msg:  timeoutMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+								},
 							})
 						})
 					})
@@ -688,45 +694,35 @@ func TestOnSubmissionCompleted(t *testing.T) {
 									},
 								},
 							}
-							runAndVerify(func(changeNum int64, lastMsg string) {
-								switch changeNum {
-								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.")
-									So(lastMsg, ShouldContainSubstring, "CLs in the Run have been submitted partially.")
-									So(lastMsg, ShouldContainSubstring, "Not submitted:\n* https://x-review.example.com/c/1111")
-									So(lastMsg, ShouldContainSubstring, "Submitted:\n* https://x-review.example.com/c/2222")
-								case ci2.GetNumber():
-								default:
-									panic(fmt.Errorf("unknown change: %d", changeNum))
-								}
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  "CL failed to submit because of transient failure: some transient failure. However, submission is running out of time to retry.\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+								},
 							})
+							// Verify posting message to the submitted CL about the failure
+							// on the dependent CLs
 							reqs := selfSetReviewRequests()
-							So(reqs, ShouldHaveLength, 2) // for both submitted and failed CLs
-							So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
+							So(reqs, ShouldHaveLength, 1)
+							So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
 							assertNotify(reqs[0], 99, 100, 101)
-							assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
-							So(reqs[0].Message, ShouldContainSubstring, "CL failed to submit because of transient failure")
-							// The 2nd Gerrit message should be for the submitted CL to indicate
-							// the submission failure on the dependent CLs.
-							assertNotify(reqs[1], 99, 100, 101)
-							assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
-							So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
+							assertAttentionSet(reqs[0], "failed to submit dependent CLs", 99, 100, 101)
+							So(reqs[0].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
 						})
 						Convey("Unclassified failure", func() {
-							runAndVerify(func(changeNum int64, lastMsg string) {
-								switch changeNum {
-								case ci1.GetNumber():
-									So(lastMsg, ShouldContainSubstring, timeoutMsg)
-									So(lastMsg, ShouldContainSubstring, "CLs in the Run have been submitted partially")
-									So(lastMsg, ShouldContainSubstring, "Not submitted:\n* https://x-review.example.com/c/1111")
-									So(lastMsg, ShouldContainSubstring, "Submitted:\n* https://x-review.example.com/c/2222")
-								case ci2.GetNumber():
-								default:
-									panic(fmt.Errorf("unknown change: %d", changeNum))
-								}
+							runAndVerify([]struct {
+								clid int64
+								msg  string
+							}{
+								{
+									clid: 1,
+									msg:  timeoutMsg + "\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+								},
 							})
 						})
-
 					})
 
 					Convey("CLs fully submitted", func() {
@@ -738,9 +734,6 @@ func TestOnSubmissionCompleted(t *testing.T) {
 						So(res.SideEffectFn, ShouldNotBeNil)
 						So(res.PreserveEvents, ShouldBeFalse)
 						So(res.PostProcessFn, ShouldBeNil)
-						// both untouched
-						So(ct.GFake.GetChange(gHost, int(ci1.GetNumber())).Info, ShouldResembleProto, ci1)
-						So(ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info, ShouldResembleProto, ci2)
 						So(submit.MustCurrentRun(ctx, lProject), ShouldNotEqual, rs.ID)
 					})
 				})
@@ -755,27 +748,48 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
 				TaskId:   "task-foo",
 			}
+			runAndVerify := func(expectedMsgs []struct {
+				clid int64
+				msg  string
+			}) {
+				res, err := h.OnSubmissionCompleted(ctx, rs, sc)
+				So(err, ShouldBeNil)
+				So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
+				for i, f := range sc.GetClFailures().GetFailures() {
+					So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+				}
+				So(res.SideEffectFn, ShouldBeNil)
+				So(res.PreserveEvents, ShouldBeFalse)
+				So(res.PostProcessFn, ShouldBeNil)
+				So(res.State.OngoingLongOps.GetOps(), ShouldHaveLength, 1)
+				for i, f := range sc.GetClFailures().GetFailures() {
+					So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
+				}
+				for _, op := range res.State.OngoingLongOps.GetOps() {
+					So(op.GetResetTriggers(), ShouldNotBeNil)
+					expectedRequests := make([]*run.OngoingLongOps_Op_ResetTriggers_Request, len(expectedMsgs))
+					for i, expectedMsg := range expectedMsgs {
+						expectedRequests[i] = &run.OngoingLongOps_Op_ResetTriggers_Request{
+							Clid:    expectedMsg.clid,
+							Message: expectedMsg.msg,
+							Notify: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+								run.OngoingLongOps_Op_ResetTriggers_OWNER,
+								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							},
+							AddToAttention: []run.OngoingLongOps_Op_ResetTriggers_Whom{
+								run.OngoingLongOps_Op_ResetTriggers_OWNER,
+								run.OngoingLongOps_Op_ResetTriggers_CQ_VOTERS,
+							},
+							AddToAttentionReason: submissionFailureAttentionReason,
+						}
+					}
+					So(op.GetResetTriggers().GetRequests(), ShouldResembleProto, expectedRequests)
+					So(op.GetResetTriggers().GetRunStatusIfSucceeded(), ShouldEqual, run.Status_FAILED)
+				}
+			}
 
 			Convey("Single CL Run", func() {
 				rs.Submission.Cls = []int64{2}
-				runAndVerify := func(verifyMsgFn func(lastMsg string)) {
-					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_FAILED)
-					So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
-					for i, f := range sc.GetClFailures().GetFailures() {
-						So(res.State.Submission.GetFailedCls()[i], ShouldEqual, f.GetClid())
-					}
-					So(res.SideEffectFn, ShouldNotBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					ci := ct.GFake.GetChange(gHost, int(ci2.GetNumber())).Info
-					verifyMsgFn(gf.LastMessage(ci).GetMessage())
-					for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-						So(vote.GetValue(), ShouldEqual, 0)
-					}
-				}
-
 				Convey("CL Submission failure", func() {
 					sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
 						ClFailures: &eventpb.SubmissionCompleted_CLSubmissionFailures{
@@ -787,45 +801,32 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							},
 						},
 					}
-					runAndVerify(func(lastMsg string) {
-						So(lastMsg, ShouldContainSubstring, "CV failed to submit this CL because of merge conflict")
-						So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+					runAndVerify([]struct {
+						clid int64
+						msg  string
+					}{
+						{
+							clid: 2,
+							msg:  "CV failed to submit this CL because of merge conflict",
+						},
 					})
-					reqs := selfSetReviewRequests()
-					So(reqs, ShouldHaveLength, 1)
-					So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
-					assertNotify(reqs[0], 99, 100, 101)
-					assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
 				})
 
 				Convey("Unclassified failure", func() {
-					runAndVerify(func(lastMsg string) {
-						So(lastMsg, ShouldContainSubstring, defaultMsg)
-						So(lastMsg, ShouldNotContainSubstring, "None of the CLs in the Run were submitted by CV")
+					runAndVerify([]struct {
+						clid int64
+						msg  string
+					}{
+						{
+							clid: 2,
+							msg:  defaultMsg,
+						},
 					})
 				})
 			})
 
 			Convey("Multi CLs Run", func() {
 				rs.Submission.Cls = []int64{2, 1}
-				runAndVerify := func(verifyMsgFn func(changeNum int64, lastMsg string)) {
-					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					So(err, ShouldBeNil)
-					So(res.State.Status, ShouldEqual, run.Status_FAILED)
-					So(res.State.EndTime, ShouldEqual, ct.Clock.Now())
-					So(res.SideEffectFn, ShouldNotBeNil)
-					So(res.PreserveEvents, ShouldBeFalse)
-					So(res.PostProcessFn, ShouldBeNil)
-					for _, ci := range []*gerritpb.ChangeInfo{ci1, ci2} {
-						ci := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
-						verifyMsgFn(ci.GetNumber(), gf.LastMessage(ci).GetMessage())
-						if ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info.GetStatus() != gerritpb.ChangeStatus_MERGED {
-							for _, vote := range ci.GetLabels()[trigger.CQLabelName].GetAll() {
-								So(vote.GetValue(), ShouldEqual, 0)
-							}
-						}
-					}
-				}
 				Convey("None of the CLs are submitted", func() {
 					Convey("CL Submission failure", func() {
 						sc.FailureReason = &eventpb.SubmissionCompleted_ClFailures{
@@ -838,31 +839,34 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							},
 						}
-						runAndVerify(func(changeNum int64, lastMsg string) {
-							switch changeNum {
-							case 1111:
-								So(lastMsg, ShouldContainSubstring, "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222")
-							case 2222:
-								So(lastMsg, ShouldContainSubstring, "Failed to submit this CL because of merge conflict")
-							}
-							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
-							So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
+						runAndVerify([]struct {
+							clid int64
+							msg  string
+						}{
+							{
+								clid: 1,
+								msg:  "This CL is not submitted because submission has failed for the following CL(s) which this CL depends on.\n* https://x-review.example.com/c/2222\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+							},
+							{
+								clid: 2,
+								msg:  "Failed to submit this CL because of merge conflict\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+							},
 						})
-						reqs := selfSetReviewRequests()
-						So(reqs, ShouldHaveLength, 2) // each for CL1 and CL2
-						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
-						assertNotify(reqs[0], 99, 100, 101)
-						assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
-						So(reqs[1].GetNumber(), ShouldEqual, ci2.GetNumber())
-						assertNotify(reqs[1], 99, 100, 101)
-						assertAttentionSet(reqs[1], submissionFailureAttentionReason, 99, 100, 101)
 					})
 
 					Convey("Unclassified failure", func() {
-						runAndVerify(func(changeNum int64, lastMsg string) {
-							So(lastMsg, ShouldContainSubstring, defaultMsg)
-							So(lastMsg, ShouldContainSubstring, "None of the CLs in the Run has been submitted")
-							So(lastMsg, ShouldContainSubstring, "CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111")
+						runAndVerify([]struct {
+							clid int64
+							msg  string
+						}{
+							{
+								clid: 1,
+								msg:  defaultMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+							},
+							{
+								clid: 2,
+								msg:  defaultMsg + "\n\nNone of the CLs in the Run has been submitted. CLs:\n* https://x-review.example.com/c/2222\n* https://x-review.example.com/c/1111",
+							},
 						})
 					})
 				})
@@ -885,22 +889,24 @@ func TestOnSubmissionCompleted(t *testing.T) {
 								},
 							},
 						}
-						runAndVerify(func(changeNum int64, lastMsg string) {
-							if changeNum == ci1.GetNumber() {
-								So(lastMsg, ShouldContainSubstring, "Failed to submit this CL because of merge conflict")
-							}
+						runAndVerify([]struct {
+							clid int64
+							msg  string
+						}{
+							{
+								clid: 1,
+								msg:  "Failed to submit this CL because of merge conflict\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+							},
 						})
+
+						// Verify posting message to the submitted CL about the failure
+						// on the dependent CLs
 						reqs := selfSetReviewRequests()
-						So(reqs, ShouldHaveLength, 2) // for both submitted and failed CLs
-						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber())
+						So(reqs, ShouldHaveLength, 1)
+						So(reqs[0].GetNumber(), ShouldEqual, ci2.GetNumber())
 						assertNotify(reqs[0], 99, 100, 101)
-						assertAttentionSet(reqs[0], submissionFailureAttentionReason, 99, 100, 101)
-						So(reqs[0].Message, ShouldContainSubstring, "Failed to submit this CL")
-						// The 2nd Gerrit message should be for the submitted CL to indicate
-						// the submission failure on the dependent CLs.
-						assertNotify(reqs[1], 99, 100, 101)
-						assertAttentionSet(reqs[1], "failed to submit dependent CLs", 99, 100, 101)
-						So(reqs[1].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
+						assertAttentionSet(reqs[0], "failed to submit dependent CLs", 99, 100, 101)
+						So(reqs[0].Message, ShouldContainSubstring, "This CL is submitted. However, submission has failed for the following CL(s) which depend on this CL.")
 					})
 
 					Convey("don't attempt posting dependent failure message if posted already", func() {
@@ -911,21 +917,28 @@ func TestOnSubmissionCompleted(t *testing.T) {
 							})
 							gf.Messages(msgs...)(c.Info)
 						})
-						runAndVerify(func(changeNum int64, lastMsg string) {
-							if changeNum == ci2.GetNumber() {
-								So(lastMsg, ShouldContainSubstring, partiallySubmittedMsgForSubmittedCLs)
-							}
+						runAndVerify([]struct {
+							clid int64
+							msg  string
+						}{
+							{
+								clid: 1,
+								msg:  defaultMsg + "\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+							},
 						})
 						reqs := selfSetReviewRequests()
-						So(reqs, ShouldHaveLength, 1)
-						So(reqs[0].GetNumber(), ShouldEqual, ci1.GetNumber()) // no request to ci2
+						So(reqs, ShouldBeEmpty) // no request to ci2
 					})
 
 					Convey("Unclassified failure", func() {
-						runAndVerify(func(changeNum int64, lastMsg string) {
-							if changeNum == ci1.GetNumber() {
-								So(lastMsg, ShouldContainSubstring, defaultMsg)
-							}
+						runAndVerify([]struct {
+							clid int64
+							msg  string
+						}{
+							{
+								clid: 1,
+								msg:  defaultMsg + "\n\nCLs in the Run have been submitted partially.\nNot submitted:\n* https://x-review.example.com/c/1111\nSubmitted:\n* https://x-review.example.com/c/2222\nPlease, use your judgement to determine if already submitted CLs have to be reverted, or if the remaining CLs could be manually submitted. If you think the partially submitted CLs may have broken the tip-of-tree of your project, consider notifying your infrastructure team/gardeners/sheriffs.",
+							},
 						})
 					})
 				})

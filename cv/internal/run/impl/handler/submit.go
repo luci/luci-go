@@ -20,7 +20,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -257,14 +256,12 @@ func (impl *Impl) OnSubmissionCompleted(ctx context.Context, rs *state.RunState,
 				},
 			})
 		}
-		if err := impl.resetNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
+		allRunCLs, err := run.LoadRunCLs(ctx, rs.ID, common.MakeCLIDs(rs.Submission.GetCls()...))
+		if err != nil {
 			return nil, err
 		}
-		se := impl.endRun(ctx, rs, run.Status_FAILED, cg)
-		return &Result{
-			State:        rs,
-			SideEffectFn: se,
-		}, nil
+		impl.scheduleResetTriggersForNotSubmittedCLs(ctx, rs, allRunCLs, sc, cg)
+		return &Result{State: rs}, nil
 	default:
 		panic(fmt.Errorf("impossible submission result %s", sc.GetResult()))
 	}
@@ -300,14 +297,18 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 		}
 
 		rs = rs.ShallowCopy()
-		var status run.Status
 		switch submittedCnt := len(rs.Submission.GetSubmittedCls()); {
 		case submittedCnt > 0 && submittedCnt == len(rs.Submission.GetCls()):
 			// Fully submitted
-			status = run.Status_SUCCEEDED
+			if err := releaseSubmitQueueIfTaken(ctx, rs, impl.RM); err != nil {
+				return nil, err
+			}
+			return &Result{
+				State:        rs,
+				SideEffectFn: impl.endRun(ctx, rs, run.Status_SUCCEEDED, cg),
+			}, nil
 		default: // None submitted or partially submitted
-			status = run.Status_FAILED
-			// Make a submission completed event with permanent failure.
+			// Synthesize a submission completed event with permanent failure.
 			if clFailures := sc.GetClFailures(); clFailures != nil {
 				rs.Submission = proto.Clone(rs.Submission).(*run.Submission)
 				rs.Submission.FailedCls = make([]int64, len(clFailures.GetFailures()))
@@ -334,18 +335,16 @@ func (impl *Impl) tryResumeSubmission(ctx context.Context, rs *state.RunState, s
 					},
 				}
 			}
-			if err := impl.resetNotSubmittedCLTriggers(ctx, rs, sc, cg); err != nil {
+			allRunCLs, err := run.LoadRunCLs(ctx, rs.ID, common.MakeCLIDs(rs.Submission.GetCls()...))
+			if err != nil {
 				return nil, err
 			}
+			impl.scheduleResetTriggersForNotSubmittedCLs(ctx, rs, allRunCLs, sc, cg)
+			if err := releaseSubmitQueueIfTaken(ctx, rs, impl.RM); err != nil {
+				return nil, err
+			}
+			return &Result{State: rs}, nil
 		}
-		if err := releaseSubmitQueueIfTaken(ctx, rs, impl.RM); err != nil {
-			return nil, err
-		}
-		se := impl.endRun(ctx, rs, status, cg)
-		return &Result{
-			State:        rs,
-			SideEffectFn: se,
-		}, nil
 	case taskID == mustTaskIDFromContext(ctx):
 		// Matching taskID indicates current task is the retry of a previous
 		// submitting task that has failed transiently. Continue the submission.
@@ -478,22 +477,15 @@ func markSubmitting(ctx context.Context, rs *state.RunState) error {
 	return nil
 }
 
-func (impl *Impl) resetNotSubmittedCLTriggers(ctx context.Context, rs *state.RunState, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) error {
-	allCLIDs := common.MakeCLIDs(rs.Submission.GetCls()...)
-	allRunCLs, err := run.LoadRunCLs(ctx, rs.ID, allCLIDs)
-	if err != nil {
-		return err
-	}
+func (impl *Impl) scheduleResetTriggersForNotSubmittedCLs(ctx context.Context, rs *state.RunState, allRunCLs []*run.RunCL, sc *eventpb.SubmissionCompleted, cg *prjcfg.ConfigGroup) {
 	whoms := rs.Mode.GerritNotifyTargets()
-	meta := reviewInputMeta{
-		notify: whoms,
-		// Add the same set of group/people to the attention set.
-		addToAttention: whoms,
-		reason:         submissionFailureAttentionReason,
-	}
-
 	// Single-CL Run
 	if len(allRunCLs) == 1 {
+		meta := reviewInputMeta{
+			notify:         whoms,
+			addToAttention: whoms,
+			reason:         submissionFailureAttentionReason,
+		}
 		switch {
 		case sc.GetClFailures() != nil:
 			failures := sc.GetClFailures().GetFailures()
@@ -506,32 +498,29 @@ func (impl *Impl) resetNotSubmittedCLTriggers(ctx context.Context, rs *state.Run
 		default:
 			meta.message = defaultMsg
 		}
-		return impl.resetCLTriggers(ctx, rs.ID, allRunCLs, cg, meta)
+		scheduleTriggersReset(ctx, rs, map[common.CLID]reviewInputMeta{
+			allRunCLs[0].ID: meta,
+		}, run.Status_FAILED)
+		return
 	}
 
 	// Multi-CL Run
 	submitted, failed, pending := splitRunCLs(allRunCLs, rs.Submission, sc)
 	msgSuffix := makeSubmissionMsgSuffix(submitted, failed, pending)
+	metas := make(map[common.CLID]reviewInputMeta, len(failed)+len(pending))
 	switch {
 	case sc.GetClFailures() != nil:
-		var wg sync.WaitGroup
-		errs := make(errors.MultiError, len(allRunCLs))
-		// reset triggers of CLs that fail to submit.
-		messages := make(map[common.CLID]string, len(sc.GetClFailures().GetFailures()))
+		// Compute metas for CLs that fail to submit
 		for _, f := range sc.GetClFailures().GetFailures() {
-			messages[common.CLID(f.GetClid())] = f.GetMessage()
+			metas[common.CLID(f.GetClid())] = reviewInputMeta{
+				notify:         whoms,
+				message:        fmt.Sprintf("%s\n\n%s", f.GetMessage(), msgSuffix),
+				addToAttention: whoms,
+				reason:         submissionFailureAttentionReason,
+			}
 		}
-		for i, failedCL := range failed {
-			i, failedCL := i, failedCL
-			meta := meta
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				meta.message = fmt.Sprintf("%s\n\n%s", messages[failedCL.ID], msgSuffix)
-				errs[i] = impl.resetCLTriggers(ctx, rs.ID, []*run.RunCL{failedCL}, cg, meta)
-			}()
-		}
-		// Reset triggers of CLs that CV won't try to submit.
+
+		// Compute the metas for CLs that CV didn't attempt to submit.
 		var sb strings.Builder
 		// TODO(yiwzhang): Once CV learns how to submit multiple CLs in parallel,
 		// this should be optimized to print out failed CLs that each pending CL
@@ -550,35 +539,60 @@ func (impl *Impl) resetNotSubmittedCLTriggers(ctx context.Context, rs *state.Run
 		}
 		fmt.Fprint(&sb, "\n\n")
 		fmt.Fprint(&sb, msgSuffix)
-		meta.message = fmt.Sprintf("%s%s", partiallySubmittedMsgForPendingCLs, sb.String())
-		for i, pendingCL := range pending {
-			i, pendingCL := i, pendingCL
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				errs[len(failed)+i] = impl.resetCLTriggers(ctx, rs.ID, []*run.RunCL{pendingCL}, cg, meta)
-			}()
+		pendingMeta := reviewInputMeta{
+			notify:         whoms,
+			message:        fmt.Sprintf("%s%s", partiallySubmittedMsgForPendingCLs, sb.String()),
+			addToAttention: whoms,
+			reason:         submissionFailureAttentionReason,
 		}
-
-		msg := fmt.Sprintf("%s%s", partiallySubmittedMsgForSubmittedCLs, sb.String())
-		for i, rcl := range submitted {
-			i, rcl := i, rcl
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				errs[len(failed)+len(pending)+i] = postMsgForDependentFailures(ctx, impl.GFactory, rcl, msg)
-			}()
+		for _, pendingCL := range pending {
+			metas[pendingCL.ID] = pendingMeta
 		}
+		scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 
-		wg.Wait()
-		return common.MostSevereError(errs)
+		// Post messages to submitted CLs.
+		// TODO(yiwzhang): model message posting as a long op.
+		if len(submitted) > 0 {
+			msg := fmt.Sprintf("%s%s", partiallySubmittedMsgForSubmittedCLs, sb.String())
+			err := parallel.FanOutIn(func(workCh chan<- func() error) {
+				for _, submittedCL := range submitted {
+					submittedCL := submittedCL
+					workCh <- func() error {
+						// Swallow the error because these messages are not critical and
+						// it's okay to not posting them during a Gerrit hiccup.
+						if err := postMsgForDependentFailures(ctx, impl.GFactory, submittedCL, msg); err != nil {
+							logging.Warningf(ctx, "failed to post messages for dependent submission failure on submitted changes: %s", err)
+						}
+						return nil
+					}
+				}
+			})
+			if err != nil {
+				panic(fmt.Errorf("impossible parallel error: %w", err))
+			}
+		}
 	case sc.GetTimeout():
-		meta.message = fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix)
-		return impl.resetCLTriggers(ctx, rs.ID, pending, cg, meta)
+		meta := reviewInputMeta{
+			notify:         whoms,
+			message:        fmt.Sprintf("%s\n\n%s", timeoutMsg, msgSuffix),
+			addToAttention: whoms,
+			reason:         submissionFailureAttentionReason,
+		}
+		for _, cl := range pending {
+			metas[cl.ID] = meta
+		}
 	default:
-		meta.message = fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix)
-		return impl.resetCLTriggers(ctx, rs.ID, pending, cg, meta)
+		meta := reviewInputMeta{
+			notify:         whoms,
+			message:        fmt.Sprintf("%s\n\n%s", defaultMsg, msgSuffix),
+			addToAttention: whoms,
+			reason:         submissionFailureAttentionReason,
+		}
+		for _, cl := range pending {
+			metas[cl.ID] = meta
+		}
 	}
+	scheduleTriggersReset(ctx, rs, metas, run.Status_FAILED)
 }
 
 func makeSubmissionMsgSuffix(submitted, failed, pending []*run.RunCL) string {
