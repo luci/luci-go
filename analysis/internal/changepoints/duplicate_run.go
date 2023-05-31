@@ -41,7 +41,7 @@ func readDuplicateInvocations(ctx context.Context, tvs []*rdbpb.TestVariant, bui
 		return nil, nil, errors.Annotate(err, "read invocations").Err()
 	}
 	dupMap := map[string]bool{}
-	buildInvID := control.BuildInvocationName(buildResult.Id)
+	buildInvID := control.BuildInvocationID(buildResult.Id)
 	for invID, ingestedInvID := range invMap {
 		// If the ingested invocation ID stored in Spanner is different from the
 		// current invocation ID, it means this is a duplicate run.
