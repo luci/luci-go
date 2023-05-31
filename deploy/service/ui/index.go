@@ -23,7 +23,7 @@ import (
 
 // indexPage renders the index page.
 func (ui *UI) indexPage(ctx *router.Context) error {
-	listing, err := ui.assets.ListAssets(ctx.Context, &rpcpb.ListAssetsRequest{})
+	listing, err := ui.assets.ListAssets(ctx.Request.Context(), &rpcpb.ListAssetsRequest{})
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (ui *UI) indexPage(ctx *router.Context) error {
 		assets[i] = deriveAssetOverview(asset)
 	}
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", map[string]any{
+	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/index.html", map[string]any{
 		"Breadcrumbs": rootBreadcrumbs(),
 		"Assets":      assets,
 	})

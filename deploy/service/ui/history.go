@@ -200,7 +200,7 @@ func (ui *UI) historyListingPage(ctx *router.Context, assetID string) error {
 		}
 	}
 
-	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
+	assetHistory, err := ui.assets.ListAssetHistory(ctx.Request.Context(), &rpcpb.ListAssetHistoryRequest{
 		AssetId:         assetID,
 		LatestHistoryId: latest,
 		Limit:           pageSize,
@@ -234,7 +234,7 @@ func (ui *UI) historyListingPage(ctx *router.Context, assetID string) error {
 		}
 	}
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-listing.html", map[string]any{
+	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/history-listing.html", map[string]any{
 		"Breadcrumbs": historyListingBreadcrumbs(ref),
 		"Ref":         ref,
 		"Overview":    deriveAssetOverview(assetHistory.Asset),
@@ -252,7 +252,7 @@ func (ui *UI) historyEntryPage(ctx *router.Context, assetID, historyID string) e
 		return err
 	}
 
-	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
+	assetHistory, err := ui.assets.ListAssetHistory(ctx.Request.Context(), &rpcpb.ListAssetHistoryRequest{
 		AssetId:         assetID,
 		LatestHistoryId: entryID,
 		Limit:           2, // to see if we have the previous one for the pager
@@ -290,7 +290,7 @@ func (ui *UI) historyEntryPage(ctx *router.Context, assetID, historyID string) e
 
 	// TODO: Add GAE-specific details.
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/history-entry.html", map[string]any{
+	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/history-entry.html", map[string]any{
 		"Breadcrumbs": historyEntryBreadcrumbs(ref, entryID),
 		"Ref":         ref,
 		"Overview":    overview,

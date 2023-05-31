@@ -417,7 +417,7 @@ func versionsSummary(asset *modelpb.Asset, active bool) []versionState {
 func (ui *UI) assetPage(ctx *router.Context, assetID string) error {
 	const historyLimit = 10
 
-	assetHistory, err := ui.assets.ListAssetHistory(ctx.Context, &rpcpb.ListAssetHistoryRequest{
+	assetHistory, err := ui.assets.ListAssetHistory(ctx.Request.Context(), &rpcpb.ListAssetHistoryRequest{
 		AssetId: assetID,
 		Limit:   historyLimit,
 	})
@@ -436,7 +436,7 @@ func (ui *UI) assetPage(ctx *router.Context, assetID string) error {
 
 	ref := assetRefFromID(assetHistory.Asset.Id)
 
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/asset.html", map[string]any{
+	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/asset.html", map[string]any{
 		"Breadcrumbs":       assetBreadcrumbs(ref),
 		"Ref":               ref,
 		"Overview":          deriveAssetOverview(assetHistory.Asset),

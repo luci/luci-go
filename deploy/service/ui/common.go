@@ -122,8 +122,8 @@ func (ui *UI) prepareTemplates() *templates.Bundle {
 func checkAccess(accessGroup string) router.Middleware {
 	return func(ctx *router.Context, next router.Handler) {
 		// Redirect anonymous users to login first.
-		if auth.CurrentIdentity(ctx.Context) == identity.AnonymousIdentity {
-			loginURL, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+		if auth.CurrentIdentity(ctx.Request.Context()) == identity.AnonymousIdentity {
+			loginURL, err := auth.LoginURL(ctx.Request.Context(), ctx.Request.URL.RequestURI())
 			if err != nil {
 				replyErr(ctx, err)
 			} else {
@@ -132,7 +132,7 @@ func checkAccess(accessGroup string) router.Middleware {
 			return
 		}
 		// Check they are in the access group.
-		switch yes, err := auth.IsMember(ctx.Context, accessGroup); {
+		switch yes, err := auth.IsMember(ctx.Request.Context(), accessGroup); {
 		case err != nil:
 			replyErr(ctx, err)
 		case !yes:
@@ -168,7 +168,7 @@ func replyErr(ctx *router.Context, err error) {
 
 	ctx.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	ctx.Writer.WriteHeader(grpcutil.CodeStatus(s.Code()))
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/error.html", map[string]any{
+	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/error.html", map[string]any{
 		"Message": message,
 	})
 }
