@@ -135,7 +135,11 @@ func (m *rpcquotaModule) Initialize(ctx context.Context, host module.Host, opts 
 		logging.Warningf(ctx, "RPC quota not disabled, but not running in prod.")
 	}
 
-	cfgsvc := configservice.New(ctx, config.ServiceSet("luci-resultdb"), "rpcquota.cfg")
+	ss, err := config.ServiceSet("luci-resultdb")
+	if err != nil {
+		return nil, err
+	}
+	cfgsvc := configservice.New(ctx, ss, "rpcquota.cfg")
 	if err := cfgsvc.Refresh(ctx); err != nil {
 		return nil, err
 	}

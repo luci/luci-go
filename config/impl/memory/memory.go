@@ -92,7 +92,11 @@ func (m *memoryImpl) GetProjectConfigs(ctx context.Context, path string, metaOnl
 	}
 	out := []config.Config{}
 	for _, proj := range projects {
-		if cfg, err := m.GetConfig(ctx, config.ProjectSet(proj.ID), path, metaOnly); err == nil {
+		ps, err := config.ProjectSet(proj.ID)
+		if err != nil {
+			return nil, err
+		}
+		if cfg, err := m.GetConfig(ctx, ps, path, metaOnly); err == nil {
 			out = append(out, *cfg)
 		}
 	}

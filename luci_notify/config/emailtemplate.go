@@ -78,7 +78,10 @@ func (t *EmailTemplate) Template() *mailtmpl.Template {
 // fetchAllEmailTemplates fetches all valid email templates of the project from
 // a config service. Returned EmailTemplate entities do not have ProjectKey set.
 func fetchAllEmailTemplates(c context.Context, configService configInterface.Interface, projectID string) (map[string]*EmailTemplate, error) {
-	configSet := configInterface.ProjectSet(projectID)
+	configSet, err := configInterface.ProjectSet(projectID)
+	if err != nil {
+		return nil, err
+	}
 	files, err := configService.ListFiles(c, configSet)
 	if err != nil {
 		return nil, err

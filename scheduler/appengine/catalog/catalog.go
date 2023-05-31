@@ -204,7 +204,10 @@ func (cat *catalog) GetAllProjects(c context.Context) ([]string, error) {
 func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Definition, error) {
 	c = logging.SetField(c, "project", projectID)
 
-	configSet := config.ProjectSet(projectID)
+	configSet, err := config.ProjectSet(projectID)
+	if err != nil {
+		return nil, err
+	}
 	var (
 		cfg  messages.ProjectConfig
 		meta config.Meta

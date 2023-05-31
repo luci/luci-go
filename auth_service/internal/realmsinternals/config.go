@@ -202,5 +202,9 @@ func (r *realmsMap) cfgSet(project string) (string, config.Set, error) {
 		return realms.InternalProject, config.Set(project), nil
 	}
 
-	return project, config.ProjectSet(project), nil
+	ps, err := config.ProjectSet(project)
+	if err != nil {
+		return "", "", err
+	}
+	return project, ps, nil
 }

@@ -156,7 +156,7 @@ func (e *Environment) JoinServices() {
 // callback with its contents, and writes the result back to config.
 func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Config)) {
 	var cfg svcconfig.Config
-	e.modTextProtobuf(c, config.ServiceSet(e.ServiceID), "services.cfg", &cfg, func() {
+	e.modTextProtobuf(c, config.MustServiceSet(e.ServiceID), "services.cfg", &cfg, func() {
 		fn(&cfg)
 	})
 }
@@ -165,7 +165,7 @@ func (e *Environment) ModServiceConfig(c context.Context, fn func(*svcconfig.Con
 // invokes the callback with its contents, and writes the result back to config.
 func (e *Environment) ModProjectConfig(c context.Context, project string, fn func(*svcconfig.ProjectConfig)) {
 	var pcfg svcconfig.ProjectConfig
-	e.modTextProtobuf(c, config.ProjectSet(project), e.ServiceID+".cfg", &pcfg, func() {
+	e.modTextProtobuf(c, config.MustProjectSet(project), e.ServiceID+".cfg", &pcfg, func() {
 		fn(&pcfg)
 	})
 }
@@ -244,7 +244,7 @@ func Install() (context.Context, *Environment) {
 	// Add a project without a LogDog project config.
 	e.addConfigEntry("projects/proj-unconfigured", "not-logdog.cfg", "junk")
 	// Add a project with malformed configs.
-	e.addConfigEntry(config.ProjectSet("proj-malformed"), e.ServiceID+".cfg", "!!! not a text protobuf !!!")
+	e.addConfigEntry(config.MustProjectSet("proj-malformed"), e.ServiceID+".cfg", "!!! not a text protobuf !!!")
 
 	// luci-config: Coordinator Defaults
 	e.ModServiceConfig(c, func(cfg *svcconfig.Config) {

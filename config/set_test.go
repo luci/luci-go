@@ -24,19 +24,31 @@ func TestConfigSet(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing config set utility methods`, t, func() {
-		So(ServiceSet("my-service"), ShouldEqual, "services/my-service")
-		So(ProjectSet("my-project"), ShouldEqual, "projects/my-project")
+		ss, err := ServiceSet("my-service")
+		So(err, ShouldBeNil)
+		So(ss, ShouldEqual, "services/my-service")
+		ps, err := ProjectSet("my-project")
+		So(err, ShouldBeNil)
+		So(ps, ShouldEqual, "projects/my-project")
 
-		s := Set("services/foo")
+		s := MustServiceSet("foo")
 		So(s.Service(), ShouldEqual, "foo")
 		So(s.Project(), ShouldEqual, "")
 
-		s = Set("projects/foo")
+		s = MustProjectSet("foo")
 		So(s.Service(), ShouldEqual, "")
 		So(s.Project(), ShouldEqual, "foo")
 
 		s = Set("malformed/set/abc/def")
 		So(s.Service(), ShouldEqual, "")
 		So(s.Project(), ShouldEqual, "")
+
+		s, err = ServiceSet("malformed/service/set/abc")
+		So(err, ShouldNotBeNil)
+		So(s, ShouldBeEmpty)
+
+		s, err = ServiceSet("malformed/project/set/abc")
+		So(err, ShouldNotBeNil)
+		So(s, ShouldBeEmpty)
 	})
 }

@@ -15,8 +15,17 @@
 package config
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 )
+
+// ServiceNamePattern is the regexp pattern string that matches valid service
+// name.
+const ServiceNamePattern = `[a-z0-9\-_]+`
+
+// serviceNameRegexp matches valid service name
+var serviceNameRegexp = regexp.MustCompile(fmt.Sprintf(`^%s$`, ServiceNamePattern))
 
 // Set is a name of a configuration set: a bunch of config files versioned and
 // stored as a single unit in a same repository.
@@ -30,10 +39,42 @@ import (
 type Set string
 
 // ServiceSet returns the name of a config set for the specified service.
-func ServiceSet(service string) Set { return Set("services/" + service) }
+//
+// Returns error if the service name doesn't match `ServiceNamePattern`.
+func ServiceSet(service string) (Set, error) {
+	if !serviceNameRegexp.MatchString(service) {
+		return "", fmt.Errorf("invalid service name %q, expected to match %q", service, ServiceNamePattern)
+	}
+	return Set("services/" + service), nil
+}
+
+// MustServiceSet is like `ServiceSet` but panic on invalid service name.
+func MustServiceSet(service string) Set {
+	cs, err := ServiceSet(service)
+	if err != nil {
+		panic(err)
+	}
+	return cs
+}
 
 // ProjectSet returns the config set for the specified project.
-func ProjectSet(project string) Set { return Set("projects/" + project) }
+//
+// Returns error if the project name is invalid. See `ValidateProjectName`.
+func ProjectSet(project string) (Set, error) {
+	if err := ValidateProjectName(project); err != nil {
+		return "", fmt.Errorf("invalid project name")
+	}
+	return Set("projects/" + project), nil
+}
+
+// MustProjectSet is like `ProjectSet` but panic on invalid project name.
+func MustProjectSet(project string) Set {
+	cs, err := ProjectSet(project)
+	if err != nil {
+		panic(err)
+	}
+	return cs
+}
 
 // Split splits a Set into its domain, target components.
 func (cs Set) Split() (domain, target string) {

@@ -74,7 +74,7 @@ func withProjectConfigs(ctx context.Context, p map[string]*svcconfig.ProjectConf
 	// Prep text config files in memory.
 	configs := make(map[cfglib.Set]cfgmem.Files, len(p))
 	for projectID, cfg := range p {
-		configs[cfglib.ProjectSet(projectID)] = cfgmem.Files{
+		configs[cfglib.MustProjectSet(projectID)] = cfgmem.Files{
 			"${appid}.cfg": proto.MarshalTextString(cfg),
 		}
 	}

@@ -152,7 +152,11 @@ func needsUpdate(ctx context.Context, project string) (bool, prjcfg.ProjectConfi
 	// NOTE: config metadata fetched here can't be used later to fetch actual
 	// contents (see https://crrev.com/c/3050832), so it is only used
 	// to check if fetching config contents is even necessary.
-	switch err := cfgclient.Get(ctx, config.ProjectSet(project), ConfigFileName, nil, &meta); {
+	ps, err := config.ProjectSet(project)
+	if err != nil {
+		return false, pc, err
+	}
+	switch err := cfgclient.Get(ctx, ps, ConfigFileName, nil, &meta); {
 	case err != nil:
 		return false, pc, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
 	case meta.ContentHash == "":
@@ -185,9 +189,13 @@ func needsUpdate(ctx context.Context, project string) (bool, prjcfg.ProjectConfi
 func fetchCfg(ctx context.Context, project string) (*cfgpb.Config, *config.Meta, error) {
 	meta := &config.Meta{}
 	ret := &cfgpb.Config{}
-	err := cfgclient.Get(
+	ps, err := config.ProjectSet(project)
+	if err != nil {
+		return nil, nil, err
+	}
+	err = cfgclient.Get(
 		ctx,
-		config.ProjectSet(project),
+		ps,
 		ConfigFileName,
 		cfgclient.ProtoText(ret),
 		meta,
