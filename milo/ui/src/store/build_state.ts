@@ -395,7 +395,7 @@ export const BuildState = types
     const clusteredRootSteps = keepAliveComputed(self, () => clusterBuildSteps(self.rootSteps));
     return {
       get clusteredRootSteps() {
-        return clusteredRootSteps.get()!;
+        return clusteredRootSteps.get();
       },
     };
   })

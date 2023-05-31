@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { computed, IComputedValueOptions, observable } from 'mobx';
+import { computed, IComputedValue, IComputedValueOptions, observable } from 'mobx';
 import { addDisposer, flow, IAnyStateTreeNode, isAlive } from 'mobx-state-tree';
 import { IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
 
@@ -40,32 +40,39 @@ export function unwrapObservable<T>(observable: IPromiseBasedObservable<T>, defa
  * ensures the computed value can be properly GCed when `target` is destroyed.
  */
 export function keepAliveComputed<T>(
-  target: IAnyStateTreeNode,
-  func: () => T,
-  opts: IComputedValueOptions<T | null> = {}
-) {
+    target: IAnyStateTreeNode,
+    func: () => T,
+    opts: IComputedValueOptions<T> = {},
+): IComputedValue<T> {
   const isAlive = observable.box(true);
   const ret = computed(
-    () => {
-      // Ensure the computed value doesn't observe anything else other than
-      // `isAlive` when `target` is no longer alive.
-      if (!isAlive.get()) {
-        return null;
-      }
-      return func();
-    },
-    {
-      ...opts,
-      keepAlive: true,
-    }
+      () => {
+        // Ensure the computed value doesn't observe anything else other than
+        // `isAlive` when `target` is no longer alive.
+        if (!isAlive.get()) {
+          throw new Error('the computed value is accessed when the target node is no longer alive');
+        }
+        return func();
+      },
+      {
+        ...opts,
+        keepAlive: true,
+      },
   );
 
   addDisposer(target, () => {
     isAlive.set(false);
 
-    // Re-evaluate the computed value so it no longer have any external
-    // dependencies.
-    ret.get();
+    try {
+      // Re-evaluate the computed value so it no longer have any external
+      // dependencies.
+      ret.get();
+    } catch {
+      // Ignore the `computed value is accessed` error.
+      // The error is to prevent downstream from accidentally using the "dead"
+      // computed value. But it's ok to access it here to re-establish its
+      // dependencies.
+    }
   });
   return ret;
 }
@@ -78,8 +85,8 @@ export function keepAliveComputed<T>(
 // Use the same signature as `flow` from `mobx-state-tree`, which uses `any`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function aliveFlow<R, Args extends any[]>(
-  target: IAnyStateTreeNode,
-  generator: Parameters<typeof flow<R, Args>>[0]
+    target: IAnyStateTreeNode,
+    generator: Parameters<typeof flow<R, Args>>[0],
 ): ReturnType<typeof flow<R, Args>> {
   return flow(function* (...args) {
     const gen = generator(...args);

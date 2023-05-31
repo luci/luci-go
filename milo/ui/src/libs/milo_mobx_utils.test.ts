@@ -13,25 +13,32 @@
 // limitations under the License.
 
 import { afterEach, beforeEach, expect, jest } from '@jest/globals';
-import { destroy, getSnapshot, Instance, types } from 'mobx-state-tree';
+import {
+  destroy,
+  getSnapshot,
+  Instance,
+  protect,
+  types,
+  unprotect,
+} from 'mobx-state-tree';
 import { fromPromise, FULFILLED, PENDING } from 'mobx-utils';
 
-import { aliveFlow } from './milo_mobx_utils';
+import { aliveFlow, keepAliveComputed } from './milo_mobx_utils';
 import { deferred } from './utils';
 
-const TestStore = types
-  .model('TestStore', {
-    prop: 0,
-  })
-  .actions((self) => ({
-    aliveAction: aliveFlow(self, function* (promises: Promise<number>[]) {
-      for (const promise of promises) {
-        self.prop = yield promise;
-      }
-    }),
-  }));
-
 describe('aliveFlow', () => {
+  const TestStore = types
+      .model('TestStore', {
+        prop: 0,
+      })
+      .actions((self) => ({
+        aliveAction: aliveFlow(self, function* (promises: Promise<number>[]) {
+          for (const promise of promises) {
+            self.prop = yield promise;
+          }
+        }),
+      }));
+
   let store: Instance<typeof TestStore>;
   beforeEach(() => {
     jest.useFakeTimers();
@@ -48,7 +55,9 @@ describe('aliveFlow', () => {
     const [promise2, resolve2] = deferred<number>();
     const [promise3, resolve3] = deferred<number>();
 
-    const actionPromise = fromPromise(store.aliveAction([promise1, promise2, promise3]));
+    const actionPromise = fromPromise(
+        store.aliveAction([promise1, promise2, promise3]),
+    );
 
     expect(store.prop).toStrictEqual(0);
 
@@ -73,7 +82,9 @@ describe('aliveFlow', () => {
     const [promise2, resolve2] = deferred<number>();
     const [promise3, resolve3] = deferred<number>();
 
-    const actionPromise = fromPromise(store.aliveAction([promise1, promise2, promise3]));
+    const actionPromise = fromPromise(
+        store.aliveAction([promise1, promise2, promise3]),
+    );
 
     expect(store.prop).toStrictEqual(0);
 
@@ -95,5 +106,86 @@ describe('aliveFlow', () => {
 
     await jest.advanceTimersByTimeAsync(100);
     expect(actionPromise.state).toStrictEqual(PENDING);
+  });
+});
+
+describe('keepAliveComputed', () => {
+  const TestStore = types
+      .model('TestStore', {
+        prop: 0,
+      })
+      .volatile(() => ({
+        compute: (_v: number): number => {
+          // The function should be mocked be jest.
+          throw new Error('unreachable');
+        },
+      }))
+      .views((self) => {
+        const computedValue = keepAliveComputed(self, () =>
+          self.compute(self.prop),
+        );
+        return {
+          get computedValue() {
+            return computedValue.get();
+          },
+        };
+      })
+      .actions((self) => ({
+        setProp(newVal: number) {
+          self.prop = newVal;
+        },
+      }));
+
+  let store: Instance<typeof TestStore>;
+  let computeSpy: jest.SpiedFunction<(v: number) => number>;
+  beforeEach(() => {
+    jest.useFakeTimers();
+    store = TestStore.create({});
+    unprotect(store);
+    computeSpy = jest.spyOn(store, 'compute').mockImplementation((v) => v);
+    protect(store);
+  });
+
+  afterEach(() => {
+    unprotect(store);
+    jest.restoreAllMocks();
+    destroy(store);
+    jest.useRealTimers();
+  });
+
+  it('e2e', async () => {
+    expect(computeSpy).toHaveBeenCalledTimes(0);
+
+    // Access the computed value.
+    expect(store.computedValue).toStrictEqual(0);
+    expect(computeSpy).toHaveBeenCalledTimes(1);
+
+    // Accessing the computed value again does not cause it to be re-computed.
+    expect(store.computedValue).toStrictEqual(0);
+    expect(computeSpy).toHaveBeenCalledTimes(1);
+
+    // Updating the dependency does not cause it to be re-computed.
+    store.setProp(1);
+    await jest.runAllTimersAsync();
+    expect(computeSpy).toHaveBeenCalledTimes(1);
+
+    // Accessing the computed value again after the dependency changed causes it
+    // to be re-computed.
+    expect(store.computedValue).toStrictEqual(1);
+    expect(computeSpy).toHaveBeenCalledTimes(2);
+
+    // We are going to destroy the store. Need to restore mock first to avoid
+    // trigger mobx "trying to read or write an object that is no longer part
+    // of a state tree" error.
+    unprotect(store);
+    computeSpy.mockRestore();
+    protect(store);
+
+    // Accessing the computed value after the store is destroyed throws an
+    // error.
+    destroy(store);
+    expect(() => store.computedValue).toThrowErrorMatchingInlineSnapshot(
+        `"the computed value is accessed when the target node is no longer alive"`,
+    );
   });
 });
