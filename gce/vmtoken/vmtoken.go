@@ -235,25 +235,24 @@ func Matches(c context.Context, host, zone, proj string) bool {
 func Middleware(c *router.Context, next router.Handler) {
 	if tok := c.Request.Header.Get(Header); tok != "" {
 		// TODO(smut): Support requests to other modules, versions.
-		aud := "https://" + info.DefaultVersionHostname(c.Context)
-		logging.Debugf(c.Context, "expecting VM token for: %s", aud)
-		switch p, err := Verify(c.Context, tok); {
+		aud := "https://" + info.DefaultVersionHostname(c.Request.Context())
+		logging.Debugf(c.Request.Context(), "expecting VM token for: %s", aud)
+		switch p, err := Verify(c.Request.Context(), tok); {
 		case transient.Tag.In(err):
-			logging.WithError(err).Errorf(c.Context, "transient error verifying VM token")
+			logging.WithError(err).Errorf(c.Request.Context(), "transient error verifying VM token")
 			http.Error(c.Writer, "error: failed to verify VM token", http.StatusInternalServerError)
 			return
 		case err != nil:
-			logging.WithError(err).Errorf(c.Context, "invalid VM token")
+			logging.WithError(err).Errorf(c.Request.Context(), "invalid VM token")
 			http.Error(c.Writer, "error: invalid VM token", http.StatusUnauthorized)
 			return
 		case p.Audience != aud:
-			logging.Errorf(c.Context, "received VM token intended for: %s", p.Audience)
+			logging.Errorf(c.Request.Context(), "received VM token intended for: %s", p.Audience)
 			http.Error(c.Writer, "error: VM token audience mismatch", http.StatusUnauthorized)
 			return
 		default:
-			logging.Debugf(c.Context, "received VM token from %q in %q in %q for: %s", p.Instance, p.Zone, p.Project, p.Audience)
-			c.Context = withPayload(c.Context, p)
-			c.Request = c.Request.WithContext(c.Context)
+			logging.Debugf(c.Request.Context(), "received VM token from %q in %q in %q for: %s", p.Instance, p.Zone, p.Project, p.Audience)
+			c.Request = c.Request.WithContext(withPayload(c.Request.Context(), p))
 		}
 	}
 	next(c)

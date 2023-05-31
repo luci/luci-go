@@ -115,13 +115,12 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	dsp := &tq.Dispatcher{}
 	registerTasks(dsp)
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
-		var cancel context.CancelFunc
-		c.Context, cancel = context.WithTimeout(c.Context, 30*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 		defer cancel()
-		c.Context = withDispatcher(c.Context, dsp)
-		c.Context = withCompute(c.Context, newCompute(c.Context))
-		c.Context = withSwarming(c.Context, newSwarming(c.Context))
-		c.Request = c.Request.WithContext(c.Context)
+		ctx = withDispatcher(ctx, dsp)
+		ctx = withCompute(ctx, newCompute(ctx))
+		ctx = withSwarming(ctx, newSwarming(ctx))
+		c.Request = c.Request.WithContext(ctx)
 		next(c)
 	})
 	dsp.InstallRoutes(r, mw)

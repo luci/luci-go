@@ -38,8 +38,8 @@ func newHTTPHandler(f func(c context.Context) error) router.Handler {
 	return func(c *router.Context) {
 		c.Writer.Header().Set("Content-Type", "text/plain")
 
-		if err := f(c.Context); err != nil {
-			errors.Log(c.Context, err)
+		if err := f(c.Request.Context()); err != nil {
+			errors.Log(c.Request.Context(), err)
 			c.Writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}

@@ -312,8 +312,8 @@ func doImport(c context.Context) error {
 func importHandler(c *router.Context) {
 	c.Writer.Header().Set("Content-Type", "text/plain")
 
-	if err := doImport(c.Context); err != nil {
-		errors.Log(c.Context, err)
+	if err := doImport(c.Request.Context()); err != nil {
+		errors.Log(c.Request.Context(), err)
 		c.Writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -325,9 +325,8 @@ func importHandler(c *router.Context) {
 func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
 		// Install the services.
-		c.Context = withProjServer(c.Context, &rpc.Projects{})
-		c.Context = withVMsServer(c.Context, &rpc.Config{})
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(withProjServer(c.Request.Context(), &rpc.Projects{}))
+		c.Request = c.Request.WithContext(withVMsServer(c.Request.Context(), &rpc.Config{}))
 		next(c)
 	})
 	r.GET("/internal/cron/import-config", mw, importHandler)
