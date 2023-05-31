@@ -87,15 +87,38 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 
 		Convey("invalid test id", func() {
 			ctx = adminContext(ctx)
-			req := &pb.GetTestVariantBranchRequest{
-				Name: "projects/project/tests/this//is/a%test/variants/0123456789abcdef/refs/7265665f68617368",
-			}
-			res, err := server.Get(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(res, ShouldBeNil)
+			Convey("bad structure", func() {
+				ctx = adminContext(ctx)
+				req := &pb.GetTestVariantBranchRequest{
+					Name: "projects/project/tests/a/variants/0123456789abcdef/refs/7265665f68617368/bad/subpath",
+				}
+				res, err := server.Get(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldErrLike, "name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}")
+				So(res, ShouldBeNil)
+			})
+			Convey("bad URL escaping", func() {
+				req := &pb.GetTestVariantBranchRequest{
+					Name: "projects/project/tests/abcdef%test/variants/0123456789abcdef/refs/7265665f68617368",
+				}
+				res, err := server.Get(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldErrLike, "malformed test id: invalid URL escape \"%te\"")
+				So(res, ShouldBeNil)
+			})
+			Convey("bad value", func() {
+				req := &pb.GetTestVariantBranchRequest{
+					Name: "projects/project/tests/\u0001atest/variants/0123456789abcdef/refs/7265665f68617368",
+				}
+				res, err := server.Get(ctx, req)
+				So(err, ShouldNotBeNil)
+				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+				So(err, ShouldErrLike, `test id "\x01atest": does not match ^[[:print:]]{1,512}$`)
+				So(res, ShouldBeNil)
+			})
 		})
-
 		Convey("ok", func() {
 			ctx = adminContext(ctx)
 			// Insert test variant branch to Spanner.
@@ -184,7 +207,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 
 			hexStr := "7265665f68617368" // hex string of "ref_hash".
 			req := &pb.GetTestVariantBranchRequest{
-				Name: "projects/project/tests/this//is/a/test/variants/0123456789abcdef/refs/7265665f68617368",
+				Name: "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 			}
 			res, err := server.Get(ctx, req)
 			So(err, ShouldBeNil)
@@ -196,6 +219,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			diff := cmp.Diff(res, &pb.TestVariantBranch{
+				Name:              "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 				Project:           "project",
 				TestId:            "this//is/a/test",
 				VariantHash:       "0123456789abcdef",

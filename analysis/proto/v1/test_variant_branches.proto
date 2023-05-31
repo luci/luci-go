@@ -52,25 +52,35 @@ message GetTestVariantBranchRequest {
 
 // Represents changepoint analysis for a particular (project, test, variant, ref).
 message TestVariantBranch {
+  // The name of the test variant branch.
+  // Of the form projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}
+  // where:
+  // PROJECT is the LUCI Project of the test variant branch analysis.
+  // URL_ESCAPED_TEST_ID is the test ID, escaped with
+  // https://golang.org/pkg/net/url/#PathEscape. See also https://aip.dev/122.
+  // VARIANT_HASH is the variant hash of the test variant analysis (16 lower-case-character hex string).
+  // REF_HASH is the identity of the branch of the analysis. It is a 16 lower-case-character hex string.
+  string name = 1;
+
   // The LUCI Project. E.g. "chromium".
-  string project = 1;
+  string project = 2;
 
   // The identity of the test.
-  string test_id = 2;
+  string test_id = 3;
 
   // Hash of the variant, as 16 lowercase hexadecimal characters.
   // E.g. "96c68dc946ab4068".
-  string variant_hash = 3;
+  string variant_hash = 4;
 
   // Hash of the source branch, as 16 lowercase hexadecimal characters.
-  string ref_hash = 4;
+  string ref_hash = 5;
 
   // Describes one specific way of running the test, e.g. a specific bucket,
   // builder and a test suite.
-  luci.analysis.v1.Variant variant = 5;
+  luci.analysis.v1.Variant variant = 6;
 
   // The branch in source control.
-  luci.analysis.v1.SourceRef ref = 6;
+  luci.analysis.v1.SourceRef ref = 7;
 
   // The finalized segments in the output buffer.
   //
@@ -82,7 +92,7 @@ message TestVariantBranch {
   // If any tool needs to read this data, a wire proto (that is different
   // from the storage proto) needs to be defined and this field replaced
   // by a field of that wire type.
-  google.protobuf.Any finalized_segments = 7;
+  google.protobuf.Any finalized_segments = 8;
 
   // The finalizing segment in the output buffer.
   //
@@ -94,13 +104,13 @@ message TestVariantBranch {
   // If any tool needs to read this data, a wire proto (that is different
   // from the storage proto) needs to be defined and this field replaced
   // by a field of that wire type.
-  google.protobuf.Any finalizing_segment = 8;
+  google.protobuf.Any finalizing_segment = 9;
 
   // The hot input buffer.
-  InputBuffer hot_buffer = 9;
+  InputBuffer hot_buffer = 10;
 
   // The cold input buffer.
-  InputBuffer cold_buffer = 10;
+  InputBuffer cold_buffer = 11;
 
   // Additionally we may want to return the segmentize input buffer as well
   // (maybe to show in the UI), but we will do it when we need it.

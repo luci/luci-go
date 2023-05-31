@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/resultdb/pbutil"
 )
 
 // Regular expressions for matching resource names used in APIs.
@@ -48,7 +49,7 @@ var (
 	ProjectConfigNameRe                 = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/config$`)
 	ReclusteringProgressNameRe          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/reclusteringProgress$`)
 	RuleNameRe                          = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/rules/(` + rules.RuleIDRePattern + `)$`)
-	TestVariantBranchNameRe             = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/tests/(` + config.TestIDRePattern + `)/variants/(` + config.VariantHashRePattern + `)/refs/(` + config.RefHashRePattern + `)$`)
+	TestVariantBranchNameRe             = regexp.MustCompile(`^projects/(` + config.ProjectRePattern + `)/tests/([^/]+)/variants/(` + config.VariantHashRePattern + `)/refs/(` + config.RefHashRePattern + `)$`)
 )
 
 // parseMetricName parses a metric resource name into a metric ID.
@@ -152,19 +153,31 @@ func parseClusterExoneratedTestVariantsName(name string) (project string, cluste
 
 // parseTestVariantBranchName parses the resource name into project, test_id,
 // variant hash and ref hash.
-func parseTestVariantBranchName(name string) (project string, testID string, variantHash string, refHash string, err error) {
+func parseTestVariantBranchName(name string) (project, testID, variantHash, refHash string, err error) {
 	matches := TestVariantBranchNameRe.FindStringSubmatch(name)
 	if matches == nil || len(matches) != 5 {
-		return "", "", "", "", errors.Reason("name must be of format projects/{PROJECT}/tests/{TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}").Err()
+		return "", "", "", "", errors.Reason("name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}").Err()
 	}
 	// Unescape test_id.
 	testID, err = url.PathUnescape(matches[2])
 	if err != nil {
-		return "", "", "", "", errors.Annotate(err, "malformed test id %q", testID).Err()
+		return "", "", "", "", errors.Annotate(err, "malformed test id").Err()
+	}
+
+	if err := pbutil.ValidateTestID(testID); err != nil {
+		return "", "", "", "", errors.Annotate(err, "test id %q", testID).Err()
 	}
 	return matches[1], testID, matches[3], matches[4], nil
 }
 
+// ruleName constructs a rule resource name from its components.
 func ruleName(project, ruleID string) string {
 	return fmt.Sprintf("projects/%s/rules/%s", project, ruleID)
+}
+
+// testVariantBranchName constructs a test variant branch resource name
+// from its components.
+func testVariantBranchName(project, testID, variantHash, refHash string) string {
+	encodedTestID := url.PathEscape(testID)
+	return fmt.Sprintf("projects/%s/tests/%s/variants/%s/refs/%s", project, encodedTestID, variantHash, refHash)
 }
