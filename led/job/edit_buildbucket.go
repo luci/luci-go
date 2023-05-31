@@ -431,7 +431,12 @@ func (bbe *buildbucketEditor) SwarmingHostname(host string) {
 			return errors.New("empty SwarmingHostname")
 		}
 
-		bbe.bb.BbagentArgs.Build.Infra.Swarming.Hostname = host
+		infra := bbe.bb.BbagentArgs.Build.Infra
+		if infra.Swarming != nil {
+			infra.Swarming.Hostname = host
+		} else {
+			return errors.New("the build does not run on swarming directly.")
+		}
 		return
 	})
 }
