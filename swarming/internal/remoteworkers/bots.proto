@@ -227,6 +227,10 @@ enum BotStatus {
 
   // The bot is initializing and is not ready to accept leases.
   INITIALIZING = 5;
+
+  // The bot is in maintenance status. In this state, the bot will continue to
+  // be treated as online, but will not accept new leases.
+  MAINTENANCE = 6;
 }
 
 // The state of the lease. All leases start in the PENDING state. A bot can

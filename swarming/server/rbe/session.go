@@ -193,6 +193,7 @@ type UpdateBotSessionRequest struct {
 	//   * HOST_REBOOTING
 	//   * BOT_TERMINATING
 	//   * INITIALIZING
+	//   * MAINTENANCE
 	Status string `json:"status"`
 
 	// Nonblocking is true if the bot doesn't want to block waiting for new
@@ -357,19 +358,19 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	// terminated. The only time it replies with BOT_TERMINATING is when the
 	// session was *already* dead (either closed by the bot previously or timed
 	// out by the RBE server).
-	sessionHealthy := botStatus == remoteworkers.BotStatus_OK
+	acceptingLeases := botStatus == remoteworkers.BotStatus_OK
 	switch session.Status {
 	case remoteworkers.BotStatus_OK:
 		// Do nothing. This is fine. Trust `botStatus` was applied.
 	case remoteworkers.BotStatus_BOT_TERMINATING:
 		// The session was already closed previously.
-		sessionHealthy = false
+		acceptingLeases = false
 	default: // i.e. all other "unhealthy" or "not ready" statuses
 		logging.Errorf(ctx, "Unexpected status change from RBE: %s => %s", botStatus, session.Status)
-		sessionHealthy = false
+		acceptingLeases = false
 	}
 
-	if !sessionHealthy {
+	if !acceptingLeases {
 		// RBE should not assign leases to a terminating or unhealthy bot.
 		for _, lease := range session.Leases {
 			logging.Errorf(ctx, "Unexpected RBE lease: %s", lease)
