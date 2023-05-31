@@ -39,7 +39,7 @@ func invocationPage(c *router.Context) {
 		return
 	}
 
-	inv, err := config(c.Context).Engine.GetInvocation(c.Context, job, invID)
+	inv, err := config(c.Request.Context()).Engine.GetInvocation(c.Request.Context(), job, invID)
 	switch {
 	case err == engine.ErrNoSuchInvocation:
 		uiErrNoInvocation.render(c)
@@ -48,8 +48,8 @@ func invocationPage(c *router.Context) {
 		panic(err)
 	}
 
-	jobUI := makeJob(c.Context, job, nil)
-	templates.MustRender(c.Context, c.Writer, "pages/invocation.html", map[string]any{
+	jobUI := makeJob(c.Request.Context(), job, nil)
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/invocation.html", map[string]any{
 		"Job": jobUI,
 		"Inv": makeInvocation(jobUI, inv),
 	})
@@ -60,7 +60,7 @@ func invocationPage(c *router.Context) {
 
 func abortInvocationAction(c *router.Context) {
 	handleInvAction(c, func(job *engine.Job, invID int64) error {
-		return config(c.Context).Engine.AbortInvocation(c.Context, job, invID)
+		return config(c.Request.Context()).Engine.AbortInvocation(c.Request.Context(), job, invID)
 	})
 }
 

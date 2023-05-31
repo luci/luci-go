@@ -75,7 +75,7 @@ func (e *presentableError) render(c *router.Context) {
 	}
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	c.Writer.WriteHeader(e.Status)
-	templates.MustRender(c.Context, c.Writer, "pages/error.html", map[string]any{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/error.html", map[string]any{
 		"Breadcrumps":    breadcrumps,
 		"LastCrumbIdx":   len(breadcrumps) - 1,
 		"Message":        e.Message,

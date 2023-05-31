@@ -25,7 +25,7 @@ import (
 
 func projectPage(c *router.Context) {
 	projectID := c.Params.ByName("ProjectID")
-	jobs, err := config(c.Context).Engine.GetVisibleProjectJobs(c.Context, projectID)
+	jobs, err := config(c.Request.Context()).Engine.GetVisibleProjectJobs(c.Request.Context(), projectID)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +51,7 @@ func projectPage(c *router.Context) {
 	}
 
 	// Filter jobs used `check`.
-	sorted := sortJobs(c.Context, jobs)
+	sorted := sortJobs(c.Request.Context(), jobs)
 	filtered := sorted[:0]
 	for _, job := range sorted {
 		if check(job) {
@@ -59,7 +59,7 @@ func projectPage(c *router.Context) {
 		}
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/project.html", map[string]any{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/project.html", map[string]any{
 		"ProjectID":    projectID,
 		"ProjectEmpty": len(sorted) == 0,
 		"Filter":       filter,

@@ -39,7 +39,7 @@ import (
 )
 
 func jobPage(ctx *router.Context) {
-	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
+	c, w, r, p := ctx.Request.Context(), ctx.Writer, ctx.Request, ctx.Params
 	e := config(c).Engine
 
 	projectID := p.ByName("ProjectID")
@@ -189,7 +189,7 @@ var errCannotTriggerPausedJob = errors.New("cannot trigger paused job")
 
 func triggerJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {
-		ctx := c.Context
+		ctx := c.Request.Context()
 		eng := config(ctx).Engine
 
 		// Paused jobs just silently ignore triggers. Warn the user.
@@ -229,20 +229,20 @@ func triggerJobAction(c *router.Context) {
 func pauseJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {
 		reason := c.Request.PostForm.Get("reason")
-		return config(c.Context).Engine.PauseJob(c.Context, job, reason)
+		return config(c.Request.Context()).Engine.PauseJob(c.Request.Context(), job, reason)
 	})
 }
 
 func resumeJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {
 		reason := c.Request.PostForm.Get("reason") // note: currently unset
-		return config(c.Context).Engine.ResumeJob(c.Context, job, reason)
+		return config(c.Request.Context()).Engine.ResumeJob(c.Request.Context(), job, reason)
 	})
 }
 
 func abortJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {
-		return config(c.Context).Engine.AbortJob(c.Context, job)
+		return config(c.Request.Context()).Engine.AbortJob(c.Request.Context(), job)
 	})
 }
 

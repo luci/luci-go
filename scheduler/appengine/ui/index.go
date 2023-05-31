@@ -24,7 +24,7 @@ import (
 )
 
 func indexPage(c *router.Context) {
-	jobs, err := config(c.Context).Engine.GetVisibleJobs(c.Context)
+	jobs, err := config(c.Request.Context()).Engine.GetVisibleJobs(c.Request.Context())
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +38,7 @@ func indexPage(c *router.Context) {
 		Waiting   sortedJobs
 	}
 	var byProj []*projectAndJobs
-	for _, job := range sortJobs(c.Context, jobs) {
+	for _, job := range sortJobs(c.Request.Context(), jobs) {
 		if len(byProj) == 0 || byProj[len(byProj)-1].ProjectID != job.ProjectID {
 			byProj = append(byProj, &projectAndJobs{ProjectID: job.ProjectID})
 		}
@@ -57,7 +57,7 @@ func indexPage(c *router.Context) {
 		}
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]any{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/index.html", map[string]any{
 		"Projects": byProj,
 	})
 }

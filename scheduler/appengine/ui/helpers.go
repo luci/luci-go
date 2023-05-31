@@ -25,7 +25,7 @@ import (
 // Panics on unexpected errors, so panic catcher middleware can write HTTP
 // Internal Server Error page.
 func jobFromEngine(c *router.Context, projectID, jobName string) *engine.Job {
-	job, err := config(c.Context).Engine.GetVisibleJob(c.Context, projectID+"/"+jobName)
+	job, err := config(c.Request.Context()).Engine.GetVisibleJob(c.Request.Context(), projectID+"/"+jobName)
 	switch {
 	case err == engine.ErrNoSuchJob:
 		uiErrNoJobOrNoPerm.render(c)

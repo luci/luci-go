@@ -89,7 +89,7 @@ type requestContext router.Context
 // fail writes error message to the log and the response and sets status code.
 func (c *requestContext) fail(code int, msg string, args ...any) {
 	body := fmt.Sprintf(msg, args...)
-	logging.Errorf(c.Context, "HTTP %d: %s", code, body)
+	logging.Errorf(c.Request.Context(), "HTTP %d: %s", code, body)
 	http.Error(c.Writer, body, code)
 }
 
@@ -159,7 +159,7 @@ func main() {
 	// Do global init before handling requests.
 	base := standard.Base().Extend(
 		func(c *router.Context, next router.Handler) {
-			globalInit.Do(func() { initializeGlobalState(c.Context) })
+			globalInit.Do(func() { initializeGlobalState(c.Request.Context()) })
 			next(c)
 		},
 	)
@@ -219,7 +219,7 @@ func pubsubPushHandler(c *router.Context) {
 		rc.fail(500, "Failed to read the request: %s", err)
 		return
 	}
-	if err = globalEngine.ProcessPubSubPush(rc.Context, body, rc.Request.URL.Query()); err != nil {
+	if err = globalEngine.ProcessPubSubPush(rc.Request.Context(), body, rc.Request.URL.Query()); err != nil {
 		rc.err(err, "Failed to process incoming PubSub push")
 		return
 	}
@@ -235,7 +235,7 @@ func pubsubPullHandler(c *router.Context) {
 		return
 	}
 	err := globalEngine.PullPubSubOnDevServer(
-		rc.Context, rc.Params.ByName("ManagerName"), rc.Params.ByName("Publisher"))
+		rc.Request.Context(), rc.Params.ByName("ManagerName"), rc.Params.ByName("Publisher"))
 	if err != nil {
 		rc.err(err, "Failed to pull PubSub messages")
 	} else {
@@ -250,7 +250,7 @@ func readConfigCron(c *router.Context) {
 	projectsToVisit := map[string]bool{}
 
 	// Visit all projects in the catalog.
-	ctx, cancel := context.WithTimeout(rc.Context, 150*time.Second)
+	ctx, cancel := context.WithTimeout(rc.Request.Context(), 150*time.Second)
 	defer cancel()
 	projects, err := globalCatalog.GetAllProjects(ctx)
 	if err != nil {
@@ -263,7 +263,7 @@ func readConfigCron(c *router.Context) {
 
 	// Also visit all registered projects that do not show up in the catalog
 	// listing anymore. It will unregister all jobs belonging to them.
-	existing, err := globalEngine.GetAllProjects(rc.Context)
+	existing, err := globalEngine.GetAllProjects(rc.Request.Context())
 	if err != nil {
 		rc.err(err, "Failed to grab a list of project IDs from datastore")
 		return
@@ -280,7 +280,7 @@ func readConfigCron(c *router.Context) {
 			Payload: &internal.ReadProjectConfigTask{ProjectId: projectID},
 		})
 	}
-	if err = globalDispatcher.AddTask(rc.Context, tasks...); err != nil {
+	if err = globalDispatcher.AddTask(rc.Request.Context(), tasks...); err != nil {
 		rc.err(err, "Failed to add tasks to task queue")
 	} else {
 		rc.ok()
