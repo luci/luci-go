@@ -61,7 +61,7 @@ const ClustersTable = ({
   // if there are none in the URL already.
   useEffect(() => {
     if (!selectedInterval) {
-      updateIntervalParam(TIME_INTERVAL_OPTIONS[0]);
+      updateIntervalParam(TIME_INTERVAL_OPTIONS[0], true);
     }
   }, [selectedInterval, updateIntervalParam]);
 

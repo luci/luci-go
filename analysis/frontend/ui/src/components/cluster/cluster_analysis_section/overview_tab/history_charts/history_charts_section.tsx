@@ -51,14 +51,14 @@ export const HistoryChartsSection = () => {
   // Set annotations off by default.
   useEffect(() => {
     if (isAnnotated === undefined) {
-      updateAnnotatedParam(false);
+      updateAnnotatedParam(false, true);
     }
   }, [isAnnotated, updateAnnotatedParam]);
 
   // Set the default day range if there isn't one in the URL already.
   useEffect(() => {
     if (!selectedHistoryTimeRange) {
-      updateHistoryTimeRangeParam(HISTORY_TIME_RANGE_OPTIONS[0]);
+      updateHistoryTimeRangeParam(HISTORY_TIME_RANGE_OPTIONS[0], true);
     }
   }, [selectedHistoryTimeRange, updateHistoryTimeRangeParam]);
 
