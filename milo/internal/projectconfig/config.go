@@ -66,6 +66,8 @@ type Project struct {
 	// ID format: <project>/<bucket>/<builder>
 	ExternalBuilderIDs []string
 
+	MetadataConfig []byte `gae:",noindex"`
+
 	// Tolerate unknown fields when fetching entities.
 	_ datastore.PropertyMap `gae:"-,extra"`
 }
@@ -321,7 +323,10 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 	project.LogoURL = miloCfg.LogoUrl
 	project.IgnoredBuilderIDs = miloCfg.IgnoredBuilderIds
 	project.BugURLTemplate = miloCfg.BugUrlTemplate
-
+	project.MetadataConfig, err = proto.Marshal(miloCfg.MetadataConfig)
+	if err != nil {
+		return nil, nil, nil, errors.Annotate(err, "marshal metadataConfig").Err()
+	}
 	// Populate project.ExternalBuilderIDs
 	for _, console := range miloCfg.Consoles {
 		for _, builder := range console.Builders {

@@ -281,6 +281,15 @@ consoles: {
 	realm: "foo:fake_realm"
 	manifest_name: "REVISION"
 }
+metadata_config: {
+	test_metadata_properties: {
+		schema: "package.name"
+		display_items: {
+			display_name: "owners"
+			path: "owners.email"
+		}
+	}
+}
 `
 
 var fooProjectCfg = `
@@ -335,6 +344,15 @@ consoles: {
 		name: "buildbucket/luci.foo.other/baz"
 		category: "main|other"
 		short_name: "o"
+	}
+}
+metadata_config: {
+	test_metadata_properties: {
+		schema: "package.name"
+		display_items: {
+			display_name: "owners"
+			path: "owners.email"
+		}
 	}
 }
 `

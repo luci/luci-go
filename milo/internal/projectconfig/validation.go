@@ -15,6 +15,7 @@
 package projectconfig
 
 import (
+	"regexp"
 	"strings"
 
 	"go.chromium.org/luci/common/api/gitiles"
@@ -26,6 +27,14 @@ import (
 )
 
 // Config validation rules go here.
+
+const maxLenPropertiesSchema = 256
+
+var (
+	propertiesSchemaRe = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$`)
+	displayNameRe      = regexp.MustCompile(`^[[:print:]]{1,64}$`)
+	displayItemPathRe  = regexp.MustCompile(`^([^.]+\.)*[^.]+$`)
+)
 
 func init() {
 	// Milo is only responsible for validating the config matching the instance's
@@ -73,6 +82,9 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			ctx.Errorf("invaid builder ID, the format must be <bucket>/<builder>")
 		}
 		ctx.Exit()
+	}
+	if proj.MetadataConfig != nil {
+		validateMetadataConfig(ctx, proj.MetadataConfig)
 	}
 
 	return nil
@@ -162,4 +174,39 @@ func validateExternalConsole(ctx *validation.Context, console *projectconfigpb.C
 	if console.HeaderId != "" || console.Header != nil {
 		ctx.Errorf("header found in external console")
 	}
+}
+
+func validateMetadataConfig(ctx *validation.Context, mc *projectconfigpb.MetadataConfig) {
+	ctx.Enter("metadata config")
+	defer ctx.Exit()
+	for i, testMetadataProperties := range mc.TestMetadataProperties {
+		ctx.Enter("test metadata properties #%d", i)
+		validateTestMetadataProperty(ctx, testMetadataProperties)
+		ctx.Exit()
+	}
+}
+
+func validateTestMetadataProperty(ctx *validation.Context, dr *projectconfigpb.DisplayRule) {
+	if len(dr.Schema) > maxLenPropertiesSchema {
+		ctx.Errorf("schema exceeds the maximum size of %d bytes", maxLenPropertiesSchema)
+	}
+	validateWithRe(ctx, propertiesSchemaRe, dr.Schema, "schema")
+	for i, displayItem := range dr.DisplayItems {
+		ctx.Enter("display item #%d", i)
+		validateWithRe(ctx, displayNameRe, displayItem.DisplayName, "displayName")
+		validateWithRe(ctx, displayItemPathRe, displayItem.Path, "path")
+		ctx.Exit()
+	}
+}
+
+func validateWithRe(ctx *validation.Context, re *regexp.Regexp, value string, name string) {
+	ctx.Enter("%s", name)
+	if value == "" {
+		ctx.Errorf("unspecified")
+		return
+	}
+	if !re.MatchString(value) {
+		ctx.Errorf("does not match %s", re)
+	}
+	ctx.Exit()
 }

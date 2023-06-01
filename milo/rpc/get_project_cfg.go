@@ -24,6 +24,7 @@ import (
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 )
 
 // GetProjectCfg implements milopb.MiloInternal service
@@ -48,8 +49,13 @@ func (s *MiloInternalService) GetProjectCfg(ctx context.Context, req *milopb.Get
 	if err != nil {
 		return nil, err
 	}
+	metadataConfig := &projectconfigpb.MetadataConfig{}
+	if err := proto.Unmarshal(project.MetadataConfig, metadataConfig); err != nil {
+		return nil, err
+	}
 	return &projectconfigpb.Project{
 		LogoUrl:        project.LogoURL,
 		BugUrlTemplate: project.BugURLTemplate,
+		MetadataConfig: metadataConfig,
 	}, nil
 }

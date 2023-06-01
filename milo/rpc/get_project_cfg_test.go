@@ -20,13 +20,16 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
+	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/internal/projectconfig"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestGetProjectCfg(t *testing.T) {
@@ -36,10 +39,24 @@ func TestGetProjectCfg(t *testing.T) {
 		datastore.GetTestable(c).Consistent(true)
 		srv := &MiloInternalService{}
 
-		err := datastore.Put(c, &projectconfig.Project{
-			ID:      "fake_project",
-			ACL:     projectconfig.ACL{Identities: []identity.Identity{"user_with_access"}},
-			LogoURL: "https://logo.com",
+		mc := &projectconfigpb.MetadataConfig{
+			TestMetadataProperties: []*projectconfigpb.DisplayRule{
+				{
+					Schema: "package.name",
+					DisplayItems: []*projectconfigpb.DisplayItem{{
+						DisplayName: "owner",
+						Path:        "owner.email",
+					}},
+				},
+			},
+		}
+		mcbytes, err := proto.Marshal(mc)
+		So(err, ShouldBeNil)
+		err = datastore.Put(c, &projectconfig.Project{
+			ID:             "fake_project",
+			ACL:            projectconfig.ACL{Identities: []identity.Identity{"user_with_access"}},
+			LogoURL:        "https://logo.com",
+			MetadataConfig: mcbytes,
 		})
 		So(err, ShouldBeNil)
 
@@ -63,6 +80,7 @@ func TestGetProjectCfg(t *testing.T) {
 			cfg, err := srv.GetProjectCfg(c, req)
 			So(err, ShouldBeNil)
 			So(cfg.GetLogoUrl(), ShouldEqual, "https://logo.com")
+			So(cfg.MetadataConfig, ShouldResembleProto, mc)
 		})
 
 		Convey(`reject invalid request`, func() {

@@ -92,6 +92,16 @@ func TestValidation(t *testing.T) {
 				So(ve.Errors[0], ShouldErrLike, "name must be non-empty")
 				So(ve.Errors[1], ShouldErrLike, "the string is not a valid legacy builder ID")
 			})
+			Convey("Load bad config due to metadata config", func() {
+				content := []byte(badCfg5)
+				validateProjectCfg(ctx, configSet, path, content)
+				err := ctx.Finalize()
+				ve, ok := err.(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 2)
+				So(ve.Errors[0], ShouldErrLike, "schema): does not match")
+				So(ve.Errors[1], ShouldErrLike, "path): unspecified")
+			})
 			Convey("Load a good config", func() {
 				content := []byte(fooCfg)
 				validateProjectCfg(ctx, configSet, path, content)
@@ -180,3 +190,14 @@ consoles: {
 	header_id: "main_header"
 }
 `
+
+var badCfg5 = `
+metadata_config: {
+	test_metadata_properties: {
+		schema: "package"
+		display_items: {
+			display_name: "owners"
+			path: ""
+		}
+	}
+}`

@@ -67,6 +67,9 @@ message Project {
   // disable HTML escaping. If the template is not a valid mustache template, or
   // doesn't satisfy the requirements above, the link is not displayed.
   string bug_url_template = 8;
+
+  // MetadataConfig is the display configuration for arbitrary metadata.
+  MetadataConfig metadata_config = 9;
 }
 
 // Link is a link to an internet resource, which will be rendered out as
@@ -284,4 +287,34 @@ message Builder {
   // The recommendation is to keep this name as short as reasonable,
   // as longer names take up more horizontal space.
   string short_name = 3;
+}
+
+// MetadataConfig specifies how to display arbitrary metadata.
+message MetadataConfig {
+  // TestMetadataProperties specify how data in luci.resultdb.v1.TestMetadata.Properties
+  // should be presented in the UI.
+  repeated DisplayRule test_metadata_properties = 1;
+}
+
+// DisplayRule selects fields from a JSON object to present,
+// given the schema of the JSON object.
+message DisplayRule {
+  // The schema of the JSON object, which the DisplayItems rules apply.
+  // Use the fully-qualified name of the source protocol buffer.
+  // eg. chromiumos.test.api.TestCaseMetadata
+  string schema = 1;
+
+  // A list of items to display.
+  repeated DisplayItem display_items = 2;
+}
+
+// DisplayItem is the information about the item to display.
+message DisplayItem {
+   // A user-friendly name to describe the item.
+   string display_name = 1;
+
+   // The path to the item from the root of the JSON object.
+   // Only support object walking to access nested objects.
+   // Eg. object: {a:{b:1}}, path: a.b, return: 1
+   string path = 2;
 }
