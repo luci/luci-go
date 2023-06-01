@@ -196,7 +196,7 @@ const RecommendedPrioritySummary = ({ metricValues, metrics, projectConfig }: Pr
 }
 
 function tidyPriorityLabels(priorities: PriorityThreshold[], prefix: string = "P"): PriorityThreshold[] {
-  const isOnlyDigits = new RegExp('^\d+$');
+  const isOnlyDigits = new RegExp("^\\d+$");
 
   let tidiedPriorities: PriorityThreshold[] = [];
   priorities.forEach(priorityThreshold => {

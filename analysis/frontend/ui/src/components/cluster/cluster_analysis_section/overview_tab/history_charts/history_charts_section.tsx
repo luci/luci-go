@@ -110,10 +110,10 @@ export const HistoryChartsSection = () => {
         <Grid container columns={90} data-testid="history-charts-container" >
           {selectedMetrics.map((m) =>
             <Grid item
+              key={m.metricId}
               xs={itemSize}
               data-testid={"chart-" + m.metricId} >
               <SingleMetricChart
-                key={m.metricId}
                 height={chartHeight}
                 color={getMetricColor(metrics.indexOf(m))}
                 isAnnotated={isAnnotated || false}

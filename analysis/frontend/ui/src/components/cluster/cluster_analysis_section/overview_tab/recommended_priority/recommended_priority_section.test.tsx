@@ -28,7 +28,8 @@ import {
 import { getMockMetricsList } from '@/testing_tools/mocks/metrics_mock';
 import {
   createMockProjectConfig,
-  createMockProjectConfigWithThresholds,
+  createMockProjectConfigWithBuganizerThresholds,
+  createMockProjectConfigWithMonorailThresholds,
   mockFetchProjectConfig,
 } from '@/testing_tools/mocks/projects_mock';
 
@@ -55,7 +56,7 @@ describe('test RecommendedPrioritySection component', () => {
   it('shows the recommended priority', async () => {
     mockGetCluster(project, algorithm, id, mockCluster);
 
-    const mockConfig = createMockProjectConfigWithThresholds();
+    const mockConfig = createMockProjectConfigWithBuganizerThresholds();
     mockFetchProjectConfig(mockConfig);
 
     renderWithRouterAndClient(
@@ -74,6 +75,28 @@ describe('test RecommendedPrioritySection component', () => {
     expect(screen.getByText('P0')).toBeInTheDocument();
     expect(screen.getByText('User Cls Failed Presubmit (1d) (value: 98) \u2265 20')).toBeInTheDocument();
     expect(screen.getByText('more info')).toBeInTheDocument();
+  });
+
+  it('adds the priority prefix for a numeric priority value', async () => {
+    mockGetCluster(project, algorithm, id, mockCluster);
+
+    const mockConfig = createMockProjectConfigWithMonorailThresholds();
+    mockFetchProjectConfig(mockConfig);
+
+    renderWithRouterAndClient(
+      <ClusterContextProvider
+        project={project}
+        clusterAlgorithm={algorithm}
+        clusterId={id} >
+        <OverviewTabContextProvider metrics={metrics} >
+          <RecommendedPrioritySection />
+        </OverviewTabContextProvider>
+      </ClusterContextProvider>
+    );
+
+    await screen.findAllByTestId('recommended-priority-summary');
+
+    expect(screen.getByText('P0')).toBeInTheDocument();
   });
 
   it('renders even without a recommended priority', async () => {

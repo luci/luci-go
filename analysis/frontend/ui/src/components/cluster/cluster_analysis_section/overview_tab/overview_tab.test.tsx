@@ -32,7 +32,7 @@ import {
 } from '@/testing_tools/mocks/cluster_mock';
 import { mockFetchMetrics } from '@/testing_tools/mocks/metrics_mock';
 import {
-  createMockProjectConfigWithThresholds,
+  createMockProjectConfigWithBuganizerThresholds,
   mockFetchProjectConfig,
 } from '@/testing_tools/mocks/projects_mock';
 
@@ -67,7 +67,7 @@ describe('Test OverviewTab component', () => {
     const mockCluster = getMockCluster(id, project, algorithm);
 
     mockGetCluster(project, algorithm, id, mockCluster);
-    const mockConfig = createMockProjectConfigWithThresholds();
+    const mockConfig = createMockProjectConfigWithBuganizerThresholds();
     mockFetchProjectConfig(mockConfig);
 
     const history: QueryClusterHistoryResponse = {

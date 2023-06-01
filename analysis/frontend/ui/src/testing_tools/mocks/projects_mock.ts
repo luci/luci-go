@@ -26,13 +26,11 @@ export const createMockProjectConfig = (): ProjectConfig => {
   };
 };
 
-export const createMockProjectConfigWithThresholds = (): ProjectConfig => {
+export const createMockProjectConfigWithBuganizerThresholds = (): ProjectConfig => {
   return {
     name: 'projects/chromium/config',
-    monorail: {
-      project: 'chromium',
-      displayPrefix: 'crbug.com',
-      priorities: [
+    buganizer: {
+      priorityMappings: [
         {
           priority: 'P0',
           thresholds: [
@@ -46,6 +44,40 @@ export const createMockProjectConfigWithThresholds = (): ProjectConfig => {
         },
         {
           priority: 'P1',
+          thresholds: [
+            {
+              metricId: 'human-cls-failed-presubmit',
+              threshold: {
+                oneDay: '10',
+              },
+            },
+          ],
+        },
+      ],
+    },
+  };
+};
+
+export const createMockProjectConfigWithMonorailThresholds = (): ProjectConfig => {
+  return {
+    name: 'projects/chromium/config',
+    monorail: {
+      project: 'chromium',
+      displayPrefix: 'crbug.com',
+      priorities: [
+        {
+          priority: '0',
+          thresholds: [
+            {
+              metricId: 'human-cls-failed-presubmit',
+              threshold: {
+                oneDay: '20',
+              },
+            },
+          ],
+        },
+        {
+          priority: '1',
           thresholds: [
             {
               metricId: 'human-cls-failed-presubmit',
