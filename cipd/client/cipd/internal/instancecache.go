@@ -262,7 +262,19 @@ func (c *InstanceCache) Close(ctx context.Context) {
 // The results can be waited upon using WaitInstance() method. Each enqueued
 // InstanceRequest will get an exactly one InstanceResponse (perhaps with an
 // error inside). The order of responses may not match the order of requests.
-func (c *InstanceCache) RequestInstances(reqs []*InstanceRequest) {
+func (c *InstanceCache) RequestInstances(ctx context.Context, reqs []*InstanceRequest) {
+	now := clock.Now(ctx)
+	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
+		for _, r := range reqs {
+			// Mark any existing instances as used so they
+			// won't be GCd.
+			if e, ok := s.Entries[r.Pin.InstanceID]; ok {
+				e.LastAccess = timestamppb.New(now)
+			}
+		}
+		return true
+	})
+
 	atomic.AddInt32(&c.fetchPending, int32(len(reqs)))
 	for _, r := range reqs {
 		c.fetchReq <- r

@@ -128,7 +128,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.6.14"
+	UserAgent = "cipd 2.6.15"
 )
 
 func init() {
@@ -1764,7 +1764,7 @@ func (c *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (src pkg
 	}
 	defer cache.Close(ctx)
 
-	cache.RequestInstances([]*internal.InstanceRequest{
+	cache.RequestInstances(ctx, []*internal.InstanceRequest{
 		{Context: ctx, Pin: pin},
 	})
 	res := cache.WaitInstance()
@@ -1999,7 +1999,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			},
 		}
 	}
-	cache.RequestInstances(reqs)
+	cache.RequestInstances(ctx, reqs)
 
 	// While packages are being fetched, do maintenance operations that do not
 	// require package data (removals and restoration of broken symlinks).
@@ -2104,7 +2104,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			// admission check, it passed, and we don't need an activity for it
 			// anymore.
 
-			cache.RequestInstances([]*internal.InstanceRequest{
+			cache.RequestInstances(ctx, []*internal.InstanceRequest{
 				{
 					Context: refetchCtx,
 					Done:    refetchDone,

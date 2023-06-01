@@ -43,7 +43,6 @@ func TestInstanceCache(t *testing.T) {
 	t.Parallel()
 
 	Convey("InstanceCache", t, func() {
-		ctx := context.Background()
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 
 		tempDir, err := ioutil.TempDir("", "instanceche_test")
@@ -92,7 +91,7 @@ func TestInstanceCache(t *testing.T) {
 			before := fetchCalls
 			fetchM.Unlock()
 
-			cache.RequestInstances([]*InstanceRequest{
+			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin},
 			})
 			res := cache.WaitInstance()
@@ -168,7 +167,7 @@ func TestInstanceCache(t *testing.T) {
 
 			So(countTempFiles(), ShouldEqual, 0)
 
-			cache.RequestInstances([]*InstanceRequest{
+			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res := cache.WaitInstance()
@@ -183,7 +182,7 @@ func TestInstanceCache(t *testing.T) {
 			So(countTempFiles(), ShouldEqual, 0)
 
 			// Download the first time.
-			cache.RequestInstances([]*InstanceRequest{
+			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res := cache.WaitInstance()
@@ -195,7 +194,7 @@ func TestInstanceCache(t *testing.T) {
 			So(countTempFiles(), ShouldEqual, 2)
 
 			// The second call grabs it from the cache.
-			cache.RequestInstances([]*InstanceRequest{
+			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res = cache.WaitInstance()
@@ -209,7 +208,7 @@ func TestInstanceCache(t *testing.T) {
 			So(countTempFiles(), ShouldEqual, 1)
 
 			// Download the second time.
-			cache.RequestInstances([]*InstanceRequest{
+			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin(0)},
 			})
 			res = cache.WaitInstance()
@@ -238,7 +237,7 @@ func TestInstanceCache(t *testing.T) {
 				cache.ParallelDownloads = 1
 				cache.Launch(ctx)
 
-				cache.RequestInstances(reqs)
+				cache.RequestInstances(ctx, reqs)
 				for i := 0; i < len(reqs); i++ {
 					res := cache.WaitInstance()
 					So(res.Err, ShouldBeNil)
@@ -254,7 +253,7 @@ func TestInstanceCache(t *testing.T) {
 
 				seen := map[int]struct{}{}
 
-				cache.RequestInstances(reqs)
+				cache.RequestInstances(ctx, reqs)
 				for i := 0; i < len(reqs); i++ {
 					res := cache.WaitInstance()
 					So(res.Err, ShouldBeNil)
@@ -271,7 +270,7 @@ func TestInstanceCache(t *testing.T) {
 				cache.ParallelDownloads = 4
 				cache.Launch(ctx)
 
-				cache.RequestInstances(reqs)
+				cache.RequestInstances(ctx, reqs)
 
 				// Make errCount fetches fail and rest succeed.
 				const errCount = 10
@@ -339,6 +338,37 @@ func TestInstanceCache(t *testing.T) {
 			for i := 0; i < 5; i++ {
 				putNew(cache, pin(i))
 			}
+		})
+
+		Convey("RequestInstancesDoesNotEvictEntriesToBeFetched", func() {
+			cache.maxAge = 2 * time.Second
+			for i := 0; i < 8; i++ {
+				putNew(cache, pin(i))
+			}
+			// At this point, 8 fetches have been done.
+			So(fetchCalls, ShouldEqual, 8)
+
+			tc.Add(3 * time.Second)
+
+			// All of the cache entries are now older than cache.maxAge,
+			// but we are fetching them again, so they should not be
+			// evicted.
+			var ir []*InstanceRequest
+			// A new download will trigger gc
+			ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(10)})
+			for i := 0; i < 8; i++ {
+				ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(i)})
+			}
+			cache.RequestInstances(ctx, ir)
+
+			for i := 0; i < 9; i++ {
+				res := cache.WaitInstance()
+				So(res.Err, ShouldBeNil)
+				So(res.Source.Close(ctx, false), ShouldBeNil)
+			}
+
+			// Only one new fetch should happen, for pin 10.
+			So(fetchCalls, ShouldEqual, 9)
 		})
 
 		Convey("Sync", func() {
