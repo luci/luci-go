@@ -15,7 +15,10 @@
 /**
  * Yields up to certain number of items.
  */
-export function* take<T>(iter: Iterable<T>, count: number): IterableIterator<T> {
+export function* take<T>(
+  iter: Iterable<T>,
+  count: number
+): IterableIterator<T> {
   if (count <= 0) {
     return;
   }
@@ -32,7 +35,9 @@ export function* take<T>(iter: Iterable<T>, count: number): IterableIterator<T> 
  * Yields the current item and the previous item (or null if there's no previous
  * item).
  */
-export function* withPrev<T>(iter: Iterable<T>): IterableIterator<[T, T | null]> {
+export function* withPrev<T>(
+  iter: Iterable<T>
+): IterableIterator<[T, T | null]> {
   let prev: T | null = null;
   for (const item of iter) {
     yield [item, prev];
@@ -43,7 +48,10 @@ export function* withPrev<T>(iter: Iterable<T>): IterableIterator<[T, T | null]>
 /**
  * A map utility for iterators.
  */
-export function* map<V, T>(iter: Iterable<V>, mapFn: (v: V) => T): IterableIterator<T> {
+export function* map<V, T>(
+  iter: Iterable<V>,
+  mapFn: (v: V) => T
+): IterableIterator<T> {
   for (const item of iter) {
     yield mapFn(item);
   }
@@ -52,7 +60,10 @@ export function* map<V, T>(iter: Iterable<V>, mapFn: (v: V) => T): IterableItera
 /**
  * A map utility for async iterators.
  */
-export async function* mapAsync<V, T>(iter: AsyncIterable<V>, mapFn: (v: V) => T): AsyncIterableIterator<T> {
+export async function* mapAsync<V, T>(
+  iter: AsyncIterable<V>,
+  mapFn: (v: V) => T
+): AsyncIterableIterator<T> {
   for await (const item of iter) {
     yield mapFn(item);
   }
@@ -72,7 +83,9 @@ export function* flatten<T>(iter: Iterable<readonly T[]>): IterableIterator<T> {
  * @returns a function that takes no parameter, returns a copy of the original
  * iterator
  */
-export function teeAsync<T>(iter: AsyncIterator<T>): () => AsyncIterableIterator<T> {
+export function teeAsync<T>(
+  iter: AsyncIterator<T>
+): () => AsyncIterableIterator<T> {
   // TODO(weiweilin): convert cache to T[] to reduce memory usage.
   const cache = [] as Array<Promise<IteratorResult<T>> | IteratorResult<T>>;
   return async function* () {
@@ -95,7 +108,9 @@ export function teeAsync<T>(iter: AsyncIterator<T>): () => AsyncIterableIterator
  * Utility function that transforms the iterator to return the index of the item
  * in addition to the item.
  */
-export function* enumerate<T>(iter: Iterable<T>): IterableIterator<[number, T]> {
+export function* enumerate<T>(
+  iter: Iterable<T>
+): IterableIterator<[number, T]> {
   let i = 0;
   for (const item of iter) {
     yield [i, item];

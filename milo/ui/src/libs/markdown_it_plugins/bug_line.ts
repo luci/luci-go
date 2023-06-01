@@ -40,7 +40,12 @@ function processToken(srcToken: Token): Token[] {
 
     // Insert the bug link nodes.
     token = new Token('link_open', 'a', 1);
-    token.attrs = [['href', `https://crbug.com/${bugStr.replace('#', '').replace(':', '/')}`]];
+    token.attrs = [
+      [
+        'href',
+        `https://crbug.com/${bugStr.replace('#', '').replace(':', '/')}`,
+      ],
+    ];
     token.level = srcToken.level;
     newTokens.push(token);
 

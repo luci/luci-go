@@ -52,7 +52,10 @@ export class TestHistoryStatsLoader {
   /**
    * `${variantHash}/${dateIndex}` -> stats
    */
-  @observable.shallow private readonly cache = new Map<string, QueryTestHistoryStatsResponseGroup>();
+  @observable.shallow private readonly cache = new Map<
+    string,
+    QueryTestHistoryStatsResponseGroup
+  >();
 
   /**
    * The worker that populates `cache`.
@@ -102,7 +105,9 @@ export class TestHistoryStatsLoader {
 
       const groups = res.groups || [];
       for (const group of groups) {
-        const dateIndex = this.getDateIndex(DateTime.fromISO(group.partitionTime));
+        const dateIndex = this.getDateIndex(
+          DateTime.fromISO(group.partitionTime)
+        );
         this.cache.set(`${group.variantHash}/${dateIndex}`, group);
       }
 
@@ -114,7 +119,9 @@ export class TestHistoryStatsLoader {
       pageToken = res.nextPageToken;
 
       if (groups.length > 0) {
-        this.unloadedDateIndex = this.getDateIndex(DateTime.fromISO(groups[groups.length - 1].partitionTime));
+        this.unloadedDateIndex = this.getDateIndex(
+          DateTime.fromISO(groups[groups.length - 1].partitionTime)
+        );
       }
     }
   }
@@ -125,7 +132,11 @@ export class TestHistoryStatsLoader {
    * If the entries associated with the specified variant hash and date index
    * hasn't been loaded yet, return null.
    */
-  getStats(variantHash: string, dateIndex: number, noLoading = false): QueryTestHistoryStatsResponseGroup | null {
+  getStats(
+    variantHash: string,
+    dateIndex: number,
+    noLoading = false
+  ): QueryTestHistoryStatsResponseGroup | null {
     // If the dateIndex is not loaded, return null.
     // For simplicity, treat partially loaded date as not loaded. Even though
     // entries for some variants might have been loaded already.

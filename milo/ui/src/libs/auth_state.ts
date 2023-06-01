@@ -58,7 +58,9 @@ export function getAuthStateCacheSync() {
   if (!cachedAuthState?.accessTokenExpiry) {
     return cachedAuthState;
   }
-  return cachedAuthState.accessTokenExpiry * 1000 > Date.now() ? cachedAuthState : null;
+  return cachedAuthState.accessTokenExpiry * 1000 > Date.now()
+    ? cachedAuthState
+    : null;
 }
 
 /**

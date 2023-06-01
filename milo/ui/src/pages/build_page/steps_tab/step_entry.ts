@@ -25,10 +25,24 @@ import '../../../components/buildbucket_log_link';
 import '../../../components/pin_toggle';
 import './step_cluster';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../../libs/constants';
-import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
-import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
+import {
+  HideTooltipEventDetail,
+  ShowTooltipEventDetail,
+} from '../../../components/tooltip';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+  BUILD_STATUS_ICON_MAP,
+} from '../../../libs/constants';
+import {
+  lazyRendering,
+  RenderPlaceHolder,
+} from '../../../libs/observer_element';
+import {
+  displayCompactDuration,
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '../../../libs/time_utils';
 import { BuildStatus } from '../../../services/buildbucket';
 import { consumeStore, StoreInstance } from '../../../store';
 import { StepExt } from '../../../store/build_state';
@@ -41,7 +55,10 @@ import { BuildPageStepClusterElement } from './step_cluster';
  */
 @customElement('milo-bp-step-entry')
 @lazyRendering
-export class BuildPageStepEntryElement extends MiloBaseElement implements RenderPlaceHolder {
+export class BuildPageStepEntryElement
+  extends MiloBaseElement
+  implements RenderPlaceHolder
+{
   @observable.ref
   @consumeStore()
   store!: StoreInstance;
@@ -64,9 +81,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
 
   toggleAllSteps(expand: boolean) {
     this.expanded = expand;
-    this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>('milo-bp-step-cluster').forEach((e) =>
-      e.toggleAllSteps(expand)
-    );
+    this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>(
+      'milo-bp-step-cluster'
+    ).forEach((e) => e.toggleAllSteps(expand));
   }
 
   constructor() {
@@ -86,14 +103,27 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       >
         ${this.step.summary}
       </div>
-      <ul id="log-links" style=${styleMap({ display: this.step.filteredLogs.length ? '' : 'none' })}>
+      <ul
+        id="log-links"
+        style=${styleMap({
+          display: this.step.filteredLogs.length ? '' : 'none',
+        })}
+      >
         ${this.step.filteredLogs.map(
-          (log) => html`<li><milo-buildbucket-log-link .log=${log}></milo-buildbucket-log-link></li>`
+          (log) =>
+            html`<li>
+              <milo-buildbucket-log-link
+                .log=${log}
+              ></milo-buildbucket-log-link>
+            </li>`
         )}
       </ul>
-      ${this.step.tags.length ? html`<milo-tags-entry .tags=${this.step.tags}></milo-tags-entry>` : ''}
+      ${this.step.tags.length
+        ? html`<milo-tags-entry .tags=${this.step.tags}></milo-tags-entry>`
+        : ''}
       ${this.step.clusteredChildren.map(
-        (cluster) => html`<milo-bp-step-cluster .steps=${cluster}></milo-bp-step-cluster>`
+        (cluster) =>
+          html`<milo-bp-step-cluster .steps=${cluster}></milo-bp-step-cluster>`
       ) || ''}
     `;
   }
@@ -103,7 +133,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
       return html` <span class="duration" title="No duration">N/A</span> `;
     }
 
-    const [compactDuration, compactDurationUnits] = displayCompactDuration(this.step.duration);
+    const [compactDuration, compactDurationUnits] = displayCompactDuration(
+      this.step.duration
+    );
 
     return html`
       <div
@@ -123,7 +155,11 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
           );
         }}
         @mouseout=${() => {
-          window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
+          window.dispatchEvent(
+            new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+              detail: { delay: 50 },
+            })
+          );
         }}
       >
         ${compactDuration}
@@ -143,7 +179,11 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
         </tr>
         <tr>
           <td>Ended:</td>
-          <td>${this.step.endTime ? this.step.endTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}</td>
+          <td>${
+            this.step.endTime
+              ? this.step.endTime.toFormat(NUMERIC_TIME_FORMAT)
+              : 'N/A'
+          }</td>
         </tr>
         <tr>
           <td>Duration:</td>
@@ -194,7 +234,10 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
 
   protected render() {
     return html`
-      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
+      <milo-expandable-entry
+        .expanded=${this.expanded}
+        .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
+      >
         <span id="header" slot="header">
           <mwc-icon
             id="status-indicator"
@@ -208,7 +251,8 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
             id="header-text"
             class=${classMap({
               [`${BUILD_STATUS_CLASS_MAP[this.step.status]}-bg`]:
-                this.step.status !== BuildStatus.Success && !(this.expanded && this.step.summary),
+                this.step.status !== BuildStatus.Success &&
+                !(this.expanded && this.step.summary),
             })}
           >
             <b>${this.step.index + 1}. ${this.step.selfName}</b>
@@ -216,7 +260,9 @@ export class BuildPageStepEntryElement extends MiloBaseElement implements Render
               .pinned=${this.step.isPinned}
               title="Pin/unpin the step. The configuration is shared across all builds."
               class="hidden-icon"
-              style=${styleMap({ visibility: this.step.isPinned ? 'visible' : '' })}
+              style=${styleMap({
+                visibility: this.step.isPinned ? 'visible' : '',
+              })}
               @click=${(e: Event) => {
                 this.step.setIsPinned(!this.step.isPinned);
                 e.stopPropagation();

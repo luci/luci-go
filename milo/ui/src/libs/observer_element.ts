@@ -155,7 +155,11 @@ export class ProgressiveNotifier implements Notifier {
   }
 
   private scheduleNotification() {
-    if (this.timeout || this.elements.size === 0 || this.options.batchSize <= 0) {
+    if (
+      this.timeout ||
+      this.elements.size === 0 ||
+      this.options.batchSize <= 0
+    ) {
       return;
     }
     this.timeout = window.setTimeout(() => {
@@ -194,7 +198,9 @@ const connectedCBCalledSymbol = Symbol('connectedCBCalled');
  * Ensures the component get notified when it intersects with the root element.
  * See @fileoverview for examples.
  */
-export function observer<T extends ObserverElement, C extends Constructor<T>>(cls: C) {
+export function observer<T extends ObserverElement, C extends Constructor<T>>(
+  cls: C
+) {
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
   class EnterViewObserverElement extends (cls as Constructor<MobxLitElement>) {
@@ -204,7 +210,9 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
       if (this[privateNotifierSymbol] === newVal) {
         return;
       }
-      this[privateNotifierSymbol].unsubscribe(this as MobxLitElement as ObserverElement);
+      this[privateNotifierSymbol].unsubscribe(
+        this as MobxLitElement as ObserverElement
+      );
       this[privateNotifierSymbol] = newVal;
 
       // If the notifier is updated before or during this.connectedCallback(),
@@ -213,7 +221,9 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
       // We can't use this.isConnected, because this.isConnected is true during
       // this.connectedCallback();
       if (this[connectedCBCalledSymbol]) {
-        this[privateNotifierSymbol].subscribe(this as MobxLitElement as ObserverElement);
+        this[privateNotifierSymbol].subscribe(
+          this as MobxLitElement as ObserverElement
+        );
       }
     }
 
@@ -232,7 +242,9 @@ export function observer<T extends ObserverElement, C extends Constructor<T>>(cl
     disconnectedCallback() {
       this[connectedCBCalledSymbol] = false;
       super.disconnectedCallback();
-      this[notifierSymbol].unsubscribe(this as MobxLitElement as ObserverElement);
+      this[notifierSymbol].unsubscribe(
+        this as MobxLitElement as ObserverElement
+      );
     }
   }
 
@@ -260,7 +272,10 @@ const prerenderSymbol = Symbol('prerender');
  * Makes the component only renders a placeholder until it intersects with the
  * root element. See @fileoverview for examples.
  */
-export function lazyRendering<T extends RenderPlaceHolder, C extends Constructor<T>>(cls: C) {
+export function lazyRendering<
+  T extends RenderPlaceHolder,
+  C extends Constructor<T>
+>(cls: C) {
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
   class LazilyRenderedElement extends (cls as Constructor<RenderPlaceHolder>) {

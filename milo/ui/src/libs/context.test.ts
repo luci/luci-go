@@ -33,14 +33,18 @@ class GrandChild extends Child {
   prop3 = 3;
 }
 
-const [provideOuterProviderInactiveKey, consumeOuterProviderInactiveKey] = createContextLink<string>();
-const [provideOuterProviderKey, consumeOuterProviderKey] = createContextLink<string>();
+const [provideOuterProviderInactiveKey, consumeOuterProviderInactiveKey] =
+  createContextLink<string>();
+const [provideOuterProviderKey, consumeOuterProviderKey] =
+  createContextLink<string>();
 const [provideProviderKey, consumeProviderKey] = createContextLink<string>();
 const [, consumeUnprovidedKey] = createContextLink<string>();
 const [provideOuterUnobservedKey] = createContextLink<string>();
-const [provideConsumerOptionalPropKey, consumeConsumerOptionalPropKey] = createContextLink<string>();
+const [provideConsumerOptionalPropKey, consumeConsumerOptionalPropKey] =
+  createContextLink<string>();
 const [provideSubtypeKey, consumeSubtypeKey] = createContextLink<Child>();
-const [provideSelfProvidedKey, consumeSelfProvidedKey] = createContextLink<string>();
+const [provideSelfProvidedKey, consumeSelfProvidedKey] =
+  createContextLink<string>();
 
 @customElement('milo-outer-context-provider-test')
 @provider
@@ -147,7 +151,9 @@ class OuterContextProvider extends MiloBaseElement {
         () => this.consumerOptionalPropKey,
         (consumerOptionalPropKey) => {
           // Emulate @property() update.
-          this.updated(new Map([['consumerOptionalPropKey', consumerOptionalPropKey]]));
+          this.updated(
+            new Map([['consumerOptionalPropKey', consumerOptionalPropKey]])
+          );
         },
         { fireImmediately: true }
       )
@@ -300,11 +306,12 @@ class ContextConsumer extends MiloBaseElement {
 }
 
 @customElement('milo-context-consumer-wrapper-test')
-export class ContextConsumerWrapper extends LitElement {
+class ContextConsumerWrapper extends LitElement {
   protected render() {
     return html` <milo-context-consumer-test></milo-context-consumer-test> `;
   }
 }
+ContextConsumerWrapper;
 
 // TODO(weiweilin): test what happens when ContextProvider is disconnected from
 // DOM then reconnected to DOM.
@@ -314,37 +321,59 @@ describe('context', () => {
     const outerProvider = await fixture<OuterContextProvider>(html`
       <milo-outer-context-provider-test>
         <milo-inner-context-provider-test>
-          <milo-context-consumer-test id="inner-consumer"> </milo-context-consumer-test>
+          <milo-context-consumer-test id="inner-consumer">
+          </milo-context-consumer-test>
         </milo-inner-context-provider-test>
-        <milo-context-consumer-test id="outer-consumer"> </milo-context-consumer-test>
+        <milo-context-consumer-test id="outer-consumer">
+        </milo-context-consumer-test>
         <milo-outer-context-provider> </milo-outer-context-provider
       ></milo-outer-context-provider-test>
     `);
 
-    const innerProvider = outerProvider.querySelector('milo-inner-context-provider-test')!.shadowRoot!
-      .host as InnerContextProvider;
-    const outerConsumer = outerProvider.querySelector('#outer-consumer')!.shadowRoot!.host as ContextConsumer;
-    const innerConsumer = outerProvider.querySelector('#inner-consumer')!.shadowRoot!.host as ContextConsumer;
+    const innerProvider = outerProvider.querySelector(
+      'milo-inner-context-provider-test'
+    )!.shadowRoot!.host as InnerContextProvider;
+    const outerConsumer = outerProvider.querySelector('#outer-consumer')!
+      .shadowRoot!.host as ContextConsumer;
+    const innerConsumer = outerProvider.querySelector('#inner-consumer')!
+      .shadowRoot!.host as ContextConsumer;
 
-    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
-    expect(outerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val0');
-    expect(outerConsumer.providerKey).toStrictEqual('outer_provider-provider-val0');
-    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual('outer_provider-provider-val0');
+    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual(
+      'outer_provider-outer_provider_inactive-val0'
+    );
+    expect(outerConsumer.outerProviderKey).toStrictEqual(
+      'outer_provider-outer_provider-val0'
+    );
+    expect(outerConsumer.providerKey).toStrictEqual(
+      'outer_provider-provider-val0'
+    );
+    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual(
+      'outer_provider-provider-val0'
+    );
     expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
     expect(outerConsumer.selfProvided2).toStrictEqual('local-self_provided');
     expect(outerConsumer.setterCallCount).toStrictEqual(1);
 
-    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
-    expect(innerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val0');
-    expect(innerConsumer.providerKey).toStrictEqual('inner_provider-provider-val0');
-    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual('inner_provider-provider-val0');
+    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual(
+      'outer_provider-outer_provider_inactive-val0'
+    );
+    expect(innerConsumer.outerProviderKey).toStrictEqual(
+      'outer_provider-outer_provider-val0'
+    );
+    expect(innerConsumer.providerKey).toStrictEqual(
+      'inner_provider-provider-val0'
+    );
+    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual(
+      'inner_provider-provider-val0'
+    );
     expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
     expect(innerConsumer.setterCallCount).toStrictEqual(1);
 
     // Update outer provider.
-    outerProvider.outerProviderInactiveKey = 'outer_provider-outer_provider_inactive-val1';
+    outerProvider.outerProviderInactiveKey =
+      'outer_provider-outer_provider_inactive-val1';
     outerProvider.outerProviderKey = 'outer_provider-outer_provider-val1';
     outerProvider.providerKey = 'outer_provider-provider-val1';
     outerProvider.outerUnobservedKey = 'outer_provider-unobserved_val1';
@@ -352,19 +381,35 @@ describe('context', () => {
     await outerProvider.updateComplete;
 
     // outerConsumer updated.
-    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
-    expect(outerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
-    expect(outerConsumer.providerKey).toStrictEqual('outer_provider-provider-val1');
-    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual('outer_provider-provider-val1');
+    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual(
+      'outer_provider-outer_provider_inactive-val0'
+    );
+    expect(outerConsumer.outerProviderKey).toStrictEqual(
+      'outer_provider-outer_provider-val1'
+    );
+    expect(outerConsumer.providerKey).toStrictEqual(
+      'outer_provider-provider-val1'
+    );
+    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual(
+      'outer_provider-provider-val1'
+    );
     expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
     expect(outerConsumer.setterCallCount).toStrictEqual(2);
 
     // innerConsumer.providerKey unchanged, other properties updated.
-    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
-    expect(innerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
-    expect(innerConsumer.providerKey).toStrictEqual('inner_provider-provider-val0');
-    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual('inner_provider-provider-val0');
+    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual(
+      'outer_provider-outer_provider_inactive-val0'
+    );
+    expect(innerConsumer.outerProviderKey).toStrictEqual(
+      'outer_provider-outer_provider-val1'
+    );
+    expect(innerConsumer.providerKey).toStrictEqual(
+      'inner_provider-provider-val0'
+    );
+    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual(
+      'inner_provider-provider-val0'
+    );
     expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
     expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(innerConsumer.setterCallCount).toStrictEqual(1);
@@ -374,19 +419,35 @@ describe('context', () => {
     await innerProvider.updateComplete;
 
     // outerConsumer unchanged.
-    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
-    expect(outerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
-    expect(outerConsumer.providerKey).toStrictEqual('outer_provider-provider-val1');
-    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual('outer_provider-provider-val1');
+    expect(outerConsumer.outerProviderInactiveKey).toStrictEqual(
+      'outer_provider-outer_provider_inactive-val0'
+    );
+    expect(outerConsumer.outerProviderKey).toStrictEqual(
+      'outer_provider-outer_provider-val1'
+    );
+    expect(outerConsumer.providerKey).toStrictEqual(
+      'outer_provider-provider-val1'
+    );
+    expect(outerConsumer.providerKeyWithAnotherName).toStrictEqual(
+      'outer_provider-provider-val1'
+    );
     expect(outerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(outerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
     expect(outerConsumer.setterCallCount).toStrictEqual(2);
 
     // innerConsumer.providerKey updated, other properties unchanged.
-    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual('outer_provider-outer_provider_inactive-val0');
-    expect(innerConsumer.outerProviderKey).toStrictEqual('outer_provider-outer_provider-val1');
-    expect(innerConsumer.providerKey).toStrictEqual('inner_provider-provider-val1');
-    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual('inner_provider-provider-val1');
+    expect(innerConsumer.outerProviderInactiveKey).toStrictEqual(
+      'outer_provider-outer_provider_inactive-val0'
+    );
+    expect(innerConsumer.outerProviderKey).toStrictEqual(
+      'outer_provider-outer_provider-val1'
+    );
+    expect(innerConsumer.providerKey).toStrictEqual(
+      'inner_provider-provider-val1'
+    );
+    expect(innerConsumer.providerKeyWithAnotherName).toStrictEqual(
+      'inner_provider-provider-val1'
+    );
     expect(innerConsumer.outerUnobservedKey).toStrictEqual('local-unobserved');
     expect(innerConsumer.unprovidedKey).toStrictEqual('local-unprovided');
     expect(innerConsumer.setterCallCount).toStrictEqual(2);
@@ -400,11 +461,13 @@ describe('context', () => {
         <milo-context-consumer-wrapper-test></milo-context-consumer-wrapper-test>
       </div>
     `);
-    const globalProvider = rootEle.querySelector('milo-global-context-provider-test')!.shadowRoot!
-      .host as GlobalContextProvider;
+    const globalProvider = rootEle.querySelector(
+      'milo-global-context-provider-test'
+    )!.shadowRoot!.host as GlobalContextProvider;
     const consumer = rootEle
       .querySelector('milo-context-consumer-wrapper-test')!
-      .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
+      .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!
+      .host as ContextConsumer;
 
     expect(consumer.providerKey).toStrictEqual('global_provider-provider-val0');
 
@@ -425,11 +488,13 @@ describe('context', () => {
         </milo-outer-context-provider-test>
       </div>
     `);
-    const globalProvider = rootEle.querySelector('milo-global-context-provider-test')!.shadowRoot!
-      .host as GlobalContextProvider;
+    const globalProvider = rootEle.querySelector(
+      'milo-global-context-provider-test'
+    )!.shadowRoot!.host as GlobalContextProvider;
     const consumer = rootEle
       .querySelector('milo-context-consumer-wrapper-test')!
-      .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!.host as ContextConsumer;
+      .shadowRoot!.querySelector('milo-context-consumer-test')!.shadowRoot!
+      .host as ContextConsumer;
 
     expect(consumer.providerKey).toStrictEqual('outer_provider-provider-val0');
 

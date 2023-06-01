@@ -24,7 +24,7 @@ export function RevisionRow({ commit }: RevisionRowProps) {
     <tr>
       <td>Revision:</td>
       <td>
-        <a href={getGitilesCommitURL(commit)} target="_blank">
+        <a href={getGitilesCommitURL(commit)} target="_blank" rel="noreferrer">
           {commit.id}
         </a>
         {commit.position ? ` CP #${commit.position}` : ''}

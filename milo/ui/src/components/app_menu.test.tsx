@@ -34,7 +34,9 @@ describe('AppMenu', () => {
 
   it('has pending update', () => {
     unprotect(store);
-    jest.spyOn(store.workbox, 'hasPendingUpdate', 'get').mockImplementation(() => true);
+    jest
+      .spyOn(store.workbox, 'hasPendingUpdate', 'get')
+      .mockImplementation(() => true);
     protect(store);
 
     render(
@@ -44,7 +46,9 @@ describe('AppMenu', () => {
     );
 
     const menuButton = screen.getByTestId('menu-button');
-    expect(menuButton.querySelector('[data-testid="UpgradeIcon"]')).not.toBeNull();
+    expect(
+      menuButton.querySelector('[data-testid="UpgradeIcon"]')
+    ).not.toBeNull();
 
     fireEvent.click(menuButton);
     const menu = screen.getByRole('menuitem', { name: 'update website' });
@@ -53,7 +57,9 @@ describe('AppMenu', () => {
 
   it('no pending update', () => {
     unprotect(store);
-    jest.spyOn(store.workbox, 'hasPendingUpdate', 'get').mockImplementation(() => false);
+    jest
+      .spyOn(store.workbox, 'hasPendingUpdate', 'get')
+      .mockImplementation(() => false);
     protect(store);
 
     expect(store.workbox.hasPendingUpdate).toStrictEqual(false);

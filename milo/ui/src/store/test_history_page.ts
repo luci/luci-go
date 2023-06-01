@@ -19,7 +19,11 @@ import { addDisposer, types } from 'mobx-state-tree';
 
 import { keepAliveComputed } from '../libs/milo_mobx_utils';
 import { PageLoader } from '../libs/page_loader';
-import { parseVariantFilter, parseVariantPredicate, VariantFilter } from '../libs/queries/th_filter_query';
+import {
+  parseVariantFilter,
+  parseVariantPredicate,
+  VariantFilter,
+} from '../libs/queries/th_filter_query';
 import { TestHistoryStatsLoader } from '../models/test_history_stats_loader';
 import {
   QueryTestHistoryStatsResponseGroup,
@@ -42,9 +46,9 @@ export const enum XAxisType {
   COMMIT = 'COMMIT',
 }
 
-// Use SCALE_COLOR to discard colors avoid using white color when the input is
+// Use `scaleColor` to discard colors avoid using white color when the input is
 // close to 0.
-const SCALE_COLOR = scaleLinear().range([0.1, 1]).domain([0, 1]);
+const scaleColor = scaleLinear().range([0.1, 1]).domain([0, 1]);
 
 export const TestHistoryPage = types
   .model('TestHistoryPage', {
@@ -58,7 +62,9 @@ export const TestHistoryPage = types
     days: 14,
     filterText: '',
 
-    selectedGroup: types.frozen<QueryTestHistoryStatsResponseGroup | null>(null),
+    selectedGroup: types.frozen<QueryTestHistoryStatsResponseGroup | null>(
+      null
+    ),
 
     graphType: types.frozen<GraphType>(GraphType.STATUS),
     xAxisType: types.frozen<XAxisType>(XAxisType.DATE),
@@ -83,10 +89,12 @@ export const TestHistoryPage = types
   }))
   .views((self) => ({
     get latestDate() {
-      return (self.refreshTime?.dateTime || DateTime.now()).toUTC().startOf('day');
+      return (self.refreshTime?.dateTime || DateTime.now())
+        .toUTC()
+        .startOf('day');
     },
     get scaleDurationColor() {
-      return scaleSequential((x) => interpolateOranges(SCALE_COLOR(x))).domain([
+      return scaleSequential((x) => interpolateOranges(scaleColor(x))).domain([
         self.minDurationMs,
         self.maxDurationMs,
       ]);
@@ -114,7 +122,10 @@ export const TestHistoryPage = types
           pageToken,
         });
         return [
-          res.variants?.map((v) => [v.variantHash, v.variant || { def: {} }] as [string, Variant]) || [],
+          res.variants?.map(
+            (v) =>
+              [v.variantHash, v.variant || { def: {} }] as [string, Variant]
+          ) || [],
           res.nextPageToken,
         ];
       });
@@ -156,7 +167,9 @@ export const TestHistoryPage = types
       const variantHash = self.selectedGroup?.variantHash;
       const earliest = self.selectedGroup?.partitionTime;
       const testHistoryService = self.services.testHistory;
-      const variant = varLoader.items.find(([vHash]) => vHash === variantHash)![1];
+      const variant = varLoader.items.find(
+        ([vHash]) => vHash === variantHash
+      )![1];
       const latest = DateTime.fromISO(earliest).minus({ days: -1 }).toISO();
 
       return new PageLoader(async (pageToken) => {
@@ -176,7 +189,10 @@ export const TestHistoryPage = types
           pageSize: 100,
           pageToken,
         });
-        return [res.verdicts?.map((verdict) => ({ verdict, variant: variant })) || [], res.nextPageToken];
+        return [
+          res.verdicts?.map((verdict) => ({ verdict, variant: variant })) || [],
+          res.nextPageToken,
+        ];
       });
     });
 
@@ -194,13 +210,20 @@ export const TestHistoryPage = types
   })
   .views((self) => {
     const criticalVariantKeys = computed(
-      () => getCriticalVariantKeys(self.variantsLoader?.items.map(([_, v]) => v) || []),
+      () =>
+        getCriticalVariantKeys(
+          self.variantsLoader?.items.map(([_, v]) => v) || []
+        ),
       { equals: comparer.shallow }
     );
 
     return {
       get filteredVariants() {
-        return self.variantsLoader?.items.filter(([hash, v]) => self.variantFilter(v, hash)) || [];
+        return (
+          self.variantsLoader?.items.filter(([hash, v]) =>
+            self.variantFilter(v, hash)
+          ) || []
+        );
       },
       get criticalVariantKeys(): readonly string[] {
         return criticalVariantKeys.get();
@@ -212,7 +235,9 @@ export const TestHistoryPage = types
         return self.customColumnKeys || this.defaultColumnKeys;
       },
       get columnWidths(): readonly number[] {
-        return this.columnKeys.map((col) => self.customColumnWidths[col] ?? 100);
+        return this.columnKeys.map(
+          (col) => self.customColumnWidths[col] ?? 100
+        );
       },
       get sortingKeys(): readonly string[] {
         return self.customSortingKeys || self.defaultSortingKeys;
@@ -309,7 +334,7 @@ export const TestHistoryPage = types
             // Only update the filters after the query is successfully parsed.
             this._updateFilters(newVariantFilter, newVariantPredicate);
           } catch (e) {
-            //TODO(weiweilin): display the error to the user.
+            // TODO(weiweilin): display the error to the user.
             console.error(e);
           }
         })
@@ -337,20 +362,28 @@ export const TEST_VERDICT_STATUS_CMP_STRING = {
 export function createTVCmpFn(
   sortingKeys: readonly string[]
 ): (v1: TestVerdictBundle, v2: TestVerdictBundle) => number {
-  const sorters: Array<[number, (v: TestVerdictBundle) => { toString(): string }]> = sortingKeys.map((key) => {
+  const sorters: Array<
+    [number, (v: TestVerdictBundle) => { toString(): string }]
+  > = sortingKeys.map((key) => {
     const [mul, propKey] = key.startsWith('-') ? [-1, key.slice(1)] : [1, key];
     const propGetter = createTVPropGetter(propKey);
 
     // Status should be be sorted by their significance not by their string
     // representation.
     if (propKey.toLowerCase() === 'status') {
-      return [mul, (v) => TEST_VERDICT_STATUS_CMP_STRING[propGetter(v) as TestVerdictStatus]];
+      return [
+        mul,
+        (v) =>
+          TEST_VERDICT_STATUS_CMP_STRING[propGetter(v) as TestVerdictStatus],
+      ];
     }
     return [mul, propGetter];
   });
   return (v1, v2) => {
     for (const [mul, propGetter] of sorters) {
-      const cmp = propGetter(v1).toString().localeCompare(propGetter(v2).toString()) * mul;
+      const cmp =
+        propGetter(v1).toString().localeCompare(propGetter(v2).toString()) *
+        mul;
       if (cmp !== 0) {
         return cmp;
       }
@@ -368,7 +401,9 @@ export function createTVCmpFn(
  * 3. 'v.{variant_key}': def[variant_key] of associated variant of the test
  * verdict (e.g. v.gpu).
  */
-export function createTVPropGetter(propKey: string): (v: TestVerdictBundle) => ToString {
+export function createTVPropGetter(
+  propKey: string
+): (v: TestVerdictBundle) => ToString {
   if (propKey.match(/^v[.]/i)) {
     const variantKey = propKey.slice(2);
     return ({ variant }) => variant.def[variantKey] || '';

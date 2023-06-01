@@ -43,7 +43,10 @@ const step3 = createStep(0, '2022-01-01T00:02:00Z', '2022-01-01T00:04:00Z');
 describe('StepCluster', () => {
   it('should calculate duration based on start & end time', async () => {
     const ele = await fixture<BuildPageStepClusterElement>(html`
-      <milo-bp-step-cluster .store=${Store.create()} .steps=${[step1, step2, step3]}></milo-bp-step-cluster>
+      <milo-bp-step-cluster
+        .store=${Store.create()}
+        .steps=${[step1, step2, step3]}
+      ></milo-bp-step-cluster>
     `);
 
     // The duration should equals endTime - startTime. Not a sum of all

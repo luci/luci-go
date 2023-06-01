@@ -15,6 +15,7 @@
 import { Info } from '@mui/icons-material';
 import { observer } from 'mobx-react-lite';
 
+import { Button } from '@mui/material';
 import { DotSpinner } from '../../components/dot_spinner';
 import { useStore } from '../../store';
 
@@ -32,16 +33,17 @@ export const VariantCounts = observer(() => {
 
   return (
     <>
-      Showing <i>{pageState.filteredVariants.length}</i> variant(s) that <i>match(es) the filter</i>.
-      {(canLoadMore || isLoading) && <>&nbsp;</>}
-      {canLoadMore && (
+      Showing <i>{pageState.filteredVariants.length}</i> variant(s) that{' '}
+      <i>match(es) the filter</i>.{(canLoadMore || isLoading) && <>&nbsp;</>}
+      {(canLoadMore || true) && (
         <>
-          <span className="active-text" onClick={() => pageState.variantsLoader?.loadNextPage()}>
-            [load more]
-          </span>
-          <span title={LOADING_VARIANT_INFO_TOOLTIP}>
-            <Info fontSize="small" sx={{ verticalAlign: 'text-bottom' }} />
-          </span>
+          <Button
+            onClick={() => pageState.variantsLoader?.loadNextPage()}
+            endIcon={<Info fontSize="small" />}
+            title={LOADING_VARIANT_INFO_TOOLTIP}
+          >
+            load more
+          </Button>
         </>
       )}
       {isLoading && (

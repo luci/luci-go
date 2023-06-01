@@ -27,9 +27,15 @@ export const PropertiesSection = observer(() => {
   return (
     <>
       <h3>Input Properties</h3>
-      <PropertyViewer properties={build.input?.properties || {}} config={store.userConfig.build.inputProperties} />
+      <PropertyViewer
+        properties={build.input?.properties || {}}
+        config={store.userConfig.build.inputProperties}
+      />
       <h3>Output Properties</h3>
-      <PropertyViewer properties={build.output?.properties || {}} config={store.userConfig.build.outputProperties} />
+      <PropertyViewer
+        properties={build.output?.properties || {}}
+        config={store.userConfig.build.outputProperties}
+      />
     </>
   );
 });

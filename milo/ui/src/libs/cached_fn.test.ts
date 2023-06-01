@@ -13,20 +13,26 @@
 // limitations under the License.
 
 import { beforeEach, expect, jest } from '@jest/globals';
-import { aTimeout } from '@open-wc/testing-helpers';
 import stableStringify from 'fast-json-stable-stringify';
 
 import { cached, CacheOption } from './cached_fn';
+import { timeout } from './utils';
 
 describe('cached_fn', () => {
   let cachedFn: (opt: CacheOption, param1: number, param2: string) => string;
   let fnSpy: jest.Mock<(param1: number, param2: string) => string>;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     let callCount = 0;
-    const fn = (param1: number, param2: string) => `${param1}-${param2}-${callCount++}`;
+    const fn = (param1: number, param2: string) =>
+      `${param1}-${param2}-${callCount++}`;
     fnSpy = jest.fn(fn);
     cachedFn = cached(fnSpy, { key: (...params) => stableStringify(params) });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('should return cached response when params are identical', async () => {
@@ -91,7 +97,11 @@ describe('cached_fn', () => {
 
   it('should not invalidate the new cache when invalidateCache = true', async () => {
     const res1 = cachedFn({}, 1, 'a');
-    const res2 = cachedFn({ acceptCache: false, invalidateCache: true }, 1, 'a');
+    const res2 = cachedFn(
+      { acceptCache: false, invalidateCache: true },
+      1,
+      'a'
+    );
     const res3 = cachedFn({}, 1, 'a');
     expect(res1).toStrictEqual('1-a-0');
     expect(res2).toStrictEqual('1-a-1');
@@ -103,13 +113,13 @@ describe('cached_fn', () => {
     beforeEach(() => {
       cachedFn = cached(fnSpy, {
         key: (...params) => stableStringify(params),
-        expire: () => aTimeout(20),
+        expire: () => timeout(20),
       });
     });
 
     it('should return cached response when cache has not expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
-      await aTimeout(10);
+      await jest.advanceTimersByTimeAsync(10);
       const res2 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual(res2);
       expect(fnSpy.mock.calls.length).toStrictEqual(1);
@@ -117,7 +127,7 @@ describe('cached_fn', () => {
 
     it('should return a new response when cache has expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
-      await aTimeout(30);
+      await jest.advanceTimersByTimeAsync(30);
       const res2 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual('1-a-0');
       expect(res2).toStrictEqual('1-a-1');
@@ -126,9 +136,9 @@ describe('cached_fn', () => {
 
     it('should not expire refreshed cache too early', async () => {
       const res1 = cachedFn({}, 1, 'a');
-      await aTimeout(15);
+      await jest.advanceTimersByTimeAsync(15);
       const res2 = cachedFn({ acceptCache: false }, 1, 'a');
-      await aTimeout(15);
+      await jest.advanceTimersByTimeAsync(15);
       const res3 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual('1-a-0');
       expect(res2).toStrictEqual('1-a-1');
@@ -142,7 +152,7 @@ describe('cached_fn', () => {
       cachedFn = cached(fnSpy, {
         key: (...params) => stableStringify(params),
         expire: async () => {
-          await aTimeout(20);
+          await timeout(20);
           throw new Error();
         },
       });
@@ -150,7 +160,7 @@ describe('cached_fn', () => {
 
     it('should return cached response when cache has not expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
-      await aTimeout(10);
+      await jest.advanceTimersByTimeAsync(10);
       const res2 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual(res2);
       expect(fnSpy.mock.calls.length).toStrictEqual(1);
@@ -158,7 +168,7 @@ describe('cached_fn', () => {
 
     it('should return a new response when cache has expired', async () => {
       const res1 = cachedFn({}, 1, 'a');
-      await aTimeout(30);
+      await jest.advanceTimersByTimeAsync(30);
       const res2 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual('1-a-0');
       expect(res2).toStrictEqual('1-a-1');
@@ -167,9 +177,9 @@ describe('cached_fn', () => {
 
     it('should not invalidate refreshed cache too early', async () => {
       const res1 = cachedFn({}, 1, 'a');
-      await aTimeout(15);
+      await jest.advanceTimersByTimeAsync(15);
       const res2 = cachedFn({ acceptCache: false }, 1, 'a');
-      await aTimeout(15);
+      await jest.advanceTimersByTimeAsync(15);
       const res3 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual('1-a-0');
       expect(res2).toStrictEqual('1-a-1');
@@ -194,7 +204,7 @@ describe('cached_fn', () => {
 
     it('should delete the cache in the next event cycle', async () => {
       const res1 = cachedFn({}, 1, 'a');
-      await aTimeout(0);
+      await jest.advanceTimersByTimeAsync(0);
       const res2 = cachedFn({}, 1, 'a');
       expect(res1).toStrictEqual('1-a-0');
       expect(res2).toStrictEqual('1-a-1');
@@ -218,9 +228,7 @@ describe('cached_fn', () => {
     });
 
     it('should not cache the response', async () => {
-      try {
-        cachedFn({}, 1, 'a');
-      } catch {} // eslint-disable-line no-empty
+      expect(() => cachedFn({}, 1, 'a')).toThrow();
       const res2 = cachedFn({}, 1, 'a');
       expect(res2).toStrictEqual('1-a-1');
       expect(fnSpy.mock.calls.length).toStrictEqual(2);

@@ -15,7 +15,10 @@
 import { observer } from 'mobx-react-lite';
 
 import { RelativeTimestamp } from '../../../components/relative_timestamp';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../../libs/constants';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+} from '../../../libs/constants';
 import { renderMarkdown } from '../../../libs/markdown_utils';
 import { BuildStatus } from '../../../services/buildbucket';
 import { useStore } from '../../../store';
@@ -37,12 +40,22 @@ export const SummarySection = observer(() => {
 
   return (
     <>
-      {build?.isCanary && [BuildStatus.Failure, BuildStatus.InfraFailure].includes(build.data.status) && (
-        <div css={{ padding: '5px', backgroundColor: 'var(--warning-color)', fontWeight: 500 }}>
-          WARNING: This build ran on a canary version of LUCI. If you suspect it failed due to infra, retry the build.
-          Next time it may use the non-canary version.
-        </div>
-      )}
+      {build?.isCanary &&
+        [BuildStatus.Failure, BuildStatus.InfraFailure].includes(
+          build.data.status
+        ) && (
+          <div
+            css={{
+              padding: '5px',
+              backgroundColor: 'var(--warning-color)',
+              fontWeight: 500,
+            }}
+          >
+            WARNING: This build ran on a canary version of LUCI. If you suspect
+            it failed due to infra, retry the build. Next time it may use the
+            non-canary version.
+          </div>
+        )}
       {scheduledCancelTime && (
         <div
           css={{
@@ -51,7 +64,8 @@ export const SummarySection = observer(() => {
             padding: '5px',
           }}
         >
-          This build was scheduled to be canceled by {build.data.canceledBy || 'unknown'}{' '}
+          This build was scheduled to be canceled by{' '}
+          {build.data.canceledBy || 'unknown'}{' '}
           <RelativeTimestamp timestamp={scheduledCancelTime} />
         </div>
       )}
@@ -72,9 +86,16 @@ export const SummarySection = observer(() => {
         className={`${BUILD_STATUS_CLASS_MAP[build.data.status]}-bg`}
       >
         {build?.data.summaryMarkdown ? (
-          <div dangerouslySetInnerHTML={{ __html: renderMarkdown(build.data.summaryMarkdown) }} />
+          <div
+            dangerouslySetInnerHTML={{
+              __html: renderMarkdown(build.data.summaryMarkdown),
+            }}
+          />
         ) : (
-          <div css={{ fontWeight: 500 }}>Build {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'status unknown'}</div>
+          <div css={{ fontWeight: 500 }}>
+            Build{' '}
+            {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'status unknown'}
+          </div>
         )}
       </div>
     </>

@@ -32,18 +32,28 @@ export interface BuildbucketLogLinkProps {
  * Renders a Log object.
  */
 export function BuildbucketLogLink({ log }: BuildbucketLogLinkProps) {
-  const logdogRawUrl = ['stdout', 'stderr'].includes(log.name) ? getLogdogRawUrl(log.url) : null;
+  const logdogRawUrl = ['stdout', 'stderr'].includes(log.name)
+    ? getLogdogRawUrl(log.url)
+    : null;
 
   return (
     <>
-      <Link href={log.viewUrl} target="_blank" css={{ color: 'var(--default-text-color)' }}>
+      <Link
+        href={log.viewUrl}
+        target="_blank"
+        css={{ color: 'var(--default-text-color)' }}
+      >
         {log.name}
       </Link>
       {logdogRawUrl && (
         <>
           {' '}
           [
-          <Link href={logdogRawUrl} target="_blank" css={{ color: 'var(--default-text-color)' }}>
+          <Link
+            href={logdogRawUrl}
+            target="_blank"
+            css={{ color: 'var(--default-text-color)' }}
+          >
             raw
           </Link>
           ]

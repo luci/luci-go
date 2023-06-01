@@ -111,15 +111,38 @@ const variant12 = {
 describe('TestLoader', () => {
   describe('when first page contains variants', () => {
     let testLoader: TestLoader;
-    let stub: jest.Mock<(req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>>;
+    let stub: jest.Mock<
+      (
+        req: QueryTestVariantsRequest,
+        cacheOpt?: CacheOption
+      ) => Promise<QueryTestVariantsResponse>
+    >;
     const req = { invocations: ['invocation'], pageSize: 4 };
 
     beforeEach(() => {
-      stub = jest.fn<(req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>>();
-      stub.mockResolvedValueOnce({ testVariants: [variant1, variant2, variant3, variant4], nextPageToken: 'page2' });
-      stub.mockResolvedValueOnce({ testVariants: [variant5, variant6, variant7], nextPageToken: 'page3' });
-      stub.mockResolvedValueOnce({ testVariants: [variant8, variant9, variant10, variant11], nextPageToken: 'page4' });
-      stub.mockResolvedValueOnce({ testVariants: [variant12], nextPageToken: undefined });
+      stub =
+        jest.fn<
+          (
+            req: QueryTestVariantsRequest,
+            cacheOpt?: CacheOption
+          ) => Promise<QueryTestVariantsResponse>
+        >();
+      stub.mockResolvedValueOnce({
+        testVariants: [variant1, variant2, variant3, variant4],
+        nextPageToken: 'page2',
+      });
+      stub.mockResolvedValueOnce({
+        testVariants: [variant5, variant6, variant7],
+        nextPageToken: 'page3',
+      });
+      stub.mockResolvedValueOnce({
+        testVariants: [variant8, variant9, variant10, variant11],
+        nextPageToken: 'page4',
+      });
+      stub.mockResolvedValueOnce({
+        testVariants: [variant12],
+        nextPageToken: undefined,
+      });
       testLoader = new TestLoader(req, {
         queryTestVariants: stub,
       } as Partial<ResultDb> as ResultDb);
@@ -131,14 +154,25 @@ describe('TestLoader', () => {
 
       await testLoader.loadNextTestVariants();
       expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([variant1, variant2, variant3, variant4]);
+      expect(testLoader.nonExpectedTestVariants).toEqual([
+        variant1,
+        variant2,
+        variant3,
+        variant4,
+      ]);
       expect(testLoader.expectedTestVariants).toEqual([]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(1);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlaky);
       expect(stub.mock.calls.length).toStrictEqual(1);
-      expect(stub.mock.lastCall?.[0]).toEqual({ ...req, pageSize: 10000, pageToken: '' });
+      expect(stub.mock.lastCall?.[0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: '',
+      });
 
       await testLoader.loadNextTestVariants();
       expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
@@ -154,7 +188,11 @@ describe('TestLoader', () => {
       expect(testLoader.expectedTestVariants).toEqual([]);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
       expect(stub.mock.calls.length).toStrictEqual(2);
-      expect(stub.mock.lastCall?.[0]).toEqual({ ...req, pageSize: 10000, pageToken: 'page2' });
+      expect(stub.mock.lastCall?.[0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: 'page2',
+      });
 
       await testLoader.loadNextTestVariants();
       expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
@@ -167,13 +205,24 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+      ]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
       expect(stub.mock.calls.length).toStrictEqual(3);
-      expect(stub.mock.lastCall?.[0]).toEqual({ ...req, pageSize: 10000, pageToken: 'page3' });
+      expect(stub.mock.lastCall?.[0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: 'page3',
+      });
 
       await testLoader.loadNextTestVariants();
       expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
@@ -186,13 +235,25 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11, variant12]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+        variant12,
+      ]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
       expect(stub.mock.calls.length).toStrictEqual(4);
-      expect(stub.mock.lastCall?.[0]).toEqual({ ...req, pageSize: 10000, pageToken: 'page4' });
+      expect(stub.mock.lastCall?.[0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: 'page4',
+      });
 
       // Should not load when the iterator is exhausted.
       await testLoader.loadNextTestVariants();
@@ -206,9 +267,17 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11, variant12]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+        variant12,
+      ]);
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
       expect(stub.mock.calls.length).toStrictEqual(4);
@@ -227,12 +296,19 @@ describe('TestLoader', () => {
 
       await loadReq1;
       expect(testLoader.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([variant1, variant2, variant3, variant4]);
+      expect(testLoader.nonExpectedTestVariants).toEqual([
+        variant1,
+        variant2,
+        variant3,
+        variant4,
+      ]);
       expect(testLoader.expectedTestVariants).toEqual([]);
       // loadReq2 has not finished loading yet.
       expect(testLoader.isLoading).toBeTruthy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(1);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingFlaky);
 
@@ -251,7 +327,9 @@ describe('TestLoader', () => {
       // loadReq3 has not finished loading yet.
       expect(testLoader.isLoading).toBeTruthy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
 
@@ -266,11 +344,18 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+      ]);
       // loadReq4 has not finished loading yet.
       expect(testLoader.isLoading).toBeTruthy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.LoadingExpected);
 
@@ -285,11 +370,19 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11, variant12]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+        variant12,
+      ]);
       // The list is exhausted, loadReq5 should not change the loading state.
       expect(testLoader.isLoading).toBeFalsy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
 
@@ -304,40 +397,53 @@ describe('TestLoader', () => {
         variant6,
         variant7,
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11, variant12]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+        variant12,
+      ]);
       expect(testLoader.isLoading).toBeFalsy();
       expect(testLoader.unfilteredUnexpectedVariantsCount).toStrictEqual(2);
-      expect(testLoader.unfilteredUnexpectedlySkippedVariantsCount).toStrictEqual(1);
+      expect(
+        testLoader.unfilteredUnexpectedlySkippedVariantsCount
+      ).toStrictEqual(1);
       expect(testLoader.unfilteredFlakyVariantsCount).toStrictEqual(2);
       expect(testLoader.stage).toStrictEqual(LoadingStage.Done);
 
       expect(stub.mock.calls.length).toStrictEqual(4);
-      expect(stub.mock.calls[0][0]).toEqual({ ...req, pageSize: 10000, pageToken: '' });
-      expect(stub.mock.calls[1][0]).toEqual({ ...req, pageSize: 10000, pageToken: 'page2' });
-      expect(stub.mock.calls[2][0]).toEqual({ ...req, pageSize: 10000, pageToken: 'page3' });
-      expect(stub.mock.calls[3][0]).toEqual({ ...req, pageSize: 10000, pageToken: 'page4' });
+      expect(stub.mock.calls[0][0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: '',
+      });
+      expect(stub.mock.calls[1][0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: 'page2',
+      });
+      expect(stub.mock.calls[2][0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: 'page3',
+      });
+      expect(stub.mock.calls[3][0]).toEqual({
+        ...req,
+        pageSize: 10000,
+        pageToken: 'page4',
+      });
     });
 
     it('loadFirstPageOfTestVariants should work correctly', async () => {
       const firstLoadPromise = testLoader.loadNextTestVariants();
-      expect(firstLoadPromise).toStrictEqual(testLoader.loadFirstPageOfTestVariants());
+      expect(firstLoadPromise).toStrictEqual(
+        testLoader.loadFirstPageOfTestVariants()
+      );
       const secondLoadPromise = testLoader.loadNextTestVariants();
-      expect(secondLoadPromise).not.toBe(testLoader.loadFirstPageOfTestVariants());
-    });
-
-    it('should load at least one test variant that matches the filter', async () => {
-      testLoader.filter = (v) => v.testId === 'matched-id';
-      await testLoader.loadNextTestVariants();
-
-      expect(testLoader.unexpectedTestVariants).toEqual([]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([variant5]);
-      expect(testLoader.expectedTestVariants).toEqual([]);
-
-      await testLoader.loadNextTestVariants();
-
-      expect(testLoader.unexpectedTestVariants).toEqual([]);
-      expect(testLoader.nonExpectedTestVariants).toEqual([variant5]);
-      expect(testLoader.expectedTestVariants).toEqual([variant12]);
+      expect(secondLoadPromise).not.toBe(
+        testLoader.loadFirstPageOfTestVariants()
+      );
     });
 
     it('should load at least one test variant that matches the filter', async () => {
@@ -359,7 +465,8 @@ describe('TestLoader', () => {
       testLoader.filter = () => false;
 
       // Detect infinite loop and abort.
-      const oldLoadNextTestVariants = testLoader.loadNextTestVariants.bind(testLoader);
+      const oldLoadNextTestVariants =
+        testLoader.loadNextTestVariants.bind(testLoader);
       let callCount = 0;
       testLoader.loadNextTestVariants = (...params) => {
         callCount++;
@@ -380,14 +487,31 @@ describe('TestLoader', () => {
 
   describe('when first page contains no variants', () => {
     let testLoader: TestLoader;
-    let stub: jest.Mock<(req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>>;
+    let stub: jest.Mock<
+      (
+        req: QueryTestVariantsRequest,
+        cacheOpt?: CacheOption
+      ) => Promise<QueryTestVariantsResponse>
+    >;
     const req = { invocations: ['invocation'], pageSize: 4 };
 
     beforeEach(() => {
-      stub = jest.fn<(req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>>();
+      stub =
+        jest.fn<
+          (
+            req: QueryTestVariantsRequest,
+            cacheOpt?: CacheOption
+          ) => Promise<QueryTestVariantsResponse>
+        >();
       stub.mockResolvedValueOnce({ nextPageToken: 'page2' });
-      stub.mockResolvedValueOnce({ testVariants: [variant8], nextPageToken: 'page3' });
-      stub.mockResolvedValueOnce({ testVariants: [variant9], nextPageToken: undefined });
+      stub.mockResolvedValueOnce({
+        testVariants: [variant8],
+        nextPageToken: 'page3',
+      });
+      stub.mockResolvedValueOnce({
+        testVariants: [variant9],
+        nextPageToken: undefined,
+      });
       testLoader = new TestLoader(req, {
         queryTestVariants: stub,
       } as Partial<ResultDb> as ResultDb);
@@ -406,16 +530,37 @@ describe('TestLoader', () => {
 
   describe('when grouping test variants', () => {
     let testLoader: TestLoader;
-    let stub: jest.Mock<(req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>>;
+    let stub: jest.Mock<
+      (
+        req: QueryTestVariantsRequest,
+        cacheOpt?: CacheOption
+      ) => Promise<QueryTestVariantsResponse>
+    >;
     const req = { invocations: ['invocation'], pageSize: 4 };
 
     beforeEach(() => {
-      stub = jest.fn<(req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>>();
+      stub =
+        jest.fn<
+          (
+            req: QueryTestVariantsRequest,
+            cacheOpt?: CacheOption
+          ) => Promise<QueryTestVariantsResponse>
+        >();
       stub.mockResolvedValueOnce({
-        testVariants: [variant1, variant2, variant3, variant4, variant5, variant6, variant7],
+        testVariants: [
+          variant1,
+          variant2,
+          variant3,
+          variant4,
+          variant5,
+          variant6,
+          variant7,
+        ],
         nextPageToken: 'page1',
       });
-      stub.mockResolvedValueOnce({ testVariants: [variant8, variant9, variant10, variant11, variant12] });
+      stub.mockResolvedValueOnce({
+        testVariants: [variant8, variant9, variant10, variant11, variant12],
+      });
       testLoader = new TestLoader(req, {
         queryTestVariants: stub,
       } as Partial<ResultDb> as ResultDb);
@@ -437,7 +582,13 @@ describe('TestLoader', () => {
         [variant4, variant5],
         [variant6, variant7],
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11, variant12]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+        variant12,
+      ]);
     });
 
     it('should support multiple grouping keys', async () => {
@@ -456,7 +607,13 @@ describe('TestLoader', () => {
         [variant6],
         [variant7],
       ]);
-      expect(testLoader.expectedTestVariants).toEqual([variant8, variant9, variant10, variant11, variant12]);
+      expect(testLoader.expectedTestVariants).toEqual([
+        variant8,
+        variant9,
+        variant10,
+        variant11,
+        variant12,
+      ]);
     });
   });
 });

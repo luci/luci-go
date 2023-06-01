@@ -14,7 +14,7 @@
 
 import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 
 import { bugLine } from './bug_line';
 
@@ -24,7 +24,9 @@ const multipleBugLinesWithHardBreak = 'Bug: 123  \nBUG:234';
 
 describe('bug_line', () => {
   it('can render single bug line correctly', async () => {
-    const md = MarkdownIt('zero', { breaks: true }).enable('newline').use(bugLine);
+    const md = markdownIt('zero', { breaks: true })
+      .enable('newline')
+      .use(bugLine);
 
     const ele = await fixture(md.render(singleBugLine));
 
@@ -47,7 +49,9 @@ describe('bug_line', () => {
   });
 
   describe('When breaks is set to true', () => {
-    const md = MarkdownIt('zero', { breaks: true }).enable('newline').use(bugLine);
+    const md = markdownIt('zero', { breaks: true })
+      .enable('newline')
+      .use(bugLine);
 
     it('can renders multiple bug lines with soft break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));
@@ -81,7 +85,9 @@ describe('bug_line', () => {
   });
 
   describe('When breaks is set to false', () => {
-    const md = MarkdownIt('zero', { breaks: false }).enable('newline').use(bugLine);
+    const md = markdownIt('zero', { breaks: false })
+      .enable('newline')
+      .use(bugLine);
 
     it('can renders multiple bug lines with soft break correctly', async () => {
       const ele = await fixture(md.render(multipleBugLinesWithSoftBreak));

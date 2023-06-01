@@ -206,9 +206,15 @@ export const PropertyViewerConfig = types
     },
   }));
 
-export type PropertyViewerConfigInstance = Instance<typeof PropertyViewerConfig>;
-export type PropertyViewerConfigSnapshotIn = SnapshotIn<typeof PropertyViewerConfig>;
-export type PropertyViewerConfigSnapshotOut = SnapshotOut<typeof PropertyViewerConfig>;
+export type PropertyViewerConfigInstance = Instance<
+  typeof PropertyViewerConfig
+>;
+export type PropertyViewerConfigSnapshotIn = SnapshotIn<
+  typeof PropertyViewerConfig
+>;
+export type PropertyViewerConfigSnapshotOut = SnapshotOut<
+  typeof PropertyViewerConfig
+>;
 
 export const BuildConfig = types
   .model('BuildConfig', {
@@ -234,7 +240,9 @@ export const TestsConfig = types
      * SHOULD NOT BE ACCESSED DIRECTLY. Use the methods instead.
      */
     // Map<ColumnKey, ColumnWidthInPx>
-    _columnWidths: types.optional(types.map(types.number), { 'v.test_suite': 350 }),
+    _columnWidths: types.optional(types.map(types.number), {
+      'v.test_suite': 350,
+    }),
   })
   .views((self) => ({
     get columnWidths() {
@@ -263,12 +271,18 @@ export const UserConfig = types
         if (configV1Str === null) {
           return;
         }
-        const configV1 = merge({}, DEFAULT_USER_CONFIGS_V1, JSON.parse(configV1Str)) as UserConfigsV1;
+        const configV1 = merge(
+          {},
+          DEFAULT_USER_CONFIGS_V1,
+          JSON.parse(configV1Str)
+        ) as UserConfigsV1;
         const configV2 = configV1ToV2(configV1);
         applySnapshot(self, { ...configV2, id: self.id });
       } catch (e) {
         console.error(e);
-        console.warn('encountered an error when restoring user configs from the v1, ignoring it');
+        console.warn(
+          'encountered an error when restoring user configs from the v1, ignoring it'
+        );
       }
       storage.removeItem(V1_CACHE_KEY);
       storage.setItem(V2_CACHE_KEY, JSON.stringify(getSnapshot(self)));
@@ -282,7 +296,9 @@ export const UserConfig = types
         applySnapshot(self, { ...JSON.parse(snapshotStr), id: self.id });
       } catch (e) {
         console.error(e);
-        console.warn('encountered an error when restoring user configs from the cache, deleting it');
+        console.warn(
+          'encountered an error when restoring user configs from the cache, deleting it'
+        );
         storage.removeItem(V2_CACHE_KEY);
       }
     },

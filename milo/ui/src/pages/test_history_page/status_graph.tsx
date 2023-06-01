@@ -23,9 +23,15 @@ import './graph_config';
 import checkCircle from '../../assets/svgs/check_circle_24dp.svg';
 import checkCircleStacked from '../../assets/svgs/check_circle_stacked_24dp.svg';
 import { MiloBaseElement } from '../../components/milo_base';
-import { VARIANT_STATUS_CLASS_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../libs/constants';
+import {
+  VARIANT_STATUS_CLASS_MAP,
+  VERDICT_VARIANT_STATUS_MAP,
+} from '../../libs/constants';
 import { consumer } from '../../libs/context';
-import { QueryTestHistoryStatsResponseGroup, TestVerdictStatus } from '../../services/luci_analysis';
+import {
+  QueryTestHistoryStatsResponseGroup,
+  TestVerdictStatus,
+} from '../../services/luci_analysis';
 import { TestVariantStatus } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import { commonStyles } from '../../styles/stylesheets';
@@ -65,7 +71,9 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
                 x="-1"
                 height=${CELL_SIZE}
                 width=${CELL_SIZE * this.pageState.days + 2}
-                fill=${i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'}
+                fill=${
+                  i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'
+                }
               />
               ${this.renderRow(vHash)}
             </g>
@@ -82,7 +90,9 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
       const stats = this.pageState.statsLoader!.getStats(vHash, i);
       if (!stats) {
         ret.push(svg`
-          <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
+          <foreignObject x=${
+            CELL_SIZE * i
+          } width=${CELL_SIZE} height=${CELL_SIZE}>
             <milo-dot-spinner></milo-dot-spinner>
           </foreignObject>
         `);
@@ -103,11 +113,15 @@ export class TestHistoryStatusGraphElement extends MiloBaseElement {
       [TestVerdictStatus.EXPECTED]: group.expectedCount || 0,
       [TestVerdictStatus.EXONERATED]: group.exoneratedCount || 0,
       [TestVerdictStatus.FLAKY]: group.flakyCount || 0,
-      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: group.unexpectedlySkippedCount || 0,
+      [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]:
+        group.unexpectedlySkippedCount || 0,
       [TestVerdictStatus.UNEXPECTED]: group.unexpectedCount || 0,
       [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: 0,
     };
-    const totalCount = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    const totalCount = Object.values(counts).reduce(
+      (sum, count) => sum + count,
+      0
+    );
 
     if (totalCount === 0) {
       return;
@@ -140,12 +154,21 @@ Click to view test details.</title>`;
     }
 
     const count =
-      (this.pageState.countUnexpected ? counts[TestVariantStatus.UNEXPECTED] : 0) +
-      (this.pageState.countUnexpectedlySkipped ? counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED] : 0) +
+      (this.pageState.countUnexpected
+        ? counts[TestVariantStatus.UNEXPECTED]
+        : 0) +
+      (this.pageState.countUnexpectedlySkipped
+        ? counts[TestVariantStatus.UNEXPECTEDLY_SKIPPED]
+        : 0) +
       (this.pageState.countFlaky ? counts[TestVariantStatus.FLAKY] : 0) +
-      (this.pageState.countExonerated ? counts[TestVariantStatus.EXONERATED] : 0);
+      (this.pageState.countExonerated
+        ? counts[TestVariantStatus.EXONERATED]
+        : 0);
 
-    const nonEmptyStatusCount = STATUS_ORDER.reduce((c, status) => (counts[status] ? c + 1 : c), 0);
+    const nonEmptyStatusCount = STATUS_ORDER.reduce(
+      (c, status) => (counts[status] ? c + 1 : c),
+      0
+    );
 
     return svg`
       ${STATUS_ORDER.map((status) => {
@@ -153,10 +176,15 @@ Click to view test details.</title>`;
           return;
         }
         // Ensures each non-empty section is at least 1px tall.
-        const height = ((INNER_CELL_SIZE - nonEmptyStatusCount) * counts[status]) / totalCount + 1;
+        const height =
+          ((INNER_CELL_SIZE - nonEmptyStatusCount) * counts[status]) /
+            totalCount +
+          1;
         const ele = svg`
           <rect
-            class="${VARIANT_STATUS_CLASS_MAP[VERDICT_VARIANT_STATUS_MAP[status]]}"
+            class="${
+              VARIANT_STATUS_CLASS_MAP[VERDICT_VARIANT_STATUS_MAP[status]]
+            }"
             y=${previousHeight}
             width=${INNER_CELL_SIZE}
             height=${height}

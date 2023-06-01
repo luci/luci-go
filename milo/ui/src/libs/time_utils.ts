@@ -19,7 +19,13 @@ export const LONG_TIME_FORMAT = 'HH:mm:ss ccc, MMM dd yyyy ZZZZ';
 export const NUMERIC_TIME_FORMAT = 'y-MM-dd HH:mm:ss ZZ';
 
 export function displayDuration(duration: Duration) {
-  const shifted = duration.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds');
+  const shifted = duration.shiftTo(
+    'days',
+    'hours',
+    'minutes',
+    'seconds',
+    'milliseconds'
+  );
   const parts = [];
   if (shifted.days >= 1) {
     parts.push(shifted.days + ' ' + (shifted.days === 1 ? 'day' : 'days'));
@@ -29,11 +35,15 @@ export function displayDuration(duration: Duration) {
   }
   // We only care about minutes if days and hours are not both present
   if (shifted.minutes >= 1 && parts.length <= 1) {
-    parts.push(shifted.minutes + ' ' + (shifted.minutes === 1 ? 'min' : 'mins'));
+    parts.push(
+      shifted.minutes + ' ' + (shifted.minutes === 1 ? 'min' : 'mins')
+    );
   }
   // We only care about seconds if it is significant enough
   if (shifted.seconds >= 1 && parts.length <= 1) {
-    parts.push(shifted.seconds + ' ' + (shifted.seconds === 1 ? 'sec' : 'secs'));
+    parts.push(
+      shifted.seconds + ' ' + (shifted.seconds === 1 ? 'sec' : 'secs')
+    );
   }
   // We only care about ms if there are no other part
   if (parts.length === 0) {
@@ -42,12 +52,20 @@ export function displayDuration(duration: Duration) {
   return parts.join(' ');
 }
 
-export function displayCompactDuration(duration: Duration | null): [string, string] {
+export function displayCompactDuration(
+  duration: Duration | null
+): [string, string] {
   if (duration === null) {
     return ['N/A', ''];
   }
 
-  const shifted = duration.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds');
+  const shifted = duration.shiftTo(
+    'days',
+    'hours',
+    'minutes',
+    'seconds',
+    'milliseconds'
+  );
   if (shifted.days >= 1) {
     return [`${(shifted.days + shifted.hours / 24).toFixed(1)}d`, 'd'];
   }
@@ -62,7 +80,10 @@ export function displayCompactDuration(duration: Duration | null): [string, stri
   // shifted.milliseconds.toFixed(0) may give us 1000 when
   // shifted.milliseconds >= 999.5. We should display it as 1.0s in that case.
   if (shifted.seconds >= 1 || shifted.milliseconds >= 999.5) {
-    return [`${(shifted.seconds + shifted.milliseconds / 1000).toPrecision(2)}s`, 's'];
+    return [
+      `${(shifted.seconds + shifted.milliseconds / 1000).toPrecision(2)}s`,
+      's',
+    ];
   }
   return [`${shifted.milliseconds.toFixed(0)}ms`, 'ms'];
 }

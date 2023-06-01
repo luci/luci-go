@@ -42,6 +42,7 @@ interface ResultErr<E> {
  * Configs of the app.
  * Declared in the server generated file, /configs.js, included as a script tag.
  */
+// This is a global variable. We need to declare it with `var`.
 // eslint-disable-next-line no-var
 declare var CONFIGS: {
   readonly RESULT_DB: {

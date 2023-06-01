@@ -4,6 +4,7 @@
     "allowJs": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
+    "target": "ES2015",
     "sourceMap": true,
     "outDir": "out/",
     "noEmit": true,

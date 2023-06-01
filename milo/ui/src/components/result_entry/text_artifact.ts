@@ -20,7 +20,10 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
 import '../dot_spinner';
-import { consumeArtifacts, consumeArtifactsFinalized } from '../../context/artifact_provider';
+import {
+  consumeArtifacts,
+  consumeArtifactsFinalized,
+} from '../../context/artifact_provider';
 import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
@@ -74,7 +77,9 @@ export class TextArtifactElement extends MobxLitElement {
 
   @computed
   private get fetchUrl(): string {
-    const artifact = this.artifacts.get((this.invLevel ? 'inv-level/' : '') + this.artifactId);
+    const artifact = this.artifacts.get(
+      (this.invLevel ? 'inv-level/' : '') + this.artifactId
+    );
     // TODO(crbug/1206109): use permanent raw artifact URL.
     return artifact ? artifact.fetchUrl : '';
   }
@@ -85,7 +90,9 @@ export class TextArtifactElement extends MobxLitElement {
       return fromPromise(Promise.race([]));
     }
     return fromPromise(
-      fetch(urlSetSearchQueryParam(this.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
+      fetch(
+        urlSetSearchQueryParam(this.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)
+      ).then((res) => res.text())
     );
   }
 
@@ -107,7 +114,9 @@ export class TextArtifactElement extends MobxLitElement {
     }
 
     if (this.content === null) {
-      return html`<div id="load">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
+      return html`<div id="load">
+        Loading <milo-dot-spinner></milo-dot-spinner>
+      </div>`;
     }
 
     if (this.content === '') {

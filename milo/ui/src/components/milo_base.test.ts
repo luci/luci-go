@@ -39,7 +39,9 @@ describe('MiloBase', () => {
       }
     }
 
-    const testBaseElement = await fixture<TestBaseElement>(html`<milo-test-base></milo-test-base>`);
+    const testBaseElement = await fixture<TestBaseElement>(
+      html`<milo-test-base></milo-test-base>`
+    );
 
     expect(records).toEqual([]);
     testBaseElement.disconnectedCallback();

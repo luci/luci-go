@@ -51,7 +51,11 @@ export class StatusBarElement extends MobxLitElement {
   }
 
   protected render() {
-    return html` <div id="container">${this.components.map((c) => this.renderComponent(c))}</div> `;
+    return html`
+      <div id="container">
+        ${this.components.map((c) => this.renderComponent(c))}
+      </div>
+    `;
   }
 
   static styles = css`

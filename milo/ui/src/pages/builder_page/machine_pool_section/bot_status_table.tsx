@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BOT_STATUS_COLOR_MAP, BOT_STATUS_LABEL_MAP } from '../../../libs/constants';
+import {
+  BOT_STATUS_COLOR_MAP,
+  BOT_STATUS_LABEL_MAP,
+} from '../../../libs/constants';
 import { BotStatus } from '../../../services/swarming';
 
 interface BotStatusRowProps {
@@ -62,10 +65,26 @@ export function BotStatusTable({ stats, totalBots }: BotStatusTableProps) {
       }}
     >
       <tbody>
-        <BotStatusRow status={BotStatus.Idle} count={stats[BotStatus.Idle]} total={totalBots} />
-        <BotStatusRow status={BotStatus.Busy} count={stats[BotStatus.Busy]} total={totalBots} />
-        <BotStatusRow status={BotStatus.Quarantined} count={stats[BotStatus.Quarantined]} total={totalBots} />
-        <BotStatusRow status={BotStatus.Dead} count={stats[BotStatus.Dead]} total={totalBots} />
+        <BotStatusRow
+          status={BotStatus.Idle}
+          count={stats[BotStatus.Idle]}
+          total={totalBots}
+        />
+        <BotStatusRow
+          status={BotStatus.Busy}
+          count={stats[BotStatus.Busy]}
+          total={totalBots}
+        />
+        <BotStatusRow
+          status={BotStatus.Quarantined}
+          count={stats[BotStatus.Quarantined]}
+          total={totalBots}
+        />
+        <BotStatusRow
+          status={BotStatus.Dead}
+          count={stats[BotStatus.Dead]}
+          total={totalBots}
+        />
       </tbody>
     </table>
   );

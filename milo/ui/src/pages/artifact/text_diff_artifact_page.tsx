@@ -28,7 +28,10 @@ import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { getRawArtifactURLPath } from '../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../libs/utils';
-import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
+import {
+  ArtifactIdentifier,
+  constructArtifactName,
+} from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import { commonStyles } from '../../styles/stylesheets';
 import { consumeArtifactIdent } from './artifact_page_layout';
@@ -52,7 +55,11 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.services.resultDb.getArtifact({ name: constructArtifactName(this.artifactIdent) }));
+    return fromPromise(
+      this.store.services.resultDb.getArtifact({
+        name: constructArtifactName(this.artifactIdent),
+      })
+    );
   }
   @computed private get artifact() {
     return unwrapObservable(this.artifact$, null);
@@ -65,7 +72,13 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
     }
     return fromPromise(
       // TODO(crbug/1206109): use permanent raw artifact URL.
-      fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
+      fetch(
+        urlSetSearchQueryParam(
+          this.artifact.fetchUrl,
+          'n',
+          ARTIFACT_LENGTH_LIMIT
+        )
+      ).then((res) => res.text())
     );
   }
   @computed private get content() {
@@ -79,12 +92,16 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
 
   protected render = reportRenderError(this, () => {
     if (!this.artifact || !this.content) {
-      return html`<div id="content" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
+      return html`<div id="content" class="active-text">
+        Loading <milo-dot-spinner></milo-dot-spinner>
+      </div>`;
     }
 
     return html`
       <div id="details">
-        <a href=${getRawArtifactURLPath(this.artifact.name)}>View Raw Content</a>
+        <a href=${getRawArtifactURLPath(this.artifact.name)}
+          >View Raw Content</a
+        >
       </div>
       <div id="content">
         <link
@@ -92,7 +109,12 @@ export class TextDiffArtifactPageElement extends MobxLitElement {
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
         />
-        ${unsafeHTML(Diff2Html.html(this.content || '', { drawFileList: false, outputFormat: 'side-by-side' }))}
+        ${unsafeHTML(
+          Diff2Html.html(this.content || '', {
+            drawFileList: false,
+            outputFormat: 'side-by-side',
+          })
+        )}
       </div>
     `;
   });
@@ -122,7 +144,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-text-diff-artifact-page': {};
+      'milo-text-diff-artifact-page': Record<string, never>;
     }
   }
 }

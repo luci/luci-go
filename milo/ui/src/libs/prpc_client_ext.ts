@@ -35,7 +35,12 @@ export class PrpcClientExt {
     });
   }
 
-  async call(service: string, method: string, message: object, additionalHeaders: { [key: string]: string } = {}) {
+  async call(
+    service: string,
+    method: string,
+    message: object,
+    additionalHeaders: { [key: string]: string } = {}
+  ) {
     const accessToken = this.getAccessToken();
     if (accessToken) {
       additionalHeaders = {
@@ -43,6 +48,8 @@ export class PrpcClientExt {
         ...additionalHeaders,
       };
     }
-    return this.client.call(service, method, message, additionalHeaders).catch((e) => this.onError(e));
+    return this.client
+      .call(service, method, message, additionalHeaders)
+      .catch((e) => this.onError(e));
   }
 }

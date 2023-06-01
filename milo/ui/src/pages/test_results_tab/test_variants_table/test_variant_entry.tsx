@@ -27,28 +27,45 @@ import '../../../components/expandable_entry';
 import '../../../components/copy_to_clipboard';
 import '../../../components/result_entry';
 import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../../../common_tags';
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP } from '../../../libs/constants';
+import {
+  VARIANT_STATUS_CLASS_MAP,
+  VARIANT_STATUS_ICON_MAP,
+} from '../../../libs/constants';
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
-import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
+import {
+  lazyRendering,
+  RenderPlaceHolder,
+} from '../../../libs/observer_element';
 import { attachTags, hasTags } from '../../../libs/tag';
 import { getCodeSourceUrl } from '../../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { Cluster } from '../../../services/luci_analysis';
-import { RESULT_LIMIT, TestStatus, TestVariant } from '../../../services/resultdb';
+import {
+  RESULT_LIMIT,
+  TestStatus,
+  TestVariant,
+} from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
 import { colorClasses, commonStyles } from '../../../styles/stylesheets';
 import { consumeProject, consumeTestTabUrl } from './context';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
-const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite']);
+const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
+  'bucket',
+  'builder',
+  'test_suite',
+]);
 
 /**
  * Renders an expandable entry of the given test variant.
  */
 @customElement('milo-test-variant-entry')
 @lazyRendering
-export class TestVariantEntryElement extends MobxLitElement implements RenderPlaceHolder {
+export class TestVariantEntryElement
+  extends MobxLitElement
+  implements RenderPlaceHolder
+{
   @observable.ref @consumeStore() store!: StoreInstance;
   @observable.ref @consumeProject() project: string | undefined;
   @observable.ref @consumeTestTabUrl() testTabUrl: string | undefined;
@@ -101,7 +118,9 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     // We don't care about expected result nor unexpectedly passed/skipped
     // results. Filter them out.
     const results = this.variant.results?.filter(
-      (r) => !r.result.expected && ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status)
+      (r) =>
+        !r.result.expected &&
+        ![TestStatus.Pass, TestStatus.Skip].includes(r.result.status)
     );
 
     if (!results?.length) {
@@ -126,14 +145,20 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
         })
         .then((res) => {
           return res.clusteredTestResults.map(
-            (ctr, i) => [results[i].result.resultId, ctr.clusters] as readonly [string, readonly Cluster[]]
+            (ctr, i) =>
+              [results[i].result.resultId, ctr.clusters] as readonly [
+                string,
+                readonly Cluster[]
+              ]
           );
         })
     );
   }
 
   @computed
-  private get clustersByResultId(): ReadonlyArray<readonly [string, readonly Cluster[]]> {
+  private get clustersByResultId(): ReadonlyArray<
+    readonly [string, readonly Cluster[]]
+  > {
     try {
       return unwrapObservable(this.clustersByResultId$, []);
     } catch (err) {
@@ -152,7 +177,9 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed
   private get uniqueClusters(): readonly Cluster[] {
-    const clusters = this.clustersByResultId.flatMap(([_, clusters]) => clusters);
+    const clusters = this.clustersByResultId.flatMap(
+      ([_, clusters]) => clusters
+    );
     const seen = new Set<string>();
     const uniqueClusters: Cluster[] = [];
     for (const cluster of clusters) {
@@ -187,12 +214,16 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   @computed
   private get hasSingleChild() {
-    return (this.variant.results?.length ?? 0) + (this.variant.exonerations?.length ?? 0) === 1;
+    return (
+      (this.variant.results?.length ?? 0) +
+        (this.variant.exonerations?.length ?? 0) ===
+      1
+    );
   }
 
   @computed
   private get variantDef() {
-    const def = this.variant!.variant?.def || {};
+    const def = this.variant.variant?.def || {};
     const res: Array<[string, string]> = [];
     const seen = new Set();
     for (const key of ORDERED_VARIANT_DEF_KEYS) {
@@ -234,10 +265,16 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
     }
     return html`
       <div id="basic-info">
-        ${this.historyUrl ? html`<a href=${this.historyUrl} target="_blank">history</a> |` : ''}
-        ${this.sourceUrl ? html`<a href=${this.sourceUrl} target="_blank">source</a> |` : ''}
+        ${this.historyUrl
+          ? html`<a href=${this.historyUrl} target="_blank">history</a> |`
+          : ''}
+        ${this.sourceUrl
+          ? html`<a href=${this.sourceUrl} target="_blank">source</a> |`
+          : ''}
         <div id="test-id">
-          <span class="greyed-out" title=${this.variant.testId}>ID: ${this.variant.testId}</span>
+          <span class="greyed-out" title=${this.variant.testId}
+            >ID: ${this.variant.testId}</span
+          >
           <milo-copy-to-clipboard
             .textToCopy=${this.variant.testId}
             @click=${(e: Event) => e.stopPropagation()}
@@ -257,7 +294,9 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
         </span>
       </div>
       ${this.variant.results?.length === RESULT_LIMIT
-        ? html`<div id="result-limit-warning">Only the first ${RESULT_LIMIT} results are displayed.</div>`
+        ? html`<div id="result-limit-warning">
+            Only the first ${RESULT_LIMIT} results are displayed.
+          </div>`
         : ''}
       ${repeat(
         this.variant.exonerations || [],
@@ -265,7 +304,8 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
         (e) => html`
           <div class="explanation-html">
             ${unsafeHTML(
-              e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).'
+              e.explanationHtml ||
+                'This test variant had unexpected results, but was exonerated (reason not provided).'
             )}
           </div>
         `
@@ -296,7 +336,10 @@ export class TestVariantEntryElement extends MobxLitElement implements RenderPla
 
   protected render() {
     return html`
-      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
+      <milo-expandable-entry
+        .expanded=${this.expanded}
+        .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
+      >
         <div id="header" slot="header">
           <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[this.variant.status]}>
             ${VARIANT_STATUS_ICON_MAP[this.variant.status]}
@@ -443,7 +486,11 @@ export interface TestVariantEntryProps {
   readonly historyUrl?: string;
 }
 
-export function TestVariantEntry({ variant, columnGetters, historyUrl }: TestVariantEntryProps) {
+export function TestVariantEntry({
+  variant,
+  columnGetters,
+  historyUrl,
+}: TestVariantEntryProps) {
   const container = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

@@ -57,7 +57,11 @@ export class AssociatedBugsBadgeElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.uniqueBugs.length > 0,
-        (shouldDisplay) => this.style.setProperty('display', shouldDisplay ? 'inline-block' : 'none'),
+        (shouldDisplay) =>
+          this.style.setProperty(
+            'display',
+            shouldDisplay ? 'inline-block' : 'none'
+          ),
         { fireImmediately: true }
       )
     );
@@ -65,7 +69,10 @@ export class AssociatedBugsBadgeElement extends MiloBaseElement {
 
   private renderTooltip() {
     return html`
-      <milo-associated-bugs-tooltip .project=${this.project} .clusters=${this.clusters}></milo-associated-bugs-tooltip>
+      <milo-associated-bugs-tooltip
+        .project=${this.project}
+        .clusters=${this.clusters}
+      ></milo-associated-bugs-tooltip>
     `;
   }
 
@@ -88,7 +95,11 @@ export class AssociatedBugsBadgeElement extends MiloBaseElement {
           );
         }}
         @mouseout=${() => {
-          window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
+          window.dispatchEvent(
+            new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+              detail: { delay: 50 },
+            })
+          );
         }}
       >
         ${this.uniqueBugs.map((b) => b.linkText).join(', ')}

@@ -50,7 +50,13 @@ export class LinkArtifactElement extends MobxLitElement {
   private get content$(): IPromiseBasedObservable<string> {
     return fromPromise(
       // TODO(crbug/1206109): use permanent raw artifact URL.
-      fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => {
+      fetch(
+        urlSetSearchQueryParam(
+          this.artifact.fetchUrl,
+          'n',
+          ARTIFACT_LENGTH_LIMIT
+        )
+      ).then((res) => {
         if (!res.ok) {
           this.loadError = true;
           return '';
@@ -85,7 +91,9 @@ export class LinkArtifactElement extends MobxLitElement {
 
   protected render = reportRenderError(this, () => {
     if (this.loadError) {
-      return html` <span class="load-error"> Error loading ${this.artifact.artifactId} link </span>`;
+      return html` <span class="load-error">
+        Error loading ${this.artifact.artifactId} link
+      </span>`;
     }
 
     if (this.content) {

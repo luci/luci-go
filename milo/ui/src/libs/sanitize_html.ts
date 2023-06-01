@@ -25,7 +25,9 @@ domPurify.addHook('afterSanitizeAttributes', (node) => {
 
   // Note: rel="noopener" is added when the target is not set because <base> can
   // set the default target to _blank.
-  if (['_self', '_top', '_parent'].includes(node.getAttribute('target') || '')) {
+  if (
+    ['_self', '_top', '_parent'].includes(node.getAttribute('target') || '')
+  ) {
     return;
   }
 
@@ -39,7 +41,10 @@ domPurify.addHook('afterSanitizeAttributes', (node) => {
  * Sanitizes the input HTML string.
  */
 export function sanitizeHTML(html: string) {
-  return domPurify.sanitize(html, { ADD_ATTR: ['target', 'artifact-id', 'inv-level'], ADD_TAGS: ['text-artifact'] });
+  return domPurify.sanitize(html, {
+    ADD_ATTR: ['target', 'artifact-id', 'inv-level'],
+    ADD_TAGS: ['text-artifact'],
+  });
 }
 
 export function initDefaultTrustedTypesPolicy() {

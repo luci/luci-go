@@ -13,17 +13,40 @@
 // limitations under the License.
 
 import { ChevronRight, ExpandMore } from '@mui/icons-material';
-import { Box, Collapse, Icon, IconButton, Link, styled, TableCell, TableRow } from '@mui/material';
+import {
+  Box,
+  Collapse,
+  Icon,
+  IconButton,
+  Link,
+  styled,
+  TableCell,
+  TableRow,
+} from '@mui/material';
 import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
 import { Fragment } from 'react';
 
 import { Timestamp } from '../../../../components/timestamp';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP, BUILD_STATUS_ICON_MAP } from '../../../../libs/constants';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+  BUILD_STATUS_ICON_MAP,
+} from '../../../../libs/constants';
 import { renderMarkdown } from '../../../../libs/markdown_utils';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '../../../../libs/time_utils';
-import { getBuildURLPathFromBuildId, getGerritChangeURL, getGitilesCommitURL } from '../../../../libs/url_utils';
-import { Build, getAssociatedGitilesCommit } from '../../../../services/buildbucket';
+import {
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '../../../../libs/time_utils';
+import {
+  getBuildURLPathFromBuildId,
+  getGerritChangeURL,
+  getGitilesCommitURL,
+} from '../../../../libs/url_utils';
+import {
+  Build,
+  getAssociatedGitilesCommit,
+} from '../../../../services/buildbucket';
 import { ExpandableEntriesStateInstance } from '../../../../store/expandable_entries_state';
 
 const MarkdownContainer = styled(Box)({
@@ -45,68 +68,104 @@ export interface EndedBuildsTableRowProps {
   readonly build: Build;
 }
 
-export const EndedBuildsTableRow = observer(({ tableState, build }: EndedBuildsTableRowProps) => {
-  const expanded = Boolean(build.summaryMarkdown && tableState.isExpanded(build.id));
+export const EndedBuildsTableRow = observer(
+  ({ tableState, build }: EndedBuildsTableRowProps) => {
+    const expanded = Boolean(
+      build.summaryMarkdown && tableState.isExpanded(build.id)
+    );
 
-  const createTime = DateTime.fromISO(build.createTime);
-  const startTime = build.startTime ? DateTime.fromISO(build.startTime) : null;
-  const endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
-  const runDuration = startTime && endTime ? endTime.diff(startTime) : null;
-  const commit = getAssociatedGitilesCommit(build);
-  const changes = build.input?.gerritChanges || [];
+    const createTime = DateTime.fromISO(build.createTime);
+    const startTime = build.startTime
+      ? DateTime.fromISO(build.startTime)
+      : null;
+    const endTime = build.endTime ? DateTime.fromISO(build.endTime) : null;
+    const runDuration = startTime && endTime ? endTime.diff(startTime) : null;
+    const commit = getAssociatedGitilesCommit(build);
+    const changes = build.input?.gerritChanges || [];
 
-  return (
-    <>
-      <TableRow
-        sx={{
-          '& > td': { borderBottom: 'unset' },
-        }}
-      >
-        <TableCell>
-          {build.summaryMarkdown && (
-            <IconButton aria-label="toggle-row" size="small" onClick={() => tableState.toggle(build.id, !expanded)}>
-              {expanded ? <ExpandMore /> : <ChevronRight />}
-            </IconButton>
-          )}
-        </TableCell>
-        <TableCell>
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" />
-          <Icon className={BUILD_STATUS_CLASS_MAP[build.status]} title={BUILD_STATUS_DISPLAY_MAP[build.status]}>
-            {BUILD_STATUS_ICON_MAP[build.status]}
-          </Icon>
-        </TableCell>
-        <TableCell>
-          <Link href={getBuildURLPathFromBuildId(build.id)}>{build.number ?? 'b' + build.id}</Link>
-        </TableCell>
-        <TableCell>
-          <Timestamp datetime={createTime} format={NUMERIC_TIME_FORMAT} />
-        </TableCell>
-        <TableCell>{endTime ? <Timestamp datetime={endTime} format={NUMERIC_TIME_FORMAT} /> : 'N/A'}</TableCell>
-        <TableCell>{runDuration ? displayDuration(runDuration) : 'N/A'}</TableCell>
-        <TableCell>{commit ? <Link href={getGitilesCommitURL(commit)}>{commit.id}</Link> : 'N/A'}</TableCell>
-        <TableCell>
-          {changes.map((c, i) => (
-            <Fragment key={c.change}>
-              {i !== 0 && <>, </>}
-              <Link key={c.change} href={getGerritChangeURL(c)}>
-                CL {c.change} (ps #{c.patchset})
-              </Link>
-            </Fragment>
-          ))}
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell colSpan={8} sx={{ p: 0 }}>
-          {build.summaryMarkdown && (
-            <Collapse in={expanded} timeout="auto">
-              <MarkdownContainer
-                className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(build.summaryMarkdown || 'No Summary.') }}
-              />
-            </Collapse>
-          )}
-        </TableCell>
-      </TableRow>
-    </>
-  );
-});
+    return (
+      <>
+        <TableRow
+          sx={{
+            '& > td': { borderBottom: 'unset' },
+          }}
+        >
+          <TableCell>
+            {build.summaryMarkdown && (
+              <IconButton
+                aria-label="toggle-row"
+                size="small"
+                onClick={() => tableState.toggle(build.id, !expanded)}
+              >
+                {expanded ? <ExpandMore /> : <ChevronRight />}
+              </IconButton>
+            )}
+          </TableCell>
+          <TableCell>
+            <link
+              rel="stylesheet"
+              href="https://fonts.googleapis.com/css?family=Material+Icons&display=block"
+            />
+            <Icon
+              className={BUILD_STATUS_CLASS_MAP[build.status]}
+              title={BUILD_STATUS_DISPLAY_MAP[build.status]}
+            >
+              {BUILD_STATUS_ICON_MAP[build.status]}
+            </Icon>
+          </TableCell>
+          <TableCell>
+            <Link href={getBuildURLPathFromBuildId(build.id)}>
+              {build.number ?? 'b' + build.id}
+            </Link>
+          </TableCell>
+          <TableCell>
+            <Timestamp datetime={createTime} format={NUMERIC_TIME_FORMAT} />
+          </TableCell>
+          <TableCell>
+            {endTime ? (
+              <Timestamp datetime={endTime} format={NUMERIC_TIME_FORMAT} />
+            ) : (
+              'N/A'
+            )}
+          </TableCell>
+          <TableCell>
+            {runDuration ? displayDuration(runDuration) : 'N/A'}
+          </TableCell>
+          <TableCell>
+            {commit ? (
+              <Link href={getGitilesCommitURL(commit)}>{commit.id}</Link>
+            ) : (
+              'N/A'
+            )}
+          </TableCell>
+          <TableCell>
+            {changes.map((c, i) => (
+              <Fragment key={c.change}>
+                {i !== 0 && <>, </>}
+                <Link key={c.change} href={getGerritChangeURL(c)}>
+                  CL {c.change} (ps #{c.patchset})
+                </Link>
+              </Fragment>
+            ))}
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell colSpan={8} sx={{ p: 0 }}>
+            {build.summaryMarkdown && (
+              <Collapse in={expanded} timeout="auto">
+                <MarkdownContainer
+                  className={`${BUILD_STATUS_CLASS_MAP[build.status]}-bg`}
+                  dangerouslySetInnerHTML={{
+                    __html: renderMarkdown(
+                      build.summaryMarkdown || 'No Summary.'
+                    ),
+                  }}
+                />
+              </Collapse>
+            )}
+          </TableCell>
+        </TableRow>
+      </>
+    );
+  }
+);

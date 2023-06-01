@@ -23,9 +23,18 @@ import '../../components/dot_spinner';
 import '../../components/hotkey';
 import { CommitEntryElement } from '../../components/commit_entry';
 import { MiloBaseElement } from '../../components/milo_base';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '../../libs/analytics_utils';
 import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportErrorAsync, reportRenderError } from '../../libs/error_handler';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportErrorAsync,
+  reportRenderError,
+} from '../../libs/error_handler';
 import { getGitilesRepoURL } from '../../libs/url_utils';
 import { GitCommit } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
@@ -47,7 +56,9 @@ export class BlamelistTabElement extends MiloBaseElement {
   @computed
   private get queryBlamelistResIter() {
     const iterFn =
-      this.store.buildPage.queryBlamelistResIterFns?.[this.store.buildPage.selectedBlamelistPinIndex] ||
+      this.store.buildPage.queryBlamelistResIterFns?.[
+        this.store.buildPage.selectedBlamelistPinIndex
+      ] ||
       async function* () {
         yield Promise.race([]);
       };
@@ -65,7 +76,9 @@ export class BlamelistTabElement extends MiloBaseElement {
 
   @computed
   get selectedBlamelistPin() {
-    return this.store.buildPage.build?.blamelistPins[this.store.buildPage.selectedBlamelistPinIndex];
+    return this.store.buildPage.build?.blamelistPins[
+      this.store.buildPage.selectedBlamelistPinIndex
+    ];
   }
 
   @computed
@@ -76,7 +89,9 @@ export class BlamelistTabElement extends MiloBaseElement {
     }
 
     return this.precedingCommit
-      ? `${this.precedingCommit.id.substring(0, 12)}..${blamelistPin.id?.substring(0, 12) || blamelistPin.ref}`
+      ? `${this.precedingCommit.id.substring(0, 12)}..${
+          blamelistPin.id?.substring(0, 12) || blamelistPin.ref
+        }`
       : blamelistPin.id?.substring(0, 12) || blamelistPin.ref;
   }
 
@@ -86,8 +101,11 @@ export class BlamelistTabElement extends MiloBaseElement {
       return `This build included ${this.commits.length} new revisions from ${this.revisionRange}`;
     }
     if (this.commits.length > 0) {
-      return `This build included over ${this.commits.length} new revisions up to ${
-        this.selectedBlamelistPin!.id?.substring(0, 12) || this.selectedBlamelistPin!.ref
+      return `This build included over ${
+        this.commits.length
+      } new revisions up to ${
+        this.selectedBlamelistPin!.id?.substring(0, 12) ||
+        this.selectedBlamelistPin!.ref
       }`;
     }
     return '';
@@ -109,7 +127,11 @@ export class BlamelistTabElement extends MiloBaseElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('blamelist');
-    trackEvent(GA_CATEGORIES.BLAMELIST_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
+    trackEvent(
+      GA_CATEGORIES.BLAMELIST_TAB,
+      GA_ACTIONS.TAB_VISITED,
+      window.location.href
+    );
     this.addDisposer(
       reaction(
         () => this.queryBlamelistResIter,
@@ -139,15 +161,19 @@ export class BlamelistTabElement extends MiloBaseElement {
   private allEntriesWereExpanded = false;
   private toggleAllEntries(expand: boolean) {
     this.allEntriesWereExpanded = expand;
-    this.shadowRoot!.querySelectorAll<CommitEntryElement>('milo-commit-entry').forEach((e) => (e.expanded = expand));
+    this.shadowRoot!.querySelectorAll<CommitEntryElement>(
+      'milo-commit-entry'
+    ).forEach((e) => (e.expanded = expand));
   }
-  private readonly toggleAllEntriesByHotkey = () => this.toggleAllEntries(!this.allEntriesWereExpanded);
+  private readonly toggleAllEntriesByHotkey = () =>
+    this.toggleAllEntries(!this.allEntriesWereExpanded);
 
   protected render = reportRenderError(this, () => {
     if (this.store.buildPage.build && !this.selectedBlamelistPin) {
       return html`
         <div id="no-blamelist">
-          Blamelist is not available because the build has no associated gitiles commit.<br />
+          Blamelist is not available because the build has no associated gitiles
+          commit.<br />
         </div>
       `;
     }
@@ -159,11 +185,17 @@ export class BlamelistTabElement extends MiloBaseElement {
           <select
             id="repo-select"
             @input=${(e: InputEvent) =>
-              this.store.buildPage.setSelectedBlamelist(Number((e.target as HTMLOptionElement).value))}
+              this.store.buildPage.setSelectedBlamelist(
+                Number((e.target as HTMLOptionElement).value)
+              )}
           >
             ${this.store.buildPage.build?.blamelistPins.map(
               (pin, i) => html`
-                <option value=${i} ?selected=${this.store.buildPage.selectedBlamelistPinIndex === i}>
+                <option
+                  value=${i}
+                  ?selected=${this.store.buildPage.selectedBlamelistPinIndex ===
+                  i}
+                >
                   ${getGitilesRepoURL(pin)}
                 </option>
               `
@@ -175,10 +207,20 @@ export class BlamelistTabElement extends MiloBaseElement {
           .handler=${this.toggleAllEntriesByHotkey}
           title="press x to expand/collapse all entries"
         >
-          <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllEntries(true)}>
+          <mwc-button
+            class="action-button"
+            dense
+            unelevated
+            @click=${() => this.toggleAllEntries(true)}
+          >
             Expand All
           </mwc-button>
-          <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllEntries(false)}>
+          <mwc-button
+            class="action-button"
+            dense
+            unelevated
+            @click=${() => this.toggleAllEntries(false)}
+          >
             Collapse All
           </mwc-button>
         </milo-hotkey>
@@ -190,10 +232,19 @@ export class BlamelistTabElement extends MiloBaseElement {
           style=${styleMap({ display: this.blamelistSummary ? '' : 'none' })}
         >
           <span>${this.blamelistSummary}</span>
-          <a href="${this.gitilesLink}" target="_blank" style=${styleMap({ display: this.gitilesLink ? '' : 'none' })}>
+          <a
+            href="${this.gitilesLink}"
+            target="_blank"
+            style=${styleMap({ display: this.gitilesLink ? '' : 'none' })}
+          >
             [view in Gitiles]
           </a>
-          <span id="load" style=${styleMap({ display: this.blamelistSummary && !this.endOfPage ? '' : 'none' })}>
+          <span
+            id="load"
+            style=${styleMap({
+              display: this.blamelistSummary && !this.endOfPage ? '' : 'none',
+            })}
+          >
             <span
               id="load-more"
               style=${styleMap({ display: this.isLoading ? 'none' : '' })}
@@ -206,7 +257,10 @@ export class BlamelistTabElement extends MiloBaseElement {
             </span>
           </span>
         </div>
-        <hr class="divider" style=${styleMap({ display: this.blamelistSummary ? '' : 'none' })} />
+        <hr
+          class="divider"
+          style=${styleMap({ display: this.blamelistSummary ? '' : 'none' })}
+        />
         ${this.commits.map(
           (commit, i) => html`
             <milo-commit-entry
@@ -219,17 +273,24 @@ export class BlamelistTabElement extends MiloBaseElement {
         )}
         <div
           class="list-entry"
-          style=${styleMap({ display: this.endOfPage && this.commits.length === 0 ? '' : 'none' })}
+          style=${styleMap({
+            display: this.endOfPage && this.commits.length === 0 ? '' : 'none',
+          })}
         >
           No blamelist.
         </div>
         <hr
           class="divider"
-          style=${styleMap({ display: !this.endOfPage && this.commits.length === 0 ? 'none' : '' })}
+          style=${styleMap({
+            display: !this.endOfPage && this.commits.length === 0 ? 'none' : '',
+          })}
         />
         <div class="list-entry">
           <span>Showing ${this.commits.length} commits.</span>
-          <span id="load" style=${styleMap({ display: this.endOfPage ? 'none' : '' })}>
+          <span
+            id="load"
+            style=${styleMap({ display: this.endOfPage ? 'none' : '' })}
+          >
             <span
               id="load-more"
               style=${styleMap({ display: this.isLoading ? 'none' : '' })}
@@ -318,7 +379,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-blamelist-tab': {};
+      'milo-blamelist-tab': Record<string, never>;
     }
   }
 }

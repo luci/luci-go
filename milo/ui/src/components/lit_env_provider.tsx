@@ -32,7 +32,9 @@ function redirectToLogin(err: ErrorEvent, ele: LitEnvProviderElement) {
     hasTags(err.error, MAY_REQUIRE_SIGNIN) &&
     !hasTags(err.error, OPTIONAL_RESOURCE)
   ) {
-    window.location.href = `/ui/login?${new URLSearchParams([['redirect', window.location.href]])}`;
+    window.location.href = `/ui/login?${new URLSearchParams([
+      ['redirect', window.location.href],
+    ])}`;
     return false;
   }
   return handleLocally(err, ele);
@@ -49,11 +51,12 @@ export class LitEnvProviderElement extends MiloBaseElement {
   @provideStore({ global: true })
   store!: StoreInstance;
 
-  @provideNotifier({ global: true }) readonly notifier = new ProgressiveNotifier({
-    // Ensures that everything above the current scroll view is rendered.
-    // This reduces page shifting due to incorrect height estimate.
-    rootMargin: '1000000px 0px 0px 0px',
-  });
+  @provideNotifier({ global: true }) readonly notifier =
+    new ProgressiveNotifier({
+      // Ensures that everything above the current scroll view is rendered.
+      // This reduces page shifting due to incorrect height estimate.
+      rootMargin: '1000000px 0px 0px 0px',
+    });
 
   constructor() {
     super();

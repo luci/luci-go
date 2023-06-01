@@ -140,14 +140,20 @@ export function reportErrorAsync<T extends unknown[], V>(
  * Return true to instruct the error handler element to render the error
  * message.
  */
-export type OnError<T extends LitElement> = (err: ErrorEvent, ele: T) => boolean;
+export type OnError<T extends LitElement> = (
+  err: ErrorEvent,
+  ele: T
+) => boolean;
 
 /**
  * An OnError function that stops the error from propagating. If the error
  * message is not empty, instructs the error handler element to render the
  * error.
  */
-export function handleLocally<T extends LitElement>(err: ErrorEvent, _ele: T): boolean {
+export function handleLocally<T extends LitElement>(
+  err: ErrorEvent,
+  _ele: T
+): boolean {
   err.stopPropagation();
   return err.message !== '';
 }
@@ -160,7 +166,10 @@ export function handleLocally<T extends LitElement>(err: ErrorEvent, _ele: T): b
  * event.preventDefault() is not called, instructs the error handler element to
  * render the error.
  */
-export function forwardWithoutMsg<T extends LitElement>(err: ErrorEvent, ele: T): boolean {
+export function forwardWithoutMsg<T extends LitElement>(
+  err: ErrorEvent,
+  ele: T
+): boolean {
   err.stopPropagation();
   const event = new ErrorEvent('error', {
     error: err.error,
@@ -183,13 +192,19 @@ export function forwardWithoutMsg<T extends LitElement>(err: ErrorEvent, ele: T)
 /**
  * Specifies how the error should be rendered.
  */
-export type RenderErrorFn<T extends LitElement> = (err: ErrorEvent, ele: T) => unknown;
+export type RenderErrorFn<T extends LitElement> = (
+  err: ErrorEvent,
+  ele: T
+) => unknown;
 
 /**
  * A RenderErrorFn that renders the error message in a <pre> with grey
  * background.
  */
-export function renderErrorInPre<T extends LitElement>(err: ErrorEvent, _ele: T): unknown {
+export function renderErrorInPre<T extends LitElement>(
+  err: ErrorEvent,
+  _ele: T
+): unknown {
   return html`
     <pre
       style="
@@ -221,7 +236,9 @@ export function errorHandler<T extends LitElement>(
     // position. Cast to Constructor<LitElement> to stop tsc complaining.
     class ErrorHandler extends (cls as Constructor<LitElement>) {
       [errorSymbol]: ErrorEvent | null = null;
-      [errorListenerSymbol] = (_e: ErrorEvent) => {};
+      [errorListenerSymbol] = (_e: ErrorEvent) => {
+        /* implementation will be provided in `connectedCallback` */
+      };
 
       constructor() {
         super();

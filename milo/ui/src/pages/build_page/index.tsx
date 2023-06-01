@@ -16,13 +16,31 @@ import { css } from '@emotion/react';
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
-import { Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import {
+  Outlet,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import { Tab, Tabs } from '../../components/tabs';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_COLOR_THEME_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../libs/constants';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '../../libs/analytics_utils';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_COLOR_THEME_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+} from '../../libs/constants';
 import { displayDuration, LONG_TIME_FORMAT } from '../../libs/time_utils';
-import { getBuilderURLPath, getBuildURLPath, getLegacyBuildURLPath, getProjectURLPath } from '../../libs/url_utils';
+import {
+  getBuilderURLPath,
+  getBuildURLPath,
+  getLegacyBuildURLPath,
+  getProjectURLPath,
+} from '../../libs/url_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { BuildStatus } from '../../services/buildbucket';
 import { useStore } from '../../store';
@@ -63,11 +81,17 @@ export const BuildPageShortLink = observer(() => {
     }
     const build = store.buildPage.build!;
     if (build.data.number !== undefined) {
-      store.buildPage.setBuildId(build.data.builder, build.data.number, build.data.id);
+      store.buildPage.setBuildId(
+        build.data.builder,
+        build.data.number,
+        build.data.id
+      );
     }
     const buildUrl = getBuildURLPath(build.data.builder, build.buildNumOrId);
     const searchString = searchParams.toString();
-    const newUrl = `${buildUrl}${pathSuffix ? `/${pathSuffix}` : ''}${searchString ? `?${searchParams}` : ''}`;
+    const newUrl = `${buildUrl}${pathSuffix ? `/${pathSuffix}` : ''}${
+      searchString ? `?${searchParams}` : ''
+    }`;
 
     // TODO(weiweilin): sinon is not able to mock useNavigate.
     // Add a unit test once we setup jest.
@@ -91,15 +115,25 @@ export const BuildPage = observer(() => {
   const store = useStore();
 
   if (!project || !bucket || !builder || !buildNumOrId) {
-    throw new Error('invariant violated: project, bucket, builder, buildNumOrId should be set');
+    throw new Error(
+      'invariant violated: project, bucket, builder, buildNumOrId should be set'
+    );
   }
 
   useEffect(() => {
     if (window.location.href.includes('javascript:')) {
       return;
     }
-    trackEvent(GA_CATEGORIES.NEW_BUILD_PAGE, GA_ACTIONS.PAGE_VISITED, window.location.href);
-    trackEvent(GA_CATEGORIES.PROJECT_BUILD_PAGE, GA_ACTIONS.VISITED_NEW, project);
+    trackEvent(
+      GA_CATEGORIES.NEW_BUILD_PAGE,
+      GA_ACTIONS.PAGE_VISITED,
+      window.location.href
+    );
+    trackEvent(
+      GA_CATEGORIES.PROJECT_BUILD_PAGE,
+      GA_ACTIONS.VISITED_NEW,
+      project
+    );
   }, [project, bucket, builder, buildNumOrId]);
 
   useEffect(() => {
@@ -122,7 +156,10 @@ export const BuildPage = observer(() => {
   );
 
   const build = store.buildPage.build;
-  const buildURLPath = getBuildURLPath({ project, bucket, builder }, buildNumOrId);
+  const buildURLPath = getBuildURLPath(
+    { project, bucket, builder },
+    buildNumOrId
+  );
 
   const status = build?.data?.status;
   const statusDisplay = status ? BUILD_STATUS_DISPLAY_MAP[status] : 'loading';
@@ -141,7 +178,10 @@ export const BuildPage = observer(() => {
   return (
     <InvocationProvider value={store.buildPage.invocation}>
       <BuildLitEnvProvider>
-        <ChangeConfigDialog open={store.showSettingsDialog} onClose={() => store.setShowSettingsDialog(false)} />
+        <ChangeConfigDialog
+          open={store.showSettingsDialog}
+          onClose={() => store.setShowSettingsDialog(false)}
+        />
         <div
           css={{
             backgroundColor: 'var(--block-background-color)',
@@ -165,14 +205,16 @@ export const BuildPage = observer(() => {
             <span>&nbsp;/&nbsp;</span>
             <span>{bucket}</span>
             <span>&nbsp;/&nbsp;</span>
-            <a href={getBuilderURLPath({ project, bucket, builder })}>{builder}</a>
+            <a href={getBuilderURLPath({ project, bucket, builder })}>
+              {builder}
+            </a>
             <span>&nbsp;/&nbsp;</span>
             <span>{buildNumOrId}</span>
           </div>
           {customBugLink && (
             <>
               <div css={delimiter}></div>
-              <a href={customBugLink} target="_blank">
+              <a href={customBugLink} target="_blank" rel="noreferrer">
                 File a bug
               </a>
             </>
@@ -182,10 +224,13 @@ export const BuildPage = observer(() => {
               <div css={delimiter}></div>
               <a
                 onClick={(e) => {
-                  const switchVerTemporarily = e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
+                  const switchVerTemporarily =
+                    e.metaKey || e.shiftKey || e.ctrlKey || e.altKey;
                   trackEvent(
                     GA_CATEGORIES.LEGACY_BUILD_PAGE,
-                    switchVerTemporarily ? GA_ACTIONS.SWITCH_VERSION_TEMP : GA_ACTIONS.SWITCH_VERSION,
+                    switchVerTemporarily
+                      ? GA_ACTIONS.SWITCH_VERSION_TEMP
+                      : GA_ACTIONS.SWITCH_VERSION,
                     window.location.href
                   );
 
@@ -193,11 +238,16 @@ export const BuildPage = observer(() => {
                     return;
                   }
 
-                  const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+                  const expires = new Date(
+                    Date.now() + 365 * 24 * 60 * 60 * 1000
+                  ).toUTCString();
                   document.cookie = `showNewBuildPage=false; expires=${expires}; path=/`;
                   store.redirectSw?.unregister();
                 }}
-                href={getLegacyBuildURLPath({ project, bucket, builder }, buildNumOrId)}
+                href={getLegacyBuildURLPath(
+                  { project, bucket, builder },
+                  buildNumOrId
+                )}
               >
                 Switch to the legacy build page
               </a>
@@ -211,23 +261,34 @@ export const BuildPage = observer(() => {
           >
             {build && (
               <>
-                <i className={`status ${BUILD_STATUS_CLASS_MAP[build.data.status]}`}>
-                  {BUILD_STATUS_DISPLAY_MAP[build.data.status] || 'unknown status'}{' '}
+                <i
+                  className={`status ${
+                    BUILD_STATUS_CLASS_MAP[build.data.status]
+                  }`}
+                >
+                  {BUILD_STATUS_DISPLAY_MAP[build.data.status] ||
+                    'unknown status'}{' '}
                 </i>
                 {(() => {
                   switch (build.data.status) {
                     case BuildStatus.Scheduled:
-                      return `since ${build.createTime.toFormat(LONG_TIME_FORMAT)}`;
+                      return `since ${build.createTime.toFormat(
+                        LONG_TIME_FORMAT
+                      )}`;
                     case BuildStatus.Started:
-                      return `since ${build.startTime!.toFormat(LONG_TIME_FORMAT)}`;
+                      return `since ${build.startTime!.toFormat(
+                        LONG_TIME_FORMAT
+                      )}`;
                     case BuildStatus.Canceled:
-                      return `after ${displayDuration(build.endTime!.diff(build.createTime))} by ${
-                        build.data.canceledBy || 'unknown'
-                      }`;
+                      return `after ${displayDuration(
+                        build.endTime!.diff(build.createTime)
+                      )} by ${build.data.canceledBy || 'unknown'}`;
                     case BuildStatus.Failure:
                     case BuildStatus.InfraFailure:
                     case BuildStatus.Success:
-                      return `after ${displayDuration(build.endTime!.diff(build.startTime || build.createTime))}`;
+                      return `after ${displayDuration(
+                        build.endTime!.diff(build.startTime || build.createTime)
+                      )}`;
                     default:
                       return '';
                   }
@@ -239,15 +300,22 @@ export const BuildPage = observer(() => {
         <LinearProgress
           value={100}
           variant={build ? 'determinate' : 'indeterminate'}
-          color={build ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status] : 'primary'}
+          color={
+            build ? BUILD_STATUS_COLOR_THEME_MAP[build.data.status] : 'primary'
+          }
         />
         <Tabs value={store.selectedTabId || false}>
-          <Tab label="Overview" value="overview" to={buildURLPath + '/overview'} />
+          <Tab
+            label="Overview"
+            value="overview"
+            to={buildURLPath + '/overview'}
+          />
           {/* If the tab is visited directly via URL before we know if it could
         exists, display the tab heading so <Tabs /> won't throw no matching tab
         error */}
           {(store.selectedTabId === 'test-results' ||
-            (store.buildPage.hasInvocation && store.buildPage.canReadTestVerdicts)) && (
+            (store.buildPage.hasInvocation &&
+              store.buildPage.canReadTestVerdicts)) && (
             <Tab
               label="Test Results"
               value="test-results"
@@ -256,17 +324,37 @@ export const BuildPage = observer(() => {
               iconPosition="end"
             />
           )}
-          {(store.selectedTabId === 'steps' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Steps & Logs" value="steps" to={buildURLPath + '/steps'} />
+          {(store.selectedTabId === 'steps' ||
+            store.buildPage.canReadFullBuild) && (
+            <Tab
+              label="Steps & Logs"
+              value="steps"
+              to={buildURLPath + '/steps'}
+            />
           )}
-          {(store.selectedTabId === 'related-builds' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Related Builds" value="related-builds" to={buildURLPath + '/related-builds'} />
+          {(store.selectedTabId === 'related-builds' ||
+            store.buildPage.canReadFullBuild) && (
+            <Tab
+              label="Related Builds"
+              value="related-builds"
+              to={buildURLPath + '/related-builds'}
+            />
           )}
-          {(store.selectedTabId === 'timeline' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Timeline" value="timeline" to={buildURLPath + '/timeline'} />
+          {(store.selectedTabId === 'timeline' ||
+            store.buildPage.canReadFullBuild) && (
+            <Tab
+              label="Timeline"
+              value="timeline"
+              to={buildURLPath + '/timeline'}
+            />
           )}
-          {(store.selectedTabId === 'blamelist' || store.buildPage.canReadFullBuild) && (
-            <Tab label="Blamelist" value="blamelist" to={buildURLPath + '/blamelist'} />
+          {(store.selectedTabId === 'blamelist' ||
+            store.buildPage.canReadFullBuild) && (
+            <Tab
+              label="Blamelist"
+              value="blamelist"
+              to={buildURLPath + '/blamelist'}
+            />
           )}
         </Tabs>
         <Outlet />

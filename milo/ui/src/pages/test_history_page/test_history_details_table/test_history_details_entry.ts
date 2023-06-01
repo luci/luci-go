@@ -25,11 +25,22 @@ import { fromPromise } from 'mobx-utils';
 import '../../../components/expandable_entry';
 import '../../../components/result_entry';
 import '../../../components/changelists_badge';
-import { VARIANT_STATUS_CLASS_MAP, VARIANT_STATUS_ICON_MAP, VERDICT_VARIANT_STATUS_MAP } from '../../../libs/constants';
+import {
+  VARIANT_STATUS_CLASS_MAP,
+  VARIANT_STATUS_ICON_MAP,
+  VERDICT_VARIANT_STATUS_MAP,
+} from '../../../libs/constants';
 import { unwrapObservable } from '../../../libs/milo_mobx_utils';
-import { lazyRendering, RenderPlaceHolder } from '../../../libs/observer_element';
+import {
+  lazyRendering,
+  RenderPlaceHolder,
+} from '../../../libs/observer_element';
 import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
-import { getBuildURLPathFromBuildId, getCodeSourceUrl, getInvURLPath } from '../../../libs/url_utils';
+import {
+  getBuildURLPathFromBuildId,
+  getCodeSourceUrl,
+  getInvURLPath,
+} from '../../../libs/url_utils';
 import { TestVerdictBundle } from '../../../services/luci_analysis';
 import { RESULT_LIMIT } from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
@@ -37,14 +48,21 @@ import { colorClasses, commonStyles } from '../../../styles/stylesheets';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.
-const ORDERED_VARIANT_DEF_KEYS = Object.freeze(['bucket', 'builder', 'test_suite']);
+const ORDERED_VARIANT_DEF_KEYS = Object.freeze([
+  'bucket',
+  'builder',
+  'test_suite',
+]);
 
 /**
  * Renders an expandable entry of the given test variant.
  */
 @customElement('milo-test-history-details-entry')
 @lazyRendering
-export class TestHistoryDetailsEntryElement extends MobxLitElement implements RenderPlaceHolder {
+export class TestHistoryDetailsEntryElement
+  extends MobxLitElement
+  implements RenderPlaceHolder
+{
   @observable.ref @consumeStore() store!: StoreInstance;
 
   @observable.ref verdictBundle!: TestVerdictBundle;
@@ -80,7 +98,11 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
         ],
         resultLimit: RESULT_LIMIT,
       })
-      .then((res) => res.testVariants![0]);
+      .then((res) => {
+        // There must be a matching variant from ResultDB.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return res.testVariants![0];
+      });
     return fromPromise(testVariant);
   }
 
@@ -97,7 +119,11 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
 
   @computed
   private get hasSingleChild() {
-    return (this.testVariant?.results?.length ?? 0) + (this.testVariant?.exonerations?.length ?? 0) === 1;
+    return (
+      (this.testVariant?.results?.length ?? 0) +
+        (this.testVariant?.exonerations?.length ?? 0) ===
+      1
+    );
   }
 
   @computed
@@ -126,7 +152,9 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
       return 0;
     }
     // Otherwise expand the first failed result, or -1 if there aren't any.
-    return this.testVariant?.results?.findIndex((e) => !e.result.expected) ?? -1;
+    return (
+      this.testVariant?.results?.findIndex((e) => !e.result.expected) ?? -1
+    );
   }
 
   @computed private get columnValues() {
@@ -143,10 +171,11 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
   @computed private get invocationUrl() {
     const invId = this.verdictBundle.verdict.invocationId;
     const match = invId.match(/^build-(?<id>\d+)/);
-    if (!match) {
+    const buildId = match?.groups?.['id'];
+    if (!buildId) {
       return `${getInvURLPath(invId)}/test-results`;
     }
-    return `${getBuildURLPathFromBuildId(match.groups!['id'])}/test-results`;
+    return `${getBuildURLPathFromBuildId(buildId)}/test-results`;
   }
 
   constructor() {
@@ -165,7 +194,9 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
 
     return html`
       <div id="basic-info">
-        ${this.sourceUrl ? html`<a href=${this.sourceUrl} target="_blank">source</a>` : ''}
+        ${this.sourceUrl
+          ? html`<a href=${this.sourceUrl} target="_blank">source</a>`
+          : ''}
         ${this.variantDef.length !== 0 ? '|' : ''}
         <span class="greyed-out">
           ${this.variantDef.map(
@@ -184,13 +215,16 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
         (e) => html`
           <div class="explanation-html">
             ${unsafeHTML(
-              e.explanationHtml || 'This test variant had unexpected results, but was exonerated (reason not provided).'
+              e.explanationHtml ||
+                'This test variant had unexpected results, but was exonerated (reason not provided).'
             )}
           </div>
         `
       )}
       ${this.testVariant.results?.length === RESULT_LIMIT
-        ? html`<div id="result-limit-warning">Only the first ${RESULT_LIMIT} results are displayed.</div>`
+        ? html`<div id="result-limit-warning">
+            Only the first ${RESULT_LIMIT} results are displayed.
+          </div>`
         : ''}
       ${repeat(
         this.testVariant.results || [],
@@ -212,18 +246,30 @@ export class TestHistoryDetailsEntryElement extends MobxLitElement implements Re
   }
 
   protected render() {
-    const status = VERDICT_VARIANT_STATUS_MAP[this.verdictBundle.verdict.status];
+    const status =
+      VERDICT_VARIANT_STATUS_MAP[this.verdictBundle.verdict.status];
     return html`
-      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
+      <milo-expandable-entry
+        .expanded=${this.expanded}
+        .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
+      >
         <div id="header" slot="header">
-          <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[status]}>${VARIANT_STATUS_ICON_MAP[status]}</mwc-icon>
+          <mwc-icon class=${VARIANT_STATUS_CLASS_MAP[status]}
+            >${VARIANT_STATUS_ICON_MAP[status]}</mwc-icon
+          >
           <div title=${this.dateTime?.toFormat(LONG_TIME_FORMAT) || ''}>
             ${this.dateTime?.toFormat(SHORT_TIME_FORMAT) || ''}
           </div>
-          <a href=${this.invocationUrl} @click=${(e: Event) => e.stopImmediatePropagation()} target="_blank">
+          <a
+            href=${this.invocationUrl}
+            @click=${(e: Event) => e.stopImmediatePropagation()}
+            target="_blank"
+          >
             ${this.verdictBundle.verdict.invocationId}
           </a>
-          <milo-changelists-badge .changelists=${this.verdictBundle.verdict.changelists || []}></milo-changelists-badge>
+          <milo-changelists-badge
+            .changelists=${this.verdictBundle.verdict.changelists || []}
+          ></milo-changelists-badge>
           ${this.columnValues.map((v) => html`<div title=${v}>${v}</div>`)}
         </div>
         <div id="body" slot="content">${this.renderBody()}</div>

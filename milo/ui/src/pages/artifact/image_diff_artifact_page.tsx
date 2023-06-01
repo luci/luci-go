@@ -25,7 +25,10 @@ import '../../components/dot_spinner';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { ArtifactIdentifier, constructArtifactName } from '../../services/resultdb';
+import {
+  ArtifactIdentifier,
+  constructArtifactName,
+} from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import { commonStyles } from '../../styles/stylesheets';
 import { consumeArtifactIdent } from './artifact_page_layout';
@@ -77,10 +80,16 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
     return constructArtifactName({ ...this.artifactIdent });
   }
   @computed private get expectedArtifactName() {
-    return constructArtifactName({ ...this.artifactIdent, artifactId: this.expectedArtifactId });
+    return constructArtifactName({
+      ...this.artifactIdent,
+      artifactId: this.expectedArtifactId,
+    });
   }
   @computed private get actualArtifactName() {
-    return constructArtifactName({ ...this.artifactIdent, artifactId: this.actualArtifactId });
+    return constructArtifactName({
+      ...this.artifactIdent,
+      artifactId: this.actualArtifactId,
+    });
   }
 
   @computed
@@ -88,7 +97,9 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
     if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.services.resultDb.getArtifact({ name: this.diffArtifactName }));
+    return fromPromise(
+      this.store.services.resultDb.getArtifact({ name: this.diffArtifactName })
+    );
   }
   @computed private get diffArtifact() {
     return unwrapObservable(this.diffArtifact$, null);
@@ -99,7 +110,11 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
     if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.services.resultDb.getArtifact({ name: this.expectedArtifactName }));
+    return fromPromise(
+      this.store.services.resultDb.getArtifact({
+        name: this.expectedArtifactName,
+      })
+    );
   }
   @computed private get expectedArtifact() {
     return unwrapObservable(this.expectedArtifact$, null);
@@ -110,7 +125,11 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
     if (!this.store.services.resultDb) {
       return fromPromise(Promise.race([]));
     }
-    return fromPromise(this.store.services.resultDb.getArtifact({ name: this.actualArtifactName }));
+    return fromPromise(
+      this.store.services.resultDb.getArtifact({
+        name: this.actualArtifactName,
+      })
+    );
   }
   @computed private get actualArtifact() {
     return unwrapObservable(this.actualArtifact$, null);
@@ -127,7 +146,9 @@ export class ImageDiffArtifactPageElement extends MobxLitElement {
 
   protected render = reportRenderError(this, () => {
     if (this.isLoading) {
-      return html`<div id="loading-spinner" class="active-text">Loading <milo-dot-spinner></milo-dot-spinner></div>`;
+      return html`<div id="loading-spinner" class="active-text">
+        Loading <milo-dot-spinner></milo-dot-spinner>
+      </div>`;
     }
 
     return html`

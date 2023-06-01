@@ -46,7 +46,11 @@ export class TestHistoryDetailsTableConfigWidgetElement extends MobxLitElement {
     makeObservable(this);
   }
 
-  private renderPropKeysConfigRow(label: string, keys: readonly string[], updateKeys: (newKeys: string[]) => void) {
+  private renderPropKeysConfigRow(
+    label: string,
+    keys: readonly string[],
+    updateKeys: (newKeys: string[]) => void
+  ) {
     return html`
       <tr>
         <td>${label}:</td>

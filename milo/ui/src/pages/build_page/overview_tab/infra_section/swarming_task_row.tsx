@@ -25,7 +25,11 @@ export function SwarmingTaskRow({ swarming }: SwarmingTaskRowProps) {
       <td>Swarming Task:</td>
       <td>
         {swarming.taskId ? (
-          <a href={getSwarmingTaskURL(swarming.hostname, swarming.taskId)} target="_blank">
+          <a
+            href={getSwarmingTaskURL(swarming.hostname, swarming.taskId)}
+            target="_blank"
+            rel="noreferrer"
+          >
             {swarming.taskId}
           </a>
         ) : (

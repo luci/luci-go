@@ -59,7 +59,8 @@ export const ServiceWorkerRegistrationState = types
         self,
         // Keep track of the installing service worker state.
         reaction(
-          () => [self.installing?.serviceWorker, self.installing?.state] as const,
+          () =>
+            [self.installing?.serviceWorker, self.installing?.state] as const,
           ([sw]) => {
             if (!sw) {
               return;
@@ -94,4 +95,6 @@ export const ServiceWorkerRegistrationState = types
     },
   }));
 
-export type ServiceWorkerRegistrationStateInstance = Instance<typeof ServiceWorkerRegistrationState>;
+export type ServiceWorkerRegistrationStateInstance = Instance<
+  typeof ServiceWorkerRegistrationState
+>;

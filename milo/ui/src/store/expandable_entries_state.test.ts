@@ -15,7 +15,10 @@
 import { afterEach, beforeEach, expect } from '@jest/globals';
 import { destroy } from 'mobx-state-tree';
 
-import { ExpandableEntriesState, ExpandableEntriesStateInstance } from './expandable_entries_state';
+import {
+  ExpandableEntriesState,
+  ExpandableEntriesStateInstance,
+} from './expandable_entries_state';
 
 describe('ExpandableEntriesState', () => {
   let state: ExpandableEntriesStateInstance;

@@ -26,7 +26,10 @@ export const KV_SYNTAX_EXPLANATION =
  */
 export function parseKeyValue(source: string): [string, string | null] {
   const [, key, value] = source.match(KV_RE)!;
-  return [decodeQueryParam(key), value === undefined ? null : decodeQueryParam(value)];
+  return [
+    decodeQueryParam(key),
+    value === undefined ? null : decodeQueryParam(value),
+  ];
 }
 
 function decodeQueryParam(p: string) {

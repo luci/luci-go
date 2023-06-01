@@ -14,17 +14,21 @@
 
 import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 
 import { reviewerLine } from './reviewer_line';
 
 const singleReviewerLine = 'R=user@google.com';
-const multipleReviewerLinesWithSoftBreak = 'R=user@google.com\nR=user2@google.com';
-const multipleReviewerLinesWithHardBreak = 'R=user@google.com  \nR=user2@google.com';
+const multipleReviewerLinesWithSoftBreak =
+  'R=user@google.com\nR=user2@google.com';
+const multipleReviewerLinesWithHardBreak =
+  'R=user@google.com  \nR=user2@google.com';
 
 describe('reviewer_line', () => {
   it('does not treat "R=" prefix as part of the email address', async () => {
-    const md = MarkdownIt('zero', { breaks: true, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
+    const md = markdownIt('zero', { breaks: true, linkify: true })
+      .enable(['newline', 'linkify'])
+      .use(reviewerLine);
 
     const ele = await fixture(md.render(singleReviewerLine));
 
@@ -36,7 +40,9 @@ describe('reviewer_line', () => {
   });
 
   describe('When breaks is set to true', () => {
-    const md = MarkdownIt('zero', { breaks: true, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
+    const md = markdownIt('zero', { breaks: true, linkify: true })
+      .enable(['newline', 'linkify'])
+      .use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));
@@ -70,7 +76,9 @@ describe('reviewer_line', () => {
   });
 
   describe('When breaks is set to false', () => {
-    const md = MarkdownIt('zero', { breaks: false, linkify: true }).enable(['newline', 'linkify']).use(reviewerLine);
+    const md = markdownIt('zero', { breaks: false, linkify: true })
+      .enable(['newline', 'linkify'])
+      .use(reviewerLine);
 
     it('can renders multiple reviewer lines with soft break correctly', async () => {
       const ele = await fixture(md.render(multipleReviewerLinesWithSoftBreak));

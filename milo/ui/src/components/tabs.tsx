@@ -13,7 +13,12 @@
 // limitations under the License.
 
 // import styled from '@emotion/styled';
-import { styled, Tab as MuiTab, TabProps, Tabs as MuiTabs } from '@mui/material';
+import {
+  styled,
+  Tab as MuiTab,
+  TabProps,
+  Tabs as MuiTabs,
+} from '@mui/material';
 import { Link } from 'react-router-dom';
 
 /**

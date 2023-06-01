@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import { afterEach, beforeEach, expect, jest } from '@jest/globals';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { destroy, Instance, protect, unprotect } from 'mobx-state-tree';
 
 import { Store, StoreProvider } from '../../store';
@@ -44,7 +50,9 @@ describe('ChangeConfigDialog', () => {
       </StoreProvider>
     );
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Test Results' })
+    ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
     await act(async () => {
@@ -53,7 +61,9 @@ describe('ChangeConfigDialog', () => {
     });
 
     // Updating the config while the dialog is still open has no effect.
-    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Test Results' })
+    ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
     rerender(
@@ -81,7 +91,9 @@ describe('ChangeConfigDialog', () => {
       </StoreProvider>
     );
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Test Results' })
+    ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Test Results' }));
 
@@ -119,7 +131,9 @@ describe('ChangeConfigDialog', () => {
       </StoreProvider>
     );
 
-    expect(screen.queryByRole('button', { name: 'Test Results' })).not.toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Test Results' })
+    ).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Timeline' })).toBeNull();
 
     fireEvent.mouseDown(screen.getByRole('button', { name: 'Test Results' }));

@@ -31,7 +31,10 @@ export interface ExpandableEntryHeaderProps {
 /**
  * Renders the header of an <ExpandableEntry />.
  */
-export function ExpandableEntryHeader({ onToggle, children }: ExpandableEntryHeaderProps) {
+export function ExpandableEntryHeader({
+  onToggle,
+  children,
+}: ExpandableEntryHeaderProps) {
   const expanded = useContext(ExpandedContext);
 
   return (
@@ -69,7 +72,10 @@ export interface ExpandableEntryBodyProps {
  * Renders the body of an <ExpandableEntry />.
  * The content is hidden when the entry is collapsed.
  */
-export function ExpandableEntryBody({ ruler, children }: ExpandableEntryBodyProps) {
+export function ExpandableEntryBody({
+  ruler,
+  children,
+}: ExpandableEntryBodyProps) {
   const expanded = useContext(ExpandedContext);
   ruler = ruler || 'visible';
 
@@ -110,7 +116,9 @@ export interface ExpandableEntryProps {
 export function ExpandableEntry({ expanded, children }: ExpandableEntryProps) {
   return (
     <Box>
-      <ExpandedContext.Provider value={expanded}>{children}</ExpandedContext.Provider>
+      <ExpandedContext.Provider value={expanded}>
+        {children}
+      </ExpandedContext.Provider>
     </Box>
   );
 }
@@ -132,7 +140,9 @@ export class ExpandableEntryElement extends MobxLitElement {
    */
   @observable.ref contentRuler: 'visible' | 'invisible' | 'none' = 'visible';
 
-  onToggle = (_isExpanded: boolean) => {};
+  onToggle = (_isExpanded: boolean) => {
+    /* do nothing by default */
+  };
 
   @observable.ref private _expanded = false;
   get expanded() {
@@ -153,14 +163,18 @@ export class ExpandableEntryElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <div id="expandable-header" @click=${() => (this.expanded = !this.expanded)}>
+      <div
+        id="expandable-header"
+        @click=${() => (this.expanded = !this.expanded)}
+      >
         <mwc-icon>${this.expanded ? 'expand_more' : 'chevron_right'}</mwc-icon>
         <slot name="header"></slot>
       </div>
       <div
         id="body"
         style=${styleMap({
-          'grid-template-columns': this.contentRuler === 'none' ? '1fr' : '24px 1fr',
+          'grid-template-columns':
+            this.contentRuler === 'none' ? '1fr' : '24px 1fr',
         })}
       >
         <div
@@ -170,7 +184,10 @@ export class ExpandableEntryElement extends MobxLitElement {
             visibility: this.contentRuler === 'invisible' ? 'hidden' : '',
           })}
         ></div>
-        <slot name="content" style=${styleMap({ display: this.expanded ? '' : 'none' })}></slot>
+        <slot
+          name="content"
+          style=${styleMap({ display: this.expanded ? '' : 'none' })}
+        ></slot>
       </div>
     `;
   }

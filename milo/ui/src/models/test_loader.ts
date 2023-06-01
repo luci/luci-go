@@ -60,7 +60,9 @@ export class LoadTestVariantsError extends Error implements InnerTag {
  */
 export class TestLoader {
   @observable.ref filter = (_v: TestVariant) => true;
-  @observable.ref groupers: ReadonlyArray<readonly [string, (v: TestVariant) => unknown]> = [];
+  @observable.ref groupers: ReadonlyArray<
+    readonly [string, (v: TestVariant) => unknown]
+  > = [];
   @observable.ref cmpFn = (_v1: TestVariant, _v2: TestVariant) => 0;
 
   @computed get isLoading() {
@@ -82,7 +84,9 @@ export class TestLoader {
 
   @computed
   get testVariantCount() {
-    return this.nonExpectedTestVariants.length + this.expectedTestVariants.length;
+    return (
+      this.nonExpectedTestVariants.length + this.expectedTestVariants.length
+    );
   }
 
   /**
@@ -96,7 +100,9 @@ export class TestLoader {
 
     let groups = [this.nonExpectedTestVariants];
     for (const [, propGetter] of this.groupers) {
-      groups = groups.flatMap((group) => Object.values(groupBy(group, propGetter)));
+      groups = groups.flatMap((group) =>
+        Object.values(groupBy(group, propGetter))
+      );
     }
     return groups.map((group) => group.sort(this.cmpFn));
   }
@@ -112,7 +118,9 @@ export class TestLoader {
       if (prop === 'status') {
         continue;
       }
-      groups = groups.flatMap((group) => Object.values(groupBy(group, propGetter)));
+      groups = groups.flatMap((group) =>
+        Object.values(groupBy(group, propGetter))
+      );
     }
     return groups.map((group) => group.slice().sort(this.cmpFn));
   }
@@ -155,17 +163,26 @@ export class TestLoader {
     return this.stage > LoadingStage.LoadingUnexpected;
   }
   @computed get firstPageLoaded() {
-    return this.unfilteredUnexpectedVariants.length > 0 || this.loadedAllUnexpectedVariants;
+    return (
+      this.unfilteredUnexpectedVariants.length > 0 ||
+      this.loadedAllUnexpectedVariants
+    );
   }
   @computed get firstPageIsEmpty() {
-    return this.loadedAllUnexpectedVariants && this.unfilteredUnexpectedVariants.length === 0;
+    return (
+      this.loadedAllUnexpectedVariants &&
+      this.unfilteredUnexpectedVariants.length === 0
+    );
   }
 
   // undefined means the end has been reached.
   // empty string is the token for the first page.
   private nextPageToken: string | undefined = '';
 
-  constructor(private readonly req: QueryTestVariantsRequest, private readonly resultDb: ResultDb) {
+  constructor(
+    private readonly req: QueryTestVariantsRequest,
+    private readonly resultDb: ResultDb
+  ) {
     makeObservable(this);
   }
 

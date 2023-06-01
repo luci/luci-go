@@ -37,7 +37,9 @@ export const ServiceWorkerState = types
       this._setState(serviceWorker.state);
 
       const onStateChange = () => this._setState(serviceWorker.state);
-      addDisposer(self, () => serviceWorker.removeEventListener('statechange', onStateChange));
+      addDisposer(self, () =>
+        serviceWorker.removeEventListener('statechange', onStateChange)
+      );
       serviceWorker.addEventListener('statechange', onStateChange);
     },
   }));

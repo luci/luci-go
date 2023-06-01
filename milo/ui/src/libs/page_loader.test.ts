@@ -16,7 +16,9 @@ import { expect } from '@jest/globals';
 
 import { PageLoader } from './page_loader';
 
-const pages: { [pageToken: string]: [items: number[], nextPageToken?: string] } = {
+const pages: {
+  [pageToken: string]: [items: number[], nextPageToken?: string];
+} = {
   ['page1']: [[1, 2, 3, 4], 'page2'],
   ['page2']: [[5, 6, 7, 8], 'page3'],
   ['page3']: [[9, 10]],
@@ -24,7 +26,9 @@ const pages: { [pageToken: string]: [items: number[], nextPageToken?: string] } 
 
 describe('PageLoader', () => {
   it('e2e', async () => {
-    const pageLoader = new PageLoader(async (pageToken) => pages[pageToken || 'page1']);
+    const pageLoader = new PageLoader(
+      async (pageToken) => pages[pageToken || 'page1']
+    );
 
     expect(pageLoader.loadedFirstPage).toBeFalsy();
     expect(pageLoader.loadedAll).toBeFalsy();
@@ -58,7 +62,9 @@ describe('PageLoader', () => {
 
   describe('loadFirstPage works', () => {
     it('when called first', async () => {
-      const pageLoader = new PageLoader(async (pageToken) => pages[pageToken || 'page1']);
+      const pageLoader = new PageLoader(
+        async (pageToken) => pages[pageToken || 'page1']
+      );
 
       const page1 = await pageLoader.loadFirstPage();
       expect(page1).toEqual(pages['page1'][0]);
@@ -74,7 +80,9 @@ describe('PageLoader', () => {
     });
 
     it('when called after loading other pages', async () => {
-      const pageLoader = new PageLoader(async (pageToken) => pages[pageToken || 'page1']);
+      const pageLoader = new PageLoader(
+        async (pageToken) => pages[pageToken || 'page1']
+      );
 
       const page1 = await pageLoader.loadNextPage();
       expect(page1).toEqual(pages['page1'][0]);
@@ -92,7 +100,9 @@ describe('PageLoader', () => {
 
   describe('isLoading is populated correctly', () => {
     it('when loading pages sequentially', async () => {
-      const pageLoader = new PageLoader(async (pageToken) => pages[pageToken || 'page1']);
+      const pageLoader = new PageLoader(
+        async (pageToken) => pages[pageToken || 'page1']
+      );
 
       const page1Promise = pageLoader.loadNextPage();
       expect(pageLoader.isLoading).toBeTruthy();
@@ -117,7 +127,9 @@ describe('PageLoader', () => {
     });
 
     it('when loading pages in parallel', async () => {
-      const pageLoader = new PageLoader(async (pageToken) => pages[pageToken || 'page1']);
+      const pageLoader = new PageLoader(
+        async (pageToken) => pages[pageToken || 'page1']
+      );
 
       const page1Promise = pageLoader.loadNextPage();
       const page2Promise = pageLoader.loadNextPage();

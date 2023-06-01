@@ -20,8 +20,10 @@ import { MiloBaseElement } from '../components/milo_base';
 import { createContextLink, provider } from '../libs/context';
 import { Artifact } from '../services/resultdb';
 
-export const [provideArtifacts, consumeArtifacts] = createContextLink<Map<string, Artifact>>();
-export const [provideArtifactsFinalized, consumeArtifactsFinalized] = createContextLink<boolean>();
+export const [provideArtifacts, consumeArtifacts] =
+  createContextLink<Map<string, Artifact>>();
+export const [provideArtifactsFinalized, consumeArtifactsFinalized] =
+  createContextLink<boolean>();
 
 /**
  * Provides artifacts information.

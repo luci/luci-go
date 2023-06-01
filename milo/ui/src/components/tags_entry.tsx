@@ -22,7 +22,11 @@ import { createRoot, Root } from 'react-dom/client';
 
 import { StringPair } from '../services/common';
 import { commonStyles } from '../styles/stylesheets';
-import { ExpandableEntry, ExpandableEntryBody, ExpandableEntryHeader } from './expandable_entry';
+import {
+  ExpandableEntry,
+  ExpandableEntryBody,
+  ExpandableEntryHeader,
+} from './expandable_entry';
 
 export interface TagsEntryProps {
   readonly tags: readonly StringPair[];
@@ -49,15 +53,14 @@ export function TagsEntry({ tags }: TagsEntryProps) {
         </span>
       </ExpandableEntryHeader>
       <ExpandableEntryBody ruler="invisible">
-        <table
-          css={{ width: 'fit-content', overflow: 'hidden' }}>
+        <table css={{ width: 'fit-content', overflow: 'hidden' }}>
           <tbody>
             {tags.map((tag, i) => (
               <tr key={i}>
                 <td>{tag.key}:</td>
                 <td>
                   {tag.value?.match(/^https?:\/\//i) ? (
-                    <a href={tag.value} target="_blank">
+                    <a href={tag.value} target="_blank" rel="noreferrer">
                       {tag.value}
                     </a>
                   ) : (

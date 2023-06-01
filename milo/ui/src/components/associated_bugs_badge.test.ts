@@ -64,23 +64,33 @@ const cluster3: Cluster = {
 describe('AssociatedBugsBadge', () => {
   it('should remove duplicated bugs', async () => {
     const ele = await fixture<AssociatedBugsBadgeElement>(html`
-      <milo-associated-bugs-badge .clusters=${[cluster1, cluster2, cluster3, cluster1]}></milo-associated-bugs-badge>
+      <milo-associated-bugs-badge
+        .clusters=${[cluster1, cluster2, cluster3, cluster1]}
+      ></milo-associated-bugs-badge>
     `);
 
     expect(ele.shadowRoot!.textContent).toContain('crbug.com/1234');
-    expect(ele.shadowRoot!.textContent).not.toMatch(/crbug\.com\/1234(.*)crbug\.com\/1234/);
+    expect(ele.shadowRoot!.textContent).not.toMatch(
+      /crbug\.com\/1234(.*)crbug\.com\/1234/
+    );
   });
 
   it('should render a list on hover', async () => {
     const ele = await fixture<AssociatedBugsBadgeElement>(html`
-      <milo-associated-bugs-badge .clusters=${[cluster1, cluster2, cluster3]}></milo-associated-bugs-badge>
+      <milo-associated-bugs-badge
+        .clusters=${[cluster1, cluster2, cluster3]}
+      ></milo-associated-bugs-badge>
     `);
 
     const listener = oneEvent(window, 'show-tooltip');
-    ele.shadowRoot!.querySelector('.badge')!.dispatchEvent(new MouseEvent('mouseover'));
+    ele
+      .shadowRoot!.querySelector('.badge')!
+      .dispatchEvent(new MouseEvent('mouseover'));
     const event: CustomEvent<ShowTooltipEventDetail> = await listener;
 
-    const tooltip = event.detail.tooltip.querySelector('milo-associated-bugs-tooltip')! as AssociatedBugsTooltipElement;
+    const tooltip = event.detail.tooltip.querySelector(
+      'milo-associated-bugs-tooltip'
+    )! as AssociatedBugsTooltipElement;
 
     expect(tooltip.clusters).toEqual([cluster1, cluster2, cluster3]);
   });

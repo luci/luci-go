@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { computed, IComputedValue, IComputedValueOptions, observable } from 'mobx';
+import {
+  computed,
+  IComputedValue,
+  IComputedValueOptions,
+  observable,
+} from 'mobx';
 import { addDisposer, flow, IAnyStateTreeNode, isAlive } from 'mobx-state-tree';
 import { IPromiseBasedObservable, PENDING, REJECTED } from 'mobx-utils';
 
@@ -24,7 +29,10 @@ import { NEVER_PROMISE } from './constants';
  * If the observable is pending, return the defaultValue.
  * If the observable is rejected, throw the error.
  */
-export function unwrapObservable<T>(observable: IPromiseBasedObservable<T>, defaultValue: T) {
+export function unwrapObservable<T>(
+  observable: IPromiseBasedObservable<T>,
+  defaultValue: T
+) {
   switch (observable.state) {
     case PENDING:
       return defaultValue;
@@ -40,24 +48,26 @@ export function unwrapObservable<T>(observable: IPromiseBasedObservable<T>, defa
  * ensures the computed value can be properly GCed when `target` is destroyed.
  */
 export function keepAliveComputed<T>(
-    target: IAnyStateTreeNode,
-    func: () => T,
-    opts: IComputedValueOptions<T> = {},
+  target: IAnyStateTreeNode,
+  func: () => T,
+  opts: IComputedValueOptions<T> = {}
 ): IComputedValue<T> {
   const isAlive = observable.box(true);
   const ret = computed(
-      () => {
-        // Ensure the computed value doesn't observe anything else other than
-        // `isAlive` when `target` is no longer alive.
-        if (!isAlive.get()) {
-          throw new Error('the computed value is accessed when the target node is no longer alive');
-        }
-        return func();
-      },
-      {
-        ...opts,
-        keepAlive: true,
-      },
+    () => {
+      // Ensure the computed value doesn't observe anything else other than
+      // `isAlive` when `target` is no longer alive.
+      if (!isAlive.get()) {
+        throw new Error(
+          'the computed value is accessed when the target node is no longer alive'
+        );
+      }
+      return func();
+    },
+    {
+      ...opts,
+      keepAlive: true,
+    }
   );
 
   addDisposer(target, () => {
@@ -85,8 +95,8 @@ export function keepAliveComputed<T>(
 // Use the same signature as `flow` from `mobx-state-tree`, which uses `any`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function aliveFlow<R, Args extends any[]>(
-    target: IAnyStateTreeNode,
-    generator: Parameters<typeof flow<R, Args>>[0],
+  target: IAnyStateTreeNode,
+  generator: Parameters<typeof flow<R, Args>>[0]
 ): ReturnType<typeof flow<R, Args>> {
   return flow(function* (...args) {
     const gen = generator(...args);

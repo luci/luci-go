@@ -15,7 +15,7 @@
 import { beforeAll, expect } from '@jest/globals';
 import { fixture, html } from '@open-wc/testing-helpers';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 
 import { defaultTarget } from './default_target';
 
@@ -36,7 +36,7 @@ www.a.com
 </div>
 `;
 
-const md = MarkdownIt('zero', { linkify: true, html: true })
+const md = markdownIt('zero', { linkify: true, html: true })
   .enable(['linkify', 'autolink', 'link', 'html_inline', 'html_block'])
   .use(defaultTarget, '_blank');
 

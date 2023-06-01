@@ -26,10 +26,16 @@ import './row';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumer, provider } from '../../libs/context';
 import { reportError, reportErrorAsync } from '../../libs/error_handler';
-import { IntersectionNotifier, provideNotifier } from '../../libs/observer_element';
+import {
+  IntersectionNotifier,
+  provideNotifier,
+} from '../../libs/observer_element';
 import { getProjectURLPath } from '../../libs/url_utils';
 import { BuilderID } from '../../services/buildbucket';
-import { ListBuildersRequest, ListBuildersResponse } from '../../services/milo_internal';
+import {
+  ListBuildersRequest,
+  ListBuildersResponse,
+} from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
 import { commonStyles } from '../../styles/stylesheets';
 
@@ -75,7 +81,8 @@ export class BuildersPageElement extends MiloBaseElement {
   @observable.ref private builders: readonly BuilderID[] = [];
   @observable.ref private isLoading = false;
 
-  @computed private get listBuildersResIter(): AsyncIterableIterator<ListBuildersResponse> {
+  @computed
+  private get listBuildersResIter(): AsyncIterableIterator<ListBuildersResponse> {
     if (!this.store.services.milo) {
       return (async function* () {
         yield Promise.race([]);
@@ -123,7 +130,9 @@ export class BuildersPageElement extends MiloBaseElement {
   private loadAllPages = reportErrorAsync(this, async () => {
     this.isLoading = true;
     for await (const buildersRes of this.listBuildersResIter) {
-      this.builders = this.builders.concat(buildersRes.builders?.map((v) => v.id) || []);
+      this.builders = this.builders.concat(
+        buildersRes.builders?.map((v) => v.id) || []
+      );
     }
     this.isLoading = false;
   });
@@ -155,7 +164,10 @@ export class BuildersPageElement extends MiloBaseElement {
               this.builders,
               (b) => b.project + '/' + b.bucket + '/' + b.builder,
               (b) =>
-                html`<milo-builders-page-row .builder=${b} .numOfBuilds=${this.numOfBuilds}></milo-builders-page-row>`
+                html`<milo-builders-page-row
+                  .builder=${b}
+                  .numOfBuilds=${this.numOfBuilds}
+                ></milo-builders-page-row>`
             )}
           </tbody>
         </table>
@@ -246,5 +258,10 @@ export function BuildersPage() {
     document.title = (group || project) + ' | Builders';
   }, [project, group]);
 
-  return <milo-builders-page project={project} group={group || ''}></milo-builders-page>;
+  return (
+    <milo-builders-page
+      project={project}
+      group={group || ''}
+    ></milo-builders-page>
+  );
 }

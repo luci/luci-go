@@ -26,7 +26,9 @@ describe('TestList', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+    store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+    });
   });
   afterEach(() => {
     cleanup();
@@ -37,7 +39,10 @@ describe('TestList', () => {
   it('should load the first page of test', () => {
     store.searchPage.setSearchQuery('test-id');
     store.searchPage.setSearchTarget(SearchTarget.Tests);
-    const loadFirstPagesStub = jest.spyOn(store.searchPage.testLoader!, 'loadFirstPage');
+    const loadFirstPagesStub = jest.spyOn(
+      store.searchPage.testLoader!,
+      'loadFirstPage'
+    );
 
     render(
       <StoreProvider value={store}>

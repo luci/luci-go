@@ -21,12 +21,20 @@ export interface InvocationRowProps {
 }
 
 export function InvocationRow({ resultdb }: InvocationRowProps) {
-  const invocationLink = resultdb?.invocation ? getInvocationLink(resultdb.invocation) : null;
+  const invocationLink = resultdb?.invocation
+    ? getInvocationLink(resultdb.invocation)
+    : null;
 
   return (
     <tr>
       <td>ResultDB Invocation:</td>
-      <td>{invocationLink ? <MiloLink link={invocationLink} target="_blank" /> : 'None'}</td>
+      <td>
+        {invocationLink ? (
+          <MiloLink link={invocationLink} target="_blank" />
+        ) : (
+          'None'
+        )}
+      </td>
     </tr>
   );
 }

@@ -25,7 +25,10 @@ import '../expandable_entry';
 import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { getRawArtifactURLPath, getTextDiffArtifactURLPath } from '../../libs/url_utils';
+import {
+  getRawArtifactURLPath,
+  getTextDiffArtifactURLPath,
+} from '../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../libs/utils';
 import { Artifact } from '../../services/resultdb';
 import { commonStyles } from '../../styles/stylesheets';
@@ -41,7 +44,13 @@ export class TextDiffArtifactElement extends MobxLitElement {
   private get content$(): IPromiseBasedObservable<string> {
     return fromPromise(
       // TODO(crbug/1206109): use permanent raw artifact URL.
-      fetch(urlSetSearchQueryParam(this.artifact.fetchUrl, 'n', ARTIFACT_LENGTH_LIMIT)).then((res) => res.text())
+      fetch(
+        urlSetSearchQueryParam(
+          this.artifact.fetchUrl,
+          'n',
+          ARTIFACT_LENGTH_LIMIT
+        )
+      ).then((res) => res.text())
     );
   }
 
@@ -65,11 +74,20 @@ export class TextDiffArtifactElement extends MobxLitElement {
       <milo-expandable-entry .expanded=${true} .contentRuler="invisible">
         <span id="header" slot="header">
           Unexpected text output from
-          <a href=${getTextDiffArtifactURLPath(this.artifact.name)} target="_blank"> ${this.artifact.artifactId} </a>
-          (<a href=${getRawArtifactURLPath(this.artifact.name)} target="_blank">view raw</a>)
+          <a
+            href=${getTextDiffArtifactURLPath(this.artifact.name)}
+            target="_blank"
+          >
+            ${this.artifact.artifactId}
+          </a>
+          (<a href=${getRawArtifactURLPath(this.artifact.name)} target="_blank"
+            >view raw</a
+          >)
         </span>
         <div id="content" slot="content">
-          ${unsafeHTML(Diff2Html.html(this.content || '', { drawFileList: false }))}
+          ${unsafeHTML(
+            Diff2Html.html(this.content || '', { drawFileList: false })
+          )}
         </div>
       </milo-expandable-entry>
     `;

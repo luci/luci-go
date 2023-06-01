@@ -49,7 +49,10 @@ describe('getLogdogRawUrl', () => {
 
 describe('getBuildbucketLink', () => {
   it('should get correct Buildbucket url', async () => {
-    const buildbucketLink = getBuildbucketLink('cr-buildbucket-dev.appspot.com', '123');
+    const buildbucketLink = getBuildbucketLink(
+      'cr-buildbucket-dev.appspot.com',
+      '123'
+    );
     expect(buildbucketLink.url).toStrictEqual(
       // eslint-disable-next-line max-len
       'https://cr-buildbucket-dev.appspot.com/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?request=%7B%22id%22%3A%22123%22%7D'
@@ -59,8 +62,12 @@ describe('getBuildbucketLink', () => {
 
 describe('getSafeUrlFromTagValue', () => {
   it('should get the correct gerrit url', async () => {
-    const url = getSafeUrlFromTagValue('patch/gerrit/chromium-review.googlesource.com/2365643/6');
-    expect(url).toStrictEqual('https://chromium-review.googlesource.com/c/2365643/6');
+    const url = getSafeUrlFromTagValue(
+      'patch/gerrit/chromium-review.googlesource.com/2365643/6'
+    );
+    expect(url).toStrictEqual(
+      'https://chromium-review.googlesource.com/c/2365643/6'
+    );
   });
 
   it('should get the correct gitiles url', async () => {
@@ -73,12 +80,20 @@ describe('getSafeUrlFromTagValue', () => {
   });
 
   it('should get the correct milo url', async () => {
-    const url = getSafeUrlFromTagValue('build/milo/project_name/bucket/Builder name/42');
-    expect(url).toStrictEqual('/p/project_name/builders/bucket/Builder%20name/42');
+    const url = getSafeUrlFromTagValue(
+      'build/milo/project_name/bucket/Builder name/42'
+    );
+    expect(url).toStrictEqual(
+      '/p/project_name/builders/bucket/Builder%20name/42'
+    );
   });
   it('should get the correct swarming url', async () => {
-    const url = getSafeUrlFromTagValue('task/swarming/chrome-swarming/deadbeef');
-    expect(url).toStrictEqual('https://chrome-swarming.appspot.com/task?id=deadbeef&o=true&w=true');
+    const url = getSafeUrlFromTagValue(
+      'task/swarming/chrome-swarming/deadbeef'
+    );
+    expect(url).toStrictEqual(
+      'https://chrome-swarming.appspot.com/task?id=deadbeef&o=true&w=true'
+    );
   });
 });
 
@@ -160,7 +175,10 @@ describe('renderBugUrlTemplate', () => {
 
 describe('getCipdLink', () => {
   it('should get correct cipd url', async () => {
-    const cipdLink = getCipdLink('infra/3pp/tools/git/mac-amd64', 'bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC');
+    const cipdLink = getCipdLink(
+      'infra/3pp/tools/git/mac-amd64',
+      'bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC'
+    );
     expect(cipdLink.url).toStrictEqual(
       // eslint-disable-next-line max-len
       'https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/git/mac-amd64/+/bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC'

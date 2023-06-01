@@ -42,7 +42,10 @@ export const BuilderInfoSection = observer(() => {
   return (
     <>
       <h3>Builder Info</h3>
-      <div id="builder-description" dangerouslySetInnerHTML={{ __html: builderDescriptionHtml }} />
+      <div
+        id="builder-description"
+        dangerouslySetInnerHTML={{ __html: builderDescriptionHtml }}
+      />
     </>
   );
 });

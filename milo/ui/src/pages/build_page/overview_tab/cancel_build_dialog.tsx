@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useState } from 'react';
 
@@ -24,52 +31,59 @@ export interface CancelBuildDialogProps {
   readonly container?: HTMLDivElement;
 }
 
-export const CancelBuildDialog = observer(({ open, onClose, container }: CancelBuildDialogProps) => {
-  const pageState = useStore().buildPage;
-  const [reason, setReason] = useState('');
-  const [showError, setShowErr] = useState(false);
+export const CancelBuildDialog = observer(
+  ({ open, onClose, container }: CancelBuildDialogProps) => {
+    const pageState = useStore().buildPage;
+    const [reason, setReason] = useState('');
+    const [showError, setShowErr] = useState(false);
 
-  const handleConfirm = useCallback(() => {
-    if (!reason) {
-      setShowErr(true);
-      return;
-    }
-    pageState.cancelBuild(reason);
-    onClose?.();
-  }, [reason, pageState]);
+    const handleConfirm = useCallback(() => {
+      if (!reason) {
+        setShowErr(true);
+        return;
+      }
+      pageState.cancelBuild(reason);
+      onClose?.();
+    }, [reason, pageState, onClose]);
 
-  const handleUpdate = (newReason: string) => {
-    setReason(newReason);
-    setShowErr(false);
-  };
+    const handleUpdate = (newReason: string) => {
+      setReason(newReason);
+      setShowErr(false);
+    };
 
-  return (
-    <Dialog onClose={onClose} open={open} fullWidth maxWidth="sm" container={container}>
-      <DialogTitle>Cancel Build</DialogTitle>
-      <DialogContent>
-        <TextField
-          label="Reason"
-          value={reason}
-          error={showError}
-          helperText={showError ? 'Reason is required' : ''}
-          onChange={(e) => handleUpdate(e.target.value)}
-          autoFocus
-          required
-          margin="dense"
-          fullWidth
-          multiline
-          minRows={4}
-          maxRows={10}
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} variant="text">
-          Dismiss
-        </Button>
-        <Button onClick={handleConfirm} variant="contained">
-          Confirm
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-});
+    return (
+      <Dialog
+        onClose={onClose}
+        open={open}
+        fullWidth
+        maxWidth="sm"
+        container={container}
+      >
+        <DialogTitle>Cancel Build</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Reason"
+            value={reason}
+            error={showError}
+            helperText={showError ? 'Reason is required' : ''}
+            onChange={(e) => handleUpdate(e.target.value)}
+            required
+            margin="dense"
+            fullWidth
+            multiline
+            minRows={4}
+            maxRows={10}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} variant="text">
+            Dismiss
+          </Button>
+          <Button onClick={handleConfirm} variant="contained">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+);

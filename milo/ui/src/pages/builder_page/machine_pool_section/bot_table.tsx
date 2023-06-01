@@ -16,7 +16,10 @@ import { Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import { Timestamp } from '../../../components/timestamp';
-import { BOT_STATUS_COLOR_MAP, BOT_STATUS_LABEL_MAP } from '../../../libs/constants';
+import {
+  BOT_STATUS_COLOR_MAP,
+  BOT_STATUS_LABEL_MAP,
+} from '../../../libs/constants';
 import { NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
 import { BotInfo, getBotStatus, getBotUrl } from '../../../services/swarming';
 
@@ -40,9 +43,14 @@ function BotRow({ swarmingHost, bot }: BotRowProps) {
       <td>
         <Link href={getBotUrl(swarmingHost, bot.botId)}>{bot.botId}</Link>
       </td>
-      <td css={{ backgroundColor: BOT_STATUS_COLOR_MAP[status] }}>{BOT_STATUS_LABEL_MAP[status]}</td>
+      <td css={{ backgroundColor: BOT_STATUS_COLOR_MAP[status] }}>
+        {BOT_STATUS_LABEL_MAP[status]}
+      </td>
       <td>
-        <Timestamp datetime={DateTime.fromISO(bot.lastSeenTs)} format={NUMERIC_TIME_FORMAT} />
+        <Timestamp
+          datetime={DateTime.fromISO(bot.lastSeenTs)}
+          format={NUMERIC_TIME_FORMAT}
+        />
       </td>
     </tr>
   );

@@ -14,7 +14,12 @@
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { afterEach, beforeEach, expect, jest } from '@jest/globals';
-import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing-helpers';
+import {
+  aTimeout,
+  fixture,
+  fixtureCleanup,
+  html,
+} from '@open-wc/testing-helpers';
 import { LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { destroy } from 'mobx-state-tree';
@@ -25,12 +30,21 @@ import { ANONYMOUS_IDENTITY } from '../../../libs/auth_state';
 import { provider } from '../../../libs/context';
 import { Notifier, provideNotifier } from '../../../libs/observer_element';
 import { Cluster } from '../../../services/luci_analysis';
-import { TestResultBundle, TestStatus, TestVariant, TestVariantStatus } from '../../../services/resultdb';
+import {
+  TestResultBundle,
+  TestStatus,
+  TestVariant,
+  TestVariantStatus,
+} from '../../../services/resultdb';
 import { provideStore, Store, StoreInstance } from '../../../store';
 import { provideProject, provideTestTabUrl } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 
-const clusteringVersion = { algorithmsVersion: '1', rulesVersion: '1', configVersion: '1' };
+const clusteringVersion = {
+  algorithmsVersion: '1',
+  rulesVersion: '1',
+  configVersion: '1',
+};
 
 const cluster1: Cluster = {
   clusterId: {
@@ -99,7 +113,9 @@ class TestVariantEntryTestContextElement extends LitElement {
 describe('TestVariantEntry', () => {
   let store: StoreInstance;
   beforeEach(() => {
-    store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+    store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+    });
   });
   afterEach(() => {
     fixtureCleanup();
@@ -116,7 +132,12 @@ describe('TestVariantEntry', () => {
       ],
     });
 
-    function makeResult(resultId: string, expected: boolean, status: TestStatus, failureMsg: string): TestResultBundle {
+    function makeResult(
+      resultId: string,
+      expected: boolean,
+      status: TestStatus,
+      failureMsg: string
+    ): TestResultBundle {
       const ret: DeepMutable<TestResultBundle> = {
         result: {
           name: 'invocations/inv/tests/test-id/results/' + resultId,
@@ -154,7 +175,10 @@ describe('TestVariantEntry', () => {
 
     await fixture<TestVariantEntryElement>(html`
       <milo-test-variant-entry-test-context .store=${store}>
-        <milo-test-variant-entry .store=${store} .variant=${tv}></milo-test-variant-entry>
+        <milo-test-variant-entry
+          .store=${store}
+          .variant=${tv}
+        ></milo-test-variant-entry>
       </milo-test-variant-entry-test-context>
     `);
 
@@ -163,7 +187,10 @@ describe('TestVariantEntry', () => {
       {
         project: 'proj',
         testResults: [
-          { testId: 'test-id', failureReason: { primaryErrorMessage: 'reason3' } },
+          {
+            testId: 'test-id',
+            failureReason: { primaryErrorMessage: 'reason3' },
+          },
           { testId: 'test-id', failureReason: undefined },
         ],
       },
@@ -173,7 +200,9 @@ describe('TestVariantEntry', () => {
 
   it('should work properly if failed to query clusters from luci-analysis', async () => {
     const clusterStub = jest.spyOn(store.services.clusters!, 'cluster');
-    clusterStub.mockRejectedValueOnce(new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed'));
+    clusterStub.mockRejectedValueOnce(
+      new GrpcError(RpcCode.PERMISSION_DENIED, 'not allowed')
+    );
 
     const tv: TestVariant = {
       testId: 'test-id',
@@ -199,7 +228,9 @@ describe('TestVariantEntry', () => {
         <milo-test-variant-entry .variant=${tv}></milo-test-variant-entry>
       </milo-test-variant-entry-test-context>
     `);
-    const tvEntry = ele.querySelector<TestVariantEntryElement>('milo-test-variant-entry')!;
+    const tvEntry = ele.querySelector<TestVariantEntryElement>(
+      'milo-test-variant-entry'
+    )!;
     await aTimeout(0);
 
     expect(clusterStub.mock.calls.length).toStrictEqual(1);
@@ -214,7 +245,11 @@ describe('TestVariantEntry', () => {
     // New interactions are still handled.
     tvEntry.expanded = true;
     await tvEntry.updateComplete;
-    expect(tvEntry.shadowRoot!.querySelector<ExpandableEntryElement>('milo-expandable-entry')!.expanded).toBeTruthy();
+    expect(
+      tvEntry.shadowRoot!.querySelector<ExpandableEntryElement>(
+        'milo-expandable-entry'
+      )!.expanded
+    ).toBeTruthy();
   });
 
   it('should generate test URLs correctly', async () => {
@@ -242,7 +277,11 @@ describe('TestVariantEntry', () => {
         <milo-test-variant-entry .variant=${tv}></milo-test-variant-entry>
       </milo-test-variant-entry-test-context>
     `);
-    const tvEntry = ele.querySelector<TestVariantEntryElement>('milo-test-variant-entry')!;
-    expect(tvEntry.selfLink).toStrictEqual('https://test.com/test-results?q=ExactID%3Atest-id+VHash%3Avhash');
+    const tvEntry = ele.querySelector<TestVariantEntryElement>(
+      'milo-test-variant-entry'
+    )!;
+    expect(tvEntry.selfLink).toStrictEqual(
+      'https://test.com/test-results?q=ExactID%3Atest-id+VHash%3Avhash'
+    );
   });
 });

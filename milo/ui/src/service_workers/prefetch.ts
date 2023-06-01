@@ -12,12 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getAuthStateCache, getAuthStateCacheSync, queryAuthState, setAuthStateCache } from '../libs/auth_state';
+import {
+  getAuthStateCache,
+  getAuthStateCacheSync,
+  queryAuthState,
+  setAuthStateCache,
+} from '../libs/auth_state';
 import { cached } from '../libs/cached_fn';
 import { PrpcClientExt } from '../libs/prpc_client_ext';
 import { genCacheKeyForPrpcRequest } from '../libs/prpc_utils';
 import { timeout } from '../libs/utils';
-import { BUILD_FIELD_MASK, BuilderID, BuildsService, GetBuildRequest } from '../services/buildbucket';
+import {
+  BUILD_FIELD_MASK,
+  BuilderID,
+  BuildsService,
+  GetBuildRequest,
+} from '../services/buildbucket';
 import {
   constructArtifactName,
   getInvIdFromBuildId,
@@ -62,18 +72,29 @@ export class Prefetcher {
     // _cacheKey and _expiresIn are not used here but are used in the expire
     // and key functions below.
     // they are listed here to help TSC generate the correct type definition.
-    (info: Parameters<typeof fetch>[0], init: Parameters<typeof fetch>[1], _cacheKey: unknown, _expiresIn: number) =>
-      this.fetchImpl(info, init),
+    (
+      info: Parameters<typeof fetch>[0],
+      init: Parameters<typeof fetch>[1],
+      _cacheKey: unknown,
+      _expiresIn: number
+    ) => this.fetchImpl(info, init),
     {
       key: (_info, _init, cacheKey) => cacheKey,
       expire: ([, , , expiresIn]) => timeout(expiresIn),
     }
   );
 
-  private prefetchBuildsService = new BuildsService(this.makePrpcClient(this.configs.BUILDBUCKET.HOST));
-  private prefetchResultDBService = new ResultDb(this.makePrpcClient(this.configs.RESULT_DB.HOST));
+  private prefetchBuildsService = new BuildsService(
+    this.makePrpcClient(this.configs.BUILDBUCKET.HOST)
+  );
+  private prefetchResultDBService = new ResultDb(
+    this.makePrpcClient(this.configs.RESULT_DB.HOST)
+  );
 
-  constructor(private readonly configs: typeof CONFIGS, private readonly fetchImpl: typeof fetch) {}
+  constructor(
+    private readonly configs: typeof CONFIGS,
+    private readonly fetchImpl: typeof fetch
+  ) {}
 
   private makePrpcClient(host: string) {
     return new PrpcClientExt(
@@ -90,7 +111,7 @@ export class Prefetcher {
           );
 
           // Abort the function to prevent the response from being consumed.
-          throw 0;
+          throw new Error();
         },
       },
 
@@ -116,7 +137,13 @@ export class Prefetcher {
     const authState = await getAuthStateCache();
 
     const queryAuthStatePromise = queryAuthState((info, init) =>
-      this.cachedFetch({}, info, init, AUTH_STATE_CACHE_KEY, CACHE_DURATION).then((res) => res.clone())
+      this.cachedFetch(
+        {},
+        info,
+        init,
+        AUTH_STATE_CACHE_KEY,
+        CACHE_DURATION
+      ).then((res) => res.clone())
     ).then(setAuthStateCache);
     if (!authState) {
       await queryAuthStatePromise;
@@ -136,9 +163,13 @@ export class Prefetcher {
     let invName: string | null = null;
 
     // TODO(crbug/1108198): remove the /ui prefix.
-    let match = reqUrl.pathname.match(/^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i);
+    let match = reqUrl.pathname.match(
+      /^\/ui\/p\/([^/]+)\/builders\/([^/]+)\/([^/]+)\/(b?\d+)\/?/i
+    );
     if (match) {
-      const [project, bucket, builder, buildIdOrNum] = match.slice(1, 5).map((v) => decodeURIComponent(v));
+      const [project, bucket, builder, buildIdOrNum] = match
+        .slice(1, 5)
+        .map((v) => decodeURIComponent(v));
       if (buildIdOrNum.startsWith('b')) {
         buildId = buildIdOrNum.slice(1);
       } else {
@@ -158,26 +189,37 @@ export class Prefetcher {
       getBuildRequest = { id: buildId, fields: BUILD_FIELD_MASK };
       invName = 'invocations/' + getInvIdFromBuildId(buildId);
     } else if (builderId && buildNum) {
-      getBuildRequest = { builder: builderId, buildNumber: buildNum, fields: BUILD_FIELD_MASK };
-      invName = 'invocations/' + (await getInvIdFromBuildNum(builderId, buildNum));
+      getBuildRequest = {
+        builder: builderId,
+        buildNumber: buildNum,
+        fields: BUILD_FIELD_MASK,
+      };
+      invName =
+        'invocations/' + (await getInvIdFromBuildNum(builderId, buildNum));
     }
 
     if (getBuildRequest) {
       this.prefetchBuildsService
         .getBuild(getBuildRequest, CACHE_OPTION)
-        // Ignore any error, let the consumer of the cache deal with it.
-        .catch((_e) => {});
+        .catch((_e) => {
+          // Ignore any error, let the consumer of the cache deal with it.
+        });
     }
 
     if (invName) {
       this.prefetchResultDBService
         .getInvocation({ name: invName }, CACHE_OPTION)
-        // Ignore any error, let the consumer of the cache deal with it.
-        .catch((_e) => {});
+        .catch((_e) => {
+          // Ignore any error, let the consumer of the cache deal with it.
+        });
       this.prefetchResultDBService
-        .queryTestVariants({ invocations: [invName], resultLimit: RESULT_LIMIT }, CACHE_OPTION)
-        // Ignore any error, let the consumer of the cache deal with it.
-        .catch((_e) => {});
+        .queryTestVariants(
+          { invocations: [invName], resultLimit: RESULT_LIMIT },
+          CACHE_OPTION
+        )
+        .catch((_e) => {
+          // Ignore any error, let the consumer of the cache deal with it.
+        });
     }
   }
 
@@ -199,11 +241,23 @@ export class Prefetcher {
 
     this.prefetchResultDBService
       .getArtifact(
-        { name: constructArtifactName({ invocationId: invocationId!, testId, resultId, artifactId: artifactId! }) },
+        {
+          name: constructArtifactName({
+            // Invocation is a compulsory capture group.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            invocationId: invocationId!,
+            testId,
+            resultId,
+            // artifactId is a compulsory capture group.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            artifactId: artifactId!,
+          }),
+        },
         CACHE_OPTION
       )
-      // Ignore any error, let the consumer of the cache deal with it.
-      .catch((_e) => {});
+      .catch((_e) => {
+        // Ignore any error, let the consumer of the cache deal with it.
+      });
   }
 
   /**
@@ -222,7 +276,10 @@ export class Prefetcher {
         const cacheKey =
           e.request.url === this.authStateUrl
             ? AUTH_STATE_CACHE_KEY
-            : await genCacheKeyForPrpcRequest(PRPC_CACHE_KEY_PREFIX, e.request.clone());
+            : await genCacheKeyForPrpcRequest(
+                PRPC_CACHE_KEY_PREFIX,
+                e.request.clone()
+              );
 
         const res = await this.cachedFetch(
           // The response can't be reused, don't keep it in cache.

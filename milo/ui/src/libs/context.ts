@@ -120,11 +120,16 @@ export interface CtxProviderOption {
 
 // Use a Map to so there can be only one property mapped to the context in a
 // provider.
-type ProviderContextMeta = Map<string, [string | number | symbol, CtxProviderOption]>;
+type ProviderContextMeta = Map<
+  string,
+  [string | number | symbol, CtxProviderOption]
+>;
 
 // Use an array so there can be multiple properties mapped to the same context
 // in a consumer.
-type ConsumerContextMeta = Array<[eventType: string, propKey: string | number | symbol]>;
+type ConsumerContextMeta = Array<
+  [eventType: string, propKey: string | number | symbol]
+>;
 
 const providerMetaSymbol = Symbol('provider');
 const consumerMetaSymbol = Symbol('consumer');
@@ -156,7 +161,8 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
   const disconnectedCBsSymbol = Symbol('disconnectedCBs');
   const isFirstUpdatedSymbol = Symbol('isFirstUpdated');
 
-  const meta: ProviderContextMeta = Reflect.getMetadata(providerMetaSymbol, cls.prototype) || new Map();
+  const meta: ProviderContextMeta =
+    Reflect.getMetadata(providerMetaSymbol, cls.prototype) || new Map();
   const eventTypes = [...meta.keys()];
 
   class Provider extends (cls as Constructor<MobxLitElement>) {
@@ -203,7 +209,9 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
         const eventCB = ((event: ContextEvent) => {
           const onCtxUpdate = event.detail.onCtxUpdate;
           onCtxUpdateSet.add(onCtxUpdate);
-          event.detail.addDisconnectedEventCB(() => onCtxUpdateSet.delete(onCtxUpdate));
+          event.detail.addDisconnectedEventCB(() =>
+            onCtxUpdateSet.delete(onCtxUpdate)
+          );
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onCtxUpdate((this as any)[propKey]);
           event.stopImmediatePropagation();
@@ -213,7 +221,9 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
         }) as EventListener;
 
         this.addEventListener(eventType, eventCB);
-        this[disconnectedCBsSymbol].push(() => this.removeEventListener(eventType, eventCB));
+        this[disconnectedCBsSymbol].push(() =>
+          this.removeEventListener(eventType, eventCB)
+        );
 
         if (opt.global) {
           if (globalContextProviders.has(eventType)) {
@@ -227,9 +237,15 @@ export function provider<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
             }
           });
         } else {
-          localContextProviderCounter.set(eventType, (localContextProviderCounter.get(eventType) || 0) + 1);
+          localContextProviderCounter.set(
+            eventType,
+            (localContextProviderCounter.get(eventType) || 0) + 1
+          );
           this[disconnectedCBsSymbol].push(() => {
-            localContextProviderCounter.set(eventType, localContextProviderCounter.get(eventType)! - 1);
+            localContextProviderCounter.set(
+              eventType,
+              localContextProviderCounter.get(eventType)! - 1
+            );
           });
         }
       }
@@ -270,7 +286,10 @@ export function consumer<Cls extends Constructor<MobxLitElement>>(cls: Cls) {
   // multiple times won't override the property.
   const disconnectedCBsSymbol = Symbol('disconnectedCBs');
 
-  const meta = (Reflect.getMetadata(consumerMetaSymbol, cls.prototype) as ConsumerContextMeta | undefined) || [];
+  const meta =
+    (Reflect.getMetadata(consumerMetaSymbol, cls.prototype) as
+      | ConsumerContextMeta
+      | undefined) || [];
 
   // TypeScript doesn't allow type parameter in extends or implements
   // position. Cast to Constructor<MobxLitElement> to stop tsc complaining.
@@ -349,13 +368,20 @@ export function createContextLink<Ctx>() {
       if (!Reflect.hasMetadata(providerMetaSymbol, target)) {
         Reflect.defineMetadata(providerMetaSymbol, new Map(), target);
       }
-      const meta = Reflect.getMetadata(providerMetaSymbol, target) as ProviderContextMeta;
+      const meta = Reflect.getMetadata(
+        providerMetaSymbol,
+        target
+      ) as ProviderContextMeta;
       meta.set(eventType, [propKey, opt]);
     };
   }
 
   function consumeContext() {
-    return function <K extends string | number | symbol, V, T extends MobxLitElement & Partial<Record<K, V>>>(
+    return function <
+      K extends string | number | symbol,
+      V,
+      T extends MobxLitElement & Partial<Record<K, V>>
+    >(
       // T[K] must be assignable to Ctx.
       target: Ctx extends T[K] ? T : never,
       propKey: K
@@ -363,10 +389,16 @@ export function createContextLink<Ctx>() {
       if (!Reflect.hasMetadata(consumerMetaSymbol, target)) {
         Reflect.defineMetadata(consumerMetaSymbol, [], target);
       }
-      const meta = Reflect.getMetadata(consumerMetaSymbol, target) as ConsumerContextMeta;
+      const meta = Reflect.getMetadata(
+        consumerMetaSymbol,
+        target
+      ) as ConsumerContextMeta;
       meta.push([eventType, propKey]);
     };
   }
 
-  return [provideContext, consumeContext] as [typeof provideContext, typeof consumeContext];
+  return [provideContext, consumeContext] as [
+    typeof provideContext,
+    typeof consumeContext
+  ];
 }

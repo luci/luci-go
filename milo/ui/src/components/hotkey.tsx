@@ -13,22 +13,30 @@
 // limitations under the License.
 
 import { MobxLitElement } from '@adobe/lit-mobx';
-import Hotkeys, { HotkeysEvent, KeyHandler } from 'hotkeys-js';
+import hotkeys, { HotkeysEvent, KeyHandler } from 'hotkeys-js';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 import { useEffect } from 'react';
 import * as React from 'react';
 import { createRoot, Root } from 'react-dom/client';
+import { useLatest } from 'react-use';
 
 // Let individual hotkey element set the filters instead.
-Hotkeys.filter = () => true;
+hotkeys.filter = () => true;
 
-export type FilterFn = (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => boolean;
+export type FilterFn = (
+  keyboardEvent: KeyboardEvent,
+  hotkeysEvent: HotkeysEvent
+) => boolean;
 
 // By default, prevent hotkeys from reacting to events from input related elements
 // enclosed in shadow DOM.
-const DEFAULT_FILTER_FN = (keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {
-  const tagName = (keyboardEvent.composedPath()[0] as Partial<HTMLElement>).tagName || '';
+const DEFAULT_FILTER_FN = (
+  keyboardEvent: KeyboardEvent,
+  _hotkeysEvent: HotkeysEvent
+) => {
+  const tagName =
+    (keyboardEvent.composedPath()[0] as Partial<HTMLElement>).tagName || '';
   return !['INPUT', 'SELECT', 'TEXTAREA'].includes(tagName);
 };
 
@@ -47,19 +55,21 @@ export interface HotkeyProps {
 export function Hotkey({ hotkey, handler, filter, children }: HotkeyProps) {
   const filterFn = filter ?? DEFAULT_FILTER_FN;
 
-  const handle: KeyHandler = (keyboardEvent, hotkeysEvent) => {
+  // Use a reference so we don't have to re-bind the hotkey when the filter or
+  // handler gets updated.
+  const handle = useLatest<KeyHandler>((keyboardEvent, hotkeysEvent) => {
     if (!filterFn(keyboardEvent, hotkeysEvent)) {
       return;
     }
     handler(keyboardEvent, hotkeysEvent);
-  };
+  });
 
   useEffect(() => {
-    Hotkeys(hotkey, handle);
+    hotkeys(hotkey, (...params) => handle.current(...params));
     return () => {
-      Hotkeys.unbind(hotkey);
+      hotkeys.unbind(hotkey);
     };
-  }, [hotkey, handler, filter]);
+  }, [hotkey, handle]);
 
   return <>{children}</>;
 }
@@ -74,7 +84,8 @@ export class HotkeyElement extends MobxLitElement {
   // assigned to `this.handler` or `this.filter`.
   // This helps reducing updates.
   private handlerFn: KeyHandler = (...params) => this.handler(...params);
-  private filterFn: FilterFn = (...params) => (this.filter ?? DEFAULT_FILTER_FN)(...params);
+  private filterFn: FilterFn = (...params) =>
+    (this.filter ?? DEFAULT_FILTER_FN)(...params);
 
   private readonly parent: HTMLSpanElement;
   private readonly root: Root;

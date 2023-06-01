@@ -113,7 +113,11 @@ export function parseVariantPredicate(filterQuery: string): VariantPredicate {
     }
 
     const [vKey, vValue] = parseKeyValue(value);
-    if (!vKey || vKey.length > VARIANT_KEY_MAX_LEN || !VARIANT_KEY_RE.test(vKey)) {
+    if (
+      !vKey ||
+      vKey.length > VARIANT_KEY_MAX_LEN ||
+      !VARIANT_KEY_RE.test(vKey)
+    ) {
       continue;
     }
     if (!vValue || vValue.length > VARIANT_VALUE_MAX_LEN) {
@@ -139,15 +143,19 @@ const QUERY_TYPE_SUGGESTIONS = [
   },
   {
     type: 'VHash:',
-    explanation: 'Include only tests with the specified variant hash (case insensitive)',
+    explanation:
+      'Include only tests with the specified variant hash (case insensitive)',
   },
   {
     type: '-VHash:',
-    explanation: 'Exclude tests with the specified variant hash (case insensitive)',
+    explanation:
+      'Exclude tests with the specified variant hash (case insensitive)',
   },
 ];
 
-export function suggestTestHistoryFilterQuery(query: string): readonly Suggestion[] {
+export function suggestTestHistoryFilterQuery(
+  query: string
+): readonly Suggestion[] {
   if (query === '') {
     // Return some example queries when the query is empty.
     return [
@@ -172,11 +180,13 @@ export function suggestTestHistoryFilterQuery(query: string): readonly Suggestio
       },
       {
         value: 'V:uri-encoded-variant-key=uri-encoded-variant-value',
-        explanation: 'Include only tests with a matching test variant key-value pair (case sensitive)',
+        explanation:
+          'Include only tests with a matching test variant key-value pair (case sensitive)',
       },
       {
         value: 'VHash:variant-hash',
-        explanation: 'Include only tests with the specified variant hash (case insensitive)',
+        explanation:
+          'Include only tests with the specified variant hash (case insensitive)',
       },
     ];
   }
@@ -208,5 +218,8 @@ export function suggestTestHistoryFilterQuery(query: string): readonly Suggestio
     );
   }
 
-  return suggestions.map((s) => ({ ...s, display: s.display || highlight(s.value!, subQuery) }));
+  return suggestions.map((s) => ({
+    ...s,
+    display: s.display || highlight(s.value!, subQuery),
+  }));
 }

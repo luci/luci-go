@@ -20,9 +20,16 @@ import { reaction } from 'mobx';
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
 import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportErrorAsync } from '../../libs/error_handler';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportErrorAsync,
+} from '../../libs/error_handler';
 import { LoadingStage } from '../../models/test_loader';
-import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
+import {
+  consumeInvocationState,
+  InvocationStateInstance,
+} from '../../store/invocation_state';
 
 /**
  * Format number with a cap.
@@ -52,7 +59,10 @@ export class TestResultsTabCountIndicatorElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.invState.testLoader,
-        (testLoader) => reportErrorAsync(this, async () => testLoader?.loadFirstPageOfTestVariants())(),
+        (testLoader) =>
+          reportErrorAsync(this, async () =>
+            testLoader?.loadFirstPageOfTestVariants()
+          )(),
         { fireImmediately: true }
       )
     );
@@ -67,10 +77,16 @@ export class TestResultsTabCountIndicatorElement extends MiloBaseElement {
     if (testLoader.unfilteredUnexpectedVariantsCount > 0) {
       return html`<div
         id="unexpected"
-        title=${formatNum(testLoader.unfilteredUnexpectedVariantsCount, !testLoader.loadedAllUnexpectedVariants) +
-        ' unexpected tests'}
+        title=${formatNum(
+          testLoader.unfilteredUnexpectedVariantsCount,
+          !testLoader.loadedAllUnexpectedVariants
+        ) + ' unexpected tests'}
       >
-        ${formatNum(testLoader.unfilteredUnexpectedVariantsCount, !testLoader.loadedAllUnexpectedVariants, 99)}
+        ${formatNum(
+          testLoader.unfilteredUnexpectedVariantsCount,
+          !testLoader.loadedAllUnexpectedVariants,
+          99
+        )}
       </div>`;
     }
 
@@ -92,15 +108,22 @@ export class TestResultsTabCountIndicatorElement extends MiloBaseElement {
     if (testLoader.unfilteredFlakyVariantsCount > 0) {
       return html`<div
         id="flaky"
-        title=${formatNum(testLoader.unfilteredFlakyVariantsCount, !testLoader.loadedAllUnexpectedVariants) +
-        ' flaky tests'}
+        title=${formatNum(
+          testLoader.unfilteredFlakyVariantsCount,
+          !testLoader.loadedAllUnexpectedVariants
+        ) + ' flaky tests'}
       >
-        ${formatNum(testLoader.unfilteredFlakyVariantsCount, testLoader.stage < LoadingStage.LoadingFlaky)}
+        ${formatNum(
+          testLoader.unfilteredFlakyVariantsCount,
+          testLoader.stage < LoadingStage.LoadingFlaky
+        )}
       </div>`;
     }
 
     if (testLoader.unfilteredTestVariantCount > 0) {
-      return html`<mwc-icon id="expected" title="all tests passed">check_circle</mwc-icon>`;
+      return html`<mwc-icon id="expected" title="all tests passed"
+        >check_circle</mwc-icon
+      >`;
     }
 
     return;

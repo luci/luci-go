@@ -24,7 +24,10 @@ import {
 } from '../services/luci_analysis';
 import { TestHistoryStatsLoader } from './test_history_stats_loader';
 
-function createGroup(timestamp: string, variantHash: string): QueryTestHistoryStatsResponseGroup {
+function createGroup(
+  timestamp: string,
+  variantHash: string
+): QueryTestHistoryStatsResponseGroup {
   return {
     partitionTime: timestamp,
     variantHash,
@@ -43,9 +46,20 @@ describe('TestHistoryStatsLoader', () => {
   it('loadUntil should work correctly', async () => {
     // Set up.
     const stub =
-      jest.fn<(req: QueryTestHistoryStatsRequest, cacheOpt?: CacheOption) => Promise<QueryTestHistoryStatsResponse>>();
-    stub.mockResolvedValueOnce({ groups: [group1, group2], nextPageToken: 'page2' });
-    stub.mockResolvedValueOnce({ groups: [group3, group4], nextPageToken: 'page3' });
+      jest.fn<
+        (
+          req: QueryTestHistoryStatsRequest,
+          cacheOpt?: CacheOption
+        ) => Promise<QueryTestHistoryStatsResponse>
+      >();
+    stub.mockResolvedValueOnce({
+      groups: [group1, group2],
+      nextPageToken: 'page2',
+    });
+    stub.mockResolvedValueOnce({
+      groups: [group3, group4],
+      nextPageToken: 'page3',
+    });
     stub.mockResolvedValueOnce({ groups: [group5] });
     const statsLoader = new TestHistoryStatsLoader(
       'project',

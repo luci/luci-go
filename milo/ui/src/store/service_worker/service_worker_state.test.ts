@@ -16,7 +16,10 @@ import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { destroy } from 'mobx-state-tree';
 
 import { FakeServiceWorker } from '../../libs/test_utils/fake_service_worker';
-import { ServiceWorkerState, ServiceWorkerStateInstance } from './service_worker_state';
+import {
+  ServiceWorkerState,
+  ServiceWorkerStateInstance,
+} from './service_worker_state';
 
 describe('ServiceWorkerState', () => {
   let state: ServiceWorkerStateInstance;

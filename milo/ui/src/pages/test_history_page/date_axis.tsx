@@ -13,7 +13,14 @@
 // limitations under the License.
 
 import { Interpolation, Theme } from '@emotion/react';
-import { AxisScale, axisTop, scaleTime, select as d3Select, timeDay, timeFormat } from 'd3';
+import {
+  AxisScale,
+  axisTop,
+  scaleTime,
+  select as d3Select,
+  timeDay,
+  timeFormat,
+} from 'd3';
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
@@ -32,7 +39,9 @@ export class TestHistoryDateAxisElement extends MiloBaseElement {
   }
 
   private readonly dayAdjuster = new ResizeObserver(() => {
-    const days = Math.floor((this.getBoundingClientRect().width - 2) / CELL_SIZE);
+    const days = Math.floor(
+      (this.getBoundingClientRect().width - 2) / CELL_SIZE
+    );
     this.pageState.setDays(days);
   });
 
@@ -53,14 +62,23 @@ export class TestHistoryDateAxisElement extends MiloBaseElement {
 
   @computed private get scaleTime() {
     return scaleTime()
-      .domain([this.pageState.latestDate, this.pageState.latestDate.minus({ days: this.pageState.days })])
+      .domain([
+        this.pageState.latestDate,
+        this.pageState.latestDate.minus({ days: this.pageState.days }),
+      ])
       .range([0, this.pageState.days * CELL_SIZE]) as AxisScale<Date>;
   }
 
   @computed private get axisTime() {
-    const ret = d3Select(document.createElementNS('http://www.w3.org/2000/svg', 'g'))
+    const ret = d3Select(
+      document.createElementNS('http://www.w3.org/2000/svg', 'g')
+    )
       .attr('transform', `translate(1, ${X_AXIS_HEIGHT - 1})`)
-      .call(axisTop(this.scaleTime).tickFormat(timeFormat('%Y-%m-%d')).ticks(timeDay.every(1)));
+      .call(
+        axisTop(this.scaleTime)
+          .tickFormat(timeFormat('%Y-%m-%d'))
+          .ticks(timeDay.every(1))
+      );
 
     ret
       .selectAll('text')
@@ -74,7 +92,9 @@ export class TestHistoryDateAxisElement extends MiloBaseElement {
   }
 
   protected render() {
-    return html`<svg id="x-axis" height=${X_AXIS_HEIGHT}>${this.axisTime}</svg>`;
+    return html`<svg id="x-axis" height=${X_AXIS_HEIGHT}>
+      ${this.axisTime}
+    </svg>`;
   }
 
   static styles = css`

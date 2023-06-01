@@ -18,7 +18,9 @@ export interface AncestorBuildsRowProps {
   readonly ancestorBuildIds?: readonly string[];
 }
 
-export function AncestorBuildsRow({ ancestorBuildIds }: AncestorBuildsRowProps) {
+export function AncestorBuildsRow({
+  ancestorBuildIds,
+}: AncestorBuildsRowProps) {
   return (
     <tr>
       <td>Ancestor Builds:</td>
@@ -27,7 +29,11 @@ export function AncestorBuildsRow({ ancestorBuildIds }: AncestorBuildsRowProps) 
           ? 'no ancestor builds'
           : ancestorBuildIds.map((id) => (
               <>
-                <a href={getBuildURLPathFromBuildId(id)} target="_blank">
+                <a
+                  href={getBuildURLPathFromBuildId(id)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {id}
                 </a>{' '}
               </>

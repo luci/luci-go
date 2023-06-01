@@ -64,7 +64,10 @@ describe('InvocationState', () => {
   describe('filterVariant', () => {
     let store: StoreInstance;
     let queryTestVariantsStub: jest.SpiedFunction<
-      (req: QueryTestVariantsRequest, cacheOpt?: CacheOption) => Promise<QueryTestVariantsResponse>
+      (
+        req: QueryTestVariantsRequest,
+        cacheOpt?: CacheOption
+      ) => Promise<QueryTestVariantsResponse>
     >;
     beforeAll(async () => {
       store = Store.create({
@@ -72,8 +75,13 @@ describe('InvocationState', () => {
         invocationPage: { invocationId: 'invocation-id' },
       });
       unprotect(store);
-      queryTestVariantsStub = jest.spyOn(store.services.resultDb!, 'queryTestVariants');
-      queryTestVariantsStub.mockResolvedValueOnce({ testVariants: [variant1, variant2, variant3, variant4, variant5] });
+      queryTestVariantsStub = jest.spyOn(
+        store.services.resultDb!,
+        'queryTestVariants'
+      );
+      queryTestVariantsStub.mockResolvedValueOnce({
+        testVariants: [variant1, variant2, variant3, variant4, variant5],
+      });
       protect(store);
       await store.invocationPage.invocation.testLoader!.loadNextTestVariants();
     });
@@ -83,29 +91,49 @@ describe('InvocationState', () => {
 
     it('should not filter out anything when search text is empty', () => {
       store.invocationPage.invocation.setSearchText('');
-      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
+      expect(
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+      ).toEqual([variant1, variant2]);
+      expect(
+        store.invocationPage.invocation.testLoader!.expectedTestVariants
+      ).toEqual([variant5]);
     });
 
     it("should filter out variants whose test ID doesn't match the search text", () => {
       store.invocationPage.invocation.setSearchText('test-suite-a');
-      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([variant1, variant2]);
-      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([]);
+      expect(
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+      ).toEqual([variant1, variant2]);
+      expect(
+        store.invocationPage.invocation.testLoader!.expectedTestVariants
+      ).toEqual([]);
     });
 
     it('search text should be case insensitive', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
-      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([]);
-      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
+      expect(
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+      ).toEqual([]);
+      expect(
+        store.invocationPage.invocation.testLoader!.expectedTestVariants
+      ).toEqual([variant5]);
     });
 
     it('should preserve the last known valid filter', () => {
       store.invocationPage.invocation.setSearchText('test-suite-b');
-      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([]);
-      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
+      expect(
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+      ).toEqual([]);
+      expect(
+        store.invocationPage.invocation.testLoader!.expectedTestVariants
+      ).toEqual([variant5]);
       store.invocationPage.invocation.setSearchText('invalid:filter');
-      expect(store.invocationPage.invocation.testLoader!.unexpectedTestVariants).toEqual([]);
-      expect(store.invocationPage.invocation.testLoader!.expectedTestVariants).toEqual([variant5]);
+      expect(
+        store.invocationPage.invocation.testLoader!.unexpectedTestVariants
+      ).toEqual([]);
+      expect(
+        store.invocationPage.invocation.testLoader!.expectedTestVariants
+      ).toEqual([variant5]);
     });
   });
 });

@@ -51,7 +51,8 @@ const INV_TEXT_OFFSET = ROW_HEIGHT / 2 + TEXT_HEIGHT / 2;
 const TEXT_MARGIN = 10;
 
 const SIDE_PANEL_WIDTH = 400;
-const SIDE_PANEL_RECT_WIDTH = SIDE_PANEL_WIDTH - BLOCK_MARGIN * 2 - BORDER_SIZE * 2;
+const SIDE_PANEL_RECT_WIDTH =
+  SIDE_PANEL_WIDTH - BLOCK_MARGIN * 2 - BORDER_SIZE * 2;
 const MIN_GRAPH_WIDTH = 500 + SIDE_PANEL_WIDTH;
 
 const LIST_ITEM_WIDTH = SIDE_PANEL_RECT_WIDTH - TEXT_MARGIN * 2;
@@ -89,7 +90,12 @@ export class Timeline extends MobxLitElement {
   private footerEle!: HTMLDivElement;
   private sidePanelEle!: HTMLDivElement;
   private bodyEle!: HTMLDivElement;
-  private relativeTimeText!: Selection<SVGTextElement, unknown, null, undefined>;
+  private relativeTimeText!: Selection<
+    SVGTextElement,
+    unknown,
+    null,
+    undefined
+  >;
 
   // Properties shared between render methods.
   private bodyHeight!: number;
@@ -109,7 +115,8 @@ export class Timeline extends MobxLitElement {
     const endTime = this.endTime.toMillis();
     this.bodyHeight = this.blocks.length * ROW_HEIGHT - BORDER_SIZE;
     const bodyWidth = this.width - SIDE_PANEL_WIDTH;
-    const padding = Math.ceil(((endTime - startTime) * BLOCK_EXTRA_WIDTH) / bodyWidth) / 2;
+    const padding =
+      Math.ceil(((endTime - startTime) * BLOCK_EXTRA_WIDTH) / bodyWidth) / 2;
 
     // Calc attributes shared among components.
     this.scaleTime = scaleTime()
@@ -123,9 +130,12 @@ export class Timeline extends MobxLitElement {
       // Ensure the top and bottom borders are not rendered.
       .range([-HALF_BORDER_SIZE, this.bodyHeight + HALF_BORDER_SIZE]);
 
-    const maxInterval = (endTime - startTime + 2 * padding) / (bodyWidth / V_GRID_LINE_MAX_GAP);
+    const maxInterval =
+      (endTime - startTime + 2 * padding) / (bodyWidth / V_GRID_LINE_MAX_GAP);
 
-    this.timeInterval = timeMillisecond.every(roundDown(maxInterval, PREDEFINED_TIME_INTERVALS))!;
+    this.timeInterval = timeMillisecond.every(
+      roundDown(maxInterval, PREDEFINED_TIME_INTERVALS)
+    )!;
 
     // Render each component.
     this.renderHeader();
@@ -133,7 +143,9 @@ export class Timeline extends MobxLitElement {
     this.renderSidePanel();
     this.renderBody();
 
-    return html`<div id="timeline">${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}</div>`;
+    return html`<div id="timeline">
+      ${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}
+    </div>`;
   }
 
   private renderHeader() {
@@ -149,12 +161,19 @@ export class Timeline extends MobxLitElement {
         .attr('x', TEXT_MARGIN)
         .attr('y', TOP_AXIS_HEIGHT - TEXT_MARGIN / 2)
         .attr('font-weight', '500')
-        .text(`${this.startTimeLabel}: ${this.startTime.toFormat(NUMERIC_TIME_FORMAT)}`);
+        .text(
+          `${this.startTimeLabel}: ${this.startTime.toFormat(
+            NUMERIC_TIME_FORMAT
+          )}`
+        );
     }
 
     const headerRootGroup = svg
       .append('g')
-      .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`);
+      .attr(
+        'transform',
+        `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`
+      );
     const topAxis = axisTop(this.scaleTime).ticks(this.timeInterval);
     headerRootGroup.call(topAxis);
 
@@ -167,7 +186,10 @@ export class Timeline extends MobxLitElement {
       .attr('text-anchor', 'end');
 
     // Top border for the side panel.
-    headerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
+    headerRootGroup
+      .append('line')
+      .attr('x1', -SIDE_PANEL_WIDTH)
+      .attr('stroke', 'var(--default-text-color)');
   }
 
   private renderFooter() {
@@ -183,15 +205,22 @@ export class Timeline extends MobxLitElement {
         .attr('x', TEXT_MARGIN)
         .attr('y', TEXT_HEIGHT + TEXT_MARGIN / 2)
         .attr('font-weight', '500')
-        .text(`${this.endTimeLabel}: ${this.endTime.toFormat(NUMERIC_TIME_FORMAT)}`);
+        .text(
+          `${this.endTimeLabel}: ${this.endTime.toFormat(NUMERIC_TIME_FORMAT)}`
+        );
     }
 
-    const footerRootGroup = svg.append('g').attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
+    const footerRootGroup = svg
+      .append('g')
+      .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
     const bottomAxis = axisBottom(this.scaleTime).ticks(this.timeInterval);
     footerRootGroup.call(bottomAxis);
 
     // Bottom border for the side panel.
-    footerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
+    footerRootGroup
+      .append('line')
+      .attr('x1', -SIDE_PANEL_WIDTH)
+      .attr('stroke', 'var(--default-text-color)');
   }
 
   private renderSidePanel() {
@@ -277,8 +306,12 @@ export class Timeline extends MobxLitElement {
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
     for (const [i, block] of enumerate(this.blocks)) {
-      const start = this.scaleTime(block.start?.toMillis() || this.endTime.toMillis());
-      const end = this.scaleTime(block.end?.toMillis() || this.endTime.toMillis());
+      const start = this.scaleTime(
+        block.start?.toMillis() || this.endTime.toMillis()
+      );
+      const end = this.scaleTime(
+        block.end?.toMillis() || this.endTime.toMillis()
+      );
 
       const blockGroup = svg
         .append('g')
@@ -314,9 +347,14 @@ export class Timeline extends MobxLitElement {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         blockText.each(function () {
+          // This is the standard d3 API.
+          // eslint-disable-next-line no-invalid-this
           const textBBox = this.getBBox();
           const x1 = Math.min(textBBox.x, -BLOCK_EXTRA_WIDTH / 2);
-          const x2 = Math.max(textBBox.x + textBBox.width, BLOCK_MARGIN + width);
+          const x2 = Math.max(
+            textBBox.x + textBBox.width,
+            BLOCK_MARGIN + width
+          );
 
           // This makes the inv text easier to interact with.
           const eventTargetRect = blockGroup
@@ -381,10 +419,12 @@ export class Timeline extends MobxLitElement {
     block: TimelineBlock
   ) {
     if (block.href) {
-      ele.attr('class', ele.attr('class') + ' clickable').on('click', (e: MouseEvent) => {
-        e.stopPropagation();
-        window.open(block.href, '_blank');
-      });
+      ele
+        .attr('class', ele.attr('class') + ' clickable')
+        .on('click', (e: MouseEvent) => {
+          e.stopPropagation();
+          window.open(block.href, '_blank');
+        });
     }
 
     ele
@@ -399,22 +439,31 @@ export class Timeline extends MobxLitElement {
                   <tr>
                     <td>Started:</td>
                     <td>
-                      ${(block.start || this.endTime).toFormat(NUMERIC_TIME_FORMAT)}
-                      (after ${displayDuration((block.start || this.endTime).diff(this.startTime))})
+                      ${(block.start || this.endTime).toFormat(
+                        NUMERIC_TIME_FORMAT
+                      )}
+                      (after ${displayDuration(
+                        (block.start || this.endTime).diff(this.startTime)
+                      )})
                     </td>
                   </tr>
                   <tr>
                     <td>Ended:</td>
-                    <td>${
-                      block.end
-                        ? block.end.toFormat(NUMERIC_TIME_FORMAT) +
-                          ` (after ${displayDuration(block.end.diff(this.startTime))})`
-                        : 'N/A'
-                    }</td>
+                    <td>
+                      ${
+                        block.end
+                          ? block.end.toFormat(NUMERIC_TIME_FORMAT) +
+                            ` (after ${displayDuration(
+                              block.end.diff(this.startTime)
+                            )})`
+                          : 'N/A'
+                      }</td>
                   </tr>
                   <tr>
                     <td>Duration:</td>
-                    <td>${displayDuration((block.end || this.endTime).diff(this.startTime))}</td>
+                    <td>${displayDuration(
+                      (block.end || this.endTime).diff(this.startTime)
+                    )}</td>
                   </tr>
                 </div>
               `,
@@ -432,7 +481,11 @@ export class Timeline extends MobxLitElement {
         );
       })
       .on('mouseout', () => {
-        window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 0 } }));
+        window.dispatchEvent(
+          new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+            detail: { delay: 0 },
+          })
+        );
       });
   }
   static styles = [

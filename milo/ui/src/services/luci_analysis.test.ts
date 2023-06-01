@@ -15,9 +15,17 @@
 import { expect, jest } from '@jest/globals';
 
 import { PrpcClientExt } from '../libs/prpc_client_ext';
-import { ClusterRequest, ClusterResponse, ClustersService } from './luci_analysis';
+import {
+  ClusterRequest,
+  ClusterResponse,
+  ClustersService,
+} from './luci_analysis';
 
-const clusteringVersion = { algorithmsVersion: '1', rulesVersion: '1', configVersion: '1' };
+const clusteringVersion = {
+  algorithmsVersion: '1',
+  rulesVersion: '1',
+  configVersion: '1',
+};
 
 describe('ClustersService', () => {
   it('should batch requests from the same project together', async () => {
@@ -33,8 +41,14 @@ describe('ClustersService', () => {
     };
     callStub.mockResolvedValueOnce(mockedRes);
 
-    const call1 = clustersService.cluster({ project: 'proj1', testResults: [{ testId: 'test1' }] });
-    const call2 = clustersService.cluster({ project: 'proj1', testResults: [{ testId: 'test2' }] });
+    const call1 = clustersService.cluster({
+      project: 'proj1',
+      testResults: [{ testId: 'test1' }],
+    });
+    const call2 = clustersService.cluster({
+      project: 'proj1',
+      testResults: [{ testId: 'test2' }],
+    });
     const res1 = await call1;
     const res2 = await call2;
 
@@ -49,11 +63,15 @@ describe('ClustersService', () => {
     ]);
     expect(res1).toEqual({
       clusteringVersion,
-      clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] }],
+      clusteredTestResults: [
+        { clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] },
+      ],
     });
     expect(res2).toEqual({
       clusteringVersion,
-      clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] }],
+      clusteredTestResults: [
+        { clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] },
+      ],
     });
   });
 
@@ -63,17 +81,27 @@ describe('ClustersService', () => {
     const clustersService = new ClustersService(prpc);
     const mockedRes1: ClusterResponse = {
       clusteringVersion,
-      clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] }],
+      clusteredTestResults: [
+        { clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] },
+      ],
     };
     const mockedRes2: ClusterResponse = {
       clusteringVersion,
-      clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] }],
+      clusteredTestResults: [
+        { clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] },
+      ],
     };
     callStub.mockResolvedValueOnce(mockedRes1);
     callStub.mockResolvedValueOnce(mockedRes2);
 
-    const call1 = clustersService.cluster({ project: 'proj1', testResults: [{ testId: 'test1' }] });
-    const call2 = clustersService.cluster({ project: 'proj2', testResults: [{ testId: 'test2' }] });
+    const call1 = clustersService.cluster({
+      project: 'proj1',
+      testResults: [{ testId: 'test1' }],
+    });
+    const call2 = clustersService.cluster({
+      project: 'proj2',
+      testResults: [{ testId: 'test2' }],
+    });
     const res1 = await call1;
     const res2 = await call2;
 
@@ -96,11 +124,15 @@ describe('ClustersService', () => {
     ]);
     expect(res1).toEqual({
       clusteringVersion,
-      clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] }],
+      clusteredTestResults: [
+        { clusters: [{ clusterId: { algorithm: 'algorithm', id: '1' } }] },
+      ],
     });
     expect(res2).toEqual({
       clusteringVersion,
-      clusteredTestResults: [{ clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] }],
+      clusteredTestResults: [
+        { clusters: [{ clusterId: { algorithm: 'algorithm', id: '2' } }] },
+      ],
     });
   });
 
@@ -115,7 +147,9 @@ describe('ClustersService', () => {
         clusteredTestResults: [],
       };
       for (let i = startIndex; i < count + startIndex; ++i) {
-        res.clusteredTestResults.push({ clusters: [{ clusterId: { algorithm: 'algorithm', id: `${i}` } }] });
+        res.clusteredTestResults.push({
+          clusters: [{ clusterId: { algorithm: 'algorithm', id: `${i}` } }],
+        });
       }
       return res;
     }
@@ -144,8 +178,16 @@ describe('ClustersService', () => {
     const res3 = await call3;
 
     expect(callStub.mock.calls.length).toStrictEqual(2);
-    expect(callStub.mock.calls[0]).toEqual(['luci.analysis.v1.Clusters', 'Cluster', makeReq(0, 800)]);
-    expect(callStub.mock.calls[1]).toEqual(['luci.analysis.v1.Clusters', 'Cluster', makeReq(800, 400)]);
+    expect(callStub.mock.calls[0]).toEqual([
+      'luci.analysis.v1.Clusters',
+      'Cluster',
+      makeReq(0, 800),
+    ]);
+    expect(callStub.mock.calls[1]).toEqual([
+      'luci.analysis.v1.Clusters',
+      'Cluster',
+      makeReq(800, 400),
+    ]);
     expect(res1).toEqual(makeRes(0, 400));
     expect(res2).toEqual(makeRes(400, 400));
     expect(res3).toEqual(makeRes(800, 400));

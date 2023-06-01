@@ -24,10 +24,16 @@ import { Store, StoreInstance } from '.';
 describe('BuildPage', () => {
   describe('cache', () => {
     let store: StoreInstance;
-    let getBuildStub: jest.SpiedFunction<(req: GetBuildRequest, cacheOpt?: CacheOption) => Promise<Build>>;
+    let getBuildStub: jest.SpiedFunction<
+      (req: GetBuildRequest, cacheOpt?: CacheOption) => Promise<Build>
+    >;
 
     beforeEach(() => {
-      const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
+      const builderId = {
+        project: 'proj',
+        bucket: 'bucket',
+        builder: 'builder',
+      };
       jest.useFakeTimers();
       store = Store.create({
         authState: { value: { identity: ANONYMOUS_IDENTITY } },
@@ -36,8 +42,16 @@ describe('BuildPage', () => {
       store.buildPage.setParams(builderId, '1');
 
       getBuildStub = jest.spyOn(store.services.builds!, 'getBuild');
-      getBuildStub.mockResolvedValueOnce({ number: 1, id: '2', builder: builderId } as Build);
-      getBuildStub.mockResolvedValueOnce({ number: 1, id: '2', builder: builderId } as Build);
+      getBuildStub.mockResolvedValueOnce({
+        number: 1,
+        id: '2',
+        builder: builderId,
+      } as Build);
+      getBuildStub.mockResolvedValueOnce({
+        number: 1,
+        id: '2',
+        builder: builderId,
+      } as Build);
     });
 
     afterEach(() => {
@@ -81,15 +95,36 @@ describe('BuildPage', () => {
     });
 
     it('ignore builderIdParam when buildNumOrIdParam is a buildId', async () => {
-      store.buildPage.setParams({ project: 'wrong_proj', bucket: 'wrong_bucket', builder: 'wrong_builder' }, 'b123');
+      store.buildPage.setParams(
+        {
+          project: 'wrong_proj',
+          bucket: 'wrong_bucket',
+          builder: 'wrong_builder',
+        },
+        'b123'
+      );
 
       const getBuildStub = jest.spyOn(store.services.builds!, 'getBuild');
       const getBuilderStub = jest.spyOn(store.services.builders!, 'getBuilder');
-      const getProjectCfgStub = jest.spyOn(store.services.milo!, 'getProjectCfg');
-      const batchCheckPermissionsStub = jest.spyOn(store.services.milo!, 'batchCheckPermissions');
+      const getProjectCfgStub = jest.spyOn(
+        store.services.milo!,
+        'getProjectCfg'
+      );
+      const batchCheckPermissionsStub = jest.spyOn(
+        store.services.milo!,
+        'batchCheckPermissions'
+      );
 
-      const builderId = { project: 'proj', bucket: 'bucket', builder: 'builder' };
-      getBuildStub.mockResolvedValueOnce({ number: 1, id: '123', builder: builderId } as Build);
+      const builderId = {
+        project: 'proj',
+        bucket: 'bucket',
+        builder: 'builder',
+      };
+      getBuildStub.mockResolvedValueOnce({
+        number: 1,
+        id: '123',
+        builder: builderId,
+      } as Build);
       getBuilderStub.mockResolvedValueOnce({ id: builderId, config: {} });
       getProjectCfgStub.mockResolvedValueOnce({});
       batchCheckPermissionsStub.mockResolvedValueOnce({ results: {} });
@@ -107,7 +142,9 @@ describe('BuildPage', () => {
 
       expect(getBuildStub.mock.calls[0][0].builder).toBeUndefined();
       expect(getBuilderStub.mock.calls[0][0].id).toEqual(builderId);
-      expect(getProjectCfgStub.mock.calls[0][0].project).toStrictEqual(builderId.project);
+      expect(getProjectCfgStub.mock.calls[0][0].project).toStrictEqual(
+        builderId.project
+      );
       expect(batchCheckPermissionsStub.mock.calls[0][0].realm).toStrictEqual(
         `${builderId.project}:${builderId.bucket}`
       );

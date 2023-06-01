@@ -22,8 +22,15 @@ interface Item {
 }
 
 describe('batched_fn', () => {
-  let batchedRpc: (opt: BatchOption, ns: string, itemKeys: number[], shouldErr?: boolean) => Promise<Item[]>;
-  let rpcSpy: jest.Mock<(ns: string, itemKeys: number[], shouldErr?: boolean) => Promise<Item[]>>;
+  let batchedRpc: (
+    opt: BatchOption,
+    ns: string,
+    itemKeys: number[],
+    shouldErr?: boolean
+  ) => Promise<Item[]>;
+  let rpcSpy: jest.Mock<
+    (ns: string, itemKeys: number[], shouldErr?: boolean) => Promise<Item[]>
+  >;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -35,17 +42,26 @@ describe('batched_fn', () => {
      * @param itemKeys the key of the items to retrieve.
      * @param shouldErr whether the RPC will fail
      */
-    function getItemsFromServer(ns: string, itemKeys: number[], shouldErr = false): Promise<Item[]> {
+    function getItemsFromServer(
+      ns: string,
+      itemKeys: number[],
+      shouldErr = false
+    ): Promise<Item[]> {
       if (shouldErr) {
-        return Promise.reject('RPC err');
+        return Promise.reject(new Error('RPC err'));
       }
-      return Promise.resolve(itemKeys.map((key) => ({ key, value: `${ns}-${key}` })));
+      return Promise.resolve(
+        itemKeys.map((key) => ({ key, value: `${ns}-${key}` }))
+      );
     }
 
     rpcSpy = jest.fn(getItemsFromServer);
     batchedRpc = batched({
       fn: rpcSpy,
-      combineParamSets: ([ns1, itemKeys1, shouldErr1], [ns2, itemKeys2, shouldErr2]) => {
+      combineParamSets: (
+        [ns1, itemKeys1, shouldErr1],
+        [ns2, itemKeys2, shouldErr2]
+      ) => {
         // If we cannot combine the calls, return ResultErr.
         if (ns1 !== ns2) {
           return { ok: false, value: '' };
@@ -210,18 +226,8 @@ describe('batched_fn', () => {
     expect(rpcSpy.mock.lastCall?.[1]).toEqual([1, 2, 3, 4, 5]);
 
     // Check returns.
-    try {
-      await prom1;
-      expect("should've thrown an error").toBeNull();
-    } catch (e) {
-      expect(e).toStrictEqual('RPC err');
-    }
-    try {
-      await prom2;
-      expect("should've thrown an err").toBeNull();
-    } catch (e) {
-      expect(e).toStrictEqual('RPC err');
-    }
+    await expect(prom1).rejects.toThrowErrorMatchingInlineSnapshot(`"RPC err"`);
+    await expect(prom2).rejects.toThrowErrorMatchingInlineSnapshot(`"RPC err"`);
 
     // Start a new batch.
     const prom3 = batchedRpc({ maxPendingMs: 20 }, 'ns1', [6, 7]);

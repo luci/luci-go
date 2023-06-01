@@ -68,9 +68,10 @@ export function cached<T extends unknown[], V>(
     const key = config.key(...params);
     let value: V;
     let updatedCache = false;
+    const cachedValue = (opt.acceptCache ?? true) && cache.get(key);
 
-    if ((opt.acceptCache ?? true) && cache.has(key)) {
-      value = cache.get(key)![0];
+    if (cachedValue) {
+      value = cachedValue[0];
     } else {
       value = fn(...params);
       if (!opt.skipUpdate) {
@@ -82,11 +83,16 @@ export function cached<T extends unknown[], V>(
             cache.delete(key);
           }
         };
-        // Also invalidates the cache when the promise is rejected to prevent
-        // unexpected cache build up.
         config
           .expire?.(params, value)
-          .catch((_e) => {})
+          .catch((e) => {
+            // there's nothing we can do when the expire function rejects
+            // other than logging it.
+            // use a catch statement to prevent it from failing unit tests.
+            console.error(e);
+          })
+          // Also invalidates the cache when the promise is rejected to
+          // prevent unexpected cache build up.
           .finally(deleteCache);
 
         // Set the cache after config.expire call so there's no memory leak when

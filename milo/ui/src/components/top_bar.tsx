@@ -51,7 +51,8 @@ export function TopBar({ container }: TopBarProps) {
           lineHeight: '40px',
         }}
       >
-        <NavLink href="/">Home</NavLink> | <NavLink href="/search">Search</NavLink>
+        <NavLink href="/">Home</NavLink> |{' '}
+        <NavLink href="/search">Search</NavLink>
       </Box>
       <IconButton onClick={() => window.open(genFeedbackUrl())} size="medium">
         <Feedback />
@@ -65,7 +66,11 @@ export function TopBar({ container }: TopBarProps) {
           flexShrink: 0,
         }}
       >
-        <SignIn identity={authState.identity} email={authState.email} picture={authState.picture} />
+        <SignIn
+          identity={authState.identity}
+          email={authState.email}
+          picture={authState.picture}
+        />
       </Box>
     </Box>
   );

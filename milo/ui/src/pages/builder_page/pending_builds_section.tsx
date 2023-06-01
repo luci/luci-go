@@ -16,7 +16,10 @@ import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
 import { Timestamp } from '../../components/timestamp';
-import { displayCompactDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
+import {
+  displayCompactDuration,
+  NUMERIC_TIME_FORMAT,
+} from '../../libs/time_utils';
 import { getBuildURLPathFromBuildId } from '../../libs/url_utils';
 import { BuilderID, BuildStatus } from '../../services/buildbucket';
 import { useBuilds } from './utils';
@@ -30,7 +33,11 @@ export interface PendingBuildsSectionProps {
 
 export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
   const { data, error, isError, isLoading } = useBuilds({
-    predicate: { builder: builderId, includeExperimental: true, status: BuildStatus.Scheduled },
+    predicate: {
+      builder: builderId,
+      includeExperimental: true,
+      status: BuildStatus.Scheduled,
+    },
     pageSize: PAGE_SIZE,
     fields: FIELD_MASK,
   });
@@ -45,7 +52,16 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
     <>
       <h3>
         Scheduled Builds
-        {!isLoading && <> ({data.nextPageToken ? `most recent ${PAGE_SIZE} builds` : data.builds?.length || 0})</>}
+        {!isLoading && (
+          <>
+            {' '}
+            (
+            {data.nextPageToken
+              ? `most recent ${PAGE_SIZE} builds`
+              : data.builds?.length || 0}
+            )
+          </>
+        )}
       </h3>
       {isLoading ? (
         <CircularProgress />
@@ -57,9 +73,16 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
               const [duration] = displayCompactDuration(now.diff(createTime));
               return (
                 <li key={b.id}>
-                  <Link href={getBuildURLPathFromBuildId(b.id)}>{b.number || `b${b.id}`}</Link>
+                  <Link href={getBuildURLPathFromBuildId(b.id)}>
+                    {b.number || `b${b.id}`}
+                  </Link>
                   <span> </span>
-                  Created at: <Timestamp datetime={createTime} format={NUMERIC_TIME_FORMAT} />, waiting {duration}
+                  Created at:{' '}
+                  <Timestamp
+                    datetime={createTime}
+                    format={NUMERIC_TIME_FORMAT}
+                  />
+                  , waiting {duration}
                 </li>
               );
             })}

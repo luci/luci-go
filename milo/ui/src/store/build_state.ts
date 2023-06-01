@@ -107,7 +107,10 @@ export class StepExt {
   // explicitly in another field.
   @computed get summaryParts() {
     const bodyContainer = document.createElement('div');
-    render(unsafeHTML(renderMarkdown(this.summaryMarkdown || '')), bodyContainer);
+    render(
+      unsafeHTML(renderMarkdown(this.summaryMarkdown || '')),
+      bodyContainer
+    );
     // The body has no content.
     // We don't need to check bodyContainer.firstChild because text are
     // automatically wrapped in <p>.
@@ -129,13 +132,21 @@ export class StepExt {
     while (firstParagraph.firstChild !== null) {
       // Found some text, move them from the body to the header.
       if (firstParagraph.firstChild !== firstParagraph.firstElementChild) {
-        headerContainer.appendChild(firstParagraph.removeChild(firstParagraph.firstChild));
+        headerContainer.appendChild(
+          firstParagraph.removeChild(firstParagraph.firstChild)
+        );
         continue;
       }
 
       // Found an inline element, move it from the body to the header.
-      if (['A', 'SPAN', 'I', 'B', 'STRONG', 'CODE'].includes(firstParagraph.firstElementChild.tagName)) {
-        headerContainer.appendChild(firstParagraph.removeChild(firstParagraph.firstElementChild));
+      if (
+        ['A', 'SPAN', 'I', 'B', 'STRONG', 'CODE'].includes(
+          firstParagraph.firstElementChild.tagName
+        )
+      ) {
+        headerContainer.appendChild(
+          firstParagraph.removeChild(firstParagraph.firstElementChild)
+        );
         continue;
       }
 
@@ -191,7 +202,9 @@ export class StepExt {
   @computed get filteredLogs() {
     const logs = this.logs || [];
 
-    return this.userConfig?.build.steps.showDebugLogs ?? true ? logs : logs.filter((log) => !log.name.startsWith('$'));
+    return this.userConfig?.build.steps.showDebugLogs ?? true
+      ? logs
+      : logs.filter((log) => !log.name.startsWith('$'));
   }
 
   @computed get isPinned() {
@@ -219,7 +232,10 @@ export class StepExt {
    * true iff the step or one of its descendants failed (status Failure or InfraFailure).
    */
   @computed get failed(): boolean {
-    if (this.status === BuildStatus.Failure || this.status === BuildStatus.InfraFailure) {
+    if (
+      this.status === BuildStatus.Failure ||
+      this.status === BuildStatus.InfraFailure
+    ) {
       return true;
     }
     return this.children.some((child) => child.failed);
@@ -238,7 +254,9 @@ export class StepExt {
  * steps' criticality, so that a change it the steps' criticality (e.g. when
  * the step is pinned/unpinned) does not trigger a rerun of the function.
  */
-export function clusterBuildSteps(steps: readonly StepExt[]): readonly (readonly StepExt[])[] {
+export function clusterBuildSteps(
+  steps: readonly StepExt[]
+): readonly (readonly StepExt[])[] {
   const clusters: StepExt[][] = [];
   for (const step of steps) {
     let lastCluster = clusters[clusters.length - 1];
@@ -247,7 +265,9 @@ export function clusterBuildSteps(steps: readonly StepExt[]): readonly (readonly
     // cluster base on the internal state of the step is confusing.
     // e.g. it can leads to the steps being re-clustered when users (un)pin a
     // step.
-    const criticalityChanged = untracked(() => step.isCritical !== lastCluster?.[0]?.isCritical);
+    const criticalityChanged = untracked(
+      () => step.isCritical !== lastCluster?.[0]?.isCritical
+    );
 
     if (criticalityChanged) {
       lastCluster = [];
@@ -280,36 +300,54 @@ export const BuildState = types
       return self.data.endTime ? DateTime.fromISO(self.data.endTime) : null;
     },
     get cancelTime() {
-      return self.data.cancelTime ? DateTime.fromISO(self.data.cancelTime) : null;
+      return self.data.cancelTime
+        ? DateTime.fromISO(self.data.cancelTime)
+        : null;
     },
     get schedulingTimeout() {
-      return self.data.schedulingTimeout ? Duration.fromMillis(parseProtoDuration(self.data.schedulingTimeout)) : null;
+      return self.data.schedulingTimeout
+        ? Duration.fromMillis(parseProtoDuration(self.data.schedulingTimeout))
+        : null;
     },
     get executionTimeout() {
-      return self.data.executionTimeout ? Duration.fromMillis(parseProtoDuration(self.data.executionTimeout)) : null;
+      return self.data.executionTimeout
+        ? Duration.fromMillis(parseProtoDuration(self.data.executionTimeout))
+        : null;
     },
     get gracePeriod() {
-      return self.data.gracePeriod ? Duration.fromMillis(parseProtoDuration(self.data.gracePeriod)) : null;
+      return self.data.gracePeriod
+        ? Duration.fromMillis(parseProtoDuration(self.data.gracePeriod))
+        : null;
     },
     get buildOrStepInfraFailed() {
       return (
-        self.data.status === BuildStatus.InfraFailure || self.steps.some((s) => s.status === BuildStatus.InfraFailure)
+        self.data.status === BuildStatus.InfraFailure ||
+        self.steps.some((s) => s.status === BuildStatus.InfraFailure)
       );
     },
     get buildNumOrId() {
       return self.data.number?.toString() || 'b' + self.data.id;
     },
     get isCanary() {
-      return Boolean(self.data.input?.experiments?.includes('luci.buildbucket.canary_software'));
+      return Boolean(
+        self.data.input?.experiments?.includes(
+          'luci.buildbucket.canary_software'
+        )
+      );
     },
     get buildSets(): readonly string[] {
-      return self.data.tags?.filter((tag) => tag.key === 'buildset').map((tag) => tag.value || '') || [];
+      return (
+        self.data.tags
+          ?.filter((tag) => tag.key === 'buildset')
+          .map((tag) => tag.value || '') || []
+      );
     },
     get associatedGitilesCommit() {
       return getAssociatedGitilesCommit(self.data);
     },
     get blamelistPins(): readonly GitilesCommit[] {
-      const blamelistPins = self.data.output?.properties?.[BLAMELIST_PIN_KEY] || [];
+      const blamelistPins =
+        self.data.output?.properties?.[BLAMELIST_PIN_KEY] || [];
       if (blamelistPins.length === 0 && this.associatedGitilesCommit) {
         blamelistPins.push(this.associatedGitilesCommit);
       }
@@ -332,7 +370,9 @@ export const BuildState = types
 
       return {
         label: recipeName as string,
-        url: `https://${csHost}/search/?${new URLSearchParams([['q', `file:recipes/${recipeName}.py`]]).toString()}`,
+        url: `https://${csHost}/search/?${new URLSearchParams([
+          ['q', `file:recipes/${recipeName}.py`],
+        ]).toString()}`,
         ariaLabel: `recipe ${recipeName}`,
       };
     },
@@ -340,17 +380,19 @@ export const BuildState = types
       return self.currentTime?.dateTime || DateTime.now();
     },
     get pendingDuration() {
-      return (this.startTime || this.endTime || this._currentTime).diff(this.createTime);
+      return (this.startTime || this.endTime || this._currentTime).diff(
+        this.createTime
+      );
     },
     get isPending() {
       return !this.startTime && !this.endTime;
     },
     /**
      * A build exceeded it's scheduling timeout when
-     * * the build is canceled, AND
-     * * the build did not enter the execution phase, AND
-     * * the scheduling timeout is specified, AND
-     * * the pending duration is no less than the scheduling timeout.
+     * - the build is canceled, AND
+     * - the build did not enter the execution phase, AND
+     * - the scheduling timeout is specified, AND
+     * - the pending duration is no less than the scheduling timeout.
      */
     get exceededSchedulingTimeout() {
       return (
@@ -361,17 +403,19 @@ export const BuildState = types
       );
     },
     get executionDuration() {
-      return this.startTime ? (this.endTime || this._currentTime).diff(this.startTime) : null;
+      return this.startTime
+        ? (this.endTime || this._currentTime).diff(this.startTime)
+        : null;
     },
     get isExecuting() {
       return this.startTime !== null && !this.endTime;
     },
     /**
      * A build exceeded it's execution timeout when
-     * * the build is canceled, AND
-     * * the build had entered the execution phase, AND
-     * * the execution timeout is specified, AND
-     * * the execution duration is no less than the execution timeout.
+     * - the build is canceled, AND
+     * - the build had entered the execution phase, AND
+     * - the execution timeout is specified, AND
+     * - the execution duration is no less than the execution timeout.
      */
     get exceededExecutionTimeout(): boolean {
       return (
@@ -392,7 +436,9 @@ export const BuildState = types
     },
   }))
   .views((self) => {
-    const clusteredRootSteps = keepAliveComputed(self, () => clusterBuildSteps(self.rootSteps));
+    const clusteredRootSteps = keepAliveComputed(self, () =>
+      clusterBuildSteps(self.rootSteps)
+    );
     return {
       get clusteredRootSteps() {
         return clusteredRootSteps.get();
@@ -410,6 +456,8 @@ export const BuildState = types
       // Build the step-tree.
       for (const step of self.data.steps || []) {
         const splitName = step.name.split('|');
+        // There must be at least one element in a split string array.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const selfName = splitName.pop()!;
         const depth = splitName.length;
         const parentName = splitName.join('|');
@@ -432,7 +480,7 @@ export const BuildState = types
         if (!parent) {
           rootSteps.push(stepState);
         } else {
-          parent.children!.push(stepState);
+          parent.children.push(stepState);
         }
       }
 

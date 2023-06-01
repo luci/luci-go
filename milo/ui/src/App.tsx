@@ -14,7 +14,11 @@
 
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import { ThemeProvider } from '@emotion/react';
-import { QueryClient, QueryClientConfig, QueryClientProvider } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientConfig,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
@@ -103,7 +107,10 @@ export function App({ isDevEnv, enableUiSW }: AppProps) {
       );
       store.workbox.init(swUrl);
     }
-    if (navigator.serviceWorker && !document.cookie.includes('showNewBuildPage=false')) {
+    if (
+      navigator.serviceWorker &&
+      !document.cookie.includes('showNewBuildPage=false')
+    ) {
       navigator.serviceWorker
         .register(
           // cast to string because TypeScript doesn't allow us to use
@@ -174,17 +181,26 @@ export function App({ isDevEnv, enableUiSW }: AppProps) {
           path: 'artifact',
           element: <ArtifactPageLayout />,
           children: [
-            { path: 'text-diff/invocations/:invId/artifacts/:artifactId', element: <TextDiffArtifactPage /> },
+            {
+              path: 'text-diff/invocations/:invId/artifacts/:artifactId',
+              element: <TextDiffArtifactPage />,
+            },
             {
               path: 'text-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
               element: <TextDiffArtifactPage />,
             },
-            { path: 'image-diff/invocations/:invId/artifacts/:artifactId', element: <ImageDiffArtifactPage /> },
+            {
+              path: 'image-diff/invocations/:invId/artifacts/:artifactId',
+              element: <ImageDiffArtifactPage />,
+            },
             {
               path: 'image-diff/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
               element: <ImageDiffArtifactPage />,
             },
-            { path: 'raw/invocations/:invId/artifacts/:artifactId', element: <RawArtifactPage /> },
+            {
+              path: 'raw/invocations/:invId/artifacts/:artifactId',
+              element: <RawArtifactPage />,
+            },
             {
               path: 'raw/invocations/:invId/tests/:testId/results/:resultId/artifacts/:artifactId',
               element: <RawArtifactPage />,

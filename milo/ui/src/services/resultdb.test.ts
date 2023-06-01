@@ -26,8 +26,13 @@ import {
 
 describe('resultdb', () => {
   it('should compute invocation ID from build number correctly', async () => {
-    const invId = await getInvIdFromBuildNum({ project: 'chromium', bucket: 'ci', builder: 'ios-device' }, 179945);
-    expect(invId).toStrictEqual('build-135d246ed1a40cc3e77d8b1daacc7198fe344b1ac7b95c08cb12f1cc383867d7-179945');
+    const invId = await getInvIdFromBuildNum(
+      { project: 'chromium', bucket: 'ci', builder: 'ios-device' },
+      179945
+    );
+    expect(invId).toStrictEqual(
+      'build-135d246ed1a40cc3e77d8b1daacc7198fe344b1ac7b95c08cb12f1cc383867d7-179945'
+    );
   });
 
   it('should compute invocation ID from build ID correctly', async () => {
@@ -39,7 +44,9 @@ describe('resultdb', () => {
 describe('createTVPropGetter', () => {
   it('can create a status getter', async () => {
     const getter = createTVPropGetter('status');
-    const prop = getter({ status: TestVariantStatus.EXONERATED } as Partial<TestVariant> as TestVariant);
+    const prop = getter({
+      status: TestVariantStatus.EXONERATED,
+    } as Partial<TestVariant> as TestVariant);
     expect(prop).toStrictEqual(TestVariantStatus.EXONERATED);
   });
 
@@ -53,7 +60,9 @@ describe('createTVPropGetter', () => {
     expect(prop1).toStrictEqual('test-name');
 
     // Fallback to test id.
-    const prop2 = getter({ testId: 'test-id' } as Partial<TestVariant> as TestVariant);
+    const prop2 = getter({
+      testId: 'test-id',
+    } as Partial<TestVariant> as TestVariant);
     expect(prop2).toStrictEqual('test-id');
   });
 
@@ -161,21 +170,80 @@ describe('getCriticalVariantKeys', () => {
 
   it('when some variant values always change together', () => {
     const keys = getCriticalVariantKeys([
-      { def: { test_suite: 'test-suite-1', builder: 'linux-builder', os: 'linux' } },
-      { def: { test_suite: 'test-suite-1', builder: 'macos-builder', os: 'macos' } },
-      { def: { test_suite: 'test-suite-2', builder: 'linux-builder', os: 'linux' } },
-      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos' } },
+      {
+        def: {
+          test_suite: 'test-suite-1',
+          builder: 'linux-builder',
+          os: 'linux',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-1',
+          builder: 'macos-builder',
+          os: 'macos',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-2',
+          builder: 'linux-builder',
+          os: 'linux',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-2',
+          builder: 'macos-builder',
+          os: 'macos',
+        },
+      },
     ]);
     expect(keys).toEqual(['builder', 'test_suite']);
   });
 
   it("when there are additional variant keys that don't matter", () => {
     const keys = getCriticalVariantKeys([
-      { def: { test_suite: 'test-suite-1', builder: 'linux-builder', os: 'linux', a_param1: 'val1' } },
-      { def: { test_suite: 'test-suite-1', builder: 'macos-builder', os: 'macos', a_param2: 'val2' } },
-      { def: { test_suite: 'test-suite-2', builder: 'linux-builder', os: 'linux', a_param3: 'val3' } },
-      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos', a_param4: 'val4' } },
-      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos', a_param5: 'val5' } },
+      {
+        def: {
+          test_suite: 'test-suite-1',
+          builder: 'linux-builder',
+          os: 'linux',
+          a_param1: 'val1',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-1',
+          builder: 'macos-builder',
+          os: 'macos',
+          a_param2: 'val2',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-2',
+          builder: 'linux-builder',
+          os: 'linux',
+          a_param3: 'val3',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-2',
+          builder: 'macos-builder',
+          os: 'macos',
+          a_param4: 'val4',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-2',
+          builder: 'macos-builder',
+          os: 'macos',
+          a_param5: 'val5',
+        },
+      },
     ]);
     // Having a_param4 is enough to uniquely identify all variants.
     expect(keys).toEqual(['builder', 'test_suite', 'a_param4']);
@@ -183,10 +251,38 @@ describe('getCriticalVariantKeys', () => {
 
   it('when there are multiple valid set of critical keys', () => {
     const keys = getCriticalVariantKeys([
-      { def: { test_suite: 'test-suite-1', builder: 'linux-builder', os: 'linux', a_param: 'val1' } },
-      { def: { test_suite: 'test-suite-1', builder: 'macos-builder', os: 'macos', a_param: 'val2' } },
-      { def: { test_suite: 'test-suite-2', builder: 'linux-builder', os: 'linux', a_param: 'val3' } },
-      { def: { test_suite: 'test-suite-2', builder: 'macos-builder', os: 'macos', a_param: 'val4' } },
+      {
+        def: {
+          test_suite: 'test-suite-1',
+          builder: 'linux-builder',
+          os: 'linux',
+          a_param: 'val1',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-1',
+          builder: 'macos-builder',
+          os: 'macos',
+          a_param: 'val2',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-2',
+          builder: 'linux-builder',
+          os: 'linux',
+          a_param: 'val3',
+        },
+      },
+      {
+        def: {
+          test_suite: 'test-suite-2',
+          builder: 'macos-builder',
+          os: 'macos',
+          a_param: 'val4',
+        },
+      },
     ]);
     // Having a_param is enough to uniquely identify all variants.
     // But we prefer keys that are known to have special meanings.

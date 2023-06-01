@@ -50,7 +50,9 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
                 x="-1"
                 height=${CELL_SIZE}
                 width=${CELL_SIZE * this.pageState.days + 2}
-                fill=${i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'}
+                fill=${
+                  i % 2 === 0 ? 'var(--block-background-color)' : 'transparent'
+                }
               />
               ${this.renderRow(vHash)}
             </g>
@@ -67,7 +69,9 @@ export class TestHistoryDurationGraphElement extends MiloBaseElement {
       const group = this.pageState.statsLoader!.getStats(vHash, i);
       if (!group) {
         ret.push(svg`
-          <foreignObject x=${CELL_SIZE * i} width=${CELL_SIZE} height=${CELL_SIZE}>
+          <foreignObject x=${
+            CELL_SIZE * i
+          } width=${CELL_SIZE} height=${CELL_SIZE}>
             <milo-dot-spinner></milo-dot-spinner>
           </foreignObject>
         `);

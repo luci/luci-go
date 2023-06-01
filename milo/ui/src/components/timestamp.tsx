@@ -34,7 +34,11 @@ export const DEFAULT_EXTRA_ZONE_CONFIGS = [
   },
 ];
 
-function renderTooltip(datetime: DateTime, format: string, extraZones: readonly TimeZoneConfig[]) {
+function renderTooltip(
+  datetime: DateTime,
+  format: string,
+  extraZones: readonly TimeZoneConfig[]
+) {
   const now = DateTime.now();
   return html`
     <table>
@@ -68,25 +72,35 @@ export function Timestamp(props: TimestampProps) {
   const format = props.format ?? LONG_TIME_FORMAT;
   const extraZones = props.extraZones ?? DEFAULT_EXTRA_ZONE_CONFIGS;
 
+  function onShowTooltip(target: HTMLElement) {
+    const tooltip = document.createElement('div');
+    render(renderTooltip(datetime, format, extraZones), tooltip);
+
+    window.dispatchEvent(
+      new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
+        detail: {
+          tooltip,
+          targetRect: target.getBoundingClientRect(),
+          gapSize: 2,
+        },
+      })
+    );
+  }
+
+  function onHideTooltip() {
+    window.dispatchEvent(
+      new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+        detail: { delay: 50 },
+      })
+    );
+  }
+
   return (
     <span
-      onMouseOver={(e) => {
-        const tooltip = document.createElement('div');
-        render(renderTooltip(datetime, format, extraZones), tooltip);
-
-        window.dispatchEvent(
-          new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-            detail: {
-              tooltip,
-              targetRect: (e.target as HTMLElement).getBoundingClientRect(),
-              gapSize: 2,
-            },
-          })
-        );
-      }}
-      onMouseOut={() => {
-        window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
-      }}
+      onMouseOver={(e) => onShowTooltip(e.target as HTMLElement)}
+      onFocus={(e) => onShowTooltip(e.target as HTMLElement)}
+      onMouseOut={onHideTooltip}
+      onBlur={onHideTooltip}
     >
       {datetime.toFormat(format)}
     </span>

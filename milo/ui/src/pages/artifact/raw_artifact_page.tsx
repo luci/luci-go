@@ -30,7 +30,12 @@ export function RawArtifactPage() {
     throw new Error('invId, testId, and artifactId must be set');
   }
 
-  const artifactName = constructArtifactName({ invocationId: invId, testId, resultId, artifactId });
+  const artifactName = constructArtifactName({
+    invocationId: invId,
+    testId,
+    resultId,
+    artifactId,
+  });
   useEffect(() => {
     // Use window.location.replace instead of useNavigate so the route isn't
     // intercepted by react-router.

@@ -17,7 +17,10 @@ import { Fragment, useState } from 'react';
 
 import { MiloLink } from '../../../../components/link';
 import { getCipdLink } from '../../../../libs/build_utils';
-import { BUILD_STATUS_CLASS_MAP, BUILD_STATUS_DISPLAY_MAP } from '../../../../libs/constants';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  BUILD_STATUS_DISPLAY_MAP,
+} from '../../../../libs/constants';
 import { Build } from '../../../../services/buildbucket';
 
 export interface BuildPackagesInfoProps {
@@ -25,25 +28,38 @@ export interface BuildPackagesInfoProps {
 }
 
 export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
-  const [displayType, setDisplayType] = useState<null | 'requested' | 'resolved'>(null);
+  const [displayType, setDisplayType] = useState<
+    null | 'requested' | 'resolved'
+  >(null);
   const experiments = build.input?.experiments;
   const agent = build.infra?.buildbucket?.agent;
-  if (!experiments?.includes('luci.buildbucket.agent.cipd_installation') || !agent) {
+  if (
+    !experiments?.includes('luci.buildbucket.agent.cipd_installation') ||
+    !agent
+  ) {
     return <></>;
   }
 
-  const data = displayType === 'requested' ? agent.input.data : agent.output?.resolvedData || {};
+  const data =
+    displayType === 'requested'
+      ? agent.input.data
+      : agent.output?.resolvedData || {};
 
   return (
     <>
       {agent.output?.summaryHtml && (
         <Box
-          sx={{ padding: '10px', marginBottom: '10px', clear: 'both', overlapWrap: 'break-word' }}
+          sx={{
+            padding: '10px',
+            marginBottom: '10px',
+            clear: 'both',
+            overlapWrap: 'break-word',
+          }}
           className={`${BUILD_STATUS_CLASS_MAP[agent.output.status]}-bg`}
           dangerouslySetInnerHTML={{ __html: agent.output.summaryHtml }}
         />
       )}
-      {/*Use table instead of MUI or CSS grid to be consistent with other
+      {/* Use table instead of MUI or CSS grid to be consistent with other
        * sessions in the overview tab.
        */}
       <table>
@@ -51,8 +67,16 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
           <tr>
             <td>Status:</td>
             <td>
-              <span className={agent.output ? BUILD_STATUS_CLASS_MAP[agent.output.status] : ''}>
-                {agent.output ? BUILD_STATUS_DISPLAY_MAP[agent.output.status] : 'N/A'}
+              <span
+                className={
+                  agent.output
+                    ? BUILD_STATUS_CLASS_MAP[agent.output.status]
+                    : ''
+                }
+              >
+                {agent.output
+                  ? BUILD_STATUS_DISPLAY_MAP[agent.output.status]
+                  : 'N/A'}
               </span>
             </td>
           </tr>
@@ -67,7 +91,11 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
           <tr>
             <td>$ServiceURL:</td>
             <td>
-              <a href="https://chrome-infra-packages.appspot.com" target="_blank">
+              <a
+                href="https://chrome-infra-packages.appspot.com"
+                target="_blank"
+                rel="noreferrer"
+              >
                 https://chrome-infra-packages.appspot.com
               </a>
             </td>
@@ -82,7 +110,10 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
                 size="small"
               >
                 <ToggleButton value="requested">Requested</ToggleButton>
-                <ToggleButton value="resolved" disabled={!agent.output?.resolvedData}>
+                <ToggleButton
+                  value="resolved"
+                  disabled={!agent.output?.resolvedData}
+                >
                   Resolved
                 </ToggleButton>
               </ToggleButtonGroup>
@@ -113,7 +144,10 @@ export function BuildPackagesInfo({ build }: BuildPackagesInfoProps) {
                         <td>{spec.package}</td>
                         <td>
                           {displayType === 'resolved' ? (
-                            <MiloLink link={getCipdLink(spec.package, spec.version)} target="_blank" />
+                            <MiloLink
+                              link={getCipdLink(spec.package, spec.version)}
+                              target="_blank"
+                            />
                           ) : (
                             spec.version
                           )}

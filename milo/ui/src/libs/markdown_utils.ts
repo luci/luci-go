@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 
 import { defaultTarget } from './markdown_it_plugins/default_target';
 
-const md = MarkdownIt({ html: true, linkify: true }).use(defaultTarget, '_blank');
+const md = markdownIt({ html: true, linkify: true }).use(
+  defaultTarget,
+  '_blank'
+);
 
 export function renderMarkdown(markdown: string) {
   return md.render(markdown);

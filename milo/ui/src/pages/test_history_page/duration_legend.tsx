@@ -28,7 +28,12 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
 import { MiloBaseElement } from '../../components/milo_base';
-import { HOUR_MS, MINUTE_MS, PREDEFINED_TIME_INTERVALS, SECOND_MS } from '../../libs/constants';
+import {
+  HOUR_MS,
+  MINUTE_MS,
+  PREDEFINED_TIME_INTERVALS,
+  SECOND_MS,
+} from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { roundUp } from '../../libs/utils';
 import { consumeStore, StoreInstance } from '../../store';
@@ -54,11 +59,16 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
   }
 
   @computed private get scaleHeight() {
-    return this.pageState.filteredVariants.length * CELL_SIZE + X_AXIS_HEIGHT - 2 * DURATION_LEGEND_PADDING;
+    return (
+      this.pageState.filteredVariants.length * CELL_SIZE +
+      X_AXIS_HEIGHT -
+      2 * DURATION_LEGEND_PADDING
+    );
   }
 
   @computed private get tickStepSizeMs() {
-    const durationDiff = this.pageState.maxDurationMs - this.pageState.minDurationMs;
+    const durationDiff =
+      this.pageState.maxDurationMs - this.pageState.minDurationMs;
     const durationLegendHeight = this.scaleDurationY.range()[1];
     const minInterval = (durationDiff / durationLegendHeight) * MIN_TICK_SIZE;
     return roundUp(minInterval, PREDEFINED_TIME_INTERVALS);
@@ -91,8 +101,12 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
   }
 
   @computed private get durationAxisEle() {
-    return d3Select(document.createElementNS('http://www.w3.org/2000/svg', 'g')).call(
-      axisRight(this.scaleDurationY).ticks(this.tickInterval).tickFormat(this.tickFormat)
+    return d3Select(
+      document.createElementNS('http://www.w3.org/2000/svg', 'g')
+    ).call(
+      axisRight(this.scaleDurationY)
+        .ticks(this.tickInterval)
+        .tickFormat(this.tickFormat)
     );
   }
 
@@ -104,20 +118,36 @@ export class TestHistoryDurationLegendElement extends MiloBaseElement {
   protected render() {
     const variants = this.pageState.filteredVariants;
     return html`
-      <svg height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length} width=${Y_AXIS_WIDTH + DURATION_RECT_WIDTH}>
+      <svg
+        height=${X_AXIS_HEIGHT + CELL_SIZE * variants.length}
+        width=${Y_AXIS_WIDTH + DURATION_RECT_WIDTH}
+      >
         <defs>
           <linearGradient id="duration-gradient" gradientTransform="rotate(90)">
-            <stop offset="0%" stop-color=${this.pageState.scaleDurationColor(this.pageState.maxDurationMs)}></stop>
+            <stop
+              offset="0%"
+              stop-color=${this.pageState.scaleDurationColor(
+                this.pageState.maxDurationMs
+              )}
+            ></stop>
             <stop
               offset="50%"
               stop-color=${this.pageState.scaleDurationColor(
-                (this.pageState.maxDurationMs + this.pageState.minDurationMs) / 2
+                (this.pageState.maxDurationMs + this.pageState.minDurationMs) /
+                  2
               )}
             ></stop>
-            <stop offset="100%" stop-color=${this.pageState.scaleDurationColor(this.pageState.minDurationMs)}></stop>
+            <stop
+              offset="100%"
+              stop-color=${this.pageState.scaleDurationColor(
+                this.pageState.minDurationMs
+              )}
+            ></stop>
           </linearGradient>
         </defs>
-        <g transform="translate(${DURATION_RECT_WIDTH}, ${DURATION_LEGEND_PADDING})">
+        <g
+          transform="translate(${DURATION_RECT_WIDTH}, ${DURATION_LEGEND_PADDING})"
+        >
           <rect
             x=${-DURATION_RECT_WIDTH}
             y="-0.5"

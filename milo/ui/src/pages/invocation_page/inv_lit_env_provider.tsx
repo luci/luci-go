@@ -23,7 +23,10 @@ import { consumer, provider } from '../../libs/context';
 import { getInvURLPath } from '../../libs/url_utils';
 import { consumeStore, StoreInstance } from '../../store';
 import { provideInvocationState } from '../../store/invocation_state';
-import { provideProject, provideTestTabUrl } from '../test_results_tab/test_variants_table/context';
+import {
+  provideProject,
+  provideTestTabUrl,
+} from '../test_results_tab/test_variants_table/context';
 
 /**
  * Provides context to lit components in an invocation page.
@@ -54,7 +57,9 @@ export class InvLitEnvProviderElement extends MiloBaseElement {
     if (!this.store.invocationPage.invocationId) {
       return undefined;
     }
-    return getInvURLPath(this.store.invocationPage.invocationId) + '/test-results';
+    return (
+      getInvURLPath(this.store.invocationPage.invocationId) + '/test-results'
+    );
   }
 
   constructor() {

@@ -15,13 +15,24 @@
 import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import stableStringify from 'fast-json-stable-stringify';
 import { reaction } from 'mobx';
-import { addDisposer, cast, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import {
+  addDisposer,
+  cast,
+  Instance,
+  SnapshotIn,
+  SnapshotOut,
+  types,
+} from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
 
 import { renderBugUrlTemplate } from '../libs/build_utils';
 import { NEVER_OBSERVABLE, POTENTIALLY_EXPIRED } from '../libs/constants';
 import * as iter from '../libs/iter_utils';
-import { aliveFlow, keepAliveComputed, unwrapObservable } from '../libs/milo_mobx_utils';
+import {
+  aliveFlow,
+  keepAliveComputed,
+  unwrapObservable,
+} from '../libs/milo_mobx_utils';
 import { attachTags, InnerTag, TAG_SOURCE } from '../libs/tag';
 import { getGitilesRepoURL } from '../libs/url_utils';
 import {
@@ -37,7 +48,10 @@ import {
   SEARCH_BUILD_FIELD_MASK,
   TEST_PRESENTATION_KEY,
 } from '../services/buildbucket';
-import { QueryBlamelistRequest, QueryBlamelistResponse } from '../services/milo_internal';
+import {
+  QueryBlamelistRequest,
+  QueryBlamelistResponse,
+} from '../services/milo_internal';
 import {
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
@@ -113,7 +127,9 @@ export const BuildPage = types
      * with 'b'.
      */
     get buildNum() {
-      return self.buildNumOrIdParam?.startsWith('b') === false ? Number(self.buildNumOrIdParam) : null;
+      return self.buildNumOrIdParam?.startsWith('b') === false
+        ? Number(self.buildNumOrIdParam)
+        : null;
     },
     /**
      * buildId is defined when this.buildNumOrId is defined and starts with 'b',
@@ -121,8 +137,15 @@ export const BuildPage = types
      */
     get buildId() {
       const cached =
-        self.builderIdParam && this.buildNum !== null ? self.getBuildId(self.builderIdParam, this.buildNum) : null;
-      return cached || (self.buildNumOrIdParam?.startsWith('b') ? self.buildNumOrIdParam.slice(1) : null);
+        self.builderIdParam && this.buildNum !== null
+          ? self.getBuildId(self.builderIdParam, this.buildNum)
+          : null;
+      return (
+        cached ||
+        (self.buildNumOrIdParam?.startsWith('b')
+          ? self.buildNumOrIdParam.slice(1)
+          : null)
+      );
     },
     get hasInvocation() {
       return Boolean(self._build?.data.infra?.resultdb?.invocation);
@@ -130,16 +153,26 @@ export const BuildPage = types
   }))
   .actions((self) => ({
     _setBuild(build: Build) {
-      self._build = cast({ data: build, currentTime: self.currentTime?.id, userConfig: self.userConfig?.id });
+      self._build = cast({
+        data: build,
+        currentTime: self.currentTime?.id,
+        userConfig: self.userConfig?.id,
+      });
     },
     _setRelatedBuilds(builds: readonly Build[]) {
-      self._relatedBuilds = cast(builds.map((data) => ({ data, currentTime: self.currentTime?.id })));
+      self._relatedBuilds = cast(
+        builds.map((data) => ({ data, currentTime: self.currentTime?.id }))
+      );
     },
   }))
   .views((self) => {
     let buildQueryTime: number | null = null;
     const build = keepAliveComputed(self, () => {
-      if (!self.services?.builds || (!self.buildId && (!self.builderIdParam || !self.buildNum)) || !self.refreshTime) {
+      if (
+        !self.services?.builds ||
+        (!self.buildId && (!self.builderIdParam || !self.buildNum)) ||
+        !self.refreshTime
+      ) {
         return null;
       }
 
@@ -154,7 +187,8 @@ export const BuildPage = types
       // If we record the query time instead, no other code will need to read
       // or update the query time.
       const cacheOpt = {
-        acceptCache: buildQueryTime === null || buildQueryTime >= self.refreshTime.value,
+        acceptCache:
+          buildQueryTime === null || buildQueryTime >= self.refreshTime.value,
       };
       buildQueryTime = self.refreshTime.value;
 
@@ -162,7 +196,11 @@ export const BuildPage = types
       // page is redirected from a short build link to a long build link.
       const req: GetBuildRequest = self.buildId
         ? { id: self.buildId, fields: BUILD_FIELD_MASK }
-        : { builder: self.builderIdParam, buildNumber: self.buildNum!, fields: BUILD_FIELD_MASK };
+        : {
+            builder: self.builderIdParam,
+            buildNumber: self.buildNum!,
+            fields: BUILD_FIELD_MASK,
+          };
 
       return fromPromise(
         self.services.builds
@@ -191,14 +229,19 @@ export const BuildPage = types
         if (self.build === null) {
           return null;
         }
-        const invIdFromBuild = self.build?.data.infra?.resultdb?.invocation?.slice('invocations/'.length) ?? null;
+        const invIdFromBuild =
+          self.build?.data.infra?.resultdb?.invocation?.slice(
+            'invocations/'.length
+          ) ?? null;
         return fromPromise(Promise.resolve(invIdFromBuild));
       } else if (self.buildId) {
         // Favor ID over builder + number to ensure cache hit when the build
         // page is redirected from a short build link to a long build link.
         return fromPromise(Promise.resolve(getInvIdFromBuildId(self.buildId)));
       } else if (self.builderIdParam && self.buildNum) {
-        return fromPromise(getInvIdFromBuildNum(self.builderIdParam, self.buildNum));
+        return fromPromise(
+          getInvIdFromBuildNum(self.builderIdParam, self.buildNum)
+        );
       } else {
         return null;
       }
@@ -235,7 +278,9 @@ export const BuildPage = types
             }
           }
           const builds = [...buildMap.values()].sort((b1, b2) =>
-            b1.id.length === b2.id.length ? b1.id.localeCompare(b2.id) : b1.id.length - b2.id.length
+            b1.id.length === b2.id.length
+              ? b1.id.localeCompare(b2.id)
+              : b1.id.length - b2.id.length
           );
           self._setRelatedBuilds(builds);
           return self._relatedBuilds;
@@ -247,7 +292,9 @@ export const BuildPage = types
       if (!self.services?.builders || !self.build?.data.builder) {
         return null;
       }
-      return fromPromise(self.services.builders.getBuilder({ id: self.build.data.builder }));
+      return fromPromise(
+        self.services.builders.getBuilder({ id: self.build.data.builder })
+      );
     });
 
     const permittedActions = keepAliveComputed(self, () => {
@@ -302,7 +349,10 @@ export const BuildPage = types
         return unwrapObservable(builder.get() || NEVER_OBSERVABLE, null);
       },
       get _permittedActions(): { readonly [key: string]: boolean | undefined } {
-        const permittedActionRes = unwrapObservable(permittedActions.get() || NEVER_OBSERVABLE, null);
+        const permittedActionRes = unwrapObservable(
+          permittedActions.get() || NEVER_OBSERVABLE,
+          null
+        );
         return permittedActionRes?.results || {};
       },
       get canRetry() {
@@ -328,7 +378,10 @@ export const BuildPage = types
           return null;
         }
 
-        return renderBugUrlTemplate(this.projectCfg.bugUrlTemplate, self.build.data);
+        return renderBugUrlTemplate(
+          this.projectCfg.bugUrlTemplate,
+          self.build.data
+        );
       },
       get gitilesCommitRepo() {
         if (!self.build?.associatedGitilesCommit) {
@@ -339,7 +392,10 @@ export const BuildPage = types
     };
   })
   .views((self) => {
-    const getQueryBlamelistResIterFn = (gitilesCommit: GitilesCommit, multiProjectSupport = false) => {
+    const getQueryBlamelistResIterFn = (
+      gitilesCommit: GitilesCommit,
+      multiProjectSupport = false
+    ) => {
       if (!self.services?.milo || !self.build) {
         // eslint-disable-next-line require-yield
         return async function* () {
@@ -370,7 +426,10 @@ export const BuildPage = types
 
       return self.build.blamelistPins.map((pin) => {
         const pinRepo = getGitilesRepoURL(pin);
-        return getQueryBlamelistResIterFn(pin, pinRepo !== self.gitilesCommitRepo);
+        return getQueryBlamelistResIterFn(
+          pin,
+          pinRepo !== self.gitilesCommitRepo
+        );
       });
     });
 
@@ -381,7 +440,14 @@ export const BuildPage = types
     };
   })
   .actions((self) => ({
-    setDependencies(deps: Partial<Pick<typeof self, 'currentTime' | 'refreshTime' | 'services' | 'userConfig'>>) {
+    setDependencies(
+      deps: Partial<
+        Pick<
+          typeof self,
+          'currentTime' | 'refreshTime' | 'services' | 'userConfig'
+        >
+      >
+    ) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
     setUseComputedInvId(useComputed: boolean) {

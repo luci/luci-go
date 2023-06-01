@@ -17,7 +17,11 @@ import Mustache from 'mustache';
 import { Link } from '../models/link';
 import { Build, BuildInfraSwarming } from '../services/buildbucket';
 import { getBotUrl } from '../services/swarming';
-import { getBuilderURLPath, getInvURLPath, getSwarmingTaskURL } from './url_utils';
+import {
+  getBuilderURLPath,
+  getInvURLPath,
+  getSwarmingTaskURL,
+} from './url_utils';
 
 // getBotLink generates a link to a swarming bot.
 export function getBotLink(swarming: BuildInfraSwarming): Link | null {
@@ -45,17 +49,22 @@ export function getInvocationLink(invocationName: string): Link | null {
 
 // getBuildbucketLink generates a link to a buildbucket RPC explorer page for
 // the given build.
-export function getBuildbucketLink(buildbucketHost: string, buildId: string): Link {
+export function getBuildbucketLink(
+  buildbucketHost: string,
+  buildId: string
+): Link {
   return {
     label: buildId,
-    url: `https://${buildbucketHost}/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?${new URLSearchParams([
+    url: `https://${buildbucketHost}/rpcexplorer/services/buildbucket.v2.Builds/GetBuild?${new URLSearchParams(
       [
-        'request',
-        JSON.stringify({
-          id: buildId,
-        }),
-      ],
-    ]).toString()}`,
+        [
+          'request',
+          JSON.stringify({
+            id: buildId,
+          }),
+        ],
+      ]
+    ).toString()}`,
     ariaLabel: 'Buildbucket RPC explorer for build',
   };
 }
@@ -71,28 +80,40 @@ export function getLogdogRawUrl(logdogURL: string): string | null {
 
 export function getSafeUrlFromTagValue(tagValue: string): string | null {
   {
-    const match = tagValue.match(/^patch\/gerrit\/([\w-]+\.googlesource\.com)\/(\d+\/\d+)$/);
+    const match = tagValue.match(
+      /^patch\/gerrit\/([\w-]+\.googlesource\.com)\/(\d+\/\d+)$/
+    );
     if (match) {
       const [, host, cl] = match as string[];
       return `https://${host}/c/${cl}`;
     }
   }
   {
-    const match = tagValue.match(/^commit\/gitiles\/([\w-]+\.googlesource\.com\/.+)$/);
+    const match = tagValue.match(
+      /^commit\/gitiles\/([\w-]+\.googlesource\.com\/.+)$/
+    );
     if (match) {
       const [, url] = match as string[];
       return `https://${url}`;
     }
   }
   {
-    const match = tagValue.match(/^build\/milo\/([\w\-_ ]+)\/([\w\-_ ]+)\/([\w\-_ ]+)\/(\d+)$/);
+    const match = tagValue.match(
+      /^build\/milo\/([\w\-_ ]+)\/([\w\-_ ]+)\/([\w\-_ ]+)\/(\d+)$/
+    );
     if (match) {
       const [, project, bucket, builder, buildIdOrNum] = match as string[];
-      return `${getBuilderURLPath({ project, bucket, builder })}/${buildIdOrNum}`;
+      return `${getBuilderURLPath({
+        project,
+        bucket,
+        builder,
+      })}/${buildIdOrNum}`;
     }
   }
   {
-    const match = tagValue.match(/^task\/swarming\/(chrome-swarming|chromium-swarm)\/(.+)$/);
+    const match = tagValue.match(
+      /^task\/swarming\/(chrome-swarming|chromium-swarm)\/(.+)$/
+    );
     if (match) {
       const [, instance, taskId] = match as string[];
       return getSwarmingTaskURL(`${instance}.appspot.com`, taskId);
@@ -101,7 +122,8 @@ export function getSafeUrlFromTagValue(tagValue: string): string | null {
   return null;
 }
 
-const RE_BUG_URL = /https:\/\/(bugs\.chromium\.org|b\.corp\.google\.com)(\/*.)?/;
+const RE_BUG_URL =
+  /https:\/\/(bugs\.chromium\.org|b\.corp\.google\.com)(\/*.)?/;
 
 /**
  * Renders Project.BugUrlTemplate. See the definition for Project.BugUrlTemplate
@@ -124,7 +146,9 @@ export function renderBugUrlTemplate(
         },
       },
       milo_build_url: encodeURIComponent(miloOrigin + `/b/${build.id}`),
-      milo_builder_url: encodeURIComponent(miloOrigin + getBuilderURLPath(build.builder)),
+      milo_builder_url: encodeURIComponent(
+        miloOrigin + getBuilderURLPath(build.builder)
+      ),
     });
   } catch (_e) {
     console.warn(

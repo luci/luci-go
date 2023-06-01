@@ -25,7 +25,9 @@ describe('BuilderList', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+    store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+    });
   });
   afterEach(() => {
     cleanup();
@@ -34,7 +36,10 @@ describe('BuilderList', () => {
   });
 
   it('should start loading all builders', () => {
-    const loadRemainingPagesStub = jest.spyOn(store.searchPage.builderLoader!, 'loadRemainingPages');
+    const loadRemainingPagesStub = jest.spyOn(
+      store.searchPage.builderLoader!,
+      'loadRemainingPages'
+    );
     loadRemainingPagesStub.mockImplementation(() => Promise.resolve());
 
     render(

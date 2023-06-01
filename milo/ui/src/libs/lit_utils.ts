@@ -18,7 +18,10 @@ import { html, TemplateResult } from 'lit';
  * Return a lit-element template that highlight the substring (case-insensitive)
  * in the given fullString.
  */
-export function highlight(fullString: string, subString: string): TemplateResult {
+export function highlight(
+  fullString: string,
+  subString: string
+): TemplateResult {
   const matchStart = fullString.toUpperCase().search(subString.toUpperCase());
   const prefix = fullString.slice(0, matchStart);
   const matched = fullString.slice(matchStart, matchStart + subString.length);

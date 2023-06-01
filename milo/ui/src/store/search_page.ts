@@ -61,7 +61,9 @@ export const SearchPage = types
     },
     get filteredBuilders() {
       const parts = self.searchQuery.toLowerCase().split(' ');
-      return this.builders?.filter(([bid]) => parts.every((part) => bid.includes(part))).map(([_, builder]) => builder);
+      return this.builders
+        ?.filter(([bid]) => parts.every((part) => bid.includes(part)))
+        .map(([_, builder]) => builder);
     },
     get groupedBuilders() {
       return groupBy(this.filteredBuilders, (b) => `${b.project}/${b.bucket}`);

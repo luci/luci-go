@@ -14,7 +14,7 @@
 
 import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 
 import { crbugLink } from './crbug_link';
 
@@ -23,7 +23,9 @@ crbug/123 crbug.com/234 not a link CRBUG.COM/345
 crbug/proj/456 crbug/proj/657not_a_link
 `;
 
-const md = MarkdownIt('zero', { linkify: true }).enable('linkify').use(crbugLink);
+const md = markdownIt('zero', { linkify: true })
+  .enable('linkify')
+  .use(crbugLink);
 
 describe('crbug_link', () => {
   it('can render links correctly', async () => {

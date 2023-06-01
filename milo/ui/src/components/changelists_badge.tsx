@@ -55,7 +55,14 @@ export function ChangelistsBadge({ changelists }: ChangelistBadgeProps) {
           return;
         }
         const tooltip = document.createElement('div');
-        render(html`<milo-changelists-tooltip .changelists=${changelists}></milo-changelists-tooltip>`, tooltip);
+        render(
+          html`
+            <milo-changelists-tooltip
+              .changelists=${changelists}
+            ></milo-changelists-tooltip>
+          `,
+          tooltip
+        );
         window.dispatchEvent(
           new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
             detail: {
@@ -70,9 +77,15 @@ export function ChangelistsBadge({ changelists }: ChangelistBadgeProps) {
         if (!hasMultipleCls) {
           return;
         }
-        window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
+        window.dispatchEvent(
+          new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+            detail: { delay: 50 },
+          })
+        );
       }}
-      onClick={(e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => e.stopPropagation()}
+      onClick={(e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) =>
+        e.stopPropagation()
+      }
     />
   );
 }

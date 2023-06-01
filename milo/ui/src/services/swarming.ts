@@ -57,13 +57,17 @@ export interface BotInfoListResponse {
 export class BotsService {
   static readonly SERVICE = 'swarming.v2.Bots';
 
-  private readonly callFn: (method: string, message: object) => Promise<unknown>;
+  private readonly callFn: (
+    method: string,
+    message: object
+  ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
-    this.callFn = (method: string, message: object) => client.call(BotsService.SERVICE, method, message);
+    this.callFn = (method: string, message: object) =>
+      client.call(BotsService.SERVICE, method, message);
   }
 
-  async ListBots(req: BotsRequest) {
+  async listBots(req: BotsRequest) {
     return (await this.callFn('ListBots', req)) as BotInfoListResponse;
   }
 }

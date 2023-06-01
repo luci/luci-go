@@ -21,7 +21,11 @@ import '../../../components/dot_spinner';
 import './step_cluster';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { consumer } from '../../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportRenderError,
+} from '../../../libs/error_handler';
 import { consumeStore, StoreInstance } from '../../../store';
 import { commonStyles } from '../../../styles/stylesheets';
 import { BuildPageStepClusterElement } from './step_cluster';
@@ -42,15 +46,19 @@ export class BuildPageStepListElement extends MiloBaseElement {
   private expandSubSteps = false;
   toggleAllSteps(expand: boolean) {
     this.expandSubSteps = expand;
-    this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>('milo-bp-step-cluster').forEach((e) =>
-      e.toggleAllSteps(expand)
-    );
+    this.shadowRoot!.querySelectorAll<BuildPageStepClusterElement>(
+      'milo-bp-step-cluster'
+    ).forEach((e) => e.toggleAllSteps(expand));
   }
 
   protected render = reportRenderError(this, () => {
     const build = this.store.buildPage.build;
     if (!build) {
-      return html` <div id="load" class="list-entry">Loading <milo-dot-spinner></milo-dot-spinner></div> `;
+      return html`
+        <div id="load" class="list-entry">
+          Loading <milo-dot-spinner></milo-dot-spinner>
+        </div>
+      `;
     }
 
     if (build.rootSteps.length === 0) {
@@ -60,7 +68,10 @@ export class BuildPageStepListElement extends MiloBaseElement {
     return html`
       ${build.clusteredRootSteps.map(
         (cluster) =>
-          html`<milo-bp-step-cluster .steps=${cluster} .expanded=${this.expandSubSteps}></milo-bp-step-cluster>`
+          html`<milo-bp-step-cluster
+            .steps=${cluster}
+            .expanded=${this.expandSubSteps}
+          ></milo-bp-step-cluster>`
       )}
     `;
   });
@@ -87,7 +98,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-bp-step-list': {};
+      'milo-bp-step-list': Record<string, never>;
     }
   }
 }

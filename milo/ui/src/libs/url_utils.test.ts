@@ -18,8 +18,14 @@ import { getBuilderURLPath, getTestHistoryURLPath } from './url_utils';
 
 describe('getBuilderURLPath', () => {
   it('should encode the builder', () => {
-    const url = getBuilderURLPath({ project: 'testproject', bucket: 'testbucket', builder: 'test builder' });
-    expect(url).toStrictEqual('/p/testproject/builders/testbucket/test%20builder');
+    const url = getBuilderURLPath({
+      project: 'testproject',
+      bucket: 'testbucket',
+      builder: 'test builder',
+    });
+    expect(url).toStrictEqual(
+      '/p/testproject/builders/testbucket/test%20builder'
+    );
   });
 });
 

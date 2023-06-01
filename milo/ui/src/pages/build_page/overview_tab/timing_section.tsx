@@ -45,21 +45,35 @@ export const TimingSection = observer(() => {
           </tr>
           <tr>
             <td>Started:</td>
-            <td>{build.startTime ? <Timestamp datetime={build.startTime} /> : 'N/A'}</td>
+            <td>
+              {build.startTime ? (
+                <Timestamp datetime={build.startTime} />
+              ) : (
+                'N/A'
+              )}
+            </td>
           </tr>
           <tr>
             <td>Ended:</td>
-            <td>{build.endTime ? <Timestamp datetime={build.endTime} /> : 'N/A'}</td>
+            <td>
+              {build.endTime ? <Timestamp datetime={build.endTime} /> : 'N/A'}
+            </td>
           </tr>
           <tr>
             <td>Pending:</td>
             <td>
               {displayDuration(build.pendingDuration)}
               {build.isPending ? '(and counting)' : ''}
-              {build.exceededSchedulingTimeout ? <span className="warning">(exceeded timeout)</span> : ''}
+              {build.exceededSchedulingTimeout ? (
+                <span className="warning">(exceeded timeout)</span>
+              ) : (
+                ''
+              )}
               <span
                 title={`Maximum pending duration: ${
-                  build.schedulingTimeout ? displayDuration(build.schedulingTimeout) : 'N/A'
+                  build.schedulingTimeout
+                    ? displayDuration(build.schedulingTimeout)
+                    : 'N/A'
                 }`}
               >
                 <InlineInfo fontSize="small" />
@@ -69,12 +83,20 @@ export const TimingSection = observer(() => {
           <tr>
             <td>Execution:</td>
             <td>
-              {build.executionDuration ? displayDuration(build.executionDuration) : 'N/A'}
+              {build.executionDuration
+                ? displayDuration(build.executionDuration)
+                : 'N/A'}
               {build.isExecuting ? '(and counting)' : ''}
-              {build.exceededExecutionTimeout ? <span className="warning">(exceeded timeout)</span> : ''}
+              {build.exceededExecutionTimeout ? (
+                <span className="warning">(exceeded timeout)</span>
+              ) : (
+                ''
+              )}
               <span
                 title={`Maximum execution duration: ${
-                  build.executionTimeout ? displayDuration(build.executionTimeout) : 'N/A'
+                  build.executionTimeout
+                    ? displayDuration(build.executionTimeout)
+                    : 'N/A'
                 }`}
               >
                 <InlineInfo fontSize="small" />

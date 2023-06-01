@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import { MoreVert, Settings, Upgrade } from '@mui/icons-material';
-import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import {
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 
@@ -40,7 +46,12 @@ export const AppMenu = observer(({ container, children }: AppMenuProps) => {
       >
         {hasPendingUpdate ? <Upgrade /> : children ?? <MoreVert />}
       </IconButton>
-      <Menu open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)} anchorEl={anchorEl} container={container}>
+      <Menu
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+        anchorEl={anchorEl}
+        container={container}
+      >
         <MenuItem
           onClick={() => store.workbox.workbox?.messageSkipWaiting()}
           disabled={!hasPendingUpdate}

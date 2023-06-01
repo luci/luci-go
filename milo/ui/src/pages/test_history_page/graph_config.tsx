@@ -33,7 +33,10 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
   }
 
   @computed private get shouldShowCountFilter() {
-    return this.pageState.graphType === GraphType.STATUS && this.pageState.xAxisType === XAxisType.DATE;
+    return (
+      this.pageState.graphType === GraphType.STATUS &&
+      this.pageState.xAxisType === XAxisType.DATE
+    );
   }
 
   constructor() {
@@ -47,11 +50,21 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
         <label>Show:</label>
         <select
           @input=${(e: InputEvent) => {
-            this.pageState.setGraphType((e.target as HTMLOptionElement).value as GraphType);
+            this.pageState.setGraphType(
+              (e.target as HTMLOptionElement).value as GraphType
+            );
           }}
         >
-          <option ?selected=${this.pageState.graphType === GraphType.STATUS} value=${GraphType.STATUS}>Status</option>
-          <option ?selected=${this.pageState.graphType === GraphType.DURATION} value=${GraphType.DURATION}>
+          <option
+            ?selected=${this.pageState.graphType === GraphType.STATUS}
+            value=${GraphType.STATUS}
+          >
+            Status
+          </option>
+          <option
+            ?selected=${this.pageState.graphType === GraphType.DURATION}
+            value=${GraphType.DURATION}
+          >
             Duration
           </option>
         </select>
@@ -59,11 +72,16 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
       <div
         id="duration-filter"
         class="filter"
-        style=${styleMap({ display: this.pageState.graphType === GraphType.DURATION ? '' : 'none' })}
+        style=${styleMap({
+          display:
+            this.pageState.graphType === GraphType.DURATION ? '' : 'none',
+        })}
       >
         <input id="pass-only-toggle" type="checkbox" checked disabled />
         <label for="pass-only-toggle"
-          >Pass Only<mwc-icon class="inline-icon" title="Only include durations from passed results"
+          >Pass Only<mwc-icon
+            class="inline-icon"
+            title="Only include durations from passed results"
             >info</mwc-icon
           ></label
         >
@@ -73,32 +91,57 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
         <select
           disabled
           @input=${(e: InputEvent) => {
-            this.pageState.setXAxisType((e.target as HTMLOptionElement).value as XAxisType);
+            this.pageState.setXAxisType(
+              (e.target as HTMLOptionElement).value as XAxisType
+            );
           }}
         >
-          <option ?selected=${this.pageState.xAxisType === XAxisType.COMMIT} value=${XAxisType.COMMIT}>Commit</option>
-          <option ?selected=${this.pageState.xAxisType === XAxisType.DATE} value=${XAxisType.DATE}>Date</option>
+          <option
+            ?selected=${this.pageState.xAxisType === XAxisType.COMMIT}
+            value=${XAxisType.COMMIT}
+          >
+            Commit
+          </option>
+          <option
+            ?selected=${this.pageState.xAxisType === XAxisType.DATE}
+            value=${XAxisType.DATE}
+          >
+            Date
+          </option>
         </select>
       </div>
-      <div id="count-filter" style=${styleMap({ display: this.shouldShowCountFilter ? '' : 'none' })}>
+      <div
+        id="count-filter"
+        style=${styleMap({ display: this.shouldShowCountFilter ? '' : 'none' })}
+      >
         <label>Count:</label>
         <div class="filter">
           <input
             id="unexpected-toggle"
             type="checkbox"
             ?checked=${this.pageState.countUnexpected}
-            @change=${(e: Event) => this.pageState.setCountUnexpected((e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) =>
+              this.pageState.setCountUnexpected(
+                (e.target as HTMLInputElement).checked
+              )}
           />
-          <label for="unexpected-toggle" style="color: var(--failure-color);">Unexpected</label>
+          <label for="unexpected-toggle" style="color: var(--failure-color);"
+            >Unexpected</label
+          >
         </div>
         <div class="filter">
           <input
             id="unexpectedly-skipped-toggle"
             type="checkbox"
             ?checked=${this.pageState.countUnexpectedlySkipped}
-            @change=${(e: Event) => this.pageState.setCountUnexpectedlySkipped((e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) =>
+              this.pageState.setCountUnexpectedlySkipped(
+                (e.target as HTMLInputElement).checked
+              )}
           />
-          <label for="unexpectedly-skipped-toggle" style="color: var(--critical-failure-color);"
+          <label
+            for="unexpectedly-skipped-toggle"
+            style="color: var(--critical-failure-color);"
             >Unexpectedly Skipped</label
           >
         </div>
@@ -107,18 +150,28 @@ export class TestHistoryGraphConfigElement extends MiloBaseElement {
             id="flaky-toggle"
             type="checkbox"
             ?checked=${this.pageState.countFlaky}
-            @change=${(e: Event) => this.pageState.setCountFlaky((e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) =>
+              this.pageState.setCountFlaky(
+                (e.target as HTMLInputElement).checked
+              )}
           />
-          <label for="flaky-toggle" style="color: var(--warning-color);">Flaky</label>
+          <label for="flaky-toggle" style="color: var(--warning-color);"
+            >Flaky</label
+          >
         </div>
         <div class="filter">
           <input
             id="exonerated-toggle"
             type="checkbox"
             ?checked=${this.pageState.countExonerated}
-            @change=${(e: Event) => this.pageState.setCountExonerated((e.target as HTMLInputElement).checked)}
+            @change=${(e: Event) =>
+              this.pageState.setCountExonerated(
+                (e.target as HTMLInputElement).checked
+              )}
           />
-          <label for="exonerated-toggle" style="color: var(--exonerated-color);">Exonerated</label>
+          <label for="exonerated-toggle" style="color: var(--exonerated-color);"
+            >Exonerated</label
+          >
         </div>
       </div>
     `;
@@ -178,7 +231,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-th-graph-config': {};
+      'milo-th-graph-config': Record<string, never>;
     }
   }
 }

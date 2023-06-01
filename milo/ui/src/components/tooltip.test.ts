@@ -16,18 +16,28 @@ import { expect } from '@jest/globals';
 import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
 
 import './tooltip';
-import { HideTooltipEventDetail, ShowTooltipEventDetail, TooltipElement } from './tooltip';
+import {
+  HideTooltipEventDetail,
+  ShowTooltipEventDetail,
+  TooltipElement,
+} from './tooltip';
 
 describe('Tooltip', () => {
   it('should only display one tooltip at a time', async () => {
-    const tooltipContainer = await fixture<TooltipElement>(html`<milo-tooltip></milo-tooltip>`);
+    const tooltipContainer = await fixture<TooltipElement>(
+      html`<milo-tooltip></milo-tooltip>`
+    );
 
     const tooltip1 = document.createElement('div');
     const tooltip2 = document.createElement('div');
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
+        detail: {
+          tooltip: tooltip1,
+          targetRect: tooltipContainer.getBoundingClientRect(),
+          gapSize: 5,
+        },
       })
     );
 
@@ -37,7 +47,11 @@ describe('Tooltip', () => {
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
+        detail: {
+          tooltip: tooltip2,
+          targetRect: tooltipContainer.getBoundingClientRect(),
+          gapSize: 5,
+        },
       })
     );
 
@@ -47,13 +61,19 @@ describe('Tooltip', () => {
   });
 
   it('should hide tooltip after specified delay', async () => {
-    const tooltipContainer = await fixture<TooltipElement>(html`<milo-tooltip></milo-tooltip>`);
+    const tooltipContainer = await fixture<TooltipElement>(
+      html`<milo-tooltip></milo-tooltip>`
+    );
 
     const tooltip = document.createElement('div');
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
+        detail: {
+          tooltip,
+          targetRect: tooltipContainer.getBoundingClientRect(),
+          gapSize: 5,
+        },
       })
     );
 
@@ -74,14 +94,20 @@ describe('Tooltip', () => {
   });
 
   it('should handle race condition correctly', async () => {
-    const tooltipContainer = await fixture<TooltipElement>(html`<milo-tooltip></milo-tooltip>`);
+    const tooltipContainer = await fixture<TooltipElement>(
+      html`<milo-tooltip></milo-tooltip>`
+    );
 
     const tooltip1 = document.createElement('div');
     const tooltip2 = document.createElement('div');
 
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip1, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
+        detail: {
+          tooltip: tooltip1,
+          targetRect: tooltipContainer.getBoundingClientRect(),
+          gapSize: 5,
+        },
       })
     );
 
@@ -100,7 +126,11 @@ describe('Tooltip', () => {
     // Show another tooltip before the first one is dismissed.
     window.dispatchEvent(
       new CustomEvent<ShowTooltipEventDetail>('show-tooltip', {
-        detail: { tooltip: tooltip2, targetRect: tooltipContainer.getBoundingClientRect(), gapSize: 5 },
+        detail: {
+          tooltip: tooltip2,
+          targetRect: tooltipContainer.getBoundingClientRect(),
+          gapSize: 5,
+        },
       })
     );
 

@@ -18,7 +18,10 @@ import { customElement } from 'lit/decorators.js';
 
 import './step_entry';
 import { provider } from '../../../libs/context';
-import { IntersectionNotifier, provideNotifier } from '../../../libs/observer_element';
+import {
+  IntersectionNotifier,
+  provideNotifier,
+} from '../../../libs/observer_element';
 import { BuildStatus } from '../../../services/buildbucket';
 import { Store } from '../../../store';
 import { StepExt } from '../../../store/build_state';
@@ -57,7 +60,10 @@ describe('StepEntry', () => {
     });
     await fixture<NotifierProviderElement>(html`
       <milo-bp-step-entry-test-notifier-provider>
-        <milo-bp-step-entry .store=${Store.create()} .step=${step}></milo-bp-step-entry>
+        <milo-bp-step-entry
+          .store=${Store.create()}
+          .step=${step}
+        ></milo-bp-step-entry>
       </milo-bp-step-entry-test-notifier-provider>
     `);
     await aTimeout(10);

@@ -51,4 +51,6 @@ export const ExpandableEntriesState = types
     },
   }));
 
-export type ExpandableEntriesStateInstance = Instance<typeof ExpandableEntriesState>;
+export type ExpandableEntriesStateInstance = Instance<
+  typeof ExpandableEntriesState
+>;

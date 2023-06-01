@@ -42,7 +42,13 @@ export function SignIn({ identity, email, picture }: SignInProps) {
   if (!identity || identity === ANONYMOUS_IDENTITY) {
     return (
       <Container>
-        <ActionLink href={getLoginUrl(location.pathname + location.search + location.hash)}>Login</ActionLink>
+        <ActionLink
+          href={getLoginUrl(
+            location.pathname + location.search + location.hash
+          )}
+        >
+          Login
+        </ActionLink>
       </Container>
     );
   }
@@ -52,7 +58,14 @@ export function SignIn({ identity, email, picture }: SignInProps) {
       {picture && (
         <img
           src={picture}
-          css={{ margin: '2px 3px', height: '36px', width: '36px', borderRadius: '6px', overflow: 'hidden' }}
+          alt="user avatar"
+          css={{
+            margin: '2px 3px',
+            height: '36px',
+            width: '36px',
+            borderRadius: '6px',
+            overflow: 'hidden',
+          }}
         />
       )}
       <Box
@@ -63,7 +76,13 @@ export function SignIn({ identity, email, picture }: SignInProps) {
         }}
       >
         {email} |{' '}
-        <ActionLink href={getLogoutUrl(location.pathname + location.search + location.hash)}>Logout</ActionLink>
+        <ActionLink
+          href={getLogoutUrl(
+            location.pathname + location.search + location.hash
+          )}
+        >
+          Logout
+        </ActionLink>
       </Box>
     </Container>
   );

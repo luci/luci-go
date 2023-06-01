@@ -13,5 +13,9 @@
 // limitations under the License.
 
 export function NotFoundPage() {
-  return <div css={{ margin: '8px 16px' }}>We couldn't find the page you were looking for.</div>;
+  return (
+    <div css={{ margin: '8px 16px' }}>
+      We couldn&apos;t find the page you were looking for.
+    </div>
+  );
 }

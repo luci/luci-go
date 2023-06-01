@@ -19,7 +19,12 @@ import { LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 
 import './error_handler';
-import { errorHandler, forwardWithoutMsg, reportError, reportErrorAsync } from './error_handler';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportError,
+  reportErrorAsync,
+} from './error_handler';
 
 @customElement('milo-error-handler-test-default')
 @errorHandler()
@@ -48,14 +53,23 @@ describe('errorHandler', () => {
       </milo-error-handler-test-default>
     `);
     const childEle = errorHandlerEle.querySelector('div')!;
-    childEle.dispatchEvent(new ErrorEvent('error', { error: new Error(), message: 'error msg', bubbles: true }));
+    childEle.dispatchEvent(
+      new ErrorEvent('error', {
+        error: new Error(),
+        message: 'error msg',
+        bubbles: true,
+      })
+    );
     await aTimeout(0);
-    expect(errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent).toMatch('error msg');
+    expect(
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+    ).toMatch('error msg');
   });
 
   // The second dispatch doesn't seem to trigger the event handler in JSDOM.
   // TODO(weiweilin): investigate why the second dispatch doesn't trigger the
   // event handler.
+  // eslint-disable-next-line jest/no-disabled-tests
   it.skip('should update error message when received a new error event', async () => {
     const errorHandlerEle = await fixture<ErrorHandlerTestDefaultElement>(html`
       <milo-error-handler-test-default>
@@ -63,22 +77,45 @@ describe('errorHandler', () => {
       </milo-error-handler-test-default>
     `);
     const childEle = errorHandlerEle.querySelector('div')!;
-    childEle.dispatchEvent(new ErrorEvent('error', { error: new Error(), message: 'error msg', bubbles: true }));
+    childEle.dispatchEvent(
+      new ErrorEvent('error', {
+        error: new Error(),
+        message: 'error msg',
+        bubbles: true,
+      })
+    );
     await aTimeout(0);
-    expect(errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent).toMatch('error msg');
-    childEle.dispatchEvent(new ErrorEvent('error', { error: new Error(), message: 'error msg 2', bubbles: true }));
+    expect(
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+    ).toMatch('error msg');
+    childEle.dispatchEvent(
+      new ErrorEvent('error', {
+        error: new Error(),
+        message: 'error msg 2',
+        bubbles: true,
+      })
+    );
     await aTimeout(0);
-    expect(errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent).toMatch('error msg 2');
+    expect(
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+    ).toMatch('error msg 2');
   });
 
   it('should render the original content when onErrorRender returns false', async () => {
-    const errorHandlerEle = await fixture<ErrorHandlerTestOnErrorReturnsPropElement>(html`
-      <milo-error-handler-test-on-error-returns-prop>
-        <div></div>
-      </milo-error-handler-test-on-error-returns-prop>
-    `);
+    const errorHandlerEle =
+      await fixture<ErrorHandlerTestOnErrorReturnsPropElement>(html`
+        <milo-error-handler-test-on-error-returns-prop>
+          <div></div>
+        </milo-error-handler-test-on-error-returns-prop>
+      `);
     const childEle = errorHandlerEle.querySelector('div')!;
-    childEle.dispatchEvent(new ErrorEvent('error', { error: new Error(), message: '', bubbles: true }));
+    childEle.dispatchEvent(
+      new ErrorEvent('error', {
+        error: new Error(),
+        message: '',
+        bubbles: true,
+      })
+    );
     await aTimeout(0);
     expect(errorHandlerEle.shadowRoot!.querySelector('pre')).toBeNull();
   });
@@ -160,20 +197,12 @@ describe('reportErrorAsync', () => {
   it('should dispatch an error event when the fn throws', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
-    class SpecialErrorClass extends Error {}
-    const err = new SpecialErrorClass('err msg');
-    try {
-      await reportErrorAsync(div, async () => {
+    const err = new Error('err msg');
+    await expect(
+      reportErrorAsync(div, async () => {
         throw err;
-      })();
-      throw new Error("should've thrown an error");
-    } catch (e) {
-      if (e instanceof SpecialErrorClass) {
-        expect(e).toStrictEqual(err);
-      } else {
-        throw e;
-      }
-    }
+      })
+    ).rejects.toThrow(err);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
     expect(event).toBeInstanceOf(ErrorEvent);
@@ -186,20 +215,12 @@ describe('reportErrorAsync', () => {
   it('should dispatch an error event when the fn throws immediately', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
-    class SpecialErrorClass extends Error {}
-    const err = new SpecialErrorClass('err msg');
-    try {
-      await reportErrorAsync(div, () => {
+    const err = new Error('err msg');
+    await expect(
+      reportErrorAsync(div, () => {
         throw err;
-      })();
-      throw new Error("should've thrown an error");
-    } catch (e) {
-      if (e instanceof SpecialErrorClass) {
-        expect(e).toStrictEqual(err);
-      } else {
-        throw e;
-      }
-    }
+      })
+    ).rejects.toThrow(err);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
     expect(event).toBeInstanceOf(ErrorEvent);
@@ -234,13 +255,11 @@ describe('reportErrorAsync', () => {
   it('should still dispatch the original error event when fallbackFn throws', async () => {
     const div = document.createElement('div');
     const dispatchEventStub = jest.spyOn(div, 'dispatchEvent');
-    class SpecialErrorClass extends Error {}
-    class FallbackErrorClass extends Error {}
-    const err = new SpecialErrorClass('err msg');
-    const fallbackErr = new FallbackErrorClass('fallback err msg');
+    const err = new Error('err msg');
+    const fallbackErr = new Error('fallback err msg');
 
-    try {
-      await reportErrorAsync(
+    await expect(
+      reportErrorAsync(
         div,
         async () => {
           throw err;
@@ -248,15 +267,8 @@ describe('reportErrorAsync', () => {
         async () => {
           throw fallbackErr;
         }
-      )();
-      throw new Error("should've thrown an error");
-    } catch (e) {
-      if (e instanceof FallbackErrorClass) {
-        expect(e).toStrictEqual(fallbackErr);
-      } else {
-        throw e;
-      }
-    }
+      )
+    ).rejects.toThrow(fallbackErr);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
     expect(event).toBeInstanceOf(ErrorEvent);
@@ -274,8 +286,8 @@ describe('reportErrorAsync', () => {
     const err = new SpecialErrorClass('err msg');
     const fallbackErr = new FallbackErrorClass('fallback err msg');
 
-    try {
-      await reportErrorAsync(
+    await expect(
+      reportErrorAsync(
         div,
         async () => {
           throw err;
@@ -283,15 +295,8 @@ describe('reportErrorAsync', () => {
         () => {
           throw fallbackErr;
         }
-      )();
-      throw new Error("should've thrown an error");
-    } catch (e) {
-      if (e instanceof FallbackErrorClass) {
-        expect(e).toStrictEqual(fallbackErr);
-      } else {
-        throw e;
-      }
-    }
+      )
+    ).rejects.toThrow(fallbackErr);
     expect(dispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = dispatchEventStub.mock.lastCall?.[0];
     expect(event).toBeInstanceOf(ErrorEvent);
@@ -331,15 +336,26 @@ describe('forwardWithoutMsg', () => {
         </milo-error-handler-test-forward-without-msg>
       </div>
     `);
-    const parentDispatchEventStub = jest.spyOn(parentEle, 'dispatchEvent').mockImplementation(() => true);
-    const errorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
-      'milo-error-handler-test-forward-without-msg'
-    )!;
+    const parentDispatchEventStub = jest
+      .spyOn(parentEle, 'dispatchEvent')
+      .mockImplementation(() => true);
+    const errorHandlerEle =
+      parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
+        'milo-error-handler-test-forward-without-msg'
+      )!;
     const err = new Error('error msg');
     const childEle = errorHandlerEle.querySelector('div')!;
-    childEle.dispatchEvent(new ErrorEvent('error', { error: err, message: 'error msg', bubbles: true }));
+    childEle.dispatchEvent(
+      new ErrorEvent('error', {
+        error: err,
+        message: 'error msg',
+        bubbles: true,
+      })
+    );
     await aTimeout(0);
-    expect(errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent).toMatch('error msg');
+    expect(
+      errorHandlerEle.shadowRoot?.querySelector('pre')?.textContent
+    ).toMatch('error msg');
     expect(parentDispatchEventStub.mock.calls.length).toStrictEqual(1);
     const event = parentDispatchEventStub.mock.lastCall?.[0];
     expect(event).toBeInstanceOf(ErrorEvent);
@@ -357,13 +373,19 @@ describe('forwardWithoutMsg', () => {
         </milo-error-handler-test-forward-without-msg>
       </milo-error-handler-test-recover>
     `);
-    const errorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
-      'milo-error-handler-test-forward-without-msg'
-    )!;
+    const errorHandlerEle =
+      parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
+        'milo-error-handler-test-forward-without-msg'
+      )!;
     const err = new Error('error msg');
     const childEle = errorHandlerEle.querySelector('div')!;
     childEle.dispatchEvent(
-      new ErrorEvent('error', { error: err, message: 'error msg', bubbles: true, cancelable: true })
+      new ErrorEvent('error', {
+        error: err,
+        message: 'error msg',
+        bubbles: true,
+        cancelable: true,
+      })
     );
     await aTimeout(0);
     expect(errorHandlerEle.shadowRoot?.querySelector('pre')).toBeNull();
@@ -381,12 +403,23 @@ describe('forwardWithoutMsg', () => {
         </milo-error-handler-test-forward-without-msg>
       </milo-error-handler-test-recover>
     `);
-    const outerErrorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>('#outer')!;
-    const innerErrorHandlerEle = parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>('#inner')!;
+    const outerErrorHandlerEle =
+      parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
+        '#outer'
+      )!;
+    const innerErrorHandlerEle =
+      parentEle.querySelector<ErrorHandlerTestForwardWithoutMsgElement>(
+        '#inner'
+      )!;
     const err = new Error('error msg');
     const childEle = innerErrorHandlerEle.querySelector('#child')!;
     childEle.dispatchEvent(
-      new ErrorEvent('error', { error: err, message: 'error msg', bubbles: true, cancelable: true })
+      new ErrorEvent('error', {
+        error: err,
+        message: 'error msg',
+        bubbles: true,
+        cancelable: true,
+      })
     );
     await aTimeout(0);
     expect(outerErrorHandlerEle.shadowRoot?.querySelector('pre')).toBeNull();

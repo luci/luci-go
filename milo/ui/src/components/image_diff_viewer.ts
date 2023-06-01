@@ -88,7 +88,9 @@ export class ImageDiffViewerElement extends MiloBaseElement {
     super.connectedCallback();
     const hidePixelViewers = () => (this.showPixelViewers = false);
     window.addEventListener('click', hidePixelViewers);
-    this.addDisposer(() => window.removeEventListener('click', hidePixelViewers));
+    this.addDisposer(() =>
+      window.removeEventListener('click', hidePixelViewers)
+    );
     this.addDisposer(
       reaction(
         () => this.coord,
@@ -103,7 +105,10 @@ export class ImageDiffViewerElement extends MiloBaseElement {
 
   protected render() {
     return html`
-      <div id="pixel-viewers" style=${styleMap({ display: this.showPixelViewers ? '' : 'none' })}>
+      <div
+        id="pixel-viewers"
+        style=${styleMap({ display: this.showPixelViewers ? '' : 'none' })}
+      >
         <milo-hotkey
           id="close-viewers-instruction"
           .key=${'esc'}
@@ -113,9 +118,18 @@ export class ImageDiffViewerElement extends MiloBaseElement {
           Click again or press ESC to close the pixel viewers.
         </milo-hotkey>
         <div id="pixel-viewer-grid">
-          <milo-pixel-viewer .label=${'expected:'} .imgUrl=${this.expectedImgUrl}></milo-pixel-viewer>
-          <milo-pixel-viewer .label=${'actual:'} .imgUrl=${this.actualImgUrl}></milo-pixel-viewer>
-          <milo-pixel-viewer .label=${'diff:'} .imgUrl=${this.diffImgUrl}></milo-pixel-viewer>
+          <milo-pixel-viewer
+            .label=${'expected:'}
+            .imgUrl=${this.expectedImgUrl}
+          ></milo-pixel-viewer>
+          <milo-pixel-viewer
+            .label=${'actual:'}
+            .imgUrl=${this.actualImgUrl}
+          ></milo-pixel-viewer>
+          <milo-pixel-viewer
+            .label=${'diff:'}
+            .imgUrl=${this.diffImgUrl}
+          ></milo-pixel-viewer>
         </div>
       </div>
       <div id="options">
@@ -171,7 +185,10 @@ export class ImageDiffViewerElement extends MiloBaseElement {
   private renderImage(id: string, label: string, url: string) {
     return html`
       <div id=${id} class="image">
-        <div>${label} (view raw <a href=${url} target="_blank">here</a> or click on the image to zoom in.)</div>
+        <div>
+          ${label} (view raw <a href=${url} target="_blank">here</a> or click on
+          the image to zoom in.)
+        </div>
         <img
           src=${url}
           @mousemove=${this.updateCoord}

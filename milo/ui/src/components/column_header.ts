@@ -73,12 +73,21 @@ export class ColumnHeaderElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <div id="prop-label" title=${this.tooltip} @click=${() => (this.menuIsOpen = !this.menuIsOpen)}>
+      <div
+        id="prop-label"
+        title=${this.tooltip}
+        @click=${() => (this.menuIsOpen = !this.menuIsOpen)}
+      >
         ${this.label}
       </div>
       <div id="padding"></div>
       ${this.renderResizer()}
-      <mwc-menu x="0" y="20" ?open=${this.menuIsOpen} @closed=${() => (this.menuIsOpen = false)}>
+      <mwc-menu
+        x="0"
+        y="20"
+        ?open=${this.menuIsOpen}
+        @closed=${() => (this.menuIsOpen = false)}
+      >
         <mwc-list-item
           style=${styleMap({ display: this.canSort ? '' : 'none' })}
           @click=${() => this.sortByColumn?.(true)}
@@ -97,7 +106,10 @@ export class ColumnHeaderElement extends MobxLitElement {
         >
           Group by this column
         </mwc-list-item>
-        <mwc-list-item style=${styleMap({ display: this.canHide ? '' : 'none' })} @click=${() => this.hideColumn?.()}>
+        <mwc-list-item
+          style=${styleMap({ display: this.canHide ? '' : 'none' })}
+          @click=${() => this.hideColumn?.()}
+        >
           Hide column
         </mwc-list-item>
       </mwc-menu>
@@ -124,7 +136,8 @@ export class ColumnHeaderElement extends MobxLitElement {
       }
       #resizer {
         flex: 0 0 auto;
-        background: linear-gradient(var(--divider-color), var(--divider-color)) 2px 0/1px 100% no-repeat;
+        background: linear-gradient(var(--divider-color), var(--divider-color))
+          2px 0/1px 100% no-repeat;
         width: 5px;
         cursor: col-resize;
       }

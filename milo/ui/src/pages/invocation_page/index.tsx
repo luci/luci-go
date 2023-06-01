@@ -19,7 +19,11 @@ import { Outlet, useParams } from 'react-router-dom';
 
 import { Tab, Tabs } from '../../components/tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '../../libs/constants';
-import { getBuildURLPathFromBuildId, getInvURLPath, getSwarmingTaskURL } from '../../libs/url_utils';
+import {
+  getBuildURLPathFromBuildId,
+  getInvURLPath,
+  getSwarmingTaskURL,
+} from '../../libs/url_utils';
 import { useStore } from '../../store';
 import { CountIndicator } from '../test_results_tab/count_indicator';
 import { InvLitEnvProvider } from './inv_lit_env_provider';
@@ -42,11 +46,13 @@ export const InvocationPage = observer(() => {
   useEffect(() => {
     store.invocationPage.setInvocationId(invId);
     document.title = `inv: ${invId}`;
-  }, [invId]);
+  }, [invId, store]);
 
   const inv = store.invocationPage.invocation.invocation;
   const buildId = invId.match(/^build-(?<id>\d+)/)?.groups?.['id'];
-  const { swarmingHost, taskId } = invId.match(/^task-(?<swarmingHost>.*)-(?<taskId>[0-9a-fA-F]+)$/)?.groups || {};
+  const { swarmingHost, taskId } =
+    invId.match(/^task-(?<swarmingHost>.*)-(?<taskId>[0-9a-fA-F]+)$/)?.groups ||
+    {};
   const invUrlPath = getInvURLPath(invId);
 
   return (
@@ -67,14 +73,22 @@ export const InvocationPage = observer(() => {
             <>
               {' '}
               (
-              <a href={getBuildURLPathFromBuildId(buildId)} target="_blank">
+              <a
+                href={getBuildURLPathFromBuildId(buildId)}
+                target="_blank"
+                rel="noreferrer"
+              >
                 build page
               </a>
               )
             </>
           )}
           {ALLOWED_SWARMING_HOSTS.includes(swarmingHost) && taskId && (
-            <a href={getSwarmingTaskURL(swarmingHost, taskId)} target="_blank">
+            <a
+              href={getSwarmingTaskURL(swarmingHost, taskId)}
+              target="_blank"
+              rel="noreferrer"
+            >
               task page
             </a>
           )}
@@ -97,7 +111,10 @@ export const InvocationPage = observer(() => {
           )}
         </div>
       </div>
-      <LinearProgress value={100} variant={inv ? 'determinate' : 'indeterminate'} />
+      <LinearProgress
+        value={100}
+        variant={inv ? 'determinate' : 'indeterminate'}
+      />
       <Tabs value={store.selectedTabId || false}>
         <Tab
           label="Test Results"
@@ -106,7 +123,11 @@ export const InvocationPage = observer(() => {
           icon={<CountIndicator />}
           iconPosition="end"
         />
-        <Tab label="Invocation Details" value="invocation-details" to={invUrlPath + '/invocation-details'} />
+        <Tab
+          label="Invocation Details"
+          value="invocation-details"
+          to={invUrlPath + '/invocation-details'}
+        />
       </Tabs>
       <Outlet />
     </InvLitEnvProvider>

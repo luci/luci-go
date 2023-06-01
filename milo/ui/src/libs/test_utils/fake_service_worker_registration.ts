@@ -20,12 +20,15 @@
  * We cannot stub `ServiceWorkerRegistration` because it doesn't have a legal
  * constructor.
  */
-export class FakeServiceWorkerRegistration implements ServiceWorkerRegistration {
+export class FakeServiceWorkerRegistration
+  implements ServiceWorkerRegistration
+{
   active: ServiceWorker | null = null;
   installing: ServiceWorker | null = null;
   waiting: ServiceWorker | null = null;
   updateViaCache: ServiceWorkerUpdateViaCache = 'none';
-  onupdatefound: ((this: ServiceWorkerRegistration, ev: Event) => any) | null = null;
+  onupdatefound: ((this: ServiceWorkerRegistration, ev: Event) => any) | null =
+    null;
 
   get navigationPreload(): NavigationPreloadManager {
     throw new Error('Method not implemented.');
@@ -36,12 +39,17 @@ export class FakeServiceWorkerRegistration implements ServiceWorkerRegistration 
 
   constructor(public scope: string) {}
 
-  getNotifications(filter?: GetNotificationOptions | undefined): Promise<Notification[]>;
+  getNotifications(
+    filter?: GetNotificationOptions | undefined
+  ): Promise<Notification[]>;
   getNotifications(_filter?: unknown): Promise<Notification[]> {
     throw new Error('Method not implemented.');
   }
 
-  showNotification(title: string, options?: NotificationOptions | undefined): Promise<void>;
+  showNotification(
+    title: string,
+    options?: NotificationOptions | undefined
+  ): Promise<void>;
   showNotification(_title: unknown, _options?: unknown): Promise<void> {
     throw new Error('Method not implemented.');
   }
@@ -58,7 +66,10 @@ export class FakeServiceWorkerRegistration implements ServiceWorkerRegistration 
 
   addEventListener<K extends 'updatefound'>(
     type: K,
-    listener: (this: ServiceWorkerRegistration, ev: ServiceWorkerRegistrationEventMap[K]) => any,
+    listener: (
+      this: ServiceWorkerRegistration,
+      ev: ServiceWorkerRegistrationEventMap[K]
+    ) => any,
     options?: boolean | AddEventListenerOptions | undefined
   ): void;
   addEventListener(
@@ -66,13 +77,20 @@ export class FakeServiceWorkerRegistration implements ServiceWorkerRegistration 
     listener: EventListenerOrEventListenerObject,
     options?: boolean | AddEventListenerOptions | undefined
   ): void;
-  addEventListener(_type: unknown, _listener: unknown, _options?: unknown): void {
+  addEventListener(
+    _type: unknown,
+    _listener: unknown,
+    _options?: unknown
+  ): void {
     throw new Error('Method not implemented.');
   }
 
   removeEventListener<K extends 'updatefound'>(
     type: K,
-    listener: (this: ServiceWorkerRegistration, ev: ServiceWorkerRegistrationEventMap[K]) => any,
+    listener: (
+      this: ServiceWorkerRegistration,
+      ev: ServiceWorkerRegistrationEventMap[K]
+    ) => any,
     options?: boolean | EventListenerOptions | undefined
   ): void;
   removeEventListener(
@@ -80,7 +98,11 @@ export class FakeServiceWorkerRegistration implements ServiceWorkerRegistration 
     listener: EventListenerOrEventListenerObject,
     options?: boolean | EventListenerOptions | undefined
   ): void;
-  removeEventListener(_type: unknown, _listener: unknown, _options?: unknown): void {
+  removeEventListener(
+    _type: unknown,
+    _listener: unknown,
+    _options?: unknown
+  ): void {
     throw new Error('Method not implemented.');
   }
 

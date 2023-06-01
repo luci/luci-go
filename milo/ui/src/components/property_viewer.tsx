@@ -25,7 +25,11 @@ export interface PropertyViewerProps {
   readonly onInit?: (editor: CodeMirror.Editor) => void;
 }
 
-export function PropertyViewer({ properties, config, onInit }: PropertyViewerProps) {
+export function PropertyViewer({
+  properties,
+  config,
+  onInit,
+}: PropertyViewerProps) {
   const configRef = useLatest(config);
   const formattedValue = JSON.stringify(properties, undefined, 2);
 
@@ -72,7 +76,12 @@ export function PropertyViewer({ properties, config, onInit }: PropertyViewerPro
         onInit?.(editor);
       }}
       css={{
-        '& .CodeMirror-scroll': { minWidth: '400px', maxWidth: '1000px', minHeight: '100px', maxHeight: '600px' },
+        '& .CodeMirror-scroll': {
+          minWidth: '400px',
+          maxWidth: '1000px',
+          minHeight: '100px',
+          maxHeight: '600px',
+        },
       }}
     />
   );

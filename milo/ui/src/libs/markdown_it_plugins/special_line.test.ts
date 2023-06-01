@@ -14,12 +14,12 @@
 
 import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 import Token from 'markdown-it/lib/token';
 
 import { specialLine } from './special_line';
 
-function lookaheadLine(md: MarkdownIt) {
+function lookaheadLine(md: markdownIt) {
   md.use(specialLine, /^(?=abc=)/i, (token: Token) => {
     token.content = 'special';
     return [token];
@@ -28,7 +28,9 @@ function lookaheadLine(md: MarkdownIt) {
 
 describe('special_line', () => {
   it('can handle regex matching empty prefix (e.g. lookahead regex)', async () => {
-    const md = MarkdownIt('zero', { breaks: true, linkify: true }).use(lookaheadLine);
+    const md = markdownIt('zero', { breaks: true, linkify: true }).use(
+      lookaheadLine
+    );
 
     const ele = await fixture(md.render('abc=content'));
     expect(ele.textContent).toStrictEqual('special');

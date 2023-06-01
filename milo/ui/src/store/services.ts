@@ -14,7 +14,14 @@
 
 import { PrpcClientOptions, RpcCode } from '@chopsui/prpc-client';
 import { computed, untracked } from 'mobx';
-import { addDisposer, Instance, isAlive, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import {
+  addDisposer,
+  Instance,
+  isAlive,
+  SnapshotIn,
+  SnapshotOut,
+  types,
+} from 'mobx-state-tree';
 import { keepAlive } from 'mobx-utils';
 
 import { MAY_REQUIRE_SIGNIN } from '../common_tags';
@@ -26,7 +33,11 @@ import { MiloInternal } from '../services/milo_internal';
 import { ResultDb } from '../services/resultdb';
 import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
 
-const MAY_REQUIRE_SIGNIN_ERROR_CODE = [RpcCode.NOT_FOUND, RpcCode.PERMISSION_DENIED, RpcCode.UNAUTHENTICATED];
+const MAY_REQUIRE_SIGNIN_ERROR_CODE = [
+  RpcCode.NOT_FOUND,
+  RpcCode.PERMISSION_DENIED,
+  RpcCode.UNAUTHENTICATED,
+];
 
 export const ServicesStore = types
   .model('ServicesStore', {
@@ -39,7 +50,10 @@ export const ServicesStore = types
       // access token is updated.
       return new PrpcClientExt(
         opts,
-        () => untracked(() => (isAlive(self) && self.authState?.value?.accessToken) || ''),
+        () =>
+          untracked(
+            () => (isAlive(self) && self.authState?.value?.accessToken) || ''
+          ),
         (e) => {
           if (MAY_REQUIRE_SIGNIN_ERROR_CODE.includes(e.code)) {
             attachTags(e, MAY_REQUIRE_SIGNIN);
@@ -60,31 +74,41 @@ export const ServicesStore = types
         if (!self.authState?.identity) {
           return null;
         }
-        return new TestHistoryService(makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST }));
+        return new TestHistoryService(
+          makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST })
+        );
       },
       get milo() {
         if (!self.authState?.identity) {
           return null;
         }
-        return new MiloInternal(makeClient({ host: '', insecure: location.protocol === 'http:' }));
+        return new MiloInternal(
+          makeClient({ host: '', insecure: location.protocol === 'http:' })
+        );
       },
       get builds() {
         if (!self.authState?.identity) {
           return null;
         }
-        return new BuildsService(makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
+        return new BuildsService(
+          makeClient({ host: CONFIGS.BUILDBUCKET.HOST })
+        );
       },
       get builders() {
         if (!self.authState?.identity) {
           return null;
         }
-        return new BuildersService(makeClient({ host: CONFIGS.BUILDBUCKET.HOST }));
+        return new BuildersService(
+          makeClient({ host: CONFIGS.BUILDBUCKET.HOST })
+        );
       },
       get clusters() {
         if (!self.authState?.identity) {
           return null;
         }
-        return new ClustersService(makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST }));
+        return new ClustersService(
+          makeClient({ host: CONFIGS.LUCI_ANALYSIS.HOST })
+        );
       },
     };
   })

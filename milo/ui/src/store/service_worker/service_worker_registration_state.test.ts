@@ -25,12 +25,17 @@ import {
 describe('ServiceWorkerRegistrationState', () => {
   let fakeRegistration: FakeServiceWorkerRegistration;
   let state: ServiceWorkerRegistrationStateInstance;
-  let addEventListenerStub: jest.SpiedFunction<typeof FakeServiceWorkerRegistration.prototype.addEventListener>;
+  let addEventListenerStub: jest.SpiedFunction<
+    typeof FakeServiceWorkerRegistration.prototype.addEventListener
+  >;
 
   beforeEach(() => {
     fakeRegistration = new FakeServiceWorkerRegistration('/scope');
     addEventListenerStub = jest.spyOn(fakeRegistration, 'addEventListener');
-    const removeEventListenerStub = jest.spyOn(fakeRegistration, 'removeEventListener');
+    const removeEventListenerStub = jest.spyOn(
+      fakeRegistration,
+      'removeEventListener'
+    );
     addEventListenerStub.mockImplementation(() => {});
     removeEventListenerStub.mockImplementation(() => {});
     state = ServiceWorkerRegistrationState.create();

@@ -32,8 +32,10 @@ import { StringPair } from './common';
 export const PERM_INVOCATIONS_GET = 'resultdb.invocations.get';
 export const PERM_TEST_EXONERATIONS_LIST = 'resultdb.testExonerations.list';
 export const PERM_TEST_RESULTS_LIST = 'resultdb.testResults.list';
-export const PERM_TEST_EXONERATIONS_LIST_LIMITED = 'resultdb.testExonerations.listLimited';
-export const PERM_TEST_RESULTS_LIST_LIMITED = 'resultdb.testResults.listLimited';
+export const PERM_TEST_EXONERATIONS_LIST_LIMITED =
+  'resultdb.testExonerations.listLimited';
+export const PERM_TEST_RESULTS_LIST_LIMITED =
+  'resultdb.testResults.listLimited';
 
 export enum TestStatus {
   Unspecified = 'STATUS_UNSPECIFIED',
@@ -164,7 +166,9 @@ export interface TestExonerationPredicate {
   readonly variant?: VariantPredicate;
 }
 
-export type VariantPredicate = { readonly equals: Variant } | { readonly contains: Variant };
+export type VariantPredicate =
+  | { readonly equals: Variant }
+  | { readonly contains: Variant };
 
 export const enum Expectancy {
   All = 'ALL',
@@ -296,48 +300,106 @@ export const RESULT_LIMIT = 100;
 export class ResultDb {
   static readonly SERVICE = 'luci.resultdb.v1.ResultDB';
 
-  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private readonly cachedCallFn: (
+    opt: CacheOption,
+    method: string,
+    message: object
+  ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
-    this.cachedCallFn = cached((method: string, message: object) => client.call(ResultDb.SERVICE, method, message), {
-      key: (method, message) => `${method}-${stableStringify(message)}`,
-    });
+    this.cachedCallFn = cached(
+      (method: string, message: object) =>
+        client.call(ResultDb.SERVICE, method, message),
+      {
+        key: (method, message) => `${method}-${stableStringify(message)}`,
+      }
+    );
   }
 
-  async getInvocation(req: GetInvocationRequest, cacheOpt: CacheOption = {}): Promise<Invocation> {
-    return (await this.cachedCallFn(cacheOpt, 'GetInvocation', req)) as Invocation;
+  async getInvocation(
+    req: GetInvocationRequest,
+    cacheOpt: CacheOption = {}
+  ): Promise<Invocation> {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'GetInvocation',
+      req
+    )) as Invocation;
   }
 
-  async queryTestResults(req: QueryTestResultsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryTestResults', req)) as QueryTestResultsResponse;
+  async queryTestResults(
+    req: QueryTestResultsRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryTestResults',
+      req
+    )) as QueryTestResultsResponse;
   }
 
-  async queryTestExonerations(req: QueryTestExonerationsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryTestExonerations', req)) as QueryTestExonerationsResponse;
+  async queryTestExonerations(
+    req: QueryTestExonerationsRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryTestExonerations',
+      req
+    )) as QueryTestExonerationsResponse;
   }
 
   async listArtifacts(req: ListArtifactsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'ListArtifacts', req)) as ListArtifactsResponse;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'ListArtifacts',
+      req
+    )) as ListArtifactsResponse;
   }
 
   async queryArtifacts(req: QueryArtifactsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryArtifacts', req)) as QueryArtifactsResponse;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryArtifacts',
+      req
+    )) as QueryArtifactsResponse;
   }
 
   async getArtifact(req: GetArtifactRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetArtifact', req)) as Artifact;
   }
 
-  async queryTestVariants(req: QueryTestVariantsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryTestVariants', req)) as QueryTestVariantsResponse;
+  async queryTestVariants(
+    req: QueryTestVariantsRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryTestVariants',
+      req
+    )) as QueryTestVariantsResponse;
   }
 
-  async batchGetTestVariants(req: BatchGetTestVariantsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'BatchGetTestVariants', req)) as BatchGetTestVariantsResponse;
+  async batchGetTestVariants(
+    req: BatchGetTestVariantsRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'BatchGetTestVariants',
+      req
+    )) as BatchGetTestVariantsResponse;
   }
 
-  async queryTestMetadata(req: QueryTestMetadataRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryTestMetadata', req)) as QueryTestMetadataResponse;
+  async queryTestMetadata(
+    req: QueryTestMetadataRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryTestMetadata',
+      req
+    )) as QueryTestMetadataResponse;
   }
 }
 
@@ -351,7 +413,13 @@ export interface TestResultIdentifier {
  * Parses the test result name and get the individual components.
  */
 export function parseTestResultName(name: string) {
-  const match = name.match(/^invocations\/(.*?)\/tests\/(.*?)\/results\/(.*?)$/)!;
+  const match = name.match(
+    /^invocations\/(.*?)\/tests\/(.*?)\/results\/(.*?)$/
+  );
+  if (!match) {
+    throw new Error(`invalid test result name: ${name}`);
+  }
+
   const [, invocationId, testId, resultId] = match as string[];
   return {
     invocationId,
@@ -364,7 +432,12 @@ export function parseTestResultName(name: string) {
  * Parses the artifact name and get the individual components.
  */
 export function parseArtifactName(artifactName: string): ArtifactIdentifier {
-  const match = artifactName.match(/^invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)$/)!;
+  const match = artifactName.match(
+    /^invocations\/(.*?)\/(?:tests\/(.*?)\/results\/(.*?)\/)?artifacts\/(.*)$/
+  );
+  if (!match) {
+    throw new Error(`invalid artifact name: ${artifactName}`);
+  }
 
   const [, invocationId, testId, resultId, artifactId] = match as string[];
 
@@ -376,7 +449,9 @@ export function parseArtifactName(artifactName: string): ArtifactIdentifier {
   };
 }
 
-export type ArtifactIdentifier = InvocationArtifactIdentifier | TestResultArtifactIdentifier;
+export type ArtifactIdentifier =
+  | InvocationArtifactIdentifier
+  | TestResultArtifactIdentifier;
 
 export interface InvocationArtifactIdentifier {
   readonly invocationId: string;
@@ -397,9 +472,9 @@ export interface TestResultArtifactIdentifier {
  */
 export function constructArtifactName(identifier: ArtifactIdentifier) {
   if (identifier.testId && identifier.resultId) {
-    return `invocations/${identifier.invocationId}/tests/${encodeURIComponent(identifier.testId)}/results/${
-      identifier.resultId
-    }/artifacts/${identifier.artifactId}`;
+    return `invocations/${identifier.invocationId}/tests/${encodeURIComponent(
+      identifier.testId
+    )}/results/${identifier.resultId}/artifacts/${identifier.artifactId}`;
   } else {
     return `invocations/${identifier.invocationId}/artifacts/${identifier.artifactId}`;
   }
@@ -415,7 +490,10 @@ export function getInvIdFromBuildId(buildId: string): string {
 /**
  * Computes invocation ID for the build from the given builder ID and build number.
  */
-export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number): Promise<string> {
+export async function getInvIdFromBuildNum(
+  builder: BuilderID,
+  buildNum: number
+): Promise<string> {
   const builderId = `${builder.project}/${builder.bucket}/${builder.builder}`;
   return `build-${await sha256(builderId)}-${buildNum}`;
 }
@@ -429,7 +507,9 @@ export async function getInvIdFromBuildNum(builder: BuilderID, buildNum: number)
  * 3. 'v.{variant_key}': variant.def[variant_key] of the test variant (e.g.
  * v.gpu).
  */
-export function createTVPropGetter(propKey: string): (v: TestVariant) => ToString {
+export function createTVPropGetter(
+  propKey: string
+): (v: TestVariant) => ToString {
   if (propKey.match(/^v[.]/i)) {
     const variantKey = propKey.slice(2);
     return (v) => v.variant?.def[variantKey] || '';
@@ -453,21 +533,32 @@ export function createTVPropGetter(propKey: string): (v: TestVariant) => ToStrin
  * 1. '{property_key}': sort by property_key in ascending order.
  * 2. '-{property_key}': sort by property_key in descending order.
  */
-export function createTVCmpFn(sortingKeys: readonly string[]): (v1: TestVariant, v2: TestVariant) => number {
-  const sorters: Array<[number, (v: TestVariant) => { toString(): string }]> = sortingKeys.map((key) => {
-    const [mul, propKey] = key.startsWith('-') ? [-1, key.slice(1)] : [1, key];
-    const propGetter = createTVPropGetter(propKey);
+export function createTVCmpFn(
+  sortingKeys: readonly string[]
+): (v1: TestVariant, v2: TestVariant) => number {
+  const sorters: Array<[number, (v: TestVariant) => { toString(): string }]> =
+    sortingKeys.map((key) => {
+      const [mul, propKey] = key.startsWith('-')
+        ? [-1, key.slice(1)]
+        : [1, key];
+      const propGetter = createTVPropGetter(propKey);
 
-    // Status should be be sorted by their significance not by their string
-    // representation.
-    if (propKey.toLowerCase() === 'status') {
-      return [mul, (v) => TEST_VARIANT_STATUS_CMP_STRING[propGetter(v) as TestVariantStatus]];
-    }
-    return [mul, propGetter];
-  });
+      // Status should be be sorted by their significance not by their string
+      // representation.
+      if (propKey.toLowerCase() === 'status') {
+        return [
+          mul,
+          (v) =>
+            TEST_VARIANT_STATUS_CMP_STRING[propGetter(v) as TestVariantStatus],
+        ];
+      }
+      return [mul, propGetter];
+    });
   return (v1, v2) => {
     for (const [mul, propGetter] of sorters) {
-      const cmp = propGetter(v1).toString().localeCompare(propGetter(v2).toString()) * mul;
+      const cmp =
+        propGetter(v1).toString().localeCompare(propGetter(v2).toString()) *
+        mul;
       if (cmp !== 0) {
         return cmp;
       }
@@ -481,7 +572,8 @@ export function createTVCmpFn(sortingKeys: readonly string[]): (v1: TestVariant,
  */
 export function getPropKeyLabel(key: string) {
   // If the key has the format of '{type}.{value}', hide the '{type}.' prefix.
-  // Don't use String.split here because value may contain '.'.
+  // It's safe to cast here because the 2nd capture group must match something.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return key.match(/^([^.]*\.)?(.*)$/)![2];
 }
 

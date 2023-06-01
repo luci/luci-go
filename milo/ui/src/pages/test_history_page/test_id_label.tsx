@@ -15,7 +15,10 @@
 import Link from '@mui/material/Link';
 import { useQuery } from '@tanstack/react-query';
 
-import { useAuthState, useGetAccessToken } from '../../components/auth_state_provider';
+import {
+  useAuthState,
+  useGetAccessToken,
+} from '../../components/auth_state_provider';
 import { PrpcClientExt } from '../../libs/prpc_client_ext';
 import { getCodeSourceUrl } from '../../libs/url_utils';
 import { extractProject } from '../../libs/utils';
@@ -35,17 +38,27 @@ function useTestMetadata(req: QueryTestMetadataRequest) {
   return useQuery({
     queryKey: [identity, ResultDb.SERVICE, 'QueryTestMetadata', req],
     queryFn: async () => {
-      const resultDBService = new ResultDb(new PrpcClientExt({ host: CONFIGS.RESULT_DB.HOST }, getAccessToken));
-      const res = await resultDBService.queryTestMetadata(req, { acceptCache: false, skipUpdate: true });
+      const resultDBService = new ResultDb(
+        new PrpcClientExt({ host: CONFIGS.RESULT_DB.HOST }, getAccessToken)
+      );
+      const res = await resultDBService.queryTestMetadata(req, {
+        acceptCache: false,
+        skipUpdate: true,
+      });
       if (!res.testMetadata) {
         return {};
       }
       // Select the main branch. Fallback to the first element if main branch not found.
-      const selected = res.testMetadata.find((m) => m.sourceRef.gitiles?.ref === MAIN_GIT_REF) || res.testMetadata[0];
+      const selected =
+        res.testMetadata.find(
+          (m) => m.sourceRef.gitiles?.ref === MAIN_GIT_REF
+        ) || res.testMetadata[0];
       const testLocation = selected.testMetadata?.location;
       return {
         metadata: selected.testMetadata,
-        sourceURL: testLocation ? getCodeSourceUrl(testLocation, selected.sourceRef.gitiles?.ref) : null,
+        sourceURL: testLocation
+          ? getCodeSourceUrl(testLocation, selected.sourceRef.gitiles?.ref)
+          : null,
       };
     },
   });
@@ -53,7 +66,10 @@ function useTestMetadata(req: QueryTestMetadataRequest) {
 
 export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
   const project = extractProject(projectOrRealm);
-  const { data, isSuccess, isLoading } = useTestMetadata({ project, predicate: { testIds: [testId] } });
+  const { data, isSuccess, isLoading } = useTestMetadata({
+    project,
+    predicate: { testIds: [testId] },
+  });
   return (
     <table
       css={{

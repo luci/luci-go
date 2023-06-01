@@ -45,7 +45,13 @@ export const TestList = observer(() => {
       <ul>
         {testLoader.items.map((testId) => (
           <li key={testId}>
-            <a href={`/ui/test/${encodeURIComponent(testProject)}/${encodeURIComponent(testId)}`} target="_blank">
+            <a
+              href={`/ui/test/${encodeURIComponent(
+                testProject
+              )}/${encodeURIComponent(testId)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
               {testId}
             </a>
           </li>
@@ -58,7 +64,11 @@ export const TestList = observer(() => {
         </Typography>
       ) : (
         !testLoader.loadedAll && (
-          <Typography component="span" className="active-text" onClick={() => testLoader?.loadNextPage()}>
+          <Typography
+            component="span"
+            className="active-text"
+            onClick={() => testLoader?.loadNextPage()}
+          >
             [load more]
           </Typography>
         )

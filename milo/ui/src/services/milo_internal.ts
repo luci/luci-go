@@ -132,11 +132,16 @@ export interface BatchCheckPermissionsResponse {
 
 export class MiloInternal {
   static readonly SERVICE = 'luci.milo.v1.MiloInternal';
-  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private readonly cachedCallFn: (
+    opt: CacheOption,
+    method: string,
+    message: object
+  ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(MiloInternal.SERVICE, method, message),
+      (method: string, message: object) =>
+        client.call(MiloInternal.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
       }
@@ -144,26 +149,55 @@ export class MiloInternal {
   }
 
   async queryBlamelist(req: QueryBlamelistRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryBlamelist', req)) as QueryBlamelistResponse;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryBlamelist',
+      req
+    )) as QueryBlamelistResponse;
   }
 
   async getProjectCfg(req: GetProjectCfgRequest, cacheOpt: CacheOption = {}) {
     return (await this.cachedCallFn(cacheOpt, 'GetProjectCfg', req)) as Project;
   }
 
-  async queryRecentBuilds(req: QueryRecentBuildsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryRecentBuilds', req)) as QueryRecentBuildsResponse;
+  async queryRecentBuilds(
+    req: QueryRecentBuildsRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryRecentBuilds',
+      req
+    )) as QueryRecentBuildsResponse;
   }
 
   async listBuilders(req: ListBuildersRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'ListBuilders', req)) as ListBuildersResponse;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'ListBuilders',
+      req
+    )) as ListBuildersResponse;
   }
 
-  async queryBuilderStats(req: QueryBuilderStatsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'QueryBuilderStats', req)) as BuilderStats;
+  async queryBuilderStats(
+    req: QueryBuilderStatsRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryBuilderStats',
+      req
+    )) as BuilderStats;
   }
 
-  async batchCheckPermissions(req: BatchCheckPermissionsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'BatchCheckPermissions', req)) as BatchCheckPermissionsResponse;
+  async batchCheckPermissions(
+    req: BatchCheckPermissionsRequest,
+    cacheOpt: CacheOption = {}
+  ) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'BatchCheckPermissions',
+      req
+    )) as BatchCheckPermissionsResponse;
   }
 }

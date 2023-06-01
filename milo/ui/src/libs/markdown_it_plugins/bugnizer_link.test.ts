@@ -14,7 +14,7 @@
 
 import { expect } from '@jest/globals';
 import { fixture } from '@open-wc/testing-helpers';
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 
 import { bugnizerLink } from './bugnizer_link';
 
@@ -23,7 +23,9 @@ b:123 b/234 ab/345 b:proj/456 not a link
 crbug/567
 `;
 
-const md = MarkdownIt('zero', { linkify: true }).enable('linkify').use(bugnizerLink);
+const md = markdownIt('zero', { linkify: true })
+  .enable('linkify')
+  .use(bugnizerLink);
 
 describe('bugnizer_link', () => {
   it('can render links correctly', async () => {

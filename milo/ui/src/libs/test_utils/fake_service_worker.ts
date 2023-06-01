@@ -25,7 +25,10 @@ export class FakeServiceWorker implements ServiceWorker {
   onstatechange: ((this: ServiceWorker, ev: Event) => any) | null = null;
 
   postMessage(message: any, transfer: Transferable[]): void;
-  postMessage(message: any, options?: StructuredSerializeOptions | undefined): void;
+  postMessage(
+    message: any,
+    options?: StructuredSerializeOptions | undefined
+  ): void;
   postMessage(_message: unknown, _options?: unknown): void {
     throw new Error('Method not implemented.');
   }
@@ -40,7 +43,11 @@ export class FakeServiceWorker implements ServiceWorker {
     listener: EventListenerOrEventListenerObject,
     options?: boolean | AddEventListenerOptions | undefined
   ): void;
-  addEventListener(_type: string, _listener: unknown, _options?: unknown): void {
+  addEventListener(
+    _type: string,
+    _listener: unknown,
+    _options?: unknown
+  ): void {
     throw new Error('Method not implemented.');
   }
 
@@ -54,7 +61,11 @@ export class FakeServiceWorker implements ServiceWorker {
     listener: EventListenerOrEventListenerObject,
     options?: boolean | EventListenerOptions | undefined
   ): void;
-  removeEventListener(_type: string, _listener: unknown, _options?: unknown): void {
+  removeEventListener(
+    _type: string,
+    _listener: unknown,
+    _options?: unknown
+  ): void {
     throw new Error('Method not implemented.');
   }
 

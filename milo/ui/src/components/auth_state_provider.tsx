@@ -26,26 +26,32 @@ export interface AuthStateProviderProps {
   readonly children: React.ReactNode;
 }
 
-export const AuthStateProvider = observer(({ initialValue, children }: AuthStateProviderProps) => {
-  const store = useStore();
-  // Use `useState` instead of `useEffect` to ensure that the auth state is
-  // initialized before constructing the `getAuthState` callback below.
-  useState(() => store.authState.init(initialValue));
+export const AuthStateProvider = observer(
+  ({ initialValue, children }: AuthStateProviderProps) => {
+    const store = useStore();
+    // Use `useState` instead of `useEffect` to ensure that the auth state is
+    // initialized before constructing the `getAuthState` callback below.
+    useState(() => store.authState.init(initialValue));
 
-  const getAuthState = useCallback(
-    // Use `untracked` to prevent token refresh triggering updates.
-    () =>
-      untracked(() => {
-        // Safe to cast here because the auth state has been initialized above.
-        return store.authState.value!;
-      }),
-    // Establish a dependency on user identity so the provided getter is
-    // refreshed whenever the identity changed.
-    [store.authState.identity]
-  );
+    const getAuthState = useCallback(
+      // Use `untracked` to prevent token refresh triggering updates.
+      () =>
+        untracked(() => {
+          // Safe to cast here because the auth state has been initialized above.
+          return store.authState.value!;
+        }),
+      // Establish a dependency on user identity so the provided getter is
+      // refreshed whenever the identity changed.
+      [store.authState.identity]
+    );
 
-  return <AuthStateContext.Provider value={getAuthState}>{children}</AuthStateContext.Provider>;
-});
+    return (
+      <AuthStateContext.Provider value={getAuthState}>
+        {children}
+      </AuthStateContext.Provider>
+    );
+  }
+);
 
 /**
  * Returns the latest auth state. For ephemeral properties (e.g. ID/access
@@ -55,7 +61,10 @@ export const AuthStateProvider = observer(({ initialValue, children }: AuthState
  * can happen if the user logged into a different account via a browser tab
  * between auth state refreshes).
  */
-export function useAuthState(): Pick<AuthState, 'identity' | 'email' | 'picture'> {
+export function useAuthState(): Pick<
+  AuthState,
+  'identity' | 'email' | 'picture'
+> {
   const getAuthState = useContext(AuthStateContext);
 
   if (!getAuthState) {

@@ -31,7 +31,8 @@ export const PERM_BUILDS_ADD = 'buildbucket.builds.add';
 export const PERM_BUILDS_GET = 'buildbucket.builds.get';
 export const PERM_BUILDS_GET_LIMITED = 'buildbucket.builds.getLimited';
 
-export const TEST_PRESENTATION_KEY = '$recipe_engine/resultdb/test_presentation';
+export const TEST_PRESENTATION_KEY =
+  '$recipe_engine/resultdb/test_presentation';
 export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 
 export const BUILD_FIELD_MASK =
@@ -317,7 +318,7 @@ export interface ScheduleBuildRequest {
   templateBuildId?: string;
   builder?: BuilderID;
   experiments?: { [key: string]: boolean };
-  properties?: {};
+  properties?: object;
   gitilesCommit?: GitilesCommit;
   gerritChanges?: GerritChange[];
   tags?: StringPair[];
@@ -334,11 +335,16 @@ export interface ScheduleBuildRequest {
 
 export class BuildsService {
   static readonly SERVICE = 'buildbucket.v2.Builds';
-  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private readonly cachedCallFn: (
+    opt: CacheOption,
+    method: string,
+    message: object
+  ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(BuildsService.SERVICE, method, message),
+      (method: string, message: object) =>
+        client.call(BuildsService.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
       }
@@ -350,15 +356,27 @@ export class BuildsService {
   }
 
   async searchBuilds(req: SearchBuildsRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'SearchBuilds', req)) as SearchBuildsResponse;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'SearchBuilds',
+      req
+    )) as SearchBuildsResponse;
   }
 
   async cancelBuild(req: CancelBuildRequest) {
-    return (await this.cachedCallFn({ acceptCache: false, skipUpdate: true }, 'CancelBuild', req)) as Build;
+    return (await this.cachedCallFn(
+      { acceptCache: false, skipUpdate: true },
+      'CancelBuild',
+      req
+    )) as Build;
   }
 
   async scheduleBuild(req: ScheduleBuildRequest) {
-    return (await this.cachedCallFn({ acceptCache: false, skipUpdate: true }, 'ScheduleBuild', req)) as Build;
+    return (await this.cachedCallFn(
+      { acceptCache: false, skipUpdate: true },
+      'ScheduleBuild',
+      req
+    )) as Build;
   }
 }
 
@@ -392,21 +410,34 @@ export interface ListBuildersResponse {
 export class BuildersService {
   static readonly SERVICE = 'buildbucket.v2.Builders';
 
-  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private readonly cachedCallFn: (
+    opt: CacheOption,
+    method: string,
+    message: object
+  ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(BuildersService.SERVICE, method, message),
+      (method: string, message: object) =>
+        client.call(BuildersService.SERVICE, method, message),
       { key: (method, message) => `${method}-${stableStringify(message)}` }
     );
   }
 
   async getBuilder(req: GetBuilderRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'GetBuilder', req)) as BuilderItem;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'GetBuilder',
+      req
+    )) as BuilderItem;
   }
 
   async listBuilders(req: ListBuildersRequest, cacheOpt: CacheOption = {}) {
-    return (await this.cachedCallFn(cacheOpt, 'ListBuilders', req)) as ListBuildersResponse;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'ListBuilders',
+      req
+    )) as ListBuildersResponse;
   }
 }
 

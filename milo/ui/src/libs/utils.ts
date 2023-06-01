@@ -52,6 +52,17 @@ export function unwrapOrElse<T>(fn: () => T, onErr: (err: unknown) => T): T {
   }
 }
 
+/**
+ * A utility function that replaces non-null assertion (e.g. `value!`) with a
+ * runtime check.
+ */
+export function assertNonNullable<T>(value: T): NonNullable<T> {
+  if (value === null || value === undefined) {
+    throw new Error('value is not NonNullable');
+  }
+  return value;
+}
+
 // Generates URL for collecting feedback.
 export function genFeedbackUrl() {
   const feedbackComment =
@@ -75,7 +86,9 @@ export async function sha256(message: string) {
   const msgBuffer = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
   return hashHex;
 }
 
@@ -91,7 +104,11 @@ export function timeout(ms: number) {
  *
  * If the URL is a relative URL, location.origin will be used as the base.
  */
-export function urlSetSearchQueryParam(url: string, key: string, value: { toString(): string }) {
+export function urlSetSearchQueryParam(
+  url: string,
+  key: string,
+  value: { toString(): string }
+) {
   const urlObj = new URL(url, location.origin);
   urlObj.searchParams.set(key, value.toString());
   return urlObj.toString();
@@ -163,6 +180,7 @@ export function deferred<T = void>(): [
     resolvePromise = resolve;
     rejectPromise = reject;
   });
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return [promise, resolvePromise!, rejectPromise!];
 }
 
@@ -182,7 +200,9 @@ export function createStaticTrustedURL<T extends string>(
   staticUrl: string extends T ? never : T
 ) {
   return (
-    self.trustedTypes?.createPolicy(policy, { createScriptURL: (_) => staticUrl }).createScriptURL('') || staticUrl
+    self.trustedTypes
+      ?.createPolicy(policy, { createScriptURL: (_) => staticUrl })
+      .createScriptURL('') || staticUrl
   );
 }
 
@@ -192,6 +212,6 @@ export function createStaticTrustedURL<T extends string>(
  * @param projectOrRealm a LUCI project name or a realm
  * @returns a LUCI project name
  */
-export function extractProject(projectOrRealm:string): string {
-  return projectOrRealm.split(":",2)[0]
+export function extractProject(projectOrRealm: string): string {
+  return projectOrRealm.split(':', 2)[0];
 }

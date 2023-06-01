@@ -34,7 +34,9 @@ describe('TestIdLabel', () => {
         },
       },
     });
-    store = Store.create({ authState: { value: { identity: ANONYMOUS_IDENTITY } } });
+    store = Store.create({
+      authState: { value: { identity: ANONYMOUS_IDENTITY } },
+    });
   });
   afterEach(() => {
     cleanup();
@@ -67,14 +69,21 @@ describe('TestIdLabel', () => {
         },
       ],
     };
-    const testMetadataStub = jest.spyOn(ResultDb.prototype, 'queryTestMetadata');
+    const testMetadataStub = jest.spyOn(
+      ResultDb.prototype,
+      'queryTestMetadata'
+    );
     testMetadataStub.mockResolvedValueOnce(tm);
 
     render(
       <QueryClientProvider client={client}>
         <StoreProvider value={store}>
           <AuthStateProvider
-            initialValue={{ identity: 'identity-1', idToken: 'id-token-1', accessToken: 'access-token-1' }}
+            initialValue={{
+              identity: 'identity-1',
+              idToken: 'id-token-1',
+              accessToken: 'access-token-1',
+            }}
           >
             <TestIdLabel projectOrRealm="testrealm" testId="testid" />
           </AuthStateProvider>
@@ -85,7 +94,10 @@ describe('TestIdLabel', () => {
     expect(screen.queryByText('testid')).not.toBeNull();
     expect(testMetadataStub.mock.calls.length).toStrictEqual(1);
     expect(await screen.findByText('fakename')).not.toBeNull();
-    const expectedSource = 'https://chromium.googlesource.com/chromium/src/+/refs/heads/main/testfile#440';
-    expect((await screen.findByText('fakename')).getAttribute('href')).toStrictEqual(expectedSource);
+    const expectedSource =
+      'https://chromium.googlesource.com/chromium/src/+/refs/heads/main/testfile#440';
+    expect(
+      (await screen.findByText('fakename')).getAttribute('href')
+    ).toStrictEqual(expectedSource);
   });
 });

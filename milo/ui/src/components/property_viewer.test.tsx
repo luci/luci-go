@@ -17,7 +17,10 @@ import { cleanup, render } from '@testing-library/react';
 import CodeMirror from 'codemirror';
 import { destroy } from 'mobx-state-tree';
 
-import { PropertyViewerConfig, PropertyViewerConfigInstance } from '../store/user_config';
+import {
+  PropertyViewerConfig,
+  PropertyViewerConfigInstance,
+} from '../store/user_config';
 import { PropertyViewer } from './property_viewer';
 
 const TEST_PROPERTIES = {
@@ -29,9 +32,14 @@ const TEST_PROPERTIES = {
   },
 };
 
-const TEST_PROPERTIES_LINES = JSON.stringify(TEST_PROPERTIES, undefined, 2).split('\n');
+const TEST_PROPERTIES_LINES = JSON.stringify(
+  TEST_PROPERTIES,
+  undefined,
+  2
+).split('\n');
 
 // jsdom doesn't allow us to unit test a codemirror editor.
+// eslint-disable-next-line jest/no-disabled-tests
 describe.skip('PropertyViewer', () => {
   let store: PropertyViewerConfigInstance;
 
@@ -83,7 +91,11 @@ describe.skip('PropertyViewer', () => {
     await jest.runAllTimersAsync();
 
     // Unfold key1.
-    editor!.foldCode(TEST_PROPERTIES_LINES.indexOf('  "key1": {'), undefined, 'unfold');
+    editor!.foldCode(
+      TEST_PROPERTIES_LINES.indexOf('  "key1": {'),
+      undefined,
+      'unfold'
+    );
     await jest.runAllTimersAsync();
 
     expect(store.isFolded('  "key1": {')).toBeFalsy();
@@ -91,7 +103,11 @@ describe.skip('PropertyViewer', () => {
     expect(store.isFolded('  "key3": {')).toBeFalsy();
 
     // Fold key2.
-    editor!.foldCode(TEST_PROPERTIES_LINES.indexOf('  "key2": {'), undefined, 'fold');
+    editor!.foldCode(
+      TEST_PROPERTIES_LINES.indexOf('  "key2": {'),
+      undefined,
+      'fold'
+    );
     await jest.runAllTimersAsync();
 
     expect(store.isFolded('  "key1": {')).toBeFalsy();

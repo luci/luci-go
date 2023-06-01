@@ -19,7 +19,10 @@ import { destroy, Instance, types } from 'mobx-state-tree';
 import { ANONYMOUS_IDENTITY } from '../libs/auth_state';
 import { CacheOption } from '../libs/cached_fn';
 import { ListBuildersRequest } from '../services/buildbucket';
-import { QueryTestsRequest, QueryTestsResponse } from '../services/luci_analysis';
+import {
+  QueryTestsRequest,
+  QueryTestsResponse,
+} from '../services/luci_analysis';
 import { ListBuildersResponse } from '../services/milo_internal';
 import { AuthStateStore } from './auth_state';
 import { SearchPage, SearchTarget } from './search_page';
@@ -75,7 +78,10 @@ const listBuilderResponses: { [pageToken: string]: ListBuildersResponse } = {
 };
 
 const TestStore = types.model('TestStore', {
-  authState: types.optional(AuthStateStore, { id: 0, value: { identity: ANONYMOUS_IDENTITY } }),
+  authState: types.optional(AuthStateStore, {
+    id: 0,
+    value: { identity: ANONYMOUS_IDENTITY },
+  }),
   services: types.optional(ServicesStore, { id: 0, authState: 0 }),
   searchPage: types.optional(SearchPage, { services: 0 }),
 });
@@ -84,14 +90,22 @@ describe('SearchPage', () => {
   describe('search builders', () => {
     let testStore: Instance<typeof TestStore>;
     let listBuildersStub: jest.SpiedFunction<
-      (req: ListBuildersRequest, cacheOpt?: CacheOption) => Promise<ListBuildersResponse>
+      (
+        req: ListBuildersRequest,
+        cacheOpt?: CacheOption
+      ) => Promise<ListBuildersResponse>
     >;
 
+    // The finish is signaled via a callback. It's easier to use `done` instead
+    // of returning a promise.
+    // eslint-disable-next-line jest/no-done-callback
     beforeEach((done) => {
       testStore = TestStore.create();
       listBuildersStub = jest.spyOn(testStore.services.milo!, 'listBuilders');
 
-      listBuildersStub.mockImplementation(async ({ pageToken }) => listBuilderResponses[pageToken || 'page1']);
+      listBuildersStub.mockImplementation(
+        async ({ pageToken }) => listBuilderResponses[pageToken || 'page1']
+      );
       testStore.searchPage.builderLoader?.loadRemainingPages();
 
       when(() => Boolean(testStore.searchPage.builderLoader?.loadedAll), done);
@@ -101,18 +115,51 @@ describe('SearchPage', () => {
 
     it('should load builders correctly', () => {
       expect(listBuildersStub.mock.calls.length).toStrictEqual(3);
-      expect(listBuildersStub.mock.calls[0][0]).toEqual({ pageSize: 10000, pageToken: undefined });
-      expect(listBuildersStub.mock.calls[1][0]).toEqual({ pageSize: 10000, pageToken: 'page2' });
-      expect(listBuildersStub.mock.calls[2][0]).toEqual({ pageSize: 10000, pageToken: 'page3' });
+      expect(listBuildersStub.mock.calls[0][0]).toEqual({
+        pageSize: 10000,
+        pageToken: undefined,
+      });
+      expect(listBuildersStub.mock.calls[1][0]).toEqual({
+        pageSize: 10000,
+        pageToken: 'page2',
+      });
+      expect(listBuildersStub.mock.calls[2][0]).toEqual({
+        pageSize: 10000,
+        pageToken: 'page3',
+      });
       expect(testStore.searchPage.builders).toEqual([
-        ['project1/bucket1/builder1', { project: 'project1', bucket: 'bucket1', builder: 'builder1' }],
-        ['project1/bucket1/builder2', { project: 'project1', bucket: 'bucket1', builder: 'builder2' }],
-        ['project1/bucket2/builder1', { project: 'project1', bucket: 'bucket2', builder: 'builder1' }],
-        ['project1/bucket2/builder2', { project: 'project1', bucket: 'bucket2', builder: 'builder2' }],
-        ['project2/bucket1/builder1', { project: 'project2', bucket: 'bucket1', builder: 'builder1' }],
-        ['project2/bucket1/builder2', { project: 'project2', bucket: 'bucket1', builder: 'builder2' }],
-        ['project2/bucket2/builder1', { project: 'project2', bucket: 'bucket2', builder: 'builder1' }],
-        ['project2/bucket2/builder2', { project: 'project2', bucket: 'bucket2', builder: 'builder2' }],
+        [
+          'project1/bucket1/builder1',
+          { project: 'project1', bucket: 'bucket1', builder: 'builder1' },
+        ],
+        [
+          'project1/bucket1/builder2',
+          { project: 'project1', bucket: 'bucket1', builder: 'builder2' },
+        ],
+        [
+          'project1/bucket2/builder1',
+          { project: 'project1', bucket: 'bucket2', builder: 'builder1' },
+        ],
+        [
+          'project1/bucket2/builder2',
+          { project: 'project1', bucket: 'bucket2', builder: 'builder2' },
+        ],
+        [
+          'project2/bucket1/builder1',
+          { project: 'project2', bucket: 'bucket1', builder: 'builder1' },
+        ],
+        [
+          'project2/bucket1/builder2',
+          { project: 'project2', bucket: 'bucket1', builder: 'builder2' },
+        ],
+        [
+          'project2/bucket2/builder1',
+          { project: 'project2', bucket: 'bucket2', builder: 'builder1' },
+        ],
+        [
+          'project2/bucket2/builder2',
+          { project: 'project2', bucket: 'bucket2', builder: 'builder2' },
+        ],
       ]);
     });
 
@@ -163,12 +210,18 @@ describe('SearchPage', () => {
   describe('search tests', () => {
     let testStore: Instance<typeof TestStore>;
     let queryTestsStub: jest.SpiedFunction<
-      (req: QueryTestsRequest, cacheOpt?: CacheOption) => Promise<QueryTestsResponse>
+      (
+        req: QueryTestsRequest,
+        cacheOpt?: CacheOption
+      ) => Promise<QueryTestsResponse>
     >;
 
     beforeEach(() => {
       testStore = TestStore.create();
-      queryTestsStub = jest.spyOn(testStore.services.testHistory!, 'queryTests');
+      queryTestsStub = jest.spyOn(
+        testStore.services.testHistory!,
+        'queryTests'
+      );
     });
 
     afterEach(() => destroy(testStore));
@@ -180,9 +233,17 @@ describe('SearchPage', () => {
       expect(queryTestsStub.mock.calls.length).toStrictEqual(0);
 
       // The subsequent page loads should be handled correctly.
-      queryTestsStub.mockResolvedValueOnce({ testIds: ['testId1substr1', 'testId1substr2'], nextPageToken: 'page2' });
-      queryTestsStub.mockResolvedValueOnce({ testIds: ['testId1substr3', 'testId1substr4'], nextPageToken: 'page3' });
-      queryTestsStub.mockResolvedValueOnce({ testIds: ['testId1substr3', 'testId1substr4'] });
+      queryTestsStub.mockResolvedValueOnce({
+        testIds: ['testId1substr1', 'testId1substr2'],
+        nextPageToken: 'page2',
+      });
+      queryTestsStub.mockResolvedValueOnce({
+        testIds: ['testId1substr3', 'testId1substr4'],
+        nextPageToken: 'page3',
+      });
+      queryTestsStub.mockResolvedValueOnce({
+        testIds: ['testId1substr3', 'testId1substr4'],
+      });
       await testStore.searchPage.testLoader?.loadNextPage();
       await testStore.searchPage.testLoader?.loadNextPage();
       await testStore.searchPage.testLoader?.loadNextPage();

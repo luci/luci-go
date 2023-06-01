@@ -38,7 +38,9 @@ export class AssociatedBugsTooltipElement extends MobxLitElement {
       <table style="padding: 5px;">
         <tbody>
           <tr>
-            <td colspan="2">This failure is associated with the following bug(s):</td>
+            <td colspan="2">
+              This failure is associated with the following bug(s):
+            </td>
           </tr>
           ${bugClusters.map(
             (c) =>
@@ -46,7 +48,12 @@ export class AssociatedBugsTooltipElement extends MobxLitElement {
                 <tr class="row">
                   <td><a href=${c.bug!.url}>${c.bug!.linkText}</a></td>
                   <td>
-                    <a href=${makeRuleLink(this.project, c.clusterId.id)} target="_blank">Failures</a>
+                    <a
+                      href=${makeRuleLink(this.project, c.clusterId.id)}
+                      target="_blank"
+                    >
+                      Failures
+                    </a>
                   </td>
                 </tr>
               `

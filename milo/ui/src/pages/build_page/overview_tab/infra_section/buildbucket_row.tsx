@@ -24,7 +24,10 @@ export function BuildbucketRow({ buildId }: BuildbucketRowProps) {
     <tr>
       <td>Buildbucket ID:</td>
       <td>
-        <MiloLink link={getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, buildId)} target="_blank" />
+        <MiloLink
+          link={getBuildbucketLink(CONFIGS.BUILDBUCKET.HOST, buildId)}
+          target="_blank"
+        />
       </td>
     </tr>
   );

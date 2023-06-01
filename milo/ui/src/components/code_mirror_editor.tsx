@@ -61,7 +61,13 @@ export interface CodeMirrorEditorProps {
 // validation errors with the current version of React.
 // And neither version offers a good way to attach fold/unfold event listeners
 // BEFORE any content is rendered.
-export function CodeMirrorEditor({ value, initOptions, onInit, css, className }: CodeMirrorEditorProps) {
+export function CodeMirrorEditor({
+  value,
+  initOptions,
+  onInit,
+  css,
+  className,
+}: CodeMirrorEditorProps) {
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const editorRef = useRef<CodeMirror.EditorFromTextArea | null>(null);
 

@@ -26,7 +26,8 @@ import { getInvURLPath } from '../../libs/url_utils';
 import { ArtifactIdentifier } from '../../services/resultdb';
 import { commonStyles } from '../../styles/stylesheets';
 
-export const [provideArtifactIdent, consumeArtifactIdent] = createContextLink<ArtifactIdentifier>();
+export const [provideArtifactIdent, consumeArtifactIdent] =
+  createContextLink<ArtifactIdentifier>();
 
 /**
  * Renders the header of an artifact page.
@@ -102,7 +103,9 @@ export class ArtifactPageLayoutElement extends MiloBaseElement {
           </tr>
         </table>
       </div>
-      <milo-status-bar .components=${[{ color: 'var(--active-color)', weight: 1 }]}></milo-status-bar>
+      <milo-status-bar
+        .components=${[{ color: 'var(--active-color)', weight: 1 }]}
+      ></milo-status-bar>
       <slot></slot>
     `;
   }
@@ -133,16 +136,23 @@ export function ArtifactPageLayout() {
   const container = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    // This never happens, but useful for type narrowing.
     if (!container.current) {
-      return;
+      throw new Error('unreachable');
     }
+
     render(
-      html`<milo-artifact-page-layout .invId=${invId} .testId=${testId} .resultId=${resultId} .artifactId=${artifactId}>
+      html` <milo-artifact-page-layout
+        .invId=${invId}
+        .testId=${testId}
+        .resultId=${resultId}
+        .artifactId=${artifactId}
+      >
         ${container.current.children}
       </milo-artifact-page-layout>`,
       container.current
     );
-  }, [container.current]);
+  }, [invId, testId, resultId, artifactId]);
 
   return (
     <div ref={container}>

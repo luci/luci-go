@@ -22,9 +22,16 @@ import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import './step_entry';
 import checkCircleStacked from '../../../assets/svgs/check_circle_stacked_24dp.svg';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../../components/tooltip';
+import {
+  HideTooltipEventDetail,
+  ShowTooltipEventDetail,
+} from '../../../components/tooltip';
 import { consumer } from '../../../libs/context';
-import { displayCompactDuration, displayDuration, NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
+import {
+  displayCompactDuration,
+  displayDuration,
+  NUMERIC_TIME_FORMAT,
+} from '../../../libs/time_utils';
 import { consumeStore, StoreInstance } from '../../../store';
 import { StepExt } from '../../../store/build_state';
 import { commonStyles } from '../../../styles/stylesheets';
@@ -92,9 +99,9 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
   toggleAllSteps(expand: boolean) {
     this.expandSteps = expand;
     this.setExpanded(expand);
-    this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>('milo-bp-step-entry').forEach((e) =>
-      e.toggleAllSteps(expand)
-    );
+    this.shadowRoot!.querySelectorAll<BuildPageStepEntryElement>(
+      'milo-bp-step-entry'
+    ).forEach((e) => e.toggleAllSteps(expand));
   }
 
   connectedCallback() {
@@ -127,13 +134,17 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
           <image xlink:href=${checkCircleStacked} width="24" height="24" />
         </svg>
         ${this.renderDuration()}
-        <div id="elided-steps-description">Step ${firstStepLabel} ~ ${lastStepLabel} succeeded.</div>
+        <div id="elided-steps-description">
+          Step ${firstStepLabel} ~ ${lastStepLabel} succeeded.
+        </div>
       </div>
     `;
   }
 
   private renderDuration() {
-    const [compactDuration, compactDurationUnits] = displayCompactDuration(this.duration);
+    const [compactDuration, compactDurationUnits] = displayCompactDuration(
+      this.duration
+    );
 
     return html`
       <div
@@ -153,7 +164,11 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
           );
         }}
         @mouseout=${() => {
-          window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 50 } }));
+          window.dispatchEvent(
+            new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+              detail: { delay: 50 },
+            })
+          );
         }}
       >
         ${compactDuration}
@@ -166,11 +181,17 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
       <table>
         <tr>
           <td>Started:</td>
-          <td>${this.startTime ? this.startTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}</td>
+          <td>${
+            this.startTime
+              ? this.startTime.toFormat(NUMERIC_TIME_FORMAT)
+              : 'N/A'
+          }</td>
         </tr>
         <tr>
           <td>Ended:</td>
-          <td>${this.endTime ? this.endTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'}</td>
+          <td>${
+            this.endTime ? this.endTime.toFormat(NUMERIC_TIME_FORMAT) : 'N/A'
+          }</td>
         </tr>
         <tr>
           <td>Duration:</td>
@@ -192,7 +213,11 @@ export class BuildPageStepClusterElement extends MiloBaseElement {
     return html`
       <div style=${styleMap({ display: this.shouldElide ? 'none' : 'block' })}>
         ${this.steps.map(
-          (step) => html`<milo-bp-step-entry .step=${step} .expanded=${this.expandSteps}></milo-bp-step-entry>`
+          (step) =>
+            html`<milo-bp-step-entry
+              .step=${step}
+              .expanded=${this.expandSteps}
+            ></milo-bp-step-entry>`
         )}
       </div>
     `;

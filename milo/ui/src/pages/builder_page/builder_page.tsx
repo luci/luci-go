@@ -16,7 +16,10 @@ import { Grid, LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
-import { useAuthState, useGetAccessToken } from '../../components/auth_state_provider';
+import {
+  useAuthState,
+  useGetAccessToken,
+} from '../../components/auth_state_provider';
 import { PrpcClientExt } from '../../libs/prpc_client_ext';
 import { BuildersService, GetBuilderRequest } from '../../services/buildbucket';
 import { BuilderIdBar } from './builder_id_bar';
@@ -58,7 +61,9 @@ function useBuilder(req: GetBuilderRequest) {
 export function BuilderPage() {
   const { project, bucket, builder } = useParams();
   if (!project || !bucket || !builder) {
-    throw new Error('invariant violated: project, bucket, builder should be set');
+    throw new Error(
+      'invariant violated: project, bucket, builder should be set'
+    );
   }
 
   const builderId = { project, bucket, builder };
@@ -71,12 +76,19 @@ export function BuilderPage() {
   return (
     <>
       <BuilderIdBar builderId={builderId} />
-      <LinearProgress value={100} variant={isLoading ? 'indeterminate' : 'determinate'} color="primary" />
+      <LinearProgress
+        value={100}
+        variant={isLoading ? 'indeterminate' : 'determinate'}
+        color="primary"
+      />
       {!isLoading && (
         <Grid container spacing={2} sx={{ padding: '0 16px' }}>
           {data.swarmingHost && (
             <Grid item md={4}>
-              <MachinePoolSection swarmingHost={data.swarmingHost} dimensions={data.dimensions} />
+              <MachinePoolSection
+                swarmingHost={data.swarmingHost}
+                dimensions={data.dimensions}
+              />
             </Grid>
           )}
           <Grid item md={2}>

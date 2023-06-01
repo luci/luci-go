@@ -21,9 +21,17 @@ import '../../../components/hotkey';
 import './step_display_config';
 import './step_list';
 import { MiloBaseElement } from '../../../components/milo_base';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '../../../libs/analytics_utils';
 import { consumer } from '../../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../../libs/error_handler';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportRenderError,
+} from '../../../libs/error_handler';
 import { consumeStore, StoreInstance } from '../../../store';
 import { commonStyles } from '../../../styles/stylesheets';
 import { BuildPageStepListElement } from './step_list';
@@ -39,15 +47,22 @@ export class StepsTabElement extends MiloBaseElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('steps');
-    trackEvent(GA_CATEGORIES.STEPS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
+    trackEvent(
+      GA_CATEGORIES.STEPS_TAB,
+      GA_ACTIONS.TAB_VISITED,
+      window.location.href
+    );
   }
 
   private allStepsWereExpanded = false;
   private toggleAllSteps(expand: boolean) {
     this.allStepsWereExpanded = expand;
-    this.shadowRoot!.querySelector<BuildPageStepListElement>('milo-bp-step-list')!.toggleAllSteps(expand);
+    this.shadowRoot!.querySelector<BuildPageStepListElement>(
+      'milo-bp-step-list'
+    )!.toggleAllSteps(expand);
   }
-  private readonly toggleAllStepsByHotkey = () => this.toggleAllSteps(!this.allStepsWereExpanded);
+  private readonly toggleAllStepsByHotkey = () =>
+    this.toggleAllSteps(!this.allStepsWereExpanded);
 
   constructor() {
     super();
@@ -58,11 +73,25 @@ export class StepsTabElement extends MiloBaseElement {
     return html`
       <div id="header">
         <milo-bp-step-display-config></milo-bp-step-display-config>
-        <milo-hotkey .key=${'x'} .handler=${this.toggleAllStepsByHotkey} title="press x to expand/collapse all entries">
-          <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(true)}>
+        <milo-hotkey
+          .key=${'x'}
+          .handler=${this.toggleAllStepsByHotkey}
+          title="press x to expand/collapse all entries"
+        >
+          <mwc-button
+            class="action-button"
+            dense
+            unelevated
+            @click=${() => this.toggleAllSteps(true)}
+          >
             Expand All
           </mwc-button>
-          <mwc-button class="action-button" dense unelevated @click=${() => this.toggleAllSteps(false)}>
+          <mwc-button
+            class="action-button"
+            dense
+            unelevated
+            @click=${() => this.toggleAllSteps(false)}
+          >
             Collapse All
           </mwc-button>
         </milo-hotkey>
@@ -104,7 +133,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-steps-tab': {};
+      'milo-steps-tab': Record<string, never>;
     }
   }
 }

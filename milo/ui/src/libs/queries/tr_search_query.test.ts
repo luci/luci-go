@@ -14,8 +14,16 @@
 
 import { expect } from '@jest/globals';
 
-import { TestResult, TestStatus, TestVariant, TestVariantStatus } from '../../services/resultdb';
-import { parseTestResultSearchQuery, suggestTestResultSearchQuery } from './tr_search_query';
+import {
+  TestResult,
+  TestStatus,
+  TestVariant,
+  TestVariantStatus,
+} from '../../services/resultdb';
+import {
+  parseTestResultSearchQuery,
+  suggestTestResultSearchQuery,
+} from './tr_search_query';
 
 const variant1: TestVariant = {
   testId: 'invocation-a/test-suite-a/test-1',
@@ -152,7 +160,15 @@ const variant7: TestVariant = {
   ],
 };
 
-const variants = [variant1, variant2, variant3, variant4, variant5, variant6, variant7];
+const variants = [
+  variant1,
+  variant2,
+  variant3,
+  variant4,
+  variant5,
+  variant6,
+  variant7,
+];
 
 describe('parseTestResultSearchQuery', () => {
   describe('query with no type', () => {
@@ -179,7 +195,13 @@ describe('parseTestResultSearchQuery', () => {
     it('should be case insensitive', () => {
       const filter = parseTestResultSearchQuery('id:test-suite-b');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant3, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant3,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
 
     it('should work with negation', () => {
@@ -205,27 +227,46 @@ describe('parseTestResultSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseTestResultSearchQuery('-rstatus:pass');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant1, variant2, variant4, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant1,
+        variant2,
+        variant4,
+        variant6,
+        variant7,
+      ]);
     });
   });
 
   describe('ExactID query', () => {
     it('should only keep tests with the same ID', () => {
-      const filter = parseTestResultSearchQuery('ExactID:invocation-a/test-suite-b/test-5');
+      const filter = parseTestResultSearchQuery(
+        'ExactID:invocation-a/test-suite-b/test-5'
+      );
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant6]);
     });
 
     it('should be case sensitive', () => {
-      const filter = parseTestResultSearchQuery('ExactID:invocation-a/test-suite-B/test-5');
+      const filter = parseTestResultSearchQuery(
+        'ExactID:invocation-a/test-suite-B/test-5'
+      );
       const filtered = variants.filter(filter);
       expect(filtered).toEqual([variant5]);
     });
 
     it('should work with negation', () => {
-      const filter = parseTestResultSearchQuery('-ExactID:invocation-a/test-suite-b/test-5');
+      const filter = parseTestResultSearchQuery(
+        '-ExactID:invocation-a/test-suite-b/test-5'
+      );
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant1, variant2, variant3, variant4, variant5, variant7]);
+      expect(filtered).toEqual([
+        variant1,
+        variant2,
+        variant3,
+        variant4,
+        variant5,
+        variant7,
+      ]);
     });
   });
 
@@ -251,7 +292,14 @@ describe('parseTestResultSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseTestResultSearchQuery('-v:key1=val1');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant2, variant3, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant2,
+        variant3,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
   });
 
@@ -265,7 +313,14 @@ describe('parseTestResultSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseTestResultSearchQuery('-vhash:key1:val1');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant2, variant3, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant2,
+        variant3,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
   });
 
@@ -291,13 +346,29 @@ describe('parseTestResultSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseTestResultSearchQuery('-tag:tag-key-1=tag-val-1');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant2, variant3, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant2,
+        variant3,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
 
     it('should support duplicated tag key', () => {
-      const filter = parseTestResultSearchQuery('-tag:duplicated-tag-key=second-tag-val');
+      const filter = parseTestResultSearchQuery(
+        '-tag:duplicated-tag-key=second-tag-val'
+      );
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant1, variant3, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant1,
+        variant3,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
   });
 
@@ -317,7 +388,14 @@ describe('parseTestResultSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseTestResultSearchQuery('-Name:test-name-1');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant2, variant3, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant2,
+        variant3,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
   });
 
@@ -343,7 +421,14 @@ describe('parseTestResultSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseTestResultSearchQuery('-Duration:5-10');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant2, variant3, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant2,
+        variant3,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
   });
 
@@ -363,7 +448,14 @@ describe('parseTestResultSearchQuery', () => {
     it('should work with negation', () => {
       const filter = parseTestResultSearchQuery('-ExactName:test');
       const filtered = variants.filter(filter);
-      expect(filtered).toEqual([variant1, variant2, variant4, variant5, variant6, variant7]);
+      expect(filtered).toEqual([
+        variant1,
+        variant2,
+        variant4,
+        variant5,
+        variant6,
+        variant7,
+      ]);
     });
   });
 
@@ -397,8 +489,12 @@ describe('suggestTestResultSearchQuery', () => {
     const suggestions1 = suggestTestResultSearchQuery('unexpected Pass');
     expect(suggestions1.find((s) => s.value === 'RStatus:Pass')).toBeDefined();
     expect(suggestions1.find((s) => s.value === '-RStatus:Pass')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === 'Status:UNEXPECTED')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-Status:UNEXPECTED')).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'Status:UNEXPECTED')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-Status:UNEXPECTED')
+    ).toBeUndefined();
   });
 
   it('should suggest run status query with matching status', () => {
@@ -412,11 +508,15 @@ describe('suggestTestResultSearchQuery', () => {
 
     const suggestions3 = suggestTestResultSearchQuery('Crash');
     expect(suggestions3.find((s) => s.value === 'RStatus:Crash')).toBeDefined();
-    expect(suggestions3.find((s) => s.value === '-RStatus:Crash')).toBeDefined();
+    expect(
+      suggestions3.find((s) => s.value === '-RStatus:Crash')
+    ).toBeDefined();
 
     const suggestions4 = suggestTestResultSearchQuery('Abort');
     expect(suggestions4.find((s) => s.value === 'RStatus:Abort')).toBeDefined();
-    expect(suggestions4.find((s) => s.value === '-RStatus:Abort')).toBeDefined();
+    expect(
+      suggestions4.find((s) => s.value === '-RStatus:Abort')
+    ).toBeDefined();
 
     const suggestions5 = suggestTestResultSearchQuery('Skip');
     expect(suggestions5.find((s) => s.value === 'RStatus:Skip')).toBeDefined();
@@ -425,42 +525,82 @@ describe('suggestTestResultSearchQuery', () => {
 
   it('should not suggest run status query with a different status', () => {
     const suggestions1 = suggestTestResultSearchQuery('Pass');
-    expect(suggestions1.find((s) => s.value === 'RStatus:Fail')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Fail')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === 'RStatus:Crash')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Crash')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === 'RStatus:Abort')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Abort')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === 'RStatus:Skip')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-RStatus:Skip')).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'RStatus:Fail')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:Fail')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'RStatus:Crash')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:Crash')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'RStatus:Abort')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:Abort')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'RStatus:Skip')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-RStatus:Skip')
+    ).toBeUndefined();
   });
 
   it('should suggest variant status query with matching status', () => {
     const suggestions1 = suggestTestResultSearchQuery('unexpected');
-    expect(suggestions1.find((s) => s.value === 'Status:UNEXPECTED')).toBeDefined();
-    expect(suggestions1.find((s) => s.value === '-Status:UNEXPECTED')).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === 'Status:UNEXPECTED')
+    ).toBeDefined();
+    expect(
+      suggestions1.find((s) => s.value === '-Status:UNEXPECTED')
+    ).toBeDefined();
 
     const suggestions2 = suggestTestResultSearchQuery('flaky');
     expect(suggestions2.find((s) => s.value === 'Status:FLAKY')).toBeDefined();
     expect(suggestions2.find((s) => s.value === '-Status:FLAKY')).toBeDefined();
 
     const suggestions3 = suggestTestResultSearchQuery('exonerated');
-    expect(suggestions3.find((s) => s.value === 'Status:EXONERATED')).toBeDefined();
-    expect(suggestions3.find((s) => s.value === '-Status:EXONERATED')).toBeDefined();
+    expect(
+      suggestions3.find((s) => s.value === 'Status:EXONERATED')
+    ).toBeDefined();
+    expect(
+      suggestions3.find((s) => s.value === '-Status:EXONERATED')
+    ).toBeDefined();
 
     const suggestions4 = suggestTestResultSearchQuery('expected');
-    expect(suggestions4.find((s) => s.value === 'Status:EXPECTED')).toBeDefined();
-    expect(suggestions4.find((s) => s.value === '-Status:EXPECTED')).toBeDefined();
+    expect(
+      suggestions4.find((s) => s.value === 'Status:EXPECTED')
+    ).toBeDefined();
+    expect(
+      suggestions4.find((s) => s.value === '-Status:EXPECTED')
+    ).toBeDefined();
   });
 
   it('should not suggest variant status query with a different status', () => {
     const suggestions1 = suggestTestResultSearchQuery('UNEXPECTED');
-    expect(suggestions1.find((s) => s.value === 'Status:FLAKY')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-Status:FLAKY')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === 'Status:EXONERATED')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-Status:EXONERATED')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === 'Status:EXPECTED')).toBeUndefined();
-    expect(suggestions1.find((s) => s.value === '-Status:EXPECTED')).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'Status:FLAKY')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-Status:FLAKY')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'Status:EXONERATED')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-Status:EXONERATED')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === 'Status:EXPECTED')
+    ).toBeUndefined();
+    expect(
+      suggestions1.find((s) => s.value === '-Status:EXPECTED')
+    ).toBeUndefined();
   });
 
   it('suggestion should be case insensitive', () => {
@@ -474,11 +614,15 @@ describe('suggestTestResultSearchQuery', () => {
 
     const suggestions3 = suggestTestResultSearchQuery('CrAsH');
     expect(suggestions3.find((s) => s.value === 'RStatus:Crash')).toBeDefined();
-    expect(suggestions3.find((s) => s.value === '-RStatus:Crash')).toBeDefined();
+    expect(
+      suggestions3.find((s) => s.value === '-RStatus:Crash')
+    ).toBeDefined();
 
     const suggestions4 = suggestTestResultSearchQuery('Abort');
     expect(suggestions4.find((s) => s.value === 'RStatus:Abort')).toBeDefined();
-    expect(suggestions4.find((s) => s.value === '-RStatus:Abort')).toBeDefined();
+    expect(
+      suggestions4.find((s) => s.value === '-RStatus:Abort')
+    ).toBeDefined();
 
     const suggestions5 = suggestTestResultSearchQuery('sKIP');
     expect(suggestions5.find((s) => s.value === 'RStatus:Skip')).toBeDefined();
@@ -523,7 +667,9 @@ describe('suggestTestResultSearchQuery', () => {
 
     const suggestions2 = suggestTestResultSearchQuery('-ExactID:pass');
     // When user explicitly typed negative query, don't suggest positive query.
-    expect(suggestions2.find((s) => s.value === 'ExactID:pass')).toBeUndefined();
+    expect(
+      suggestions2.find((s) => s.value === 'ExactID:pass')
+    ).toBeUndefined();
     expect(suggestions2.find((s) => s.value === '-ExactID:pass')).toBeDefined();
   });
 
@@ -540,7 +686,9 @@ describe('suggestTestResultSearchQuery', () => {
 
     const suggestions2 = suggestTestResultSearchQuery('-V:test_suite');
     // When user explicitly typed negative query, don't suggest positive query.
-    expect(suggestions2.find((s) => s.value === 'V:test_suite')).toBeUndefined();
+    expect(
+      suggestions2.find((s) => s.value === 'V:test_suite')
+    ).toBeUndefined();
     expect(suggestions2.find((s) => s.value === '-V:test_suite')).toBeDefined();
   });
 

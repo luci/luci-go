@@ -13,7 +13,12 @@
 // limitations under the License.
 
 import { beforeEach, expect, jest } from '@jest/globals';
-import { aTimeout, fixture, fixtureCleanup, html } from '@open-wc/testing-helpers';
+import {
+  aTimeout,
+  fixture,
+  fixtureCleanup,
+  html,
+} from '@open-wc/testing-helpers';
 import { css } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable, reaction } from 'mobx';
@@ -71,7 +76,10 @@ class EnterViewObserverNotifierProviderElement extends MiloBaseElement {
 
 @customElement('milo-enter-view-observer-test-entry')
 @observer
-class EnterViewObserverTestEntryElement extends MiloBaseElement implements ObserverElement {
+class EnterViewObserverTestEntryElement
+  extends MiloBaseElement
+  implements ObserverElement
+{
   @observable.ref onEnterCallCount = 0;
 
   constructor() {
@@ -106,10 +114,15 @@ describe.skip('enterViewObserver', () => {
       <milo-enter-view-observer-notifier-provider-test>
         ${new Array(100)
           .fill(0)
-          .map(() => html`<milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>`)}
+          .map(
+            () =>
+              html`<milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>`
+          )}
       </milo-enter-view-observer-notifier-provider-test>
     `);
-    entries = listView.querySelectorAll<EnterViewObserverTestEntryElement>('milo-enter-view-observer-test-entry');
+    entries = listView.querySelectorAll<EnterViewObserverTestEntryElement>(
+      'milo-enter-view-observer-test-entry'
+    );
   });
 
   it('should notify entries in the view.', async () => {
@@ -159,8 +172,12 @@ describe.skip('enterViewObserver', () => {
       </milo-enter-view-observer-notifier-provider-test>
     `);
 
-    const entry1 = provider1.querySelector('milo-enter-view-observer-test-entry') as EnterViewObserverTestEntryElement;
-    const entry2 = provider2.querySelector('milo-enter-view-observer-test-entry') as EnterViewObserverTestEntryElement;
+    const entry1 = provider1.querySelector(
+      'milo-enter-view-observer-test-entry'
+    ) as EnterViewObserverTestEntryElement;
+    const entry2 = provider2.querySelector(
+      'milo-enter-view-observer-test-entry'
+    ) as EnterViewObserverTestEntryElement;
 
     expect(notifier1SubscribeSpy.mock.calls.length).toStrictEqual(1);
     expect(notifier1SubscribeSpy.mock.lastCall?.[0]).toStrictEqual(entry1);
@@ -183,12 +200,15 @@ describe.skip('enterViewObserver', () => {
     const notifier2SubscribeSpy = jest.spyOn(notifier2, 'subscribe');
     const notifier2UnsubscribeSpy = jest.spyOn(notifier2, 'unsubscribe');
 
-    const provider = await fixture<EnterViewObserverNotifierProviderElement>(html`
-      <milo-enter-view-observer-notifier-provider-test .notifier=${notifier1}>
-        <milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>
-      </milo-enter-view-observer-notifier-provider-test>
-    `);
-    const entry = provider.querySelector('milo-enter-view-observer-test-entry') as EnterViewObserverTestEntryElement;
+    const provider =
+      await fixture<EnterViewObserverNotifierProviderElement>(html`
+        <milo-enter-view-observer-notifier-provider-test .notifier=${notifier1}>
+          <milo-enter-view-observer-test-entry></milo-enter-view-observer-test-entry>
+        </milo-enter-view-observer-notifier-provider-test>
+      `);
+    const entry = provider.querySelector(
+      'milo-enter-view-observer-test-entry'
+    ) as EnterViewObserverTestEntryElement;
 
     expect(notifier1SubscribeSpy.mock.calls.length).toStrictEqual(1);
     expect(notifier1SubscribeSpy.mock.lastCall?.[0]).toStrictEqual(entry);
@@ -207,7 +227,10 @@ describe.skip('enterViewObserver', () => {
 
 @customElement('milo-lazy-rendering-test-entry')
 @lazyRendering
-class LazyRenderingElement extends MiloBaseElement implements RenderPlaceHolder {
+class LazyRenderingElement
+  extends MiloBaseElement
+  implements RenderPlaceHolder
+{
   constructor() {
     super();
     makeObservable(this);
@@ -238,16 +261,25 @@ describe.skip('lazyRendering', () => {
   beforeEach(async () => {
     listView = await fixture<EnterViewObserverNotifierProviderElement>(html`
       <milo-enter-view-observer-notifier-provider-test>
-        ${new Array(100).fill(0).map(() => html`<milo-lazy-rendering-test-entry></milo-lazy-rendering-test-entry>`)}
+        ${new Array(100)
+          .fill(0)
+          .map(
+            () =>
+              html`<milo-lazy-rendering-test-entry></milo-lazy-rendering-test-entry>`
+          )}
       </milo-enter-view-observer-notifier-provider-test>
     `);
-    entries = listView.querySelectorAll<LazyRenderingElement>('milo-lazy-rendering-test-entry');
+    entries = listView.querySelectorAll<LazyRenderingElement>(
+      'milo-lazy-rendering-test-entry'
+    );
   });
 
   it('should only render content for elements entered the view.', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 10 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 10 ? 'content' : 'placeholder'
+      );
     });
   });
 
@@ -257,14 +289,19 @@ describe.skip('lazyRendering', () => {
     await aTimeout(20);
 
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 15 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 15 ? 'content' : 'placeholder'
+      );
     });
   });
 });
 
 @customElement('milo-progressive-rendering-test-entry')
 @lazyRendering
-class ProgressiveRenderingElement extends MiloBaseElement implements RenderPlaceHolder {
+class ProgressiveRenderingElement
+  extends MiloBaseElement
+  implements RenderPlaceHolder
+{
   constructor() {
     super();
     makeObservable(this);
@@ -289,7 +326,11 @@ class ProgressiveRenderingElement extends MiloBaseElement implements RenderPlace
 @customElement('milo-progressive-rendering-notifier-provider-test')
 @provider
 class ProgressiveNotifierProviderElement extends MiloBaseElement {
-  @provideNotifier() notifier = new ProgressiveNotifier({ batchInterval: 100, batchSize: 10, root: this });
+  @provideNotifier() notifier = new ProgressiveNotifier({
+    batchInterval: 100,
+    batchSize: 10,
+    root: this,
+  });
 
   protected render() {
     return html`<slot></slot>`;
@@ -315,16 +356,23 @@ describe.skip('progressiveNotifier', () => {
       <milo-progressive-rendering-notifier-provider-test>
         ${new Array(100)
           .fill(0)
-          .map(() => html`<milo-progressive-rendering-test-entry></milo-progressive-rendering-test-entry>`)}
+          .map(
+            () =>
+              html`<milo-progressive-rendering-test-entry></milo-progressive-rendering-test-entry>`
+          )}
       </milo-progressive-rendering-notifier-provider-test>
     `);
-    entries = listView.querySelectorAll<ProgressiveRenderingElement>('milo-progressive-rendering-test-entry');
+    entries = listView.querySelectorAll<ProgressiveRenderingElement>(
+      'milo-progressive-rendering-test-entry'
+    );
   });
 
   it('should only render content for elements entered the view.', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 10 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 10 ? 'content' : 'placeholder'
+      );
     });
   });
 
@@ -334,26 +382,34 @@ describe.skip('progressiveNotifier', () => {
     await aTimeout(20);
 
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 15 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 15 ? 'content' : 'placeholder'
+      );
     });
   });
 
   it('should notify some of the remaining entries after certain interval', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 10 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 10 ? 'content' : 'placeholder'
+      );
     });
 
     await aTimeout(150);
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 20 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 20 ? 'content' : 'placeholder'
+      );
     });
   });
 
   it('new notification should reset interval', async () => {
     await aTimeout(20);
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 10 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 10 ? 'content' : 'placeholder'
+      );
     });
 
     await aTimeout(60);
@@ -361,12 +417,16 @@ describe.skip('progressiveNotifier', () => {
 
     await aTimeout(60);
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 15 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 15 ? 'content' : 'placeholder'
+      );
     });
 
     await aTimeout(50);
     entries.forEach((entry, i) => {
-      expect(entry.shadowRoot!.textContent).toStrictEqual(i <= 25 ? 'content' : 'placeholder');
+      expect(entry.shadowRoot!.textContent).toStrictEqual(
+        i <= 25 ? 'content' : 'placeholder'
+      );
     });
   });
 });

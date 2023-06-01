@@ -118,7 +118,8 @@ describe('UserConfig', () => {
           expandByDefault: true,
           stepPinTime: {
             parent: Date.now(),
-            'parent|child': Date.now() - Duration.fromObject({ hour: 2 }).toMillis(),
+            'parent|child':
+              Date.now() - Duration.fromObject({ hour: 2 }).toMillis(),
           },
         },
         testResults: {

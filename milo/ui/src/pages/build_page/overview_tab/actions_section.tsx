@@ -27,46 +27,58 @@ export interface ActionsSectionProps {
   openDialog: (dialog: Dialog) => void;
 }
 
-export const ActionsSection = observer(({ openDialog }: ActionsSectionProps) => {
-  const store = useStore();
-  const build = store.buildPage.build;
+export const ActionsSection = observer(
+  ({ openDialog }: ActionsSectionProps) => {
+    const store = useStore();
+    const build = store.buildPage.build;
 
-  if (!build) {
-    return <></>;
-  }
+    if (!build) {
+      return <></>;
+    }
 
-  const canRetry = store.buildPage.canRetry;
+    const canRetry = store.buildPage.canRetry;
 
-  if (build.endTime) {
+    if (build.endTime) {
+      return (
+        <>
+          <h3>Actions</h3>
+          <div
+            title={
+              canRetry ? '' : 'You have no permission to retry this build.'
+            }
+          >
+            <Button
+              onClick={() => openDialog(Dialog.RetryBuild)}
+              disabled={!canRetry}
+            >
+              Retry Build
+            </Button>
+          </div>
+        </>
+      );
+    }
+
+    const canCancel = build.cancelTime === null && store.buildPage.canCancel;
+    let tooltip = '';
+    if (!canCancel) {
+      tooltip =
+        build.cancelTime === null
+          ? 'You have no permission to cancel this build.'
+          : 'The build is already scheduled to be canceled.';
+    }
+
     return (
       <>
         <h3>Actions</h3>
-        <div title={canRetry ? '' : 'You have no permission to retry this build.'}>
-          <Button onClick={() => openDialog(Dialog.RetryBuild)} disabled={!canRetry}>
-            Retry Build
+        <div title={tooltip}>
+          <Button
+            onClick={() => openDialog(Dialog.CancelBuild)}
+            disabled={!canCancel}
+          >
+            Cancel Build
           </Button>
         </div>
       </>
     );
   }
-
-  const canCancel = build.cancelTime === null && store.buildPage.canCancel;
-  let tooltip = '';
-  if (!canCancel) {
-    tooltip =
-      build.cancelTime === null
-        ? 'You have no permission to cancel this build.'
-        : 'The build is already scheduled to be canceled.';
-  }
-
-  return (
-    <>
-      <h3>Actions</h3>
-      <div title={tooltip}>
-        <Button onClick={() => openDialog(Dialog.CancelBuild)} disabled={!canCancel}>
-          Cancel Build
-        </Button>
-      </div>
-    </>
-  );
-});
+);

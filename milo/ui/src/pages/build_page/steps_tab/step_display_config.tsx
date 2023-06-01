@@ -33,7 +33,12 @@ import { createRoot, Root } from 'react-dom/client';
 
 import '../../../components/dot_spinner';
 import { consumer } from '../../../libs/context';
-import { consumeStore, StoreInstance, StoreProvider, useStore } from '../../../store';
+import {
+  consumeStore,
+  StoreInstance,
+  StoreProvider,
+  useStore,
+} from '../../../store';
 import { ExpandStepOption } from '../../../store/user_config';
 import { commonStyles } from '../../../styles/stylesheets';
 
@@ -58,13 +63,23 @@ interface LabeledCheckBoxProps {
   readonly sx: SxProps<Theme>;
 }
 
-const LabeledCheckBox = ({ label, checked, onChange, sx }: LabeledCheckBoxProps) => {
+const LabeledCheckBox = ({
+  label,
+  checked,
+  onChange,
+  sx,
+}: LabeledCheckBoxProps) => {
   return (
     <FormControlLabel
       label={label}
       componentsProps={{ typography: { sx: { fontSize: '14px' } } }}
       control={
-        <Checkbox checked={checked} onChange={(e) => onChange(e.target.checked)} size="small" sx={{ mr: -0.5 }} />
+        <Checkbox
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          size="small"
+          sx={{ mr: -0.5 }}
+        />
       }
       sx={sx}
     ></FormControlLabel>
@@ -88,7 +103,14 @@ export const StepDisplayConfig = observer(() => {
         onChange={(checked) => stepsConfig.setShowDebugLogs(checked)}
         sx={{ mx: 1 }}
       />
-      <Box sx={{ display: 'inline-grid', gridTemplateColumns: 'auto 1fr', gap: 1, ml: 2 }}>
+      <Box
+        sx={{
+          display: 'inline-grid',
+          gridTemplateColumns: 'auto 1fr',
+          gap: 1,
+          ml: 2,
+        }}
+      >
         <Typography
           component="span"
           sx={{
@@ -104,7 +126,9 @@ export const StepDisplayConfig = observer(() => {
         <FormControl sx={{ width: 200 }} size="small">
           <Select
             value={stepsConfig.expandByDefault}
-            onChange={(e) => stepsConfig.setExpandByDefault(e.target.value as ExpandStepOption)}
+            onChange={(e) =>
+              stepsConfig.setExpandByDefault(e.target.value as ExpandStepOption)
+            }
             MenuProps={{ disablePortal: true }}
             sx={{
               fontSize: '14px',
@@ -114,7 +138,11 @@ export const StepDisplayConfig = observer(() => {
             }}
           >
             {StepCategoryOptionOrder.map((category) => (
-              <MenuItem key={category} value={category} sx={{ fontSize: '14px' }}>
+              <MenuItem
+                key={category}
+                value={category}
+                sx={{ fontSize: '14px' }}
+              >
                 {StepCategoryLabelMap[category]}
               </MenuItem>
             ))}

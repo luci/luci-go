@@ -19,7 +19,10 @@ import { useRef } from 'react';
 
 import { Hotkey } from '../../components/hotkey';
 import { useStore } from '../../store';
-import { DetailsTable, TestHistoryDetailsTableElement } from './test_history_details_table';
+import {
+  DetailsTable,
+  TestHistoryDetailsTableElement,
+} from './test_history_details_table';
 import { ConfigWidget } from './test_history_details_table/config_widget';
 
 export const VerdictDetailsDialog = observer(() => {
@@ -64,13 +67,29 @@ export const VerdictDetailsDialog = observer(() => {
           <ConfigWidget css={{ padding: '4px 5px 0px' }} />
           <div>{/* GAP */}</div>
           <div title="press x to expand/collapse all entries">
-            <Hotkey hotkey="x" handler={() => detailsTableRef.current?.toggleAllVariants()}>
-              <Button onClick={() => detailsTableRef.current?.toggleAllVariants(true)}>Expand All</Button>
-              <Button onClick={() => detailsTableRef.current?.toggleAllVariants(false)}>Collapse All</Button>
+            <Hotkey
+              hotkey="x"
+              handler={() => detailsTableRef.current?.toggleAllVariants()}
+            >
+              <Button
+                onClick={() => detailsTableRef.current?.toggleAllVariants(true)}
+              >
+                Expand All
+              </Button>
+              <Button
+                onClick={() =>
+                  detailsTableRef.current?.toggleAllVariants(false)
+                }
+              >
+                Collapse All
+              </Button>
             </Hotkey>
           </div>
           <div title="press esc to close the test variant details table">
-            <Hotkey hotkey="esc" handler={() => pageState.setSelectedGroup(null)}>
+            <Hotkey
+              hotkey="esc"
+              handler={() => pageState.setSelectedGroup(null)}
+            >
               <Close
                 css={{
                   color: 'red',
@@ -82,7 +101,10 @@ export const VerdictDetailsDialog = observer(() => {
             </Hotkey>
           </div>
         </div>
-        <DetailsTable ref={detailsTableRef} css={{ '--thdt-top-offset': '43px' }} />
+        <DetailsTable
+          ref={detailsTableRef}
+          css={{ '--thdt-top-offset': '43px' }}
+        />
       </DialogContent>
     </Dialog>
   );

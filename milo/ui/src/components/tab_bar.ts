@@ -36,7 +36,9 @@ export class TabBarElement extends MobxLitElement {
   @observable.ref tabs: TabDef[] = [];
   @observable.ref selectedTabId = '';
 
-  onTabClicked: (clickedTabId: string) => void = () => {};
+  onTabClicked: (clickedTabId: string) => void = () => {
+    /* do nothing by default */
+  };
 
   constructor() {
     super();
@@ -48,7 +50,10 @@ export class TabBarElement extends MobxLitElement {
       ${this.tabs.map(
         (tab) => html`
           <a
-            class=${classMap({ tab: true, selected: this.selectedTabId === tab.id })}
+            class=${classMap({
+              tab: true,
+              selected: this.selectedTabId === tab.id,
+            })}
             @click=${() => {
               if (this.selectedTabId === tab.id) {
                 return;
@@ -56,7 +61,9 @@ export class TabBarElement extends MobxLitElement {
               this.onTabClicked(this.selectedTabId);
             }}
             href=${tab.href}
-            >${tab.label}${tab.slotName ? html` <slot name=${tab.slotName}></slot>` : ''}</a
+            >${tab.label}${tab.slotName
+              ? html` <slot name=${tab.slotName}></slot>`
+              : ''}</a
           >
         `
       )}

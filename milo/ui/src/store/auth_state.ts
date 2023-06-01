@@ -13,9 +13,20 @@
 // limitations under the License.
 
 import { reaction } from 'mobx';
-import { addDisposer, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import {
+  addDisposer,
+  Instance,
+  SnapshotIn,
+  SnapshotOut,
+  types,
+} from 'mobx-state-tree';
 
-import { AuthState, getAuthStateCache, queryAuthState, setAuthStateCache } from '../libs/auth_state';
+import {
+  AuthState,
+  getAuthStateCache,
+  queryAuthState,
+  setAuthStateCache,
+} from '../libs/auth_state';
 import { aliveFlow } from '../libs/milo_mobx_utils';
 import { timeout } from '../libs/utils';
 
@@ -49,7 +60,14 @@ export const AuthStateStore = types
     queryAuthState,
   }))
   .actions((self) => ({
-    setDependencies(deps: Partial<Pick<typeof self, 'getAuthStateCache' | 'setAuthStateCache' | 'queryAuthState'>>) {
+    setDependencies(
+      deps: Partial<
+        Pick<
+          typeof self,
+          'getAuthStateCache' | 'setAuthStateCache' | 'queryAuthState'
+        >
+      >
+    ) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
   }))
@@ -78,7 +96,8 @@ export const AuthStateStore = types
           }
           // Refresh the access token 10s earlier to prevent the token from
           // expiring before the new token is returned.
-          validDuration = authState.accessTokenExpiry * 1000 - Date.now() - 10000;
+          validDuration =
+            authState.accessTokenExpiry * 1000 - Date.now() - 10000;
         }
 
         yield timeout(validDuration);

@@ -15,19 +15,34 @@
 import { deepEqual } from 'fast-equals';
 import { html } from 'lit';
 import { autorun, comparer, computed } from 'mobx';
-import { addDisposer, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import {
+  addDisposer,
+  Instance,
+  SnapshotIn,
+  SnapshotOut,
+  types,
+} from 'mobx-state-tree';
 import { fromPromise } from 'mobx-utils';
 import { createContext, useContext } from 'react';
 
 import { NEVER_OBSERVABLE, NEVER_PROMISE } from '../libs/constants';
 import { createContextLink } from '../libs/context';
 import { keepAliveComputed, unwrapObservable } from '../libs/milo_mobx_utils';
-import { parseTestResultSearchQuery, TestVariantFilter } from '../libs/queries/tr_search_query';
+import {
+  parseTestResultSearchQuery,
+  TestVariantFilter,
+} from '../libs/queries/tr_search_query';
 import { InnerTag, TAG_SOURCE } from '../libs/tag';
 import { TestLoader } from '../models/test_loader';
 import { VariantGroup } from '../pages/test_results_tab/test_variants_table';
 import { TestPresentationConfig } from '../services/buildbucket';
-import { createTVCmpFn, createTVPropGetter, RESULT_LIMIT, TestVariant, TestVariantStatus } from '../services/resultdb';
+import {
+  createTVCmpFn,
+  createTVPropGetter,
+  RESULT_LIMIT,
+  TestVariant,
+  TestVariantStatus,
+} from '../services/resultdb';
 import { ServicesStore } from './services';
 
 export class QueryInvocationError extends Error implements InnerTag {
@@ -70,20 +85,38 @@ export const InvocationState = types
     },
   }))
   .views((self) => {
-    const defaultColumnKeys = computed(() => self.presentationConfig.column_keys || [], { equals: comparer.shallow });
-    const columnKeys = computed(() => self.customColumnKeys || defaultColumnKeys.get(), { equals: comparer.shallow });
-    const defaultSortingKeys = computed(() => ['status', ...defaultColumnKeys.get(), 'name'], {
-      equals: comparer.shallow,
-    });
-    const sortingKeys = computed(() => self.customSortingKeys || defaultSortingKeys.get(), {
-      equals: comparer.shallow,
-    });
-    const defaultGroupingKeys = computed(() => self.presentationConfig.grouping_keys || ['status'], {
-      equals: comparer.shallow,
-    });
-    const groupingKeys = computed(() => self.customGroupingKeys || defaultGroupingKeys.get(), {
-      equals: comparer.shallow,
-    });
+    const defaultColumnKeys = computed(
+      () => self.presentationConfig.column_keys || [],
+      { equals: comparer.shallow }
+    );
+    const columnKeys = computed(
+      () => self.customColumnKeys || defaultColumnKeys.get(),
+      { equals: comparer.shallow }
+    );
+    const defaultSortingKeys = computed(
+      () => ['status', ...defaultColumnKeys.get(), 'name'],
+      {
+        equals: comparer.shallow,
+      }
+    );
+    const sortingKeys = computed(
+      () => self.customSortingKeys || defaultSortingKeys.get(),
+      {
+        equals: comparer.shallow,
+      }
+    );
+    const defaultGroupingKeys = computed(
+      () => self.presentationConfig.grouping_keys || ['status'],
+      {
+        equals: comparer.shallow,
+      }
+    );
+    const groupingKeys = computed(
+      () => self.customGroupingKeys || defaultGroupingKeys.get(),
+      {
+        equals: comparer.shallow,
+      }
+    );
 
     return {
       get defaultColumnKeys() {
@@ -108,10 +141,14 @@ export const InvocationState = types
         return groupingKeys.get();
       },
       get columnWidths() {
-        return this.columnKeys.map((col) => self.customColumnWidths[col] ?? 100);
+        return this.columnKeys.map(
+          (col) => self.customColumnWidths[col] ?? 100
+        );
       },
       get groupers() {
-        return this.groupingKeys.map((key) => [key, createTVPropGetter(key)] as const);
+        return this.groupingKeys.map(
+          (key) => [key, createTVPropGetter(key)] as const
+        );
       },
       get invocationName() {
         if (!self.invocationId) {
@@ -123,14 +160,20 @@ export const InvocationState = types
   })
   .views((self) => {
     const invocation = keepAliveComputed(self, () => {
-      if (!self.services?.resultDb || !self.invocationName) {
+      if (
+        !self.services?.resultDb ||
+        !self.invocationName ||
+        !self.invocationId
+      ) {
         return null;
       }
       const invId = self.invocationId;
       return fromPromise(
-        self.services.resultDb.getInvocation({ name: self.invocationName }).catch((e) => {
-          throw new QueryInvocationError(invId!, e);
-        })
+        self.services.resultDb
+          .getInvocation({ name: self.invocationName })
+          .catch((e) => {
+            throw new QueryInvocationError(invId, e);
+          })
       );
     });
 
@@ -138,7 +181,10 @@ export const InvocationState = types
       if (!self.invocationName || !self.services?.resultDb) {
         return null;
       }
-      return new TestLoader({ invocations: [self.invocationName], resultLimit: RESULT_LIMIT }, self.services.resultDb);
+      return new TestLoader(
+        { invocations: [self.invocationName], resultLimit: RESULT_LIMIT },
+        self.services.resultDb
+      );
     });
 
     return {
@@ -156,7 +202,10 @@ export const InvocationState = types
           return [];
         }
         const ret: VariantGroup[] = [];
-        if (this.testLoader.loadedAllUnexpectedVariants && this.testLoader.unexpectedTestVariants.length === 0) {
+        if (
+          this.testLoader.loadedAllUnexpectedVariants &&
+          this.testLoader.unexpectedTestVariants.length === 0
+        ) {
           // Indicates that there are no unexpected test variants.
           ret.push({
             def: [['status', TestVariantStatus.UNEXPECTED]],
@@ -165,7 +214,9 @@ export const InvocationState = types
         }
         ret.push(
           ...this.testLoader.groupedNonExpectedVariants.map((group) => ({
-            def: self.groupers.map(([key, getter]) => [key, getter(group[0])] as [string, unknown]),
+            def: self.groupers.map(
+              ([key, getter]) => [key, getter(group[0])] as [string, unknown]
+            ),
             variants: group,
           })),
           {
@@ -173,7 +224,9 @@ export const InvocationState = types
             variants: this.testLoader.expectedTestVariants,
             note: deepEqual(self.groupingKeys, ['status'])
               ? ''
-              : html`<b>note: custom grouping doesn't apply to expected tests</b>`,
+              : html`<b
+                  >note: custom grouping doesn't apply to expected tests</b
+                >`,
           }
         );
         return ret;
@@ -200,7 +253,15 @@ export const InvocationState = types
   })
   .actions((self) => ({
     setDependencies(
-      deps: Partial<Pick<typeof self, 'services' | 'invocationIdGetter' | 'presentationConfigGetter' | 'warningGetter'>>
+      deps: Partial<
+        Pick<
+          typeof self,
+          | 'services'
+          | 'invocationIdGetter'
+          | 'presentationConfigGetter'
+          | 'warningGetter'
+        >
+      >
     ) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
@@ -235,7 +296,7 @@ export const InvocationState = types
           try {
             this._setSearchFilter(parseTestResultSearchQuery(self.searchText));
           } catch (e) {
-            //TODO(weiweilin): display the error to the user.
+            // TODO(weiweilin): display the error to the user.
             console.error(e);
           }
         })
@@ -259,9 +320,12 @@ export type InvocationStateInstance = Instance<typeof InvocationState>;
 export type InvocationStateSnapshotIn = SnapshotIn<typeof InvocationState>;
 export type InvocationStateSnapshotOut = SnapshotOut<typeof InvocationState>;
 
-export const [provideInvocationState, consumeInvocationState] = createContextLink<InvocationStateInstance>();
+export const [provideInvocationState, consumeInvocationState] =
+  createContextLink<InvocationStateInstance>();
 
-export const InvocationContext = createContext<InvocationStateInstance | null>(null);
+export const InvocationContext = createContext<InvocationStateInstance | null>(
+  null
+);
 export const InvocationProvider = InvocationContext.Provider;
 
 export function useInvocation() {

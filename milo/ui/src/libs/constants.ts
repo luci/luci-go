@@ -16,7 +16,11 @@ import { fromPromise } from 'mobx-utils';
 
 import { BuildStatus } from '../services/buildbucket';
 import { TestVerdictStatus } from '../services/luci_analysis';
-import { InvocationState, TestStatus, TestVariantStatus } from '../services/resultdb';
+import {
+  InvocationState,
+  TestStatus,
+  TestVariantStatus,
+} from '../services/resultdb';
 import { BotStatus } from '../services/swarming';
 
 export const INVOCATION_STATE_DISPLAY_MAP = {
@@ -64,9 +68,11 @@ export const VARIANT_STATUS_ICON_MAP = Object.freeze({
 });
 
 export const VERDICT_VARIANT_STATUS_MAP = Object.freeze({
-  [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]: TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED,
+  [TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED]:
+    TestVariantStatus.TEST_VARIANT_STATUS_UNSPECIFIED,
   [TestVerdictStatus.UNEXPECTED]: TestVariantStatus.UNEXPECTED,
-  [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: TestVariantStatus.UNEXPECTEDLY_SKIPPED,
+  [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]:
+    TestVariantStatus.UNEXPECTEDLY_SKIPPED,
   [TestVerdictStatus.FLAKY]: TestVariantStatus.FLAKY,
   [TestVerdictStatus.EXONERATED]: TestVariantStatus.EXONERATED,
   [TestVerdictStatus.EXPECTED]: TestVariantStatus.EXPECTED,
@@ -217,5 +223,7 @@ export const PREDEFINED_TIME_INTERVALS = Object.freeze([
   86400000, // 24hr
 ]);
 
-export const NEVER_PROMISE = new Promise<never>(() => {});
+export const NEVER_PROMISE = new Promise<never>(() => {
+  /* Never resolves. */
+});
 export const NEVER_OBSERVABLE = fromPromise(NEVER_PROMISE);

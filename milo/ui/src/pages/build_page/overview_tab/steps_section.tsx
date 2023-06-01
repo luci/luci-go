@@ -27,7 +27,9 @@ export const StepsSection = observer(() => {
     return <></>;
   }
 
-  const stepsUrl = getBuildURLPath(pageState.builderIdParam, pageState.buildNumOrIdParam) + '/steps';
+  const stepsUrl =
+    getBuildURLPath(pageState.builderIdParam, pageState.buildNumOrIdParam) +
+    '/steps';
 
   return (
     <>

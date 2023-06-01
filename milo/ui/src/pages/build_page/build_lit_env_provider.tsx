@@ -21,20 +21,37 @@ import { OPTIONAL_RESOURCE } from '../../common_tags';
 import { MiloBaseElement } from '../../components/milo_base';
 import { POTENTIALLY_EXPIRED } from '../../libs/constants';
 import { consumer, provider } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, renderErrorInPre } from '../../libs/error_handler';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  renderErrorInPre,
+} from '../../libs/error_handler';
 import { attachTags, hasTags } from '../../libs/tag';
 import { getBuildURLPath } from '../../libs/url_utils';
 import { LoadTestVariantsError } from '../../models/test_loader';
 import { consumeStore, StoreInstance } from '../../store';
 import { GetBuildError } from '../../store/build_page';
-import { provideInvocationState, QueryInvocationError } from '../../store/invocation_state';
-import { provideProject, provideTestTabUrl } from '../test_results_tab/test_variants_table/context';
+import {
+  provideInvocationState,
+  QueryInvocationError,
+} from '../../store/invocation_state';
+import {
+  provideProject,
+  provideTestTabUrl,
+} from '../test_results_tab/test_variants_table/context';
 
-function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildLitEnvProviderElement) {
+function retryWithoutComputedInvId(
+  err: ErrorEvent,
+  ele: BuildLitEnvProviderElement
+) {
   let recovered = false;
   if (err.error instanceof LoadTestVariantsError) {
     // Ignore request using the old invocation ID.
-    if (!err.error.req.invocations.includes(`invocations/${ele.store.buildPage.invocationId}`)) {
+    if (
+      !err.error.req.invocations.includes(
+        `invocations/${ele.store.buildPage.invocationId}`
+      )
+    ) {
       recovered = true;
     }
 
@@ -72,10 +89,14 @@ function retryWithoutComputedInvId(err: ErrorEvent, ele: BuildLitEnvProviderElem
 }
 
 function renderError(err: ErrorEvent, ele: BuildLitEnvProviderElement) {
-  if (err.error instanceof GetBuildError && hasTags(err.error, POTENTIALLY_EXPIRED)) {
+  if (
+    err.error instanceof GetBuildError &&
+    hasTags(err.error, POTENTIALLY_EXPIRED)
+  ) {
     return html`
       <div id="build-not-found-error">
-        Build Not Found: if you are trying to view an old build, it could have been wiped from the server already.
+        Build Not Found: if you are trying to view an old build, it could have
+        been wiped from the server already.
       </div>
       ${renderErrorInPre(err, ele)}
     `;
@@ -111,11 +132,17 @@ export class BuildLitEnvProviderElement extends MiloBaseElement {
   @provideTestTabUrl({ global: true })
   @computed
   get testTabUrl() {
-    if (!this.store.buildPage.builderIdParam || !this.store.buildPage.buildNumOrIdParam) {
+    if (
+      !this.store.buildPage.builderIdParam ||
+      !this.store.buildPage.buildNumOrIdParam
+    ) {
       return undefined;
     }
     return (
-      getBuildURLPath(this.store.buildPage.builderIdParam, this.store.buildPage.buildNumOrIdParam) + '/test-results'
+      getBuildURLPath(
+        this.store.buildPage.builderIdParam,
+        this.store.buildPage.buildNumOrIdParam
+      ) + '/test-results'
     );
   }
 

@@ -15,7 +15,11 @@
 import { expect } from '@jest/globals';
 
 import { Variant } from '../../services/luci_analysis';
-import { parseVariantFilter, parseVariantPredicate, suggestTestHistoryFilterQuery } from './th_filter_query';
+import {
+  parseVariantFilter,
+  parseVariantPredicate,
+  suggestTestHistoryFilterQuery,
+} from './th_filter_query';
 
 const entry1 = {
   variant: { def: { key1: 'val1' } },
@@ -59,7 +63,9 @@ describe('parseVariantFilter', () => {
     const filter = parseVariantFilter('v:key1=val1');
 
     const filtered = variants
-      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .map(
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+      )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
     expect(filtered).toEqual([entry1.variant]);
@@ -69,7 +75,9 @@ describe('parseVariantFilter', () => {
     const filter = parseVariantFilter('v:key2=val3%3Dval');
 
     const filtered = variants
-      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .map(
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+      )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
     expect(filtered).toEqual([entry7.variant]);
@@ -79,7 +87,9 @@ describe('parseVariantFilter', () => {
     const filter = parseVariantFilter('V:key2');
 
     const filtered = variants
-      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .map(
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+      )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
     expect(filtered).toEqual([entry5.variant, entry6.variant, entry7.variant]);
@@ -89,7 +99,9 @@ describe('parseVariantFilter', () => {
     const filter = parseVariantFilter('-v:key1=val1');
 
     const filtered = variants
-      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .map(
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+      )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
     expect(filtered).toEqual([
@@ -103,20 +115,32 @@ describe('parseVariantFilter', () => {
   });
 
   it('should work multiple queries', () => {
-    const filter = parseVariantFilter('-v:key1=val1 STATUS:Unexpected v:key1=val2');
+    const filter = parseVariantFilter(
+      '-v:key1=val1 STATUS:Unexpected v:key1=val2'
+    );
 
     const filtered = variants
-      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .map(
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+      )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    expect(filtered).toEqual([entry2.variant, entry4.variant, entry5.variant, entry6.variant, entry7.variant]);
+    expect(filtered).toEqual([
+      entry2.variant,
+      entry4.variant,
+      entry5.variant,
+      entry6.variant,
+      entry7.variant,
+    ]);
   });
 
   it('should work with variant hash filter', () => {
     const filter = parseVariantFilter('vhash:key1:val2');
 
     const filtered = variants
-      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .map(
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+      )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
     expect(filtered).toEqual([entry2.variant, entry4.variant]);
@@ -126,10 +150,18 @@ describe('parseVariantFilter', () => {
     const filter = parseVariantFilter('-vhash:key1:val2');
 
     const filtered = variants
-      .map((v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string])
+      .map(
+        (v) => [v.variant || { def: {} }, v.variantHash] as [Variant, string]
+      )
       .filter(([v, hash]) => filter(v, hash))
       .map(([v]) => v);
-    expect(filtered).toEqual([entry1.variant, entry3.variant, entry5.variant, entry6.variant, entry7.variant]);
+    expect(filtered).toEqual([
+      entry1.variant,
+      entry3.variant,
+      entry5.variant,
+      entry6.variant,
+      entry7.variant,
+    ]);
   });
 });
 
@@ -151,7 +183,9 @@ describe('suggestTestHistoryFilterQuery', () => {
 
     const suggestions2 = suggestTestHistoryFilterQuery('-V:test_suite');
     // When user explicitly typed negative query, don't suggest positive query.
-    expect(suggestions2.find((s) => s.value === 'V:test_suite')).toBeUndefined();
+    expect(
+      suggestions2.find((s) => s.value === 'V:test_suite')
+    ).toBeUndefined();
     expect(suggestions2.find((s) => s.value === '-V:test_suite')).toBeDefined();
   });
 });
@@ -159,21 +193,29 @@ describe('suggestTestHistoryFilterQuery', () => {
 describe('parseVariantPredicate', () => {
   it('should work with multiple variant key-value filters', () => {
     const predicate = parseVariantPredicate('v:key1=val1 v:key2=val2');
-    expect(predicate).toEqual({ contains: { def: { key1: 'val1', key2: 'val2' } } });
+    expect(predicate).toEqual({
+      contains: { def: { key1: 'val1', key2: 'val2' } },
+    });
   });
 
   it('should ignore negative filters', () => {
-    const predicate = parseVariantPredicate('v:key1=val1 -v:key2=val2 -vhash:902690735d13f8bd');
+    const predicate = parseVariantPredicate(
+      'v:key1=val1 -v:key2=val2 -vhash:902690735d13f8bd'
+    );
     expect(predicate).toEqual({ contains: { def: { key1: 'val1' } } });
   });
 
   it('should prioritize variant hash filter', () => {
-    const predicate = parseVariantPredicate('v:key1=val1 vhash:0123456789AbCdEf');
+    const predicate = parseVariantPredicate(
+      'v:key1=val1 vhash:0123456789AbCdEf'
+    );
     expect(predicate).toEqual({ hashEquals: '0123456789abcdef' });
   });
 
   it('should ignore invalid filters', () => {
-    const predicate = parseVariantPredicate('v:key1=val1 vhash:invalidhash other:hash');
+    const predicate = parseVariantPredicate(
+      'v:key1=val1 vhash:invalidhash other:hash'
+    );
     expect(predicate).toEqual({ contains: { def: { key1: 'val1' } } });
   });
 });

@@ -65,7 +65,9 @@ describe('CancelBuildDialog', () => {
       </StoreProvider>
     );
 
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'need to stop build' } });
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'need to stop build' },
+    });
     fireEvent.click(screen.getByText('Confirm'));
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
@@ -73,6 +75,8 @@ describe('CancelBuildDialog', () => {
     expect(onCloseSpy.mock.calls.length).toStrictEqual(1);
     expect(screen.queryByText('Reason is required')).toBeNull();
     expect(cancelBuildStub.mock.calls.length).toStrictEqual(1);
-    expect(cancelBuildStub.mock.lastCall?.[0]).toStrictEqual('need to stop build');
+    expect(cancelBuildStub.mock.lastCall?.[0]).toStrictEqual(
+      'need to stop build'
+    );
   });
 });

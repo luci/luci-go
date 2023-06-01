@@ -29,7 +29,11 @@ export interface StartedBuildsSectionProps {
 
 export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
   const { data, error, isError, isLoading } = useBuilds({
-    predicate: { builder: builderId, includeExperimental: true, status: BuildStatus.Started },
+    predicate: {
+      builder: builderId,
+      includeExperimental: true,
+      status: BuildStatus.Started,
+    },
     pageSize: PAGE_SIZE,
     fields: FIELD_MASK,
   });
@@ -44,17 +48,30 @@ export function StartedBuildsSection({ builderId }: StartedBuildsSectionProps) {
     <>
       <h3>
         Started Builds
-        {!isLoading && <> ({data.nextPageToken ? `most recent ${PAGE_SIZE} builds` : data.builds?.length || 0})</>}
+        {!isLoading && (
+          <>
+            {' '}
+            (
+            {data.nextPageToken
+              ? `most recent ${PAGE_SIZE} builds`
+              : data.builds?.length || 0}
+            )
+          </>
+        )}
       </h3>
       {isLoading ? (
         <CircularProgress />
       ) : (
         <ul>
           {data.builds?.map((b) => {
-            const [duration] = displayCompactDuration(now.diff(DateTime.fromISO(b.startTime!)));
+            const [duration] = displayCompactDuration(
+              now.diff(DateTime.fromISO(b.startTime!))
+            );
             return (
               <li key={b.id}>
-                <Link href={getBuildURLPathFromBuildId(b.id)}>{b.number || `b${b.id}`}</Link>
+                <Link href={getBuildURLPathFromBuildId(b.id)}>
+                  {b.number || `b${b.id}`}
+                </Link>
                 <span> </span>
                 [Running for: {duration}]
               </li>

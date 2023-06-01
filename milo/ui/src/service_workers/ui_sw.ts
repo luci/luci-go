@@ -14,8 +14,14 @@
 
 // TODO(weiweilin): add integration tests to ensure the SW works properly.
 
+// This is injected by Vite.
+// eslint-disable-next-line import/no-unresolved
 import 'virtual:configs.js';
-import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
+import {
+  cleanupOutdatedCaches,
+  createHandlerBoundToURL,
+  precacheAndRoute,
+} from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 
 import './force_update';
@@ -33,7 +39,11 @@ self.addEventListener('message', (event) => {
   }
 });
 
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), { allowlist: [/^\/ui\//] }));
+registerRoute(
+  new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), {
+    allowlist: [/^\/ui\//],
+  })
+);
 
 /**
  * Whether the UI service worker should skip waiting.
@@ -56,7 +66,9 @@ self.addEventListener('fetch', async (e) => {
 
   // Ensure all clients served by this service worker use the same config.
   if (url.pathname === '/configs.js') {
-    const res = new Response(`self.CONFIGS=Object.freeze(${JSON.stringify(CONFIGS)});`);
+    const res = new Response(
+      `self.CONFIGS=Object.freeze(${JSON.stringify(CONFIGS)});`
+    );
     res.headers.set('content-type', 'application/javascript');
     e.respondWith(res);
     return;

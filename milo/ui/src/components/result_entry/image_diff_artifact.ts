@@ -33,7 +33,11 @@ export class TextDiffArtifactElement extends MobxLitElement {
   @observable.ref diff!: Artifact;
 
   @computed private get artifactPageUrl() {
-    return getImageDiffArtifactURLPath(this.diff.name, this.actual.artifactId, this.expected.artifactId);
+    return getImageDiffArtifactURLPath(
+      this.diff.name,
+      this.actual.artifactId,
+      this.expected.artifactId
+    );
   }
 
   constructor() {
@@ -46,9 +50,16 @@ export class TextDiffArtifactElement extends MobxLitElement {
       <milo-expandable-entry .expanded=${true} .contentRuler="invisible">
         <span id="header" slot="header">
           Unexpected image output from
-          <a href=${this.artifactPageUrl} target="_blank">${this.diff.artifactId}</a>
+          <a href=${this.artifactPageUrl} target="_blank"
+            >${this.diff.artifactId}</a
+          >
         </span>
-        <milo-image-diff-viewer slot="content" .expected=${this.expected} .actual=${this.actual} .diff=${this.diff}>
+        <milo-image-diff-viewer
+          slot="content"
+          .expected=${this.expected}
+          .actual=${this.actual}
+          .diff=${this.diff}
+        >
         </milo-image-diff-viewer>
       </milo-expandable-entry>
     `;

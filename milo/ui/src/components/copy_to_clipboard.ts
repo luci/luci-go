@@ -36,7 +36,11 @@ export class CopyToClipboard extends MobxLitElement {
       if (this.copied) {
         return;
       }
-      copy(typeof this.textToCopy === 'function' ? this.textToCopy() : this.textToCopy);
+      copy(
+        typeof this.textToCopy === 'function'
+          ? this.textToCopy()
+          : this.textToCopy
+      );
       this.copied = true;
       setTimeout(() => (this.copied = false), 1000);
     });

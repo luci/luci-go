@@ -17,11 +17,27 @@ import { fixture } from '@open-wc/testing-helpers';
 import { html } from 'lit';
 
 import './auto_complete';
-import { AutoCompleteElement, Suggestion, SuggestionEntry } from './auto_complete';
+import {
+  AutoCompleteElement,
+  Suggestion,
+  SuggestionEntry,
+} from './auto_complete';
 
 function simulateKeyStroke(target: EventTarget, code: string) {
-  target.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, composed: true, code } as KeyboardEventInit));
-  target.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, composed: true, code } as KeyboardEventInit));
+  target.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      bubbles: true,
+      composed: true,
+      code,
+    } as KeyboardEventInit)
+  );
+  target.dispatchEvent(
+    new KeyboardEvent('keyup', {
+      bubbles: true,
+      composed: true,
+      code,
+    } as KeyboardEventInit)
+  );
 }
 
 const suggestions: Suggestion[] = [
@@ -109,7 +125,9 @@ describe('AuthComplete', () => {
       .slice()
       .reverse()
       .find((s) => !s.isHeader);
-    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(lastSelectableSuggestion);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(
+      lastSelectableSuggestion
+    );
 
     const firstSelectableSuggestion = suggestions.find((s) => !s.isHeader);
     simulateKeyStroke(inputEle, 'ArrowDown');
@@ -117,7 +135,9 @@ describe('AuthComplete', () => {
       simulateKeyStroke(inputEle, 'ArrowUp');
     }
     simulateKeyStroke(inputEle, 'Enter');
-    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(firstSelectableSuggestion);
+    expect(suggestionSpy.mock.lastCall?.[0]).toStrictEqual(
+      firstSelectableSuggestion
+    );
 
     expect(completeSpy.mock.calls.length).toStrictEqual(0);
   });

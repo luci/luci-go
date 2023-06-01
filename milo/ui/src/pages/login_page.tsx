@@ -32,15 +32,19 @@ export function LoginPage() {
   const location = useLocation();
   const authState = useAuthState();
 
-  const isLoggedIn = ![undefined, ANONYMOUS_IDENTITY].includes(authState.identity);
+  const isLoggedIn = ![undefined, ANONYMOUS_IDENTITY].includes(
+    authState.identity
+  );
 
   useEffect(() => {
     if (!isLoggedIn) {
       return;
     }
-    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    const redirect = new URLSearchParams(window.location.search).get(
+      'redirect'
+    );
     navigate(redirect || '/');
-  }, [isLoggedIn]);
+  }, [isLoggedIn, navigate]);
 
   return (
     <div css={{ margin: '8px 16px' }}>

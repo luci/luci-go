@@ -30,8 +30,8 @@ export const TagsSection = observer(() => {
       <h3>Tags</h3>
       <table>
         <tbody>
-          {tags.map((tag) => (
-            <BuildTagRow key={tag.key} tagKey={tag.key} tagValue={tag.value || ''} />
+          {tags.map((tag, i) => (
+            <BuildTagRow key={i} tagKey={tag.key} tagValue={tag.value || ''} />
           ))}
         </tbody>
       </table>

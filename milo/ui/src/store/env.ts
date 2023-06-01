@@ -18,4 +18,5 @@ export interface StoreEnvironment {
   readonly isDevEnv?: boolean;
 }
 
-export const getEnv = (node: IAnyStateTreeNode) => mstGetEnv<StoreEnvironment>(node);
+export const getEnv = (node: IAnyStateTreeNode) =>
+  mstGetEnv<StoreEnvironment>(node);

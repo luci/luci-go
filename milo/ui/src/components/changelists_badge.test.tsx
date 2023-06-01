@@ -21,8 +21,18 @@ import { ChangelistsTooltipElement } from './changelists_tooltip';
 import { ShowTooltipEventDetail } from './tooltip';
 
 const changelists: Changelist[] = [
-  { host: 'www.example.com', change: '1234', patchset: 1, ownerKind: ChangelistOwnerKind.Automation },
-  { host: 'www.example.com', change: '2345', patchset: 2, ownerKind: ChangelistOwnerKind.Automation },
+  {
+    host: 'www.example.com',
+    change: '1234',
+    patchset: 1,
+    ownerKind: ChangelistOwnerKind.Automation,
+  },
+  {
+    host: 'www.example.com',
+    change: '2345',
+    patchset: 2,
+    ownerKind: ChangelistOwnerKind.Automation,
+  },
 ];
 
 describe('ChangelistsBadge', () => {
@@ -40,8 +50,12 @@ describe('ChangelistsBadge', () => {
     const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists.slice(0, 1)} />);
 
-    const anchorElement = screen.getByRole<HTMLAnchorElement>('link', { exact: false });
-    expect(anchorElement.href).toStrictEqual('https://www.example.com/c/1234/1');
+    const anchorElement = screen.getByRole<HTMLAnchorElement>('link', {
+      exact: false,
+    });
+    expect(anchorElement.href).toStrictEqual(
+      'https://www.example.com/c/1234/1'
+    );
     expect(anchorElement.textContent).toStrictEqual('c/1234/1');
 
     fireEvent.mouseOver(anchorElement);
@@ -54,18 +68,27 @@ describe('ChangelistsBadge', () => {
     const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
     render(<ChangelistsBadge changelists={changelists} />);
 
-    const anchorElement = screen.getByRole<HTMLAnchorElement>('link', { exact: false });
-    expect(anchorElement.href).toStrictEqual('https://www.example.com/c/1234/1');
+    const anchorElement = screen.getByRole<HTMLAnchorElement>('link', {
+      exact: false,
+    });
+    expect(anchorElement.href).toStrictEqual(
+      'https://www.example.com/c/1234/1'
+    );
     expect(anchorElement.textContent).toStrictEqual('c/1234/1, ...');
 
     fireEvent.mouseOver(anchorElement);
     await jest.runAllTimersAsync();
 
     expect(dispatchEventSpy.mock.calls.length).toStrictEqual(1);
-    const event = dispatchEventSpy.mock.lastCall![0] as CustomEvent<ShowTooltipEventDetail>;
+    const event = dispatchEventSpy.mock
+      .lastCall![0] as CustomEvent<ShowTooltipEventDetail>;
     expect(event.type).toStrictEqual('show-tooltip');
-    const tooltip = event.detail.tooltip.getElementsByTagName('milo-changelists-tooltip');
+    const tooltip = event.detail.tooltip.getElementsByTagName(
+      'milo-changelists-tooltip'
+    );
     expect(tooltip.length).toStrictEqual(1);
-    expect((tooltip[0] as ChangelistsTooltipElement).changelists).toEqual(changelists);
+    expect((tooltip[0] as ChangelistsTooltipElement).changelists).toEqual(
+      changelists
+    );
   });
 });

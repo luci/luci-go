@@ -14,7 +14,11 @@
 
 import stableStringify from 'fast-json-stable-stringify';
 
-export const CRITICAL_HEADERS = Object.freeze(['accept', 'content-type', 'authorization']);
+export const CRITICAL_HEADERS = Object.freeze([
+  'accept',
+  'content-type',
+  'authorization',
+]);
 
 /**
  * Generates a cache key for prpc-request.

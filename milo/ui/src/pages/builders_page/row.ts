@@ -23,7 +23,10 @@ import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
 import { lazyRendering } from '../../libs/observer_element';
-import { getBuilderURLPath, getBuildURLPathFromBuildData } from '../../libs/url_utils';
+import {
+  getBuilderURLPath,
+  getBuildURLPathFromBuildData,
+} from '../../libs/url_utils';
 import { Build, BuilderID } from '../../services/buildbucket';
 import { BuilderStats } from '../../services/milo_internal';
 import { consumeStore, StoreInstance } from '../../store';
@@ -43,7 +46,9 @@ export class BuildersPageRowElement extends MiloBaseElement {
     return getBuilderURLPath(this.builder);
   }
 
-  @computed private get recentBuilds$(): IPromiseBasedObservable<readonly Build[]> {
+  @computed private get recentBuilds$(): IPromiseBasedObservable<
+    readonly Build[]
+  > {
     if (!this.store?.services.milo) {
       return fromPromise(Promise.race([]));
     }
@@ -86,7 +91,10 @@ export class BuildersPageRowElement extends MiloBaseElement {
   renderPlaceHolder() {
     return html`
       <td class="shrink-to-fit">
-        <a href=${this.builderLink}>${this.builder.project}/${this.builder.bucket}/${this.builder.builder}</a>
+        <a href=${this.builderLink}
+          >${this.builder.project}/${this.builder.bucket}/${this.builder
+            .builder}</a
+        >
       </td>
       <td class="shrink-to-fit"></td>
       <td></td>
@@ -99,7 +107,10 @@ export class BuildersPageRowElement extends MiloBaseElement {
     return reportRenderError(this, () => {
       return html`
         <td class="shrink-to-fit">
-          <a href=${this.builderLink}>${this.builder.project}/${this.builder.bucket}/${this.builder.builder}</a>
+          <a href=${this.builderLink}
+            >${this.builder.project}/${this.builder.bucket}/${this.builder
+              .builder}</a
+          >
         </td>
         <td class="shrink-to-fit">${this.renderBuilderStats()}</td>
         <td>${this.renderRecentBuilds()}</td>

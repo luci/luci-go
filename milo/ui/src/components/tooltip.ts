@@ -77,7 +77,10 @@ export class TooltipElement extends MobxLitElement {
     window.clearTimeout(this.hideTooltipTimeout);
 
     const e = event as CustomEvent<HideTooltipEventDetail>;
-    this.hideTooltipTimeout = window.setTimeout(this.hideTooltip, e.detail.delay || 0);
+    this.hideTooltipTimeout = window.setTimeout(
+      this.hideTooltip,
+      e.detail.delay || 0
+    );
   };
 
   private hideTooltip = action(() => {
@@ -90,7 +93,9 @@ export class TooltipElement extends MobxLitElement {
   constructor() {
     super();
     makeObservable(this);
-    this.addEventListener('mouseover', () => window.clearTimeout(this.hideTooltipTimeout));
+    this.addEventListener('mouseover', () =>
+      window.clearTimeout(this.hideTooltipTimeout)
+    );
     this.addEventListener('mouseout', this.hideTooltip);
   }
 
@@ -119,32 +124,50 @@ export class TooltipElement extends MobxLitElement {
 
     const offsets = [
       // Bottom (left-aligned).
-      [this.targetRect.left + window.scrollX, this.targetRect.bottom + this.gapSize + window.scrollY],
+      [
+        this.targetRect.left + window.scrollX,
+        this.targetRect.bottom + this.gapSize + window.scrollY,
+      ],
       // Bottom (right-aligned).
-      [this.targetRect.right - selfRect.width + window.scrollX, this.targetRect.bottom + this.gapSize + window.scrollY],
+      [
+        this.targetRect.right - selfRect.width + window.scrollX,
+        this.targetRect.bottom + this.gapSize + window.scrollY,
+      ],
       // Top (left-aligned).
-      [this.targetRect.left + window.scrollX, this.targetRect.top - selfRect.height - this.gapSize + window.scrollY],
+      [
+        this.targetRect.left + window.scrollX,
+        this.targetRect.top - selfRect.height - this.gapSize + window.scrollY,
+      ],
       // Top (right-aligned).
       [
         this.targetRect.right - selfRect.width + window.scrollX,
         this.targetRect.top - selfRect.height - this.gapSize + window.scrollY,
       ],
       // Right (top-aligned).
-      [this.targetRect.right + this.gapSize + window.scrollX, this.targetRect.top + window.scrollY],
+      [
+        this.targetRect.right + this.gapSize + window.scrollX,
+        this.targetRect.top + window.scrollY,
+      ],
       // Right (bottom-aligned).
       [
         this.targetRect.right + this.gapSize + window.scrollX,
         this.targetRect.bottom - selfRect.height + window.scrollY,
       ],
       // Left (top-aligned).
-      [this.targetRect.left - selfRect.width - this.gapSize + window.scrollX, this.targetRect.top + window.scrollY],
+      [
+        this.targetRect.left - selfRect.width - this.gapSize + window.scrollX,
+        this.targetRect.top + window.scrollY,
+      ],
       // Left (bottom-aligned).
       [
         this.targetRect.left - selfRect.width - this.gapSize + window.scrollX,
         this.targetRect.bottom - selfRect.height + window.scrollY,
       ],
       // Bottom-right.
-      [this.targetRect.right + this.gapSize + window.scrollX, this.targetRect.bottom + this.gapSize + window.scrollY],
+      [
+        this.targetRect.right + this.gapSize + window.scrollX,
+        this.targetRect.bottom + this.gapSize + window.scrollY,
+      ],
       // Bottom-left.
       [
         this.targetRect.left - selfRect.width - this.gapSize + window.scrollX,
@@ -196,8 +219,8 @@ export class TooltipElement extends MobxLitElement {
       background: white;
       border-radius: 4px;
       padding: 5px;
-      box-shadow: rgb(0 0 0 / 20%) 0px 5px 5px -3px, rgb(0 0 0 / 14%) 0px 8px 10px 1px,
-        rgb(0 0 0 / 12%) 0px 3px 14px 2px;
+      box-shadow: rgb(0 0 0 / 20%) 0px 5px 5px -3px,
+        rgb(0 0 0 / 14%) 0px 8px 10px 1px, rgb(0 0 0 / 12%) 0px 3px 14px 2px;
       z-index: 999;
     }
   `;
@@ -207,7 +230,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-tooltip': {};
+      'milo-tooltip': Record<string, never>;
     }
   }
 }

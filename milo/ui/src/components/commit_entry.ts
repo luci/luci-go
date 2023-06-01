@@ -18,7 +18,7 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { DateTime } from 'luxon';
-import MarkdownIt from 'markdown-it';
+import markdownIt from 'markdown-it';
 import { computed, makeObservable, observable } from 'mobx';
 
 import './expandable_entry';
@@ -31,7 +31,7 @@ import { NUMERIC_TIME_FORMAT } from '../libs/time_utils';
 import { GitCommit } from '../services/milo_internal';
 import { commonStyles } from '../styles/stylesheets';
 
-const md = MarkdownIt('zero', { breaks: true, linkify: true })
+const md = markdownIt('zero', { breaks: true, linkify: true })
   .enable(['linkify', 'newline'])
   .use(bugLine)
   .use(reviewerLine)
@@ -47,7 +47,9 @@ export class CommitEntryElement extends MobxLitElement {
   @observable.ref number = 0;
   @observable.ref repoUrl = '';
   @observable.ref commit!: GitCommit;
-  onToggle = (_isExpanded: boolean) => {};
+  onToggle = (_isExpanded: boolean) => {
+    /* do nothing by default */
+  };
 
   @observable.ref private _expanded = false;
   get expanded() {
@@ -92,7 +94,8 @@ export class CommitEntryElement extends MobxLitElement {
 
   private renderChangedFiles() {
     return html`
-      Changed files: <span class="greyed-out">${this.commit.treeDiff.length}</span>
+      Changed files:
+      <span class="greyed-out">${this.commit.treeDiff.length}</span>
       <ul>
         ${this.changedFilenames.map((filename) => html`<li>${filename}</li>`)}
       </ul>
@@ -101,14 +104,21 @@ export class CommitEntryElement extends MobxLitElement {
 
   protected render() {
     return html`
-      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
+      <milo-expandable-entry
+        .expanded=${this.expanded}
+        .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
+      >
         <div slot="header" id="entry-header">
           <div id="header-number">${this.number}.</div>
           <div id="header-revision">
-            <a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank">${this.commit.id.substring(0, 12)}</a>
+            <a href=${`${this.repoUrl}/+/${this.commit.id}`} target="_blank"
+              >${this.commit.id.substring(0, 12)}</a
+            >
           </div>
           <div id="header-author">${this.commit.author.email}</div>
-          <div id="header-time">${this.commitTime.toFormat(NUMERIC_TIME_FORMAT)}</div>
+          <div id="header-time">
+            ${this.commitTime.toFormat(NUMERIC_TIME_FORMAT)}
+          </div>
           <div id="header-description">${this.commitTitle}</div>
         </div>
         <div slot="content" id="entry-content">

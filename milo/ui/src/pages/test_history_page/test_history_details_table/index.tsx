@@ -28,9 +28,13 @@ import './test_history_details_entry';
 import { MiloBaseElement } from '../../../components/milo_base';
 import { consumer } from '../../../libs/context';
 import { reportErrorAsync } from '../../../libs/error_handler';
-import { createTVPropGetter, getPropKeyLabel } from '../../../services/resultdb';
+import {
+  createTVPropGetter,
+  getPropKeyLabel,
+} from '../../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../../store';
 import { colorClasses, commonStyles } from '../../../styles/stylesheets';
+import { assertNonNullable } from '../../../libs/utils';
 import { TestHistoryDetailsEntryElement } from './test_history_details_entry';
 
 /**
@@ -63,15 +67,19 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
   }
 
   private getThdtColumns(columnWidths: readonly number[]) {
-    return '24px 135px 250px 400px' + columnWidths.map((width) => width + 'px').join(' ') + ' 1fr';
+    return (
+      '24px 135px 250px 400px' +
+      columnWidths.map((width) => width + 'px').join(' ') +
+      ' 1fr'
+    );
   }
 
   private allVariantsWereExpanded = false;
   toggleAllVariants(expand?: boolean) {
     this.allVariantsWereExpanded = expand ?? !this.allVariantsWereExpanded;
-    this.shadowRoot!.querySelectorAll<TestHistoryDetailsEntryElement>('milo-test-history-details-entry').forEach(
-      (e) => (e.expanded = this.allVariantsWereExpanded)
-    );
+    this.shadowRoot!.querySelectorAll<TestHistoryDetailsEntryElement>(
+      'milo-test-history-details-entry'
+    ).forEach((e) => (e.expanded = this.allVariantsWereExpanded));
   }
 
   connectedCallback() {
@@ -81,7 +89,11 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     this.addDisposer(
       reaction(
         () => this.pageState.entriesLoader,
-        (entriesLoader) => reportErrorAsync(this, async () => await entriesLoader?.loadFirstPage())(),
+        (entriesLoader) =>
+          reportErrorAsync(
+            this,
+            async () => await entriesLoader?.loadFirstPage()
+          )(),
         { fireImmediately: true }
       )
     );
@@ -96,14 +108,18 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     );
   }
 
-  private loadMore = reportErrorAsync(this, async () => await this.pageState.entriesLoader?.loadNextPage());
+  private loadMore = reportErrorAsync(
+    this,
+    async () => await this.pageState.entriesLoader?.loadNextPage()
+  );
 
   private renderAllVariants() {
     const entryLoaders = this.pageState.entriesLoader;
     return html`
       ${repeat(
         this.pageState.verdictBundles,
-        ({ verdict }) => `${verdict.testId} ${verdict.variantHash} ${verdict.invocationId}`,
+        ({ verdict }) =>
+          `${verdict.testId} ${verdict.variantHash} ${verdict.invocationId}`,
         (v) => html`
           <milo-test-history-details-entry
             .verdictBundle=${v}
@@ -114,7 +130,10 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
       )}
       <div id="variant-list-tail">
         Showing ${entryLoaders?.items.length || 0} /
-        ${this.pageState.selectedTestVerdictCount}${entryLoaders?.loadedAll ? '' : '+'} tests.
+        ${this.pageState.selectedTestVerdictCount}${entryLoaders?.loadedAll
+          ? ''
+          : '+'}
+        tests.
         <span
           class="active-text"
           style=${styleMap({
@@ -129,7 +148,9 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
     const entriesLoader = this.pageState.entriesLoader;
     return html`
       <span
-        style=${styleMap({ display: entriesLoader?.isLoading ?? true ? 'none' : '' })}
+        style=${styleMap({
+          display: entriesLoader?.isLoading ?? true ? 'none' : '',
+        })}
         @click=${() => this.loadMore()}
       >
         [load more]
@@ -147,7 +168,9 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
 
   private tableHeaderEle?: HTMLElement;
   protected updated() {
-    this.tableHeaderEle = this.shadowRoot!.getElementById('table-header')!;
+    this.tableHeaderEle = assertNonNullable(
+      this.shadowRoot?.getElementById('table-header')
+    );
   }
 
   /**
@@ -156,7 +179,9 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
   private sortByColumnFn(col: string) {
     return (ascending: boolean) => {
       const matchingKeys = [col, `-${col}`];
-      const newKeys = this.pageState.sortingKeys.filter((key) => !matchingKeys.includes(key));
+      const newKeys = this.pageState.sortingKeys.filter(
+        (key) => !matchingKeys.includes(key)
+      );
       newKeys.unshift((ascending ? '' : '-') + col);
       this.pageState.setSortingKeys(newKeys);
     };
@@ -172,9 +197,18 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
             .tooltip=${'status'}
             .sortByColumn=${this.sortByColumnFn('status')}
           ></milo-column-header>
-          <milo-column-header .label=${'Timestamp'} .tooltip=${'partitionTime'}></milo-column-header>
-          <milo-column-header .label=${'Invocation'} .tooltip=${'invocationId'}></milo-column-header>
-          <milo-column-header .label=${'Changelists'} .tooltip=${'changelists'}></milo-column-header>
+          <milo-column-header
+            .label=${'Timestamp'}
+            .tooltip=${'partitionTime'}
+          ></milo-column-header>
+          <milo-column-header
+            .label=${'Invocation'}
+            .tooltip=${'invocationId'}
+          ></milo-column-header>
+          <milo-column-header
+            .label=${'Changelists'}
+            .tooltip=${'changelists'}
+          ></milo-column-header>
           ${this.pageState.columnKeys.map(
             (col, i) => html`<milo-column-header
               .label=${getPropKeyLabel(col)}
@@ -192,19 +226,29 @@ export class TestHistoryDetailsTableElement extends MiloBaseElement {
                         // Live updating the width of the entire column can cause a bit
                         // of lag when there are many rows. Live updating just the
                         // column header is good enough.
-                        this.tableHeaderEle?.style.setProperty('--thdt-columns', this.getThdtColumns(newColWidths));
+                        this.tableHeaderEle?.style.setProperty(
+                          '--thdt-columns',
+                          this.getThdtColumns(newColWidths)
+                        );
                         return;
                       }
 
-                      this.tableHeaderEle?.style.removeProperty('--thdt-columns');
-                      this.store.userConfig.tests.setColumWidth(col, this.columnWidths[i] + delta);
+                      this.tableHeaderEle?.style.removeProperty(
+                        '--thdt-columns'
+                      );
+                      this.store.userConfig.tests.setColumWidth(
+                        col,
+                        this.columnWidths[i] + delta
+                      );
                     }
               }
               .sortByColumn=${this.sortByColumnFn(col)}
             ></milo-column-header>`
           )}
         </div>
-        <div id="test-variant-list" tabindex="0">${this.renderAllVariants()}</div>
+        <div id="test-variant-list" tabindex="0">
+          ${this.renderAllVariants()}
+        </div>
       </div>
     `;
   }
@@ -272,7 +316,13 @@ export interface DetailsTableProps {
 }
 
 export const DetailsTable = forwardRef(
-  (props: DetailsTableProps, ref: ForwardedRef<TestHistoryDetailsTableElement>) => {
-    return <milo-th-details-table {...props} ref={ref} class={props.className} />;
+  (
+    props: DetailsTableProps,
+    ref: ForwardedRef<TestHistoryDetailsTableElement>
+  ) => {
+    return (
+      <milo-th-details-table {...props} ref={ref} class={props.className} />
+    );
   }
 );
+DetailsTable.displayName = 'DetailsTable';

@@ -23,12 +23,23 @@ import './test_variants_table';
 import './test_variants_table/config_widget';
 import './search_box';
 import { MiloBaseElement } from '../../components/milo_base';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '../../libs/analytics_utils';
 import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportRenderError } from '../../libs/error_handler';
-import { URLExt } from '../../libs/utils';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportRenderError,
+} from '../../libs/error_handler';
+import { URLExt, assertNonNullable } from '../../libs/utils';
 import { consumeStore, StoreInstance } from '../../store';
-import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
+import {
+  consumeInvocationState,
+  InvocationStateInstance,
+} from '../../store/invocation_state';
 import { commonStyles } from '../../styles/stylesheets';
 import { TestVariantsTableElement } from './test_variants_table';
 
@@ -50,9 +61,14 @@ export class TestResultsTabElement extends MiloBaseElement {
   private allVariantsWereExpanded = false;
   private toggleAllVariants(expand: boolean) {
     this.allVariantsWereExpanded = expand;
-    this.shadowRoot!.querySelector<TestVariantsTableElement>('milo-test-variants-table')!.toggleAllVariants(expand);
+    assertNonNullable(
+      this.shadowRoot?.querySelector<TestVariantsTableElement>(
+        'milo-test-variants-table'
+      )
+    ).toggleAllVariants(expand);
   }
-  private readonly toggleAllVariantsByHotkey = () => this.toggleAllVariants(!this.allVariantsWereExpanded);
+  private readonly toggleAllVariantsByHotkey = () =>
+    this.toggleAllVariants(!this.allVariantsWereExpanded);
 
   constructor() {
     super();
@@ -62,24 +78,34 @@ export class TestResultsTabElement extends MiloBaseElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('test-results');
-    trackEvent(GA_CATEGORIES.TEST_RESULTS_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
+    trackEvent(
+      GA_CATEGORIES.TEST_RESULTS_TAB,
+      GA_ACTIONS.TAB_VISITED,
+      window.location.href
+    );
 
     // Update filters to match the querystring without saving them.
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.has('q')) {
-      this.invState.setSearchText(searchParams.get('q')!);
+    const q = searchParams.get('q');
+    if (q !== null) {
+      this.invState.setSearchText(q);
     }
-    if (searchParams.has('cols')) {
-      const cols = searchParams.get('cols')!;
+    const cols = searchParams.get('cols');
+    if (cols !== null) {
       this.invState.setColumnKeys(cols.split(',').filter((col) => col !== ''));
     }
-    if (searchParams.has('sortby')) {
-      const sortingKeys = searchParams.get('sortby')!;
-      this.invState.setSortingKeys(sortingKeys.split(',').filter((col) => col !== ''));
+    const sortBy = searchParams.get('sortby');
+    if (sortBy !== null) {
+      this.invState.setSortingKeys(
+        sortBy.split(',').filter((col) => col !== '')
+      );
     }
-    if (searchParams.has('groupby')) {
-      const groupingKeys = searchParams.get('groupby')!;
-      this.invState.setGroupingKeys(groupingKeys.split(',').filter((key) => key !== ''));
+    const groupBy = searchParams.get('groupby');
+    if (groupBy !== null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.invState.setGroupingKeys(
+        groupBy.split(',').filter((key) => key !== '')
+      );
     }
 
     // Update the querystring when filters are updated.
@@ -116,14 +142,20 @@ export class TestResultsTabElement extends MiloBaseElement {
         <div id="no-invocation">
           No associated invocation.<br />
           You need to integrate with ResultDB to see the test results.<br />
-          See <a href="http://go/resultdb" target="_blank">go/resultdb</a> or ask
-          <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a> for help.
+          See <a href="http://go/resultdb" target="_blank">go/resultdb</a> or
+          ask
+          <a href="mailto: luci-eng@google.com" target="_blank">luci-eng@</a>
+          for help.
         </div>
       `;
     }
 
     return html`
-      ${this.invState.warning ? html`<div id="test-results-tab-warning">${this.invState.warning}</div>` : ''}
+      ${this.invState.warning
+        ? html`<div id="test-results-tab-warning">
+            ${this.invState.warning}
+          </div>`
+        : ''}
       <milo-test-variants-table></milo-test-variants-table>
     `;
   }
@@ -131,7 +163,9 @@ export class TestResultsTabElement extends MiloBaseElement {
   protected render = reportRenderError(this, () => {
     return html`
       <div id="header">
-        <milo-tvt-config-widget class="filters-container"></milo-tvt-config-widget>
+        <milo-tvt-config-widget
+          class="filters-container"
+        ></milo-tvt-config-widget>
         <div class="filters-container-delimiter"></div>
         <milo-trt-search-box></milo-trt-search-box>
         <milo-hotkey
@@ -139,8 +173,18 @@ export class TestResultsTabElement extends MiloBaseElement {
           .handler=${this.toggleAllVariantsByHotkey}
           title="press x to expand/collapse all entries"
         >
-          <mwc-button dense unelevated @click=${() => this.toggleAllVariants(true)}>Expand All</mwc-button>
-          <mwc-button dense unelevated @click=${() => this.toggleAllVariants(false)}>Collapse All</mwc-button>
+          <mwc-button
+            dense
+            unelevated
+            @click=${() => this.toggleAllVariants(true)}
+            >Expand All</mwc-button
+          >
+          <mwc-button
+            dense
+            unelevated
+            @click=${() => this.toggleAllVariants(false)}
+            >Collapse All</mwc-button
+          >
         </milo-hotkey>
       </div>
       ${this.renderBody()}
@@ -203,7 +247,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-test-results-tab': {};
+      'milo-test-results-tab': Record<string, never>;
     }
   }
 }

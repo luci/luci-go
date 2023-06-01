@@ -107,7 +107,10 @@ export function batched<T extends unknown[], V>(
       };
     } else {
       // Attempt to combine the new call with the current batch.
-      const combineResult = config.combineParamSets(currentBatch.batchedParams, params);
+      const combineResult = config.combineParamSets(
+        currentBatch.batchedParams,
+        params
+      );
       if (combineResult.ok) {
         currentBatch.batchedParams = combineResult.value;
         currentBatch.paramSets.push(params);
@@ -134,7 +137,10 @@ export function batched<T extends unknown[], V>(
     if (resolveTime < currentBatch.resolveTime) {
       currentBatch.resolveTime = resolveTime;
       clearTimeout(currentBatch.scheduleId);
-      currentBatch.scheduleId = setTimeout(processCurrentBatch, opt.maxPendingMs);
+      currentBatch.scheduleId = setTimeout(
+        processCurrentBatch,
+        opt.maxPendingMs
+      );
     }
 
     return promise;

@@ -30,7 +30,7 @@ export function BuildTagRow({ tagKey, tagValue }: BuildTagRowProps) {
       <td>{tagKey}:</td>
       <td css={{ clear: 'both', overflowWrap: 'anywhere' }}>
         {url ? (
-          <a href={url} target="_blank">
+          <a href={url} target="_blank" rel="noreferrer">
             {tagValue}
           </a>
         ) : (

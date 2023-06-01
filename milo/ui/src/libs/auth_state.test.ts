@@ -14,7 +14,11 @@
 
 import { expect } from '@jest/globals';
 
-import { getAuthStateCache, getAuthStateCacheSync, setAuthStateCache } from './auth_state';
+import {
+  getAuthStateCache,
+  getAuthStateCacheSync,
+  setAuthStateCache,
+} from './auth_state';
 
 describe('auth_state', () => {
   it('support accessing auth state synchronously', () => {

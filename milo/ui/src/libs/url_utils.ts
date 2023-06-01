@@ -12,34 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Build, BuilderID, GerritChange, GitilesCommit } from '../services/buildbucket';
+import {
+  Build,
+  BuilderID,
+  GerritChange,
+  GitilesCommit,
+} from '../services/buildbucket';
 import { TestLocation } from '../services/resultdb';
 
-export function getBuildURLPathFromBuildData(build: Pick<Build, 'builder' | 'number' | 'id'>): string {
-  return getBuildURLPath(build.builder, build.number ? build.number.toString() : `b${build.id}`);
+export function getBuildURLPathFromBuildData(
+  build: Pick<Build, 'builder' | 'number' | 'id'>
+): string {
+  return getBuildURLPath(
+    build.builder,
+    build.number ? build.number.toString() : `b${build.id}`
+  );
 }
 
 export function getBuildURLPathFromBuildId(buildId: string): string {
   return `/ui/b/${buildId}`;
 }
 
-export function getBuildURLPath(builder: BuilderID, buildIdOrNum: string): string {
+export function getBuildURLPath(
+  builder: BuilderID,
+  buildIdOrNum: string
+): string {
   return `/ui${getBuilderURLPath(builder)}/${buildIdOrNum}`;
 }
 
 export function getBuilderURLPath(builder: BuilderID): string {
-  return `${getProjectURLPath(builder.project)}/builders/${builder.bucket}/${encodeURIComponent(builder.builder)}`;
+  return `${getProjectURLPath(builder.project)}/builders/${
+    builder.bucket
+  }/${encodeURIComponent(builder.builder)}`;
 }
 
 export function getProjectURLPath(proj: string): string {
   return `/p/${proj}`;
 }
 
-export function getLegacyBuildURLPath(builder: BuilderID, buildNumOrId: string) {
+export function getLegacyBuildURLPath(
+  builder: BuilderID,
+  buildNumOrId: string
+) {
   return `/old${getBuilderURLPath(builder)}/${buildNumOrId}`;
 }
 
-export function getGitilesRepoURL(commit: Pick<GitilesCommit, 'host' | 'project'>) {
+export function getGitilesRepoURL(
+  commit: Pick<GitilesCommit, 'host' | 'project'>
+) {
   return `https://${commit.host}/${commit.project}`;
 }
 

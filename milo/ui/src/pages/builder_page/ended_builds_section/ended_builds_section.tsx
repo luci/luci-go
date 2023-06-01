@@ -61,7 +61,11 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
 
   const { data, error, isError, isLoading, isPreviousData } = useBuilds(
     {
-      predicate: { builder: builderId, includeExperimental: true, status: BuildStatusMask.EndedMask },
+      predicate: {
+        builder: builderId,
+        includeExperimental: true,
+        status: BuildStatusMask.EndedMask,
+      },
       pageSize,
       pageToken: currentPageToken,
       fields: FIELD_MASK,

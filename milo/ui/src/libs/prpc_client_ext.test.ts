@@ -20,11 +20,20 @@ import { PrpcClientExt } from './prpc_client_ext';
 describe('PrpcClientExt', () => {
   it('should grab access token from getAccessToken', async () => {
     let accessToken = '1';
-    const fetchStub = jest.fn((_url: URL | RequestInfo, _req: RequestInit | undefined) => {
-      return Promise.resolve(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
-    });
+    const fetchStub = jest.fn(
+      (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
+        return Promise.resolve(
+          new Response(")]}'\n{}", {
+            headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() },
+          })
+        );
+      }
+    );
 
-    const client = new PrpcClientExt({ fetchImpl: fetchStub }, () => accessToken);
+    const client = new PrpcClientExt(
+      { fetchImpl: fetchStub },
+      () => accessToken
+    );
     await client.call('service', 'method', {});
     const req1 = new Request(...fetchStub.mock.lastCall!);
     expect(req1.headers.get('Authorization')).toStrictEqual('Bearer 1');
@@ -37,13 +46,29 @@ describe('PrpcClientExt', () => {
 
   it('should not override additional header', async () => {
     const accessToken = '1';
-    const fetchStub = jest.fn((_url: URL | RequestInfo, _req: RequestInit | undefined) => {
-      return Promise.resolve(new Response(")]}'\n{}", { headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() } }));
-    });
+    const fetchStub = jest.fn(
+      (_url: URL | RequestInfo, _req: RequestInit | undefined) => {
+        return Promise.resolve(
+          new Response(")]}'\n{}", {
+            headers: { 'X-Prpc-Grpc-Code': RpcCode.OK.toString() },
+          })
+        );
+      }
+    );
 
-    const client = new PrpcClientExt({ fetchImpl: fetchStub }, () => accessToken);
-    await client.call('service', 'method', {}, { Authorization: 'additional-header' });
+    const client = new PrpcClientExt(
+      { fetchImpl: fetchStub },
+      () => accessToken
+    );
+    await client.call(
+      'service',
+      'method',
+      {},
+      { Authorization: 'additional-header' }
+    );
     const req1 = new Request(...fetchStub.mock.lastCall!);
-    expect(req1.headers.get('Authorization')).toStrictEqual('additional-header');
+    expect(req1.headers.get('Authorization')).toStrictEqual(
+      'additional-header'
+    );
   });
 });

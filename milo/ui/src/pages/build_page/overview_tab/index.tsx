@@ -16,7 +16,11 @@ import styled from '@emotion/styled';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../../libs/analytics_utils';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '../../../libs/analytics_utils';
 import { useStore } from '../../../store';
 import { ActionsSection, Dialog } from './actions_section';
 import { BuildLogSection } from './build_log_section';
@@ -73,13 +77,23 @@ export const OverviewTab = observer(() => {
 
   useEffect(() => {
     store.setSelectedTabId('overview');
-    trackEvent(GA_CATEGORIES.OVERVIEW_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
+    trackEvent(
+      GA_CATEGORIES.OVERVIEW_TAB,
+      GA_ACTIONS.TAB_VISITED,
+      window.location.href
+    );
   }, []);
 
   return (
     <>
-      <RetryBuildDialog open={activeDialog === Dialog.RetryBuild} onClose={() => setActiveDialog(Dialog.None)} />
-      <CancelBuildDialog open={activeDialog === Dialog.CancelBuild} onClose={() => setActiveDialog(Dialog.None)} />
+      <RetryBuildDialog
+        open={activeDialog === Dialog.RetryBuild}
+        onClose={() => setActiveDialog(Dialog.None)}
+      />
+      <CancelBuildDialog
+        open={activeDialog === Dialog.CancelBuild}
+        onClose={() => setActiveDialog(Dialog.None)}
+      />
       <ContainerDiv>
         <FirstColumn>
           <SummarySection />

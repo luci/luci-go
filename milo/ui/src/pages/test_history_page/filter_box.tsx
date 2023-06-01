@@ -58,7 +58,8 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
     return this.uncommittedFilterText.split(' ').pop() || '';
   }
   @computed private get queryPrefix() {
-    const searchTextPrefixLen = this.uncommittedFilterText.length - this.lastSubQuery.length;
+    const searchTextPrefixLen =
+      this.uncommittedFilterText.length - this.lastSubQuery.length;
     return this.uncommittedFilterText.slice(0, searchTextPrefixLen);
   }
   @computed private get suggestions() {
@@ -85,7 +86,9 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
         .key=${'/'}
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
-          setTimeout(() => this.shadowRoot?.getElementById('input-box')!.focus());
+          setTimeout(() =>
+            this.shadowRoot?.getElementById('input-box')!.focus()
+          );
         }}
       >
         <milo-auto-complete
@@ -94,15 +97,20 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
           .value=${this.uncommittedFilterText}
           .placeHolder=${'Press / to filter test history...'}
           .suggestions=${this.suggestions}
-          .onValueUpdate=${(newVal: string) => (this.uncommittedFilterText = newVal)}
+          .onValueUpdate=${(newVal: string) =>
+            (this.uncommittedFilterText = newVal)}
           .onSuggestionSelected=${(suggestion: SuggestionEntry) => {
-            this.uncommittedFilterText = this.queryPrefix + suggestion.value! + ' ';
+            this.uncommittedFilterText =
+              this.queryPrefix + suggestion.value! + ' ';
             this.commitFilter();
           }}
           .onComplete=${() => this.commitFilter()}
         >
           <mwc-icon
-            style=${styleMap({ color: this.uncommittedFilterText === '' ? '' : 'var(--active-color)' })}
+            style=${styleMap({
+              color:
+                this.uncommittedFilterText === '' ? '' : 'var(--active-color)',
+            })}
             slot="pre-icon"
           >
             filter_alt
@@ -113,7 +121,9 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
                   id="clear-filter"
                   slot="post-icon"
                   title="Clear"
-                  style=${styleMap({ display: this.uncommittedFilterText === '' ? 'none' : '' })}
+                  style=${styleMap({
+                    display: this.uncommittedFilterText === '' ? 'none' : '',
+                  })}
                   @click=${() => {
                     this.uncommittedFilterText = '';
                     this.commitFilter();

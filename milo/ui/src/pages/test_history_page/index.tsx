@@ -83,7 +83,10 @@ export const TestHistoryPage = observer(() => {
 
   // Update the querystring when filters are updated.
   useEffect(() => {
-    setSearchParams({ ...(!pageState.filterText ? {} : { q: pageState.filterText }) }, { replace: true });
+    setSearchParams(
+      { ...(!pageState.filterText ? {} : { q: pageState.filterText }) },
+      { replace: true }
+    );
   }, [pageState.filterText]);
 
   useEffect(() => {
@@ -100,7 +103,10 @@ export const TestHistoryPage = observer(() => {
     <PageContainer>
       <TestIdLabel projectOrRealm={projectOrRealm} testId={testId} />
       <LinearProgress value={100} variant="determinate" />
-      <FilterBox css={{ width: 'calc(100% - 10px)', margin: '5px' }} initialFilterText={initialFilterText} />
+      <FilterBox
+        css={{ width: 'calc(100% - 10px)', margin: '5px' }}
+        initialFilterText={initialFilterText}
+      />
       <GraphConfig />
       <GraphContainer>
         <VariantDefTable css={{ gridArea: 'v-table' }} />
@@ -117,7 +123,9 @@ export const TestHistoryPage = observer(() => {
       </div>
       <VerdictDetailsDialog />
       {/* Add padding to support free scrolling when the dialog is open. */}
-      {!pageState.selectedGroup && <div css={{ width: '100%', height: '60vh' }} />}
+      {!pageState.selectedGroup && (
+        <div css={{ width: '100%', height: '60vh' }} />
+      )}
     </PageContainer>
   );
 });

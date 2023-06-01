@@ -38,7 +38,7 @@ export function ChangelistsTooltip({ changelists }: ChangelistBadgeProps) {
   return (
     <div css={{ padding: 5 }}>
       {changelists.map((cl, i) => (
-        <a key={i} href={getClLink(cl)} target="_blank">
+        <a key={i} href={getClLink(cl)} target="_blank" rel="noreferrer">
           {getClLabel(cl)}
         </a>
       ))}

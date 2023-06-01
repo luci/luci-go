@@ -34,11 +34,20 @@ import { TEST_STATUS_DISPLAY_MAP } from '../../libs/constants';
 import { consumer } from '../../libs/context';
 import { reportRenderError } from '../../libs/error_handler';
 import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { displayCompactDuration, displayDuration, parseProtoDuration } from '../../libs/time_utils';
+import {
+  displayCompactDuration,
+  displayDuration,
+  parseProtoDuration,
+} from '../../libs/time_utils';
 import { getInvURLPath, getRawArtifactURLPath } from '../../libs/url_utils';
 import { unwrapOrElse } from '../../libs/utils';
 import { Cluster, makeClusterLink } from '../../services/luci_analysis';
-import { Artifact, ListArtifactsResponse, parseTestResultName, TestResult } from '../../services/resultdb';
+import {
+  Artifact,
+  ListArtifactsResponse,
+  parseTestResultName,
+  TestResult,
+} from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
 import { colorClasses, commonStyles } from '../../styles/stylesheets';
 
@@ -93,7 +102,9 @@ export class ResultEntryElement extends MobxLitElement {
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(resultdb.listArtifacts({ parent: this.testResult.name }));
+    return fromPromise(
+      resultdb.listArtifacts({ parent: this.testResult.name })
+    );
   }
 
   @computed private get resultArtifacts() {
@@ -116,7 +127,9 @@ export class ResultEntryElement extends MobxLitElement {
       return fromPromise(Promise.race([]));
     }
     // TODO(weiweilin): handle pagination.
-    return fromPromise(resultdb.listArtifacts({ parent: 'invocations/' + this.parentInvId }));
+    return fromPromise(
+      resultdb.listArtifacts({ parent: 'invocations/' + this.parentInvId })
+    );
   }
 
   @computed private get invArtifacts() {
@@ -134,8 +147,12 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed private get artifactsMapping() {
     return new Map([
-      ...this.resultArtifacts.map((obj) => [obj.artifactId, obj] as [string, Artifact]),
-      ...this.invArtifacts.map((obj) => ['inv-level/' + obj.artifactId, obj] as [string, Artifact]),
+      ...this.resultArtifacts.map(
+        (obj) => [obj.artifactId, obj] as [string, Artifact]
+      ),
+      ...this.invArtifacts.map(
+        (obj) => ['inv-level/' + obj.artifactId, obj] as [string, Artifact]
+      ),
     ]);
   }
 
@@ -145,7 +162,9 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed private get testhausLogArtifact() {
     // Check for Testhaus logs at the test result level first.
-    const log = this.resultArtifacts.find((a) => a.artifactId === 'testhaus_logs');
+    const log = this.resultArtifacts.find(
+      (a) => a.artifactId === 'testhaus_logs'
+    );
     if (log) {
       return log;
     }
@@ -160,7 +179,9 @@ export class ResultEntryElement extends MobxLitElement {
 
   @computed private get imageDiffArtifactGroup() {
     return {
-      expected: this.resultArtifacts.find((a) => a.artifactId === 'expected_image'),
+      expected: this.resultArtifacts.find(
+        (a) => a.artifactId === 'expected_image'
+      ),
       actual: this.resultArtifacts.find((a) => a.artifactId === 'actual_image'),
       diff: this.resultArtifacts.find((a) => a.artifactId === 'image_diff'),
     };
@@ -172,7 +193,9 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     // There can be at most one failureReason cluster.
-    const reasonCluster = this.clusters.filter((c) => c.clusterId.algorithm.startsWith('reason-'))?.[0];
+    const reasonCluster = this.clusters.filter((c) =>
+      c.clusterId.algorithm.startsWith('reason-')
+    )?.[0];
     if (!reasonCluster) {
       return null;
     }
@@ -196,12 +219,17 @@ export class ResultEntryElement extends MobxLitElement {
         <span slot="header"
           >Failure
           Reason${this.clusterLink
-            ? html` (<a href=${this.clusterLink} target="_blank" @click=${(e: Event) => e.stopImmediatePropagation()}
+            ? html` (<a
+                  href=${this.clusterLink}
+                  target="_blank"
+                  @click=${(e: Event) => e.stopImmediatePropagation()}
                   >similar failures</a
                 >)`
             : ''}:
         </span>
-        <pre id="failure-reason" class="info-block" slot="content">${errMsg}</pre>
+        <pre id="failure-reason" class="info-block" slot="content">
+${errMsg}</pre
+        >
       </milo-expandable-entry>
     `;
   }
@@ -227,7 +255,11 @@ export class ResultEntryElement extends MobxLitElement {
         ></milo-link-artifact>`;
       }
 
-      return html` <div class="summary-log-link">View logs in: ${testhausLink}${delimiter}${stainlessLink}</div> `;
+      return html`
+        <div class="summary-log-link">
+          View logs in: ${testhausLink}${delimiter}${stainlessLink}
+        </div>
+      `;
     }
 
     return null;
@@ -245,7 +277,8 @@ export class ResultEntryElement extends MobxLitElement {
           <div id="summary-html" class="info-block">
             <milo-artifact-provider
               .artifacts=${this.artifactsMapping}
-              .finalized=${this.invArtifacts$.state !== PENDING && this.resultArtifacts$.state !== PENDING}
+              .finalized=${this.invArtifacts$.state !== PENDING &&
+              this.resultArtifacts$.state !== PENDING}
             >
               ${unsafeHTML(this.testResult.summaryHtml)}
             </milo-artifact-provider>
@@ -258,9 +291,13 @@ export class ResultEntryElement extends MobxLitElement {
 
   private renderArtifactLink(artifact: Artifact) {
     if (artifact.contentType === 'text/x-uri') {
-      return html`<milo-link-artifact .artifact=${artifact}></milo-link-artifact>`;
+      return html`<milo-link-artifact
+        .artifact=${artifact}
+      ></milo-link-artifact>`;
     }
-    return html`<a href=${getRawArtifactURLPath(artifact.name)} target="_blank">${artifact.artifactId}</a>`;
+    return html`<a href=${getRawArtifactURLPath(artifact.name)} target="_blank"
+      >${artifact.artifactId}</a
+    >`;
   }
 
   private renderInvocationLevelArtifacts() {
@@ -269,25 +306,35 @@ export class ResultEntryElement extends MobxLitElement {
     }
 
     return html`
-      <div id="inv-artifacts-header">From the parent inv <a href=${getInvURLPath(this.parentInvId)}></a>:</div>
+      <div id="inv-artifacts-header">
+        From the parent inv <a href=${getInvURLPath(this.parentInvId)}></a>:
+      </div>
       <ul>
-        ${this.invArtifacts.map((artifact) => html` <li>${this.renderArtifactLink(artifact)}</li> `)}
+        ${this.invArtifacts.map(
+          (artifact) => html` <li>${this.renderArtifactLink(artifact)}</li> `
+        )}
       </ul>
     `;
   }
 
   private renderArtifacts() {
-    const artifactCount = this.resultArtifacts.length + this.invArtifacts.length;
+    const artifactCount =
+      this.resultArtifacts.length + this.invArtifacts.length;
     if (artifactCount === 0) {
       return html``;
     }
 
     return html`
       <milo-expandable-entry .contentRuler="invisible">
-        <span slot="header"> Artifacts: <span class="greyed-out">${artifactCount}</span> </span>
+        <span slot="header">
+          Artifacts: <span class="greyed-out">${artifactCount}</span>
+        </span>
         <div slot="content">
           <ul>
-            ${this.resultArtifacts.map((artifact) => html` <li>${this.renderArtifactLink(artifact)}</li> `)}
+            ${this.resultArtifacts.map(
+              (artifact) =>
+                html` <li>${this.renderArtifactLink(artifact)}</li> `
+            )}
           </ul>
           ${this.renderInvocationLevelArtifacts()}
         </div>
@@ -303,7 +350,10 @@ export class ResultEntryElement extends MobxLitElement {
     return html`
       ${this.renderFailureReason()}${this.renderSummaryHtml()}
       ${this.textDiffArtifact &&
-      html` <milo-text-diff-artifact .artifact=${this.textDiffArtifact}> </milo-text-diff-artifact> `}
+      html`
+        <milo-text-diff-artifact .artifact=${this.textDiffArtifact}>
+        </milo-text-diff-artifact>
+      `}
       ${this.imageDiffArtifactGroup.diff &&
       html`
         <milo-image-diff-artifact
@@ -314,7 +364,11 @@ export class ResultEntryElement extends MobxLitElement {
         </milo-image-diff-artifact>
       `}
       ${this.renderArtifacts()}
-      ${this.testResult.tags?.length ? html`<milo-tags-entry .tags=${this.testResult.tags}></milo-tags-entry>` : ''}
+      ${this.testResult.tags?.length
+        ? html`<milo-tags-entry
+            .tags=${this.testResult.tags}
+          ></milo-tags-entry>`
+        : ''}
     `;
   }
 
@@ -327,9 +381,14 @@ export class ResultEntryElement extends MobxLitElement {
       [compactDuration, durationUnits] = displayCompactDuration(this.duration);
     }
     return html`
-      <milo-expandable-entry .expanded=${this.expanded} .onToggle=${(expanded: boolean) => (this.expanded = expanded)}>
+      <milo-expandable-entry
+        .expanded=${this.expanded}
+        .onToggle=${(expanded: boolean) => (this.expanded = expanded)}
+      >
         <span id="header" slot="header">
-          <div class="duration ${durationUnits}" title=${duration}>${compactDuration}</div>
+          <div class="duration ${durationUnits}" title=${duration}>
+            ${compactDuration}
+          </div>
           run #${this.id}
           <span class=${this.testResult.expected ? 'expected' : 'unexpected'}>
             ${this.testResult.expected ? 'expectedly' : 'unexpectedly'}
@@ -375,7 +434,11 @@ export class ResultEntryElement extends MobxLitElement {
     if (matchBuild) {
       return html`
         in build:
-        <a href="/ui/b/${matchBuild[1]}" target="_blank" @click=${(e: Event) => e.stopPropagation()}>
+        <a
+          href="/ui/b/${matchBuild[1]}"
+          target="_blank"
+          @click=${(e: Event) => e.stopPropagation()}
+        >
           ${matchBuild[1]}
         </a>
       `;

@@ -53,9 +53,15 @@ export class AutoCompleteElement extends MiloBaseElement {
    */
   @observable.ref highlight = false;
 
-  onValueUpdate = (_newVal: string) => {};
-  onSuggestionSelected = (_suggestion: SuggestionEntry) => {};
-  onComplete = () => {};
+  onValueUpdate = (_newVal: string) => {
+    /* do nothing by default */
+  };
+  onSuggestionSelected = (_suggestion: SuggestionEntry) => {
+    /* do nothing by default */
+  };
+  onComplete = () => {
+    /* do nothing by default */
+  };
 
   focus() {
     this.inputBox.focus();
@@ -89,7 +95,9 @@ export class AutoCompleteElement extends MiloBaseElement {
   }
 
   protected updated() {
-    this.shadowRoot!.querySelector('.dropdown-item.selected')?.scrollIntoView({ block: 'nearest' });
+    this.shadowRoot!.querySelector('.dropdown-item.selected')?.scrollIntoView({
+      block: 'nearest',
+    });
   }
 
   protected firstUpdated() {
@@ -129,7 +137,11 @@ export class AutoCompleteElement extends MiloBaseElement {
 
   private externalClickHandler = (e: MouseEvent) => {
     // If user clicks on other elements, dismiss the dropdown.
-    if (!e.composedPath().some((t) => t === this.inputBox || t === this.dropdownContainer)) {
+    if (
+      !e
+        .composedPath()
+        .some((t) => t === this.inputBox || t === this.dropdownContainer)
+    ) {
       this.clearSuggestion();
     }
   };
@@ -144,10 +156,15 @@ export class AutoCompleteElement extends MiloBaseElement {
     }
     return html`
       <tr
-        class=${classMap({ 'dropdown-item': true, selected: suggestionIndex === this.selectedIndex })}
+        class=${classMap({
+          'dropdown-item': true,
+          selected: suggestionIndex === this.selectedIndex,
+        })}
         @mouseover=${() => (this.selectedIndex = suggestionIndex)}
         @click=${() => {
-          this.onSuggestionSelected(this.suggestions[this.selectedIndex] as SuggestionEntry);
+          this.onSuggestionSelected(
+            this.suggestions[this.selectedIndex] as SuggestionEntry
+          );
           this.focus();
         }}
       >
@@ -165,7 +182,8 @@ export class AutoCompleteElement extends MiloBaseElement {
           id="input-box"
           placeholder=${this.hint}
           .value=${this.value}
-          @input=${(e: InputEvent) => this.onValueUpdate((e.target as HTMLInputElement).value)}
+          @input=${(e: InputEvent) =>
+            this.onValueUpdate((e.target as HTMLInputElement).value)}
           @focus=${() => (this.focused = true)}
           @blur=${() => (this.focused = false)}
           @keydown=${(e: KeyboardEvent) => {
@@ -175,7 +193,11 @@ export class AutoCompleteElement extends MiloBaseElement {
                   this.showSuggestions = true;
                 }
                 // Select the next suggestion entry.
-                for (let nextIndex = this.selectedIndex + 1; nextIndex < this.suggestions.length; ++nextIndex) {
+                for (
+                  let nextIndex = this.selectedIndex + 1;
+                  nextIndex < this.suggestions.length;
+                  ++nextIndex
+                ) {
                   if (!this.suggestions[nextIndex].isHeader) {
                     action(() => (this.selectedIndex = nextIndex))();
                     break;
@@ -184,7 +206,11 @@ export class AutoCompleteElement extends MiloBaseElement {
                 break;
               case 'ArrowUp':
                 // Select the previous suggestion entry.
-                for (let nextIndex = this.selectedIndex - 1; nextIndex >= 0; --nextIndex) {
+                for (
+                  let nextIndex = this.selectedIndex - 1;
+                  nextIndex >= 0;
+                  --nextIndex
+                ) {
                   if (!this.suggestions[nextIndex].isHeader) {
                     action(() => (this.selectedIndex = nextIndex))();
                     break;
@@ -196,7 +222,9 @@ export class AutoCompleteElement extends MiloBaseElement {
                 break;
               case 'Enter':
                 if (this.selectedIndex !== -1) {
-                  this.onSuggestionSelected(this.suggestions[this.selectedIndex] as SuggestionEntry);
+                  this.onSuggestionSelected(
+                    this.suggestions[this.selectedIndex] as SuggestionEntry
+                  );
                 } else {
                   if (this.value !== '' && !this.value.endsWith(' ')) {
                     // Complete the current sub-query if it's not already completed.
@@ -215,10 +243,15 @@ export class AutoCompleteElement extends MiloBaseElement {
         <slot name="post-icon"><span></span></slot>
         <div
           id="dropdown-container"
-          style=${styleMap({ display: this.showSuggestions && this.suggestions.length > 0 ? '' : 'none' })}
+          style=${styleMap({
+            display:
+              this.showSuggestions && this.suggestions.length > 0 ? '' : 'none',
+          })}
         >
           <table id="dropdown">
-            ${this.suggestions.map((suggestion, i) => this.renderSuggestion(suggestion, i))}
+            ${this.suggestions.map((suggestion, i) =>
+              this.renderSuggestion(suggestion, i)
+            )}
           </table>
         </div>
       </div>

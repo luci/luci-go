@@ -30,11 +30,26 @@ import { autorun, makeObservable, observable } from 'mobx';
 
 import '../../components/dot_spinner';
 import { MiloBaseElement } from '../../components/milo_base';
-import { HideTooltipEventDetail, ShowTooltipEventDetail } from '../../components/tooltip';
-import { GA_ACTIONS, GA_CATEGORIES, trackEvent } from '../../libs/analytics_utils';
-import { BUILD_STATUS_CLASS_MAP, PREDEFINED_TIME_INTERVALS } from '../../libs/constants';
+import {
+  HideTooltipEventDetail,
+  ShowTooltipEventDetail,
+} from '../../components/tooltip';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '../../libs/analytics_utils';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  PREDEFINED_TIME_INTERVALS,
+} from '../../libs/constants';
 import { consumer } from '../../libs/context';
-import { errorHandler, forwardWithoutMsg, reportError, reportRenderError } from '../../libs/error_handler';
+import {
+  errorHandler,
+  forwardWithoutMsg,
+  reportError,
+  reportRenderError,
+} from '../../libs/error_handler';
 import { enumerate } from '../../libs/iter_utils';
 import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
 import { roundDown } from '../../libs/utils';
@@ -59,7 +74,8 @@ const TEXT_MARGIN = 10;
 
 const SIDE_PANEL_WIDTH = 400;
 const MIN_GRAPH_WIDTH = 500 + SIDE_PANEL_WIDTH;
-const SIDE_PANEL_RECT_WIDTH = SIDE_PANEL_WIDTH - STEP_MARGIN * 2 - BORDER_SIZE * 2;
+const SIDE_PANEL_RECT_WIDTH =
+  SIDE_PANEL_WIDTH - STEP_MARGIN * 2 - BORDER_SIZE * 2;
 const STEP_IDENT = 15;
 
 const LIST_ITEM_WIDTH = SIDE_PANEL_RECT_WIDTH - TEXT_MARGIN * 2;
@@ -92,7 +108,12 @@ export class TimelineTabElement extends MiloBaseElement {
   private timeInterval!: d3.TimeInterval;
   private readonly nowTimestamp = Date.now();
   private readonly now = DateTime.fromMillis(this.nowTimestamp);
-  private relativeTimeText!: Selection<SVGTextElement, unknown, null, undefined>;
+  private relativeTimeText!: Selection<
+    SVGTextElement,
+    unknown,
+    null,
+    undefined
+  >;
 
   constructor() {
     super();
@@ -102,10 +123,17 @@ export class TimelineTabElement extends MiloBaseElement {
   connectedCallback() {
     super.connectedCallback();
     this.store.setSelectedTabId('timeline');
-    trackEvent(GA_CATEGORIES.TIMELINE_TAB, GA_ACTIONS.TAB_VISITED, window.location.href);
+    trackEvent(
+      GA_CATEGORIES.TIMELINE_TAB,
+      GA_ACTIONS.TAB_VISITED,
+      window.location.href
+    );
 
     const syncWidth = () => {
-      this.totalWidth = Math.max(window.innerWidth - 2 * MARGIN, MIN_GRAPH_WIDTH);
+      this.totalWidth = Math.max(
+        window.innerWidth - 2 * MARGIN,
+        MIN_GRAPH_WIDTH
+      );
       this.bodyWidth = this.totalWidth - SIDE_PANEL_WIDTH;
     };
     window.addEventListener('resize', syncWidth);
@@ -124,7 +152,9 @@ export class TimelineTabElement extends MiloBaseElement {
       return html`<div id="no-steps">No steps were run.</div>`;
     }
 
-    return html`<div id="timeline">${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}</div>`;
+    return html`<div id="timeline">
+      ${this.sidePanelEle}${this.headerEle}${this.bodyEle}${this.footerEle}
+    </div>`;
   });
 
   private renderTimeline = reportError(this, () => {
@@ -137,7 +167,9 @@ export class TimelineTabElement extends MiloBaseElement {
     const endTime = build.endTime?.toMillis() || this.nowTimestamp;
 
     this.bodyHeight = build.steps.length * ROW_HEIGHT - BORDER_SIZE;
-    const padding = Math.ceil(((endTime - startTime) * STEP_EXTRA_WIDTH) / this.bodyWidth) / 2;
+    const padding =
+      Math.ceil(((endTime - startTime) * STEP_EXTRA_WIDTH) / this.bodyWidth) /
+      2;
 
     // Calc attributes shared among components.
     this.scaleTime = scaleTime()
@@ -151,9 +183,13 @@ export class TimelineTabElement extends MiloBaseElement {
       // Ensure the top and bottom borders are not rendered.
       .range([-HALF_BORDER_SIZE, this.bodyHeight + HALF_BORDER_SIZE]);
 
-    const maxInterval = (endTime - startTime + 2 * padding) / (this.bodyWidth / V_GRID_LINE_MAX_GAP);
+    const maxInterval =
+      (endTime - startTime + 2 * padding) /
+      (this.bodyWidth / V_GRID_LINE_MAX_GAP);
 
-    this.timeInterval = timeMillisecond.every(roundDown(maxInterval, PREDEFINED_TIME_INTERVALS))!;
+    this.timeInterval = timeMillisecond.every(
+      roundDown(maxInterval, PREDEFINED_TIME_INTERVALS)
+    )!;
 
     // Render each component.
     this.renderHeader();
@@ -176,11 +212,16 @@ export class TimelineTabElement extends MiloBaseElement {
       .attr('x', TEXT_MARGIN)
       .attr('y', TOP_AXIS_HEIGHT - TEXT_MARGIN / 2)
       .attr('font-weight', '500')
-      .text('Build Start Time: ' + build.startTime!.toFormat(NUMERIC_TIME_FORMAT));
+      .text(
+        'Build Start Time: ' + build.startTime!.toFormat(NUMERIC_TIME_FORMAT)
+      );
 
     const headerRootGroup = svg
       .append('g')
-      .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`);
+      .attr(
+        'transform',
+        `translate(${SIDE_PANEL_WIDTH}, ${TOP_AXIS_HEIGHT - HALF_BORDER_SIZE})`
+      );
     const topAxis = axisTop(this.scaleTime).ticks(this.timeInterval);
     headerRootGroup.call(topAxis);
 
@@ -193,7 +234,10 @@ export class TimelineTabElement extends MiloBaseElement {
       .attr('text-anchor', 'end');
 
     // Top border for the side panel.
-    headerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
+    headerRootGroup
+      .append('line')
+      .attr('x1', -SIDE_PANEL_WIDTH)
+      .attr('stroke', 'var(--default-text-color)');
   }
 
   private renderFooter() {
@@ -214,12 +258,17 @@ export class TimelineTabElement extends MiloBaseElement {
         .text('Build End Time: ' + build.endTime.toFormat(NUMERIC_TIME_FORMAT));
     }
 
-    const footerRootGroup = svg.append('g').attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
+    const footerRootGroup = svg
+      .append('g')
+      .attr('transform', `translate(${SIDE_PANEL_WIDTH}, ${HALF_BORDER_SIZE})`);
     const bottomAxis = axisBottom(this.scaleTime).ticks(this.timeInterval);
     footerRootGroup.call(bottomAxis);
 
     // Bottom border for the side panel.
-    footerRootGroup.append('line').attr('x1', -SIDE_PANEL_WIDTH).attr('stroke', 'var(--default-text-color)');
+    footerRootGroup
+      .append('line')
+      .attr('x1', -SIDE_PANEL_WIDTH)
+      .attr('stroke', 'var(--default-text-color)');
   }
 
   private renderSidePanel() {
@@ -311,7 +360,9 @@ export class TimelineTabElement extends MiloBaseElement {
     svg.append('g').attr('class', 'grid').call(horizontalGridLines);
 
     for (const [i, step] of enumerate(build.steps)) {
-      const start = this.scaleTime(step.startTime?.toMillis() || this.nowTimestamp);
+      const start = this.scaleTime(
+        step.startTime?.toMillis() || this.nowTimestamp
+      );
       const end = this.scaleTime(step.endTime?.toMillis() || this.nowTimestamp);
 
       const stepGroup = svg
@@ -335,7 +386,10 @@ export class TimelineTabElement extends MiloBaseElement {
       const stepText = stepGroup
         .append('text')
         .attr('text-anchor', isWide || !nearEnd ? 'start' : 'end')
-        .attr('x', isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN)
+        .attr(
+          'x',
+          isWide ? TEXT_MARGIN : nearEnd ? -TEXT_MARGIN : width + TEXT_MARGIN
+        )
         .attr('y', STEP_TEXT_OFFSET)
         .text(step.listNumber + ' ' + step.selfName);
 
@@ -346,6 +400,8 @@ export class TimelineTabElement extends MiloBaseElement {
         const timelineTab = this; // eslint-disable-line @typescript-eslint/no-this-alias
 
         stepText.each(function () {
+          // This is the standard d3 API.
+          // eslint-disable-next-line no-invalid-this
           const textBBox = this.getBBox();
           const x1 = Math.min(textBBox.x, -STEP_EXTRA_WIDTH / 2);
           const x2 = Math.max(textBBox.x + textBBox.width, STEP_MARGIN + width);
@@ -393,7 +449,9 @@ export class TimelineTabElement extends MiloBaseElement {
       const time = DateTime.fromJSDate(this.scaleTime.invert(x));
       const duration = time.diff(build.startTime!);
       this.relativeTimeText.attr('x', x);
-      this.relativeTimeText.text(displayDuration(duration) + ' since build start');
+      this.relativeTimeText.text(
+        displayDuration(duration) + ' since build start'
+      );
     });
 
     // Right border.
@@ -414,10 +472,12 @@ export class TimelineTabElement extends MiloBaseElement {
   ) {
     const logUrl = step.logs[0]?.viewUrl;
     if (logUrl) {
-      ele.attr('class', ele.attr('class') + ' clickable').on('click', (e: MouseEvent) => {
-        e.stopPropagation();
-        window.open(logUrl, '_blank');
-      });
+      ele
+        .attr('class', ele.attr('class') + ' clickable')
+        .on('click', (e: MouseEvent) => {
+          e.stopPropagation();
+          window.open(logUrl, '_blank');
+        });
     }
 
     ele
@@ -427,13 +487,21 @@ export class TimelineTabElement extends MiloBaseElement {
           html`
             <table>
               <tr>
-                <td colspan="2">${logUrl ? 'Click to open associated log.' : html`<b>No associated log.</b>`}</td>
+                <td colspan="2">${
+                  logUrl
+                    ? 'Click to open associated log.'
+                    : html`<b>No associated log.</b>`
+                }</td>
               </tr>
               <tr>
                 <td>Started:</td>
                 <td>
                   ${(step.startTime || this.now).toFormat(NUMERIC_TIME_FORMAT)}
-                  (after ${displayDuration((step.startTime || this.now).diff(this.store.buildPage.build!.startTime!))})
+                  (after ${displayDuration(
+                    (step.startTime || this.now).diff(
+                      this.store.buildPage.build!.startTime!
+                    )
+                  )})
                 </td>
               </tr>
               <tr>
@@ -441,7 +509,11 @@ export class TimelineTabElement extends MiloBaseElement {
                 <td>${
                   step.endTime
                     ? step.endTime.toFormat(NUMERIC_TIME_FORMAT) +
-                      ` (after ${displayDuration(step.endTime.diff(this.store.buildPage.build!.startTime!))})`
+                      ` (after ${displayDuration(
+                        step.endTime.diff(
+                          this.store.buildPage.build!.startTime!
+                        )
+                      )})`
                     : 'N/A'
                 }</td>
               </tr>
@@ -465,7 +537,11 @@ export class TimelineTabElement extends MiloBaseElement {
         );
       })
       .on('mouseout', () => {
-        window.dispatchEvent(new CustomEvent<HideTooltipEventDetail>('hide-tooltip', { detail: { delay: 0 } }));
+        window.dispatchEvent(
+          new CustomEvent<HideTooltipEventDetail>('hide-tooltip', {
+            detail: { delay: 0 },
+          })
+        );
       });
   }
 
@@ -585,7 +661,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-timeline-tab': {};
+      'milo-timeline-tab': Record<string, never>;
     }
   }
 }

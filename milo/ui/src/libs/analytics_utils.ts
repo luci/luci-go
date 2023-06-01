@@ -48,7 +48,12 @@ declare global {
   }
 }
 
-export function trackEvent(category: GA_CATEGORIES, action: GA_ACTIONS, label?: string, value?: number) {
+export function trackEvent(
+  category: GA_CATEGORIES,
+  action: GA_ACTIONS,
+  label?: string,
+  value?: number
+) {
   if (!window.ENABLE_GA) {
     return;
   }

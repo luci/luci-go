@@ -28,16 +28,16 @@ import { deferred } from './utils';
 
 describe('aliveFlow', () => {
   const TestStore = types
-      .model('TestStore', {
-        prop: 0,
-      })
-      .actions((self) => ({
-        aliveAction: aliveFlow(self, function* (promises: Promise<number>[]) {
-          for (const promise of promises) {
-            self.prop = yield promise;
-          }
-        }),
-      }));
+    .model('TestStore', {
+      prop: 0,
+    })
+    .actions((self) => ({
+      aliveAction: aliveFlow(self, function* (promises: Promise<number>[]) {
+        for (const promise of promises) {
+          self.prop = yield promise;
+        }
+      }),
+    }));
 
   let store: Instance<typeof TestStore>;
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe('aliveFlow', () => {
     const [promise3, resolve3] = deferred<number>();
 
     const actionPromise = fromPromise(
-        store.aliveAction([promise1, promise2, promise3]),
+      store.aliveAction([promise1, promise2, promise3])
     );
 
     expect(store.prop).toStrictEqual(0);
@@ -83,7 +83,7 @@ describe('aliveFlow', () => {
     const [promise3, resolve3] = deferred<number>();
 
     const actionPromise = fromPromise(
-        store.aliveAction([promise1, promise2, promise3]),
+      store.aliveAction([promise1, promise2, promise3])
     );
 
     expect(store.prop).toStrictEqual(0);
@@ -111,30 +111,30 @@ describe('aliveFlow', () => {
 
 describe('keepAliveComputed', () => {
   const TestStore = types
-      .model('TestStore', {
-        prop: 0,
-      })
-      .volatile(() => ({
-        compute: (_v: number): number => {
-          // The function should be mocked be jest.
-          throw new Error('unreachable');
+    .model('TestStore', {
+      prop: 0,
+    })
+    .volatile(() => ({
+      compute: (_v: number): number => {
+        // The function should be mocked be jest.
+        throw new Error('unreachable');
+      },
+    }))
+    .views((self) => {
+      const computedValue = keepAliveComputed(self, () =>
+        self.compute(self.prop)
+      );
+      return {
+        get computedValue() {
+          return computedValue.get();
         },
-      }))
-      .views((self) => {
-        const computedValue = keepAliveComputed(self, () =>
-          self.compute(self.prop),
-        );
-        return {
-          get computedValue() {
-            return computedValue.get();
-          },
-        };
-      })
-      .actions((self) => ({
-        setProp(newVal: number) {
-          self.prop = newVal;
-        },
-      }));
+      };
+    })
+    .actions((self) => ({
+      setProp(newVal: number) {
+        self.prop = newVal;
+      },
+    }));
 
   let store: Instance<typeof TestStore>;
   let computeSpy: jest.SpiedFunction<(v: number) => number>;
@@ -185,7 +185,7 @@ describe('keepAliveComputed', () => {
     // error.
     destroy(store);
     expect(() => store.computedValue).toThrowErrorMatchingInlineSnapshot(
-        `"the computed value is accessed when the target node is no longer alive"`,
+      `"the computed value is accessed when the target node is no longer alive"`
     );
   });
 });

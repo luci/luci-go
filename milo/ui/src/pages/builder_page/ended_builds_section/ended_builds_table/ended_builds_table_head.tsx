@@ -22,29 +22,31 @@ export interface EndedBuildsTableHeadProps {
   readonly tableState: ExpandableEntriesStateInstance;
 }
 
-export const EndedBuildsTableHead = observer(({ tableState }: EndedBuildsTableHeadProps) => {
-  return (
-    <TableHead>
-      <TableRow>
-        <TableCell>
-          <IconButton
-            aria-label="toggle-all-rows"
-            size="small"
-            onClick={() => {
-              tableState.toggleAll(!tableState.defaultExpanded);
-            }}
-          >
-            {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
-          </IconButton>
-        </TableCell>
-        <TableCell>Status</TableCell>
-        <TableCell>Build #</TableCell>
-        <TableCell>Create Time</TableCell>
-        <TableCell>End Time</TableCell>
-        <TableCell>Run Duration</TableCell>
-        <TableCell>Commit</TableCell>
-        <TableCell>Changes</TableCell>
-      </TableRow>
-    </TableHead>
-  );
-});
+export const EndedBuildsTableHead = observer(
+  ({ tableState }: EndedBuildsTableHeadProps) => {
+    return (
+      <TableHead>
+        <TableRow>
+          <TableCell>
+            <IconButton
+              aria-label="toggle-all-rows"
+              size="small"
+              onClick={() => {
+                tableState.toggleAll(!tableState.defaultExpanded);
+              }}
+            >
+              {tableState.defaultExpanded ? <ExpandMore /> : <ChevronRight />}
+            </IconButton>
+          </TableCell>
+          <TableCell>Status</TableCell>
+          <TableCell>Build #</TableCell>
+          <TableCell>Create Time</TableCell>
+          <TableCell>End Time</TableCell>
+          <TableCell>Run Duration</TableCell>
+          <TableCell>Commit</TableCell>
+          <TableCell>Changes</TableCell>
+        </TableRow>
+      </TableHead>
+    );
+  }
+);

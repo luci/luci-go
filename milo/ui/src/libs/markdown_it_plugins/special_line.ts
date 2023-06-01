@@ -56,7 +56,11 @@ class SpecialLineRulesProcessor {
     ) {
       const content = s.src.slice(s.pos);
 
-      for (let activeRuleIndex = 0; activeRuleIndex < this.rules.length; ++activeRuleIndex) {
+      for (
+        let activeRuleIndex = 0;
+        activeRuleIndex < this.rules.length;
+        ++activeRuleIndex
+      ) {
         const rule = this.rules[activeRuleIndex];
         const prefixMatch = rule.rePrefix.exec(content);
         if (prefixMatch && prefixMatch.index === 0) {
@@ -94,7 +98,11 @@ class SpecialLineRulesProcessor {
       for (const srcToken of blockToken.children!) {
         // Apply transformFn to text tokens in the same level in the special
         // line.
-        if (activeRule?.transformFn && srcToken.type === 'text' && srcToken.level === ruleLevel) {
+        if (
+          activeRule?.transformFn &&
+          srcToken.type === 'text' &&
+          srcToken.level === ruleLevel
+        ) {
           newChildren.push(...activeRule.transformFn(srcToken));
           continue;
         }
@@ -115,7 +123,10 @@ class SpecialLineRulesProcessor {
         newChildren.push(srcToken);
 
         // Reset activeRule and ruleLevel when starting a new line.
-        if (srcToken.type === 'hardbreak' || (!hardBreakOnly && srcToken.type === 'softbreak')) {
+        if (
+          srcToken.type === 'hardbreak' ||
+          (!hardBreakOnly && srcToken.type === 'softbreak')
+        ) {
           activeRule = null;
           ruleLevel = 0;
           continue;
@@ -137,7 +148,11 @@ const processorMap = new Map<MarkdownIt, SpecialLineRulesProcessor>();
  * 1. in lines satisfy the special prefix rule, and
  * 2. not enclosed by other tags.
  */
-export function specialLine(md: MarkdownIt, rePrefix: RegExp, transformFn: TransformFn) {
+export function specialLine(
+  md: MarkdownIt,
+  rePrefix: RegExp,
+  transformFn: TransformFn
+) {
   let processor = processorMap.get(md);
 
   if (!processor) {

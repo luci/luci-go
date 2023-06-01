@@ -129,8 +129,12 @@ export class PixelViewerElement extends MiloBaseElement {
     // Draw zoomed-in image.
     this.addDisposer(
       autorun(() => {
-        const xScale = scaleLinear().range([0, this.rWidth]).domain([0, this.dWidth]);
-        const yScale = scaleLinear().range([0, this.rHeight]).domain([0, this.dHeight]);
+        const xScale = scaleLinear()
+          .range([0, this.rWidth])
+          .domain([0, this.dWidth]);
+        const yScale = scaleLinear()
+          .range([0, this.rHeight])
+          .domain([0, this.dHeight]);
 
         // Draw grid.
         const svg = d3Select(svgEle);
@@ -153,10 +157,16 @@ export class PixelViewerElement extends MiloBaseElement {
   protected render() {
     return html`
       <div id="root">
-        <div id="label-area" style="color: ${this.labelColor}; background-color: ${this.color};">
+        <div
+          id="label-area"
+          style="color: ${this.labelColor}; background-color: ${this.color};"
+        >
           ${this.label} (${this.coord.x}, ${this.coord.y}) ${this.color}
         </div>
-        <svg viewBox="0 0 ${this.rWidth} ${this.rHeight}" preserveAspectRatio="xMinYMin slice">
+        <svg
+          viewBox="0 0 ${this.rWidth} ${this.rHeight}"
+          preserveAspectRatio="xMinYMin slice"
+        >
           <g
             transform="
                 scale(${this.pixelSize})
@@ -164,7 +174,10 @@ export class PixelViewerElement extends MiloBaseElement {
                 translate(${-this.coord.x}, ${-this.coord.y})
               "
           >
-            <image href=${this.imgUrl} image-rendering="optimizeQuality"></image>
+            <image
+              href=${this.imgUrl}
+              image-rendering="optimizeQuality"
+            ></image>
           </g>
           <g id="grid"></g>
           <g id="focus">

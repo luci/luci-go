@@ -25,7 +25,10 @@ import { TimelineBlock } from '../../components/timeline';
 import { consumer } from '../../libs/context';
 import { Invocation } from '../../services/resultdb';
 import { consumeStore, StoreInstance } from '../../store';
-import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
+import {
+  consumeInvocationState,
+  InvocationStateInstance,
+} from '../../store/invocation_state';
 import { commonStyles } from '../../styles/stylesheets';
 
 const MARGIN = 20;
@@ -65,7 +68,11 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
     this.addDisposer(
       autorun(() => {
         try {
-          if (!this.invState || !this.invState.invocation || !this.invState.invocation.includedInvocations) {
+          if (
+            !this.invState ||
+            !this.invState.invocation ||
+            !this.invState.invocation.includedInvocations
+          ) {
             return;
           }
           let invs = this.invState.invocation.includedInvocations || [];
@@ -79,7 +86,10 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
             this.batchRequestComplete();
             if (delayedInvs.length) {
               this.store.services.resultDb
-                ?.getInvocation({ name: delayedInvs.pop()! }, { skipUpdate: true })
+                ?.getInvocation(
+                  { name: delayedInvs.pop()! },
+                  { skipUpdate: true }
+                )
                 .then(invocationReceivedCallback)
                 .catch((e) => {
                   // TODO(mwarton): display the error to the user.
@@ -126,7 +136,10 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
     this.now = DateTime.now();
 
     const syncWidth = () => {
-      this.graphWidth = Math.max(window.innerWidth - 2 * MARGIN, MIN_GRAPH_WIDTH);
+      this.graphWidth = Math.max(
+        window.innerWidth - 2 * MARGIN,
+        MIN_GRAPH_WIDTH
+      );
     };
     window.addEventListener('resize', syncWidth);
     this.addDisposer(() => window.removeEventListener('resize', syncWidth));
@@ -156,8 +169,12 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
       }
     });
     return html`
-      <div>Create Time: ${new Date(invocation.createTime).toLocaleString()}</div>
-      <div>Finalize Time: ${new Date(invocation.finalizeTime).toLocaleString()}</div>
+      <div>
+        Create Time: ${new Date(invocation.createTime).toLocaleString()}
+      </div>
+      <div>
+        Finalize Time: ${new Date(invocation.finalizeTime).toLocaleString()}
+      </div>
       <div>Deadline: ${new Date(invocation.deadline).toLocaleDateString()}</div>
       <div style=${styleMap({ display: this.hasTags ? '' : 'none' })}>
         Tags:
@@ -179,7 +196,9 @@ export class InvocationDetailsTabElement extends MiloBaseElement {
               <milo-timeline
                 .width=${this.graphWidth}
                 .startTime=${DateTime.fromISO(invocation.createTime)}
-                .endTime=${invocation.finalizeTime ? DateTime.fromISO(invocation.finalizeTime) : this.now}
+                .endTime=${invocation.finalizeTime
+                  ? DateTime.fromISO(invocation.finalizeTime)
+                  : this.now}
                 .blocks=${blocks}
               >
               </milo-timeline>`
@@ -214,7 +233,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
     interface IntrinsicElements {
-      'milo-invocation-details-tab': {};
+      'milo-invocation-details-tab': Record<string, never>;
     }
   }
 }

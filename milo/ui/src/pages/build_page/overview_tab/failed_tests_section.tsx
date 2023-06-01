@@ -16,7 +16,10 @@ import { observer } from 'mobx-react-lite';
 import { Link } from 'react-router-dom';
 
 import { DotSpinner } from '../../../components/dot_spinner';
-import { getBuildURLPath, getTestHistoryURLPath } from '../../../libs/url_utils';
+import {
+  getBuildURLPath,
+  getTestHistoryURLPath,
+} from '../../../libs/url_utils';
 import { urlSetSearchQueryParam } from '../../../libs/utils';
 import { getPropKeyLabel } from '../../../services/resultdb';
 import { useStore } from '../../../store';
@@ -47,7 +50,10 @@ export const FailedTestSection = observer(() => {
   }
 
   const testsTabUrl =
-    getBuildURLPath(store.buildPage.builderIdParam, store.buildPage.buildNumOrIdParam) + '/test-results';
+    getBuildURLPath(
+      store.buildPage.builderIdParam,
+      store.buildPage.buildNumOrIdParam
+    ) + '/test-results';
 
   if (!testLoader?.firstPageLoaded) {
     return (
@@ -64,12 +70,19 @@ export const FailedTestSection = observer(() => {
 
   // Overview tab is more crowded than the test results tab.
   // Hide all additional columns.
-  const columnWidths = '24px ' + invState.columnWidths.map(() => '0').join(' ') + ' 1fr';
-  const displayedTVCount = Math.min(testLoader.unfilteredUnexpectedVariantsCount, MAX_DISPLAYED_UNEXPECTED_TESTS);
+  const columnWidths =
+    '24px ' + invState.columnWidths.map(() => '0').join(' ') + ' 1fr';
+  const displayedTVCount = Math.min(
+    testLoader.unfilteredUnexpectedVariantsCount,
+    MAX_DISPLAYED_UNEXPECTED_TESTS
+  );
 
   const groupDefs = invState.groupers
     .filter(([key]) => key !== 'status')
-    .map(([key, getter]) => [getPropKeyLabel(key), getter] as [string, typeof getter]);
+    .map(
+      ([key, getter]) =>
+        [getPropKeyLabel(key), getter] as [string, typeof getter]
+    );
 
   const lists: JSX.Element[] = [];
 
@@ -89,15 +102,22 @@ export const FailedTestSection = observer(() => {
     }
 
     for (const testVariant of group) {
-      const q = Object.entries(testVariant.variant?.def || {}).map(([dimension, value]) =>
-          `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`).join(' ');
+      const q = Object.entries(testVariant.variant?.def || {})
+        .map(
+          ([dimension, value]) =>
+            `V:${encodeURIComponent(dimension)}=${encodeURIComponent(value)}`
+        )
+        .join(' ');
       lists.push(
         <TestVariantEntry
           key={testVariant.testId + '|' + testVariant.variantHash}
           variant={testVariant}
           columnGetters={invState.columnGetters}
           historyUrl={urlSetSearchQueryParam(
-            getTestHistoryURLPath(store.buildPage.build!.data.builder.project, testVariant.testId),
+            getTestHistoryURLPath(
+              store.buildPage.build!.data.builder.project,
+              testVariant.testId
+            ),
             'q',
             q
           )}
@@ -120,8 +140,12 @@ export const FailedTestSection = observer(() => {
             'No failed tests.'
           ) : (
             <>
-              Showing {displayedTVCount}/{testLoader.unfilteredUnexpectedVariantsCount} failed tests.{' '}
-              <Link to={testsTabUrl} css={{ color: 'var(--default-text-color)' }}>
+              Showing {displayedTVCount}/
+              {testLoader.unfilteredUnexpectedVariantsCount} failed tests.{' '}
+              <Link
+                to={testsTabUrl}
+                css={{ color: 'var(--default-text-color)' }}
+              >
                 [view all]
               </Link>
             </>

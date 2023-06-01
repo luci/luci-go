@@ -39,7 +39,7 @@ function simulateKeyStroke(target: EventTarget, key: string) {
 }
 
 @customElement('milo-hotkey-test-wrapper')
-export class WrapperElement extends LitElement {
+class WrapperElement extends LitElement {
   protected render() {
     return html`
       <input id="input">
@@ -48,6 +48,7 @@ export class WrapperElement extends LitElement {
     `;
   }
 }
+WrapperElement; // 'Use' the class to silence eslint/tsc warnings.
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -59,8 +60,12 @@ declare global {
 }
 
 describe('Hotkey', () => {
-  let handlerSpy: jest.Mock<(_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => void>;
-  let handlerSpy2: jest.Mock<(_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => void>;
+  let handlerSpy: jest.Mock<
+    (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => void
+  >;
+  let handlerSpy2: jest.Mock<
+    (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => void
+  >;
   let ele: ReturnType<typeof render>;
   let childEle: Element;
   let inputEle: HTMLInputElement;
@@ -72,8 +77,12 @@ describe('Hotkey', () => {
 
   beforeEach(async () => {
     jest.useFakeTimers();
-    handlerSpy = jest.fn((_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {});
-    handlerSpy2 = jest.fn((_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {});
+    handlerSpy = jest.fn(
+      (_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {}
+    );
+    handlerSpy2 = jest.fn(
+      (_keyboardEvent: KeyboardEvent, _hotkeysEvent: HotkeysEvent) => {}
+    );
 
     ele = render(
       <Hotkey hotkey="a" handler={handlerSpy}>

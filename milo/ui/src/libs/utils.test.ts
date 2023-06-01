@@ -23,19 +23,28 @@ describe('URLExt', () => {
   });
 
   it('should set search params correctly', async () => {
-    const newUrlStr = url.setSearchParam('key2', 'newVal2').setSearchParam('key3', 'newVal3').toString();
-    expect(newUrlStr).toStrictEqual('https://example.com/path?key1=val1&key2=newVal2&key3=newVal3');
+    const newUrlStr = url
+      .setSearchParam('key2', 'newVal2')
+      .setSearchParam('key3', 'newVal3')
+      .toString();
+    expect(newUrlStr).toStrictEqual(
+      'https://example.com/path?key1=val1&key2=newVal2&key3=newVal3'
+    );
   });
 
   it('should remove matched search params correctly', async () => {
-    const newUrlStr = url.removeMatchedParams({ key1: 'val1', key2: 'val', key3: 'val3' }).toString();
+    const newUrlStr = url
+      .removeMatchedParams({ key1: 'val1', key2: 'val', key3: 'val3' })
+      .toString();
     expect(newUrlStr).toStrictEqual('https://example.com/path?key2=val2');
   });
 
   it('should not remove search params when multiple values are specified', async () => {
     const url = new URLExt('https://example.com/path?key1=val1&key1=val2');
     const newUrlStr = url.removeMatchedParams({ key1: 'val1' }).toString();
-    expect(newUrlStr).toStrictEqual('https://example.com/path?key1=val1&key1=val2');
+    expect(newUrlStr).toStrictEqual(
+      'https://example.com/path?key1=val1&key1=val2'
+    );
   });
 });
 

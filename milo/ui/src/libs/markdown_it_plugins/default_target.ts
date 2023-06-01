@@ -31,7 +31,8 @@ export function defaultTarget(md: MarkdownIt, defaultTarget: string) {
   };
 
   // Set default target for anchors in html_inline tokens.
-  const existingHTMLInlineRule = md.renderer.rules['html_inline'] || renderToken;
+  const existingHTMLInlineRule =
+    md.renderer.rules['html_inline'] || renderToken;
   md.renderer.rules['html_inline'] = (tokens, i, ...params) => {
     const token = tokens[i];
     if (/^<a .*>$/i.test(token.content)) {
@@ -40,7 +41,10 @@ export function defaultTarget(md: MarkdownIt, defaultTarget: string) {
       const anchor = template.content.firstElementChild!;
       const target = anchor.getAttribute('target') || defaultTarget;
       anchor.setAttribute('target', target);
-      token.content = anchor.outerHTML.substring(0, anchor.outerHTML.length - CLOSING_ANCHOR_TAG.length);
+      token.content = anchor.outerHTML.substring(
+        0,
+        anchor.outerHTML.length - CLOSING_ANCHOR_TAG.length
+      );
     }
     return existingHTMLInlineRule(tokens, i, ...params);
   };

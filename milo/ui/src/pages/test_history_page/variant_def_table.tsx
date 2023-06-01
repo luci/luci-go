@@ -45,7 +45,9 @@ export class TestHistoryVariantDefTableElement extends MiloBaseElement {
           ${this.pageState.filteredVariants.map(
             ([_, v]) => html`
               <tr>
-                ${this.pageState.criticalVariantKeys.map((k) => html`<td>${v.def[k] || ''}</td>`)}
+                ${this.pageState.criticalVariantKeys.map(
+                  (k) => html`<td>${v.def[k] || ''}</td>`
+                )}
               </tr>
             `
           )}

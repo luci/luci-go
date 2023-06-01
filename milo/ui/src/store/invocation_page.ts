@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import { reaction } from 'mobx';
-import { addDisposer, Instance, SnapshotIn, SnapshotOut, types } from 'mobx-state-tree';
+import {
+  addDisposer,
+  Instance,
+  SnapshotIn,
+  SnapshotOut,
+  types,
+} from 'mobx-state-tree';
 
 import { InvocationState } from './invocation_state';
 import { ServicesStore } from './services';

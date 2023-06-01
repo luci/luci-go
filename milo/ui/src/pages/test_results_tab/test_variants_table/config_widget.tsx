@@ -22,7 +22,10 @@ import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
 import { consumer } from '../../../libs/context';
-import { consumeInvocationState, InvocationStateInstance } from '../../../store/invocation_state';
+import {
+  consumeInvocationState,
+  InvocationStateInstance,
+} from '../../../store/invocation_state';
 import { commonStyles } from '../../../styles/stylesheets';
 
 @customElement('milo-tvt-config-widget')
@@ -46,7 +49,11 @@ export class TestVariantsTableConfigWidgetElement extends MobxLitElement {
     makeObservable(this);
   }
 
-  private renderPropKeysConfigRow(label: string, keys: readonly string[], updateKeys: (newKeys: string[]) => void) {
+  private renderPropKeysConfigRow(
+    label: string,
+    keys: readonly string[],
+    updateKeys: (newKeys: string[]) => void
+  ) {
     return html`
       <tr>
         <td>${label}:</td>

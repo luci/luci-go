@@ -44,7 +44,9 @@ export class PageLoader<T> {
   private firstLoadPromise?: Promise<readonly T[]>;
 
   constructor(
-    private readonly getNextPage: (pageToken?: string) => Promise<[items: readonly T[], nextPageToken?: string]>
+    private readonly getNextPage: (
+      pageToken?: string
+    ) => Promise<[items: readonly T[], nextPageToken?: string]>
   ) {
     makeObservable(this);
   }

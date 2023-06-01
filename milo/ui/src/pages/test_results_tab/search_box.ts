@@ -24,7 +24,10 @@ import '../../components/hotkey';
 import { SuggestionEntry } from '../../components/auto_complete';
 import { consumer } from '../../libs/context';
 import { suggestTestResultSearchQuery } from '../../libs/queries/tr_search_query';
-import { consumeInvocationState, InvocationStateInstance } from '../../store/invocation_state';
+import {
+  consumeInvocationState,
+  InvocationStateInstance,
+} from '../../store/invocation_state';
 
 /**
  * An element that let the user search tests in the test results tab with DSL.
@@ -40,7 +43,8 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
     return this.invState.searchText.split(' ').pop() || '';
   }
   @computed private get queryPrefix() {
-    const searchTextPrefixLen = this.invState.searchText.length - this.lastSubQuery.length;
+    const searchTextPrefixLen =
+      this.invState.searchText.length - this.lastSubQuery.length;
     return this.invState.searchText.slice(0, searchTextPrefixLen);
   }
   @computed private get suggestions() {
@@ -58,7 +62,9 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
         .key=${'/'}
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
-          setTimeout(() => this.shadowRoot?.getElementById('search-box')!.focus());
+          setTimeout(() =>
+            this.shadowRoot?.getElementById('search-box')!.focus()
+          );
         }}
       >
         <milo-auto-complete
@@ -67,13 +73,19 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
           .value=${this.invState.searchText}
           .placeHolder=${'Press / to search test results...'}
           .suggestions=${this.suggestions}
-          .onValueUpdate=${(newVal: string) => this.invState.setSearchText(newVal)}
+          .onValueUpdate=${(newVal: string) =>
+            this.invState.setSearchText(newVal)}
           .onSuggestionSelected=${(suggestion: SuggestionEntry) => {
-            this.invState.setSearchText(this.queryPrefix + suggestion.value! + ' ');
+            this.invState.setSearchText(
+              this.queryPrefix + suggestion.value! + ' '
+            );
           }}
         >
           <mwc-icon
-            style=${styleMap({ color: this.invState.searchText === '' ? '' : 'var(--active-color)' })}
+            style=${styleMap({
+              color:
+                this.invState.searchText === '' ? '' : 'var(--active-color)',
+            })}
             slot="pre-icon"
           >
             search
@@ -82,7 +94,9 @@ export class TestResultTabSearchBoxElement extends MobxLitElement {
             id="clear-search"
             slot="post-icon"
             title="Clear"
-            style=${styleMap({ display: this.invState.searchText === '' ? 'none' : '' })}
+            style=${styleMap({
+              display: this.invState.searchText === '' ? 'none' : '',
+            })}
             @click=${() => this.invState.setSearchText('')}
           >
             close

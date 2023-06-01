@@ -14,17 +14,25 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { useAuthState, useGetAccessToken } from '../../components/auth_state_provider';
+import {
+  useAuthState,
+  useGetAccessToken,
+} from '../../components/auth_state_provider';
 import { PrpcClientExt } from '../../libs/prpc_client_ext';
 import { BuildsService, SearchBuildsRequest } from '../../services/buildbucket';
 
-export function useBuilds(req: SearchBuildsRequest, opts = { keepPreviousData: false }) {
+export function useBuilds(
+  req: SearchBuildsRequest,
+  opts = { keepPreviousData: false }
+) {
   const { identity } = useAuthState();
   const getAccessToken = useGetAccessToken();
   return useQuery({
     queryKey: [identity, BuildsService.SERVICE, 'SearchBuilds', req],
     queryFn: async () => {
-      const buildersService = new BuildsService(new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST }, getAccessToken));
+      const buildersService = new BuildsService(
+        new PrpcClientExt({ host: CONFIGS.BUILDBUCKET.HOST }, getAccessToken)
+      );
       return buildersService.searchBuilds(
         req,
         // Let react-query manage caching.

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from 'path';
 import replace from '@rollup/plugin-replace';
 import react from '@vitejs/plugin-react';
-import * as path from 'path';
 import { defineConfig, loadEnv } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
+import { VitePWA as vitePWA } from 'vite-plugin-pwa';
 
 /**
  * Get a boolean from the envDir.
@@ -107,7 +107,7 @@ export default defineConfig(({ mode }) => {
           // In production, the service worker script cannot be a JS module.
           // Because that has limited browser support. So we need to use
           // `importScripts` instead of `import` to load `/configs.js`.
-          return mode === 'development' ? localDevConfigsJs : "importScripts('/configs.js');";
+          return mode === 'development' ? localDevConfigsJs : 'importScripts(\'/configs.js\');';
         },
       },
       {
@@ -158,7 +158,7 @@ export default defineConfig(({ mode }) => {
           configFile: true,
         },
       }),
-      VitePWA({
+      vitePWA({
         injectRegister: null,
         strategies: 'injectManifest',
         srcDir: 'src/service_workers',
@@ -177,11 +177,11 @@ export default defineConfig(({ mode }) => {
           globPatterns: ['**/*.{js,css,html}'],
           vitePlugins(vitePluginIds) {
             return vitePluginIds.filter(
-              (id) =>
+                (id) =>
                 // Don't include the plugin itself.
-                !id.startsWith('vite-plugin-pwa') &&
+                  !id.startsWith('vite-plugin-pwa') &&
                 // Don't need any HTML related plugins.
-                !id.includes('html')
+                !id.includes('html'),
             );
           },
         },

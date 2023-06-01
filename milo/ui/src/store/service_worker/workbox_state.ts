@@ -44,7 +44,9 @@ export const WorkboxState = types
         if (self.workbox) {
           throw new Error('already initialized');
         }
-        self.workbox = new Workbox(url, { type: getEnv(self).isDevEnv ? 'module' : 'classic' });
+        self.workbox = new Workbox(url, {
+          type: getEnv(self).isDevEnv ? 'module' : 'classic',
+        });
         const call = self.workbox.register();
 
         // .register() always resolves a ServiceWorkerRegistration on the first

@@ -15,7 +15,11 @@
 import { expect, jest } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { ExpandableEntry, ExpandableEntryBody, ExpandableEntryHeader } from './expandable_entry';
+import {
+  ExpandableEntry,
+  ExpandableEntryBody,
+  ExpandableEntryHeader,
+} from './expandable_entry';
 
 describe('ExpandableEntry', () => {
   it('collapsed', () => {

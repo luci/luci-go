@@ -15,13 +15,20 @@
 import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { applySnapshot, destroy } from 'mobx-state-tree';
 
-import { AuthState, getAuthStateCache, queryAuthState, setAuthStateCache } from '../libs/auth_state';
+import {
+  AuthState,
+  getAuthStateCache,
+  queryAuthState,
+  setAuthStateCache,
+} from '../libs/auth_state';
 import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
 
 describe('AuthStateStore', () => {
   let store: AuthStateStoreInstance;
   let getAuthStateCacheStub: jest.Mock<() => Promise<AuthState | null>>;
-  let setAuthStateCacheStub: jest.Mock<(authState: AuthState | null) => Promise<void>>;
+  let setAuthStateCacheStub: jest.Mock<
+    (authState: AuthState | null) => Promise<void>
+  >;
   let queryAuthStateStub: jest.Mock<() => Promise<AuthState>>;
 
   beforeEach(() => {

@@ -13,14 +13,25 @@
 // limitations under the License.
 
 import { Search } from '@mui/icons-material';
-import { Box, FormControl, InputAdornment, MenuItem, Select, TextField } from '@mui/material';
+import {
+  Box,
+  FormControl,
+  InputAdornment,
+  MenuItem,
+  Select,
+  TextField,
+} from '@mui/material';
 import { debounce } from 'lodash-es';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useState } from 'react';
 
 import { URLExt } from '../../libs/utils';
 import { useStore } from '../../store';
-import { DEFAULT_SEARCH_TARGET, DEFAULT_TEST_PROJECT, SearchTarget } from '../../store/search_page';
+import {
+  DEFAULT_SEARCH_TARGET,
+  DEFAULT_TEST_PROJECT,
+  SearchTarget,
+} from '../../store/search_page';
 import { BuilderList } from './builder_list';
 import { TestList } from './test_list';
 
@@ -68,13 +79,17 @@ export const SearchPage = observer(() => {
       .setSearchParam('tp', pageState.testProject)
       .setSearchParam('q', pageState.searchQuery)
       // Make the URL shorter.
-      .removeMatchedParams({ t: DEFAULT_SEARCH_TARGET, tp: DEFAULT_TEST_PROJECT, q: '' });
+      .removeMatchedParams({
+        t: DEFAULT_SEARCH_TARGET,
+        tp: DEFAULT_TEST_PROJECT,
+        q: '',
+      });
     window.history.replaceState(null, '', url);
   }, [pageState.searchTarget, pageState.testProject, pageState.searchQuery]);
 
-  // Update the search query in the pageStore after a slight delay to avoid
-  // updating the list or triggering network requests too frequently.
   const executeSearch = useCallback(
+    // Update the search query in the pageStore after a slight delay to avoid
+    // updating the list or triggering network requests too frequently.
     debounce(
       (newSearchQuery: string) => pageState.setSearchQuery(newSearchQuery),
       SEARCH_DELAY[pageState.searchTarget]
@@ -90,16 +105,20 @@ export const SearchPage = observer(() => {
     // is scheduled. However, when the search target is changed, executeSearch
     // itself is updated. Therefore we need to cancel the search explicitly.
     return () => executeSearch.cancel();
-  }, [executeSearch, searchQuery]);
+  }, [executeSearch, searchQuery, pageState]);
 
   const searchTarget = pageState.searchTarget;
 
   return (
     <Box sx={{ px: 6, py: 5 }}>
-      <Box sx={{ display: 'grid', mx: 20, gridTemplateColumns: 'auto auto 1fr' }}>
+      <Box
+        sx={{ display: 'grid', mx: 20, gridTemplateColumns: 'auto auto 1fr' }}
+      >
         <Select
           value={searchTarget}
-          onChange={(e) => pageState.setSearchTarget(e.target.value as SearchTarget)}
+          onChange={(e) =>
+            pageState.setSearchTarget(e.target.value as SearchTarget)
+          }
           MenuProps={{ disablePortal: true }}
           size="small"
           sx={{
@@ -144,7 +163,6 @@ export const SearchPage = observer(() => {
             value={searchQuery}
             placeholder={SEARCH_HINT[searchTarget]}
             onChange={(e) => setSearchQuery(e.target.value)}
-            autoFocus
             variant="outlined"
             size="small"
             InputProps={{
@@ -169,7 +187,13 @@ export const SearchPage = observer(() => {
           />
         </FormControl>
       </Box>
-      <Box sx={{ mt: 5 }}>{searchTarget === SearchTarget.Builders ? <BuilderList /> : <TestList />}</Box>
+      <Box sx={{ mt: 5 }}>
+        {searchTarget === SearchTarget.Builders ? (
+          <BuilderList />
+        ) : (
+          <TestList />
+        )}
+      </Box>
     </Box>
   );
 });

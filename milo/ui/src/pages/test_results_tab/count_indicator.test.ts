@@ -23,7 +23,10 @@ import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
 import { provider } from '../../libs/context';
 import { TestVariantStatus } from '../../services/resultdb';
 import { Store, StoreInstance } from '../../store';
-import { InvocationStateInstance, provideInvocationState } from '../../store/invocation_state';
+import {
+  InvocationStateInstance,
+  provideInvocationState,
+} from '../../store/invocation_state';
 import { TestResultsTabCountIndicatorElement } from './count_indicator';
 
 const variant1 = {
@@ -84,21 +87,31 @@ describe('CountIndicator', () => {
 
   it('should load the first page of test variants when connected', async () => {
     unprotect(store);
-    const queryTestVariantsStub = jest.spyOn(store.services.resultDb!, 'queryTestVariants');
+    const queryTestVariantsStub = jest.spyOn(
+      store.services.resultDb!,
+      'queryTestVariants'
+    );
     protect(store);
 
     queryTestVariantsStub.mockResolvedValueOnce({
       testVariants: [variant1, variant2, variant3],
       nextPageToken: 'next',
     });
-    queryTestVariantsStub.mockResolvedValueOnce({ testVariants: [variant4, variant5] });
+    queryTestVariantsStub.mockResolvedValueOnce({
+      testVariants: [variant4, variant5],
+    });
 
     const provider = await fixture<ContextProvider>(html`
-      <milo-trt-count-indicator-context-provider .invocationState=${store.invocationPage.invocation}>
+      <milo-trt-count-indicator-context-provider
+        .invocationState=${store.invocationPage.invocation}
+      >
         <milo-trt-count-indicator></milo-trt-count-indicator>
       </milo-trt-count-indicator-context-provider>
     `);
-    const indicator = provider.querySelector<TestResultsTabCountIndicatorElement>('milo-trt-count-indicator')!;
+    const indicator =
+      provider.querySelector<TestResultsTabCountIndicatorElement>(
+        'milo-trt-count-indicator'
+      )!;
 
     expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
 
@@ -106,7 +119,9 @@ describe('CountIndicator', () => {
     indicator.connectedCallback();
 
     await aTimeout(0);
-    expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(false);
+    expect(store.invocationPage.invocation.testLoader?.isLoading).toStrictEqual(
+      false
+    );
     expect(queryTestVariantsStub.mock.calls.length).toStrictEqual(1);
   });
 });

@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import { expect, jest } from '@jest/globals';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 
 import { URLExt } from '../../libs/utils';
@@ -46,16 +52,26 @@ describe('SearchPage', () => {
       </StoreProvider>
     );
 
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'builder' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'builder' },
+    });
 
     act(() => jest.advanceTimersByTime(10));
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'builder-id' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'builder-id' },
+    });
     act(() => jest.advanceTimersByTime(10));
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'builder-id-with-suffix' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'builder-id-with-suffix' },
+    });
     act(() => jest.advanceTimersByTime(300));
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'another-builder' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'another-builder' },
+    });
     act(() => jest.advanceTimersByTime(10));
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'another-builder-id' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'another-builder-id' },
+    });
     act(() => jest.runAllTimers());
 
     expect(setSearchQuerySpy.mock.calls.length).toStrictEqual(2);
@@ -74,11 +90,15 @@ describe('SearchPage', () => {
       </StoreProvider>
     );
 
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'builder' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'builder' },
+    });
     act(() => jest.advanceTimersByTime(10));
     act(() => store.searchPage.setSearchTarget(SearchTarget.Tests));
     act(() => jest.advanceTimersByTime(10));
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'test-id' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'test-id' },
+    });
     act(() => jest.runAllTimers());
 
     expect(setSearchQuerySpy.mock.calls.length).toStrictEqual(1);
@@ -119,7 +139,9 @@ describe('SearchPage', () => {
     );
 
     expect(window.location.search).toStrictEqual('');
-    fireEvent.change(screen.getByTestId('filter-input'), { target: { value: 'query' } });
+    fireEvent.change(screen.getByTestId('filter-input'), {
+      target: { value: 'query' },
+    });
 
     act(() => {
       store.searchPage.setSearchTarget(SearchTarget.Tests);

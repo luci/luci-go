@@ -198,34 +198,64 @@ export interface AssociatedBug {
 export class TestHistoryService {
   static readonly SERVICE = 'luci.analysis.v1.TestHistory';
 
-  private readonly cachedCallFn: (opt: CacheOption, method: string, message: object) => Promise<unknown>;
+  private readonly cachedCallFn: (
+    opt: CacheOption,
+    method: string,
+    message: object
+  ) => Promise<unknown>;
 
   constructor(client: PrpcClientExt) {
     this.cachedCallFn = cached(
-      (method: string, message: object) => client.call(TestHistoryService.SERVICE, method, message),
+      (method: string, message: object) =>
+        client.call(TestHistoryService.SERVICE, method, message),
       {
         key: (method, message) => `${method}-${stableStringify(message)}`,
       }
     );
   }
 
-  async query(req: QueryTestHistoryRequest, cacheOpt: CacheOption = {}): Promise<QueryTestHistoryResponse> {
-    return (await this.cachedCallFn(cacheOpt, 'Query', req)) as QueryTestHistoryResponse;
+  async query(
+    req: QueryTestHistoryRequest,
+    cacheOpt: CacheOption = {}
+  ): Promise<QueryTestHistoryResponse> {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'Query',
+      req
+    )) as QueryTestHistoryResponse;
   }
 
   async queryStats(
     req: QueryTestHistoryStatsRequest,
     cacheOpt: CacheOption = {}
   ): Promise<QueryTestHistoryStatsResponse> {
-    return (await this.cachedCallFn(cacheOpt, 'QueryStats', req)) as QueryTestHistoryStatsResponse;
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryStats',
+      req
+    )) as QueryTestHistoryStatsResponse;
   }
 
-  async queryVariants(req: QueryVariantsRequest, cacheOpt: CacheOption = {}): Promise<QueryVariantsResponse> {
-    return (await this.cachedCallFn(cacheOpt, 'QueryVariants', req)) as QueryVariantsResponse;
+  async queryVariants(
+    req: QueryVariantsRequest,
+    cacheOpt: CacheOption = {}
+  ): Promise<QueryVariantsResponse> {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryVariants',
+      req
+    )) as QueryVariantsResponse;
   }
 
-  async queryTests(req: QueryTestsRequest, cacheOpt: CacheOption = {}): Promise<QueryTestsResponse> {
-    return (await this.cachedCallFn(cacheOpt, 'QueryTests', req)) as QueryTestsResponse;
+  async queryTests(
+    req: QueryTestsRequest,
+    cacheOpt: CacheOption = {}
+  ): Promise<QueryTestsResponse> {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryTests',
+      req
+    )) as QueryTestsResponse;
   }
 }
 
@@ -242,10 +272,12 @@ export class ClustersService {
     const CLUSTER_BATCH_LIMIT = 1000;
 
     const batchedCluster = batched<[ClusterRequest], ClusterResponse>({
-      fn: (req: ClusterRequest) => client.call(ClustersService.SERVICE, 'Cluster', req),
+      fn: (req: ClusterRequest) =>
+        client.call(ClustersService.SERVICE, 'Cluster', req),
       combineParamSets: ([req1], [req2]) => {
         const canCombine =
-          req1.testResults.length + req2.testResults.length <= CLUSTER_BATCH_LIMIT && req1.project === req2.project;
+          req1.testResults.length + req2.testResults.length <=
+            CLUSTER_BATCH_LIMIT && req1.project === req2.project;
         if (!canCombine) {
           return { ok: false } as ResultErr<void>;
         }
@@ -265,7 +297,10 @@ export class ClustersService {
         for (const [req] of paramSets) {
           splitRets.push({
             clusteringVersion: ret.clusteringVersion,
-            clusteredTestResults: ret.clusteredTestResults.slice(pivot, pivot + req.testResults.length),
+            clusteredTestResults: ret.clusteredTestResults.slice(
+              pivot,
+              pivot + req.testResults.length
+            ),
           });
           pivot += req.testResults.length;
         }
@@ -274,13 +309,25 @@ export class ClustersService {
       },
     });
 
-    this.cachedBatchedCluster = cached((batchOpt: BatchOption, req: ClusterRequest) => batchedCluster(batchOpt, req), {
-      key: (_batchOpt, req) => stableStringify(req),
-    });
+    this.cachedBatchedCluster = cached(
+      (batchOpt: BatchOption, req: ClusterRequest) =>
+        batchedCluster(batchOpt, req),
+      {
+        key: (_batchOpt, req) => stableStringify(req),
+      }
+    );
   }
 
-  async cluster(req: ClusterRequest, batchOpt: BatchOption = {}, cacheOpt: CacheOption = {}): Promise<ClusterResponse> {
-    return (await this.cachedBatchedCluster(cacheOpt, batchOpt, req)) as ClusterResponse;
+  async cluster(
+    req: ClusterRequest,
+    batchOpt: BatchOption = {},
+    cacheOpt: CacheOption = {}
+  ): Promise<ClusterResponse> {
+    return (await this.cachedBatchedCluster(
+      cacheOpt,
+      batchOpt,
+      req
+    )) as ClusterResponse;
   }
 }
 
