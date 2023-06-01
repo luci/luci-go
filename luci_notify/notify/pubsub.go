@@ -388,7 +388,7 @@ func newBuildsClient(c context.Context, host, project string) (buildbucketpb.Bui
 // This handler delegates the actual processing of the build to handleBuild.
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
 func BuildbucketPubSubHandler(ctx *router.Context) error {
-	c := ctx.Context
+	c := ctx.Request.Context()
 	build, err := extractBuild(c, ctx.Request)
 	switch {
 	case err != nil:

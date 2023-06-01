@@ -84,9 +84,8 @@ func main() {
 		// Buildbucket Pub/Sub endpoint.
 		srv.Routes.POST("/_ah/push-handlers/buildbucket", nil,
 			func(c *router.Context) {
-				ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
+				ctx, cancel := context.WithTimeout(c.Request.Context(), notify.PUBSUB_POST_REQUEST_TIMEOUT)
 				defer cancel()
-				c.Context = ctx
 				c.Request = c.Request.WithContext(ctx)
 
 				status := ""
