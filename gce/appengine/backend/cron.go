@@ -102,6 +102,30 @@ func manageBotsAsync(c context.Context) error {
 	return trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind).Gt("url", ""))
 }
 
+// auditInstances schedules an audit task for every project:zone combination
+func auditInstances(c context.Context) error {
+	jobs := make([]*tq.Task, 0)
+	addTask := func(p *model.Project) {
+		proj := p.Config.GetProject()
+		for _, reg := range p.Config.GetRegion() {
+			jobs = append(jobs, &tq.Task{
+				Payload: &tasks.AuditProject{
+					Project: proj,
+					Region:  reg,
+				},
+			})
+		}
+	}
+	q := datastore.NewQuery(model.ProjectKind)
+	if err := datastore.Run(c, q, addTask); err != nil {
+		return errors.Annotate(err, "failed to schedule audits").Err()
+	}
+	if err := getDispatcher(c).AddTask(c, jobs...); err != nil {
+		return errors.Annotate(err, "failed to schedule tasks").Err()
+	}
+	return nil
+}
+
 // reportQuotasAsync schedules task queue tasks to report quota in each project.
 func reportQuotasAsync(c context.Context) error {
 	return trigger(c, &tasks.ReportQuota{}, datastore.NewQuery(model.ProjectKind))

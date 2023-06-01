@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
@@ -440,6 +441,266 @@ func TestDestroyInstance(t *testing.T) {
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
 				})
 			})
+		})
+	})
+}
+
+func TestAuditInstanceInZone(t *testing.T) {
+	t.Parallel()
+
+	Convey("auditInstanceInZone", t, func() {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		rt := &roundtripper.JSONRoundTripper{}
+		c := context.Background()
+		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
+		So(err, ShouldBeNil)
+		c = withCompute(withDispatcher(memory.Use(c), dsp), gce)
+		datastore.GetTestable(c).Consistent(true)
+		tqt := tqtesting.GetTestable(c, dsp)
+		tqt.CreateQueues()
+
+		Convey("invalid", func() {
+			Convey("nil", func() {
+				err := auditInstanceInZone(c, nil)
+				So(err, ShouldErrLike, "Unexpected payload")
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("empty", func() {
+				err := auditInstanceInZone(c, &tasks.AuditProject{})
+				So(err, ShouldErrLike, "Project is required")
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("empty region", func() {
+				err := auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+				})
+				So(err, ShouldErrLike, "Region is required")
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+		})
+
+		Convey("valid", func() {
+			Convey("VM entry exists", func() {
+				count := 0
+				// The first request must be to the List API. Should not
+				// do any consequent requests
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.InstanceList{
+							Items: []*compute.Instance{{
+								Hostname: "double-k",
+							}},
+						}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := datastore.Put(c, &model.VM{
+					ID:       "double",
+					Hostname: "double-k",
+				})
+				So(err, ShouldBeNil)
+				err = auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+					Region:  "us-mex-1",
+				})
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("VM entry exists double, page token", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.InstanceList{
+							Items: []*compute.Instance{{
+								Hostname: "double-k",
+							}, {
+								Hostname: "thes-one",
+							}},
+							NextPageToken: "next-page",
+						}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := datastore.Put(c, &model.VM{
+					ID:       "double",
+					Hostname: "double-k",
+				})
+				So(err, ShouldBeNil)
+				err = datastore.Put(c, &model.VM{
+					ID:       "thes",
+					Hostname: "thes-one",
+				})
+				So(err, ShouldBeNil)
+				err = auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+					Region:  "us-mex-1",
+				})
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+				// The next token should schedule a job
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+
+			// TODO(b/274688233): Uncomment once we are sure this doesn't delete
+			// anything important
+			/*Convey("VM leaked (single)", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.InstanceList{
+							Items: []*compute.Instance{{
+								Hostname: "double-k",
+							}},
+						}
+					case 1:
+						count += 1
+						return http.StatusOK, &compute.Operation{}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+					Region:  "us-mex-1",
+				})
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 2)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("VM leaked (double)", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.InstanceList{
+							Items: []*compute.Instance{{
+								Hostname: "double-k",
+							}, {
+								Hostname: "thes-one",
+							}},
+						}
+					case 1:
+						count += 1
+						return http.StatusOK, &compute.Operation{}
+					case 2:
+						count += 1
+						return http.StatusOK, &compute.Operation{}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+					Region:  "us-mex-1",
+				})
+				So(count, ShouldEqual, 3)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+			Convey("VM leaked (mix)", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.InstanceList{
+							Items: []*compute.Instance{{
+								Hostname: "double-k",
+							}, {
+								Hostname: "thes-one",
+							}},
+						}
+					case 1:
+						count += 1
+						return http.StatusOK, &compute.Operation{
+							Status: "Done",
+						}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := datastore.Put(c, &model.VM{
+					ID:       "double",
+					Hostname: "double-k",
+				})
+				So(err, ShouldBeNil)
+				err = auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+					Region:  "us-mex-1",
+				})
+				So(count, ShouldEqual, 2)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})*/
+		})
+
+		Convey("error", func() {
+			Convey("list failure", func() {
+				rt.Handler = func(req any) (int, any) {
+					return http.StatusInternalServerError, nil
+				}
+				err := auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+					Region:  "us-mex-1",
+				})
+				So(err, ShouldErrLike, "failed to list")
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+			// TODO(b/274688233): Uncomment once we are sure this doesn't delete
+			// anything important
+			/*Convey("VM delete failure", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.InstanceList{
+							Items: []*compute.Instance{{
+								Hostname: "double-k",
+							}},
+						}
+					case 1:
+						count += 1
+						return http.StatusOK, &compute.Operation{
+							Error: &compute.OperationError{
+								Errors: []*compute.OperationErrorErrors{
+									{},
+								},
+							},
+						}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := auditInstanceInZone(c, &tasks.AuditProject{
+					Project: "libreboot",
+					Region:  "us-mex-1",
+				})
+				So(count, ShouldEqual, 2)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})*/
 		})
 	})
 }

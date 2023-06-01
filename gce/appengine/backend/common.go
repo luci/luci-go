@@ -54,6 +54,7 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
 	dsp.RegisterTask(&tasks.ReportQuota{}, reportQuota, reportQuotaQueue, nil)
 	dsp.RegisterTask(&tasks.TerminateBot{}, terminateBot, terminateBotQueue, nil)
+	dsp.RegisterTask(&tasks.AuditProject{}, auditInstanceInZone, auditInstancesQueue, nil)
 }
 
 // gceKey is the key to a *compute.Service in the context.
@@ -130,4 +131,5 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	r.GET("/internal/cron/expand-configs", mw, newHTTPHandler(expandConfigsAsync))
 	r.GET("/internal/cron/manage-bots", mw, newHTTPHandler(manageBotsAsync))
 	r.GET("/internal/cron/report-quota", mw, newHTTPHandler(reportQuotasAsync))
+	r.GET("/internal/cron/audit-project", mw, newHTTPHandler(auditInstances))
 }

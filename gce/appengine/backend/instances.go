@@ -265,3 +265,118 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	// Instance destruction is pending.
 	return nil
 }
+
+const auditInstancesQueue = "audit-instances"
+
+// Number of instances to audit per run
+const auditBatchSize = 100
+
+// auditInstanceInZone attempts to enforce the vm table as the source of truth
+// for any given project. It does this by deleting anything that it doesn't
+// recognize.
+func auditInstanceInZone(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.AuditProject)
+	switch {
+	case !ok:
+		return errors.Reason("Unexpected payload type %T", payload).Err()
+	case task.GetProject() == "":
+		return errors.Reason("Project is required").Err()
+	case task.GetRegion() == "":
+		return errors.Reason("Region is required").Err()
+	}
+	proj := task.GetProject()
+	reg := task.GetRegion()
+	logging.Debugf(c, "Auditing %s in %s", proj, reg)
+	// List a bunch on instances and validate with the DB
+	srv := getCompute(c).Instances
+	call := srv.List(proj, reg).MaxResults(auditBatchSize)
+	if task.GetPageToken() != "" {
+		// Add the page token if given
+		call = call.PageToken(task.GetPageToken())
+	}
+	op, err := call.Context(c).Do()
+	if err != nil {
+		if gerr, ok := err.(*googleapi.Error); ok {
+			logErrors(c, fmt.Sprintf("%s-%s", proj, reg), gerr)
+		}
+		return errors.Annotate(err, "failed to list  %s-%s", proj, reg).Err()
+	}
+
+	// Assign job to handle the next set of instances
+	defer func(c context.Context, task *tasks.AuditProject, pageToken string) {
+		if pageToken != "" {
+			task.PageToken = pageToken
+			if err := getDispatcher(c).AddTask(c, &tq.Task{
+				Payload: task,
+			}); err != nil {
+				logging.Errorf(c, "Failed to add audit task for %s-%s", task.GetProject(), task.GetRegion())
+			}
+		}
+	}(c, task, op.NextPageToken)
+
+	// Mapping from hostname to VM
+	hostToVM := make(map[string]*model.VM)
+	for _, inst := range op.Items {
+		// Init all the hostnames
+		hostToVM[inst.Hostname] = nil
+	}
+
+	query := datastore.NewQuery(model.VMKind)
+	// Queries will contain all the queries to be made to datastore
+	var queries []*datastore.Query
+	for hostname := range hostToVM {
+		// Eq creates a new object everytime. So collect all the unique
+		// queries
+		queries = append(queries, query.Eq("hostname", hostname))
+	}
+	mapVMs := func(vm *model.VM) {
+		hostToVM[vm.Hostname] = vm
+	}
+	// Get all the VM records corresponding to the listed instances
+	err = datastore.RunMulti(c, queries, mapVMs)
+	if err != nil {
+		logging.Errorf(c, "Failed to query for the VMS. %v", err)
+		return err
+	}
+	var countLeaks int64
+	// Delete the ones we don't know of
+	for hostname, vm := range hostToVM {
+		if vm == nil {
+			countLeaks += 1
+			logging.Debugf(c, "plugging the instance leak in %s-%s: %s", proj, reg, hostname)
+			/* TODO(b/274688233): Uncomment this once we are sure that
+			* this will not result in an outage. Will use the logs to
+			* determine what instances will be deleted.
+			* -------------------------------------------------------------------------
+			* // Send a delete request for the instance
+			* reqID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("plug-%s", hostname)))
+			* del := srv.Delete(proj, reg, hostname)
+			* op, err := del.RequestId(reqID.String()).Context(c).Do()
+			* if err != nil {
+			* 	if gerr, ok := err.(*googleapi.Error); ok {
+			* 		if gerr.Code == http.StatusNotFound {
+			* 			// Instance is already destroyed.
+			* 			logging.Debugf(c, "instance does not exist: %s", hostname)
+			* 		}
+			* 		logErrors(c, hostname, gerr)
+			* 	}
+			* 	logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
+			* 	continue
+			* }
+			* if op.Error != nil && len(op.Error.Errors) > 0 {
+			* 	//return errors.Reason("failed to plug %v", op.Error).Err()
+			* 	for _, e := range op.Error.Errors {
+			* 		logging.Errorf(c, "%s: %s", e.Code, e.Message)
+			* 	}
+			* 	logging.Errorf(c, "failed to plug the leak %s. %v", hostname, err)
+			* 	continue
+			* }
+			* if op.Status == "DONE" {
+			* 	logging.Debugf(c, "plugged the leak of instance: %s", op.TargetLink)
+			* }
+			* --------------------------------------------------------------------------*/
+		}
+	}
+	metrics.UpdateLeaks(c, countLeaks, proj, reg)
+	return nil
+}

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 
@@ -180,6 +181,26 @@ func TestCron(t *testing.T) {
 				})
 				So(reportQuotasAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
+
+		Convey("auditInstances", func() {
+			Convey("none", func() {
+				So(auditInstances(c), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				err := datastore.Put(c, &model.Project{
+					ID: "id",
+					Config: projects.Config{
+						Project: "gnu-hurd",
+						Region:  []string{"us-mex-1", "us-num-1"},
+					},
+				})
+				So(err, ShouldBeNil)
+				So(auditInstances(c), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
 			})
 		})
 
