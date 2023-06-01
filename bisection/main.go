@@ -63,12 +63,12 @@ const (
 // checkAccess is middleware that checks if the user is authorized to
 // access GoFindit.
 func checkAccess(ctx *router.Context, next router.Handler) {
-	user := auth.CurrentIdentity(ctx.Context)
+	user := auth.CurrentIdentity(ctx.Request.Context())
 	// User is not logged in
 	if user.Kind() == identity.Anonymous {
-		url, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+		url, err := auth.LoginURL(ctx.Request.Context(), ctx.Request.URL.RequestURI())
 		if err != nil {
-			logging.Errorf(ctx.Context, "error in getting loginURL: %w", err)
+			logging.Errorf(ctx.Request.Context(), "error in getting loginURL: %w", err)
 			http.Error(ctx.Writer, "Error in getting loginURL", http.StatusInternalServerError)
 		} else {
 			http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
@@ -77,13 +77,13 @@ func checkAccess(ctx *router.Context, next router.Handler) {
 	}
 
 	// User is logged in, check access group
-	switch yes, err := auth.IsMember(ctx.Context, ACCESS_GROUP); {
+	switch yes, err := auth.IsMember(ctx.Request.Context(), ACCESS_GROUP); {
 	case err != nil:
-		logging.Errorf(ctx.Context, "error in checking membership %s", err.Error())
+		logging.Errorf(ctx.Request.Context(), "error in checking membership %s", err.Error())
 		http.Error(ctx.Writer, "Error in authorizing the user.", http.StatusInternalServerError)
 	case !yes:
 		ctx.Writer.WriteHeader(http.StatusForbidden)
-		templates.MustRender(ctx.Context, ctx.Writer, "pages/access-denied.html", nil)
+		templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/access-denied.html", nil)
 	default:
 		next(ctx)
 	}
@@ -168,8 +168,8 @@ func main() {
 		pusherID := identity.Identity(fmt.Sprintf("user:buildbucket-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
 
 		srv.Routes.POST("/_ah/push-handlers/buildbucket", pubsubMwc, func(ctx *router.Context) {
-			if got := auth.CurrentIdentity(ctx.Context); got != pusherID {
-				logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
+			if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
+				logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
 				ctx.Writer.WriteHeader(http.StatusForbidden)
 			} else {
 				pubsub.BuildbucketPubSubHandler(ctx)

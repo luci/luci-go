@@ -57,30 +57,30 @@ func GetAuthState(ctx *router.Context) {
 		return
 	}
 
-	user := auth.CurrentUser(ctx.Context)
+	user := auth.CurrentUser(ctx.Request.Context())
 	var state *authState
 	if user.Identity == identity.AnonymousIdentity {
 		state = &authState{
 			Identity: string(user.Identity),
 		}
 	} else {
-		session := auth.GetState(ctx.Context).Session()
+		session := auth.GetState(ctx.Request.Context()).Session()
 		if session == nil {
 			http.Error(ctx.Writer, "Request not authenticated via secure cookies.", http.StatusUnauthorized)
 			return
 		}
 
-		accessToken, err := session.AccessToken(ctx.Context)
+		accessToken, err := session.AccessToken(ctx.Request.Context())
 		if err != nil {
-			logging.Errorf(ctx.Context, "Obtain access token: %s", err)
+			logging.Errorf(ctx.Request.Context(), "Obtain access token: %s", err)
 			http.Error(ctx.Writer, "Internal server error.", http.StatusInternalServerError)
 			return
 		}
-		idToken, err := session.IDToken(ctx.Context)
+		idToken, err := session.IDToken(ctx.Request.Context())
 		if err != nil {
 			// If here when running the server locally, it may mean you need to run
 			// "luci-auth".
-			logging.Errorf(ctx.Context, "Obtain ID token: %s", err)
+			logging.Errorf(ctx.Request.Context(), "Obtain ID token: %s", err)
 			http.Error(ctx.Writer, "Internal server error.", http.StatusInternalServerError)
 			return
 		}

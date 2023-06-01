@@ -21,5 +21,5 @@ import (
 
 // IndexPage serves a GET request for the index page for the frontend
 func IndexPage(ctx *router.Context) {
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/index.html", templates.Args{})
+	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/index.html", templates.Args{})
 }

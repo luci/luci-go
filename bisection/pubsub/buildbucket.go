@@ -76,8 +76,8 @@ type buildBucketMessage struct {
 
 // BuildbucketPubSubHandler handles pub/sub messages from buildbucket
 func BuildbucketPubSubHandler(ctx *router.Context) {
-	if err := buildbucketPubSubHandlerImpl(ctx.Context, ctx.Request); err != nil {
-		logging.Errorf(ctx.Context, "Error processing buildbucket pubsub message: %s", err)
+	if err := buildbucketPubSubHandlerImpl(ctx.Request.Context(), ctx.Request); err != nil {
+		logging.Errorf(ctx.Request.Context(), "Error processing buildbucket pubsub message: %s", err)
 		processError(ctx, err)
 		return
 	}
