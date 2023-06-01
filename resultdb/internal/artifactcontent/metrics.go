@@ -61,7 +61,7 @@ func NewMetricsWriter(c *router.Context) *MetricsWriter {
 	}
 	return &MetricsWriter{
 		statusTracker: c.Writer.(*statusTrackingWriter),
-		startTime:     clock.Now(c.Context),
+		startTime:     clock.Now(c.Request.Context()),
 	}
 }
 

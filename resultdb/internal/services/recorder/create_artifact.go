@@ -82,17 +82,17 @@ func (h *artifactCreationHandler) Handle(c *router.Context) {
 	ac := &artifactCreator{artifactCreationHandler: h}
 	mw := artifactcontent.NewMetricsWriter(c)
 	defer func() {
-		mw.Upload(c.Context, ac.size)
+		mw.Upload(c.Request.Context(), ac.size)
 	}()
 
 	err := ac.handle(c)
 	st, ok := appstatus.Get(err)
 	switch {
 	case ok:
-		logging.Warningf(c.Context, "Responding with %s: %s", st.Code(), err)
+		logging.Warningf(c.Request.Context(), "Responding with %s: %s", st.Code(), err)
 		http.Error(c.Writer, st.Message(), grpcutil.CodeStatus(st.Code()))
 	case err != nil:
-		logging.Errorf(c.Context, "Internal server error: %s", err)
+		logging.Errorf(c.Request.Context(), "Internal server error: %s", err)
 		http.Error(c.Writer, "Internal server error", http.StatusInternalServerError)
 	default:
 		c.Writer.WriteHeader(http.StatusNoContent)
@@ -116,7 +116,7 @@ type artifactCreator struct {
 }
 
 func (ac *artifactCreator) handle(c *router.Context) error {
-	ctx := c.Context
+	ctx := c.Request.Context()
 
 	// Parse and validate the request.
 	if err := ac.parseRequest(c); err != nil {
@@ -322,7 +322,7 @@ func (ac *artifactCreator) parseRequest(c *router.Context) error {
 	if updateToken == "" {
 		return appstatus.Errorf(codes.Unauthenticated, "%s header is missing", updateTokenHeaderKey)
 	}
-	if err := validateInvocationToken(c.Context, updateToken, ac.invID); err != nil {
+	if err := validateInvocationToken(c.Request.Context(), updateToken, ac.invID); err != nil {
 		return appstatus.Errorf(codes.PermissionDenied, "invalid %s header value", updateTokenHeaderKey)
 	}
 

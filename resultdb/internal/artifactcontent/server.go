@@ -125,20 +125,20 @@ type contentRequest struct {
 func (r *contentRequest) handle(c *router.Context) {
 	r.setAccessControlHeaders(c, false)
 
-	if err := r.parseRequest(c.Context, c.Request); err != nil {
-		r.sendError(c.Context, appstatus.BadRequest(err))
+	if err := r.parseRequest(c.Request.Context(), c.Request); err != nil {
+		r.sendError(c.Request.Context(), appstatus.BadRequest(err))
 		return
 	}
 
-	if err := r.checkAccess(c.Context, c.Request); err != nil {
-		r.sendError(c.Context, err)
+	if err := r.checkAccess(c.Request.Context(), c.Request); err != nil {
+		r.sendError(c.Request.Context(), err)
 		return
 	}
 
 	// Read the state from database.
 	var rbeCASHash spanner.NullString
 	key := r.invID.Key(r.parentID, r.artifactID)
-	err := spanutil.ReadRow(span.Single(c.Context), "Artifacts", key, map[string]any{
+	err := spanutil.ReadRow(span.Single(c.Request.Context()), "Artifacts", key, map[string]any{
 		"ContentType": &r.contentType,
 		"Size":        &r.size,
 		"RBECASHash":  &rbeCASHash,
@@ -148,19 +148,19 @@ func (r *contentRequest) handle(c *router.Context) {
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		err = appstatus.Attachf(err, codes.NotFound, "%s not found", r.artifactName)
-		r.sendError(c.Context, err)
+		r.sendError(c.Request.Context(), err)
 
 	case err != nil:
-		r.sendError(c.Context, err)
+		r.sendError(c.Request.Context(), err)
 
 	case rbeCASHash.Valid:
 		mw := NewMetricsWriter(c)
-		defer mw.Download(c.Context, r.size.Int64)
+		defer mw.Download(c.Request.Context(), r.size.Int64)
 		r.handleRBECASContent(c, rbeCASHash.StringVal)
 
 	default:
 		err = appstatus.Attachf(err, codes.NotFound, "%s not found", r.artifactName)
-		r.sendError(c.Context, err)
+		r.sendError(c.Request.Context(), err)
 	}
 }
 

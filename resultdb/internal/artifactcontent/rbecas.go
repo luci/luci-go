@@ -69,24 +69,24 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 	// https://github.com/googleapis/googleapis/blob/c8e291e6a4d60771219205b653715d5aeec3e96b/google/bytestream/bytestream.proto#L50-L53
 
 	// Start a reading stream.
-	stream, err := r.ReadCASBlob(c.Context, &bytestream.ReadRequest{
+	stream, err := r.ReadCASBlob(c.Request.Context(), &bytestream.ReadRequest{
 		ResourceName: resourceName(r.RBECASInstanceName, hash, r.size.Int64),
 		ReadLimit:    r.limit,
 	})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			// Do not lose the original error message.
-			logging.Warningf(c.Context, "RBE-CAS responded: %s", err)
+			logging.Warningf(c.Request.Context(), "RBE-CAS responded: %s", err)
 			err = appstatus.Errorf(codes.NotFound, "artifact content no longer exists")
 		}
-		r.sendError(c.Context, err)
+		r.sendError(c.Request.Context(), err)
 		return
 	}
 
 	// Forward the blob to the client.
 	wroteHeader := false
 	for {
-		_, readSpan := trace.StartSpan(c.Context, "resultdb.readChunk")
+		_, readSpan := trace.StartSpan(c.Request.Context(), "resultdb.readChunk")
 		chunk, err := stream.Recv()
 		if err == nil {
 			readSpan.Attribute("size", len(chunk.Data))
@@ -104,17 +104,17 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 				// write headers. Write at least something indicating the incomplete
 				// response.
 				fmt.Fprintf(c.Writer, "\nResultDB: internal error while writing the response!\n")
-				logging.Errorf(c.Context, "Failed to read from RBE-CAS in the middle of response: %s", err)
+				logging.Errorf(c.Request.Context(), "Failed to read from RBE-CAS in the middle of response: %s", err)
 			} else {
 				if status.Code(err) == codes.NotFound {
 					// Sometimes RBE-CAS doesn't report NotFound until the read
 					// of the first chunk, so duplicate the NotFound handling
 					// above.
 					// Do not lose the original error message.
-					logging.Warningf(c.Context, "RBE-CAS responded: %s", err)
+					logging.Warningf(c.Request.Context(), "RBE-CAS responded: %s", err)
 					err = appstatus.Errorf(codes.NotFound, "artifact content no longer exists")
 				}
-				r.sendError(c.Context, err)
+				r.sendError(c.Request.Context(), err)
 			}
 			return
 
@@ -125,12 +125,12 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 				wroteHeader = true
 			}
 
-			_, writeSpan := trace.StartSpan(c.Context, "resultdb.writeChunk")
+			_, writeSpan := trace.StartSpan(c.Request.Context(), "resultdb.writeChunk")
 			writeSpan.Attribute("size", len(chunk.Data))
 			_, err := c.Writer.Write(chunk.Data)
 			writeSpan.End(err)
 			if err != nil {
-				logging.Warningf(c.Context, "Failed to write a response chunk: %s", err)
+				logging.Warningf(c.Request.Context(), "Failed to write a response chunk: %s", err)
 				return
 			}
 		}

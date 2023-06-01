@@ -112,7 +112,6 @@ func TestCreateArtifact(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			c := &router.Context{
-				Context: ctx,
 				Request: (&http.Request{
 					Header: http.Header{},
 					URL:    u,
