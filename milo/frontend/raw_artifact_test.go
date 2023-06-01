@@ -80,7 +80,6 @@ func TestRawArtifactHandler(t *testing.T) {
 			c := context.Background()
 			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 			ctx := &router.Context{
-				Context: c,
 				Request: req.WithContext(c),
 				Writer:  w,
 			}
@@ -112,7 +111,6 @@ func TestRawArtifactHandler(t *testing.T) {
 
 			req := &http.Request{URL: url}
 			ctx := &router.Context{
-				Context: c,
 				Request: req.WithContext(c),
 				Writer:  w,
 			}
@@ -144,7 +142,6 @@ func TestRawArtifactHandler(t *testing.T) {
 
 			req := &http.Request{URL: url}
 			ctx := &router.Context{
-				Context: c,
 				Request: req.WithContext(c),
 				Writer:  w,
 			}

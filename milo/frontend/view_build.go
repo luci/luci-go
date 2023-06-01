@@ -85,9 +85,9 @@ func handleLUCIBuild(c *router.Context) error {
 // GetBuildPage fetches the full set of information for a Milo build page from Buildbucket.
 // Including the blamelist and other auxiliary information.
 func GetBuildPage(ctx *router.Context, br *buildbucketpb.GetBuildRequest, blamelistOpt buildbucket.BlamelistOption) (*ui.BuildPage, error) {
-	now := timestamppb.New(clock.Now(ctx.Context))
+	now := timestamppb.New(clock.Now(ctx.Request.Context()))
 
-	c := ctx.Context
+	c := ctx.Request.Context()
 	host, err := buildbucket.GetHost(c)
 	if err != nil {
 		return nil, err
@@ -268,10 +268,10 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, showOptInBanner bool, err 
 		optInBannerHtml = bp.NewBuildPageOptInHTML()
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/build.html", templates.Args{
 		"BuildPage":      bp,
 		"RetryRequestID": rand.Int31(),
-		"XsrfTokenField": xsrf.TokenField(c.Context),
+		"XsrfTokenField": xsrf.TokenField(c.Request.Context()),
 		"BannerHTML":     optInBannerHtml,
 	})
 	return nil
@@ -284,7 +284,7 @@ func redirectLUCIBuild(c *router.Context) error {
 	if err != nil {
 		return err
 	}
-	builder, number, err := buildbucket.GetBuilderID(c.Context, id)
+	builder, number, err := buildbucket.GetBuilderID(c.Request.Context(), id)
 	if err != nil {
 		return err
 	}
@@ -303,7 +303,7 @@ func handleGetRelatedBuildsTable(c *router.Context) error {
 	if err != nil {
 		return err
 	}
-	templates.MustRender(c.Context, c.Writer, "widgets/related_builds_table.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "widgets/related_builds_table.html", templates.Args{
 		"RelatedBuildsTable": rbt,
 	})
 	return nil
@@ -316,7 +316,7 @@ func getRelatedBuilds(c *router.Context) (*ui.RelatedBuildsTable, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
-	rbt, err := buildbucket.GetRelatedBuildsTable(c.Context, id)
+	rbt, err := buildbucket.GetRelatedBuildsTable(c.Request.Context(), id)
 	if err != nil {
 		return nil, errors.Annotate(err, "error when getting related builds table").Err()
 	}
@@ -330,7 +330,7 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	case http.ErrNoCookie:
 		return ui.StepDisplayDefault
 	default:
-		logging.WithError(err).Errorf(c.Context, "failed to read stepDisplayPref cookie")
+		logging.WithError(err).Errorf(c.Request.Context(), "failed to read stepDisplayPref cookie")
 		return ui.StepDisplayDefault
 	}
 }
@@ -342,7 +342,7 @@ func getShowNewBuildPageCookie(c *router.Context) bool {
 	case http.ErrNoCookie:
 		return true
 	default:
-		logging.WithError(err).Errorf(c.Context, "failed to read showNewBuildPage cookie")
+		logging.WithError(err).Errorf(c.Request.Context(), "failed to read showNewBuildPage cookie")
 		return true
 	}
 }
@@ -354,7 +354,7 @@ func getShowDebugLogsPrefCookie(c *router.Context) bool {
 	case http.ErrNoCookie:
 		return false
 	default:
-		logging.WithError(err).Errorf(c.Context, "failed to read showDebugLogsPref cookie")
+		logging.WithError(err).Errorf(c.Request.Context(), "failed to read showDebugLogsPref cookie")
 		return false
 	}
 }

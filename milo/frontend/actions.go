@@ -35,7 +35,7 @@ func cancelBuildHandler(ctx *router.Context) error {
 		return errors.Annotate(err, "error while parsing cancel build request input fields").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	if _, err := buildbucket.CancelBuild(ctx.Context, id, reason); err != nil {
+	if _, err := buildbucket.CancelBuild(ctx.Request.Context(), id, reason); err != nil {
 		return err
 	}
 
@@ -73,7 +73,7 @@ func retryBuildHandler(ctx *router.Context) error {
 		return errors.Annotate(err, "error while parsing retry build request input fields").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	build, err := buildbucket.RetryBuild(ctx.Context, buildbucketID, requestID)
+	build, err := buildbucket.RetryBuild(ctx.Request.Context(), buildbucketID, requestID)
 	if err != nil {
 		return err
 	}

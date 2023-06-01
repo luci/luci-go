@@ -36,7 +36,7 @@ func handleSwarmingBuild(c *router.Context) error {
 	taskID := c.Params.ByName("id")
 
 	// Redirect to build page if possible.
-	switch buildID, ldURL, err := swarming.RedirectsFromTask(c.Context, host, taskID); {
+	switch buildID, ldURL, err := swarming.RedirectsFromTask(c.Request.Context(), host, taskID); {
 	case err != nil:
 		return err
 	case buildID != 0:
@@ -51,13 +51,13 @@ func handleSwarmingBuild(c *router.Context) error {
 		return nil
 	}
 
-	build, err := swarming.GetBuild(c.Context, host, taskID)
+	build, err := swarming.GetBuild(c.Request.Context(), host, taskID)
 	return renderBuildLegacy(c, build, false, err)
 }
 
 func handleRawPresentationBuild(c *router.Context) error {
 	legacyBuild, build, err := rawpresentation.GetBuild(
-		c.Context,
+		c.Request.Context(),
 		c.Params.ByName("logdog_host"),
 		c.Params.ByName("project"),
 		types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")))
@@ -76,9 +76,9 @@ func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, renderTimel
 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
 	build.ShowDebugLogsPref = getShowDebugLogsPrefCookie(c)
-	build.Fix(c.Context)
+	build.Fix(c.Request.Context())
 
-	templates.MustRender(c.Context, c.Writer, "pages/build_legacy.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/build_legacy.html", templates.Args{
 		"Build": build,
 	})
 	return nil

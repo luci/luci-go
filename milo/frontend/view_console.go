@@ -552,7 +552,7 @@ func ConsoleHandler(c *router.Context) error {
 	group := c.Params.ByName("group")
 
 	// Get console from datastore and filter out builders from the definition.
-	con, err := projectconfig.GetConsole(c.Context, project, group)
+	con, err := projectconfig.GetConsole(c.Request.Context(), project, group)
 	switch {
 	case err != nil:
 		return err
@@ -584,23 +584,23 @@ func ConsoleHandler(c *router.Context) error {
 		if err != nil {
 			return err
 		}
-		headerCons, err = projectconfig.GetConsoles(c.Context, ids)
+		headerCons, err = projectconfig.GetConsoles(c.Request.Context(), ids)
 		if err != nil {
 			headerConsError = errors.Annotate(err, "error getting header consoles").Err()
 			headerCons = make([]*projectconfig.Console, 0)
 		}
 	}
-	if err := filterUnauthorizedBuildersFromConsoles(c.Context, append(headerCons, con)); err != nil {
+	if err := filterUnauthorizedBuildersFromConsoles(c.Request.Context(), append(headerCons, con)); err != nil {
 		return errors.Annotate(err, "error authorizing user").Err()
 	}
 
 	// Process the request and generate a renderable structure.
-	result, err := console(c.Context, project, group, limit, con, headerCons, headerConsError)
+	result, err := console(c.Request.Context(), project, group, limit, con, headerCons, headerConsError)
 	if err != nil {
 		return err
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/console.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/console.html", templates.Args{
 		"Console": consoleRenderer{result},
 		"Expand":  con.Def.DefaultExpand,
 	})
@@ -611,11 +611,11 @@ func ConsoleHandler(c *router.Context) error {
 // console list page (defined in ./appengine/templates/pages/builder_groups.html).
 func ConsolesHandler(c *router.Context, projectID string) error {
 	// Get consoles related to this project and filter out all builders.
-	cons, err := projectconfig.GetProjectConsoles(c.Context, projectID)
+	cons, err := projectconfig.GetProjectConsoles(c.Request.Context(), projectID)
 	if err != nil {
 		return err
 	}
-	if err := filterUnauthorizedBuildersFromConsoles(c.Context, cons); err != nil {
+	if err := filterUnauthorizedBuildersFromConsoles(c.Request.Context(), cons); err != nil {
 		return errors.Annotate(err, "error authorizing user").Err()
 	}
 
@@ -626,19 +626,19 @@ func ConsolesHandler(c *router.Context, projectID string) error {
 		Render    consoleRenderer
 	}
 	var consoles []fullConsole
-	summaryMap, err := buildsource.GetConsoleSummariesFromDefs(c.Context, cons, projectID)
+	summaryMap, err := buildsource.GetConsoleSummariesFromDefs(c.Request.Context(), cons, projectID)
 	if err != nil {
 		return err
 	}
 	for _, con := range cons {
 		summary, ok := summaryMap[con.ConsoleID()]
 		if !ok {
-			logging.Errorf(c.Context, "console summary for %s not found", con.ConsoleID())
+			logging.Errorf(c.Request.Context(), "console summary for %s not found", con.ConsoleID())
 			continue
 		}
-		respConsole, err := consolePreview(c.Context, summary, &con.Def)
+		respConsole, err := consolePreview(c.Request.Context(), summary, &con.Def)
 		if err != nil {
-			logging.WithError(err).Errorf(c.Context, "failed to generate resp console")
+			logging.WithError(err).Errorf(c.Request.Context(), "failed to generate resp console")
 			continue
 		}
 		resolvedProjectID := con.ProjectID()
@@ -656,7 +656,7 @@ func ConsolesHandler(c *router.Context, projectID string) error {
 		consoles = append(consoles, full)
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/builder_groups.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/builder_groups.html", templates.Args{
 		"ProjectID": projectID,
 		"Consoles":  consoles,
 	})

@@ -135,8 +135,8 @@ func Run(srv *server.Server, templatePath string) {
 
 	// PubSub subscription endpoints.
 	r.POST("/push-handlers/buildbucket", pubsubMW, func(ctx *router.Context) {
-		if got := auth.CurrentIdentity(ctx.Context); got != pusherID {
-			logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", pusherID, got)
+		if got := auth.CurrentIdentity(ctx.Request.Context()); got != pusherID {
+			logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
 			ctx.Writer.WriteHeader(403)
 		} else {
 			buildbucket.PubSubHandler(ctx)
@@ -255,11 +255,11 @@ func redirectFromProjectlessBuilder(c *router.Context) {
 func configsJSHandler(c *router.Context) error {
 	template, err := template.ParseFiles("frontend/templates/configs.template.js")
 	if err != nil {
-		logging.Errorf(c.Context, "Failed to load configs.template.js: %s", err)
+		logging.Errorf(c.Request.Context(), "Failed to load configs.template.js: %s", err)
 		return err
 	}
 
-	settings := config.GetSettings(c.Context)
+	settings := config.GetSettings(c.Request.Context())
 
 	header := c.Writer.Header()
 	header.Set("content-type", "application/javascript")
@@ -281,7 +281,7 @@ func configsJSHandler(c *router.Context) error {
 	})
 
 	if err != nil {
-		logging.Errorf(c.Context, "Failed to execute configs.template.js: %s", err)
+		logging.Errorf(c.Request.Context(), "Failed to execute configs.template.js: %s", err)
 		return err
 	}
 

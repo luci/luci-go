@@ -68,22 +68,22 @@ func ErrorHandler(c *router.Context, err error) {
 	code := grpcutil.Code(err)
 	switch code {
 	case codes.Unauthenticated:
-		loginURL, err := auth.LoginURL(c.Context, c.Request.URL.RequestURI())
+		loginURL, err := auth.LoginURL(c.Request.Context(), c.Request.URL.RequestURI())
 		if err == nil {
 			http.Redirect(c.Writer, c.Request, loginURL, http.StatusFound)
 			return
 		}
 		errors.Log(
-			c.Context, errors.Annotate(err, "failed to retrieve login URL").Err())
+			c.Request.Context(), errors.Annotate(err, "failed to retrieve login URL").Err())
 	case codes.OK:
 		// All good.
 	default:
-		errors.Log(c.Context, err)
+		errors.Log(c.Request.Context(), err)
 	}
 
 	status := grpcutil.CodeStatus(code)
 	c.Writer.WriteHeader(status)
-	templates.MustRender(c.Context, c.Writer, "pages/error.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/error.html", templates.Args{
 		"Code":    status,
 		"Message": err.Error(),
 	})

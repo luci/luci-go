@@ -24,7 +24,7 @@ import (
 // HandleSwarmingLog renders a step log from a swarming build.
 func HandleSwarmingLog(c *router.Context) error {
 	log, closed, err := swarming.GetLog(
-		c.Context,
+		c.Request.Context(),
 		c.Request.FormValue("server"),
 		c.Params.ByName("id"),
 		c.Params.ByName("logname"))
@@ -32,7 +32,7 @@ func HandleSwarmingLog(c *router.Context) error {
 		return err
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/log.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/log.html", templates.Args{
 		"Log":    log,
 		"Closed": closed,
 	})

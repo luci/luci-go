@@ -53,12 +53,12 @@ func BuilderHandler(c *router.Context) error {
 		pageSize = 25
 	}
 
-	page, err := buildbucket.GetBuilderPage(c.Context, bid, pageSize, pageToken)
+	page, err := buildbucket.GetBuilderPage(c.Request.Context(), bid, pageSize, pageToken)
 	if err != nil {
 		return err
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/builder.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/builder.html", templates.Args{
 		"BuilderPage": page,
 	})
 	return nil

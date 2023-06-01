@@ -43,19 +43,19 @@ type authState struct {
 // getAuthState returns data about the current user and the access token
 // associated with the current session.
 func getAuthState(c *router.Context) error {
-	user := auth.CurrentUser(c.Context)
+	user := auth.CurrentUser(c.Request.Context())
 	var state *authState
 	if user.Identity == identity.AnonymousIdentity {
 		state = &authState{
 			Identity: string(user.Identity),
 		}
 	} else {
-		session := auth.GetState(c.Context).Session()
+		session := auth.GetState(c.Request.Context()).Session()
 		if session == nil {
 			return errors.New("request not authenticated via secure cookies", grpcutil.UnauthenticatedTag)
 		}
 
-		token, err := session.AccessToken(c.Context)
+		token, err := session.AccessToken(c.Request.Context())
 		if err != nil {
 			return err
 		}

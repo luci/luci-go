@@ -48,18 +48,18 @@ func (s *HTTPService) buildRawArtifactHandler(prefix string) func(ctx *router.Co
 		// Related: https://github.com/julienschmidt/httprouter/issues/284
 		artifactName := path[len(prefix):]
 
-		settings, err := s.GetSettings(ctx.Context)
+		settings, err := s.GetSettings(ctx.Request.Context())
 		if err != nil {
 			return errors.Annotate(err, "failed to get Milo's service settings").Err()
 		}
-		rdbClient, err := s.GetResultDBClient(ctx.Context, settings.Resultdb.Host, auth.AsSessionUser)
+		rdbClient, err := s.GetResultDBClient(ctx.Request.Context(), settings.Resultdb.Host, auth.AsSessionUser)
 		if err != nil {
 			return errors.Annotate(err, "failed to get ResultDB client").Err()
 		}
 
-		artifact, err := rdbClient.GetArtifact(ctx.Context, &resultpb.GetArtifactRequest{Name: artifactName})
+		artifact, err := rdbClient.GetArtifact(ctx.Request.Context(), &resultpb.GetArtifactRequest{Name: artifactName})
 		if err != nil {
-			return appstatus.GRPCifyAndLog(ctx.Context, err)
+			return appstatus.GRPCifyAndLog(ctx.Request.Context(), err)
 		}
 
 		http.Redirect(ctx.Writer, ctx.Request, artifact.FetchUrl, http.StatusFound)

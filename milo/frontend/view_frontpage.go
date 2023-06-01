@@ -23,12 +23,12 @@ import (
 )
 
 func frontpageHandler(c *router.Context) {
-	projs, err := projectconfig.GetVisibleProjects(c.Context)
+	projs, err := projectconfig.GetVisibleProjects(c.Request.Context())
 	if err != nil {
 		ErrorHandler(c, err)
 		return
 	}
-	templates.MustRender(c.Context, c.Writer, "pages/frontpage.html", templates.Args{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/frontpage.html", templates.Args{
 		"frontpage": ui.Frontpage{Projects: projs},
 	})
 }

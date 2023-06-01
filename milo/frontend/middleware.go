@@ -515,15 +515,13 @@ func getTemplateBundle(templatePath string, appVersionID string, prod bool) *tem
 
 // withBuildbucketBuildsClient is a middleware that installs a production buildbucket builds RPC client into the context.
 func withBuildbucketBuildsClient(c *router.Context, next router.Handler) {
-	c.Context = buildbucket.WithBuildsClientFactory(c.Context, buildbucket.ProdBuildsClientFactory)
-	c.Request = c.Request.WithContext(c.Context)
+	c.Request = c.Request.WithContext(buildbucket.WithBuildsClientFactory(c.Request.Context(), buildbucket.ProdBuildsClientFactory))
 	next(c)
 }
 
 // withBuildbucketBuildersClient is a middleware that installs a production buildbucket builders RPC client into the context.
 func withBuildbucketBuildersClient(c *router.Context, next router.Handler) {
-	c.Context = buildbucket.WithBuildersClientFactory(c.Context, buildbucket.ProdBuildersClientFactory)
-	c.Request = c.Request.WithContext(c.Context)
+	c.Request = c.Request.WithContext(buildbucket.WithBuildersClientFactory(c.Request.Context(), buildbucket.ProdBuildersClientFactory))
 	next(c)
 }
 
@@ -533,13 +531,12 @@ func withBuildbucketBuildersClient(c *router.Context, next router.Handler) {
 //
 // This middleware must be installed after the auth middleware.
 func withGitMiddleware(c *router.Context, next router.Handler) {
-	acls, err := gitacls.FromConfig(c.Context, config.GetSettings(c.Context).SourceAcls)
+	acls, err := gitacls.FromConfig(c.Request.Context(), config.GetSettings(c.Request.Context()).SourceAcls)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
 	}
-	c.Context = git.UseACLs(c.Context, acls)
-	c.Request = c.Request.WithContext(c.Context)
+	c.Request = c.Request.WithContext(git.UseACLs(c.Request.Context(), acls))
 	next(c)
 }
 
@@ -551,17 +548,16 @@ func withGitMiddleware(c *router.Context, next router.Handler) {
 func buildProjectACLMiddleware(optional bool) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		luciProject := c.Params.ByName("project")
-		switch allowed, err := projectconfig.IsAllowed(c.Context, luciProject); {
+		switch allowed, err := projectconfig.IsAllowed(c.Request.Context(), luciProject); {
 		case err != nil:
 			ErrorHandler(c, err)
 		case allowed:
-			c.Context = git.WithProject(c.Context, luciProject)
-			c.Request = c.Request.WithContext(c.Context)
+			c.Request = c.Request.WithContext(git.WithProject(c.Request.Context(), luciProject))
 			next(c)
 		case !allowed && optional:
 			next(c)
 		default:
-			if auth.CurrentIdentity(c.Context) == identity.AnonymousIdentity {
+			if auth.CurrentIdentity(c.Request.Context()) == identity.AnonymousIdentity {
 				ErrorHandler(c, errors.New("not logged in", grpcutil.UnauthenticatedTag))
 			} else {
 				ErrorHandler(c, errors.New("no access to project", grpcutil.PermissionDeniedTag))

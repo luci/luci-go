@@ -186,10 +186,10 @@ var summaryBuildMask = &field_mask.FieldMask{
 
 // PubSubHandler is a webhook that stores the builds coming in from pubsub.
 func PubSubHandler(ctx *router.Context) {
-	err := pubSubHandlerImpl(ctx.Context, ctx.Request)
+	err := pubSubHandlerImpl(ctx.Request.Context(), ctx.Request)
 	if err != nil {
-		logging.Errorf(ctx.Context, "error while handling pubsub event")
-		errors.Log(ctx.Context, err)
+		logging.Errorf(ctx.Request.Context(), "error while handling pubsub event")
+		errors.Log(ctx.Request.Context(), err)
 	}
 	if transient.Tag.In(err) {
 		// Transient errors are 4xx so that PubSub retries them.

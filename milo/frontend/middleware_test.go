@@ -115,13 +115,12 @@ func TestFuncs(t *testing.T) {
 			So(projectconfig.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
-				Context: c,
 				Writer:  r,
 				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)).WithContext(c),
 				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
 			}
 			projectACLMiddleware(ctx, nil)
-			project, ok := git.ProjectFromContext(ctx.Context)
+			project, ok := git.ProjectFromContext(ctx.Request.Context())
 			So(ok, ShouldBeFalse)
 			So(project, ShouldEqual, "")
 			So(r.Code, ShouldEqual, 302)
@@ -145,7 +144,6 @@ func TestFuncs(t *testing.T) {
 			So(projectconfig.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
-				Context: c,
 				Writer:  r,
 				Request: httptest.NewRequest("GET", "/p/public", bytes.NewReader(nil)).WithContext(c),
 				Params:  httprouter.Params{{Key: "project", Value: "public"}},
@@ -155,7 +153,7 @@ func TestFuncs(t *testing.T) {
 				nextCalled = true
 			}
 			optionalProjectACLMiddleware(ctx, next)
-			project, ok := git.ProjectFromContext(ctx.Context)
+			project, ok := git.ProjectFromContext(ctx.Request.Context())
 			So(project, ShouldEqual, "public")
 			So(ok, ShouldBeTrue)
 			So(nextCalled, ShouldBeTrue)
@@ -179,7 +177,6 @@ func TestFuncs(t *testing.T) {
 			So(projectconfig.UpdateProjects(c), ShouldBeNil)
 
 			ctx := &router.Context{
-				Context: c,
 				Writer:  r,
 				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)).WithContext(c),
 				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
@@ -189,7 +186,7 @@ func TestFuncs(t *testing.T) {
 				nextCalled = true
 			}
 			optionalProjectACLMiddleware(ctx, next)
-			project, ok := git.ProjectFromContext(ctx.Context)
+			project, ok := git.ProjectFromContext(ctx.Request.Context())
 			So(ok, ShouldBeFalse)
 			So(project, ShouldEqual, "")
 			So(nextCalled, ShouldBeTrue)

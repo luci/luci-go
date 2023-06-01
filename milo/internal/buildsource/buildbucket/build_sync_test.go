@@ -166,7 +166,6 @@ func TestPubSub(t *testing.T) {
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
 			PubSubHandler(&router.Context{
-				Context: c,
 				Writer:  h,
 				Request: r.WithContext(c),
 			})
@@ -231,7 +230,6 @@ func TestPubSub(t *testing.T) {
 			h := httptest.NewRecorder()
 			r := &http.Request{Body: makeReq(buildExp)}
 			PubSubHandler(&router.Context{
-				Context: c,
 				Writer:  h,
 				Request: r.WithContext(c),
 			})
@@ -277,7 +275,6 @@ func TestPubSub(t *testing.T) {
 				h := httptest.NewRecorder()
 				r := &http.Request{Body: makeReq(eBuild)}
 				PubSubHandler(&router.Context{
-					Context: c,
 					Writer:  h,
 					Request: r.WithContext(c),
 				})
