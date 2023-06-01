@@ -42,8 +42,7 @@ func TestCVRunHandler(t *testing.T) {
 		h := &CVRunHandler{}
 		rsp := httptest.NewRecorder()
 		rctx := &router.Context{
-			Context: ctx,
-			Writer:  rsp,
+			Writer: rsp,
 		}
 		Convey(`Valid message`, func() {
 			message := &cvv1.PubSubRun{

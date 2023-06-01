@@ -39,8 +39,7 @@ func TestInvocationFinalizedHandler(t *testing.T) {
 		h := &InvocationFinalizedHandler{}
 		rsp := httptest.NewRecorder()
 		rctx := &router.Context{
-			Context: ctx,
-			Writer:  rsp,
+			Writer: rsp,
 		}
 
 		Convey(`Valid message`, func() {

@@ -62,13 +62,13 @@ func (h *CVRunHandler) Handle(ctx *router.Context) {
 	project := "unknown"
 	defer func() {
 		// Closure for late binding.
-		cvRunCounter.Add(ctx.Context, 1, project, status)
+		cvRunCounter.Add(ctx.Request.Context(), 1, project, status)
 	}()
-	project, processed, err := h.handlerImpl(ctx.Context, ctx.Request)
+	project, processed, err := h.handlerImpl(ctx.Request.Context(), ctx.Request)
 
 	switch {
 	case err != nil:
-		errors.Log(ctx.Context, errors.Annotate(err, "handling cv pubsub event").Err())
+		errors.Log(ctx.Request.Context(), errors.Annotate(err, "handling cv pubsub event").Err())
 		status = processErr(ctx, err)
 		return
 	case !processed:

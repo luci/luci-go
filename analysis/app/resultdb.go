@@ -64,13 +64,13 @@ func (h *InvocationFinalizedHandler) Handle(ctx *router.Context) {
 	project := "unknown"
 	defer func() {
 		// Closure for late binding.
-		invocationsFinalizedCounter.Add(ctx.Context, 1, project, status)
+		invocationsFinalizedCounter.Add(ctx.Request.Context(), 1, project, status)
 	}()
-	project, processed, err := h.handleImpl(ctx.Context, ctx.Request)
+	project, processed, err := h.handleImpl(ctx.Request.Context(), ctx.Request)
 
 	switch {
 	case err != nil:
-		errors.Log(ctx.Context, errors.Annotate(err, "handling invocation finalized pubsub event").Err())
+		errors.Log(ctx.Request.Context(), errors.Annotate(err, "handling invocation finalized pubsub event").Err())
 		status = processErr(ctx, err)
 		return
 	case !processed:

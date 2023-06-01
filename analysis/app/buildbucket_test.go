@@ -47,8 +47,7 @@ func TestHandleBuild(t *testing.T) {
 
 		rsp := httptest.NewRecorder()
 		rctx := &router.Context{
-			Context: ctx,
-			Writer:  rsp,
+			Writer: rsp,
 		}
 		pubSubMessage := &buildbucketpb.BuildsV2PubSub{
 			Build: &buildbucketpb.Build{

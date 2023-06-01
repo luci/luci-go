@@ -51,12 +51,12 @@ func BuildbucketPubSubHandler(ctx *router.Context) {
 	status := "unknown"
 	defer func() {
 		// Closure for late binding.
-		buildCounter.Add(ctx.Context, 1, project, status)
+		buildCounter.Add(ctx.Request.Context(), 1, project, status)
 	}()
 
-	project, processed, err := bbPubSubHandlerImpl(ctx.Context, ctx.Request)
+	project, processed, err := bbPubSubHandlerImpl(ctx.Request.Context(), ctx.Request)
 	if err != nil {
-		errors.Log(ctx.Context, errors.Annotate(err, "handling buildbucket pubsub event").Err())
+		errors.Log(ctx.Request.Context(), errors.Annotate(err, "handling buildbucket pubsub event").Err())
 		status = processErr(ctx, err)
 		return
 	}
