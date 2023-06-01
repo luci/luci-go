@@ -116,3 +116,56 @@ message Counts {
   // The total number of verdicts.
   int64 total_verdicts = 9;
 }
+
+// Store statistics about verdicts evicted from the input buffer in Spanner.
+//
+// Purpose is described in go/luci-analysis-test-variant-analysis-in-clusters.
+//
+// Statistics about verdicts not yet evicted from the input buffer are not
+// stored here because they can be computed directly from the input buffer.
+// This means this proto only needs to be updated in Spanner when
+// verdicts are evicted from the input buffer (approximately every 1/100
+// verdict ingestions), rather than on every verdict ingestion, reducing the
+// number of writes required.
+message Statistics {
+  // Statistics by partition time hour. Stored in ascending order (oldest
+  // hour first).
+  //
+  // Retained for 11 days (as 1 + 3 + 7 days):
+  // - 1 day to support the functional requirement of calculating flakiness
+  //   using data from up to the last 24 hours.
+  // - 3 days to account for the fact that some builds may be long-running
+  //   and could take up to 3 days to complete, so we need flakiness as at
+  //   a partition time of up to 3 days ago.
+  // - 7 days to allow time to respond to operational incidents that involve
+  //   delayed or stuck ingestion tasks, without losing data.
+  repeated HourBucket hourly_buckets = 1;
+
+  message HourBucket {
+    // The hour of the verdict's partition time.
+    // This is the partition time, as the number of seconds since January 1, 1970 UTC
+    // (i.e. as a unix timestamp), divided by 3600.
+    int64 hour = 1;
+
+    // The following verdict totals are subject to the ingestion criteria
+    // for test variant analysis. Broadly speaking, this excludes:
+    // - data for tryjobs that were not in submitted CV runs,
+    // - duplicate verdicts (where the same test runs have already been ingested),
+    // - all skipped test results. If a verdict has only skipped results,
+    //   it is not ingested. Otherwise, the verdict is ingested minus its
+    //   skipped results and its status (e.g. expected, flaky or unexpected)
+    //   is computed based on the remaining non-skipped results.
+    //
+    // Lastly, the effect of exoneration is excluded (this means that if a
+    // flaky verdict is exonerated, it is counted as flaky, and if an
+    // unexpected verdict is exonerated, it is counted as unexpected).
+
+    // The number of verdicts with only unexpected test results (excluding skips).
+    int64 unexpected_verdicts = 2;
+    // The number of verdicts with a mix of expected and unexpected test results
+    // (excluding skips.)
+    int64 flaky_verdicts = 3;
+    // The total number of verdicts.
+    int64 total_verdicts = 4;
+  }
+}

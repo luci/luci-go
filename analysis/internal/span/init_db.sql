@@ -791,14 +791,20 @@ CREATE TABLE TestVariantBranch (
   --  the test variant, after those in HotInputBuffer. Verdicts in
   -- HotInputBuffer are pushed here when HotInputBuffer is full.
   ColdInputBuffer BYTES(MAX) NOT NULL,
-  -- ZStandard-compressed, serialized Segment proto describing the finalizing
-  -- segment (if any). When verdicts are evicted from the ColdInputBuffer,
-  -- their totals are added to this segment.
+  -- ZStandard-compressed, serialized
+  -- luci.analysis.internal.changepoints.Segment proto describing the
+  -- finalizing segment (if any). When verdicts are evicted from the
+  -- ColdInputBuffer, their totals are added to this segment.
   FinalizingSegment BYTES(MAX) NOT NULL,
-  -- ZStandard-compressed, serialized Segments proto describing the finalized
-  -- segments only.
+  -- ZStandard-compressed, serialized
+  -- luci.analysis.internal.changepoints.Segments proto describing the
+  -- finalized segments only.
   -- We only store up to 100 finalized segments.
   FinalizedSegments BYTES(MAX) NOT NULL,
+  -- ZStandard-compressed, serialized
+  -- luci.analysis.internal.changepoints.Statistics proto with summary
+  -- statistics about evicted verdicts.
+  Statistics BYTES(MAX) NOT NULL DEFAULT(b''),
   -- The Spanner commit timestamp this row was last updated.
   -- Used as version timestamp for BigQuery export.
   LastUpdated TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),

@@ -532,6 +532,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 		tvb.UpdateOutputBuffer(evictedSegments)
 		So(tvb.FinalizedSegments, ShouldBeNil)
 		So(tvb.FinalizingSegment, ShouldNotBeNil)
+
 		expected := &cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZING,
 			StartPosition:                100,

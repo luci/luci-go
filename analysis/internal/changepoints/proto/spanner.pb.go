@@ -424,6 +424,152 @@ func (x *Counts) GetTotalVerdicts() int64 {
 	return 0
 }
 
+// Store statistics about verdicts evicted from the input buffer in Spanner.
+//
+// Purpose is described in go/luci-analysis-test-variant-analysis-in-clusters.
+//
+// Statistics about verdicts not yet evicted from the input buffer are not
+// stored here because they can be computed directly from the input buffer.
+// This means this proto only needs to be updated in Spanner when
+// verdicts are evicted from the input buffer (approximately every 1/100
+// verdict ingestions), rather than on every verdict ingestion, reducing the
+// number of writes required.
+type Statistics struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Statistics by partition time hour. Stored in ascending order (oldest
+	// hour first).
+	//
+	// Retained for 11 days (as 1 + 3 + 7 days):
+	//   - 1 day to support the functional requirement of calculating flakiness
+	//     using data from up to the last 24 hours.
+	//   - 3 days to account for the fact that some builds may be long-running
+	//     and could take up to 3 days to complete, so we need flakiness as at
+	//     a partition time of up to 3 days ago.
+	//   - 7 days to allow time to respond to operational incidents that involve
+	//     delayed or stuck ingestion tasks, without losing data.
+	HourlyBuckets []*Statistics_HourBucket `protobuf:"bytes,1,rep,name=hourly_buckets,json=hourlyBuckets,proto3" json:"hourly_buckets,omitempty"`
+}
+
+func (x *Statistics) Reset() {
+	*x = Statistics{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Statistics) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Statistics) ProtoMessage() {}
+
+func (x *Statistics) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Statistics.ProtoReflect.Descriptor instead.
+func (*Statistics) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Statistics) GetHourlyBuckets() []*Statistics_HourBucket {
+	if x != nil {
+		return x.HourlyBuckets
+	}
+	return nil
+}
+
+type Statistics_HourBucket struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The hour of the verdict's partition time.
+	// This is the partition time, as the number of seconds since January 1, 1970 UTC
+	// (i.e. as a unix timestamp), divided by 3600.
+	Hour int64 `protobuf:"varint,1,opt,name=hour,proto3" json:"hour,omitempty"`
+	// The number of verdicts with only unexpected test results (excluding skips).
+	UnexpectedVerdicts int64 `protobuf:"varint,2,opt,name=unexpected_verdicts,json=unexpectedVerdicts,proto3" json:"unexpected_verdicts,omitempty"`
+	// The number of verdicts with a mix of expected and unexpected test results
+	// (excluding skips.)
+	FlakyVerdicts int64 `protobuf:"varint,3,opt,name=flaky_verdicts,json=flakyVerdicts,proto3" json:"flaky_verdicts,omitempty"`
+	// The total number of verdicts.
+	TotalVerdicts int64 `protobuf:"varint,4,opt,name=total_verdicts,json=totalVerdicts,proto3" json:"total_verdicts,omitempty"`
+}
+
+func (x *Statistics_HourBucket) Reset() {
+	*x = Statistics_HourBucket{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Statistics_HourBucket) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Statistics_HourBucket) ProtoMessage() {}
+
+func (x *Statistics_HourBucket) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Statistics_HourBucket.ProtoReflect.Descriptor instead.
+func (*Statistics_HourBucket) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *Statistics_HourBucket) GetHour() int64 {
+	if x != nil {
+		return x.Hour
+	}
+	return 0
+}
+
+func (x *Statistics_HourBucket) GetUnexpectedVerdicts() int64 {
+	if x != nil {
+		return x.UnexpectedVerdicts
+	}
+	return 0
+}
+
+func (x *Statistics_HourBucket) GetFlakyVerdicts() int64 {
+	if x != nil {
+		return x.FlakyVerdicts
+	}
+	return 0
+}
+
+func (x *Statistics_HourBucket) GetTotalVerdicts() int64 {
+	if x != nil {
+		return x.TotalVerdicts
+	}
+	return 0
+}
+
 var File_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_rawDesc = []byte{
@@ -507,18 +653,35 @@ var file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto
 	0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0d, 0x66, 0x6c, 0x61, 0x6b, 0x79, 0x56, 0x65,
 	0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x5f,
 	0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x18, 0x09, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0d,
-	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x2a, 0x58, 0x0a,
-	0x0c, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x1d, 0x0a,
-	0x19, 0x53, 0x45, 0x47, 0x4d, 0x45, 0x4e, 0x54, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x45, 0x5f, 0x55,
-	0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06,
-	0x41, 0x43, 0x54, 0x49, 0x56, 0x45, 0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a, 0x46, 0x49, 0x4e, 0x41,
-	0x4c, 0x49, 0x5a, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x0d, 0x0a, 0x09, 0x46, 0x49, 0x4e, 0x41,
-	0x4c, 0x49, 0x5a, 0x45, 0x44, 0x10, 0x03, 0x42, 0x4a, 0x5a, 0x48, 0x67, 0x6f, 0x2e, 0x63, 0x68,
-	0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f,
-	0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61,
-	0x6c, 0x2f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x73, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74,
-	0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x22, 0x91, 0x02,
+	0x0a, 0x0a, 0x53, 0x74, 0x61, 0x74, 0x69, 0x73, 0x74, 0x69, 0x63, 0x73, 0x12, 0x61, 0x0a, 0x0e,
+	0x68, 0x6f, 0x75, 0x72, 0x6c, 0x79, 0x5f, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x61, 0x6e, 0x61, 0x6c,
+	0x79, 0x73, 0x69, 0x73, 0x2e, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2e, 0x63, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x73, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x69,
+	0x73, 0x74, 0x69, 0x63, 0x73, 0x2e, 0x48, 0x6f, 0x75, 0x72, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74,
+	0x52, 0x0d, 0x68, 0x6f, 0x75, 0x72, 0x6c, 0x79, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x73, 0x1a,
+	0x9f, 0x01, 0x0a, 0x0a, 0x48, 0x6f, 0x75, 0x72, 0x42, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x12,
+	0x0a, 0x04, 0x68, 0x6f, 0x75, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x68, 0x6f,
+	0x75, 0x72, 0x12, 0x2f, 0x0a, 0x13, 0x75, 0x6e, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64,
+	0x5f, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52,
+	0x12, 0x75, 0x6e, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x56, 0x65, 0x72, 0x64, 0x69,
+	0x63, 0x74, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x66, 0x6c, 0x61, 0x6b, 0x79, 0x5f, 0x76, 0x65, 0x72,
+	0x64, 0x69, 0x63, 0x74, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0d, 0x66, 0x6c, 0x61,
+	0x6b, 0x79, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x74, 0x6f,
+	0x74, 0x61, 0x6c, 0x5f, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x0d, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74,
+	0x73, 0x2a, 0x58, 0x0a, 0x0c, 0x53, 0x65, 0x67, 0x6d, 0x65, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74,
+	0x65, 0x12, 0x1d, 0x0a, 0x19, 0x53, 0x45, 0x47, 0x4d, 0x45, 0x4e, 0x54, 0x5f, 0x53, 0x54, 0x41,
+	0x54, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00,
+	0x12, 0x0a, 0x0a, 0x06, 0x41, 0x43, 0x54, 0x49, 0x56, 0x45, 0x10, 0x01, 0x12, 0x0e, 0x0a, 0x0a,
+	0x46, 0x49, 0x4e, 0x41, 0x4c, 0x49, 0x5a, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x0d, 0x0a, 0x09,
+	0x46, 0x49, 0x4e, 0x41, 0x4c, 0x49, 0x5a, 0x45, 0x44, 0x10, 0x03, 0x42, 0x4a, 0x5a, 0x48, 0x67,
+	0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c,
+	0x75, 0x63, 0x69, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x73, 0x69, 0x73, 0x2f, 0x69, 0x6e, 0x74,
+	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70, 0x6f, 0x69, 0x6e,
+	0x74, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x70,
+	0x6f, 0x69, 0x6e, 0x74, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -534,26 +697,29 @@ func file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_prot
 }
 
 var file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_goTypes = []interface{}{
 	(SegmentState)(0),             // 0: luci.analysis.internal.changepoints.SegmentState
 	(*Segments)(nil),              // 1: luci.analysis.internal.changepoints.Segments
 	(*Segment)(nil),               // 2: luci.analysis.internal.changepoints.Segment
 	(*Counts)(nil),                // 3: luci.analysis.internal.changepoints.Counts
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(*Statistics)(nil),            // 4: luci.analysis.internal.changepoints.Statistics
+	(*Statistics_HourBucket)(nil), // 5: luci.analysis.internal.changepoints.Statistics.HourBucket
+	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_depIdxs = []int32{
 	2, // 0: luci.analysis.internal.changepoints.Segments.segments:type_name -> luci.analysis.internal.changepoints.Segment
 	0, // 1: luci.analysis.internal.changepoints.Segment.state:type_name -> luci.analysis.internal.changepoints.SegmentState
-	4, // 2: luci.analysis.internal.changepoints.Segment.start_hour:type_name -> google.protobuf.Timestamp
-	4, // 3: luci.analysis.internal.changepoints.Segment.end_hour:type_name -> google.protobuf.Timestamp
-	4, // 4: luci.analysis.internal.changepoints.Segment.most_recent_unexpected_result_hour:type_name -> google.protobuf.Timestamp
+	6, // 2: luci.analysis.internal.changepoints.Segment.start_hour:type_name -> google.protobuf.Timestamp
+	6, // 3: luci.analysis.internal.changepoints.Segment.end_hour:type_name -> google.protobuf.Timestamp
+	6, // 4: luci.analysis.internal.changepoints.Segment.most_recent_unexpected_result_hour:type_name -> google.protobuf.Timestamp
 	3, // 5: luci.analysis.internal.changepoints.Segment.finalized_counts:type_name -> luci.analysis.internal.changepoints.Counts
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	5, // 6: luci.analysis.internal.changepoints.Statistics.hourly_buckets:type_name -> luci.analysis.internal.changepoints.Statistics.HourBucket
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_init() }
@@ -598,6 +764,30 @@ func file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_prot
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Statistics); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Statistics_HourBucket); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -605,7 +795,7 @@ func file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_prot
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_analysis_internal_changepoints_proto_spanner_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
