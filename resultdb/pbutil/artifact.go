@@ -69,6 +69,19 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 		return unescaped, nil
 	}
 
+	unescapeTestID := func(escaped string) (string, error) {
+		unescaped, err := url.PathUnescape(escaped)
+		if err != nil {
+			return "", errors.Annotate(err, "%q", escaped).Err()
+		}
+
+		if err := ValidateTestID(unescaped); err != nil {
+			return "", errors.Annotate(err, "%q", unescaped).Err()
+		}
+
+		return unescaped, nil
+	}
+
 	if m := invocationArtifactNameRe.FindStringSubmatch(name); m != nil {
 		invocationID = m[1]
 		artifactID, err = unescape(m[2], artifactIDRe)
@@ -78,7 +91,7 @@ func ParseArtifactName(name string) (invocationID, testID, resultID, artifactID 
 
 	if m := testResultArtifactNameRe.FindStringSubmatch(name); m != nil {
 		invocationID = m[1]
-		if testID, err = unescape(m[2], testIDRe); err != nil {
+		if testID, err = unescapeTestID(m[2]); err != nil {
 			err = errors.Annotate(err, "test ID").Err()
 			return
 		}

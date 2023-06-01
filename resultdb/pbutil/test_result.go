@@ -21,13 +21,15 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/golang/protobuf/ptypes"
+	"golang.org/x/text/unicode/norm"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
-
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -43,7 +45,6 @@ const (
 var (
 	projectRe        = regexp.MustCompile(`^[a-z0-9\-]{1,40}$`)
 	resultIDRe       = regexpf("^%s$", resultIDPattern)
-	testIDRe         = regexp.MustCompile(`^[[:print:]]{1,512}$`)
 	testResultNameRe = regexpf(
 		"^invocations/(%s)/tests/([^/]+)/results/(%s)$", invocationIDPattern,
 		resultIDPattern,
@@ -79,7 +80,24 @@ func ValidateProject(project string) error {
 
 // ValidateTestID returns a non-nil error if testID is invalid.
 func ValidateTestID(testID string) error {
-	return validateWithRe(testIDRe, testID)
+	if testID == "" {
+		return unspecified()
+	}
+	if len(testID) > 512 {
+		return errors.Reason("longer than 512 bytes").Err()
+	}
+	if !utf8.ValidString(testID) {
+		return errors.Reason("not a valid utf8 string").Err()
+	}
+	if !norm.NFC.IsNormalString(testID) {
+		return errors.Reason("not in unicode normalized form C").Err()
+	}
+	for i, rune := range testID {
+		if !unicode.IsPrint(rune) {
+			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
+		}
+	}
+	return nil
 }
 
 // ValidateTestResultID returns a non-nil error if resultID is invalid.
@@ -293,7 +311,7 @@ func ParseTestResultName(name string) (invID, testID, resultID string, err error
 		return
 	}
 
-	if ve := validateWithRe(testIDRe, unescapedTestID); ve != nil {
+	if ve := ValidateTestID(unescapedTestID); ve != nil {
 		err = errors.Annotate(ve, "test id %q", unescapedTestID).Err()
 		return
 	}

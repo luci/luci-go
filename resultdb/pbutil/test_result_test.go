@@ -21,17 +21,14 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
-	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // validTestResult returns a valid TestResult sample.
@@ -105,7 +102,7 @@ func TestTestResultName(t *testing.T) {
 			Convey(`unescaped unprintable`, func() {
 				_, _, _, err := ParseTestResultName(
 					"invocations/a/tests/unprintable_%07/results/result1")
-				So(err, ShouldErrLike, doesNotMatch(testIDRe))
+				So(err, ShouldErrLike, "non-printable rune")
 			})
 		})
 
@@ -127,6 +124,13 @@ func TestValidateTestResult(t *testing.T) {
 	Convey("Succeeds", t, func() {
 		msg := validTestResult(now)
 		So(validate(msg), ShouldBeNil)
+
+		Convey("with unicode TestID", func() {
+			// Uses printable unicode character 'µ'.
+			msg.TestId = "TestVariousDeadlines/5µs"
+			So(ValidateTestID(msg.TestId), ShouldErrLike, nil)
+			So(validate(msg), ShouldBeNil)
+		})
 
 		Convey("with invalid Name", func() {
 			// ValidateTestResult should skip validating TestResult.Name.
@@ -185,11 +189,12 @@ func TestValidateTestResult(t *testing.T) {
 			badInputs := []string{
 				strings.Repeat("1", 512+1),
 				// [[:print:]] matches with [ -~] and [[:graph:]]
-				string(rune(163)),
+				string(rune(7)),
+				string("cafe\u0301"), // UTF8 text that is not in normalization form C.
 			}
 			for _, in := range badInputs {
 				msg.TestId = in
-				So(validate(msg), ShouldErrLike, fieldDoesNotMatch("test_id", testIDRe))
+				So(validate(msg), ShouldErrLike, "")
 			}
 		})
 
@@ -201,8 +206,7 @@ func TestValidateTestResult(t *testing.T) {
 		Convey("with invalid ResultID", func() {
 			badInputs := []string{
 				strings.Repeat("1", 32+1),
-				// [[:ascii:]] matches with a char in [\x00-\x7F]
-				string(rune(163)),
+				string(rune(7)),
 			}
 			for _, in := range badInputs {
 				msg.ResultId = in

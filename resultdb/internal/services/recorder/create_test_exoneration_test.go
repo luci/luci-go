@@ -63,7 +63,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 		Convey(`NUL in test id`, func() {
 			req.TestExoneration.TestId = "\x01"
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, "test_id: does not match")
+			So(err, ShouldErrLike, "test_id: non-printable rune")
 		})
 
 		Convey(`Invalid variant`, func() {
@@ -124,7 +124,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: test_exoneration: test_id: does not match`)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: test_exoneration: test_id: non-printable rune`)
 		})
 
 		Convey(`No invocation`, func() {

@@ -21,6 +21,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
@@ -29,10 +34,6 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestTestVariantAnalysesServer(t *testing.T) {
@@ -115,7 +116,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 				res, err := server.Get(ctx, req)
 				So(err, ShouldNotBeNil)
 				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-				So(err, ShouldErrLike, `test id "\x01atest": does not match ^[[:print:]]{1,512}$`)
+				So(err, ShouldErrLike, `test id "\x01atest": non-printable rune`)
 				So(res, ShouldBeNil)
 			})
 		})

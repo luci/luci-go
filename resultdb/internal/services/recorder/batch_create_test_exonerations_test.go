@@ -75,7 +75,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldErrLike, `requests[0]: test_exoneration: test_id: does not match`)
+			So(err, ShouldErrLike, `requests[0]: test_exoneration: test_id: non-printable rune`)
 		})
 
 		Convey(`Inconsistent invocation`, func() {
