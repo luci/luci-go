@@ -48,8 +48,7 @@ func TestIngestTarball(t *testing.T) {
 		rw := httptest.NewRecorder()
 
 		rctx := &router.Context{
-			Context: ctx,
-			Writer:  rw,
+			Writer: rw,
 			Request: (&http.Request{
 				Method: "PUT",
 				Body:   body,

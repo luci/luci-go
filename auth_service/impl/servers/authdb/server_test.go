@@ -81,7 +81,6 @@ func TestAuthDBServing(t *testing.T) {
 			sb = "0"
 		}
 		rctx := &router.Context{
-			Context: ctx,
 			Request: (&http.Request{
 				URL: &url.URL{
 					RawQuery: fmt.Sprintf("skip_body=%s", sb),

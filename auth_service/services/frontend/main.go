@@ -137,19 +137,19 @@ func main() {
 			http.Redirect(ctx.Writer, ctx.Request, "/groups", http.StatusFound)
 		})
 		srv.Routes.GET("/groups", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Context, ctx.Writer, "pages/groups.html", nil)
+			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/groups.html", nil)
 		})
 		srv.Routes.GET("/groups/:groupName", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Context, ctx.Writer, "pages/groups.html", nil)
+			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/groups.html", nil)
 		})
 		srv.Routes.GET("/change_log", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Context, ctx.Writer, "pages/change_log.html", nil)
+			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/change_log.html", nil)
 		})
 		srv.Routes.GET("/ip_allowlists", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Context, ctx.Writer, "pages/ip_allowlists.html", nil)
+			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/ip_allowlists.html", nil)
 		})
 		srv.Routes.GET("/lookup", mw, func(ctx *router.Context) {
-			templates.MustRender(ctx.Context, ctx.Writer, "pages/lookup.html", nil)
+			templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/lookup.html", nil)
 		})
 
 		// Legacy authdbrevision serving.
@@ -212,12 +212,12 @@ func prepareTemplates(opts *server.Options) *templates.Bundle {
 
 // requireLogin redirect anonymous users to the login page.
 func requireLogin(ctx *router.Context, next router.Handler) {
-	if auth.CurrentIdentity(ctx.Context) != identity.AnonymousIdentity {
+	if auth.CurrentIdentity(ctx.Request.Context()) != identity.AnonymousIdentity {
 		next(ctx) // already logged in
 		return
 	}
 
-	loginURL, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+	loginURL, err := auth.LoginURL(ctx.Request.Context(), ctx.Request.URL.RequestURI())
 	if err != nil {
 		replyError(ctx, err, "Failed to generate the login URL", http.StatusInternalServerError)
 		return
@@ -228,11 +228,11 @@ func requireLogin(ctx *router.Context, next router.Handler) {
 
 // authorizeUIAccess checks the user is allowed to access the web UI.
 func authorizeUIAccess(ctx *router.Context, next router.Handler) {
-	switch yes, err := auth.IsMember(ctx.Context, impl.ServiceAccessGroup); {
+	switch yes, err := auth.IsMember(ctx.Request.Context(), impl.ServiceAccessGroup); {
 	case err != nil:
 		replyError(ctx, err, "Failed to check group membership", http.StatusInternalServerError)
 	case !yes:
-		templates.MustRender(ctx.Context, ctx.Writer, "pages/access_denied.html", nil)
+		templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/access_denied.html", nil)
 	default:
 		next(ctx)
 	}
@@ -249,17 +249,17 @@ func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
 
 	ingest := strings.Contains(ctx.Request.URL.RequestURI(), "/auth_service/api/v1/importer/ingest_tarball/")
 
-	if auth.CurrentIdentity(ctx.Context) == identity.AnonymousIdentity {
+	if auth.CurrentIdentity(ctx.Request.Context()) == identity.AnonymousIdentity {
 		jsonErr(errors.New("anonymous identity"), http.StatusForbidden)
 		return
 	}
 
 	if !ingest {
-		switch yes, err := auth.IsMember(ctx.Context, impl.TrustedServicesGroup, impl.AdminGroup); {
+		switch yes, err := auth.IsMember(ctx.Request.Context(), impl.TrustedServicesGroup, impl.AdminGroup); {
 		case err != nil:
 			jsonErr(errors.New("failed to check group membership"), http.StatusInternalServerError)
 		case !yes:
-			jsonErr(fmt.Errorf("%s is not a member of %s", auth.CurrentIdentity(ctx.Context), impl.TrustedServicesGroup),
+			jsonErr(fmt.Errorf("%s is not a member of %s", auth.CurrentIdentity(ctx.Request.Context()), impl.TrustedServicesGroup),
 				http.StatusForbidden)
 		default:
 			next(ctx)
@@ -273,9 +273,9 @@ func authorizeAPIAccess(ctx *router.Context, next router.Handler) {
 //
 // Also logs the internal error in the server logs.
 func replyError(ctx *router.Context, err error, message string, code int) {
-	logging.Errorf(ctx.Context, "%s: %s", message, err)
+	logging.Errorf(ctx.Request.Context(), "%s: %s", message, err)
 	ctx.Writer.WriteHeader(code)
-	templates.MustRender(ctx.Context, ctx.Writer, "pages/error.html", templates.Args{
+	templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/error.html", templates.Args{
 		"SimpleHeader": true,
 		"Message":      message,
 	})
@@ -288,7 +288,7 @@ func replyError(ctx *router.Context, err error, message string, code int) {
 // grpc-tagged errors produced via grpcutil.
 func adaptGrpcErr(h func(*router.Context) error) router.Handler {
 	return func(ctx *router.Context) {
-		err := grpcutil.GRPCifyAndLogErr(ctx.Context, h(ctx))
+		err := grpcutil.GRPCifyAndLogErr(ctx.Request.Context(), h(ctx))
 		if code := status.Code(err); code != codes.OK {
 			http.Error(ctx.Writer, status.Convert(err).Message(), grpcutil.CodeStatus(code))
 		}

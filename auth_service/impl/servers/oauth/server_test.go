@@ -76,7 +76,6 @@ func TestOAuthServing(t *testing.T) {
 		rw := httptest.NewRecorder()
 
 		rctx := &router.Context{
-			Context: ctx,
 			Writer:  rw,
 			Request: (&http.Request{}).WithContext(ctx),
 		}

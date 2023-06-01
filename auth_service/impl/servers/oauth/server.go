@@ -30,7 +30,7 @@ import (
 // legacy services that depend on the legacy oauth endpoint for OAuth2 login on a client.
 // Returns client_id and client_secret to use for OAuth2 login on a client.
 func HandleLegacyOAuthEndpoint(ctx *router.Context) error {
-	c, w := ctx.Context, ctx.Writer
+	c, w := ctx.Request.Context(), ctx.Writer
 	var globalCfgEntity *model.AuthGlobalConfig
 	var replicationStateEntity *model.AuthReplicationState
 	var err error

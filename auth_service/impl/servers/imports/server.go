@@ -31,7 +31,7 @@ type GroupsJSON struct {
 // HandleTarballIngestHandler handles the endpoint for ingesting tarballs
 // returns a JSON response of the groups that were found in the tarball.
 func HandleTarballIngestHandler(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 	var err error
 	tarballName := ctx.Params.ByName("tarballName")
 	groups, revision, err := model.IngestTarball(c, tarballName, r.Body)

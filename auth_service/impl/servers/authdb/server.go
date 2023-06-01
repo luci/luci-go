@@ -78,7 +78,7 @@ func getLatestRevision(ctx context.Context, request *rpcpb.GetSnapshotRequest) (
 // services. Writes the AuthDBSnapshot JSON to the router.Writer. gRPC Error is returned
 // and adapted to HTTP format if operation is unsuccesful.
 func (s *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 	var snap *rpcpb.Snapshot
 	var err error
 
