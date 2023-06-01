@@ -92,7 +92,6 @@ func (cc *ClientCache) Clear() {
 // withClientCacheMW creates a middleware that injects the ClientCache to context.
 func withClientCacheMW(cc *ClientCache) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		c.Context = context.WithValue(c.Context, ccKey, cc)
 		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ccKey, cc))
 		next(c)
 	}

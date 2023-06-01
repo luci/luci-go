@@ -44,12 +44,11 @@ func TestHandlers(t *testing.T) {
 	Convey("Templates", t, func() {
 		ctx = auth.WithState(ctx, fakeAuthState())
 		c := &router.Context{
-			Context: ctx,
 			Request: (&http.Request{}).WithContext(ctx),
 		}
 		templateBundleMW := templates.WithTemplates(getTemplateBundle("test-version-1"))
 		templateBundleMW(c, func(c *router.Context) {
-			top, err := templates.Render(c.Context, "pages/index.html", nil)
+			top, err := templates.Render(c.Request.Context(), "pages/index.html", nil)
 			So(err, ShouldBeNil)
 			So(string(top), ShouldContainSubstring, "user@example.com")
 			So(string(top), ShouldContainSubstring, "test-version-1")
@@ -60,8 +59,7 @@ func TestHandlers(t *testing.T) {
 		// Install handlers with fake auth state.
 		r := router.New()
 		r.Use(router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-			c.Context = auth.WithState(c.Context, fakeAuthState())
-			c.Request = c.Request.WithContext(c.Context)
+			c.Request = c.Request.WithContext(auth.WithState(c.Request.Context(), fakeAuthState()))
 			next(c)
 		}))
 

@@ -74,12 +74,12 @@ func getTemplateBundle(appVersion string) *templates.Bundle {
 
 // checkPermission checks if the user has permission to read the blob.
 func checkPermission(c *router.Context, next router.Handler) {
-	switch ok, err := auth.HasPermission(c.Context, permMintToken, readOnlyRealm(c.Params), nil); {
+	switch ok, err := auth.HasPermission(c.Request.Context(), permMintToken, readOnlyRealm(c.Params), nil); {
 	case err != nil:
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 	case !ok:
 		err = errors.New("permission denied", grpcutil.PermissionDeniedTag)
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 	default:
 		next(c)
 	}
@@ -87,41 +87,41 @@ func checkPermission(c *router.Context, next router.Handler) {
 
 // rootHandler renders top page.
 func rootHandler(c *router.Context) {
-	templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/index.html", nil)
 }
 
 func treeHandler(c *router.Context) {
 	inst := fullInstName(c.Params)
-	cl, err := GetClient(c.Context, inst)
+	cl, err := GetClient(c.Request.Context(), inst)
 	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 		return
 	}
 	bd, err := blobDigest(c.Params)
 	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 		return
 	}
-	err = renderTree(c.Context, c.Writer, cl, bd, inst)
+	err = renderTree(c.Request.Context(), c.Writer, cl, bd, inst)
 	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 	}
 }
 
 func getHandler(c *router.Context) {
-	cl, err := GetClient(c.Context, fullInstName(c.Params))
+	cl, err := GetClient(c.Request.Context(), fullInstName(c.Params))
 	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 		return
 	}
 	bd, err := blobDigest(c.Params)
 	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 		return
 	}
-	err = returnBlob(c.Context, c.Writer, cl, bd, fileName(c.Request))
+	err = returnBlob(c.Request.Context(), c.Writer, cl, bd, fileName(c.Request))
 	if err != nil {
-		renderErrorPage(c.Context, c.Writer, err)
+		renderErrorPage(c.Request.Context(), c.Writer, err)
 	}
 }
 

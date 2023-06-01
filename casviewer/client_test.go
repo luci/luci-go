@@ -35,17 +35,17 @@ func TestClient(t *testing.T) {
 			inst2 := "projects/test-proj/instances/inst2"
 
 			// First time, it creates a new client.
-			cl1, err := GetClient(c.Context, inst1)
+			cl1, err := GetClient(c.Request.Context(), inst1)
 			So(err, ShouldBeNil)
 			So(cl1, ShouldNotBeNil)
 
 			// The client should be reused for the same instance.
-			cl2, err := GetClient(c.Context, inst1)
+			cl2, err := GetClient(c.Request.Context(), inst1)
 			So(err, ShouldBeNil)
 			So(cl2, ShouldEqual, cl1)
 
 			// A new client for a different instance will be created.
-			cl3, err := GetClient(c.Context, inst2)
+			cl3, err := GetClient(c.Request.Context(), inst2)
 			So(err, ShouldBeNil)
 			So(cl3, ShouldNotBeNil)
 			So(cl3, ShouldNotEqual, cl1)
@@ -58,12 +58,12 @@ func TestClient(t *testing.T) {
 
 			// Create clients.
 			var err error
-			_, err = GetClient(c.Context, inst1)
+			_, err = GetClient(c.Request.Context(), inst1)
 			So(err, ShouldBeNil)
-			_, err = GetClient(c.Context, inst2)
+			_, err = GetClient(c.Request.Context(), inst2)
 			So(err, ShouldBeNil)
 
-			cc, err := clientCache(c.Context)
+			cc, err := clientCache(c.Request.Context())
 			So(err, ShouldBeNil)
 			cc.Clear()
 
@@ -79,7 +79,6 @@ func newContext() *router.Context {
 	ctx := context.Background()
 	ctx = authtest.MockAuthConfig(ctx)
 	c := &router.Context{
-		Context: ctx,
 		Request: (&http.Request{}).WithContext(ctx),
 	}
 	withClientCacheMW(cc)(c, func(_ *router.Context) {})

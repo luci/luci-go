@@ -29,7 +29,7 @@ import (
 func WithTemplates(b *Bundle) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		// Note: Use(...) calls EnsureLoaded and initializes b.err inside.
-		c.Context = Use(c.Context, b, &Extra{
+		c.Context = Use(c.Request.Context(), b, &Extra{
 			Request: c.Request,
 			Params:  c.Params,
 		})
