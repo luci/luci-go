@@ -33,7 +33,7 @@ type GerritClient interface {
 	GetRefInfo(ctx context.Context, in *RefInfoRequest, opts ...grpc.CallOption) (*RefInfo, error)
 	// Lists the code owners for a file/folder in a branch
 	//
-	// https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
+	// https://chromium-review.googlesource.com/plugins/code-owners/Documentation/rest-api.html#list-code-owners-for-path-in-branch
 	ListFileOwners(ctx context.Context, in *ListFileOwnersRequest, opts ...grpc.CallOption) (*ListOwnersResponse, error)
 	// Lists changes that match a query.
 	//
@@ -343,7 +343,7 @@ type GerritServer interface {
 	GetRefInfo(context.Context, *RefInfoRequest) (*RefInfo, error)
 	// Lists the code owners for a file/folder in a branch
 	//
-	// https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
+	// https://chromium-review.googlesource.com/plugins/code-owners/Documentation/rest-api.html#list-code-owners-for-path-in-branch
 	ListFileOwners(context.Context, *ListFileOwnersRequest) (*ListOwnersResponse, error)
 	// Lists changes that match a query.
 	//

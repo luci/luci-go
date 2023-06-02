@@ -38,7 +38,7 @@ service Gerrit {
 
   // Lists the code owners for a file/folder in a branch
   //
-  // https://gerrit.googlesource.com/plugins/code-owners/+/refs/heads/master/resources/Documentation/rest-api.md#list-code-owners-for-path-in-branch
+  // https://chromium-review.googlesource.com/plugins/code-owners/Documentation/rest-api.html#list-code-owners-for-path-in-branch
   rpc ListFileOwners(ListFileOwnersRequest) returns (ListOwnersResponse);
 
 
