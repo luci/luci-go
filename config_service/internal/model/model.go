@@ -16,13 +16,13 @@
 package model
 
 import (
+	"context"
 	"time"
 
-	"cloud.google.com/go/datastore"
-
-	"go.chromium.org/luci/config"
-
+	"go.chromium.org/luci/common/errors"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 const (
@@ -50,7 +50,7 @@ type ConfigSet struct {
 	// LatestRevision contains the latest revision info for this ConfigSet.
 	LatestRevision RevisionInfo `gae:"latest_revision,noindex"`
 	// Location is the source location which points the root of this ConfigSet.
-	Location *cfgcommonpb.Location `gae:"location,noindex"`
+	Location *cfgcommonpb.Location `gae:"location"`
 	// Version is the global version of the config set.
 	// It may be used to decide to force a refresh.
 	Version int64 `gae:"version,noindex"`
@@ -75,7 +75,7 @@ type File struct {
 	// ContentHash is the SHA256 hash of the file content.
 	ContentHash string `gae:"content_hash"`
 	// Location is a pinned, fully resolved source location to this file.
-	Location *cfgcommonpb.Location `gae:"location,noindex"`
+	Location *cfgcommonpb.Location `gae:"location"`
 }
 
 // ImportAttempt describes what happened last time we tried to import a config
@@ -110,4 +110,20 @@ type RevisionInfo struct {
 	CommitTime time.Time `gae:"time"`
 	// CommitterEmail is the committer's email.
 	CommitterEmail string `gae:"committer_email"`
+}
+
+// GetLatestConfigFile returns the latest File for the given config set.
+func GetLatestConfigFile(ctx context.Context, configSet config.Set, filePath string) (*File, error) {
+	cfgSet := &ConfigSet{ID: configSet}
+	if err := datastore.Get(ctx, cfgSet); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch ConfigSet %q", configSet).Err()
+	}
+	file := &File{
+		Path:     filePath,
+		Revision: datastore.MakeKey(ctx, ConfigSetKind, string(configSet), RevisionKind, cfgSet.LatestRevision.ID),
+	}
+	if err := datastore.Get(ctx, file); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch file %q for config set %q", configSet, filePath).Err()
+	}
+	return file, nil
 }

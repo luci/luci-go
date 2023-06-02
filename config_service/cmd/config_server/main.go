@@ -18,14 +18,22 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/tq"
 
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/rpc"
 )
 
 func main() {
-	server.Main(nil, nil, func(srv *server.Server) error {
+	mods := []module.Module{
+		gaeemulation.NewModuleFromFlags(),
+		tq.NewModuleFromFlags(),
+	}
+
+	server.Main(nil, mods, func(srv *server.Server) error {
 		mw := router.MiddlewareChain{
 			auth.Authenticate(&openid.GoogleIDTokenAuthMethod{
 				AudienceCheck: openid.AudienceMatchesHost,
