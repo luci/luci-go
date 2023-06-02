@@ -71,7 +71,7 @@ func main() {
 	svr.InstallHandlers(r, base)
 
 	r.GET("/admin/cron/sync-configs", base, func(c *router.Context) {
-		config.Sync(c.Context)
+		config.Sync(c.Request.Context())
 	})
 
 	// Redirect "/" to "/rpcexplorer/".

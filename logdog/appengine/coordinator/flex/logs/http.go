@@ -440,17 +440,17 @@ func fetchOnce(c context.Context, ch chan<- logResp, index types.MessageIndex, p
 }
 
 func writeHTMLHeader(ctx *router.Context, data logData) {
-	loginURL, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+	loginURL, err := auth.LoginURL(ctx.Request.Context(), ctx.Request.URL.RequestURI())
 	if err != nil {
-		logging.WithError(err).Errorf(ctx.Context, "getting login url")
+		logging.WithError(err).Errorf(ctx.Request.Context(), "getting login url")
 		loginURL = "#ERROR"
 	}
-	logoutURL, err := auth.LogoutURL(ctx.Context, ctx.Request.URL.RequestURI())
+	logoutURL, err := auth.LogoutURL(ctx.Request.Context(), ctx.Request.URL.RequestURI())
 	if err != nil {
-		logging.WithError(err).Errorf(ctx.Context, "getting logout url")
+		logging.WithError(err).Errorf(ctx.Request.Context(), "getting logout url")
 		logoutURL = "#ERROR"
 	}
-	user := auth.CurrentUser(ctx.Context) // This will not return nil, so it's safe to access.
+	user := auth.CurrentUser(ctx.Request.Context()) // This will not return nil, so it's safe to access.
 	project := data.options.project
 	path := data.options.path
 	title := "error" // If the data is not filled in, this was probably an error.
@@ -461,7 +461,7 @@ func writeHTMLHeader(ctx *router.Context, data logData) {
 		Path:        fmt.Sprintf("%s/%s", data.options.project, data.options.path),
 		Title:       title,
 		Link:        data.viewerURL(),
-		IsAnonymous: auth.CurrentIdentity(ctx.Context) == identity.AnonymousIdentity,
+		IsAnonymous: auth.CurrentIdentity(ctx.Request.Context()) == identity.AnonymousIdentity,
 		LoginURL:    loginURL,
 		LogoutURL:   logoutURL,
 		UserPicture: user.Picture,
@@ -512,12 +512,12 @@ func writeErrorPage(ctx *router.Context, err error, data logData) {
 	case codes.Unauthenticated:
 		// Redirect to login screen.
 		var u string
-		u, ierr = auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+		u, ierr = auth.LoginURL(ctx.Request.Context(), ctx.Request.URL.RequestURI())
 		if ierr == nil {
 			http.Redirect(ctx.Writer, ctx.Request, u, http.StatusFound)
 			return
 		}
-		logging.WithError(ierr).Errorf(ctx.Context, "Error getting Login URL")
+		logging.WithError(ierr).Errorf(ctx.Request.Context(), "Error getting Login URL")
 		fallthrough
 	case codes.Internal:
 		// Hide internal errors, expose all other errors.
@@ -529,7 +529,7 @@ func writeErrorPage(ctx *router.Context, err error, data logData) {
 	if data.options.isHTML() {
 		writeHTMLHeader(ctx, data)
 	}
-	writeFooter(ctx, clock.Now(ctx.Context), ierr, data.options.isHTML())
+	writeFooter(ctx, clock.Now(ctx.Request.Context()), ierr, data.options.isHTML())
 }
 
 func writeFooter(ctx *router.Context, start time.Time, err error, isHTML bool) {
@@ -546,7 +546,7 @@ func writeFooter(ctx *router.Context, start time.Time, err error, isHTML bool) {
 	if isHTML {
 		if err := footerTemplate.ExecuteTemplate(ctx.Writer, "footer", footer{
 			Message:  message,
-			Duration: fmt.Sprintf("%.2fs", clock.Now(ctx.Context).Sub(start).Seconds()),
+			Duration: fmt.Sprintf("%.2fs", clock.Now(ctx.Request.Context()).Sub(start).Seconds()),
 		}); err != nil {
 			fmt.Fprintf(ctx.Writer, "Failed to render page: %s", html.EscapeString(err.Error()))
 		}
@@ -756,20 +756,20 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 
 // GetHandler is an HTTP handler for retrieving logs.
 func GetHandler(ctx *router.Context) {
-	start := clock.Now(ctx.Context)
+	start := clock.Now(ctx.Request.Context())
 	// Start the fetcher and wait for fetched logs to arrive into ch.
-	data, err := startFetch(ctx.Context, ctx.Request, ctx.Params.ByName("path"))
+	data, err := startFetch(ctx.Request.Context(), ctx.Request, ctx.Params.ByName("path"))
 	if err != nil {
-		logging.WithError(err).Errorf(ctx.Context, "failed to start fetch")
+		logging.WithError(err).Errorf(ctx.Request.Context(), "failed to start fetch")
 		writeErrorPage(ctx, err, data)
 		return
 	}
 	writeOKHeaders(ctx, data)
 
 	// Write the log contents and then the footer.
-	err = serve(ctx.Context, data, ctx.Writer)
+	err = serve(ctx.Request.Context(), data, ctx.Writer)
 	if err != nil {
-		logging.WithError(err).Errorf(ctx.Context, "failed to serve logs")
+		logging.WithError(err).Errorf(ctx.Request.Context(), "failed to serve logs")
 	}
 	writeFooter(ctx, start, err, data.options.isHTML())
 }

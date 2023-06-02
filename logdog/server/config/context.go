@@ -95,8 +95,7 @@ func WithStore(ctx context.Context, s *Store) context.Context {
 // Middleware returns a middleware that installs `s` into requests' context.
 func Middleware(s *Store) router.Middleware {
 	return func(ctx *router.Context, next router.Handler) {
-		ctx.Context = WithStore(ctx.Context, s)
-		ctx.Request = ctx.Request.WithContext(ctx.Context)
+		ctx.Request = ctx.Request.WithContext(WithStore(ctx.Request.Context(), s))
 		next(ctx)
 	}
 }
