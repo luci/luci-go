@@ -34,7 +34,7 @@ func prefixListingPage(c *router.Context, pfx string) error {
 		return status.Errorf(codes.InvalidArgument, "bad prefix: %s", err)
 	}
 
-	svc := state(c.Context).services
+	svc := state(c.Request.Context()).services
 
 	var listing *api.ListPrefixResponse
 	var meta *prefixMetadataBlock
@@ -42,14 +42,14 @@ func prefixListingPage(c *router.Context, pfx string) error {
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error {
 			var err error
-			listing, err = svc.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
+			listing, err = svc.PublicRepo.ListPrefix(c.Request.Context(), &api.ListPrefixRequest{
 				Prefix: pfx,
 			})
 			return err
 		}
 		tasks <- func() error {
 			var err error
-			meta, err = fetchPrefixMetadata(c.Context, pfx)
+			meta, err = fetchPrefixMetadata(c.Request.Context(), pfx)
 			return err
 		}
 	})
@@ -57,7 +57,7 @@ func prefixListingPage(c *router.Context, pfx string) error {
 		return err
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]any{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/index.html", map[string]any{
 		"Breadcrumbs": breadcrumbs(pfx, ""),
 		"Prefixes":    prefixesListing(pfx, listing.Prefixes),
 		"Packages":    packagesListing(pfx, listing.Packages, ""),

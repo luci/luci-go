@@ -41,7 +41,7 @@ func packagePage(c *router.Context, pkg string) error {
 		pfx = pkg[:i]
 	}
 
-	svc := state(c.Context).services
+	svc := state(c.Request.Context()).services
 
 	// Cursor used for paginating instance listing.
 	cursor := c.Request.URL.Query().Get("c")
@@ -56,7 +56,7 @@ func packagePage(c *router.Context, pkg string) error {
 	err := parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error {
 			var err error
-			instances, err = svc.PublicRepo.ListInstances(c.Context, &api.ListInstancesRequest{
+			instances, err = svc.PublicRepo.ListInstances(c.Request.Context(), &api.ListInstancesRequest{
 				Package:   pkg,
 				PageSize:  12,
 				PageToken: cursor,
@@ -65,29 +65,29 @@ func packagePage(c *router.Context, pkg string) error {
 				return err
 			}
 			if instances.NextPageToken != "" {
-				instancesListing.storePrevCursor(c.Context, pkg, instances.NextPageToken, cursor)
+				instancesListing.storePrevCursor(c.Request.Context(), pkg, instances.NextPageToken, cursor)
 				nextPageURL = packagePageURL(pkg, instances.NextPageToken)
 			}
 			if cursor != "" {
-				prevPageURL = packagePageURL(pkg, instancesListing.fetchPrevCursor(c.Context, pkg, cursor))
+				prevPageURL = packagePageURL(pkg, instancesListing.fetchPrevCursor(c.Request.Context(), pkg, cursor))
 			}
 			return nil
 		}
 		tasks <- func() error {
 			var err error
-			siblings, err = svc.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
+			siblings, err = svc.PublicRepo.ListPrefix(c.Request.Context(), &api.ListPrefixRequest{
 				Prefix: pfx,
 			})
 			return err
 		}
 		tasks <- func() error {
 			var err error
-			meta, err = fetchPrefixMetadata(c.Context, pkg)
+			meta, err = fetchPrefixMetadata(c.Request.Context(), pkg)
 			return err
 		}
 		tasks <- func() error {
 			var err error
-			refs, err = svc.PublicRepo.ListRefs(c.Context, &api.ListRefsRequest{
+			refs, err = svc.PublicRepo.ListRefs(c.Request.Context(), &api.ListRefsRequest{
 				Package: pkg,
 			})
 			return err
@@ -113,7 +113,7 @@ func packagePage(c *router.Context, pkg string) error {
 		Age         string
 	}
 
-	now := clock.Now(c.Context).UTC()
+	now := clock.Now(c.Request.Context()).UTC()
 	instListing := make([]instanceItem, len(instances.Instances))
 	for i, inst := range instances.Instances {
 		iid := common.ObjectRefToInstanceID(inst.Instance)
@@ -126,7 +126,7 @@ func packagePage(c *router.Context, pkg string) error {
 		}
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]any{
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/index.html", map[string]any{
 		"Package":     pkg,
 		"Breadcrumbs": breadcrumbs(pfx, ""),
 		"Prefixes":    prefixesListing(pfx, siblings.Prefixes),

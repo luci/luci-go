@@ -1673,7 +1673,7 @@ func (l *legacyInstance) FromInstance(inst *api.Instance) *legacyInstance {
 // grpc-tagged errors produced via grpcutil.
 func adaptGrpcErr(h func(*router.Context) error) router.Handler {
 	return func(ctx *router.Context) {
-		err := status.Convert(grpcutil.GRPCifyAndLogErr(ctx.Context, h(ctx)))
+		err := status.Convert(grpcutil.GRPCifyAndLogErr(ctx.Request.Context(), h(ctx)))
 		if err.Code() != codes.OK {
 			http.Error(ctx.Writer, err.Message(), grpcutil.CodeStatus(err.Code()))
 		}
@@ -1759,7 +1759,7 @@ func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareCh
 // On success issues HTTP 302 redirect to the signed Google Storage URL.
 // On errors returns HTTP 4** with an error message.
 func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	// Do light validation (the rest is in ResolveVersion), and get a full client
 	// package name.
@@ -1829,7 +1829,7 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 // On success issues HTTP 302 redirect to the signed Google Storage URL.
 // On errors returns HTTP 4** with an error message.
 func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	// Parse the path. The router is too simplistic to parse such paths.
 	pkg, version, err := parseDownloadPath(ctx.Params.ByName("path"))
@@ -1887,7 +1887,7 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 // On success issues HTTP 302 redirect to the signed Google Storage URL.
 // On errors returns HTTP 4** with an error message.
 func (impl *repoImpl) handleBootstrapDownload(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	// Parse the path. The router is too simplistic to parse such paths.
 	pkg, version, err := parseDownloadPath(ctx.Params.ByName("path"))
@@ -1971,7 +1971,7 @@ func (impl *repoImpl) handleBootstrapDownload(ctx *router.Context) error {
 //	  }
 //	}
 func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	iid := r.FormValue("instance_id")
 	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
@@ -2032,7 +2032,7 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 //	  }
 //	}
 func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	iid := r.FormValue("instance_id")
 	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
@@ -2087,7 +2087,7 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 //	  "instance_id": "..."
 //	}
 func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
-	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+	c, r, w := ctx.Request.Context(), ctx.Request, ctx.Writer
 
 	resp, err := impl.ResolveVersion(c, &api.ResolveVersionRequest{
 		Package: r.FormValue("package_name"),

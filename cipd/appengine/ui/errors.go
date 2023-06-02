@@ -45,7 +45,7 @@ func renderErr(h func(*router.Context) error) router.Handler {
 
 		ctx.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 		ctx.Writer.WriteHeader(grpcutil.CodeStatus(s.Code()))
-		templates.MustRender(ctx.Context, ctx.Writer, "pages/error.html", map[string]any{
+		templates.MustRender(ctx.Request.Context(), ctx.Writer, "pages/error.html", map[string]any{
 			"Message": message,
 		})
 	}

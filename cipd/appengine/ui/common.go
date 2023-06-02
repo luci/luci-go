@@ -51,11 +51,10 @@ func state(ctx context.Context) *requestState {
 func InstallHandlers(srv *server.Server, svc *impl.Services, templatesPath string) {
 	m := router.NewMiddlewareChain(
 		func(c *router.Context, next router.Handler) {
-			c.Context = context.WithValue(c.Context, &requestStateKey, &requestState{
-				startTime: clock.Now(c.Context),
+			c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), &requestStateKey, &requestState{
+				startTime: clock.Now(c.Request.Context()),
 				services:  svc,
-			})
-			c.Request = c.Request.WithContext(c.Context)
+			}))
 			next(c)
 		},
 		templates.WithTemplates(prepareTemplates(&srv.Options, templatesPath)),

@@ -40,11 +40,11 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		return status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
-	svc := state(c.Context).services
+	svc := state(c.Request.Context()).services
 
 	// Resolve the version first (even if is already IID). This also checks ACLs
 	// and verifies the instance exists.
-	inst, err := svc.PublicRepo.ResolveVersion(c.Context, &api.ResolveVersionRequest{
+	inst, err := svc.PublicRepo.ResolveVersion(c.Request.Context(), &api.ResolveVersionRequest{
 		Package: pkg,
 		Version: ver,
 	})
@@ -59,7 +59,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 	var url *api.ObjectURL
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() (err error) {
-			desc, err = svc.PublicRepo.DescribeInstance(c.Context, &api.DescribeInstanceRequest{
+			desc, err = svc.PublicRepo.DescribeInstance(c.Request.Context(), &api.DescribeInstanceRequest{
 				Package:            inst.Package,
 				Instance:           inst.Instance,
 				DescribeRefs:       true,
@@ -69,7 +69,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			return
 		}
 		tasks <- func() (err error) {
-			md, err = svc.PublicRepo.ListMetadata(c.Context, &api.ListMetadataRequest{
+			md, err = svc.PublicRepo.ListMetadata(c.Request.Context(), &api.ListMetadataRequest{
 				Package:  inst.Package,
 				Instance: inst.Instance,
 			})
@@ -83,7 +83,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			} else {
 				name = chunks[0]
 			}
-			url, err = svc.InternalCAS.GetObjectURL(c.Context, &api.GetObjectURLRequest{
+			url, err = svc.InternalCAS.GetObjectURL(c.Request.Context(), &api.GetObjectURLRequest{
 				Object:           inst.Instance,
 				DownloadFilename: name + ".zip",
 			})
@@ -94,8 +94,8 @@ func instancePage(c *router.Context, pkg, ver string) error {
 		return status.Errorf(codes.Internal, "%s", err)
 	}
 
-	now := clock.Now(c.Context)
-	templates.MustRender(c.Context, c.Writer, "pages/instance.html", map[string]any{
+	now := clock.Now(c.Request.Context())
+	templates.MustRender(c.Request.Context(), c.Writer, "pages/instance.html", map[string]any{
 		"Package":     pkg,
 		"Version":     ver,
 		"InstanceID":  common.ObjectRefToInstanceID(inst.Instance),
