@@ -22,25 +22,44 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	// "go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/auth"
 )
 
 // ServiceAccountEmail is a helper function to get the email address
-// that LUCI Bisection uses to perform Gerrit actions
+// that LUCI Bisection uses to perform Gerrit actions.
 func ServiceAccountEmail(ctx context.Context) (string, error) {
-	// TODO (aredulla): use ServiceAccount function once it is available
-	// emailAddress, err := info.ServiceAccount(ctx)
-	// if err != nil {
-	// 	return "", errors.Annotate(err,
-	// 		"failed to get LUCI Bisection email address used for Gerrit").Err()
-	// }
+	emailAddress, err := getServiceAccountName(ctx)
+	if err != nil {
+		// Not critical - just log the error.
+		err = errors.Annotate(err, "error getting the service account email").Err()
+		logging.Errorf(ctx, err.Error())
 
-	// For now, construct the service account email from the App ID
-	emailAddress := fmt.Sprintf("%s@appspot.gserviceaccount.com", info.AppID(ctx))
+		// Construct the service account email from the App ID instead.
+		constructedAddress := fmt.Sprintf("%s@appspot.gserviceaccount.com", info.AppID(ctx))
+		logging.Debugf(ctx, "using constructed service account %s instead",
+			constructedAddress)
+		return constructedAddress, nil
+	}
 
 	return emailAddress, nil
+}
+
+func getServiceAccountName(ctx context.Context) (string, error) {
+	signer := auth.GetSigner(ctx)
+	if signer == nil {
+		return "", errors.New("failed to get the Signer instance representing the service")
+	}
+
+	info, err := signer.ServiceInfo(ctx)
+	if err != nil {
+		return "", errors.Annotate(err, "failed to get service info").Err()
+	}
+
+	return info.ServiceAccountName, nil
 }
 
 // GetHost extracts the Gerrit host from the given Gerrit review URL
