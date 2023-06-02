@@ -17,6 +17,7 @@ package views
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
@@ -40,6 +41,33 @@ const rulesViewBaseQuery = `
 	SELECT
 	row.*
 	FROM items`
+
+const segmentsUnexpectedRealtimeQuery = `
+	WITH merged_table AS(
+		SELECT *
+		FROM internal.test_variant_segment_updates
+		WHERE project = "%[1]s" AND has_recent_unexpected_results = 1
+		UNION ALL
+		SELECT *
+		FROM internal.test_variant_segments
+		WHERE project = "%[1]s" AND has_recent_unexpected_results = 1
+	), merged_table_grouped AS(
+		SELECT
+			ARRAY_AGG(m ORDER BY version DESC LIMIT 1)[OFFSET(0)] as row
+		FROM merged_table m
+		GROUP BY project, test_id, variant_hash, ref_hash
+	)
+	SELECT
+		row.project AS project,
+		row.test_id AS test_id,
+		row.variant_hash AS variant_hash,
+		row.ref_hash AS ref_hash,
+		row.variant AS variant,
+		row.ref AS ref,
+		-- Omit has_recent_unexpected_results here as all rows have unexpected results.
+		row.segments AS segments,
+		row.version AS version
+	FROM merged_table_grouped`
 
 var datasetViewQueries = map[string]map[string]*bigquery.TableMetadata{
 	"internal": {"failure_association_rules": &bigquery.TableMetadata{ViewQuery: rulesViewBaseQuery}},
@@ -78,6 +106,23 @@ var luciProjectViewQueries = map[string]makeTableMetadata{
 		}
 		return &bigquery.TableMetadata{
 			ViewQuery: `SELECT * FROM internal.test_verdicts WHERE project = "` + luciProject + `"`,
+		}
+	},
+	"test_variant_segments": func(luciProject string) *bigquery.TableMetadata {
+		if !config.ProjectRe.MatchString(luciProject) {
+			panic("invalid LUCI Project")
+		}
+		return &bigquery.TableMetadata{
+			ViewQuery: `SELECT * FROM internal.test_variant_segments WHERE project = "` + luciProject + `"`,
+		}
+	},
+	"test_variant_segments_unexpected_realtime": func(luciProject string) *bigquery.TableMetadata {
+		if !config.ProjectRe.MatchString(luciProject) {
+			panic("invalid LUCI Project")
+		}
+		viewQuery := fmt.Sprintf(segmentsUnexpectedRealtimeQuery, luciProject)
+		return &bigquery.TableMetadata{
+			ViewQuery: viewQuery,
 		}
 	},
 }
