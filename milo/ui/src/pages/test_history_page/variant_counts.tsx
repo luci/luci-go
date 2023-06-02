@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import { Info } from '@mui/icons-material';
+import { Button } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
-import { Button } from '@mui/material';
-import { DotSpinner } from '../../components/dot_spinner';
-import { useStore } from '../../store';
+import { DotSpinner } from '@/common/components/dot_spinner';
+import { useStore } from '@/common/store';
 
 const LOADING_VARIANT_INFO_TOOLTIP =
   'It may take several clicks to find any new variant. ' +

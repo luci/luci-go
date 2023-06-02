@@ -23,13 +23,16 @@ import { destroy } from 'mobx-state-tree';
 import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import './styles/common_style.css';
-import './styles/color_classes.css';
-import './components/tooltip';
-import { LitEnvProvider } from './components/lit_env_provider';
-import { BaseLayout } from './layouts/base';
-import { obtainAuthState } from './libs/auth_state';
-import { createStaticTrustedURL } from './libs/utils';
+import '@/common/styles/common_style.css';
+import '@/common/styles/color_classes.css';
+import '@/common/components/tooltip';
+import { LitEnvProvider } from '@/common/components/lit_env_provider';
+import { BaseLayout } from '@/common/layouts/base';
+import { obtainAuthState } from '@/common/libs/auth_state';
+import { createStaticTrustedURL } from '@/common/libs/utils';
+import { Store, StoreProvider } from '@/common/store';
+import { theme } from '@/common/theme';
+
 import { ArtifactPageLayout } from './pages/artifact/artifact_page_layout';
 import { ImageDiffArtifactPage } from './pages/artifact/image_diff_artifact_page';
 import { RawArtifactPage } from './pages/artifact/raw_artifact_page';
@@ -37,22 +40,20 @@ import { TextDiffArtifactPage } from './pages/artifact/text_diff_artifact_page';
 import { BuildPage, BuildPageShortLink } from './pages/build_page';
 import { BlamelistTab } from './pages/build_page/blamelist_tab';
 import { BuildDefaultTab } from './pages/build_page/build_default_tab';
-import { OverviewTab } from './pages/build_page/overview_tab';
+import { OverviewTab } from './pages/build_page/overview_tab/overview_tab';
 import { RelatedBuildsTab } from './pages/build_page/related_builds_tab';
 import { StepsTab } from './pages/build_page/steps_tab';
 import { TimelineTab } from './pages/build_page/timeline_tab';
 import { BuilderPage } from './pages/builder_page';
-import { BuildersPage } from './pages/builders_page';
-import { InvocationPage } from './pages/invocation_page';
+import { BuildersPage } from './pages/builders_page/builders';
 import { InvocationDefaultTab } from './pages/invocation_page/invocation_default_tab';
 import { InvocationDetailsTab } from './pages/invocation_page/invocation_details_tab';
+import { InvocationPage } from './pages/invocation_page/invocation_page';
 import { LoginPage } from './pages/login_page';
 import { NotFoundPage } from './pages/not_found_page';
-import { SearchPage } from './pages/search_page';
-import { TestHistoryPage } from './pages/test_history_page';
-import { TestResultsTab } from './pages/test_results_tab';
-import { Store, StoreProvider } from './store';
-import { theme } from './theme';
+import { SearchPage } from './pages/search_page/search_page';
+import { TestHistoryPage } from './pages/test_history_page/test_history_page';
+import { TestResultsTab } from './pages/test_results_tab/test_results_tab';
 
 const QUERY_CLIENT_CONFIG: QueryClientConfig = {
   defaultOptions: {

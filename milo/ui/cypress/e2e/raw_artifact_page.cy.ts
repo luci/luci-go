@@ -19,14 +19,20 @@ const RAW_ARTIFACT_PAGE_URL =
 
 describe('Raw Artifact Page', () => {
   beforeEach(() => {
-    cy.stubRequests({ hostname: 'staging.results.usercontent.cr.dev' }, 'artifact', { matchHeaders: [] });
+    cy.stubRequests(
+      { hostname: 'staging.results.usercontent.cr.dev' },
+      'artifact',
+      { matchHeaders: [] }
+    );
   });
 
   it('should render raw artifact when the service worker is not registered', () => {
     cy.unregisterServiceWorkers('/ui/');
 
     cy.visit(RAW_ARTIFACT_PAGE_URL);
-    cy.get('pre').contains('MediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst');
+    cy.get('pre').contains(
+      'MediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst'
+    );
 
     const resultDbArtifactUrl =
       '/invocations/task-chromium-swarm-dev.appspot.com-53d2baa7033f4711/tests/' +
@@ -34,7 +40,10 @@ describe('Raw Artifact Page', () => {
       '.PlayingSessionAlwaysDisplayFirst/results/f66c3e76-00731/artifacts/snippet';
 
     cy.location('pathname').should('equal', resultDbArtifactUrl);
-    cy.location('origin').should('equal', 'https://staging.results.usercontent.cr.dev');
+    cy.location('origin').should(
+      'equal',
+      'https://staging.results.usercontent.cr.dev'
+    );
   });
 
   it('should render raw artifact without URL redirection when the service worker is registered', () => {
@@ -42,12 +51,16 @@ describe('Raw Artifact Page', () => {
     cy.intercept('/sw-loaded', (req) => req.reply('')).as('sw-loaded');
     cy.visit('/ui/');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    cy.window().then((win) => (win as any).SW_PROMISE.then(() => window.fetch('/sw-loaded')));
+    cy.window().then((win) =>
+      (win as any).SW_PROMISE.then(() => window.fetch('/sw-loaded'))
+    );
     cy.wait('@sw-loaded');
 
     cy.visit(RAW_ARTIFACT_PAGE_URL);
 
-    cy.get('pre').contains('MediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst');
+    cy.get('pre').contains(
+      'MediaDialogViewBrowserTest.PlayingSessionAlwaysDisplayFirst'
+    );
     cy.location('pathname').should('equal', RAW_ARTIFACT_PAGE_URL);
     cy.location('origin').should('equal', Cypress.config().baseUrl);
   });

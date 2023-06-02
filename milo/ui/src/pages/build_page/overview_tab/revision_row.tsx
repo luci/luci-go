@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getGitilesCommitURL } from '../../../libs/url_utils';
-import { GitilesCommit } from '../../../services/buildbucket';
+import { getGitilesCommitURL } from '@/common/libs/url_utils';
+import { GitilesCommit } from '@/common/services/buildbucket';
 
 export interface RevisionRowProps {
   readonly commit: GitilesCommit;

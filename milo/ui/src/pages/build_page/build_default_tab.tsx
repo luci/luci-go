@@ -15,7 +15,7 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { useStore } from '../../store';
+import { useStore } from '@/common/store';
 
 // TODO(weiweilin): add a unit test once jest is set up.
 export function BuildDefaultTab() {

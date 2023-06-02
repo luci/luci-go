@@ -17,19 +17,19 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { reaction } from 'mobx';
 
-import '../../components/dot_spinner';
-import { MiloBaseElement } from '../../components/milo_base';
-import { consumer } from '../../libs/context';
+import '@/common/components/dot_spinner';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { consumer } from '@/common/libs/context';
 import {
   errorHandler,
   forwardWithoutMsg,
   reportErrorAsync,
-} from '../../libs/error_handler';
-import { LoadingStage } from '../../models/test_loader';
+} from '@/common/libs/error_handler';
+import { LoadingStage } from '@/common/models/test_loader';
 import {
   consumeInvocationState,
   InvocationStateInstance,
-} from '../../store/invocation_state';
+} from '@/common/store/invocation_state';
 
 /**
  * Format number with a cap.

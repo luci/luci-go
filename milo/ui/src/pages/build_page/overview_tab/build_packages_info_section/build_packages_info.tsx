@@ -15,13 +15,13 @@
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Fragment, useState } from 'react';
 
-import { MiloLink } from '../../../../components/link';
-import { getCipdLink } from '../../../../libs/build_utils';
+import { MiloLink } from '@/common/components/link';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
-} from '../../../../libs/constants';
-import { Build } from '../../../../services/buildbucket';
+} from '@/common/constants';
+import { getCipdLink } from '@/common/libs/build_utils';
+import { Build } from '@/common/services/buildbucket';
 
 export interface BuildPackagesInfoProps {
   readonly build: Build;

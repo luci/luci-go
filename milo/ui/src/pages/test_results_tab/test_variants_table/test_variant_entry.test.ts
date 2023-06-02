@@ -25,18 +25,19 @@ import { customElement } from 'lit/decorators.js';
 import { destroy } from 'mobx-state-tree';
 
 import './test_variant_entry';
-import { ExpandableEntryElement } from '../../../components/expandable_entry';
-import { ANONYMOUS_IDENTITY } from '../../../libs/auth_state';
-import { provider } from '../../../libs/context';
-import { Notifier, provideNotifier } from '../../../libs/observer_element';
-import { Cluster } from '../../../services/luci_analysis';
+import { ExpandableEntryElement } from '@/common/components/expandable_entry';
+import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
+import { provider } from '@/common/libs/context';
+import { Notifier, provideNotifier } from '@/common/libs/observer_element';
+import { Cluster } from '@/common/services/luci_analysis';
 import {
   TestResultBundle,
   TestStatus,
   TestVariant,
   TestVariantStatus,
-} from '../../../services/resultdb';
-import { provideStore, Store, StoreInstance } from '../../../store';
+} from '@/common/services/resultdb';
+import { provideStore, Store, StoreInstance } from '@/common/store';
+
 import { provideProject, provideTestTabUrl } from './context';
 import { TestVariantEntryElement } from './test_variant_entry';
 

@@ -16,8 +16,10 @@ import { Box, Button, CircularProgress, Input } from '@mui/material';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { BuilderID, BuildStatusMask } from '../../../services/buildbucket';
+import { BuilderID, BuildStatusMask } from '@/common/services/buildbucket';
+
 import { useBuilds } from '../utils';
+
 import { EndedBuildsTable } from './ended_builds_table';
 
 const DEFAULT_PAGE_SIZE = 25;

@@ -17,20 +17,20 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise, IPromiseBasedObservable } from 'mobx-utils';
 
-import '../../components/dot_spinner';
-import { MiloBaseElement } from '../../components/milo_base';
-import { BUILD_STATUS_CLASS_MAP } from '../../libs/constants';
-import { reportRenderError } from '../../libs/error_handler';
-import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { lazyRendering } from '../../libs/observer_element';
+import '@/common/components/dot_spinner';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { BUILD_STATUS_CLASS_MAP } from '@/common/constants';
+import { reportRenderError } from '@/common/libs/error_handler';
+import { unwrapObservable } from '@/common/libs/mobx_utils';
+import { lazyRendering } from '@/common/libs/observer_element';
 import {
   getBuilderURLPath,
   getBuildURLPathFromBuildData,
-} from '../../libs/url_utils';
-import { Build, BuilderID } from '../../services/buildbucket';
-import { BuilderStats } from '../../services/milo_internal';
-import { consumeStore, StoreInstance } from '../../store';
-import { commonStyles } from '../../styles/stylesheets';
+} from '@/common/libs/url_utils';
+import { Build, BuilderID } from '@/common/services/buildbucket';
+import { BuilderStats } from '@/common/services/milo_internal';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
 
 @customElement('milo-builders-page-row')
 @lazyRendering

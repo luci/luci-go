@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MiloLink } from '../../../../components/link';
-import { getBotLink } from '../../../../libs/build_utils';
-import { BuildInfraSwarming } from '../../../../services/buildbucket';
+import { MiloLink } from '@/common/components/link';
+import { getBotLink } from '@/common/libs/build_utils';
+import { BuildInfraSwarming } from '@/common/services/buildbucket';
 
 export interface BotLinkRowProps {
   readonly swarming: BuildInfraSwarming;

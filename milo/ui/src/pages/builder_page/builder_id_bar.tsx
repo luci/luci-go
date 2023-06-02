@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getProjectURLPath } from '../../libs/url_utils';
-import { BuilderID } from '../../services/buildbucket';
+import { getProjectURLPath } from '@/common/libs/url_utils';
+import { BuilderID } from '@/common/services/buildbucket';
 
 export interface BuilderIdBarProps {
   readonly builderId: BuilderID;

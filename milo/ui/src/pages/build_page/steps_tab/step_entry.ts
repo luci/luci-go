@@ -19,35 +19,37 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
-import '../../../components/copy_to_clipboard';
-import '../../../components/expandable_entry';
-import '../../../components/buildbucket_log_link';
-import '../../../components/pin_toggle';
+import '@/common/components/copy_to_clipboard';
+import '@/common/components/expandable_entry';
+import '@/common/components/buildbucket_log_link';
+import '@/common/components/pin_toggle';
 import './step_cluster';
-import { MiloBaseElement } from '../../../components/milo_base';
+
+import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
-} from '../../../components/tooltip';
+} from '@/common/components/tooltip';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
-} from '../../../libs/constants';
+} from '@/common/constants';
 import {
   lazyRendering,
   RenderPlaceHolder,
-} from '../../../libs/observer_element';
+} from '@/common/libs/observer_element';
 import {
   displayCompactDuration,
   displayDuration,
   NUMERIC_TIME_FORMAT,
-} from '../../../libs/time_utils';
-import { BuildStatus } from '../../../services/buildbucket';
-import { consumeStore, StoreInstance } from '../../../store';
-import { StepExt } from '../../../store/build_state';
-import { ExpandStepOption } from '../../../store/user_config';
-import { colorClasses, commonStyles } from '../../../styles/stylesheets';
+} from '@/common/libs/time_utils';
+import { BuildStatus } from '@/common/services/buildbucket';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { StepExt } from '@/common/store/build_state';
+import { ExpandStepOption } from '@/common/store/user_config';
+import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+
 import { BuildPageStepClusterElement } from './step_cluster';
 
 /**

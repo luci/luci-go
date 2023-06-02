@@ -14,7 +14,8 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { useStore } from '../../../store';
+import { useStore } from '@/common/store';
+
 import { RevisionRow } from './revision_row';
 
 export const OutputSection = observer(() => {

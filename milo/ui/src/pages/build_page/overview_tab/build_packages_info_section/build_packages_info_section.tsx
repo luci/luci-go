@@ -14,7 +14,8 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { useStore } from '../../../../store';
+import { useStore } from '@/common/store';
+
 import { BuildPackagesInfo } from './build_packages_info';
 
 export const BuildPackagesInfoSection = observer(() => {

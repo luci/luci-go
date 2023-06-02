@@ -17,24 +17,25 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ReactNode } from 'react';
 
-import { OPTIONAL_RESOURCE } from '../../common_tags';
-import { MiloBaseElement } from '../../components/milo_base';
-import { POTENTIALLY_EXPIRED } from '../../libs/constants';
-import { consumer, provider } from '../../libs/context';
+import { OPTIONAL_RESOURCE } from '@/common/common_tags';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { POTENTIALLY_EXPIRED } from '@/common/constants';
+import { consumer, provider } from '@/common/libs/context';
 import {
   errorHandler,
   forwardWithoutMsg,
   renderErrorInPre,
-} from '../../libs/error_handler';
-import { attachTags, hasTags } from '../../libs/tag';
-import { getBuildURLPath } from '../../libs/url_utils';
-import { LoadTestVariantsError } from '../../models/test_loader';
-import { consumeStore, StoreInstance } from '../../store';
-import { GetBuildError } from '../../store/build_page';
+} from '@/common/libs/error_handler';
+import { attachTags, hasTags } from '@/common/libs/tag/tag';
+import { getBuildURLPath } from '@/common/libs/url_utils';
+import { LoadTestVariantsError } from '@/common/models/test_loader';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { GetBuildError } from '@/common/store/build_page';
 import {
   provideInvocationState,
   QueryInvocationError,
-} from '../../store/invocation_state';
+} from '@/common/store/invocation_state';
+
 import {
   provideProject,
   provideTestTabUrl,

@@ -20,12 +20,12 @@ import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import '../../components/auto_complete';
-import '../../components/hotkey';
-import { SuggestionEntry } from '../../components/auto_complete';
-import { consumer } from '../../libs/context';
-import { suggestTestHistoryFilterQuery } from '../../libs/queries/th_filter_query';
-import { consumeStore, StoreInstance } from '../../store';
+import '@/common/components/auto_complete';
+import '@/common/components/hotkey';
+import { SuggestionEntry } from '@/common/components/auto_complete';
+import { consumer } from '@/common/libs/context';
+import { suggestTestHistoryFilterQuery } from '@/common/libs/queries/th_filter_query';
+import { consumeStore, StoreInstance } from '@/common/store';
 
 /**
  * An element that let the user search tests in the test history view with DSL.

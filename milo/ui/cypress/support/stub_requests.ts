@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from 'path';
+
 import { RouteMatcher } from 'cypress/types/net-stubbing';
 import { deepEqual } from 'fast-equals';
-import * as path from 'path';
 
 import { BodyRepresentation, fromBodyRep, toBodyRep } from './serde';
 
@@ -83,8 +84,15 @@ interface CacheEntry {
  * Converts header keys with multiple values from using array representation to
  * using string representation.
  */
-function normalizeHeaders(headers: { [key: string]: string | string[] }): { [key: string]: string } {
-  return Object.fromEntries(Object.entries(headers).map(([k, v]) => [k, Array.isArray(v) ? v.sort().join(', ') : v]));
+function normalizeHeaders(headers: { [key: string]: string | string[] }): {
+  [key: string]: string;
+} {
+  return Object.fromEntries(
+    Object.entries(headers).map(([k, v]) => [
+      k,
+      Array.isArray(v) ? v.sort().join(', ') : v,
+    ])
+  );
 }
 
 /**
@@ -97,10 +105,19 @@ let cacheMap: Map<string, CacheEntry[]>;
 /**
  * Stubs all requests matched the routeMatcher.
  */
-function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRequestsOption = {}) {
+function stubRequests(
+  routeMatcher: RouteMatcher,
+  cacheName: string,
+  opt: StubRequestsOption = {}
+) {
   // Use '.txt' instead of '.json' because the file might be empty (therefore
   // invalid) when first created.
-  const filename = path.join('cypress', 'http_cache', Cypress.spec.name, cacheName + '.txt');
+  const filename = path.join(
+    'cypress',
+    'http_cache',
+    Cypress.spec.name,
+    cacheName + '.txt'
+  );
   const matchHeaders = opt.matchHeaders?.map((key) => key.toLowerCase());
 
   function stripIgnoredHeaders<T>(req: CachedRequest<T>): CachedRequest<T> {
@@ -109,7 +126,9 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
     }
     return {
       ...req,
-      headers: Object.fromEntries(matchHeaders.map((key) => [key, req.headers[key]])),
+      headers: Object.fromEntries(
+        matchHeaders.map((key) => [key, req.headers[key]])
+      ),
     };
   }
 
@@ -119,7 +138,8 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
   cy.writeFile(filename, '', { flag: 'a+' });
 
   cy.readFile(filename).then((content) => {
-    const cache = cacheMap.get(filename) || (JSON.parse(content || '[]') as CacheEntry[]);
+    const cache =
+      cacheMap.get(filename) || (JSON.parse(content || '[]') as CacheEntry[]);
     cy.intercept(routeMatcher, (incomingReq) => {
       // We need 2 request objects because
       // 1. we need to strip away ignored headers to perform cache matching.
@@ -133,7 +153,12 @@ function stubRequests(routeMatcher: RouteMatcher, cacheName: string, opt: StubRe
       };
 
       const res = cache.find((entry) =>
-        matchRequest(stripIgnoredHeaders(entry.req), stripIgnoredHeaders(fullReq), entry.req.headers, fullReq.headers)
+        matchRequest(
+          stripIgnoredHeaders(entry.req),
+          stripIgnoredHeaders(fullReq),
+          entry.req.headers,
+          fullReq.headers
+        )
       )?.res;
 
       if (res) {

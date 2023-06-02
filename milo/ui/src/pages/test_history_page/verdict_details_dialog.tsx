@@ -17,8 +17,9 @@ import { Button, Dialog, DialogContent } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useRef } from 'react';
 
-import { Hotkey } from '../../components/hotkey';
-import { useStore } from '../../store';
+import { Hotkey } from '@/common/components/hotkey';
+import { useStore } from '@/common/store';
+
 import {
   DetailsTable,
   TestHistoryDetailsTableElement,

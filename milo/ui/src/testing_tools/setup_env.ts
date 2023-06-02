@@ -22,7 +22,7 @@ import * as dotenv from 'dotenv';
 import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';
 
-import { assertNonNullable } from '../libs/utils';
+import { assertNonNullable } from '@/common/libs/utils';
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
 // then delete this.

@@ -14,8 +14,8 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { BuildTagRow } from '../../../components/build_tag_row';
-import { useStore } from '../../../store';
+import { BuildTagRow } from '@/common/components/build_tag_row';
+import { useStore } from '@/common/store';
 
 export const TagsSection = observer(() => {
   const store = useStore();

@@ -15,13 +15,10 @@
 import { Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
-import { Timestamp } from '../../../components/timestamp';
-import {
-  BOT_STATUS_COLOR_MAP,
-  BOT_STATUS_LABEL_MAP,
-} from '../../../libs/constants';
-import { NUMERIC_TIME_FORMAT } from '../../../libs/time_utils';
-import { BotInfo, getBotStatus, getBotUrl } from '../../../services/swarming';
+import { Timestamp } from '@/common/components/timestamp';
+import { BOT_STATUS_COLOR_MAP, BOT_STATUS_LABEL_MAP } from '@/common/constants';
+import { NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
+import { BotInfo, getBotStatus, getBotUrl } from '@/common/services/swarming';
 
 interface BotRowProps {
   readonly swarmingHost: string;

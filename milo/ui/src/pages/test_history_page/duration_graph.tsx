@@ -18,12 +18,13 @@ import { customElement } from 'lit/decorators.js';
 import { Duration } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '../../components/milo_base';
-import { consumer } from '../../libs/context';
-import { displayDuration, parseProtoDuration } from '../../libs/time_utils';
-import { QueryTestHistoryStatsResponseGroup } from '../../services/luci_analysis';
-import { consumeStore, StoreInstance } from '../../store';
-import { commonStyles } from '../../styles/stylesheets';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { consumer } from '@/common/libs/context';
+import { displayDuration, parseProtoDuration } from '@/common/libs/time_utils';
+import { QueryTestHistoryStatsResponseGroup } from '@/common/services/luci_analysis';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
+
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 @customElement('milo-th-duration-graph')

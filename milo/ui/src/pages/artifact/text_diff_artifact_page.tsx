@@ -20,20 +20,21 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '../../components/dot_spinner';
-import '../../components/status_bar';
-import { ARTIFACT_LENGTH_LIMIT } from '../../libs/constants';
-import { consumer } from '../../libs/context';
-import { reportRenderError } from '../../libs/error_handler';
-import { unwrapObservable } from '../../libs/milo_mobx_utils';
-import { getRawArtifactURLPath } from '../../libs/url_utils';
-import { urlSetSearchQueryParam } from '../../libs/utils';
+import '@/common/components/dot_spinner';
+import '@/common/components/status_bar';
+import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants';
+import { consumer } from '@/common/libs/context';
+import { reportRenderError } from '@/common/libs/error_handler';
+import { unwrapObservable } from '@/common/libs/mobx_utils';
+import { getRawArtifactURLPath } from '@/common/libs/url_utils';
+import { urlSetSearchQueryParam } from '@/common/libs/utils';
 import {
   ArtifactIdentifier,
   constructArtifactName,
-} from '../../services/resultdb';
-import { consumeStore, StoreInstance } from '../../store';
-import { commonStyles } from '../../styles/stylesheets';
+} from '@/common/services/resultdb';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
+
 import { consumeArtifactIdent } from './artifact_page_layout';
 
 /**

@@ -19,9 +19,13 @@ import { useParams } from 'react-router-dom';
 import {
   useAuthState,
   useGetAccessToken,
-} from '../../components/auth_state_provider';
-import { PrpcClientExt } from '../../libs/prpc_client_ext';
-import { BuildersService, GetBuilderRequest } from '../../services/buildbucket';
+} from '@/common/components/auth_state_provider';
+import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
+import {
+  BuildersService,
+  GetBuilderRequest,
+} from '@/common/services/buildbucket';
+
 import { BuilderIdBar } from './builder_id_bar';
 import { EndedBuildsSection } from './ended_builds_section';
 import { MachinePoolSection } from './machine_pool_section';

@@ -20,21 +20,22 @@ import { DateTime } from 'luxon';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
 import './step_entry';
-import checkCircleStacked from '../../../assets/svgs/check_circle_stacked_24dp.svg';
-import { MiloBaseElement } from '../../../components/milo_base';
+import checkCircleStacked from '@/common/assets/svgs/check_circle_stacked_24dp.svg';
+import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
-} from '../../../components/tooltip';
-import { consumer } from '../../../libs/context';
+} from '@/common/components/tooltip';
+import { consumer } from '@/common/libs/context';
 import {
   displayCompactDuration,
   displayDuration,
   NUMERIC_TIME_FORMAT,
-} from '../../../libs/time_utils';
-import { consumeStore, StoreInstance } from '../../../store';
-import { StepExt } from '../../../store/build_state';
-import { commonStyles } from '../../../styles/stylesheets';
+} from '@/common/libs/time_utils';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { StepExt } from '@/common/store/build_state';
+import { commonStyles } from '@/common/styles/stylesheets';
+
 import { BuildPageStepEntryElement } from './step_entry';
 
 @customElement('milo-bp-step-cluster')

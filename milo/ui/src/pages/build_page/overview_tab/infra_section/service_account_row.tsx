@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BuildInfraSwarming } from '../../../../services/buildbucket';
+import { BuildInfraSwarming } from '@/common/services/buildbucket';
 
 export interface ServiceAccountRowProps {
   readonly swarming: BuildInfraSwarming;

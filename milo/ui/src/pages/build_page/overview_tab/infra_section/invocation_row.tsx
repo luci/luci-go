@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MiloLink } from '../../../../components/link';
-import { getInvocationLink } from '../../../../libs/build_utils';
-import { BuildInfraResultdb } from '../../../../services/buildbucket';
+import { MiloLink } from '@/common/components/link';
+import { getInvocationLink } from '@/common/libs/build_utils';
+import { BuildInfraResultdb } from '@/common/services/buildbucket';
 
 export interface InvocationRowProps {
   readonly resultdb?: BuildInfraResultdb;

@@ -28,31 +28,31 @@ import {
 import { observer } from 'mobx-react-lite';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-import '../../components/dot_spinner';
-import { DotSpinner } from '../../components/dot_spinner';
-import {
-  GA_ACTIONS,
-  GA_CATEGORIES,
-  trackEvent,
-} from '../../libs/analytics_utils';
+import '@/common/components/dot_spinner';
+import { DotSpinner } from '@/common/components/dot_spinner';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
-} from '../../libs/constants';
-import { renderMarkdown } from '../../libs/markdown_utils';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
+} from '@/common/constants';
+import {
+  GA_ACTIONS,
+  GA_CATEGORIES,
+  trackEvent,
+} from '@/common/libs/analytics_utils';
+import { renderMarkdown } from '@/common/libs/markdown_utils';
+import { displayDuration, NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
 import {
   getBuilderURLPath,
   getBuildURLPathFromBuildData,
   getProjectURLPath,
-} from '../../libs/url_utils';
-import { useStore } from '../../store';
-import { BuildStateInstance } from '../../store/build_state';
+} from '@/common/libs/url_utils';
+import { useStore } from '@/common/store';
+import { BuildStateInstance } from '@/common/store/build_state';
 import {
   ExpandableEntriesState,
   ExpandableEntriesStateInstance,
-} from '../../store/expandable_entries_state';
+} from '@/common/store/expandable_entries_state/expandable_entries_state';
 
 const TableStateContext = createContext<ExpandableEntriesStateInstance>(
   ExpandableEntriesState.create()

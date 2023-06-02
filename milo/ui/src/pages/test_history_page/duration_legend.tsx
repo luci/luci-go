@@ -27,16 +27,17 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '../../components/milo_base';
+import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HOUR_MS,
   MINUTE_MS,
   PREDEFINED_TIME_INTERVALS,
   SECOND_MS,
-} from '../../libs/constants';
-import { consumer } from '../../libs/context';
-import { roundUp } from '../../libs/utils';
-import { consumeStore, StoreInstance } from '../../store';
+} from '@/common/constants';
+import { consumer } from '@/common/libs/context';
+import { roundUp } from '@/common/libs/utils';
+import { consumeStore, StoreInstance } from '@/common/store';
+
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 const DURATION_LEGEND_PADDING = 10;

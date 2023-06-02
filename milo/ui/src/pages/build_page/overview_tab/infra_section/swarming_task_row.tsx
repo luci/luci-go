@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getSwarmingTaskURL } from '../../../../libs/url_utils';
-import { BuildInfraSwarming } from '../../../../services/buildbucket';
+import { getSwarmingTaskURL } from '@/common/libs/url_utils';
+import { BuildInfraSwarming } from '@/common/services/buildbucket';
 
 export interface SwarmingTaskRowProps {
   readonly swarming: BuildInfraSwarming;

@@ -27,27 +27,24 @@ import { DateTime } from 'luxon';
 import { observer } from 'mobx-react-lite';
 import { Fragment } from 'react';
 
-import { Timestamp } from '../../../../components/timestamp';
+import { Timestamp } from '@/common/components/timestamp';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
   BUILD_STATUS_ICON_MAP,
-} from '../../../../libs/constants';
-import { renderMarkdown } from '../../../../libs/markdown_utils';
-import {
-  displayDuration,
-  NUMERIC_TIME_FORMAT,
-} from '../../../../libs/time_utils';
+} from '@/common/constants';
+import { renderMarkdown } from '@/common/libs/markdown_utils';
+import { displayDuration, NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
 import {
   getBuildURLPathFromBuildId,
   getGerritChangeURL,
   getGitilesCommitURL,
-} from '../../../../libs/url_utils';
+} from '@/common/libs/url_utils';
 import {
   Build,
   getAssociatedGitilesCommit,
-} from '../../../../services/buildbucket';
-import { ExpandableEntriesStateInstance } from '../../../../store/expandable_entries_state';
+} from '@/common/services/buildbucket';
+import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state/expandable_entries_state';
 
 const MarkdownContainer = styled(Box)({
   padding: '0 10px',

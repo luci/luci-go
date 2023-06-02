@@ -16,10 +16,10 @@ import { Box, Typography } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
-import '../../components/dot_spinner';
-import { DotSpinner } from '../../components/dot_spinner';
-import { getBuilderURLPath } from '../../libs/url_utils';
-import { useStore } from '../../store';
+import '@/common/components/dot_spinner';
+import { DotSpinner } from '@/common/components/dot_spinner';
+import { getBuilderURLPath } from '@/common/libs/url_utils';
+import { useStore } from '@/common/store';
 
 export const BuilderList = observer(() => {
   const { groupedBuilders, builderLoader } = useStore().searchPage;

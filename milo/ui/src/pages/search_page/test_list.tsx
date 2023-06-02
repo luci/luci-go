@@ -16,9 +16,9 @@ import { Typography } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
-import '../../components/dot_spinner';
-import { DotSpinner } from '../../components/dot_spinner';
-import { useStore } from '../../store';
+import '@/common/components/dot_spinner';
+import { DotSpinner } from '@/common/components/dot_spinner';
+import { useStore } from '@/common/store';
 
 export const TestList = observer(() => {
   const { testProject, searchQuery, testLoader } = useStore().searchPage;

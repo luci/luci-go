@@ -14,14 +14,14 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { RelativeTimestamp } from '../../../components/relative_timestamp';
+import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import {
   BUILD_STATUS_CLASS_MAP,
   BUILD_STATUS_DISPLAY_MAP,
-} from '../../../libs/constants';
-import { renderMarkdown } from '../../../libs/markdown_utils';
-import { BuildStatus } from '../../../services/buildbucket';
-import { useStore } from '../../../store';
+} from '@/common/constants';
+import { renderMarkdown } from '@/common/libs/markdown_utils';
+import { BuildStatus } from '@/common/services/buildbucket';
+import { useStore } from '@/common/store';
 
 export const SummarySection = observer(() => {
   const store = useStore();

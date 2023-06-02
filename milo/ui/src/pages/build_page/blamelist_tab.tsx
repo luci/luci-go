@@ -18,27 +18,27 @@ import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 
-import '../../components/commit_entry';
-import '../../components/dot_spinner';
-import '../../components/hotkey';
-import { CommitEntryElement } from '../../components/commit_entry';
-import { MiloBaseElement } from '../../components/milo_base';
+import '@/common/components/commit_entry';
+import '@/common/components/dot_spinner';
+import '@/common/components/hotkey';
+import { CommitEntryElement } from '@/common/components/commit_entry';
+import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   GA_ACTIONS,
   GA_CATEGORIES,
   trackEvent,
-} from '../../libs/analytics_utils';
-import { consumer } from '../../libs/context';
+} from '@/common/libs/analytics_utils';
+import { consumer } from '@/common/libs/context';
 import {
   errorHandler,
   forwardWithoutMsg,
   reportErrorAsync,
   reportRenderError,
-} from '../../libs/error_handler';
-import { getGitilesRepoURL } from '../../libs/url_utils';
-import { GitCommit } from '../../services/milo_internal';
-import { consumeStore, StoreInstance } from '../../store';
-import { commonStyles } from '../../styles/stylesheets';
+} from '@/common/libs/error_handler';
+import { getGitilesRepoURL } from '@/common/libs/url_utils';
+import { GitCommit } from '@/common/services/milo_internal';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
 
 @customElement('milo-blamelist-tab')
 @errorHandler(forwardWithoutMsg)

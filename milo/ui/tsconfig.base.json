@@ -4,7 +4,7 @@
     "allowJs": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
-    "target": "ES2015",
+    "target": "ESNext",
     "sourceMap": true,
     "outDir": "out/",
     "noEmit": true,
@@ -38,7 +38,10 @@
     // [2]: https://lit.dev/docs/components/properties/#avoiding-issues-with-class-fields
     // [3]: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier
     // [4]: https://reactjs.org/blog/2020/10/20/react-v17.html#changes-to-event-delegation
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "paths": {
+      "@/*": ["./src/*"],
+    }
   },
   "exclude": ["node_modules"]
 }

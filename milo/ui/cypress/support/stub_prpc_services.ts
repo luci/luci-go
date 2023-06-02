@@ -14,7 +14,8 @@
 
 import { deepEqual } from 'fast-equals';
 
-import { removeDefaultProps } from '../../src/libs/prpc_utils';
+import { removeDefaultProps } from '../../src/common/libs/prpc_utils';
+
 import { StubRequestsOption } from './stub_requests';
 
 declare global {
@@ -45,9 +46,21 @@ export const STUB_REQUEST_OPTIONS: StubRequestsOption = {
  */
 function stubPrpcServices() {
   // TODO(weiweilin): read host names from configs.
-  cy.stubRequests('https://cr-buildbucket-dev.appspot.com/prpc/**', 'buildbucket', STUB_REQUEST_OPTIONS);
-  cy.stubRequests('https://staging.results.api.cr.dev/prpc/**', 'resultdb', STUB_REQUEST_OPTIONS);
-  cy.stubRequests('http://localhost:8080/prpc/**', 'milo', STUB_REQUEST_OPTIONS);
+  cy.stubRequests(
+    'https://cr-buildbucket-dev.appspot.com/prpc/**',
+    'buildbucket',
+    STUB_REQUEST_OPTIONS
+  );
+  cy.stubRequests(
+    'https://staging.results.api.cr.dev/prpc/**',
+    'resultdb',
+    STUB_REQUEST_OPTIONS
+  );
+  cy.stubRequests(
+    'http://localhost:8080/prpc/**',
+    'milo',
+    STUB_REQUEST_OPTIONS
+  );
 }
 
 /**

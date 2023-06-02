@@ -19,17 +19,17 @@ import { styleMap } from 'lit/directives/style-map.js';
 import { DateTime } from 'luxon';
 import { autorun, computed, makeObservable, observable } from 'mobx';
 
-import '../../components/timeline';
-import { MiloBaseElement } from '../../components/milo_base';
-import { TimelineBlock } from '../../components/timeline';
-import { consumer } from '../../libs/context';
-import { Invocation } from '../../services/resultdb';
-import { consumeStore, StoreInstance } from '../../store';
+import '@/common/components/timeline';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { TimelineBlock } from '@/common/components/timeline';
+import { consumer } from '@/common/libs/context';
+import { Invocation } from '@/common/services/resultdb';
+import { consumeStore, StoreInstance } from '@/common/store';
 import {
   consumeInvocationState,
   InvocationStateInstance,
-} from '../../store/invocation_state';
-import { commonStyles } from '../../styles/stylesheets';
+} from '@/common/store/invocation_state';
+import { commonStyles } from '@/common/styles/stylesheets';
 
 const MARGIN = 20;
 const MIN_GRAPH_WIDTH = 900;

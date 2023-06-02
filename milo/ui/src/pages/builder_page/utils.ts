@@ -17,9 +17,12 @@ import { useQuery } from '@tanstack/react-query';
 import {
   useAuthState,
   useGetAccessToken,
-} from '../../components/auth_state_provider';
-import { PrpcClientExt } from '../../libs/prpc_client_ext';
-import { BuildsService, SearchBuildsRequest } from '../../services/buildbucket';
+} from '@/common/components/auth_state_provider';
+import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
+import {
+  BuildsService,
+  SearchBuildsRequest,
+} from '@/common/services/buildbucket';
 
 export function useBuilds(
   req: SearchBuildsRequest,

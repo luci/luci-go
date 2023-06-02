@@ -17,10 +17,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
 import { destroy, Instance } from 'mobx-state-tree';
 
-import { AuthStateProvider } from '../../components/auth_state_provider';
-import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
-import { QueryTestMetadataResponse, ResultDb } from '../../services/resultdb';
-import { Store, StoreProvider } from '../../store';
+import { AuthStateProvider } from '@/common/components/auth_state_provider';
+import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
+import {
+  QueryTestMetadataResponse,
+  ResultDb,
+} from '@/common/services/resultdb';
+import { Store, StoreProvider } from '@/common/store';
+
 import { TestIdLabel } from './test_id_label';
 
 describe('TestIdLabel', () => {

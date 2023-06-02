@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// eslint-disable-next-line no-undef
 module.exports = {
   preset: 'ts-jest/presets/js-with-babel',
   testEnvironment: 'jsdom',
@@ -35,5 +36,6 @@ module.exports = {
   setupFiles: ['./src/testing_tools/setup_env.ts'],
   moduleNameMapper: {
     '\\.(css|less|svg)$': 'identity-obj-proxy',
+    '@/(.*)': '<rootDir>/src/$1',
   },
 };

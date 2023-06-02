@@ -17,24 +17,25 @@ import { css, html, svg, SVGTemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import '../../components/status_bar';
-import '../../components/dot_spinner';
+import '@/common/components/status_bar';
+import '@/common/components/dot_spinner';
 import './graph_config';
-import checkCircle from '../../assets/svgs/check_circle_24dp.svg';
-import checkCircleStacked from '../../assets/svgs/check_circle_stacked_24dp.svg';
-import { MiloBaseElement } from '../../components/milo_base';
+import checkCircle from '@/common/assets/svgs/check_circle_24dp.svg';
+import checkCircleStacked from '@/common/assets/svgs/check_circle_stacked_24dp.svg';
+import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   VARIANT_STATUS_CLASS_MAP,
   VERDICT_VARIANT_STATUS_MAP,
-} from '../../libs/constants';
-import { consumer } from '../../libs/context';
+} from '@/common/constants';
+import { consumer } from '@/common/libs/context';
 import {
   QueryTestHistoryStatsResponseGroup,
   TestVerdictStatus,
-} from '../../services/luci_analysis';
-import { TestVariantStatus } from '../../services/resultdb';
-import { consumeStore, StoreInstance } from '../../store';
-import { commonStyles } from '../../styles/stylesheets';
+} from '@/common/services/luci_analysis';
+import { TestVariantStatus } from '@/common/services/resultdb';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
+
 import { CELL_PADDING, CELL_SIZE, INNER_CELL_SIZE } from './constants';
 
 const ICON_PADDING = (CELL_SIZE - 24) / 2;

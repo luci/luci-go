@@ -14,7 +14,8 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { useStore } from '../../../../store';
+import { useStore } from '@/common/store';
+
 import { AncestorBuildsRow } from './ancestor_build_row';
 import { BotLinkRow } from './bot_link_row';
 import { BuildbucketRow } from './buildbucket_row';

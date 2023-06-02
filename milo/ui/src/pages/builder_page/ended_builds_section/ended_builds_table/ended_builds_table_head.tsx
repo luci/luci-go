@@ -16,7 +16,7 @@ import { ChevronRight, ExpandMore } from '@mui/icons-material';
 import { IconButton, TableCell, TableHead, TableRow } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
-import { ExpandableEntriesStateInstance } from '../../../../store/expandable_entries_state';
+import { ExpandableEntriesStateInstance } from '@/common/store/expandable_entries_state/expandable_entries_state';
 
 export interface EndedBuildsTableHeadProps {
   readonly tableState: ExpandableEntriesStateInstance;

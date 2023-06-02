@@ -22,7 +22,8 @@ import {
   BuildAgentResolvedDataRef,
   BuildInfra,
   BuildInfraBuildbucket,
-} from '../../../../services/buildbucket';
+} from '@/common/services/buildbucket';
+
 import { BuildPackagesInfo } from './build_packages_info';
 
 describe('BuildPackagesInfo', () => {

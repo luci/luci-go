@@ -25,9 +25,10 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '../../components/milo_base';
-import { consumer } from '../../libs/context';
-import { consumeStore, StoreInstance } from '../../store';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { consumer } from '@/common/libs/context';
+import { consumeStore, StoreInstance } from '@/common/store';
+
 import { CELL_SIZE, X_AXIS_HEIGHT } from './constants';
 
 @customElement('milo-th-date-axis')

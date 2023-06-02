@@ -31,16 +31,16 @@ import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createRoot, Root } from 'react-dom/client';
 
-import '../../../components/dot_spinner';
-import { consumer } from '../../../libs/context';
+import '@/common/components/dot_spinner';
+import { consumer } from '@/common/libs/context';
 import {
   consumeStore,
   StoreInstance,
   StoreProvider,
   useStore,
-} from '../../../store';
-import { ExpandStepOption } from '../../../store/user_config';
-import { commonStyles } from '../../../styles/stylesheets';
+} from '@/common/store';
+import { ExpandStepOption } from '@/common/store/user_config';
+import { commonStyles } from '@/common/styles/stylesheets';
 
 const StepCategoryLabelMap = Object.freeze({
   [ExpandStepOption.All]: 'All',

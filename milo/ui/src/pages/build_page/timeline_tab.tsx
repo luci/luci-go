@@ -28,34 +28,34 @@ import { customElement } from 'lit/decorators.js';
 import { DateTime } from 'luxon';
 import { autorun, makeObservable, observable } from 'mobx';
 
-import '../../components/dot_spinner';
-import { MiloBaseElement } from '../../components/milo_base';
+import '@/common/components/dot_spinner';
+import { MiloBaseElement } from '@/common/components/milo_base';
 import {
   HideTooltipEventDetail,
   ShowTooltipEventDetail,
-} from '../../components/tooltip';
+} from '@/common/components/tooltip';
+import {
+  BUILD_STATUS_CLASS_MAP,
+  PREDEFINED_TIME_INTERVALS,
+} from '@/common/constants';
 import {
   GA_ACTIONS,
   GA_CATEGORIES,
   trackEvent,
-} from '../../libs/analytics_utils';
-import {
-  BUILD_STATUS_CLASS_MAP,
-  PREDEFINED_TIME_INTERVALS,
-} from '../../libs/constants';
-import { consumer } from '../../libs/context';
+} from '@/common/libs/analytics_utils';
+import { consumer } from '@/common/libs/context';
 import {
   errorHandler,
   forwardWithoutMsg,
   reportError,
   reportRenderError,
-} from '../../libs/error_handler';
-import { enumerate } from '../../libs/iter_utils';
-import { displayDuration, NUMERIC_TIME_FORMAT } from '../../libs/time_utils';
-import { roundDown } from '../../libs/utils';
-import { consumeStore, StoreInstance } from '../../store';
-import { StepExt } from '../../store/build_state';
-import { commonStyles } from '../../styles/stylesheets';
+} from '@/common/libs/error_handler';
+import { enumerate } from '@/common/libs/iter_utils';
+import { displayDuration, NUMERIC_TIME_FORMAT } from '@/common/libs/time_utils';
+import { roundDown } from '@/common/libs/utils';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { StepExt } from '@/common/store/build_state';
+import { commonStyles } from '@/common/styles/stylesheets';
 
 const MARGIN = 10;
 const TOP_AXIS_HEIGHT = 35;

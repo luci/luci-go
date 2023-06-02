@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MiloLink } from '../../../../components/link';
-import { getBuildbucketLink } from '../../../../libs/build_utils';
+import { MiloLink } from '@/common/components/link';
+import { getBuildbucketLink } from '@/common/libs/build_utils';
 
 export interface BuildbucketRowProps {
   readonly buildId: string;

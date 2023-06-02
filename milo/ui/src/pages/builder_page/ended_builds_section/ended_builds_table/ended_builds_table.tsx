@@ -15,8 +15,9 @@
 import { Table, TableBody } from '@mui/material';
 import { useState } from 'react';
 
-import { Build } from '../../../../services/buildbucket';
-import { ExpandableEntriesState } from '../../../../store/expandable_entries_state';
+import { Build } from '@/common/services/buildbucket';
+import { ExpandableEntriesState } from '@/common/store/expandable_entries_state/expandable_entries_state';
+
 import { EndedBuildsTableHead } from './ended_builds_table_head';
 import { EndedBuildsTableRow } from './ended_builds_table_row';
 

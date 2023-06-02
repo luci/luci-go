@@ -18,11 +18,11 @@ import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import { MiloBaseElement } from '../../components/milo_base';
-import { consumer } from '../../libs/context';
-import { consumeStore, StoreInstance } from '../../store';
-import { GraphType, XAxisType } from '../../store/test_history_page';
-import { commonStyles } from '../../styles/stylesheets';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { consumer } from '@/common/libs/context';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { GraphType, XAxisType } from '@/common/store/test_history_page';
+import { commonStyles } from '@/common/styles/stylesheets';
 
 @customElement('milo-th-graph-config')
 @consumer

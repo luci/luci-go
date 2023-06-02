@@ -18,11 +18,11 @@ import { useQuery } from '@tanstack/react-query';
 import {
   useAuthState,
   useGetAccessToken,
-} from '../../components/auth_state_provider';
-import { PrpcClientExt } from '../../libs/prpc_client_ext';
-import { getCodeSourceUrl } from '../../libs/url_utils';
-import { extractProject } from '../../libs/utils';
-import { QueryTestMetadataRequest, ResultDb } from '../../services/resultdb';
+} from '@/common/components/auth_state_provider';
+import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
+import { getCodeSourceUrl } from '@/common/libs/url_utils';
+import { extractProject } from '@/common/libs/utils';
+import { QueryTestMetadataRequest, ResultDb } from '@/common/services/resultdb';
 
 export interface TestIdLabelProps {
   readonly projectOrRealm: string; // A project name or a realm name.

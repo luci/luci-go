@@ -22,31 +22,32 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 import { useEffect, useRef } from 'react';
 
-import '../../../components/associated_bugs_badge';
-import '../../../components/expandable_entry';
-import '../../../components/copy_to_clipboard';
-import '../../../components/result_entry';
-import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '../../../common_tags';
+import '@/common/components/associated_bugs_badge';
+import '@/common/components/expandable_entry';
+import '@/common/components/copy_to_clipboard';
+import '@/common/components/result_entry';
+import { MAY_REQUIRE_SIGNIN, OPTIONAL_RESOURCE } from '@/common/common_tags';
 import {
   VARIANT_STATUS_CLASS_MAP,
   VARIANT_STATUS_ICON_MAP,
-} from '../../../libs/constants';
-import { unwrapObservable } from '../../../libs/milo_mobx_utils';
+} from '@/common/constants';
+import { unwrapObservable } from '@/common/libs/mobx_utils';
 import {
   lazyRendering,
   RenderPlaceHolder,
-} from '../../../libs/observer_element';
-import { attachTags, hasTags } from '../../../libs/tag';
-import { getCodeSourceUrl } from '../../../libs/url_utils';
-import { urlSetSearchQueryParam } from '../../../libs/utils';
-import { Cluster } from '../../../services/luci_analysis';
+} from '@/common/libs/observer_element';
+import { attachTags, hasTags } from '@/common/libs/tag/tag';
+import { getCodeSourceUrl } from '@/common/libs/url_utils';
+import { urlSetSearchQueryParam } from '@/common/libs/utils';
+import { Cluster } from '@/common/services/luci_analysis';
 import {
   RESULT_LIMIT,
   TestStatus,
   TestVariant,
-} from '../../../services/resultdb';
-import { consumeStore, StoreInstance } from '../../../store';
-import { colorClasses, commonStyles } from '../../../styles/stylesheets';
+} from '@/common/services/resultdb';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
+
 import { consumeProject, consumeTestTabUrl } from './context';
 
 // This list defines the order in which variant def keys should be displayed.

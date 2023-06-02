@@ -16,9 +16,10 @@ import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { cleanup, render } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
 
-import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
-import { Store, StoreInstance, StoreProvider } from '../../store';
-import { SearchTarget } from '../../store/search_page';
+import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
+import { Store, StoreInstance, StoreProvider } from '@/common/store';
+import { SearchTarget } from '@/common/store/search_page';
+
 import { TestList } from './test_list';
 
 describe('TestList', () => {

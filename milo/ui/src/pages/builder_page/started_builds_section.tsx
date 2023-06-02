@@ -15,9 +15,10 @@
 import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
-import { displayCompactDuration } from '../../libs/time_utils';
-import { getBuildURLPathFromBuildId } from '../../libs/url_utils';
-import { BuilderID, BuildStatus } from '../../services/buildbucket';
+import { displayCompactDuration } from '@/common/libs/time_utils';
+import { getBuildURLPathFromBuildId } from '@/common/libs/url_utils';
+import { BuilderID, BuildStatus } from '@/common/services/buildbucket';
+
 import { useBuilds } from './utils';
 
 const PAGE_SIZE = 100;

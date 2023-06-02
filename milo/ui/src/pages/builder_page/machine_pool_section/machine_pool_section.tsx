@@ -21,20 +21,21 @@ import { useState } from 'react';
 import {
   useAuthState,
   useGetAccessToken,
-} from '../../../components/auth_state_provider';
+} from '@/common/components/auth_state_provider';
 import {
   ExpandableEntry,
   ExpandableEntryBody,
   ExpandableEntryHeader,
-} from '../../../components/expandable_entry';
-import { PrpcClientExt } from '../../../libs/prpc_client_ext';
-import { StringPair } from '../../../services/common';
+} from '@/common/components/expandable_entry';
+import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
+import { StringPair } from '@/common/services/common';
 import {
   BotsRequest,
   BotsService,
   BotStatus,
   getBotStatus,
-} from '../../../services/swarming';
+} from '@/common/services/swarming';
+
 import { BotStatusTable } from './bot_status_table';
 import { BotTable } from './bot_table';
 

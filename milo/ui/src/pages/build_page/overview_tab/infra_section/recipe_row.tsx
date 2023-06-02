@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MiloLink } from '../../../../components/link';
-import { Link } from '../../../../models/link';
+import { MiloLink } from '@/common/components/link';
+import { Link } from '@/common/models/link';
 
 export interface RecipeRowProps {
   readonly recipeLink: Link;

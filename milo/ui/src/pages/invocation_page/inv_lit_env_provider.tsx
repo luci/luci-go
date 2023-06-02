@@ -18,11 +18,12 @@ import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable, reaction } from 'mobx';
 import { ReactNode } from 'react';
 
-import { MiloBaseElement } from '../../components/milo_base';
-import { consumer, provider } from '../../libs/context';
-import { getInvURLPath } from '../../libs/url_utils';
-import { consumeStore, StoreInstance } from '../../store';
-import { provideInvocationState } from '../../store/invocation_state';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { consumer, provider } from '@/common/libs/context';
+import { getInvURLPath } from '@/common/libs/url_utils';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { provideInvocationState } from '@/common/store/invocation_state';
+
 import {
   provideProject,
   provideTestTabUrl,

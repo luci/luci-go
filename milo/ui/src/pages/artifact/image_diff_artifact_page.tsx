@@ -19,18 +19,19 @@ import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 import { useSearchParams } from 'react-router-dom';
 
-import '../../components/image_diff_viewer';
-import '../../components/status_bar';
-import '../../components/dot_spinner';
-import { consumer } from '../../libs/context';
-import { reportRenderError } from '../../libs/error_handler';
-import { unwrapObservable } from '../../libs/milo_mobx_utils';
+import '@/common/components/image_diff_viewer';
+import '@/common/components/status_bar';
+import '@/common/components/dot_spinner';
+import { consumer } from '@/common/libs/context';
+import { reportRenderError } from '@/common/libs/error_handler';
+import { unwrapObservable } from '@/common/libs/mobx_utils';
 import {
   ArtifactIdentifier,
   constructArtifactName,
-} from '../../services/resultdb';
-import { consumeStore, StoreInstance } from '../../store';
-import { commonStyles } from '../../styles/stylesheets';
+} from '@/common/services/resultdb';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
+
 import { consumeArtifactIdent } from './artifact_page_layout';
 
 /**

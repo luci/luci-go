@@ -17,17 +17,18 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
-import '../../../components/dot_spinner';
+import '@/common/components/dot_spinner';
 import './step_cluster';
-import { MiloBaseElement } from '../../../components/milo_base';
-import { consumer } from '../../../libs/context';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { consumer } from '@/common/libs/context';
 import {
   errorHandler,
   forwardWithoutMsg,
   reportRenderError,
-} from '../../../libs/error_handler';
-import { consumeStore, StoreInstance } from '../../../store';
-import { commonStyles } from '../../../styles/stylesheets';
+} from '@/common/libs/error_handler';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { commonStyles } from '@/common/styles/stylesheets';
+
 import { BuildPageStepClusterElement } from './step_cluster';
 
 @customElement('milo-bp-step-list')

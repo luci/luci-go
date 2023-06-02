@@ -14,7 +14,7 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { useStore } from '../../../store';
+import { useStore } from '@/common/store';
 
 export const ExperimentsSection = observer(() => {
   const store = useStore();

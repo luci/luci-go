@@ -14,8 +14,8 @@
 
 import { observer } from 'mobx-react-lite';
 
-import { unwrapOrElse } from '../../../libs/utils';
-import { useStore } from '../../../store';
+import { unwrapOrElse } from '@/common/libs/utils';
+import { useStore } from '@/common/store';
 
 export const BuilderInfoSection = observer(() => {
   const store = useStore();

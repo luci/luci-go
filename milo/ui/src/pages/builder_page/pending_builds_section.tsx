@@ -15,13 +15,14 @@
 import { CircularProgress, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 
-import { Timestamp } from '../../components/timestamp';
+import { Timestamp } from '@/common/components/timestamp';
 import {
   displayCompactDuration,
   NUMERIC_TIME_FORMAT,
-} from '../../libs/time_utils';
-import { getBuildURLPathFromBuildId } from '../../libs/url_utils';
-import { BuilderID, BuildStatus } from '../../services/buildbucket';
+} from '@/common/libs/time_utils';
+import { getBuildURLPathFromBuildId } from '@/common/libs/url_utils';
+import { BuilderID, BuildStatus } from '@/common/services/buildbucket';
+
 import { useBuilds } from './utils';
 
 const PAGE_SIZE = 100;

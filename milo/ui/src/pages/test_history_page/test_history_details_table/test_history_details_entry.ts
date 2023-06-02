@@ -22,29 +22,29 @@ import { DateTime } from 'luxon';
 import { computed, makeObservable, observable } from 'mobx';
 import { fromPromise } from 'mobx-utils';
 
-import '../../../components/expandable_entry';
-import '../../../components/result_entry';
-import '../../../components/changelists_badge';
+import '@/common/components/expandable_entry';
+import '@/common/components/result_entry';
+import '@/common/components/changelists_badge';
 import {
   VARIANT_STATUS_CLASS_MAP,
   VARIANT_STATUS_ICON_MAP,
   VERDICT_VARIANT_STATUS_MAP,
-} from '../../../libs/constants';
-import { unwrapObservable } from '../../../libs/milo_mobx_utils';
+} from '@/common/constants';
+import { unwrapObservable } from '@/common/libs/mobx_utils';
 import {
   lazyRendering,
   RenderPlaceHolder,
-} from '../../../libs/observer_element';
-import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '../../../libs/time_utils';
+} from '@/common/libs/observer_element';
+import { LONG_TIME_FORMAT, SHORT_TIME_FORMAT } from '@/common/libs/time_utils';
 import {
   getBuildURLPathFromBuildId,
   getCodeSourceUrl,
   getInvURLPath,
-} from '../../../libs/url_utils';
-import { TestVerdictBundle } from '../../../services/luci_analysis';
-import { RESULT_LIMIT } from '../../../services/resultdb';
-import { consumeStore, StoreInstance } from '../../../store';
-import { colorClasses, commonStyles } from '../../../styles/stylesheets';
+} from '@/common/libs/url_utils';
+import { TestVerdictBundle } from '@/common/services/luci_analysis';
+import { RESULT_LIMIT } from '@/common/services/resultdb';
+import { consumeStore, StoreInstance } from '@/common/store';
+import { colorClasses, commonStyles } from '@/common/styles/stylesheets';
 
 // This list defines the order in which variant def keys should be displayed.
 // Any unrecognized keys will be listed after the ones defined below.

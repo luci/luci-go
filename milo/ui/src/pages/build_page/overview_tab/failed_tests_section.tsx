@@ -15,15 +15,16 @@
 import { observer } from 'mobx-react-lite';
 import { Link } from 'react-router-dom';
 
-import { DotSpinner } from '../../../components/dot_spinner';
+import { DotSpinner } from '@/common/components/dot_spinner';
 import {
   getBuildURLPath,
   getTestHistoryURLPath,
-} from '../../../libs/url_utils';
-import { urlSetSearchQueryParam } from '../../../libs/utils';
-import { getPropKeyLabel } from '../../../services/resultdb';
-import { useStore } from '../../../store';
-import { useInvocation } from '../../../store/invocation_state';
+} from '@/common/libs/url_utils';
+import { urlSetSearchQueryParam } from '@/common/libs/utils';
+import { getPropKeyLabel } from '@/common/services/resultdb';
+import { useStore } from '@/common/store';
+import { useInvocation } from '@/common/store/invocation_state';
+
 import { TestVariantEntry } from '../../test_results_tab/test_variants_table/test_variant_entry';
 
 const MAX_DISPLAYED_UNEXPECTED_TESTS = 10;

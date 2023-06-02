@@ -26,7 +26,7 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
-import { useStore } from '../../store';
+import { useStore } from '@/common/store';
 
 export interface ChangeConfigDialogProps {
   readonly open: boolean;

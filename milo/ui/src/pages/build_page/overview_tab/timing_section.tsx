@@ -17,9 +17,9 @@ import { Info } from '@mui/icons-material';
 import { IconProps } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 
-import { Timestamp } from '../../../components/timestamp';
-import { displayDuration } from '../../../libs/time_utils';
-import { useStore } from '../../../store';
+import { Timestamp } from '@/common/components/timestamp';
+import { displayDuration } from '@/common/libs/time_utils';
+import { useStore } from '@/common/store';
 
 const InlineInfo = styled(Info)<IconProps>({
   verticalAlign: 'bottom',

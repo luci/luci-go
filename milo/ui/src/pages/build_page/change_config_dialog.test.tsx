@@ -22,7 +22,8 @@ import {
 } from '@testing-library/react';
 import { destroy, Instance, protect, unprotect } from 'mobx-state-tree';
 
-import { Store, StoreProvider } from '../../store';
+import { Store, StoreProvider } from '@/common/store';
+
 import { ChangeConfigDialog } from './change_config_dialog';
 
 describe('ChangeConfigDialog', () => {

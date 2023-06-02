@@ -18,13 +18,13 @@ import { computed, makeObservable, observable, reaction } from 'mobx';
 import { useEffect, useRef } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 
-import '../../components/image_diff_viewer';
-import '../../components/status_bar';
-import { MiloBaseElement } from '../../components/milo_base';
-import { createContextLink, provider } from '../../libs/context';
-import { getInvURLPath } from '../../libs/url_utils';
-import { ArtifactIdentifier } from '../../services/resultdb';
-import { commonStyles } from '../../styles/stylesheets';
+import '@/common/components/image_diff_viewer';
+import '@/common/components/status_bar';
+import { MiloBaseElement } from '@/common/components/milo_base';
+import { createContextLink, provider } from '@/common/libs/context';
+import { getInvURLPath } from '@/common/libs/url_utils';
+import { ArtifactIdentifier } from '@/common/services/resultdb';
+import { commonStyles } from '@/common/styles/stylesheets';
 
 export const [provideArtifactIdent, consumeArtifactIdent] =
   createContextLink<ArtifactIdentifier>();

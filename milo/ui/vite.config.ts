@@ -13,10 +13,12 @@
 // limitations under the License.
 
 import * as path from 'path';
+
 import replace from '@rollup/plugin-replace';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import { VitePWA as vitePWA } from 'vite-plugin-pwa';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 /**
  * Get a boolean from the envDir.
@@ -24,7 +26,10 @@ import { VitePWA as vitePWA } from 'vite-plugin-pwa';
  * Return true/false if the value matches 'true'/'false' (case sensitive).
  * Otherwise, return null.
  */
-function getBoolEnv(envDir: Record<string, string>, key: string): boolean | null {
+function getBoolEnv(
+  envDir: Record<string, string>,
+  key: string
+): boolean | null {
   const value = envDir[key];
   if (value === 'true') {
     return true;
@@ -49,7 +54,11 @@ export default defineConfig(({ mode }) => {
       HOST: env['VITE_LUCI_ANALYSIS_HOST'],
     },
   };
-  const localDevConfigsJs = `self.CONFIGS=Object.freeze(${JSON.stringify(localDevConfigs, undefined, 2)});`;
+  const localDevConfigsJs = `self.CONFIGS=Object.freeze(${JSON.stringify(
+    localDevConfigs,
+    undefined,
+    2
+  )});`;
 
   return {
     base: '/ui',
@@ -60,10 +69,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           index: 'index.html',
-          root_sw: './src/service_workers/root_sw.ts',
+          root_sw: './src/common/service_workers/root_sw.ts',
         },
         output: {
-          entryFileNames: (chunkInfo) => (chunkInfo.name === 'index' ? 'immutable/[name]-[hash:8].js' : '[name].js'),
+          entryFileNames: (chunkInfo) =>
+            chunkInfo.name === 'index'
+              ? 'immutable/[name]-[hash:8].js'
+              : '[name].js',
         },
       },
     },
@@ -75,10 +87,14 @@ export default defineConfig(({ mode }) => {
         // We have different building pipeline for dev/test/production builds.
         // Limits the impact of the pipeline-specific features to only the
         // entry files for better consistently across different builds.
-        include: ['./src/index.tsx', './src/service_workers/ui_sw.ts'],
+        include: ['./src/main.tsx', './src/common/service_workers/ui_sw.ts'],
         values: {
-          ENABLE_UI_SW: JSON.stringify(getBoolEnv(env, 'VITE_ENABLE_UI_SW') ?? true),
-          UI_SW_SKIP_WAITING: JSON.stringify(getBoolEnv(env, 'VITE_UI_SW_SKIP_WAITING') ?? false),
+          ENABLE_UI_SW: JSON.stringify(
+            getBoolEnv(env, 'VITE_ENABLE_UI_SW') ?? true
+          ),
+          UI_SW_SKIP_WAITING: JSON.stringify(
+            getBoolEnv(env, 'VITE_UI_SW_SKIP_WAITING') ?? false
+          ),
           ENABLE_GA: JSON.stringify(getBoolEnv(env, 'VITE_ENABLE_GA') ?? true),
         },
       }),
@@ -91,8 +107,14 @@ export default defineConfig(({ mode }) => {
 
           // `importScripts` is only available in workers.
           // Ensure this module is only used by service workers.
-          if (!importer?.startsWith(path.join(__dirname, 'src/service_workers'))) {
-            throw new Error('virtual:configs.js should only be imported by a service worker script.');
+          if (
+            !importer?.startsWith(
+              path.join(__dirname, 'src/common/service_workers')
+            )
+          ) {
+            throw new Error(
+              'virtual:configs.js should only be imported by a service worker script.'
+            );
           }
           return '\0virtual:config.js';
         },
@@ -107,7 +129,9 @@ export default defineConfig(({ mode }) => {
           // In production, the service worker script cannot be a JS module.
           // Because that has limited browser support. So we need to use
           // `importScripts` instead of `import` to load `/configs.js`.
-          return mode === 'development' ? localDevConfigsJs : 'importScripts(\'/configs.js\');';
+          return mode === 'development'
+            ? localDevConfigsJs
+            : "importScripts('/configs.js');";
         },
       },
       {
@@ -158,10 +182,11 @@ export default defineConfig(({ mode }) => {
           configFile: true,
         },
       }),
+      tsconfigPaths(),
       vitePWA({
         injectRegister: null,
         strategies: 'injectManifest',
-        srcDir: 'src/service_workers',
+        srcDir: 'src/common/service_workers',
         filename: 'ui_sw.ts',
         outDir: 'out',
         devOptions: {
@@ -177,11 +202,11 @@ export default defineConfig(({ mode }) => {
           globPatterns: ['**/*.{js,css,html}'],
           vitePlugins(vitePluginIds) {
             return vitePluginIds.filter(
-                (id) =>
+              (id) =>
                 // Don't include the plugin itself.
-                  !id.startsWith('vite-plugin-pwa') &&
+                !id.startsWith('vite-plugin-pwa') &&
                 // Don't need any HTML related plugins.
-                !id.includes('html'),
+                !id.includes('html')
             );
           },
         },

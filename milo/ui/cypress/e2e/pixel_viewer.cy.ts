@@ -27,22 +27,31 @@ describe('Pixel Viewer', () => {
       'modified-resultdb',
       STUB_REQUEST_OPTIONS
     );
-    cy.stubRequests({ url: 'http://localhost:8080/prpc/**', method: 'POST' }, 'modified-milo', STUB_REQUEST_OPTIONS);
+    cy.stubRequests(
+      { url: 'http://localhost:8080/prpc/**', method: 'POST' },
+      'modified-milo',
+      STUB_REQUEST_OPTIONS
+    );
     cy.stubRequests(
       { url: 'https://results.usercontent.cr.dev/**', method: 'GET' },
       'modified-artifacts',
       STUB_REQUEST_OPTIONS
     );
 
-    cy.visit('/ui/p/chromium/builders/try/linux_layout_tests_composite_after_paint/51472/test-results', {
-      qs: {
-        q: 'highlight-es',
-      },
-    });
+    cy.visit(
+      '/ui/p/chromium/builders/try/linux_layout_tests_composite_after_paint/51472/test-results',
+      {
+        qs: {
+          q: 'highlight-es',
+        },
+      }
+    );
 
     cy.get('label').contains('Side by side').click();
     cy.scrollTo('topLeft');
-    cy.get('#expected-image > img').invoke('prop', 'complete').should('be.true');
+    cy.get('#expected-image > img')
+      .invoke('prop', 'complete')
+      .should('be.true');
 
     // This error means that ResizeObserver was not able to deliver all
     // observations within a single animation frame. This error can be safely
@@ -50,18 +59,27 @@ describe('Pixel Viewer', () => {
     // this error when cypress is in control of the frame.
     // Ignore the error as suggested by the cypress maintainer. See
     // https://github.com/quasarframework/quasar/issues/2233#issuecomment-492975745
-    cy.on('uncaught:exception', (e) => !e.message.includes('ResizeObserver loop limit exceeded'));
+    cy.on(
+      'uncaught:exception',
+      (e) => !e.message.includes('ResizeObserver loop limit exceeded')
+    );
 
     cy.get('#expected-image > img').click(8, 10);
     // Calling .click on an element causes the page to scroll. Reset the
     // scrolling position.
     cy.scrollTo('topLeft');
     cy.get('#pixel-viewer-grid');
-    cy.matchImageSnapshot('pixel-viewer', { capture: 'viewport', clip: { x: 0, y: 0, width: 1000, height: 300 } });
+    cy.matchImageSnapshot('pixel-viewer', {
+      capture: 'viewport',
+      clip: { x: 0, y: 0, width: 1000, height: 300 },
+    });
 
     cy.get('#expected-image > img').then(([ele]) => {
       const rect = ele.getBoundingClientRect();
-      cy.get('#expected-image > img').trigger('mousemove', { clientX: rect.x + 60, clientY: rect.y + 20 });
+      cy.get('#expected-image > img').trigger('mousemove', {
+        clientX: rect.x + 60,
+        clientY: rect.y + 20,
+      });
     });
     cy.matchImageSnapshot('pixel-viewer-after-move', {
       capture: 'viewport',

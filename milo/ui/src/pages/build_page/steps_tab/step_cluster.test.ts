@@ -16,9 +16,10 @@ import { expect } from '@jest/globals';
 import { fixture, html } from '@open-wc/testing-helpers';
 
 import './step_cluster';
-import { BuildStatus } from '../../../services/buildbucket';
-import { Store } from '../../../store';
-import { StepExt } from '../../../store/build_state';
+import { BuildStatus } from '@/common/services/buildbucket';
+import { Store } from '@/common/store';
+import { StepExt } from '@/common/store/build_state';
+
 import { BuildPageStepClusterElement } from './step_cluster';
 
 function createStep(index: number, startTime: string, endTime: string) {

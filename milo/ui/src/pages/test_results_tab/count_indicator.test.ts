@@ -18,15 +18,16 @@ import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { destroy, protect, unprotect } from 'mobx-state-tree';
 
-import './count_indicator';
-import { ANONYMOUS_IDENTITY } from '../../libs/auth_state';
-import { provider } from '../../libs/context';
-import { TestVariantStatus } from '../../services/resultdb';
-import { Store, StoreInstance } from '../../store';
+import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
+import { provider } from '@/common/libs/context';
+import { TestVariantStatus } from '@/common/services/resultdb';
+import { Store, StoreInstance } from '@/common/store';
 import {
   InvocationStateInstance,
   provideInvocationState,
-} from '../../store/invocation_state';
+} from '@/common/store/invocation_state';
+
+import './count_indicator';
 import { TestResultsTabCountIndicatorElement } from './count_indicator';
 
 const variant1 = {
