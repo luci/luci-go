@@ -132,14 +132,14 @@ func (d *Dispatcher) InstallCronRoutes(r *router.Router, prefix string) {
 		}
 		mw = internal.CloudAuthMiddleware(d.AuthorizedCallers, header,
 			func(c *router.Context) {
-				callsCounter.Add(c.Context, 1, handlerID(c), "auth")
+				callsCounter.Add(c.Request.Context(), 1, handlerID(c), "auth")
 			},
 		)
 	}
 
 	r.GET(route, mw, func(c *router.Context) {
 		id := handlerID(c)
-		if err := d.executeHandlerByID(c.Context, id); err != nil {
+		if err := d.executeHandlerByID(c.Request.Context(), id); err != nil {
 			status := 0
 			if transient.Tag.In(err) {
 				err = errors.Annotate(err, "transient error in cron handler %q", id).Err()
@@ -148,7 +148,7 @@ func (d *Dispatcher) InstallCronRoutes(r *router.Router, prefix string) {
 				err = errors.Annotate(err, "fatal error in cron handler %q", id).Err()
 				status = 202
 			}
-			errors.Log(c.Context, err)
+			errors.Log(c.Request.Context(), err)
 			http.Error(c.Writer, err.Error(), status)
 		} else {
 			c.Writer.Write([]byte("OK"))

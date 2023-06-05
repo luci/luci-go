@@ -261,7 +261,7 @@ type Authenticator struct {
 // http.go.
 func (a *Authenticator) GetMiddleware() router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		ctx, err := a.AuthenticateHTTP(c.Context, c.Request)
+		ctx, err := a.AuthenticateHTTP(c.Request.Context(), c.Request)
 		if err != nil {
 			code, ok := grpcutil.Tag.In(err)
 			if !ok {
@@ -271,9 +271,8 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 					code = codes.Unauthenticated
 				}
 			}
-			replyError(c.Context, c.Writer, grpcutil.CodeStatus(code), err)
+			replyError(c.Request.Context(), c.Writer, grpcutil.CodeStatus(code), err)
 		} else {
-			c.Context = ctx
 			c.Request = c.Request.WithContext(ctx)
 			next(c)
 		}

@@ -117,7 +117,7 @@ type RequestBodyConstraint[B any] interface {
 // InstallHandler installs a bot request handler at the given route.
 func InstallHandler[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
 	s.router.POST(route, s.middlewares, func(c *router.Context) {
-		ctx := c.Context
+		ctx := c.Request.Context()
 		req := c.Request
 		wrt := c.Writer
 

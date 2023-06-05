@@ -66,7 +66,7 @@ func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, ru
 		},
 	}
 	base = base.Extend(a.GetMiddleware(), func(c *router.Context, next router.Handler) {
-		cc, w := c.Context, c.Writer
+		cc, w := c.Request.Context(), c.Writer
 		switch yep, err := isAuthorizedCall(cc, mustFetchCachedSettings(cc)); {
 		case err != nil:
 			errStatus(cc, w, err, http.StatusInternalServerError, "Unable to perform authorization")

@@ -56,7 +56,7 @@ func withPage(c context.Context, rw http.ResponseWriter, p httprouter.Params, cb
 }
 
 func portalPageGET(ctx *router.Context) {
-	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
+	c, rw, p := ctx.Request.Context(), ctx.Writer, ctx.Params
 
 	withPage(c, rw, p, func(id string, page Page) error {
 		title, err := page.Title(c)
@@ -104,7 +104,7 @@ func portalPageGET(ctx *router.Context) {
 }
 
 func portalPagePOST(ctx *router.Context) {
-	c, rw, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
+	c, rw, r, p := ctx.Request.Context(), ctx.Writer, ctx.Request, ctx.Params
 
 	withPage(c, rw, p, func(id string, page Page) error {
 		title, err := page.Title(c)
@@ -159,7 +159,7 @@ func portalPagePOST(ctx *router.Context) {
 }
 
 func portalActionGETPOST(ctx *router.Context) {
-	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
+	c, rw, p := ctx.Request.Context(), ctx.Writer, ctx.Params
 	actionID := p.ByName("ActionID")
 
 	withPage(c, rw, p, func(id string, page Page) error {

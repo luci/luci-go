@@ -33,7 +33,6 @@ func TestPubSubHandlers(t *testing.T) {
 		c := gaetesting.TestingContext()
 		rec := httptest.NewRecorder()
 		pubSubPush(&router.Context{
-			Context: c,
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})
@@ -45,7 +44,6 @@ func TestPubSubHandlers(t *testing.T) {
 		c, _ := setupCtx()
 		rec := httptest.NewRecorder()
 		pubSubPush(&router.Context{
-			Context: c,
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})
@@ -58,7 +56,6 @@ func TestPubSubHandlers(t *testing.T) {
 		srv.Notification = &service.Notification{Revision: 122} // older than 123
 		rec := httptest.NewRecorder()
 		pubSubPush(&router.Context{
-			Context: c,
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})
@@ -72,7 +69,6 @@ func TestPubSubHandlers(t *testing.T) {
 		srv.Notification = &service.Notification{Revision: 124}
 		rec := httptest.NewRecorder()
 		pubSubPush(&router.Context{
-			Context: c,
 			Writer:  rec,
 			Request: makePostRequest(c),
 		})

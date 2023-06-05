@@ -25,7 +25,7 @@ import (
 // WithPanicCatcher is a middleware that catches panics, dumps stack trace to
 // logging and returns HTTP 500.
 func WithPanicCatcher(c *router.Context, next router.Handler) {
-	ctx := c.Context
+	ctx := c.Request.Context()
 	w := c.Writer
 	uri := c.Request.RequestURI
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {

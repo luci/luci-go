@@ -75,17 +75,17 @@ func main() {
 
 		// Logging and tracing example.
 		srv.Routes.GET("/log", nil, func(c *router.Context) {
-			logging.Debugf(c.Context, "Hello debug world")
+			logging.Debugf(c.Request.Context(), "Hello debug world")
 
-			ctx, span := trace.StartSpan(c.Context, "Testing")
+			ctx, span := trace.StartSpan(c.Request.Context(), "Testing")
 			logging.Infof(ctx, "Hello info world")
 			time.Sleep(100 * time.Millisecond)
 			span.End(nil)
 
-			logging.Warningf(c.Context, "Hello warning world")
+			logging.Warningf(c.Request.Context(), "Hello warning world")
 			c.Writer.Write([]byte("Hello, world"))
 
-			logging.WithError(fmt.Errorf("boom")).Errorf(c.Context, "Hello error world")
+			logging.WithError(fmt.Errorf("boom")).Errorf(c.Request.Context(), "Hello error world")
 		})
 
 		// Redis example.
@@ -99,7 +99,7 @@ func main() {
 		// when using Docker-for-Mac. Don't put any sensitive stuff there (or make
 		// sure your firewall is configured to block external connections).
 		srv.Routes.GET("/redis", nil, func(c *router.Context) {
-			conn, err := redisconn.Get(c.Context)
+			conn, err := redisconn.Get(c.Request.Context())
 			if err != nil {
 				http.Error(c.Writer, err.Error(), 500)
 				return
@@ -123,7 +123,7 @@ func main() {
 		}
 		mw := router.NewMiddlewareChain(openIDCheck.GetMiddleware())
 		srv.Routes.POST("/push", mw, func(c *router.Context) {
-			logging.Infof(c.Context, "Authenticated as %s", auth.CurrentIdentity(c.Context))
+			logging.Infof(c.Request.Context(), "Authenticated as %s", auth.CurrentIdentity(c.Request.Context()))
 			// TODO: check auth.CurrentIdentity(...) against an allowlist of allowed
 			// callers, etc.
 		})
@@ -131,7 +131,7 @@ func main() {
 		// Using ID tokens for authenticating outbound calls. This synthetic example
 		// works on localhost only.
 		srv.Routes.GET("/call", mw, func(c *router.Context) {
-			tr, err := auth.GetRPCTransport(c.Context,
+			tr, err := auth.GetRPCTransport(c.Request.Context(),
 				auth.AsSelf,
 				auth.WithIDTokenAudience("https://${host}"),
 			)
@@ -179,16 +179,16 @@ func main() {
 		)
 
 		srv.Routes.GET("/", htmlPageMW, func(c *router.Context) {
-			templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
+			templates.MustRender(c.Request.Context(), c.Writer, "pages/index.html", nil)
 		})
 		// To test redirects after login.
 		srv.Routes.GET("/test/*something", htmlPageMW, func(c *router.Context) {
-			templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
+			templates.MustRender(c.Request.Context(), c.Writer, "pages/index.html", nil)
 		})
 
 		// Example of sending emails.
 		srv.Routes.GET("/send-mail", nil, func(c *router.Context) {
-			err := mailer.Send(c.Context, &mailer.Mail{
+			err := mailer.Send(c.Request.Context(), &mailer.Mail{
 				To:       []string{"someone@example.com"},
 				Subject:  "Hi",
 				TextBody: "How are you doing?",

@@ -110,7 +110,6 @@ func TestMethod(t *testing.T) {
 		call := func(h router.Handler, host string, url *url.URL, header http.Header) *http.Response {
 			rw := httptest.NewRecorder()
 			h(&router.Context{
-				Context: ctx,
 				Request: (&http.Request{
 					URL:    url,
 					Host:   host,
@@ -403,7 +402,6 @@ func TestMethod(t *testing.T) {
 			r := router.New()
 			r.Use(router.MiddlewareChain{
 				func(rc *router.Context, next router.Handler) {
-					rc.Context = ctx
 					rc.Request = rc.Request.WithContext(ctx)
 					next(rc)
 				},
@@ -615,7 +613,7 @@ func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
 			"expires_in":    3600,
 			"refresh_token": f.RefreshToken,
 			"access_token":  f.genAccessToken(),
-			"id_token":      f.genIDToken(ctx.Context, encodedParams.Nonce),
+			"id_token":      f.genIDToken(ctx.Request.Context(), encodedParams.Nonce),
 		})
 
 	case "refresh_token":
@@ -627,7 +625,7 @@ func (f *openIDProviderFake) tokenHandler(ctx *router.Context) {
 		json.NewEncoder(ctx.Writer).Encode(map[string]any{
 			"expires_in":   3600,
 			"access_token": f.genAccessToken(),
-			"id_token":     f.genIDToken(ctx.Context, ""),
+			"id_token":     f.genIDToken(ctx.Request.Context(), ""),
 		})
 
 	default:

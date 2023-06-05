@@ -58,17 +58,17 @@ func main() {
 
 		// Logging and tracing example.
 		srv.Routes.GET("/", nil, func(c *router.Context) {
-			logging.Debugf(c.Context, "Hello debug world")
+			logging.Debugf(c.Request.Context(), "Hello debug world")
 
-			ctx, span := trace.StartSpan(c.Context, "Testing")
+			ctx, span := trace.StartSpan(c.Request.Context(), "Testing")
 			logging.Infof(ctx, "Hello info world")
 			time.Sleep(100 * time.Millisecond)
 			span.End(nil)
 
-			logging.Warningf(c.Context, "Hello warning world")
+			logging.Warningf(c.Request.Context(), "Hello warning world")
 			c.Writer.Write([]byte("Hello, world"))
 
-			logging.WithError(fmt.Errorf("boom")).Errorf(c.Context, "Hello error world")
+			logging.WithError(fmt.Errorf("boom")).Errorf(c.Request.Context(), "Hello error world")
 		})
 
 		// Authentication example.
@@ -79,9 +79,9 @@ func main() {
 			&gerritauth.Method,
 		))
 		srv.Routes.GET("/who", mw, func(c *router.Context) {
-			logging.Infof(c.Context, "Authenticated as %s", auth.CurrentIdentity(c.Context))
-			fmt.Fprintf(c.Writer, "Authenticated as %s\n", auth.CurrentIdentity(c.Context))
-			if info := gerritauth.GetAssertedInfo(c.Context); info != nil {
+			logging.Infof(c.Request.Context(), "Authenticated as %s", auth.CurrentIdentity(c.Request.Context()))
+			fmt.Fprintf(c.Writer, "Authenticated as %s\n", auth.CurrentIdentity(c.Request.Context()))
+			if info := gerritauth.GetAssertedInfo(c.Request.Context()); info != nil {
 				fmt.Fprintf(c.Writer, "Gerrit user: %v\n", info.User)
 				fmt.Fprintf(c.Writer, "Gerrit CL: %v\n", info.Change)
 			}
@@ -109,7 +109,7 @@ func main() {
 		// when using Docker-for-Mac. Don't put any sensitive stuff there (or make
 		// sure your firewall is configured to block external connections).
 		srv.Routes.GET("/redis", nil, func(c *router.Context) {
-			conn, err := redisconn.Get(c.Context)
+			conn, err := redisconn.Get(c.Request.Context())
 			if err != nil {
 				http.Error(c.Writer, err.Error(), 500)
 				return
@@ -124,7 +124,7 @@ func main() {
 		})
 
 		srv.Routes.GET("/inc", nil, func(c *router.Context) {
-			ctx := c.Context
+			ctx := c.Request.Context()
 
 			ent := TestEntity{ID: "test"}
 			if err := datastore.Get(ctx, &ent); err != nil && err != datastore.ErrNoSuchEntity {
@@ -141,7 +141,7 @@ func main() {
 		})
 
 		srv.Routes.GET("/sign", nil, func(c *router.Context) {
-			key, sig, err := auth.GetSigner(c.Context).SignBytes(c.Context, []byte("test"))
+			key, sig, err := auth.GetSigner(c.Request.Context()).SignBytes(c.Request.Context(), []byte("test"))
 			if err != nil {
 				http.Error(c.Writer, err.Error(), 500)
 				return

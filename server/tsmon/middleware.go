@@ -133,15 +133,15 @@ func (s *State) Activate(ctx context.Context) {
 // Middleware is a middleware that collects request metrics and triggers metric
 // flushes.
 func (s *State) Middleware(c *router.Context, next router.Handler) {
-	state, settings := s.checkSettings(c.Context)
+	state, settings := s.checkSettings(c.Request.Context())
 	if settings.Enabled {
-		started := clock.Now(c.Context)
+		started := clock.Now(c.Request.Context())
 		req := c.Request
 		userAgent, ok := req.Header["User-Agent"]
 		if !ok || len(userAgent) == 0 {
 			userAgent = []string{"Unknown"}
 		}
-		ctx := c.Context
+		ctx := c.Request.Context()
 		contentLength := c.Request.ContentLength
 		nrw := iotools.NewResponseWriter(c.Writer)
 		c.Writer = nrw

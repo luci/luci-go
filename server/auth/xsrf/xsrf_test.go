@@ -61,7 +61,6 @@ func TestXsrf(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req := makeRequest(c, tok)
 		router.RunMiddleware(&router.Context{
-			Context: c,
 			Writer:  rec,
 			Request: req,
 		}, mc, h)
@@ -71,7 +70,6 @@ func TestXsrf(t *testing.T) {
 		rec = httptest.NewRecorder()
 		req = makeRequest(c, "")
 		router.RunMiddleware(&router.Context{
-			Context: c,
 			Writer:  rec,
 			Request: req,
 		}, mc, h)
@@ -81,7 +79,6 @@ func TestXsrf(t *testing.T) {
 		rec = httptest.NewRecorder()
 		req = makeRequest(c, "blah")
 		router.RunMiddleware(&router.Context{
-			Context: c,
 			Writer:  rec,
 			Request: req,
 		}, mc, h)

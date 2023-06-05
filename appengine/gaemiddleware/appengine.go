@@ -36,9 +36,9 @@ var devAppserverBypassFn = info.IsDevAppServer
 // module instead or check "X-AppEngine-Cron" header manually in your HTTP
 // handlers.
 func RequireCron(c *router.Context, next router.Handler) {
-	if !devAppserverBypassFn(c.Context) {
+	if !devAppserverBypassFn(c.Request.Context()) {
 		if c.Request.Header.Get("X-Appengine-Cron") != "true" {
-			logging.Errorf(c.Context, "request not made from cron")
+			logging.Errorf(c.Request.Context(), "request not made from cron")
 			http.Error(c.Writer, "error: must be run from cron", http.StatusForbidden)
 			return
 		}
@@ -62,10 +62,10 @@ func RequireCron(c *router.Context, next router.Handler) {
 // HTTP handlers.
 func RequireTaskQueue(queue string) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		if !devAppserverBypassFn(c.Context) {
+		if !devAppserverBypassFn(c.Request.Context()) {
 			qName := c.Request.Header.Get("X-AppEngine-QueueName")
 			if qName == "" || (queue != "" && queue != qName) {
-				logging.Errorf(c.Context, "request made from wrong taskqueue: %q v %q", qName, queue)
+				logging.Errorf(c.Request.Context(), "request made from wrong taskqueue: %q v %q", qName, queue)
 				http.Error(c.Writer, "error: must be run from the correct taskqueue", http.StatusForbidden)
 				return
 			}

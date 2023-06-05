@@ -40,7 +40,7 @@ func TestMiddleware(t *testing.T) {
 	runMiddlware := func(c context.Context, state *State, cb func(*router.Context)) {
 		rec := httptest.NewRecorder()
 		router.RunMiddleware(
-			&router.Context{Context: c, Writer: rec, Request: (&http.Request{}).WithContext(c)},
+			&router.Context{Writer: rec, Request: (&http.Request{}).WithContext(c)},
 			router.NewMiddlewareChain(state.Middleware),
 			cb,
 		)
@@ -48,8 +48,8 @@ func TestMiddleware(t *testing.T) {
 	}
 
 	incrMetric := func(c *router.Context) {
-		So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
-		tsmon.Store(c.Context).Incr(c.Context, testMetric, time.Time{}, []any{}, int64(1))
+		So(store.IsNilStore(tsmon.Store(c.Request.Context())), ShouldBeFalse)
+		tsmon.Store(c.Request.Context()).Incr(c.Request.Context(), testMetric, time.Time{}, []any{}, int64(1))
 	}
 
 	readMetric := func(c context.Context) any {
@@ -115,13 +115,13 @@ func TestMiddleware(t *testing.T) {
 		Convey("Dynamic enable and disable works", func() {
 			// Enabled. Store is not nil.
 			runMiddlware(c, state, func(c *router.Context) {
-				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeFalse)
+				So(store.IsNilStore(tsmon.Store(c.Request.Context())), ShouldBeFalse)
 			})
 
 			// Disabled. Store is nil.
 			state.Settings.Enabled = false
 			runMiddlware(c, state, func(c *router.Context) {
-				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeTrue)
+				So(store.IsNilStore(tsmon.Store(c.Request.Context())), ShouldBeTrue)
 			})
 		})
 

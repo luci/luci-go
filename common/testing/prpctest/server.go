@@ -45,7 +45,6 @@ type Server struct {
 func setContext(ctx context.Context) router.MiddlewareChain {
 	return router.NewMiddlewareChain(
 		func(rctx *router.Context, next router.Handler) {
-			rctx.Context = ctx
 			rctx.Request = rctx.Request.WithContext(ctx)
 			next(rctx)
 		},

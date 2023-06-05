@@ -38,33 +38,26 @@ func TestRouter(t *testing.T) {
 		return context.WithValue(c, key, append(current, val))
 	}
 	a := func(c *Context, next Handler) {
-		c.Context = appendValue(c.Context, outputKey, "a:before")
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "a:before"))
 		next(c)
-		c.Context = appendValue(c.Context, outputKey, "a:after")
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "a:after"))
 	}
 	b := func(c *Context, next Handler) {
-		c.Context = appendValue(c.Context, outputKey, "b:before")
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "b:before"))
 		next(c)
-		c.Context = appendValue(c.Context, outputKey, "b:after")
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "b:after"))
 	}
 	c := func(c *Context, next Handler) {
-		c.Context = appendValue(c.Context, outputKey, "c")
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "c"))
 		next(c)
 	}
 	d := func(c *Context, next Handler) {
 		next(c)
-		c.Context = appendValue(c.Context, outputKey, "d")
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "d"))
 	}
 	stop := func(_ *Context, _ Handler) {}
 	handler := func(c *Context) {
-		c.Context = appendValue(c.Context, outputKey, "handler")
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "handler"))
 	}
 
 	Convey("Router", t, func() {
@@ -111,18 +104,20 @@ func TestRouter(t *testing.T) {
 		})
 
 		Convey("run", func() {
-			ctx := &Context{Context: context.Background(), Request: &http.Request{}}
+			ctx := &Context{
+				Request: &http.Request{},
+			}
 
 			Convey("Should execute handler when using nil middlewares", func() {
 				run(ctx, nil, nil, handler)
-				So(ctx.Context.Value(outputKey), ShouldResemble, []string{"handler"})
+				So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"handler"})
 			})
 
 			Convey("Should execute middlewares and handler in order", func() {
 				m := NewMiddlewareChain(a, b, c)
 				n := NewMiddlewareChain(d)
 				run(ctx, m, n, handler)
-				So(ctx.Context.Value(outputKey), ShouldResemble,
+				So(ctx.Request.Context().Value(outputKey), ShouldResemble,
 					[]string{"a:before", "b:before", "c", "handler", "d", "b:after", "a:after"},
 				)
 			})
@@ -130,25 +125,25 @@ func TestRouter(t *testing.T) {
 			Convey("Should not execute upcoming middleware/handlers if next is not called", func() {
 				mc := NewMiddlewareChain(a, stop, b)
 				run(ctx, mc, NewMiddlewareChain(), handler)
-				So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "a:after"})
+				So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "a:after"})
 			})
 
 			Convey("Should execute next middleware when it encounters nil middleware", func() {
 				Convey("At start of first chain", func() {
 					run(ctx, NewMiddlewareChain(nil, a), NewMiddlewareChain(b), handler)
-					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 				Convey("At start of second chain", func() {
 					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(nil, b), handler)
-					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 				Convey("At end of first chain", func() {
 					run(ctx, NewMiddlewareChain(a, nil), NewMiddlewareChain(b), handler)
-					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 				Convey("At end of second chain", func() {
 					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(b, nil), handler)
-					So(ctx.Context.Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
 				})
 			})
 		})
@@ -156,12 +151,10 @@ func TestRouter(t *testing.T) {
 		Convey("ServeHTTP", func() {
 			ts := httptest.NewServer(r)
 			a := func(c *Context, next Handler) {
-				c.Context = appendValue(c.Context, outputKey, "a:before")
-				c.Request = c.Request.WithContext(c.Context)
+				c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "a:before"))
 				next(c)
-				c.Context = appendValue(c.Context, outputKey, "a:after")
-				c.Request = c.Request.WithContext(c.Context)
-				io.WriteString(c.Writer, strings.Join(c.Context.Value(outputKey).([]string), ","))
+				c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "a:after"))
+				io.WriteString(c.Writer, strings.Join(c.Request.Context().Value(outputKey).([]string), ","))
 			}
 
 			Convey("Should execute middleware registered in Use and Handle in order", func() {

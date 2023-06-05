@@ -86,7 +86,7 @@ func InstallHandlersDeprecated(r *router.Router, base router.MiddlewareChain) {
 
 func httpHandler(c *router.Context) {
 	status := http.StatusOK
-	if err := Warmup(c.Context); err != nil {
+	if err := Warmup(c.Request.Context()); err != nil {
 		status = http.StatusInternalServerError
 	}
 	c.Writer.WriteHeader(status)

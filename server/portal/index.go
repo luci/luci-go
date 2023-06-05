@@ -38,7 +38,7 @@ func (a pageIndexEntries) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a pageIndexEntries) Less(i, j int) bool { return a[i].Title < a[j].Title }
 
 func indexPage(ctx *router.Context) {
-	c, rw := ctx.Context, ctx.Writer
+	c, rw := ctx.Request.Context(), ctx.Writer
 
 	entries := pageIndexEntries{}
 	for id, p := range GetPages() {

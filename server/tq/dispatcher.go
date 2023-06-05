@@ -720,7 +720,7 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 			header = "X-Appengine-Queuename"
 		}
 		mw = srvinternal.CloudAuthMiddleware(pushers, header, func(c *router.Context) {
-			metrics.ServerRejectedCount.Add(c.Context, 1, "auth")
+			metrics.ServerRejectedCount.Add(c.Request.Context(), 1, "auth")
 		})
 	}
 
@@ -733,7 +733,7 @@ func (d *Dispatcher) InstallTasksRoutes(r *router.Router, prefix string) {
 		if err != nil {
 			httpReply(c, 500, "Failed to read the request", err)
 		} else {
-			replyWithErr(c, d.handlePush(c.Context, body, parseHeaders(c.Request.Header)))
+			replyWithErr(c, d.handlePush(c.Request.Context(), body, parseHeaders(c.Request.Header)))
 		}
 	})
 }
@@ -754,7 +754,7 @@ func (d *Dispatcher) InstallSweepRoute(r *router.Router, path string) {
 	}
 
 	r.GET(path, mw, func(c *router.Context) {
-		err := d.Sweep(c.Context)
+		err := d.Sweep(c.Request.Context())
 		if err != nil && !transient.Tag.In(err) {
 			err = Fatal.Apply(err)
 		}
@@ -1403,7 +1403,7 @@ func parseHeaders(h http.Header) ExecutionInfo {
 // `msg` is sent to the caller as is. `err` is logged, but not sent.
 func httpReply(c *router.Context, code int, msg string, err error) {
 	if err != nil && !quietOnError.In(err) {
-		logging.Errorf(c.Context, "server/tq task %s: %s", msg, err)
+		logging.Errorf(c.Request.Context(), "server/tq task %s: %s", msg, err)
 	}
 	http.Error(c.Writer, msg, code)
 }

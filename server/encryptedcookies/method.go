@@ -341,12 +341,12 @@ func (m *AuthMethod) checkConfigured(ctx context.Context) (*OpenIDConfig, error)
 
 // handler is a common wrapper for routes registered in InstallHandlers.
 func (m *AuthMethod) handler(ctx *router.Context, cb handler) {
-	cfg, err := m.checkConfigured(ctx.Context)
+	cfg, err := m.checkConfigured(ctx.Request.Context())
 	if err == nil {
 		var discovery *openid.DiscoveryDoc
-		discovery, err = cfg.discoveryDoc(ctx.Context)
+		discovery, err = cfg.discoveryDoc(ctx.Request.Context())
 		if err == nil {
-			err = cb(ctx.Context, ctx.Request, ctx.Writer, cfg, discovery)
+			err = cb(ctx.Request.Context(), ctx.Request, ctx.Writer, cfg, discovery)
 		}
 	}
 	if err != nil {

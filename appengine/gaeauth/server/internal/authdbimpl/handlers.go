@@ -82,10 +82,10 @@ func subscriptionName(ctx context.Context, authServiceURL string) string {
 // delivery.
 func pubSubPull(c *router.Context) {
 	if !appengine.IsDevAppServer() {
-		replyError(c.Context, c.Writer, errors.New("not a dev server"))
+		replyError(c.Request.Context(), c.Writer, errors.New("not a dev server"))
 		return
 	}
-	processPubSubRequest(c.Context, c.Writer, c.Request, func(ctx context.Context, srv authService, serviceURL string) (*service.Notification, error) {
+	processPubSubRequest(c.Request.Context(), c.Writer, c.Request, func(ctx context.Context, srv authService, serviceURL string) (*service.Notification, error) {
 		return srv.PullPubSub(ctx, subscriptionName(ctx, serviceURL))
 	})
 }
@@ -95,7 +95,7 @@ func pubSubPull(c *router.Context) {
 // It uses the signature inside PubSub message body for authentication. Skips
 // messages not signed by currently configured auth service.
 func pubSubPush(c *router.Context) {
-	processPubSubRequest(c.Context, c.Writer, c.Request, func(ctx context.Context, srv authService, serviceURL string) (*service.Notification, error) {
+	processPubSubRequest(c.Request.Context(), c.Writer, c.Request, func(ctx context.Context, srv authService, serviceURL string) (*service.Notification, error) {
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			return nil, err

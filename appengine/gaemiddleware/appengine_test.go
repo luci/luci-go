@@ -43,7 +43,6 @@ func TestRequireCron(t *testing.T) {
 		Convey("from non-cron fails", func() {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
-				Context: gaetesting.TestingContext(),
 				Writer:  rec,
 				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
@@ -56,8 +55,7 @@ func TestRequireCron(t *testing.T) {
 		Convey("from cron succeeds", func() {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
-				Context: gaetesting.TestingContext(),
-				Writer:  rec,
+				Writer: rec,
 				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-cron"): []string{"true"},
@@ -85,7 +83,6 @@ func TestRequireTQ(t *testing.T) {
 		Convey("from non-tq fails (wat)", func() {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
-				Context: gaetesting.TestingContext(),
 				Writer:  rec,
 				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
@@ -98,7 +95,6 @@ func TestRequireTQ(t *testing.T) {
 		Convey("from non-tq fails", func() {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
-				Context: gaetesting.TestingContext(),
 				Writer:  rec,
 				Request: (&http.Request{}).WithContext(gaetesting.TestingContext()),
 			}
@@ -111,8 +107,7 @@ func TestRequireTQ(t *testing.T) {
 		Convey("from wrong tq fails (wat)", func() {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
-				Context: gaetesting.TestingContext(),
-				Writer:  rec,
+				Writer: rec,
 				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"else"},
@@ -128,8 +123,7 @@ func TestRequireTQ(t *testing.T) {
 		Convey("from right tq succeeds (wat)", func() {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
-				Context: gaetesting.TestingContext(),
-				Writer:  rec,
+				Writer: rec,
 				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},
@@ -145,8 +139,7 @@ func TestRequireTQ(t *testing.T) {
 		Convey("from any tq succeeds", func() {
 			rec := httptest.NewRecorder()
 			c := &router.Context{
-				Context: gaetesting.TestingContext(),
-				Writer:  rec,
+				Writer: rec,
 				Request: (&http.Request{
 					Header: http.Header{
 						http.CanonicalHeaderKey("x-appengine-queuename"): []string{"wat"},

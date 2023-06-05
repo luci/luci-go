@@ -244,7 +244,7 @@ func serverEmail(ctx context.Context) string {
 
 // handler adapts `cb(...)` to match router.Handler.
 func handler(ctx *router.Context, cb func(ctx context.Context, r *http.Request, rw http.ResponseWriter) error) {
-	if err := cb(ctx.Context, ctx.Request, ctx.Writer); err != nil {
+	if err := cb(ctx.Request.Context(), ctx.Request, ctx.Writer); err != nil {
 		http.Error(ctx.Writer, err.Error(), http.StatusInternalServerError)
 	}
 }

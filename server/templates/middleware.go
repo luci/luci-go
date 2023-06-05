@@ -29,11 +29,10 @@ import (
 func WithTemplates(b *Bundle) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		// Note: Use(...) calls EnsureLoaded and initializes b.err inside.
-		c.Context = Use(c.Request.Context(), b, &Extra{
+		c.Request = c.Request.WithContext(Use(c.Request.Context(), b, &Extra{
 			Request: c.Request,
 			Params:  c.Params,
-		})
-		c.Request = c.Request.WithContext(c.Context)
+		}))
 		if b.err != nil {
 			http.Error(c.Writer, fmt.Sprintf("Can't load HTML templates.\n%s", b.err), http.StatusInternalServerError)
 			return

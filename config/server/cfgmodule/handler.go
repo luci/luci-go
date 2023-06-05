@@ -230,7 +230,7 @@ func internalErrStatus(c context.Context, w http.ResponseWriter, msg string, err
 // responds with the corresponding results.
 func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 	return func(ctx *router.Context) {
-		c, w, r := ctx.Context, ctx.Writer, ctx.Request
+		c, w, r := ctx.Request.Context(), ctx.Writer, ctx.Request
 
 		raw := r.Body
 		if r.Header.Get("Content-Encoding") == "gzip" {
@@ -310,7 +310,7 @@ func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 // responds with the necessary metadata defined by the given Validator.
 func metadataRequestHandler(rules *validation.RuleSet) router.Handler {
 	return func(ctx *router.Context) {
-		c, w := ctx.Context, ctx.Writer
+		c, w := ctx.Request.Context(), ctx.Writer
 
 		patterns, err := rules.ConfigPatterns(c)
 		if err != nil {

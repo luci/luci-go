@@ -130,9 +130,9 @@ func TestServer(t *testing.T) {
 
 		Convey("Logging", func() {
 			srv.Routes.GET("/test", nil, func(c *router.Context) {
-				logging.Infof(c.Context, "Info log")
+				logging.Infof(c.Request.Context(), "Info log")
 				tc.Add(time.Second)
-				logging.Warningf(c.Context, "Warn log")
+				logging.Warningf(c.Request.Context(), "Warn log")
 				c.Writer.WriteHeader(201)
 				c.Writer.Write([]byte("Hello, world"))
 			})
@@ -188,7 +188,7 @@ func TestServer(t *testing.T) {
 		Convey("Context features", func() {
 			So(testContextFeatures(srv.Context), ShouldBeNil)
 			srv.Routes.GET("/request", nil, func(c *router.Context) {
-				if err := testContextFeatures(c.Context); err != nil {
+				if err := testContextFeatures(c.Request.Context()); err != nil {
 					http.Error(c.Writer, err.Error(), 500)
 				}
 			})
@@ -204,7 +204,7 @@ func TestServer(t *testing.T) {
 			cancelled := make(chan struct{})
 			srv.Routes.GET("/request", nil, func(c *router.Context) {
 				select {
-				case <-c.Context.Done():
+				case <-c.Request.Context().Done():
 					close(cancelled)
 				case <-time.After(time.Minute):
 				}
@@ -300,7 +300,7 @@ func TestServer(t *testing.T) {
 		Convey("Client auth", func() {
 			srv.Routes.GET("/client-auth", nil, func(c *router.Context) {
 				scopes := strings.Split(c.Request.Header.Get("Ask-Scope"), " ")
-				ts, err := auth.GetTokenSource(c.Context, auth.AsSelf, auth.WithScopes(scopes...))
+				ts, err := auth.GetTokenSource(c.Request.Context(), auth.AsSelf, auth.WithScopes(scopes...))
 				if err != nil {
 					http.Error(c.Writer, err.Error(), 500)
 					return
@@ -348,13 +348,13 @@ func TestServer(t *testing.T) {
 			}
 			mw := router.NewMiddlewareChain(authn.GetMiddleware())
 			srv.Routes.GET("/auth-state", mw, func(rc *router.Context) {
-				state := auth.GetState(rc.Context)
+				state := auth.GetState(rc.Request.Context())
 				c.So(state.DB(), ShouldEqual, fakeAuthDB)
 				c.So(state.PeerIdentity(), ShouldEqual, fakeUser.Identity)
 				c.So(state.PeerIP().String(), ShouldEqual, "2.2.2.2")
-				c.So(auth.CurrentUser(rc.Context), ShouldEqual, fakeUser)
-				c.So(auth.CurrentIdentity(rc.Context), ShouldEqual, fakeUser.Identity)
-				yes, err := auth.IsMember(rc.Context, "group-1")
+				c.So(auth.CurrentUser(rc.Request.Context()), ShouldEqual, fakeUser)
+				c.So(auth.CurrentIdentity(rc.Request.Context()), ShouldEqual, fakeUser.Identity)
+				yes, err := auth.IsMember(rc.Request.Context(), "group-1")
 				c.So(err, ShouldBeNil)
 				c.So(yes, ShouldBeTrue)
 			})
@@ -379,7 +379,7 @@ func TestServer(t *testing.T) {
 				req, _ := http.NewRequest("GET", ts.URL, nil)
 				req.Header.Add("User-Agent", "zzz")
 
-				t, err := auth.GetRPCTransport(rc.Context, auth.NoAuth)
+				t, err := auth.GetRPCTransport(rc.Request.Context(), auth.NoAuth)
 				c.So(err, ShouldBeNil)
 				client := http.Client{Transport: t}
 
@@ -439,7 +439,7 @@ func TestH2C(t *testing.T) {
 		defer srv.cleanup()
 
 		srv.Routes.GET("/test", nil, func(c *router.Context) {
-			if err := testContextFeatures(c.Context); err != nil {
+			if err := testContextFeatures(c.Request.Context()); err != nil {
 				http.Error(c.Writer, err.Error(), 500)
 			} else {
 				c.Writer.WriteHeader(200)
@@ -776,8 +776,8 @@ func TestOptions(t *testing.T) {
 			So(os.WriteFile(opts.AuthDBPath, []byte(body), 0600), ShouldBeNil)
 
 			testRequestHandler(&opts, func(rc *router.Context) {
-				db := auth.GetState(rc.Context).DB()
-				yes, err := db.IsMember(rc.Context, "user:a@example.com", []string{"group"})
+				db := auth.GetState(rc.Request.Context()).DB()
+				yes, err := db.IsMember(rc.Request.Context(), "user:a@example.com", []string{"group"})
 				c.So(err, ShouldBeNil)
 				c.So(yes, ShouldBeTrue)
 			})
@@ -899,10 +899,10 @@ func BenchmarkServer(b *testing.B) {
 
 	// The route we are going to hit from the benchmark.
 	srv.Routes.GET("/test", nil, func(c *router.Context) {
-		logging.Infof(c.Context, "Hello, world")
+		logging.Infof(c.Request.Context(), "Hello, world")
 		for i := 0; i < 10; i++ {
 			// E.g. calling bunch of Cloud APIs.
-			ts, _ := auth.GetTokenSource(c.Context, auth.AsSelf, auth.WithScopes("A", "B", "C"))
+			ts, _ := auth.GetTokenSource(c.Request.Context(), auth.AsSelf, auth.WithScopes("A", "B", "C"))
 			ts.Token()
 		}
 		c.Writer.Write([]byte("Hello, world"))

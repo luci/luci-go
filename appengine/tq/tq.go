@@ -479,7 +479,7 @@ func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 		httpReply(c, false, 500, "Failed to read request body: %s", err)
 		return
 	}
-	logging.Debugf(c.Context, "Received task (exec count %d): %s", headers.TaskExecutionCount, body)
+	logging.Debugf(c.Request.Context(), "Received task (exec count %d): %s", headers.TaskExecutionCount, body)
 
 	payload, err := deserializePayload(body)
 	if err != nil {
@@ -493,7 +493,7 @@ func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 		return
 	}
 
-	ctx := withRequestHeaders(c.Context, headers)
+	ctx := withRequestHeaders(c.Request.Context(), headers)
 	switch err = h.cb(ctx, payload); {
 	case err == nil:
 		httpReply(c, true, 200, "OK")
@@ -509,7 +509,7 @@ func (d *Dispatcher) processHTTPRequest(c *router.Context) {
 func httpReply(c *router.Context, ok bool, code int, msg string, args ...any) {
 	body := fmt.Sprintf(msg, args...)
 	if !ok {
-		logging.Errorf(c.Context, "%s", body)
+		logging.Errorf(c.Request.Context(), "%s", body)
 	}
 	http.Error(c.Writer, body, code)
 }

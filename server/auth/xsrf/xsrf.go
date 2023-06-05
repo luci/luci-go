@@ -82,14 +82,14 @@ func TokenField(ctx context.Context) template.HTML {
 func WithTokenCheck(c *router.Context, next router.Handler) {
 	tok := c.Request.PostFormValue("xsrf_token")
 	if tok == "" {
-		replyError(c.Context, c.Writer, http.StatusForbidden, "XSRF token is missing")
+		replyError(c.Request.Context(), c.Writer, http.StatusForbidden, "XSRF token is missing")
 		return
 	}
-	switch err := Check(c.Context, tok); {
+	switch err := Check(c.Request.Context(), tok); {
 	case transient.Tag.In(err):
-		replyError(c.Context, c.Writer, http.StatusInternalServerError, "Transient error when checking XSRF token - %s", err)
+		replyError(c.Request.Context(), c.Writer, http.StatusInternalServerError, "Transient error when checking XSRF token - %s", err)
 	case err != nil:
-		replyError(c.Context, c.Writer, http.StatusForbidden, "Bad XSRF token - %s", err)
+		replyError(c.Request.Context(), c.Writer, http.StatusForbidden, "Bad XSRF token - %s", err)
 	default:
 		next(c)
 	}

@@ -51,7 +51,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 			sendError(c.Writer, "Missing 'tok' query parameter with a pprof token", http.StatusBadRequest)
 			return
 		}
-		switch err := checkToken(c.Context, tok); {
+		switch err := checkToken(c.Request.Context(), tok); {
 		case transient.Tag.In(err):
 			sendError(c.Writer, fmt.Sprintf("Transient error, please retry: %s", err), http.StatusInternalServerError)
 			return

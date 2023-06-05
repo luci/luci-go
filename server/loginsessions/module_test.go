@@ -83,7 +83,6 @@ func TestModule(t *testing.T) {
 		handler := router.New()
 		handler.Use(router.MiddlewareChain{
 			func(rc *router.Context, next router.Handler) {
-				rc.Context = ctx
 				rc.Request = rc.Request.WithContext(ctx)
 				next(rc)
 			},

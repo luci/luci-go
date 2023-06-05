@@ -207,7 +207,7 @@ func (m *loginSessionsModule) loginSessionPage(ctx *router.Context) {
 
 	// Load OAuth client details to show on the page. Bail if this client is no
 	// longer known (this should be rare).
-	oauthClient, err := m.srv.provider(ctx.Context, session.OauthClientId)
+	oauthClient, err := m.srv.provider(ctx.Request.Context(), session.OauthClientId)
 	switch {
 	case err != nil:
 		m.renderInternalError(ctx, "error fetching OAuth client %s: %s", session.OauthClientId, err)
@@ -224,7 +224,7 @@ func (m *loginSessionsModule) loginSessionPage(ctx *router.Context) {
 
 	// Generate `state` blob that would come back to us in the redirect URL from
 	// the authorization endpoint.
-	state, err := internal.EncryptState(ctx.Context, &statepb.OpenIDState{
+	state, err := internal.EncryptState(ctx.Request.Context(), &statepb.OpenIDState{
 		LoginSessionId:   session.Id,
 		LoginCookieValue: loginCookieValue,
 	})
@@ -238,7 +238,7 @@ func (m *loginSessionsModule) loginSessionPage(ctx *router.Context) {
 		Name:     m.loginCookieName(session.Id),
 		Value:    loginCookieValue,
 		Path:     "/cli/",
-		MaxAge:   int(session.Expiry.AsTime().Sub(clock.Now(ctx.Context)).Seconds()),
+		MaxAge:   int(session.Expiry.AsTime().Sub(clock.Now(ctx.Request.Context())).Seconds()),
 		Secure:   !m.insecureCookie,
 		HttpOnly: true,
 	})
@@ -268,7 +268,7 @@ func (m *loginSessionsModule) loginSessionPage(ctx *router.Context) {
 // success or nil on errors.
 func (m *loginSessionsModule) sessionFromState(ctx *router.Context, stateB64 string) *statepb.LoginSession {
 	// Decrypt the state to get the session ID.
-	state, err := internal.DecryptState(ctx.Context, stateB64)
+	state, err := internal.DecryptState(ctx.Request.Context(), stateB64)
 	if err != nil {
 		m.renderInternalError(ctx, "failed to decrypt state: %s", err)
 		return nil
@@ -292,7 +292,7 @@ func (m *loginSessionsModule) sessionFromState(ctx *router.Context, stateB64 str
 // It renders errors directly into the response. It returns the LoginSession on
 // success or nil on errors.
 func (m *loginSessionsModule) pendingSessionOrRenderErr(ctx *router.Context, sessionID string) *statepb.LoginSession {
-	switch session, err := m.srv.store.Get(ctx.Context, sessionID); {
+	switch session, err := m.srv.store.Get(ctx.Request.Context(), sessionID); {
 	case err == internal.ErrNoSession:
 		m.renderExpiredError(ctx, "no such session")
 		return nil
@@ -302,7 +302,7 @@ func (m *loginSessionsModule) pendingSessionOrRenderErr(ctx *router.Context, ses
 	case session.State != loginsessionspb.LoginSession_PENDING:
 		m.renderExpiredError(ctx, "the session is not pending, it is %s", session.State)
 		return nil
-	case clock.Now(ctx.Context).After(session.Expiry.AsTime()):
+	case clock.Now(ctx.Request.Context()).After(session.Expiry.AsTime()):
 		m.renderExpiredError(ctx, "the session is expired")
 		return nil
 	default:
@@ -405,7 +405,7 @@ func (m *loginSessionsModule) loginConfirmPagePOST(ctx *router.Context) {
 
 	// Check the provided confirmation code is a known non-expired code.
 	confirmationCode := ctx.Request.PostFormValue("confirmation_code")
-	now := clock.Now(ctx.Context)
+	now := clock.Now(ctx.Request.Context())
 	good := false
 	for _, code := range session.ConfirmationCodes {
 		if code.Expiry.AsTime().After(now) &&
@@ -436,15 +436,15 @@ func (m *loginSessionsModule) loginConfirmPagePOST(ctx *router.Context) {
 
 // finalizeSession flips the session into a final state and renders the result.
 func (m *loginSessionsModule) finalizeSession(ctx *router.Context, sessionID string, cb func(*statepb.LoginSession)) {
-	session, err := m.srv.store.Update(ctx.Context, sessionID, func(session *statepb.LoginSession) {
+	session, err := m.srv.store.Update(ctx.Request.Context(), sessionID, func(session *statepb.LoginSession) {
 		if session.State == loginsessionspb.LoginSession_PENDING {
-			updateExpiry(ctx.Context, session)
+			updateExpiry(ctx.Request.Context(), session)
 			if session.State == loginsessionspb.LoginSession_PENDING {
 				cb(session)
 				if session.State == loginsessionspb.LoginSession_PENDING {
 					panic("the callback didn't change the state")
 				}
-				session.Completed = timestamppb.New(clock.Now(ctx.Context))
+				session.Completed = timestamppb.New(clock.Now(ctx.Request.Context()))
 			}
 		}
 	})
@@ -477,7 +477,7 @@ func (m *loginSessionsModule) renderTemplate(ctx *router.Context, status int, na
 		// This code path is used when running for real.
 		ctx.Writer.Header().Add("Content-Type", "text/html; charset=utf-8")
 		ctx.Writer.WriteHeader(status)
-		m.tmpl.MustRender(ctx.Context, nil, ctx.Writer, name, args)
+		m.tmpl.MustRender(ctx.Request.Context(), nil, ctx.Writer, name, args)
 	} else {
 		// This code path is used in tests.
 		ctx.Writer.Header().Add("Content-Type", "application/json; charset=utf-8")
@@ -495,7 +495,7 @@ func (m *loginSessionsModule) renderTemplate(ctx *router.Context, status int, na
 
 // renderInternalError logs the error and renders generic "Internal error" page.
 func (m *loginSessionsModule) renderInternalError(ctx *router.Context, msg string, args ...any) {
-	logging.Errorf(ctx.Context, "Internal error: "+msg, args...)
+	logging.Errorf(ctx.Request.Context(), "Internal error: "+msg, args...)
 	m.renderTemplate(ctx, http.StatusInternalServerError, "pages/error.html", templates.Args{
 		"Error": "Internal server error.",
 	})
@@ -503,7 +503,7 @@ func (m *loginSessionsModule) renderInternalError(ctx *router.Context, msg strin
 
 // renderExpiredError logs the error and renders generic "Session expired" page.
 func (m *loginSessionsModule) renderExpiredError(ctx *router.Context, msg string, args ...any) {
-	logging.Warningf(ctx.Context, "Expiry error: "+msg, args...)
+	logging.Warningf(ctx.Request.Context(), "Expiry error: "+msg, args...)
 	m.renderTemplate(ctx, http.StatusNotFound, "pages/error.html", templates.Args{
 		"Error": "No such login session or it has finished or expired. Please restart the login flow from scratch.",
 	})
@@ -511,7 +511,7 @@ func (m *loginSessionsModule) renderExpiredError(ctx *router.Context, msg string
 
 // renderBadRequestError logs and renders "bad argument" error page.
 func (m *loginSessionsModule) renderBadRequestError(ctx *router.Context, msg string, args ...any) {
-	logging.Warningf(ctx.Context, "Bad request: "+msg, args...)
+	logging.Warningf(ctx.Request.Context(), "Bad request: "+msg, args...)
 
 	// Make it title case, add final '.'.
 	pretty := []rune(fmt.Sprintf(msg, args...))

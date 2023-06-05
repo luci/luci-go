@@ -224,9 +224,9 @@ func (m *serverModule) registerVars(opts module.HostOptions) {
 // came from LUCI Config service.
 func (m *serverModule) authorizeConfigService(c *router.Context, next router.Handler) {
 	// Grab the expected service account ID of the LUCI Config service we use.
-	info, err := m.configServiceInfo(c.Context)
+	info, err := m.configServiceInfo(c.Request.Context())
 	if err != nil {
-		errors.Log(c.Context, err)
+		errors.Log(c.Request.Context(), err)
 		if transient.Tag.In(err) {
 			http.Error(c.Writer, "Transient error during authorization", http.StatusInternalServerError)
 		} else {
@@ -236,7 +236,7 @@ func (m *serverModule) authorizeConfigService(c *router.Context, next router.Han
 	}
 
 	// Check the call is actually from the LUCI Config.
-	caller := auth.CurrentIdentity(c.Context)
+	caller := auth.CurrentIdentity(c.Request.Context())
 	if caller.Kind() == identity.User && caller.Value() == info.ServiceAccountName {
 		next(c)
 	} else {

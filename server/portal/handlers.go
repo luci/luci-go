@@ -150,13 +150,12 @@ func (adminBypassDB) IsAllowedIP(c context.Context, ip net.IP, allowlist string)
 }
 
 func (d adminBypassDB) install(c *router.Context, next router.Handler) {
-	c.Context = auth.ModifyConfig(c.Context, func(cfg auth.Config) auth.Config {
+	c.Request = c.Request.WithContext(auth.ModifyConfig(c.Request.Context(), func(cfg auth.Config) auth.Config {
 		cfg.DBProvider = func(context.Context) (authdb.DB, error) {
 			return d, nil
 		}
 		return cfg
-	})
-	c.Request = c.Request.WithContext(c.Context)
+	}))
 	next(c)
 }
 
@@ -169,7 +168,7 @@ func (d adminBypassDB) install(c *router.Context, next router.Handler) {
 // It redirect anonymous users to login page, and displays "Access denied" page
 // to authenticated non-admin users.
 func adminAutologin(c *router.Context, next router.Handler) {
-	u := auth.CurrentUser(c.Context)
+	u := auth.CurrentUser(c.Request.Context())
 
 	// Redirect anonymous users to a login page that redirects back to the current
 	// page. Don't do it if this anonymous user is also marked as Superuser, which
@@ -179,9 +178,9 @@ func adminAutologin(c *router.Context, next router.Handler) {
 		destURL := *c.Request.URL
 		destURL.Host = ""
 		destURL.Scheme = ""
-		url, err := auth.LoginURL(c.Context, destURL.String())
+		url, err := auth.LoginURL(c.Request.Context(), destURL.String())
 		if err != nil {
-			logging.WithError(err).Errorf(c.Context, "Error when generating login URL")
+			logging.WithError(err).Errorf(c.Request.Context(), "Error when generating login URL")
 			if transient.Tag.In(err) {
 				http.Error(c.Writer, "Transient error when generating login URL, see logs", 500)
 			} else {
@@ -196,7 +195,7 @@ func adminAutologin(c *router.Context, next router.Handler) {
 	// Only superusers can proceed.
 	if !u.Superuser {
 		c.Writer.WriteHeader(http.StatusForbidden)
-		templates.MustRender(c.Context, c.Writer, "pages/access_denied.html", nil)
+		templates.MustRender(c.Request.Context(), c.Writer, "pages/access_denied.html", nil)
 		return
 	}
 

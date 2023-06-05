@@ -32,11 +32,10 @@ import (
 func withSigner(s signing.Signer) router.MiddlewareChain {
 	return router.NewMiddlewareChain(
 		func(c *router.Context, next router.Handler) {
-			c.Context = ModifyConfig(c.Context, func(cfg Config) Config {
+			c.Request = c.Request.WithContext(ModifyConfig(c.Request.Context(), func(cfg Config) Config {
 				cfg.Signer = s
 				return cfg
-			})
-			c.Request = c.Request.WithContext(c.Context)
+			}))
 			next(c)
 		},
 	)
@@ -115,13 +114,12 @@ func TestClientIDHandler(t *testing.T) {
 		var clientIDErr error
 		modConfig := router.NewMiddlewareChain(
 			func(c *router.Context, next router.Handler) {
-				c.Context = ModifyConfig(c.Context, func(cfg Config) Config {
+				c.Request = c.Request.WithContext(ModifyConfig(c.Request.Context(), func(cfg Config) Config {
 					cfg.FrontendClientID = func(context.Context) (string, error) {
 						return "fake-client-id", clientIDErr
 					}
 					return cfg
-				})
-				c.Request = c.Request.WithContext(c.Context)
+				}))
 				next(c)
 			},
 		)

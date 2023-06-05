@@ -15,7 +15,6 @@
 package middleware
 
 import (
-	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -25,10 +24,9 @@ import (
 // WithContextTimeout returns a middleware that adds a timeout to the context.
 func WithContextTimeout(timeout time.Duration) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		var cancel context.CancelFunc
-		c.Context, cancel = clock.WithTimeout(c.Context, timeout)
+		ctx, cancel := clock.WithTimeout(c.Request.Context(), timeout)
 		defer cancel()
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(ctx)
 		next(c)
 	}
 }

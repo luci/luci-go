@@ -19,7 +19,6 @@
 package router
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -40,7 +39,6 @@ type Router struct {
 //
 // TODO: Remove Context in favor of Request.Context().
 type Context struct {
-	Context     context.Context
 	Writer      http.ResponseWriter
 	Request     *http.Request
 	Params      httprouter.Params
@@ -162,7 +160,6 @@ func (r *Router) Static(prefix string, mc MiddlewareChain, root http.FileSystem)
 func (r *Router) adapt(mc MiddlewareChain, h Handler, path string) httprouter.Handle {
 	return func(rw http.ResponseWriter, req *http.Request, p httprouter.Params) {
 		run(&Context{
-			Context:     req.Context(),
 			Writer:      rw,
 			Request:     req,
 			Params:      p,

@@ -57,18 +57,18 @@ import (
 var cacheEnabled = stringset.NewFromSlice("Project", "BuildStatus")
 
 func handlePubSubMessage(ctx *router.Context, identity identity.Identity) {
-	if got := auth.CurrentIdentity(ctx.Context); got != identity {
-		logging.Errorf(ctx.Context, "Expecting ID token of %q, got %q", identity, got)
+	if got := auth.CurrentIdentity(ctx.Request.Context()); got != identity {
+		logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", identity, got)
 		ctx.Writer.WriteHeader(403)
 	} else {
-		switch err := tasks.SubNotify(ctx.Context, ctx.Request.Body); {
+		switch err := tasks.SubNotify(ctx.Request.Context(), ctx.Request.Body); {
 		case err == nil:
 			ctx.Writer.WriteHeader(200)
 		case transient.Tag.In(err):
-			logging.Warningf(ctx.Context, "Encounter transient error when processing pubsub msg: %s", err)
+			logging.Warningf(ctx.Request.Context(), "Encounter transient error when processing pubsub msg: %s", err)
 			ctx.Writer.WriteHeader(500) // PubSub will resend this msg.
 		default:
-			logging.Errorf(ctx.Context, "Encounter non-transient error when processing pubsub msg: %s", err)
+			logging.Errorf(ctx.Request.Context(), "Encounter non-transient error when processing pubsub msg: %s", err)
 			ctx.Writer.WriteHeader(202)
 		}
 	}

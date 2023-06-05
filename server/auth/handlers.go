@@ -37,12 +37,12 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 
 // certsHandler servers public certificates of the signer in the context.
 func certsHandler(c *router.Context) {
-	s := GetSigner(c.Context)
+	s := GetSigner(c.Request.Context())
 	if s == nil {
 		httpReplyError(c, http.StatusNotFound, "No Signer instance available")
 		return
 	}
-	certs, err := s.Certificates(c.Context)
+	certs, err := s.Certificates(c.Request.Context())
 	if err != nil {
 		httpReplyError(c, http.StatusInternalServerError, fmt.Sprintf("Can't fetch certificates - %s", err))
 	} else {
@@ -52,12 +52,12 @@ func certsHandler(c *router.Context) {
 
 // infoHandler returns information about the current service identity.
 func infoHandler(c *router.Context) {
-	s := GetSigner(c.Context)
+	s := GetSigner(c.Request.Context())
 	if s == nil {
 		httpReplyError(c, http.StatusNotFound, "No Signer instance available")
 		return
 	}
-	info, err := s.ServiceInfo(c.Context)
+	info, err := s.ServiceInfo(c.Request.Context())
 	if err != nil {
 		httpReplyError(c, http.StatusInternalServerError, fmt.Sprintf("Can't grab service info - %s", err))
 	} else {
@@ -67,7 +67,7 @@ func infoHandler(c *router.Context) {
 
 // clientIDHandler returns OAuth2.0 client ID intended for the frontend.
 func clientIDHandler(c *router.Context) {
-	clientID, err := GetFrontendClientID(c.Context)
+	clientID, err := GetFrontendClientID(c.Request.Context())
 	if err != nil {
 		httpReplyError(c, http.StatusInternalServerError, fmt.Sprintf("Can't grab the client ID - %s", err))
 	} else {
@@ -81,7 +81,7 @@ func httpReply(c *router.Context, code int, out any) {
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(code)
 	if err := json.NewEncoder(c.Writer).Encode(out); err != nil {
-		logging.Errorf(c.Context, "Failed to JSON encode output - %s", err)
+		logging.Errorf(c.Request.Context(), "Failed to JSON encode output - %s", err)
 	}
 }
 

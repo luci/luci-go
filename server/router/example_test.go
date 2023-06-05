@@ -41,8 +41,7 @@ func AuthCheck(c *router.Context, next router.Handler) {
 }
 
 func GenerateSecret(c *router.Context, next router.Handler) {
-	c.Context = context.WithValue(c.Context, "secret", rand.Int())
-	c.Request = c.Request.WithContext(c.Context)
+	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "secret", rand.Int()))
 	next(c)
 }
 
@@ -84,7 +83,7 @@ func Example_createServer() {
 	auth := r.Subrouter("authenticated")
 	auth.Use(router.NewMiddlewareChain(AuthCheck))
 	auth.GET("/secret", router.NewMiddlewareChain(GenerateSecret), func(c *router.Context) {
-		fmt.Fprintf(c.Writer, "secret: %d", c.Context.Value("secret"))
+		fmt.Fprintf(c.Writer, "secret: %d", c.Request.Context().Value("secret"))
 	})
 
 	server := httptest.NewServer(r)

@@ -232,13 +232,12 @@ func (e *Environment) Base() router.MiddlewareChain {
 		// We do this because Contexts will leak resources and/or goroutines if they
 		// have timers or can be canceled, but aren't. Predictably canceling the
 		// parent will ensure that any such resource leaks are cleaned up.
-		var cancelFunc context.CancelFunc
-		c.Context, cancelFunc = context.WithCancel(c.Context)
+		ctx, cancelFunc := context.WithCancel(c.Request.Context())
 		defer cancelFunc()
 
 		// Apply production settings.
-		c.Context = e.With(c.Context, c.Request)
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(e.With(ctx, c.Request))
+
 		next(c)
 	}
 

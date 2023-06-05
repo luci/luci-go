@@ -275,11 +275,11 @@ func (s *Server) handlePOST(c *router.Context) {
 	}
 
 	if res.err != nil {
-		writeError(c.Context, c.Writer, res.err, res.fmt)
+		writeError(c.Request.Context(), c.Writer, res.err, res.fmt)
 		return
 	}
 
-	writeMessage(c.Context, c.Writer, res.out, res.fmt, s.EnableResponseCompression && res.acceptsGZip)
+	writeMessage(c.Request.Context(), c.Writer, res.out, res.fmt, s.EnableResponseCompression && res.acceptsGZip)
 }
 
 func (s *Server) handleOPTIONS(c *router.Context) {
@@ -338,7 +338,7 @@ func (s *Server) call(c *router.Context, service *service, method grpc.MethodDes
 		return
 	}
 
-	methodCtx, cancelFunc, err := parseHeader(c.Context, c.Request.Header, c.Request.Host)
+	methodCtx, cancelFunc, err := parseHeader(c.Request.Context(), c.Request.Header, c.Request.Host)
 	if err != nil {
 		r.err = protocolErr(codes.InvalidArgument, http.StatusBadRequest, "bad request headers: %s", err)
 		return
@@ -389,13 +389,13 @@ func (s *Server) setAccessControlHeaders(c *router.Context, preflight bool) {
 	if origin == "" || s.AccessControl == nil {
 		return
 	}
-	accessControl := s.AccessControl(c.Context, origin)
+	accessControl := s.AccessControl(c.Request.Context(), origin)
 	if !accessControl.AllowCrossOriginRequests {
 		if accessControl.AllowCredentials {
-			logging.Warningf(c.Context, "pRPC AccessControl: ignoring AllowCredentials since AllowCrossOriginRequests is false")
+			logging.Warningf(c.Request.Context(), "pRPC AccessControl: ignoring AllowCredentials since AllowCrossOriginRequests is false")
 		}
 		if len(accessControl.AllowHeaders) != 0 {
-			logging.Warningf(c.Context, "pRPC AccessControl: ignoring AllowHeaders since AllowCrossOriginRequests is false")
+			logging.Warningf(c.Request.Context(), "pRPC AccessControl: ignoring AllowHeaders since AllowCrossOriginRequests is false")
 		}
 		return
 	}

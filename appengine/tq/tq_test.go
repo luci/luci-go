@@ -56,7 +56,6 @@ func TestDispatcher(t *testing.T) {
 
 		installRoutes := func() {
 			d.InstallRoutes(r, router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-				c.Context = ctx
 				c.Request = c.Request.WithContext(ctx)
 				next(c)
 			}))

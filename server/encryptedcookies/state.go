@@ -109,7 +109,7 @@ func stateHandlerImpl(ctx *router.Context, sessionCheck func(auth.Session) bool)
 		return
 	}
 
-	state := auth.GetState(ctx.Context)
+	state := auth.GetState(ctx.Request.Context())
 	user := state.User()
 
 	reply := AuthState{
@@ -120,7 +120,7 @@ func stateHandlerImpl(ctx *router.Context, sessionCheck func(auth.Session) bool)
 
 	replyErr := func(msg, details string) {
 		http.Error(ctx.Writer, msg, http.StatusInternalServerError)
-		logging.Errorf(ctx.Context, "%s: %s", msg, details)
+		logging.Errorf(ctx.Request.Context(), "%s: %s", msg, details)
 	}
 
 	if user.Identity != identity.AnonymousIdentity {
@@ -137,17 +137,17 @@ func stateHandlerImpl(ctx *router.Context, sessionCheck func(auth.Session) bool)
 			replyErr("Unexpected auth session type", "this is likely misconfiguration of the authentication middleware chain")
 			return
 		}
-		accessToken, err := session.AccessToken(ctx.Context)
+		accessToken, err := session.AccessToken(ctx.Request.Context())
 		if err != nil {
 			replyErr("Failure getting access token", err.Error())
 			return
 		}
-		idToken, err := session.IDToken(ctx.Context)
+		idToken, err := session.IDToken(ctx.Request.Context())
 		if err != nil {
 			replyErr("Failure getting ID token", err.Error())
 			return
 		}
-		now := clock.Now(ctx.Context)
+		now := clock.Now(ctx.Request.Context())
 		reply.AccessToken = accessToken.AccessToken
 		reply.AccessTokenExpiry = accessToken.Expiry.Unix()
 		reply.AccessTokenExpiresIn = int32(accessToken.Expiry.Sub(now).Seconds())
@@ -163,6 +163,6 @@ func stateHandlerImpl(ctx *router.Context, sessionCheck func(auth.Session) bool)
 	}
 	ctx.Writer.Header().Add("Content-Type", "application/json")
 	if _, err := ctx.Writer.Write(bytes); err != nil {
-		logging.Errorf(ctx.Context, "Writing JSON response: %s", err)
+		logging.Errorf(ctx.Request.Context(), "Writing JSON response: %s", err)
 	}
 }

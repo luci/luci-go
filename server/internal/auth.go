@@ -46,7 +46,7 @@ func CloudAuthMiddleware(callers []string, header string, rejected func(*router.
 			return
 		}
 
-		if ident := auth.CurrentIdentity(c.Context); ident.Kind() != identity.Anonymous {
+		if ident := auth.CurrentIdentity(c.Request.Context()); ident.Kind() != identity.Anonymous {
 			if checkContainsIdent(callers, ident) {
 				next(c)
 			} else {
@@ -93,7 +93,7 @@ func checkContainsIdent(callers []string, ident identity.Identity) bool {
 // `msg` is sent to the caller as is. `err` is logged, but not sent.
 func httpReply(c *router.Context, code int, msg string, err error) {
 	if err != nil {
-		logging.Errorf(c.Context, "%s: %s", msg, err)
+		logging.Errorf(c.Request.Context(), "%s: %s", msg, err)
 	}
 	http.Error(c.Writer, msg, code)
 }

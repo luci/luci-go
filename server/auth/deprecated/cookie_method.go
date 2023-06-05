@@ -159,7 +159,7 @@ func (m *CookieAuthMethod) LogoutURL(ctx context.Context, dest string) (string, 
 
 // loginHandler initiates login flow by redirecting user to OpenID login page.
 func (m *CookieAuthMethod) loginHandler(ctx *router.Context) {
-	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
+	c, rw, r := ctx.Request.Context(), ctx.Writer, ctx.Request
 
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
 	if err != nil {
@@ -189,7 +189,7 @@ func (m *CookieAuthMethod) loginHandler(ctx *router.Context) {
 
 // logoutHandler nukes active session and redirect back to destination URL.
 func (m *CookieAuthMethod) logoutHandler(ctx *router.Context) {
-	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
+	c, rw, r := ctx.Request.Context(), ctx.Writer, ctx.Request
 
 	dest, err := normalizeURL(r.URL.Query().Get("r"))
 	if err != nil {
@@ -223,7 +223,7 @@ func (m *CookieAuthMethod) logoutHandler(ctx *router.Context) {
 // callbackHandler handles redirect from OpenID backend. Parameters contain
 // authorization code that can be exchanged for user profile.
 func (m *CookieAuthMethod) callbackHandler(ctx *router.Context) {
-	c, rw, r := ctx.Context, ctx.Writer, ctx.Request
+	c, rw, r := ctx.Request.Context(), ctx.Writer, ctx.Request
 
 	// This code path is hit when user clicks "Deny" on consent page.
 	q := r.URL.Query()

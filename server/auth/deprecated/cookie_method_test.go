@@ -127,7 +127,6 @@ func TestFullFlow(t *testing.T) {
 			So(err, ShouldBeNil)
 			rec := httptest.NewRecorder()
 			method.loginHandler(&router.Context{
-				Context: ctx,
 				Writer:  rec,
 				Request: req,
 			})
@@ -161,7 +160,6 @@ func TestFullFlow(t *testing.T) {
 			So(err, ShouldBeNil)
 			rec = httptest.NewRecorder()
 			method.callbackHandler(&router.Context{
-				Context: ctx,
 				Writer:  rec,
 				Request: req,
 			})
@@ -197,7 +195,6 @@ func TestFullFlow(t *testing.T) {
 			req.Header.Add("Cookie", expectedCookie)
 			rec = httptest.NewRecorder()
 			method.logoutHandler(&router.Context{
-				Context: ctx,
 				Writer:  rec,
 				Request: req,
 			})
@@ -230,7 +227,6 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 			req.Host = "fake.com"
 			rec := httptest.NewRecorder()
 			method.callbackHandler(&router.Context{
-				Context: ctx,
 				Writer:  rec,
 				Request: req,
 			})

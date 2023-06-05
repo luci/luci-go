@@ -79,13 +79,13 @@ func main() {
 			updates := map[string]int64{
 				"global-rate-limit": -60,
 			}
-			switch err := quota.UpdateQuota(c.Context, updates, nil); err {
+			switch err := quota.UpdateQuota(c.Request.Context(), updates, nil); err {
 			case nil:
 				_, _ = c.Writer.Write([]byte("OK\n"))
 			case quota.ErrInsufficientQuota:
 				http.Error(c.Writer, "rate limit exceeded", http.StatusTooManyRequests)
 			default:
-				errors.Log(c.Context, errors.Annotate(err, "debit quota").Err())
+				errors.Log(c.Request.Context(), errors.Annotate(err, "debit quota").Err())
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			}
 		})
@@ -96,11 +96,11 @@ func main() {
 			updates := map[string]int64{
 				"global-rate-limit": 60,
 			}
-			switch err := quota.UpdateQuota(c.Context, updates, nil); err {
+			switch err := quota.UpdateQuota(c.Request.Context(), updates, nil); err {
 			case nil:
 				_, _ = c.Writer.Write([]byte("OK\n"))
 			default:
-				errors.Log(c.Context, errors.Annotate(err, "credit quota").Err())
+				errors.Log(c.Request.Context(), errors.Annotate(err, "credit quota").Err())
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			}
 		})

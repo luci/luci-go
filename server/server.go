@@ -1226,7 +1226,7 @@ func (s *Server) newRouter(opts PortOptions) *router.Router {
 
 	// Mandatory health check/readiness probe endpoint.
 	r.GET(healthEndpoint, nil, func(c *router.Context) {
-		c.Writer.Write([]byte(s.healthResponse(c.Context)))
+		c.Writer.Write([]byte(s.healthResponse(c.Request.Context())))
 	})
 
 	// Add NotFound handler wrapped in our middlewares so that unrecognized
@@ -1926,7 +1926,6 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	}()
 
 	// Finish processing the request.
-	c.Context = ctx
 	c.Request = c.Request.WithContext(ctx)
 	next(c)
 }
@@ -2648,8 +2647,7 @@ func (s *Server) initAdminPort() error {
 	}
 	store := secrets.NewDerivedStore(secrets.Secret{Active: secret})
 	withAdminSecret := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
-		c.Context = secrets.Use(c.Context, store)
-		c.Request = c.Request.WithContext(c.Context)
+		c.Request = c.Request.WithContext(secrets.Use(c.Request.Context(), store))
 		next(c)
 	})
 

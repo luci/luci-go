@@ -238,20 +238,18 @@ func TestMiddleware(t *testing.T) {
 	t.Parallel()
 
 	handler := func(c *router.Context) {
-		fmt.Fprintf(c.Writer, "%s", CurrentIdentity(c.Context))
+		fmt.Fprintf(c.Writer, "%s", CurrentIdentity(c.Request.Context()))
 	}
 
 	call := func(a *Authenticator) *httptest.ResponseRecorder {
 		req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		ctx := injectTestDB(context.Background(), &fakeDB{
-			allowedClientID: "some_client_id",
-		})
 		router.RunMiddleware(&router.Context{
-			Context: ctx,
-			Writer:  w,
-			Request: req.WithContext(ctx),
+			Writer: w,
+			Request: req.WithContext(injectTestDB(context.Background(), &fakeDB{
+				allowedClientID: "some_client_id",
+			})),
 		}, router.NewMiddlewareChain(a.GetMiddleware()), handler)
 		return w
 	}

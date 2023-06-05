@@ -36,9 +36,9 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 //
 // See DatastoreTaskNumAllocator and AssignTaskNumbers.
 func housekeepingHandler(c *router.Context) {
-	tsmon.GetState(c.Context).RunGlobalCallbacks(c.Context)
-	if err := AssignTaskNumbers(c.Context); err != nil {
-		logging.WithError(err).Errorf(c.Context, "Task number assigner failed")
+	tsmon.GetState(c.Request.Context()).RunGlobalCallbacks(c.Request.Context())
+	if err := AssignTaskNumbers(c.Request.Context()); err != nil {
+		logging.WithError(err).Errorf(c.Request.Context(), "Task number assigner failed")
 		c.Writer.WriteHeader(http.StatusInternalServerError)
 	}
 }

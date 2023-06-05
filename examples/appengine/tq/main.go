@@ -145,7 +145,7 @@ func main() {
 				return
 			}
 			// Kick off the chain by enqueuing the starting task.
-			if err = EnqueueCountDown(c.Context, num); err != nil {
+			if err = EnqueueCountDown(c.Request.Context(), num); err != nil {
 				http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 			} else {
 				c.Writer.Write([]byte("OK\n"))

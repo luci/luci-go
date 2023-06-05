@@ -63,13 +63,13 @@ func main() {
 		// bigquery-log-pubsub@ is a part of the PubSub Push subscription config.
 		pusherID := identity.Identity(fmt.Sprintf("user:bigquery-log-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
 		srv.Routes.POST("/internal/pubsub/bigquery-log", oidcMW, func(c *router.Context) {
-			if got := auth.CurrentIdentity(c.Context); got != pusherID {
-				logging.Errorf(c.Context, "Expecting ID token of %q, got %q", pusherID, got)
+			if got := auth.CurrentIdentity(c.Request.Context()); got != pusherID {
+				logging.Errorf(c.Request.Context(), "Expecting ID token of %q, got %q", pusherID, got)
 				c.Writer.WriteHeader(403)
 			} else {
-				err := bqInserter.HandlePubSubPush(c.Context, c.Request.Body)
+				err := bqInserter.HandlePubSubPush(c.Request.Context(), c.Request.Body)
 				if err != nil {
-					logging.Errorf(c.Context, "Failed to process the message: %s", err)
+					logging.Errorf(c.Request.Context(), "Failed to process the message: %s", err)
 					c.Writer.WriteHeader(500)
 				}
 			}
