@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/gce/vmtoken"
+	"go.chromium.org/luci/gce/appengine/rpc/internal/metrics"
 )
 
 // Instances implements instances.InstancesServer.
@@ -177,6 +178,7 @@ func getByHostname(c context.Context, hostname string) (*instances.Instance, err
 		return nil, errors.Annotate(err, "failed to fetch VM").Err()
 	case len(vms) == 0:
 		if vmtoken.Has(c) {
+			metrics.UpdateUntrackedGets(c, hostname)
 			logging.Warningf(c, "no VMs found by hostname %q", hostname)
 			return nil, status.Errorf(codes.PermissionDenied, "unauthorized user")
 		}
