@@ -53,6 +53,7 @@ import { ClusterContext } from '../../cluster_context';
 import FailuresTableFilter from './failures_table_filter/failures_table_filter';
 import FailuresTableGroup from './failures_table_group/failures_table_group';
 import FailuresTableHead from './failures_table_head/failures_table_head';
+import { useSelectedVariantGroupsParam } from './hooks';
 
 interface Props {
   // The name of the tab.
@@ -76,7 +77,8 @@ const FailuresTable = ({
 
   const [failureFilter, setFailureFilter] = useState<FailureFilter>(defaultFailureFilter);
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>(defaultImpactFilter);
-  const [selectedVariantGroups, setSelectedVariantGroups] = useState<string[]>([]);
+  // TODO: This should be read from the URL instead.
+  const [selectedVariantGroups, setSelectedVariantGroups] = useSelectedVariantGroupsParam(variantGroups.map(g => g.key));
 
   const [sortMetric, setCurrentSortMetric] = useState<MetricName>('latestFailureTime');
   const [isAscending, setIsAscending] = useState(false);
@@ -100,7 +102,8 @@ const FailuresTable = ({
 
   useEffect( () => {
     if (failures) {
-      setVariantGroups(countDistictVariantValues(failures));
+      const groups = countDistictVariantValues(failures);
+      setVariantGroups(groups);
     }
   }, [failures]);
 
@@ -126,7 +129,12 @@ const FailuresTable = ({
       variantGroup.isSelected = selectedVariantGroups.includes(variantGroup.key);
     });
     setVariantGroups(variantGroupsClone);
-  }, [selectedVariantGroups]);
+  },
+  // We use the length rather than the array for the dependency here, as the
+  // object changes on every render leading this function to be executed every
+  // render.  Since the UI only allows adding or removing selections and not
+  // replacing them, the length will detect all modifications.
+  [selectedVariantGroups.length]);
 
   const groupCountAndSortFailures = () => {
     if (failures) {
@@ -146,7 +154,7 @@ const FailuresTable = ({
 
   const handleVariantsChange = (event: SelectChangeEvent<typeof selectedVariantGroups>) => {
     const value = event.target.value;
-    setSelectedVariantGroups(typeof value === 'string' ? value.split(',') : value);
+    setSelectedVariantGroups(typeof value === 'string' ? value.split(',') : value, true);
   };
 
   const toggleSort = (metric: MetricName) => {

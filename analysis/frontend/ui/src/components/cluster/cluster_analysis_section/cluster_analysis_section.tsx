@@ -17,7 +17,7 @@ import {
 } from 'react';
 import {
   useLocation,
-  useNavigate,
+  useSearchParams,
 } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
@@ -33,26 +33,41 @@ import ExonerationsTab from '@/components/cluster/cluster_analysis_section/exone
 
 import { ClusterContext } from '../cluster_context';
 
+
+
 const ClusterAnalysisSection = () => {
   const {
     project,
   } = useContext(ClusterContext);
   const location = useLocation();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
-    navigate({ hash: '#' + newValue }, { replace: true });
+  const handleTabChange = (newValue: string) => {
+    setSearchParams(params => {
+      params.set('tab', newValue);
+      return params;
+    }, {replace: true});
   };
 
   const exonerationsAvailable = project == 'chromium' || project == 'chrome' || project == 'chromeos';
 
-  let value = location.hash;
-  if (value.length > 0) {
-    // Cut off the leading '#'.
-    value = value.slice(1);
+  const validValues = ['overview', 'recent-failures']
+  if (exonerationsAvailable) {
+    validValues.push('exonerations');
   }
-  if (value != 'overview' && value != 'recent-failures' && (!exonerationsAvailable || value != 'exonerations')) {
-    // Default to a tab we know.
+
+  // Handle legacy URLs that used hash instead of search params.
+  let hashValue = location.hash;
+  if (hashValue.length > 0) {
+    // Cut off the leading '#'.
+    hashValue = hashValue.slice(1);
+  }
+  if(validValues.indexOf(hashValue) != -1) {
+    handleTabChange(hashValue);
+  }
+
+  let value = searchParams.get('tab');
+  if (!value || validValues.indexOf(value) == -1) {
     value = 'overview';
   }
 
@@ -65,7 +80,7 @@ const ClusterAnalysisSection = () => {
       <Container maxWidth={false}>
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <TabList value={value} onChange={handleTabChange}>
+            <TabList value={value} onChange={(_, newValue) => handleTabChange(newValue)}>
               <Tab label='Overview' value='overview' />
               <Tab label='Recent Failures' value='recent-failures' />
               {
