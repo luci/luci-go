@@ -92,20 +92,20 @@ func (ValidationResponseMessage_Severity) EnumDescriptor() ([]byte, []int) {
 }
 
 // Severity of a validation response message.
-type ValidateConfigResponse_Severity int32
+type ValidationResult_Severity int32
 
 const (
-	ValidateConfigResponse_UNKNOWN  ValidateConfigResponse_Severity = 0
-	ValidateConfigResponse_DEBUG    ValidateConfigResponse_Severity = 10
-	ValidateConfigResponse_INFO     ValidateConfigResponse_Severity = 20
-	ValidateConfigResponse_WARNING  ValidateConfigResponse_Severity = 30
-	ValidateConfigResponse_ERROR    ValidateConfigResponse_Severity = 40
-	ValidateConfigResponse_CRITICAL ValidateConfigResponse_Severity = 50
+	ValidationResult_UNKNOWN  ValidationResult_Severity = 0
+	ValidationResult_DEBUG    ValidationResult_Severity = 10
+	ValidationResult_INFO     ValidationResult_Severity = 20
+	ValidationResult_WARNING  ValidationResult_Severity = 30
+	ValidationResult_ERROR    ValidationResult_Severity = 40
+	ValidationResult_CRITICAL ValidationResult_Severity = 50
 )
 
-// Enum value maps for ValidateConfigResponse_Severity.
+// Enum value maps for ValidationResult_Severity.
 var (
-	ValidateConfigResponse_Severity_name = map[int32]string{
+	ValidationResult_Severity_name = map[int32]string{
 		0:  "UNKNOWN",
 		10: "DEBUG",
 		20: "INFO",
@@ -113,7 +113,7 @@ var (
 		40: "ERROR",
 		50: "CRITICAL",
 	}
-	ValidateConfigResponse_Severity_value = map[string]int32{
+	ValidationResult_Severity_value = map[string]int32{
 		"UNKNOWN":  0,
 		"DEBUG":    10,
 		"INFO":     20,
@@ -123,30 +123,30 @@ var (
 	}
 )
 
-func (x ValidateConfigResponse_Severity) Enum() *ValidateConfigResponse_Severity {
-	p := new(ValidateConfigResponse_Severity)
+func (x ValidationResult_Severity) Enum() *ValidationResult_Severity {
+	p := new(ValidationResult_Severity)
 	*p = x
 	return p
 }
 
-func (x ValidateConfigResponse_Severity) String() string {
+func (x ValidationResult_Severity) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ValidateConfigResponse_Severity) Descriptor() protoreflect.EnumDescriptor {
+func (ValidationResult_Severity) Descriptor() protoreflect.EnumDescriptor {
 	return file_go_chromium_org_luci_common_proto_config_service_config_proto_enumTypes[1].Descriptor()
 }
 
-func (ValidateConfigResponse_Severity) Type() protoreflect.EnumType {
+func (ValidationResult_Severity) Type() protoreflect.EnumType {
 	return &file_go_chromium_org_luci_common_proto_config_service_config_proto_enumTypes[1]
 }
 
-func (x ValidateConfigResponse_Severity) Number() protoreflect.EnumNumber {
+func (x ValidationResult_Severity) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ValidateConfigResponse_Severity.Descriptor instead.
-func (ValidateConfigResponse_Severity) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ValidationResult_Severity.Descriptor instead.
+func (ValidationResult_Severity) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_config_service_config_proto_rawDescGZIP(), []int{18, 0}
 }
 
@@ -1391,20 +1391,20 @@ func (x *ServiceMetadata) GetConfigPatterns() []*ConfigPattern {
 	return nil
 }
 
-// ValidateConfigRequest is the request to ValidateConfig rpc.
-type ValidateConfigRequest struct {
+// ValidateConfigsRequest is the request to ValidateConfigs rpc.
+type ValidateConfigsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// Config set of the config files to validate.
 	ConfigSet string `protobuf:"bytes,1,opt,name=config_set,json=configSet,proto3" json:"config_set,omitempty"`
-	// Files to validate.
-	Files *ValidateConfigRequest_Files `protobuf:"bytes,2,opt,name=files,proto3" json:"files,omitempty"`
+	// Config files to validate.
+	Files *ValidateConfigsRequest_Files `protobuf:"bytes,2,opt,name=files,proto3" json:"files,omitempty"`
 }
 
-func (x *ValidateConfigRequest) Reset() {
-	*x = ValidateConfigRequest{}
+func (x *ValidateConfigsRequest) Reset() {
+	*x = ValidateConfigsRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1412,13 +1412,13 @@ func (x *ValidateConfigRequest) Reset() {
 	}
 }
 
-func (x *ValidateConfigRequest) String() string {
+func (x *ValidateConfigsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ValidateConfigRequest) ProtoMessage() {}
+func (*ValidateConfigsRequest) ProtoMessage() {}
 
-func (x *ValidateConfigRequest) ProtoReflect() protoreflect.Message {
+func (x *ValidateConfigsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1430,38 +1430,38 @@ func (x *ValidateConfigRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ValidateConfigRequest.ProtoReflect.Descriptor instead.
-func (*ValidateConfigRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ValidateConfigsRequest.ProtoReflect.Descriptor instead.
+func (*ValidateConfigsRequest) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_config_service_config_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *ValidateConfigRequest) GetConfigSet() string {
+func (x *ValidateConfigsRequest) GetConfigSet() string {
 	if x != nil {
 		return x.ConfigSet
 	}
 	return ""
 }
 
-func (x *ValidateConfigRequest) GetFiles() *ValidateConfigRequest_Files {
+func (x *ValidateConfigsRequest) GetFiles() *ValidateConfigsRequest_Files {
 	if x != nil {
 		return x.Files
 	}
 	return nil
 }
 
-// ValidateConfigResponse is the response to ValidateConfig rpc.
-type ValidateConfigResponse struct {
+// ValidationResult is the result of validating configs.
+type ValidationResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// Errors, warnings and other information found during validation.
 	// If at least one error is found, the config is considered invalid.
-	Messages []*ValidateConfigResponse_Message `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
+	Messages []*ValidationResult_Message `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
 }
 
-func (x *ValidateConfigResponse) Reset() {
-	*x = ValidateConfigResponse{}
+func (x *ValidationResult) Reset() {
+	*x = ValidationResult{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1469,13 +1469,13 @@ func (x *ValidateConfigResponse) Reset() {
 	}
 }
 
-func (x *ValidateConfigResponse) String() string {
+func (x *ValidationResult) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ValidateConfigResponse) ProtoMessage() {}
+func (*ValidationResult) ProtoMessage() {}
 
-func (x *ValidateConfigResponse) ProtoReflect() protoreflect.Message {
+func (x *ValidationResult) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1487,12 +1487,12 @@ func (x *ValidateConfigResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ValidateConfigResponse.ProtoReflect.Descriptor instead.
-func (*ValidateConfigResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ValidationResult.ProtoReflect.Descriptor instead.
+func (*ValidationResult) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_config_service_config_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *ValidateConfigResponse) GetMessages() []*ValidateConfigResponse_Message {
+func (x *ValidationResult) GetMessages() []*ValidationResult_Message {
 	if x != nil {
 		return x.Messages
 	}
@@ -1760,16 +1760,16 @@ func (x *ValidationResponseMessage_Message) GetText() string {
 	return ""
 }
 
-type ValidateConfigRequest_Files struct {
+type ValidateConfigsRequest_Files struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Files []*ValidateConfigRequest_File `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	Files []*ValidateConfigsRequest_File `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
 }
 
-func (x *ValidateConfigRequest_Files) Reset() {
-	*x = ValidateConfigRequest_Files{}
+func (x *ValidateConfigsRequest_Files) Reset() {
+	*x = ValidateConfigsRequest_Files{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1777,13 +1777,13 @@ func (x *ValidateConfigRequest_Files) Reset() {
 	}
 }
 
-func (x *ValidateConfigRequest_Files) String() string {
+func (x *ValidateConfigsRequest_Files) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ValidateConfigRequest_Files) ProtoMessage() {}
+func (*ValidateConfigsRequest_Files) ProtoMessage() {}
 
-func (x *ValidateConfigRequest_Files) ProtoReflect() protoreflect.Message {
+func (x *ValidateConfigsRequest_Files) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1795,12 +1795,12 @@ func (x *ValidateConfigRequest_Files) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ValidateConfigRequest_Files.ProtoReflect.Descriptor instead.
-func (*ValidateConfigRequest_Files) Descriptor() ([]byte, []int) {
+// Deprecated: Use ValidateConfigsRequest_Files.ProtoReflect.Descriptor instead.
+func (*ValidateConfigsRequest_Files) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_config_service_config_proto_rawDescGZIP(), []int{17, 0}
 }
 
-func (x *ValidateConfigRequest_Files) GetFiles() []*ValidateConfigRequest_File {
+func (x *ValidateConfigsRequest_Files) GetFiles() []*ValidateConfigsRequest_File {
 	if x != nil {
 		return x.Files
 	}
@@ -1808,7 +1808,7 @@ func (x *ValidateConfigRequest_Files) GetFiles() []*ValidateConfigRequest_File {
 }
 
 // File represents a config file to validate.
-type ValidateConfigRequest_File struct {
+type ValidateConfigsRequest_File struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1817,13 +1817,13 @@ type ValidateConfigRequest_File struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Types that are assignable to Content:
 	//
-	//	*ValidateConfigRequest_File_RawContent
-	//	*ValidateConfigRequest_File_SignedUrl
-	Content isValidateConfigRequest_File_Content `protobuf_oneof:"content"`
+	//	*ValidateConfigsRequest_File_RawContent
+	//	*ValidateConfigsRequest_File_SignedUrl
+	Content isValidateConfigsRequest_File_Content `protobuf_oneof:"content"`
 }
 
-func (x *ValidateConfigRequest_File) Reset() {
-	*x = ValidateConfigRequest_File{}
+func (x *ValidateConfigsRequest_File) Reset() {
+	*x = ValidateConfigsRequest_File{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1831,13 +1831,13 @@ func (x *ValidateConfigRequest_File) Reset() {
 	}
 }
 
-func (x *ValidateConfigRequest_File) String() string {
+func (x *ValidateConfigsRequest_File) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ValidateConfigRequest_File) ProtoMessage() {}
+func (*ValidateConfigsRequest_File) ProtoMessage() {}
 
-func (x *ValidateConfigRequest_File) ProtoReflect() protoreflect.Message {
+func (x *ValidateConfigsRequest_File) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1849,49 +1849,49 @@ func (x *ValidateConfigRequest_File) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ValidateConfigRequest_File.ProtoReflect.Descriptor instead.
-func (*ValidateConfigRequest_File) Descriptor() ([]byte, []int) {
+// Deprecated: Use ValidateConfigsRequest_File.ProtoReflect.Descriptor instead.
+func (*ValidateConfigsRequest_File) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_config_service_config_proto_rawDescGZIP(), []int{17, 1}
 }
 
-func (x *ValidateConfigRequest_File) GetPath() string {
+func (x *ValidateConfigsRequest_File) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (m *ValidateConfigRequest_File) GetContent() isValidateConfigRequest_File_Content {
+func (m *ValidateConfigsRequest_File) GetContent() isValidateConfigsRequest_File_Content {
 	if m != nil {
 		return m.Content
 	}
 	return nil
 }
 
-func (x *ValidateConfigRequest_File) GetRawContent() []byte {
-	if x, ok := x.GetContent().(*ValidateConfigRequest_File_RawContent); ok {
+func (x *ValidateConfigsRequest_File) GetRawContent() []byte {
+	if x, ok := x.GetContent().(*ValidateConfigsRequest_File_RawContent); ok {
 		return x.RawContent
 	}
 	return nil
 }
 
-func (x *ValidateConfigRequest_File) GetSignedUrl() string {
-	if x, ok := x.GetContent().(*ValidateConfigRequest_File_SignedUrl); ok {
+func (x *ValidateConfigsRequest_File) GetSignedUrl() string {
+	if x, ok := x.GetContent().(*ValidateConfigsRequest_File_SignedUrl); ok {
 		return x.SignedUrl
 	}
 	return ""
 }
 
-type isValidateConfigRequest_File_Content interface {
-	isValidateConfigRequest_File_Content()
+type isValidateConfigsRequest_File_Content interface {
+	isValidateConfigsRequest_File_Content()
 }
 
-type ValidateConfigRequest_File_RawContent struct {
+type ValidateConfigsRequest_File_RawContent struct {
 	// RawContent is the raw byte content of the config file.
 	RawContent []byte `protobuf:"bytes,2,opt,name=raw_content,json=rawContent,proto3,oneof"`
 }
 
-type ValidateConfigRequest_File_SignedUrl struct {
+type ValidateConfigsRequest_File_SignedUrl struct {
 	// SignedURL is a GCS singed url to download full config content.
 	//
 	// The service MUST provide "Accept-Encoding: gzip" header to minimize
@@ -1903,12 +1903,12 @@ type ValidateConfigRequest_File_SignedUrl struct {
 	SignedUrl string `protobuf:"bytes,3,opt,name=signed_url,json=signedUrl,proto3,oneof"`
 }
 
-func (*ValidateConfigRequest_File_RawContent) isValidateConfigRequest_File_Content() {}
+func (*ValidateConfigsRequest_File_RawContent) isValidateConfigsRequest_File_Content() {}
 
-func (*ValidateConfigRequest_File_SignedUrl) isValidateConfigRequest_File_Content() {}
+func (*ValidateConfigsRequest_File_SignedUrl) isValidateConfigsRequest_File_Content() {}
 
 // A message that explains why a config is valid or not.
-type ValidateConfigResponse_Message struct {
+type ValidationResult_Message struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1916,13 +1916,13 @@ type ValidateConfigResponse_Message struct {
 	// Path of the config file that has an error.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// If an error, a config is considered invalid. Defaults to INFO.
-	Severity ValidateConfigResponse_Severity `protobuf:"varint,2,opt,name=severity,proto3,enum=config.ValidateConfigResponse_Severity" json:"severity,omitempty"`
+	Severity ValidationResult_Severity `protobuf:"varint,2,opt,name=severity,proto3,enum=config.ValidationResult_Severity" json:"severity,omitempty"`
 	// Textual representation of the message.
 	Text string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 }
 
-func (x *ValidateConfigResponse_Message) Reset() {
-	*x = ValidateConfigResponse_Message{}
+func (x *ValidationResult_Message) Reset() {
+	*x = ValidationResult_Message{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1930,13 +1930,13 @@ func (x *ValidateConfigResponse_Message) Reset() {
 	}
 }
 
-func (x *ValidateConfigResponse_Message) String() string {
+func (x *ValidationResult_Message) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ValidateConfigResponse_Message) ProtoMessage() {}
+func (*ValidationResult_Message) ProtoMessage() {}
 
-func (x *ValidateConfigResponse_Message) ProtoReflect() protoreflect.Message {
+func (x *ValidationResult_Message) ProtoReflect() protoreflect.Message {
 	mi := &file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1948,26 +1948,26 @@ func (x *ValidateConfigResponse_Message) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ValidateConfigResponse_Message.ProtoReflect.Descriptor instead.
-func (*ValidateConfigResponse_Message) Descriptor() ([]byte, []int) {
+// Deprecated: Use ValidationResult_Message.ProtoReflect.Descriptor instead.
+func (*ValidationResult_Message) Descriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_common_proto_config_service_config_proto_rawDescGZIP(), []int{18, 0}
 }
 
-func (x *ValidateConfigResponse_Message) GetPath() string {
+func (x *ValidationResult_Message) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *ValidateConfigResponse_Message) GetSeverity() ValidateConfigResponse_Severity {
+func (x *ValidationResult_Message) GetSeverity() ValidationResult_Severity {
 	if x != nil {
 		return x.Severity
 	}
-	return ValidateConfigResponse_UNKNOWN
+	return ValidationResult_UNKNOWN
 }
 
-func (x *ValidateConfigResponse_Message) GetText() string {
+func (x *ValidationResult_Message) GetText() string {
 	if x != nil {
 		return x.Text
 	}
@@ -2153,57 +2153,56 @@ var file_go_chromium_org_luci_common_proto_config_service_config_proto_rawDesc =
 	0x70, 0x61, 0x74, 0x74, 0x65, 0x72, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x15,
 	0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x50, 0x61,
 	0x74, 0x74, 0x65, 0x72, 0x6e, 0x52, 0x0e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x50, 0x61, 0x74,
-	0x74, 0x65, 0x72, 0x6e, 0x73, 0x22, 0x9f, 0x02, 0x0a, 0x15, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61,
-	0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
-	0x1d, 0x0a, 0x0a, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x73, 0x65, 0x74, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x09, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x53, 0x65, 0x74, 0x12, 0x39,
-	0x0a, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e,
-	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x43,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x46, 0x69, 0x6c,
-	0x65, 0x73, 0x52, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x1a, 0x41, 0x0a, 0x05, 0x46, 0x69, 0x6c,
-	0x65, 0x73, 0x12, 0x38, 0x0a, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x22, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64,
-	0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x2e, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x1a, 0x69, 0x0a, 0x04,
-	0x46, 0x69, 0x6c, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x21, 0x0a, 0x0b, 0x72, 0x61, 0x77, 0x5f,
-	0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x48, 0x00, 0x52,
-	0x0a, 0x72, 0x61, 0x77, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x1f, 0x0a, 0x0a, 0x73,
-	0x69, 0x67, 0x6e, 0x65, 0x64, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x48,
-	0x00, 0x52, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x55, 0x72, 0x6c, 0x42, 0x09, 0x0a, 0x07,
-	0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22, 0xa8, 0x02, 0x0a, 0x16, 0x56, 0x61, 0x6c, 0x69,
-	0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x42, 0x0a, 0x08, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61,
-	0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x08, 0x6d, 0x65,
-	0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x1a, 0x76, 0x0a, 0x07, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
-	0x65, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74,
-	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x27, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2e, 0x53, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79,
-	0x52, 0x08, 0x73, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x65,
-	0x78, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x65, 0x78, 0x74, 0x22, 0x52,
-	0x0a, 0x08, 0x53, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e,
-	0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x09, 0x0a, 0x05, 0x44, 0x45, 0x42, 0x55, 0x47,
-	0x10, 0x0a, 0x12, 0x08, 0x0a, 0x04, 0x49, 0x4e, 0x46, 0x4f, 0x10, 0x14, 0x12, 0x0b, 0x0a, 0x07,
-	0x57, 0x41, 0x52, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x1e, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x52, 0x52,
-	0x4f, 0x52, 0x10, 0x28, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x52, 0x49, 0x54, 0x49, 0x43, 0x41, 0x4c,
-	0x10, 0x32, 0x32, 0x9f, 0x01, 0x0a, 0x08, 0x43, 0x6f, 0x6e, 0x73, 0x75, 0x6d, 0x65, 0x72, 0x12,
-	0x40, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x16,
-	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
-	0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x17, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22,
-	0x00, 0x12, 0x51, 0x0a, 0x0e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e,
-	0x66, 0x69, 0x67, 0x12, 0x1d, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c,
-	0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c, 0x69,
-	0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x00, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d,
-	0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x6f, 0x6d,
-	0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x65, 0x72, 0x6e, 0x73, 0x22, 0xa2, 0x02, 0x0a, 0x16, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61,
+	0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x12, 0x1d, 0x0a, 0x0a, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x73, 0x65, 0x74, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x53, 0x65, 0x74, 0x12,
+	0x3a, 0x0a, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24,
+	0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x46,
+	0x69, 0x6c, 0x65, 0x73, 0x52, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x1a, 0x42, 0x0a, 0x05, 0x46,
+	0x69, 0x6c, 0x65, 0x73, 0x12, 0x39, 0x0a, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c,
+	0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x1a,
+	0x69, 0x0a, 0x04, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x21, 0x0a, 0x0b, 0x72,
+	0x61, 0x77, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c,
+	0x48, 0x00, 0x52, 0x0a, 0x72, 0x61, 0x77, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x12, 0x1f,
+	0x0a, 0x0a, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x48, 0x00, 0x52, 0x09, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x55, 0x72, 0x6c, 0x42,
+	0x09, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22, 0x96, 0x02, 0x0a, 0x10, 0x56,
+	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12,
+	0x3c, 0x0a, 0x08, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x20, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x2e, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x52, 0x08, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x1a, 0x70, 0x0a,
+	0x07, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x61, 0x74, 0x68,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12, 0x3d, 0x0a, 0x08,
+	0x73, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x21,
+	0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x2e, 0x53, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74,
+	0x79, 0x52, 0x08, 0x73, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x74,
+	0x65, 0x78, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x65, 0x78, 0x74, 0x22,
+	0x52, 0x0a, 0x08, 0x53, 0x65, 0x76, 0x65, 0x72, 0x69, 0x74, 0x79, 0x12, 0x0b, 0x0a, 0x07, 0x55,
+	0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x09, 0x0a, 0x05, 0x44, 0x45, 0x42, 0x55,
+	0x47, 0x10, 0x0a, 0x12, 0x08, 0x0a, 0x04, 0x49, 0x4e, 0x46, 0x4f, 0x10, 0x14, 0x12, 0x0b, 0x0a,
+	0x07, 0x57, 0x41, 0x52, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x1e, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x52,
+	0x52, 0x4f, 0x52, 0x10, 0x28, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x52, 0x49, 0x54, 0x49, 0x43, 0x41,
+	0x4c, 0x10, 0x32, 0x32, 0x9b, 0x01, 0x0a, 0x08, 0x43, 0x6f, 0x6e, 0x73, 0x75, 0x6d, 0x65, 0x72,
+	0x12, 0x40, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12,
+	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x17, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0x22, 0x00, 0x12, 0x4d, 0x0a, 0x0f, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x73, 0x12, 0x1e, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56,
+	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x56,
+	0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22,
+	0x00, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d,
+	0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e,
+	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2222,7 +2221,7 @@ var file_go_chromium_org_luci_common_proto_config_service_config_proto_enumTypes
 var file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_go_chromium_org_luci_common_proto_config_service_config_proto_goTypes = []interface{}{
 	(ValidationResponseMessage_Severity)(0),   // 0: config.ValidationResponseMessage.Severity
-	(ValidateConfigResponse_Severity)(0),      // 1: config.ValidateConfigResponse.Severity
+	(ValidationResult_Severity)(0),            // 1: config.ValidationResult.Severity
 	(*GitilesLocation)(nil),                   // 2: config.GitilesLocation
 	(*IdentityConfig)(nil),                    // 3: config.IdentityConfig
 	(*Location)(nil),                          // 4: config.Location
@@ -2240,15 +2239,15 @@ var file_go_chromium_org_luci_common_proto_config_service_config_proto_goTypes =
 	(*ValidationRequestMessage)(nil),          // 16: config.ValidationRequestMessage
 	(*ValidationResponseMessage)(nil),         // 17: config.ValidationResponseMessage
 	(*ServiceMetadata)(nil),                   // 18: config.ServiceMetadata
-	(*ValidateConfigRequest)(nil),             // 19: config.ValidateConfigRequest
-	(*ValidateConfigResponse)(nil),            // 20: config.ValidateConfigResponse
+	(*ValidateConfigsRequest)(nil),            // 19: config.ValidateConfigsRequest
+	(*ValidationResult)(nil),                  // 20: config.ValidationResult
 	(*Service_JWTAuth)(nil),                   // 21: config.Service.JWTAuth
 	(*ImportCfg_Gitiles)(nil),                 // 22: config.ImportCfg.Gitiles
 	(*SchemasCfg_Schema)(nil),                 // 23: config.SchemasCfg.Schema
 	(*ValidationResponseMessage_Message)(nil), // 24: config.ValidationResponseMessage.Message
-	(*ValidateConfigRequest_Files)(nil),       // 25: config.ValidateConfigRequest.Files
-	(*ValidateConfigRequest_File)(nil),        // 26: config.ValidateConfigRequest.File
-	(*ValidateConfigResponse_Message)(nil),    // 27: config.ValidateConfigResponse.Message
+	(*ValidateConfigsRequest_Files)(nil),      // 25: config.ValidateConfigsRequest.Files
+	(*ValidateConfigsRequest_File)(nil),       // 26: config.ValidateConfigsRequest.File
+	(*ValidationResult_Message)(nil),          // 27: config.ValidationResult.Message
 	(*emptypb.Empty)(nil),                     // 28: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_common_proto_config_service_config_proto_depIdxs = []int32{
@@ -2265,15 +2264,15 @@ var file_go_chromium_org_luci_common_proto_config_service_config_proto_depIdxs =
 	14, // 10: config.Validator.patterns:type_name -> config.ConfigPattern
 	24, // 11: config.ValidationResponseMessage.messages:type_name -> config.ValidationResponseMessage.Message
 	14, // 12: config.ServiceMetadata.config_patterns:type_name -> config.ConfigPattern
-	25, // 13: config.ValidateConfigRequest.files:type_name -> config.ValidateConfigRequest.Files
-	27, // 14: config.ValidateConfigResponse.messages:type_name -> config.ValidateConfigResponse.Message
+	25, // 13: config.ValidateConfigsRequest.files:type_name -> config.ValidateConfigsRequest.Files
+	27, // 14: config.ValidationResult.messages:type_name -> config.ValidationResult.Message
 	0,  // 15: config.ValidationResponseMessage.Message.severity:type_name -> config.ValidationResponseMessage.Severity
-	26, // 16: config.ValidateConfigRequest.Files.files:type_name -> config.ValidateConfigRequest.File
-	1,  // 17: config.ValidateConfigResponse.Message.severity:type_name -> config.ValidateConfigResponse.Severity
+	26, // 16: config.ValidateConfigsRequest.Files.files:type_name -> config.ValidateConfigsRequest.File
+	1,  // 17: config.ValidationResult.Message.severity:type_name -> config.ValidationResult.Severity
 	28, // 18: config.Consumer.GetMetadata:input_type -> google.protobuf.Empty
-	19, // 19: config.Consumer.ValidateConfig:input_type -> config.ValidateConfigRequest
+	19, // 19: config.Consumer.ValidateConfigs:input_type -> config.ValidateConfigsRequest
 	18, // 20: config.Consumer.GetMetadata:output_type -> config.ServiceMetadata
-	20, // 21: config.Consumer.ValidateConfig:output_type -> config.ValidateConfigResponse
+	20, // 21: config.Consumer.ValidateConfigs:output_type -> config.ValidationResult
 	20, // [20:22] is the sub-list for method output_type
 	18, // [18:20] is the sub-list for method input_type
 	18, // [18:18] is the sub-list for extension type_name
@@ -2492,7 +2491,7 @@ func file_go_chromium_org_luci_common_proto_config_service_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ValidateConfigRequest); i {
+			switch v := v.(*ValidateConfigsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2504,7 +2503,7 @@ func file_go_chromium_org_luci_common_proto_config_service_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ValidateConfigResponse); i {
+			switch v := v.(*ValidationResult); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2564,7 +2563,7 @@ func file_go_chromium_org_luci_common_proto_config_service_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ValidateConfigRequest_Files); i {
+			switch v := v.(*ValidateConfigsRequest_Files); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2576,7 +2575,7 @@ func file_go_chromium_org_luci_common_proto_config_service_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ValidateConfigRequest_File); i {
+			switch v := v.(*ValidateConfigsRequest_File); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2588,7 +2587,7 @@ func file_go_chromium_org_luci_common_proto_config_service_config_proto_init() {
 			}
 		}
 		file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ValidateConfigResponse_Message); i {
+			switch v := v.(*ValidationResult_Message); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2607,8 +2606,8 @@ func file_go_chromium_org_luci_common_proto_config_service_config_proto_init() {
 		(*Project_GitilesLocation)(nil),
 	}
 	file_go_chromium_org_luci_common_proto_config_service_config_proto_msgTypes[24].OneofWrappers = []interface{}{
-		(*ValidateConfigRequest_File_RawContent)(nil),
-		(*ValidateConfigRequest_File_SignedUrl)(nil),
+		(*ValidateConfigsRequest_File_RawContent)(nil),
+		(*ValidateConfigsRequest_File_SignedUrl)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -423,8 +423,8 @@ message ValidationResponseMessage {
 service Consumer {
   // GetMetadata returns the service metadata.
   rpc GetMetadata(google.protobuf.Empty) returns(ServiceMetadata) {}
-  // ValidateConfig validates the provided configs within a config set.
-  rpc ValidateConfig(ValidateConfigRequest) returns (ValidateConfigResponse) {};
+  // ValidateConfigs validates the provided configs within a config set.
+  rpc ValidateConfigs(ValidateConfigsRequest) returns (ValidationResult) {};
 }
 
 // ServiceMetadata describes the metadata of a service.
@@ -436,8 +436,8 @@ message ServiceMetadata {
   repeated ConfigPattern config_patterns = 1;
 }
 
-// ValidateConfigRequest is the request to ValidateConfig rpc.
-message ValidateConfigRequest {
+// ValidateConfigsRequest is the request to ValidateConfigs rpc.
+message ValidateConfigsRequest {
   message Files {
     repeated File files = 1;
   }
@@ -461,12 +461,12 @@ message ValidateConfigRequest {
   }
   // Config set of the config files to validate.
   string config_set = 1;
-  // Files to validate.
+  // Config files to validate.
   Files files = 2;
 }
 
-// ValidateConfigResponse is the response to ValidateConfig rpc.
-message ValidateConfigResponse {
+// ValidationResult is the result of validating configs.
+message ValidationResult {
   // Severity of a validation response message.
   enum Severity {
     UNKNOWN = 0;

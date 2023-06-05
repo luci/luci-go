@@ -25,8 +25,8 @@ const _ = grpc.SupportPackageIsVersion7
 type ConsumerClient interface {
 	// GetMetadata returns the service metadata.
 	GetMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ServiceMetadata, error)
-	// ValidateConfig validates the provided configs within a config set.
-	ValidateConfig(ctx context.Context, in *ValidateConfigRequest, opts ...grpc.CallOption) (*ValidateConfigResponse, error)
+	// ValidateConfigs validates the provided configs within a config set.
+	ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*ValidationResult, error)
 }
 
 type consumerClient struct {
@@ -46,9 +46,9 @@ func (c *consumerClient) GetMetadata(ctx context.Context, in *emptypb.Empty, opt
 	return out, nil
 }
 
-func (c *consumerClient) ValidateConfig(ctx context.Context, in *ValidateConfigRequest, opts ...grpc.CallOption) (*ValidateConfigResponse, error) {
-	out := new(ValidateConfigResponse)
-	err := c.cc.Invoke(ctx, "/config.Consumer/ValidateConfig", in, out, opts...)
+func (c *consumerClient) ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*ValidationResult, error) {
+	out := new(ValidationResult)
+	err := c.cc.Invoke(ctx, "/config.Consumer/ValidateConfigs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +61,8 @@ func (c *consumerClient) ValidateConfig(ctx context.Context, in *ValidateConfigR
 type ConsumerServer interface {
 	// GetMetadata returns the service metadata.
 	GetMetadata(context.Context, *emptypb.Empty) (*ServiceMetadata, error)
-	// ValidateConfig validates the provided configs within a config set.
-	ValidateConfig(context.Context, *ValidateConfigRequest) (*ValidateConfigResponse, error)
+	// ValidateConfigs validates the provided configs within a config set.
+	ValidateConfigs(context.Context, *ValidateConfigsRequest) (*ValidationResult, error)
 	mustEmbedUnimplementedConsumerServer()
 }
 
@@ -73,8 +73,8 @@ type UnimplementedConsumerServer struct {
 func (UnimplementedConsumerServer) GetMetadata(context.Context, *emptypb.Empty) (*ServiceMetadata, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMetadata not implemented")
 }
-func (UnimplementedConsumerServer) ValidateConfig(context.Context, *ValidateConfigRequest) (*ValidateConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfig not implemented")
+func (UnimplementedConsumerServer) ValidateConfigs(context.Context, *ValidateConfigsRequest) (*ValidationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfigs not implemented")
 }
 func (UnimplementedConsumerServer) mustEmbedUnimplementedConsumerServer() {}
 
@@ -107,20 +107,20 @@ func _Consumer_GetMetadata_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Consumer_ValidateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ValidateConfigRequest)
+func _Consumer_ValidateConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ValidateConfigsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConsumerServer).ValidateConfig(ctx, in)
+		return srv.(ConsumerServer).ValidateConfigs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/config.Consumer/ValidateConfig",
+		FullMethod: "/config.Consumer/ValidateConfigs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConsumerServer).ValidateConfig(ctx, req.(*ValidateConfigRequest))
+		return srv.(ConsumerServer).ValidateConfigs(ctx, req.(*ValidateConfigsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -137,8 +137,8 @@ var Consumer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Consumer_GetMetadata_Handler,
 		},
 		{
-			MethodName: "ValidateConfig",
-			Handler:    _Consumer_ValidateConfig_Handler,
+			MethodName: "ValidateConfigs",
+			Handler:    _Consumer_ValidateConfigs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

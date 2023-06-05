@@ -95,8 +95,8 @@ func (srv consumerServer) GetMetadata(ctx context.Context, _ *emptypb.Empty) (*c
 	return ret, nil
 }
 
-// ValidateConfig implements config.Consumer.ValidateConfig.
-func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.ValidateConfigRequest) (*config.ValidateConfigResponse, error) {
+// ValidateConfigs implements config.Consumer.ValidateConfigs.
+func (srv consumerServer) ValidateConfigs(ctx context.Context, req *config.ValidateConfigsRequest) (*config.ValidationResult, error) {
 	if err := srv.checkCaller(ctx); err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.Valida
 		return nil, err
 	}
 
-	result := make([][]*config.ValidateConfigResponse_Message, len(req.GetFiles().GetFiles()))
+	result := make([][]*config.ValidationResult_Message, len(req.GetFiles().GetFiles()))
 	eg, ectx := errgroup.WithContext(ctx)
 	eg.SetLimit(8)
 	for i, file := range req.GetFiles().GetFiles() {
@@ -112,9 +112,9 @@ func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.Valida
 		eg.Go(func() error {
 			var content []byte
 			switch file.GetContent().(type) {
-			case *config.ValidateConfigRequest_File_RawContent:
+			case *config.ValidateConfigsRequest_File_RawContent:
 				content = file.GetRawContent()
-			case *config.ValidateConfigRequest_File_SignedUrl:
+			case *config.ValidateConfigsRequest_File_SignedUrl:
 				var err error
 				if content, err = srv.downloadFromSignedURL(ectx, file.GetSignedUrl()); err != nil {
 					return err
@@ -133,7 +133,7 @@ func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.Valida
 	}
 
 	// Flatten the messages
-	ret := &config.ValidateConfigResponse{}
+	ret := &config.ValidationResult{}
 	for _, msgs := range result {
 		ret.Messages = append(ret.Messages, msgs...)
 	}
@@ -161,7 +161,7 @@ func (srv consumerServer) checkCaller(ctx context.Context) error {
 	return status.Errorf(codes.PermissionDenied, "%q is not authorized", caller)
 }
 
-func checkValidateInput(req *config.ValidateConfigRequest) error {
+func checkValidateInput(req *config.ValidateConfigsRequest) error {
 	switch {
 	case req.GetConfigSet() == "":
 		return status.Errorf(codes.InvalidArgument, "must specify the config_set of the file to validate")
@@ -213,37 +213,37 @@ func (srv consumerServer) downloadFromSignedURL(ctx context.Context, url string)
 	}
 }
 
-func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*config.ValidateConfigResponse_Message, error) {
+func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*config.ValidationResult_Message, error) {
 	vc := &validation.Context{Context: ctx}
 	vc.SetFile(path)
 	if err := srv.rules.ValidateConfig(vc, configSet, path, content); err != nil {
 		return nil, err
 	}
 
-	var ret []*config.ValidateConfigResponse_Message
+	var ret []*config.ValidationResult_Message
 	verdict := vc.Finalize()
 	switch verr, ok := verdict.(*validation.Error); {
 	case verdict == nil:
 	case !ok:
-		ret = append(ret, &config.ValidateConfigResponse_Message{
+		ret = append(ret, &config.ValidationResult_Message{
 			Path:     path,
-			Severity: config.ValidateConfigResponse_ERROR,
+			Severity: config.ValidationResult_ERROR,
 			Text:     verdict.Error(),
 		})
 	case verr != nil && len(verr.Errors) > 0:
 		for _, err := range verr.Errors {
 			// validation.Context supports just 2 severities now,
 			// but defensively default to ERROR level in unexpected cases.
-			msgSeverity := config.ValidateConfigResponse_ERROR
+			msgSeverity := config.ValidationResult_ERROR
 			switch severity, ok := validation.SeverityTag.In(err); {
 			case !ok:
 				logging.Errorf(ctx, "unset validation.Severity in %s", err)
 			case severity == validation.Warning:
-				msgSeverity = config.ValidateConfigResponse_WARNING
+				msgSeverity = config.ValidationResult_WARNING
 			case severity != validation.Blocking:
 				logging.Errorf(ctx, "unrecognized validation.Severity %d in %s", severity, err)
 			}
-			ret = append(ret, &config.ValidateConfigResponse_Message{
+			ret = append(ret, &config.ValidationResult_Message{
 				Path:     path,
 				Severity: msgSeverity,
 				Text:     err.Error(),

@@ -285,106 +285,106 @@ func TestConsumerServer(t *testing.T) {
 			Convey("Single file", func() {
 				const path = "some_file.cfg"
 				addRule(path)
-				file := &config.ValidateConfigRequest_File{
+				file := &config.ValidateConfigsRequest_File{
 					Path: path,
 				}
-				req := &config.ValidateConfigRequest{
+				req := &config.ValidateConfigsRequest{
 					ConfigSet: configSet,
-					Files: &config.ValidateConfigRequest_Files{
-						Files: []*config.ValidateConfigRequest_File{
+					Files: &config.ValidateConfigsRequest_Files{
+						Files: []*config.ValidateConfigsRequest_File{
 							file,
 						},
 					},
 				}
 				Convey("Pass validation", func() {
 					Convey("With raw content", func() {
-						file.Content = &config.ValidateConfigRequest_File_RawContent{
+						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("good config"),
 						}
 					})
 					Convey("With signed url", func() {
 						addFileToRemote(path, []byte("good config"), true)
-						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
 					})
-					res, err := srv.ValidateConfig(ctx, req)
+					res, err := srv.ValidateConfigs(ctx, req)
 					So(err, ShouldBeNil)
 					So(res.GetMessages(), ShouldBeEmpty)
 				})
 				Convey("With error", func() {
 					Convey("With raw content", func() {
-						file.Content = &config.ValidateConfigRequest_File_RawContent{
+						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("config with error"),
 						}
 					})
 					Convey("With signed url", func() {
 						addFileToRemote(path, []byte("config with error"), true)
-						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
 					})
-					res, err := srv.ValidateConfig(ctx, req)
+					res, err := srv.ValidateConfigs(ctx, req)
 					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
-						Messages: []*config.ValidateConfigResponse_Message{
+					So(res, ShouldResembleProto, &config.ValidationResult{
+						Messages: []*config.ValidationResult_Message{
 							{
 								Path:     path,
 								Text:     "in \"some_file.cfg\": blocking error",
-								Severity: config.ValidateConfigResponse_ERROR,
+								Severity: config.ValidationResult_ERROR,
 							},
 						},
 					})
 				})
 				Convey("With warning", func() {
 					Convey("With raw content", func() {
-						file.Content = &config.ValidateConfigRequest_File_RawContent{
+						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("config with warning"),
 						}
 					})
 					Convey("With signed url", func() {
 						addFileToRemote(path, []byte("config with warning"), true)
-						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
 					})
-					res, err := srv.ValidateConfig(ctx, req)
+					res, err := srv.ValidateConfigs(ctx, req)
 					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
-						Messages: []*config.ValidateConfigResponse_Message{
+					So(res, ShouldResembleProto, &config.ValidationResult{
+						Messages: []*config.ValidationResult_Message{
 							{
 								Path:     path,
 								Text:     "in \"some_file.cfg\": diagnostic warning",
-								Severity: config.ValidateConfigResponse_WARNING,
+								Severity: config.ValidationResult_WARNING,
 							},
 						},
 					})
 				})
 				Convey("With both", func() {
 					Convey("With raw content", func() {
-						file.Content = &config.ValidateConfigRequest_File_RawContent{
+						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("config with error and warning"),
 						}
 					})
 					Convey("With signed url", func() {
 						addFileToRemote(path, []byte("config with error and warning"), true)
-						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
 					})
-					res, err := srv.ValidateConfig(ctx, req)
+					res, err := srv.ValidateConfigs(ctx, req)
 					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
-						Messages: []*config.ValidateConfigResponse_Message{
+					So(res, ShouldResembleProto, &config.ValidationResult{
+						Messages: []*config.ValidationResult_Message{
 							{
 								Path:     path,
 								Text:     "in \"some_file.cfg\": blocking error",
-								Severity: config.ValidateConfigResponse_ERROR,
+								Severity: config.ValidationResult_ERROR,
 							},
 							{
 								Path:     path,
 								Text:     "in \"some_file.cfg\": diagnostic warning",
-								Severity: config.ValidateConfigResponse_WARNING,
+								Severity: config.ValidationResult_WARNING,
 							},
 						},
 					})
@@ -392,10 +392,10 @@ func TestConsumerServer(t *testing.T) {
 
 				Convey("Signed Url not found", func() {
 					// Without adding the file to remote
-					file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+					file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 						SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 					}
-					res, err := srv.ValidateConfig(ctx, req)
+					res, err := srv.ValidateConfigs(ctx, req)
 					grpcStatus, ok := status.FromError(err)
 					So(ok, ShouldBeTrue)
 					So(grpcStatus, ShouldBeLikeStatus, codes.Internal, "Unknown resource")
@@ -407,54 +407,54 @@ func TestConsumerServer(t *testing.T) {
 				addRule("foo.cfg")
 				addRule("bar.cfg")
 				addRule("baz.cfg")
-				fileFoo := &config.ValidateConfigRequest_File{
+				fileFoo := &config.ValidateConfigsRequest_File{
 					Path: "foo.cfg",
-					Content: &config.ValidateConfigRequest_File_RawContent{
+					Content: &config.ValidateConfigsRequest_File_RawContent{
 						RawContent: []byte("error"),
 					},
 				}
 				addFileToRemote("bar.cfg", []byte("good config"), true)
-				fileBar := &config.ValidateConfigRequest_File{
+				fileBar := &config.ValidateConfigsRequest_File{
 					Path: "bar.cfg",
-					Content: &config.ValidateConfigRequest_File_SignedUrl{
+					Content: &config.ValidateConfigsRequest_File_SignedUrl{
 						SignedUrl: ts.URL + "/bar.cfg",
 					},
 				}
 				addFileToRemote("baz.cfg", []byte("warning and error"), false) // not compressed at rest
-				fileBaz := &config.ValidateConfigRequest_File{
+				fileBaz := &config.ValidateConfigsRequest_File{
 					Path: "baz.cfg",
-					Content: &config.ValidateConfigRequest_File_SignedUrl{
+					Content: &config.ValidateConfigsRequest_File_SignedUrl{
 						SignedUrl: ts.URL + "/baz.cfg",
 					},
 				}
 
-				req := &config.ValidateConfigRequest{
+				req := &config.ValidateConfigsRequest{
 					ConfigSet: configSet,
-					Files: &config.ValidateConfigRequest_Files{
-						Files: []*config.ValidateConfigRequest_File{
+					Files: &config.ValidateConfigsRequest_Files{
+						Files: []*config.ValidateConfigsRequest_File{
 							fileFoo, fileBar, fileBaz,
 						},
 					},
 				}
 
-				res, err := srv.ValidateConfig(ctx, req)
+				res, err := srv.ValidateConfigs(ctx, req)
 				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &config.ValidateConfigResponse{
-					Messages: []*config.ValidateConfigResponse_Message{
+				So(res, ShouldResembleProto, &config.ValidationResult{
+					Messages: []*config.ValidationResult_Message{
 						{
 							Path:     "foo.cfg",
 							Text:     "in \"foo.cfg\": blocking error",
-							Severity: config.ValidateConfigResponse_ERROR,
+							Severity: config.ValidationResult_ERROR,
 						},
 						{
 							Path:     "baz.cfg",
 							Text:     "in \"baz.cfg\": blocking error",
-							Severity: config.ValidateConfigResponse_ERROR,
+							Severity: config.ValidationResult_ERROR,
 						},
 						{
 							Path:     "baz.cfg",
 							Text:     "in \"baz.cfg\": diagnostic warning",
-							Severity: config.ValidateConfigResponse_WARNING,
+							Severity: config.ValidationResult_WARNING,
 						},
 					},
 				})
