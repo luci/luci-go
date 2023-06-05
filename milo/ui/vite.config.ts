@@ -159,7 +159,7 @@ export default defineConfig(({ mode }) => {
           // Serve `/root_sw.js`
           server.middlewares.use((req, _res, next) => {
             if (req.url === '/root_sw.js') {
-              req.url = '/ui/src/service_workers/root_sw.ts';
+              req.url = '/ui/src/common/service_workers/root_sw.ts';
             }
             return next();
           });
