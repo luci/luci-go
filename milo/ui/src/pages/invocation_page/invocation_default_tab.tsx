@@ -16,11 +16,21 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export function InvocationDefaultTab() {
-  const { pathname } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const navigate = useNavigate();
 
-  const newUrl = `${pathname}/test-results`;
-  useEffect(() => navigate(newUrl, { replace: true }));
+  // Remove any trailing '/' so the new URL won't contain '//'.
+  const basePath = pathname.replace(/\/*$/, '');
+  const newUrl = `${basePath}/test-results${search}${hash}`;
+
+  useEffect(
+    () => navigate(newUrl, { replace: true }),
+    // The react-router router implementation could trigger URL related updates
+    // (e.g. search query update) before unmounting the component and
+    // redirecting users to the new component.
+    // This may cause infinite loops if the dependency isn't specified.
+    [navigate, newUrl]
+  );
 
   return <></>;
 }

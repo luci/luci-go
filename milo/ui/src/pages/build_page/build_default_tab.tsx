@@ -12,22 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { untracked } from 'mobx';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useStore } from '@/common/store';
 
-// TODO(weiweilin): add a unit test once jest is set up.
 export function BuildDefaultTab() {
-  const { pathname } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const store = useStore();
   const navigate = useNavigate();
 
   // Remove any trailing '/' so the new URL won't contain '//'.
   const basePath = pathname.replace(/\/*$/, '');
 
-  const newUrl = `${basePath}/${store.userConfig.build.defaultTab}`;
-  useEffect(() => navigate(newUrl, { replace: true }));
+  // This is unnecessary since the component isn't an observer.
+  // But add `untracked` just to be safe.
+  const defaultTab = untracked(() => store.userConfig.build.defaultTab);
+
+  const newUrl = `${basePath}/${defaultTab}${search}${hash}`;
+  useEffect(
+    () => navigate(newUrl, { replace: true }),
+    // The react-router router implementation could trigger URL related updates
+    // (e.g. search query update) before unmounting the component and
+    // redirecting users to the new component.
+    // This may cause infinite loops if the dependency isn't specified.
+    [navigate, newUrl]
+  );
 
   return <></>;
 }
