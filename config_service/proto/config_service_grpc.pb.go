@@ -24,6 +24,16 @@ const _ = grpc.SupportPackageIsVersion7
 type ConfigsClient interface {
 	// Get one configuration.
 	GetConfig(ctx context.Context, in *GetConfigRequest, opts ...grpc.CallOption) (*Config, error)
+	// Validates Configs for a config set.
+	//
+	// The caller needs to passes the manifest of the config directory for
+	// validation. The manifest consists of the file path to each config file
+	// and the SHA256 hash of each config file content. LUCI Config will asks
+	// the caller to upload the config files that it has not seen their hashes
+	// in any previous validation session (up to 3 hours). The caller should
+	// call this rpc again with the same manifest after successfully uploading
+	// all the missing files.
+	ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*ValidateConfigsResponse, error)
 }
 
 type configsClient struct {
@@ -43,12 +53,31 @@ func (c *configsClient) GetConfig(ctx context.Context, in *GetConfigRequest, opt
 	return out, nil
 }
 
+func (c *configsClient) ValidateConfigs(ctx context.Context, in *ValidateConfigsRequest, opts ...grpc.CallOption) (*ValidateConfigsResponse, error) {
+	out := new(ValidateConfigsResponse)
+	err := c.cc.Invoke(ctx, "/config.service.v2.Configs/ValidateConfigs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConfigsServer is the server API for Configs service.
 // All implementations must embed UnimplementedConfigsServer
 // for forward compatibility
 type ConfigsServer interface {
 	// Get one configuration.
 	GetConfig(context.Context, *GetConfigRequest) (*Config, error)
+	// Validates Configs for a config set.
+	//
+	// The caller needs to passes the manifest of the config directory for
+	// validation. The manifest consists of the file path to each config file
+	// and the SHA256 hash of each config file content. LUCI Config will asks
+	// the caller to upload the config files that it has not seen their hashes
+	// in any previous validation session (up to 3 hours). The caller should
+	// call this rpc again with the same manifest after successfully uploading
+	// all the missing files.
+	ValidateConfigs(context.Context, *ValidateConfigsRequest) (*ValidateConfigsResponse, error)
 	mustEmbedUnimplementedConfigsServer()
 }
 
@@ -58,6 +87,9 @@ type UnimplementedConfigsServer struct {
 
 func (UnimplementedConfigsServer) GetConfig(context.Context, *GetConfigRequest) (*Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (UnimplementedConfigsServer) ValidateConfigs(context.Context, *ValidateConfigsRequest) (*ValidateConfigsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateConfigs not implemented")
 }
 func (UnimplementedConfigsServer) mustEmbedUnimplementedConfigsServer() {}
 
@@ -90,6 +122,24 @@ func _Configs_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Configs_ValidateConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ValidateConfigsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigsServer).ValidateConfigs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/config.service.v2.Configs/ValidateConfigs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigsServer).ValidateConfigs(ctx, req.(*ValidateConfigsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Configs_ServiceDesc is the grpc.ServiceDesc for Configs service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +150,10 @@ var Configs_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetConfig",
 			Handler:    _Configs_GetConfig_Handler,
+		},
+		{
+			MethodName: "ValidateConfigs",
+			Handler:    _Configs_ValidateConfigs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

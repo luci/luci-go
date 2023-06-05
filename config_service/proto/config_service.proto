@@ -12,11 +12,23 @@ option go_package = "go.chromium.org/luci/config_service/proto;configpb";
 option py_generic_services = true;
 
 import "google/protobuf/field_mask.proto";
+import "go.chromium.org/luci/common/proto/config/service_config.proto";
+
 
 // Configs Service.
 service Configs {
   // Get one configuration.
   rpc GetConfig(GetConfigRequest) returns (Config) {};
+  // Validates Configs for a config set.
+  //
+  // The caller needs to passes the manifest of the config directory for
+  // validation. The manifest consists of the file path to each config file
+  // and the SHA256 hash of each config file content. LUCI Config will asks
+  // the caller to upload the config files that it has not seen their hashes
+  // in any previous validation session (up to 3 hours). The caller should
+  // call this rpc again with the same manifest after successfully uploading
+  // all the missing files.
+  rpc ValidateConfigs(ValidateConfigsRequest) returns (ValidateConfigsResponse) {};
 }
 
 // A request message for GetConfig rpc.
@@ -64,4 +76,48 @@ message Config {
 
   // Original config file url on Git repo.
   string url = 7;
+}
+
+// ValidateConfigsRequest is the request of ValidateConfigs rpc.
+message ValidateConfigsRequest {
+  message FileHash {
+    // Relative path to the config file in POSIX style.
+    string path = 1;
+    // The SHA256 hash of the config file.
+    string hash = 2;
+  }
+  // ConfigSet to validate against.
+  //
+  // See: https://pkg.go.dev/go.chromium.org/luci/config#Set
+  string config_set = 1;
+  // FileHashes represent the manifest of the config directory.
+  repeated FileHash file_hashes = 2;
+}
+
+
+// ValidateConfigsResponse is the response to ValidateConfigs rpc.
+message ValidateConfigsResponse {
+  message InvalidRequest {
+    message MissingFile {
+      // Relative path to the missing config file in POSIX style.
+      string path = 1;
+      // The url to upload the config.
+      //
+      // The caller SHOULD send compressed config and include header
+      // "Content-Encoding: gzip" header.
+      string signed_url = 2;
+    }
+    // The files that have NOT been seen by LUCI Config and need to be uploaded.
+    repeated MissingFile missing_files = 1;
+    // Files that none of the services can validate and SHOULD not be included
+    // in the ValidateConfigsRequest.
+    repeated string unnecessary_files = 2;
+  }
+  oneof response {
+    // The result of successful config validation.
+    config.ValidationResult result = 1;
+    // InvalidRequest describes the problem in ValidateConfigsRequest and how
+    // to fix them.
+    InvalidRequest invalid_request = 2;
+  }
 }
