@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/klauspost/compress/gzip"
@@ -56,6 +57,20 @@ type consumerServer struct {
 	rules *validation.RuleSet
 
 	getConfigServiceAccountFn func(context.Context) (string, error)
+
+	httpClient *http.Client
+}
+
+func makeConsumerServer(ctx context.Context, rules *validation.RuleSet, getConfigServiceAccountFn func(context.Context) (string, error)) consumerServer {
+	tr, err := auth.GetRPCTransport(ctx, auth.NoAuth)
+	if err != nil {
+		panic(fmt.Errorf("failed to get the RPC transport: %w", err))
+	}
+	return consumerServer{
+		rules:                     rules,
+		getConfigServiceAccountFn: getConfigServiceAccountFn,
+		httpClient:                &http.Client{Transport: tr},
+	}
 }
 
 // GetMetadata implements config.Consumer.GetMetadata.
@@ -95,10 +110,17 @@ func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.Valida
 	for i, file := range req.GetFiles().GetFiles() {
 		i, file := i, file
 		eg.Go(func() error {
-			content := file.GetRawContent()
-			if len(content) == 0 {
-				// TODO(yiwzhang): implement download from gcs.
-				panic("unimplemented")
+			var content []byte
+			switch file.GetContent().(type) {
+			case *config.ValidateConfigRequest_File_RawContent:
+				content = file.GetRawContent()
+			case *config.ValidateConfigRequest_File_SignedUrl:
+				var err error
+				if content, err = srv.downloadFromSignedURL(ectx, file.GetSignedUrl()); err != nil {
+					return err
+				}
+			default:
+				panic(fmt.Errorf("unrecognized file content type: %T", file.GetContent()))
 			}
 			var err error
 			result[i], err = srv.validateOneFile(ectx, req.GetConfigSet(), file.GetPath(), content)
@@ -110,6 +132,7 @@ func (srv consumerServer) ValidateConfig(ctx context.Context, req *config.Valida
 		return nil, status.Errorf(codes.Internal, "encounter internal error: %s", err)
 	}
 
+	// Flatten the messages
 	ret := &config.ValidateConfigResponse{}
 	for _, msgs := range result {
 		ret.Messages = append(ret.Messages, msgs...)
@@ -154,6 +177,40 @@ func checkValidateInput(req *config.ValidateConfigRequest) error {
 		}
 	}
 	return nil
+}
+
+func (srv consumerServer) downloadFromSignedURL(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request to download file: %w", err)
+	}
+	req.Header.Add("Accept-Encoding", "gzip")
+	res, err := srv.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute http request to download file to validate: %w", err)
+	}
+	reader := res.Body
+	defer func() { _ = reader.Close() }()
+	switch {
+	case res.StatusCode != http.StatusOK:
+		body, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+		return nil, fmt.Errorf("failed to download file to validate, got http response code: %d, body: %q", res.StatusCode, string(body))
+	case res.Header.Get("Content-Encoding") == "gzip":
+		reader, err = gzip.NewReader(reader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
+		}
+		fallthrough
+	default:
+		ret, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+		return ret, nil
+	}
 }
 
 func (srv consumerServer) validateOneFile(ctx context.Context, configSet, path string, content []byte) ([]*config.ValidateConfigResponse_Message, error) {

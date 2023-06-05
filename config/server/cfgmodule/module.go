@@ -178,17 +178,18 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 
 	// Register the prpc `config.Consumer` service that handles configs
 	// validation.
-	config.RegisterConsumerServer(host, &consumerServer{
-		rules: m.opts.Rules,
-		getConfigServiceAccountFn: func(ctx context.Context) (string, error) {
+	config.RegisterConsumerServer(host, makeConsumerServer(
+		ctx,
+		m.opts.Rules,
+		func(ctx context.Context) (string, error) {
 			// Grab the expected service account ID of the LUCI Config service we use.
 			info, err := m.configServiceInfo(ctx)
 			if err != nil {
 				return "", err
 			}
 			return info.ServiceAccountName, nil
-		},
-	})
+		}),
+	)
 	return ctx, nil
 }
 

@@ -19,11 +19,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -223,6 +227,60 @@ func TestConsumerServer(t *testing.T) {
 					return nil
 				})
 			}
+			resources := map[string]struct {
+				data    []byte
+				gzipped bool
+			}{}
+
+			addFileToRemote := func(path string, data []byte, compress bool) {
+				if compress {
+					var b bytes.Buffer
+					gw := gzip.NewWriter(&b)
+					_, err := gw.Write(data)
+					So(err, ShouldBeNil)
+					So(gw.Close(), ShouldBeNil)
+					data = b.Bytes()
+				}
+				resources[path] = struct {
+					data    []byte
+					gzipped bool
+				}{
+					data:    data,
+					gzipped: compress,
+				}
+			}
+
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				path := strings.TrimLeft(r.RequestURI, "/")
+				var resp []byte
+				switch resource, ok := resources[path]; {
+				case !ok:
+					http.Error(w, fmt.Sprintf("Unknown resource %q", path), http.StatusNotFound)
+				case r.Header.Get("Accept-Encoding") == "gzip" && resource.gzipped:
+					w.Header().Add("Content-Encoding", "gzip")
+					resp = resource.data
+				case resource.gzipped:
+					gr, err := gzip.NewReader(bytes.NewBuffer(resource.data))
+					if err != nil {
+						http.Error(w, fmt.Sprintf("failed to create reader %s", err), http.StatusInternalServerError)
+						return
+					}
+					defer func() { _ = gr.Close() }()
+					resp, err = io.ReadAll(gr)
+					if err != nil {
+						http.Error(w, fmt.Sprintf("failed to read data %s", err), http.StatusInternalServerError)
+						return
+					}
+				default:
+					resp = resource.data
+				}
+				_, err := w.Write(resp)
+				if err != nil {
+					panic(err)
+				}
+			}))
+			defer ts.Close()
+			srv.httpClient = ts.Client()
 
 			Convey("Single file", func() {
 				const path = "some_file.cfg"
@@ -239,17 +297,33 @@ func TestConsumerServer(t *testing.T) {
 					},
 				}
 				Convey("Pass validation", func() {
-					file.Content = &config.ValidateConfigRequest_File_RawContent{
-						RawContent: []byte("good config"),
-					}
+					Convey("With raw content", func() {
+						file.Content = &config.ValidateConfigRequest_File_RawContent{
+							RawContent: []byte("good config"),
+						}
+					})
+					Convey("With signed url", func() {
+						addFileToRemote(path, []byte("good config"), true)
+						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
+						}
+					})
 					res, err := srv.ValidateConfig(ctx, req)
 					So(err, ShouldBeNil)
 					So(res.GetMessages(), ShouldBeEmpty)
 				})
 				Convey("With error", func() {
-					file.Content = &config.ValidateConfigRequest_File_RawContent{
-						RawContent: []byte("config with error"),
-					}
+					Convey("With raw content", func() {
+						file.Content = &config.ValidateConfigRequest_File_RawContent{
+							RawContent: []byte("config with error"),
+						}
+					})
+					Convey("With signed url", func() {
+						addFileToRemote(path, []byte("config with error"), true)
+						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
+						}
+					})
 					res, err := srv.ValidateConfig(ctx, req)
 					So(err, ShouldBeNil)
 					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
@@ -263,9 +337,17 @@ func TestConsumerServer(t *testing.T) {
 					})
 				})
 				Convey("With warning", func() {
-					file.Content = &config.ValidateConfigRequest_File_RawContent{
-						RawContent: []byte("config with warning"),
-					}
+					Convey("With raw content", func() {
+						file.Content = &config.ValidateConfigRequest_File_RawContent{
+							RawContent: []byte("config with warning"),
+						}
+					})
+					Convey("With signed url", func() {
+						addFileToRemote(path, []byte("config with warning"), true)
+						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
+						}
+					})
 					res, err := srv.ValidateConfig(ctx, req)
 					So(err, ShouldBeNil)
 					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
@@ -279,9 +361,17 @@ func TestConsumerServer(t *testing.T) {
 					})
 				})
 				Convey("With both", func() {
-					file.Content = &config.ValidateConfigRequest_File_RawContent{
-						RawContent: []byte("config with error and warning"),
-					}
+					Convey("With raw content", func() {
+						file.Content = &config.ValidateConfigRequest_File_RawContent{
+							RawContent: []byte("config with error and warning"),
+						}
+					})
+					Convey("With signed url", func() {
+						addFileToRemote(path, []byte("config with error and warning"), true)
+						file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
+						}
+					})
 					res, err := srv.ValidateConfig(ctx, req)
 					So(err, ShouldBeNil)
 					So(res, ShouldResembleProto, &config.ValidateConfigResponse{
@@ -299,6 +389,18 @@ func TestConsumerServer(t *testing.T) {
 						},
 					})
 				})
+
+				Convey("Signed Url not found", func() {
+					// Without adding the file to remote
+					file.Content = &config.ValidateConfigRequest_File_SignedUrl{
+						SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
+					}
+					res, err := srv.ValidateConfig(ctx, req)
+					grpcStatus, ok := status.FromError(err)
+					So(ok, ShouldBeTrue)
+					So(grpcStatus, ShouldBeLikeStatus, codes.Internal, "Unknown resource")
+					So(res, ShouldBeNil)
+				})
 			})
 
 			Convey("Multiple files", func() {
@@ -311,16 +413,18 @@ func TestConsumerServer(t *testing.T) {
 						RawContent: []byte("error"),
 					},
 				}
+				addFileToRemote("bar.cfg", []byte("good config"), true)
 				fileBar := &config.ValidateConfigRequest_File{
 					Path: "bar.cfg",
-					Content: &config.ValidateConfigRequest_File_RawContent{
-						RawContent: []byte("good config"),
+					Content: &config.ValidateConfigRequest_File_SignedUrl{
+						SignedUrl: ts.URL + "/bar.cfg",
 					},
 				}
+				addFileToRemote("baz.cfg", []byte("warning and error"), false) // not compressed at rest
 				fileBaz := &config.ValidateConfigRequest_File{
 					Path: "baz.cfg",
-					Content: &config.ValidateConfigRequest_File_RawContent{
-						RawContent: []byte("warning and error"),
+					Content: &config.ValidateConfigRequest_File_SignedUrl{
+						SignedUrl: ts.URL + "/baz.cfg",
 					},
 				}
 

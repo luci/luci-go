@@ -1894,7 +1894,12 @@ type ValidateConfigRequest_File_RawContent struct {
 type ValidateConfigRequest_File_SignedUrl struct {
 	// SignedURL is a GCS singed url to download full config content.
 	//
-	// Expired in 10 minutes.
+	// The service MUST provide "Accept-Encoding: gzip" header to minimize
+	// the data on the wire and the service should also be able to
+	// handle the uncompressed data based on the presence of
+	// "Content-Encoding" header.
+	// The signed url will expire shortly. Currently LUCI Config sets the
+	// expiration time to 10 min.
 	SignedUrl string `protobuf:"bytes,3,opt,name=signed_url,json=signedUrl,proto3,oneof"`
 }
 

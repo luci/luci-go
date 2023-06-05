@@ -450,7 +450,12 @@ message ValidateConfigRequest {
       bytes raw_content = 2;
       // SignedURL is a GCS singed url to download full config content.
       //
-      // Expired in 10 minutes.
+      // The service MUST provide "Accept-Encoding: gzip" header to minimize
+      // the data on the wire and the service should also be able to
+      // handle the uncompressed data based on the presence of
+      // "Content-Encoding" header.
+      // The signed url will expire shortly. Currently LUCI Config sets the
+      // expiration time to 10 min.
       string signed_url = 3;
     }
   }
@@ -459,7 +464,6 @@ message ValidateConfigRequest {
   // Files to validate.
   Files files = 2;
 }
-
 
 // ValidateConfigResponse is the response to ValidateConfig rpc.
 message ValidateConfigResponse {
