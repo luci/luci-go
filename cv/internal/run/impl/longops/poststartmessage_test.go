@@ -103,19 +103,6 @@ func TestPostStartMessage(t *testing.T) {
 			return cl, rcl
 		}
 
-		clidOf := func(gChange int64) int64 {
-			cl := changelist.MustGobID(gHost, gChange).MustCreateIfNotExists(ctx)
-			return int64(cl.ID)
-		}
-
-		clidsOf := func(gChanges ...int64) []int64 {
-			out := make([]int64, len(gChanges))
-			for i, gChange := range gChanges {
-				out[i] = clidOf(gChange)
-			}
-			return out
-		}
-
 		makeRunWithCLs := func(r *run.Run, cis ...*gerritpb.ChangeInfo) *run.Run {
 			if len(cis) == 0 {
 				panic(fmt.Errorf("at least one CL required"))
@@ -165,7 +152,6 @@ func TestPostStartMessage(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 			So(ct.GFake.GetChange(gHost, gChange1).Info, gf.ShouldLastMessageContain, "CV is trying the patch.\n\nBot data: ")
 		})
 
@@ -174,7 +160,6 @@ func TestPostStartMessage(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 
 			ci := ct.GFake.GetChange(gHost, gChange1).Info
 			So(ci, gf.ShouldLastMessageContain, "CV is trying the patch.\n\nFollow status at:")
@@ -196,7 +181,6 @@ func TestPostStartMessage(t *testing.T) {
 			res, err := op.Do(ctx)
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-			So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1, gChange2))
 
 			for _, gChange := range []int{gChange1, gChange2} {
 				ci := ct.GFake.GetChange(gHost, gChange).Info
@@ -232,7 +216,6 @@ func TestPostStartMessage(t *testing.T) {
 				res, err := opRetry.Do(ctx)
 				So(err, ShouldBeNil)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-				So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 				So(ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), ShouldHaveLength, 2)
 				// And the timestamp isn't entirely right, but that's fine.
 				So(res.GetPostStartMessage().GetTime().AsTime(), ShouldResemble, ct.Clock.Now().UTC().Truncate(time.Second))
@@ -243,7 +226,6 @@ func TestPostStartMessage(t *testing.T) {
 				res, err := opRetry.Do(ctx)
 				So(err, ShouldBeNil)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_SUCCEEDED)
-				So(res.GetPostStartMessage().GetPosted(), ShouldResemble, clidsOf(gChange1))
 				// There should still be exactly 1 message.
 				ci := ct.GFake.GetChange(gHost, gChange1).Info
 				So(ci.GetMessages(), ShouldHaveLength, 1)
@@ -269,10 +251,9 @@ func TestPostStartMessage(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(transient.Tag.In(err), ShouldBeFalse)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
-				p := res.GetPostStartMessage()
-				So(p.GetPermanentErrors(), ShouldHaveLength, 1)
-				So(p.GetPermanentErrors()[clidOf(gChange1)], ShouldContainSubstring, "admin-is-angry-today")
-				So(p.GetPosted(), ShouldResemble, clidsOf(gChange2))
+				So(res.GetPostStartMessage().GetTime(), ShouldBeNil)
+				ci := ct.GFake.GetChange(gHost, gChange1).Info
+				So(ci.GetMessages(), ShouldHaveLength, 0)
 			})
 
 			Convey("Gerrit internal error is deemed transient", func() {
@@ -304,10 +285,11 @@ func TestPostStartMessage(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(transient.Tag.In(err), ShouldBeFalse)
 				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
-				p := res.GetPostStartMessage()
-				So(p.GetPermanentErrors(), ShouldHaveLength, 1)
-				So(p.GetPermanentErrors()[clidOf(gChange1)], ShouldContainSubstring, "admin-is-angry-today")
-				So(p.GetPosted(), ShouldBeEmpty)
+				So(res.GetPostStartMessage().GetTime(), ShouldBeNil)
+				ci1 := ct.GFake.GetChange(gHost, gChange1).Info
+				So(ci1.GetMessages(), ShouldHaveLength, 0)
+				ci2 := ct.GFake.GetChange(gHost, gChange2).Info
+				So(ci2.GetMessages(), ShouldHaveLength, 0)
 			})
 		})
 	})

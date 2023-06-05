@@ -331,8 +331,6 @@ func (m *LongOpCompleted_PostStartMessage) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for PermanentErrors
-
 	if all {
 		switch v := interface{}(m.GetTime()).(type) {
 		case interface{ ValidateAll() error }:

@@ -54,10 +54,8 @@ message LongOpCompleted {
   }
 
   message PostStartMessage {
-    // CLIDs on which the message was posted.
-    repeated int64 posted = 1;
-    // Maps CLID to the permanent error.
-    map<int64, string> permanent_errors = 2;
+    reserved 1, 2;
+    reserved "posted", "permanent_errors";
     // Approximate time when CV became certain that the message was posted on
     // the last CL.
     google.protobuf.Timestamp time = 3;

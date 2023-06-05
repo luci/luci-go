@@ -312,14 +312,6 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			// already submitting the CL.
 			rs.Run.Status = run.Status_SUBMITTING
 			result.Status = eventpb.LongOpCompleted_FAILED
-			// The result is set in practice but serves debugging purposes only,
-			// and is ignored by the onCompletedPostStartMessage.
-			result.Result = &eventpb.LongOpCompleted_PostStartMessage_{
-				PostStartMessage: &eventpb.LongOpCompleted_PostStartMessage{
-					PermanentErrors: map[int64]string{1: "Gerrit refused to post the start message"},
-				},
-			}
-
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_SUBMITTING)
@@ -344,13 +336,10 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 
 		Convey("on success, cleans Run's state", func() {
 			result.Status = eventpb.LongOpCompleted_SUCCEEDED
-			// The result is set in practice but serves debugging purposes only,
-			// and is ignored by the onCompletedPostStartMessage.
 			postedAt := ct.Clock.Now().Add(-time.Second)
 			result.Result = &eventpb.LongOpCompleted_PostStartMessage_{
 				PostStartMessage: &eventpb.LongOpCompleted_PostStartMessage{
-					Posted: []int64{1},
-					Time:   timestamppb.New(postedAt),
+					Time: timestamppb.New(postedAt),
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
@@ -364,14 +353,6 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 
 		Convey("on failure, cleans Run's state and record reasons", func() {
 			result.Status = eventpb.LongOpCompleted_FAILED
-			// The result is set in practice but serves debugging purposes only,
-			// and is ignored by the onCompletedPostStartMessage.
-			result.Result = &eventpb.LongOpCompleted_PostStartMessage_{
-				PostStartMessage: &eventpb.LongOpCompleted_PostStartMessage{
-					PermanentErrors: map[int64]string{1: "Gerrit refused to post the start message"},
-					Posted:          []int64{2},
-				},
-			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
 			So(err, ShouldBeNil)
 			So(res.State.Status, ShouldEqual, run.Status_RUNNING)

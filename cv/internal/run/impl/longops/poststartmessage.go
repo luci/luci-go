@@ -108,34 +108,31 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 			PostStartMessage: psm,
 		},
 	}
-	var firstError error
-	for i, rcl := range op.rcls {
-		switch err := errs[i]; {
+	var firstTE, firstPE error
+	for i, err := range errs {
+		switch {
 		case err == nil:
-			psm.Posted = append(psm.Posted, int64(rcl.ID))
 		case errors.Unwrap(err) == errCancelHonored:
 			result.Status = eventpb.LongOpCompleted_CANCELLED
-			errs[i] = nil
-		case !transient.Tag.In(err):
-			if psm.GetPermanentErrors() == nil {
-				psm.PermanentErrors = make(map[int64]string, 1)
-				firstError = err
+		case transient.Tag.In(err):
+			if firstTE == nil {
+				firstTE = err
 			}
-			psm.GetPermanentErrors()[int64(rcl.ID)] = err.Error()
-			logging.Errorf(ctx, "failed to post start message on CL %d %q: %s", rcl.ID, rcl.ExternalID, err)
-		case firstError == nil:
-			// First transient error.
-			firstError = err
+		default:
+			if firstPE == nil {
+				firstPE = err
+			}
+			logging.Errorf(ctx, "failed to post start message on CL %d %q: %s",
+				op.rcls[i].ID, op.rcls[i].ExternalID, err)
 		}
 	}
 
 	switch {
-	case len(psm.GetPermanentErrors()) > 0:
+	case firstPE != nil:
 		result.Status = eventpb.LongOpCompleted_FAILED
-		return result, firstError
-	case firstError != nil:
-		// Must be a transient error, expect a retry.
-		return nil, firstError
+		return result, firstPE
+	case firstTE != nil:
+		return nil, firstTE
 	default:
 		psm.Time = timestamppb.New(op.latestPostedAt)
 		return result, nil
