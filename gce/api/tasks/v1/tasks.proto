@@ -93,8 +93,8 @@ message TerminateBot {
 message AuditProject {
   // The name of the project to audit
   string project = 1;
-  // The GCE region to audit
-  string region = 2;
+  // The GCE zone to audit
+  string zone = 2;
   // Page token to use with the query
   string pageToken = 3;
 }

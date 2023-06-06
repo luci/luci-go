@@ -477,7 +477,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				err := auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 				})
-				So(err, ShouldErrLike, "Region is required")
+				So(err, ShouldErrLike, "Zone is required")
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 		})
@@ -508,7 +508,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				So(err, ShouldBeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Region:  "us-mex-1",
+					Zone:    "us-mex-1",
 				})
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 1)
@@ -546,7 +546,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				So(err, ShouldBeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Region:  "us-mex-1",
+					Zone:    "us-mex-1",
 				})
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 1)
@@ -577,7 +577,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				}
 				err := auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Region:  "us-mex-1",
+					Zone:  "us-mex-1",
 				})
 				So(err, ShouldBeNil)
 				So(count, ShouldEqual, 2)
@@ -610,7 +610,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				}
 				err := auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Region:  "us-mex-1",
+					Zone:  "us-mex-1",
 				})
 				So(count, ShouldEqual, 3)
 				So(err, ShouldBeNil)
@@ -646,7 +646,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				So(err, ShouldBeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Region:  "us-mex-1",
+					Zone:  "us-mex-1",
 				})
 				So(count, ShouldEqual, 2)
 				So(err, ShouldBeNil)
@@ -661,7 +661,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				}
 				err := auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Region:  "us-mex-1",
+					Zone:    "us-mex-1",
 				})
 				So(err, ShouldErrLike, "failed to list")
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
@@ -695,7 +695,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 				}
 				err := auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
-					Region:  "us-mex-1",
+					Zone:  "us-mex-1",
 				})
 				So(count, ShouldEqual, 2)
 				So(err, ShouldBeNil)

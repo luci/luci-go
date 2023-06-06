@@ -17,17 +17,21 @@ package backend
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
+
+	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
+	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -39,7 +43,11 @@ func TestCron(t *testing.T) {
 	Convey("cron", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		c := withDispatcher(memory.Use(context.Background()), dsp)
+		rt := &roundtripper.JSONRoundTripper{}
+		c := context.Background()
+		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
+		So(err, ShouldBeNil)
+		c = withCompute(withDispatcher(memory.Use(c), dsp), gce)
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
@@ -190,17 +198,101 @@ func TestCron(t *testing.T) {
 				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
 
-			Convey("one", func() {
+			Convey("zero", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.ZoneList{
+							Items: []*compute.Zone{},
+						}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
 				err := datastore.Put(c, &model.Project{
 					ID: "id",
 					Config: projects.Config{
 						Project: "gnu-hurd",
-						Region:  []string{"us-mex-1", "us-num-1"},
+					},
+				})
+				So(err, ShouldBeNil)
+				So(auditInstances(c), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+			})
+
+			Convey("one", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.ZoneList{
+							Items: []*compute.Zone{{
+								Name: "us-mex-1",
+							}, {
+								Name: "us-num-1",
+							}},
+						}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := datastore.Put(c, &model.Project{
+					ID: "id",
+					Config: projects.Config{
+						Project: "gnu-hurd",
 					},
 				})
 				So(err, ShouldBeNil)
 				So(auditInstances(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+			})
+
+			Convey("two", func() {
+				count := 0
+				rt.Handler = func(req any) (int, any) {
+					switch count {
+					case 0:
+						count += 1
+						return http.StatusOK, &compute.ZoneList{
+							Items: []*compute.Zone{{
+								Name: "us-mex-1",
+							}, {
+								Name: "us-num-1",
+							}},
+						}
+					case 1:
+						count += 1
+						return http.StatusOK, &compute.ZoneList{
+							Items: []*compute.Zone{{
+								Name: "us-can-2",
+							}},
+						}
+					default:
+						count += 1
+						return http.StatusInternalServerError, nil
+					}
+				}
+				err := datastore.Put(c, &model.Project{
+					ID: "id",
+					Config: projects.Config{
+						Project: "gnu-hurd",
+					},
+				})
+				So(err, ShouldBeNil)
+				err = datastore.Put(c, &model.Project{
+					ID: "id2",
+					Config: projects.Config{
+						Project: "libreboot",
+					},
+				})
+				So(err, ShouldBeNil)
+				So(auditInstances(c), ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
 			})
 		})
 

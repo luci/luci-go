@@ -104,21 +104,31 @@ func manageBotsAsync(c context.Context) error {
 
 // auditInstances schedules an audit task for every project:zone combination
 func auditInstances(c context.Context) error {
-	jobs := make([]*tq.Task, 0)
-	addTask := func(p *model.Project) {
+	var projects []string
+	addProject := func(p *model.Project) {
 		proj := p.Config.GetProject()
-		for _, reg := range p.Config.GetRegion() {
+		projects = append(projects, proj)
+	}
+	q := datastore.NewQuery(model.ProjectKind)
+	if err := datastore.Run(c, q, addProject); err != nil {
+		return errors.Annotate(err, "failed to schedule audits").Err()
+	}
+	jobs := make([]*tq.Task, 0)
+	srv := getCompute(c).Zones
+	for _, proj := range projects {
+		zoneList, err := srv.List(proj).Context(c).Do()
+		if err != nil {
+			logging.Errorf(c, "Failed to list zones for %s. %v", proj, err)
+			continue
+		}
+		for _, zone := range zoneList.Items {
 			jobs = append(jobs, &tq.Task{
 				Payload: &tasks.AuditProject{
 					Project: proj,
-					Region:  reg,
+					Zone:    zone.Name,
 				},
 			})
 		}
-	}
-	q := datastore.NewQuery(model.ProjectKind)
-	if err := datastore.Run(c, q, addTask); err != nil {
-		return errors.Annotate(err, "failed to schedule audits").Err()
 	}
 	if err := getDispatcher(c).AddTask(c, jobs...); err != nil {
 		return errors.Annotate(err, "failed to schedule tasks").Err()

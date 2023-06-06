@@ -281,15 +281,15 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 		return errors.Reason("Unexpected payload type %T", payload).Err()
 	case task.GetProject() == "":
 		return errors.Reason("Project is required").Err()
-	case task.GetRegion() == "":
-		return errors.Reason("Region is required").Err()
+	case task.GetZone() == "":
+		return errors.Reason("Zone is required").Err()
 	}
 	proj := task.GetProject()
-	reg := task.GetRegion()
-	logging.Debugf(c, "Auditing %s in %s", proj, reg)
+	zone := task.GetZone()
+	logging.Debugf(c, "Auditing %s in %s", proj, zone)
 	// List a bunch on instances and validate with the DB
 	srv := getCompute(c).Instances
-	call := srv.List(proj, reg).MaxResults(auditBatchSize)
+	call := srv.List(proj, zone).MaxResults(auditBatchSize)
 	if task.GetPageToken() != "" {
 		// Add the page token if given
 		call = call.PageToken(task.GetPageToken())
@@ -297,9 +297,9 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	op, err := call.Context(c).Do()
 	if err != nil {
 		if gerr, ok := err.(*googleapi.Error); ok {
-			logErrors(c, fmt.Sprintf("%s-%s", proj, reg), gerr)
+			logErrors(c, fmt.Sprintf("%s-%s", proj, zone), gerr)
 		}
-		return errors.Annotate(err, "failed to list  %s-%s", proj, reg).Err()
+		return errors.Annotate(err, "failed to list  %s-%s", proj, zone).Err()
 	}
 
 	// Assign job to handle the next set of instances
@@ -309,7 +309,7 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 			if err := getDispatcher(c).AddTask(c, &tq.Task{
 				Payload: task,
 			}); err != nil {
-				logging.Errorf(c, "Failed to add audit task for %s-%s", task.GetProject(), task.GetRegion())
+				logging.Errorf(c, "Failed to add audit task for %s-%s", task.GetProject(), task.GetZone())
 			}
 		}
 	}(c, task, op.NextPageToken)
@@ -343,14 +343,14 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	for hostname, vm := range hostToVM {
 		if vm == nil {
 			countLeaks += 1
-			logging.Debugf(c, "plugging the instance leak in %s-%s: %s", proj, reg, hostname)
+			logging.Debugf(c, "plugging the instance leak in %s-%s: %s", proj, zone, hostname)
 			/* TODO(b/274688233): Uncomment this once we are sure that
 			* this will not result in an outage. Will use the logs to
 			* determine what instances will be deleted.
 			* -------------------------------------------------------------------------
 			* // Send a delete request for the instance
 			* reqID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("plug-%s", hostname)))
-			* del := srv.Delete(proj, reg, hostname)
+			* del := srv.Delete(proj, zone, hostname)
 			* op, err := del.RequestId(reqID.String()).Context(c).Do()
 			* if err != nil {
 			* 	if gerr, ok := err.(*googleapi.Error); ok {
@@ -377,6 +377,6 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 			* --------------------------------------------------------------------------*/
 		}
 	}
-	metrics.UpdateLeaks(c, countLeaks, proj, reg)
+	metrics.UpdateLeaks(c, countLeaks, proj, zone)
 	return nil
 }

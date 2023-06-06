@@ -27,11 +27,11 @@ var (
 		"The number of instances leaked",
 		nil,
 		field.String("project"),
-		field.String("region"),
+		field.String("zone"),
 	)
 )
 
 // UpdateLeaks sets GCE instance leak metrics.
-func UpdateLeaks(c context.Context, leak int64, project, region string) {
-	leakCount.Set(c, leak, project, region)
+func UpdateLeaks(c context.Context, leak int64, project, zone string) {
+	leakCount.Set(c, leak, project, zone)
 }
