@@ -416,11 +416,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 	Convey(`Analyze batch run analysis got change point`, t, func() {
 		ctx := newContext(t)
 		exporter, client := fakeExporter()
-		// Store some existing data in spanner first.
-		payload := tu.SamplePayload()
-		sourcesMap := tu.SampleSourcesMap(10)
 
-		// Set up the verdicts in spanner.
+		// Store some existing data in spanner first.
+		sourcesMap := tu.SampleSourcesMap(10)
 		positions := make([]int, 2000)
 		total := make([]int, 2000)
 		hasUnexpected := make([]int, 2000)
@@ -458,6 +456,11 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 
+		// Insert a new verdict.
+		payload := tu.SamplePayload()
+		const ingestedVerdictHour = 55
+		payload.PartitionTime = timestamppb.New(time.Unix(ingestedVerdictHour*3600, 0))
+
 		tvs := []*rdbpb.TestVariant{
 			{
 				TestId:      "test_1",
@@ -494,6 +497,22 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 1)
 		tvb = tvbs[0]
+
+		// Setup bucket expectations.
+		// Only statistics for verdicts evicted from the output buffer should be
+		// included in the statistics.
+		var expectedBuckets []*cpb.Statistics_HourBucket
+		for i := 1; i <= 100; i++ {
+			bucket := &cpb.Statistics_HourBucket{
+				Hour:          int64(i),
+				TotalVerdicts: 1,
+			}
+			expectedBuckets = append(expectedBuckets, bucket)
+			if bucket.Hour == ingestedVerdictHour {
+				// Add one for the verdict we just ingested.
+				bucket.TotalVerdicts += 1
+			}
+		}
 
 		// Use diff here to compare both protobuf and non-protobuf.
 		diff := cmp.Diff(tvb, &tvbr.TestVariantBranch{
@@ -550,6 +569,9 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 						},
 					},
 				},
+			},
+			Statistics: &cpb.Statistics{
+				HourlyBuckets: expectedBuckets,
 			},
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")

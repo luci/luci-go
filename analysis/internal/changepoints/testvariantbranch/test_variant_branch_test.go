@@ -255,6 +255,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 					FlakyRuns:    10,
 				},
 			},
+			IsFinalizingSegmentDirty: true,
 			FinalizedSegments: &cpb.Segments{
 				Segments: []*cpb.Segment{
 					{
@@ -274,8 +275,16 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 					},
 				},
 			},
-			IsFinalizingSegmentDirty: true,
 			IsFinalizedSegmentsDirty: true,
+			Statistics: &cpb.Statistics{
+				HourlyBuckets: []*cpb.Statistics_HourBucket{{
+					Hour:               100,
+					UnexpectedVerdicts: 1,
+					FlakyVerdicts:      2,
+					TotalVerdicts:      4,
+				}},
+			},
+			IsStatisticsDirty: true,
 		}
 
 		mutation, err = tvb.ToMutation()
@@ -295,6 +304,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb.InputBuffer.IsColdBufferDirty = false
 		tvb.IsFinalizedSegmentsDirty = false
 		tvb.IsFinalizingSegmentDirty = false
+		tvb.IsStatisticsDirty = false
 
 		// Captures finalizing segment in separate variables.
 		finalizingSegment1 := tvb.FinalizingSegment
@@ -308,7 +318,13 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		tvb.FinalizedSegments = nil
 		tvbs[0].FinalizedSegments = nil
 
-		// Captures finalized segments in separate variables.
+		// Captures statistics in seperate variables.
+		statistics1 := tvb.Statistics
+		statistics2 := tvbs[0].Statistics
+		tvb.Statistics = nil
+		tvbs[0].Statistics = nil
+
+		// Captures source ref in separate variables.
 		sourceRef1 := tvb.SourceRef
 		sourceRef2 := tvbs[0].SourceRef
 		tvb.SourceRef = nil
@@ -317,6 +333,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		So(tvbs[0], ShouldResemble, tvb)
 		So(finalizingSegment1, ShouldResembleProto, finalizingSegment2)
 		So(finalizedSegments1, ShouldResembleProto, finalizedSegments2)
+		So(statistics1, ShouldResembleProto, statistics2)
 		So(sourceRef1, ShouldResembleProto, sourceRef2)
 	})
 }
@@ -456,33 +473,86 @@ func TestInsertToInputBuffer(t *testing.T) {
 func TestUpdateOutputBuffer(t *testing.T) {
 	Convey("No existing finalizing segment", t, func() {
 		tvb := TestVariantBranch{}
-		evictedSegments := []*cpb.Segment{
+		evictedSegments := []inputbuffer.EvictedSegment{
 			{
-				State:         cpb.SegmentState_FINALIZED,
-				StartPosition: 1,
-				EndPosition:   10,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:  10,
-					TotalRuns:     10,
-					TotalVerdicts: 10,
+				Segment: &cpb.Segment{
+					State:         cpb.SegmentState_FINALIZED,
+					StartPosition: 1,
+					EndPosition:   10,
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:  10,
+						TotalRuns:     10,
+						TotalVerdicts: 10,
+					},
+				},
+				Verdicts: []inputbuffer.PositionVerdict{
+					{
+						CommitPosition:   2,
+						Hour:             time.Unix(10*3600, 0),
+						IsSimpleExpected: true,
+					},
 				},
 			},
 			{
-				State:         cpb.SegmentState_FINALIZING,
-				StartPosition: 11,
-				EndPosition:   30,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:  20,
-					TotalRuns:     20,
-					TotalVerdicts: 20,
+				Segment: &cpb.Segment{
+					State:         cpb.SegmentState_FINALIZING,
+					StartPosition: 11,
+					EndPosition:   30,
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:  20,
+						TotalRuns:     20,
+						TotalVerdicts: 20,
+					},
+				},
+				Verdicts: []inputbuffer.PositionVerdict{
+					{
+						CommitPosition:   11,
+						Hour:             time.Unix(11*3600, 0),
+						IsSimpleExpected: true,
+					},
+					{
+						CommitPosition:   12,
+						Hour:             time.Unix((100000-StatisticsRetentionDays*24)*3600, 0),
+						IsSimpleExpected: true,
+					},
+					{
+						CommitPosition:   13,
+						Hour:             time.Unix((100000-StatisticsRetentionDays*24+1)*3600, 0),
+						IsSimpleExpected: true,
+					},
+					{
+						CommitPosition:   11,
+						Hour:             time.Unix(100000*3600, 0),
+						IsSimpleExpected: true,
+					},
 				},
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
-		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
+
 		So(tvb.FinalizingSegment, ShouldNotBeNil)
-		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1])
-		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, evictedSegments[0])
+		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1].Segment)
+		So(tvb.IsFinalizingSegmentDirty, ShouldBeTrue)
+
+		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
+		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, evictedSegments[0].Segment)
+		So(tvb.IsFinalizedSegmentsDirty, ShouldBeTrue)
+
+		So(tvb.Statistics, ShouldResembleProto, &cpb.Statistics{
+			HourlyBuckets: []*cpb.Statistics_HourBucket{
+				// Confirm that buckets for hours 11 and (100000 - StatisticsRetentionDays*24)
+				// are not present due to retention policies.
+				{
+					Hour:          (100000 - StatisticsRetentionDays*24 + 1),
+					TotalVerdicts: 1,
+				},
+				{
+					Hour:          100000,
+					TotalVerdicts: 1,
+				},
+			},
+		})
+		So(tvb.IsStatisticsDirty, ShouldBeTrue)
 	})
 
 	Convey("Combine finalizing segment with finalizing segment", t, func() {
@@ -508,26 +578,32 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*cpb.Segment{
+		evictedSegments := []inputbuffer.EvictedSegment{
 			{
-				State:                        cpb.SegmentState_FINALIZING,
-				StartPosition:                200,
-				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
-				HasStartChangepoint:          false,
-				StartPositionLowerBound_99Th: 190,
-				StartPositionUpperBound_99Th: 210,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:             50,
-					UnexpectedResults:        3,
-					TotalRuns:                40,
-					UnexpectedUnretriedRuns:  5,
-					UnexpectedAfterRetryRuns: 6,
-					FlakyRuns:                7,
-					TotalVerdicts:            20,
-					UnexpectedVerdicts:       3,
-					FlakyVerdicts:            2,
+				Segment: &cpb.Segment{
+
+					State:                        cpb.SegmentState_FINALIZING,
+					StartPosition:                200,
+					StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
+					HasStartChangepoint:          false,
+					StartPositionLowerBound_99Th: 190,
+					StartPositionUpperBound_99Th: 210,
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:             50,
+						UnexpectedResults:        3,
+						TotalRuns:                40,
+						UnexpectedUnretriedRuns:  5,
+						UnexpectedAfterRetryRuns: 6,
+						FlakyRuns:                7,
+						TotalVerdicts:            20,
+						UnexpectedVerdicts:       3,
+						FlakyVerdicts:            2,
+					},
+					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 				},
-				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0))},
+				// Verdicts are not relevant to this test.
+				Verdicts: []inputbuffer.PositionVerdict{},
+			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
 		So(tvb.FinalizedSegments, ShouldBeNil)
@@ -579,44 +655,52 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*cpb.Segment{
+		evictedSegments := []inputbuffer.EvictedSegment{
 			{
-				State:                        cpb.SegmentState_FINALIZED,
-				StartPosition:                200,
-				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
-				HasStartChangepoint:          false,
-				StartPositionLowerBound_99Th: 190,
-				StartPositionUpperBound_99Th: 210,
-				EndPosition:                  400,
-				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:             50,
-					UnexpectedResults:        3,
-					TotalRuns:                40,
-					UnexpectedUnretriedRuns:  5,
-					UnexpectedAfterRetryRuns: 6,
-					FlakyRuns:                7,
-					TotalVerdicts:            20,
-					UnexpectedVerdicts:       3,
-					FlakyVerdicts:            2,
+				Segment: &cpb.Segment{
+					State:                        cpb.SegmentState_FINALIZED,
+					StartPosition:                200,
+					StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
+					HasStartChangepoint:          false,
+					StartPositionLowerBound_99Th: 190,
+					StartPositionUpperBound_99Th: 210,
+					EndPosition:                  400,
+					EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:             50,
+						UnexpectedResults:        3,
+						TotalRuns:                40,
+						UnexpectedUnretriedRuns:  5,
+						UnexpectedAfterRetryRuns: 6,
+						FlakyRuns:                7,
+						TotalVerdicts:            20,
+						UnexpectedVerdicts:       3,
+						FlakyVerdicts:            2,
+					},
+					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 				},
-				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+				// Verdicts are not relevant to this test.
+				Verdicts: []inputbuffer.PositionVerdict{},
 			},
 			{
-				State:         cpb.SegmentState_FINALIZING,
-				StartPosition: 500,
-				EndPosition:   800,
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:  20,
-					TotalRuns:     20,
-					TotalVerdicts: 20,
+				Segment: &cpb.Segment{
+					State:         cpb.SegmentState_FINALIZING,
+					StartPosition: 500,
+					EndPosition:   800,
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:  20,
+						TotalRuns:     20,
+						TotalVerdicts: 20,
+					},
 				},
+				// Verdicts are not relevant to this test.
+				Verdicts: []inputbuffer.PositionVerdict{},
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
 		So(len(tvb.FinalizedSegments.Segments), ShouldEqual, 1)
 		So(tvb.FinalizingSegment, ShouldNotBeNil)
-		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1])
+		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1].Segment)
 		expected := &cpb.Segment{
 			State:                        cpb.SegmentState_FINALIZED,
 			StartPosition:                100,
@@ -665,37 +749,45 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*cpb.Segment{
+		evictedSegments := []inputbuffer.EvictedSegment{
 			{
-				State:                        cpb.SegmentState_FINALIZED,
-				StartPosition:                200,
-				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
-				HasStartChangepoint:          false,
-				StartPositionLowerBound_99Th: 190,
-				StartPositionUpperBound_99Th: 210,
-				EndPosition:                  400,
-				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:             50,
-					UnexpectedResults:        3,
-					TotalRuns:                40,
-					UnexpectedUnretriedRuns:  5,
-					UnexpectedAfterRetryRuns: 6,
-					FlakyRuns:                7,
-					TotalVerdicts:            20,
-					UnexpectedVerdicts:       3,
-					FlakyVerdicts:            2,
+				Segment: &cpb.Segment{
+					State:                        cpb.SegmentState_FINALIZED,
+					StartPosition:                200,
+					StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
+					HasStartChangepoint:          false,
+					StartPositionLowerBound_99Th: 190,
+					StartPositionUpperBound_99Th: 210,
+					EndPosition:                  400,
+					EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:             50,
+						UnexpectedResults:        3,
+						TotalRuns:                40,
+						UnexpectedUnretriedRuns:  5,
+						UnexpectedAfterRetryRuns: 6,
+						FlakyRuns:                7,
+						TotalVerdicts:            20,
+						UnexpectedVerdicts:       3,
+						FlakyVerdicts:            2,
+					},
+					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 				},
-				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+				// Verdicts are not relevant to this test.
+				Verdicts: []inputbuffer.PositionVerdict{},
 			},
 			{
-				State:                        cpb.SegmentState_FINALIZING,
-				StartPosition:                500,
-				StartHour:                    timestamppb.New(time.Unix(500*3600, 0)),
-				HasStartChangepoint:          true,
-				StartPositionLowerBound_99Th: 490,
-				StartPositionUpperBound_99Th: 510,
-				FinalizedCounts:              &cpb.Counts{},
+				Segment: &cpb.Segment{
+					State:                        cpb.SegmentState_FINALIZING,
+					StartPosition:                500,
+					StartHour:                    timestamppb.New(time.Unix(500*3600, 0)),
+					HasStartChangepoint:          true,
+					StartPositionLowerBound_99Th: 490,
+					StartPositionUpperBound_99Th: 510,
+					FinalizedCounts:              &cpb.Counts{},
+				},
+				// Verdicts are not relevant to this test.
+				Verdicts: []inputbuffer.PositionVerdict{},
 			},
 		}
 		tvb.UpdateOutputBuffer(evictedSegments)
@@ -724,7 +816,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 		}
 		So(tvb.FinalizedSegments.Segments[0], ShouldResembleProto, expected)
-		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1])
+		So(tvb.FinalizingSegment, ShouldResembleProto, evictedSegments[1].Segment)
 	})
 
 	Convey("Should panic if no finalizing segment in evicted segments", t, func() {
@@ -750,32 +842,191 @@ func TestUpdateOutputBuffer(t *testing.T) {
 				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(7*3600, 0)),
 			},
 		}
-		evictedSegments := []*cpb.Segment{
+		evictedSegments := []inputbuffer.EvictedSegment{
 			{
-				State:                        cpb.SegmentState_FINALIZED,
-				StartPosition:                200,
-				StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
-				HasStartChangepoint:          false,
-				StartPositionLowerBound_99Th: 190,
-				StartPositionUpperBound_99Th: 210,
-				EndPosition:                  400,
-				EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
-				FinalizedCounts: &cpb.Counts{
-					TotalResults:             50,
-					UnexpectedResults:        3,
-					TotalRuns:                40,
-					UnexpectedUnretriedRuns:  5,
-					UnexpectedAfterRetryRuns: 6,
-					FlakyRuns:                7,
-					TotalVerdicts:            20,
-					UnexpectedVerdicts:       3,
-					FlakyVerdicts:            2,
+				Segment: &cpb.Segment{
+					State:                        cpb.SegmentState_FINALIZED,
+					StartPosition:                200,
+					StartHour:                    timestamppb.New(time.Unix(100*3600, 0)),
+					HasStartChangepoint:          false,
+					StartPositionLowerBound_99Th: 190,
+					StartPositionUpperBound_99Th: 210,
+					EndPosition:                  400,
+					EndHour:                      timestamppb.New(time.Unix(400*3600, 0)),
+					FinalizedCounts: &cpb.Counts{
+						TotalResults:             50,
+						UnexpectedResults:        3,
+						TotalRuns:                40,
+						UnexpectedUnretriedRuns:  5,
+						UnexpectedAfterRetryRuns: 6,
+						FlakyRuns:                7,
+						TotalVerdicts:            20,
+						UnexpectedVerdicts:       3,
+						FlakyVerdicts:            2,
+					},
+					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
 				},
-				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+				// Verdicts are not relevant to this test.
+				Verdicts: []inputbuffer.PositionVerdict{},
 			},
 		}
 		f := func() { tvb.UpdateOutputBuffer(evictedSegments) }
 		So(f, ShouldPanic)
+	})
+
+	Convey("Statistics should be updated following eviction", t, func() {
+		tvb := TestVariantBranch{
+			Statistics: &cpb.Statistics{
+				HourlyBuckets: []*cpb.Statistics_HourBucket{
+					{
+						Hour:               999,
+						UnexpectedVerdicts: 1,
+						FlakyVerdicts:      2,
+						TotalVerdicts:      3,
+					},
+					{
+						Hour:          1000,
+						FlakyVerdicts: 10,
+						TotalVerdicts: 10,
+					},
+				},
+			},
+		}
+		evictedSegments := []inputbuffer.EvictedSegment{
+			{
+				Segment: &cpb.Segment{
+
+					State:                          cpb.SegmentState_FINALIZING,
+					StartPosition:                  200,
+					StartHour:                      timestamppb.New(time.Unix(100*3600, 0)),
+					HasStartChangepoint:            false,
+					StartPositionLowerBound_99Th:   190,
+					StartPositionUpperBound_99Th:   210,
+					FinalizedCounts:                &cpb.Counts{},
+					MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(10*3600, 0)),
+				},
+				Verdicts: []inputbuffer.PositionVerdict{
+					// Expected verdict.
+					{
+						CommitPosition:   190,
+						Hour:             time.Unix(1000*3600, 0),
+						IsSimpleExpected: true,
+					},
+					// Expected verdict.
+					{
+						CommitPosition: 191,
+						Hour:           time.Unix(1000*3600, 0),
+						Details: inputbuffer.VerdictDetails{
+							Runs: []inputbuffer.Run{
+								{
+									ExpectedResultCount: 2,
+								},
+							},
+						},
+					},
+					// Flaky verdict.
+					{
+						CommitPosition: 192,
+						Hour:           time.Unix(992*3600, 0),
+						Details: inputbuffer.VerdictDetails{
+							Runs: []inputbuffer.Run{
+								{
+									ExpectedResultCount: 1,
+								},
+								{
+									IsDuplicate:           true,
+									UnexpectedResultCount: 1,
+								},
+							},
+						},
+					},
+					// Unexpected verdict.
+					{
+						CommitPosition: 193,
+						Hour:           time.Unix(991*3600, 0),
+						Details: inputbuffer.VerdictDetails{
+							Runs: []inputbuffer.Run{
+								{
+									UnexpectedResultCount: 1,
+								},
+								{
+									UnexpectedResultCount: 1,
+								},
+							},
+						},
+					},
+					// Verdict which is (just) within the retention policy.
+					{
+						CommitPosition: 194,
+						Hour:           time.Unix((1000-StatisticsRetentionDays*24+1)*3600, 0),
+						Details: inputbuffer.VerdictDetails{
+							Runs: []inputbuffer.Run{
+								{
+									UnexpectedResultCount: 1,
+								},
+								{
+									UnexpectedResultCount: 1,
+								},
+							},
+						},
+					},
+					// Verdict which is from too old a bucket.
+					{
+						CommitPosition: 194,
+						Hour:           time.Unix((1000-StatisticsRetentionDays*24)*3600, 0),
+						Details: inputbuffer.VerdictDetails{
+							Runs: []inputbuffer.Run{
+								{
+									UnexpectedResultCount: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		tvb.UpdateOutputBuffer(evictedSegments)
+
+		expected := &cpb.Statistics{
+			HourlyBuckets: []*cpb.Statistics_HourBucket{
+				{
+					Hour:               (1000 - StatisticsRetentionDays*24 + 1),
+					UnexpectedVerdicts: 1,
+					TotalVerdicts:      1,
+				},
+				{
+					Hour:               991,
+					UnexpectedVerdicts: 1,
+					TotalVerdicts:      1,
+				},
+				{
+					Hour:          992,
+					FlakyVerdicts: 1,
+					TotalVerdicts: 1,
+				},
+				{
+					Hour:               999,
+					UnexpectedVerdicts: 1,
+					FlakyVerdicts:      2,
+					TotalVerdicts:      3,
+				},
+				{
+					Hour:          1000,
+					FlakyVerdicts: 10,
+					TotalVerdicts: 12,
+				},
+			},
+		}
+		So(tvb.Statistics, ShouldResembleProto, expected)
+		So(tvb.IsStatisticsDirty, ShouldBeTrue)
+	})
+
+	Convey("Output buffer should not be updated if there is no eviction", t, func() {
+		tvb := TestVariantBranch{}
+		tvb.UpdateOutputBuffer([]inputbuffer.EvictedSegment{})
+		So(tvb.IsStatisticsDirty, ShouldBeFalse)
+		So(tvb.IsFinalizingSegmentDirty, ShouldBeFalse)
+		So(tvb.IsFinalizedSegmentsDirty, ShouldBeFalse)
 	})
 }
 
@@ -785,5 +1036,119 @@ func makeTestVariantBranchKey(proj string, testID string, variantHash string, re
 		TestID:      testID,
 		VariantHash: variantHash,
 		RefHash:     refHash,
+	}
+}
+
+func BenchmarkEncodeSegments(b *testing.B) {
+	// Result when test added:
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkEncodeSegments-96    	    3343	    328663 ns/op	   14598 B/op	       3 allocs/op
+	b.StopTimer()
+	segs := testSegments()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := EncodeSegments(segs)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func BenchmarkDecodeSegments(b *testing.B) {
+	// Result when test added:
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkDecodeSegments-96    	   10663	    111653 ns/op	   53190 B/op	     510 allocs/op
+	b.StopTimer()
+	segs := testSegments()
+	encodedSegs, err := EncodeSegments(segs)
+	if err != nil {
+		panic(err)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := DecodeSegments(encodedSegs)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func BenchmarkEncodeStatistics(b *testing.B) {
+	// Result when test added:
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkEncodeStatistics-96    	   15578	     71829 ns/op	    8321 B/op	       3 allocs/op
+	b.StopTimer()
+	stats := testStatistics()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := EncodeStatistics(stats)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func BenchmarkDecodeStatistics(b *testing.B) {
+	// Result when test added:
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkDecodeStatistics-96    	   18616	     61122 ns/op	   34236 B/op	     276 allocs/op
+	b.StopTimer()
+	stats := testStatistics()
+	encodedStats, err := EncodeStatistics(stats)
+	if err != nil {
+		panic(err)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := DecodeStatistics(encodedStats)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func testStatistics() *cpb.Statistics {
+	var buckets []*cpb.Statistics_HourBucket
+	for i := 0; i < StatisticsRetentionDays*24; i++ {
+		buckets = append(buckets, &cpb.Statistics_HourBucket{
+			Hour:               int64(i),
+			UnexpectedVerdicts: int64(i + 1),
+			FlakyVerdicts:      int64(i + 2),
+			TotalVerdicts:      int64(2*i + 3),
+		})
+	}
+	return &cpb.Statistics{HourlyBuckets: buckets}
+}
+
+func testSegments() *cpb.Segments {
+	var segments []*cpb.Segment
+	for i := 0; i < 100; i++ {
+		segments = append(segments, &cpb.Segment{
+			State:                          cpb.SegmentState_FINALIZED,
+			HasStartChangepoint:            true,
+			StartPosition:                  int64(162*i + 5),
+			StartPositionLowerBound_99Th:   int64(162 * i),
+			StartPositionUpperBound_99Th:   int64(162*i + 10),
+			EndPosition:                    int64(162 * (i + 1)),
+			StartHour:                      timestamppb.New(time.Unix(int64(i*12*3600), 0)),
+			EndHour:                        timestamppb.New(time.Unix(int64((i+1)*12*3600), 0)),
+			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(int64((i+1)*9*3600), 0)),
+			FinalizedCounts: &cpb.Counts{
+				UnexpectedResults: int64(i),
+				TotalResults:      int64(i + 1),
+
+				UnexpectedUnretriedRuns:  int64(i + 2),
+				UnexpectedAfterRetryRuns: int64(i + 3),
+				FlakyRuns:                int64(i + 4),
+				TotalRuns:                int64(4*i + 5),
+
+				UnexpectedVerdicts: int64(i + 6),
+				FlakyVerdicts:      int64(i + 7),
+				TotalVerdicts:      int64(2*i + 8),
+			},
+		})
+	}
+	return &cpb.Segments{
+		Segments: segments,
 	}
 }

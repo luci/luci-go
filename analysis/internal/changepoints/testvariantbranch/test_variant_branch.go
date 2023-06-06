@@ -16,10 +16,20 @@
 package testvariantbranch
 
 import (
+	"sort"
+
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
+
+// StatisticsRetentionDays is the number of days to keep statistics about
+// evicted verdicts. See Statistics proto for more.
+//
+// This is a minimum period driven by functional and operational requirements,
+// our deletion logic will tend to keep retain data for longer (but this is
+// OK as it is not user data).
+const StatisticsRetentionDays = 11
 
 // TestVariantBranch represents one row in the TestVariantBranch spanner table.
 // See go/luci-test-variant-analysis-design for details.
@@ -36,18 +46,22 @@ type TestVariantBranch struct {
 	RefHash     []byte
 	SourceRef   *pb.SourceRef
 	InputBuffer *inputbuffer.Buffer
-	// Store the finalizing segment, if any.
-	// The count for the finalizing segment should only include the verdicts
-	// that are not in the input buffer anymore.
-	FinalizingSegment *cpb.Segment
-	// Store all the finalized segments for the test variant branch.
-	FinalizedSegments *cpb.Segments
 	// If this is true, it means we should trigger a write of FinalizingSegment
 	// to Spanner.
 	IsFinalizingSegmentDirty bool
+	// The finalizing segment, if any.
+	// The count for the finalizing segment should only include the verdicts
+	// that are not in the input buffer anymore.
+	FinalizingSegment *cpb.Segment
 	// If this is true, it means we should trigger a write of FinalizedSegments
 	// to Spanner.
 	IsFinalizedSegmentsDirty bool
+	// The finalized segments for the test variant branch.
+	FinalizedSegments *cpb.Segments
+	// If true, it means we should trigger a write of Statistics to Spanner.
+	IsStatisticsDirty bool
+	// Statistics about verdicts which have been evicted from the input buffer.
+	Statistics *cpb.Statistics
 }
 
 // InsertToInputBuffer inserts data of a new test variant into the input
@@ -76,11 +90,11 @@ func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *cpb.Segment) {
 
 // UpdateOutputBuffer updates the output buffer with the evicted segments from
 // the input buffer.
-// evictedSegments contain all finalized segments, except for the last segment,
-// which is a finalizing segment.
+// evictedSegments should contain only finalized segments, except for the
+// last segment (if any), which must be a finalizing segment.
 // evictedSegments is sorted in ascending order of commit position (oldest
 // segment first).
-func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*cpb.Segment) {
+func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []inputbuffer.EvictedSegment) {
 	// Nothing to update.
 	if len(evictedSegments) == 0 {
 		return
@@ -91,7 +105,7 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*cpb.Segment)
 	segmentIndex := 0
 	if tvb.FinalizingSegment != nil {
 		segmentIndex = 1
-		combinedSegment := combineSegment(tvb.FinalizingSegment, evictedSegments[0])
+		combinedSegment := combineSegment(tvb.FinalizingSegment, evictedSegments[0].Segment)
 		tvb.IsFinalizingSegmentDirty = true
 		if combinedSegment.State == cpb.SegmentState_FINALIZING {
 			// Replace the finalizing segment.
@@ -104,28 +118,35 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []*cpb.Segment)
 
 	for ; segmentIndex < len(evictedSegments); segmentIndex++ {
 		segment := evictedSegments[segmentIndex]
-		if segment.State == cpb.SegmentState_FINALIZED {
-			tvb.InsertFinalizedSegment(segment)
+		if segment.Segment.State == cpb.SegmentState_FINALIZED {
+			tvb.InsertFinalizedSegment(segment.Segment)
 		} else { // Finalizing segment.
-			tvb.FinalizingSegment = segment
+			tvb.FinalizingSegment = segment.Segment
 			tvb.IsFinalizingSegmentDirty = true
 		}
 	}
+
+	var evictedVerdicts []inputbuffer.PositionVerdict
+	for _, segments := range evictedSegments {
+		evictedVerdicts = append(evictedVerdicts, segments.Verdicts...)
+	}
+	tvb.Statistics = insertVerdictsIntoStatistics(tvb.Statistics, evictedVerdicts)
+	tvb.IsStatisticsDirty = true
 
 	// Assert that finalizing segment is after finalized segments.
 	tvb.verifyOutputBuffer()
 }
 
-func verifyEvictedSegments(evictedSegments []*cpb.Segment) {
+func verifyEvictedSegments(evictedSegments []inputbuffer.EvictedSegment) {
 	// Verify that evictedSegments contain all FINALIZED segment, except for
 	// the last segment.
 	for i, seg := range evictedSegments {
 		if i != len(evictedSegments)-1 {
-			if seg.State != cpb.SegmentState_FINALIZED {
+			if seg.Segment.State != cpb.SegmentState_FINALIZED {
 				panic("evictedSegments should contains all finalized segments, except the last one")
 			}
 		} else {
-			if seg.State != cpb.SegmentState_FINALIZING {
+			if seg.Segment.State != cpb.SegmentState_FINALIZING {
 				panic("last segment of evicted segments should be finalizing")
 			}
 		}
@@ -147,18 +168,21 @@ func (tvb *TestVariantBranch) verifyOutputBuffer() {
 }
 
 // combineSegment combines the finalizing segment from the output buffer with
-// a segment evicted from the input buffer.
+// another partial segment evicted from the input buffer.
 func combineSegment(finalizingSegment, evictedSegment *cpb.Segment) *cpb.Segment {
 	result := &cpb.Segment{
-		State:                        evictedSegment.State,
+		State: evictedSegment.State,
+		// Use the start position information provided by prior evictions.
 		HasStartChangepoint:          finalizingSegment.HasStartChangepoint,
 		StartPosition:                finalizingSegment.StartPosition,
 		StartHour:                    finalizingSegment.StartHour,
 		StartPositionLowerBound_99Th: finalizingSegment.StartPositionLowerBound_99Th,
 		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
-		EndPosition:                  evictedSegment.EndPosition,
-		EndHour:                      evictedSegment.EndHour,
-		FinalizedCounts:              AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.FinalizedCounts),
+		// Use end position information provided by later evictions.
+		EndPosition: evictedSegment.EndPosition,
+		EndHour:     evictedSegment.EndHour,
+		// Combine counts.
+		FinalizedCounts: AddCounts(finalizingSegment.FinalizedCounts, evictedSegment.FinalizedCounts),
 	}
 	result.MostRecentUnexpectedResultHour = finalizingSegment.MostRecentUnexpectedResultHour
 	if result.MostRecentUnexpectedResultHour.GetSeconds() < evictedSegment.MostRecentUnexpectedResultHour.GetSeconds() {
@@ -179,5 +203,82 @@ func AddCounts(count1 *cpb.Counts, count2 *cpb.Counts) *cpb.Counts {
 		TotalVerdicts:            count1.TotalVerdicts + count2.TotalVerdicts,
 		UnexpectedVerdicts:       count1.UnexpectedVerdicts + count2.UnexpectedVerdicts,
 		FlakyVerdicts:            count1.FlakyVerdicts + count2.FlakyVerdicts,
+	}
+}
+
+// insertVerdictsIntoStatistics updates the given statistics to include
+// the given evicted verdicts. Retention policies are applied.
+func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.PositionVerdict) *cpb.Statistics {
+	bucketByHour := make(map[int64]*cpb.Statistics_HourBucket)
+	for _, bucket := range stats.GetHourlyBuckets() {
+		// Copy hourly bucket to avoid mutating the passed statistics object.
+		bucketByHour[bucket.Hour] = &cpb.Statistics_HourBucket{
+			Hour:               bucket.Hour,
+			UnexpectedVerdicts: bucket.UnexpectedVerdicts,
+			FlakyVerdicts:      bucket.FlakyVerdicts,
+			TotalVerdicts:      bucket.TotalVerdicts,
+		}
+	}
+
+	for _, v := range verdicts {
+		// Find or create hourly bucket.
+		hour := v.Hour.Unix() / 3600
+		bucket, ok := bucketByHour[hour]
+		if !ok {
+			bucket = &cpb.Statistics_HourBucket{Hour: hour}
+			bucketByHour[hour] = bucket
+		}
+
+		// Add verdict to hourly bucket.
+		bucket.TotalVerdicts++
+		if !v.IsSimpleExpected {
+			verdictHasExpectedResults := false
+			verdictHasUnexpectedResults := false
+			for _, run := range v.Details.Runs {
+				verdictHasExpectedResults = verdictHasExpectedResults || (run.ExpectedResultCount > 0)
+				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.UnexpectedResultCount > 0)
+			}
+			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
+				bucket.UnexpectedVerdicts++
+			}
+			if verdictHasUnexpectedResults && verdictHasExpectedResults {
+				bucket.FlakyVerdicts++
+			}
+		}
+	}
+
+	buckets := make([]*cpb.Statistics_HourBucket, 0, len(bucketByHour))
+	for _, bucket := range bucketByHour {
+		buckets = append(buckets, bucket)
+	}
+
+	// Sort in ascending order (oldest hour first).
+	sort.Slice(buckets, func(i, j int) bool {
+		return buckets[i].Hour < buckets[j].Hour
+	})
+
+	// Apply data deletion policies.
+	if len(buckets) > 0 {
+		lastHour := buckets[len(buckets)-1].Hour
+		deleteBeforeIndex := -1
+		for i, bucket := range buckets {
+			// Retain buckets which are within the retention interval
+			// of the most recent bucket hour. The most recent bucket
+			// hour will always be less recent than time.Now(), so
+			// this will tend to retain somewhat more data than necessary.
+			//
+			// We use this logic instead of one that depends on time.Now()
+			// as it is simpler from a testability perspective than a
+			// system time-dependant function.
+			if bucket.Hour > lastHour-StatisticsRetentionDays*24 {
+				break
+			}
+			deleteBeforeIndex = i
+		}
+		buckets = buckets[deleteBeforeIndex+1:]
+	}
+
+	return &cpb.Statistics{
+		HourlyBuckets: buckets,
 	}
 }

@@ -54,7 +54,10 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 		keys[i] = spanner.Key{tvbks[i].Project, tvbks[i].TestID, tvbks[i].VariantHash, []byte(tvbks[i].RefHash)}
 	}
 	keyset := spanner.KeySetFromKeys(keys...)
-	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef", "HotInputBuffer", "ColdInputBuffer", "FinalizingSegment", "FinalizedSegments"}
+	cols := []string{
+		"Project", "TestId", "VariantHash", "RefHash", "Variant", "SourceRef",
+		"HotInputBuffer", "ColdInputBuffer", "FinalizingSegment", "FinalizedSegments", "Statistics",
+	}
 	err := span.Read(ctx, "TestVariantBranch", keyset, cols).Do(
 		func(row *spanner.Row) error {
 			tvb, err := SpannerRowToTestVariantBranch(row)
@@ -95,13 +98,15 @@ func SpannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 	var coldBuffer []byte
 	var finalizingSegment []byte
 	var finalizedSegments []byte
+	var statistics []byte
 
-	if err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.RefHash, &tvb.Variant, &sourceRef, &hotBuffer, &coldBuffer, &finalizingSegment, &finalizedSegments); err != nil {
+	err := b.FromSpanner(row, &tvb.Project, &tvb.TestID, &tvb.VariantHash, &tvb.RefHash, &tvb.Variant,
+		&sourceRef, &hotBuffer, &coldBuffer, &finalizingSegment, &finalizedSegments, &statistics)
+	if err != nil {
 		return nil, errors.Annotate(err, "read values from spanner").Err()
 	}
 
 	// Source ref
-	var err error
 	tvb.SourceRef, err = DecodeSourceRef(sourceRef)
 	if err != nil {
 		return nil, errors.Annotate(err, "decode source ref").Err()
@@ -130,6 +135,11 @@ func SpannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 	tvb.FinalizedSegments, err = DecodeSegments(finalizedSegments)
 	if err != nil {
 		return nil, errors.Annotate(err, "decode finalized segments").Err()
+	}
+
+	tvb.Statistics, err = DecodeStatistics(statistics)
+	if err != nil {
+		return nil, errors.Annotate(err, "decode statistics").Err()
 	}
 
 	return tvb, nil
@@ -185,6 +195,18 @@ func (tvb *TestVariantBranch) ToMutation() (*spanner.Mutation, error) {
 		bytes, err := EncodeSegments(tvb.FinalizedSegments)
 		if err != nil {
 			return nil, errors.Annotate(err, "encode finalized segments").Err()
+		}
+		values = append(values, bytes)
+	}
+
+	// Evicted verdict statistics.
+	// We only write statistics if this is new (because Statistics
+	// is NOT NULL), or there is an update.
+	if tvb.IsStatisticsDirty || tvb.IsNew {
+		cols = append(cols, "Statistics")
+		bytes, err := EncodeStatistics(tvb.Statistics)
+		if err != nil {
+			return nil, errors.Annotate(err, "encode statistics").Err()
 		}
 		values = append(values, bytes)
 	}

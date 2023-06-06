@@ -73,6 +73,29 @@ func (s *Segment) Length() int {
 	return s.EndIndex - s.StartIndex + 1
 }
 
+// EvictedSegment represents a segment or segment part which was evicted
+// from the input buffer.
+type EvictedSegment struct {
+	// The segment (either full or partial) which is being evicted.
+	// A segment may be partial for one or both of the following reasons:
+	// - The eviction is occuring because of limited input buffer space
+	//   (not because of a finalized changepoint), so only a fraction
+	//   of the segment needs to be evicted.
+	// - Previously, part of the segment was evicted (for the above
+	//   reason), so subsequent evictions are necessarily only
+	//   in relation to the remaining part of that segment.
+	//
+	// The consumer generally does not need to be concerned about which
+	// of these cases applies, and should always process evicted segments
+	// in commit position order, merging them with any previously
+	// evicted finalizing segment (if any).
+	Segment *cpb.Segment
+
+	// The verdicts which are being evicted. These correspond to the
+	// Segment above. Not in any particular order.
+	Verdicts []PositionVerdict
+}
+
 // SegmentedInputBuffer wraps the input buffer and the segments it contains.
 type SegmentedInputBuffer struct {
 	InputBuffer *Buffer
@@ -151,25 +174,33 @@ func inputBufferSegment(startIndex, endIndex int, history []PositionVerdict) *Se
 }
 
 // EvictSegments evicts segments from the segmented input buffer.
-// The sib.Segments are sorted from the oldest commit position to the newest.
-// A segment will be evicted if:
-//  1. It is a finalized segment. In such case, it will be fully evicted.
-//  2. It is a finalizing segment. In such case, it will be partially evicted.
 //
-// Returns the list of evicted segments.
+// Returned EvictedSegments are sorted from the oldest commit position
+// to the newest.
+//
+// A segment will be evicted if:
+//  1. The changepoint that ends the segment has been finalized,
+//     because half of the input buffer is newer than the ending commit
+//     position). In this case, the entire remainder of the segment will
+//     be evicted.
+//  2. There is storage pressure in the input buffer (it is at risk of
+//     containing too many verdicts). In this case, a segment will be
+//     partially evicted, and that segment will be 'finalizing'.
 //
 // Note that if the last segment evicted is a finalized segment, this function
 // will add an extra finalizing segment to the end of evicted segments. This is
 // to keep track of the confidence interval of the starting commit position of
-// the next segment in the input buffer after eviction. It is because after a
-// finalized segment is evicted, we cannot recalculte the confidence interval
-// of the first segment from the input buffer alone. As a result, the result of
-// this function will contain all finalized segments, except for the last
-// segment, which is finalizing.
+// the segment after the finalized segment. It is needed because after a
+// finalized segment is evicted, its verdicts disappear from the input buffer
+// and we can no longer calculate the confidence interval of the start of the
+// next segment.
 //
-// The remaining segments will be in sib.Segments.
-func (sib *SegmentedInputBuffer) EvictSegments() []*cpb.Segment {
-	evictedSegments := []*cpb.Segment{}
+// As a result, the result of this function will contain all finalized segments,
+// except for the last segment (if any), which is finalizing.
+//
+// The segments remaining after eviction will be in sib.Segments.
+func (sib *SegmentedInputBuffer) EvictSegments() []EvictedSegment {
+	evictedSegments := []EvictedSegment{}
 	remainingSegments := []*Segment{}
 
 	// Evict finalized segments.
@@ -216,18 +247,22 @@ func (sib *SegmentedInputBuffer) EvictSegments() []*cpb.Segment {
 	sib.Segments = remainingSegments
 
 	// If the last segment is finalized, we also add a finalizing segment
-	// to the end of the evicted segments.
+	// to the end of the evicted segments, to record the start position
+	// (and confidence interval) of the following segment.
 	l := len(evictedSegments)
-	if l > 0 && evictedSegments[l-1].State == cpb.SegmentState_FINALIZED {
+	if l > 0 && evictedSegments[l-1].Segment.State == cpb.SegmentState_FINALIZED {
 		firstRemainingSeg := remainingSegments[0]
-		evictedSegments = append(evictedSegments, &cpb.Segment{
-			State:                        cpb.SegmentState_FINALIZING,
-			HasStartChangepoint:          true,
-			StartPosition:                firstRemainingSeg.StartPosition,
-			StartHour:                    firstRemainingSeg.StartHour,
-			StartPositionLowerBound_99Th: firstRemainingSeg.StartPositionLowerBound99Th,
-			StartPositionUpperBound_99Th: firstRemainingSeg.StartPositionUpperBound99Th,
-			FinalizedCounts:              &cpb.Counts{},
+		evictedSegments = append(evictedSegments, EvictedSegment{
+			Segment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
+				HasStartChangepoint:          true,
+				StartPosition:                firstRemainingSeg.StartPosition,
+				StartHour:                    firstRemainingSeg.StartHour,
+				StartPositionLowerBound_99Th: firstRemainingSeg.StartPositionLowerBound99Th,
+				StartPositionUpperBound_99Th: firstRemainingSeg.StartPositionUpperBound99Th,
+				FinalizedCounts:              &cpb.Counts{},
+			},
+			Verdicts: []PositionVerdict{},
 		})
 	}
 	return evictedSegments
@@ -250,7 +285,7 @@ func (ib *Buffer) isSegmentFinalized(seg *Segment) bool {
 // This has an assumption that the segment verdicts are at the beginning
 // of the hot and cold buffers.
 // Returns a segment containing the information about the verdicts being evicted.
-func (ib *Buffer) evictFinalizedSegment(seg *Segment) *cpb.Segment {
+func (ib *Buffer) evictFinalizedSegment(seg *Segment) EvictedSegment {
 	// Evict hot buffer.
 	evictEndIndex := -1
 	for i, v := range ib.HotBuffer.Verdicts {
@@ -260,6 +295,8 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) *cpb.Segment {
 			break
 		}
 	}
+	var evictedVerdicts []PositionVerdict
+	evictedVerdicts = append(evictedVerdicts, ib.HotBuffer.Verdicts[:evictEndIndex+1]...)
 	ib.HotBuffer.Verdicts = ib.HotBuffer.Verdicts[evictEndIndex+1:]
 
 	// Evict cold buffer.
@@ -273,11 +310,12 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) *cpb.Segment {
 	}
 	if evictEndIndex > -1 {
 		ib.IsColdBufferDirty = true
+		evictedVerdicts = append(evictedVerdicts, ib.ColdBuffer.Verdicts[:evictEndIndex+1]...)
 		ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[evictEndIndex+1:]
 	}
 
 	// Return evicted segment.
-	result := &cpb.Segment{
+	segment := &cpb.Segment{
 		State:                          cpb.SegmentState_FINALIZED,
 		FinalizedCounts:                seg.Counts,
 		HasStartChangepoint:            seg.HasStartChangepoint,
@@ -289,32 +327,45 @@ func (ib *Buffer) evictFinalizedSegment(seg *Segment) *cpb.Segment {
 		StartPositionUpperBound_99Th:   seg.StartPositionUpperBound99Th,
 		MostRecentUnexpectedResultHour: seg.MostRecentUnexpectedResultHourAllVerdicts,
 	}
-	return result
+	return EvictedSegment{
+		Segment:  segment,
+		Verdicts: evictedVerdicts,
+	}
 }
 
-// evictFinalizingSegment evicts part of the finalizing segment when an
-// overflow occurs.
-// Note that an overflow can only occur after a compaction from the hot buffer
+// evictFinalizingSegment evicts part of the finalizing segment when
+// there is space pressure in the input buffer.
+// Note that space pressure is defined by the cold buffer meeting
+// capacity and can only occur after a compaction from the hot buffer
 // to the cold buffer (i.e. the hot buffer is empty and the cold buffer
 // overflows).
 // Returns evicted and remaining segments.
-func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted *cpb.Segment, remaining *Segment) {
-	evictedCount := segmentCounts(ib.ColdBuffer.Verdicts[:endPos+1])
+func (ib *Buffer) evictFinalizingSegment(endPos int, seg *Segment) (evicted EvictedSegment, remaining *Segment) {
+	if len(ib.HotBuffer.Verdicts) > 0 {
+		// This indicates a logic error.
+		panic("hot buffer is not empty during eviction")
+	}
+
+	evictedVerdicts := ib.ColdBuffer.Verdicts[:endPos+1]
+	evictedCount := segmentCounts(evictedVerdicts)
 	remainingCount := segmentCounts(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
 	evictedMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[:endPos+1])
 	remainingMostRecentHour := mostRecentUnexpectedResultHour(ib.ColdBuffer.Verdicts[endPos+1 : seg.EndIndex+1])
 	ib.ColdBuffer.Verdicts = ib.ColdBuffer.Verdicts[endPos+1:]
 	ib.IsColdBufferDirty = true
 	// Evicted segment.
-	evicted = &cpb.Segment{
-		State:                          cpb.SegmentState_FINALIZING,
-		FinalizedCounts:                evictedCount,
-		HasStartChangepoint:            seg.HasStartChangepoint,
-		StartPosition:                  seg.StartPosition,
-		StartHour:                      seg.StartHour,
-		StartPositionLowerBound_99Th:   seg.StartPositionLowerBound99Th,
-		StartPositionUpperBound_99Th:   seg.StartPositionUpperBound99Th,
-		MostRecentUnexpectedResultHour: evictedMostRecentHour,
+	evicted = EvictedSegment{
+		Segment: &cpb.Segment{
+			State:                          cpb.SegmentState_FINALIZING,
+			FinalizedCounts:                evictedCount,
+			HasStartChangepoint:            seg.HasStartChangepoint,
+			StartPosition:                  seg.StartPosition,
+			StartHour:                      seg.StartHour,
+			StartPositionLowerBound_99Th:   seg.StartPositionLowerBound99Th,
+			StartPositionUpperBound_99Th:   seg.StartPositionUpperBound99Th,
+			MostRecentUnexpectedResultHour: evictedMostRecentHour,
+		},
+		Verdicts: evictedVerdicts,
 	}
 
 	// Remaining segment.
@@ -342,13 +393,19 @@ func segmentCounts(history []PositionVerdict) *cpb.Counts {
 			verdictHasExpectedResults := false
 			verdictHasUnexpectedResults := false
 			for _, run := range verdict.Details.Runs {
+				// Verdict-level statistics.
+				verdictHasExpectedResults = verdictHasExpectedResults || (run.ExpectedResultCount > 0)
+				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.UnexpectedResultCount > 0)
+
 				if run.IsDuplicate {
 					continue
 				}
-				counts.TotalRuns++
+				// Result-level statistics (ignores duplicate runs).
 				counts.TotalResults += int64(run.ExpectedResultCount + run.UnexpectedResultCount)
 				counts.UnexpectedResults += int64(run.UnexpectedResultCount)
 
+				// Run-level statistics (ignores duplicate runs).
+				counts.TotalRuns++
 				// flaky run.
 				isFlakyRun := run.ExpectedResultCount > 0 && run.UnexpectedResultCount > 0
 				if isFlakyRun {
@@ -364,8 +421,6 @@ func segmentCounts(history []PositionVerdict) *cpb.Counts {
 				if isUnexpectedAfterRetries {
 					counts.UnexpectedAfterRetryRuns++
 				}
-				verdictHasExpectedResults = verdictHasExpectedResults || (run.ExpectedResultCount > 0)
-				verdictHasUnexpectedResults = verdictHasUnexpectedResults || (run.UnexpectedResultCount > 0)
 			}
 			if verdictHasUnexpectedResults && !verdictHasExpectedResults {
 				counts.UnexpectedVerdicts++

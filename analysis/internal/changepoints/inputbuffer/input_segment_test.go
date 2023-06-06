@@ -19,12 +19,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	. "github.com/smartystreets/goconvey/convey"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	. "go.chromium.org/luci/common/testing/assertions"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSegmentizeInputBuffer(t *testing.T) {
@@ -35,7 +34,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 				total         = []int{1, 2, 1, 2, 1, 2}
 				hasUnexpected = []int{0, 1, 0, 2, 0, 0}
 			)
-			ib := genInputBuffer(10, 200, positions, total, hasUnexpected)
+			ib := genInputBuffer(10, 200, Verdicts(positions, total, hasUnexpected))
 			cps := []ChangePoint{}
 			sib := ib.Segmentize(cps)
 			ibSegments := sib.Segments
@@ -178,7 +177,7 @@ func TestSegmentizeInputBuffer(t *testing.T) {
 
 func TestEvictSegments(t *testing.T) {
 	Convey("Not evict segment", t, func() {
-		ib := genSimpleInputBuffer(100, 2000, 100, 1, []int{})
+		ib := genInputBuffer(100, 2000, simpleVerdicts(100, 1, []int{}))
 		segments := []*Segment{
 			{
 				StartIndex: 0,
@@ -206,7 +205,7 @@ func TestEvictSegments(t *testing.T) {
 	})
 
 	Convey("Evict finalizing segment", t, func() {
-		ib := genSimpleInputBuffer(100, 2000, 2100, 1, []int{50, 1900})
+		ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{50, 1900}))
 		segments := []*Segment{
 			{
 				StartIndex: 0,
@@ -248,20 +247,23 @@ func TestEvictSegments(t *testing.T) {
 		So(len(remaining), ShouldEqual, 2)
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
-		diff := cmp.Diff(evicted[0], &cpb.Segment{
-			State:               cpb.SegmentState_FINALIZING,
-			HasStartChangepoint: false,
-			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
-			StartPosition:       1,
-			FinalizedCounts: &cpb.Counts{
-				TotalResults:            100,
-				UnexpectedResults:       1,
-				TotalRuns:               100,
-				UnexpectedUnretriedRuns: 1,
-				TotalVerdicts:           100,
-				UnexpectedVerdicts:      1,
+		diff := cmp.Diff(evicted[0], EvictedSegment{
+			Segment: &cpb.Segment{
+				State:               cpb.SegmentState_FINALIZING,
+				HasStartChangepoint: false,
+				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				StartPosition:       1,
+				FinalizedCounts: &cpb.Counts{
+					TotalResults:            100,
+					UnexpectedResults:       1,
+					TotalRuns:               100,
+					UnexpectedUnretriedRuns: 1,
+					TotalVerdicts:           100,
+					UnexpectedVerdicts:      1,
+				},
+				MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(51*3600, 0)),
 			},
-			MostRecentUnexpectedResultHour: timestamppb.New(time.Unix(51*3600, 0)),
+			Verdicts: simpleVerdicts(100, 1, []int{50}),
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
@@ -300,7 +302,7 @@ func TestEvictSegments(t *testing.T) {
 	})
 
 	Convey("Evict finalized segment", t, func() {
-		ib := genSimpleInputBuffer(100, 2000, 2100, 1, []int{})
+		ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{}))
 		segments := []*Segment{
 			{
 				StartIndex: 0, // Finalized segment.
@@ -374,50 +376,59 @@ func TestEvictSegments(t *testing.T) {
 		So(len(remaining), ShouldEqual, 2)
 		So(ib.IsColdBufferDirty, ShouldBeTrue)
 
-		diff := cmp.Diff(evicted[0], &cpb.Segment{
-			State:               cpb.SegmentState_FINALIZED,
-			HasStartChangepoint: false,
-			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
-			StartPosition:       1,
-			EndHour:             timestamppb.New(time.Unix(40*3600, 0)),
-			EndPosition:         40,
-			FinalizedCounts: &cpb.Counts{
-				TotalResults:  40,
-				TotalRuns:     40,
-				TotalVerdicts: 40,
+		diff := cmp.Diff(evicted[0], EvictedSegment{
+			Segment: &cpb.Segment{
+				State:               cpb.SegmentState_FINALIZED,
+				HasStartChangepoint: false,
+				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				StartPosition:       1,
+				EndHour:             timestamppb.New(time.Unix(40*3600, 0)),
+				EndPosition:         40,
+				FinalizedCounts: &cpb.Counts{
+					TotalResults:  40,
+					TotalRuns:     40,
+					TotalVerdicts: 40,
+				},
 			},
+			Verdicts: simpleVerdicts(40, 1, []int{}),
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
-		diff = cmp.Diff(evicted[1], &cpb.Segment{
-			State:                        cpb.SegmentState_FINALIZED,
-			HasStartChangepoint:          true,
-			StartHour:                    timestamppb.New(time.Unix(41*3600, 0)),
-			StartPosition:                41,
-			StartPositionLowerBound_99Th: 30,
-			StartPositionUpperBound_99Th: 50,
-			EndHour:                      timestamppb.New(time.Unix(80*3600, 0)),
-			EndPosition:                  80,
-			FinalizedCounts: &cpb.Counts{
-				TotalResults:  40,
-				TotalRuns:     40,
-				TotalVerdicts: 40,
+		diff = cmp.Diff(evicted[1], EvictedSegment{
+			Segment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZED,
+				HasStartChangepoint:          true,
+				StartHour:                    timestamppb.New(time.Unix(41*3600, 0)),
+				StartPosition:                41,
+				StartPositionLowerBound_99Th: 30,
+				StartPositionUpperBound_99Th: 50,
+				EndHour:                      timestamppb.New(time.Unix(80*3600, 0)),
+				EndPosition:                  80,
+				FinalizedCounts: &cpb.Counts{
+					TotalResults:  40,
+					TotalRuns:     40,
+					TotalVerdicts: 40,
+				},
 			},
+			Verdicts: simpleVerdicts(40, 41, []int{}),
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
-		diff = cmp.Diff(evicted[2], &cpb.Segment{
-			State:                        cpb.SegmentState_FINALIZING,
-			HasStartChangepoint:          true,
-			StartHour:                    timestamppb.New(time.Unix(81*3600, 0)),
-			StartPosition:                81,
-			StartPositionLowerBound_99Th: 70,
-			StartPositionUpperBound_99Th: 90,
-			FinalizedCounts: &cpb.Counts{
-				TotalResults:  20,
-				TotalRuns:     20,
-				TotalVerdicts: 20,
+		diff = cmp.Diff(evicted[2], EvictedSegment{
+			Segment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
+				HasStartChangepoint:          true,
+				StartHour:                    timestamppb.New(time.Unix(81*3600, 0)),
+				StartPosition:                81,
+				StartPositionLowerBound_99Th: 70,
+				StartPositionUpperBound_99Th: 90,
+				FinalizedCounts: &cpb.Counts{
+					TotalResults:  20,
+					TotalRuns:     20,
+					TotalVerdicts: 20,
+				},
 			},
+			Verdicts: simpleVerdicts(20, 81, []int{}),
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
@@ -452,7 +463,7 @@ func TestEvictSegments(t *testing.T) {
 	})
 
 	Convey("Evict all hot buffer", t, func() {
-		ib := genSimpleInputBuffer(100, 2000, 2000, 1, []int{})
+		ib := genInputBuffer(100, 2000, simpleVerdicts(2000, 1, []int{}))
 		ib.HotBuffer = History{
 			Verdicts: []PositionVerdict{
 				{
@@ -507,37 +518,52 @@ func TestEvictSegments(t *testing.T) {
 		So(len(sib.InputBuffer.HotBuffer.Verdicts), ShouldEqual, 0)
 		So(len(sib.InputBuffer.ColdBuffer.Verdicts), ShouldEqual, 1961)
 
-		So(evicted[0], ShouldResembleProto, &cpb.Segment{
-			State:               cpb.SegmentState_FINALIZED,
-			HasStartChangepoint: false,
-			StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
-			StartPosition:       1,
-			EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
-			EndPosition:         39,
-			FinalizedCounts: &cpb.Counts{
-				TotalResults:  40,
-				TotalRuns:     40,
-				TotalVerdicts: 40,
-			},
-		})
+		expectedVerdicts := []PositionVerdict{
+			// The verdict in the hot buffer.
+			{CommitPosition: 10},
+		}
+		// Plus the evicted verdicts in the cold buffer.
+		expectedVerdicts = append(expectedVerdicts, simpleVerdicts(39, 1, []int{})...)
 
-		So(evicted[1], ShouldResembleProto, &cpb.Segment{
-			State:                        cpb.SegmentState_FINALIZING,
-			HasStartChangepoint:          true,
-			StartHour:                    timestamppb.New(time.Unix(40*3600, 0)),
-			StartPosition:                40,
-			StartPositionLowerBound_99Th: 30,
-			StartPositionUpperBound_99Th: 50,
-			FinalizedCounts:              &cpb.Counts{},
-		})
+		diff := cmp.Diff(evicted[0], EvictedSegment{
+			Segment: &cpb.Segment{
+				State:               cpb.SegmentState_FINALIZED,
+				HasStartChangepoint: false,
+				StartHour:           timestamppb.New(time.Unix(1*3600, 0)),
+				StartPosition:       1,
+				EndHour:             timestamppb.New(time.Unix(39*3600, 0)),
+				EndPosition:         39,
+				FinalizedCounts: &cpb.Counts{
+					TotalResults:  40,
+					TotalRuns:     40,
+					TotalVerdicts: 40,
+				},
+			},
+			Verdicts: expectedVerdicts,
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+
+		diff = cmp.Diff(evicted[1], EvictedSegment{
+			Segment: &cpb.Segment{
+				State:                        cpb.SegmentState_FINALIZING,
+				HasStartChangepoint:          true,
+				StartHour:                    timestamppb.New(time.Unix(40*3600, 0)),
+				StartPosition:                40,
+				StartPositionLowerBound_99Th: 30,
+				StartPositionUpperBound_99Th: 50,
+				FinalizedCounts:              &cpb.Counts{},
+			},
+			Verdicts: []PositionVerdict{},
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
 
 		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(remaining[0], segments[1], cmp.Comparer(proto.Equal))
+		diff = cmp.Diff(remaining[0], segments[1], cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 	})
 }
 
-func genSimpleInputBuffer(hotCap int, coldCap int, verdictCount int, startPos int, unexpectedIndices []int) *Buffer {
+func simpleVerdicts(verdictCount int, startPos int, unexpectedIndices []int) []PositionVerdict {
 	positions := make([]int, verdictCount)
 	total := make([]int, verdictCount)
 	hasUnexpected := make([]int, verdictCount)
@@ -548,12 +574,10 @@ func genSimpleInputBuffer(hotCap int, coldCap int, verdictCount int, startPos in
 	for _, ui := range unexpectedIndices {
 		hasUnexpected[ui] = 1
 	}
-	return genInputBuffer(hotCap, coldCap, positions, total, hasUnexpected)
+	return Verdicts(positions, total, hasUnexpected)
 }
 
-func genInputBuffer(hotCap int, coldCap int, positions, total, hasUnexpected []int) *Buffer {
-	history := Verdicts(positions, total, hasUnexpected)
-
+func genInputBuffer(hotCap int, coldCap int, history []PositionVerdict) *Buffer {
 	return &Buffer{
 		HotBufferCapacity:  hotCap,
 		ColdBufferCapacity: coldCap,
@@ -574,5 +598,41 @@ func genInputbufferWithRetries(hotCap int, coldCap int, positions, total, hasUne
 		ColdBuffer: History{
 			Verdicts: history,
 		},
+	}
+}
+
+func BenchmarkEncode(b *testing.B) {
+	// Result when test added:
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkEncode-96    	   30672	     34227 ns/op	   35125 B/op	       6 allocs/op
+
+	b.StopTimer()
+	ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{5, 102, 174, 872, 971}))
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		EncodeHistory(ib.ColdBuffer)
+		EncodeHistory(ib.HotBuffer)
+	}
+}
+
+func BenchmarkDecode(b *testing.B) {
+	// Result when test added:
+	// cpu: Intel(R) Xeon(R) CPU @ 2.00GHz
+	// BenchmarkDecode-96    	   11694	     99450 ns/op	  176464 B/op	      10 allocs/op
+
+	b.StopTimer()
+	ib := genInputBuffer(100, 2000, simpleVerdicts(2100, 1, []int{5, 102, 174, 872, 971}))
+	encodedColdBuffer := EncodeHistory(ib.ColdBuffer) // 69 bytes compressed
+	encodedHotBuffer := EncodeHistory(ib.HotBuffer)   // 19 bytes compressed
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := DecodeHistory(encodedColdBuffer)
+		if err != nil {
+			panic(err)
+		}
+		_, err = DecodeHistory(encodedHotBuffer)
+		if err != nil {
+			panic(err)
+		}
 	}
 }

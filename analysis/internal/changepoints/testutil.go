@@ -24,7 +24,9 @@ import (
 
 func FetchTestVariantBranches(ctx context.Context) ([]*tvbr.TestVariantBranch, error) {
 	st := spanner.NewStatement(`
-			SELECT Project, TestId, VariantHash, RefHash, Variant, SourceRef, HotInputBuffer, ColdInputBuffer, FinalizingSegment, FinalizedSegments
+			SELECT
+				Project, TestId, VariantHash, RefHash, Variant, SourceRef,
+				HotInputBuffer, ColdInputBuffer, FinalizingSegment, FinalizedSegments, Statistics
 			FROM TestVariantBranch
 			ORDER BY TestId
 		`)

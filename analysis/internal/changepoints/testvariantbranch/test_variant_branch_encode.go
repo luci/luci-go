@@ -15,8 +15,8 @@
 package testvariantbranch
 
 import (
-	"go.chromium.org/luci/analysis/internal/span"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
+	"go.chromium.org/luci/analysis/internal/span"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/proto"
@@ -38,11 +38,18 @@ func EncodeSegment(seg *cpb.Segment) ([]byte, error) {
 	return EncodeProtoMessage(seg)
 }
 
-func EncodeSegments(seg *cpb.Segments) ([]byte, error) {
-	if seg == nil {
+func EncodeSegments(segs *cpb.Segments) ([]byte, error) {
+	if segs == nil {
 		return []byte{}, nil
 	}
-	return EncodeProtoMessage(seg)
+	return EncodeProtoMessage(segs)
+}
+
+func EncodeStatistics(stats *cpb.Statistics) ([]byte, error) {
+	if stats == nil {
+		return []byte{}, nil
+	}
+	return EncodeProtoMessage(stats)
 }
 
 func EncodeSourceRef(sourceRef *pb.SourceRef) ([]byte, error) {
@@ -87,6 +94,19 @@ func DecodeSegments(bytes []byte) (*cpb.Segments, error) {
 		return nil, err
 	}
 	return seg, nil
+}
+
+// DecodeStatistics decodes []byte into a Statistics proto.
+func DecodeStatistics(bytes []byte) (*cpb.Statistics, error) {
+	if len(bytes) == 0 {
+		return nil, nil
+	}
+	stats := &cpb.Statistics{}
+	err := DecodeProtoMessage(bytes, stats)
+	if err != nil {
+		return nil, err
+	}
+	return stats, nil
 }
 
 // DecodeSourceRef decodes []byte in to SourceRef.

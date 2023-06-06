@@ -44,20 +44,13 @@ func VerdictsWithRetries(positions, total, hasUnexpected, retried, unexpectedAft
 
 		verdict := PositionVerdict{
 			CommitPosition: positions[i],
-			Hour:           time.Unix(int64(3600*(i+1)), 0),
+			Hour:           time.Unix(int64(3600*(positions[i])), 0),
 		}
 		if hasUnexpectedCount == 0 && totalCount == 1 {
 			verdict.IsSimpleExpected = true
 		} else {
 			verdict.Details = VerdictDetails{
-				Runs: []Run{
-					{
-						// Duplicate result, should be ignored.
-						IsDuplicate:           true,
-						ExpectedResultCount:   5,
-						UnexpectedResultCount: 5,
-					},
-				},
+				Runs: []Run{},
 			}
 			for i := 0; i < totalCount; i++ {
 				if i < unexpectedAfterRetry {
