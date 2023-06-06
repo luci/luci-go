@@ -25,12 +25,10 @@ service Gitiles {
     rpc Log(LogRequest) returns (LogResponse) {};
     // Refs retrieves repo refs.
     rpc Refs(RefsRequest) returns (RefsResponse) {};
-    // Archive retrieves archived contents of the project.
+    // Archive retrieves archived content bundle under the provided path in a
+    // repo or the entire repo if the path is not provided.
     //
-    // An archive is a shallow bundle of the contents of a repository.
-    //
-    // DEPRECATED: Use DownloadFile to obtain plain text files.
-    // TODO(pprabhu): Migrate known users to DownloadFile and delete this RPC.
+    // Note: for a single file, use DownloadFile to obtain the plain text file.
     rpc Archive(ArchiveRequest) returns (ArchiveResponse) {};
     // DownloadFile retrieves a file from the project.
     rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {};
@@ -152,8 +150,12 @@ message ArchiveRequest {
         BZIP2 = 3;
         XZ = 4;
     }
-    // Format of the returned project archive.
+    // Format of the returned archive.
     Format format = 3;
+
+    // POSIX style path relative to the project root.
+    // Optional. If not specified, it means to get the entire project archive.
+    string path = 4;
 }
 
 message ArchiveResponse {

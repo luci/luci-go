@@ -61,6 +61,8 @@ func (r *ArchiveRequest) Validate() error {
 		return errors.New("format must be valid")
 	case r.Ref == "":
 		return errors.New("ref is required")
+	case strings.HasPrefix(r.Path, "/"):
+		return errors.New("path must not start with /")
 	default:
 		return nil
 	}

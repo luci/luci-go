@@ -218,8 +218,12 @@ func (c *client) Archive(ctx context.Context, req *gitiles.ArchiveRequest, opts 
 	resp := &gitiles.ArchiveResponse{}
 
 	ref := strings.TrimRight(req.Ref, "/")
-	path := fmt.Sprintf("/%s/+archive/%s%s", url.PathEscape(req.Project), url.PathEscape(ref), archiveExtensions[req.Format])
-	h, b, err := c.getRaw(ctx, path, nil)
+	path := strings.TrimRight(req.Path, "/")
+	if path != "" {
+		path = fmt.Sprintf("/%s", path)
+	}
+	urlPath := fmt.Sprintf("/%s/+archive/%s%s%s", url.PathEscape(req.Project), url.PathEscape(ref), url.PathEscape(path), archiveExtensions[req.Format])
+	h, b, err := c.getRaw(ctx, urlPath, nil)
 	if err != nil {
 		return resp, err
 	}

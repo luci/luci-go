@@ -38,8 +38,9 @@ func cmdArchive(authOpts auth.Options) *subcommands.Command {
 
 	return &subcommands.Command{
 		UsageLine: "archive <options> repository-url committish",
-		ShortDesc: "downloads an archive of a repo at committish",
-		LongDesc: `Downloads an archive of a repo at given committish.
+		ShortDesc: "downloads an archive at the given repo committish",
+		LongDesc: `Downloads an archive of a repo or a given path in the repo at
+committish.
 
 This tool does not stream the archive, so the full contents are stored in
 memory before being written to disk.
@@ -50,6 +51,7 @@ memory before being written to disk.
 			c.Flags.StringVar(&c.rawFormat, "format", "GZIP",
 				fmt.Sprintf("Format of the archive requested. One of %s", formatChoices()))
 			c.Flags.StringVar(&c.output, "output", "", "Path to write archive to.")
+			c.Flags.StringVar(&c.path, "path", "", "Relative path to the repo project root.")
 			return &c
 		},
 	}
@@ -59,6 +61,7 @@ type archiveRun struct {
 	commonFlags
 	format gitilespb.ArchiveRequest_Format
 	output string
+	path   string
 
 	rawFormat string
 }
@@ -100,6 +103,7 @@ func (c *archiveRun) main(a subcommands.Application, args []string) error {
 		Format:  c.format,
 		Project: project,
 		Ref:     ref,
+		Path:    c.path,
 	}
 
 	authCl, err := c.createAuthClient()
