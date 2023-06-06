@@ -201,6 +201,22 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 						},
 					},
 				},
+				Statistics: &cpb.Statistics{
+					HourlyBuckets: []*cpb.Statistics_HourBucket{
+						{
+							Hour:               123456,
+							UnexpectedVerdicts: 1,
+							FlakyVerdicts:      3,
+							TotalVerdicts:      12,
+						},
+						{
+							Hour:               123500,
+							UnexpectedVerdicts: 3,
+							FlakyVerdicts:      7,
+							TotalVerdicts:      93,
+						},
+					},
+				},
 			}
 			mutation, err := tvb.ToMutation()
 			So(err, ShouldBeNil)
@@ -219,6 +235,9 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 			expectedFinalizedSegments, err := anypb.New(tvb.FinalizedSegments)
 			So(err, ShouldBeNil)
 
+			expectedStatistics, err := anypb.New(tvb.Statistics)
+			So(err, ShouldBeNil)
+
 			diff := cmp.Diff(res, &pb.TestVariantBranch{
 				Name:              "projects/project/tests/this%2F%2Fis%2Fa%2Ftest/variants/0123456789abcdef/refs/7265665f68617368",
 				Project:           "project",
@@ -229,6 +248,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 				Ref:               tvb.SourceRef,
 				FinalizingSegment: expectedFinalizingSegment,
 				FinalizedSegments: expectedFinalizedSegments,
+				Statistics:        expectedStatistics,
 				HotBuffer: &pb.InputBuffer{
 					Length: 1,
 					Verdicts: []*pb.PositionVerdict{

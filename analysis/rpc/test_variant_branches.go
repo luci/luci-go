@@ -97,6 +97,7 @@ func validateGetTestVariantBranchRequest(req *pb.GetTestVariantBranchRequest) (t
 func testVariantBranchToProto(tvb *tvbr.TestVariantBranch) (*pb.TestVariantBranch, error) {
 	var finalizedSegments *anypb.Any
 	var finalizingSegment *anypb.Any
+	var statistics *anypb.Any
 
 	// Hide the internal Spanner proto from our clients, as they
 	// must not depend on it. If this API is used for anything
@@ -116,6 +117,13 @@ func testVariantBranchToProto(tvb *tvbr.TestVariantBranch) (*pb.TestVariantBranc
 			return nil, err
 		}
 	}
+	if tvb.Statistics != nil {
+		var err error
+		statistics, err = anypb.New(tvb.Statistics)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	refHash := hex.EncodeToString(tvb.RefHash)
 	result := &pb.TestVariantBranch{
@@ -128,6 +136,7 @@ func testVariantBranchToProto(tvb *tvbr.TestVariantBranch) (*pb.TestVariantBranc
 		Ref:               tvb.SourceRef,
 		FinalizedSegments: finalizedSegments,
 		FinalizingSegment: finalizingSegment,
+		Statistics:        statistics,
 		HotBuffer:         toInputBufferProto(tvb.InputBuffer.HotBuffer),
 		ColdBuffer:        toInputBufferProto(tvb.InputBuffer.ColdBuffer),
 	}

@@ -106,6 +106,18 @@ message TestVariantBranch {
   // by a field of that wire type.
   google.protobuf.Any finalizing_segment = 9;
 
+  // Statistics about verdicts in the output buffer.
+  //
+  // Do not depend on this field. The internal protocol buffer stored in
+  // Spanner is returned here for debug purposes only. We use
+  // google.protobuf.Any to avoid revealing its type and having clients
+  // possibly depend on it.
+  //
+  // If any tool needs to read this data, a wire proto (that is different
+  // from the storage proto) needs to be defined and this field replaced
+  // by a field of that wire type.
+  google.protobuf.Any statistics = 12;
+
   // The hot input buffer.
   InputBuffer hot_buffer = 10;
 
