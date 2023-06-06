@@ -148,7 +148,7 @@ func getAllServiceCfgSets(ctx context.Context, cfgLoc *cfgcommonpb.GitilesLocati
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid gitiles repo: %s", cfgLoc.Repo).Err()
 	}
-	gitilesClient, err := clients.NewGitilesClient(ctx, host)
+	gitilesClient, err := clients.NewGitilesClient(ctx, host, "")
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create a gitiles client").Err()
 	}

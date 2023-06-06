@@ -26,13 +26,20 @@ import (
 
 var MockGitilesClientKey = "mock gitiles clients key for testing only"
 
-// NewGitilesClient returns a Gitiles client.
-func NewGitilesClient(ctx context.Context, host string) (gitilespb.GitilesClient, error) {
+// NewGitilesClient returns a Gitiles client with the authority of the given
+// luciProject or the current service if luciProject is empty.
+func NewGitilesClient(ctx context.Context, host, luciProject string) (gitilespb.GitilesClient, error) {
 	if mockClient, ok := ctx.Value(&MockGitilesClientKey).(*mock_gitiles.MockGitilesClient); ok {
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	var t http.RoundTripper
+	var err error
+	if luciProject != "" {
+		t, err = auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(gitiles.OAuthScope))
+	} else {
+		t, err = auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	}
 	if err != nil {
 		return nil, err
 	}
