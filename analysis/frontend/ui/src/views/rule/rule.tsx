@@ -16,11 +16,14 @@ import { useParams } from 'react-router-dom';
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
+import LinearProgress from '@mui/material/LinearProgress';
 
 import ClusterAnalysisSection from '@/components/cluster/cluster_analysis_section/cluster_analysis_section';
 import RuleTopPanel from '@/components/rule/rule_top_panel/rule_top_panel';
+import RuleArchivedMessage from '@/components/rule/rule_archived_message/rule_archived_message';
 import ErrorAlert from '@/components/error_alert/error_alert';
 import { ClusterContextProvider } from '@/components/cluster/cluster_context';
+import useFetchRule from '@/hooks/use_fetch_rule';
 
 const Rule = () => {
   const { project, id } = useParams();
@@ -30,7 +33,22 @@ const Rule = () => {
       <ErrorAlert
         errorTitle="Project or Rule ID is not specified"
         errorText="Project or Rule ID not specified in the URL, please make sure you have the correct URL and try again."
-        showError/>
+        showError />
+    );
+  }
+
+  const { isLoading, isError, data: rule, error } = useFetchRule(id, project);
+
+  if (isLoading) {
+    return <LinearProgress />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorAlert
+        errorText={`An error occured while fetching the rule: ${error}`}
+        errorTitle="Failed to load rule"
+        showError />
     );
   }
 
@@ -41,9 +59,10 @@ const Rule = () => {
           <RuleTopPanel project={project} ruleId={id} />
         </Grid>
         <Grid item xs={12}>
-          <ClusterContextProvider project={project} clusterAlgorithm='rules' clusterId={id}>
-            <ClusterAnalysisSection/>
-          </ClusterContextProvider>
+          {rule?.isActive ?
+            <ClusterContextProvider project={project} clusterAlgorithm='rules' clusterId={id}>
+              <ClusterAnalysisSection />
+            </ClusterContextProvider> : <RuleArchivedMessage />}
         </Grid>
       </Grid>
     </Container>
