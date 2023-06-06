@@ -34,6 +34,9 @@ func (impl *Impl) Cancel(ctx context.Context, rs *state.RunState, reasons []stri
 		err := errors.Reason("CRITICAL: can't cancel a Run with unspecified status").Err()
 		common.LogError(ctx, err)
 		panic(err)
+	case status == run.Status_SUBMITTING && rs.ID == "chromeos/8937574795854-1-ca8bf5e54fae6361":
+		// TODO(yiwzhang): revert after the run on https://crrev.com/i/5961766
+		// is cancelled.
 	case status == run.Status_SUBMITTING:
 		// Can't cancel while submitting.
 		return &Result{State: rs, PreserveEvents: true}, nil
