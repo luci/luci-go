@@ -493,7 +493,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Hostname: "double-k",
+								Name: "double-k",
 							}},
 						}
 					default:
@@ -523,9 +523,9 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Hostname: "double-k",
+								Name: "double-k",
 							}, {
-								Hostname: "thes-one",
+								Name: "thes-one",
 							}},
 							NextPageToken: "next-page",
 						}
@@ -564,7 +564,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Hostname: "double-k",
+								Name: "double-k",
 							}},
 						}
 					case 1:
@@ -592,9 +592,9 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Hostname: "double-k",
+								Name: "double-k",
 							}, {
-								Hostname: "thes-one",
+								Name: "thes-one",
 							}},
 						}
 					case 1:
@@ -624,9 +624,9 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Hostname: "double-k",
+								Name: "double-k",
 							}, {
-								Hostname: "thes-one",
+								Name: "thes-one",
 							}},
 						}
 					case 1:
@@ -676,7 +676,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 						count += 1
 						return http.StatusOK, &compute.InstanceList{
 							Items: []*compute.Instance{{
-								Hostname: "double-k",
+								Name: "double-k",
 							}},
 						}
 					case 1:

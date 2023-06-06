@@ -302,6 +302,10 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 		return errors.Annotate(err, "failed to list  %s-%s", proj, zone).Err()
 	}
 
+	if op.Warning != nil {
+		logging.Warningf(c, "%s: %s", op.Warning.Code, op.Warning.Message)
+	}
+
 	// Assign job to handle the next set of instances
 	defer func(c context.Context, task *tasks.AuditProject, pageToken string) {
 		if pageToken != "" {
@@ -317,8 +321,13 @@ func auditInstanceInZone(c context.Context, payload proto.Message) error {
 	// Mapping from hostname to VM
 	hostToVM := make(map[string]*model.VM)
 	for _, inst := range op.Items {
-		// Init all the hostnames
-		hostToVM[inst.Hostname] = nil
+		// Init all the hostnames. Or as gcloud calls it names. There
+		// is no hostname assigned to this VM in gclouds sense. This is
+		// because it has a different meaning. We mean the hostname
+		// from swarmings perspective, which is gclouds sense is just
+		// name. The instance struct does have a hostname field, but
+		// this is empty for all the VMs
+		hostToVM[inst.Name] = nil
 	}
 
 	query := datastore.NewQuery(model.VMKind)
