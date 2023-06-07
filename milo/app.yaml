@@ -65,6 +65,16 @@ handlers:
   # content when the service worker tries to fetch a new version.
   expiration: 0s
 
+# Serve the service worker on the old URL.
+# TODO(weiweilin): remove this once no traffic are hitting the old path.
+- url: /ui/service-worker.js
+  secure: always
+  static_files: ui/out/ui_sw.js
+  upload: ui/out/ui_sw.js
+  # These resources are cached by the service worker. Don't serve the old
+  # content when the service worker tries to fetch a new version.
+  expiration: 0s
+
 # SPA frontend routes.
 - url: /ui/.*
   secure: always
