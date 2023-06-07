@@ -46,8 +46,8 @@ func TestConfigSet(t *testing.T) {
 		So(os.WriteFile(path("subdir", "b.cfg"), []byte("b\n"), 0600), ShouldBeNil)
 
 		Convey("Reading", func() {
-			Convey("Success without filter", func() {
-				cfg, err := ReadConfigSet(tmp, "set name", nil)
+			Convey("Success", func() {
+				cfg, err := ReadConfigSet(tmp, "set name")
 				So(err, ShouldBeNil)
 				So(cfg, ShouldResemble, ConfigSet{
 					Name: "set name",
@@ -63,59 +63,9 @@ func TestConfigSet(t *testing.T) {
 				})
 			})
 
-			Convey("Success with filter", func() {
-				Convey("Single", func() {
-					cfg, err := ReadConfigSet(tmp, "set name", []string{"a.cfg"})
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResemble, ConfigSet{
-						Name: "set name",
-						Data: map[string][]byte{
-							"a.cfg": []byte("a\n"),
-						},
-					})
-
-					So(cfg.Files(), ShouldResemble, []string{
-						"a.cfg",
-					})
-				})
-
-				Convey("Multiple", func() {
-					cfg, err := ReadConfigSet(tmp, "set name", []string{"a.cfg", "*/b.cfg", "c.cfg"})
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResemble, ConfigSet{
-						Name: "set name",
-						Data: map[string][]byte{
-							"a.cfg":        []byte("a\n"),
-							"subdir/b.cfg": []byte("b\n"),
-						},
-					})
-
-					So(cfg.Files(), ShouldResemble, []string{
-						"a.cfg",
-						"subdir/b.cfg",
-					})
-				})
-
-				Convey("No matching", func() {
-					cfg, err := ReadConfigSet(tmp, "set name", []string{"c.cfg"})
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResemble, ConfigSet{
-						Name: "set name",
-						Data: map[string][]byte{},
-					})
-
-					So(cfg.Files(), ShouldBeEmpty)
-				})
-			})
-
 			Convey("Missing dir", func() {
-				_, err := ReadConfigSet(path("unknown"), "zzz", nil)
+				_, err := ReadConfigSet(path("unknown"), "zzz")
 				So(err, ShouldNotBeNil)
-			})
-
-			Convey("Invalid glob", func() {
-				_, err := ReadConfigSet(tmp, "set name", []string{"[]"})
-				So(err, ShouldErrLike, "invalid glob pattern")
 			})
 		})
 	})

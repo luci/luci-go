@@ -27,7 +27,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/flag/stringsetflag"
 
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/lucicfg/buildifier"
@@ -44,8 +43,7 @@ func Cmd(params base.Parameters) *subcommands.Command {
 If the first positional argument is a directory, takes all files there and
 sends them to LUCI Config service, to be validated as a single config set. The
 name of the config set (e.g. "projects/foo") MUST be provided via -config-set
-flag, it is required in this mode. Optionally, provide -file-filters flag to
-selectively send files to validate instead of all files.
+flag, it is required in this mode.
 
 If the first positional argument is a Starlark file, it is interpreted (as with
 'generate' subcommand) and the resulting generated configs are compared to
@@ -74,8 +72,6 @@ statement. See its doc for more details.
 				"Name of the config set to validate against when validating existing *.cfg configs.")
 			vr.Flags.BoolVar(&vr.strict, "strict", false,
 				"Use byte-by-byte comparison instead of comparing configs as proto messages.")
-			vr.Flags.Var(&vr.fileFilters, "file-filters",
-				"Glob patterns for config file path relative to 'config-dir'. When validating existing *.cfg configs, only the config files that match any of the pattern will be validated.")
 			return vr
 		},
 	}
@@ -84,9 +80,8 @@ statement. See its doc for more details.
 type validateRun struct {
 	base.Subcommand
 
-	configSet   string             // used only when validating existing *.cfg
-	strict      bool               // -strict flag
-	fileFilters stringsetflag.Flag // -file-filters flag, applied only when validating *.cfg
+	configSet string // used only when validating existing *.cfg
+	strict    bool   // -strict flag
 }
 
 type validateResult struct {
@@ -147,14 +142,9 @@ func (vr *validateRun) validateExisting(ctx context.Context, dir string) (*valid
 	case vr.Meta.WasTouched("config_dir"):
 		return nil, base.NewCLIError("-config-dir shouldn't be used, the directory was already given as positional argument")
 	}
-	configSet, err := lucicfg.ReadConfigSet(dir, vr.configSet, vr.fileFilters.Data.ToSlice())
+	configSet, err := lucicfg.ReadConfigSet(dir, vr.configSet)
 	if err != nil {
 		return nil, err
-	}
-	if len(configSet.Data) == 0 { // early return
-		return &validateResult{Validation: []*lucicfg.ValidationResult{
-			{ConfigSet: configSet.Name},
-		}}, nil
 	}
 	_, res, err := base.Validate(ctx, base.ValidateParams{
 		Output:              configSet.AsOutput("."),
