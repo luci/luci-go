@@ -22,4 +22,8 @@ const (
 	// In particular, this reduces Gerrit querying to CLs modified since
 	// (now-MaxTriggerAge).
 	MaxTriggerAge = 24 * 7 * time.Hour
+
+	// LaunchRetryClockTag tags the clock to coordinate with the test timer
+	// call back in cvtesting.
+	LaunchRetryClockTag = "retry-launch"
 )

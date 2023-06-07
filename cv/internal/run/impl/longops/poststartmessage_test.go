@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,7 +40,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/util"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPostStartMessage(t *testing.T) {
@@ -240,57 +239,54 @@ func TestPostStartMessage(t *testing.T) {
 				gf.CI(gChange1, gf.CQ(+1)),
 				gf.CI(gChange2, gf.CQ(+1)),
 			))
+			ctx, cancel := clock.WithDeadline(ctx, op.Op.Deadline.AsTime())
+			defer cancel()
+			expectedNumMsgsForChange1, expectedNumMsgsForChange2 := 0, 0
+			ct.Clock.Set(op.Op.Deadline.AsTime().Add(-8 * time.Minute))
 
-			Convey("PermissionDenied is fatal failure", func() {
+			Convey("With a non transient failure", func() {
 				ct.GFake.MutateChange(gHost, gChange1, func(c *gf.Change) {
-					c.ACLs = func(op gf.Operation, luciProject string) *status.Status {
+					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
 						return status.New(codes.PermissionDenied, "admin-is-angry-today")
 					}
 				})
-				res, err := op.Do(ctx)
-				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeFalse)
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
-				So(res.GetPostStartMessage().GetTime(), ShouldBeNil)
-				ci := ct.GFake.GetChange(gHost, gChange1).Info
-				So(ci.GetMessages(), ShouldHaveLength, 0)
+				expectedNumMsgsForChange1, expectedNumMsgsForChange2 = 0, 1
 			})
 
-			Convey("Gerrit internal error is deemed transient", func() {
+			Convey("With a transient failure", func() {
 				ct.GFake.MutateChange(gHost, gChange2, func(c *gf.Change) {
-					// HACK: simulate HTTP 5xx on SetReview.
-					c.ACLs = func(op gf.Operation, luciProject string) *status.Status {
+					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
 						return status.New(codes.Internal, "oops, temp error")
 					}
 				})
-				res, err := op.Do(ctx)
-				So(err, ShouldErrLike, "oops, temp error")
-				So(transient.Tag.In(err), ShouldBeTrue)
-				So(res, ShouldBeNil)
+				expectedNumMsgsForChange1, expectedNumMsgsForChange2 = 1, 0
 			})
 
-			Convey("Fatal failures dominate transient", func() {
+			Convey("With a mix of non-transient and transient failures", func() {
 				ct.GFake.MutateChange(gHost, gChange1, func(c *gf.Change) {
-					c.ACLs = func(op gf.Operation, luciProject string) *status.Status {
+					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
 						return status.New(codes.PermissionDenied, "admin-is-angry-today")
 					}
 				})
 				ct.GFake.MutateChange(gHost, gChange2, func(c *gf.Change) {
-					// HACK: simulate HTTP 5xx on SetReview.
-					c.ACLs = func(op gf.Operation, luciProject string) *status.Status {
+					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
 						return status.New(codes.Internal, "oops, temp error")
 					}
 				})
-				res, err := op.Do(ctx)
-				So(err, ShouldNotBeNil)
-				So(transient.Tag.In(err), ShouldBeFalse)
-				So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
-				So(res.GetPostStartMessage().GetTime(), ShouldBeNil)
-				ci1 := ct.GFake.GetChange(gHost, gChange1).Info
-				So(ci1.GetMessages(), ShouldHaveLength, 0)
-				ci2 := ct.GFake.GetChange(gHost, gChange2).Info
-				So(ci2.GetMessages(), ShouldHaveLength, 0)
+				expectedNumMsgsForChange1, expectedNumMsgsForChange2 = 0, 0
 			})
+
+			res, err := op.Do(ctx)
+			// Given any failure, the status should be set to FAILED,
+			// but the returned error is nil to prevent the TQ retry.
+			So(err, ShouldBeNil)
+			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
+			So(res.GetPostStartMessage().GetTime(), ShouldBeNil)
+			// Verify the posted messages.
+			ci1 := ct.GFake.GetChange(gHost, gChange1).Info
+			So(ci1.GetMessages(), ShouldHaveLength, expectedNumMsgsForChange1)
+			ci2 := ct.GFake.GetChange(gHost, gChange2).Info
+			So(ci2.GetMessages(), ShouldHaveLength, expectedNumMsgsForChange2)
 		})
 	})
 }

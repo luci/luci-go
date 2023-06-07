@@ -22,8 +22,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -161,13 +159,6 @@ func TestLaunch(t *testing.T) {
 				},
 			}
 			tj := w.makePendingTryjob(ctx, def)
-			ct.Clock.SetTimerCallback(func(dur time.Duration, timer clock.Timer) {
-				for _, tag := range testclock.GetTags(timer) {
-					if tag == launchRetryClockTag {
-						ct.Clock.Add(dur)
-					}
-				}
-			})
 			So(datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return tryjob.SaveTryjobs(ctx, []*tryjob.Tryjob{tj}, nil)
 			}, nil), ShouldBeNil)

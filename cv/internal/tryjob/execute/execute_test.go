@@ -25,8 +25,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -703,13 +701,6 @@ func TestExecutePlan(t *testing.T) {
 
 			Convey("Fail the execution if encounter launch failure", func() {
 				def.GetBuildbucket().GetBuilder().Project = "another_proj"
-				ct.Clock.SetTimerCallback(func(dur time.Duration, timer clock.Timer) {
-					for _, tag := range testclock.GetTags(timer) {
-						if tag == launchRetryClockTag {
-							ct.Clock.Add(dur)
-						}
-					}
-				})
 				execState, err := executor.executePlan(ctx, &plan{
 					triggerNewAttempt: []planItem{
 						{

@@ -27,10 +27,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/lease"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/botdata"
@@ -71,9 +73,11 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 	if op.IsCancelRequested() {
 		return &eventpb.LongOpCompleted{Status: eventpb.LongOpCompleted_CANCELLED}, nil
 	}
-
 	if err := op.prepare(ctx); err != nil {
 		return nil, err
+	}
+	if op.Op.GetDeadline() == nil {
+		panic(errors.New("PostStartMessageOp: missing deadline"))
 	}
 
 	errs := make(errors.MultiError, len(op.rcls))
@@ -100,43 +104,36 @@ func (op *PostStartMessageOp) Do(ctx context.Context) (*eventpb.LongOpCompleted,
 		panic(fmt.Errorf("unexpected WorkPool error %s", poolError))
 	}
 
-	// Aggregate all errors into the final result.
-	psm := &eventpb.LongOpCompleted_PostStartMessage{}
-	result := &eventpb.LongOpCompleted{
-		Status: eventpb.LongOpCompleted_SUCCEEDED, // be hopeful by default
-		Result: &eventpb.LongOpCompleted_PostStartMessage_{
-			PostStartMessage: psm,
-		},
-	}
-	var firstTE, firstPE error
+	var hasCancelled, hasFailed bool
 	for i, err := range errs {
 		switch {
 		case err == nil:
 		case errors.Unwrap(err) == errCancelHonored:
-			result.Status = eventpb.LongOpCompleted_CANCELLED
-		case transient.Tag.In(err):
-			if firstTE == nil {
-				firstTE = err
-			}
+			hasCancelled = true
 		default:
-			if firstPE == nil {
-				firstPE = err
-			}
-			logging.Errorf(ctx, "failed to post start message on CL %d %q: %s",
+			hasFailed = true
+			logging.Warningf(ctx, "failed to post start message on CL %d %q: %s",
 				op.rcls[i].ID, op.rcls[i].ExternalID, err)
 		}
 	}
-
-	switch {
-	case firstPE != nil:
-		result.Status = eventpb.LongOpCompleted_FAILED
-		return result, firstPE
-	case firstTE != nil:
-		return nil, firstTE
-	default:
-		psm.Time = timestamppb.New(op.latestPostedAt)
-		return result, nil
+	result := &eventpb.LongOpCompleted{
+		Result: &eventpb.LongOpCompleted_PostStartMessage_{
+			PostStartMessage: &eventpb.LongOpCompleted_PostStartMessage{},
+		},
 	}
+	switch {
+	case hasFailed:
+		result.Status = eventpb.LongOpCompleted_FAILED
+	case hasCancelled:
+		result.Status = eventpb.LongOpCompleted_CANCELLED
+	default:
+		result.Status = eventpb.LongOpCompleted_SUCCEEDED
+		result.GetPostStartMessage().Time = timestamppb.New(op.latestPostedAt)
+	}
+	// doCL() retries on transient failures until 30 secs before the op
+	// deadline. If any failure cases, this returns nil in error to prevent
+	// the TQ task from being retried.
+	return result, nil
 }
 
 func (op *PostStartMessageOp) prepare(ctx context.Context) error {
@@ -157,37 +154,59 @@ func (op *PostStartMessageOp) prepare(ctx context.Context) error {
 }
 
 func (op *PostStartMessageOp) doCL(ctx context.Context, rcl *run.RunCL) (time.Time, error) {
+	ctx = logging.SetField(ctx, "cl", rcl.ID)
 	if rcl.Detail.GetGerrit() == nil {
 		panic(fmt.Errorf("CL %d is not a Gerrit CL", rcl.ID))
 	}
-
-	if op.IsCancelRequested() {
-		return notPosted, errCancelHonored
-	}
-
-	queryOpts := []gerritpb.QueryOption{gerritpb.QueryOption_MESSAGES}
-	switch postedAt, err := util.IsActionTakenOnGerritCL(ctx, op.GFactory, rcl, queryOpts, op.hasStartMessagePosted); {
-	case err != nil:
-		return notPosted, errors.Annotate(err, "failed to check if message was already posted").Err()
-	case postedAt != notPosted:
-		logging.Debugf(ctx, "CL %d %s already has the starting message at %s", rcl.ID, rcl.ExternalID, postedAt)
-		return postedAt, nil
-	}
-
-	if op.IsCancelRequested() {
-		return notPosted, errCancelHonored
-	}
-
 	req, err := op.makeSetReviewReq(rcl)
 	if err != nil {
 		return notPosted, err
 	}
-	if err := util.MutateGerritCL(ctx, op.GFactory, rcl, req, 2*time.Minute, "post-start-message"); err != nil {
+	var lastNonDeadlineErr error
+	var postedAt time.Time
+	queryOpts := []gerritpb.QueryOption{gerritpb.QueryOption_MESSAGES}
+	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), op.makeRetryFactory(), func() error {
+		if op.IsCancelRequested() {
+			return errCancelHonored
+		}
+
+		var err error
+		switch postedAt, err = util.IsActionTakenOnGerritCL(ctx, op.GFactory, rcl, queryOpts, op.hasStartMessagePosted); {
+		case postedAt != notPosted:
+			logging.Debugf(ctx, "PostStartMessageOp: the CL already has the starting message at %s", postedAt)
+			return nil
+		case err == nil:
+		case errors.Unwrap(err) != context.DeadlineExceeded:
+			lastNonDeadlineErr = err
+			fallthrough
+		default:
+			return errors.Annotate(err, "failed to check if message was already posted").Err()
+		}
+		switch err = util.MutateGerritCL(ctx, op.GFactory, rcl, req, 2*time.Minute, "post-start-message"); {
+		case err == nil:
+			// NOTE: to avoid another round-trip to Gerrit, use the CV time here even
+			// though it isn't the same as what Gerrit recorded.
+			postedAt = clock.Now(ctx).Truncate(time.Second)
+		case errors.Unwrap(err) != context.DeadlineExceeded:
+			lastNonDeadlineErr = err
+			fallthrough
+		default:
+			logging.Debugf(ctx, "PostStartMessageOp: failed to mutate Gerrit CL: %s", err)
+		}
+		return err
+	}, nil)
+
+	switch {
+	case err == nil:
+		return postedAt, nil
+	case errors.Unwrap(err) == context.DeadlineExceeded && lastNonDeadlineErr != nil:
+		// if the deadline error occurred after retries, then returns the last
+		// error before the deadline error. It should be more informative than
+		// `context deadline exceeded`.
+		return notPosted, lastNonDeadlineErr
+	default:
 		return notPosted, err
 	}
-	// NOTE: to avoid another round-trip to Gerrit, use the CV time here even
-	// though it isn't the same as what Gerrit recorded.
-	return clock.Now(ctx).Truncate(time.Second), nil
 }
 
 // hasStartMessagePosted returns when the start message was posted on a CL or
@@ -234,4 +253,17 @@ func (op *PostStartMessageOp) makeSetReviewReq(rcl *run.RunCL) (*gerritpb.SetRev
 		Notify:     gerritpb.Notify_NOTIFY_NONE,
 		Message:    msg,
 	}, nil
+}
+
+func (op *PostStartMessageOp) makeRetryFactory() retry.Factory {
+	return lease.RetryIfLeased(transient.Only(func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   100 * time.Millisecond,
+				Retries: -1, // unlimited
+			},
+			Multiplier: 2,
+			MaxDelay:   1 * time.Minute,
+		}
+	}))
 }

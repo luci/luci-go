@@ -41,7 +41,7 @@ import (
 const (
 	// maxPostStartMessageDuration is the max time that a Run will be waiting for
 	// the starting message to be posted on every CL.
-	maxPostStartMessageDuration = 10 * time.Minute
+	maxPostStartMessageDuration = 8 * time.Minute
 
 	logEntryLabelPostStartMessage = "Posting Starting Message"
 )

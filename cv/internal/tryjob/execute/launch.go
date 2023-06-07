@@ -38,8 +38,6 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-const launchRetryClockTag = "retry-launch"
-
 // launchTryjobs launches the provided Tryjobs using the backend system.
 //
 // All provided Tryjobs MUST be in PENDING status and SHOULD NOT have an
@@ -68,7 +66,7 @@ func (w *worker) launchTryjobs(ctx context.Context, tryjobs []*tryjob.Tryjob) ([
 		return nil, err
 	}
 	launchFailures := make(map[*tryjob.Tryjob]error)
-	_ = retry.Retry(clock.Tag(ctx, launchRetryClockTag), retryFactory, func() error {
+	_ = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), retryFactory, func() error {
 		var hasFatal bool
 		launchFailures, hasFatal = w.tryLaunchTryjobsOnce(ctx, toBeLaunched, clsInOrder)
 		switch {
