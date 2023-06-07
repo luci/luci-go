@@ -219,21 +219,27 @@ func RemoteValidator(client *http.Client, host string) ConfigSetValidator {
 
 // ReadConfigSet reads all regular files in the given directory (recursively)
 // and returns them as a ConfigSet with given name.
-func ReadConfigSet(dir, name string) (ConfigSet, error) {
+func ReadConfigSet(dir, name string, globPatterns []string) (ConfigSet, error) {
 	configs := map[string][]byte{}
 	err := filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
 		if err != nil || !info.Mode().IsRegular() {
-			return err
-		}
-		content, err := os.ReadFile(p)
-		if err != nil {
 			return err
 		}
 		relPath, err := filepath.Rel(dir, p)
 		if err != nil {
 			return err
 		}
-		configs[filepath.ToSlash(relPath)] = content
+		path := filepath.ToSlash(relPath)
+		switch matched, err := matchAnyGlobPatterns(globPatterns, path); {
+		case err != nil:
+			return err
+		case matched:
+			content, err := os.ReadFile(p)
+			if err != nil {
+				return err
+			}
+			configs[path] = content
+		}
 		return nil
 	})
 	if err != nil {
@@ -243,6 +249,23 @@ func ReadConfigSet(dir, name string) (ConfigSet, error) {
 		Name: name,
 		Data: configs,
 	}, nil
+}
+
+func matchAnyGlobPatterns(patterns []string, path string) (bool, error) {
+	if len(patterns) == 0 {
+		return true, nil
+	}
+	for _, pattern := range patterns {
+		switch matched, err := filepath.Match(pattern, path); {
+		case err == filepath.ErrBadPattern:
+			return false, fmt.Errorf("invalid glob pattern: %q", pattern)
+		case err != nil:
+			return false, err
+		case matched:
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // Files returns a sorted list of file names in the config set.
