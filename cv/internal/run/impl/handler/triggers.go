@@ -41,7 +41,7 @@ func (impl *Impl) onCompletedResetTriggers(ctx context.Context, rs *state.RunSta
 	opID := opCompleted.GetOperationId()
 	rs = rs.ShallowCopy()
 	rs.RemoveCompletedLongOp(opID)
-	if status := rs.Status; run.IsEnded(status) || status == run.Status_SUBMITTING {
+	if status := rs.Status; run.IsEnded(status) {
 		logging.Warningf(ctx, "long operation to reset triggers has completed but Run is %s. Result: %s", rs.Status, opCompleted)
 		return &Result{State: rs}, nil
 	}
