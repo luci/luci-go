@@ -14,15 +14,14 @@
 
 import { afterEach, beforeEach, expect, jest } from '@jest/globals';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { destroy, Instance } from 'mobx-state-tree';
 
 import { AuthStateProvider } from '@/common/components/auth_state_provider';
 import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
-import {
-  QueryTestMetadataResponse,
-  ResultDb,
-} from '@/common/services/resultdb';
+import { MiloInternal, Project } from '@/common/services/milo_internal';
+import { ResultDb } from '@/common/services/resultdb';
+import { TestMetadataDetail } from '@/common/services/resultdb';
 import { Store, StoreProvider } from '@/common/store';
 
 import { TestIdLabel } from './test_id_label';
@@ -47,38 +46,34 @@ describe('TestIdLabel', () => {
     destroy(store);
   });
 
-  it('should load test source', async () => {
-    const tm: QueryTestMetadataResponse = {
-      testMetadata: [
-        {
-          name: 'project/refhash',
-          project: 'chromium',
-          testId: 'fakeid',
-          refHash: 'fakeHash',
-          sourceRef: {
-            gitiles: {
-              host: 'chromium.googlesource.com',
-              project: 'chromium/src',
-              ref: 'refs/heads/main',
-            },
-          },
-          testMetadata: {
-            name: 'fakename',
-            location: {
-              repo: 'https://chromium.googlesource.com/chromium/src',
-              fileName: '//testfile',
-              line: 440,
-            },
-          },
-        },
-      ],
-    };
-    const testMetadataStub = jest.spyOn(
-      ResultDb.prototype,
-      'queryTestMetadata'
-    );
-    testMetadataStub.mockResolvedValueOnce(tm);
-
+  const testSchema = 'testSchema';
+  const baseTestMetadata: TestMetadataDetail = {
+    name: 'project/refhash',
+    project: 'chromium',
+    testId: 'fakeid',
+    refHash: 'fakeHash',
+    sourceRef: {
+      gitiles: {
+        host: 'chromium.googlesource.com',
+        project: 'chromium/src',
+        ref: 'refs/heads/main',
+      },
+    },
+    testMetadata: {
+      name: 'fakename',
+      location: {
+        repo: 'https://chromium.googlesource.com/chromium/src',
+        fileName: '//testfile',
+        line: 440,
+      },
+      properties: {
+        testCase: { id: { value: 'test case id' } },
+        owners: [{ email: 'test@gmail.com' }],
+      },
+      propertiesSchema: testSchema,
+    },
+  };
+  const renderTestIdLabel = () => {
     render(
       <QueryClientProvider client={client}>
         <StoreProvider value={store}>
@@ -96,12 +91,66 @@ describe('TestIdLabel', () => {
     );
     expect(screen.queryByText('testrealm')).not.toBeNull();
     expect(screen.queryByText('testid')).not.toBeNull();
-    expect(testMetadataStub.mock.calls.length).toStrictEqual(1);
+  };
+  it('should load test source', async () => {
+    const testMetadataStub = jest.spyOn(
+      ResultDb.prototype,
+      'queryTestMetadata'
+    );
+    testMetadataStub.mockResolvedValueOnce({
+      testMetadata: [baseTestMetadata],
+    });
+
+    renderTestIdLabel();
     expect(await screen.findByText('fakename')).not.toBeNull();
     const expectedSource =
       'https://chromium.googlesource.com/chromium/src/+/refs/heads/main/testfile#440';
     expect(
       (await screen.findByText('fakename')).getAttribute('href')
     ).toStrictEqual(expectedSource);
+  });
+
+  it('should not crash if no test metadata returned from the query', async () => {
+    const testMetadataStub = jest.spyOn(
+      ResultDb.prototype,
+      'queryTestMetadata'
+    );
+    testMetadataStub.mockResolvedValueOnce({});
+
+    renderTestIdLabel();
+  });
+
+  it('should load key value metadata using the metadataConfig', async () => {
+    const testProjectCfg: Project = {
+      metadataConfig: {
+        testMetadataProperties: [
+          {
+            schema: testSchema,
+            displayItems: [
+              { displayName: 'invalidPath1', path: 'testCase.id.value.a' },
+              { displayName: 'invalidPath2', path: 'testCase.id.a.a' },
+              { displayName: 'notString', path: 'testCaseInfo.owners' },
+              { displayName: 'validPath', path: 'testCase.id.value' },
+            ],
+          },
+        ],
+      },
+    };
+    const cfgStub = jest.spyOn(MiloInternal.prototype, 'getProjectCfg');
+    cfgStub.mockResolvedValueOnce(testProjectCfg);
+    const testMetadataStub = jest.spyOn(
+      ResultDb.prototype,
+      'queryTestMetadata'
+    );
+    testMetadataStub.mockResolvedValueOnce({
+      testMetadata: [baseTestMetadata],
+    });
+
+    renderTestIdLabel();
+    await waitFor(() => expect(screen.queryByText('validPath')).not.toBeNull());
+    expect(screen.queryByText('test case id')).not.toBeNull();
+    expect(screen.queryByText('invalidPath1')).toBeNull();
+    expect(screen.queryByText('invalidPath1')).toBeNull();
+    expect(screen.queryByText('notString')).toBeNull();
   });
 });

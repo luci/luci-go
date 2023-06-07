@@ -215,3 +215,27 @@ export function createStaticTrustedURL<T extends string>(
 export function extractProject(projectOrRealm: string): string {
   return projectOrRealm.split(':', 2)[0];
 }
+
+/**
+ * Extract nested field with a path.
+ * Path only support dot notation for object walking, eg "a.b" to access 1 in object {a:{b:1}}.
+ * Returns null if path doesn't exist in the given object.
+ *
+ * @param properties an arbitrary object which will be extracted from.
+ * @param path the path to the wanted field.
+ * @returns the value at the end of the path.
+ */
+export function extractProperty(
+  properties: { [key: string]: unknown },
+  path: string
+) {
+  const pathTokens = path.split('.');
+  let cur: any = properties;
+  for (const token of pathTokens) {
+    if (!cur) {
+      return null;
+    }
+    cur = cur[token];
+  }
+  return cur || null;
+}

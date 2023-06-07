@@ -240,6 +240,8 @@ export const TEST_VARIANT_STATUS_CMP_STRING = {
 export interface TestMetadata {
   readonly name?: string;
   readonly location?: TestLocation;
+  readonly propertiesSchema?: string;
+  readonly properties?: { [key: string]: unknown };
 }
 
 export interface TestResultBundle {

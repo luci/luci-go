@@ -28,6 +28,7 @@ import { FilterBox } from './filter_box';
 import { GraphConfig } from './graph_config';
 import { StatusGraph } from './status_graph';
 import { TestIdLabel } from './test_id_label';
+import { TestPropertiesEntry } from './test_properties_entry';
 import { VariantCounts } from './variant_counts';
 import { VariantDefTable } from './variant_def_table';
 import { VerdictDetailsDialog } from './verdict_details_dialog';
@@ -102,7 +103,18 @@ export const TestHistoryPage = observer(() => {
 
   return (
     <PageContainer>
-      <TestIdLabel projectOrRealm={projectOrRealm} testId={testId} />
+      <div
+        css={{
+          width: '100%',
+          backgroundColor: 'var(--block-background-color)',
+          padding: '6px 16px',
+          fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
+          fontSize: '14px',
+        }}
+      >
+        <TestIdLabel projectOrRealm={projectOrRealm} testId={testId} />
+        <TestPropertiesEntry projectOrRealm={projectOrRealm} testId={testId} />
+      </div>
       <LinearProgress value={100} variant="determinate" />
       <FilterBox
         css={{ width: 'calc(100% - 10px)', margin: '5px' }}

@@ -84,6 +84,20 @@ export interface GetProjectCfgRequest {
 export interface Project {
   readonly logoUrl?: string;
   readonly bugUrlTemplate?: string;
+  readonly metadataConfig?: MetadataConfig;
+}
+
+export interface MetadataConfig {
+  readonly testMetadataProperties?: readonly DisplayRule[];
+}
+export interface DisplayRule {
+  readonly schema: string;
+  readonly displayItems: readonly DisplayItem[];
+}
+
+export interface DisplayItem {
+  readonly displayName: string;
+  readonly path: string;
 }
 
 export interface BugTemplate {

@@ -21,65 +21,89 @@ import {
 } from '@/common/components/auth_state_provider';
 import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
 import { getCodeSourceUrl } from '@/common/libs/url_utils';
-import { extractProject } from '@/common/libs/utils';
-import { QueryTestMetadataRequest, ResultDb } from '@/common/services/resultdb';
+import { extractProject, extractProperty } from '@/common/libs/utils';
+import { StringPair } from '@/common/services/common';
+import { MiloInternal, Project } from '@/common/services/milo_internal';
+import { TestMetadata } from '@/common/services/resultdb';
+
+import { useTestMetadata } from './utils';
 
 export interface TestIdLabelProps {
   readonly projectOrRealm: string; // A project name or a realm name.
   readonly testId: string;
 }
 
-const MAIN_GIT_REF = 'refs/heads/main';
-
-// TODO: query with pagination.
-function useTestMetadata(req: QueryTestMetadataRequest) {
+function useProjectConfig(project: string) {
   const { identity } = useAuthState();
   const getAccessToken = useGetAccessToken();
+  const req = { project };
   return useQuery({
-    queryKey: [identity, ResultDb.SERVICE, 'QueryTestMetadata', req],
+    queryKey: [identity, MiloInternal.SERVICE, 'GetProjectCfg', req],
     queryFn: async () => {
-      const resultDBService = new ResultDb(
-        new PrpcClientExt({ host: CONFIGS.RESULT_DB.HOST }, getAccessToken)
+      const miloInternalService = new MiloInternal(
+        new PrpcClientExt(
+          { host: '', insecure: location.protocol === 'http:' },
+          getAccessToken
+        )
       );
-      const res = await resultDBService.queryTestMetadata(req, {
+      const res = await miloInternalService.getProjectCfg(req, {
         acceptCache: false,
         skipUpdate: true,
       });
-      if (!res.testMetadata) {
-        return {};
-      }
-      // Select the main branch. Fallback to the first element if main branch not found.
-      const selected =
-        res.testMetadata.find(
-          (m) => m.sourceRef.gitiles?.ref === MAIN_GIT_REF
-        ) || res.testMetadata[0];
-      const testLocation = selected.testMetadata?.location;
-      return {
-        metadata: selected.testMetadata,
-        sourceURL: testLocation
-          ? getCodeSourceUrl(testLocation, selected.sourceRef.gitiles?.ref)
-          : null,
-      };
+      return res;
     },
   });
 }
 
+function propertiesToDisplay(
+  projectCfg: Project,
+  testMetadata: TestMetadata
+): StringPair[] {
+  const propertiesCfgs = projectCfg.metadataConfig?.testMetadataProperties;
+  // Return empty if no test metadata properties or, test metadata properties schema or display config is unspecified.
+  if (
+    !testMetadata.properties ||
+    !testMetadata.propertiesSchema ||
+    !propertiesCfgs
+  ) {
+    return [];
+  }
+  // Find the right display rules to apply to the test metadata properties based on the schema name.
+  const propertiesCfg = propertiesCfgs.find(
+    (t) => t.schema === testMetadata.propertiesSchema
+  );
+  if (!propertiesCfg) {
+    return [];
+  }
+  const pairs: StringPair[] = [];
+  for (const item of propertiesCfg.displayItems) {
+    const value = extractProperty(testMetadata.properties, item.path);
+    if (value && typeof value === 'string') {
+      pairs.push({ key: item.displayName, value });
+    }
+  }
+  return pairs;
+}
+
 export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
   const project = extractProject(projectOrRealm);
-  const { data, isSuccess, isLoading } = useTestMetadata({
-    project,
-    predicate: { testIds: [testId] },
-  });
+  const {
+    data: testMetadataDetail,
+    isSuccess: tmIsSuccess,
+    isLoading: tmIsLoading,
+  } = useTestMetadata({ project, predicate: { testIds: [testId] } });
+  const metadata = testMetadataDetail?.testMetadata;
+  const testLocation = metadata?.location;
+  const sourceURL = testLocation
+    ? getCodeSourceUrl(testLocation, testMetadataDetail?.sourceRef.gitiles?.ref)
+    : null;
+  const {
+    data: projectCfg,
+    isSuccess: cfgIsSuccess,
+    isLoading: cfgIsLoading,
+  } = useProjectConfig(project);
   return (
-    <table
-      css={{
-        width: '100%',
-        backgroundColor: 'var(--block-background-color)',
-        padding: '6px 16px',
-        fontFamily: "'Google Sans', 'Helvetica Neue', sans-serif",
-        fontSize: '14px',
-      }}
-    >
+    <table>
       <tbody>
         <tr>
           <td
@@ -97,22 +121,30 @@ export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
           <td css={{ color: 'var(--light-text-color)' }}>ID</td>
           <td>{testId}</td>
         </tr>
-        {!isLoading && isSuccess && (
+        {!tmIsLoading && tmIsSuccess && metadata && (
           <>
-            {data.metadata?.name && (
+            {metadata.name && (
               <tr>
                 <td css={{ color: 'var(--light-text-color)' }}>Test</td>
-                {data.sourceURL ? (
+                {sourceURL ? (
                   <td>
-                    <Link href={data.sourceURL} target="_blank">
-                      {data.metadata.name}
+                    <Link href={sourceURL} target="_blank">
+                      {metadata.name}
                     </Link>
                   </td>
                 ) : (
-                  <td>{data.metadata.name}</td>
+                  <td>{metadata.name}</td>
                 )}
               </tr>
             )}
+            {!cfgIsLoading &&
+              cfgIsSuccess &&
+              propertiesToDisplay(projectCfg, metadata).map((item, idx) => (
+                <tr key={idx}>
+                  <td css={{ color: 'var(--light-text-color)' }}>{item.key}</td>
+                  <td>{item.value}</td>
+                </tr>
+              ))}
           </>
         )}
       </tbody>
