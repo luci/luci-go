@@ -19,33 +19,25 @@ import (
 	"context"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/secrets"
+	tsmonsrv "go.chromium.org/luci/server/tsmon"
 
 	"go.chromium.org/luci/cv/internal/aggrmetrics"
 	"go.chromium.org/luci/cv/internal/common"
 )
 
 const (
-	// prodXGRPCTarget is the dial target for prodx grpc service.
-	prodXGRPCTarget = "prodxmon-pa.googleapis.com:443"
-
 	// aggregateMetricsCronTimeout is the amount off time the Cron has to compute
 	// and flush the aggregation metrics.
 	aggregateMetricsCronTimeout = 2 * time.Minute
@@ -71,7 +63,7 @@ func main() {
 		state.SetStore(store.NewInMemory(&target))
 		state.InhibitGlobalCallbacksOnFlush()
 
-		mon, err := newMonitor(srv.Context, opts.TsMonAccount)
+		mon, err := tsmonsrv.NewProdXMonitor(srv.Context, 1024, opts.TsMonAccount)
 		if err != nil {
 			return errors.Annotate(err, "failed to initiate monitoring client").Err()
 		}
@@ -98,25 +90,4 @@ func main() {
 
 		return nil
 	})
-}
-
-func newMonitor(ctx context.Context, account string) (monitor.Monitor, error) {
-	cred, err := auth.GetPerRPCCredentials(
-		ctx, auth.AsActor,
-		auth.WithServiceAccount(account),
-		auth.WithScopes(monitor.ProdxmonScopes...),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
-	}
-	conn, err := grpc.Dial(
-		prodXGRPCTarget,
-		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
-		grpc.WithPerRPCCredentials(cred),
-		grpcmon.WithClientRPCStatsMonitor(),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to dial ProdX service(%s)", prodXGRPCTarget).Err()
-	}
-	return monitor.NewGRPCMonitorWithChunkSize(ctx, 1024, conn), nil
 }

@@ -19,9 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
@@ -33,9 +30,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/versions"
-	"go.chromium.org/luci/grpc/grpcmon"
 
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -253,12 +248,12 @@ func (s *State) enableTSMon(ctx context.Context, prodXAccount string) {
 
 	mon := s.CustomMonitor
 	if mon == nil {
-		conn, err := dialProdX(ctx, prodXAccount)
+		prodx, err := NewProdXMonitor(ctx, 500, prodXAccount)
 		if err != nil {
 			logging.WithError(err).Errorf(ctx, "failed to dial ProdX; using NilMonitor()")
 			mon = monitor.NewNilMonitor()
 		} else {
-			mon = monitor.NewGRPCMonitor(ctx, conn)
+			mon = prodx
 		}
 	}
 	s.state.SetMonitor(mon)
@@ -407,26 +402,4 @@ func (s *State) ensureTaskNumAndFlush(ctx context.Context, state *tsmon.State, s
 	}
 	state.Store().SetDefaultTarget(&task)
 	return state.ParallelFlush(ctx, state.Monitor(), 4)
-}
-
-// dialProdX creates a gRPC connection to ProdX with a given service account.
-func dialProdX(ctx context.Context, account string) (*grpc.ClientConn, error) {
-	cred, err := auth.GetPerRPCCredentials(
-		ctx, auth.AsActor,
-		auth.WithServiceAccount(account),
-		auth.WithScopes(monitor.ProdxmonScopes...),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "obtaining credential with %q", account).Err()
-	}
-	conn, err := grpc.Dial(
-		prodXEndpoint,
-		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
-		grpc.WithPerRPCCredentials(cred),
-		grpcmon.WithClientRPCStatsMonitor(),
-	)
-	if err != nil {
-		return nil, errors.Annotate(err, "dialing ProdX at %q", prodXEndpoint).Err()
-	}
-	return conn, err
 }

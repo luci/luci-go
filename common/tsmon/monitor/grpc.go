@@ -34,20 +34,13 @@ type grpcMonitor struct {
 	connection *grpc.ClientConn
 }
 
-// NewGRPCMonitor creates a new Monitor object that sends metric by gRPC.
-func NewGRPCMonitor(ctx context.Context, conn *grpc.ClientConn) Monitor {
+// NewGRPCMonitor creates a new Monitor that sends metric by gRPC with a given
+// chunk size.
+func NewGRPCMonitor(ctx context.Context, chunkSize int, conn *grpc.ClientConn) Monitor {
 	return &grpcMonitor{
 		client:     pb.NewMonitoringServiceClient(conn),
-		chunkSize:  500,
+		chunkSize:  chunkSize,
 		connection: conn,
-	}
-}
-
-// NewGRPCMonitorWithChunkSize creates a new GRPCMonitor with a given chunk size.
-func NewGRPCMonitorWithChunkSize(ctx context.Context, chunkSize int, conn *grpc.ClientConn) Monitor {
-	return &grpcMonitor{
-		client:    pb.NewMonitoringServiceClient(conn),
-		chunkSize: chunkSize,
 	}
 }
 
