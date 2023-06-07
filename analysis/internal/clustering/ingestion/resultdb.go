@@ -27,9 +27,9 @@ import (
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-func failuresFromTestVariant(opts Options, tv *rdbpb.TestVariant) []*cpb.Failure {
+func failuresFromTestVariant(opts Options, tv TestVerdict) []*cpb.Failure {
 	var failures []*cpb.Failure
-	if tv.Status == rdbpb.TestVariantStatus_EXPECTED {
+	if tv.Verdict.Status == rdbpb.TestVariantStatus_EXPECTED {
 		// Short circuit: There will be nothing in the test variant to
 		// ingest, as everything is expected.
 		return nil
@@ -37,7 +37,7 @@ func failuresFromTestVariant(opts Options, tv *rdbpb.TestVariant) []*cpb.Failure
 
 	// Whether there were any (non-skip) passed or expected results.
 	var hasPass bool
-	for _, tr := range tv.Results {
+	for _, tr := range tv.Verdict.Results {
 		if tr.Result.Status != rdbpb.TestStatus_SKIP &&
 			(tr.Result.Status == rdbpb.TestStatus_PASS ||
 				tr.Result.Expected) {
@@ -46,7 +46,7 @@ func failuresFromTestVariant(opts Options, tv *rdbpb.TestVariant) []*cpb.Failure
 	}
 
 	// Group test results by run and sort in order of start time.
-	resultsByRun := resultdb.GroupAndOrderTestResults(tv.Results)
+	resultsByRun := resultdb.GroupAndOrderTestResults(tv.Verdict.Results)
 
 	resultIndex := 0
 	for _, run := range resultsByRun {
@@ -67,9 +67,9 @@ func failuresFromTestVariant(opts Options, tv *rdbpb.TestVariant) []*cpb.Failure
 				continue
 			}
 
-			failure := failureFromResult(tv, tr.Result, opts)
+			failure := failureFromResult(tr.Result, tv, opts)
 			failure.IngestedInvocationResultIndex = int64(resultIndex)
-			failure.IngestedInvocationResultCount = int64(len(tv.Results))
+			failure.IngestedInvocationResultCount = int64(len(tv.Verdict.Results))
 			failure.IsIngestedInvocationBlocked = !hasPass
 			failure.TestRunResultIndex = int64(i)
 			failure.TestRunResultCount = int64(len(run))
@@ -88,9 +88,9 @@ func isFailure(s rdbpb.TestStatus) bool {
 		s == rdbpb.TestStatus_FAIL)
 }
 
-func failureFromResult(tv *rdbpb.TestVariant, tr *rdbpb.TestResult, opts Options) *cpb.Failure {
-	exonerations := make([]*cpb.TestExoneration, 0, len(tv.Exonerations))
-	for _, e := range tv.Exonerations {
+func failureFromResult(tr *rdbpb.TestResult, tv TestVerdict, opts Options) *cpb.Failure {
+	exonerations := make([]*cpb.TestExoneration, 0, len(tv.Verdict.Exonerations))
+	for _, e := range tv.Verdict.Exonerations {
 		exonerations = append(exonerations, exonerationFromResultDB(e))
 	}
 
@@ -118,12 +118,12 @@ func failureFromResult(tv *rdbpb.TestVariant, tr *rdbpb.TestResult, opts Options
 		PartitionTime:                 timestamppb.New(opts.PartitionTime),
 		ChunkIndex:                    0, // To be populated by chunking.
 		Realm:                         opts.Realm,
-		TestId:                        tv.TestId,                              // Get from variant, as it is not populated on each result.
-		Variant:                       pbutil.VariantFromResultDB(tv.Variant), // Get from variant, as it is not populated on each result.
+		TestId:                        tv.Verdict.TestId,                              // Get from variant, as it is not populated on each result.
+		Variant:                       pbutil.VariantFromResultDB(tv.Verdict.Variant), // Get from variant, as it is not populated on each result.
 		Tags:                          pbutil.StringPairFromResultDB(tr.Tags),
-		VariantHash:                   tv.VariantHash, // Get from variant, as it is not populated on each result.
+		VariantHash:                   tv.Verdict.VariantHash, // Get from variant, as it is not populated on each result.
 		FailureReason:                 pbutil.FailureReasonFromResultDB(tr.FailureReason),
-		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags, tv.TestMetadata),
+		BugTrackingComponent:          extractBugTrackingComponent(tr.Tags, tv.Verdict.TestMetadata),
 		StartTime:                     tr.StartTime,
 		Duration:                      tr.Duration,
 		Exonerations:                  exonerations,
@@ -139,6 +139,9 @@ func failureFromResult(tv *rdbpb.TestVariant, tr *rdbpb.TestResult, opts Options
 		TestRunResultIndex:            -1,    // To be populated by caller.
 		TestRunResultCount:            -1,    // To be populated by caller.
 		IsTestRunBlocked:              false, // To be populated by caller.
+		Sources:                       tv.Sources,
+		BuildGardenerRotations:        opts.BuildGardenerRotations,
+		TestVariantBranch:             tv.TestVariantBranch,
 	}
 
 	// Copy the result to avoid the result aliasing any of the protos used as input.

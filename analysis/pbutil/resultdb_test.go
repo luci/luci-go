@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"encoding/hex"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -187,5 +188,39 @@ func TestResultDB(t *testing.T) {
 				},
 			},
 		})
+	})
+	Convey("RefFromSources", t, func() {
+		sources := &pb.Sources{
+			GitilesCommit: &pb.GitilesCommit{
+				Host:       "project.googlesource.com",
+				Project:    "myproject/src",
+				Ref:        "refs/heads/main",
+				CommitHash: "abcdefabcd1234567890abcdefabcd1234567890",
+				Position:   16801,
+			},
+		}
+		ref := SourceRefFromSources(sources)
+		So(ref, ShouldResembleProto, &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "project.googlesource.com",
+					Project: "myproject/src",
+					Ref:     "refs/heads/main",
+				},
+			},
+		})
+	})
+	Convey("RefHash", t, func() {
+		ref := &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "project.googlesource.com",
+					Project: "myproject/src",
+					Ref:     "refs/heads/main",
+				},
+			},
+		}
+		hash := SourceRefHash(ref)
+		So(hex.EncodeToString(hash), ShouldEqual, `5d47c679cf080cb5`)
 	})
 }

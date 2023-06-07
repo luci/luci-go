@@ -236,13 +236,27 @@ func SortGerritChanges(changes []*pb.GerritChange) {
 	})
 }
 
-// RefHash returns a short hash of the sourceRef.
-func RefHash(sr *pb.SourceRef) []byte {
+// SourceRefFromSources extracts a SourceRef from given sources.
+func SourceRefFromSources(srcs *pb.Sources) *pb.SourceRef {
+	return &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    srcs.GitilesCommit.Host,
+				Project: srcs.GitilesCommit.Project,
+				Ref:     srcs.GitilesCommit.Ref,
+			},
+		}}
+}
+
+// SourceRefHash returns a short hash of the sourceRef.
+func SourceRefHash(sr *pb.SourceRef) []byte {
 	var result [32]byte
 	switch sr.System.(type) {
 	case *pb.SourceRef_Gitiles:
 		gitiles := sr.GetGitiles()
 		result = sha256.Sum256([]byte("gitiles" + "\n" + gitiles.Host + "\n" + gitiles.Project + "\n" + gitiles.Ref))
+	default:
+		panic("invalid source ref")
 	}
 	return result[:8]
 }

@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/rulesalgorithm"
 	"go.chromium.org/luci/analysis/internal/clustering/algorithms/testname"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
+	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
@@ -86,8 +87,9 @@ func TestIngest(t *testing.T) {
 					OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 				},
 			},
+			BuildGardenerRotations: []string{"gardener-rotation1", "gardener-rotation2"},
 		}
-		testIngestion := func(input []*rdbpb.TestVariant, expectedCFs []*bqpb.ClusteredFailureRow) {
+		testIngestion := func(input []TestVerdict, expectedCFs []*bqpb.ClusteredFailureRow) {
 			err := ingestor.Ingest(ctx, opts, input)
 			So(err, ShouldBeNil)
 
@@ -140,8 +142,8 @@ func TestIngest(t *testing.T) {
 			const uniqifier = 1
 			const testRunCount = 1
 			const resultsPerTestRun = 1
-			tv := newTestVariant(uniqifier, testRunCount, resultsPerTestRun, nil)
-			tvs := []*rdbpb.TestVariant{tv}
+			tv := newTestVerdict(uniqifier, testRunCount, resultsPerTestRun, nil)
+			tvs := []TestVerdict{tv}
 
 			// Expect the test result to be clustered by both reason and test name.
 			const testRunNum = 0
@@ -155,15 +157,15 @@ func TestIngest(t *testing.T) {
 			expectedCFs := []*bqpb.ClusteredFailureRow{regexpCF, testnameCF, ruleCF}
 
 			Convey(`Unexpected failure`, func() {
-				tv.Results[0].Result.Status = rdbpb.TestStatus_FAIL
-				tv.Results[0].Result.Expected = false
+				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_FAIL
+				tv.Verdict.Results[0].Result.Expected = false
 
 				testIngestion(tvs, expectedCFs)
 				So(len(chunkStore.Contents), ShouldEqual, 1)
 			})
 			Convey(`Expected failure`, func() {
-				tv.Results[0].Result.Status = rdbpb.TestStatus_FAIL
-				tv.Results[0].Result.Expected = true
+				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_FAIL
+				tv.Verdict.Results[0].Result.Expected = true
 
 				// Expect no test results ingested for an expected
 				// failure.
@@ -173,8 +175,8 @@ func TestIngest(t *testing.T) {
 				So(len(chunkStore.Contents), ShouldEqual, 0)
 			})
 			Convey(`Unexpected pass`, func() {
-				tv.Results[0].Result.Status = rdbpb.TestStatus_PASS
-				tv.Results[0].Result.Expected = false
+				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_PASS
+				tv.Verdict.Results[0].Result.Expected = false
 
 				// Expect no test results ingested for a passed test
 				// (even if unexpected).
@@ -183,8 +185,8 @@ func TestIngest(t *testing.T) {
 				So(len(chunkStore.Contents), ShouldEqual, 0)
 			})
 			Convey(`Unexpected skip`, func() {
-				tv.Results[0].Result.Status = rdbpb.TestStatus_SKIP
-				tv.Results[0].Result.Expected = false
+				tv.Verdict.Results[0].Result.Status = rdbpb.TestStatus_SKIP
+				tv.Verdict.Results[0].Result.Expected = false
 
 				// Expect no test results ingested for a skipped test
 				// (even if unexpected).
@@ -195,7 +197,7 @@ func TestIngest(t *testing.T) {
 			})
 			Convey(`Failure with no tags`, func() {
 				// Tests are allowed to have no tags.
-				tv.Results[0].Result.Tags = nil
+				tv.Verdict.Results[0].Result.Tags = nil
 
 				for _, cf := range expectedCFs {
 					cf.Tags = nil
@@ -207,8 +209,8 @@ func TestIngest(t *testing.T) {
 			})
 			Convey(`Failure without variant`, func() {
 				// Tests are allowed to have no variant.
-				tv.Variant = nil
-				tv.Results[0].Result.Variant = nil
+				tv.Verdict.Variant = nil
+				tv.Verdict.Results[0].Result.Variant = nil
 
 				for _, cf := range expectedCFs {
 					cf.Variant = nil
@@ -219,7 +221,7 @@ func TestIngest(t *testing.T) {
 			})
 			Convey(`Failure without failure reason`, func() {
 				// Failures may not have a failure reason.
-				tv.Results[0].Result.FailureReason = nil
+				tv.Verdict.Results[0].Result.FailureReason = nil
 				testnameCF.FailureReason = nil
 
 				// As the test result does not match any rules, the
@@ -245,11 +247,11 @@ func TestIngest(t *testing.T) {
 				So(len(chunkStore.Contents), ShouldEqual, 1)
 			})
 			Convey(`Failure with multiple exoneration`, func() {
-				tv.Exonerations = []*rdbpb.TestExoneration{
+				tv.Verdict.Exonerations = []*rdbpb.TestExoneration{
 					{
 						Name:            fmt.Sprintf("invocations/testrun-mytestrun/tests/test-name-%v/exonerations/exon-1", uniqifier),
-						TestId:          tv.TestId,
-						Variant:         proto.Clone(tv.Variant).(*rdbpb.Variant),
+						TestId:          tv.Verdict.TestId,
+						Variant:         proto.Clone(tv.Verdict.Variant).(*rdbpb.Variant),
 						VariantHash:     "hash",
 						ExonerationId:   "exon-1",
 						ExplanationHtml: "<p>Some description</p>",
@@ -257,8 +259,8 @@ func TestIngest(t *testing.T) {
 					},
 					{
 						Name:            fmt.Sprintf("invocations/testrun-mytestrun/tests/test-name-%v/exonerations/exon-1", uniqifier),
-						TestId:          tv.TestId,
-						Variant:         proto.Clone(tv.Variant).(*rdbpb.Variant),
+						TestId:          tv.Verdict.TestId,
+						Variant:         proto.Clone(tv.Verdict.Variant).(*rdbpb.Variant),
 						VariantHash:     "hash",
 						ExonerationId:   "exon-1",
 						ExplanationHtml: "<p>Some description</p>",
@@ -283,7 +285,7 @@ func TestIngest(t *testing.T) {
 				reason := &pb.FailureReason{
 					PrimaryErrorMessage: "Should not match rule",
 				}
-				tv.Results[0].Result.FailureReason = &rdbpb.FailureReason{
+				tv.Verdict.Results[0].Result.FailureReason = &rdbpb.FailureReason{
 					PrimaryErrorMessage: "Should not match rule",
 				}
 				testnameCF.FailureReason = reason
@@ -306,7 +308,7 @@ func TestIngest(t *testing.T) {
 
 			Convey(`Failure with bug component metadata`, func() {
 				Convey(`With monorail bug system`, func() {
-					tv.TestMetadata.BugComponent = &rdbpb.BugComponent{
+					tv.Verdict.TestMetadata.BugComponent = &rdbpb.BugComponent{
 						System: &rdbpb.BugComponent_Monorail{
 							Monorail: &rdbpb.MonorailComponent{
 								Project: "chromium",
@@ -322,7 +324,7 @@ func TestIngest(t *testing.T) {
 					So(len(chunkStore.Contents), ShouldEqual, 1)
 				})
 				Convey(`With Buganizer bug system`, func() {
-					tv.TestMetadata.BugComponent = &rdbpb.BugComponent{
+					tv.Verdict.TestMetadata.BugComponent = &rdbpb.BugComponent{
 						System: &rdbpb.BugComponent_IssueTracker{
 							IssueTracker: &rdbpb.IssueTrackerComponent{
 								ComponentId: 12345,
@@ -337,13 +339,23 @@ func TestIngest(t *testing.T) {
 					So(len(chunkStore.Contents), ShouldEqual, 1)
 				})
 			})
+			Convey(`Failure with no sources`, func() {
+				tv.Sources = nil
+				for _, cf := range expectedCFs {
+					cf.Sources = nil
+					cf.SourceRef = nil
+					cf.SourceRefHash = "<fix me>"
+				}
+				// No sources also means no test variant branch analysis.
+				tv.TestVariantBranch = nil
+			})
 		})
 		Convey(`Ingest multiple failures`, func() {
 			const uniqifier = 1
 			const testRunsPerVariant = 2
 			const resultsPerTestRun = 2
-			tv := newTestVariant(uniqifier, testRunsPerVariant, resultsPerTestRun, nil)
-			tvs := []*rdbpb.TestVariant{tv}
+			tv := newTestVerdict(uniqifier, testRunsPerVariant, resultsPerTestRun, nil)
+			tvs := []TestVerdict{tv}
 
 			// Setup a scenario as follows:
 			// - A test was run four times in total, consisting of two test
@@ -375,7 +387,7 @@ func TestIngest(t *testing.T) {
 
 			Convey(`Some test runs blocked and presubmit run not blocked`, func() {
 				// Let the last retry of the last test run pass.
-				tv.Results[testRunsPerVariant*resultsPerTestRun-1].Result.Status = rdbpb.TestStatus_PASS
+				tv.Verdict.Results[testRunsPerVariant*resultsPerTestRun-1].Result.Status = rdbpb.TestStatus_PASS
 				// Drop the expected clustered failures for the last test result.
 				expectedCFs = expectedCFs[0 : (testRunsPerVariant*resultsPerTestRun-1)*3]
 
@@ -394,14 +406,14 @@ func TestIngest(t *testing.T) {
 			})
 		})
 		Convey(`Ingest many failures`, func() {
-			var tvs []*rdbpb.TestVariant
+			var tvs []TestVerdict
 			var expectedCFs []*bqpb.ClusteredFailureRow
 
 			const variantCount = 20
 			const testRunsPerVariant = 10
 			const resultsPerTestRun = 10
 			for uniqifier := 0; uniqifier < variantCount; uniqifier++ {
-				tv := newTestVariant(uniqifier, testRunsPerVariant, resultsPerTestRun, nil)
+				tv := newTestVerdict(uniqifier, testRunsPerVariant, resultsPerTestRun, nil)
 				tvs = append(tvs, tv)
 				for t := 0; t < testRunsPerVariant; t++ {
 					for j := 0; j < resultsPerTestRun; j++ {
@@ -452,14 +464,14 @@ func clusteredFailureKey(cf *bqpb.ClusteredFailureRow) string {
 	return fmt.Sprintf("%q/%q/%q/%q", cf.ClusterAlgorithm, cf.ClusterId, cf.TestResultSystem, cf.TestResultId)
 }
 
-func newTestVariant(uniqifier, testRunCount, resultsPerTestRun int, bugComponent *rdbpb.BugComponent) *rdbpb.TestVariant {
+func newTestVerdict(uniqifier, testRunCount, resultsPerTestRun int, bugComponent *rdbpb.BugComponent) TestVerdict {
 	testID := fmt.Sprintf("ninja://test_name/%v", uniqifier)
 	variant := &rdbpb.Variant{
 		Def: map[string]string{
 			"k1": "v1",
 		},
 	}
-	tv := &rdbpb.TestVariant{
+	rdbVerdict := &rdbpb.TestVariant{
 		TestId:       testID,
 		Variant:      variant,
 		VariantHash:  "hash",
@@ -477,10 +489,18 @@ func newTestVariant(uniqifier, testRunCount, resultsPerTestRun int, bugComponent
 			tr.TestId = ""
 			tr.Variant = nil
 			tr.VariantHash = ""
-			tv.Results = append(tv.Results, &rdbpb.TestResultBundle{Result: tr})
+			rdbVerdict.Results = append(rdbVerdict.Results, &rdbpb.TestResultBundle{Result: tr})
 		}
 	}
-	return tv
+	return TestVerdict{
+		Verdict: rdbVerdict,
+		Sources: testSources(),
+		TestVariantBranch: &clusteringpb.TestVariantBranch{
+			FlakyVerdicts_24H:      111,
+			UnexpectedVerdicts_24H: 222,
+			TotalVerdicts_24H:      555,
+		},
+	}
 }
 
 func newTestResult(uniqifier, testRunNum, resultNum int) *rdbpb.TestResult {
@@ -507,6 +527,27 @@ func newFakeTestResult(uniqifier, testRunNum, resultNum int) *rdbpb.TestResult {
 			PrimaryErrorMessage: "Failure reason.",
 		},
 	}
+}
+
+func testSources() *pb.Sources {
+	result := &pb.Sources{
+		GitilesCommit: &pb.GitilesCommit{
+			Host:       "chromium.googlesource.com",
+			Project:    "infra/infra",
+			Ref:        "refs/heads/main",
+			CommitHash: "1234567890abcdefabcd1234567890abcdefabcd",
+			Position:   12345,
+		},
+		IsDirty: true,
+		Changelists: []*pb.Changelist{
+			{
+				Host:     "chromium-review.googlesource.com",
+				Change:   87654,
+				Patchset: 321,
+			},
+		},
+	}
+	return result
 }
 
 func expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTestRun, resultNum int) *bqpb.ClusteredFailureRow {
@@ -577,5 +618,23 @@ func expectedClusteredFailure(uniqifier, testRunCount, testRunNum, resultsPerTes
 		TestRunResultIndex:            int64(resultNum),
 		TestRunResultCount:            int64(resultsPerTestRun),
 		IsTestRunBlocked:              true,
+
+		SourceRefHash: `923c0d1af67f8ef8`,
+		SourceRef: &pb.SourceRef{
+			System: &pb.SourceRef_Gitiles{
+				Gitiles: &pb.GitilesRef{
+					Host:    "chromium.googlesource.com",
+					Project: "infra/infra",
+					Ref:     "refs/heads/main",
+				},
+			},
+		},
+		Sources:                testSources(),
+		BuildGardenerRotations: []string{"gardener-rotation1", "gardener-rotation2"},
+		TestVariantBranch: &bqpb.ClusteredFailureRow_TestVariantBranch{
+			FlakyVerdicts_24H:      111,
+			UnexpectedVerdicts_24H: 222,
+			TotalVerdicts_24H:      555,
+		},
 	}
 }

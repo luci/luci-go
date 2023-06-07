@@ -123,7 +123,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 		baseTestMetadata := testmetadata.TestMetadataRow{
 			Project:      "testproject",
 			TestID:       "testID",
-			RefHash:      pbutil.RefHash(sourceRef),
+			RefHash:      pbutil.SourceRefHash(sourceRef),
 			SubRealm:     "testrealm",
 			TestMetadata: &pb.TestMetadata{},
 			SourceRef:    sourceRef,

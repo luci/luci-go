@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-	"go.chromium.org/luci/analysis/internal/changepoints/sources"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -32,6 +31,7 @@ import (
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
+	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/gae/impl/memory"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -329,7 +329,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
+			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))),
 			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -367,7 +367,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
-			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
+			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))),
 			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -430,13 +430,14 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			}
 		}
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
+		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
 		tvb := &tvbr.TestVariantBranch{
 			IsNew:       true,
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			SourceRef:   sources.SourceRef(sourcesMap["sources_id"]),
-			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
+			SourceRef:   ref,
+			RefHash:     pbutil.SourceRefHash(ref),
 			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",
@@ -519,7 +520,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
-			RefHash:     sources.RefHash(sourcesMap["sources_id"]),
+			RefHash:     pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))),
 			Variant: &pb.Variant{
 				Def: map[string]string{
 					"k": "v",

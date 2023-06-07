@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
+	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -314,11 +315,10 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		return nil
 	}
 
-	failingTVs := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
 	nextPageToken := rsp.NextPageToken
 
 	// Insert the test results for clustering.
-	err = ingestForClustering(ctx, i.clustering, payload, ingestedInv, failingTVs)
+	err = ingestForClustering(ctx, i.clustering, payload, ingestedInv, rsp)
 	if err != nil {
 		return err
 	}
@@ -333,6 +333,8 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 		shouldIngestForTestVariants(realmCfg, payload)
 
 	if ingestForTestVariantAnalysis {
+		failingTVs := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
+
 		builder := payload.Build.Builder
 		if err := createOrUpdateAnalyzedTestVariants(ctx, inv.Realm, builder, failingTVs); err != nil {
 			err = errors.Annotate(err, "ingesting for test variant analysis").Err()
@@ -476,7 +478,7 @@ func scheduleNextTask(ctx context.Context, task *taskspb.IngestTestResults, next
 	return err
 }
 
-func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, inv *testresults.IngestedInvocation, tvs []*rdbpb.TestVariant) (err error) {
+func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, payload *taskspb.IngestTestResults, inv *testresults.IngestedInvocation, rsp *rdbpb.QueryTestVariantsResponse) (err error) {
 	ctx, s := trace.StartSpan(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.ingestForClustering")
 	defer func() { s.End(err) }()
 
@@ -515,11 +517,26 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 				payload.Build.Host, payload.Build.Id, payload.PresubmitRun.PresubmitRunId.System, payload.PresubmitRun.PresubmitRunId.Id)
 		}
 	}
+
+	failingRDBTVs := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
+	failingTVs := make([]ingestion.TestVerdict, 0, len(failingRDBTVs))
+	for _, tv := range failingRDBTVs {
+		var sources *pb.Sources
+		if rdbSources, ok := rsp.Sources[tv.SourcesId]; ok {
+			sources = pbutil.SourcesFromResultDB(rdbSources)
+		}
+		failingTVs = append(failingTVs, ingestion.TestVerdict{
+			Verdict:           tv,
+			Sources:           sources,
+			TestVariantBranch: nil, // TODO(meiring): Query.
+		})
+	}
+
 	// Clustering ingestion is designed to behave gracefully in case of
 	// a task retry. Given the same options and same test variants (in
 	// the same order), the IDs and content of the chunks it writes is
 	// designed to be stable. If chunks already exist, it will skip them.
-	if err := clustering.Ingest(ctx, opts, tvs); err != nil {
+	if err := clustering.Ingest(ctx, opts, failingTVs); err != nil {
 		err = errors.Annotate(err, "ingesting for clustering").Err()
 		return transient.Tag.Apply(err)
 	}

@@ -172,7 +172,42 @@ message Failure {
   // mitigated by exoneration.
   bool is_test_run_blocked = 21;
 
-  // Next ID: 30.
+  // The code sources tested, if known.
+  luci.analysis.v1.Sources sources = 30;
+
+  // The gardener rotations the build is a part of. Corresponds to the
+  // `sheriff_rotations` field of the build input properties.
+  repeated string build_gardener_rotations = 31;
+
+  // Information about the test variant-branch the result is from.
+  TestVariantBranch test_variant_branch = 32;
+
+  // Next ID: 33.
+}
+
+// Statistics about the (test,variant,ref) the verdict is from.
+message TestVariantBranch {
+  // The counts of verdicts observed for this (test, variant, source ref)
+  // with a partition time equal or less than the partition time of this
+  // verdict. This figure only considers verdicts ingested by LUCI Analysis
+  // prior to this verdict.
+  // Hourly bucketing is used internally, so data is aligned to hour
+  // boundaries.
+
+  // The number of flaky verdicts in the preceding 24 hours. A verdict
+  // is considered flaky for this count if it has both expected and
+  // unexpected test results (excluding skips). Whether the verdict
+  // was exonerated is irrelevant.
+  int64 flaky_verdicts_24h = 1;
+
+  // The number of unexpected verdicts in the preceding 24 hours. A verdict
+  // is unexpected for this count if has only unexpected test results
+  // (excluding skips). Whether the verdict was exonerated is irrelevant.
+  int64 unexpected_verdicts_24h = 2;
+
+  // The total number of verdicts in the preceding 24 hours, excluding
+  // verdicts with only skipped test results.
+  int64 total_verdicts_24h = 3;
 }
 
 // LUCI Analysis internal representation of a test exoneration.

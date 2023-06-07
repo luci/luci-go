@@ -66,7 +66,7 @@ func ReadTestMetadata(ctx context.Context, opts ReadTestMetadataOptions, f func(
 	st.Params = spanutil.ToSpannerMap(map[string]any{
 		"project":  opts.Project,
 		"testIDs":  opts.TestIDs,
-		"refHash":  pbutil.RefHash(opts.SourceRef),
+		"refHash":  pbutil.SourceRefHash(opts.SourceRef),
 		"subRealm": opts.SubRealm,
 	})
 	var b spanutil.Buffer

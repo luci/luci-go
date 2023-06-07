@@ -58,7 +58,11 @@ type Options struct {
 	// The unsubmitted changelists that were tested (if any).
 	// Changelists are sorted in ascending (host, change, patchset) order.
 	// Up to 10 changelists are captured.
+	// Deprecated.
 	Changelists []*pb.Changelist
+	// The gardener rotations the build is a part of. Corresponds to the
+	// `sheriff_rotations` field of the build input properties.
+	BuildGardenerRotations []string
 }
 
 type PresubmitRun struct {
@@ -114,9 +118,22 @@ type Ingestion struct {
 	chunkSeq int
 }
 
+type TestVerdict struct {
+	// Verdict is the ResultDB test verdict.
+	Verdict *rdbpb.TestVariant
+	// Sources are the code source(s) tested by the verdict. Note
+	// that this may vary from verdict to verdict within an invocation.
+	// May be unset if sources are unavailable.
+	Sources *pb.Sources
+	// TestVariantBranch captures statistics about the (test, variant, branch)
+	// 3-tuple from which the verdict was obtained.
+	// May be unset if sources are unavailable.
+	TestVariantBranch *cpb.TestVariantBranch
+}
+
 // Ingest performs the ingestion of the specified test variants, with
 // the specified options.
-func (i *Ingester) Ingest(ctx context.Context, opts Options, tvs []*rdbpb.TestVariant) error {
+func (i *Ingester) Ingest(ctx context.Context, opts Options, tvs []TestVerdict) error {
 	buffer := make([]*cpb.Failure, 0, ChunkSize)
 
 	chunkSeq := 0

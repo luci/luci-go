@@ -88,17 +88,6 @@ func (u *testMetadataUpdator) run(ctx context.Context) error {
 	return nil
 }
 
-func (u *testMetadataUpdator) sourceRef() *pb.SourceRef {
-	return &pb.SourceRef{
-		System: &pb.SourceRef_Gitiles{
-			Gitiles: &pb.GitilesRef{
-				Host:    u.sources.GitilesCommit.Host,
-				Project: u.sources.GitilesCommit.Project,
-				Ref:     u.sources.GitilesCommit.Ref,
-			},
-		}}
-}
-
 // queryTestResultMetadata visits all test results in the given invocations.
 // and returns one test metadata with the most metadata information for each test.
 func (u *testMetadataUpdator) queryTestResultMetadata(ctx context.Context, invID invocations.ID, batchC chan<- map[testID]*pb.TestMetadata) error {
@@ -166,7 +155,7 @@ func (u *testMetadataUpdator) updateOrCreateRows(ctx context.Context, realm stri
 		opts := testmetadata.ReadTestMetadataOptions{
 			Project:   project,
 			TestIDs:   testIDs,
-			SourceRef: u.sourceRef(),
+			SourceRef: pbutil.SourceRefFromSources(u.sources),
 			SubRealm:  subRealm,
 		}
 		// Update existing metadata entries.
@@ -224,14 +213,15 @@ var saveCols = []string{
 }
 
 func (u *testMetadataUpdator) testMetadataMutation(project, testID, subRealm string, tm *pb.TestMetadata) *spanner.Mutation {
+	ref := pbutil.SourceRefFromSources(u.sources)
 	vals := []any{
 		project,
 		testID,
-		pbutil.RefHash(u.sourceRef()),
+		pbutil.SourceRefHash(ref),
 		subRealm,
 		spanner.CommitTimestamp,
 		spanutil.Compressed(pbutil.MustMarshal(tm)).ToSpanner(),
-		spanutil.Compressed(pbutil.MustMarshal(u.sourceRef())).ToSpanner(),
+		spanutil.Compressed(pbutil.MustMarshal(ref)).ToSpanner(),
 		u.sources.GitilesCommit.Position,
 	}
 	return spanner.InsertOrUpdate("TestMetadata", saveCols, vals)

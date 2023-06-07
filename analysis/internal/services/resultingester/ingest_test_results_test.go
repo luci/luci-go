@@ -603,7 +603,7 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 		TestID:      "ninja://test_consistent_failure",
 		VariantHash: "hash",
 		SourceRef:   sr,
-		RefHash:     rdbpbutil.RefHash(pbutil.SourceRefToResultDB(sr)),
+		RefHash:     rdbpbutil.SourceRefHash(pbutil.SourceRefToResultDB(sr)),
 		InputBuffer: &inputbuffer.Buffer{
 			HotBufferCapacity:  100,
 			ColdBufferCapacity: 2000,

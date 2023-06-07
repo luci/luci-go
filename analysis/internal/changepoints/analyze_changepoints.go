@@ -297,14 +297,15 @@ func runChangePointAnalysis(tvb *tvbr.TestVariantBranch) []*inputbuffer.Segment 
 func insertIntoInputBuffer(tvb *tvbr.TestVariantBranch, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) (*tvbr.TestVariantBranch, error) {
 	src := sourcesMap[tv.SourcesId]
 	if tvb == nil {
+		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(src))
 		tvb = &tvbr.TestVariantBranch{
 			IsNew:       true,
 			Project:     payload.GetBuild().GetProject(),
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
-			RefHash:     sources.RefHash(src),
+			RefHash:     pbutil.SourceRefHash(ref),
 			Variant:     pbutil.VariantFromResultDB(tv.Variant),
-			SourceRef:   sources.SourceRef(src),
+			SourceRef:   ref,
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
 				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
@@ -375,7 +376,7 @@ func testVariantBranchKeys(tvs []*rdbpb.TestVariant, project string, sourcesMap 
 			Project:     project,
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
-			RefHash:     tvbr.RefHash(sources.RefHash(src)),
+			RefHash:     tvbr.RefHash(pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(src)))),
 		}
 	}
 	return results

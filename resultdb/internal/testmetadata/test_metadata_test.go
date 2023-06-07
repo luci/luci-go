@@ -41,7 +41,7 @@ func TestReadTestMetadata(t *testing.T) {
 					Ref:     "testref",
 				},
 			}}
-		hash := pbutil.RefHash(sourceRef)
+		hash := pbutil.SourceRefHash(sourceRef)
 		run := func(opts ReadTestMetadataOptions) (rows []*TestMetadataRow, err error) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()

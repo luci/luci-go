@@ -16,6 +16,7 @@ package analysis
 
 import (
 	"context"
+	"encoding/hex"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -23,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/clustering"
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
+	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
@@ -183,7 +185,16 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 		TestRunResultIndex:            failure.TestRunResultIndex,
 		TestRunResultCount:            failure.TestRunResultCount,
 		IsTestRunBlocked:              failure.IsTestRunBlocked,
+		BuildGardenerRotations:        failure.BuildGardenerRotations,
+		TestVariantBranch:             testVariantBranch(failure.TestVariantBranch),
 	}
+	if failure.Sources != nil {
+		entry.Sources = failure.Sources
+		ref := pbutil.SourceRefFromSources(failure.Sources)
+		entry.SourceRef = ref
+		entry.SourceRefHash = hex.EncodeToString(pbutil.SourceRefHash(ref))
+	}
+
 	if failure.PresubmitRun != nil {
 		entry.PresubmitRunId = failure.PresubmitRun.PresubmitRunId
 		entry.PresubmitRunOwner = failure.PresubmitRun.Owner
@@ -191,6 +202,17 @@ func entryFromUpdate(project, chunkID string, cluster clustering.ClusterID, fail
 		entry.PresubmitRunStatus = ToBQPresubmitRunStatus(failure.PresubmitRun.Status)
 	}
 	return entry
+}
+
+func testVariantBranch(tvb *cpb.TestVariantBranch) *bqpb.ClusteredFailureRow_TestVariantBranch {
+	if tvb == nil {
+		return nil
+	}
+	return &bqpb.ClusteredFailureRow_TestVariantBranch{
+		FlakyVerdicts_24H:      tvb.FlakyVerdicts_24H,
+		UnexpectedVerdicts_24H: tvb.UnexpectedVerdicts_24H,
+		TotalVerdicts_24H:      tvb.TotalVerdicts_24H,
+	}
 }
 
 func variantPairs(v *pb.Variant) []*pb.StringPair {

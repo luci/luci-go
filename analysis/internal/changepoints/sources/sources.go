@@ -17,9 +17,7 @@ package sources
 
 import (
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
-	"go.chromium.org/luci/analysis/pbutil"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -57,21 +55,4 @@ func HasCommitData(sources *rdbpb.Sources) bool {
 
 func CommitPosition(sources *rdbpb.Sources) int {
 	return int(sources.GitilesCommit.Position)
-}
-
-func SourceRef(sources *rdbpb.Sources) *analysispb.SourceRef {
-	return &analysispb.SourceRef{
-		System: &analysispb.SourceRef_Gitiles{
-			Gitiles: &analysispb.GitilesRef{
-				Host:    sources.GitilesCommit.Host,
-				Project: sources.GitilesCommit.Project,
-				Ref:     sources.GitilesCommit.Ref,
-			},
-		},
-	}
-}
-
-func RefHash(sources *rdbpb.Sources) []byte {
-	sourceRef := SourceRef(sources)
-	return rdbpbutil.RefHash(pbutil.SourceRefToResultDB(sourceRef))
 }

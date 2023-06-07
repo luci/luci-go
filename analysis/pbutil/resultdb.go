@@ -228,3 +228,21 @@ func SourceRefToResultDB(v *pb.SourceRef) *rdbpb.SourceRef {
 		},
 	}
 }
+
+// SourceRefFromSources extracts a SourceRef from given sources.
+func SourceRefFromSources(sources *pb.Sources) *pb.SourceRef {
+	return &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    sources.GitilesCommit.Host,
+				Project: sources.GitilesCommit.Project,
+				Ref:     sources.GitilesCommit.Ref,
+			},
+		},
+	}
+}
+
+// SourceRefHash returns a short hash of the source ref.
+func SourceRefHash(sourceRef *pb.SourceRef) []byte {
+	return pbutil.SourceRefHash(SourceRefToResultDB(sourceRef))
+}
