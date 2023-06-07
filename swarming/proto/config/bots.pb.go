@@ -462,6 +462,9 @@ func (x *BotAuth) GetIpWhitelist() string {
 //
 // They are used only if all pools the bot belongs to are associated with an
 // RBE instance, and it is the same instance for all pools.
+//
+// TODO(vadimsh): Remove when no longer used. Replace by BotModeAllocation in
+// Pool.RBEMigration.
 type BotGroup_RBEMigration struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -479,10 +482,12 @@ type BotGroup_RBEMigration struct {
 	//
 	// Useful to exclude problematic bots from the RBE mode.
 	DisableRbeOn []string `protobuf:"bytes,3,rep,name=disable_rbe_on,json=disableRbeOn,proto3" json:"disable_rbe_on,omitempty"`
-	// If true, check the Swarming scheduler queue before switching to RBE mode.
+	// If true consume tasks from both Swarming and RBE schedulers at the same
+	// time (in an interleaved kind of way).
 	//
-	// This can be used to gracefully "drain" Swarming scheduler queue before
-	// starting consuming tasks from the RBE queue.
+	// Useful when migrating small bot pools. In this mode task ordering and
+	// priority may not be respected (if tasks end up in different schedulers)
+	// and there may be higher scheduling delays.
 	HybridMode bool `protobuf:"varint,4,opt,name=hybrid_mode,json=hybridMode,proto3" json:"hybrid_mode,omitempty"`
 }
 

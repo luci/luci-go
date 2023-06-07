@@ -768,7 +768,7 @@ message TaskResultResponse {
   float duration = 12;
   // Process exit code if relevant. May be forcibly set to -1 in exceptional
   // cases.
-  int32 exit_code = 13;
+  int64 exit_code = 13;
   // True if exit_code != 0.
   bool failure = 14;
   // True if state is BOT_DIED.

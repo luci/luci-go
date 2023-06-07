@@ -139,8 +139,6 @@ message Pool {
   // Settings controlling migration to the RBE Scheduler.
   message RBEMigration {
     // An RBE instance to send tasks to.
-    //
-    // If empty, the RBE mode is disabled.
     string rbe_instance = 1;
     // Approximate percent of tasks targeting this pool to send to RBE.
     //
@@ -150,6 +148,39 @@ message Pool {
     // tasks that have `rbe:prevent` tag will never use RBE. If both tags are
     // set, `rbe:prevent` takes precedence.
     int32 rbe_mode_percent = 2;
+    // Distribution of bots in this pool across migration modes. Percents must
+    // sum up to 100.
+    //
+    // Bots are assigned the corresponding mode based on hash of their ID modulo
+    // 100. The full space of such IDs always looks like this:
+    //
+    //    [---SWARMING---|---HYBRID---|---RBE---]
+    //
+    // Where width of sections are defined by `percent` below. In other words,
+    // there are two boundaries that can be moved:
+    //   1. SWARMING <-> HYBRID.
+    //   2. HYBRID <-> RBE.
+    //
+    // Migration starts with all bots being SWARMING, then SWARMING <-> HYBRID
+    // boundary is moved until all bots are HYBRID. Then HYBRID <-> RBE boundary
+    // is moved until all bots are RBE.
+    //
+    // If a bot belongs to multiple pools (should be rare), the mode is derived
+    // to be compatible across all bot's pools:
+    //   1. All pools indicate the bot should be in SWARMING => use SWARMING.
+    //   2. All pools indicate the bot should be in RBE => use RBE.
+    //   3. Otherwise use HYBRID.
+    message BotModeAllocation {
+      enum BotMode {
+        UNKNOWN = 0;
+        SWARMING = 1;
+        HYBRID = 2;
+        RBE = 3;
+      }
+      BotMode mode = 1;
+      int32 percent = 2;
+    }
+    repeated BotModeAllocation bot_mode_allocation = 3;
   }
   RBEMigration rbe_migration = 13;
 
