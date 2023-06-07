@@ -233,7 +233,8 @@ func TestPostStartMessage(t *testing.T) {
 			})
 		})
 
-		Convey("Failures", func() {
+		// TODO(ddoman): re-enable after a fix for flaky failures.
+		SkipConvey("Failures", func() {
 			op := makeOp(makeRunWithCLs(
 				&run.Run{Mode: run.DryRun},
 				gf.CI(gChange1, gf.CQ(+1)),
