@@ -30,21 +30,6 @@ import { Prefetcher } from './prefetch';
 // Tell TSC that this is a ServiceWorker script.
 declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
 
-cleanupOutdatedCaches();
-precacheAndRoute(self.__WB_MANIFEST);
-
-self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-registerRoute(
-  new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), {
-    allowlist: [/^\/ui\//],
-  })
-);
-
 /**
  * Whether the UI service worker should skip waiting.
  * Injected by Vite.
@@ -76,3 +61,22 @@ self.addEventListener('fetch', async (e) => {
 
   prefetcher.prefetchResources(url);
 });
+
+// Enable workbox specific features AFTER we registered our own event handlers
+// to make sure our own event handlers have the chance to intercept the
+// requests.
+{
+  self.addEventListener('message', (event) => {
+    if (event.data?.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+    }
+  });
+
+  cleanupOutdatedCaches();
+  precacheAndRoute(self.__WB_MANIFEST);
+  registerRoute(
+    new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), {
+      allowlist: [/^\/ui\//],
+    })
+  );
+}
