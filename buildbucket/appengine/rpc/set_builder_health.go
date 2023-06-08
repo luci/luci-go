@@ -165,7 +165,7 @@ func (*Builders) SetBuilderHealth(ctx context.Context, req *pb.SetBuilderHealthR
 	}
 	// Returning early if there are no builders that the user is allowed to update.
 	if len(errs) == len(req.Health) {
-		return nil, appstatus.Errorf(codes.PermissionDenied, "User doesn't have permission to modify any of the builders provided.")
+		return resp, nil
 	}
 	if err := validateRequest(ctx, req, errs, resp.Responses); err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err.Error())

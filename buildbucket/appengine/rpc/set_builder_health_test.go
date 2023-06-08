@@ -18,14 +18,15 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
@@ -207,17 +208,45 @@ func TestSetBuilderHealth(t *testing.T) {
 			req := &pb.SetBuilderHealthRequest{
 				Health: []*pb.SetBuilderHealthRequest_BuilderHealth{
 					{
-						Id:     &pb.BuilderID{},
+						Id: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
 						Health: &pb.HealthStatus{HealthScore: 12},
 					},
 					{
-						Id:     &pb.BuilderID{},
+						Id: &pb.BuilderID{
+							Project: "project2",
+							Bucket:  "bucket2",
+							Builder: "builder2",
+						},
 						Health: &pb.HealthStatus{HealthScore: 13},
 					},
 				},
 			}
-			_, err := srv.SetBuilderHealth(ctx, req)
-			So(err.Error(), ShouldContainSubstring, "User doesn't have permission to modify any of the builders provided.")
+			resp, err := srv.SetBuilderHealth(ctx, req)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &pb.SetBuilderHealthResponse{
+				Responses: []*pb.SetBuilderHealthResponse_Response{
+					{
+						Response: &pb.SetBuilderHealthResponse_Response_Error{
+							Error: &status.Status{
+								Code:    7,
+								Message: "Builder: project/bucket/builder: attaching a status: rpc error: code = NotFound desc = requested resource not found or \"anonymous:anonymous\" does not have permission to view it",
+							},
+						},
+					},
+					{
+						Response: &pb.SetBuilderHealthResponse_Response_Error{
+							Error: &status.Status{
+								Code:    7,
+								Message: "Builder: project2/bucket2/builder2: attaching a status: rpc error: code = NotFound desc = requested resource not found or \"anonymous:anonymous\" does not have permission to view it",
+							},
+						},
+					},
+				},
+			})
 		})
 
 		Convey("bad request; has perms", func() {
