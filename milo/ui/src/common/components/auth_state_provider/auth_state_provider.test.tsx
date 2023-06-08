@@ -16,6 +16,7 @@ import { expect, jest } from '@jest/globals';
 import { act, cleanup, render } from '@testing-library/react';
 import { applySnapshot, destroy } from 'mobx-state-tree';
 
+import * as authStateLib from '@/common/libs/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 
 import {
@@ -51,14 +52,38 @@ function IdentityConsumer({ renderCallback }: IdentityConsumerProps) {
   return <></>;
 }
 
+jest.mock('@/common/libs/auth_state', () => {
+  const actual = jest.requireActual(
+    '@/common/libs/auth_state'
+  ) as typeof authStateLib;
+  const mocked: typeof authStateLib = {
+    ...actual,
+    // Wraps `queryAuthState` in a mock so we can mock its implementation later.
+    queryAuthState: jest.fn(actual.queryAuthState),
+  };
+  return mocked;
+});
+
+const AUTH_STATE = {
+  identity: 'identity-1',
+  idToken: 'id-token-1',
+  accessToken: 'access-token-1',
+};
+
 describe('AuthStateProvider', () => {
   let store: StoreInstance;
+  let queryAuthStateSpy: jest.Mock<typeof authStateLib.queryAuthState>;
 
   beforeEach(() => {
     store = Store.create({});
     jest.useFakeTimers();
+    queryAuthStateSpy = authStateLib.queryAuthState as jest.Mock<
+      typeof authStateLib.queryAuthState
+    >;
+    queryAuthStateSpy.mockResolvedValue(AUTH_STATE);
   });
   afterEach(() => {
+    queryAuthStateSpy.mockRestore();
     cleanup();
     destroy(store);
     jest.useRealTimers();
@@ -75,13 +100,7 @@ describe('AuthStateProvider', () => {
 
     render(
       <StoreProvider value={store}>
-        <AuthStateProvider
-          initialValue={{
-            identity: 'identity-1',
-            idToken: 'id-token-1',
-            accessToken: 'access-token-1',
-          }}
-        >
+        <AuthStateProvider initialValue={AUTH_STATE}>
           <IdentityConsumer renderCallback={identityConsumerCBSpy} />
           <TokenConsumer renderCallback={tokenConsumerCBSpy} />
         </AuthStateProvider>

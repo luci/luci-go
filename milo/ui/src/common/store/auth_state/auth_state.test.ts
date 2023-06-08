@@ -17,7 +17,6 @@ import { applySnapshot, destroy } from 'mobx-state-tree';
 
 import {
   AuthState,
-  getAuthStateCache,
   queryAuthState,
   setAuthStateCache,
 } from '@/common/libs/auth_state';
@@ -26,7 +25,6 @@ import { AuthStateStore, AuthStateStoreInstance } from './auth_state';
 
 describe('AuthStateStore', () => {
   let store: AuthStateStoreInstance;
-  let getAuthStateCacheStub: jest.Mock<() => Promise<AuthState | null>>;
   let setAuthStateCacheStub: jest.Mock<
     (authState: AuthState | null) => Promise<void>
   >;
@@ -35,11 +33,9 @@ describe('AuthStateStore', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     store = AuthStateStore.create({});
-    getAuthStateCacheStub = jest.fn(getAuthStateCache);
     setAuthStateCacheStub = jest.fn(setAuthStateCache);
     queryAuthStateStub = jest.fn(queryAuthState);
     store.setDependencies({
-      getAuthStateCache: getAuthStateCacheStub,
       setAuthStateCache: setAuthStateCacheStub,
       queryAuthState: queryAuthStateStub,
     });
@@ -154,9 +150,33 @@ describe('AuthStateStore', () => {
   });
 
   describe('init', () => {
-    it('when getAuthState always return short-lived token', async () => {
-      getAuthStateCacheStub.mockResolvedValueOnce(null);
+    it("should update token immediately even when it's still valid", async () => {
+      const startTime = jest.now();
+      store.init({
+        identity: 'user:user@google.com',
+        email: 'user@google.com',
+        accessToken: 'cached-token',
+        // 30 mins from now.
+        accessTokenExpiry: jest.now() / 1000 + 30 * 60,
+      });
 
+      const refreshedAuthState = {
+        identity: 'user:user@google.com',
+        email: 'user@google.com',
+        accessToken: 'token',
+        // 60 mins from now.
+        accessTokenExpiry: jest.now() / 1000 + 60 * 60,
+      };
+      queryAuthStateStub.mockResolvedValueOnce(refreshedAuthState);
+
+      await jest.runOnlyPendingTimersAsync();
+      expect(jest.now()).toStrictEqual(startTime);
+      expect(queryAuthStateStub.mock.calls.length).toStrictEqual(1);
+      expect(setAuthStateCacheStub.mock.calls.length).toStrictEqual(1);
+      expect(store.value).toMatchObject(refreshedAuthState);
+    });
+
+    it('when getAuthState always return short-lived token', async () => {
       const startTime = jest.now();
       store.init({
         identity: 'user:user@google.com',

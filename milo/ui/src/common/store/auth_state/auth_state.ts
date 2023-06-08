@@ -23,7 +23,6 @@ import {
 
 import {
   AuthState,
-  getAuthStateCache,
   queryAuthState,
   setAuthStateCache,
 } from '@/common/libs/auth_state';
@@ -55,18 +54,12 @@ export const AuthStateStore = types
     },
   }))
   .volatile(() => ({
-    getAuthStateCache,
     setAuthStateCache,
     queryAuthState,
   }))
   .actions((self) => ({
     setDependencies(
-      deps: Partial<
-        Pick<
-          typeof self,
-          'getAuthStateCache' | 'setAuthStateCache' | 'queryAuthState'
-        >
-      >
+      deps: Partial<Pick<typeof self, 'setAuthStateCache' | 'queryAuthState'>>
     ) {
       Object.assign<typeof self, Partial<typeof self>>(self, deps);
     },
@@ -82,7 +75,6 @@ export const AuthStateStore = types
        * only the last call is respected.
        *
        * @param forceUpdate when set to true, update the auth state immediately.
-       * This is useful for testing purpose.
        */
       scheduleUpdate: aliveFlow(self, function* (forceUpdate = false) {
         const scheduleId = {};
@@ -122,12 +114,16 @@ export const AuthStateStore = types
      */
     init(initialValue: AuthState) {
       self.value = initialValue;
+      let isFirstUpdate = true;
       addDisposer(
         self,
         reaction(
           () => self.value,
           () => {
-            self.scheduleUpdate();
+            // The initial value could be outdated. Force update when first
+            // initialized.
+            self.scheduleUpdate(isFirstUpdate);
+            isFirstUpdate = false;
           },
           {
             fireImmediately: true,

@@ -18,7 +18,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { destroy, Instance } from 'mobx-state-tree';
 
 import { AuthStateProvider } from '@/common/components/auth_state_provider';
-import { ANONYMOUS_IDENTITY } from '@/common/libs/auth_state';
+import * as authStateLib from '@/common/libs/auth_state';
 import { MiloInternal, Project } from '@/common/services/milo_internal';
 import { ResultDb } from '@/common/services/resultdb';
 import { TestMetadataDetail } from '@/common/services/resultdb';
@@ -26,9 +26,28 @@ import { Store, StoreProvider } from '@/common/store';
 
 import { TestIdLabel } from './test_id_label';
 
+jest.mock('@/common/libs/auth_state', () => {
+  const actual = jest.requireActual(
+    '@/common/libs/auth_state'
+  ) as typeof authStateLib;
+  const mocked: typeof authStateLib = {
+    ...actual,
+    // Wraps `queryAuthState` in a mock so we can mock its implementation later.
+    queryAuthState: jest.fn(actual.queryAuthState),
+  };
+  return mocked;
+});
+
+const AUTH_STATE = {
+  identity: 'identity-1',
+  idToken: 'id-token-1',
+  accessToken: 'access-token-1',
+};
+
 describe('TestIdLabel', () => {
   let store: Instance<typeof Store>;
   let client: QueryClient;
+  let queryAuthStateSpy: jest.Mock<typeof authStateLib.queryAuthState>;
   beforeEach(() => {
     client = new QueryClient({
       defaultOptions: {
@@ -37,11 +56,14 @@ describe('TestIdLabel', () => {
         },
       },
     });
-    store = Store.create({
-      authState: { value: { identity: ANONYMOUS_IDENTITY } },
-    });
+    store = Store.create();
+    queryAuthStateSpy = authStateLib.queryAuthState as jest.Mock<
+      typeof authStateLib.queryAuthState
+    >;
+    queryAuthStateSpy.mockResolvedValue(AUTH_STATE);
   });
   afterEach(() => {
+    queryAuthStateSpy.mockRestore();
     cleanup();
     destroy(store);
   });
@@ -77,13 +99,7 @@ describe('TestIdLabel', () => {
     render(
       <QueryClientProvider client={client}>
         <StoreProvider value={store}>
-          <AuthStateProvider
-            initialValue={{
-              identity: 'identity-1',
-              idToken: 'id-token-1',
-              accessToken: 'access-token-1',
-            }}
-          >
+          <AuthStateProvider initialValue={AUTH_STATE}>
             <TestIdLabel projectOrRealm="testrealm" testId="testid" />
           </AuthStateProvider>
         </StoreProvider>
@@ -92,6 +108,7 @@ describe('TestIdLabel', () => {
     expect(screen.queryByText('testrealm')).not.toBeNull();
     expect(screen.queryByText('testid')).not.toBeNull();
   };
+
   it('should load test source', async () => {
     const testMetadataStub = jest.spyOn(
       ResultDb.prototype,
@@ -117,7 +134,7 @@ describe('TestIdLabel', () => {
     );
     testMetadataStub.mockResolvedValueOnce({});
 
-    renderTestIdLabel();
+    expect(renderTestIdLabel).not.toThrow();
   });
 
   it('should load key value metadata using the metadataConfig', async () => {
