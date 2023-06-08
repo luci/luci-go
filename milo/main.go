@@ -112,6 +112,7 @@ func main() {
 		})
 
 		httpService := frontend.HTTPService{
+			Server: srv,
 			GetSettings: func(c context.Context) (*configpb.Settings, error) {
 				settings := config.GetSettings(c)
 				return settings, nil
@@ -131,7 +132,7 @@ func main() {
 				}), nil
 			},
 		}
-		httpService.RegisterRoutes(srv)
+		httpService.RegisterRoutes()
 
 		return nil
 	})

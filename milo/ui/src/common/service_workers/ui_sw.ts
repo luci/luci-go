@@ -24,18 +24,60 @@ import {
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 
-import './force_update';
+import { parseVersion } from '../libs/version';
+
 import { Prefetcher } from './prefetch';
+import * as versionManagement from './version_management';
 
 // Tell TSC that this is a ServiceWorker script.
 declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
+
+// Update the minimum version (exclusive) to force purging the old caches when
+// releasing a critical bug fix.
+const MIN_VERSION = '13381-5572ca8';
+
+// TODO(weiweilin): remove the default version string once VERSION is
+// guaranteed to be populated.
+const version = self.CONFIGS.VERSION || '13465-07077e1';
+
+versionManagement.init({
+  version: version,
+  // Set the maximum version to the current version to ensure the new version
+  // are always purged after reverts.
+  shouldSkipWaiting: (lastActivatedVersion) => {
+    if (!lastActivatedVersion) {
+      return true;
+    }
+
+    const lastVer = parseVersion(lastActivatedVersion);
+    const minVer = parseVersion(MIN_VERSION);
+    const currentVer = parseVersion(version);
+
+    // Default to purge the last version if any of the versions cannot be
+    // parsed.
+    if (!lastVer || !minVer || !currentVer) {
+      return true;
+    }
+
+    // Ensures the service worker is newer than the minimum version.
+    if (lastVer <= minVer) {
+      return true;
+    }
+
+    // Ensures the service worker is always rolled back in case of a revert.
+    if (currentVer < lastVer) {
+      return true;
+    }
+
+    return false;
+  },
+});
 
 /**
  * Whether the UI service worker should skip waiting.
  * Injected by Vite.
  */
 declare const UI_SW_SKIP_WAITING: boolean;
-
 if (UI_SW_SKIP_WAITING) {
   self.skipWaiting();
 }

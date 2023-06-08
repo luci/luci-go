@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
   const localDevConfigs: typeof CONFIGS = {
+    VERSION: env['VITE_MILO_VERSION'],
     RESULT_DB: {
       HOST: env['VITE_RESULT_DB_HOST'],
     },

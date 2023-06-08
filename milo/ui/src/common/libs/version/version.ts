@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-self.CONFIGS = Object.freeze({
-  VERSION: "{{.Version}}",
-  RESULT_DB: {
-    HOST: "{{.ResultDB.Host}}",
-  },
-  BUILDBUCKET: {
-    HOST: "{{.Buildbucket.Host}}",
-  },
-  LUCI_ANALYSIS: {
-    HOST: "{{.LuciAnalysis.Host}}",
-  },
-});
+const VERSION_RE = /^(\d+)-([0-9a-f]+)(-.+)?$/;
+
+export interface ParsedVersion {
+  readonly num: number;
+  readonly hash: string;
+}
+
+/**
+ * Parse the version string with the format of `VERSION_RE`.
+ *
+ * If the version string is invalid, return null.
+ */
+export function parseVersion(version: string): ParsedVersion | null {
+  const match = version.match(VERSION_RE);
+  if (!match) {
+    return null;
+  }
+
+  const [, num, hash] = match;
+  return {
+    num: Number(num),
+    hash,
+  };
+}

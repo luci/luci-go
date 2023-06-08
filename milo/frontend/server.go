@@ -34,6 +34,8 @@ import (
 // HTTPService is the Milo frontend service that serves multiple HTTP endpoints.
 // TODO(weiweilin): move other HTTP endpoints to HTTPService.
 type HTTPService struct {
+	Server *server.Server
+
 	// GetSettings returns the current setting for milo.
 	GetSettings func(c context.Context) (*configpb.Settings, error)
 
@@ -42,14 +44,15 @@ type HTTPService struct {
 }
 
 // RegisterRoutes registers routes explicitly handled by the handler.
-func (s *HTTPService) RegisterRoutes(srv *server.Server) {
+func (s *HTTPService) RegisterRoutes() {
 	baseMW := router.NewMiddlewareChain()
 	baseAuthMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
-		auth.Authenticate(srv.CookieAuth),
+		auth.Authenticate(s.Server.CookieAuth),
 	)
 
-	srv.Routes.GET("/raw-artifact/*artifactName", baseAuthMW, handleError(s.buildRawArtifactHandler("/raw-artifact/")))
+	s.Server.Routes.GET("/raw-artifact/*artifactName", baseAuthMW, handleError(s.buildRawArtifactHandler("/raw-artifact/")))
+	s.Server.Routes.GET("/configs.js", baseMW, handleError(s.configsJSHandler))
 }
 
 // handleError is a wrapper for a handler so that the handler can return an error

@@ -16,7 +16,6 @@ package frontend
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"net/url"
 	"strings"
@@ -36,7 +35,6 @@ import (
 
 	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/internal/buildsource/swarming"
-	"go.chromium.org/luci/milo/internal/config"
 )
 
 // Run sets up all the routes and runs the server.
@@ -148,9 +146,6 @@ func Run(srv *server.Server, templatePath string) {
 
 	r.GET("/internal_widgets/related_builds/:id", htmlMW, handleError(handleGetRelatedBuildsTable))
 
-	// Config for ResultUI frontend.
-	r.GET("/configs.js", baseMW, handleError(configsJSHandler))
-
 	r.GET("/auth-state", baseAuthMW, handleError(getAuthState))
 }
 
@@ -249,41 +244,4 @@ func redirectFromProjectlessBuilder(c *router.Context) {
 	u := *c.Request.URL
 	u.Path = fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket, builder)
 	http.Redirect(c.Writer, c.Request, u.String(), http.StatusMovedPermanently)
-}
-
-// configsJSHandler serves /configs.js used by ResultUI frontend code.
-func configsJSHandler(c *router.Context) error {
-	template, err := template.ParseFiles("frontend/templates/configs.template.js")
-	if err != nil {
-		logging.Errorf(c.Request.Context(), "Failed to load configs.template.js: %s", err)
-		return err
-	}
-
-	settings := config.GetSettings(c.Request.Context())
-
-	header := c.Writer.Header()
-	header.Set("content-type", "application/javascript")
-
-	// Set max-age to 10 mins, stale-while-revalidate to 1 hour to reduce traffic.
-	// We don't need a long cache duration because the configs file is fetched and
-	// re-served by the service worker.
-	header.Set("cache-control", "max-age=600,stale-while-revalidate=3600")
-	err = template.Execute(c.Writer, map[string]any{
-		"ResultDB": map[string]string{
-			"Host": settings.GetResultdb().GetHost(),
-		},
-		"Buildbucket": map[string]string{
-			"Host": settings.GetBuildbucket().GetHost(),
-		},
-		"LuciAnalysis": map[string]string{
-			"Host": settings.GetLuciAnalysis().GetHost(),
-		},
-	})
-
-	if err != nil {
-		logging.Errorf(c.Request.Context(), "Failed to execute configs.template.js: %s", err)
-		return err
-	}
-
-	return nil
 }
