@@ -171,6 +171,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 				return errors.Annotate(err, "insert into input buffer").Err()
 			}
 			inputSegments := runChangePointAnalysis(tvb)
+			tvb.ApplyRetentionPolicyForFinalizedSegments(payload.PartitionTime.AsTime())
 			mut, err := tvb.ToMutation()
 			if err != nil {
 				return errors.Annotate(err, "test variant branch to mutation").Err()

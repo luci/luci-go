@@ -579,6 +579,146 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(len(client.Insertions), ShouldEqual, 1)
 		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 1)
 	})
+
+	Convey(`Analyze batch should apply retention policy`, t, func() {
+		ctx := newContext(t)
+		exporter, client := fakeExporter()
+
+		// Store some existing data in spanner first.
+		sourcesMap := tu.SampleSourcesMap(10)
+
+		// Set up 110 finalized segments.
+		finalizedSegments := []*cpb.Segment{}
+		for i := 0; i < 110; i++ {
+			finalizedSegments = append(finalizedSegments, &cpb.Segment{
+				EndHour:         timestamppb.New(time.Unix(int64(i*3600), 0)),
+				FinalizedCounts: &cpb.Counts{},
+			})
+		}
+		sourceRef := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
+		tvb := &tvbr.TestVariantBranch{
+			IsNew:       true,
+			Project:     "chromium",
+			TestID:      "test_1",
+			VariantHash: "hash_1",
+			SourceRef:   sourceRef,
+			RefHash:     pbutil.SourceRefHash(sourceRef),
+			Variant: &pb.Variant{
+				Def: map[string]string{
+					"k": "v",
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
+						{
+							CommitPosition:   1,
+							IsSimpleExpected: true,
+						},
+					},
+				},
+				ColdBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{},
+				},
+				IsColdBufferDirty: true,
+			},
+			FinalizedSegments: &cpb.Segments{Segments: finalizedSegments},
+		}
+		mutation, err := tvb.ToMutation()
+		So(err, ShouldBeNil)
+		testutil.MustApply(ctx, mutation)
+
+		// Insert a new verdict.
+		payload := tu.SamplePayload()
+		const ingestedVerdictHour = 5*365*24 + 13
+		payload.PartitionTime = timestamppb.New(time.Unix(ingestedVerdictHour*3600, 0))
+
+		tvs := []*rdbpb.TestVariant{
+			{
+				TestId:      "test_1",
+				VariantHash: "hash_1",
+				Status:      rdbpb.TestVariantStatus_EXPECTED,
+				Results: []*rdbpb.TestResultBundle{
+					{
+						Result: &rdbpb.TestResult{
+							Name:   "invocations/abc/tests/xyz",
+							Status: rdbpb.TestStatus_PASS,
+						},
+					},
+				},
+				SourcesId: "sources_id",
+			},
+		}
+
+		err = analyzeSingleBatch(ctx, tvs, payload, sourcesMap, exporter)
+		So(err, ShouldBeNil)
+		So(countCheckPoint(ctx), ShouldEqual, 1)
+
+		// Check invocations.
+		invs := fetchInvocations(ctx)
+		So(invs, ShouldResemble, []Invocation{
+			{
+				Project:              "chromium",
+				InvocationID:         "abc",
+				IngestedInvocationID: "build-1234",
+			},
+		})
+
+		// Check test variant branch.
+		tvbs, err := FetchTestVariantBranches(ctx)
+		So(err, ShouldBeNil)
+		So(len(tvbs), ShouldEqual, 1)
+		tvb = tvbs[0]
+
+		// Use diff here to compare both protobuf and non-protobuf.
+		diff := cmp.Diff(tvb, &tvbr.TestVariantBranch{
+			Project:     "chromium",
+			TestID:      "test_1",
+			VariantHash: "hash_1",
+			RefHash:     pbutil.SourceRefHash(sourceRef),
+			Variant: &pb.Variant{
+				Def: map[string]string{
+					"k": "v",
+				},
+			},
+			SourceRef: &pb.SourceRef{
+				System: &pb.SourceRef_Gitiles{
+					Gitiles: &pb.GitilesRef{
+						Host:    "host",
+						Project: "proj",
+						Ref:     "ref",
+					},
+				},
+			},
+			InputBuffer: &inputbuffer.Buffer{
+				HotBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{
+						{
+							CommitPosition:   1,
+							IsSimpleExpected: true,
+						},
+						{
+							CommitPosition:   10,
+							IsSimpleExpected: true,
+							Hour:             payload.PartitionTime.AsTime(),
+						},
+					},
+				},
+				ColdBuffer: inputbuffer.History{
+					Verdicts: []inputbuffer.PositionVerdict{},
+				},
+				HotBufferCapacity:  inputbuffer.DefaultHotBufferCapacity,
+				ColdBufferCapacity: inputbuffer.DefaultColdBufferCapacity,
+			},
+
+			FinalizedSegments: &cpb.Segments{
+				Segments: finalizedSegments[14:],
+			},
+		}, cmp.Comparer(proto.Equal))
+		So(diff, ShouldEqual, "")
+		So(len(client.Insertions), ShouldEqual, 1)
+		So(verdictCounter.Get(ctx, "chromium", "ingested"), ShouldEqual, 1)
+	})
 }
 
 func TestOutOfOrderVerdict(t *testing.T) {

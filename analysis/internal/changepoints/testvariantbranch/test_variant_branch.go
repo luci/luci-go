@@ -17,19 +17,31 @@ package testvariantbranch
 
 import (
 	"sort"
+	"time"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// StatisticsRetentionDays is the number of days to keep statistics about
-// evicted verdicts. See Statistics proto for more.
-//
-// This is a minimum period driven by functional and operational requirements,
-// our deletion logic will tend to keep retain data for longer (but this is
-// OK as it is not user data).
-const StatisticsRetentionDays = 11
+const (
+	// Each test variant branch retains at most 100 finalized segments.
+	maxFinalizedSegmentsToRetain = 100
+
+	// We only retain finalized segments for the last 5 years.
+	// For simplicity, we consider a year has 365 days.
+	// For testibility, we calculate the 5 years from the last ingestion time
+	// of the test variant branch (this means we may over-retain some segments).
+	maxHoursToRetain = 5 * 365 * 24
+
+	// StatisticsRetentionDays is the number of days to keep statistics about
+	// evicted verdicts. See Statistics proto for more.
+	//
+	// This is a minimum period driven by functional and operational requirements,
+	// our deletion logic will tend to keep retain data for longer (but this is
+	// OK as it is not user data).
+	StatisticsRetentionDays = 11
+)
 
 // TestVariantBranch represents one row in the TestVariantBranch spanner table.
 // See go/luci-test-variant-analysis-design for details.
@@ -164,6 +176,45 @@ func (tvb *TestVariantBranch) verifyOutputBuffer() {
 	}
 	if finalizedSegments[l-1].EndPosition >= tvb.FinalizingSegment.StartPosition {
 		panic("finalizing segment should be older than finalized segments")
+	}
+}
+
+// ApplyRetentionPolicyForFinalizedSegments applies retention policy
+// to finalized segments.
+// The following retention policy applies to finalized segments:
+//   - At most 100 finalized segments can be stored.
+//   - Finalized segments are retained for 5 years from when they closed.
+//
+// fromTime is the time when the 5 year period is calculated from.
+//
+// The retention policy to delete test variant branches without
+// test results in 90 days will be enforced separately with a cron job.
+func (tvb *TestVariantBranch) ApplyRetentionPolicyForFinalizedSegments(fromTime time.Time) {
+	finalizedSegments := tvb.FinalizedSegments.GetSegments()
+	if len(finalizedSegments) == 0 {
+		return
+	}
+
+	// We keep the finalized segments from this index.
+	// Note that finalized segments are ordered by commit position (lowest first)
+	// so theory (although it's rare), a later segment may have
+	// smaller end hour than an earlier segment. Therefore, we may over-retain
+	// some segments.
+	startIndexToKeep := 0
+	if len(finalizedSegments) > maxFinalizedSegmentsToRetain {
+		startIndexToKeep = len(finalizedSegments) - maxFinalizedSegmentsToRetain
+	}
+	for i := startIndexToKeep; i < len(finalizedSegments); i++ {
+		segment := finalizedSegments[i]
+		if segment.EndHour.AsTime().Add(time.Hour * maxHoursToRetain).After(fromTime) {
+			startIndexToKeep = i
+			break
+		}
+	}
+
+	if startIndexToKeep > 0 {
+		tvb.IsFinalizedSegmentsDirty = true
+		tvb.FinalizedSegments.Segments = finalizedSegments[startIndexToKeep:]
 	}
 }
 
