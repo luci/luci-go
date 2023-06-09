@@ -124,10 +124,6 @@ func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskReque
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "bad build id").Err())
 	}
-	_, err = validateToken(ctx, buildID, pb.TokenBody_TASK)
-	if err != nil {
-		return nil, err
-	}
 
 	if err := validateUpdateBuildTaskRequest(ctx, req); err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)

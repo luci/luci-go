@@ -19,17 +19,14 @@ import (
 	"strconv"
 	"testing"
 
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
-	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -46,8 +43,6 @@ func TestValidateBuildTask(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		ctx = installTestSecret(ctx)
 
-		tk, err := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
-		So(err, ShouldBeNil)
 		t0 := testclock.TestRecentTimeUTC
 		build := &model.Build{
 			ID: 1,
@@ -61,7 +56,6 @@ func TestValidateBuildTask(t *testing.T) {
 				Status: pb.Status_STARTED,
 			},
 			CreateTime:  t0,
-			UpdateToken: tk,
 		}
 		bk := datastore.KeyForObj(ctx, build)
 		infra := &model.BuildInfra{
@@ -352,19 +346,12 @@ func TestValidateTaskUpdate(t *testing.T) {
 func TestUpdateBuildTask(t *testing.T) {
 	t.Parallel()
 
-	updateContextForNewBuildToken := func(ctx context.Context, buildID int64) (string, context.Context) {
-		newToken, _ := buildtoken.GenerateToken(ctx, buildID, pb.TokenBody_TASK)
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, newToken))
-		return newToken, ctx
-	}
-
 	Convey("UpdateBuildTask", t, func() {
 		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		ctx = installTestSecret(ctx)
 
-		tk, ctx := updateContextForNewBuildToken(ctx, 1)
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -391,7 +378,6 @@ func TestUpdateBuildTask(t *testing.T) {
 				Status: pb.Status_STARTED,
 			},
 			CreateTime:  t0,
-			UpdateToken: tk,
 		}
 		bk := datastore.KeyForObj(ctx, build)
 		infra := &model.BuildInfra{
@@ -423,19 +409,6 @@ func TestUpdateBuildTask(t *testing.T) {
 				}
 				So(updateBuildTask(ctx, req), ShouldBeRPCOK)
 			})
-			Convey("buildID does not match token", func() {
-				req := &pb.UpdateBuildTaskRequest{
-					BuildId: "2",
-					Task: &pb.Task{
-						Status: pb.Status_STARTED,
-						Id: &pb.TaskID{
-							Id:     "two",
-							Target: "swarming",
-						},
-					},
-				}
-				So(updateBuildTask(ctx, req), ShouldBeRPCUnauthenticated)
-			})
 		})
 	})
 }
@@ -446,7 +419,6 @@ func TestUpdateTaskEntity(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		ctx = installTestSecret(ctx)
 
-		tk, _ := buildtoken.GenerateToken(ctx, 1, pb.TokenBody_TASK)
 		t0 := testclock.TestRecentTimeUTC
 
 		taskProto := &pb.Task{
@@ -478,7 +450,6 @@ func TestUpdateTaskEntity(t *testing.T) {
 			ID:          1,
 			Proto:       buildProto,
 			CreateTime:  t0,
-			UpdateToken: tk,
 		}
 
 		Convey("normal task save", func() {

@@ -29,8 +29,8 @@ message TokenBody {
     PURPOSE_UNSPECIFIED = 0;
     // The token is a token for updating a build.
     BUILD = 1;
-    // The token is a token for updating a backend task.
-    TASK = 2;
+    // The token is a token for updating a backend task. DO NOT USE. DEPRECATED.
+    TASK = 2 [deprecated = true];
     // The token is a token for starting a build.
     START_BUILD = 3;
     // The token is a token for registering a backend task to the build it runs.
