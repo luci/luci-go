@@ -324,11 +324,7 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 	// See go/luci-test-variant-analysis-design for details.
 	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp, payload)
 	if err != nil {
-		// Only log the error for now, we will return error when everything is
-		// working.
-		err = errors.Annotate(err, "change point analysis").Err()
-		logging.Errorf(ctx, err.Error())
-		// return err
+		return errors.Annotate(err, "change point analysis").Err()
 	}
 
 	// Insert the test results for clustering. This should occur
