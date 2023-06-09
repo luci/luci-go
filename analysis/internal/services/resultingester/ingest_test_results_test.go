@@ -1048,8 +1048,10 @@ func verifyClustering(chunkStore *chunkstore.FakeClient, clusteredFailures *clus
 	}
 	So(actualClusteredFailures, ShouldResemble, expectedClusteredFailures)
 
-	// Verify test variant branch stats were correctly queried.
 	for _, cf := range clusteredFailures.Insertions {
+		So(cf.BuildGardenerRotations, ShouldResemble, []string{"rotation1", "rotation2"})
+
+		// Verify test variant branch stats were correctly populated.
 		if cf.TestId == "ninja://test_consistent_failure" {
 			So(cf.TestVariantBranch, ShouldResembleProto, &bqpb.ClusteredFailureRow_TestVariantBranch{
 				UnexpectedVerdicts_24H: 124,

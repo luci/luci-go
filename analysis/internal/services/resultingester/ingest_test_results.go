@@ -493,13 +493,14 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 
 	// Setup clustering ingestion.
 	opts := ingestion.Options{
-		TaskIndex:     payload.TaskIndex,
-		Project:       inv.Project,
-		PartitionTime: inv.PartitionTime,
-		Realm:         inv.Project + ":" + inv.SubRealm,
-		InvocationID:  inv.IngestedInvocationID,
-		BuildStatus:   inv.BuildStatus,
-		Changelists:   changelists,
+		TaskIndex:              payload.TaskIndex,
+		Project:                inv.Project,
+		PartitionTime:          inv.PartitionTime,
+		Realm:                  inv.Project + ":" + inv.SubRealm,
+		InvocationID:           inv.IngestedInvocationID,
+		BuildStatus:            inv.BuildStatus,
+		Changelists:            changelists,
+		BuildGardenerRotations: payload.Build.GardenerRotations,
 	}
 
 	if payload.PresubmitRun != nil {
