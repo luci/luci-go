@@ -31,6 +31,7 @@ import (
 	tvbexporter "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
+	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/resultdb"
@@ -317,7 +318,22 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 
 	nextPageToken := rsp.NextPageToken
 
-	// Insert the test results for clustering.
+	// Ingest for test variant analysis (change point analysis).
+	// Note that this is different from the ingestForTestVariantAnalysis below
+	// which should eventually be removed.
+	// See go/luci-test-variant-analysis-design for details.
+	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp, payload)
+	if err != nil {
+		// Only log the error for now, we will return error when everything is
+		// working.
+		err = errors.Annotate(err, "change point analysis").Err()
+		logging.Errorf(ctx, err.Error())
+		// return err
+	}
+
+	// Insert the test results for clustering. This should occur
+	// after test variant analysis ingestion as it queries the results of the
+	// above analysis.
 	err = ingestForClustering(ctx, i.clustering, payload, ingestedInv, rsp)
 	if err != nil {
 		return err
@@ -362,19 +378,6 @@ func (i *resultIngester) ingestTestResults(ctx context.Context, payload *taskspb
 				return transient.Tag.Apply(err)
 			}
 		}
-	}
-
-	// Ingest for test variant analysis (change point analysis).
-	// Note that this is different from the ingestForTestVariantAnalysis above
-	// which should eventually be removed.
-	// See go/luci-test-variant-analysis-design for details.
-	err = ingestForChangePointAnalysis(ctx, i.testVariantBranchExporter, rsp, payload)
-	if err != nil {
-		// Only log the error for now, we will return error when everything is
-		// working.
-		err = errors.Annotate(err, "change point analysis").Err()
-		logging.Errorf(ctx, err.Error())
-		// return err
 	}
 
 	err = ingestForVerdictExport(ctx, i.verdictExporter, rsp, inv, payload)
@@ -518,17 +521,22 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 		}
 	}
 
-	failingRDBTVs := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
-	failingTVs := make([]ingestion.TestVerdict, 0, len(failingRDBTVs))
-	for _, tv := range failingRDBTVs {
+	failingRDBVerdicts := filterToTestVariantsWithUnexpectedFailures(rsp.TestVariants)
+	testVariantBranchStats, err := queryTestVariantAnalysisForClustering(ctx, failingRDBVerdicts, inv.Project, inv.PartitionTime, rsp.Sources)
+	if err != nil {
+		return errors.Annotate(err, "query test variant analysis for clustering").Err()
+	}
+
+	verdicts := make([]ingestion.TestVerdict, 0, len(failingRDBVerdicts))
+	for i, tv := range failingRDBVerdicts {
 		var sources *pb.Sources
-		if rdbSources, ok := rsp.Sources[tv.SourcesId]; ok {
-			sources = pbutil.SourcesFromResultDB(rdbSources)
+		if tv.SourcesId != "" {
+			sources = pbutil.SourcesFromResultDB(rsp.Sources[tv.SourcesId])
 		}
-		failingTVs = append(failingTVs, ingestion.TestVerdict{
+		verdicts = append(verdicts, ingestion.TestVerdict{
 			Verdict:           tv,
 			Sources:           sources,
-			TestVariantBranch: nil, // TODO(meiring): Query.
+			TestVariantBranch: testVariantBranchStats[i],
 		})
 	}
 
@@ -536,11 +544,37 @@ func ingestForClustering(ctx context.Context, clustering *ingestion.Ingester, pa
 	// a task retry. Given the same options and same test variants (in
 	// the same order), the IDs and content of the chunks it writes is
 	// designed to be stable. If chunks already exist, it will skip them.
-	if err := clustering.Ingest(ctx, opts, failingTVs); err != nil {
+	if err := clustering.Ingest(ctx, opts, verdicts); err != nil {
 		err = errors.Annotate(err, "ingesting for clustering").Err()
 		return transient.Tag.Apply(err)
 	}
 	return nil
+}
+
+// queryTestVariantAnalysisForClustering queries test variant analysis for
+// the specified test verdicts. The returned slice has exactly one entry
+// for each verdict in `tvs`. If analysis is not available for a given
+// verdict, the corresponding item in the response will be nil.
+func queryTestVariantAnalysisForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*rdbpb.Sources) ([]*clusteringpb.TestVariantBranch, error) {
+	cfg, err := config.Get(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "read config").Err()
+	}
+	tvaQueriesEnabled := cfg.TestVariantAnalysis != nil && cfg.TestVariantAnalysis.Enabled &&
+		cfg.Clustering != nil && cfg.Clustering.QueryTestVariantAnalysisEnabled
+
+	var result []*clusteringpb.TestVariantBranch
+	if tvaQueriesEnabled {
+		var err error
+		result, err = changepoints.QueryStatsForClustering(ctx, tvs, project, partitionTime, sourcesMap)
+		if err != nil {
+			return nil, errors.Annotate(err, "read test variant branch analysis").Err()
+		}
+	} else {
+		// Use nil analysis for each verdict.
+		result = make([]*clusteringpb.TestVariantBranch, len(tvs))
+	}
+	return result, nil
 }
 
 func ingestForChangePointAnalysis(ctx context.Context, exporter *tvbexporter.Exporter, rsp *rdbpb.QueryTestVariantsResponse, payload *taskspb.IngestTestResults) (err error) {

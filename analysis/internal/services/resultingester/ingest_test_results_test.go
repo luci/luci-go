@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints"
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
+	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
@@ -295,6 +296,9 @@ func TestIngestTestResults(t *testing.T) {
 				TestVerdictExport: &configpb.TestVerdictExport{
 					Enabled: true,
 				},
+				Clustering: &configpb.ClusteringSystem{
+					QueryTestVariantAnalysisEnabled: true,
+				},
 			}
 			setupConfig := func(ctx context.Context, cfg *configpb.Config) {
 				err := config.SetTestConfig(ctx, cfg)
@@ -319,6 +323,9 @@ func TestIngestTestResults(t *testing.T) {
 				insert.AnalyzedTestVariant(testRealm, "ninja://test_no_new_results", "hash", atvpb.Status_NO_NEW_RESULTS, nil),
 			}
 			testutil.MustApply(ctx, ms...)
+
+			// Populate some existing test variant analysis.
+			setupTestVariantAnalysis(ctx, partitionTime)
 
 			payload := &taskspb.IngestTestResults{
 				Build: &ctrlpb.BuildResult{
@@ -582,6 +589,52 @@ func TestIngestTestResults(t *testing.T) {
 	})
 }
 
+func setupTestVariantAnalysis(ctx context.Context, partitionTime time.Time) {
+	sr := &pb.SourceRef{
+		System: &pb.SourceRef_Gitiles{
+			Gitiles: &pb.GitilesRef{
+				Host:    "project.googlesource.com",
+				Project: "myproject/src",
+				Ref:     "refs/heads/main",
+			},
+		},
+	}
+	// Truncated to nearest hour.
+	hour := partitionTime.Unix() / 3600
+
+	branch := &tvbr.TestVariantBranch{
+		IsNew:       true,
+		Project:     "project",
+		TestID:      "ninja://test_consistent_failure",
+		VariantHash: "hash",
+		SourceRef:   sr,
+		RefHash:     rdbpbutil.SourceRefHash(pbutil.SourceRefToResultDB(sr)),
+		InputBuffer: &inputbuffer.Buffer{
+			HotBufferCapacity:  100,
+			ColdBufferCapacity: 2000,
+			HotBuffer: inputbuffer.History{
+				Verdicts: []inputbuffer.PositionVerdict{},
+			},
+			ColdBuffer: inputbuffer.History{
+				Verdicts: []inputbuffer.PositionVerdict{},
+			},
+		},
+		Statistics: &changepointspb.Statistics{
+			HourlyBuckets: []*changepointspb.Statistics_HourBucket{
+				{
+					Hour:               int64(hour - 23),
+					UnexpectedVerdicts: 123,
+					FlakyVerdicts:      456,
+					TotalVerdicts:      1999,
+				},
+			},
+		},
+	}
+	m, err := branch.ToMutation()
+	So(err, ShouldBeNil)
+	testutil.MustApply(ctx, m)
+}
+
 func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, client *bqexporter.FakeClient) {
 	tvbs, err := changepoints.FetchTestVariantBranches(ctx)
 	So(err, ShouldBeNil)
@@ -625,6 +678,16 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 			},
 			ColdBuffer: inputbuffer.History{
 				Verdicts: []inputbuffer.PositionVerdict{},
+			},
+		},
+		Statistics: &changepointspb.Statistics{
+			HourlyBuckets: []*changepointspb.Statistics_HourBucket{
+				{
+					Hour:               int64(hour.Unix()/3600 - 23),
+					UnexpectedVerdicts: 123,
+					FlakyVerdicts:      456,
+					TotalVerdicts:      1999,
+				},
 			},
 		},
 	}, cmp.Comparer(proto.Equal))
@@ -984,6 +1047,19 @@ func verifyClustering(chunkStore *chunkstore.FakeClient, clusteredFailures *clus
 		"ninja://test_has_unexpected":     1,
 	}
 	So(actualClusteredFailures, ShouldResemble, expectedClusteredFailures)
+
+	// Verify test variant branch stats were correctly queried.
+	for _, cf := range clusteredFailures.Insertions {
+		if cf.TestId == "ninja://test_consistent_failure" {
+			So(cf.TestVariantBranch, ShouldResembleProto, &bqpb.ClusteredFailureRow_TestVariantBranch{
+				UnexpectedVerdicts_24H: 124,
+				FlakyVerdicts_24H:      456,
+				TotalVerdicts_24H:      2000,
+			})
+		} else {
+			So(cf.TestVariantBranch, ShouldBeNil)
+		}
+	}
 }
 
 func verifyAnalyzedTestVariants(ctx context.Context, skdr *tqtesting.Scheduler) {

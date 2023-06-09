@@ -165,15 +165,8 @@ type ProjectConfig struct {
 	Monorail *MonorailProject `protobuf:"bytes,1,opt,name=monorail,proto3" json:"monorail,omitempty"`
 	// The Buganzier configuration to use when filing bugs.
 	Buganizer *BuganizerProject `protobuf:"bytes,8,opt,name=buganizer,proto3" json:"buganizer,omitempty"`
-	// The threshold at which to file bugs.
-	// If reason cluster's impact exceeds the given threshold,
-	// a bug will be filed for it.
-	// Alternatively, if test name cluster's impact exceeds 134% of the given
-	// threshold, a bug will also be filed for it.
-	//
-	// LUCI Analysis's bias towards reason clusters reflects the fact that bugs
-	// filed for reasons should be better scoped and more actionable
-	// (focus on one problem).
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use bug_filing_thresholds instead.
 	BugFilingThreshold *ImpactThreshold `protobuf:"bytes,2,opt,name=bug_filing_threshold,json=bugFilingThreshold,proto3" json:"bug_filing_threshold,omitempty"`
 	// Per realm configurations.
 	Realms []*RealmConfig `protobuf:"bytes,3,rep,name=realms,proto3" json:"realms,omitempty"`
@@ -899,14 +892,13 @@ type MonorailPriority struct {
 	// The monorail priority value. For example, "0". This depends on the
 	// valid priority field values you have defined in your monorail project.
 	Priority string `protobuf:"bytes,1,opt,name=priority,proto3" json:"priority,omitempty"`
-	// The threshold at which to apply the priority.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use thresholds instead.
 	Threshold *ImpactThreshold `protobuf:"bytes,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
 	// The threshold at which to apply the priority.
 	// The thresholds are considered satisfied if any of the individual impact metric
 	// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
 	// are combined using an OR-semantic).
-	//
-	// TODO(beining): Still WIP, this field is planned to replace MonorailPriority.threshold.
 	Thresholds []*ImpactMetricThreshold `protobuf:"bytes,3,rep,name=thresholds,proto3" json:"thresholds,omitempty"`
 }
 
@@ -1386,14 +1378,13 @@ type BuganizerProject_PriorityMapping struct {
 
 	// The Buganizer priority that will be mapped to a threshold.
 	Priority BuganizerPriority `protobuf:"varint,1,opt,name=priority,proto3,enum=luci.analysis.config.BuganizerPriority" json:"priority,omitempty"`
-	// The threshold at which to apply the priority.
+	// Deprecated. No longer has any effect. Retained for textproto
+	// compatibility only. Use thresholds instead.
 	Threshold *ImpactThreshold `protobuf:"bytes,2,opt,name=threshold,proto3" json:"threshold,omitempty"`
 	// The threshold at which to apply the priority.
 	// The thresholds are considered satisfied if any of the individual impact metric
 	// thresholds is met or exceeded (i.e. if multiple thresholds are set, they
 	// are combined using an OR-semantic).
-	//
-	// TODO(beining): Still WIP, this field is planned to replace PriorityMapping.threshold.
 	Thresholds []*ImpactMetricThreshold `protobuf:"bytes,3,rep,name=thresholds,proto3" json:"thresholds,omitempty"`
 }
 

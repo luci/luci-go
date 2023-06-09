@@ -142,7 +142,7 @@ func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []inputbuffer.E
 	for _, segments := range evictedSegments {
 		evictedVerdicts = append(evictedVerdicts, segments.Verdicts...)
 	}
-	tvb.Statistics = insertVerdictsIntoStatistics(tvb.Statistics, evictedVerdicts)
+	tvb.Statistics = applyStatisticsRetention(insertVerdictsIntoStatistics(tvb.Statistics, evictedVerdicts))
 	tvb.IsStatisticsDirty = true
 
 	// Assert that finalizing segment is after finalized segments.
@@ -308,6 +308,16 @@ func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.
 		return buckets[i].Hour < buckets[j].Hour
 	})
 
+	return &cpb.Statistics{
+		HourlyBuckets: buckets,
+	}
+}
+
+// applyStatisticsRetention applies the retention policies
+// to statistics data.
+func applyStatisticsRetention(stats *cpb.Statistics) *cpb.Statistics {
+	buckets := stats.HourlyBuckets
+
 	// Apply data deletion policies.
 	if len(buckets) > 0 {
 		lastHour := buckets[len(buckets)-1].Hour
@@ -328,8 +338,15 @@ func insertVerdictsIntoStatistics(stats *cpb.Statistics, verdicts []inputbuffer.
 		}
 		buckets = buckets[deleteBeforeIndex+1:]
 	}
+	return &cpb.Statistics{HourlyBuckets: buckets}
+}
 
-	return &cpb.Statistics{
-		HourlyBuckets: buckets,
-	}
+// MergedStatistics returns statistics about the verdicts ingested for
+// given test variant branch. Statistics comprise data from both the
+// input buffer and the output buffer.
+func (tvb *TestVariantBranch) MergedStatistics() *cpb.Statistics {
+	verdicts := make([]inputbuffer.PositionVerdict, 0, inputbuffer.DefaultColdBufferCapacity+inputbuffer.DefaultHotBufferCapacity)
+	verdicts = append(verdicts, tvb.InputBuffer.ColdBuffer.Verdicts...)
+	verdicts = append(verdicts, tvb.InputBuffer.HotBuffer.Verdicts...)
+	return insertVerdictsIntoStatistics(tvb.Statistics, verdicts)
 }

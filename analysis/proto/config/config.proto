@@ -50,6 +50,9 @@ message Config {
 
   // Config to control the test verdict export.
   TestVerdictExport test_verdict_export = 8;
+
+  // Configuration related to failure clustering.
+  ClusteringSystem clustering = 9;
 }
 
 // TestVariantAnalysis controls how LUCI Analysis run test variant
@@ -63,6 +66,17 @@ message TestVariantAnalysis {
   // Controls whether we should export test variant analysis result to
   // BigQuery. To turn this on, the "enabled" flag should also be turned on.
   bool bigquery_export_enabled = 2;
+}
+
+// ClusteringSystem controls failure clustering for a LUCI Analysis
+// system. For project-level clustering settings, see
+// `luci.analysis.config.Clustering` instead.
+message ClusteringSystem {
+  // Controls whether test variant analysis may be queried when clustering
+  // failures. If set, the test_variant_branch column will be populated
+  // for clustered_failures rows in BigQuery, if the failures have source
+  // position data.
+  bool query_test_variant_analysis_enabled = 1;
 }
 
 // Settings to control ingestion.
