@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 )
@@ -276,6 +278,15 @@ func (op *ResetTriggersOp) makeDispatcherChannel(ctx context.Context) dispatcher
 		}
 		result := &op.results[ci.index]
 		result.err = trigger.Reset(ctx, ci.input)
+		gerritErr := "GERRIT_ERROR_NONE"
+		if errCode, ok := trigger.IsResetErrFromGerrit(result.err); ok {
+			if codeString, ok := code.Code_name[int32(errCode)]; ok {
+				gerritErr = codeString
+			} else {
+				gerritErr = fmt.Sprintf("Code(%d)", int64(errCode))
+			}
+		}
+		metrics.Internal.RunResetTriggerAttempted.Add(ctx, 1, op.Run.ID.LUCIProject(), op.Run.ConfigGroupID.Name(), string(op.Run.Mode), result.err == nil, gerritErr)
 		if result.err == nil {
 			result.resetAt = clock.Now(ctx)
 		}

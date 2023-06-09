@@ -55,6 +55,25 @@ var ErrResetPermanentTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent error while resetting triggers"),
 }
 
+var errGerritTagKey = errors.NewTagKey("this is a Gerrit error")
+
+func applyGerritErrTag(err error, grpcCode codes.Code) error {
+	return errors.TagValue{Key: errGerritTagKey, Value: grpcCode}.Apply(err)
+}
+
+// IsResetErrFromGerrit returns gerrit grpc error code if the `trigger.Reset`
+// fails because of Gerrit.
+func IsResetErrFromGerrit(err error) (codes.Code, bool) {
+	switch v, ok := errors.TagValueIn(errGerritTagKey, err); {
+	case err == nil:
+		return codes.OK, false
+	case !ok:
+		return codes.Unknown, false
+	default:
+		return v.(codes.Code), true
+	}
+}
+
 // ResetInput contains info to reset triggers of Run on a CL.
 type ResetInput struct {
 	// CL is a Gerrit CL entity.
@@ -389,15 +408,6 @@ func (c *change) sortedVoterAccountIDs() []int64 {
 	return ids
 }
 
-func sortedReviewerAccountIDs(ci *gerritpb.ChangeInfo) []int64 {
-	ids := make([]int64, len(ci.GetReviewers().GetReviewers()))
-	for i, acc := range ci.GetReviewers().GetReviewers() {
-		ids[i] = acc.GetAccountId()
-	}
-	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
-	return ids
-}
-
 func (c *change) removeVotesAndPostMsg(ctx context.Context, ci *gerritpb.ChangeInfo, t *run.Trigger, msg string, notify, addAttn gerrit.Whoms, reason string) error {
 	var nonTriggeringVotesRemovalErrs errors.MultiError
 	needRemoveTriggerVote := false
@@ -570,18 +580,22 @@ func makeGerritAttentionSetInputs(addAttn gerrit.Whoms, ci *gerritpb.ChangeInfo,
 }
 
 func (c *change) annotateGerritErr(ctx context.Context, err error, action string) error {
-	switch grpcutil.Code(err) {
+	code := grpcutil.Code(err)
+	var retErr error
+	switch code {
 	case codes.OK:
 		return nil
 	case codes.PermissionDenied:
-		return errors.Reason("no permission to %s %s/%d", action, c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
+		retErr = errors.Reason("no permission to %s %s/%d", action, c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
 	case codes.NotFound:
-		return errors.Reason("change %s/%d not found", c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
+		retErr = errors.Reason("change %s/%d not found", c.Host, c.Number).Tag(ErrResetPermanentTag).Err()
 	case codes.FailedPrecondition:
-		return errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, err).Tag(ErrResetPermanentTag).Err()
+		retErr = errors.Reason("change %s/%d in an unexpected state for action %s: %s", c.Host, c.Number, action, retErr).Tag(ErrResetPermanentTag).Err()
 	case codes.DeadlineExceeded:
-		return errors.Reason("timeout when calling Gerrit to %s %s/%d", action, c.Host, c.Number).Tag(transient.Tag).Err()
+		retErr = errors.Reason("timeout when calling Gerrit to %s %s/%d", action, c.Host, c.Number).Tag(transient.Tag).Err()
 	default:
-		return gerrit.UnhandledError(ctx, err, "failed to %s %s/%d", action, c.Host, c.Number)
+		retErr = gerrit.UnhandledError(ctx, retErr, "failed to %s %s/%d", action, c.Host, c.Number)
 	}
+	retErr = applyGerritErrTag(retErr, code)
+	return retErr
 }

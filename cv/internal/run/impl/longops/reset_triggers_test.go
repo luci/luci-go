@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
+	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 
@@ -172,6 +173,7 @@ func TestResetTriggers(t *testing.T) {
 					assertTriggerRemoved(changelist.ExternalID(result.ExternalId))
 					So(result.GetSuccessInfo().GetResetAt().AsTime(), ShouldHappenOnOrAfter, startTime)
 				}
+				So(ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), true, "GERRIT_ERROR_NONE"), ShouldEqual, clCount)
 			})
 		}
 
@@ -241,6 +243,8 @@ func TestResetTriggers(t *testing.T) {
 				}
 				So(result.ExternalId, ShouldNotBeEmpty)
 			}
+			So(ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), true, "GERRIT_ERROR_NONE"), ShouldEqual, 1)
+			So(ct.TSMonSentValue(ctx, metrics.Internal.RunResetTriggerAttempted, lProject, "test", string(run.DryRun), false, "PERMISSION_DENIED"), ShouldEqual, 1)
 		})
 
 		Convey("Doesn't obey long op cancellation", func() {

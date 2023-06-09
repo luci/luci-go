@@ -33,6 +33,7 @@ var Internal = struct {
 	CLIngestionLatencyWithoutFetch metric.CumulativeDistribution
 	BigQueryExportDelay            metric.CumulativeDistribution
 	RunTryjobResultReportDelay     metric.CumulativeDistribution
+	RunResetTriggerAttempted       metric.Counter
 }{
 	BuildbucketRPCCount: metric.NewCounter(
 		"cv/internal/buildbucket_rpc/count",
@@ -132,5 +133,15 @@ var Internal = struct {
 		field.String("project"),
 		field.String("config_group"),
 		field.String("mode"),
+	),
+	RunResetTriggerAttempted: metric.NewCounter(
+		"cv/internal/runs/reset_trigger_attempted",
+		"Record the number of attempts to reset the triggers of Run",
+		nil,
+		field.String("project"),
+		field.String("config_group"),
+		field.String("mode"),
+		field.Bool("succeeded"),
+		field.String("gerrit_error"),
 	),
 }
