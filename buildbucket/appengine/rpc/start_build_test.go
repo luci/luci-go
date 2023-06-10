@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -196,7 +197,7 @@ func TestStartBuild(t *testing.T) {
 					res, err := srv.StartBuild(ctx, req)
 					So(err, ShouldBeNil)
 
-					build, err = getBuild(ctx, 87654321)
+					build, err = common.GetBuild(ctx, 87654321)
 					So(err, ShouldBeNil)
 					So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
 					So(build.StartBuildRequestID, ShouldEqual, req.RequestId)
@@ -221,7 +222,7 @@ func TestStartBuild(t *testing.T) {
 						_, err := srv.StartBuild(ctx, req)
 						So(err, ShouldErrLike, `build 87654321 has associated with task "other"`)
 						So(buildbucket.DuplicateTask.In(err), ShouldBeTrue)
-						build, err = getBuild(ctx, 87654321)
+						build, err = common.GetBuild(ctx, 87654321)
 						So(err, ShouldBeNil)
 						So(build.UpdateToken, ShouldEqual, "")
 						So(build.StartBuildRequestID, ShouldEqual, "")
@@ -245,7 +246,7 @@ func TestStartBuild(t *testing.T) {
 						res, err := srv.StartBuild(ctx, req)
 						So(err, ShouldBeNil)
 
-						build, err = getBuild(ctx, 87654321)
+						build, err = common.GetBuild(ctx, 87654321)
 						So(err, ShouldBeNil)
 						So(build.UpdateToken, ShouldEqual, res.UpdateBuildToken)
 						So(build.StartBuildRequestID, ShouldEqual, req.RequestId)

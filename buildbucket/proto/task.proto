@@ -20,8 +20,6 @@ import "google/protobuf/struct.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/field_option.proto";
 
-
-
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 // A backend task.
@@ -60,4 +58,16 @@ message TaskID {
   // An ID unique to the target used to identify this task. e.g. Swarming task
   // ID.
   string id = 2 [ (buildbucket.v2.register_build_task_field_option).field_behavior = REQUIRED ];
+}
+
+// A message sent by task backends as part of the payload to a
+// pubsub topic corresponding with that backend. Buildbucket handles these
+// pubsub messages with the UpdateBuildTask cloud task.
+// Backends must use this proto when sending pubsub updates to buildbucket.
+message BuildTaskUpdate {
+  // A build ID.
+  string build_id = 1;
+
+  // Task
+  Task task = 2;
 }

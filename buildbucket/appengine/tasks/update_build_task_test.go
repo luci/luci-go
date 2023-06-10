@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+package tasks
 
 import (
 	"context"
@@ -41,7 +41,6 @@ func TestValidateBuildTask(t *testing.T) {
 
 	Convey("ValidateBuildTask", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = installTestSecret(ctx)
 
 		t0 := testclock.TestRecentTimeUTC
 		build := &model.Build{
@@ -55,7 +54,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 				Status: pb.Status_STARTED,
 			},
-			CreateTime:  t0,
+			CreateTime: t0,
 		}
 		bk := datastore.KeyForObj(ctx, build)
 		infra := &model.BuildInfra{
@@ -64,7 +63,7 @@ func TestValidateBuildTask(t *testing.T) {
 		}
 		So(datastore.Put(ctx, build, infra), ShouldBeNil)
 		Convey("backend not in build infra", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Id: &pb.TaskID{
@@ -105,7 +104,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Id: &pb.TaskID{
@@ -133,7 +132,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			So(datastore.Put(ctx, infra), ShouldBeNil)
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Id: &pb.TaskID{
@@ -161,7 +160,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			So(datastore.Put(ctx, infra), ShouldBeNil)
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Id: &pb.TaskID{
@@ -189,7 +188,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			So(datastore.Put(ctx, infra), ShouldBeNil)
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Id: &pb.TaskID{
@@ -217,7 +216,7 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			So(datastore.Put(ctx, infra), ShouldBeNil)
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Id: &pb.TaskID{
@@ -240,7 +239,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		Convey("is valid task", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Status: pb.Status_STARTED,
@@ -253,13 +252,13 @@ func TestValidateTaskUpdate(t *testing.T) {
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeNil)
 		})
 		Convey("is missing task", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 			}
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
 		})
 		Convey("is missing build ID", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				Task: &pb.Task{
 					Status: pb.Status_STARTED,
 					Id: &pb.TaskID{
@@ -271,7 +270,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
 		})
 		Convey("is missing task ID", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Status: pb.Status_STARTED,
@@ -280,7 +279,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
 		})
 		Convey("is invalid task status: SCHEDULED", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Status: pb.Status_SCHEDULED,
@@ -293,7 +292,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
 		})
 		Convey("is invalid task status: ENDED_MASK", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Status: pb.Status_ENDED_MASK,
@@ -306,7 +305,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
 		})
 		Convey("is invalid task status: STATUS_UNSPECIFIED", func() {
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Status: pb.Status_STATUS_UNSPECIFIED,
@@ -325,7 +324,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 				v, _ := structpb.NewValue("my really long detail, but it's not that long.")
 				details[strconv.Itoa(i)] = v
 			}
-			req := &pb.UpdateBuildTaskRequest{
+			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
 					Status: pb.Status_STARTED,
@@ -347,10 +346,8 @@ func TestUpdateBuildTask(t *testing.T) {
 	t.Parallel()
 
 	Convey("UpdateBuildTask", t, func() {
-		srv := &Builds{}
 		ctx := memory.Use(context.Background())
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-		ctx = installTestSecret(ctx)
 
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -360,8 +357,8 @@ func TestUpdateBuildTask(t *testing.T) {
 		t0 := testclock.TestRecentTimeUTC
 
 		// Helper function to call UpdateBuild.
-		updateBuildTask := func(ctx context.Context, req *pb.UpdateBuildTaskRequest) error {
-			_, err := srv.UpdateBuildTask(ctx, req)
+		updateBuildTask := func(ctx context.Context, req *pb.BuildTaskUpdate) error {
+			_, err := UpdateBuildTask(ctx, req)
 			return err
 		}
 
@@ -377,7 +374,7 @@ func TestUpdateBuildTask(t *testing.T) {
 				},
 				Status: pb.Status_STARTED,
 			},
-			CreateTime:  t0,
+			CreateTime: t0,
 		}
 		bk := datastore.KeyForObj(ctx, build)
 		infra := &model.BuildInfra{
@@ -397,7 +394,7 @@ func TestUpdateBuildTask(t *testing.T) {
 
 		Convey("tokenValidation", func() {
 			Convey("buildID matches token", func() {
-				req := &pb.UpdateBuildTaskRequest{
+				req := &pb.BuildTaskUpdate{
 					BuildId: "1",
 					Task: &pb.Task{
 						Status: pb.Status_STARTED,
@@ -417,7 +414,6 @@ func TestUpdateTaskEntity(t *testing.T) {
 	t.Parallel()
 	Convey("UpdateTaskEntity", t, func() {
 		ctx := memory.Use(context.Background())
-		ctx = installTestSecret(ctx)
 
 		t0 := testclock.TestRecentTimeUTC
 
@@ -428,7 +424,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				Target: "swarming",
 			},
 		}
-		req := &pb.UpdateBuildTaskRequest{
+		req := &pb.BuildTaskUpdate{
 			BuildId: "1",
 			Task:    taskProto,
 		}
@@ -447,9 +443,9 @@ func TestUpdateTaskEntity(t *testing.T) {
 			Infra: infraProto,
 		}
 		buildModel := &model.Build{
-			ID:          1,
-			Proto:       buildProto,
-			CreateTime:  t0,
+			ID:         1,
+			Proto:      buildProto,
+			CreateTime: t0,
 		}
 
 		Convey("normal task save", func() {

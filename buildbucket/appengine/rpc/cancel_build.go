@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
@@ -54,7 +55,7 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return nil, appstatus.Errorf(codes.InvalidArgument, "invalid mask")
 	}
 
-	bld, err := getBuild(ctx, req.Id)
+	bld, err := common.GetBuild(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}

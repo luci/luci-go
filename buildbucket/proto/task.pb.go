@@ -192,6 +192,67 @@ func (x *TaskID) GetId() string {
 	return ""
 }
 
+// A message sent by task backends as part of the payload to a
+// pubsub topic corresponding with that backend. Buildbucket handles these
+// pubsub messages with the UpdateBuildTask cloud task.
+// Backends must use this proto when sending pubsub updates to buildbucket.
+type BuildTaskUpdate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// A build ID.
+	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	// Task
+	Task *Task `protobuf:"bytes,2,opt,name=task,proto3" json:"task,omitempty"`
+}
+
+func (x *BuildTaskUpdate) Reset() {
+	*x = BuildTaskUpdate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_buildbucket_proto_task_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BuildTaskUpdate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildTaskUpdate) ProtoMessage() {}
+
+func (x *BuildTaskUpdate) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_task_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildTaskUpdate.ProtoReflect.Descriptor instead.
+func (*BuildTaskUpdate) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_task_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BuildTaskUpdate) GetBuildId() string {
+	if x != nil {
+		return x.BuildId
+	}
+	return ""
+}
+
+func (x *BuildTaskUpdate) GetTask() *Task {
+	if x != nil {
+		return x.Task
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_buildbucket_proto_task_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_buildbucket_proto_task_proto_rawDesc = []byte{
@@ -230,11 +291,16 @@ var file_go_chromium_org_luci_buildbucket_proto_task_proto_rawDesc = []byte{
 	0x20, 0x01, 0x28, 0x09, 0x42, 0x0c, 0x8a, 0xc3, 0x1a, 0x02, 0x08, 0x02, 0x92, 0xc3, 0x1a, 0x02,
 	0x08, 0x02, 0x52, 0x06, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x12, 0x16, 0x0a, 0x02, 0x69, 0x64,
 	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x06, 0x92, 0xc3, 0x1a, 0x02, 0x08, 0x02, 0x52, 0x02,
-	0x69, 0x64, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75,
-	0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64,
-	0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69,
-	0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x69, 0x64, 0x22, 0x56, 0x0a, 0x0f, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x54, 0x61, 0x73, 0x6b, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x49, 0x64,
+	0x12, 0x28, 0x0a, 0x04, 0x74, 0x61, 0x73, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14,
+	0x2e, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x32, 0x2e,
+	0x54, 0x61, 0x73, 0x6b, 0x52, 0x04, 0x74, 0x61, 0x73, 0x6b, 0x42, 0x36, 0x5a, 0x34, 0x67, 0x6f,
+	0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75,
+	0x63, 0x69, 0x2f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x3b, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x62, 0x75, 0x63, 0x6b, 0x65, 0x74,
+	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -249,24 +315,26 @@ func file_go_chromium_org_luci_buildbucket_proto_task_proto_rawDescGZIP() []byte
 	return file_go_chromium_org_luci_buildbucket_proto_task_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_buildbucket_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_buildbucket_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_buildbucket_proto_task_proto_goTypes = []interface{}{
 	(*Task)(nil),            // 0: buildbucket.v2.Task
 	(*TaskID)(nil),          // 1: buildbucket.v2.TaskID
-	(Status)(0),             // 2: buildbucket.v2.Status
-	(*StatusDetails)(nil),   // 3: buildbucket.v2.StatusDetails
-	(*structpb.Struct)(nil), // 4: google.protobuf.Struct
+	(*BuildTaskUpdate)(nil), // 2: buildbucket.v2.BuildTaskUpdate
+	(Status)(0),             // 3: buildbucket.v2.Status
+	(*StatusDetails)(nil),   // 4: buildbucket.v2.StatusDetails
+	(*structpb.Struct)(nil), // 5: google.protobuf.Struct
 }
 var file_go_chromium_org_luci_buildbucket_proto_task_proto_depIdxs = []int32{
 	1, // 0: buildbucket.v2.Task.id:type_name -> buildbucket.v2.TaskID
-	2, // 1: buildbucket.v2.Task.status:type_name -> buildbucket.v2.Status
-	3, // 2: buildbucket.v2.Task.status_details:type_name -> buildbucket.v2.StatusDetails
-	4, // 3: buildbucket.v2.Task.details:type_name -> google.protobuf.Struct
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 1: buildbucket.v2.Task.status:type_name -> buildbucket.v2.Status
+	4, // 2: buildbucket.v2.Task.status_details:type_name -> buildbucket.v2.StatusDetails
+	5, // 3: buildbucket.v2.Task.details:type_name -> google.protobuf.Struct
+	0, // 4: buildbucket.v2.BuildTaskUpdate.task:type_name -> buildbucket.v2.Task
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_buildbucket_proto_task_proto_init() }
@@ -301,6 +369,18 @@ func file_go_chromium_org_luci_buildbucket_proto_task_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_buildbucket_proto_task_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BuildTaskUpdate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -308,7 +388,7 @@ func file_go_chromium_org_luci_buildbucket_proto_task_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_buildbucket_proto_task_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

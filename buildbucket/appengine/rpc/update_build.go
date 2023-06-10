@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
@@ -391,7 +392,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		shouldCancelChildren = false
 		var err error
-		b, err = getBuild(ctx, req.Build.Id)
+		b, err = common.GetBuild(ctx, req.Build.Id)
 		if err != nil {
 			if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
 				return err
@@ -611,7 +612,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid mask").Err())
 	}
 
-	build, err := getBuild(ctx, req.Build.Id)
+	build, err := common.GetBuild(ctx, req.Build.Id)
 	if err != nil {
 		return nil, err
 	}

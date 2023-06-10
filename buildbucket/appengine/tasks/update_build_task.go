@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rpc
+// UpdateBuildTask allows the Backend to preemptively update the
+// status of the task (e.g. if it knows that the task has crashed, etc.).
+
+package tasks
 
 import (
 	"context"
 	"strconv"
-	"strings"
 
 	"google.golang.org/grpc/codes"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -47,11 +49,9 @@ func validateTaskStatus(taskStatus pb.Status) error {
 	return nil
 }
 
-func validateUpdateBuildTaskRequest(ctx context.Context, req *pb.UpdateBuildTaskRequest) error {
-	if procRes := protowalk.Fields(req, &protowalk.RequiredProcessor{}); procRes != nil {
-		if resStrs := procRes.Strings(); len(resStrs) > 0 {
-			return errors.Reason(strings.Join(resStrs, ". ")).Err()
-		}
+func validateUpdateBuildTaskRequest(ctx context.Context, req *pb.BuildTaskUpdate) error {
+	if req.BuildId == "" {
+		return errors.Reason("build_id required").Err()
 	}
 	if req.GetTask().GetId().GetId() == "" {
 		return errors.Reason("task.id: required").Err()
@@ -69,7 +69,7 @@ func validateUpdateBuildTaskRequest(ctx context.Context, req *pb.UpdateBuildTask
 // validateBuildTask ensures that the taskID provided in the request matches
 // the taskID that is stored in the build model. If there is no task associated
 // with the build, the task is associated here.
-func validateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest, build *model.Build) (*pb.Build, error) {
+func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, build *model.Build) (*pb.Build, error) {
 
 	// create a new build mask to read infra
 	mask, _ := model.NewBuildMask("", nil, &pb.BuildMask{
@@ -97,9 +97,9 @@ func validateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest, buil
 	return bld, nil
 }
 
-func updateTaskEntity(ctx context.Context, req *pb.UpdateBuildTaskRequest, build *pb.Build) error {
+func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, build *pb.Build) error {
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		b, err := getBuild(ctx, build.Id)
+		b, err := common.GetBuild(ctx, build.Id)
 		if err != nil {
 			if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
 				return err
@@ -119,7 +119,7 @@ func updateTaskEntity(ctx context.Context, req *pb.UpdateBuildTaskRequest, build
 	// TODO [randymaldonado@] send pubsub notifications and update metrics.
 }
 
-func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskRequest) (*pb.Task, error) {
+func UpdateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate) (*pb.Task, error) {
 	buildID, err := strconv.ParseInt(req.GetBuildId(), 10, 64)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "bad build id").Err())
@@ -130,7 +130,7 @@ func (*Builds) UpdateBuildTask(ctx context.Context, req *pb.UpdateBuildTaskReque
 	}
 	logging.Infof(ctx, "Received an UpdateBuildTask request for build %q", req.BuildId)
 
-	bld, err := getBuild(ctx, buildID)
+	bld, err := common.GetBuild(ctx, buildID)
 	if err != nil {
 		return nil, appstatus.BadRequest(errors.Annotate(err, "invalid build").Err())
 	}

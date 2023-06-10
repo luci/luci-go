@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -495,7 +496,7 @@ func TestCheckBuildForUpdate(t *testing.T) {
 		req := &pb.UpdateBuildRequest{Build: &pb.Build{Id: 1}}
 
 		Convey("works", func() {
-			b, err := getBuild(ctx, 1)
+			b, err := common.GetBuild(ctx, 1)
 			So(err, ShouldBeNil)
 			err = checkBuildForUpdate(updateMask(req), req, b)
 			So(err, ShouldBeNil)
@@ -503,7 +504,7 @@ func TestCheckBuildForUpdate(t *testing.T) {
 			Convey("with build.steps", func() {
 				req.Build.Status = pb.Status_STARTED
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.steps"}}
-				b, err := getBuild(ctx, 1)
+				b, err := common.GetBuild(ctx, 1)
 				So(err, ShouldBeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeNil)
@@ -511,7 +512,7 @@ func TestCheckBuildForUpdate(t *testing.T) {
 			Convey("with build.output", func() {
 				req.Build.Status = pb.Status_STARTED
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status", "build.output"}}
-				b, err := getBuild(ctx, 1)
+				b, err := common.GetBuild(ctx, 1)
 				So(err, ShouldBeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeNil)
@@ -523,7 +524,7 @@ func TestCheckBuildForUpdate(t *testing.T) {
 				build.Proto.Status = pb.Status_SUCCESS
 				So(datastore.Put(ctx, build), ShouldBeNil)
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.status"}}
-				b, err := getBuild(ctx, 1)
+				b, err := common.GetBuild(ctx, 1)
 				So(err, ShouldBeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeRPCFailedPrecondition, "cannot update an ended build")
@@ -531,21 +532,21 @@ func TestCheckBuildForUpdate(t *testing.T) {
 
 			Convey("with build.steps", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.steps"}}
-				b, err := getBuild(ctx, 1)
+				b, err := common.GetBuild(ctx, 1)
 				So(err, ShouldBeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeRPCInvalidArgument, "cannot update steps of a SCHEDULED build")
 			})
 			Convey("with build.output", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
-				b, err := getBuild(ctx, 1)
+				b, err := common.GetBuild(ctx, 1)
 				So(err, ShouldBeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeRPCInvalidArgument, "cannot update build output fields of a SCHEDULED build")
 			})
 			Convey("with build.infra.buildbucket.agent.output", func() {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}}
-				b, err := getBuild(ctx, 1)
+				b, err := common.GetBuild(ctx, 1)
 				So(err, ShouldBeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
 				So(err, ShouldBeRPCInvalidArgument, "cannot update agent output of a SCHEDULED build")
@@ -570,7 +571,7 @@ func TestUpdateBuild(t *testing.T) {
 	t.Parallel()
 
 	getBuildWithDetails := func(ctx context.Context, bid int64) *model.Build {
-		b, err := getBuild(ctx, bid)
+		b, err := common.GetBuild(ctx, bid)
 		So(err, ShouldBeNil)
 		// ensure that the below fields were cleared when the build was saved.
 		So(b.Proto.Tags, ShouldBeNil)
@@ -678,7 +679,7 @@ func TestUpdateBuild(t *testing.T) {
 		Convey("build.update_time is always updated", func() {
 			req.UpdateMask = nil
 			So(updateBuild(ctx, req), ShouldBeNil)
-			b, err := getBuild(ctx, req.Build.Id)
+			b, err := common.GetBuild(ctx, req.Build.Id)
 			So(err, ShouldBeNil)
 			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0))
 			So(b.Proto.Status, ShouldEqual, pb.Status_STARTED)
@@ -686,7 +687,7 @@ func TestUpdateBuild(t *testing.T) {
 			tclock.Add(time.Second)
 
 			So(updateBuild(ctx, req), ShouldBeNil)
-			b, err = getBuild(ctx, req.Build.Id)
+			b, err = common.GetBuild(ctx, req.Build.Id)
 			So(err, ShouldBeNil)
 			So(b.Proto.UpdateTime, ShouldResembleProto, timestamppb.New(t0.Add(time.Second)))
 		})
@@ -1349,7 +1350,7 @@ func TestUpdateBuild(t *testing.T) {
 					_, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
 
-					child, err := getBuild(ctx, 21)
+					child, err := common.GetBuild(ctx, 21)
 					So(err, ShouldBeNil)
 					So(child.Proto.CancelTime, ShouldNotBeNil)
 				})
@@ -1390,7 +1391,7 @@ func TestUpdateBuild(t *testing.T) {
 					_, err := srv.UpdateBuild(ctx, req)
 					So(err, ShouldBeRPCOK)
 
-					child, err := getBuild(ctx, 21)
+					child, err := common.GetBuild(ctx, 21)
 					So(err, ShouldBeNil)
 					So(child.Proto.CancelTime, ShouldNotBeNil)
 

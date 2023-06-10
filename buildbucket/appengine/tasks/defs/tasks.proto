@@ -8,7 +8,7 @@ package taskdefs;
 
 option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskdefs";
 
-import  "go.chromium.org/luci/buildbucket/proto/project_config.proto";
+import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 
 // A task to cancel a Swarming task in Python.
 message CancelSwarmingTask {

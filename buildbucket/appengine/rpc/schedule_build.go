@@ -30,7 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/cipd/common"
+	cipdcommon "go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
@@ -127,7 +128,7 @@ func validateExecutable(exe *pb.Executable) error {
 	switch {
 	case exe.GetCipdPackage() != "":
 		return errors.Reason("cipd_package must not be specified").Err()
-	case exe.GetCipdVersion() != "" && teeErr(common.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
+	case exe.GetCipdVersion() != "" && teeErr(cipdcommon.ValidateInstanceVersion(exe.CipdVersion), &err) != nil:
 		return errors.Annotate(err, "cipd_version").Err()
 	default:
 		return nil
@@ -273,7 +274,7 @@ func validateParent(ctx context.Context) (*model.Build, error) {
 		return nil, errors.New("invalid parent buildbucket token", grpcutil.InvalidArgumentTag)
 	}
 
-	pBld, err := getBuild(ctx, tok.BuildId)
+	pBld, err := common.GetBuild(ctx, tok.BuildId)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +342,7 @@ var templateBuildMask = model.HardcodedBuildMask(
 )
 
 func scheduleRequestFromBuildID(ctx context.Context, bID int64, isRetry bool) (*pb.ScheduleBuildRequest, error) {
-	bld, err := getBuild(ctx, bID)
+	bld, err := common.GetBuild(ctx, bID)
 	if err != nil {
 		return nil, err
 	}

@@ -324,26 +324,6 @@ func (mr *MockBuildsClientMockRecorder) UpdateBuild(ctx, in interface{}, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuild", reflect.TypeOf((*MockBuildsClient)(nil).UpdateBuild), varargs...)
 }
 
-// UpdateBuildTask mocks base method.
-func (m *MockBuildsClient) UpdateBuildTask(ctx context.Context, in *UpdateBuildTaskRequest, opts ...grpc.CallOption) (*Task, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UpdateBuildTask", varargs...)
-	ret0, _ := ret[0].(*Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateBuildTask indicates an expected call of UpdateBuildTask.
-func (mr *MockBuildsClientMockRecorder) UpdateBuildTask(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuildTask", reflect.TypeOf((*MockBuildsClient)(nil).UpdateBuildTask), varargs...)
-}
-
 // MockBuildsServer is a mock of BuildsServer interface.
 type MockBuildsServer struct {
 	ctrl     *gomock.Controller
@@ -530,19 +510,4 @@ func (m *MockBuildsServer) UpdateBuild(arg0 context.Context, arg1 *UpdateBuildRe
 func (mr *MockBuildsServerMockRecorder) UpdateBuild(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuild", reflect.TypeOf((*MockBuildsServer)(nil).UpdateBuild), arg0, arg1)
-}
-
-// UpdateBuildTask mocks base method.
-func (m *MockBuildsServer) UpdateBuildTask(arg0 context.Context, arg1 *UpdateBuildTaskRequest) (*Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateBuildTask", arg0, arg1)
-	ret0, _ := ret[0].(*Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateBuildTask indicates an expected call of UpdateBuildTask.
-func (mr *MockBuildsServerMockRecorder) UpdateBuildTask(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuildTask", reflect.TypeOf((*MockBuildsServer)(nil).UpdateBuildTask), arg0, arg1)
 }

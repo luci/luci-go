@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -173,7 +174,7 @@ func TestRegisterBuildTask(t *testing.T) {
 				res, err := srv.RegisterBuildTask(ctx, req)
 				So(err, ShouldBeNil)
 
-				build, err = getBuild(ctx, 87654321)
+				build, err = common.GetBuild(ctx, 87654321)
 				So(err, ShouldBeNil)
 				So(build.BackendTaskToken, ShouldEqual, res.UpdateBuildTaskToken)
 				So(build.RegisterTaskRequestID, ShouldEqual, req.RequestId)
@@ -212,7 +213,7 @@ func TestRegisterBuildTask(t *testing.T) {
 					res, err := srv.RegisterBuildTask(ctx, req)
 					So(err, ShouldBeNil)
 
-					build, err = getBuild(ctx, 87654321)
+					build, err = common.GetBuild(ctx, 87654321)
 					So(err, ShouldBeNil)
 					So(res.UpdateBuildTaskToken, ShouldEqual, build.BackendTaskToken)
 					So(build.RegisterTaskRequestID, ShouldEqual, req.RequestId)

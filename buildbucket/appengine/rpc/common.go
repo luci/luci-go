@@ -157,20 +157,6 @@ func validatePageSize(pageSize int32) error {
 	return nil
 }
 
-// getBuild returns the build with the given ID or NotFound appstatus if it is
-// not found.
-func getBuild(ctx context.Context, id int64) (*model.Build, error) {
-	bld := &model.Build{ID: id}
-	switch err := datastore.Get(ctx, bld); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, perm.NotFoundErr(ctx)
-	case err != nil:
-		return nil, errors.Annotate(err, "error fetching build with ID %d", id).Err()
-	default:
-		return bld, nil
-	}
-}
-
 // getBuildAndInfra returns the build and its infra entity with the given ID
 // or NotFound appstatus if either entity is not found.
 func getBuildAndInfra(ctx context.Context, id int64) (*model.Build, *model.BuildInfra, error) {

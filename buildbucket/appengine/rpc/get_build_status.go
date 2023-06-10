@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
@@ -83,7 +84,7 @@ func (*Builds) GetBuildStatus(ctx context.Context, req *pb.GetBuildStatusRequest
 				return nil, err
 			}
 		}
-		bld, err := getBuild(ctx, bID)
+		bld, err := common.GetBuild(ctx, bID)
 		if err != nil {
 			return nil, err
 		}
