@@ -15,19 +15,25 @@
 package tasks
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"io"
 	"strconv"
 	"testing"
 
+	"google.golang.org/api/pubsub/v1"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 
-	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
+	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -249,13 +255,13 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeNil)
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeNil)
 		})
 		Convey("is missing task", func() {
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
 		})
 		Convey("is missing build ID", func() {
 			req := &pb.BuildTaskUpdate{
@@ -267,7 +273,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
 		})
 		Convey("is missing task ID", func() {
 			req := &pb.BuildTaskUpdate{
@@ -276,7 +282,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					Status: pb.Status_STARTED,
 				},
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
 		})
 		Convey("is invalid task status: SCHEDULED", func() {
 			req := &pb.BuildTaskUpdate{
@@ -289,7 +295,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
 		})
 		Convey("is invalid task status: ENDED_MASK", func() {
 			req := &pb.BuildTaskUpdate{
@@ -302,7 +308,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
 		})
 		Convey("is invalid task status: STATUS_UNSPECIFIED", func() {
 			req := &pb.BuildTaskUpdate{
@@ -315,7 +321,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
 		})
 		Convey("is invalid task detail", func() {
 
@@ -337,75 +343,7 @@ func TestValidateTaskUpdate(t *testing.T) {
 					},
 				},
 			}
-			So(validateUpdateBuildTaskRequest(ctx, req), ShouldBeError)
-		})
-	})
-}
-
-func TestUpdateBuildTask(t *testing.T) {
-	t.Parallel()
-
-	Convey("UpdateBuildTask", t, func() {
-		ctx := memory.Use(context.Background())
-		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
-
-		datastore.GetTestable(ctx).AutoIndex(true)
-		datastore.GetTestable(ctx).Consistent(true)
-		ctx, _ = tsmon.WithDummyInMemory(ctx)
-		ctx = txndefer.FilterRDS(ctx)
-
-		t0 := testclock.TestRecentTimeUTC
-
-		// Helper function to call UpdateBuild.
-		updateBuildTask := func(ctx context.Context, req *pb.BuildTaskUpdate) error {
-			_, err := UpdateBuildTask(ctx, req)
-			return err
-		}
-
-		// Create and save a sample build in the datastore.
-		build := &model.Build{
-			ID: 1,
-			Proto: &pb.Build{
-				Id: 1,
-				Builder: &pb.BuilderID{
-					Project: "project",
-					Bucket:  "bucket",
-					Builder: "builder",
-				},
-				Status: pb.Status_STARTED,
-			},
-			CreateTime: t0,
-		}
-		bk := datastore.KeyForObj(ctx, build)
-		infra := &model.BuildInfra{
-			Build: bk,
-			Proto: &pb.BuildInfra{
-				Buildbucket: &pb.BuildInfra_Buildbucket{
-					Hostname: "bbhost",
-					Agent: &pb.BuildInfra_Buildbucket_Agent{
-						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
-							Data: map[string]*pb.InputDataRef{},
-						},
-					},
-				},
-			},
-		}
-		So(datastore.Put(ctx, build, infra), ShouldBeNil)
-
-		Convey("tokenValidation", func() {
-			Convey("buildID matches token", func() {
-				req := &pb.BuildTaskUpdate{
-					BuildId: "1",
-					Task: &pb.Task{
-						Status: pb.Status_STARTED,
-						Id: &pb.TaskID{
-							Id:     "one",
-							Target: "swarming",
-						},
-					},
-				}
-				So(updateBuildTask(ctx, req), ShouldBeRPCOK)
-			})
+			So(validateBuildTaskUpdate(ctx, req), ShouldBeError)
 		})
 	})
 }
@@ -476,4 +414,100 @@ func TestUpdateTaskEntity(t *testing.T) {
 			So(err, ShouldBeError)
 		})
 	})
+}
+
+func TestUpdateBuildTask(t *testing.T) {
+	t.Parallel()
+
+	Convey("pubsub handler", t, func() {
+		ctx := memory.Use(context.Background())
+		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+			"update-build-task-pubsub-msg-id": cachingtest.NewBlobCache(),
+		})
+		So(config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
+			Backends: []*pb.BackendSetting{
+				{
+					Target:       "swarming://chromium-swarm",
+					Hostname:     "chromium-swarm.appspot.com",
+					Subscription: "projects/myproject/subscriptions/mysubscription",
+				},
+			},
+		}), ShouldBeNil)
+
+		t0 := testclock.TestRecentTimeUTC
+
+		// Create and save a sample build in the datastore.
+		build := &model.Build{
+			ID: 1,
+			Proto: &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_SCHEDULED,
+			},
+			CreateTime: t0,
+		}
+		bk := datastore.KeyForObj(ctx, build)
+		infra := &model.BuildInfra{
+			Build: bk,
+			Proto: &pb.BuildInfra{
+				Buildbucket: &pb.BuildInfra_Buildbucket{
+					Hostname: "bbhost",
+					Agent: &pb.BuildInfra_Buildbucket_Agent{
+						Input: &pb.BuildInfra_Buildbucket_Agent_Input{
+							Data: map[string]*pb.InputDataRef{},
+						},
+					},
+				},
+				Backend: &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Id:     "one",
+							Target: "swarming://chromium-swarm",
+						},
+						Status: pb.Status_SCHEDULED,
+					},
+				},
+			},
+		}
+		So(datastore.Put(ctx, build, infra), ShouldBeNil)
+
+		Convey("ok", func() {
+			req := &pb.BuildTaskUpdate{
+				BuildId: "1",
+				Task: &pb.Task{
+					Status: pb.Status_STARTED,
+					Id: &pb.TaskID{
+						Id:     "one",
+						Target: "swarming://chromium-swarm",
+					},
+				},
+			}
+			body := makeUpdateBuildTaskPubsubMsg(req, "msg_id_1")
+			So(UpdateBuildTask(ctx, body), ShouldBeRPCOK)
+
+			expectedBuild := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: 1})}
+			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
+			So(expectedBuild.Proto.Backend.Task.Status, ShouldEqual, pb.Status_STARTED)
+		})
+	})
+}
+
+func makeUpdateBuildTaskPubsubMsg(req *pb.BuildTaskUpdate, msgID string) io.Reader {
+	data, err := proto.Marshal(req)
+	if err != nil {
+		return nil
+	}
+	msg := &pushRequest{
+		Message: pubsub.PubsubMessage{
+			Data:      base64.StdEncoding.EncodeToString(data),
+			MessageId: msgID,
+		},
+		Subscription: "projects/myproject/subscriptions/mysubscription",
+	}
+	jmsg, _ := json.Marshal(msg)
+	return bytes.NewReader(jmsg)
 }

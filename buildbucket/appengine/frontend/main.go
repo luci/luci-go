@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
@@ -56,12 +57,12 @@ import (
 
 var cacheEnabled = stringset.NewFromSlice("Project", "BuildStatus")
 
-func handlePubSubMessage(ctx *router.Context, identity identity.Identity) {
+func handlePubSubMessage(ctx *router.Context, identity identity.Identity, handler func(context.Context, io.Reader) error) {
 	if got := auth.CurrentIdentity(ctx.Request.Context()); got != identity {
 		logging.Errorf(ctx.Request.Context(), "Expecting ID token of %q, got %q", identity, got)
 		ctx.Writer.WriteHeader(403)
 	} else {
-		switch err := tasks.SubNotify(ctx.Request.Context(), ctx.Request.Body); {
+		switch err := handler(ctx.Request.Context(), ctx.Request.Body); {
 		case err == nil:
 			ctx.Writer.WriteHeader(200)
 		case transient.Tag.In(err):
@@ -149,13 +150,13 @@ func main() {
 		// swarming-go-pubsub@ is a part of the PubSub Push subscription config.
 		swarmingPusherID := identity.Identity(fmt.Sprintf("user:swarming-go-pubsub@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
 		srv.Routes.POST("/push-handlers/swarming-go/notify", oidcMW, func(ctx *router.Context) {
-			handlePubSubMessage(ctx, swarmingPusherID)
+			handlePubSubMessage(ctx, swarmingPusherID, tasks.SubNotify)
 		})
 
 		// task-backend-update-task-push@ is a part of the PubSub Push subscription config.
 		taskBackendPusherID := identity.Identity(fmt.Sprintf("user:task-backend-update-task-push@%s.iam.gserviceaccount.com", srv.Options.CloudProject))
 		srv.Routes.POST("/internal/pubsub/update-build-task", oidcMW, func(ctx *router.Context) {
-			handlePubSubMessage(ctx, taskBackendPusherID)
+			handlePubSubMessage(ctx, taskBackendPusherID, tasks.UpdateBuildTask)
 		})
 
 		return nil
