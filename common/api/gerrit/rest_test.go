@@ -712,12 +712,13 @@ func TestRestChangeEditFileContent(t *testing.T) {
 
 		_, err := c.ChangeEditFileContent(ctx, &gerritpb.ChangeEditFileContentRequest{
 			Number:   42,
-			Project:  "someproject",
-			FilePath: "some/path",
+			Project:  "some/project",
+			FilePath: "some/path+foo",
 			Content:  []byte("changed file"),
 		})
 		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/edit/some/path")
+		So(actualURL.RawPath, ShouldEqual, "/changes/some%2Fproject~42/edit/some%2Fpath%2Bfoo")
+		So(actualURL.Path, ShouldEqual, "/changes/some/project~42/edit/some/path+foo")
 		So(actualBody, ShouldResemble, []byte("changed file"))
 	})
 }

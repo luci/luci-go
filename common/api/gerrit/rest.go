@@ -192,7 +192,9 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 }
 
 func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
+	// Use QueryEscape instead of PathEscape since "+" can be ambigious
+	// (" " or "+") and it's not escaped in PathEscape.
+	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.QueryEscape(req.FilePath))
 	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, textInputHeaders(), req.Content, opts, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit file content").Err()
 	}
@@ -200,7 +202,9 @@ func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.Change
 }
 
 func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.DeleteEditFileContentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
+	// Use QueryEscape instead of PathEscape since "+" can be ambigious
+	// (" " or "+") and it's not escaped in PathEscape.
+	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.QueryEscape(req.FilePath))
 	var data struct{}
 	// The response cannot be JSON-deserialized.
 	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, nil, opts, http.StatusNoContent); err != nil {
