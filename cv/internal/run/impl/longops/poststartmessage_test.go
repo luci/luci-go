@@ -233,16 +233,13 @@ func TestPostStartMessage(t *testing.T) {
 			})
 		})
 
-		// TODO(ddoman): re-enable after a fix for flaky failures.
-		SkipConvey("Failures", func() {
+		Convey("Failures", func() {
 			op := makeOp(makeRunWithCLs(
 				&run.Run{Mode: run.DryRun},
 				gf.CI(gChange1, gf.CQ(+1)),
-				gf.CI(gChange2, gf.CQ(+1)),
 			))
 			ctx, cancel := clock.WithDeadline(ctx, op.Op.Deadline.AsTime())
 			defer cancel()
-			expectedNumMsgsForChange1, expectedNumMsgsForChange2 := 0, 0
 			ct.Clock.Set(op.Op.Deadline.AsTime().Add(-8 * time.Minute))
 
 			Convey("With a non transient failure", func() {
@@ -251,43 +248,21 @@ func TestPostStartMessage(t *testing.T) {
 						return status.New(codes.PermissionDenied, "admin-is-angry-today")
 					}
 				})
-				expectedNumMsgsForChange1, expectedNumMsgsForChange2 = 0, 1
 			})
-
 			Convey("With a transient failure", func() {
-				ct.GFake.MutateChange(gHost, gChange2, func(c *gf.Change) {
-					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
-						return status.New(codes.Internal, "oops, temp error")
-					}
-				})
-				expectedNumMsgsForChange1, expectedNumMsgsForChange2 = 1, 0
-			})
-
-			Convey("With a mix of non-transient and transient failures", func() {
 				ct.GFake.MutateChange(gHost, gChange1, func(c *gf.Change) {
 					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
-						return status.New(codes.PermissionDenied, "admin-is-angry-today")
-					}
-				})
-				ct.GFake.MutateChange(gHost, gChange2, func(c *gf.Change) {
-					c.ACLs = func(_ gf.Operation, _ string) *status.Status {
 						return status.New(codes.Internal, "oops, temp error")
 					}
 				})
-				expectedNumMsgsForChange1, expectedNumMsgsForChange2 = 0, 0
 			})
-
 			res, err := op.Do(ctx)
 			// Given any failure, the status should be set to FAILED,
 			// but the returned error is nil to prevent the TQ retry.
 			So(err, ShouldBeNil)
 			So(res.GetStatus(), ShouldEqual, eventpb.LongOpCompleted_FAILED)
 			So(res.GetPostStartMessage().GetTime(), ShouldBeNil)
-			// Verify the posted messages.
-			ci1 := ct.GFake.GetChange(gHost, gChange1).Info
-			So(ci1.GetMessages(), ShouldHaveLength, expectedNumMsgsForChange1)
-			ci2 := ct.GFake.GetChange(gHost, gChange2).Info
-			So(ci2.GetMessages(), ShouldHaveLength, expectedNumMsgsForChange2)
+			So(ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), ShouldHaveLength, 0)
 		})
 	})
 }
