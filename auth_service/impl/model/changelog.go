@@ -356,6 +356,44 @@ func ensureInitialSnapshot() {
 	// TODO(cjacomet): Implement
 }
 
-func generateChanges() {
-	// TODO(cjacomet): Implement
+func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*AuthDBChange, error) {
+	query := datastore.NewQuery("").Ancestor(HistoricalRevisionKey(ctx, authDBRev))
+	changes := []*AuthDBChange{}
+
+	err := datastore.Run(ctx, query, func(pm datastore.PropertyMap) error {
+		k, ok := pm.GetMeta("key")
+		if !ok {
+			return errors.New("key meta doesn't exist")
+		}
+		switch key := k.(*datastore.Key); {
+		case strings.Contains(key.String(), "AuthGroupHistory"):
+			// TODO(cjacomet): Implement!
+		case strings.Contains(key.String(), "AuthIPWhitelistHistory"):
+			// TODO(cjacomet): Implement!
+		case strings.Contains(key.String(), "AuthIPWhitelistAssignmentsHistory"):
+			// TODO(cjacomet): Implement!
+		case strings.Contains(key.String(), "AuthGlobalConfigHistory"):
+			// TODO(cjacomet): Implement!
+		case strings.Contains(key.String(), "AuthRealmsGlobalHistory"):
+			// TODO(cjacomet): Implement!
+		case strings.Contains(key.String(), "AuthProjectRealmsHistory"):
+			// TODO(cjacomet): Implement!
+		default:
+			return fmt.Errorf("history entity not supported %s", key.String())
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if dryRun {
+		logging.Infof(ctx, "dryRun: changes generated %v", changes)
+	} else {
+		if err := datastore.Put(ctx, changes); err != nil {
+			return nil, err
+		}
+	}
+	return changes, nil
 }
