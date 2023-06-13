@@ -23,7 +23,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -54,7 +54,7 @@ func TestBQExporter(t *testing.T) {
 		}
 
 		row1 := &RowInput{
-			TestVariantBranch: &tvbr.TestVariantBranch{
+			TestVariantBranch: &testvariantbranch.Entry{
 				Project:     "chromium",
 				TestID:      "test_id_1",
 				VariantHash: "variant_hash_1",
@@ -80,7 +80,7 @@ func TestBQExporter(t *testing.T) {
 		}
 
 		row2 := &RowInput{
-			TestVariantBranch: &tvbr.TestVariantBranch{
+			TestVariantBranch: &testvariantbranch.Entry{
 				Project:     "chromium",
 				TestID:      "test_id_2",
 				VariantHash: "variant_hash_2",
@@ -187,7 +187,7 @@ func TestBQExporter(t *testing.T) {
 		}
 
 		row3 := &RowInput{
-			TestVariantBranch: &tvbr.TestVariantBranch{
+			TestVariantBranch: &testvariantbranch.Entry{
 				Project:     "chromium",
 				TestID:      "test_id_3",
 				VariantHash: "variant_hash_3",

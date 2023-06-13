@@ -23,7 +23,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/pbutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	"go.chromium.org/luci/common/errors"
@@ -57,7 +57,7 @@ func NewExporter(client InsertClient) *Exporter {
 // input buffer to get the segments, but it may be expensive, so we
 // made a decision to reuse the input segments from the existing analysis.
 type RowInput struct {
-	TestVariantBranch *tvbr.TestVariantBranch
+	TestVariantBranch *testvariantbranch.Entry
 	// InputBufferSegments is the remaining segments in the input buffer of
 	// TestVariantBranch, after changepoint analysis and eviction process.
 	// Segments are sorted by commit position (lowest/oldest first).
@@ -173,7 +173,7 @@ func combineSegment(finalizingSegment *cpb.Segment, inputSegment *inputbuffer.Se
 		StartPositionUpperBound_99Th: finalizingSegment.StartPositionUpperBound_99Th,
 		EndPosition:                  inputSegment.EndPosition,
 		EndHour:                      inputSegment.EndHour,
-		Counts:                       countsToBQCounts(tvbr.AddCounts(finalizingSegment.FinalizedCounts, inputSegment.Counts)),
+		Counts:                       countsToBQCounts(testvariantbranch.AddCounts(finalizingSegment.FinalizedCounts, inputSegment.Counts)),
 	}
 }
 

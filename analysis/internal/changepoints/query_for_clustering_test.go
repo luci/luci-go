@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	clusteringpb "go.chromium.org/luci/analysis/internal/clustering/proto"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	"go.chromium.org/luci/analysis/pbutil"
@@ -38,7 +38,7 @@ func TestQueryForClustering(t *testing.T) {
 		sourcesMap := tu.SampleSourcesMap(10)
 
 		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
-		tvb := &tvbr.TestVariantBranch{
+		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",
 			TestID:      "test_1",

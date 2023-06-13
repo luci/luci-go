@@ -18,11 +18,11 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/server/span"
 )
 
-func FetchTestVariantBranches(ctx context.Context) ([]*tvbr.TestVariantBranch, error) {
+func FetchTestVariantBranches(ctx context.Context) ([]*testvariantbranch.Entry, error) {
 	st := spanner.NewStatement(`
 			SELECT
 				Project, TestId, VariantHash, RefHash, Variant, SourceRef,
@@ -31,9 +31,9 @@ func FetchTestVariantBranches(ctx context.Context) ([]*tvbr.TestVariantBranch, e
 			ORDER BY TestId
 		`)
 	it := span.Query(span.Single(ctx), st)
-	results := []*tvbr.TestVariantBranch{}
+	results := []*testvariantbranch.Entry{}
 	err := it.Do(func(r *spanner.Row) error {
-		tvb, err := tvbr.SpannerRowToTestVariantBranch(r)
+		tvb, err := testvariantbranch.SpannerRowToTestVariantBranch(r)
 		if err != nil {
 			return err
 		}

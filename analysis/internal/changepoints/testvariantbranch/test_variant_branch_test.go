@@ -34,13 +34,13 @@ import (
 func TestFetchUpdateTestVariantBranch(t *testing.T) {
 	Convey("Fetch not found", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		key := TestVariantBranchKey{
+		key := Key{
 			Project:     "proj",
 			TestID:      "test_id",
 			VariantHash: "variant_hash",
 			RefHash:     "git_hash",
 		}
-		tvbs, err := ReadTestVariantBranches(span.Single(ctx), []TestVariantBranchKey{key})
+		tvbs, err := Read(span.Single(ctx), []Key{key})
 		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 1)
 		So(tvbs[0], ShouldBeNil)
@@ -48,7 +48,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 
 	Convey("Insert and fetch", t, func() {
 		ctx := testutil.IntegrationTestContext(t)
-		tvb1 := &TestVariantBranch{
+		tvb1 := &Entry{
 			IsNew:       true,
 			Project:     "proj_1",
 			TestID:      "test_id_1",
@@ -84,7 +84,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 			},
 		}
 
-		tvb3 := &TestVariantBranch{
+		tvb3 := &Entry{
 			IsNew:       true,
 			Project:     "proj_3",
 			TestID:      "test_id_3",
@@ -120,12 +120,12 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation1, mutation3)
 
-		tvbks := []TestVariantBranchKey{
-			makeTestVariantBranchKey("proj_1", "test_id_1", "variant_hash_1", "refhash1"),
-			makeTestVariantBranchKey("proj_2", "test_id_2", "variant_hash_2", "refhash2"),
-			makeTestVariantBranchKey("proj_3", "test_id_3", "variant_hash_3", "refhash3"),
+		tvbks := []Key{
+			makeKey("proj_1", "test_id_1", "variant_hash_1", "refhash1"),
+			makeKey("proj_2", "test_id_2", "variant_hash_2", "refhash2"),
+			makeKey("proj_3", "test_id_3", "variant_hash_3", "refhash3"),
 		}
-		tvbs, err := ReadTestVariantBranches(span.Single(ctx), tvbks)
+		tvbs, err := Read(span.Single(ctx), tvbks)
 		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 3)
 		// After inserting, the record should not be new anymore.
@@ -158,7 +158,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		ctx := testutil.IntegrationTestContext(t)
 
 		// Insert a new record.
-		tvb := &TestVariantBranch{
+		tvb := &Entry{
 			IsNew:       true,
 			Project:     "proj_1",
 			TestID:      "test_id_1",
@@ -199,7 +199,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		testutil.MustApply(ctx, mutation)
 
 		// Update the record
-		tvb = &TestVariantBranch{
+		tvb = &Entry{
 			Project:     "proj_1",
 			TestID:      "test_id_1",
 			VariantHash: "variant_hash_1",
@@ -291,10 +291,10 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 		So(err, ShouldBeNil)
 		testutil.MustApply(ctx, mutation)
 
-		tvbks := []TestVariantBranchKey{
-			makeTestVariantBranchKey("proj_1", "test_id_1", "variant_hash_1", "githash1"),
+		tvbks := []Key{
+			makeKey("proj_1", "test_id_1", "variant_hash_1", "githash1"),
 		}
-		tvbs, err := ReadTestVariantBranches(span.Single(ctx), tvbks)
+		tvbs, err := Read(span.Single(ctx), tvbks)
 		So(err, ShouldBeNil)
 		So(len(tvbs), ShouldEqual, 1)
 
@@ -340,7 +340,7 @@ func TestFetchUpdateTestVariantBranch(t *testing.T) {
 
 func TestInsertToInputBuffer(t *testing.T) {
 	Convey("Insert simple test variant", t, func() {
-		tvb := &TestVariantBranch{
+		tvb := &Entry{
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  10,
 				ColdBufferCapacity: 100,
@@ -372,7 +372,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 	})
 
 	Convey("Insert non-simple test variant", t, func() {
-		tvb := &TestVariantBranch{
+		tvb := &Entry{
 			InputBuffer: &inputbuffer.Buffer{
 				HotBufferCapacity:  10,
 				ColdBufferCapacity: 100,
@@ -472,7 +472,7 @@ func TestInsertToInputBuffer(t *testing.T) {
 
 func TestUpdateOutputBuffer(t *testing.T) {
 	Convey("No existing finalizing segment", t, func() {
-		tvb := TestVariantBranch{}
+		tvb := Entry{}
 		evictedSegments := []inputbuffer.EvictedSegment{
 			{
 				Segment: &cpb.Segment{
@@ -556,7 +556,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 
 	Convey("Combine finalizing segment with finalizing segment", t, func() {
-		tvb := TestVariantBranch{
+		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
@@ -633,7 +633,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 
 	Convey("Combine finalizing segment with finalized segment", t, func() {
-		tvb := TestVariantBranch{
+		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
@@ -727,7 +727,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 
 	Convey("Combine finalizing segment with finalized segment, with a token of finalizing segment in input buffer", t, func() {
-		tvb := TestVariantBranch{
+		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
@@ -820,7 +820,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 
 	Convey("Should panic if no finalizing segment in evicted segments", t, func() {
-		tvb := TestVariantBranch{
+		tvb := Entry{
 			FinalizingSegment: &cpb.Segment{
 				State:                        cpb.SegmentState_FINALIZING,
 				StartPosition:                100,
@@ -875,7 +875,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 
 	Convey("Statistics should be updated following eviction", t, func() {
-		tvb := TestVariantBranch{
+		tvb := Entry{
 			Statistics: &cpb.Statistics{
 				HourlyBuckets: []*cpb.Statistics_HourBucket{
 					{
@@ -1022,7 +1022,7 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 
 	Convey("Output buffer should not be updated if there is no eviction", t, func() {
-		tvb := TestVariantBranch{}
+		tvb := Entry{}
 		tvb.UpdateOutputBuffer([]inputbuffer.EvictedSegment{})
 		So(tvb.IsStatisticsDirty, ShouldBeFalse)
 		So(tvb.IsFinalizingSegmentDirty, ShouldBeFalse)
@@ -1030,8 +1030,8 @@ func TestUpdateOutputBuffer(t *testing.T) {
 	})
 }
 
-func makeTestVariantBranchKey(proj string, testID string, variantHash string, refHash RefHash) TestVariantBranchKey {
-	return TestVariantBranchKey{
+func makeKey(proj string, testID string, variantHash string, refHash RefHash) Key {
+	return Key{
 		Project:     proj,
 		TestID:      testID,
 		VariantHash: variantHash,

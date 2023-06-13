@@ -27,8 +27,8 @@ import (
 // RefHash is used for RefHash field in TestVariantBranchKey.
 type RefHash string
 
-// TestVariantBranchKey denotes the primary keys for TestVariantBranch table.
-type TestVariantBranchKey struct {
+// Key denotes the primary key for the TestVariantBranch table.
+type Key struct {
 	Project     string
 	TestID      string
 	VariantHash string
@@ -37,21 +37,21 @@ type TestVariantBranchKey struct {
 	RefHash RefHash
 }
 
-// ReadTestVariantBranches fetches rows from TestVariantBranch spanner table
+// Read fetches rows from TestVariantBranch spanner table
 // and returns the objects fetched.
 // The returned slice will have the same length and order as the
 // TestVariantBranchKey slices. If a record is not found, the corresponding
 // element will be set to nil.
 // This function assumes that it is running inside a transaction.
-func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) ([]*TestVariantBranch, error) {
+func Read(ctx context.Context, ks []Key) ([]*Entry, error) {
 	// Map keys to TestVariantBranch.
 	// This is because spanner does not return ordered results.
-	keyMap := map[TestVariantBranchKey]*TestVariantBranch{}
+	keyMap := map[Key]*Entry{}
 
 	// Create the keyset.
-	keys := make([]spanner.Key, len(tvbks))
-	for i := 0; i < len(tvbks); i++ {
-		keys[i] = spanner.Key{tvbks[i].Project, tvbks[i].TestID, tvbks[i].VariantHash, []byte(tvbks[i].RefHash)}
+	keys := make([]spanner.Key, len(ks))
+	for i := 0; i < len(ks); i++ {
+		keys[i] = spanner.Key{ks[i].Project, ks[i].TestID, ks[i].VariantHash, []byte(ks[i].RefHash)}
 	}
 	keyset := spanner.KeySetFromKeys(keys...)
 	cols := []string{
@@ -64,7 +64,7 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 			if err != nil {
 				return errors.Annotate(err, "convert spanner row to test variant branch").Err()
 			}
-			tvbk := TestVariantBranchKey{
+			tvbk := Key{
 				Project:     tvb.Project,
 				TestID:      tvb.TestID,
 				VariantHash: tvb.VariantHash,
@@ -79,8 +79,8 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 		return nil, err
 	}
 
-	result := make([]*TestVariantBranch, len(tvbks))
-	for i, tvbk := range tvbks {
+	result := make([]*Entry, len(ks))
+	for i, tvbk := range ks {
 		tvb, ok := keyMap[tvbk]
 		if ok {
 			result[i] = tvb
@@ -90,8 +90,8 @@ func ReadTestVariantBranches(ctx context.Context, tvbks []TestVariantBranchKey) 
 	return result, nil
 }
 
-func SpannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error) {
-	tvb := &TestVariantBranch{}
+func SpannerRowToTestVariantBranch(row *spanner.Row) (*Entry, error) {
+	tvb := &Entry{}
 	var b spanutil.Buffer
 	var sourceRef []byte
 	var hotBuffer []byte
@@ -147,7 +147,7 @@ func SpannerRowToTestVariantBranch(row *spanner.Row) (*TestVariantBranch, error)
 
 // ToMutation returns a spanner Mutation to insert a TestVariantBranch to
 // Spanner table.
-func (tvb *TestVariantBranch) ToMutation() (*spanner.Mutation, error) {
+func (tvb *Entry) ToMutation() (*spanner.Mutation, error) {
 	cols := []string{"Project", "TestId", "VariantHash", "RefHash", "LastUpdated"}
 	values := []interface{}{tvb.Project, tvb.TestID, tvb.VariantHash, tvb.RefHash, spanner.CommitTimestamp}
 

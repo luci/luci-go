@@ -36,7 +36,7 @@ import (
 // If no source information is available for some or all of the verdicts,
 // the corresponding item in the response slice will be nil.
 func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, project string, partitionTime time.Time, sourcesMap map[string]*rdbpb.Sources) ([]*clusteringpb.TestVariantBranch, error) {
-	keys := make([]testvariantbranch.TestVariantBranchKey, 0, len(tvs))
+	keys := make([]testvariantbranch.Key, 0, len(tvs))
 
 	readIndexToResultIndex := make(map[int]int)
 	for i, tv := range tvs {
@@ -45,7 +45,7 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 		}
 		src := sourcesMap[tv.SourcesId]
 		readIndexToResultIndex[len(keys)] = i
-		keys = append(keys, testvariantbranch.TestVariantBranchKey{
+		keys = append(keys, testvariantbranch.Key{
 			Project:     project,
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
@@ -53,7 +53,7 @@ func QueryStatsForClustering(ctx context.Context, tvs []*rdbpb.TestVariant, proj
 		})
 	}
 
-	branches, err := testvariantbranch.ReadTestVariantBranches(span.Single(ctx), keys)
+	branches, err := testvariantbranch.Read(span.Single(ctx), keys)
 	if err != nil {
 		return nil, errors.Annotate(err, "read test variant branches").Err()
 	}

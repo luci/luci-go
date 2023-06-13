@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -55,7 +55,7 @@ func (*testVariantBranchesServer) Get(ctx context.Context, req *pb.GetTestVarian
 
 	txn, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
-	tvbs, err := tvbr.ReadTestVariantBranches(txn, []tvbr.TestVariantBranchKey{tvbk})
+	tvbs, err := testvariantbranch.Read(txn, []testvariantbranch.Key{tvbk})
 	if err != nil {
 		return nil, errors.Annotate(err, "read test variant branch").Err()
 	}
@@ -75,26 +75,26 @@ func (*testVariantBranchesServer) Get(ctx context.Context, req *pb.GetTestVarian
 	return analysis, nil
 }
 
-func validateGetTestVariantBranchRequest(req *pb.GetTestVariantBranchRequest) (tvbr.TestVariantBranchKey, error) {
+func validateGetTestVariantBranchRequest(req *pb.GetTestVariantBranchRequest) (testvariantbranch.Key, error) {
 	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Name)
 	if err != nil {
-		return tvbr.TestVariantBranchKey{}, errors.Annotate(err, "name").Err()
+		return testvariantbranch.Key{}, errors.Annotate(err, "name").Err()
 	}
 
 	// Check ref hash.
 	refHashBytes, err := hex.DecodeString(refHash)
 	if err != nil {
-		return tvbr.TestVariantBranchKey{}, errors.Reason("ref component must be an encoded hexadecimal string").Err()
+		return testvariantbranch.Key{}, errors.Reason("ref component must be an encoded hexadecimal string").Err()
 	}
-	return tvbr.TestVariantBranchKey{
+	return testvariantbranch.Key{
 		Project:     project,
 		TestID:      testID,
 		VariantHash: variantHash,
-		RefHash:     tvbr.RefHash(refHashBytes),
+		RefHash:     testvariantbranch.RefHash(refHashBytes),
 	}, nil
 }
 
-func testVariantBranchToProto(tvb *tvbr.TestVariantBranch) (*pb.TestVariantBranch, error) {
+func testVariantBranchToProto(tvb *testvariantbranch.Entry) (*pb.TestVariantBranch, error) {
 	var finalizedSegments *anypb.Any
 	var finalizingSegment *anypb.Any
 	var statistics *anypb.Any

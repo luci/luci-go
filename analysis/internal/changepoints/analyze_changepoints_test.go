@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
 	tu "go.chromium.org/luci/analysis/internal/changepoints/testutil"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/config"
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
 	spanutil "go.chromium.org/luci/analysis/internal/span"
@@ -325,7 +325,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		So(len(tvbs), ShouldEqual, 2)
 
 		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvbs[0], &tvbr.TestVariantBranch{
+		diff := cmp.Diff(tvbs[0], &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -363,7 +363,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}, cmp.Comparer(proto.Equal))
 		So(diff, ShouldEqual, "")
 
-		diff = cmp.Diff(tvbs[1], &tvbr.TestVariantBranch{
+		diff = cmp.Diff(tvbs[1], &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_2",
 			VariantHash: "hash_2",
@@ -431,7 +431,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 		vs := inputbuffer.Verdicts(positions, total, hasUnexpected)
 		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
-		tvb := &tvbr.TestVariantBranch{
+		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",
 			TestID:      "test_1",
@@ -516,7 +516,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		}
 
 		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvb, &tvbr.TestVariantBranch{
+		diff := cmp.Diff(tvb, &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -596,7 +596,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 			})
 		}
 		sourceRef := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(sourcesMap["sources_id"]))
-		tvb := &tvbr.TestVariantBranch{
+		tvb := &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     "chromium",
 			TestID:      "test_1",
@@ -671,7 +671,7 @@ func TestAnalyzeSingleBatch(t *testing.T) {
 		tvb = tvbs[0]
 
 		// Use diff here to compare both protobuf and non-protobuf.
-		diff := cmp.Diff(tvb, &tvbr.TestVariantBranch{
+		diff := cmp.Diff(tvb, &testvariantbranch.Entry{
 			Project:     "chromium",
 			TestID:      "test_1",
 			VariantHash: "hash_1",
@@ -730,7 +730,7 @@ func TestOutOfOrderVerdict(t *testing.T) {
 		})
 
 		Convey("No finalizing or finalized segment", func() {
-			tvb := &tvbr.TestVariantBranch{}
+			tvb := &testvariantbranch.Entry{}
 			So(isOutOfOrderAndShouldBeDiscarded(tvb, sources), ShouldBeFalse)
 		})
 
@@ -800,8 +800,8 @@ func testVariants(n int) []*rdbpb.TestVariant {
 	return tvs
 }
 
-func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *tvbr.TestVariantBranch {
-	tvb := &tvbr.TestVariantBranch{
+func finalizingTvbWithPositions(hotPositions []int, coldPositions []int) *testvariantbranch.Entry {
+	tvb := &testvariantbranch.Entry{
 		FinalizingSegment: &cpb.Segment{},
 		InputBuffer:       &inputbuffer.Buffer{},
 	}

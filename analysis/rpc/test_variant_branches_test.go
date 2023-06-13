@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/testutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -123,7 +123,7 @@ func TestTestVariantAnalysesServer(t *testing.T) {
 		Convey("ok", func() {
 			ctx = adminContext(ctx)
 			// Insert test variant branch to Spanner.
-			tvb := &tvbr.TestVariantBranch{
+			tvb := &testvariantbranch.Entry{
 				IsNew:       true,
 				Project:     "project",
 				TestID:      "this//is/a/test",

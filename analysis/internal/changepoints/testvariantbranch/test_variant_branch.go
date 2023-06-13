@@ -43,9 +43,9 @@ const (
 	StatisticsRetentionDays = 11
 )
 
-// TestVariantBranch represents one row in the TestVariantBranch spanner table.
+// Entry represents one row in the TestVariantBranch spanner table.
 // See go/luci-test-variant-analysis-design for details.
-type TestVariantBranch struct {
+type Entry struct {
 	// IsNew is a boolean to denote if the TestVariantBranch is new or already
 	// existed in Spanner.
 	// It is used for reducing the number of mutations. For example, the Variant
@@ -78,12 +78,12 @@ type TestVariantBranch struct {
 
 // InsertToInputBuffer inserts data of a new test variant into the input
 // buffer.
-func (tvb *TestVariantBranch) InsertToInputBuffer(pv inputbuffer.PositionVerdict) {
+func (tvb *Entry) InsertToInputBuffer(pv inputbuffer.PositionVerdict) {
 	tvb.InputBuffer.InsertVerdict(pv)
 }
 
 // InsertFinalizedSegment inserts a segment to the end of finalized segments.
-func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *cpb.Segment) {
+func (tvb *Entry) InsertFinalizedSegment(segment *cpb.Segment) {
 	if tvb.FinalizedSegments == nil {
 		tvb.FinalizedSegments = &cpb.Segments{}
 	}
@@ -106,7 +106,7 @@ func (tvb *TestVariantBranch) InsertFinalizedSegment(segment *cpb.Segment) {
 // last segment (if any), which must be a finalizing segment.
 // evictedSegments is sorted in ascending order of commit position (oldest
 // segment first).
-func (tvb *TestVariantBranch) UpdateOutputBuffer(evictedSegments []inputbuffer.EvictedSegment) {
+func (tvb *Entry) UpdateOutputBuffer(evictedSegments []inputbuffer.EvictedSegment) {
 	// Nothing to update.
 	if len(evictedSegments) == 0 {
 		return
@@ -168,7 +168,7 @@ func verifyEvictedSegments(evictedSegments []inputbuffer.EvictedSegment) {
 // verifyOutputBuffer verifies that the finalizing segment is older than any
 // finalized segment.
 // Panic if it is not the case.
-func (tvb *TestVariantBranch) verifyOutputBuffer() {
+func (tvb *Entry) verifyOutputBuffer() {
 	finalizedSegments := tvb.FinalizedSegments.GetSegments()
 	l := len(finalizedSegments)
 	if tvb.FinalizingSegment == nil || l == 0 {
@@ -189,7 +189,7 @@ func (tvb *TestVariantBranch) verifyOutputBuffer() {
 //
 // The retention policy to delete test variant branches without
 // test results in 90 days will be enforced separately with a cron job.
-func (tvb *TestVariantBranch) ApplyRetentionPolicyForFinalizedSegments(fromTime time.Time) {
+func (tvb *Entry) ApplyRetentionPolicyForFinalizedSegments(fromTime time.Time) {
 	finalizedSegments := tvb.FinalizedSegments.GetSegments()
 	if len(finalizedSegments) == 0 {
 		return
@@ -344,7 +344,7 @@ func applyStatisticsRetention(stats *cpb.Statistics) *cpb.Statistics {
 // MergedStatistics returns statistics about the verdicts ingested for
 // given test variant branch. Statistics comprise data from both the
 // input buffer and the output buffer.
-func (tvb *TestVariantBranch) MergedStatistics() *cpb.Statistics {
+func (tvb *Entry) MergedStatistics() *cpb.Statistics {
 	verdicts := make([]inputbuffer.PositionVerdict, 0, inputbuffer.DefaultColdBufferCapacity+inputbuffer.DefaultHotBufferCapacity)
 	verdicts = append(verdicts, tvb.InputBuffer.ColdBuffer.Verdicts...)
 	verdicts = append(verdicts, tvb.InputBuffer.HotBuffer.Verdicts...)

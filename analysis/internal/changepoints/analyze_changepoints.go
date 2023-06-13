@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/sources"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/ingestion/control"
 	"go.chromium.org/luci/analysis/internal/ingestion/resultdb"
@@ -151,7 +151,7 @@ func analyzeSingleBatch(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 
 		// Query TestVariantBranch from spanner.
 		tvbks := testVariantBranchKeys(filteredTVs, payload.Build.Project, sourcesMap)
-		tvbs, err := tvbr.ReadTestVariantBranches(ctx, tvbks)
+		tvbs, err := testvariantbranch.Read(ctx, tvbks)
 		if err != nil {
 			return errors.Annotate(err, "read test variant branches").Err()
 		}
@@ -247,7 +247,7 @@ func exportToBigQuery(ctx context.Context, exporter *bqexporter.Exporter, rowInp
 //     (commit position >= smallest start position), or
 //   - There is no finalizing or finalized segment (i.e. the entire known
 //     test history is inside the input buffer)
-func isOutOfOrderAndShouldBeDiscarded(tvb *tvbr.TestVariantBranch, src *rdbpb.Sources) bool {
+func isOutOfOrderAndShouldBeDiscarded(tvb *testvariantbranch.Entry, src *rdbpb.Sources) bool {
 	// No test variant branch. Should be ok to proceed.
 	if tvb == nil {
 		return false
@@ -270,7 +270,7 @@ func isOutOfOrderAndShouldBeDiscarded(tvb *tvbr.TestVariantBranch, src *rdbpb.So
 
 // runChangePointAnalysis runs change point analysis and returns the
 // remaining segment in the input buffer after eviction.
-func runChangePointAnalysis(tvb *tvbr.TestVariantBranch) []*inputbuffer.Segment {
+func runChangePointAnalysis(tvb *testvariantbranch.Entry) []*inputbuffer.Segment {
 	a := bayesian.ChangepointPredictor{
 		ChangepointLikelihood: 0.0001,
 		// We are leaning toward consistently passing test results.
@@ -295,11 +295,11 @@ func runChangePointAnalysis(tvb *tvbr.TestVariantBranch) []*inputbuffer.Segment 
 // of TestVariantBranch tvb.
 // If tvb is nil, it means it is not in spanner. In this case, return a new
 // TestVariantBranch object with a single element in the input buffer.
-func insertIntoInputBuffer(tvb *tvbr.TestVariantBranch, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) (*tvbr.TestVariantBranch, error) {
+func insertIntoInputBuffer(tvb *testvariantbranch.Entry, tv *rdbpb.TestVariant, payload *taskspb.IngestTestResults, duplicateMap map[string]bool, sourcesMap map[string]*rdbpb.Sources) (*testvariantbranch.Entry, error) {
 	src := sourcesMap[tv.SourcesId]
 	if tvb == nil {
 		ref := pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(src))
-		tvb = &tvbr.TestVariantBranch{
+		tvb = &testvariantbranch.Entry{
 			IsNew:       true,
 			Project:     payload.GetBuild().GetProject(),
 			TestID:      tv.TestId,
@@ -314,7 +314,7 @@ func insertIntoInputBuffer(tvb *tvbr.TestVariantBranch, tv *rdbpb.TestVariant, p
 		}
 	}
 
-	pv, err := tvbr.ToPositionVerdict(tv, payload, duplicateMap, src)
+	pv, err := testvariantbranch.ToPositionVerdict(tv, payload, duplicateMap, src)
 	if err != nil {
 		return nil, err
 	}
@@ -369,15 +369,15 @@ func filterTestVariants(ctx context.Context, tvs []*rdbpb.TestVariant, payload *
 	return results, nil
 }
 
-func testVariantBranchKeys(tvs []*rdbpb.TestVariant, project string, sourcesMap map[string]*rdbpb.Sources) []tvbr.TestVariantBranchKey {
-	results := make([]tvbr.TestVariantBranchKey, len(tvs))
+func testVariantBranchKeys(tvs []*rdbpb.TestVariant, project string, sourcesMap map[string]*rdbpb.Sources) []testvariantbranch.Key {
+	results := make([]testvariantbranch.Key, len(tvs))
 	for i, tv := range tvs {
 		src := sourcesMap[tv.SourcesId]
-		results[i] = tvbr.TestVariantBranchKey{
+		results[i] = testvariantbranch.Key{
 			Project:     project,
 			TestID:      tv.TestId,
 			VariantHash: tv.VariantHash,
-			RefHash:     tvbr.RefHash(pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(src)))),
+			RefHash:     testvariantbranch.RefHash(pbutil.SourceRefHash(pbutil.SourceRefFromSources(pbutil.SourcesFromResultDB(src)))),
 		}
 	}
 	return results

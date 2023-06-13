@@ -47,7 +47,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	changepointspb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-	tvbr "go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
+	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/clustering/chunkstore"
 	"go.chromium.org/luci/analysis/internal/clustering/ingestion"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -602,7 +602,7 @@ func setupTestVariantAnalysis(ctx context.Context, partitionTime time.Time) {
 	// Truncated to nearest hour.
 	hour := partitionTime.Unix() / 3600
 
-	branch := &tvbr.TestVariantBranch{
+	branch := &testvariantbranch.Entry{
 		IsNew:       true,
 		Project:     "project",
 		TestID:      "ninja://test_consistent_failure",
@@ -651,7 +651,7 @@ func verifyTestVariantAnalysis(ctx context.Context, partitionTime time.Time, cli
 	// Truncated to nearest hour.
 	hour := time.Unix(partitionTime.Unix()/3600*3600, 0)
 	// Use diff here to compare both protobuf and non-protobuf.
-	diff := cmp.Diff(tvbs[0], &tvbr.TestVariantBranch{
+	diff := cmp.Diff(tvbs[0], &testvariantbranch.Entry{
 		Project:     "project",
 		TestID:      "ninja://test_consistent_failure",
 		VariantHash: "hash",
