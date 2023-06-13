@@ -16,7 +16,7 @@ message Settings {
     // name is the user friendly name of the Buildbucket instance we're pointing to.
     string name = 1;
 
-    // host is the hostname of the buildbucket instance we're pointing to (sans scheme).
+    // host is the hostname of the buildbucket instance we're pointing to (eg. cr-buildbucket.appspot.com).
     string host = 2;
 
     // project is the name of the Google Cloud project that the pubsub topic
@@ -83,7 +83,7 @@ message Settings {
   repeated SourceAcls source_acls = 4;
 
   message ResultDB {
-    // host is the hostname of the ResultDB instance we're pointing to (sans scheme).
+    // host is the hostname of the ResultDB instance we're pointing to (eg. results.api.cr.dev).
     string host = 1;
   }
   ResultDB resultdb = 5;
@@ -91,8 +91,14 @@ message Settings {
   reserved 6; // weetbix
 
   message LuciAnalysis {
-    // host is the hostname of the LUCI Analysis instance we're pointing to (sans scheme).
+    // host is the hostname of the LUCI Analysis instance we're pointing to (eg. luci-analysis.appspot.com).
     string host = 1;
   }
   LuciAnalysis luci_analysis = 7;
+
+  message LuciBisection {
+    // host is the hostname of the LUCI Bisection instance we're pointing to (eg. luci-bisection.appspot.com).
+    string host = 1;
+  }
+  LuciBisection luci_bisection = 8;
 }
