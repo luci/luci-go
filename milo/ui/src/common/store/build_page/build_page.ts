@@ -47,6 +47,7 @@ import {
   PERM_BUILDS_GET_LIMITED,
   SEARCH_BUILD_FIELD_MASK,
   TEST_PRESENTATION_KEY,
+  Trinary,
 } from '@/common/services/buildbucket';
 import {
   QueryBlamelistRequest,
@@ -356,7 +357,10 @@ export const BuildPage = types
         return permittedActionRes?.results || {};
       },
       get canRetry() {
-        return this._permittedActions[PERM_BUILDS_ADD] || false;
+        return Boolean(
+          self.build?.data.retriable !== Trinary.No &&
+            this._permittedActions[PERM_BUILDS_ADD]
+        );
       },
       get canCancel() {
         return this._permittedActions[PERM_BUILDS_CANCEL] || false;

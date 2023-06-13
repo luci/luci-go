@@ -38,7 +38,7 @@ export const BLAMELIST_PIN_KEY = '$recipe_engine/milo/blamelist_pins';
 export const BUILD_FIELD_MASK =
   'id,builder,number,canceledBy,createTime,startTime,endTime,cancelTime,status,summaryMarkdown,input,output,steps,' +
   'infra.buildbucket.agent,infra.swarming,infra.resultdb,tags,exe,schedulingTimeout,executionTimeout,gracePeriod,' +
-  'ancestorIds';
+  'ancestorIds,retriable';
 
 // Includes: id, builder, number, createTime, startTime, endTime, status, summaryMarkdown.
 export const SEARCH_BUILD_FIELD_MASK =
@@ -118,6 +118,7 @@ export interface Build {
   readonly executionTimeout?: string;
   readonly gracePeriod?: string;
   readonly ancestorIds?: string[];
+  readonly retriable?: Trinary;
 }
 
 // This is from https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/proto/common.proto#25
@@ -384,7 +385,7 @@ export interface GetBuilderRequest {
   readonly id: BuilderID;
 }
 
-export interface Builder {
+export interface BuilderConfig {
   readonly swarmingHost?: string;
   readonly dimensions?: readonly string[];
   readonly descriptionHtml?: string;
@@ -392,7 +393,7 @@ export interface Builder {
 
 export interface BuilderItem {
   readonly id: BuilderID;
-  readonly config: Builder;
+  readonly config: BuilderConfig;
 }
 
 export interface ListBuildersRequest {
