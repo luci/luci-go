@@ -55,6 +55,9 @@ service MiloInternal {
 
   // Check whether the users has the specified permissions in the given realm.
   rpc BatchCheckPermissions(BatchCheckPermissionsRequest) returns (BatchCheckPermissionsResponse) {};
+
+  // Retrieves a list of consoles.
+  rpc QueryConsoles(QueryConsolesRequest) returns (QueryConsolesResponse) {};
 }
 
 // A request message for `QueryBlamelist` RPC.
@@ -255,4 +258,42 @@ message BatchCheckPermissionsResponse {
   // The key is the permission name and the value is whether the user has the
   // permission.
   map<string, bool> results = 1;
+}
+
+// Represents a function Console -> bool.
+// Empty message matches all consoles.
+message ConsolePredicate {
+  // A console must include this builder.
+  buildbucket.v2.BuilderID builder = 1;
+}
+
+message QueryConsolesRequest {
+  // A console in the response must satisfy this predicate.
+  //
+  // ConsolePredicate.builder is required.
+  ConsolePredicate predicate = 1;
+
+  // Optional. The maxium number of consoles to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 25 consoles will be returned.
+  // The maximum value is 100; values above 100 will be coerced to 100.
+  int32 page_size = 2;
+
+  // Optional. A page token, received from a previous `ListBuilders`
+  // call. Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all parameters provided to `ListBuilders`, with the
+  // exception of page_size and page_token, must match the call that provided
+  // the page token.
+  string page_token = 3;
+}
+
+message QueryConsolesResponse {
+  // A list of matched consoles.
+  repeated luci.milo.projectconfig.Console consoles = 1;
+
+  // A token that can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
 }

@@ -126,3 +126,20 @@ func (s *DecoratedMiloInternal) BatchCheckPermissions(ctx context.Context, req *
 	}
 	return
 }
+
+func (s *DecoratedMiloInternal) QueryConsoles(ctx context.Context, req *QueryConsolesRequest) (rsp *QueryConsolesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryConsoles", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryConsoles(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryConsoles", rsp, err)
+	}
+	return
+}
