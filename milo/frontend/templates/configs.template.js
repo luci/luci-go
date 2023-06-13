@@ -23,4 +23,7 @@ self.CONFIGS = Object.freeze({
   LUCI_ANALYSIS: {
     HOST: "{{.LuciAnalysis.Host}}",
   },
+  LUCI_BISECTION: {
+    HOST: "{{.LuciBisection.Host}}",
+  },
 });

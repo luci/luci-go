@@ -54,6 +54,9 @@ export default defineConfig(({ mode }) => {
     LUCI_ANALYSIS: {
       HOST: env['VITE_LUCI_ANALYSIS_HOST'],
     },
+    LUCI_BISECTION: {
+      HOST: env['VITE_LUCI_BISECTION_HOST'],
+    },
   };
   const localDevConfigsJs = `self.CONFIGS=Object.freeze(${JSON.stringify(
     localDevConfigs,

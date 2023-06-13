@@ -50,6 +50,9 @@ func (s *HTTPService) configsJSHandler(c *router.Context) error {
 		"LuciAnalysis": map[string]string{
 			"Host": settings.GetLuciAnalysis().GetHost(),
 		},
+		"LuciBisection": map[string]string{
+			"Host": settings.GetLuciBisection().GetHost(),
+		},
 	})
 
 	if err != nil {

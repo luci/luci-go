@@ -42,6 +42,9 @@ self.CONFIGS = Object.freeze({
   LUCI_ANALYSIS: {
     HOST: assertNonNullable(process.env['VITE_LUCI_ANALYSIS_HOST']),
   },
+  LUCI_BISECTION: {
+    HOST: assertNonNullable(process.env['VITE_LUCI_BISECTION_HOST']),
+  },
 });
 window.ENABLE_GA = false;
 

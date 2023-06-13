@@ -56,4 +56,7 @@ declare var CONFIGS: {
   readonly LUCI_ANALYSIS: {
     readonly HOST: string;
   };
+  readonly LUCI_BISECTION: {
+    readonly HOST: string;
+  };
 };
