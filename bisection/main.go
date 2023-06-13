@@ -31,6 +31,7 @@ import (
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/pubsub"
 	"go.chromium.org/luci/bisection/server"
+	"go.chromium.org/luci/grpc/prpc"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/auth/identity"
@@ -186,6 +187,12 @@ func main() {
 		pb.RegisterBotUpdatesServer(srv, &pb.DecoratedBotUpdates{
 			Service: &server.BotUpdatesServer{},
 			Prelude: checkBotAPIAccess,
+		})
+
+		// Register pPRC servers.
+		srv.ConfigurePRPC(func(s *prpc.Server) {
+			// Allow cross-origin calls.
+			s.AccessControl = prpc.AllowOriginAll
 		})
 
 		// GAE crons
