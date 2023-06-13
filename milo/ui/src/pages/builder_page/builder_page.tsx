@@ -31,6 +31,7 @@ import { EndedBuildsSection } from './ended_builds_section';
 import { MachinePoolSection } from './machine_pool_section';
 import { PendingBuildsSection } from './pending_builds_section';
 import { StartedBuildsSection } from './started_builds_section';
+import { ViewsSection } from './views_section';
 
 function useBuilder(req: GetBuilderRequest) {
   const { identity } = useAuthState();
@@ -85,27 +86,28 @@ export function BuilderPage() {
         variant={isLoading ? 'indeterminate' : 'determinate'}
         color="primary"
       />
-      {!isLoading && (
-        <Grid container spacing={2} sx={{ padding: '0 16px' }}>
-          {data.swarmingHost && (
-            <Grid item md={4}>
-              <MachinePoolSection
-                swarmingHost={data.swarmingHost}
-                dimensions={data.dimensions}
-              />
-            </Grid>
-          )}
-          <Grid item md={2}>
-            <StartedBuildsSection builderId={builderId} />
+      <Grid container spacing={2} sx={{ padding: '0 16px' }}>
+        {!isLoading && data.swarmingHost && (
+          <Grid item md={4}>
+            <MachinePoolSection
+              swarmingHost={data.swarmingHost}
+              dimensions={data.dimensions}
+            />
           </Grid>
-          <Grid item md={3}>
-            <PendingBuildsSection builderId={builderId} />
-          </Grid>
-          <Grid item md={12}>
-            <EndedBuildsSection builderId={builderId} />
-          </Grid>
+        )}
+        <Grid item md={3}>
+          <StartedBuildsSection builderId={builderId} />
         </Grid>
-      )}
+        <Grid item md={3}>
+          <PendingBuildsSection builderId={builderId} />
+        </Grid>
+        <Grid item md={2}>
+          <ViewsSection builderId={builderId} />
+        </Grid>
+        <Grid item md={12}>
+          <EndedBuildsSection builderId={builderId} />
+        </Grid>
+      </Grid>
     </>
   );
 }

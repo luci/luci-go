@@ -149,6 +149,26 @@ export interface BatchCheckPermissionsResponse {
   readonly results: { readonly [key: string]: boolean };
 }
 
+export interface ConsolePredicate {
+  readonly builder: BuilderID;
+}
+
+export interface QueryConsolesRequest {
+  readonly predicate: ConsolePredicate;
+  readonly pageSize?: number;
+  readonly pageToken?: string;
+}
+
+export interface Console {
+  readonly id: string;
+  readonly realm: string;
+}
+
+export interface QueryConsolesResponse {
+  readonly consoles?: readonly Console[];
+  readonly nextPageToken?: string;
+}
+
 export class MiloInternal {
   static readonly SERVICE = 'luci.milo.v1.MiloInternal';
   private readonly cachedCallFn: (
@@ -218,5 +238,13 @@ export class MiloInternal {
       'BatchCheckPermissions',
       req
     )) as BatchCheckPermissionsResponse;
+  }
+
+  async queryConsoles(req: QueryConsolesRequest, cacheOpt: CacheOption = {}) {
+    return (await this.cachedCallFn(
+      cacheOpt,
+      'QueryConsoles',
+      req
+    )) as QueryConsolesResponse;
   }
 }
