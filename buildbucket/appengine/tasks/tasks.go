@@ -260,7 +260,7 @@ func init() {
 		Queue:     "backend-go-default",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.CreateBackendBuildTask)
-			return CreateBackendTask(ctx, t.GetBuildId())
+			return CreateBackendTask(ctx, t.GetBuildId(), t.GetRequestId())
 		},
 	})
 

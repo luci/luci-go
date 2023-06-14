@@ -48,6 +48,9 @@ message CreateSwarmingBuildTask {
 // A task to create a backend task
 message CreateBackendBuildTask {
   int64 build_id = 1;
+
+  // The request ID to be sent to TaskBackend RunTask for idempotency.
+  string request_id = 2;
 }
 
 // A task to create a Swarming task.

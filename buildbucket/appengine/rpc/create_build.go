@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -668,7 +669,8 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 					// If there is a backend set, lets use it and return to not use swarming.
 					if infra.GetBackend() != nil {
 						if err := tasks.CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
-							BuildId: b.ID,
+							BuildId:   b.ID,
+							RequestId: uuid.New().String(),
 						}); err != nil {
 							return errors.Annotate(err, "failed to enqueue CreateBackendTask").Err()
 						}

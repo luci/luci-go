@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"google.golang.org/api/googleapi"
 
 	grpc "google.golang.org/grpc"
@@ -196,7 +195,7 @@ func computeAgentArgs(build *pb.Build, infra *pb.BuildInfra) (args []string) {
 	return
 }
 
-func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra) (*pb.RunTaskRequest, error) {
+func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *model.BuildInfra, requestID string) (*pb.RunTaskRequest, error) {
 	// Create task token and secrets.
 	registerTaskToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_REGISTER_TASK)
 	if err != nil {
@@ -232,7 +231,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 		RegisterBackendTaskToken: registerTaskToken,
 		Secrets:                  secrets,
 		Target:                   backend.Task.Id.Target,
-		RequestId:                uuid.New().String(),
+		RequestId:                requestID,
 		BuildId:                  strconv.FormatInt(build.Proto.Id, 10),
 		Realm:                    build.Realm(),
 		BackendConfig:            backend.Config,
@@ -369,7 +368,7 @@ func failBuild(ctx context.Context, buildID int64, msg string) error {
 }
 
 // CreateBackendTask creates a backend task for the build.
-func CreateBackendTask(ctx context.Context, buildID int64) error {
+func CreateBackendTask(ctx context.Context, buildID int64, requestID string) error {
 	bld := &model.Build{ID: buildID}
 	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
 	switch err := datastore.Get(ctx, bld, infra); {
@@ -385,7 +384,7 @@ func CreateBackendTask(ctx context.Context, buildID int64) error {
 		return tq.Fatal.Apply(errors.Annotate(err, "failed to connect to backend service").Err())
 	}
 
-	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra)
+	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra, requestID)
 	if err != nil {
 		return tq.Fatal.Apply(err)
 	}

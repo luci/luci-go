@@ -428,7 +428,7 @@ func TestCreateBackendTask(t *testing.T) {
 					},
 				},
 			}
-			req, err := computeBackendNewTaskReq(ctx, build, infra)
+			req, err := computeBackendNewTaskReq(ctx, build, infra, "request_id")
 			So(err, ShouldBeNil)
 			So(req.BackendConfig, ShouldResembleProto, &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -601,7 +601,7 @@ func TestCreateBackendTask(t *testing.T) {
 		}
 		So(datastore.Put(ctx, build, infra), ShouldBeNil)
 
-		err = CreateBackendTask(ctx, 1)
+		err = CreateBackendTask(ctx, 1, "request_id")
 
 		expectedBuild := &model.Build{ID: 1}
 
