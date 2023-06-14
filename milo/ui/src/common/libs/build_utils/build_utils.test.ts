@@ -19,6 +19,7 @@ import {
   getCipdLink,
   getLogdogRawUrl,
   getSafeUrlFromTagValue,
+  parseLegacyBucketId,
   renderBugUrlTemplate,
 } from './build_utils';
 
@@ -183,5 +184,25 @@ describe('getCipdLink', () => {
       // eslint-disable-next-line max-len
       'https://chrome-infra-packages.appspot.com/p/infra/3pp/tools/git/mac-amd64/+/bHf2s_9KYiixd4SlHDugMeMqrngwz2QOGB_7bUcVpUoC'
     );
+  });
+});
+
+describe('parseLegacyBucketId', () => {
+  it('should parse legacy bucket ID correctly', async () => {
+    expect(parseLegacyBucketId('luci.proj.buck')).toEqual({
+      project: 'proj',
+      bucket: 'buck',
+    });
+  });
+
+  it('should parse legacy bucket ID with dots correctly', async () => {
+    expect(parseLegacyBucketId('luci.proj.buck.name')).toEqual({
+      project: 'proj',
+      bucket: 'buck.name',
+    });
+  });
+
+  it('should return null if bucket ID is invalid', async () => {
+    expect(parseLegacyBucketId('luci.projbuck')).toBeNull();
   });
 });

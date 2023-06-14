@@ -174,3 +174,19 @@ export function getCipdLink(pkgName: string, version: string): Link {
     ariaLabel: `cipd url for ${pkgName}`,
   };
 }
+
+const LEGACY_BUCKET_ID_RE = /^luci\.([^.]+)\.(.+)$/;
+
+/**
+ * Parses a legacy bucket ID (e.g. `luci.${project}.${bucket}`).
+ */
+// TODO(weiweilin): find all usage of the legacy bucket ID and convert them
+// to the new ID format.
+export function parseLegacyBucketId(bucketId: string) {
+  const match = bucketId.match(LEGACY_BUCKET_ID_RE);
+  if (!match) {
+    return null;
+  }
+
+  return { project: match[1], bucket: match[2] };
+}

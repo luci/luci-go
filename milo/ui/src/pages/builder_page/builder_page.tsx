@@ -20,6 +20,7 @@ import {
   useAuthState,
   useGetAccessToken,
 } from '@/common/components/auth_state_provider';
+import { parseLegacyBucketId } from '@/common/libs/build_utils';
 import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
 import {
   BuildersService,
@@ -71,7 +72,15 @@ export function BuilderPage() {
     );
   }
 
-  const builderId = { project, bucket, builder };
+  const builderId = {
+    project,
+    // If the bucket ID is a legacy ID, convert it to the new format.
+    //
+    // TODO(weiweilin): add a unit test once the pRPC query calls are
+    // simplified.
+    bucket: parseLegacyBucketId(bucket)?.bucket ?? bucket,
+    builder,
+  };
 
   const { data, error, isError, isLoading } = useBuilder({ id: builderId });
   if (isError) {
