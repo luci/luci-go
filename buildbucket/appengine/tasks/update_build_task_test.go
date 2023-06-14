@@ -78,19 +78,8 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			result, err := validateBuildTask(ctx, req, build)
-			expected := &pb.BuildInfra{
-				Backend: &pb.BuildInfra_Backend{
-					Task: &pb.Task{
-						Id: &pb.TaskID{
-							Id:     "1",
-							Target: "swarming",
-						},
-					},
-				},
-			}
+			err := validateBuildTask(ctx, req, infra)
 			So(err, ShouldBeNil)
-			So(result.Infra, ShouldResembleProto, expected)
 		})
 		Convey("task not in build infra", func() {
 			infra := &model.BuildInfra{
@@ -100,16 +89,6 @@ func TestValidateBuildTask(t *testing.T) {
 				},
 			}
 			So(datastore.Put(ctx, infra), ShouldBeNil)
-			expected := &pb.BuildInfra{
-				Backend: &pb.BuildInfra_Backend{
-					Task: &pb.Task{
-						Id: &pb.TaskID{
-							Id:     "2",
-							Target: "other",
-						},
-					},
-				},
-			}
 			req := &pb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &pb.Task{
@@ -119,9 +98,8 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			result, err := validateBuildTask(ctx, req, build)
+			err := validateBuildTask(ctx, req, infra)
 			So(err, ShouldBeNil)
-			So(result.Infra, ShouldResembleProto, expected)
 		})
 		Convey("task ID target mismatch", func() {
 			infra := &model.BuildInfra{
@@ -147,7 +125,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			_, err := validateBuildTask(ctx, req, build)
+			err := validateBuildTask(ctx, req, infra)
 			So(err, ShouldBeError)
 		})
 		Convey("task is complete and success", func() {
@@ -175,7 +153,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			_, err := validateBuildTask(ctx, req, build)
+			err := validateBuildTask(ctx, req, infra)
 			So(err, ShouldBeError)
 		})
 		Convey("task is cancelled", func() {
@@ -203,7 +181,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			_, err := validateBuildTask(ctx, req, build)
+			err := validateBuildTask(ctx, req, infra)
 			So(err, ShouldBeError)
 		})
 		Convey("task is running", func() {
@@ -231,7 +209,7 @@ func TestValidateBuildTask(t *testing.T) {
 					},
 				},
 			}
-			_, err := validateBuildTask(ctx, req, build)
+			err := validateBuildTask(ctx, req, infra)
 			So(err, ShouldBeNil)
 		})
 
@@ -356,7 +334,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 		t0 := testclock.TestRecentTimeUTC
 
 		taskProto := &pb.Task{
-			Status: pb.Status_STARTED,
+			Status: pb.Status_SCHEDULED,
 			Id: &pb.TaskID{
 				Id:     "1",
 				Target: "swarming",
@@ -364,7 +342,14 @@ func TestUpdateTaskEntity(t *testing.T) {
 		}
 		req := &pb.BuildTaskUpdate{
 			BuildId: "1",
-			Task:    taskProto,
+			Task: &pb.Task{
+				Status: pb.Status_STARTED,
+				Id: &pb.TaskID{
+					Id:     "1",
+					Target: "swarming",
+				},
+				Link: "a link",
+			},
 		}
 		infraProto := &pb.BuildInfra{
 			Backend: &pb.BuildInfra_Backend{
@@ -378,17 +363,20 @@ func TestUpdateTaskEntity(t *testing.T) {
 				Bucket:  "bucket",
 				Builder: "builder",
 			},
-			Infra: infraProto,
 		}
 		buildModel := &model.Build{
 			ID:         1,
 			Proto:      buildProto,
 			CreateTime: t0,
 		}
+		infraModel := &model.BuildInfra{
+			Build: datastore.KeyForObj(ctx, buildModel),
+			Proto: infraProto,
+		}
 
 		Convey("normal task save", func() {
-			So(datastore.Put(ctx, buildModel), ShouldBeNil)
-			err := updateTaskEntity(ctx, req, buildProto)
+			So(datastore.Put(ctx, buildModel, infraModel), ShouldBeNil)
+			err := updateTaskEntity(ctx, req, 1)
 			So(err, ShouldBeNil)
 			bk := datastore.KeyForObj(ctx, &model.Build{ID: 1})
 			resultInfraModel := &model.BuildInfra{
@@ -404,14 +392,10 @@ func TestUpdateTaskEntity(t *testing.T) {
 							Id:     "1",
 							Target: "swarming",
 						},
+						Link: "a link",
 					},
 				},
 			})
-		})
-		Convey("empty build proto", func() {
-			emptyBuildProto := &pb.Build{}
-			err := updateTaskEntity(ctx, req, emptyBuildProto)
-			So(err, ShouldBeError)
 		})
 	})
 }

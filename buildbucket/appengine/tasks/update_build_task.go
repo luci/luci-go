@@ -25,8 +25,9 @@ import (
 	"google.golang.org/api/pubsub/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
-	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -145,49 +146,33 @@ func validateBuildTaskUpdate(ctx context.Context, req *pb.BuildTaskUpdate) error
 // validateBuildTask ensures that the taskID provided in the request matches
 // the taskID that is stored in the build model. If there is no task associated
 // with the build, the task is associated here.
-func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, build *model.Build) (*pb.Build, error) {
-
-	// create a new build mask to read infra
-	mask, _ := model.NewBuildMask("", nil, &pb.BuildMask{
-		Fields: &fieldmaskpb.FieldMask{
-			Paths: []string{"id", "infra"},
-		},
-	})
-	bld, err := build.ToProto(ctx, mask, nil)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not load build details").Err()
+func validateBuildTask(ctx context.Context, req *pb.BuildTaskUpdate, infra *model.BuildInfra) error {
+	if infra.Proto.GetBackend() == nil {
+		infra.Proto.Backend = &pb.BuildInfra_Backend{}
 	}
-	if bld.Infra.GetBackend() == nil {
-		bld.Infra.Backend = &pb.BuildInfra_Backend{}
+	if infra.Proto.Backend.GetTask() == nil {
+		infra.Proto.Backend.Task = &pb.Task{}
+	} else if infra.Proto.Backend.Task.Id.GetId() != req.Task.Id.GetId() ||
+		infra.Proto.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() {
+		return errors.Reason("task ID in request does not match task ID associated with build").Err()
 	}
-	if bld.Infra.Backend.GetTask() == nil {
-		bld.Infra.Backend.Task = &pb.Task{}
-	} else if bld.Infra.Backend.Task.Id.GetId() != req.Task.Id.GetId() ||
-		bld.Infra.Backend.Task.Id.GetTarget() != req.Task.Id.GetTarget() {
-		return nil, errors.Reason("task ID in request does not match task ID associated with build").Err()
+	if protoutil.IsEnded(infra.Proto.Backend.Task.Status) {
+		return appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended task")
 	}
-	if protoutil.IsEnded(bld.Infra.Backend.Task.Status) {
-		return nil, appstatus.Errorf(codes.FailedPrecondition, "cannot update an ended task")
-	}
-	bld.Infra.Backend.Task = req.Task
-	return bld, nil
+	return nil
 }
 
-func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, build *pb.Build) error {
+func updateTaskEntity(ctx context.Context, req *pb.BuildTaskUpdate, buildID int64) error {
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		b, err := common.GetBuild(ctx, build.Id)
+		entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
-			if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
-				return err
-			}
-			return appstatus.Errorf(codes.Internal, "failed to get build %d: %s", build.Id, err)
+			return errors.Annotate(err, "invalid Build or BuildInfra").Err()
 		}
-		bk := datastore.KeyForObj(ctx, b)
-		infra := &model.BuildInfra{
-			Build: bk,
-			Proto: build.Infra,
-		}
-		toSave := []any{infra}
+		build := entities[0].(*model.Build)
+		infra := entities[1].(*model.BuildInfra)
+		build.Proto.UpdateTime = timestamppb.New(clock.Now(ctx))
+		infra.Proto.Backend.Task = req.Task
+		toSave := []any{build, infra}
 		return datastore.Put(ctx, toSave)
 	}, nil)
 
@@ -210,21 +195,22 @@ func updateBuildTask(ctx context.Context, req buildTaskUpdate) error {
 	}
 	logging.Infof(ctx, "Received an BuildTaskUpdate message for build %q", req.BuildId)
 
-	bld, err := common.GetBuild(ctx, buildID)
+	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildInfraKind)
 	if err != nil {
-		return errors.Annotate(err, "invalid build").Err()
+		return errors.Annotate(err, "invalid buildInfra").Err()
 	}
+	infra := entities[0].(*model.BuildInfra)
 
 	// Pre-check if the task can be updated before updating it with a transaction.
 	// Ensures that the taskID provided in the request matches the taskID that is
 	// stored in the build model. If there is no task associated with the build model,
 	// the task is associated here in buildInfra.Infra.Backend.Task.
-	build, err := validateBuildTask(ctx, req.BuildTaskUpdate, bld)
+	err = validateBuildTask(ctx, req.BuildTaskUpdate, infra)
 	if err != nil {
 		return errors.Annotate(err, "invalid task").Err()
 	}
 
-	err = updateTaskEntity(ctx, req.BuildTaskUpdate, build)
+	err = updateTaskEntity(ctx, req.BuildTaskUpdate, buildID)
 	if err != nil {
 		if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
 			return err
