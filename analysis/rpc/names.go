@@ -18,10 +18,6 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"unicode"
-	"unicode/utf8"
-
-	"golang.org/x/text/unicode/norm"
 
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
@@ -173,9 +169,7 @@ func parseTestVariantBranchName(name string) (project, testID, variantHash, refH
 	if err := pbutil.ValidateTestID(testID); err != nil {
 		return "", "", "", "", errors.Annotate(err, "test id %q", testID).Err()
 	}
-	if err := ValidateTestID(matches[2]); err != nil {
-		return "", "", "", "", errors.Annotate(err, "invalid test id in name").Err()
-	}
+
 	return matches[1], testID, matches[3], matches[4], nil
 }
 
@@ -189,26 +183,4 @@ func ruleName(project, ruleID string) string {
 func testVariantBranchName(project, testID, variantHash, refHash string) string {
 	encodedTestID := url.PathEscape(testID)
 	return fmt.Sprintf("projects/%s/tests/%s/variants/%s/refs/%s", project, encodedTestID, variantHash, refHash)
-}
-
-// ValidateTestID returns a non-nil error if testID is invalid.
-func ValidateTestID(testID string) error {
-	if testID == "" {
-		return errors.Reason("unspecified").Err()
-	}
-	if len(testID) > 512 {
-		return errors.Reason("longer than 512 bytes").Err()
-	}
-	if !utf8.ValidString(testID) {
-		return errors.Reason("not a valid utf8 string").Err()
-	}
-	if !norm.NFC.IsNormalString(testID) {
-		return errors.Reason("not in unicode normalized form C").Err()
-	}
-	for i, rune := range testID {
-		if !unicode.IsPrint(rune) {
-			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
-		}
-	}
-	return nil
 }
