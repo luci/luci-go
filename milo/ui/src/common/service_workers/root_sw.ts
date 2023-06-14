@@ -31,10 +31,11 @@ self.addEventListener('fetch', (event) => {
   const isResultUI =
     // Short build link.
     url.pathname.match(/^\/b\//) ||
-    // Long build link.
-    url.pathname.match(/^\/p\/[^/]+\/builders\/[^/]+\/[^/]+\//) ||
-    // Builders link.
-    url.pathname.match(/^\/p\/[^/]+(\/g\/[^/]+)?\/builders(\/)?$/) ||
+    // Anything under `/p/:project/builders` or `/p/:project/g/:group/builders`.
+    //
+    // TODO(weiweilin): change this to `/^\/p\//` after migrating console page
+    // to SPA.
+    url.pathname.match(/^\/p\/[^/]+(\/g\/[^/]+)?\/builders(\/|$)/) ||
     // Invocation link.
     url.pathname.match(/^\/inv\//) ||
     // Artifact link.

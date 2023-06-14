@@ -100,7 +100,7 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/p/:project/g/:group/", baseMW, movedPermanently("/p/:project/g/:group"))
 
 	// Builder list
-	// Redirects to the lit-element implementation.
+	// Redirects to the SPA implementation.
 	r.GET("/p/:project/builders", baseMW, redirect("/ui/p/:project/builders", http.StatusFound))
 	r.GET("/p/:project/g/:group/builders", baseMW, redirect("/ui/p/:project/g/:group/builders", http.StatusFound))
 
@@ -112,9 +112,10 @@ func Run(srv *server.Server, templatePath string) {
 	r.GET("/swarming/prod/:id", htmlMW, handleError(handleSwarmingBuild))
 
 	// Buildbucket
-	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
-	// and common/model/builder_summary.go:SelfLink.
-	r.GET("/p/:project/builders/:bucket/:builder", optionalProjectMW, handleError(BuilderHandler))
+	// If these routes change, also change links in
+	// common/model/builder_summary.go:SelfLink.
+	// Redirects to the SPA implementation.
+	r.GET("/p/:project/builders/:bucket/:builder", baseMW, redirect("/ui/p/:project/builders/:bucket/:builder", http.StatusFound))
 
 	r.GET("/buildbucket/:bucket/:builder", baseMW, redirectFromProjectlessBuilder)
 

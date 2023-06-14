@@ -101,7 +101,7 @@ func BuilderIDLink(b, project string) string {
 	}
 
 	if parts[0] == "buildbucket" {
-		return fmt.Sprintf("/p/%s/builders/%s/%s", project, parts[1], parts[2])
+		return fmt.Sprintf("/ui/p/%s/builders/%s/%s", project, parts[1], parts[2])
 	}
 	return InvalidBuilderIDURL
 }
