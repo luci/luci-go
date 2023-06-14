@@ -45,8 +45,7 @@ interface ResultErr<E> {
 // This is a global variable. We need to declare it with `var`.
 // eslint-disable-next-line no-var
 declare var CONFIGS: {
-  // TODO(weiweilin): remove `?` in the next release.
-  readonly VERSION?: string;
+  readonly VERSION: string;
   readonly RESULT_DB: {
     readonly HOST: string;
   };

@@ -33,6 +33,7 @@ dotenv.config({
 });
 
 self.CONFIGS = Object.freeze({
+  VERSION: assertNonNullable(process.env['VITE_MILO_VERSION']),
   RESULT_DB: {
     HOST: assertNonNullable(process.env['VITE_RESULT_DB_HOST']),
   },

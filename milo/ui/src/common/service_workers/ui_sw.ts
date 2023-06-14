@@ -36,12 +36,8 @@ declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
 // releasing a critical bug fix.
 const MIN_VERSION = '13381-5572ca8';
 
-// TODO(weiweilin): remove the default version string once VERSION is
-// guaranteed to be populated.
-const version = self.CONFIGS.VERSION || '13465-07077e1';
-
 versionManagement.init({
-  version: version,
+  version: self.CONFIGS.VERSION,
   // Set the maximum version to the current version to ensure the new version
   // are always purged after reverts.
   shouldSkipWaiting: (lastActivatedVersion) => {
@@ -51,7 +47,7 @@ versionManagement.init({
 
     const lastVer = parseVersion(lastActivatedVersion);
     const minVer = parseVersion(MIN_VERSION);
-    const currentVer = parseVersion(version);
+    const currentVer = parseVersion(self.CONFIGS.VERSION);
 
     // Default to purge the last version if any of the versions cannot be
     // parsed.
@@ -60,12 +56,12 @@ versionManagement.init({
     }
 
     // Ensures the service worker is newer than the minimum version.
-    if (lastVer <= minVer) {
+    if (lastVer.num <= minVer.num) {
       return true;
     }
 
     // Ensures the service worker is always rolled back in case of a revert.
-    if (currentVer < lastVer) {
+    if (currentVer.num < lastVer.num) {
       return true;
     }
 
