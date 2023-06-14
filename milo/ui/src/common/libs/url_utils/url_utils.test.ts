@@ -14,7 +14,11 @@
 
 import { expect } from '@jest/globals';
 
-import { getBuilderURLPath, getTestHistoryURLPath } from './url_utils';
+import {
+  getBuilderURLPath,
+  getSwarmingBotListURL,
+  getTestHistoryURLPath,
+} from './url_utils';
 
 describe('getBuilderURLPath', () => {
   it('should encode the builder', () => {
@@ -33,5 +37,17 @@ describe('getTestHisotryURLPath', () => {
   it('should encode the test ID', () => {
     const url = getTestHistoryURLPath('testproject', 'test/id');
     expect(url).toStrictEqual('/ui/test/testproject/test%2Fid');
+  });
+});
+
+describe('getSwarmingBotListURL', () => {
+  it('should support multiple dimensions', () => {
+    const url = getSwarmingBotListURL('chromium-swarm-dev.appspot.com', [
+      'cpu:x86-64',
+      'os:Windows-11',
+    ]);
+    expect(url).toStrictEqual(
+      'https://chromium-swarm-dev.appspot.com/botlist?f=cpu%3Ax86-64&f=os%3AWindows-11'
+    );
   });
 });

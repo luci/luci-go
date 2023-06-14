@@ -75,6 +75,15 @@ export function getSwarmingTaskURL(hostname: string, taskId: string): string {
   return `https://${hostname}/task?id=${taskId}&o=true&w=true`;
 }
 
+export function getSwarmingBotListURL(
+  hostname: string,
+  dimensions: readonly string[]
+): string {
+  return `https://${hostname}/botlist?${new URLSearchParams(
+    dimensions.map((d) => ['f', d])
+  )}`;
+}
+
 export function getInvURLPath(invId: string): string {
   return `/ui/inv/${invId}`;
 }

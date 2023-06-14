@@ -28,6 +28,7 @@ import {
   ExpandableEntryHeader,
 } from '@/common/components/expandable_entry';
 import { PrpcClientExt } from '@/common/libs/prpc_client_ext';
+import { getSwarmingBotListURL } from '@/common/libs/url_utils';
 import { StringPair } from '@/common/services/common';
 import {
   BotsRequest,
@@ -118,7 +119,14 @@ export function MachinePoolSection({
   return (
     <>
       <h3>
-        <Link href={swarmingHost}>Machine Pool</Link>
+        <Link
+          href={getSwarmingBotListURL(
+            swarmingHost,
+            dimensions.map((d) => `${d.key}:${d.value}`)
+          )}
+        >
+          Machine Pool
+        </Link>
         {isSuccess && (
           <>
             {' '}
