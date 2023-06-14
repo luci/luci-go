@@ -33,6 +33,20 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+const (
+	// BuildStepsKind is a BuildSteps entity's kind in the datastore.
+	BuildStepsKind = "BuildSteps"
+
+	// BuildInfraKind is a BuildInfra entity's kind in the datastore.
+	BuildInfraKind = "BuildInfra"
+
+	// BuildInputPropertiesKind is a BuildInputProperties entity's kind in the datastore.
+	BuildInputPropertiesKind = "BuildInputProperties"
+
+	// BuildOutputPropertiesKind is a BuildOutputProperties entity's kind in the datastore.
+	BuildOutputPropertiesKind = "BuildOutputProperties"
+)
+
 // maxPropertySize is the maximum property size. Any properties larger than it
 // should be chunked into multiple entities to fit the Datastore size limit.
 // This value is smaller than the real Datastore limit (1048487 bytes) in order

@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
@@ -37,8 +36,6 @@ import (
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
-	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
-	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -155,21 +152,6 @@ func validatePageSize(pageSize int32) error {
 		return errors.Reason("page_size cannot be negative").Err()
 	}
 	return nil
-}
-
-// getBuildAndInfra returns the build and its infra entity with the given ID
-// or NotFound appstatus if either entity is not found.
-func getBuildAndInfra(ctx context.Context, id int64) (*model.Build, *model.BuildInfra, error) {
-	bld := &model.Build{ID: id}
-	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, &model.Build{ID: id})}
-	switch err := datastore.Get(ctx, bld, infra); {
-	case errors.Contains(err, datastore.ErrNoSuchEntity):
-		return nil, nil, perm.NotFoundErr(ctx)
-	case err != nil:
-		return nil, nil, errors.Annotate(err, "error fetching build or infra with ID %d", id).Err()
-	default:
-		return bld, infra, nil
-	}
 }
 
 // validateTags validates build tags.

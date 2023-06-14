@@ -26,14 +26,54 @@ import (
 
 // GetBuild returns the build with the given ID or NotFound appstatus if it is
 // not found.
+// A shortcut for GetBuildEntities with only Build.
 func GetBuild(ctx context.Context, id int64) (*model.Build, error) {
-	bld := &model.Build{ID: id}
-	switch err := datastore.Get(ctx, bld); {
-	case err == datastore.ErrNoSuchEntity:
+	entities, err := GetBuildEntities(ctx, id, model.BuildKind)
+	if err != nil {
+		return nil, err
+	}
+	return entities[0].(*model.Build), nil
+}
+
+func GetBuildEntities(ctx context.Context, id int64, kinds ...string) ([]any, error) {
+	if len(kinds) == 0 {
+		return nil, errors.Reason("no entities to get").Err()
+	}
+
+	var toGet []any
+	bk := datastore.KeyForObj(ctx, &model.Build{ID: id})
+	appendEntity := func(kind string) error {
+		switch kind {
+		case model.BuildKind:
+			toGet = append(toGet, &model.Build{ID: id})
+		case model.BuildStatusKind:
+			toGet = append(toGet, &model.BuildStatus{Build: bk})
+		case model.BuildStepsKind:
+			toGet = append(toGet, &model.BuildSteps{Build: bk})
+		case model.BuildInfraKind:
+			toGet = append(toGet, &model.BuildInfra{Build: bk})
+		case model.BuildInputPropertiesKind:
+			toGet = append(toGet, &model.BuildInputProperties{Build: bk})
+		case model.BuildOutputPropertiesKind:
+			toGet = append(toGet, &model.BuildOutputProperties{Build: bk})
+		default:
+			return errors.Reason("unknown entity kind %s", kind).Err()
+		}
+		return nil
+	}
+
+	for _, kind := range kinds {
+		if err := appendEntity(kind); err != nil {
+			return nil, err
+		}
+	}
+
+	switch err := datastore.Get(ctx, toGet...); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity):
 		return nil, perm.NotFoundErr(ctx)
 	case err != nil:
-		return nil, errors.Annotate(err, "error fetching build with ID %d", id).Err()
+		return nil, errors.Annotate(err, "error fetching build entities with ID %d", id).Err()
 	default:
-		return bld, nil
+		return toGet, nil
 	}
 }

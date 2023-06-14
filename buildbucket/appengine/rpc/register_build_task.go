@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 
 	"go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -122,13 +123,15 @@ func (*Builds) RegisterBuildTask(ctx context.Context, req *pb.RegisterBuildTaskR
 
 	var updateTaskToken string
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		b, infra, err := getBuildAndInfra(ctx, req.BuildId)
+		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
 			if _, isAppStatusErr := appstatus.Get(err); isAppStatusErr {
 				return err
 			}
 			return appstatus.Errorf(codes.Internal, "failed to get build %d: %s", req.BuildId, err)
 		}
+		b := entities[0].(*model.Build)
+		infra := entities[1].(*model.BuildInfra)
 
 		if infra.Proto.GetBackend().GetTask() == nil {
 			return appstatus.Errorf(codes.Internal, "the build %d does not run on task backend", req.BuildId)

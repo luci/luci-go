@@ -27,12 +27,12 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestGetBuild(t *testing.T) {
+func TestGetBuildEntities(t *testing.T) {
 	t.Parallel()
 
+	ctx := memory.Use(context.Background())
 	Convey("GetBuild", t, func() {
 		Convey("ok", func() {
-			ctx := memory.Use(context.Background())
 			So(datastore.Put(ctx, &model.Build{
 				Proto: &pb.Build{
 					Id: 1,
@@ -73,6 +73,47 @@ func TestGetBuild(t *testing.T) {
 			_, err := GetBuild(ctx, 2)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "resource not found")
+		})
+	})
+
+	Convey("GetBuildEntities", t, func() {
+		bld := &model.Build{
+			ID: 1,
+			Proto: &pb.Build{
+				Id: 1,
+				Builder: &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				},
+				Status: pb.Status_SUCCESS,
+			},
+		}
+		bk := datastore.KeyForObj(ctx, bld)
+		bs := &model.BuildStatus{Build: bk}
+		infra := &model.BuildInfra{Build: bk}
+		steps := &model.BuildSteps{Build: bk}
+		inputProp := &model.BuildInputProperties{Build: bk}
+		So(datastore.Put(ctx, bld, infra, bs, steps, inputProp), ShouldBeNil)
+
+		Convey("partial not found", func() {
+			_, err := GetBuildEntities(ctx, bld.Proto.Id, model.BuildOutputPropertiesKind)
+			So(err, ShouldErrLike, "not found")
+		})
+
+		Convey("pass", func() {
+			outputProp := &model.BuildOutputProperties{Build: bk}
+			So(datastore.Put(ctx, outputProp), ShouldBeNil)
+			Convey("all", func() {
+				entities, err := GetBuildEntities(ctx, bld.Proto.Id, model.BuildKind, model.BuildStatusKind, model.BuildStepsKind, model.BuildInfraKind, model.BuildInputPropertiesKind, model.BuildOutputPropertiesKind)
+				So(err, ShouldBeNil)
+				So(entities, ShouldHaveLength, 6)
+			})
+			Convey("only infra", func() {
+				entities, err := GetBuildEntities(ctx, bld.Proto.Id, model.BuildInfraKind)
+				So(err, ShouldBeNil)
+				So(entities, ShouldHaveLength, 1)
+			})
 		})
 	})
 }
