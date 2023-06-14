@@ -34,29 +34,30 @@ declare const self: ServiceWorkerGlobalScope & { CONFIGS: typeof CONFIGS };
 
 // Update the minimum version (exclusive) to force purging the old caches when
 // releasing a critical bug fix.
-const MIN_VERSION = '13381-5572ca8';
+// The identifier for the fixed version is not yet known when authoring a CL for
+// a critical bug fix. Make the minimum version exclusive so we can update it to
+// the last known released buggy version in the same CL.
+const MIN_VERSION_EXCLUSIVE = '13514-32491be';
 
 versionManagement.init({
   version: self.CONFIGS.VERSION,
-  // Set the maximum version to the current version to ensure the new version
-  // are always purged after reverts.
   shouldSkipWaiting: (lastActivatedVersion) => {
     if (!lastActivatedVersion) {
       return true;
     }
 
     const lastVer = parseVersion(lastActivatedVersion);
-    const minVer = parseVersion(MIN_VERSION);
+    const minVerExcl = parseVersion(MIN_VERSION_EXCLUSIVE);
     const currentVer = parseVersion(self.CONFIGS.VERSION);
 
     // Default to purge the last version if any of the versions cannot be
     // parsed.
-    if (!lastVer || !minVer || !currentVer) {
+    if (!lastVer || !minVerExcl || !currentVer) {
       return true;
     }
 
     // Ensures the service worker is newer than the minimum version.
-    if (lastVer.num <= minVer.num) {
+    if (lastVer.num <= minVerExcl.num) {
       return true;
     }
 
