@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
-import { Alert, AlertTitle } from '@mui/material';
-import React from 'react';
+import { Alert, AlertTitle, Link } from '@mui/material';
+import { Component, ReactNode } from 'react';
+
+import { genFeedbackUrl } from '../libs/utils';
 
 export interface ErrorBoundaryProps {
-  readonly children: React.ReactNode;
+  readonly children: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -29,7 +31,7 @@ const ErrorDisplay = styled.pre({
   overflowWrap: 'break-word',
 });
 
-export class ErrorBoundary extends React.Component<
+export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
@@ -48,6 +50,13 @@ export class ErrorBoundary extends React.Component<
         <Alert severity="error">
           <AlertTitle>Error</AlertTitle>
           <ErrorDisplay>{this.state.error.message}</ErrorDisplay>
+          <Link
+            href={genFeedbackUrl(this.state.error.message)}
+            target="_blank"
+            rel="noopener"
+          >
+            File a bug
+          </Link>
         </Alert>
       );
     }

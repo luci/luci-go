@@ -63,10 +63,14 @@ export function assertNonNullable<T>(value: T): NonNullable<T> {
   return value;
 }
 
-// Generates URL for collecting feedback.
-export function genFeedbackUrl() {
+/**
+ * Generates URL for collecting feedback.
+ */
+export function genFeedbackUrl(errMsg?: string) {
   const feedbackComment =
-    `From Link: ${document.location.href}\n` +
+    `Version: ${CONFIGS.VERSION}\n` +
+    `From Link: ${self.location.href}\n` +
+    (errMsg ? `Error Message:\n${errMsg}\n` : '') +
     'Please enter a description of the problem, with repro steps if applicable.';
 
   const searchParams = new URLSearchParams({
