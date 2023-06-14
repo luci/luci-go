@@ -90,7 +90,12 @@ func (mc *MockedClient) RunTask(ctx context.Context, taskReq *pb.RunTaskRequest,
 	if taskReq.Target == "fail_me" {
 		return nil, errors.Reason("idk, wanted to fail i guess :/").Err()
 	}
-	return &pb.RunTaskResponse{Task: &pb.Task{Id: &pb.TaskID{Id: "1", Target: taskReq.Target}}}, nil
+	return &pb.RunTaskResponse{
+		Task: &pb.Task{
+			Id:   &pb.TaskID{Id: "abc123", Target: taskReq.Target},
+			Link: "this_is_a_url_link",
+		},
+	}, nil
 }
 
 // useTaskBackendClientForTesting specifies that the given test double shall be used
@@ -274,7 +279,7 @@ func TestCipdClient(t *testing.T) {
 				Backend: &pb.BuildInfra_Backend{
 					Task: &pb.Task{
 						Id: &pb.TaskID{
-							Id:     "1",
+							Id:     "abc123",
 							Target: "swarming://mytarget",
 						},
 					},
@@ -478,7 +483,8 @@ func TestCreateBackendTask(t *testing.T) {
 			})
 		})
 	})
-	Convey("RunTask failed", t, func(c C) {
+
+	Convey("RunTask", t, func(c C) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mc := NewMockedClient(context.Background(), ctl)
@@ -505,6 +511,10 @@ func TestCreateBackendTask(t *testing.T) {
 			Target:   "fail_me",
 			Hostname: "hostname",
 		})
+		backendSetting = append(backendSetting, &pb.BackendSetting{
+			Target:   "swarming://chromium-swarm",
+			Hostname: "hostname2",
+		})
 		settingsCfg := &pb.SettingsCfg{Backends: backendSetting}
 		err := config.SetTestSettingsCfg(ctx, settingsCfg)
 		So(err, ShouldBeNil)
@@ -524,6 +534,7 @@ func TestCreateBackendTask(t *testing.T) {
 			},
 		}
 		ctx = context.WithValue(ctx, MockCipdClientKey{}, client)
+
 		build := &model.Build{
 			ID: 1,
 			Proto: &pb.Build{
@@ -570,7 +581,7 @@ func TestCreateBackendTask(t *testing.T) {
 					Task: &pb.Task{
 						Id: &pb.TaskID{
 							Id:     "",
-							Target: "fail_me",
+							Target: "swarming://chromium-swarm",
 						},
 					},
 					TaskDimensions: []*pb.RequestedDimension{
@@ -599,15 +610,31 @@ func TestCreateBackendTask(t *testing.T) {
 				},
 			},
 		}
-		So(datastore.Put(ctx, build, infra), ShouldBeNil)
 
-		err = CreateBackendTask(ctx, 1, "request_id")
+		Convey("ok", func() {
+			So(datastore.Put(ctx, build, infra), ShouldBeNil)
+			err = CreateBackendTask(ctx, 1, "request_id")
+			So(err, ShouldBeNil)
+			expectedBuildInfra := &model.BuildInfra{Build: key}
+			So(datastore.Get(ctx, expectedBuildInfra), ShouldBeNil)
+			So(expectedBuildInfra.Proto.Backend.Task, ShouldResembleProto, &pb.Task{
+				Id: &pb.TaskID{
+					Id:     "abc123",
+					Target: "swarming://chromium-swarm",
+				},
+				Link: "this_is_a_url_link",
+			})
+		})
 
-		expectedBuild := &model.Build{ID: 1}
-
-		So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
-		So(err, ShouldErrLike, "failed to create a backend task")
-		So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
-		So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
+		Convey("fail", func() {
+			infra.Proto.Backend.Task.Id.Target = "fail_me"
+			So(datastore.Put(ctx, build, infra), ShouldBeNil)
+			err = CreateBackendTask(ctx, 1, "request_id")
+			expectedBuild := &model.Build{ID: 1}
+			So(datastore.Get(ctx, expectedBuild), ShouldBeNil)
+			So(err, ShouldErrLike, "failed to create a backend task")
+			So(expectedBuild.Proto.Status, ShouldEqual, pb.Status_INFRA_FAILURE)
+			So(expectedBuild.Proto.SummaryMarkdown, ShouldContainSubstring, "Backend task creation failure.")
+		})
 	})
 }
