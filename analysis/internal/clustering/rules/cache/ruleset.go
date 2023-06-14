@@ -34,14 +34,14 @@ import (
 // share across multiple threads.
 type CachedRule struct {
 	// The failure association rule.
-	Rule rules.FailureAssociationRule
+	Rule rules.Entry
 	// The parsed and compiled failure association rule.
 	Expr *lang.Expr
 }
 
 // NewCachedRule initialises a new CachedRule from the given failure
 // association rule.
-func NewCachedRule(rule *rules.FailureAssociationRule) (*CachedRule, error) {
+func NewCachedRule(rule *rules.Entry) (*CachedRule, error) {
 	expr, err := lang.Parse(rule.RuleDefinition)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func (r *Ruleset) refresh(ctx context.Context) (ruleset *Ruleset, err error) {
 
 // cachedRulesFromFullRead obtains a set of cached rules from the given set of
 // active failure association rules.
-func cachedRulesFromFullRead(activeRules []*rules.FailureAssociationRule) ([]*CachedRule, error) {
+func cachedRulesFromFullRead(activeRules []*rules.Entry) ([]*CachedRule, error) {
 	var result []*CachedRule
 	for _, r := range activeRules {
 		cr, err := NewCachedRule(r)
@@ -196,7 +196,7 @@ func cachedRulesFromFullRead(activeRules []*rules.FailureAssociationRule) ([]*Ca
 
 // cachedRulesFromDelta applies deltas to an existing list of rules,
 // to obtain an updated set of rules.
-func cachedRulesFromDelta(existing []*CachedRule, delta []*rules.FailureAssociationRule) ([]*CachedRule, error) {
+func cachedRulesFromDelta(existing []*CachedRule, delta []*rules.Entry) ([]*CachedRule, error) {
 	ruleByID := make(map[string]*CachedRule)
 	for _, r := range existing {
 		ruleByID[r.Rule.RuleID] = r

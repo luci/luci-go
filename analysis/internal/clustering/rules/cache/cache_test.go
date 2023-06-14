@@ -37,9 +37,10 @@ func TestRulesCache(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		rc := NewRulesCache(cache)
-		rules.SetRulesForTesting(ctx, nil)
+		err := rules.SetForTesting(ctx, nil)
+		So(err, ShouldBeNil)
 
-		test := func(minimumPredicatesVerison time.Time, expectedRules []*rules.FailureAssociationRule, expectedVersion rules.Version) {
+		test := func(minimumPredicatesVerison time.Time, expectedRules []*rules.Entry, expectedVersion rules.Version) {
 			// Tests the content of the cache is as expected.
 			ruleset, err := rc.Ruleset(ctx, "myproject", minimumPredicatesVerison)
 			So(err, ShouldBeNil)
@@ -79,7 +80,7 @@ func TestRulesCache(t *testing.T) {
 		}
 
 		Convey(`Initially Empty`, func() {
-			err := rules.SetRulesForTesting(ctx, nil)
+			err := rules.SetForTesting(ctx, nil)
 			So(err, ShouldBeNil)
 			test(rules.StartingEpoch, nil, rules.StartingVersion)
 
@@ -100,7 +101,7 @@ func TestRulesCache(t *testing.T) {
 				// when testing.
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
 
-				rs := []*rules.FailureAssociationRule{
+				rs := []*rules.Entry{
 					rules.NewRule(100).
 						WithLastUpdated(reference.Add(-1 * time.Hour)).
 						WithPredicateLastUpdated(reference.Add(-2 * time.Hour)).
@@ -110,7 +111,7 @@ func TestRulesCache(t *testing.T) {
 						WithPredicateLastUpdated(reference).
 						Build(),
 				}
-				err := rules.SetRulesForTesting(ctx, rs)
+				err := rules.SetForTesting(ctx, rs)
 				So(err, ShouldBeNil)
 
 				expectedRulesVersion := rules.Version{
@@ -150,12 +151,12 @@ func TestRulesCache(t *testing.T) {
 				WithLastUpdated(reference).
 				WithPredicateLastUpdated(reference.Add(-1 * time.Hour))
 
-			rs := []*rules.FailureAssociationRule{
+			rs := []*rules.Entry{
 				ruleOne.Build(),
 				ruleTwo.Build(),
 				ruleThree.Build(),
 			}
-			err := rules.SetRulesForTesting(ctx, rs)
+			err := rules.SetForTesting(ctx, rs)
 			So(err, ShouldBeNil)
 
 			expectedRulesVersion := rules.Version{
@@ -166,7 +167,7 @@ func TestRulesCache(t *testing.T) {
 
 			Convey(`Then Empty`, func() {
 				// Mark all rules inactive.
-				newRules := []*rules.FailureAssociationRule{
+				newRules := []*rules.Entry{
 					ruleOne.WithActive(false).
 						WithLastUpdated(reference.Add(4 * time.Hour)).
 						WithPredicateLastUpdated(reference.Add(3 * time.Hour)).
@@ -180,7 +181,7 @@ func TestRulesCache(t *testing.T) {
 						WithPredicateLastUpdated(reference.Add(1 * time.Hour)).
 						Build(),
 				}
-				err := rules.SetRulesForTesting(ctx, newRules)
+				err := rules.SetForTesting(ctx, newRules)
 				So(err, ShouldBeNil)
 
 				oldRulesVersion := expectedRulesVersion
@@ -208,7 +209,7 @@ func TestRulesCache(t *testing.T) {
 				})
 			})
 			Convey(`Then Non-Empty`, func() {
-				newRules := []*rules.FailureAssociationRule{
+				newRules := []*rules.Entry{
 					// Mark an existing rule inactive.
 					ruleOne.WithActive(false).
 						WithLastUpdated(reference.Add(time.Hour)).
@@ -235,7 +236,7 @@ func TestRulesCache(t *testing.T) {
 						WithLastUpdated(reference.Add(3 * time.Hour)).
 						Build(),
 				}
-				err := rules.SetRulesForTesting(ctx, newRules)
+				err := rules.SetForTesting(ctx, newRules)
 				So(err, ShouldBeNil)
 
 				oldRulesVersion := expectedRulesVersion
@@ -266,8 +267,8 @@ func TestRulesCache(t *testing.T) {
 	})
 }
 
-func sortRulesByPredicateLastUpdated(rs []*rules.FailureAssociationRule) []*rules.FailureAssociationRule {
-	result := make([]*rules.FailureAssociationRule, len(rs))
+func sortRulesByPredicateLastUpdated(rs []*rules.Entry) []*rules.Entry {
+	result := make([]*rules.Entry, len(rs))
 	copy(result, rs)
 	sort.Slice(result, func(i, j int) bool {
 		if result[i].PredicateLastUpdated.Equal(result[j].PredicateLastUpdated) {

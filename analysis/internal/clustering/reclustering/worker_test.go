@@ -76,7 +76,7 @@ type scenario struct {
 	// rulesVersion is version of failure association rules.
 	rulesVersion rules.Version
 	// rules are the failure association rules.
-	rules []*rules.FailureAssociationRule
+	rules []*rules.Entry
 	// testResults are the actual test failures ingested by LUCI Analysis,
 	// organised in chunks by object ID.
 	testResultsByObjectID map[string]*cpb.Chunk
@@ -124,7 +124,7 @@ func TestReclustering(t *testing.T) {
 			So(shards.SetShardsForTesting(ctx, []shards.ReclusteringShard{shard}), ShouldBeNil)
 
 			// Set stored failure association rules.
-			So(rules.SetRulesForTesting(ctx, s.rules), ShouldBeNil)
+			So(rules.SetForTesting(ctx, s.rules), ShouldBeNil)
 
 			cfg := map[string]*configpb.ProjectConfig{
 				testProject: {
@@ -851,7 +851,7 @@ func (b *scenarioBuilder) withNoConfig(value bool) *scenarioBuilder {
 }
 
 func (b *scenarioBuilder) build() *scenario {
-	var rs []*rules.FailureAssociationRule
+	var rs []*rules.Entry
 	var activeRules []*cache.CachedRule
 
 	rulesVersion := rules.Version{
@@ -863,7 +863,7 @@ func (b *scenarioBuilder) build() *scenario {
 		WithPredicateLastUpdated(rulesVersion.Predicates).
 		WithLastUpdated(rulesVersion.Total).
 		Build()
-	rs = []*rules.FailureAssociationRule{ruleOne}
+	rs = []*rules.Entry{ruleOne}
 	if !b.oldRules {
 		rulesVersion = rules.Version{
 			Predicates: time.Date(2002, time.January, 1, 0, 0, 0, 1000, time.UTC),

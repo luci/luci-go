@@ -150,7 +150,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			// No failure association rules.
 			rs, err := rules.ReadActive(span.Single(ctx), project)
 			So(err, ShouldBeNil)
-			So(rs, ShouldResemble, []*rules.FailureAssociationRule{})
+			So(rs, ShouldResemble, []*rules.Entry{})
 
 			// No Buganizer issues.
 			So(fakeStore.Issues, ShouldHaveLength, 0)
@@ -169,7 +169,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			ignoreRuleID := ""
 			expectCreate := true
 
-			expectedRule := &rules.FailureAssociationRule{
+			expectedRule := &rules.Entry{
 				Project:               "chromeos",
 				RuleDefinition:        `reason LIKE "Failed to connect to %.%.%.%."`,
 				BugID:                 bugs.BugID{System: bugs.BuganizerSystem, ID: "1"},
@@ -196,7 +196,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				rs, err := rules.ReadActive(span.Single(ctx), project)
 				So(err, ShouldBeNil)
 
-				var cleanedRules []*rules.FailureAssociationRule
+				var cleanedRules []*rules.Entry
 				for _, r := range rs {
 					if r.RuleID != ignoreRuleID {
 						cleanedRules = append(cleanedRules, r)
@@ -335,7 +335,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					WithBugPriorityManaged(true).
 					WithBugPriorityManagedLastUpdated(createTime.Add(1 * time.Hour)).
 					WithSourceCluster(sourceClusterID).Build()
-				err := rules.SetRulesForTesting(ctx, []*rules.FailureAssociationRule{
+				err := rules.SetForTesting(ctx, []*rules.Entry{
 					rule,
 				})
 				So(err, ShouldBeNil)
@@ -504,7 +504,7 @@ func TestBuganizerUpdate(t *testing.T) {
 			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 
-			expectedRules := []*rules.FailureAssociationRule{
+			expectedRules := []*rules.Entry{
 				{
 					Project:               "chromeos",
 					RuleDefinition:        `test = "testname-0"`,
@@ -540,7 +540,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				},
 			}
 
-			expectRulesWithExtraIssues := func(expectedRules []*rules.FailureAssociationRule, numExtraIssues int) {
+			expectRulesWithExtraIssues := func(expectedRules []*rules.Entry, numExtraIssues int) {
 				// Check final set of rules is as expected.
 				rs, err := rules.ReadAll(span.Single(ctx), "chromeos")
 				So(err, ShouldBeNil)
@@ -558,7 +558,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					r.IsManagingBugPriorityLastUpdated = time.Time{}
 				}
 
-				sortedExpected := make([]*rules.FailureAssociationRule, len(expectedRules))
+				sortedExpected := make([]*rules.Entry, len(expectedRules))
 				copy(sortedExpected, expectedRules)
 				sort.Slice(sortedExpected, func(i, j int) bool {
 					return sortedExpected[i].BugID.System < sortedExpected[j].BugID.System ||
@@ -570,7 +570,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				So(len(fakeStore.Issues), ShouldEqual, len(sortedExpected)+numExtraIssues)
 			}
 
-			expectRules := func(expectedRules []*rules.FailureAssociationRule) {
+			expectRules := func(expectedRules []*rules.Entry) {
 				expectRulesWithExtraIssues(expectedRules, 0)
 			}
 
@@ -664,7 +664,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				Convey("Cluster impact does not change if bug not managed by rule", func() {
 					// Set IsManagingBug to false on one rule.
 					rs[2].IsManagingBug = false
-					rules.SetRulesForTesting(ctx, rs)
+					So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 					issue := fakeStore.Issues[3].Issue
 					So(issue.IssueId, ShouldEqual, 3)
@@ -759,7 +759,7 @@ func TestBuganizerUpdate(t *testing.T) {
 				Convey("Disabling IsManagingBugPriority prevents priority updates.", func() {
 
 					rs[2].IsManagingBugPriority = false
-					rules.SetRulesForTesting(ctx, rs)
+					So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 					originalPriority := fakeStore.Issues[3].Issue.IssueState.Priority
 					So(fakeStore.Issues[3].Issue.IssueState.Priority, ShouldNotEqual, issuetracker.Issue_P0)
@@ -961,7 +961,7 @@ func TestBuganizerUpdate(t *testing.T) {
 					Convey("Bug managed by a rule in another project", func() {
 						fakeStore.StoreIssue(ctx, buganizer.NewFakeIssue(1234))
 
-						extraRule := &rules.FailureAssociationRule{
+						extraRule := &rules.Entry{
 							Project:               "otherproject",
 							RuleDefinition:        `reason LIKE "blah"`,
 							RuleID:                "1234567890abcdef1234567890abcdef",

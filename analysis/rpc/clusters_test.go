@@ -91,7 +91,7 @@ func TestClusters(t *testing.T) {
 		// Rules version is in microsecond granularity, consistent with
 		// the granularity of Spanner commit timestamps.
 		rulesVersion := time.Date(2021, time.February, 12, 1, 2, 4, 5000, time.UTC)
-		rs := []*rules.FailureAssociationRule{
+		rs := []*rules.Entry{
 			rules.NewRule(0).
 				WithProject("testproject").
 				WithRuleDefinition(`test LIKE "%TestSuite.TestName%"`).
@@ -117,7 +117,7 @@ func TestClusters(t *testing.T) {
 					ID:     "chromium/912345",
 				}).Build(),
 		}
-		err = rules.SetRulesForTesting(ctx, rs)
+		err = rules.SetForTesting(ctx, rs)
 		So(err, ShouldBeNil)
 
 		Convey("requests are rejected", func() {

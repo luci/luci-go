@@ -33,7 +33,7 @@ func TestClearRuleUsers(t *testing.T) {
 				WithCreationTime(time.Now().AddDate(0, 0, -31)).
 				WithCreationUser("user@example.com").
 				Build()
-			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
+			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
 
 			rows, err := clearCreationUserColumn(ctx)
@@ -50,7 +50,7 @@ func TestClearRuleUsers(t *testing.T) {
 				WithCreationTime(time.Now()).
 				WithCreationUser("user@example.com").
 				Build()
-			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
+			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
 
 			rows, err := clearCreationUserColumn(ctx)
@@ -63,7 +63,7 @@ func TestClearRuleUsers(t *testing.T) {
 				WithLastUpdated(time.Now().AddDate(0, 0, -31)).
 				WithLastUpdatedUser("user@example.com").
 				Build()
-			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
+			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
 
 			rows, err := clearLastUpdatedUserColumn(ctx)
@@ -80,7 +80,7 @@ func TestClearRuleUsers(t *testing.T) {
 				WithLastUpdated(time.Now().AddDate(0, 0, -29)).
 				WithLastUpdatedUser("user@example.com").
 				Build()
-			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
+			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
 
 			rows, err := clearLastUpdatedUserColumn(ctx)
@@ -95,7 +95,7 @@ func TestClearRuleUsers(t *testing.T) {
 				WithLastUpdated(time.Now().AddDate(0, 0, -31)).
 				WithLastUpdatedUser("user@example.com").
 				Build()
-			err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
+			err := SetForTesting(ctx, []*Entry{expectedRule})
 			So(err, ShouldBeNil)
 
 			err = ClearRulesUsers(ctx)

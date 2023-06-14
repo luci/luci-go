@@ -42,11 +42,11 @@ func TestGlobalMetrics(t *testing.T) {
 		So(config.SetTestProjectConfig(ctx, projectCfgs), ShouldBeNil)
 
 		// Create some active rules.
-		rulesToCreate := []*rules.FailureAssociationRule{
+		rulesToCreate := []*rules.Entry{
 			rules.NewRule(0).WithProject("project-a").WithActive(true).Build(),
 			rules.NewRule(1).WithProject("project-a").WithActive(true).Build(),
 		}
-		err := rules.SetRulesForTesting(ctx, rulesToCreate)
+		err := rules.SetForTesting(ctx, rulesToCreate)
 		So(err, ShouldBeNil)
 
 		// Create some ingestion control records.

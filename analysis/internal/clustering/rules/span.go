@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package rules contains methods to read and write failure association rules.
 package rules
 
 import (
@@ -67,11 +68,11 @@ var StartingVersion = Version{
 // association rule, if no matching rule exists.
 var NotExistsErr = errors.New("no matching rule exists")
 
-// FailureAssociationRule associates failures with a bug. When the rule
-// is used to match incoming test failures, the resultant cluster is
-// known as a 'bug cluster' because the cluster is associated with a bug
-// (via the failure association rule).
-type FailureAssociationRule struct {
+// Entry represents a failure association rule (a rule which associates
+// failures with a bug). When the rule is used to match incoming test
+// failures, the resultant cluster is known as a 'bug cluster' because
+// the cluster is associated with a bug (via the failure association rule).
+type Entry struct {
 	// The LUCI Project for which this rule is defined.
 	Project string `json:"project"`
 	// The unique identifier for the failure association rule,
@@ -136,7 +137,7 @@ type UpdateOptions struct {
 
 // Read reads the failure association rule with the given rule ID.
 // If no rule exists, NotExistsErr will be returned.
-func Read(ctx context.Context, project string, id string) (*FailureAssociationRule, error) {
+func Read(ctx context.Context, project string, id string) (*Entry, error) {
 	whereClause := `Project = @project AND RuleId = @ruleId`
 	params := map[string]any{
 		"project": project,
@@ -154,7 +155,7 @@ func Read(ctx context.Context, project string, id string) (*FailureAssociationRu
 
 // ReadAll reads all LUCI Analysis failure association rules in a given
 // project. This method is not expected to scale -- for testing use only.
-func ReadAll(ctx context.Context, project string) ([]*FailureAssociationRule, error) {
+func ReadAll(ctx context.Context, project string) ([]*Entry, error) {
 	whereClause := `Project = @project`
 	params := map[string]any{
 		"project": project,
@@ -168,7 +169,7 @@ func ReadAll(ctx context.Context, project string) ([]*FailureAssociationRule, er
 
 // ReadActive reads all active LUCI Analysis failure association rules in
 // the given LUCI project.
-func ReadActive(ctx context.Context, project string) ([]*FailureAssociationRule, error) {
+func ReadActive(ctx context.Context, project string) ([]*Entry, error) {
 	whereClause := `Project = @project AND IsActive`
 	params := map[string]any{
 		"project": project,
@@ -182,7 +183,7 @@ func ReadActive(ctx context.Context, project string) ([]*FailureAssociationRule,
 
 // ReadByBug reads the failure association rules associated with the given bug.
 // At most one rule will be returned per project.
-func ReadByBug(ctx context.Context, bugID bugs.BugID) ([]*FailureAssociationRule, error) {
+func ReadByBug(ctx context.Context, bugID bugs.BugID) ([]*Entry, error) {
 	whereClause := `BugSystem = @bugSystem and BugId = @bugId`
 	params := map[string]any{
 		"bugSystem": bugID.System,
@@ -197,7 +198,7 @@ func ReadByBug(ctx context.Context, bugID bugs.BugID) ([]*FailureAssociationRule
 
 // ReadDelta reads the changed failure association rules since the given
 // timestamp, in the given LUCI project.
-func ReadDelta(ctx context.Context, project string, sinceTime time.Time) ([]*FailureAssociationRule, error) {
+func ReadDelta(ctx context.Context, project string, sinceTime time.Time) ([]*Entry, error) {
 	if sinceTime.Before(StartingEpoch) {
 		return nil, errors.New("cannot query rule deltas from before project inception")
 	}
@@ -215,7 +216,7 @@ func ReadDelta(ctx context.Context, project string, sinceTime time.Time) ([]*Fai
 
 // ReadDeltaAllProjects reads the changed failure association rules since the given
 // timestamp for all LUCI projects.
-func ReadDeltaAllProjects(ctx context.Context, sinceTime time.Time) ([]*FailureAssociationRule, error) {
+func ReadDeltaAllProjects(ctx context.Context, sinceTime time.Time) ([]*Entry, error) {
 	if sinceTime.Before(StartingEpoch) {
 		return nil, errors.New("cannot query rule deltas from before project inception")
 	}
@@ -234,7 +235,7 @@ func ReadDeltaAllProjects(ctx context.Context, sinceTime time.Time) ([]*FailureA
 // (so returned[i].RuleId == ids[i], assuming the rule exists, else
 // returned[i] == nil). If a rule does not exist, a value of nil will be
 // returned for that ID. The same rule can be requested multiple times.
-func ReadMany(ctx context.Context, project string, ids []string) ([]*FailureAssociationRule, error) {
+func ReadMany(ctx context.Context, project string, ids []string) ([]*Entry, error) {
 	whereClause := `Project = @project AND RuleId IN UNNEST(@ruleIds)`
 	params := map[string]any{
 		"project": project,
@@ -244,19 +245,19 @@ func ReadMany(ctx context.Context, project string, ids []string) ([]*FailureAsso
 	if err != nil {
 		return nil, errors.Annotate(err, "query rules by id").Err()
 	}
-	ruleByID := make(map[string]FailureAssociationRule)
+	ruleByID := make(map[string]Entry)
 	for _, r := range rs {
 		ruleByID[r.RuleID] = *r
 	}
-	var result []*FailureAssociationRule
+	var result []*Entry
 	for _, id := range ids {
-		var entry *FailureAssociationRule
+		var entry *Entry
 		rule, ok := ruleByID[id]
 		if ok {
 			// Copy the rule to ensure the rules in the result
 			// are not aliased, even if the same rule ID is requested
 			// multiple times.
-			entry = new(FailureAssociationRule)
+			entry = new(Entry)
 			*entry = rule
 		}
 		result = append(result, entry)
@@ -266,7 +267,7 @@ func ReadMany(ctx context.Context, project string, ids []string) ([]*FailureAsso
 
 // readWhere failure association rules matching the given where clause,
 // substituting params for any SQL parameters used in that clause.
-func readWhere(ctx context.Context, whereClause string, params map[string]any) ([]*FailureAssociationRule, error) {
+func readWhere(ctx context.Context, whereClause string, params map[string]any) ([]*Entry, error) {
 	stmt := spanner.NewStatement(`
 		SELECT Project, RuleId, RuleDefinition, BugSystem, BugId,
 		  CreationTime, LastUpdated, PredicateLastUpdated,
@@ -280,7 +281,7 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 	stmt.Params = params
 
 	it := span.Query(ctx, stmt)
-	rs := []*FailureAssociationRule{}
+	rs := []*Entry{}
 	err := it.Do(func(r *spanner.Row) error {
 		var project, ruleID, ruleDefinition, bugSystem, bugID string
 		var creationTime, lastUpdated, predicateLastUpdated time.Time
@@ -301,7 +302,7 @@ func readWhere(ctx context.Context, whereClause string, params map[string]any) (
 			return errors.Annotate(err, "read rule row").Err()
 		}
 
-		rule := &FailureAssociationRule{
+		rule := &Entry{
 			Project:                          project,
 			RuleID:                           ruleID,
 			RuleDefinition:                   ruleDefinition,
@@ -419,7 +420,7 @@ func ReadTotalActiveRules(ctx context.Context) (map[string]int64, error) {
 }
 
 // Create inserts a new failure association rule with the specified details.
-func Create(ctx context.Context, rule *FailureAssociationRule, user string) error {
+func Create(ctx context.Context, rule *Entry, user string) error {
 	if err := validateRule(rule); err != nil {
 		return err
 	}
@@ -452,7 +453,7 @@ func Create(ctx context.Context, rule *FailureAssociationRule, user string) erro
 // Update updates an existing failure association rule to have the specified
 // details. Set updatePredicate to true if you changed RuleDefinition
 // or IsActive.
-func Update(ctx context.Context, rule *FailureAssociationRule, options UpdateOptions, user string) error {
+func Update(ctx context.Context, rule *Entry, options UpdateOptions, user string) error {
 	if err := validateRule(rule); err != nil {
 		return err
 	}
@@ -486,7 +487,7 @@ func Update(ctx context.Context, rule *FailureAssociationRule, options UpdateOpt
 	return nil
 }
 
-func validateRule(r *FailureAssociationRule) error {
+func validateRule(r *Entry) error {
 	switch {
 	case !config.ProjectRe.MatchString(r.Project):
 		return errors.New("project must be valid")

@@ -42,7 +42,7 @@ func TestSpan(t *testing.T) {
 			})
 			Convey(`Exists`, func() {
 				expectedRule := NewRule(100).Build()
-				err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
+				err := SetForTesting(ctx, []*Entry{expectedRule})
 				So(err, ShouldBeNil)
 
 				rule, err := Read(span.Single(ctx), testProject, expectedRule.RuleID)
@@ -51,7 +51,7 @@ func TestSpan(t *testing.T) {
 			})
 			Convey(`With null IsManagingBugPriorityLastUpdated`, func() {
 				expectedRule := NewRule(100).WithBugPriorityManagedLastUpdated(time.Time{}).Build()
-				err := SetRulesForTesting(ctx, []*FailureAssociationRule{expectedRule})
+				err := SetForTesting(ctx, []*Entry{expectedRule})
 				So(err, ShouldBeNil)
 				_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					stmt := spanner.NewStatement(`UPDATE FailureAssociationRules
@@ -69,26 +69,26 @@ func TestSpan(t *testing.T) {
 		})
 		Convey(`ReadActive`, func() {
 			Convey(`Empty`, func() {
-				err := SetRulesForTesting(ctx, nil)
+				err := SetForTesting(ctx, nil)
 				So(err, ShouldBeNil)
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{})
+				So(rules, ShouldResemble, []*Entry{})
 			})
 			Convey(`Multiple`, func() {
-				rulesToCreate := []*FailureAssociationRule{
+				rulesToCreate := []*Entry{
 					NewRule(0).Build(),
 					NewRule(1).WithProject("otherproject").Build(),
 					NewRule(2).WithActive(false).Build(),
 					NewRule(3).Build(),
 				}
-				err := SetRulesForTesting(ctx, rulesToCreate)
+				err := SetForTesting(ctx, rulesToCreate)
 				So(err, ShouldBeNil)
 
 				rules, err := ReadActive(span.Single(ctx), testProject)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{
+				So(rules, ShouldResemble, []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 				})
@@ -112,8 +112,8 @@ func TestSpan(t *testing.T) {
 					WithBugManaged(false).
 					WithBugPriorityManaged(false).
 					Build()
-				expectedRules := []*FailureAssociationRule{expectedRule, expectedRule2}
-				err := SetRulesForTesting(ctx, expectedRules)
+				expectedRules := []*Entry{expectedRule, expectedRule2}
+				err := SetForTesting(ctx, expectedRules)
 				So(err, ShouldBeNil)
 
 				rules, err := ReadByBug(span.Single(ctx), bugID)
@@ -127,27 +127,27 @@ func TestSpan(t *testing.T) {
 				So(err, ShouldErrLike, "cannot query rule deltas from before project inception")
 			})
 			Convey(`Empty`, func() {
-				err := SetRulesForTesting(ctx, nil)
+				err := SetForTesting(ctx, nil)
 				So(err, ShouldBeNil)
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{})
+				So(rules, ShouldResemble, []*Entry{})
 			})
 			Convey(`Multiple`, func() {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
-				rulesToCreate := []*FailureAssociationRule{
+				rulesToCreate := []*Entry{
 					NewRule(0).WithLastUpdated(reference).Build(),
 					NewRule(1).WithProject("otherproject").WithLastUpdated(reference.Add(time.Minute)).Build(),
 					NewRule(2).WithActive(false).WithLastUpdated(reference.Add(time.Minute)).Build(),
 					NewRule(3).WithLastUpdated(reference.Add(time.Microsecond)).Build(),
 				}
-				err := SetRulesForTesting(ctx, rulesToCreate)
+				err := SetForTesting(ctx, rulesToCreate)
 				So(err, ShouldBeNil)
 
 				rules, err := ReadDelta(span.Single(ctx), testProject, StartingEpoch)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{
+				So(rules, ShouldResemble, []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 					rulesToCreate[2],
@@ -155,14 +155,14 @@ func TestSpan(t *testing.T) {
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{
+				So(rules, ShouldResemble, []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[2],
 				})
 
 				rules, err = ReadDelta(span.Single(ctx), testProject, reference.Add(time.Minute))
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{})
+				So(rules, ShouldResemble, []*Entry{})
 			})
 		})
 
@@ -172,27 +172,27 @@ func TestSpan(t *testing.T) {
 				So(err, ShouldErrLike, "cannot query rule deltas from before project inception")
 			})
 			Convey(`Empty`, func() {
-				err := SetRulesForTesting(ctx, nil)
+				err := SetForTesting(ctx, nil)
 				So(err, ShouldBeNil)
 
 				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{})
+				So(rules, ShouldResemble, []*Entry{})
 			})
 			Convey(`Multiple`, func() {
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
-				rulesToCreate := []*FailureAssociationRule{
+				rulesToCreate := []*Entry{
 					NewRule(0).WithLastUpdated(reference).Build(),
 					NewRule(1).WithProject("otherproject").WithLastUpdated(reference.Add(time.Minute)).Build(),
 					NewRule(2).WithActive(false).WithLastUpdated(reference.Add(time.Minute)).Build(),
 					NewRule(3).WithLastUpdated(reference.Add(time.Microsecond)).Build(),
 				}
-				err := SetRulesForTesting(ctx, rulesToCreate)
+				err := SetForTesting(ctx, rulesToCreate)
 				So(err, ShouldBeNil)
 
 				rules, err := ReadDeltaAllProjects(span.Single(ctx), StartingEpoch)
 				So(err, ShouldBeNil)
-				expected := []*FailureAssociationRule{
+				expected := []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[0],
 					rulesToCreate[2],
@@ -204,7 +204,7 @@ func TestSpan(t *testing.T) {
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference)
 				So(err, ShouldBeNil)
-				expected = []*FailureAssociationRule{
+				expected = []*Entry{
 					rulesToCreate[3],
 					rulesToCreate[2],
 					rulesToCreate[1],
@@ -215,18 +215,18 @@ func TestSpan(t *testing.T) {
 
 				rules, err = ReadDeltaAllProjects(span.Single(ctx), reference.Add(time.Minute))
 				So(err, ShouldBeNil)
-				So(rules, ShouldResemble, []*FailureAssociationRule{})
+				So(rules, ShouldResemble, []*Entry{})
 			})
 		})
 
 		Convey(`ReadMany`, func() {
-			rulesToCreate := []*FailureAssociationRule{
+			rulesToCreate := []*Entry{
 				NewRule(0).Build(),
 				NewRule(1).WithProject("otherproject").Build(),
 				NewRule(2).WithActive(false).Build(),
 				NewRule(3).Build(),
 			}
-			err := SetRulesForTesting(ctx, rulesToCreate)
+			err := SetForTesting(ctx, rulesToCreate)
 			So(err, ShouldBeNil)
 
 			ids := []string{
@@ -241,7 +241,7 @@ func TestSpan(t *testing.T) {
 			}
 			rules, err := ReadMany(span.Single(ctx), testProject, ids)
 			So(err, ShouldBeNil)
-			So(rules, ShouldResemble, []*FailureAssociationRule{
+			So(rules, ShouldResemble, []*Entry{
 				rulesToCreate[0],
 				nil,
 				rulesToCreate[2],
@@ -254,7 +254,7 @@ func TestSpan(t *testing.T) {
 		})
 		Convey(`ReadVersion`, func() {
 			Convey(`Empty`, func() {
-				err := SetRulesForTesting(ctx, nil)
+				err := SetForTesting(ctx, nil)
 				So(err, ShouldBeNil)
 
 				timestamp, err := ReadVersion(span.Single(ctx), testProject)
@@ -268,7 +268,7 @@ func TestSpan(t *testing.T) {
 				// reason, we use microsecond resolution timestamps
 				// when testing.
 				reference := time.Date(2020, 1, 2, 3, 4, 5, 6000, time.UTC)
-				rulesToCreate := []*FailureAssociationRule{
+				rulesToCreate := []*Entry{
 					NewRule(0).
 						WithPredicateLastUpdated(reference.Add(-1 * time.Hour)).
 						WithLastUpdated(reference.Add(-1 * time.Hour)).
@@ -286,7 +286,7 @@ func TestSpan(t *testing.T) {
 						WithLastUpdated(reference.Add(-2 * time.Hour)).
 						Build(),
 				}
-				err := SetRulesForTesting(ctx, rulesToCreate)
+				err := SetForTesting(ctx, rulesToCreate)
 				So(err, ShouldBeNil)
 
 				version, err := ReadVersion(span.Single(ctx), testProject)
@@ -299,7 +299,7 @@ func TestSpan(t *testing.T) {
 		})
 		Convey(`ReadTotalActiveRules`, func() {
 			Convey(`Empty`, func() {
-				err := SetRulesForTesting(ctx, nil)
+				err := SetForTesting(ctx, nil)
 				So(err, ShouldBeNil)
 
 				result, err := ReadTotalActiveRules(span.Single(ctx))
@@ -307,7 +307,7 @@ func TestSpan(t *testing.T) {
 				So(result, ShouldResemble, map[string]int64{})
 			})
 			Convey(`Multiple`, func() {
-				rulesToCreate := []*FailureAssociationRule{
+				rulesToCreate := []*Entry{
 					// Two active and one inactive rule for Project A.
 					NewRule(0).WithProject("project-a").WithActive(true).Build(),
 					NewRule(1).WithProject("project-a").WithActive(false).Build(),
@@ -317,7 +317,7 @@ func TestSpan(t *testing.T) {
 					// One active rule for Project C.
 					NewRule(4).WithProject("project-c").WithActive(true).Build(),
 				}
-				err := SetRulesForTesting(ctx, rulesToCreate)
+				err := SetForTesting(ctx, rulesToCreate)
 				So(err, ShouldBeNil)
 
 				result, err := ReadTotalActiveRules(span.Single(ctx))
@@ -330,7 +330,7 @@ func TestSpan(t *testing.T) {
 			})
 		})
 		Convey(`Create`, func() {
-			testCreate := func(bc *FailureAssociationRule, user string) (time.Time, error) {
+			testCreate := func(bc *Entry, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					return Create(ctx, bc, user)
 				})
@@ -341,7 +341,7 @@ func TestSpan(t *testing.T) {
 			r.LastUpdatedUser = LUCIAnalysisSystem
 
 			Convey(`Valid`, func() {
-				testExists := func(expectedRule FailureAssociationRule) {
+				testExists := func(expectedRule Entry) {
 					txn, cancel := span.ReadOnlyTransaction(ctx)
 					defer cancel()
 					rules, err := ReadActive(txn, testProject)
@@ -445,21 +445,21 @@ func TestSpan(t *testing.T) {
 			})
 		})
 		Convey(`Update`, func() {
-			testExists := func(expectedRule *FailureAssociationRule) {
+			testExists := func(expectedRule *Entry) {
 				txn, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
 				rule, err := Read(txn, expectedRule.Project, expectedRule.RuleID)
 				So(err, ShouldBeNil)
 				So(rule, ShouldResemble, expectedRule)
 			}
-			testUpdate := func(bc *FailureAssociationRule, options UpdateOptions, user string) (time.Time, error) {
+			testUpdate := func(bc *Entry, options UpdateOptions, user string) (time.Time, error) {
 				commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					return Update(ctx, bc, options, user)
 				})
 				return commitTime.In(time.UTC), err
 			}
 			r := NewRule(100).Build()
-			err := SetRulesForTesting(ctx, []*FailureAssociationRule{r})
+			err := SetForTesting(ctx, []*Entry{r})
 			So(err, ShouldBeNil)
 
 			Convey(`Valid`, func() {
@@ -538,13 +538,13 @@ func TestSpan(t *testing.T) {
 			})
 		})
 		Convey(`One rule managing bug constraint is correctly enforced`, func() {
-			testCreate := func(r *FailureAssociationRule, user string) error {
+			testCreate := func(r *Entry, user string) error {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					return Create(ctx, r, user)
 				})
 				return err
 			}
-			testUpdate := func(r *FailureAssociationRule, options UpdateOptions, user string) error {
+			testUpdate := func(r *Entry, options UpdateOptions, user string) error {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					return Update(ctx, r, options, user)
 				})
@@ -552,7 +552,7 @@ func TestSpan(t *testing.T) {
 			}
 
 			bug := bugs.BugID{System: "monorail", ID: "project/1234567890"}
-			rulesToCreate := []*FailureAssociationRule{
+			rulesToCreate := []*Entry{
 				NewRule(0).WithProject("project-a").WithBug(bug).WithBugManaged(true).Build(),
 				NewRule(1).WithProject("project-b").WithBug(bug).WithBugManaged(false).Build(),
 				NewRule(2).WithProject("project-c").WithBug(bug).WithBugManaged(false).Build(),

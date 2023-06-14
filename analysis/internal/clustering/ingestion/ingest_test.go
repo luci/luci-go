@@ -120,7 +120,7 @@ func TestIngest(t *testing.T) {
 
 		// This rule should match failures used in this test.
 		rule := rules.NewRule(100).WithProject(opts.Project).WithRuleDefinition(`reason LIKE "Failure reason%"`).Build()
-		err := rules.SetRulesForTesting(ctx, []*rules.FailureAssociationRule{
+		err := rules.SetForTesting(ctx, []*rules.Entry{
 			rule,
 		})
 		So(err, ShouldBeNil)
@@ -448,7 +448,7 @@ func setRegexpClustered(cfg *compiledcfg.ProjectConfig, e *bqpb.ClusteredFailure
 	}))
 }
 
-func setRuleClustered(e *bqpb.ClusteredFailureRow, rule *rules.FailureAssociationRule) {
+func setRuleClustered(e *bqpb.ClusteredFailureRow, rule *rules.Entry) {
 	e.ClusterAlgorithm = rulesalgorithm.AlgorithmName
 	e.ClusterId = rule.RuleID
 	e.IsIncludedWithHighPriority = true

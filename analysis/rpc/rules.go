@@ -137,7 +137,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	}
 	user := auth.CurrentUser(ctx).Email
 
-	r := &rules.FailureAssociationRule{
+	r := &rules.Entry{
 		Project:        project,
 		RuleID:         ruleID,
 		RuleDefinition: req.Rule.GetRuleDefinition(),
@@ -202,7 +202,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 	return createRulePB(r, cfg.Config, canSeeDefinition), nil
 }
 
-func logRuleCreate(ctx context.Context, rule *rules.FailureAssociationRule) {
+func logRuleCreate(ctx context.Context, rule *rules.Entry) {
 	logging.Infof(ctx, "Rule created (%s/%s): %s", rule.Project, rule.RuleID, formatRule(rule))
 }
 
@@ -225,8 +225,8 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 
 	var predicateUpdated bool
 	var managingBugPriorityUpdated bool
-	var originalRule *rules.FailureAssociationRule
-	var updatedRule *rules.FailureAssociationRule
+	var originalRule *rules.Entry
+	var updatedRule *rules.Entry
 	f := func(ctx context.Context) error {
 		rule, err := rules.Read(ctx, project, ruleID)
 		if err != nil {
@@ -237,7 +237,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 			// caller.
 			return errors.Annotate(err, "read rule").Err()
 		}
-		originalRule = &rules.FailureAssociationRule{}
+		originalRule = &rules.Entry{}
 		*originalRule = *rule
 
 		canSeeDefinition := true
@@ -347,11 +347,11 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 	return createRulePB(updatedRule, cfg.Config, canSeeDefinition), nil
 }
 
-func logRuleUpdate(ctx context.Context, old *rules.FailureAssociationRule, new *rules.FailureAssociationRule) {
+func logRuleUpdate(ctx context.Context, old *rules.Entry, new *rules.Entry) {
 	logging.Infof(ctx, "Rule updated (%s/%s): from %s to %s", old.Project, old.RuleID, formatRule(old), formatRule(new))
 }
 
-func formatRule(r *rules.FailureAssociationRule) string {
+func formatRule(r *rules.Entry) string {
 	return fmt.Sprintf("{\n"+
 		"\tRuleDefinition: %q,\n"+
 		"\tBugID: %q,\n"+
@@ -393,7 +393,7 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 	}, nil
 }
 
-func createRulePB(r *rules.FailureAssociationRule, cfg *configpb.ProjectConfig, includeDefinition bool) *pb.Rule {
+func createRulePB(r *rules.Entry, cfg *configpb.ProjectConfig, includeDefinition bool) *pb.Rule {
 	definition := ""
 	if includeDefinition {
 		definition = r.RuleDefinition
@@ -421,7 +421,7 @@ func createRulePB(r *rules.FailureAssociationRule, cfg *configpb.ProjectConfig, 
 	}
 }
 
-func ruleETag(rule *rules.FailureAssociationRule, includeDefinition bool) string {
+func ruleETag(rule *rules.Entry, includeDefinition bool) string {
 	filtered := "y"
 	if includeDefinition {
 		filtered = "n"

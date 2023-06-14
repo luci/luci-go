@@ -73,7 +73,7 @@ func exportRules(ctx context.Context, client exporterClient, exportTime time.Tim
 	return nil
 }
 
-func toFailureAssociationRulesHistoryRow(rule *FailureAssociationRule, exportTime time.Time) *bqpb.FailureAssociationRulesHistoryRow {
+func toFailureAssociationRulesHistoryRow(rule *Entry, exportTime time.Time) *bqpb.FailureAssociationRulesHistoryRow {
 	return &bqpb.FailureAssociationRulesHistoryRow{
 		Project:              rule.Project,
 		RuleId:               rule.RuleID,

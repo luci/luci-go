@@ -63,8 +63,8 @@ func TestExportRules(t *testing.T) {
 			r1 := NewRule(1).Build()
 			r2 := NewRule(2).Build()
 			r3 := NewRule(3).Build()
-			rulesInTable := []*FailureAssociationRule{r1, r2, r3}
-			err := SetRulesForTesting(ctx, rulesInTable)
+			rulesInTable := []*Entry{r1, r2, r3}
+			err := SetForTesting(ctx, rulesInTable)
 			So(err, ShouldBeNil)
 
 			err = exportRules(ctx, mockClient, exportTime)
@@ -87,8 +87,8 @@ func TestExportRules(t *testing.T) {
 			r2 := NewRule(2).WithLastUpdated(lastUpdatedTime.Add(-2 * time.Minute)).Build()
 			r3 := NewRule(3).WithLastUpdated(lastUpdatedTime.Add(time.Minute)).Build()
 			r4 := NewRule(4).WithLastUpdated(lastUpdatedTime.Add(2 * time.Minute)).Build()
-			rulesInTable := []*FailureAssociationRule{r1, r2, r3, r4}
-			err := SetRulesForTesting(ctx, rulesInTable)
+			rulesInTable := []*Entry{r1, r2, r3, r4}
+			err := SetForTesting(ctx, rulesInTable)
 			So(err, ShouldBeNil)
 
 			err = exportRules(ctx, mockClient, exportTime)

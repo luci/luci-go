@@ -717,7 +717,7 @@ func (b *BugUpdater) updateDuplicateDestination(ctx context.Context, destination
 // there is any rule in the system that manages the given bug, even if in
 // a different project.
 // If the rule cannot be read, it returns nil.
-func readRuleForBugAndProject(ctx context.Context, bug bugs.BugID, project string) (rule *rules.FailureAssociationRule, anyRuleManaging bool, err error) {
+func readRuleForBugAndProject(ctx context.Context, bug bugs.BugID, project string) (rule *rules.Entry, anyRuleManaging bool, err error) {
 	rules, err := rules.ReadByBug(ctx, bug)
 	if err != nil {
 		return nil, false, err
@@ -855,7 +855,7 @@ func (b *BugUpdater) createBug(ctx context.Context, cs *analysis.Cluster) (creat
 	}
 
 	// Create a failure association rule associating the failures with a bug.
-	newRule := &rules.FailureAssociationRule{
+	newRule := &rules.Entry{
 		Project:               b.project,
 		RuleID:                ruleID,
 		RuleDefinition:        rule,

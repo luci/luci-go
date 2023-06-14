@@ -156,19 +156,19 @@ func TestMonorailUpdate(t *testing.T) {
 			// No failure association rules.
 			rs, err := rules.ReadActive(span.Single(ctx), project)
 			So(err, ShouldBeNil)
-			So(rs, ShouldResemble, []*rules.FailureAssociationRule{})
+			So(rs, ShouldResemble, []*rules.Entry{})
 
 			// No monorail issues.
 			So(f.Issues, ShouldBeNil)
 		})
 		Convey("With buganizer bugs", func() {
 			fakeBuganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(12345678))
-			rs := []*rules.FailureAssociationRule{
+			rs := []*rules.Entry{
 				rules.NewRule(1).WithProject(project).WithBug(bugs.BugID{
 					System: "buganizer", ID: "12345678",
 				}).Build(),
 			}
-			rules.SetRulesForTesting(ctx, rs)
+			So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 			// Bug filing should not encounter errors.
 			err = updateBugsForProject(ctx, opts)
@@ -194,7 +194,7 @@ func TestMonorailUpdate(t *testing.T) {
 			ignoreRuleID := ""
 			expectCreate := true
 
-			expectedRule := &rules.FailureAssociationRule{
+			expectedRule := &rules.Entry{
 				Project:               "chromium",
 				RuleDefinition:        `reason LIKE "Failed to connect to %.%.%.%."`,
 				BugID:                 bugs.BugID{System: bugs.MonorailSystem, ID: "chromium/100"},
@@ -221,7 +221,7 @@ func TestMonorailUpdate(t *testing.T) {
 				rs, err := rules.ReadActive(span.Single(ctx), project)
 				So(err, ShouldBeNil)
 
-				var cleanedRules []*rules.FailureAssociationRule
+				var cleanedRules []*rules.Entry
 				for _, r := range rs {
 					if r.RuleID != ignoreRuleID {
 						cleanedRules = append(cleanedRules, r)
@@ -307,7 +307,7 @@ func TestMonorailUpdate(t *testing.T) {
 					rs, err := rules.ReadActive(span.Single(ctx), project)
 					So(err, ShouldBeNil)
 
-					var cleanedRules []*rules.FailureAssociationRule
+					var cleanedRules []*rules.Entry
 					for _, r := range rs {
 						if r.RuleID != ignoreRuleID {
 							cleanedRules = append(cleanedRules, r)
@@ -434,7 +434,7 @@ func TestMonorailUpdate(t *testing.T) {
 					WithPredicateLastUpdated(createTime.Add(1 * time.Hour)).
 					WithLastUpdated(createTime.Add(2 * time.Hour)).
 					WithSourceCluster(sourceClusterID).Build()
-				err := rules.SetRulesForTesting(ctx, []*rules.FailureAssociationRule{
+				err := rules.SetForTesting(ctx, []*rules.Entry{
 					rule,
 				})
 				So(err, ShouldBeNil)
@@ -602,7 +602,7 @@ func TestMonorailUpdate(t *testing.T) {
 			err = updateBugsForProject(ctx, opts)
 			So(err, ShouldBeNil)
 
-			expectedRules := []*rules.FailureAssociationRule{
+			expectedRules := []*rules.Entry{
 				{
 					Project:               "chromium",
 					RuleDefinition:        `test = "testname-0"`,
@@ -638,7 +638,7 @@ func TestMonorailUpdate(t *testing.T) {
 				},
 			}
 
-			expectRules := func(expectedRules []*rules.FailureAssociationRule) {
+			expectRules := func(expectedRules []*rules.Entry) {
 				// Check final set of rules is as expected.
 				rs, err := rules.ReadAll(span.Single(ctx), "chromium")
 				So(err, ShouldBeNil)
@@ -656,7 +656,7 @@ func TestMonorailUpdate(t *testing.T) {
 					r.IsManagingBugPriorityLastUpdated = time.Time{}
 				}
 
-				sortedExpected := make([]*rules.FailureAssociationRule, len(expectedRules))
+				sortedExpected := make([]*rules.Entry, len(expectedRules))
 				copy(sortedExpected, expectedRules)
 				sort.Slice(sortedExpected, func(i, j int) bool {
 					return sortedExpected[i].BugID.System < sortedExpected[j].BugID.System ||
@@ -739,7 +739,7 @@ func TestMonorailUpdate(t *testing.T) {
 				Convey("Cluster impact does not change if bug not managed by rule", func() {
 					// Set IsManagingBug to false on one rule.
 					rs[2].IsManagingBug = false
-					rules.SetRulesForTesting(ctx, rs)
+					So(rules.SetForTesting(ctx, rs), ShouldBeNil)
 
 					issue := f.Issues[2].Issue
 					So(issue.Name, ShouldEqual, "projects/chromium/issues/102")
@@ -806,7 +806,7 @@ func TestMonorailUpdate(t *testing.T) {
 						}
 						SetResidualImpact(
 							bugClusters[1], bugs.P2Impact())
-						err = rules.SetRulesForTesting(ctx, rs)
+						err = rules.SetForTesting(ctx, rs)
 						So(err, ShouldBeNil)
 
 						err = updateBugsForProject(ctx, opts)
@@ -1002,7 +1002,7 @@ func TestMonorailUpdate(t *testing.T) {
 
 						fakeBuganizerStore.StoreIssue(ctx, buganizer.NewFakeIssue(1234))
 
-						extraRule := &rules.FailureAssociationRule{
+						extraRule := &rules.Entry{
 							Project:               "otherproject",
 							RuleDefinition:        `reason LIKE "blah"`,
 							RuleID:                "1234567890abcdef1234567890abcdef",

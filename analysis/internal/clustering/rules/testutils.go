@@ -36,7 +36,7 @@ const testProject = "myproject"
 // RuleBuilder provides methods to build a failure asociation rule
 // for testing.
 type RuleBuilder struct {
-	rule      FailureAssociationRule
+	rule      Entry
 	uniqifier int
 }
 
@@ -50,7 +50,7 @@ func NewRule(uniqifier int) *RuleBuilder {
 		bugID = bugs.BugID{System: "buganizer", ID: fmt.Sprintf("%v", uniqifier)}
 	}
 
-	rule := FailureAssociationRule{
+	rule := Entry{
 		Project:                          testProject,
 		RuleID:                           hex.EncodeToString(ruleIDBytes[0:16]),
 		RuleDefinition:                   "reason LIKE \"%exit code 5%\" AND test LIKE \"tast.arc.%\"",
@@ -173,16 +173,16 @@ func (b *RuleBuilder) WithSourceCluster(value clustering.ClusterID) *RuleBuilder
 	return b
 }
 
-func (b *RuleBuilder) Build() *FailureAssociationRule {
+func (b *RuleBuilder) Build() *Entry {
 	// Copy the result, so that calling further methods on the builder does
 	// not change the returned rule.
-	result := new(FailureAssociationRule)
+	result := new(Entry)
 	*result = b.rule
 	return result
 }
 
-// SetRulesForTesting replaces the set of stored rules to match the given set.
-func SetRulesForTesting(ctx context.Context, rs []*FailureAssociationRule) error {
+// SetForTesting replaces the set of stored rules to match the given set.
+func SetForTesting(ctx context.Context, rs []*Entry) error {
 	testutil.MustApply(ctx,
 		spanner.Delete("FailureAssociationRules", spanner.AllKeys()))
 	// Insert some FailureAssociationRules.
@@ -214,6 +214,6 @@ func SetRulesForTesting(ctx context.Context, rs []*FailureAssociationRule) error
 	return err
 }
 
-func sortByID(rules []*FailureAssociationRule) {
+func sortByID(rules []*Entry) {
 	sort.Slice(rules, func(i, j int) bool { return rules[i].RuleID < rules[j].RuleID })
 }

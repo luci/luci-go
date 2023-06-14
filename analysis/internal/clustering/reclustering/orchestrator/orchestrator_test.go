@@ -117,7 +117,7 @@ func TestOrchestrator(t *testing.T) {
 
 			rulesVersionB := time.Date(2020, time.January, 10, 9, 8, 7, 0, time.UTC)
 			rule := rules.NewRule(1).WithProject("project-b").WithPredicateLastUpdated(rulesVersionB).Build()
-			err = rules.SetRulesForTesting(ctx, []*rules.FailureAssociationRule{rule})
+			err = rules.SetForTesting(ctx, []*rules.Entry{rule})
 			So(err, ShouldBeNil)
 
 			expectedRunStartTime := tc.Now().Truncate(time.Minute)

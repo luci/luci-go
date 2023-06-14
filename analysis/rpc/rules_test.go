@@ -88,7 +88,7 @@ func TestRules(t *testing.T) {
 			WithBug(bugs.BugID{System: "buganizer", ID: "666"}).
 			Build()
 
-		err := rules.SetRulesForTesting(ctx, []*rules.FailureAssociationRule{
+		err := rules.SetForTesting(ctx, []*rules.Entry{
 			ruleManaged,
 			ruleTwoProject,
 			ruleTwoProjectOther,
@@ -288,7 +288,7 @@ func TestRules(t *testing.T) {
 			})
 			Convey("Non-Empty", func() {
 				test := func(includeDefinition bool, cfg *configpb.ProjectConfig) {
-					rs := []*rules.FailureAssociationRule{
+					rs := []*rules.Entry{
 						ruleManaged,
 						ruleBuganizer,
 						rules.NewRule(2).WithProject(testProject).Build(),
@@ -297,7 +297,7 @@ func TestRules(t *testing.T) {
 						// In other project.
 						ruleManagedOther,
 					}
-					err := rules.SetRulesForTesting(ctx, rs)
+					err := rules.SetForTesting(ctx, rs)
 					So(err, ShouldBeNil)
 
 					response, err := srv.List(ctx, request)
@@ -337,7 +337,7 @@ func TestRules(t *testing.T) {
 				})
 			})
 			Convey("Empty", func() {
-				err := rules.SetRulesForTesting(ctx, nil)
+				err := rules.SetForTesting(ctx, nil)
 				So(err, ShouldBeNil)
 
 				response, err := srv.List(ctx, request)
